@@ -10,6 +10,7 @@ const authDomain =
   rawAuthDomain && rawAuthDomain.includes(".")
     ? rawAuthDomain
     : `${projectId}.firebaseapp.com`;
+const currentHost = typeof window !== "undefined" ? window.location.hostname : "";
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
@@ -32,3 +33,10 @@ export const firebaseAuth: Auth = getAuth(firebaseApp);
 
 // Persist sessions across page reloads.
 void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
+
+if (typeof window !== "undefined" && currentHost) {
+  const allowedDomain = `${projectId}.firebaseapp.com`;
+  if (currentHost !== "localhost" && currentHost !== "127.0.0.1") {
+    console.info("Firebase current host:", currentHost, "authDomain:", allowedDomain);
+  }
+}
