@@ -1499,6 +1499,12 @@ export default function RoutineDetail() {
                               meal={item.meal}
                               recipe={item.recipe}
                               nutrition={item.nutrition}
+                              defaultOpen={
+                                (item.category === "meal" || item.category === "tiffin") &&
+                                items.slice(0, index).filter(
+                                  it => it.category === "meal" || it.category === "tiffin"
+                                ).length === 0
+                              }
                             />
                           )}
                           </>

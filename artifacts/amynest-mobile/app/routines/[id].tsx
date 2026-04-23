@@ -922,6 +922,13 @@ export default function RoutineDetailScreen() {
       <RoutineItemModal
         visible={expandedIndex !== null}
         item={expandedIndex !== null ? items[expandedIndex] : null}
+        isFirstMeal={
+          expandedIndex !== null &&
+          (items[expandedIndex]?.category === "meal" || items[expandedIndex]?.category === "tiffin") &&
+          items.slice(0, expandedIndex).filter(
+            it => it.category === "meal" || it.category === "tiffin"
+          ).length === 0
+        }
         onClose={closeExpanded}
         onComplete={() => {
           if (expandedIndex !== null) {

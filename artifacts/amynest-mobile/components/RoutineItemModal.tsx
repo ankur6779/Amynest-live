@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Modal, View, Text, StyleSheet, Pressable, ScrollView,
   TouchableOpacity, Dimensions, Image, ActivityIndicator,
@@ -57,6 +57,7 @@ interface Props {
   item: RoutineItemLike | null;
   visible: boolean;
   isInteractive?: boolean;
+  isFirstMeal?: boolean;
   onClose: () => void;
   onComplete: () => void;
   onDelay: (mins: number) => void;
@@ -97,7 +98,7 @@ function statusBadge(status: ItemStatus) {
 }
 
 export default function RoutineItemModal({
-  item, visible, isInteractive = true,
+  item, visible, isInteractive = true, isFirstMeal = false,
   onClose, onComplete, onDelay, onSkip, onReopen,
 }: Props) {
   const c = useColors();
@@ -108,6 +109,11 @@ export default function RoutineItemModal({
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [recipeLoading, setRecipeLoading] = useState(false);
   const [recipeError, setRecipeError] = useState<string | null>(null);
+  const [recipeOpen, setRecipeOpen] = useState(isFirstMeal);
+
+  useEffect(() => {
+    if (visible) setRecipeOpen(isFirstMeal);
+  }, [visible, isFirstMeal]);
 
   const fetchRecipe = async (mealName: string) => {
     setSelectedMeal(mealName);
@@ -314,11 +320,29 @@ export default function RoutineItemModal({
 
               {(item.recipe || item.nutrition) ? (
                 <View style={s.notesBox}>
-                  <MobileRecipeCard
-                    meal={item.meal}
-                    recipe={item.recipe}
-                    nutrition={item.nutrition}
-                  />
+                  <TouchableOpacity
+                    onPress={() => setRecipeOpen(o => !o)}
+                    activeOpacity={0.8}
+                    style={s.recipeToggleRow}
+                    accessibilityRole="button"
+                    accessibilityLabel={recipeOpen ? "Collapse recipe" : "Expand recipe"}
+                  >
+                    <MaterialCommunityIcons name="chef-hat" size={14} color="#c2410c" />
+                    <Text style={s.recipeToggleLabel}>{"Recipe & Nutrition"}{item.meal ? ` — ${item.meal}` : ""}</Text>
+                    <Ionicons
+                      name={recipeOpen ? "chevron-up" : "chevron-down"}
+                      size={14}
+                      color="#c2410c"
+                      style={{ marginLeft: "auto" }}
+                    />
+                  </TouchableOpacity>
+                  {recipeOpen && (
+                    <MobileRecipeCard
+                      meal={item.meal}
+                      recipe={item.recipe}
+                      nutrition={item.nutrition}
+                    />
+                  )}
                 </View>
               ) : null}
 
@@ -505,6 +529,12 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: c.calloutBg,
       borderWidth: 1, borderColor: c.glassBorder,
       borderRadius: 14, padding: 14, gap: 6,
+    },
+    recipeToggleRow: {
+      flexDirection: "row", alignItems: "center", gap: 6,
+    },
+    recipeToggleLabel: {
+      color: "#c2410c", fontSize: 13, fontWeight: "700", flex: 1,
     },
     notesText: { color: c.textBody, fontSize: 13, lineHeight: 19 },
 
