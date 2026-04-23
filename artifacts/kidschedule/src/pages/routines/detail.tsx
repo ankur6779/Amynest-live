@@ -356,6 +356,12 @@ function RoutineItemModal({
               {status === "completed" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/80 text-white">✓ Done</span>}
               {status === "skipped" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-500/80 text-white">Skipped</span>}
               {status === "delayed" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/80 text-white">⏱ Delayed</span>}
+              {item.ageBand && (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/25 text-white border border-white/30 backdrop-blur-sm inline-flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  Ages {item.ageBand.replace("-", "–")}
+                </span>
+              )}
             </div>
           </div>
         </div>

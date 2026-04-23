@@ -294,6 +294,12 @@ export default function RoutineItemModal({
                     <Text style={[s.metaText, { fontWeight: "800" }]}>{badge.text}</Text>
                   </View>
                 )}
+                {item.ageBand && (
+                  <View style={s.ageBandPill}>
+                    <Ionicons name="people-outline" size={11} color="rgba(255,255,255,0.9)" />
+                    <Text style={s.ageBandText}>Ages {item.ageBand.replace("-", "–")}</Text>
+                  </View>
+                )}
               </View>
             </LinearGradient>
 
@@ -443,6 +449,14 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: "rgba(0,0,0,0.28)",
     },
     metaText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+    ageBandPill: {
+      flexDirection: "row", alignItems: "center", gap: 4,
+      paddingHorizontal: 8, paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: "rgba(255,255,255,0.22)",
+      borderWidth: 1, borderColor: "rgba(255,255,255,0.35)",
+    },
+    ageBandText: { color: "rgba(255,255,255,0.95)", fontSize: 11, fontWeight: "700" },
 
     body: { padding: 20, gap: 14 },
 
