@@ -2,9 +2,10 @@ import {
   db,
   subscriptionsTable,
   usageDailyTable,
+  childrenTable,
   type Subscription,
 } from "@workspace/db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 // Drizzle's transaction object exposes the same query API as `db`, so the
 // service helpers below accept either. We type it loosely to avoid leaking
@@ -123,6 +124,22 @@ export async function getOrCreateSubscription(
     .values({ userId, plan: "free", status: "free", provider: "none" })
     .returning();
   return created;
+}
+
+/**
+ * Returns the ID of the user's "first" child — defined as the child with the
+ * earliest `createdAt` (same ordering used by GET /children in the UI). This
+ * is the single child free-plan users are allowed to access. Returns null when
+ * the user has no children.
+ */
+export async function getFirstChildId(userId: string): Promise<number | null> {
+  const rows = await db
+    .select({ id: childrenTable.id })
+    .from(childrenTable)
+    .where(eq(childrenTable.userId, userId))
+    .orderBy(asc(childrenTable.createdAt), asc(childrenTable.id))
+    .limit(1);
+  return rows[0]?.id ?? null;
 }
 
 export function isPremiumNow(s: Subscription): boolean {

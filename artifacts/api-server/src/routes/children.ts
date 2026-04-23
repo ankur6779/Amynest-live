@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { db, childrenTable } from "@workspace/db";
 import {
@@ -31,7 +31,7 @@ router.get("/children", async (req, res): Promise<void> => {
     .select()
     .from(childrenTable)
     .where(eq(childrenTable.userId, userId))
-    .orderBy(childrenTable.createdAt);
+    .orderBy(asc(childrenTable.createdAt), asc(childrenTable.id));
   res.json(ListChildrenResponse.parse(children.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() }))));
 });
 
