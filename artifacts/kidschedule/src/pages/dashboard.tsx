@@ -23,6 +23,7 @@ type RoutineItem = {
   category: string;
   notes?: string;
   status?: string;
+  ageBand?: string;
 };
 
 type Routine = {
@@ -271,8 +272,14 @@ function NowNextTimeline({ routines }: { routines: Routine[] }) {
                   <div className={`font-bold text-sm ${isCurrent ? "text-white" : "text-foreground"} ${completed ? "line-through opacity-60" : ""}`} style={{ wordBreak: "break-word", whiteSpace: "normal" }}>
                     {item.activity}
                   </div>
-                  <div className={`text-[11px] mt-0.5 ${isCurrent ? "text-violet-100" : "text-muted-foreground"}`}>
-                    {item.childName} · {item.duration}m
+                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-violet-100" : "text-muted-foreground"}`}>
+                    <span>{item.childName} · {item.duration}m</span>
+                    {item.ageBand && (
+                      <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-sky-700 bg-sky-50 border-sky-200"}`}>
+                        <Users className="h-2.5 w-2.5" />
+                        Ages {item.ageBand.replace("-", "–")}
+                      </span>
+                    )}
                   </div>
                 </div>
                 {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
