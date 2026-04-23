@@ -3,14 +3,18 @@ import { getAuth, type Auth, browserLocalPersistence, setPersistence } from "fir
 
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string;
 
-// authDomain must be "<project-id>.firebaseapp.com" (or a custom domain).
-// If the secret was accidentally set to the App ID value, derive it automatically.
+// authDomain must be "<project-id>.firebaseapp.com" (or a custom domain with
+// Firebase Hosting configured). If the secret is set to the App ID value
+// (no dot), derive the standard auth domain automatically.
 const rawAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined;
-const authDomain =
+export const authDomain =
   rawAuthDomain && rawAuthDomain.includes(".")
     ? rawAuthDomain
     : `${projectId}.firebaseapp.com`;
-const currentHost = typeof window !== "undefined" ? window.location.hostname : "";
+
+export const currentHost =
+  typeof window !== "undefined" ? window.location.hostname : "(ssr)";
+export const firebaseProjectId = projectId;
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
@@ -33,10 +37,3 @@ export const firebaseAuth: Auth = getAuth(firebaseApp);
 
 // Persist sessions across page reloads.
 void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
-
-if (typeof window !== "undefined" && currentHost) {
-  const allowedDomain = `${projectId}.firebaseapp.com`;
-  if (currentHost !== "localhost" && currentHost !== "127.0.0.1") {
-    console.info("Firebase current host:", currentHost, "authDomain:", allowedDomain);
-  }
-}

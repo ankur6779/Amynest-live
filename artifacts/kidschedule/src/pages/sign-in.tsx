@@ -7,7 +7,7 @@ import {
   getRedirectResult,
   GoogleAuthProvider,
 } from "firebase/auth";
-import { firebaseAuth } from "@/lib/firebase";
+import { firebaseAuth, authDomain, currentHost, firebaseProjectId } from "@/lib/firebase";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const googleProvider = new GoogleAuthProvider();
@@ -118,6 +118,15 @@ export default function SignInPage() {
         Sign in to your personal parenting coach
       </p>
 
+      {/* ── Temporary debug banner — remove once auth works ── */}
+      <div className="mb-4 text-left text-[10px] bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 break-all">
+        <p className="font-semibold text-amber-700 mb-1">Firebase debug info (temp)</p>
+        <p><span className="text-slate-500">Firebase project ID:</span><br /><span className="font-mono text-indigo-700 font-bold">{firebaseProjectId}</span></p>
+        <p className="mt-1"><span className="text-slate-500">Add THIS domain in Firebase console:</span><br /><span className="font-mono text-red-600 font-bold">{currentHost}</span></p>
+        <p className="mt-1"><span className="text-slate-500">authDomain in config:</span><br /><span className="font-mono text-indigo-700">{authDomain}</span></p>
+        <p className="mt-2 text-[9px] text-slate-400">Firebase Console → Authentication → Settings → Authorized domains</p>
+      </div>
+
       <GoogleButton onClick={onGoogle} busy={busy} />
 
       <div className="flex items-center gap-3 my-5">
@@ -190,6 +199,8 @@ export function prettyAuthError(err: any): string {
       return "Password should be at least 6 characters.";
     case "auth/too-many-requests":
       return "Too many attempts. Try again in a minute.";
+    case "auth/unauthorized-domain":
+      return `This domain is not authorized in Firebase. Add "${typeof window !== "undefined" ? window.location.hostname : "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains.`;
     case "auth/popup-blocked":
       return "Popup blocked by the browser. Allow popups and retry.";
     case "auth/network-request-failed":
