@@ -15,35 +15,59 @@ function init(): { app: App; auth: AdminAuth } {
   }
 
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!raw) {
-    throw new Error(
-      "FIREBASE_SERVICE_ACCOUNT_JSON env var is missing. " +
-        "Add the Firebase service account JSON (single-line) to enable auth.",
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+
+  // Try full service-account credential first (needed for admin operations like
+  // custom tokens). If the JSON is missing or malformed, fall back to
+  // project-ID-only mode — verifyIdToken() still works because it uses Google's
+  // public RSA keys, not the service-account private key.
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      // Firebase requires real newlines in the private key. When the JSON is
+      // pasted into a secret editor they often arrive as literal "\n". Normalise.
+      if (typeof parsed.private_key === "string") {
+        parsed.private_key = (parsed.private_key as string).replace(/\\n/g, "\n");
+      }
+      _app = initializeApp({
+        credential: cert(parsed as any),
+        projectId: (parsed.project_id as string) || projectId,
+      });
+      _auth = getAdminAuth(_app);
+      logger.info(
+        { kind: "firebase_admin_initialized_with_cert", project_id: parsed.project_id },
+        "Firebase Admin SDK initialized with service account",
+      );
+      return { app: _app, auth: _auth };
+    } catch (err) {
+      logger.warn(
+        {
+          kind: "firebase_admin_cert_fallback",
+          error: err instanceof Error ? err.message : String(err),
+        },
+        "FIREBASE_SERVICE_ACCOUNT_JSON is invalid — falling back to project-ID-only mode (token verification still works)",
+      );
+    }
+  } else {
+    logger.warn(
+      { kind: "firebase_admin_no_json" },
+      "FIREBASE_SERVICE_ACCOUNT_JSON not set — using project-ID-only mode",
     );
   }
 
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (err) {
-    logger.error({ kind: "firebase_admin_parse_error" }, "Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON");
-    throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON");
+  // Project-ID-only fallback: verifyIdToken() fetches Google's public certs
+  // automatically — no private key needed for this operation.
+  if (!projectId) {
+    throw new Error(
+      "FIREBASE_PROJECT_ID env var is missing — cannot initialize Firebase Admin SDK.",
+    );
   }
 
-  // Firebase requires real newlines in the private key. When the JSON is
-  // pasted into a secret editor, they often arrive as literal "\n". Normalize.
-  if (typeof parsed.private_key === "string") {
-    parsed.private_key = (parsed.private_key as string).replace(/\\n/g, "\n");
-  }
-
-  _app = initializeApp({
-    credential: cert(parsed as any),
-    projectId: (parsed.project_id as string) || process.env.FIREBASE_PROJECT_ID,
-  });
+  _app = initializeApp({ projectId });
   _auth = getAdminAuth(_app);
   logger.info(
-    { kind: "firebase_admin_initialized", project_id: parsed.project_id },
-    "Firebase Admin SDK initialized",
+    { kind: "firebase_admin_initialized_no_cert", project_id: projectId },
+    "Firebase Admin SDK initialized in verify-only mode (no service account)",
   );
   return { app: _app, auth: _auth };
 }
