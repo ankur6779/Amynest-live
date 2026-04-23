@@ -1020,6 +1020,234 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* DOWNLOAD THE APP */}
+      <section className="relative z-10 px-5 pb-24">
+        <div className="max-w-5xl mx-auto">
+          <div
+            className="amy-glass rounded-3xl overflow-hidden relative"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(168,85,247,0.18) 0%, rgba(99,102,241,0.14) 60%, rgba(236,72,153,0.10) 100%)",
+              borderColor: "rgba(168,85,247,0.35)",
+            }}
+          >
+            {/* bg glow blobs */}
+            <div
+              aria-hidden
+              className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30 pointer-events-none"
+              style={{ background: "radial-gradient(circle,#A855F7,transparent 70%)" }}
+            />
+            <div
+              aria-hidden
+              className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full opacity-25 pointer-events-none"
+              style={{ background: "radial-gradient(circle,#EC4899,transparent 70%)" }}
+            />
+
+            <div className="relative flex flex-col md:flex-row items-center gap-10 md:gap-0 px-8 py-12 md:py-14">
+              {/* Left: copy + buttons */}
+              <div className="flex-1 text-center md:text-left z-10">
+                <div className="inline-flex items-center gap-1.5 amy-glass mb-5 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
+                  <Smartphone className="h-3 w-3 text-purple-300" />
+                  Available on iOS &amp; Android
+                </div>
+                <h2 className="font-quicksand font-black text-3xl md:text-4xl text-white leading-tight mb-4">
+                  Take Amy with you{" "}
+                  <span className="amy-gradient-text">everywhere</span>
+                </h2>
+                <p className="text-white/65 text-base md:text-lg max-w-md leading-relaxed mb-8">
+                  Get personalised parenting guidance, AI-built routines, and behaviour
+                  insights right from your pocket — free to download.
+                </p>
+
+                {/* Store buttons */}
+                <div className="flex flex-col sm:flex-row items-center md:items-start gap-4">
+                  {/* App Store — coming soon */}
+                  <div
+                    aria-label="App Store — coming soon"
+                    className="relative flex items-center gap-3 px-6 py-3.5 rounded-2xl cursor-default select-none"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      opacity: 0.85,
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 fill-white/70" aria-hidden>
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                    </svg>
+                    <div className="text-left leading-tight">
+                      <p className="text-white/40 text-[10px] font-medium">Download on the</p>
+                      <p className="text-white/70 font-bold text-base">App Store</p>
+                    </div>
+                    <span
+                      className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white"
+                      style={{ background: "linear-gradient(135deg,#A855F7,#EC4899)" }}
+                    >
+                      Soon
+                    </span>
+                  </div>
+
+                  {/* Google Play — coming soon */}
+                  <div
+                    aria-label="Google Play — coming soon"
+                    className="relative flex items-center gap-3 px-6 py-3.5 rounded-2xl cursor-default select-none"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      opacity: 0.85,
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 opacity-70" aria-hidden>
+                      <path d="M3.18 23.76c.3.17.65.19.97.06l12.14-7.01-2.66-2.67-10.45 9.62z" fill="#EA4335"/>
+                      <path d="M22.47 10.3L19.7 8.72l-3.03 2.96 3.03 3.04 2.79-1.61c.8-.46.8-1.75-.02-2.81z" fill="#FBBC04"/>
+                      <path d="M3.18.24C2.88.4 2.69.72 2.69 1.12v21.76l10.7-10.7L3.18.24z" fill="#4285F4"/>
+                      <path d="M16.29 8.28L3.18.24C2.86.07 2.51.09 2.18.26l10.99 10.82 3.12-2.8z" fill="#34A853"/>
+                    </svg>
+                    <div className="text-left leading-tight">
+                      <p className="text-white/40 text-[10px] font-medium">Get it on</p>
+                      <p className="text-white/70 font-bold text-base">Google Play</p>
+                    </div>
+                    <span
+                      className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white"
+                      style={{ background: "linear-gradient(135deg,#A855F7,#EC4899)" }}
+                    >
+                      Soon
+                    </span>
+                  </div>
+                </div>
+
+                {/* Social proof mini */}
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="flex -space-x-1.5">
+                    {["P","R","S","K"].map((l,i) => (
+                      <div
+                        key={i}
+                        className="h-7 w-7 rounded-full border-2 border-white/10 flex items-center justify-center text-[10px] font-bold text-white"
+                        style={{ background: ["#A855F7","#06B6D4","#EC4899","#F97316"][i] }}
+                      >
+                        {l}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-white/55 text-xs">
+                    <span className="text-white font-semibold">12,000+</span> parents already using the app
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: phone mockup */}
+              <div className="relative flex-shrink-0 flex items-end justify-center h-80 md:h-96 w-48 md:w-56">
+                {/* Phone outer frame */}
+                <div
+                  className="relative w-44 md:w-52 rounded-[2.5rem] overflow-hidden"
+                  style={{
+                    height: "92%",
+                    background: "linear-gradient(160deg,#1a1a2e,#16213e)",
+                    border: "2px solid rgba(255,255,255,0.12)",
+                    boxShadow: "0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset, 0 0 40px rgba(168,85,247,0.25)",
+                  }}
+                >
+                  {/* Notch */}
+                  <div
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 rounded-b-2xl z-20"
+                    style={{ background: "#0f0c29" }}
+                  />
+                  {/* Screen content */}
+                  <div className="absolute inset-0 pt-5 px-3 pb-3 flex flex-col gap-2 overflow-hidden">
+                    {/* Status bar */}
+                    <div className="flex justify-between items-center px-1 mt-1">
+                      <span className="text-white/60 text-[8px] font-medium">9:41</span>
+                      <div className="flex gap-1 items-center">
+                        <div className="w-3 h-1.5 rounded-sm bg-white/60" />
+                        <div className="w-1 h-1 rounded-full bg-white/60" />
+                      </div>
+                    </div>
+                    {/* App header */}
+                    <div className="flex items-center gap-1.5 px-1">
+                      <div className="h-5 w-5 rounded-full flex items-center justify-center" style={{ background:"linear-gradient(135deg,#7C3AED,#EC4899)" }}>
+                        <span className="text-white text-[7px] font-black">A</span>
+                      </div>
+                      <span className="text-white text-[9px] font-bold">AmyNest AI</span>
+                    </div>
+                    {/* Today label */}
+                    <div
+                      className="rounded-xl px-2.5 py-2"
+                      style={{ background:"rgba(168,85,247,0.18)", border:"1px solid rgba(168,85,247,0.3)" }}
+                    >
+                      <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">Today's Routine</p>
+                      <div className="flex flex-col gap-1">
+                        {[
+                          { label:"Wake up & stretch", color:"#A855F7", time:"7:00" },
+                          { label:"Breakfast time", color:"#F97316", time:"7:30" },
+                          { label:"Reading zone", color:"#06B6D4", time:"8:00" },
+                        ].map(({ label, color, time }) => (
+                          <div key={label} className="flex items-center gap-1.5">
+                            <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: color }} />
+                            <span className="text-white/80 text-[7px] flex-1">{label}</span>
+                            <span className="text-white/40 text-[7px]">{time}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Amy chat bubble */}
+                    <div
+                      className="rounded-xl px-2.5 py-2"
+                      style={{ background:"rgba(236,72,153,0.15)", border:"1px solid rgba(236,72,153,0.25)" }}
+                    >
+                      <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">Amy says</p>
+                      <p className="text-white/75 text-[7px] leading-snug">
+                        "Great morning! Liam completed 3 tasks. Try adding a calm-down corner today."
+                      </p>
+                    </div>
+                    {/* Stats row */}
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { label:"Streak", value:"14d", color:"#FFD166" },
+                        { label:"Score", value:"920", color:"#A855F7" },
+                      ].map(({ label, value, color }) => (
+                        <div
+                          key={label}
+                          className="rounded-xl p-2 text-center"
+                          style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)" }}
+                        >
+                          <p className="font-bold text-[10px]" style={{ color }}>{value}</p>
+                          <p className="text-white/45 text-[7px]">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Bottom nav bar */}
+                    <div
+                      className="mt-auto rounded-2xl px-3 py-1.5 flex justify-around"
+                      style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)" }}
+                    >
+                      {[Calendar, Brain, MessageCircle, Users].map((Icon, i) => (
+                        <div key={i} className={`flex flex-col items-center gap-0.5 ${i === 0 ? "opacity-100" : "opacity-40"}`}>
+                          <Icon className="h-3 w-3 text-white" />
+                          <div className={`h-0.5 w-3 rounded-full ${i === 0 ? "bg-purple-400" : "bg-transparent"}`} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Reflective sheen */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 45%)",
+                    }}
+                  />
+                </div>
+                {/* Phone shadow */}
+                <div
+                  aria-hidden
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 h-6 rounded-full pointer-events-none"
+                  style={{ background:"rgba(168,85,247,0.3)", filter:"blur(16px)" }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FOOTER */}
       <footer className="relative z-10 px-5 py-8 border-t border-white/10">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
