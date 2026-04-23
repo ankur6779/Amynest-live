@@ -189,7 +189,8 @@ export default function OnboardingScreen() {
       });
       if (!onboardingRes.ok) throw new Error(`Failed to complete onboarding: ${onboardingRes.status}`);
 
-      qc.invalidateQueries();
+      qc.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
+      await qc.invalidateQueries({ queryKey: ["onboarding-status"] });
       stepRef.current = "done";
       setStep("done");
     } catch (err) {
@@ -228,7 +229,10 @@ export default function OnboardingScreen() {
         <Text style={[styles.doneSub, { color: colors.mutedForeground }]}>All set for {children[0]?.name ?? "your child"}</Text>
         <TouchableOpacity
           style={[styles.doneBtn, { backgroundColor: PRIMARY }]}
-          onPress={() => router.replace("/(tabs)")}
+          onPress={() => {
+            qc.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
+            router.replace("/(tabs)");
+          }}
           testID="go-dashboard-btn"
         >
           <Text style={styles.doneBtnText}>Go to Dashboard</Text>

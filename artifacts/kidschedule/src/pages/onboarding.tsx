@@ -336,7 +336,7 @@ export default function OnboardingPage() {
       });
 
       localStorage.setItem("onboardingComplete", "true");
-      queryClient.setQueryData(["onboarding-status"], { onboardingComplete: true });
+      queryClient.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
     } catch {
     }
 
