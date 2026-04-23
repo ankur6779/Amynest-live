@@ -25,7 +25,7 @@ import { brand, brandAlpha } from "@/constants/colors";
 import { useSubscriptionStore, selectIsPremium } from "@/store/useSubscriptionStore";
 import LockedBlock from "@/components/LockedBlock";
 
-const LOGO_IMG = require("@assets/ChatGPT_Image_Apr_19,_2026,_02_10_25_PM_1776957728257.png");
+const LOGO_IMG = require("../../assets/images/amynest-logo-new.png");
 
 
 type Colors = ReturnType<typeof useColors>;
