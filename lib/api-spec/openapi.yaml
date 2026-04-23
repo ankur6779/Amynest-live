@@ -696,6 +696,39 @@ components:
         status:
           type: string
           enum: [pending, completed, skipped, delayed]
+        meal:
+          type: string
+          nullable: true
+        recipe:
+          type: object
+          nullable: true
+          properties:
+            prepTime: { type: string }
+            cookTime: { type: string }
+            servings: { type: string }
+            ingredients:
+              type: array
+              items: { type: string }
+            steps:
+              type: array
+              items: { type: string }
+            tip: { type: string, nullable: true }
+        nutrition:
+          type: object
+          nullable: true
+          properties:
+            calories: { type: string }
+            protein: { type: string }
+            carbs: { type: string }
+            fat: { type: string }
+            notes: { type: string, nullable: true }
+        ageBand:
+          type: string
+          nullable: true
+          enum: ["2-5", "6-10", "10+"]
+        parentHubTopic:
+          type: string
+          nullable: true
       required:
         - time
         - activity
@@ -788,6 +821,21 @@ components:
           nullable: true
         parent2IsWorking:
           type: boolean
+          nullable: true
+        region:
+          type: string
+          nullable: true
+        wakeTime:
+          type: string
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        schoolStart:
+          type: string
+          nullable: true
+        schoolEnd:
+          type: string
           nullable: true
       required:
         - childId

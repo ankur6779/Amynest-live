@@ -5,6 +5,9 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { RoutineItemAgeBand } from "./routineItemAgeBand";
+import type { RoutineItemNutrition } from "./routineItemNutrition";
+import type { RoutineItemRecipe } from "./routineItemRecipe";
 import type { RoutineItemStatus } from "./routineItemStatus";
 
 export interface RoutineItem {
@@ -16,4 +19,9 @@ export interface RoutineItem {
   notes?: string;
   rewardPoints?: number;
   status?: RoutineItemStatus;
+  meal?: string | null;
+  recipe?: RoutineItemRecipe;
+  nutrition?: RoutineItemNutrition;
+  ageBand?: RoutineItemAgeBand;
+  parentHubTopic?: string | null;
 }

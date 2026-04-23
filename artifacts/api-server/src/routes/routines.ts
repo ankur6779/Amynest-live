@@ -23,7 +23,7 @@ import {
   GenerateRoutineResponse,
   GenerateInsightsResponse,
 } from "@workspace/api-zod";
-import { generateRuleBasedRoutine, generateRuleBasedInsights, generatePartialRoutine, timeToMins, minsToTime, type AgeGroup } from "../lib/routine-templates.js";
+import { generateRuleBasedRoutine, generateRuleBasedInsights, generatePartialRoutine, timeToMins, minsToTime, applyRoutineV2, type AgeGroup, type ScheduleItem } from "../lib/routine-templates.js";
 
 // ─── School-day detection helper ───────────────────────────────────────────
 // Resolves whether the child has school on the given date based on their
@@ -196,9 +196,20 @@ NO-SCHOOL RULES — today is a school-free day:
     params.childClass,
   );
 
+  // Routine v2 post-processing: school-aware meal anchors, dedup, recipe + nutrition.
+  // The local RoutineItem and ScheduleItem are structurally compatible (same
+  // required fields + optional v2 fields), so a direct array cast is safe.
+  const v2Items = applyRoutineV2(finalItems as ScheduleItem[], {
+    hasSchool: params.hasSchool,
+    schoolStartMins: timeToMins(params.schoolStartTime),
+    schoolEndMins: timeToMins(params.schoolEndTime),
+    ageGroup: params.ageGroup,
+    fridgeItems: params.fridgeItems,
+  });
+
   return {
     title: parsed.title,
-    items: finalItems,
+    items: v2Items as RoutineItem[],
   };
 }
 
@@ -237,12 +248,16 @@ function enforceSchoolBlock(
 
   // Drop any item that overlaps [schoolStart, schoolEnd) AND every "school"
   // item (even outside the window — we'll re-insert a single canonical one).
+  // Exception: category="tiffin" eating slots are allowed inside the school
+  // window (the kid eats the packed tiffin at school).
   const kept = items.filter((it) => {
     const t = timeToMins(it.time);
     const end = t + Math.max(1, it.duration ?? 30);
     const overlaps = t < schoolEnd && end > schoolStart;
-    const isSchool = (it.category ?? "").toLowerCase() === "school";
-    return !overlaps && !isSchool;
+    const cat = (it.category ?? "").toLowerCase();
+    const isSchool = cat === "school";
+    const isTiffin = cat === "tiffin";
+    return (!overlaps || isTiffin) && !isSchool;
   });
 
   const schoolItem: RoutineItem = {
@@ -267,6 +282,12 @@ type RoutineItem = {
   notes?: string;
   status?: "pending" | "completed" | "skipped" | "delayed";
   rewardPoints?: number;
+  // Routine v2 fields propagated through to the response.
+  meal?: string | null;
+  recipe?: import("../lib/meal-recipes.js").MealRecipe | null;
+  nutrition?: import("../lib/meal-recipes.js").MealNutrition | null;
+  ageBand?: "2-5" | "6-10" | "10+";
+  parentHubTopic?: string;
 };
 
 // ─── Re-anchor AI routine to wake time ─────────────────────────────────────
@@ -378,7 +399,10 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
   }
 
   // Compute age group
-  const totalAgeMonths = (child.age * 12) + ((child as any).ageMonths ?? 0);
+  // Optional client-supplied overrides (age/schoolStart/schoolEnd/wakeTime/region).
+  // Falls back to the child profile if not provided — safe defaults.
+  const effectiveAge = parsed.data.age ?? child.age;
+  const totalAgeMonths = (effectiveAge * 12) + ((child as any).ageMonths ?? 0);
   const ageGroup: AgeGroup =
     totalAgeMonths < 12 ? "infant"
     : totalAgeMonths < 36 ? "toddler"
@@ -404,11 +428,11 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
 
   // Food type — prefer child setting, fallback to parent profile
   let foodType = (child as any).foodType ?? "veg";
-  let region: string = "pan_indian";
+  let region: string = parsed.data.region ?? "pan_indian";
   if (userId) {
     const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
     if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
-    if (pp?.region) region = pp.region;
+    if (!parsed.data.region && pp?.region) region = pp.region;
   }
 
   const generated = generateRuleBasedRoutine({
@@ -416,10 +440,10 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     childName: child.name,
     ageGroup,
     totalAgeMonths,
-    wakeUpTime: child.wakeUpTime,
+    wakeUpTime: parsed.data.wakeTime ?? child.wakeUpTime,
     sleepTime: child.sleepTime,
-    schoolStartTime: child.schoolStartTime,
-    schoolEndTime: child.schoolEndTime,
+    schoolStartTime: parsed.data.schoolStart ?? child.schoolStartTime,
+    schoolEndTime: parsed.data.schoolEnd ?? child.schoolEndTime,
     travelMode: child.travelMode === "other" && (child as any).travelModeOther
       ? (child as any).travelModeOther
       : child.travelMode,
@@ -474,7 +498,8 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     return;
   }
 
-  const totalAgeMonths = (child.age * 12) + ((child as any).ageMonths ?? 0);
+  const effectiveAge = parsed.data.age ?? child.age;
+  const totalAgeMonths = (effectiveAge * 12) + ((child as any).ageMonths ?? 0);
   const ageGroup: AgeGroup =
     totalAgeMonths < 12 ? "infant"
     : totalAgeMonths < 36 ? "toddler"
@@ -491,12 +516,16 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
 
   let foodType = (child as any).foodType ?? "veg";
-  let region: string = "pan_indian";
+  let region: string = parsed.data.region ?? "pan_indian";
   if (userId) {
     const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
     if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
-    if (pp?.region) region = pp.region;
+    if (!parsed.data.region && pp?.region) region = pp.region;
   }
+  // Optional overrides for AI generation
+  const effWakeUp = parsed.data.wakeTime ?? child.wakeUpTime;
+  const effSchoolStart = parsed.data.schoolStart ?? child.schoolStartTime;
+  const effSchoolEnd = parsed.data.schoolEnd ?? child.schoolEndTime;
 
   const p1Status = parent1WorkType === "homemaker" ? "free all day (homemaker)"
     : parent1IsWorking === false ? "free today"
@@ -516,12 +545,12 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
   try {
     const generated = await generateAiRoutine({
       childName: child.name,
-      age: child.age,
+      age: effectiveAge,
       ageGroup,
-      wakeUpTime: child.wakeUpTime,
+      wakeUpTime: effWakeUp,
       sleepTime: child.sleepTime,
-      schoolStartTime: child.schoolStartTime,
-      schoolEndTime: child.schoolEndTime,
+      schoolStartTime: effSchoolStart,
+      schoolEndTime: effSchoolEnd,
       hasSchool: isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool),
       foodType,
       region,
@@ -544,10 +573,10 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       childName: child.name,
       ageGroup,
       totalAgeMonths,
-      wakeUpTime: child.wakeUpTime,
+      wakeUpTime: effWakeUp,
       sleepTime: child.sleepTime,
-      schoolStartTime: child.schoolStartTime,
-      schoolEndTime: child.schoolEndTime,
+      schoolStartTime: effSchoolStart,
+      schoolEndTime: effSchoolEnd,
       travelMode: child.travelMode,
       hasSchool: isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool),
       mood: mood ?? "normal",

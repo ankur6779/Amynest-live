@@ -1,6 +1,8 @@
 // ─── Rule-Based Routine Generator — Zero API Cost ──────────────────────────
 // Replaces OpenAI calls with deterministic, age-appropriate schedule building.
 
+import { recipeFor, nutritionFor } from "./meal-recipes.js";
+
 export type AgeGroup = "infant" | "toddler" | "preschool" | "early_school" | "pre_teen";
 
 export type ScheduleItem = {
@@ -11,6 +13,12 @@ export type ScheduleItem = {
   notes: string;
   status: "pending";
   rewardPoints?: number;
+  // Routine v2 fields (optional — populated for meal/tiffin/activity blocks).
+  meal?: string;
+  recipe?: import("./meal-recipes.js").MealRecipe;
+  nutrition?: import("./meal-recipes.js").MealNutrition;
+  ageBand?: "2-5" | "6-10" | "10+";
+  parentHubTopic?: string;
 };
 
 const ESSENTIAL_CATEGORIES = new Set(["hygiene", "sleep", "meal", "school", "tiffin"]);
@@ -940,6 +948,323 @@ function makeTitle(ageGroup: AgeGroup, childName: string, hasSchool: boolean, se
   return template.replace("{name}", childName);
 }
 
+// ─── Routine v2 Post-Processing ───────────────────────────────────────────────
+// Re-anchors school-aware meal blocks, deduplicates meal names, and attaches
+// per-block recipe + nutrition + age-band + Parent Hub pointers.
+
+const AGE_BAND_MAP: Record<AgeGroup, "2-5" | "6-10" | "10+"> = {
+  infant: "2-5",
+  toddler: "2-5",
+  preschool: "2-5",
+  early_school: "6-10",
+  pre_teen: "10+",
+};
+
+const PARENT_HUB_BY_CATEGORY: Record<string, string> = {
+  homework: "Study Skills & Focus",
+  bonding: "Family Bonding Ideas",
+  play: "Age-Appropriate Play",
+  screen: "Healthy Screen Habits",
+  meal: "Nutrition & Picky Eaters",
+  tiffin: "Tiffin Box Ideas",
+  exercise: "Kids Fitness",
+  reading: "Reading Habits",
+};
+
+function clamp(value: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, value));
+}
+
+function setItemTime(item: ScheduleItem, mins: number): void {
+  item.time = minsToTime(mins);
+}
+
+function isMealBlock(it: ScheduleItem): boolean {
+  const c = (it.category ?? "").toLowerCase();
+  return c === "meal" || c === "tiffin";
+}
+
+// Extract the canonical meal "name" the user sees: notes look like
+// "Options: A | B | C". We pick the first option as the canonical label.
+function extractFirstMealName(it: ScheduleItem): string {
+  const n = it.notes ?? "";
+  if (n.startsWith("Options:")) {
+    return (n.replace("Options:", "").split("|")[0] ?? it.activity).trim();
+  }
+  return it.activity;
+}
+
+// Build a fridge-aware fallback meal name when the deduper can't find a unique
+// option. e.g. fridge has "tomato, paneer" → "Tomato paneer wrap".
+function fridgeFallbackMeal(fridge: string[], used: Set<string>): string | null {
+  if (fridge.length === 0) return null;
+  const templates = [
+    (a: string, b: string) => `${a} ${b} wrap`,
+    (a: string, b: string) => `${a} & ${b} bowl`,
+    (a: string, b: string) => `${a} stuffed paratha with ${b}`,
+    (a: string) => `${a} toast`,
+    (a: string, b: string) => `${a}-${b} stir-fry with rice`,
+  ];
+  for (const t of templates) {
+    for (let i = 0; i < fridge.length; i++) {
+      for (let j = 0; j < fridge.length; j++) {
+        if (i === j) continue;
+        const candidate = t(fridge[i], fridge[j] ?? fridge[i]);
+        if (!used.has(candidate.toLowerCase())) return candidate;
+      }
+    }
+  }
+  return null;
+}
+
+// Generic non-fridge fallback bank used when the deduper has exhausted all
+// options AND the parent didn't supply fridge items. Guarantees we can always
+// hand back a unique meal name for the day.
+const GENERIC_FALLBACK_MEALS = [
+  "Veg pulao with raita",
+  "Curd rice with pickle",
+  "Khichdi with ghee",
+  "Roti with dal & sabzi",
+  "Paneer bhurji with toast",
+  "Egg fried rice",
+  "Pasta in tomato sauce",
+  "Vegetable upma",
+  "Stuffed paratha with curd",
+  "Chole with rice",
+];
+
+// Strict guarantee: returns a meal name not already in `used`. Tries fridge
+// fallbacks first, then generic bank, then suffixes the original until unique.
+function uniqueMealName(seed: string, used: Set<string>, fridge: string[]): string {
+  const tryName = (n: string): string | null => {
+    if (!used.has(n.toLowerCase())) return n;
+    return null;
+  };
+  const direct = tryName(seed);
+  if (direct) return direct;
+  const fridgeAlt = fridgeFallbackMeal(fridge, used);
+  if (fridgeAlt) return fridgeAlt;
+  for (const g of GENERIC_FALLBACK_MEALS) {
+    const ok = tryName(g);
+    if (ok) return ok;
+  }
+  // Absolute last resort: suffix the seed with a count so it is unique.
+  let i = 2;
+  while (used.has(`${seed} (v${i})`.toLowerCase())) i++;
+  return `${seed} (v${i})`;
+}
+
+// Rotate through pipe-separated options to avoid repeating the same meal name
+// twice in a single day. STRICT: the returned `primary` is guaranteed to be
+// unique within `used` for the whole day. `activitySeed` is used as the
+// preferred seed when notes are not in `Options:` format (e.g. "Lunch",
+// "Tiffin") — this avoids deriving a meal name from a long sentence note.
+function dedupMealNotes(notes: string, used: Set<string>, fridge: string[] = [], activitySeed = ""): { notes: string; primary: string } {
+  if (!notes.startsWith("Options:")) {
+    const seed = (activitySeed || notes).trim() || "Meal";
+    const primary = uniqueMealName(seed, used, fridge);
+    used.add(primary.toLowerCase());
+    return { notes, primary };
+  }
+  const opts = notes.replace("Options:", "").split("|").map((s) => s.trim()).filter(Boolean);
+  // Prefer first option not already used
+  let chosen = opts.find((o) => !used.has(o.toLowerCase()));
+  if (!chosen) {
+    // All current options are duplicates — derive a strictly unique name.
+    chosen = uniqueMealName(opts[0] ?? "Meal", used, fridge);
+  }
+  const rest = opts.filter((o) => o !== chosen);
+  const reordered = "Options: " + [chosen, ...rest].join(" | ");
+  used.add(chosen.toLowerCase());
+  return { notes: reordered, primary: chosen };
+}
+
+type AnchorOpts = {
+  hasSchool: boolean;
+  schoolStartMins: number;
+  schoolEndMins: number;
+  ageGroup: AgeGroup;
+  fridgeItems?: string;
+};
+
+// Light/quick options good for a 15-min "before school" meal — used both as a
+// suggestion bank and as a baseline for the Quick Meal Before School notes.
+const QUICK_BEFORE_SCHOOL_OPTIONS = [
+  "Banana + milk + toast",
+  "Idli with chutney",
+  "Poha (no veggies needed)",
+  "Boiled egg + toast",
+  "Paratha roll-up",
+  "Cornflakes with milk",
+  "Upma (quick)",
+];
+
+// Apply the school-aware meal-window contract. We work directly on item array
+// (mutating it) because callers always re-sort + dedupe afterwards.
+function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleItem[] {
+  const { hasSchool, schoolStartMins, schoolEndMins, ageGroup } = opts;
+  const out = [...items];
+
+  const findIdx = (pred: (it: ScheduleItem) => boolean): number => out.findIndex(pred);
+
+  // 1. Breakfast handling
+  const bfIdx = findIdx((it) => /^breakfast$/i.test(it.activity));
+  if (bfIdx !== -1) {
+    const bf = out[bfIdx];
+    if (hasSchool) {
+      // Quick Meal Before School — 15 min, anchored 15 min before school start.
+      // Force the notes to a light/quick options bank so the meal type matches
+      // the time budget (no heavy dishes that take 30+ min to eat).
+      const target = Math.max(0, schoolStartMins - 15);
+      bf.activity = "Quick Meal Before School";
+      bf.duration = 15;
+      setItemTime(bf, target);
+      bf.notes = `Options: ${QUICK_BEFORE_SCHOOL_OPTIONS.slice(0, 4).join(" | ")}`;
+    } else {
+      // Non-school: anchor breakfast 8:00–9:00 AM if reachable
+      const target = clamp(timeToMins(bf.time), 8 * 60, 9 * 60);
+      setItemTime(bf, target);
+    }
+  } else if (hasSchool) {
+    // No breakfast at all — insert Quick Meal Before School so the kid eats.
+    out.push({
+      time: minsToTime(Math.max(0, schoolStartMins - 15)),
+      activity: "Quick Meal Before School",
+      duration: 15,
+      category: "meal",
+      notes: `Options: ${QUICK_BEFORE_SCHOOL_OPTIONS.slice(0, 4).join(" | ")}`,
+      status: "pending",
+    });
+  }
+
+  // 2. School-day Tiffin eating block (kid eats tiffin at school — labelled slot)
+  if (hasSchool && (ageGroup === "early_school" || ageGroup === "pre_teen" || ageGroup === "preschool")) {
+    const hasTiffinEat = out.some((it) => /^tiffin$/i.test(it.activity) && (it.category ?? "").toLowerCase() === "tiffin");
+    if (!hasTiffinEat) {
+      out.push({
+        time: minsToTime(schoolStartMins + 60),
+        activity: "Tiffin",
+        duration: 15,
+        category: "tiffin",
+        notes: "Options: Veg sandwich + fruit | Aloo paratha roll + yoghurt | Idli + chutney | Pasta salad cup",
+        status: "pending",
+      });
+    }
+  }
+
+  // 3. Lunch handling
+  const lunchIdx = findIdx((it) => /^lunch$/i.test(it.activity));
+  if (lunchIdx !== -1) {
+    const lunch = out[lunchIdx];
+    if (hasSchool && (ageGroup === "preschool" || ageGroup === "early_school" || ageGroup === "pre_teen")) {
+      // 30 min after school end (applies to all school-going age bands)
+      setItemTime(lunch, schoolEndMins + 30);
+    } else if (!hasSchool) {
+      // Non-school: 13:30–14:30
+      const t = clamp(timeToMins(lunch.time), 13 * 60 + 30, 14 * 60 + 30);
+      setItemTime(lunch, t);
+    }
+  } else if (hasSchool && (ageGroup === "preschool" || ageGroup === "early_school" || ageGroup === "pre_teen")) {
+    // Replace After-School Snack with Lunch if no lunch present (school-going kids).
+    const snackIdx = findIdx((it) => /^after-school snack$/i.test(it.activity));
+    if (snackIdx !== -1) {
+      const snack = out[snackIdx];
+      snack.activity = "Lunch";
+      snack.duration = Math.max(snack.duration, 25);
+      setItemTime(snack, schoolEndMins + 30);
+    }
+  }
+
+  // 4. Drunch (5–6 PM) — guarantee one block in the 17:00–18:00 window every
+  // day. First, try to upgrade an existing afternoon snack; otherwise, insert
+  // a new Drunch block.
+  const drunchIdx = findIdx((it) => /(^drunch$|afternoon snack|after-school snack|mid-morning snack|post-school snack|evening snack)/i.test(it.activity));
+  if (drunchIdx !== -1) {
+    const it = out[drunchIdx];
+    it.activity = "Drunch";
+    const cur = timeToMins(it.time);
+    const target = clamp(cur, 17 * 60, 18 * 60);
+    setItemTime(it, target);
+    it.duration = Math.max(it.duration, 20);
+    if (!it.notes || !it.notes.startsWith("Options:")) {
+      it.notes = "Options: Cheese sandwich + milk | Idli + chutney | Fruit chaat + nuts | Paneer wrap";
+    }
+  } else {
+    out.push({
+      time: minsToTime(17 * 60 + 30),
+      activity: "Drunch",
+      duration: 25,
+      category: "meal",
+      notes: "Options: Cheese sandwich + milk | Idli + chutney | Fruit chaat + nuts | Paneer wrap",
+      status: "pending",
+    });
+  }
+
+  // 5. Dinner — anchor 20:00–21:00 if currently outside that band
+  const dinIdx = findIdx((it) => /^dinner$/i.test(it.activity));
+  if (dinIdx !== -1) {
+    const din = out[dinIdx];
+    const t = clamp(timeToMins(din.time), 20 * 60, 21 * 60);
+    setItemTime(din, t);
+  }
+
+  return out;
+}
+
+// Attach `meal`, `recipe`, `nutrition` to every meal/tiffin block, dedupe meal
+// names across the day, and tag activities with age-band + Parent Hub pointer.
+function attachMealMetadata(items: ScheduleItem[], ageGroup: AgeGroup, fridgeItems?: string): ScheduleItem[] {
+  const used = new Set<string>();
+  const fridge = parseFridgeItems(fridgeItems);
+  // Every block carries `meal`/`recipe`/`nutrition` fields in the response —
+  // null for non-meal blocks so the contract is uniform across the day.
+  const out: ScheduleItem[] = items.map((it) => {
+    if (!isMealBlock(it)) {
+      return { ...it, meal: undefined, recipe: undefined, nutrition: undefined };
+    }
+    const { notes, primary } = dedupMealNotes(it.notes ?? it.activity, used, fridge, it.activity);
+    return {
+      ...it,
+      notes,
+      meal: primary,
+      recipe: recipeFor(primary),
+      nutrition: nutritionFor(primary),
+    };
+  });
+
+  // Tag activities with age band + Parent Hub topic. Append a CTA to the LAST
+  // activity per known category to avoid spamming notes on every block.
+  const band = AGE_BAND_MAP[ageGroup];
+  const lastIdxByCat = new Map<string, number>();
+  out.forEach((it, idx) => {
+    if (PARENT_HUB_BY_CATEGORY[(it.category ?? "").toLowerCase()]) {
+      lastIdxByCat.set((it.category ?? "").toLowerCase(), idx);
+    }
+  });
+  return out.map((it, idx) => {
+    const cat = (it.category ?? "").toLowerCase();
+    const topic = PARENT_HUB_BY_CATEGORY[cat];
+    if (!topic) return it;
+    const isLast = lastIdxByCat.get(cat) === idx;
+    const baseNotes = it.notes ?? "";
+    const cta = ` · Explore more in Parent Hub → ${topic}`;
+    return {
+      ...it,
+      ageBand: band,
+      parentHubTopic: topic,
+      notes: isLast && !baseNotes.includes("Parent Hub") ? `${baseNotes}${cta}` : baseNotes,
+    };
+  });
+}
+
+// Public entry: run the v2 post-processing on a generated routine.
+export function applyRoutineV2(items: ScheduleItem[], opts: AnchorOpts): ScheduleItem[] {
+  const anchored = anchorMealWindows(items, opts);
+  const tagged = attachMealMetadata(anchored, opts.ageGroup, opts.fridgeItems);
+  // Sort by time so any anchored insertions land in the right place.
+  return [...tagged].sort((a, b) => timeToMins(a.time) - timeToMins(b.time));
+}
+
 // ─── Main Generator ───────────────────────────────────────────────────────────
 
 export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutine {
@@ -1200,7 +1525,14 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
   items.push({ ...SLEEP_ANCHOR[ageGroup], time: minsToTime(sleepMins), status: "pending" });
 
   const title = makeTitle(ageGroup, childName, hasSchool, seed);
-  return { title, items: withRewardPoints(items) };
+  const v2Items = applyRoutineV2(items, {
+    hasSchool,
+    schoolStartMins,
+    schoolEndMins,
+    ageGroup,
+    fridgeItems,
+  });
+  return { title, items: withRewardPoints(v2Items) };
 }
 
 // ─── Rule-Based Insights Generator ───────────────────────────────────────────

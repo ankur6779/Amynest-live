@@ -97,6 +97,14 @@ export default function GenerateRoutineScreen() {
     queryFn: () => authFetch("/api/children").then((r) => r.json()),
   });
 
+  // Parent profile region — sent in generation payload so the server can pick
+  // region-aware meals deterministically instead of falling back.
+  const { data: parentProfile } = useQuery<{ region?: string } | null>({
+    queryKey: ["parent-profile"],
+    queryFn: () => authFetch("/api/parent-profile").then((r) => (r.ok ? r.json() : null)),
+  });
+  const parentRegion = parentProfile?.region;
+
   // Auto-pick the first child if none selected
   useEffect(() => {
     if (selectedChild == null && children.length > 0) {
@@ -145,6 +153,11 @@ export default function GenerateRoutineScreen() {
           specialPlans: appendHandlerToPlans(specialPlans, handlerType),
           fridgeItems: fridgeItems.trim() || undefined,
           mood: mood !== "normal" ? mood : undefined,
+          age: selectedChildData?.age,
+          wakeTime: selectedChildData?.wakeUpTime,
+          schoolStart: selectedChildData?.schoolStartTime,
+          schoolEnd: selectedChildData?.schoolEndTime,
+          region: parentRegion,
         }),
       });
       // Global Paywall: 402 feature_locked OR legacy 403 routine_limit_exceeded → paywall.

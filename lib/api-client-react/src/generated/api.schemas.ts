@@ -81,6 +81,33 @@ export const RoutineItemStatus = {
   delayed: "delayed",
 } as const;
 
+export type RoutineItemRecipe = {
+  prepTime?: string;
+  cookTime?: string;
+  servings?: string;
+  ingredients?: string[];
+  steps?: string[];
+  tip?: string | null;
+} | null;
+
+export type RoutineItemNutrition = {
+  calories?: string;
+  protein?: string;
+  carbs?: string;
+  fat?: string;
+  notes?: string | null;
+} | null;
+
+export type RoutineItemAgeBand =
+  | (typeof RoutineItemAgeBand)[keyof typeof RoutineItemAgeBand]
+  | null;
+
+export const RoutineItemAgeBand = {
+  "2-5": "2-5",
+  "6-10": "6-10",
+  "10+": "10+",
+} as const;
+
 export interface RoutineItem {
   id?: string;
   time: string;
@@ -90,6 +117,11 @@ export interface RoutineItem {
   notes?: string;
   rewardPoints?: number;
   status?: RoutineItemStatus;
+  meal?: string | null;
+  recipe?: RoutineItemRecipe;
+  nutrition?: RoutineItemNutrition;
+  ageBand?: RoutineItemAgeBand;
+  parentHubTopic?: string | null;
 }
 
 export interface Routine {
@@ -124,6 +156,11 @@ export interface GenerateRoutineBody {
   parent2Role?: string | null;
   parent2WorkType?: string | null;
   parent2IsWorking?: boolean | null;
+  region?: string | null;
+  wakeTime?: string | null;
+  age?: number | null;
+  schoolStart?: string | null;
+  schoolEnd?: string | null;
 }
 
 export interface GeneratedRoutine {

@@ -20,4 +20,9 @@ export interface GenerateRoutineBody {
   parent2Role?: string | null;
   parent2WorkType?: string | null;
   parent2IsWorking?: boolean | null;
+  region?: string | null;
+  wakeTime?: string | null;
+  age?: number | null;
+  schoolStart?: string | null;
+  schoolEnd?: string | null;
 }

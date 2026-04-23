@@ -193,6 +193,28 @@ export const ListRoutinesResponseItem = zod.object({
       status: zod
         .enum(["pending", "completed", "skipped", "delayed"])
         .optional(),
+      meal: zod.string().nullish(),
+      recipe: zod
+        .object({
+          prepTime: zod.string().optional(),
+          cookTime: zod.string().optional(),
+          servings: zod.string().optional(),
+          ingredients: zod.array(zod.string()).optional(),
+          steps: zod.array(zod.string()).optional(),
+          tip: zod.string().nullish(),
+        })
+        .nullish(),
+      nutrition: zod
+        .object({
+          calories: zod.string().optional(),
+          protein: zod.string().optional(),
+          carbs: zod.string().optional(),
+          fat: zod.string().optional(),
+          notes: zod.string().nullish(),
+        })
+        .nullish(),
+      ageBand: zod.enum(["2-5", "6-10", "10+"]).nullish(),
+      parentHubTopic: zod.string().nullish(),
     }),
   ),
   createdAt: zod.string(),
@@ -218,6 +240,28 @@ export const CreateRoutineBody = zod.object({
       status: zod
         .enum(["pending", "completed", "skipped", "delayed"])
         .optional(),
+      meal: zod.string().nullish(),
+      recipe: zod
+        .object({
+          prepTime: zod.string().optional(),
+          cookTime: zod.string().optional(),
+          servings: zod.string().optional(),
+          ingredients: zod.array(zod.string()).optional(),
+          steps: zod.array(zod.string()).optional(),
+          tip: zod.string().nullish(),
+        })
+        .nullish(),
+      nutrition: zod
+        .object({
+          calories: zod.string().optional(),
+          protein: zod.string().optional(),
+          carbs: zod.string().optional(),
+          fat: zod.string().optional(),
+          notes: zod.string().nullish(),
+        })
+        .nullish(),
+      ageBand: zod.enum(["2-5", "6-10", "10+"]).nullish(),
+      parentHubTopic: zod.string().nullish(),
     }),
   ),
   override: zod.boolean().optional(),
@@ -248,6 +292,28 @@ export const GetRoutineResponse = zod.object({
       status: zod
         .enum(["pending", "completed", "skipped", "delayed"])
         .optional(),
+      meal: zod.string().nullish(),
+      recipe: zod
+        .object({
+          prepTime: zod.string().optional(),
+          cookTime: zod.string().optional(),
+          servings: zod.string().optional(),
+          ingredients: zod.array(zod.string()).optional(),
+          steps: zod.array(zod.string()).optional(),
+          tip: zod.string().nullish(),
+        })
+        .nullish(),
+      nutrition: zod
+        .object({
+          calories: zod.string().optional(),
+          protein: zod.string().optional(),
+          carbs: zod.string().optional(),
+          fat: zod.string().optional(),
+          notes: zod.string().nullish(),
+        })
+        .nullish(),
+      ageBand: zod.enum(["2-5", "6-10", "10+"]).nullish(),
+      parentHubTopic: zod.string().nullish(),
     }),
   ),
   createdAt: zod.string(),
@@ -277,6 +343,11 @@ export const GenerateRoutineBody = zod.object({
   parent2Role: zod.string().nullish(),
   parent2WorkType: zod.string().nullish(),
   parent2IsWorking: zod.boolean().nullish(),
+  region: zod.string().nullish(),
+  wakeTime: zod.string().nullish(),
+  age: zod.number().nullish(),
+  schoolStart: zod.string().nullish(),
+  schoolEnd: zod.string().nullish(),
 });
 
 export const GenerateRoutineResponse = zod.object({
@@ -293,6 +364,28 @@ export const GenerateRoutineResponse = zod.object({
       status: zod
         .enum(["pending", "completed", "skipped", "delayed"])
         .optional(),
+      meal: zod.string().nullish(),
+      recipe: zod
+        .object({
+          prepTime: zod.string().optional(),
+          cookTime: zod.string().optional(),
+          servings: zod.string().optional(),
+          ingredients: zod.array(zod.string()).optional(),
+          steps: zod.array(zod.string()).optional(),
+          tip: zod.string().nullish(),
+        })
+        .nullish(),
+      nutrition: zod
+        .object({
+          calories: zod.string().optional(),
+          protein: zod.string().optional(),
+          carbs: zod.string().optional(),
+          fat: zod.string().optional(),
+          notes: zod.string().nullish(),
+        })
+        .nullish(),
+      ageBand: zod.enum(["2-5", "6-10", "10+"]).nullish(),
+      parentHubTopic: zod.string().nullish(),
     }),
   ),
 });
@@ -367,6 +460,28 @@ export const GetRecentRoutinesResponseItem = zod.object({
       status: zod
         .enum(["pending", "completed", "skipped", "delayed"])
         .optional(),
+      meal: zod.string().nullish(),
+      recipe: zod
+        .object({
+          prepTime: zod.string().optional(),
+          cookTime: zod.string().optional(),
+          servings: zod.string().optional(),
+          ingredients: zod.array(zod.string()).optional(),
+          steps: zod.array(zod.string()).optional(),
+          tip: zod.string().nullish(),
+        })
+        .nullish(),
+      nutrition: zod
+        .object({
+          calories: zod.string().optional(),
+          protein: zod.string().optional(),
+          carbs: zod.string().optional(),
+          fat: zod.string().optional(),
+          notes: zod.string().nullish(),
+        })
+        .nullish(),
+      ageBand: zod.enum(["2-5", "6-10", "10+"]).nullish(),
+      parentHubTopic: zod.string().nullish(),
     }),
   ),
   createdAt: zod.string(),
@@ -408,6 +523,28 @@ export const UpdateRoutineItemsBody = zod.object({
       status: zod
         .enum(["pending", "completed", "skipped", "delayed"])
         .optional(),
+      meal: zod.string().nullish(),
+      recipe: zod
+        .object({
+          prepTime: zod.string().optional(),
+          cookTime: zod.string().optional(),
+          servings: zod.string().optional(),
+          ingredients: zod.array(zod.string()).optional(),
+          steps: zod.array(zod.string()).optional(),
+          tip: zod.string().nullish(),
+        })
+        .nullish(),
+      nutrition: zod
+        .object({
+          calories: zod.string().optional(),
+          protein: zod.string().optional(),
+          carbs: zod.string().optional(),
+          fat: zod.string().optional(),
+          notes: zod.string().nullish(),
+        })
+        .nullish(),
+      ageBand: zod.enum(["2-5", "6-10", "10+"]).nullish(),
+      parentHubTopic: zod.string().nullish(),
     }),
   ),
 });
@@ -430,6 +567,28 @@ export const UpdateRoutineItemsResponse = zod.object({
       status: zod
         .enum(["pending", "completed", "skipped", "delayed"])
         .optional(),
+      meal: zod.string().nullish(),
+      recipe: zod
+        .object({
+          prepTime: zod.string().optional(),
+          cookTime: zod.string().optional(),
+          servings: zod.string().optional(),
+          ingredients: zod.array(zod.string()).optional(),
+          steps: zod.array(zod.string()).optional(),
+          tip: zod.string().nullish(),
+        })
+        .nullish(),
+      nutrition: zod
+        .object({
+          calories: zod.string().optional(),
+          protein: zod.string().optional(),
+          carbs: zod.string().optional(),
+          fat: zod.string().optional(),
+          notes: zod.string().nullish(),
+        })
+        .nullish(),
+      ageBand: zod.enum(["2-5", "6-10", "10+"]).nullish(),
+      parentHubTopic: zod.string().nullish(),
     }),
   ),
   createdAt: zod.string(),

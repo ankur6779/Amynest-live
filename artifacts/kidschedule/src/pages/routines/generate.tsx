@@ -583,6 +583,18 @@ export default function RoutineGenerate() {
     query: { queryKey: getListChildrenQueryKey() }
   });
 
+  // Parent profile region — sent in generation payload so the server doesn't
+  // have to guess. Falls back to undefined when the profile hasn't loaded yet.
+  const [parentRegion, setParentRegion] = React.useState<string | undefined>(undefined);
+  React.useEffect(() => {
+    let cancelled = false;
+    authFetch("/api/parent-profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((p) => { if (!cancelled && p?.region) setParentRegion(p.region); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authFetch]);
+
   const generateMutation = useGenerateRoutine();
   const createMutation = useCreateRoutine();
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -807,6 +819,12 @@ export default function RoutineGenerate() {
           specialPlans: appendHandlerToPlans(specialPlans, handlerType),
           fridgeItems: fridgeItems.trim() || undefined,
           mood: mood !== "normal" ? mood : undefined,
+          // School-aware generation context (server falls back to child profile when omitted).
+          age: selectedChildData?.age,
+          wakeTime: wakeTime ?? selectedChildData?.wakeUpTime,
+          schoolStart: selectedChildData?.schoolStartTime,
+          schoolEnd: selectedChildData?.schoolEndTime,
+          region: parentRegion,
           ...buildParentAvailPayload(parentAvail),
         }
       },
@@ -833,7 +851,7 @@ export default function RoutineGenerate() {
         },
       }
     );
-  }, [generateMutation, overrideMode, existingRoutine, selectedChild, date, hasSchool, specialPlans, fridgeItems, mood, parentAvail, handlePostGenerate, toast]);
+  }, [generateMutation, overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, parentAvail, parentRegion, handlePostGenerate, toast]);
 
   // ── Core generate (AI) ─────────────────────────────────────────────────────
   const proceedAiGenerate = React.useCallback(async (forceOverride: boolean, wakeTime: string | null) => {
@@ -847,6 +865,11 @@ export default function RoutineGenerate() {
         specialPlans: appendHandlerToPlans(specialPlans, handlerType),
         fridgeItems: fridgeItems.trim() || undefined,
         mood: mood !== "normal" ? mood : undefined,
+        age: selectedChildData?.age,
+        wakeTime: wakeTime ?? selectedChildData?.wakeUpTime,
+        schoolStart: selectedChildData?.schoolStartTime,
+        schoolEnd: selectedChildData?.schoolEndTime,
+        region: parentRegion,
         ...buildParentAvailPayload(parentAvail),
       };
       const res = await authFetch("/api/routines/generate-ai", {
@@ -874,7 +897,7 @@ export default function RoutineGenerate() {
     } finally {
       setIsAiGenerating(false);
     }
-  }, [overrideMode, existingRoutine, selectedChild, date, hasSchool, specialPlans, fridgeItems, mood, parentAvail, authFetch, handlePostGenerate, toast]);
+  }, [overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, parentAvail, parentRegion, authFetch, handlePostGenerate, toast]);
 
   // ── Wake-up confirmation gate ──────────────────────────────────────────────
   const triggerWithWakeCheck = React.useCallback((type: "standard" | "ai", forceOverride: boolean) => {
