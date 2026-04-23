@@ -5,9 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Plus, ChevronRight, Wand2, Sparkles, List, ChevronLeft, School, Sun } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FuturePredictor } from "@/components/future-predictor";
 import { LockedBlock } from "@/components/locked-block";
-import { SmartMealSuggestions } from "@/components/smart-meal-suggestions";
 import { SchoolMorningFlowCard } from "@/components/school-morning-flow-card";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -282,8 +280,6 @@ export default function RoutinesList() {
         </Button>
       </header>
 
-      <FuturePredictor variant="compact" />
-
       {/* 🌅 School Morning Flow — moved here from Parent Hub */}
       <div className="rounded-3xl border border-orange-100 dark:border-orange-400/20 bg-gradient-to-br from-orange-50 dark:from-orange-500/10 to-amber-50 dark:to-amber-500/10 overflow-hidden">
         <div className="flex items-center gap-2 px-4 pt-4 pb-2">
@@ -293,8 +289,6 @@ export default function RoutinesList() {
         </div>
         <SchoolMorningFlowCard />
       </div>
-
-      <SmartMealSuggestions />
 
       <div className="flex gap-2 p-1 bg-muted rounded-2xl">
         <button
