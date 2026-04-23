@@ -4,20 +4,15 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
   GoogleAuthProvider,
   updateProfile,
 } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
-import { prettyAuthError } from "@/pages/sign-in";
 import { useAuth } from "@/lib/firebase-auth";
+import { prettyAuthError } from "@/lib/auth-errors";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const googleProvider = new GoogleAuthProvider();
-
-function isMobileBrowser() {
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-}
 
 function AuthShell({ children }: { children: React.ReactNode }) {
   return (
@@ -55,22 +50,6 @@ export default function SignUpPage() {
     }
   }, [isLoaded, isSignedIn, setLocation]);
 
-  useEffect(() => {
-    setBusy(true);
-    getRedirectResult(firebaseAuth)
-      .then((result) => {
-        if (result?.user) {
-          setLocation("/");
-        }
-      })
-      .catch((err: any) => {
-        if (err?.code !== "auth/no-current-user") {
-          setError(prettyAuthError(err));
-        }
-      })
-      .finally(() => setBusy(false));
-  }, []);
-
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -100,17 +79,25 @@ export default function SignUpPage() {
     setError(null);
     setBusy(true);
     try {
-      if (isMobileBrowser()) {
-        await signInWithRedirect(firebaseAuth, googleProvider);
-      } else {
-        await signInWithPopup(firebaseAuth, googleProvider);
-        setLocation("/");
-      }
+      await signInWithPopup(firebaseAuth, googleProvider);
+      setLocation("/");
     } catch (err: any) {
-      if (err?.code !== "auth/popup-closed-by-user") {
-        setError(prettyAuthError(err));
+      const code = err?.code as string | undefined;
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+        setBusy(false);
+        return;
       }
-      setBusy(false);
+      if (code === "auth/popup-blocked") {
+        try {
+          await signInWithRedirect(firebaseAuth, googleProvider);
+        } catch (rErr: any) {
+          setError(prettyAuthError(rErr));
+          setBusy(false);
+        }
+      } else {
+        setError(prettyAuthError(err));
+        setBusy(false);
+      }
     }
   };
 
