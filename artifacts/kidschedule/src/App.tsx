@@ -37,6 +37,7 @@ import SchoolMorningFlowPage from "@/pages/school-morning-flow";
 import AmyCoachPage from "@/pages/ai-coach";
 import AmyCoachProgressPage from "@/pages/ai-coach-progress";
 import RecipesPage from "@/pages/recipes";
+import NutritionHubPage from "@/pages/nutrition";
 import AudioLessonsPage from "@/pages/audio-lessons";
 import GamesPage from "@/pages/games";
 import OnboardingPage from "@/pages/onboarding";
@@ -232,6 +233,9 @@ function AppRoutes() {
           </Route>
           <Route path="/recipes">
             {() => <ProtectedRoute component={RecipesPage} />}
+          </Route>
+          <Route path="/nutrition">
+            {() => <ProtectedRoute component={NutritionHubPage} />}
           </Route>
           <Route path="/audio-lessons">
             {() => <ProtectedRoute component={AudioLessonsPage} />}

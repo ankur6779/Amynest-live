@@ -539,6 +539,38 @@ export default function HubScreen() {
           </Pressable>
         </View>
 
+        {/* 🥗 Nutrition Hub */}
+        <View style={tileW("nutrition")}>
+          <Pressable
+            onPress={() => router.push("/nutrition" as never)}
+            style={{ borderRadius: 18, overflow: "hidden" }}
+          >
+            <LinearGradient
+              colors={["#7c3aed", "#4f46e5"]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={{ padding: 16, gap: 8 }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                  <MaterialCommunityIcons name="food-apple-outline" size={22} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🥗 Nutrition Hub</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>न्यूट्रिशन हब · Age-wise nutrition science</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+              </View>
+              <View style={{ flexDirection: "row", gap: 6 }}>
+                {["WHO", "ICMR", "Indian meals", "Family mode"].map(tag => (
+                  <View key={tag} style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
+                    <Text style={{ color: "#fff", fontSize: 9, fontWeight: "600" }}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            </LinearGradient>
+          </Pressable>
+        </View>
+
         {/* 🎉 Event Prep — fancy dress + DIY guide + speech generator */}
         <View style={tileW("event-prep")}>
           <Pressable

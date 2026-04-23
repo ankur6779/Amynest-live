@@ -229,6 +229,7 @@ function RootLayoutNav() {
       />
       <Stack.Screen name="privacy" options={{ headerShown: false }} />
       <Stack.Screen name="kids-control-center" options={{ headerShown: false }} />
+      <Stack.Screen name="nutrition" options={{ headerShown: false }} />
       <Stack.Screen name="coach/progress" options={{ headerShown: false }} />
       {__DEV__ && (
         <Stack.Screen
