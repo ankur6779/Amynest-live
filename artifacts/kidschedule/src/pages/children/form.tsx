@@ -448,7 +448,7 @@ export default function ChildForm() {
                         <FormItem>
                           <FormLabel className="font-bold">🎒 School Starts</FormLabel>
                           <FormControl>
-                            <Input type="time" className={inputClass} defaultValue="08:00" {...field} />
+                            <Input type="time" className={inputClass} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -457,7 +457,7 @@ export default function ChildForm() {
                         <FormItem>
                           <FormLabel className="font-bold">🏠 School Ends</FormLabel>
                           <FormControl>
-                            <Input type="time" className={inputClass} defaultValue="15:00" {...field} />
+                            <Input type="time" className={inputClass} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

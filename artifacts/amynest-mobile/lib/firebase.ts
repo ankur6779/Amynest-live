@@ -2,6 +2,7 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import {
   initializeAuth,
   getAuth,
+  initializeReactNativePersistence,
   // @ts-expect-error — getReactNativePersistence is exported by firebase/auth
   // for React Native but missing from the public TypeScript surface.
   getReactNativePersistence,
@@ -29,7 +30,7 @@ export const firebaseApp: FirebaseApp =
 let _auth: Auth;
 try {
   _auth = initializeAuth(firebaseApp, {
-    persistence: getReactNativePersistence(AsyncStorage),
+    persistence: initializeReactNativePersistence(AsyncStorage),
   });
 } catch {
   // initializeAuth throws if called twice (e.g. fast refresh) — fall back.

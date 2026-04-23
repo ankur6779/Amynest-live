@@ -9,6 +9,8 @@ import {
 } from "react";
 import {
   onIdTokenChanged,
+  browserLocalPersistence,
+  setPersistence,
   signOut as fbSignOut,
   type User as FirebaseUser,
 } from "firebase/auth";
@@ -96,6 +98,7 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     // Use onIdTokenChanged (not onAuthStateChanged) so token refreshes don't
     // get missed — getToken() always returns a fresh token via the SDK cache.
+    void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
     const unsub = onIdTokenChanged(firebaseAuth, (fbUser) => {
       const shim = fbUser ? fbToShim(fbUser) : null;
       setState({ user: shim, fbUser, isLoaded: true });

@@ -54,7 +54,6 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 function useOnboardingStatus() {
   const { isSignedIn } = useAuth();
   const authFetch = useAuthFetch();
-  const localDone = localStorage.getItem("onboardingComplete") === "true";
   return useQuery({
     queryKey: ["onboarding-status"],
     queryFn: async () => {
@@ -73,8 +72,6 @@ function useOnboardingStatus() {
     },
     enabled: !!isSignedIn,
     staleTime: 30_000,
-    initialData: localDone ? { onboardingComplete: true, profileComplete: false } : undefined,
-    initialDataUpdatedAt: 0,
   });
 }
 
