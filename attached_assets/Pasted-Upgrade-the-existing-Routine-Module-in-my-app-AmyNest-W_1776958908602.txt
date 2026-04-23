@@ -1,0 +1,223 @@
+Upgrade the existing Routine Module in my app "AmyNest" (Web + Mobile) to generate a fully customized daily routine using OpenAI + rule-based logic.
+
+IMPORTANT:
+- Use OpenAI for intelligent routine + meal generation
+- Follow strict timing rules
+- Do NOT repeat meals in same day
+- Use fridge data for meal personalization
+- Mobile + web responsive
+
+--------------------------------
+1. INPUT DATA (REQUIRED)
+--------------------------------
+
+Collect:
+
+- Child Age
+- School Timing (start & end)
+- Is School Day (Yes/No)
+- Region (North/South/etc.)
+- Fridge Items (array)
+- Wake up time (optional)
+
+--------------------------------
+2. MORNING MEAL LOGIC 🌅
+--------------------------------
+
+IF School Day:
+
+- Replace Breakfast with:
+  “Quick Meal Before School”
+
+- Time:
+  → 15 minutes before school
+
+- Meal rules:
+  - Milk
+  - Fruits
+  - Bread/Jam
+  - Light & quick
+
+- Also show:
+  → Nutrition benefits
+
+--------------------------------
+
+IF No School Day:
+
+- Show “Breakfast”
+- Time:
+  → Between 8:00 AM – 9:00 AM
+
+- Include:
+  - Meal suggestions
+  - Recipe
+
+--------------------------------
+3. SCHOOL TIFFIN (IF SCHOOL DAY) 🍱
+--------------------------------
+
+- After school start:
+  → Show “Tiffin Meal”
+
+Rules:
+- Kid-friendly
+- Easy to carry
+- Non-messy
+
+--------------------------------
+4. LUNCH LOGIC 🍛
+--------------------------------
+
+IF School Day:
+
+- Time:
+  → 30 minutes after school ends
+
+IF No School:
+
+- Time:
+  → Between 1:30 PM – 2:30 PM
+
+Rules:
+- Show regional cuisine
+- Include recipe
+
+--------------------------------
+5. DRUNCH (EVENING SNACK) 🍎
+--------------------------------
+
+- Time:
+  → 5:00 PM – 6:00 PM
+
+Rules:
+- Light snack
+- Healthy options
+
+--------------------------------
+6. ACTIVITIES 🎯
+--------------------------------
+
+- Show age-appropriate activities
+- Examples:
+  - 2–5 → play-based
+  - 6–10 → learning + play
+  - 10+ → skill-based
+
+- Add:
+  “Explore more in Parent Hub”
+
+--------------------------------
+7. DINNER 🍽️
+--------------------------------
+
+- Time:
+  → 8:00 PM – 9:00 PM
+
+Rules:
+- Healthy meals
+- Include recipes
+
+--------------------------------
+8. MEAL ENGINE RULES (CRITICAL 🔥)
+--------------------------------
+
+- No meal repetition in same day
+- Must consider:
+  - Fridge items
+  - Region
+  - Age
+
+--------------------------------
+9. OPENAI INTEGRATION 🤖🔥
+--------------------------------
+
+Use OpenAI to generate:
+
+- Full routine plan
+- Meal suggestions
+- Recipes
+- Nutrition benefits
+
+--------------------------------
+10. OPENAI PROMPT STRUCTURE
+--------------------------------
+
+Send:
+
+{
+  age,
+  schoolDay,
+  schoolTime,
+  region,
+  fridgeItems
+}
+
+Ask OpenAI:
+
+- Generate full day routine
+- Include all meals
+- Include recipes
+- Include nutrition benefits
+- Avoid repetition
+- Keep it simple
+
+--------------------------------
+11. OUTPUT FORMAT 🎯
+--------------------------------
+
+Return structured JSON:
+
+{
+  "routine": [
+    {
+      "time": "8:00 AM",
+      "title": "Breakfast",
+      "meal": "Idli",
+      "recipe": "Steps...",
+      "nutrition": "Rich in carbs"
+    }
+  ]
+}
+
+--------------------------------
+12. UI DISPLAY 📱
+--------------------------------
+
+- Timeline / card view
+- Each block:
+  - Time
+  - Title
+  - Meal
+  - Recipe (expand)
+  - Nutrition
+
+--------------------------------
+13. PERFORMANCE
+--------------------------------
+
+- Cache routine per day
+- Avoid repeated API calls
+
+--------------------------------
+14. USER CONTROL
+--------------------------------
+
+- Allow edit/override
+- Regenerate button
+
+--------------------------------
+15. KEEP IT SIMPLE
+--------------------------------
+
+- Practical meals only
+- No complex recipes
+
+--------------------------------
+Return:
+Fully upgraded routine system with:
+- Smart timing
+- Meal personalization
+- OpenAI-powered generation
+- Recipe + nutrition info
+- Clean UI

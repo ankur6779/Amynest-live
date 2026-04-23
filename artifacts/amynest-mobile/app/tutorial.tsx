@@ -9,7 +9,10 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   Platform,
+  Image,
 } from "react-native";
+
+const LOGO_IMG = require("../assets/images/amynest-logo.png");
 import { useRouter, Stack } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -103,14 +106,18 @@ export default function TutorialScreen() {
       >
         {SLIDES.map((slide, idx) => (
           <View key={idx} style={[styles.slide, { width: SCREEN_WIDTH }]}>
-            <LinearGradient
-              colors={slide.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.iconWrap}
-            >
-              <Ionicons name={slide.icon} size={56} color="#fff" />
-            </LinearGradient>
+            {idx === 0 ? (
+              <Image source={LOGO_IMG} style={styles.heroLogo} resizeMode="contain" />
+            ) : (
+              <LinearGradient
+                colors={slide.gradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.iconWrap}
+              >
+                <Ionicons name={slide.icon} size={56} color="#fff" />
+              </LinearGradient>
+            )}
             <Text style={styles.title}>{slide.title}</Text>
             <Text style={styles.body}>{slide.body}</Text>
           </View>
@@ -154,6 +161,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 32,
+  },
+  heroLogo: {
+    width: 200,
+    height: 200,
+    marginBottom: 24,
   },
   iconWrap: {
     width: 140,
