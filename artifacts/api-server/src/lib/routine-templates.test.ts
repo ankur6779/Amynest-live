@@ -7,6 +7,7 @@ import {
   minsToTime,
   type ScheduleItem,
 } from "./routine-templates.js";
+import { buildAgeBandGuidance } from "../routes/routines.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -496,5 +497,95 @@ describe("generateRuleBasedRoutine — preschool school day", () => {
       assert.ok(block.recipe, `"${block.activity}" missing recipe`);
       assert.ok(block.nutrition, `"${block.activity}" missing nutrition`);
     }
+  });
+});
+
+// ─── Age-band guidance content tests ─────────────────────────────────────────
+
+describe("buildAgeBandGuidance — preschool (4-year-old)", () => {
+  const guidance = buildAgeBandGuidance("preschool");
+
+  it("contains toddler/preschool-type activities", () => {
+    assert.ok(/Finger Painting/i.test(guidance), "should mention Finger Painting");
+    assert.ok(/Pretend Play/i.test(guidance), "should mention Pretend Play");
+    assert.ok(/Bubble/i.test(guidance), "should mention Bubble activities");
+    assert.ok(/Sensory Play/i.test(guidance), "should mention Sensory Play");
+  });
+
+  it("explicitly forbids journaling", () => {
+    assert.ok(/Do NOT suggest.*journaling/i.test(guidance), "should forbid journaling");
+  });
+
+  it("explicitly forbids financial literacy", () => {
+    assert.ok(/Do NOT suggest.*financial literacy/i.test(guidance), "should forbid financial literacy");
+  });
+
+  it("explicitly forbids coding (independent study)", () => {
+    assert.ok(/Do NOT suggest.*coding/i.test(guidance), "should forbid coding / independent study");
+  });
+
+  it("does NOT contain pre-teen activity keywords", () => {
+    assert.ok(!/Financial Literacy Exercise/i.test(guidance), "should not contain Financial Literacy Exercise");
+    assert.ok(!/Journaling \/ Creative Writing/i.test(guidance), "should not contain Journaling / Creative Writing activity");
+    assert.ok(!/Coding \/ App Prototyping/i.test(guidance), "should not contain Coding / App Prototyping activity");
+    assert.ok(!/Independent Curiosity Project/i.test(guidance), "should not contain Independent Curiosity Project");
+  });
+});
+
+describe("buildAgeBandGuidance — toddler (4-year-old, toddler band)", () => {
+  const guidance = buildAgeBandGuidance("toddler");
+
+  it("contains toddler-type activities", () => {
+    assert.ok(/Finger Painting/i.test(guidance), "should mention Finger Painting");
+    assert.ok(/Building Blocks/i.test(guidance), "should mention Building Blocks");
+    assert.ok(/Action Songs/i.test(guidance), "should mention Action Songs");
+  });
+
+  it("explicitly forbids journaling", () => {
+    assert.ok(/Do NOT suggest.*journaling/i.test(guidance), "should forbid journaling");
+  });
+
+  it("explicitly forbids financial literacy", () => {
+    assert.ok(/Do NOT suggest.*financial literacy/i.test(guidance), "should forbid financial literacy");
+  });
+
+  it("does NOT contain pre-teen activity keywords", () => {
+    assert.ok(!/Financial Literacy Exercise/i.test(guidance), "should not contain Financial Literacy Exercise");
+    assert.ok(!/Journaling \/ Creative Writing/i.test(guidance), "should not contain Journaling / Creative Writing activity");
+    assert.ok(!/Coding \/ App Prototyping/i.test(guidance), "should not contain Coding / App Prototyping activity");
+  });
+});
+
+describe("buildAgeBandGuidance — pre_teen (12-year-old)", () => {
+  const guidance = buildAgeBandGuidance("pre_teen");
+
+  it("contains pre-teen-type activities", () => {
+    assert.ok(/Journaling/i.test(guidance), "should mention Journaling");
+    assert.ok(/Financial Literacy/i.test(guidance), "should mention Financial Literacy");
+    assert.ok(/Coding/i.test(guidance), "should mention Coding");
+    assert.ok(/Independent Curiosity Project/i.test(guidance), "should mention Independent Curiosity Project");
+  });
+
+  it("explicitly forbids finger painting", () => {
+    assert.ok(/Do NOT suggest.*finger painting/i.test(guidance), "should forbid finger painting");
+  });
+
+  it("explicitly forbids pretend play", () => {
+    assert.ok(/Do NOT suggest.*pretend play/i.test(guidance), "should forbid pretend play");
+  });
+
+  it("explicitly forbids building blocks", () => {
+    assert.ok(/Do NOT suggest.*building blocks/i.test(guidance), "should forbid building blocks");
+  });
+
+  it("explicitly forbids action songs", () => {
+    assert.ok(/Do NOT suggest.*action songs/i.test(guidance), "should forbid action songs");
+  });
+
+  it("does NOT contain toddler activity keywords as recommended activities", () => {
+    assert.ok(!/^- Play: Finger Painting/m.test(guidance), "should not have Finger Painting as a recommended activity");
+    assert.ok(!/Pretend Play \(Mini Kitchen/i.test(guidance), "should not recommend pretend tea party play");
+    assert.ok(!/Afternoon Nap/i.test(guidance), "should not recommend Afternoon Nap");
+    assert.ok(!/Sensory Basket Exploration/i.test(guidance), "should not recommend Sensory Basket Exploration");
   });
 });

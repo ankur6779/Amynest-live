@@ -53,6 +53,49 @@ function isSchoolDay(
   return days.includes(isoWeekday);
 }
 
+// ─── Age-band guidance builder (exported for testing) ──────────────────────
+export function buildAgeBandGuidance(ageGroup: AgeGroup): string {
+  if (ageGroup === "infant") {
+    return `AGE-BAND: 0–11 months (infant)
+Activities MUST be infant-appropriate — everything is caregiver-led and sensory-based. Good examples:
+- Stimulation: Tummy Time, High-Contrast Card Time, Rattle Reach & Grasp, Mirror Play, Singing & Lap Bouncing
+- Sensory: Sensory Basket Exploration, Outdoor Fresh Air & Narration, Baby Massage
+- Feeding & Rest: Feeding session, Nap time (multiple short naps throughout the day)
+All activities involve the parent/caregiver directly. NEVER suggest the infant doing anything independently. Do NOT suggest play groups, puzzles, sports, crafts, or any activity designed for children over 12 months.`;
+  }
+  if (ageGroup === "toddler" || ageGroup === "preschool") {
+    return `AGE-BAND: 2–5 years (toddler / preschool)
+Activities MUST use toddler/preschool vocabulary and type. Good examples:
+- Play: Finger Painting, Building Blocks & Knocking Down, Bubble Chasing, Pretend Play (Mini Kitchen / Tea Party), Music & Dance Party, Puzzle & Shape Sorting, Supervised Water & Pouring Play, Art & Craft Creation, Pretend & Role Play, Sensory Play (Kinetic Sand / Dough), Nature Scavenger Hunt, Action Songs & Music Time
+- Bonding: Story Time Together, Dance & Silly Songs Together, Playdough & Clay Together, Nature Walk & Collect, Bubble Blowing Fun, Bedtime Story Invention
+- Learning: Picture Book Flip & Name, Letter & Number Hunt, Simple Kitchen Helper, Story Invention Together
+- Hygiene/Rest: Afternoon Nap (toddler), Rest & Quiet Time (preschool)
+Do NOT suggest homework, independent study, coding, news discussions, journaling, financial literacy, or sports leagues. Keep activities simple, sensory, and parent-guided.`;
+  }
+  if (ageGroup === "early_school") {
+    return `AGE-BAND: 5–10 years (school age)
+Activities MUST use school-age vocabulary and type. Good examples:
+- Play/Sport: Outdoor Sport (cricket, football, cycling, badminton), Cycling or Skipping Rope, Strategy Board Game (chess, carrom, Scrabble), STEM / Science Experiment, Coding & Logic Puzzles (Scratch, Sudoku), Geography & General Knowledge Quiz
+- Creative: Creative Writing / Storytelling, Art & Drawing Project
+- Study: Homework & Study (40 min), Reading for Pleasure
+- Responsibility: Home Responsibility Task (setting table, watering plants, folding laundry)
+- Bonding: Cooking Together, Family Science Experiment, Backyard Sports Challenge, Family Board Game Night, Weekend Nature Hike
+Do NOT suggest finger painting, pretend tea parties, sensory dough play, nap times, or toddler-style activities. Do NOT suggest deep independent research projects, journaling, financial literacy, or pre-teen wellness sessions.`;
+  }
+  if (ageGroup === "pre_teen") {
+    return `AGE-BAND: 10+ years (pre-teen)
+Activities MUST use pre-teen vocabulary and show real autonomy and depth. Good examples:
+- Fitness: Physical Fitness / Sport (running, gym, yoga, team sport, martial arts), Strength Training / Yoga Flow
+- Deep Skills: Deep Hobby Session (music, art, coding, photography, cooking, writing — their passion), Coding / App Prototyping (Python, JavaScript, Scratch)
+- Intellectual: Independent Curiosity Project (self-directed research & presentation), News & Current Events Discussion (read & debate multiple perspectives), Financial Literacy Exercise (track pocket money, compare prices)
+- Creative: Journaling / Creative Writing (diary, poetry, opinion essays), Creative Digital Project (YouTube video, podcast, digital art, music production)
+- Social: Social / Community Project (donation drive, tutor younger sibling, community action)
+- Bonding: Documentary Night & Discussion, Cooking a Full Meal Together, Debate / Philosophy Discussion, Shared Workout / Walk, Collaborative Passion Project
+Do NOT suggest finger painting, building blocks, pretend play, action songs, sensory baskets, simple puzzle sorting, or any toddler/preschool-style activity. Do NOT suggest 40-min homework blocks — pre-teens self-manage study with Pomodoro technique.`;
+  }
+  return `AGE-BAND: unknown\nActivities must be age-appropriate. Balance play, learning, family time, and rest.`;
+}
+
 // ─── AI Routine Generation helper ──────────────────────────────────────────
 async function generateAiRoutine(params: {
   childName: string;
@@ -85,43 +128,7 @@ async function generateAiRoutine(params: {
     : params.ageGroup === "early_school" ? "School Age (5–10 years)"
     : "Pre-Teen (10–15 years)";
 
-  const ageBandGuidance =
-    params.ageGroup === "infant"
-      ? `AGE-BAND: 0–11 months (infant)
-Activities MUST be infant-appropriate — everything is caregiver-led and sensory-based. Good examples:
-- Stimulation: Tummy Time, High-Contrast Card Time, Rattle Reach & Grasp, Mirror Play, Singing & Lap Bouncing
-- Sensory: Sensory Basket Exploration, Outdoor Fresh Air & Narration, Baby Massage
-- Feeding & Rest: Feeding session, Nap time (multiple short naps throughout the day)
-All activities involve the parent/caregiver directly. NEVER suggest the infant doing anything independently. Do NOT suggest play groups, puzzles, sports, crafts, or any activity designed for children over 12 months.`
-    : params.ageGroup === "toddler" || params.ageGroup === "preschool"
-      ? `AGE-BAND: 2–5 years (toddler / preschool)
-Activities MUST use toddler/preschool vocabulary and type. Good examples:
-- Play: Finger Painting, Building Blocks & Knocking Down, Bubble Chasing, Pretend Play (Mini Kitchen / Tea Party), Music & Dance Party, Puzzle & Shape Sorting, Supervised Water & Pouring Play, Art & Craft Creation, Pretend & Role Play, Sensory Play (Kinetic Sand / Dough), Nature Scavenger Hunt, Action Songs & Music Time
-- Bonding: Story Time Together, Dance & Silly Songs Together, Playdough & Clay Together, Nature Walk & Collect, Bubble Blowing Fun, Bedtime Story Invention
-- Learning: Picture Book Flip & Name, Letter & Number Hunt, Simple Kitchen Helper, Story Invention Together
-- Hygiene/Rest: Afternoon Nap (toddler), Rest & Quiet Time (preschool)
-Do NOT suggest homework, independent study, coding, news discussions, journaling, financial literacy, or sports leagues. Keep activities simple, sensory, and parent-guided.`
-    : params.ageGroup === "early_school"
-      ? `AGE-BAND: 5–10 years (school age)
-Activities MUST use school-age vocabulary and type. Good examples:
-- Play/Sport: Outdoor Sport (cricket, football, cycling, badminton), Cycling or Skipping Rope, Strategy Board Game (chess, carrom, Scrabble), STEM / Science Experiment, Coding & Logic Puzzles (Scratch, Sudoku), Geography & General Knowledge Quiz
-- Creative: Creative Writing / Storytelling, Art & Drawing Project
-- Study: Homework & Study (40 min), Reading for Pleasure
-- Responsibility: Home Responsibility Task (setting table, watering plants, folding laundry)
-- Bonding: Cooking Together, Family Science Experiment, Backyard Sports Challenge, Family Board Game Night, Weekend Nature Hike
-Do NOT suggest finger painting, pretend tea parties, sensory dough play, nap times, or toddler-style activities. Do NOT suggest deep independent research projects, journaling, financial literacy, or pre-teen wellness sessions.`
-    : params.ageGroup === "pre_teen"
-      ? `AGE-BAND: 10+ years (pre-teen)
-Activities MUST use pre-teen vocabulary and show real autonomy and depth. Good examples:
-- Fitness: Physical Fitness / Sport (running, gym, yoga, team sport, martial arts), Strength Training / Yoga Flow
-- Deep Skills: Deep Hobby Session (music, art, coding, photography, cooking, writing — their passion), Coding / App Prototyping (Python, JavaScript, Scratch)
-- Intellectual: Independent Curiosity Project (self-directed research & presentation), News & Current Events Discussion (read & debate multiple perspectives), Financial Literacy Exercise (track pocket money, compare prices)
-- Creative: Journaling / Creative Writing (diary, poetry, opinion essays), Creative Digital Project (YouTube video, podcast, digital art, music production)
-- Social: Social / Community Project (donation drive, tutor younger sibling, community action)
-- Bonding: Documentary Night & Discussion, Cooking a Full Meal Together, Debate / Philosophy Discussion, Shared Workout / Walk, Collaborative Passion Project
-Do NOT suggest finger painting, building blocks, pretend play, action songs, sensory baskets, simple puzzle sorting, or any toddler/preschool-style activity. Do NOT suggest 40-min homework blocks — pre-teens self-manage study with Pomodoro technique.`
-      : `AGE-BAND: ${ageGroupLabel}
-Activities must be age-appropriate for ${params.age} years old. Balance play, learning, family time, and rest.`;
+  const ageBandGuidance = buildAgeBandGuidance(params.ageGroup);
 
   const systemPrompt = `You are an expert child development specialist and daily routine planner.
 Generate a complete, realistic daily schedule for a child as a JSON object.
