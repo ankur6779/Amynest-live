@@ -1004,6 +1004,9 @@ function makeTitle(ageGroup: AgeGroup, childName: string, hasSchool: boolean, se
 // Re-anchors school-aware meal blocks, deduplicates meal names, and attaches
 // per-block recipe + nutrition + age-band + Parent Hub pointers.
 
+// Infant is folded into "2-5" for the 3-band model. In practice, infant
+// routines are fully nap-anchored and carry no Parent Hub activity topics,
+// so the "Ages 2–5" label is only ever surfaced on toddler/preschool items.
 const AGE_BAND_MAP: Record<AgeGroup, "2-5" | "6-10" | "10+"> = {
   infant: "2-5",
   toddler: "2-5",
