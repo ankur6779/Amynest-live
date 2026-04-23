@@ -852,56 +852,108 @@ const WIND_DOWN: Record<AgeGroup, Block[]> = {
 };
 
 const AFTERNOON_ACTIVITIES: Record<AgeGroup, Block[]> = {
+  // ── Infant (0–12 months): stimulation, motor milestones, sensory ─────────
   infant: [
-    { activity: "Tummy Time", duration: 15, category: "play", notes: "Place baby on tummy on a soft mat. This builds neck and shoulder strength. Stay with baby." },
-    { activity: "Sensory Play", duration: 20, category: "play", notes: "Show colorful rattles, soft toys, different textures. Stimulates sight, touch, and hearing." },
-    { activity: "Outdoor Fresh Air", duration: 20, category: "play", notes: "Carry baby outside for fresh air and gentle sunlight. Narrate everything you see." },
-    { activity: "Baby Massage", duration: 15, category: "hygiene", notes: "Gentle massage with coconut or baby oil. Promotes bonding, circulation, and sleep quality." },
-    { activity: "Mirror Play", duration: 10, category: "play", notes: "Show baby their reflection — they love it! Builds self-awareness and social development." },
+    { activity: "Tummy Time", duration: 15, category: "play", notes: "Place on tummy on a firm surface. Builds neck and shoulder strength — the foundation of all future motor skills. Never leave unattended." },
+    { activity: "Sensory Basket Exploration", duration: 20, category: "play", notes: "Fill a basket with safe objects — wooden spoon, soft cloth, metallic bowl. Let baby explore textures and sounds freely." },
+    { activity: "Outdoor Fresh Air & Narration", duration: 20, category: "play", notes: "Carry baby outside. Narrate everything — trees, birds, people. Vocabulary-building starts from birth through rich language input." },
+    { activity: "Baby Massage", duration: 15, category: "hygiene", notes: "Gentle massage with coconut or baby oil. Promotes bonding, circulation, and deep sleep. Hum softly throughout." },
+    { activity: "Mirror Play", duration: 10, category: "play", notes: "Show baby their reflection — they love it! Make funny faces. Builds self-awareness and early social mirroring." },
+    { activity: "High-Contrast Card Time", duration: 10, category: "play", notes: "Show black-and-white picture cards 20–30 cm from baby's face. Newborn vision develops fastest with high-contrast patterns." },
+    { activity: "Rattle Reach & Grasp", duration: 15, category: "play", notes: "Hold colorful rattles just within reach. Reaching and grasping are critical motor milestones — celebrate every touch!" },
+    { activity: "Singing & Lap Bouncing", duration: 15, category: "play", notes: "Sing nursery rhymes with gentle knee bouncing. Rhythm and music wire the developing brain — language, memory, and bonding." },
   ],
+  // ── Toddler (1–3 years): movement, sensory, imitation, early language ─────
   toddler: [
-    { activity: "Free Outdoor Play", duration: 30, category: "play", notes: "Park, garden, or open space. Let them run, jump, explore. Physical play is essential at this age." },
-    { activity: "Creative Play", duration: 20, category: "play", notes: "Finger painting, play-doh, or building blocks. Don't correct — just encourage and praise." },
-    { activity: "Puzzle & Shape Sorting", duration: 20, category: "play", notes: "Simple puzzles (4–8 pieces), shape sorters, stacking cups. Builds problem-solving and fine motor skills." },
-    { activity: "Music & Dance", duration: 15, category: "play", notes: "Play nursery rhymes and dance together. Toddlers love moving to music — great for coordination." },
-    { activity: "Water Play", duration: 20, category: "play", notes: "Supervised water play — pouring, splashing. Develops sensory awareness and keeps them cool." },
-    { activity: "Book Time", duration: 15, category: "play", notes: "Flip through picture books. Name everything you see. Builds vocabulary and attention span." },
+    { activity: "Free Outdoor Exploration", duration: 30, category: "play", notes: "Park, garden, or open space. Run, jump, climb, fall — physical play is the #1 developmental need for toddlers." },
+    { activity: "Finger Painting", duration: 20, category: "creative", notes: "Washable paints + large paper. Let them smear and mix freely — no 'correct' art. Sensory + creative = brain development." },
+    { activity: "Building Blocks & Knocking Down", duration: 20, category: "play", notes: "Stack, knock down, rebuild. Cause-and-effect and spatial reasoning start here. Every tumble is a physics lesson!" },
+    { activity: "Puzzle & Shape Sorting", duration: 20, category: "play", notes: "Simple 4–8 piece puzzles, shape sorters, stacking cups. Builds problem-solving and fine motor control." },
+    { activity: "Music & Dance Party", duration: 15, category: "play", notes: "Play nursery rhymes and dance and wiggle together. Toddlers love moving to music — great for coordination and pure joy." },
+    { activity: "Supervised Water & Pouring Play", duration: 20, category: "play", notes: "Pouring, splashing, dunking cups in a shallow tub. Develops sensory awareness, cause-effect, and keeps them cool." },
+    { activity: "Picture Book Flip & Name", duration: 15, category: "play", notes: "Flip through picture books — name and point to everything. Builds vocabulary 3x faster than screen time at this age." },
+    { activity: "Pretend Play (Mini Kitchen / Tea Party)", duration: 20, category: "play", notes: "Mini kitchen, toy shop, or tea party. Imitation is how toddlers make sense of the adult world — encourage every scene." },
+    { activity: "Bubble Chasing", duration: 15, category: "play", notes: "Blow bubbles and chase them together. Gross motor, hand-eye coordination, and pure joy — all in one." },
+    { activity: "Scribbling & Mark-Making", duration: 15, category: "creative", notes: "Crayons on big paper. Scribbling IS writing preparation. Ask 'tell me about your drawing' — never 'what is it?'" },
   ],
+  // ── Preschool (3–5 years): imagination, early literacy, sensory, social ───
   preschool: [
-    { activity: "Art & Craft", duration: 30, category: "play", notes: "Drawing, coloring, cutting shapes, making a collage. Let creativity lead — no 'wrong' art." },
-    { activity: "Outdoor Play", duration: 30, category: "play", notes: "Swings, slides, running games, sandbox. 30 min of physical activity is vital for preschoolers." },
-    { activity: "Pretend Play", duration: 25, category: "play", notes: "Role play as doctor, chef, teacher. Builds imagination, language, and social understanding." },
-    { activity: "Alphabet & Numbers", duration: 20, category: "play", notes: "Trace letters in sand, count objects around the house. Make it a game — not a lesson." },
-    { activity: "Puzzle Time", duration: 20, category: "play", notes: "15–24 piece puzzles build patience, logic, and spatial skills. Celebrate when it's done!" },
-    { activity: "Music & Rhymes", duration: 15, category: "play", notes: "Sing action songs (Hokey Pokey, Wheels on the Bus). Movement + music = happy development." },
+    { activity: "Art & Craft Creation", duration: 30, category: "creative", notes: "Drawing, coloring, cutting, collage. Let creativity lead — process matters more than product. Display their work proudly." },
+    { activity: "Outdoor Play & Exploration", duration: 30, category: "play", notes: "Swings, slides, sand play, collecting leaves and stones. 30 min of outdoor physical play is non-negotiable for preschoolers." },
+    { activity: "Pretend & Role Play", duration: 25, category: "play", notes: "Doctor, chef, teacher, shopkeeper, superhero. Role play builds language, empathy, and social problem-solving at this age." },
+    { activity: "Letter & Number Hunt", duration: 20, category: "play", notes: "Spot letters on signs and books, count household objects. Make it a treasure hunt — learning disguised as play." },
+    { activity: "Jigsaw Puzzle Challenge", duration: 20, category: "play", notes: "15–24 piece puzzles build patience, spatial logic, and task-completion skills. Celebrate loudly when the last piece fits!" },
+    { activity: "Action Songs & Music Time", duration: 15, category: "play", notes: "Hokey Pokey, Wheels on the Bus, action rhymes. Movement + rhythm + words = powerful early language development." },
+    { activity: "Sensory Play (Kinetic Sand / Dough)", duration: 20, category: "play", notes: "Kinetic sand, moon dough, or flour-salt-water dough. Sensory play calms big emotions and builds focus and fine motor skills." },
+    { activity: "Story Invention Together", duration: 20, category: "play", notes: "Start: 'Once there was a magic elephant...' Let them continue. Builds imagination, sequencing, and narrative language skills." },
+    { activity: "Simple Kitchen Helper", duration: 20, category: "play", notes: "Washing veggies, mixing, tearing lettuce, rolling dough. Preschoolers love real tasks — it builds pride and ownership." },
+    { activity: "Nature Scavenger Hunt", duration: 25, category: "play", notes: "Find: something red, something round, something soft, a leaf, an insect. Builds observation, vocabulary, and love of nature." },
   ],
+  // ── Early School (5–10 years): sports, STEM, reading, strategy, creativity ──
   early_school: [
-    { activity: "Outdoor Sport", duration: 40, category: "play", notes: "Cricket, football, cycling, badminton, swimming — let them choose. Daily sport = focus + health." },
-    { activity: "Creative Activity", duration: 30, category: "play", notes: "Draw, paint, write a short story, or make a craft. Creativity is the other half of intelligence." },
-    { activity: "Board Games / Puzzles", duration: 30, category: "play", notes: "Chess, Ludo, Carrom, Snakes & Ladders. Builds strategy, patience, and healthy competition." },
-    { activity: "Free Play Time", duration: 30, category: "play", notes: "Unstructured play — they decide! Builds independence, creativity, and self-direction." },
-    { activity: "Reading for Pleasure", duration: 20, category: "play", notes: "Comics, fiction, non-fiction — their choice. 20 min of daily pleasure reading doubles vocabulary." },
-    { activity: "Brain Games / Quiz", duration: 20, category: "play", notes: "Geography quiz, math puzzles, riddles. Make it a friendly family competition!" },
+    { activity: "Outdoor Sport", duration: 40, category: "play", notes: "Cricket, football, cycling, badminton, swimming — their choice. Daily sport builds focus, health, teamwork, and confidence." },
+    { activity: "Creative Writing / Storytelling", duration: 30, category: "creative", notes: "Write a short story, comic strip, or poem. Encourages imagination and builds literacy beyond school assignments." },
+    { activity: "Strategy Board Game", duration: 30, category: "play", notes: "Chess, Scrabble, Carrom, Battleship, Blokus. Strategy games build patience, forward planning, and healthy competition." },
+    { activity: "STEM / Science Experiment", duration: 30, category: "play", notes: "Baking soda volcano, paper bridge challenge, seed sprouting, DIY circuits. Hands-on science beats any textbook." },
+    { activity: "Reading for Pleasure", duration: 25, category: "play", notes: "Comics, fiction, non-fiction — their choice. Daily pleasure reading is the #1 predictor of long-term academic success." },
+    { activity: "Art & Drawing Project", duration: 25, category: "creative", notes: "Still life, painting, or a long-form craft. Regular creative time builds emotional regulation, detail-orientation, and originality." },
+    { activity: "Geography & General Knowledge Quiz", duration: 20, category: "play", notes: "Capitals, flags, animal facts, sports trivia. A friendly family competition makes geography the most fun subject." },
+    { activity: "Cycling or Skipping Rope", duration: 25, category: "play", notes: "Cycling builds coordination, road confidence, and independence. Skipping is fantastic cardio that also improves rhythm." },
+    { activity: "Coding & Logic Puzzles", duration: 25, category: "play", notes: "Scratch, Code.org, Sudoku, or logic grid puzzles. Computational thinking is a 21st-century superpower — start now." },
+    { activity: "Home Responsibility Task", duration: 20, category: "play", notes: "Setting the table, watering plants, folding laundry. Chores build responsibility and a sense of contribution to the family." },
   ],
+  // ── Pre-Teen (10–15 years): identity, independence, deep skills, wellness ──
   pre_teen: [
-    { activity: "Physical Fitness", duration: 30, category: "play", notes: "Running, yoga, gym exercises, team sport, dance. Daily exercise fights pre-teen stress and boosts mood." },
-    { activity: "Hobby Time", duration: 40, category: "play", notes: "Music, art, coding, reading, cooking — their passion. Protect this time — hobbies build identity." },
-    { activity: "Social Time", duration: 30, category: "play", notes: "Call or meet a friend. Social connection is critical at this age — don't skip it." },
-    { activity: "Creative Project", duration: 30, category: "play", notes: "A drawing, video, story, or experiment they choose. Long-term projects build persistence." },
-    { activity: "Digital Learning", duration: 25, category: "screen", notes: "Structured: Khan Academy, coding tutorials, documentaries. Not gaming — active learning." },
+    { activity: "Physical Fitness / Sport", duration: 35, category: "play", notes: "Running, gym, yoga, team sport, swimming, martial arts. Daily exercise fights pre-teen stress, anxiety, and mood swings." },
+    { activity: "Deep Hobby Session", duration: 45, category: "play", notes: "Music, art, coding, photography, cooking, writing — their passion. Protect this time fiercely: hobbies build identity and resilience." },
+    { activity: "Independent Curiosity Project", duration: 35, category: "study", notes: "Research something they're curious about and present it. Self-directed learning is far more powerful than assigned homework." },
+    { activity: "Coding / App Prototyping", duration: 35, category: "play", notes: "Python, JavaScript, Scratch, or app design. 20 min of coding daily for 6 months produces real, marketable competence." },
+    { activity: "Journaling / Creative Writing", duration: 25, category: "creative", notes: "Diary, short fiction, poetry, or opinion essays. Daily writing is the single most valuable cognitive habit at this age." },
+    { activity: "Strength Training / Yoga Flow", duration: 30, category: "play", notes: "Bodyweight exercises, resistance bands, or yoga. Builds discipline, body confidence, and self-regulation — all critical in pre-teens." },
+    { activity: "Financial Literacy Exercise", duration: 20, category: "study", notes: "Track pocket money, compare product prices, research how savings grow. Money skills learnt young compound for life." },
+    { activity: "Social / Community Project", duration: 25, category: "play", notes: "Organise a donation drive, tutor a younger sibling, or plan a community action. Builds empathy, leadership, and purpose." },
+    { activity: "News & Current Events Discussion", duration: 20, category: "study", notes: "Read one news story together and discuss multiple perspectives. Builds critical thinking and media literacy — essential now." },
+    { activity: "Creative Digital Project", duration: 35, category: "creative", notes: "YouTube video, podcast episode, digital art, music production, animation. Pre-teens have creative energy — channel it!" },
   ],
 };
 
-const BONDING_ACTIVITIES: Block[] = [
-  { activity: "Story Time Together", duration: 20, category: "bonding", notes: "Read aloud together. Take turns reading pages. Ask 'What do you think happens next?'" },
-  { activity: "Cooking Together", duration: 25, category: "bonding", notes: "Make something simple together — sandwich, salad, dosa. Kids who cook are more adventurous eaters." },
-  { activity: "Outdoor Walk", duration: 25, category: "bonding", notes: "Walk and talk — no phones. Ask open questions: 'What made you smile today?' Great bonding time." },
-  { activity: "Board Game / Card Game", duration: 30, category: "bonding", notes: "Ludo, Snakes & Ladders, UNO, Carrom. Let them win sometimes — builds confidence!" },
-  { activity: "Art & Craft Together", duration: 30, category: "bonding", notes: "Make something together — drawing, origami, clay modeling. Display the finished work proudly." },
-  { activity: "Movie / Show Time Together", duration: 40, category: "bonding", notes: "Watch something they enjoy — no phones during the show. Discuss it after: favourite part?" },
-  { activity: "Dance & Music Time", duration: 20, category: "bonding", notes: "Put on their favourite song and dance together. Silly dancing = big smiles = strong bonds." },
-  { activity: "Gardening Together", duration: 25, category: "bonding", notes: "Water plants, dig soil, plant seeds. Teaches patience, responsibility, and love of nature." },
-];
+// Age-banded bonding activities — distinct content per developmental stage
+const BONDING_ACTIVITIES_BY_BAND: Record<"2-5" | "6-10" | "10+", Block[]> = {
+  // Ages 2-5: toddler + preschool — sensory, movement, simple shared play
+  "2-5": [
+    { activity: "Story Time Together", duration: 20, category: "bonding", notes: "Read a picture book aloud, pointing to pictures. Ask 'Where is the dog?' and 'What happens next?' Pure magic for little ones." },
+    { activity: "Dance & Silly Songs Together", duration: 15, category: "bonding", notes: "Put on nursery rhymes and dance and wiggle together. Silly dancing = big laughs = strong parent-child bonds." },
+    { activity: "Nature Walk & Collect", duration: 20, category: "bonding", notes: "Walk slowly and collect leaves, pebbles, flowers. 'What colour is that?' Simple conversations that build vocabulary and wonder." },
+    { activity: "Playdough & Clay Together", duration: 20, category: "bonding", notes: "Roll, squish, make animals and food together. Your presence makes it special — they'll recreate this with their own children." },
+    { activity: "Bubble Blowing Fun", duration: 15, category: "bonding", notes: "Blow bubbles and chase and pop them together. Pure joy — these tiny moments are what childhood memories are made of." },
+    { activity: "Bedtime Story Invention", duration: 15, category: "bonding", notes: "Invent a story together with them as the hero. 'Then what happened?' They'll ask for this every night." },
+  ],
+  // Ages 6-10: early school — games, science, cooking, outdoor challenges
+  "6-10": [
+    { activity: "Board Game / Card Game", duration: 30, category: "bonding", notes: "Ludo, Snakes & Ladders, UNO, Carrom, Battleship. Let them win sometimes — builds confidence and sportsmanship!" },
+    { activity: "Simple Cooking Together", duration: 25, category: "bonding", notes: "Make a sandwich, salad, or simple snack together. Kids who cook with parents are more adventurous eaters and gain real confidence." },
+    { activity: "Outdoor Walk & Talk", duration: 25, category: "bonding", notes: "Walk without phones and ask open questions: 'What made you smile today? What was the hardest part?' — real answers emerge on walks." },
+    { activity: "Home Science Experiment", duration: 30, category: "bonding", notes: "Baking soda volcano, paper bridge contest, DIY compass. Learning through hands-on play with a parent = memories that last decades." },
+    { activity: "Treasure Hunt Around the House", duration: 25, category: "bonding", notes: "Hide clues leading to a small treat or surprise. They'll talk about this for days — and ask for it every weekend." },
+    { activity: "Movie / Show Together", duration: 40, category: "bonding", notes: "Watch something they enjoy — no phones during the show. Ask afterwards: 'Favourite part? What would YOU do in that situation?'" },
+    { activity: "Art Project Together", duration: 30, category: "bonding", notes: "Draw, origami, clay, or a craft project together. Display the result prominently — their pride in shared creation is immense." },
+  ],
+  // Ages 10+: pre-teen — peer-level collaboration, real responsibility, deep conversations
+  "10+": [
+    { activity: "Cook a Full Recipe Together", duration: 40, category: "bonding", notes: "Let them lead the recipe — you assist. Pre-teens who cook with parents gain confidence, life skills, and feel genuinely valued." },
+    { activity: "Family Quiz / Friendly Debate", duration: 30, category: "bonding", notes: "General knowledge quiz, or a safe opinion debate. Teaches critical thinking and that it's okay to disagree respectfully." },
+    { activity: "Workout or Yoga Together", duration: 30, category: "bonding", notes: "Run, do yoga, or follow a workout video together. Modelling healthy habits at this age shapes their lifestyle for decades." },
+    { activity: "Plan a Family Outing Together", duration: 25, category: "bonding", notes: "Let them research destinations, check timings, plan the budget. Real decision-making power builds ownership and maturity." },
+    { activity: "Gardening or DIY Project", duration: 35, category: "bonding", notes: "Plant something, fix something, build something together. Working with hands beside a parent is quietly one of the deepest bonds." },
+    { activity: "Documentary + Discussion", duration: 45, category: "bonding", notes: "A nature, science, or history documentary — then discuss the 3 most interesting facts. Great conversations start here." },
+    { activity: "Photo Walk Together", duration: 30, category: "bonding", notes: "Walk with phones/cameras and take creative photos. Share the best shots and talk about why you chose them — surprisingly deep." },
+  ],
+};
+
+// Flat lookup used in generatePartialRoutine (picks the right band automatically)
+function getBondingActivities(ageGroup: AgeGroup): Block[] {
+  return BONDING_ACTIVITIES_BY_BAND[AGE_BAND_MAP[ageGroup]];
+}
 
 const TODDLER_NAP: Block = { activity: "Afternoon Nap", duration: 90, category: "sleep", notes: "Toddlers need 1–2 hours of daytime sleep. Keep room cool and dark. Same time each day." };
 const PRESCHOOL_REST: Block = { activity: "Quiet Rest Time", duration: 45, category: "sleep", notes: "Even if not sleeping, quiet time recharges energy. Books, soft toys — no screens." };
@@ -964,12 +1016,24 @@ const PARENT_HUB_BY_CATEGORY: Record<string, string> = {
   homework: "Study Skills & Focus",
   bonding: "Family Bonding Ideas",
   play: "Age-Appropriate Play",
+  creative: "Creative Development",
+  study: "Independent Learning",
   screen: "Healthy Screen Habits",
   meal: "Nutrition & Picky Eaters",
   tiffin: "Tiffin Box Ideas",
   exercise: "Kids Fitness",
   reading: "Reading Habits",
 };
+
+// Returns a Parent Hub topic string annotated with the child's age band so
+// deep-links open age-banded content in the Parent Hub (e.g. "Family Bonding
+// Ideas · Ages 6–10"). Falls back to the base topic if category not found.
+function parentHubTopicForBand(category: string, band: "2-5" | "6-10" | "10+"): string | null {
+  const base = PARENT_HUB_BY_CATEGORY[category.toLowerCase()];
+  if (!base) return null;
+  const label = band === "2-5" ? "Ages 2–5" : band === "6-10" ? "Ages 6–10" : "Ages 10+";
+  return `${base} · ${label}`;
+}
 
 function clamp(value: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, value));
@@ -1232,18 +1296,18 @@ function attachMealMetadata(items: ScheduleItem[], ageGroup: AgeGroup, fridgeIte
     };
   });
 
-  // Tag activities with age band + Parent Hub topic. Append a CTA to the LAST
-  // activity per known category to avoid spamming notes on every block.
+  // Tag activities with age band + age-banded Parent Hub topic deep-link.
+  // CTA is appended only to the LAST block per category to avoid note spam.
   const band = AGE_BAND_MAP[ageGroup];
   const lastIdxByCat = new Map<string, number>();
   out.forEach((it, idx) => {
-    if (PARENT_HUB_BY_CATEGORY[(it.category ?? "").toLowerCase()]) {
+    if (parentHubTopicForBand((it.category ?? ""), band)) {
       lastIdxByCat.set((it.category ?? "").toLowerCase(), idx);
     }
   });
   return out.map((it, idx) => {
     const cat = (it.category ?? "").toLowerCase();
-    const topic = PARENT_HUB_BY_CATEGORY[cat];
+    const topic = parentHubTopicForBand(cat, band);
     if (!topic) return it;
     const isLast = lastIdxByCat.get(cat) === idx;
     const baseNotes = it.notes ?? "";
@@ -1433,7 +1497,7 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
   const activityBudget = windDownStart - cursor;
 
   const actPool = seededShuffle(AFTERNOON_ACTIVITIES[ageGroup], seed + 20);
-  const bondPool = seededShuffle(BONDING_ACTIVITIES, seed + 30);
+  const bondPool = seededShuffle(getBondingActivities(ageGroup), seed + 30);
   let bondAdded = 0;
   let actIdx = 0;
   let bondIdx = 0;
@@ -1712,7 +1776,7 @@ export function generatePartialRoutine(params: {
   }
 
   // Pick activities not yet done
-  const pool = seededShuffle([...AFTERNOON_ACTIVITIES[ageGroup], ...BONDING_ACTIVITIES], seed + cursor);
+  const pool = seededShuffle([...AFTERNOON_ACTIVITIES[ageGroup], ...getBondingActivities(ageGroup)], seed + cursor);
   let bondAdded = 0;
   for (const act of pool) {
     if (cursor + 20 >= sleepMins - 60) break;
