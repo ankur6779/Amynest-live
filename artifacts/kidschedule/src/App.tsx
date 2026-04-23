@@ -157,12 +157,12 @@ function AppRoutes() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-      <TooltipProvider>
-      <PaywallProvider>
-        <FirebaseAuthBootstrap />
-        <QueryClientCacheInvalidator />
-        <ReferralAttributionBridge />
-        <Switch>
+        <TooltipProvider>
+          <PaywallProvider>
+            <FirebaseAuthBootstrap />
+            <QueryClientCacheInvalidator />
+            <ReferralAttributionBridge />
+            <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/privacy" component={PrivacyPolicyPage} />
           <Route path="/sign-in" component={SignInPage} />
@@ -245,12 +245,12 @@ function AppRoutes() {
             {() => <ProtectedRoute component={ReferralsPage} requiresProfile={false} />}
           </Route>
           <Route component={NotFound} />
-        </Switch>
-        <PaywallModal />
-        <SubscriptionEventBridge />
-        <Toaster />
-      </PaywallProvider>
-      </TooltipProvider>
+            </Switch>
+            <PaywallModal />
+            <SubscriptionEventBridge />
+            <Toaster />
+          </PaywallProvider>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
