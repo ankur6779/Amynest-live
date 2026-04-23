@@ -7,6 +7,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeIn, SlideInDown, SlideOutDown } from "react-native-reanimated";
 import SlideToComplete from "./SlideToComplete";
+import { MobileRecipeCard } from "./MobileRecipeCard";
 import { useColors } from "@/hooks/useColors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { getActivityImage } from "@/lib/activity-images";
@@ -307,51 +308,11 @@ export default function RoutineItemModal({
 
               {(item.recipe || item.nutrition) ? (
                 <View style={s.notesBox}>
-                  <Text style={s.sectionLabel}>👨‍🍳 Recipe & Nutrition {item.meal ? `— ${item.meal}` : ""}</Text>
-                  {item.recipe ? (
-                    <View style={{ gap: 6, marginTop: 6 }}>
-                      <Text style={[s.notesText, { fontSize: 11, opacity: 0.7 }]}>
-                        Prep {item.recipe.prepTime} · Cook {item.recipe.cookTime} · Serves {item.recipe.servings}
-                      </Text>
-                      <Text style={[s.notesText, { fontWeight: "700" }]}>Ingredients</Text>
-                      {(item.recipe.ingredients ?? []).map((ing, i) => (
-                        <Text key={`ing-${i}`} style={s.notesText}>• {ing}</Text>
-                      ))}
-                      <Text style={[s.notesText, { fontWeight: "700", marginTop: 4 }]}>Steps</Text>
-                      {(item.recipe.steps ?? []).map((st, i) => (
-                        <Text key={`st-${i}`} style={s.notesText}>{i + 1}. {st}</Text>
-                      ))}
-                      {item.recipe.tip ? (
-                        <Text style={[s.notesText, { fontStyle: "italic", marginTop: 4 }]}>💡 {item.recipe.tip}</Text>
-                      ) : null}
-                    </View>
-                  ) : null}
-                  {item.nutrition ? (
-                    <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
-                      <Text style={[s.notesText, { fontWeight: "700" }]}>Nutrition (approx.)</Text>
-                      <View style={[s.statsRow, { marginTop: 6 }]}>
-                        <View style={[s.statBox, { backgroundColor: "rgba(251,146,60,0.12)" }]}>
-                          <Text style={s.statValue}>{item.nutrition.calories}</Text>
-                          <Text style={s.statLabel}>Cal</Text>
-                        </View>
-                        <View style={[s.statBox, { backgroundColor: "rgba(244,63,94,0.12)" }]}>
-                          <Text style={s.statValue}>{item.nutrition.protein}</Text>
-                          <Text style={s.statLabel}>Protein</Text>
-                        </View>
-                        <View style={[s.statBox, { backgroundColor: "rgba(16,185,129,0.12)" }]}>
-                          <Text style={s.statValue}>{item.nutrition.carbs}</Text>
-                          <Text style={s.statLabel}>Carbs</Text>
-                        </View>
-                        <View style={[s.statBox, { backgroundColor: "rgba(99,102,241,0.12)" }]}>
-                          <Text style={s.statValue}>{item.nutrition.fat}</Text>
-                          <Text style={s.statLabel}>Fat</Text>
-                        </View>
-                      </View>
-                      {item.nutrition.notes ? (
-                        <Text style={[s.notesText, { marginTop: 6, fontStyle: "italic" }]}>{item.nutrition.notes}</Text>
-                      ) : null}
-                    </View>
-                  ) : null}
+                  <MobileRecipeCard
+                    meal={item.meal}
+                    recipe={item.recipe}
+                    nutrition={item.nutrition}
+                  />
                 </View>
               ) : null}
 

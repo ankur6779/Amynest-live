@@ -11,6 +11,56 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "test-routine-meals"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "test-mealrecipecard-ui"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "test-mobile-recipe-card"
+
+[[workflows.workflow]]
+name = "test-routine-meals"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd /home/runner/workspace/artifacts/api-server && pnpm run test"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "test-mealrecipecard-ui"
+author = "agent"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd /home/runner/workspace/artifacts/kidschedule && pnpm run test"
+
+[[workflows.workflow]]
+name = "test-mobile-recipe-card"
+author = "agent"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd /home/runner/workspace/artifacts/amynest-mobile && pnpm run test"
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true

@@ -15,6 +15,7 @@ import { getApiUrl } from "@/lib/api";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { addPoints, checkAndAwardBadges, getTotalPoints } from "@/lib/rewards";
 import { RoutineInlineMeals } from "@/components/routine-inline-meals";
+import { MealRecipeCard } from "@/components/MealRecipeCard";
 import { announceCurrentTask, isVoiceEnabled, getVoiceSettings } from "@/lib/voice";
 import { VoiceSettingsPanel } from "@/components/voice-settings";
 import {
@@ -1487,46 +1488,12 @@ export default function RoutineDetail() {
                               ).length}
                             />
                           )}
-                          {(item.recipe || item.nutrition) && editingIndex !== index && (
-                            <details className="mt-2 rounded-xl border border-orange-200 bg-orange-50/60 p-2.5 group">
-                              <summary className="cursor-pointer text-xs font-bold text-orange-800 flex items-center gap-1.5">
-                                <ChefHat className="h-3 w-3" /> Recipe &amp; Nutrition
-                                <span className="ml-auto text-orange-500 group-open:rotate-180 transition-transform">▾</span>
-                              </summary>
-                              <div className="mt-2 space-y-2 text-[11px] text-orange-900">
-                                {item.recipe && (
-                                  <div>
-                                    <p className="font-bold mb-1">{item.meal ?? "Recipe"}</p>
-                                    <p className="text-[10px] uppercase tracking-wide text-orange-600">Prep {item.recipe.prepTime} · Cook {item.recipe.cookTime} · Serves {item.recipe.servings}</p>
-                                    <p className="font-semibold mt-1.5">Ingredients</p>
-                                    <ul className="list-disc list-inside leading-snug">
-                                      {(item.recipe.ingredients ?? []).map((ing, i) => <li key={i}>{ing}</li>)}
-                                    </ul>
-                                    <p className="font-semibold mt-1.5">Steps</p>
-                                    <ol className="list-decimal list-inside leading-snug">
-                                      {(item.recipe.steps ?? []).map((s, i) => <li key={i}>{s}</li>)}
-                                    </ol>
-                                    {item.recipe.tip && (
-                                      <p className="mt-1.5 italic text-orange-700">💡 {item.recipe.tip}</p>
-                                    )}
-                                  </div>
-                                )}
-                                {item.nutrition && (
-                                  <div className="pt-2 border-t border-orange-200">
-                                    <p className="font-bold mb-1">Nutrition (approx.)</p>
-                                    <div className="grid grid-cols-4 gap-1 text-center">
-                                      <div className="bg-white rounded-md py-1"><p className="font-bold text-[10px]">{item.nutrition.calories}</p><p className="text-[9px] text-orange-600">Calories</p></div>
-                                      <div className="bg-white rounded-md py-1"><p className="font-bold text-[10px]">{item.nutrition.protein}</p><p className="text-[9px] text-orange-600">Protein</p></div>
-                                      <div className="bg-white rounded-md py-1"><p className="font-bold text-[10px]">{item.nutrition.carbs}</p><p className="text-[9px] text-orange-600">Carbs</p></div>
-                                      <div className="bg-white rounded-md py-1"><p className="font-bold text-[10px]">{item.nutrition.fat}</p><p className="text-[9px] text-orange-600">Fat</p></div>
-                                    </div>
-                                    {item.nutrition.notes && (
-                                      <p className="mt-1.5 italic text-orange-700">{item.nutrition.notes}</p>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </details>
+                          {editingIndex !== index && (
+                            <MealRecipeCard
+                              meal={item.meal}
+                              recipe={item.recipe}
+                              nutrition={item.nutrition}
+                            />
                           )}
                           </>
                           )}
