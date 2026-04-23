@@ -1456,6 +1456,12 @@ export default function RoutineDetail() {
                                 ★ Essential
                               </span>
                             )}
+                            {item.ageBand && (
+                              <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-1.5 py-0.5">
+                                <Users className="h-2.5 w-2.5" />
+                                Ages {item.ageBand.replace("-", "–")}
+                              </span>
+                            )}
                           </div>
                           {/* Auto-skip reason */}
                           {item.skipReason && (

@@ -43,6 +43,7 @@ type RoutineItem = {
   status?: ItemStatus; skipReason?: string;
   /** Set by Adaptive Engine when it auto-modifies a task. */
   adjusted?: boolean;
+  ageBand?: "2-5" | "6-10" | "10+";
 };
 type Routine = {
   id: number; childId: number; childName: string;
@@ -1239,6 +1240,12 @@ function ItemCard({ item, seed = 0 }: { item: RoutineItem; seed?: number }) {
           isDone && { color: c.textSubtle, textDecorationLine: "line-through" },
           isSkipped && { color: c.textDim },
         ]} numberOfLines={2}>{item.activity}</Text>
+        {item.ageBand && (
+          <View style={styles.ageBandChip}>
+            <Ionicons name="people-outline" size={9} color="#0369a1" />
+            <Text style={styles.ageBandChipText}>Ages {item.ageBand.replace("-", "–")}</Text>
+          </View>
+        )}
         {item.notes && !isDone && <Text style={[styles.notesText, { color: c.textSubtle }]} numberOfLines={1}>{item.notes}</Text>}
         {isSkipped && item.skipReason && <Text style={[styles.skipReason, { color: c.textDim }]} numberOfLines={1}>⏭ {item.skipReason}</Text>}
         {isDelayed && <Text style={styles.delayedTag}>⏱ Delayed</Text>}
@@ -1358,6 +1365,14 @@ const styles = StyleSheet.create({
   notesText: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 3 },
   skipReason: { fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 3, fontStyle: "italic" },
   delayedTag: { fontSize: 10, color: "#F59E0B" /* audit-ok: semantic delay-amber tag */, marginTop: 3, fontWeight: "700" },
+  ageBandChip: {
+    flexDirection: "row", alignItems: "center", gap: 3,
+    alignSelf: "flex-start", marginTop: 4,
+    paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 20, backgroundColor: "rgba(14,165,233,0.12)",
+    borderWidth: 1, borderColor: "rgba(14,165,233,0.35)",
+  },
+  ageBandChipText: { fontSize: 9, fontWeight: "700", color: "#0ea5e9" /* audit-ok: sky-500 age badge */ },
   checkBox: {
     width: 26, height: 26, borderRadius: 8, borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center",
