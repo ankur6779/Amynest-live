@@ -25,6 +25,7 @@ import {
   GenerateInsightsResponse,
 } from "@workspace/api-zod";
 import { generateRuleBasedRoutine, generateRuleBasedInsights, generatePartialRoutine, timeToMins, minsToTime, applyRoutineV2, type AgeGroup, type ScheduleItem } from "../lib/routine-templates.js";
+import { enforceSchoolBlock as enforceSchoolBlockUtil, reAnchorToWakeTime as reAnchorToWakeTimeUtil, type AiRoutineItem } from "../lib/ai-routine-utils.js";
 
 // ─── School-day detection helper ───────────────────────────────────────────
 // Resolves whether the child has school on the given date based on their
@@ -97,7 +98,8 @@ Do NOT suggest finger painting, building blocks, pretend play, action songs, sen
 }
 
 // ─── AI Routine Generation helper ──────────────────────────────────────────
-async function generateAiRoutine(params: {
+// Exported for testing — pass `openaiClient` to inject a mock; omit for production.
+export async function generateAiRoutine(params: {
   childName: string;
   age: number;
   ageGroup: AgeGroup;
@@ -117,8 +119,21 @@ async function generateAiRoutine(params: {
   date: string;
   parentAvailSummary: string;
   customRecipes?: CustomRecipeEntry[];
+  openaiClient?: {
+    chat: {
+      completions: {
+        create: (params: {
+          model: string;
+          messages: Array<{ role: string; content: string }>;
+          response_format?: { type: string };
+          max_completion_tokens?: number;
+        }) => Promise<{ choices: Array<{ message: { content: string | null } }> }>;
+      };
+    };
+  };
 }): Promise<{ title: string; items: RoutineItem[] }> {
-  const { openai } = await import("@workspace/integrations-openai-ai-server");
+  const openai = params.openaiClient
+    ?? (await import("@workspace/integrations-openai-ai-server")).openai;
 
   const dayOfWeek = new Date(params.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long" });
   const ageGroupLabel =
@@ -234,12 +249,12 @@ NO-SCHOOL RULES — today is a school-free day:
   // Always re-anchor to wake time — prevents AI from starting at midnight
   const anchoredItems = params.ageGroup === "infant"
     ? rawItems  // infants use flexible blocks, skip cascade
-    : reAnchorToWakeTime(rawItems, params.wakeUpTime, params.sleepTime, params.ageGroup);
+    : reAnchorToWakeTimeUtil(rawItems as AiRoutineItem[], params.wakeUpTime, params.sleepTime, params.ageGroup);
 
   // Deterministic school-block enforcement — guarantees the school constraint
   // even when the AI ignored / partially ignored the prompt's SCHOOL RULES block.
-  const finalItems = enforceSchoolBlock(
-    anchoredItems,
+  const finalItems = enforceSchoolBlockUtil(
+    anchoredItems as AiRoutineItem[],
     params.hasSchool,
     params.schoolStartTime,
     params.schoolEndTime,
@@ -264,67 +279,6 @@ NO-SCHOOL RULES — today is a school-free day:
   };
 }
 
-// ─── School-block enforcer ─────────────────────────────────────────────────
-// Deterministically guarantees the school-mode contract on the final item list:
-//
-// When hasSchool=true:
-//   - Removes every existing item that overlaps the school window.
-//   - Inserts exactly ONE category="school" item spanning schoolStart→schoolEnd.
-//   - Items strictly before/after the window are preserved (their times are
-//     trusted from the upstream re-anchor pass).
-//
-// When hasSchool=false:
-//   - Strips any category="school" items the AI may have produced.
-//
-// Items remain time-sorted on output. Idempotent.
-function enforceSchoolBlock(
-  items: RoutineItem[],
-  hasSchool: boolean,
-  schoolStartTime: string,
-  schoolEndTime: string,
-  childClass: string | undefined,
-): RoutineItem[] {
-  if (!items.length) return items;
-
-  if (!hasSchool) {
-    // No-school day: strip any "school" category items the AI sneaked in.
-    return items.filter((it) => (it.category ?? "").toLowerCase() !== "school");
-  }
-
-  const schoolStart = timeToMins(schoolStartTime);
-  const schoolEnd = timeToMins(schoolEndTime);
-  // Treat malformed config (end <= start) as a no-op so we never delete the entire day.
-  if (schoolEnd <= schoolStart) return items;
-  const schoolDur = schoolEnd - schoolStart;
-
-  // Drop any item that overlaps [schoolStart, schoolEnd) AND every "school"
-  // item (even outside the window — we'll re-insert a single canonical one).
-  // Exception: category="tiffin" eating slots are allowed inside the school
-  // window (the kid eats the packed tiffin at school).
-  const kept = items.filter((it) => {
-    const t = timeToMins(it.time);
-    const end = t + Math.max(1, it.duration ?? 30);
-    const overlaps = t < schoolEnd && end > schoolStart;
-    const cat = (it.category ?? "").toLowerCase();
-    const isSchool = cat === "school";
-    const isTiffin = cat === "tiffin";
-    return (!overlaps || isTiffin) && !isSchool;
-  });
-
-  const schoolItem: RoutineItem = {
-    time: minsToTime(schoolStart),
-    activity: childClass ? `${childClass} — at school` : "At school",
-    duration: schoolDur,
-    category: "school",
-    notes: "Protected school time — child is unavailable.",
-    status: "pending",
-  };
-
-  // Insert and time-sort. Cross-midnight wrap is not relevant here because
-  // school times are mid-day; standard ascending sort is correct.
-  return [...kept, schoolItem].sort((a, b) => timeToMins(a.time) - timeToMins(b.time));
-}
-
 type RoutineItem = {
   time: string;
   activity: string;
@@ -340,65 +294,6 @@ type RoutineItem = {
   ageBand?: "2-5" | "6-10" | "10+";
   parentHubTopic?: string;
 };
-
-// ─── Re-anchor AI routine to wake time ─────────────────────────────────────
-// The AI sometimes ignores the wake time and starts at midnight (00:00).
-// This post-processor sorts items by the time the AI gave them, then
-// rebuilds a strict cascade: first item starts at wakeUpTime, each next
-// item starts exactly when the previous one ends.
-function reAnchorToWakeTime(
-  items: RoutineItem[],
-  wakeUpTime: string,
-  sleepTime: string,
-  ageGroup: AgeGroup
-): RoutineItem[] {
-  if (!items.length) return items;
-  // Infants: keep flexible ordering — just ensure no item is before wakeUpTime
-  const wakeMins = timeToMins(wakeUpTime);
-  const sleepMins = timeToMins(sleepTime);
-  // Effective sleep mins (may be next day for late bedtimes)
-  const effectiveSleepMins = sleepMins < wakeMins ? sleepMins + 1440 : sleepMins;
-
-  // Sort by the AI's original time ordering
-  const sorted = [...items].sort((a, b) => {
-    const ta = timeToMins(a.time);
-    const tb = timeToMins(b.time);
-    // Handle next-day wrap (e.g. 11 PM < 1 AM for ordering purposes)
-    const ra = ta < wakeMins - 120 ? ta + 1440 : ta;
-    const rb = tb < wakeMins - 120 ? tb + 1440 : tb;
-    return ra - rb;
-  });
-
-  // Separate sleep anchor (last item) from the rest
-  let sleepIdx = -1;
-  for (let i = sorted.length - 1; i >= 0; i--) {
-    if (sorted[i].category === "sleep" || /sleep|bedtime|good night/i.test(sorted[i].activity)) {
-      sleepIdx = i;
-      break;
-    }
-  }
-  const sleepAnchor = sleepIdx !== -1 ? sorted.splice(sleepIdx, 1)[0]! : null;
-
-  // Re-cascade: each item starts exactly where the previous one ended
-  let cursor = wakeMins;
-  const anchored: RoutineItem[] = sorted.map((item) => {
-    const dur = Math.max(1, item.duration ?? 30);
-    const result = { ...item, time: minsToTime(cursor) };
-    cursor += dur;
-    // Never push past sleep time
-    if (cursor >= effectiveSleepMins && item.category !== "sleep") {
-      cursor = Math.min(cursor, effectiveSleepMins - 10);
-    }
-    return result;
-  });
-
-  // Always put sleep anchor at the configured sleep time
-  if (sleepAnchor) {
-    anchored.push({ ...sleepAnchor, time: minsToTime(sleepMins) });
-  }
-
-  return anchored;
-}
 
 const router: IRouter = Router();
 
