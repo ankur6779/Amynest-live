@@ -36,6 +36,7 @@ import EventPrepPage from "@/pages/event-prep";
 import SchoolMorningFlowPage from "@/pages/school-morning-flow";
 import AmyCoachPage from "@/pages/ai-coach";
 import AmyCoachProgressPage from "@/pages/ai-coach-progress";
+import RecipesPage from "@/pages/recipes";
 import AudioLessonsPage from "@/pages/audio-lessons";
 import GamesPage from "@/pages/games";
 import OnboardingPage from "@/pages/onboarding";
@@ -231,6 +232,9 @@ function AppRoutes() {
           </Route>
           <Route path="/amy-coach/progress">
             {() => <ProtectedRoute component={AmyCoachProgressPage} />}
+          </Route>
+          <Route path="/recipes">
+            {() => <ProtectedRoute component={RecipesPage} />}
           </Route>
           <Route path="/audio-lessons">
             {() => <ProtectedRoute component={AudioLessonsPage} />}

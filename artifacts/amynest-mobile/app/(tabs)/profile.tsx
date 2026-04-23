@@ -581,6 +581,19 @@ export default function ProfileScreen() {
           ) : null}
         </Section>
 
+        {/* My Recipes */}
+        <TouchableOpacity
+          style={[styles.logoutBtn, { backgroundColor: "#FFF7ED", borderColor: "#FDBA7455" }]}
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.push("/recipes");
+          }}
+        >
+          <Ionicons name="restaurant-outline" size={20} color="#F97316" />
+          <Text style={[styles.logoutText, { color: "#F97316" }]}>My Recipes</Text>
+          <Ionicons name="chevron-forward" size={16} color="#F97316" style={{ marginLeft: "auto" }} />
+        </TouchableOpacity>
+
         {/* Invite & Earn */}
         <TouchableOpacity
           style={[styles.logoutBtn, { backgroundColor: "#A855F715", borderColor: "#A855F755" }]}

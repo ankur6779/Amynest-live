@@ -21,6 +21,17 @@ export type ScheduleItem = {
   parentHubTopic?: string;
 };
 
+// A custom recipe entry contributed by a parent (from the database).
+export type CustomRecipeEntry = {
+  name: string;
+  prepTime: string;
+  cookTime: string;
+  servings: string;
+  ingredients: string[];
+  steps: string[];
+  tip?: string | null;
+};
+
 const ESSENTIAL_CATEGORIES = new Set(["hygiene", "sleep", "meal", "school", "tiffin"]);
 const IMPORTANT_CATEGORIES = new Set(["study", "bonding", "wind-down", "homework"]);
 
@@ -83,6 +94,7 @@ export type RoutineParams = {
   childClass?: string;
   date: string;
   behaviorContext?: string;
+  customRecipes?: CustomRecipeEntry[];
 };
 
 // ─── Time helpers ─────────────────────────────────────────────────────────────
@@ -1152,6 +1164,7 @@ type AnchorOpts = {
   schoolEndMins: number;
   ageGroup: AgeGroup;
   fridgeItems?: string;
+  customRecipes?: CustomRecipeEntry[];
 };
 
 // Light/quick options good for a 15-min "before school" meal — used both as a
@@ -1280,7 +1293,39 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
 
 // Attach `meal`, `recipe`, `nutrition` to every meal/tiffin block, dedupe meal
 // names across the day, and tag activities with age-band + Parent Hub pointer.
-function attachMealMetadata(items: ScheduleItem[], ageGroup: AgeGroup, fridgeItems?: string): ScheduleItem[] {
+function findCustomRecipe(
+  mealName: string,
+  customRecipes?: CustomRecipeEntry[],
+): import("./meal-recipes.js").MealRecipe | undefined {
+  if (!customRecipes || customRecipes.length === 0) return undefined;
+  const lower = mealName.toLowerCase();
+  let best: CustomRecipeEntry | undefined;
+  let bestLen = 0;
+  for (const cr of customRecipes) {
+    if (!cr.name) continue;
+    const crLower = cr.name.toLowerCase();
+    if (lower.includes(crLower) && crLower.length > bestLen) {
+      best = cr;
+      bestLen = crLower.length;
+    }
+  }
+  if (!best) return undefined;
+  return {
+    prepTime: best.prepTime,
+    cookTime: best.cookTime,
+    servings: best.servings,
+    ingredients: best.ingredients,
+    steps: best.steps,
+    tip: best.tip ?? undefined,
+  };
+}
+
+function attachMealMetadata(
+  items: ScheduleItem[],
+  ageGroup: AgeGroup,
+  fridgeItems?: string,
+  customRecipes?: CustomRecipeEntry[],
+): ScheduleItem[] {
   const used = new Set<string>();
   const fridge = parseFridgeItems(fridgeItems);
   // Every block carries `meal`/`recipe`/`nutrition` fields in the response —
@@ -1290,11 +1335,12 @@ function attachMealMetadata(items: ScheduleItem[], ageGroup: AgeGroup, fridgeIte
       return { ...it, meal: undefined, recipe: undefined, nutrition: undefined };
     }
     const { notes, primary } = dedupMealNotes(it.notes ?? it.activity, used, fridge, it.activity);
+    const customRecipe = findCustomRecipe(primary, customRecipes);
     return {
       ...it,
       notes,
       meal: primary,
-      recipe: recipeFor(primary),
+      recipe: customRecipe ?? recipeFor(primary),
       nutrition: nutritionFor(primary),
     };
   });
@@ -1327,7 +1373,7 @@ function attachMealMetadata(items: ScheduleItem[], ageGroup: AgeGroup, fridgeIte
 // Public entry: run the v2 post-processing on a generated routine.
 export function applyRoutineV2(items: ScheduleItem[], opts: AnchorOpts): ScheduleItem[] {
   const anchored = anchorMealWindows(items, opts);
-  const tagged = attachMealMetadata(anchored, opts.ageGroup, opts.fridgeItems);
+  const tagged = attachMealMetadata(anchored, opts.ageGroup, opts.fridgeItems, opts.customRecipes);
   // Sort by time so any anchored insertions land in the right place.
   return [...tagged].sort((a, b) => timeToMins(a.time) - timeToMins(b.time));
 }
@@ -1339,7 +1385,7 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     childName, ageGroup, wakeUpTime, sleepTime,
     schoolStartTime, schoolEndTime, travelMode, hasSchool,
     mood, foodType, region, specialPlans, fridgeItems, date,
-    p1Free, p2Free, bothBusy,
+    p1Free, p2Free, bothBusy, customRecipes,
   } = params;
 
   const seed = dateSeed(date, childName);
@@ -1598,6 +1644,7 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     schoolEndMins,
     ageGroup,
     fridgeItems,
+    customRecipes,
   });
   return { title, items: withRewardPoints(v2Items) };
 }

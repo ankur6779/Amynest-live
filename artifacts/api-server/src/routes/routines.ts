@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc, inArray, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
-import { db, routinesTable, childrenTable, parentProfilesTable } from "@workspace/db";
+import { db, routinesTable, childrenTable, parentProfilesTable, customRecipesTable } from "@workspace/db";
+import type { CustomRecipeEntry } from "../lib/routine-templates.js";
 import {
   getOrCreateSubscription,
   isPremiumNow,
@@ -72,6 +73,7 @@ async function generateAiRoutine(params: {
   childClass?: string;
   date: string;
   parentAvailSummary: string;
+  customRecipes?: CustomRecipeEntry[];
 }): Promise<{ title: string; items: RoutineItem[] }> {
   const { openai } = await import("@workspace/integrations-openai-ai-server");
 
@@ -205,6 +207,7 @@ NO-SCHOOL RULES — today is a school-free day:
     schoolEndMins: timeToMins(params.schoolEndTime),
     ageGroup: params.ageGroup,
     fridgeItems: params.fridgeItems,
+    customRecipes: params.customRecipes,
   });
 
   return {
@@ -435,6 +438,11 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     if (!parsed.data.region && pp?.region) region = pp.region;
   }
 
+  const userCustomRecipes = await db
+    .select()
+    .from(customRecipesTable)
+    .where(eq(customRecipesTable.userId, userId));
+
   const generated = generateRuleBasedRoutine({
     region: region as any,
     childName: child.name,
@@ -458,6 +466,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     bothBusy,
     childClass: (child as any).childClass ?? undefined,
     date: parsed.data.date,
+    customRecipes: userCustomRecipes,
   });
 
   res.json(GenerateRoutineResponse.parse(generated));
@@ -542,6 +551,11 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     ? `${parent1Role ?? "Parent 1"}: ${p1Status}; ${parent2Role}: ${p2Status}`
     : `${parent1Role ?? "Parent"}: ${p1Status}`;
 
+  const aiUserCustomRecipes = await db
+    .select()
+    .from(customRecipesTable)
+    .where(eq(customRecipesTable.userId, userId));
+
   try {
     const generated = await generateAiRoutine({
       childName: child.name,
@@ -562,6 +576,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       childClass: (child as any).childClass ?? undefined,
       date: parsed.data.date,
       parentAvailSummary,
+      customRecipes: aiUserCustomRecipes,
     });
     res.json(GenerateRoutineResponse.parse(generated));
   } catch {
@@ -590,6 +605,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       bothBusy,
       childClass: (child as any).childClass ?? undefined,
       date: parsed.data.date,
+      customRecipes: aiUserCustomRecipes,
     });
     res.json(GenerateRoutineResponse.parse(generated));
   }

@@ -22,6 +22,7 @@ import pushRouter from "./push";
 import notificationsRouter from "./notifications";
 import authDebugRouter from "./auth-debug";
 import featureFeedbackRouter from "./feature-feedback";
+import recipesRouter from "./recipes";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -58,5 +59,6 @@ router.use(featureFeedbackRouter);
 router.use(accountRouter);
 router.use(pushRouter);
 router.use(notificationsRouter);
+router.use(recipesRouter);
 
 export default router;
