@@ -13,8 +13,6 @@ import {
   Sparkles,
 } from "lucide-react";
 
-type MealTag = "Healthy" | "Quick" | "Protein" | "Veg" | "Non-Veg" | "Sweet";
-
 interface AiMeal {
   id: string;
   title: string;
@@ -25,7 +23,7 @@ interface AiMeal {
   ingredients: string[];
   steps: string[];
   calories: number;
-  tags: MealTag[];
+  tags: string[];
   prepMinutes: number;
   audioText: string;
   isVeg: boolean;

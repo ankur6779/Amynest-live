@@ -409,11 +409,12 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
         ? Math.min(120, Math.max(5, Number(o.prepMinutes) || 15))
         : parsePrepMinutes(String(o.time ?? "15 min"));
       const calories = Math.min(1200, Math.max(50, Number(o.calories) || 200));
-      const tags = (Array.isArray(o.tags) ? o.tags : [])
-        .slice(0, 4).map((t) => String(t).toLowerCase().slice(0, 20))
-        .filter((t) => SAFE_TAGS.has(t)) as ("Healthy" | "Quick" | "Protein" | "Veg" | "Non-Veg" | "Sweet")[];
+      const tags: string[] = (Array.isArray(o.tags) ? o.tags : [])
+        .slice(0, 4)
+        .map((t) => String(t).toLowerCase().trim().slice(0, 20))
+        .filter((t) => SAFE_TAGS.has(t));
       const isVegMeal = o.isVeg === true || o.isVeg === "true"
-        || tags.includes("veg" as never) || (isVeg === true);
+        || tags.includes("veg") || (isVeg === true);
 
       const bgGradient = AI_GENERATE_GRADIENTS[idx % AI_GENERATE_GRADIENTS.length] as [string, string];
       const id = slugify(title) + "-" + idx;
