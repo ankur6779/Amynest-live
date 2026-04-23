@@ -3,9 +3,15 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
-import { useSignIn, useOAuth } from "@clerk/clerk-expo";
+import { signInWithEmailAndPassword, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
+import { firebaseAuth } from "@/lib/firebase";
+import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
+
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
 import { Link, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,8 +35,12 @@ function useWarmUpBrowser() {
 
 export default function SignInScreen() {
   useWarmUpBrowser();
-  const { signIn, setActive, isLoaded } = useSignIn();
-  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+  const isLoaded = true;
+  const [, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
+    clientId: GOOGLE_WEB_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+  });
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -44,15 +54,12 @@ export default function SignInScreen() {
   const [showPass, setShowPass] = useState(false);
 
   const handleSignIn = async () => {
-    if (!isLoaded || !email || !password) return;
+    if (!email || !password) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLoading(true);
     try {
-      const result = await signIn.create({ identifier: email, password });
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-        router.replace("/(tabs)");
-      }
+      await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      router.replace("/(tabs)");
     } catch (err: unknown) {
       console.error("[sign-in] failed", err);
       Alert.alert("Sign In Failed", humanizeError(err, "Please check your details and try again."));
@@ -61,22 +68,49 @@ export default function SignInScreen() {
     }
   };
 
+  // Complete Google sign-in once expo-auth-session returns an idToken.
+  useEffect(() => {
+    const r = googleResponse as { type?: string; params?: Record<string, string> } | null;
+    if (r?.type !== "success") {
+      if (r && r.type !== "success") setGoogleLoading(false);
+      return;
+    }
+    const idToken = (r.params as { id_token?: string } | undefined)?.id_token;
+    if (!idToken) {
+      setGoogleLoading(false);
+      Alert.alert("Sign In Failed", "Google did not return an ID token.");
+      return;
+    }
+    (async () => {
+      try {
+        const cred = GoogleAuthProvider.credential(idToken);
+        await signInWithCredential(firebaseAuth, cred);
+        router.replace("/(tabs)");
+      } catch (err) {
+        console.error("[sign-in] google credential failed", err);
+        Alert.alert("Sign In Failed", humanizeError(err, "Google sign-in failed. Please try again."));
+      } finally {
+        setGoogleLoading(false);
+      }
+    })();
+  }, [googleResponse, router]);
+
   const handleGoogleSignIn = async () => {
+    if (!GOOGLE_WEB_CLIENT_ID) {
+      Alert.alert(
+        "Google Sign-In Not Configured",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is missing. Use email + password for now.",
+      );
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setGoogleLoading(true);
     try {
-      const redirectUrl = "amynest://login";
-      const { createdSessionId, setActive: oauthSetActive } = await startOAuthFlow({ redirectUrl });
-      if (createdSessionId && oauthSetActive) {
-        await oauthSetActive({ session: createdSessionId });
-        router.replace("/(tabs)");
-      }
-    } catch (err: unknown) {
-      console.error("[sign-in] google failed", err);
-      const msg = humanizeError(err, "Google sign-in failed. Please try again.");
-      Alert.alert("Sign In Failed", msg);
-    } finally {
+      await promptGoogle();
+    } catch (err) {
+      console.error("[sign-in] google prompt failed", err);
       setGoogleLoading(false);
+      Alert.alert("Sign In Failed", humanizeError(err, "Google sign-in failed. Please try again."));
     }
   };
 

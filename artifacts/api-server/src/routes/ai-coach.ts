@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { createHash, randomUUID } from "crypto";
 import { eq, desc, and } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, aiCacheTable, userProgressTable, userCoachSessionsTable } from "@workspace/db";
 import { logger } from "../lib/logger.js";
 import { GOAL_IDS, type GoalId } from "../lib/image-map.js";

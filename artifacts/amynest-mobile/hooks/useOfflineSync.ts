@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { AppState, type AppStateStatus } from "react-native";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@/lib/firebase-auth";
 import { useNetworkStore, selectIsOnline } from "@/store/useNetworkStore";
 import { useAppStore } from "@/store/useAppStore";
 import { syncOfflineData, setSyncAuthGetter } from "@/utils/syncService";

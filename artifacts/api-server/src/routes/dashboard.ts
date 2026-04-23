@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, inArray } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, childrenTable, routinesTable, behaviorsTable } from "@workspace/db";
 import { GetDashboardSummaryResponse, GetRecentRoutinesResponse, GetBehaviorStatsResponse } from "@workspace/api-zod";
 import { buildInsights, type RoutineItem } from "../services/insightsService";

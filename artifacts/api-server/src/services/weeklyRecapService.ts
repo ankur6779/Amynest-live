@@ -1,5 +1,5 @@
 import { eq, and, or, isNull, lt } from "drizzle-orm";
-import { clerkClient } from "@clerk/express";
+import { adminAuth } from "../lib/firebase-admin";
 import { db, parentProfilesTable, type ParentProfile } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { sendEmail, isEmailConfigured } from "../lib/email";
@@ -271,10 +271,8 @@ export function composeWeeklyRecap(
 
 async function getPrimaryEmail(userId: string): Promise<string | null> {
   try {
-    const user = await clerkClient.users.getUser(userId);
-    const primaryId = user.primaryEmailAddressId;
-    const primary = user.emailAddresses.find((e) => e.id === primaryId);
-    return primary?.emailAddress ?? user.emailAddresses[0]?.emailAddress ?? null;
+    const user = await adminAuth().getUser(userId);
+    return user.email ?? null;
   } catch (err) {
     logger.warn({ err, userId }, "Could not load Clerk user for weekly recap");
     return null;

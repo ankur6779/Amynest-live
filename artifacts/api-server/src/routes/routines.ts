@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc, inArray, sql } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, routinesTable, childrenTable, parentProfilesTable } from "@workspace/db";
 import {
   getOrCreateSubscription,

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, parentProfilesTable } from "@workspace/db";
 import { sendRecapForUser, dispatchWeeklyRecaps } from "../services/weeklyRecapService";
 import { logger } from "../lib/logger";

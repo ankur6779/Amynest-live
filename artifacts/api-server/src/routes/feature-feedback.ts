@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { z } from "zod";
 import { db, featureFeedbackTable } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";

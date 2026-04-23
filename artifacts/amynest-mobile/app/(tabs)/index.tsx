@@ -4,7 +4,7 @@ import {
   TouchableOpacity, FlatList, Platform, ActivityIndicator,
   Modal, Pressable, Animated, Dimensions, Easing, Image,
 } from "react-native";
-import { useUser } from "@clerk/clerk-expo";
+import { useUser } from "@/lib/firebase-auth";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";

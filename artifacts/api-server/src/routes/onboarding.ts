@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, onboardingProfilesTable, childrenTable, parentProfilesTable } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 

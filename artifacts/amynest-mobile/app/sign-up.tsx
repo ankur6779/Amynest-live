@@ -3,9 +3,15 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
-import { useSignUp, useOAuth } from "@clerk/clerk-expo";
+import { createUserWithEmailAndPassword, updateProfile, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
+import { firebaseAuth } from "@/lib/firebase";
+import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
+
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
 import { Link, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,8 +33,12 @@ function useWarmUpBrowser() {
 
 export default function SignUpScreen() {
   useWarmUpBrowser();
-  const { signUp, setActive, isLoaded } = useSignUp();
-  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+  const isLoaded = true;
+  const [, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
+    clientId: GOOGLE_WEB_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+  });
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -42,7 +52,6 @@ export default function SignUpScreen() {
   const [showPass, setShowPass] = useState(false);
 
   const handleSignUp = async () => {
-    if (!isLoaded) return;
     if (firstName.trim().length < 2) {
       Alert.alert("Invalid Name", "Please enter your first name (at least 2 characters).");
       return;
@@ -59,9 +68,15 @@ export default function SignUpScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLoading(true);
     try {
-      await signUp.create({ firstName: firstName.trim(), emailAddress: email.trim(), password });
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      setStep("verify");
+      const cred = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      try {
+        await updateProfile(cred.user, { displayName: firstName.trim() });
+      } catch {
+        /* non-fatal */
+      }
+      // Firebase Auth treats accounts as immediately active. We skip the
+      // separate "verify code" step Clerk required and go straight to onboarding.
+      router.replace("/onboarding");
     } catch (err: unknown) {
       console.error("[sign-up] create failed", err);
       Alert.alert("Sign Up Failed", humanizeError(err, "Please try again."));
@@ -71,38 +86,55 @@ export default function SignUpScreen() {
   };
 
   const handleVerify = async () => {
-    if (!isLoaded) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setLoading(true);
-    try {
-      const result = await signUp.attemptEmailAddressVerification({ code });
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-        router.replace("/onboarding");
-      }
-    } catch (err: unknown) {
-      console.error("[sign-up] verify failed", err);
-      Alert.alert("Verification Failed", humanizeError(err, "Invalid code. Please try again."));
-    } finally {
-      setLoading(false);
-    }
+    // Firebase Auth doesn't require an email verification code to sign in.
+    // This handler stays as a no-op for the legacy two-step UI; in practice
+    // the account is created and signed in by handleSignUp above.
+    router.replace("/onboarding");
   };
 
+  // Complete Google sign-up once expo-auth-session returns an idToken.
+  useEffect(() => {
+    const r = googleResponse as { type?: string; params?: Record<string, string> } | null;
+    if (r?.type !== "success") {
+      if (r && r.type !== "success") setGoogleLoading(false);
+      return;
+    }
+    const idToken = (r.params as { id_token?: string } | undefined)?.id_token;
+    if (!idToken) {
+      setGoogleLoading(false);
+      Alert.alert("Sign Up Failed", "Google did not return an ID token.");
+      return;
+    }
+    (async () => {
+      try {
+        const cred = GoogleAuthProvider.credential(idToken);
+        await signInWithCredential(firebaseAuth, cred);
+        router.replace("/onboarding");
+      } catch (err) {
+        console.error("[sign-up] google credential failed", err);
+        Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));
+      } finally {
+        setGoogleLoading(false);
+      }
+    })();
+  }, [googleResponse, router]);
+
   const handleGoogleSignUp = async () => {
+    if (!GOOGLE_WEB_CLIENT_ID) {
+      Alert.alert(
+        "Google Sign-In Not Configured",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is missing. Use email + password for now.",
+      );
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setGoogleLoading(true);
     try {
-      const redirectUrl = "amynest://login";
-      const { createdSessionId, setActive: oauthSetActive } = await startOAuthFlow({ redirectUrl });
-      if (createdSessionId && oauthSetActive) {
-        await oauthSetActive({ session: createdSessionId });
-        router.replace("/onboarding");
-      }
-    } catch (err: unknown) {
-      console.error("[sign-up] google failed", err);
-      Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));
-    } finally {
+      await promptGoogle();
+    } catch (err) {
+      console.error("[sign-up] google prompt failed", err);
       setGoogleLoading(false);
+      Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));
     }
   };
 

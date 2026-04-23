@@ -1,5 +1,5 @@
-import { getAuth } from "@clerk/express";
 import type { Request, Response, NextFunction } from "express";
+import { adminAuth } from "../lib/firebase-admin";
 import { logger } from "../lib/logger";
 
 /**
@@ -19,62 +19,70 @@ function unsafeDecodeJwtPayload(token: string): Record<string, unknown> | null {
   }
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) {
-    // Diagnostic logging — when auth fails in production, we need to see WHY.
-    // Without this, every 401 is a black box and we can't fix the real cause.
-    const authHeader = req.headers["authorization"] || "";
-    const hasBearer = typeof authHeader === "string" && authHeader.startsWith("Bearer ");
-    const token = hasBearer ? (authHeader as string).slice(7) : "";
+/**
+ * Verifies a Firebase ID token from the `Authorization: Bearer <token>`
+ * header and attaches `{ userId, email, ... }` to `req.firebaseAuth`.
+ * Call sites then read it via `getAuth(req)` from `lib/auth.ts`.
+ */
+export async function requireAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const authHeader = req.headers["authorization"] || "";
+  const hasBearer = typeof authHeader === "string" && authHeader.startsWith("Bearer ");
+  const token = hasBearer ? (authHeader as string).slice(7).trim() : "";
 
-    let payloadDiag: Record<string, unknown> = {};
-    if (token) {
-      const payload = unsafeDecodeJwtPayload(token);
-      if (payload) {
-        const now = Math.floor(Date.now() / 1000);
-        payloadDiag = {
-          jwt_sub: payload.sub,
-          jwt_iss: payload.iss,
-          jwt_azp: payload.azp,
-          jwt_aud: payload.aud,
-          jwt_exp: payload.exp,
-          jwt_iat: payload.iat,
-          jwt_expired:
-            typeof payload.exp === "number" ? payload.exp < now : null,
-          jwt_age_sec:
-            typeof payload.iat === "number" ? now - payload.iat : null,
-          jwt_ttl_sec:
-            typeof payload.exp === "number" ? payload.exp - now : null,
-        };
-      } else {
-        payloadDiag = { jwt_decode_failed: true };
-      }
-    }
-
+  if (!token) {
     logger.warn(
       {
         kind: "require_auth_unauthorized",
+        reason: "missing_bearer",
         url: req.originalUrl?.split("?")[0],
         method: req.method,
-        has_auth_header: hasBearer,
-        token_len: token.length,
-        clerk_session_id: auth?.sessionId ?? null,
-        clerk_user_id: auth?.userId ?? null,
-        clerk_session_status: (auth as any)?.sessionStatus ?? null,
-        // Clerk's @clerk/express attaches a `reason` when verification fails.
-        clerk_auth_reason: (auth as any)?.reason ?? null,
-        clerk_auth_message: (auth as any)?.message ?? null,
         user_agent: req.headers["user-agent"],
         origin: req.headers["origin"],
-        ...payloadDiag,
       },
-      "requireAuth rejected request",
+      "requireAuth rejected request — no bearer token",
     );
-
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  next();
+
+  try {
+    const decoded = await adminAuth().verifyIdToken(token);
+    req.firebaseAuth = {
+      userId: decoded.uid,
+      email: decoded.email ?? null,
+      emailVerified: decoded.email_verified === true,
+      name: (decoded.name as string | undefined) ?? null,
+      picture: (decoded.picture as string | undefined) ?? null,
+    };
+    next();
+    return;
+  } catch (err) {
+    const payload = unsafeDecodeJwtPayload(token);
+    const now = Math.floor(Date.now() / 1000);
+    logger.warn(
+      {
+        kind: "require_auth_unauthorized",
+        reason: "verify_failed",
+        url: req.originalUrl?.split("?")[0],
+        method: req.method,
+        token_len: token.length,
+        verify_error: err instanceof Error ? err.message : String(err),
+        jwt_sub: payload?.sub,
+        jwt_iss: payload?.iss,
+        jwt_aud: payload?.aud,
+        jwt_exp: payload?.exp,
+        jwt_expired:
+          payload && typeof payload.exp === "number" ? payload.exp < now : null,
+        user_agent: req.headers["user-agent"],
+        origin: req.headers["origin"],
+      },
+      "requireAuth rejected request — token verification failed",
+    );
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
 }

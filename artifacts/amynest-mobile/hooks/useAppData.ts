@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@/lib/firebase-auth";
 import { useAppStore } from "@/store/useAppStore";
 import { setApiAuthGetter } from "@/services/api";
 

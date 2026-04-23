@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { db, babysittersTable } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import {
   ListBabysittersResponse,
   ListBabysittersResponseItem as BabysitterSchema,

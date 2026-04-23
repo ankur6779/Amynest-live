@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Home, Users, Calendar, Star, Menu, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useClerk, useUser } from "@clerk/react";
+import { useClerk, useUser } from "@/lib/firebase-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/brand-logo";
 import { AmyFab } from "@/components/amy-fab";
@@ -129,7 +129,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {/* User profile — fixed at top */}
               <div className="flex items-center gap-3 px-4 pt-5 pb-4 border-b shrink-0">
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src={user?.imageUrl} />
+                  <AvatarImage src={user?.imageUrl ?? undefined} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
                     {initials.toUpperCase()}
                   </AvatarFallback>
@@ -234,7 +234,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="border-t p-4">
             <div className="flex items-center gap-3 mb-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.imageUrl} />
+                <AvatarImage src={user?.imageUrl ?? undefined} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                   {initials.toUpperCase()}
                 </AvatarFallback>

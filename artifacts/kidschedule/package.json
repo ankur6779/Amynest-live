@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "build": "vite build --config vite.config.ts",
+    "dev": "VITE_FIREBASE_API_KEY=$FIREBASE_API_KEY VITE_FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN VITE_FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID VITE_FIREBASE_APP_ID=$FIREBASE_APP_ID VITE_FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID vite --config vite.config.ts --host 0.0.0.0",
+    "build": "VITE_FIREBASE_API_KEY=$FIREBASE_API_KEY VITE_FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN VITE_FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID VITE_FIREBASE_APP_ID=$FIREBASE_APP_ID VITE_FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -75,20 +75,20 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "@clerk/react": "^6.2.1",
-    "@workspace/life-skills": "workspace:*",
-    "i18next": "^26.0.5",
-    "i18next-browser-languagedetector": "^8.2.1",
-    "react-i18next": "^17.0.4",
     "@workspace/behavior-tracker": "workspace:*",
+    "@workspace/event-prep": "workspace:*",
     "@workspace/family-routine": "workspace:*",
     "@workspace/infant-hub": "workspace:*",
-    "@workspace/event-prep": "workspace:*",
+    "@workspace/infant-problems": "workspace:*",
+    "@workspace/life-skills": "workspace:*",
     "@workspace/morning-flow": "workspace:*",
     "@workspace/olympiad": "workspace:*",
+    "@workspace/ptm-prep": "workspace:*",
     "@workspace/study-zone": "workspace:*",
     "@workspace/tiffin-feedback": "workspace:*",
-    "@workspace/ptm-prep": "workspace:*",
-    "@workspace/infant-problems": "workspace:*"
+    "firebase": "^12.12.1",
+    "i18next": "^26.0.5",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "react-i18next": "^17.0.4"
   }
 }

@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
+import { requireAuth } from "../middlewares/requireAuth";
 import { suggestMeals, type MealRegion } from "../lib/meal-suggestions";
 import { logger } from "../lib/logger.js";
 
@@ -156,8 +157,8 @@ RULES:
 Generate exactly ${count} meals as a JSON array.`;
 }
 
-router.get("/meals/generate", async (req, res): Promise<void> => {
-  // ── Auth — require login to prevent abuse ──────────────────────────────
+router.get("/meals/generate", requireAuth, async (req, res): Promise<void> => {
+  // ── Auth — requireAuth middleware guarantees a userId here ─────────────
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Login required to use meal generator." });

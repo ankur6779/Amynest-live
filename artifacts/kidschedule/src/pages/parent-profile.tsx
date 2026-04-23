@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useAuth } from "@clerk/react";
+import { useUser, useAuth } from "@/lib/firebase-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -190,7 +190,7 @@ export default function ParentProfilePage() {
           <div className="flex items-center gap-5">
             <div className="relative shrink-0">
               <Avatar className="h-20 w-20 ring-2 ring-primary/20">
-                <AvatarImage src={user?.imageUrl} />
+                <AvatarImage src={user?.imageUrl ?? undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
                   {profile.name ? profile.name[0]?.toUpperCase() : (user?.firstName?.[0] ?? "U")}
                 </AvatarFallback>

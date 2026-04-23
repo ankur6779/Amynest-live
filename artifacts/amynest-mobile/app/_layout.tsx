@@ -1,5 +1,4 @@
-import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
-import * as SecureStore from "expo-secure-store";
+import { FirebaseAuthProvider, useAuth } from "@/lib/firebase-auth";
 import * as WebBrowser from "expo-web-browser";
 import { loadTutorialStatus, subscribeTutorialStatus, getTutorialStatus } from "@/utils/tutorialState";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -35,18 +34,6 @@ const queryClient = new QueryClient({
 });
 
 setBaseUrl(API_BASE_URL);
-
-const tokenCache = {
-  async getToken(key: string) {
-    try { return await SecureStore.getItemAsync(key); } catch { return null; }
-  },
-  async saveToken(key: string, value: string) {
-    try { await SecureStore.setItemAsync(key, value); } catch { /* ignore */ }
-  },
-  async clearToken(key: string) {
-    try { await SecureStore.deleteItemAsync(key); } catch { /* ignore */ }
-  },
-};
 
 type OnboardingStatus = "unknown" | "checking" | "complete" | "incomplete" | "error";
 type TutorialStatus = "checking" | "needed" | "done";
@@ -255,10 +242,8 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
-
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+    <FirebaseAuthProvider>
       <SafeAreaProvider>
         <ThemeProvider>
           <ErrorBoundary>
@@ -276,6 +261,6 @@ export default function RootLayout() {
           </ErrorBoundary>
         </ThemeProvider>
       </SafeAreaProvider>
-    </ClerkProvider>
+    </FirebaseAuthProvider>
   );
 }

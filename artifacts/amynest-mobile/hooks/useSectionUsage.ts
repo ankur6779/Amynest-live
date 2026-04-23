@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@/lib/firebase-auth";
 // AsyncStorage is already a peer dep of clerk-expo + many other libs in this app.
 import { useSubscriptionStore, selectIsPremium } from "@/store/useSubscriptionStore";
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/firebase-auth";
 import { useSubscription } from "./use-subscription";
 
 // Source the canonical Clerk userId directly — the subscription payload does

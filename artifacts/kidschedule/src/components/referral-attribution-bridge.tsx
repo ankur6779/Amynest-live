@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/firebase-auth";
 import {
   capturePendingReferralCode,
   clearPendingReferralCode,

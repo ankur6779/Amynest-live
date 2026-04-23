@@ -16,7 +16,7 @@ import {
   LayoutGrid,
   type LucideIcon,
 } from "lucide-react";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/lib/firebase-auth";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

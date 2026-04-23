@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, inArray } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, behaviorsTable, childrenTable } from "@workspace/db";
 import {
   CreateBehaviorLogBody,

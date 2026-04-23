@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, inArray, or } from "drizzle-orm";
-import { getAuth, clerkClient } from "@clerk/express";
+import { getAuth } from "../lib/auth";
+import { adminAuth } from "../lib/firebase-admin";
 import {
   db,
   childrenTable,
@@ -59,9 +60,9 @@ router.delete("/account", async (req, res): Promise<void> => {
     });
 
     try {
-      await clerkClient.users.deleteUser(userId);
+      await adminAuth().deleteUser(userId);
     } catch (err) {
-      logger.warn({ err, userId }, "Clerk user delete failed (data already wiped)");
+      logger.warn({ err, userId }, "Firebase user delete failed (data already wiped)");
     }
 
     res.json({ ok: true });

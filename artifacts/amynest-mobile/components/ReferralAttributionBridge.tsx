@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@/lib/firebase-auth";
 import * as Linking from "expo-linking";
 import {
   readPendingReferralCode,

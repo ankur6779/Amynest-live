@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@/lib/firebase-auth";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 
 export function useProfileComplete() {

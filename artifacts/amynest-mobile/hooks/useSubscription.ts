@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAuth, useUser } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@/lib/firebase-auth";
 import { useRouter } from "expo-router";
 import { useSubscriptionStore, selectIsPremium } from "@/store/useSubscriptionStore";
 import { setSubscriptionAuthGetter } from "@/services/subscriptionApi";

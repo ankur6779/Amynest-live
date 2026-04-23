@@ -1,4 +1,4 @@
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@/lib/firebase-auth";
 import { useCallback } from "react";
 import { API_BASE_URL } from "@/constants/api";
 
