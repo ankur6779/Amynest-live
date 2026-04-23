@@ -1,31 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { AmyIcon } from "@/components/amy-icon";
-import { TiffinFeedbackPanel, loadHistory as loadTiffinHistory } from "@/components/tiffin-feedback-panel";
-import { getLearningSignals, type TiffinHistory } from "@workspace/tiffin-feedback";
 import {
   Utensils,
   X,
   Volume2,
   VolumeX,
-  Plus,
   ChefHat,
   Flame,
   Clock,
-  Search,
   Sparkles,
 } from "lucide-react";
 
 type MealTag = "Healthy" | "Quick" | "Protein" | "Veg" | "Non-Veg" | "Sweet";
 
-interface RankedMeal {
+interface AiMeal {
   id: string;
   title: string;
   emoji: string;
   bgGradient: [string, string];
   region: string;
-  category: "kids_tiffin" | "parent_healthy";
+  category: string;
   ingredients: string[];
   steps: string[];
   calories: number;
@@ -37,36 +33,14 @@ interface RankedMeal {
   missingIngredients: string[];
 }
 
-interface SuggestionResult {
-  meals: RankedMeal[];
+interface AiGenerateResult {
+  meals: AiMeal[];
   amyMessage: string;
-  usedFallback: boolean;
 }
 
 type Audience = "kids_tiffin" | "parent_healthy";
 
-const FRIDGE_QUICK = [
-  "milk", "bread", "paneer", "egg", "rice", "dal",
-  "potato", "onion", "tomato", "curd", "cheese", "oats",
-];
-
-const STORAGE_FRIDGE = "amynest.fridge_items.v1";
 const STORAGE_VOICE = "amynest.tts_voice.v1";
-
-function loadFridge(): string[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_FRIDGE);
-    return raw ? (JSON.parse(raw) as string[]).slice(0, 30) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveFridge(items: string[]) {
-  try {
-    localStorage.setItem(STORAGE_FRIDGE, JSON.stringify(items));
-  } catch {}
-}
 
 function loadVoicePref(): "female" | "male" {
   try {
@@ -77,61 +51,40 @@ function loadVoicePref(): "female" | "male" {
   }
 }
 
+const PLACEHOLDER_QUERIES: Record<Audience, string[]> = {
+  kids_tiffin: [
+    "Quick tiffin for school morning using paneer",
+    "Healthy snack for 6-year-old with egg and bread",
+    "Veg lunch ideas for toddler under 20 minutes",
+    "High-protein breakfast for kids without milk",
+  ],
+  parent_healthy: [
+    "High-protein breakfast under 300 calories",
+    "Light dinner for weight loss with vegetables",
+    "Quick healthy lunch with leftover rice and dal",
+    "Low-carb snack ideas for evening",
+  ],
+};
+
 export function SmartMealSuggestions() {
   const authFetch = useAuthFetch();
   const [audience, setAudience] = useState<Audience>("kids_tiffin");
   const [region, setRegion] = useState<string>("pan_indian");
   const [isVeg, setIsVeg] = useState<boolean | undefined>(undefined);
   const [childAge, setChildAge] = useState<number | undefined>(undefined);
-  const [fridge, setFridge] = useState<string[]>(() => loadFridge());
-  const [fridgeInput, setFridgeInput] = useState("");
-  const [allMeals, setAllMeals] = useState<RankedMeal[]>([]);
+  const [query, setQuery] = useState("");
+  const [meals, setMeals] = useState<AiMeal[]>([]);
   const [amyMessage, setAmyMessage] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(false);
-  const [openMeal, setOpenMeal] = useState<RankedMeal | null>(null);
-  const [tiffinHistory, setTiffinHistory] = useState<TiffinHistory>(() => loadTiffinHistory());
-  const [manualSearch, setManualSearch] = useState(0);
-  // Rotating display offset — each click shows a different window of 5 meals
-  const [displayOffset, setDisplayOffset] = useState(0);
-  const [searchFlash, setSearchFlash] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [openMeal, setOpenMeal] = useState<AiMeal | null>(null);
+  const [hasGenerated, setHasGenerated] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
-  const learning = useMemo(() => getLearningSignals(tiffinHistory), [tiffinHistory]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // 5 meals shown at a time, rotating through the full ranked pool
-  const DISPLAY_COUNT = 5;
-  const displayedMeals = useMemo(() => {
-    if (allMeals.length === 0) return [];
-    const doubled = [...allMeals, ...allMeals]; // allow wrap-around
-    return doubled.slice(displayOffset, displayOffset + DISPLAY_COUNT);
-  }, [allMeals, displayOffset]);
+  const placeholders = PLACEHOLDER_QUERIES[audience];
+  const placeholder = placeholders[0];
 
-  // Derived data object for TiffinFeedbackPanel compat
-  const data = useMemo(
-    () => allMeals.length > 0 ? { meals: allMeals, amyMessage, usedFallback: false } : null,
-    [allMeals, amyMessage],
-  );
-
-  const handleFindCook = () => {
-    if (fridge.length > 0) {
-      // Fridge items exist → always re-fetch so results are freshly ranked
-      // by what's in the fridge. Rotation makes no sense here because the
-      // user wants "what CAN I make right now" — the top results are the answer.
-      setManualSearch(n => n + 1);
-      setDisplayOffset(0);
-    } else if (allMeals.length > 0) {
-      // No fridge — browse mode: just rotate the display window
-      setDisplayOffset(prev => (prev + DISPLAY_COUNT) % Math.max(allMeals.length, 1));
-    } else {
-      // No meals yet at all — trigger a fresh fetch
-      setManualSearch(n => n + 1);
-    }
-    setSearchFlash(true);
-    setTimeout(() => setSearchFlash(false), 800);
-    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
-  };
-
-  // Pull region + diet from parent profile + first child age once
   useEffect(() => {
     let cancelled = false;
     Promise.all([
@@ -149,55 +102,51 @@ export function SmartMealSuggestions() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist fridge
-  useEffect(() => { saveFridge(fridge); }, [fridge]);
-
-  // Fetch suggestions whenever core inputs change (not manualSearch — rotation is client-side)
-  useEffect(() => {
-    let cancelled = false;
+  const handleGenerate = async () => {
+    const effectiveQuery = query.trim() || placeholder;
     setLoading(true);
-    setFetchError(false);
-    const params = new URLSearchParams();
-    params.set("region", region);
-    params.set("audience", audience);
-    if (fridge.length > 0) params.set("fridge", fridge.join(","));
-    if (audience === "kids_tiffin" && childAge != null) {
-      params.set("childAge", String(childAge));
-    }
-    if (isVeg === true) params.set("isVeg", "true");
-    if (audience === "kids_tiffin") {
-      if (learning.liked.length > 0) params.set("liked", learning.liked.join(","));
-      if (learning.disliked.length > 0) params.set("disliked", learning.disliked.join(","));
-    }
-    // /api/meals/suggest is now a public endpoint — plain fetch, no auth needed
-    fetch(`/api/meals/suggest?${params.toString()}`)
-      .then(r => r.ok ? r.json() : null)
-      .then((r: SuggestionResult | null) => {
-        if (!cancelled) {
-          setAllMeals(r?.meals ?? []);
-          setAmyMessage(r?.amyMessage ?? "");
-          setDisplayOffset(0);
-          setLoading(false);
-          setFetchError(!r);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoading(false);
-          setFetchError(true);
-        }
-      });
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [region, audience, fridge, childAge, isVeg, learning.liked.join(","), learning.disliked.join(","), manualSearch]);
+    setFetchError(null);
+    setMeals([]);
+    setAmyMessage("");
 
-  const addFridgeItem = (raw: string) => {
-    const v = raw.trim().toLowerCase();
-    if (!v) return;
-    setFridge(prev => prev.includes(v) ? prev : [...prev, v].slice(0, 30));
-    setFridgeInput("");
+    try {
+      const res = await authFetch("/api/meals/ai-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: effectiveQuery,
+          region,
+          audience,
+          childAge: audience === "kids_tiffin" ? childAge : undefined,
+          isVeg,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? `Server error ${res.status}`);
+      }
+
+      const data = await res.json() as AiGenerateResult;
+      setMeals(data.meals ?? []);
+      setAmyMessage(data.amyMessage ?? "");
+      setHasGenerated(true);
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : "Something went wrong. Please retry.");
+    } finally {
+      setLoading(false);
+    }
   };
-  const removeFridgeItem = (v: string) => setFridge(prev => prev.filter(x => x !== v));
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") { e.preventDefault(); void handleGenerate(); }
+  };
+
+  const handleSuggestionClick = (q: string) => {
+    setQuery(q);
+    inputRef.current?.focus();
+  };
 
   return (
     <div className="rounded-2xl border border-violet-100 dark:border-violet-400/20 bg-gradient-to-br from-violet-50/60 via-white to-amber-50/40 dark:from-violet-500/8 dark:via-slate-900/30 dark:to-amber-500/8 overflow-hidden">
@@ -208,14 +157,18 @@ export function SmartMealSuggestions() {
             🍱
           </div>
           <div className="min-w-0">
-            <p className="font-quicksand font-bold text-[15px] text-foreground truncate">Smart Tiffin & Meal Suggestions</p>
-            <p className="text-[11px] text-muted-foreground truncate">Personalised by region, fridge & age</p>
+            <p className="font-quicksand font-bold text-[15px] text-foreground truncate">
+              Amy AI Meal Generator
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              Describe what you want — Amy generates recipes instantly
+            </p>
           </div>
         </div>
         {/* Audience toggle */}
         <div className="flex bg-white/70 dark:bg-slate-900/40 border border-border rounded-full p-0.5 shrink-0">
           <button
-            onClick={() => setAudience("kids_tiffin")}
+            onClick={() => { setAudience("kids_tiffin"); setMeals([]); setHasGenerated(false); }}
             className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${
               audience === "kids_tiffin"
                 ? "bg-violet-600 text-white shadow"
@@ -226,7 +179,7 @@ export function SmartMealSuggestions() {
             Kids
           </button>
           <button
-            onClick={() => setAudience("parent_healthy")}
+            onClick={() => { setAudience("parent_healthy"); setMeals([]); setHasGenerated(false); }}
             className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${
               audience === "parent_healthy"
                 ? "bg-violet-600 text-white shadow"
@@ -239,140 +192,117 @@ export function SmartMealSuggestions() {
         </div>
       </div>
 
-      {/* 🍱 Tiffin Feedback — daily input + Top Liked + Amy hint */}
-      {audience === "kids_tiffin" && (
-        <TiffinFeedbackPanel
-          pickableMeals={(data?.meals ?? []).map(m => ({
-            id: m.id, title: m.title, emoji: m.emoji, tag: m.tags[0],
-          }))}
-          onChange={setTiffinHistory}
+      {/* Query input area */}
+      <div className="px-4 pt-4 pb-3">
+        <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
+          What would you like to cook today?
+        </label>
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          maxLength={300}
+          className="w-full h-11 px-3.5 rounded-xl border border-border bg-white dark:bg-slate-900/40 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400 transition-all"
+          data-testid="meals-query-input"
         />
-      )}
 
-      {/* Amy AI message */}
-      {data && (
-        <div className="px-4 pt-3">
-          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/50 border border-violet-100 dark:border-violet-400/20">
-            <AmyIcon size={18} bounce />
-            <p className="text-[12.5px] leading-snug text-foreground/90"
-               dangerouslySetInnerHTML={{ __html: amyMessageHTML(data.amyMessage) }} />
-          </div>
-        </div>
-      )}
-
-      {/* Fridge input */}
-      <div className="px-4 pt-3">
-        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
-          <Search className="h-3 w-3" /> What's in your fridge? <span className="text-muted-foreground/60 normal-case font-medium">(optional)</span>
-        </div>
-        <div className="flex gap-2">
-          <input
-            value={fridgeInput}
-            onChange={e => setFridgeInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addFridgeItem(fridgeInput); } }}
-            placeholder="e.g. paneer"
-            className="flex-1 h-9 px-3 rounded-lg border border-border bg-white dark:bg-slate-900/40 text-sm focus:outline-none focus:border-violet-400"
-            data-testid="meals-fridge-input"
-          />
-          <button
-            onClick={() => addFridgeItem(fridgeInput)}
-            className="h-9 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs flex items-center gap-1"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add
-          </button>
-        </div>
-
-        {/* Quick chips */}
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {FRIDGE_QUICK.filter(x => !fridge.includes(x)).slice(0, 8).map(x => (
+        {/* Quick suggestion chips */}
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
+          {placeholders.slice(1).map(q => (
             <button
-              key={x}
-              onClick={() => addFridgeItem(x)}
-              className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-border hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 text-muted-foreground hover:text-foreground transition-all"
+              key={q}
+              type="button"
+              onClick={() => handleSuggestionClick(q)}
+              className="text-[11px] px-2.5 py-1 rounded-full border border-dashed border-violet-200 dark:border-violet-400/30 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 text-muted-foreground hover:text-foreground transition-all"
             >
-              + {x}
+              {q}
             </button>
           ))}
         </div>
 
-        {fridge.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2.5">
-            {fridge.map(x => (
-              <span key={x} className="inline-flex items-center gap-1 text-[11px] font-bold pl-2 pr-1 py-0.5 rounded-full bg-violet-100 dark:bg-violet-500/25 text-violet-700 dark:text-violet-200 border border-violet-200 dark:border-violet-400/30">
-                {x}
-                <button onClick={() => removeFridgeItem(x)} className="hover:bg-violet-200 dark:hover:bg-violet-400/30 rounded-full p-0.5">
-                  <X className="h-2.5 w-2.5" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* CTA: Find What I Can Cook */}
+        {/* Generate button */}
         <button
           type="button"
-          onClick={handleFindCook}
-          className={`mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${
-            searchFlash
-              ? "bg-orange-500 text-white scale-[0.97] shadow-lg"
-              : "bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-md hover:shadow-lg hover:scale-[1.01]"
-          }`}
-          data-testid="meals-find-cook-btn"
+          onClick={() => void handleGenerate()}
+          disabled={loading}
+          className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.98]"
+          data-testid="meals-generate-btn"
         >
-          <Search className="h-4 w-4" />
-          🔍 Find What I Can Cook
-          <Sparkles className="h-3.5 w-3.5 opacity-80" />
+          {loading ? (
+            <>
+              <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+              Amy is cooking up recipes…
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Generate with Amy AI
+            </>
+          )}
         </button>
       </div>
 
-      {/* Cards — with fridge-mode header */}
-      <div ref={resultsRef} className="mt-3 px-1 pb-4">
-        {/* Fridge mode header */}
-        {!loading && !fetchError && fridge.length > 0 && displayedMeals.length > 0 && (
-          <div className="mx-3 mb-2 flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
-              🧊 Aapke fridge se bana sakte ho
-            </span>
-            <span className="text-[10px] text-muted-foreground">
-              — {fridge.join(", ")} se
-            </span>
+      {/* Amy message */}
+      {amyMessage && !loading && (
+        <div className="px-4 pb-2">
+          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/50 border border-violet-100 dark:border-violet-400/20">
+            <AmyIcon size={18} bounce />
+            <p className="text-[12.5px] leading-snug text-foreground/90">{amyMessage}</p>
           </div>
-        )}
+        </div>
+      )}
 
+      {/* Results */}
+      <div ref={resultsRef} className="pb-4">
         {loading ? (
-          <div className="flex gap-3 px-3 overflow-hidden">
+          <div className="flex gap-3 px-4 overflow-hidden">
             {[0, 1, 2, 3, 4].map(i => (
               <div key={i} className="shrink-0 w-[160px] h-[200px] rounded-2xl bg-muted animate-pulse" />
             ))}
           </div>
         ) : fetchError ? (
-          <div className="mx-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/20 text-center">
-            <p className="text-sm text-red-600 dark:text-red-400 font-medium">Meals load nahi hue. Retry karo.</p>
-            <button type="button" onClick={() => setManualSearch(n => n + 1)} className="mt-2 text-xs text-red-600 underline">Retry</button>
+          <div className="mx-4 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/20 text-center">
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{fetchError}</p>
+            <button
+              type="button"
+              onClick={() => void handleGenerate()}
+              className="mt-2 text-xs text-red-600 dark:text-red-400 underline font-bold"
+            >
+              Try again
+            </button>
           </div>
-        ) : displayedMeals.length > 0 ? (
-          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-3 pb-2 scroll-smooth" style={{ scrollbarWidth: "thin" }}>
-            {displayedMeals.map((m, i) => (
+        ) : meals.length > 0 ? (
+          <div
+            className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-2 scroll-smooth"
+            style={{ scrollbarWidth: "thin" }}
+          >
+            {meals.map((m, i) => (
               <MealCard
-                key={`${m.id}-${displayOffset}-${i}`}
+                key={m.id}
                 meal={m}
                 showCalories={audience === "parent_healthy"}
-                fridgeMode={fridge.length > 0}
                 onOpen={() => setOpenMeal(m)}
-                style={{ animationDelay: `${i * 50}ms` }}
+                style={{ animationDelay: `${i * 60}ms` }}
               />
             ))}
           </div>
+        ) : !hasGenerated ? (
+          <div className="px-4 py-5 text-center">
+            <div className="text-3xl mb-2">🍱</div>
+            <p className="text-sm text-muted-foreground">
+              Type what you want to cook above and hit{" "}
+              <span className="font-bold text-violet-600">Generate</span> — Amy will create personalised recipes just for you.
+            </p>
+          </div>
         ) : (
-          <div className="text-center py-6 text-sm text-muted-foreground">
-            {fridge.length > 0
-              ? "Koi meal nahi mila in ingredients se. Kuch aur add karo fridge mein."
-              : "No meals found."}
+          <div className="px-4 py-4 text-center text-sm text-muted-foreground">
+            No meals found. Try a different description.
           </div>
         )}
       </div>
 
-      {/* Recipe modal — rendered via portal so it escapes overflow:hidden */}
       {openMeal && createPortal(
         <RecipeModal
           meal={openMeal}
@@ -387,19 +317,14 @@ export function SmartMealSuggestions() {
 
 // ─── Card ────────────────────────────────────────────────────────────────
 function MealCard({
-  meal, showCalories, fridgeMode, onOpen, style,
+  meal, showCalories, onOpen, style,
 }: {
-  meal: RankedMeal;
+  meal: AiMeal;
   showCalories: boolean;
-  fridgeMode: boolean;
   onOpen: () => void;
   style?: React.CSSProperties;
 }) {
   const tag = meal.tags[0] ?? "Healthy";
-  const totalIng = meal.ingredients.length;
-  const matchCount = meal.matchedIngredients.length;
-  const canMakeFully = fridgeMode && matchCount > 0 && matchCount >= totalIng;
-  const canMakePartially = fridgeMode && matchCount > 0 && matchCount < totalIng;
 
   return (
     <button
@@ -414,19 +339,12 @@ function MealCard({
         style={{ background: `linear-gradient(135deg, ${meal.bgGradient[0]}, ${meal.bgGradient[1]})` }}
       >
         <span className="drop-shadow-sm group-hover:scale-110 transition-transform">{meal.emoji}</span>
-        {/* Tag badge */}
         <span className="absolute top-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wide bg-white/85 text-foreground px-1.5 py-0.5 rounded-full shadow-sm">
           {tag}
         </span>
-        {/* Fridge match badge */}
-        {canMakeFully && (
-          <span className="absolute top-1.5 right-1.5 inline-flex items-center gap-0.5 text-[9px] font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded-full shadow-sm">
-            ✓ Ready!
-          </span>
-        )}
-        {canMakePartially && (
-          <span className="absolute top-1.5 right-1.5 inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded-full shadow-sm">
-            {matchCount}/{totalIng}
+        {meal.isVeg && (
+          <span className="absolute top-1.5 right-1.5 text-[9px] font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded-full shadow-sm">
+            🌿 Veg
           </span>
         )}
       </div>
@@ -438,38 +356,20 @@ function MealCard({
             <span className="inline-flex items-center gap-0.5"><Flame className="h-3 w-3 text-orange-500" /> {meal.calories}</span>
           )}
         </div>
-        {/* Fridge ingredients info */}
-        {fridgeMode && matchCount > 0 && (
-          <div className="space-y-0.5">
-            <p className="text-[9.5px] text-emerald-600 dark:text-emerald-400 font-semibold leading-tight">
-              ✓ {meal.matchedIngredients.slice(0, 3).join(", ")}
-              {meal.matchedIngredients.length > 3 ? ` +${meal.matchedIngredients.length - 3}` : ""}
-            </p>
-            {meal.missingIngredients.length > 0 && (
-              <p className="text-[9px] text-amber-600 dark:text-amber-400 leading-tight">
-                Need: {meal.missingIngredients.slice(0, 2).join(", ")}
-                {meal.missingIngredients.length > 2 ? `…` : ""}
-              </p>
-            )}
-          </div>
-        )}
-        {!fridgeMode && (
-          <p className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold">Tap for recipe →</p>
-        )}
+        <p className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold">Tap for recipe →</p>
       </div>
     </button>
   );
 }
 
-// ─── Modal + TTS ─────────────────────────────────────────────────────────
+// ─── Recipe Modal ─────────────────────────────────────────────────────────────
 function RecipeModal({
   meal, showCalories, onClose,
-}: { meal: RankedMeal; showCalories: boolean; onClose: () => void }) {
+}: { meal: AiMeal; showCalories: boolean; onClose: () => void }) {
   const [speaking, setSpeaking] = useState(false);
   const [voicePref, setVoicePref] = useState<"female" | "male">(() => loadVoicePref());
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Stop speech + handle Escape key when modal unmounts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
@@ -528,7 +428,10 @@ function RecipeModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 animate-in fade-in duration-200" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       <div
         className="bg-card rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
@@ -582,17 +485,13 @@ function RecipeModal({
               <div className="flex bg-white/70 dark:bg-slate-900/40 border border-border rounded-full p-0.5">
                 <button
                   onClick={() => switchVoice("female")}
-                  className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${
-                    voicePref === "female" ? "bg-violet-600 text-white" : "text-muted-foreground"
-                  }`}
+                  className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${voicePref === "female" ? "bg-violet-600 text-white" : "text-muted-foreground"}`}
                 >
                   ♀ Female
                 </button>
                 <button
                   onClick={() => switchVoice("male")}
-                  className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${
-                    voicePref === "male" ? "bg-violet-600 text-white" : "text-muted-foreground"
-                  }`}
+                  className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${voicePref === "male" ? "bg-violet-600 text-white" : "text-muted-foreground"}`}
                 >
                   ♂ Male
                 </button>
@@ -606,21 +505,14 @@ function RecipeModal({
               <Utensils className="h-3.5 w-3.5 text-violet-500" /> Ingredients
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {meal.ingredients.map(ing => {
-                const matched = meal.matchedIngredients.some(m => ing.includes(m) || m.includes(ing));
-                return (
-                  <span
-                    key={ing}
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
-                      matched
-                        ? "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-400/30 text-emerald-700 dark:text-emerald-200"
-                        : "bg-muted border-border text-foreground/70"
-                    }`}
-                  >
-                    {matched ? "✓ " : ""}{ing}
-                  </span>
-                );
-              })}
+              {meal.ingredients.map(ing => (
+                <span
+                  key={ing}
+                  className="text-[11px] font-medium px-2 py-0.5 rounded-full border bg-muted border-border text-foreground/70"
+                >
+                  {ing}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -640,17 +532,15 @@ function RecipeModal({
               ))}
             </ol>
           </div>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-2xl border border-border text-foreground text-sm font-bold hover:bg-muted/50 transition-colors"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
   );
-}
-
-// Render **bold** markers from the local Amy message template safely.
-function amyMessageHTML(text: string): string {
-  const escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return escaped.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 }

@@ -1,19 +1,18 @@
 /**
  * RoutineInlineMeals
  *
- * Lightweight Amy AI meal suggestion strip shown inside meal / tiffin
- * blocks on the Routine detail page. No fridge input here — just 3-4
- * personalised cards based on region + meal-type. Click to open recipe.
- *
- * instanceIndex (0, 1, 2…) lets multiple blocks on the same page show
- * different non-overlapping sets of 4 meals from the API's ranked list.
+ * Lightweight Amy AI meal strip shown inside meal / tiffin blocks on
+ * the Routine detail page. Calls the AI endpoint with a default prompt
+ * derived from the slot's audience and meal type so each block shows
+ * freshly generated, context-appropriate recipes.
  */
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { AmyIcon } from "@/components/amy-icon";
 import { X, Clock, Flame, Utensils, ChefHat } from "lucide-react";
 
-interface RankedMeal {
+interface AiMeal {
   id: string;
   title: string;
   emoji: string;
@@ -31,10 +30,9 @@ interface RankedMeal {
   missingIngredients: string[];
 }
 
-interface SuggestionResult {
-  meals: RankedMeal[];
+interface AiGenerateResult {
+  meals: AiMeal[];
   amyMessage: string;
-  usedFallback: boolean;
 }
 
 interface Props {
@@ -42,8 +40,19 @@ interface Props {
   audience?: "kids_tiffin" | "parent_healthy";
   childAge?: number;
   isVeg?: boolean;
-  /** 0-based index — used to show a different 4-meal slice per block */
+  mealType?: string;
+  /** Kept for API compatibility; no longer used for offsetting results */
   instanceIndex?: number;
+}
+
+function buildDefaultQuery(audience: "kids_tiffin" | "parent_healthy", mealType?: string, childAge?: number): string {
+  if (audience === "parent_healthy") {
+    const typeLabel = mealType ? ` for ${mealType}` : "";
+    return `Healthy nutritious meal${typeLabel} for a parent`;
+  }
+  const typeLabel = mealType ? `${mealType} ` : "tiffin ";
+  const ageLabel = childAge != null ? ` for a ${childAge}-year-old` : " for kids";
+  return `Quick kid-friendly ${typeLabel}recipe${ageLabel}`;
 }
 
 export function RoutineInlineMeals({
@@ -51,44 +60,43 @@ export function RoutineInlineMeals({
   audience = "kids_tiffin",
   childAge,
   isVeg,
-  instanceIndex = 0,
+  mealType,
 }: Props) {
-  const [meals, setMeals] = useState<RankedMeal[]>([]);
+  const authFetch = useAuthFetch();
+  const [meals, setMeals] = useState<AiMeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [amyMsg, setAmyMsg] = useState("");
-  const [openMeal, setOpenMeal] = useState<RankedMeal | null>(null);
+  const [openMeal, setOpenMeal] = useState<AiMeal | null>(null);
 
   const handleClose = useCallback(() => setOpenMeal(null), []);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const p = new URLSearchParams({ region, audience });
-    if (childAge != null) p.set("childAge", String(childAge));
-    if (isVeg === true) p.set("isVeg", "true");
 
-    // /api/meals/suggest is a public endpoint — no auth header needed
-    fetch(`/api/meals/suggest?${p.toString()}`)
+    const query = buildDefaultQuery(audience, mealType, childAge);
+
+    authFetch("/api/meals/ai-generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, region, audience, childAge, isVeg }),
+    })
       .then(r => r.ok ? r.json() : null)
-      .then((r: SuggestionResult | null) => {
+      .then((r: AiGenerateResult | null) => {
         if (cancelled) return;
         if (r && r.meals?.length > 0) {
-          // Each instanceIndex picks a non-overlapping 4-meal window
-          const start = instanceIndex * 4;
-          const end = start + 4;
-          const slice = r.meals.slice(start, end);
-          // If not enough meals at this offset, wrap around from the beginning
-          const visible = slice.length > 0 ? slice : r.meals.slice(0, 4);
-          setMeals(visible);
-          setAmyMsg(r.amyMessage);
+          setMeals(r.meals.slice(0, 4));
+          setAmyMsg(r.amyMessage ?? "");
         }
-        setLoading(false); // always release loading state
+        setLoading(false);
       })
       .catch(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => { cancelled = true; };
-  }, [region, audience, childAge, isVeg, instanceIndex]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [region, audience, childAge, isVeg, mealType]);
 
   return (
     <div className="mt-2.5 rounded-xl border border-orange-100 dark:border-orange-400/20 bg-orange-50/60 dark:bg-orange-500/5 overflow-hidden">
@@ -124,7 +132,7 @@ export function RoutineInlineMeals({
               key={m.id}
               meal={m}
               onOpen={(e) => {
-                e.stopPropagation(); // prevent routine item click handlers from firing
+                e.stopPropagation();
                 setOpenMeal(m);
               }}
             />
@@ -132,7 +140,6 @@ export function RoutineInlineMeals({
         </div>
       )}
 
-      {/* Recipe sheet — portaled to body so it escapes any overflow/transform context */}
       {openMeal && createPortal(
         <RecipeSheet meal={openMeal} onClose={handleClose} />,
         document.body,
@@ -141,14 +148,13 @@ export function RoutineInlineMeals({
   );
 }
 
-// ─── Mini Card ───────────────────────────────────────────────────────────────
-function MiniMealCard({ meal, onOpen }: { meal: RankedMeal; onOpen: (e: React.MouseEvent) => void }) {
+// ─── Mini Card ────────────────────────────────────────────────────────────────
+function MiniMealCard({ meal, onOpen }: { meal: AiMeal; onOpen: (e: React.MouseEvent) => void }) {
   return (
     <button
       onClick={onOpen}
       className="group shrink-0 w-[130px] rounded-xl overflow-hidden border border-border bg-card hover:border-orange-300 dark:hover:border-orange-500/50 hover:shadow-sm transition-all text-left"
     >
-      {/* Emoji hero */}
       <div
         className="relative h-[70px] flex items-center justify-center text-[38px]"
         style={{ background: `linear-gradient(135deg, ${meal.bgGradient[0]}, ${meal.bgGradient[1]})` }}
@@ -160,7 +166,6 @@ function MiniMealCard({ meal, onOpen }: { meal: RankedMeal; onOpen: (e: React.Mo
           </span>
         )}
       </div>
-      {/* Info */}
       <div className="px-2 py-1.5">
         <p className="font-bold text-[11.5px] text-foreground leading-tight line-clamp-2 mb-0.5">
           {meal.title}
@@ -173,9 +178,8 @@ function MiniMealCard({ meal, onOpen }: { meal: RankedMeal; onOpen: (e: React.Mo
   );
 }
 
-// ─── Recipe Sheet ────────────────────────────────────────────────────────────
-function RecipeSheet({ meal, onClose }: { meal: RankedMeal; onClose: () => void }) {
-  // Close on Escape key
+// ─── Recipe Sheet ─────────────────────────────────────────────────────────────
+function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", fn);
@@ -185,13 +189,12 @@ function RecipeSheet({ meal, onClose }: { meal: RankedMeal; onClose: () => void 
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 animate-in fade-in duration-200"
-      onClick={onClose} // clicking backdrop closes
+      onClick={onClose}
     >
       <div
         className="bg-card rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[88vh] overflow-y-auto shadow-2xl animate-in slide-in-from-bottom duration-300"
-        onClick={(e) => e.stopPropagation()} // prevent backdrop click
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Hero */}
         <div
           className="relative h-[160px] flex items-center justify-center text-[88px] rounded-t-3xl"
           style={{ background: `linear-gradient(135deg, ${meal.bgGradient[0]}, ${meal.bgGradient[1]})` }}
@@ -206,7 +209,6 @@ function RecipeSheet({ meal, onClose }: { meal: RankedMeal; onClose: () => void 
         </div>
 
         <div className="p-5 space-y-4">
-          {/* Title + tags */}
           <div>
             <h3 className="font-quicksand font-black text-xl text-foreground">{meal.title}</h3>
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -226,7 +228,6 @@ function RecipeSheet({ meal, onClose }: { meal: RankedMeal; onClose: () => void 
             </div>
           </div>
 
-          {/* Ingredients */}
           <div>
             <p className="font-bold text-sm text-foreground mb-2 flex items-center gap-1.5">
               <Utensils className="h-3.5 w-3.5 text-orange-500" /> Ingredients
@@ -240,7 +241,6 @@ function RecipeSheet({ meal, onClose }: { meal: RankedMeal; onClose: () => void 
             </div>
           </div>
 
-          {/* Steps */}
           <div>
             <p className="font-bold text-sm text-foreground mb-2 flex items-center gap-1.5">
               <ChefHat className="h-3.5 w-3.5 text-orange-500" /> Steps
