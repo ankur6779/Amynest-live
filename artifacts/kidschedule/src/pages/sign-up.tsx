@@ -10,6 +10,7 @@ import {
 } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { prettyAuthError } from "@/pages/sign-in";
+import { useAuth } from "@/lib/firebase-auth";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const googleProvider = new GoogleAuthProvider();
@@ -41,11 +42,18 @@ function AuthShell({ children }: { children: React.ReactNode }) {
 
 export default function SignUpPage() {
   const [, setLocation] = useLocation();
+  const { isLoaded, isSignedIn } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      setLocation("/");
+    }
+  }, [isLoaded, isSignedIn, setLocation]);
 
   useEffect(() => {
     setBusy(true);

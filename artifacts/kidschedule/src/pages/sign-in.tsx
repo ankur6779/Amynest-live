@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 import { firebaseAuth, authDomain, currentHost, firebaseProjectId } from "@/lib/firebase";
+import { useAuth } from "@/lib/firebase-auth";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const googleProvider = new GoogleAuthProvider();
@@ -58,10 +59,20 @@ function GoogleButton({ onClick, busy }: { onClick: () => void; busy: boolean })
 
 export default function SignInPage() {
   const [, setLocation] = useLocation();
+  const { isLoaded, isSignedIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Redirect as soon as auth state resolves to signed-in — handles both
+  // email/password and Google redirect-back without relying solely on
+  // getRedirectResult (which can return null on re-mount).
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      setLocation("/");
+    }
+  }, [isLoaded, isSignedIn, setLocation]);
 
   useEffect(() => {
     setBusy(true);
