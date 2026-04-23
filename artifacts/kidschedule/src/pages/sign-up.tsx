@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import {
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   updateProfile,
 } from "firebase/auth";
@@ -11,6 +13,10 @@ import { prettyAuthError } from "@/pages/sign-in";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const googleProvider = new GoogleAuthProvider();
+
+function isMobileBrowser() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
 
 function AuthShell({ children }: { children: React.ReactNode }) {
   return (
@@ -41,6 +47,22 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    setBusy(true);
+    getRedirectResult(firebaseAuth)
+      .then((result) => {
+        if (result?.user) {
+          setLocation("/");
+        }
+      })
+      .catch((err: any) => {
+        if (err?.code !== "auth/no-current-user") {
+          setError(prettyAuthError(err));
+        }
+      })
+      .finally(() => setBusy(false));
+  }, []);
+
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -70,13 +92,16 @@ export default function SignUpPage() {
     setError(null);
     setBusy(true);
     try {
-      await signInWithPopup(firebaseAuth, googleProvider);
-      setLocation("/");
+      if (isMobileBrowser()) {
+        await signInWithRedirect(firebaseAuth, googleProvider);
+      } else {
+        await signInWithPopup(firebaseAuth, googleProvider);
+        setLocation("/");
+      }
     } catch (err: any) {
       if (err?.code !== "auth/popup-closed-by-user") {
         setError(prettyAuthError(err));
       }
-    } finally {
       setBusy(false);
     }
   };
