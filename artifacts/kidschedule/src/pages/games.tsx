@@ -22,6 +22,11 @@ import { NumberMatchGame } from "@/components/games/NumberMatch";
 import { FindMistakeGame } from "@/components/games/FindMistake";
 import { ColorMemoryGame } from "@/components/games/ColorMemory";
 import { TargetTapGame } from "@/components/games/TargetTap";
+import { MazeEscapeGame } from "@/components/games/MazeEscape";
+import { ShapeMatchingGame } from "@/components/games/ShapeMatching";
+import { ColorFillGame } from "@/components/games/ColorFill";
+import { HiddenObjectsGame } from "@/components/games/HiddenObjects";
+import { SpotTheDifferenceGame } from "@/components/games/SpotTheDifference";
 
 type ActiveGame =
   | { kind: "play"; game: GameDef }
@@ -363,6 +368,11 @@ function GameModal({
             {game.id === "find-mistake" && <FindMistakeGame onFinish={onFinish} />}
             {game.id === "target-tap" && <TargetTapGame onFinish={onFinish} />}
             {game.id === "what-should-you-do" && <BehaviorChoiceGame onFinish={onFinish} />}
+            {game.id === "maze-escape" && <MazeEscapeGame onFinish={onFinish} />}
+            {game.id === "shape-match" && <ShapeMatchingGame onFinish={onFinish} />}
+            {game.id === "color-fill" && <ColorFillGame onFinish={onFinish} />}
+            {game.id === "hidden-objects" && <HiddenObjectsGame onFinish={onFinish} />}
+            {game.id === "spot-difference" && <SpotTheDifferenceGame onFinish={onFinish} />}
           </div>
         )}
 

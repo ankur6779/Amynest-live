@@ -25,8 +25,8 @@ interface LockedBlockProps {
 export function LockedBlock({
   locked,
   reason = "section_locked",
-  label = "Premium",
-  cta = "Unlock Now",
+  label = "Unlock to continue",
+  cta = "Unlock Premium",
   rounded = "rounded-3xl",
   children,
 }: LockedBlockProps) {

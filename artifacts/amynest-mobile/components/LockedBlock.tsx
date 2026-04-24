@@ -30,8 +30,8 @@ type Props = {
 export default function LockedBlock({
   locked,
   reason = "section_locked",
-  label = "Premium",
-  cta = "Unlock Now",
+  label = "Unlock to continue",
+  cta = "Unlock Premium",
   radius = 22,
   style,
   children,
