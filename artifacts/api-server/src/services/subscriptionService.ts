@@ -163,6 +163,27 @@ export function isPremiumNow(s: Subscription): boolean {
   return false;
 }
 
+/**
+ * Extends the user's bonus premium expiry by `days`. The bonus expiry is
+ * tracked separately from the paid currentPeriodEnd so a paid renewal webhook
+ * never shrinks bonus time. Can be called inside or outside a transaction.
+ */
+export async function extendBonusPremium(
+  userId: string,
+  days: number,
+  dbExec: DbExec = db,
+): Promise<Date> {
+  const sub = await getOrCreateSubscription(userId, dbExec);
+  const now = Date.now();
+  const base = Math.max(now, sub.bonusExpiresAt ? sub.bonusExpiresAt.getTime() : 0);
+  const next = new Date(base + days * 24 * 60 * 60 * 1000);
+  await dbExec
+    .update(subscriptionsTable)
+    .set({ bonusExpiresAt: next, updatedAt: new Date() })
+    .where(eq(subscriptionsTable.userId, userId));
+  return next;
+}
+
 /** Generic per-feature usage read (uses each feature's configured bucket). */
 export async function getFeatureUsage(userId: string, feature: FeatureKey): Promise<number> {
   const day = bucketKeyFor(feature);

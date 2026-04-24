@@ -1,9 +1,14 @@
 import { useMemo, useState } from "react";
-import { Gift, Copy, Check, Share2, Mail, MessageCircle, Trophy, Sparkles, Lock, Calendar } from "lucide-react";
+import {
+  Gift, Copy, Check, Share2, Mail, MessageCircle,
+  Trophy, Sparkles, Lock, Calendar, Ticket, Send,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { useReferrals } from "@/hooks/use-referrals";
+import { Input } from "@/components/ui/input";
+import { useReferrals, type GiftToken } from "@/hooks/use-referrals";
 import { AmyIcon } from "@/components/amy-icon";
 
 function buildLink(code: string): string {
@@ -20,12 +25,209 @@ function daysLeft(iso: string | null): number | null {
   return Math.ceil(ms / (24 * 60 * 60 * 1000));
 }
 
+// ─── Gift Token Card ──────────────────────────────────────────────────────────
+
+function GiftTokenCard({
+  token,
+  onCopy,
+  copied,
+}: {
+  token: GiftToken;
+  onCopy: (code: string) => void;
+  copied: string | null;
+}) {
+  const expDays = daysLeft(token.expiresAt);
+  const isAvailable = token.status === "available";
+
+  const shareGift = async () => {
+    const text = `I'm gifting you ${token.bonusDays} days of Amy AI premium! Use code: ${token.giftCode} at ${window.location.origin}/?gift=${token.giftCode}`;
+    if ((navigator as any).share) {
+      try {
+        await (navigator as any).share({ title: "Amy AI Gift", text });
+        return;
+      } catch { /* fall through */ }
+    }
+    onCopy(token.giftCode);
+  };
+
+  return (
+    <div
+      className={[
+        "rounded-2xl border p-4 space-y-3",
+        isAvailable
+          ? "border-violet-400/40 bg-violet-50 dark:bg-violet-500/10"
+          : "border-border bg-muted/30 opacity-60",
+      ].join(" ")}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Ticket className={`h-4 w-4 ${isAvailable ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"}`} />
+          <span className="font-quicksand font-bold text-sm">
+            {token.bonusDays} days free premium
+          </span>
+        </div>
+        <Badge
+          variant="secondary"
+          className={`text-[10px] uppercase font-bold ${
+            isAvailable
+              ? "bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300"
+              : token.status === "redeemed"
+              ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+              : "text-muted-foreground"
+          }`}
+        >
+          {token.status}
+        </Badge>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 rounded-xl border border-dashed border-violet-400/50 bg-white/60 dark:bg-white/5 px-3 py-2">
+        <code className="font-mono font-bold tracking-widest text-violet-700 dark:text-violet-300 text-sm">
+          {token.giftCode}
+        </code>
+        {isAvailable && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={() => onCopy(token.giftCode)}
+          >
+            {copied === token.giftCode ? (
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+            {copied === token.giftCode ? "Copied" : "Copy"}
+          </Button>
+        )}
+      </div>
+
+      {isAvailable && (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="flex-1 gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs"
+            onClick={shareGift}
+          >
+            <Send className="h-3.5 w-3.5" />
+            Share gift
+          </Button>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(`I'm gifting you ${token.bonusDays} days of Amy AI premium! Use this code: ${token.giftCode}`)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            WhatsApp
+          </a>
+        </div>
+      )}
+
+      {isAvailable && expDays !== null && (
+        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <Calendar className="h-3 w-3" />
+          Expires in {expDays} day{expDays === 1 ? "" : "s"}
+        </p>
+      )}
+      {token.status === "redeemed" && token.redeemedAt && (
+        <p className="text-[10px] text-muted-foreground">
+          Redeemed on {new Date(token.redeemedAt).toLocaleDateString()}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Redeem Gift Input ────────────────────────────────────────────────────────
+
+function RedeemGiftSection({ onRedeem }: { onRedeem: (code: string) => Promise<void> }) {
+  const [code, setCode] = useState("");
+  const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [bonusDays, setBonusDays] = useState(0);
+
+  const handle = async () => {
+    if (!code.trim()) return;
+    setState("loading");
+    setErrorMsg("");
+    try {
+      await onRedeem(code.trim());
+      setState("success");
+      setCode("");
+    } catch (err: any) {
+      const reason = err?.message ?? "unknown_error";
+      const messages: Record<string, string> = {
+        not_found: "Gift code not found. Check and try again.",
+        already_redeemed: "This gift has already been claimed.",
+        expired: "This gift code has expired.",
+        self_redeem: "You can't redeem your own gift code!",
+        server_error: "Something went wrong. Please try again.",
+      };
+      setErrorMsg(messages[reason] ?? "Invalid gift code.");
+      setState("error");
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-4">
+      <div className="flex items-center gap-2">
+        <Gift className="h-5 w-5 text-amber-500" />
+        <h2 className="font-quicksand text-lg font-bold">Redeem a Gift Code</h2>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Received a gift code from a friend? Enter it below to claim your free premium days.
+      </p>
+
+      {state === "success" ? (
+        <div className="rounded-2xl border border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 p-4 flex items-center gap-3">
+          <Check className="h-5 w-5 text-emerald-600 shrink-0" />
+          <div>
+            <p className="font-semibold text-emerald-800 dark:text-emerald-200">
+              🎉 Gift redeemed! {bonusDays > 0 ? `+${bonusDays} days of premium added.` : "Premium days added to your account!"}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Input
+            placeholder="GIFT-XXXXXXX"
+            value={code}
+            onChange={(e) => {
+              setCode(e.target.value.toUpperCase());
+              if (state === "error") setState("idle");
+            }}
+            onKeyDown={(e) => e.key === "Enter" && handle()}
+            className="font-mono tracking-wider uppercase"
+            disabled={state === "loading"}
+          />
+          <Button onClick={handle} disabled={state === "loading" || !code.trim()} className="gap-1.5 shrink-0">
+            {state === "loading" ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            Redeem
+          </Button>
+        </div>
+      )}
+      {state === "error" && (
+        <p className="text-sm text-red-600 dark:text-red-400">{errorMsg}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function ReferralsPage() {
-  const { payload, isLoading } = useReferrals();
-  const [copied, setCopied] = useState<"code" | "link" | null>(null);
+  const { payload, isLoading, redeemGift } = useReferrals();
+  const [copied, setCopied] = useState<string | null>(null);
 
   const stats = payload?.stats;
   const referrals = payload?.referrals ?? [];
+  const giftTokens = payload?.giftTokens ?? [];
+  const availableGifts = giftTokens.filter((t) => t.status === "available");
+  const redeemedGifts = giftTokens.filter((t) => t.status !== "available");
   const link = useMemo(() => (stats ? buildLink(stats.code) : ""), [stats]);
 
   if (isLoading || !stats) {
@@ -44,37 +246,41 @@ export default function ReferralsPage() {
 
   const validShort = Math.max(0, stats.validThreshold - stats.validReferrals);
   const paidShort = Math.max(0, stats.paidThreshold - stats.paidReferrals);
+
+  const rewardKind = stats.isPremium ? "gift tokens" : "days free";
   const message = capReached
     ? "Maxed out — you've earned the lifetime referral cap. Thank you for spreading Amy! 🎉"
     : stats.rewardsAvailable > 0
-    ? `🎉 You unlocked ${stats.rewardsAvailable * stats.rewardDays} days of premium via referrals!`
+    ? stats.isPremium
+      ? `🎁 You have ${availableGifts.length} gift token${availableGifts.length === 1 ? "" : "s"} to share with friends!`
+      : `🎉 You unlocked ${stats.rewardsAvailable * stats.rewardDays} days of premium via referrals!`
     : validShort === 0 && paidShort === 0
     ? "Almost there — your reward is being processed."
     : `Invite ${validShort > 0 ? `${validShort} more friend${validShort > 1 ? "s" : ""}` : ""}${
         validShort > 0 && paidShort > 0 ? " + " : ""
-      }${paidShort > 0 ? `${paidShort} paid user` : ""} to unlock ${stats.rewardDays} days free.`;
+      }${paidShort > 0 ? `${paidShort} paid user` : ""} to unlock ${stats.rewardDays} ${rewardKind}.`;
 
-  const copy = async (kind: "code" | "link", value: string) => {
+  const copy = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value);
-      setCopied(kind);
+      setCopied(value);
       setTimeout(() => setCopied(null), 1800);
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   };
 
   const share = async () => {
     const text = `I'm using Amy AI for parenting — try it with my code ${stats.code} and we both get premium! ${link}`;
-    if (typeof navigator !== "undefined" && (navigator as any).share) {
+    if ((navigator as any).share) {
       try {
         await (navigator as any).share({ title: "Try Amy AI", text, url: link });
         return;
-      } catch {
-        // fall through to clipboard
-      }
+      } catch { /* fall through */ }
     }
-    copy("link", text);
+    copy(link);
+  };
+
+  const handleRedeem = async (code: string) => {
+    await redeemGift.mutateAsync(code);
   };
 
   return (
@@ -85,18 +291,24 @@ export default function ReferralsPage() {
         <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
         <div className="relative space-y-3">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wider">
-            <Gift className="h-3.5 w-3.5" /> Invite & Earn Premium
+            <Gift className="h-3.5 w-3.5" /> Invite & Earn
           </div>
           <h1 className="font-quicksand text-2xl sm:text-3xl font-extrabold leading-tight">
-            Get {stats.rewardDays} days free for every {stats.validThreshold} friends 🎁
+            {stats.isPremium
+              ? `Gift ${stats.rewardDays} days premium to friends 🎁`
+              : `Get ${stats.rewardDays} days free for every ${stats.validThreshold} friends 🎁`}
           </h1>
-          <p className="text-sm sm:text-base text-white/90 max-w-xl">
-            {message}
-          </p>
-          {bonusDays !== null && bonusDays > 0 && (
+          <p className="text-sm sm:text-base text-white/90 max-w-xl">{message}</p>
+          {!stats.isPremium && bonusDays !== null && bonusDays > 0 && (
             <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold">
               <Calendar className="h-3.5 w-3.5" />
               {bonusDays} bonus day{bonusDays === 1 ? "" : "s"} active
+            </div>
+          )}
+          {stats.isPremium && availableGifts.length > 0 && (
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold">
+              <Ticket className="h-3.5 w-3.5" />
+              {availableGifts.length} gift{availableGifts.length === 1 ? "" : "s"} ready to share
             </div>
           )}
         </div>
@@ -117,10 +329,10 @@ export default function ReferralsPage() {
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => copy("code", stats.code)}
+              onClick={() => copy(stats.code)}
             >
-              {copied === "code" ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-              {copied === "code" ? "Copied" : "Copy"}
+              {copied === stats.code ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+              {copied === stats.code ? "Copied" : "Copy"}
             </Button>
           </div>
           <Button onClick={share} className="gap-2 sm:w-auto">
@@ -132,13 +344,12 @@ export default function ReferralsPage() {
           <code className="text-xs sm:text-sm text-muted-foreground truncate flex-1">{link}</code>
           <button
             type="button"
-            onClick={() => copy("link", link)}
+            onClick={() => copy(link)}
             className="text-xs font-semibold text-primary hover:underline shrink-0"
           >
-            {copied === "link" ? "Copied!" : "Copy link"}
+            {copied === link ? "Copied!" : "Copy link"}
           </button>
         </div>
-
         <div className="grid grid-cols-2 gap-2 pt-1">
           <a
             href={`https://wa.me/?text=${encodeURIComponent(`Try Amy AI with my code ${stats.code} — we both get premium! ${link}`)}`}
@@ -156,6 +367,41 @@ export default function ReferralsPage() {
           </a>
         </div>
       </div>
+
+      {/* Gift Tokens section — shown when user has any tokens */}
+      {giftTokens.length > 0 && (
+        <div className="rounded-3xl border border-violet-400/40 bg-card p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-quicksand text-lg font-bold flex items-center gap-2">
+              <Ticket className="h-5 w-5 text-violet-500" /> Your Gift Tokens
+            </h2>
+            <Badge variant="secondary" className="font-bold bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">
+              {availableGifts.length} available
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            You're a premium member — so your referral rewards are gift tokens you can share with friends instead of bonus days for yourself.
+          </p>
+          <div className="space-y-3">
+            {availableGifts.map((t) => (
+              <GiftTokenCard key={t.id} token={t} onCopy={copy} copied={copied} />
+            ))}
+            {redeemedGifts.length > 0 && (
+              <>
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide pt-1">
+                  Already sent
+                </p>
+                {redeemedGifts.map((t) => (
+                  <GiftTokenCard key={t.id} token={t} onCopy={copy} copied={copied} />
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Redeem a Gift section — always visible */}
+      <RedeemGiftSection onRedeem={handleRedeem} />
 
       {/* Progress card */}
       <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-5">
@@ -197,12 +443,14 @@ export default function ReferralsPage() {
         {capReached ? (
           <div className="rounded-2xl border border-amber-400/40 bg-amber-50 dark:bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200 inline-flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
-            You've earned the maximum {stats.rewardCap * stats.rewardDays} days of bonus premium. Thank you!
+            You've earned the maximum {stats.rewardCap} referral rewards. Thank you!
           </div>
         ) : (
           <div className="rounded-2xl border border-border bg-muted/30 p-3 text-sm">
-            <span className="font-semibold">{rewardsLeft}</span> more reward{rewardsLeft === 1 ? "" : "s"} available — up to{" "}
-            <span className="font-semibold">{rewardsLeft * stats.rewardDays} days</span> of free premium.
+            <span className="font-semibold">{rewardsLeft}</span> more reward{rewardsLeft === 1 ? "" : "s"} available — earn{" "}
+            {stats.isPremium
+              ? `${rewardsLeft} more gift token${rewardsLeft === 1 ? "" : "s"} to share`
+              : `up to ${rewardsLeft * stats.rewardDays} days of free premium`}.
           </div>
         )}
       </div>
@@ -255,13 +503,13 @@ export default function ReferralsPage() {
       {/* Rules */}
       <div className="text-xs text-muted-foreground space-y-1.5 px-2">
         <p>
-          <strong>How it works:</strong> Earn {stats.rewardDays} days of free premium when{" "}
-          {stats.validThreshold} friends sign up using your code AND at least{" "}
-          {stats.paidThreshold} of them buys any paid plan.
+          <strong>How it works:</strong>{" "}
+          {stats.isPremium
+            ? `As a premium member, earn a shareable gift token (worth ${stats.rewardDays} days of free premium for a friend) when ${stats.validThreshold} friends sign up using your code AND at least ${stats.paidThreshold} of them buys any paid plan.`
+            : `Earn ${stats.rewardDays} days of free premium when ${stats.validThreshold} friends sign up using your code AND at least ${stats.paidThreshold} of them buys any paid plan.`}
         </p>
         <p>
-          Bonus time stacks on top of your existing premium and is capped at{" "}
-          {stats.rewardCap * stats.rewardDays} days lifetime.
+          Rewards are capped at {stats.rewardCap} milestones lifetime.
         </p>
       </div>
     </div>

@@ -2,11 +2,16 @@ import {
   db,
   subscriptionsTable,
   referralsTable,
-  type Subscription,
   type Referral,
+  type Subscription,
 } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";
-import { getOrCreateSubscription, isPremiumNow } from "./subscriptionService";
+import {
+  getOrCreateSubscription,
+  isPremiumNow,
+  extendBonusPremium,
+} from "./subscriptionService";
+import { createGiftToken } from "./giftTokenService";
 
 type DbExec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -221,31 +226,12 @@ function computeEarnedMilestones(valid: number, paid: number): number {
 }
 
 /**
- * Extends the user's bonus premium expiry by `days`. The bonus expiry is
- * tracked separately from the paid currentPeriodEnd so a paid renewal webhook
- * never shrinks bonus time.
- */
-async function extendBonusPremium(
-  userId: string,
-  days: number,
-  dbExec: DbExec = db,
-): Promise<Date> {
-  const sub = await getOrCreateSubscription(userId, dbExec);
-  const now = Date.now();
-  const base = Math.max(
-    now,
-    sub.bonusExpiresAt ? sub.bonusExpiresAt.getTime() : 0,
-  );
-  const next = new Date(base + days * 24 * 60 * 60 * 1000);
-  await dbExec
-    .update(subscriptionsTable)
-    .set({ bonusExpiresAt: next, updatedAt: new Date() })
-    .where(eq(subscriptionsTable.userId, userId));
-  return next;
-}
-
-/**
  * Idempotently grants any unclaimed reward milestones for the referrer.
+ *
+ * Reward forks by subscriber status:
+ *   • Free user  → extend bonusExpiresAt by REFERRAL_REWARD_DAYS per milestone
+ *   • Paid user  → create one gift token per milestone (shareable with any friend)
+ *
  * Returns the number of NEW milestones granted in this call.
  */
 export async function tryGrantReferralReward(referrerUserId: string): Promise<number> {
@@ -256,11 +242,14 @@ export async function tryGrantReferralReward(referrerUserId: string): Promise<nu
   const toGrant = earned - already;
   if (toGrant <= 0) return 0;
 
+  const isPaid = isPremiumNow(sub);
+
   // Atomically bump the granted counter — only the row whose granted value
-  // is still `already` will succeed, preventing double-grants under
-  // concurrent callers. We compute days OUTSIDE the txn so the bonus
-  // extension is consistent.
-  const result = await db.transaction(async (tx) => {
+  // is still `already` will succeed, preventing double-grants under concurrent callers.
+  // For free users, bonus days extension is inside the transaction.
+  // For paid users, gift token creation happens AFTER the transaction commits
+  // (gift tokens use their own DB connection and can't participate in the tx).
+  const granted = await db.transaction(async (tx) => {
     const updated = await tx
       .update(subscriptionsTable)
       .set({
@@ -275,10 +264,21 @@ export async function tryGrantReferralReward(referrerUserId: string): Promise<nu
       )
       .returning({ id: subscriptionsTable.id });
     if (updated.length === 0) return 0;
-    await extendBonusPremium(referrerUserId, toGrant * REFERRAL_REWARD_DAYS, tx);
+
+    if (!isPaid) {
+      // Free user: extend bonus premium so they get free premium access.
+      await extendBonusPremium(referrerUserId, toGrant * REFERRAL_REWARD_DAYS, tx);
+    }
     return toGrant;
   });
-  return result;
+
+  if (granted > 0 && isPaid) {
+    // Paid user: grant one shareable gift token per milestone, post-commit.
+    for (let i = 0; i < granted; i++) {
+      await createGiftToken(referrerUserId, REFERRAL_REWARD_DAYS);
+    }
+  }
+  return granted;
 }
 
 // ─── Stats for dashboard ─────────────────────────────────────────────────────
