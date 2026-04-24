@@ -1,5 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { join, dirname } from "node:path";
 import {
   applyRoutineV2,
   generateRuleBasedRoutine,
@@ -674,5 +677,66 @@ describe("buildAgeBandGuidance — early_school (5–10 years)", () => {
     assert.ok(!/Afternoon Nap/i.test(guidance), "should not list Afternoon Nap as a recommended activity");
     assert.ok(!/Sensory Basket Exploration/i.test(guidance), "should not list Sensory Basket Exploration as a recommended activity");
     assert.ok(!/Building Blocks/i.test(guidance), "should not list Building Blocks as a recommended activity");
+  });
+});
+
+// ─── Age-band guidance: snapshot tests ───────────────────────────────────────
+// These tests lock the full guidance text for all five age bands. A rephrased
+// prohibition (e.g. "Do NOT suggest" → "Avoid") will fail here and surface the
+// exact diff, even if keyword-level tests still pass.
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const AGE_BAND_SNAPSHOTS = JSON.parse(
+  readFileSync(join(__dirname, "__snapshots__", "age-band-guidance.snap.json"), "utf8")
+) as Record<string, string>;
+
+describe("buildAgeBandGuidance snapshots — infant", () => {
+  it("matches committed baseline exactly", () => {
+    assert.strictEqual(
+      buildAgeBandGuidance("infant"),
+      AGE_BAND_SNAPSHOTS["infant"],
+      "infant guidance has changed — update the snapshot if the change is intentional"
+    );
+  });
+});
+
+describe("buildAgeBandGuidance snapshots — toddler", () => {
+  it("matches committed baseline exactly", () => {
+    assert.strictEqual(
+      buildAgeBandGuidance("toddler"),
+      AGE_BAND_SNAPSHOTS["toddler"],
+      "toddler guidance has changed — update the snapshot if the change is intentional"
+    );
+  });
+});
+
+describe("buildAgeBandGuidance snapshots — preschool", () => {
+  it("matches committed baseline exactly", () => {
+    assert.strictEqual(
+      buildAgeBandGuidance("preschool"),
+      AGE_BAND_SNAPSHOTS["preschool"],
+      "preschool guidance has changed — update the snapshot if the change is intentional"
+    );
+  });
+});
+
+describe("buildAgeBandGuidance snapshots — early_school", () => {
+  it("matches committed baseline exactly", () => {
+    assert.strictEqual(
+      buildAgeBandGuidance("early_school"),
+      AGE_BAND_SNAPSHOTS["early_school"],
+      "early_school guidance has changed — update the snapshot if the change is intentional"
+    );
+  });
+});
+
+describe("buildAgeBandGuidance snapshots — pre_teen", () => {
+  it("matches committed baseline exactly", () => {
+    assert.strictEqual(
+      buildAgeBandGuidance("pre_teen"),
+      AGE_BAND_SNAPSHOTS["pre_teen"],
+      "pre_teen guidance has changed — update the snapshot if the change is intentional"
+    );
   });
 });
