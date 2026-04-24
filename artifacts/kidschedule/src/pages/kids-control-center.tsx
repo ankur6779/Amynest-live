@@ -105,7 +105,7 @@ export default function KidsControlCenterPage() {
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-72 w-[40rem] rounded-full bg-amber-300/20 dark:bg-amber-400/15 blur-3xl" />
         </div>
 
-        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-10">
+        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 pt-2 sm:pt-4 pb-6 sm:pb-10">
           {/* HEADER */}
           <header className="text-center mb-6 sm:mb-8">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-violet-500/15 to-pink-500/15 border border-violet-300/40 dark:border-violet-500/30 text-xs font-bold text-violet-700 dark:text-violet-300 mb-3">
