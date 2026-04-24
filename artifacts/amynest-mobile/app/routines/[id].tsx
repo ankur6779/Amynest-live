@@ -25,7 +25,7 @@ import * as Speech from "expo-speech";
 import Animated, { FadeIn } from "react-native-reanimated";
 import SwipeableCard from "@/components/SwipeableCard";
 import RoutineItemModal from "@/components/RoutineItemModal";
-import RoutineInlineMeals from "@/components/RoutineInlineMeals";
+import AiMealGenerator from "@/components/AiMealGenerator";
 import colors, { brand, brandAlpha } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import VoiceSettingsPanel, {
@@ -945,11 +945,10 @@ export default function RoutineDetailScreen() {
                   </SwipeableCard>
                 )}
                 {(item.category === "meal" || item.category === "tiffin") && (
-                  <RoutineInlineMeals
-                    {...mealPrefs}
-                    instanceIndex={items.slice(0, origIdx).filter(
-                      (it: RoutineItem) => it.category === "meal" || it.category === "tiffin"
-                    ).length}
+                  <AiMealGenerator
+                    region={mealPrefs.region}
+                    childAge={mealPrefs.childAge}
+                    isVeg={mealPrefs.isVeg}
                   />
                 )}
               </View>
