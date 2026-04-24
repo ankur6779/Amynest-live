@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   BookOpen, Brain, Sparkles, Heart, Palette,
   ChevronDown, ChevronUp, MessageCircleHeart,
-  Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, ChefHat,
+  Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList,
 } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
@@ -36,7 +36,6 @@ import { ParentCommandCenter } from "@/components/parent-command-center";
 import { LockedBlock } from "@/components/locked-block";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
-import { SmartMealSuggestions } from "@/components/smart-meal-suggestions";
 import type { AgeGroup } from "@/lib/age-groups";
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
@@ -668,25 +667,6 @@ export default function ParentingHub() {
           </LockedBlock>
         )}
 
-        {/* 🍱 Amy AI Meal Suggestions */}
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_ai_meal_generator")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-        >
-          <HubSection
-            id="meal-suggestions"
-            icon={<ChefHat className="h-5 w-5 text-emerald-600" />}
-            title="🍱 Amy AI Meal Generator"
-            description="Describe what you want to cook — Amy generates recipes instantly"
-            accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-lime-100 dark:to-lime-500/20"
-            tryFree={tryFreeFor("hub_ai_meal_generator")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_ai_meal_generator")}
-          >
-            <SmartMealSuggestions />
-          </HubSection>
-        </LockedBlock>
 
       </div>
 
