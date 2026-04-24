@@ -122,13 +122,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     if (onboardingStatus === "unknown" || onboardingStatus === "error") {
-      checkOnboardingStatus().then(result => {
-        if (result === "incomplete" && !inOnboarding) {
-          router.replace("/onboarding");
-        } else if (result === "complete" && (inAuth || inOnboarding)) {
-          router.replace("/(tabs)");
-        }
-      });
+      // Kick off the check — navigation is handled by the state-driven blocks
+      // below once onboardingStatus settles to "complete" / "incomplete".
+      // Do NOT call router.replace inside this .then(): the navigator (Stack)
+      // may not be mounted yet because isAuthTransition hides children while
+      // onboardingStatus is "unknown" / "checking". Navigating before the
+      // navigator is mounted produces the "+not-found / This screen doesn't exist" error.
+      checkOnboardingStatus().catch(() => {});
       return;
     }
 
@@ -136,11 +136,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
     if (onboardingStatus === "incomplete") {
       if (inTabsGroup) {
-        checkOnboardingStatus().then(result => {
-          if (result === "incomplete") {
-            router.replace("/onboarding");
-          }
-        });
+        // Re-verify so a post-onboarding reload doesn't get stuck
+        checkOnboardingStatus().catch(() => {});
       } else if (!inOnboarding) {
         router.replace("/onboarding");
       }
