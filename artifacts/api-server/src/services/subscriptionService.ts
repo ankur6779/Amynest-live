@@ -3,6 +3,7 @@ import {
   subscriptionsTable,
   usageDailyTable,
   childrenTable,
+  adminPremiumGrantsTable,
   type Subscription,
 } from "@workspace/db";
 import { and, asc, eq, sql } from "drizzle-orm";
@@ -247,6 +248,39 @@ export async function getEntitlements(userId: string): Promise<EntitlementSummar
       features,
     },
   };
+}
+
+/**
+ * Checks if the given email has a manual premium grant in `admin_premium_grants`.
+ * If so, and the user's current subscription is not already active, upgrades it
+ * to active/yearly with a far-future period end. Idempotent — safe to call on
+ * every entitlement fetch.
+ */
+export async function maybeAutoGrantPremium(
+  userId: string,
+  email: string | null,
+): Promise<void> {
+  if (!email) return;
+  const grant = await db
+    .select()
+    .from(adminPremiumGrantsTable)
+    .where(eq(adminPremiumGrantsTable.email, email.toLowerCase().trim()))
+    .limit(1);
+  if (!grant[0]) return;
+  const sub = await getOrCreateSubscription(userId);
+  if (sub.status === "active") return;
+  const plan = (grant[0].plan as Exclude<Plan, "free">) ?? "yearly";
+  await db
+    .update(subscriptionsTable)
+    .set({
+      plan,
+      status: "active",
+      provider: "manual",
+      currentPeriodEnd: new Date("2099-12-31T23:59:59.000Z"),
+      cancelAtPeriodEnd: 0,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptionsTable.userId, userId));
 }
 
 export async function startTrial(userId: string): Promise<Subscription> {

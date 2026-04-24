@@ -6,6 +6,7 @@ import {
   getOrCreateSubscription,
   startTrial,
   activateSubscription,
+  maybeAutoGrantPremium,
   PLAN_PRICES,
   type Plan,
 } from "../services/subscriptionService";
@@ -34,11 +35,12 @@ function productIdToPlan(productId: string | undefined | null): Exclude<Plan, "f
 const router: IRouter = Router();
 
 router.get("/subscription", requireAuth, async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
+  const { userId, email } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
+  await maybeAutoGrantPremium(userId, email);
   const ent = await getEntitlements(userId);
   res.json({
     entitlements: ent,
