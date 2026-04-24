@@ -24,6 +24,7 @@ import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import Animated, { FadeIn } from "react-native-reanimated";
 import SwipeableCard from "@/components/SwipeableCard";
+import AiMealGenerator from "@/components/AiMealGenerator";
 import RoutineItemModal from "@/components/RoutineItemModal";
 import colors, { brand, brandAlpha } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
@@ -907,7 +908,12 @@ export default function RoutineDetailScreen() {
           }
           renderItem={({ item: entry, index: displayIdx }) => {
             const { item, origIdx } = entry;
+            const nextEntry = displayItems[displayIdx + 1];
+            const curMins = parse12hToMinutes(item.time);
+            const nextMins = nextEntry ? parse12hToMinutes(nextEntry.item.time) : Infinity;
+            const showMealGen = curMins < 720 && nextMins >= 720;
             return (
+            <View>
             <Animated.View
               entering={Platform.OS !== "web" ? FadeIn.delay(displayIdx * 35).duration(280) : undefined}
               style={styles.timelineRow}
@@ -945,6 +951,14 @@ export default function RoutineDetailScreen() {
                 )}
               </View>
             </Animated.View>
+            {showMealGen && (
+              <AiMealGenerator
+                region={mealPrefs.region}
+                childAge={mealPrefs.childAge}
+                isVeg={mealPrefs.isVeg}
+              />
+            )}
+            </View>
             );
           }}
           ItemSeparatorComponent={null}
