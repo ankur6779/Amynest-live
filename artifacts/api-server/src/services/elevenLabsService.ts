@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { Storage } from "@google-cloud/storage";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
@@ -13,26 +12,66 @@ export const AMY_VOICE_ID_DEFAULT = "21m00Tcm4TlvDq8ikWAM";
 // natural sounding. Right balance for Read-Aloud features.
 export const AMY_MODEL_ID_DEFAULT = "eleven_turbo_v2_5";
 
-// Hard guard against huge payloads — anything bigger almost certainly belongs
-// in a different feature (full article narration etc.) and we want to think
-// about cost before we wire it up.
+// Hard guard against huge payloads.
 export const TTS_MAX_INPUT_CHARS = 4000;
 
-// Where MP3 blobs live on disk. Local FS is fine for a cache because cache
-// misses are recoverable (we just regenerate the audio on-demand).
-const CACHE_DIR = path.resolve(process.cwd(), "data", "tts-cache");
+// GCS object prefix for all TTS audio files.
+const GCS_PREFIX = "tts-cache";
 
-let cacheDirReady: Promise<void> | null = null;
-function ensureCacheDir(): Promise<void> {
-  if (!cacheDirReady) cacheDirReady = fs.mkdir(CACHE_DIR, { recursive: true }).then(() => {});
-  return cacheDirReady;
+// ─── GCS client (Replit sidecar auth) ───────────────────────────────────────
+const REPLIT_SIDECAR = "http://127.0.0.1:1106";
+
+const gcsClient = new Storage({
+  credentials: {
+    audience: "replit",
+    subject_token_type: "access_token",
+    token_url: `${REPLIT_SIDECAR}/token`,
+    type: "external_account",
+    credential_source: {
+      url: `${REPLIT_SIDECAR}/credential`,
+      format: { type: "json", subject_token_field_name: "access_token" },
+    },
+    universe_domain: "googleapis.com",
+  } as never,
+  projectId: "",
+});
+
+function getBucket() {
+  const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+  if (!bucketId) throw new Error("DEFAULT_OBJECT_STORAGE_BUCKET_ID not set");
+  return gcsClient.bucket(bucketId);
 }
 
-// In-flight single-flight map: if two callers ask for the same cacheKey at the
-// same time we want exactly one ElevenLabs call (and one disk write). Without
-// this, a burst of identical requests on a cold cache pays for N synths even
-// though we'll only ever store one. Keyed by cacheKey; entries removed in a
-// finally so failures don't permanently block the key.
+function gcsObjectName(cacheKey: string): string {
+  return `${GCS_PREFIX}/${cacheKey}.mp3`;
+}
+
+async function gcsFileExists(cacheKey: string): Promise<boolean> {
+  try {
+    const [exists] = await getBucket().file(gcsObjectName(cacheKey)).exists();
+    return exists;
+  } catch {
+    return false;
+  }
+}
+
+async function gcsUpload(cacheKey: string, buffer: Buffer, contentType: string): Promise<void> {
+  const file = getBucket().file(gcsObjectName(cacheKey));
+  await file.save(buffer, { contentType, resumable: false });
+}
+
+async function gcsDownload(cacheKey: string): Promise<Buffer | null> {
+  try {
+    const [buffer] = await getBucket().file(gcsObjectName(cacheKey)).download();
+    return buffer;
+  } catch {
+    return null;
+  }
+}
+
+// ─── In-flight single-flight map ────────────────────────────────────────────
+// If two callers ask for the same cacheKey simultaneously, only one ElevenLabs
+// call is made — the second awaits the first's result.
 const inFlight = new Map<string, Promise<SynthesizeResult>>();
 
 export interface SynthesizeOptions {
@@ -42,7 +81,7 @@ export interface SynthesizeOptions {
 
 export interface SynthesizeResult {
   cacheKey: string;
-  audioPath: string;
+  audioPath: string; // GCS object name (tts-cache/<key>.mp3)
   contentType: string;
   charCount: number;
   cached: boolean;
@@ -54,23 +93,12 @@ function computeCacheKey(text: string, voiceId: string, modelId: string): string
     .digest("hex");
 }
 
-function audioPathFor(cacheKey: string): string {
-  return path.join(CACHE_DIR, `${cacheKey}.mp3`);
-}
-
-async function fileExists(p: string): Promise<boolean> {
-  try {
-    await fs.access(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /**
- * Synthesize text → MP3 using ElevenLabs, with a content-addressed disk +
- * DB cache. Identical (text, voiceId, modelId) inputs only ever cost money
- * once — every subsequent call reuses the on-disk MP3.
+ * Synthesize text → MP3 using ElevenLabs.
+ *
+ * Content-addressed cache: identical (text, voiceId, modelId) inputs only
+ * ever call ElevenLabs once — the MP3 is stored in GCS and reused by ALL
+ * users forever, surviving server restarts.
  */
 export async function synthesize(
   rawText: string,
@@ -82,32 +110,24 @@ export async function synthesize(
 
   const voiceId = options.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
   const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
-
   const cacheKey = computeCacheKey(text, voiceId, modelId);
-  const audioPath = audioPathFor(cacheKey);
+  const audioPath = gcsObjectName(cacheKey);
 
-  // Cache lookup. We re-validate that the file is still on disk because the
-  // container's data dir is not durable across rebuilds — if the row exists
-  // but the file is gone, regenerate.
+  // DB + GCS cache check.
   const existing = await db
     .select()
     .from(ttsCacheTable)
     .where(eq(ttsCacheTable.cacheKey, cacheKey))
     .limit(1);
 
-  if (existing.length > 0 && (await fileExists(audioPath))) {
-    await db
+  if (existing.length > 0 && (await gcsFileExists(cacheKey))) {
+    void db
       .update(ttsCacheTable)
-      .set({
-        hitCount: sql`${ttsCacheTable.hitCount} + 1`,
-        lastAccessedAt: sql`now()`,
-      })
-      .where(eq(ttsCacheTable.cacheKey, cacheKey));
+      .set({ hitCount: sql`${ttsCacheTable.hitCount} + 1`, lastAccessedAt: sql`now()` })
+      .where(eq(ttsCacheTable.cacheKey, cacheKey))
+      .catch(() => {});
 
-    logger.info(
-      { evt: "tts.cache_hit", cacheKey, charCount: text.length, voiceId },
-      "tts cache hit",
-    );
+    logger.info({ evt: "tts.cache_hit", cacheKey, charCount: text.length, voiceId }, "tts cache hit");
 
     return {
       cacheKey,
@@ -118,17 +138,13 @@ export async function synthesize(
     };
   }
 
-  // Single-flight: if another request for the same cacheKey is already
-  // generating, await its result instead of issuing a parallel ElevenLabs
-  // call. Marked `cached: true` because *this* caller didn't pay for a synth.
+  // Single-flight dedup.
   const pending = inFlight.get(cacheKey);
   if (pending) {
     const result = await pending;
     return { ...result, cached: true };
   }
 
-  // Cache miss → call ElevenLabs. Register our promise BEFORE awaiting so any
-  // concurrent caller for the same key joins us instead of duplicating work.
   const generation = generateAndStore({ text, voiceId, modelId, cacheKey, audioPath });
   inFlight.set(cacheKey, generation);
   try {
@@ -148,7 +164,6 @@ interface GenerateArgs {
 
 async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   const { text, voiceId, modelId, cacheKey, audioPath } = args;
-  await ensureCacheDir();
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("tts_missing_api_key");
@@ -185,52 +200,30 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   }
 
   const buffer = Buffer.from(await response.arrayBuffer());
-  if (buffer.byteLength === 0) {
-    throw new Error("tts_empty_audio");
-  }
+  if (buffer.byteLength === 0) throw new Error("tts_empty_audio");
 
   const contentType = response.headers.get("content-type") ?? "audio/mpeg";
-  await fs.writeFile(audioPath, buffer);
+
+  // Upload to GCS — survives restarts, shared across all users.
+  await gcsUpload(cacheKey, buffer, contentType);
 
   await db
     .insert(ttsCacheTable)
-    .values({
-      cacheKey,
-      text,
-      voiceId,
-      modelId,
-      audioPath,
-      contentType,
-      charCount: text.length,
-      hitCount: 0,
-    })
+    .values({ cacheKey, text, voiceId, modelId, audioPath, contentType, charCount: text.length, hitCount: 0 })
     .onConflictDoUpdate({
       target: ttsCacheTable.cacheKey,
-      set: {
-        audioPath,
-        contentType,
-        charCount: text.length,
-        lastAccessedAt: sql`now()`,
-      },
+      set: { audioPath, contentType, charCount: text.length, lastAccessedAt: sql`now()` },
     });
 
   logger.info(
-    {
-      evt: "tts.cache_miss",
-      cacheKey,
-      charCount: text.length,
-      bytes: buffer.byteLength,
-      voiceId,
-      modelId,
-    },
-    "tts generated and cached",
+    { evt: "tts.cache_miss", cacheKey, charCount: text.length, bytes: buffer.byteLength, voiceId, modelId },
+    "tts generated and cached to GCS",
   );
 
   return { cacheKey, audioPath, contentType, charCount: text.length, cached: false };
 }
 
-// Public API surface above; helpers below.
-/** Streamable read of a previously cached MP3 (raw buffer). */
+/** Download a previously cached MP3 from GCS. */
 export async function readCachedAudio(
   cacheKey: string,
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
@@ -240,21 +233,15 @@ export async function readCachedAudio(
     .where(eq(ttsCacheTable.cacheKey, cacheKey))
     .limit(1);
   if (rows.length === 0) return null;
-  const row = rows[0]!;
 
-  if (!(await fileExists(row.audioPath))) return null;
+  const buffer = await gcsDownload(cacheKey);
+  if (!buffer) return null;
 
-  const buffer = await fs.readFile(row.audioPath);
-
-  // Best-effort metadata bump; don't block the stream on it.
   void db
     .update(ttsCacheTable)
-    .set({
-      hitCount: sql`${ttsCacheTable.hitCount} + 1`,
-      lastAccessedAt: sql`now()`,
-    })
+    .set({ hitCount: sql`${ttsCacheTable.hitCount} + 1`, lastAccessedAt: sql`now()` })
     .where(eq(ttsCacheTable.cacheKey, cacheKey))
     .catch(() => {});
 
-  return { buffer, contentType: row.contentType };
+  return { buffer, contentType: rows[0]!.contentType };
 }
