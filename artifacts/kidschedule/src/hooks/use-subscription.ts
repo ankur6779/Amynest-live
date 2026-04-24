@@ -201,6 +201,16 @@ export function useSubscription() {
     [],
   );
 
+  const cancelSubscription = useCallback(async (): Promise<{ ok: boolean; reason?: string }> => {
+    const res = await authFetch(getApiUrl("/api/subscription/cancel"), { method: "POST" });
+    if (res.ok) {
+      refresh();
+      return { ok: true };
+    }
+    const body = await res.json().catch(() => ({}));
+    return { ok: false, reason: body?.message ?? body?.error ?? "Could not cancel subscription." };
+  }, [authFetch, refresh]);
+
   return {
     data: query.data,
     entitlements: query.data?.entitlements ?? null,
@@ -212,5 +222,6 @@ export function useSubscription() {
     startTrial,
     checkout,
     checkoutRazorpay,
+    cancelSubscription,
   };
 }

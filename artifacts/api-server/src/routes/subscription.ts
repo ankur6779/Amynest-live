@@ -14,6 +14,7 @@ import { requireAuth } from "../middlewares/requireAuth";
 import {
   createSubscription as rzpCreateSubscription,
   fetchSubscription as rzpFetchSubscription,
+  cancelSubscription as rzpCancelSubscription,
   verifySubscriptionPaymentSignature,
   verifyWebhookSignature,
   razorpayConfigured,
@@ -231,6 +232,56 @@ router.post("/subscription/webhook", async (req, res): Promise<void> => {
     default:
       res.json({ ok: true, ignored: event.type });
       return;
+  }
+});
+
+/**
+ * POST /subscription/cancel
+ * Cancels the active subscription.
+ * - Razorpay: cancels at cycle end (user keeps premium until period_end).
+ * - Manual/trial: downgrades immediately.
+ * Returns updated entitlements.
+ */
+router.post("/subscription/cancel", requireAuth, async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const { db, subscriptionsTable } = await import("@workspace/db");
+
+  const rows = await db
+    .select()
+    .from(subscriptionsTable)
+    .where(eq(subscriptionsTable.userId, userId))
+    .limit(1);
+
+  const sub = rows[0];
+  if (!sub || !["active", "trialing"].includes(sub.status)) {
+    res.status(400).json({ error: "no_active_subscription" });
+    return;
+  }
+
+  try {
+    if (sub.provider === "razorpay" && sub.providerSubscriptionId) {
+      // Cancel at end of billing cycle — user keeps access until period_end.
+      await rzpCancelSubscription(sub.providerSubscriptionId, true);
+      await db
+        .update(subscriptionsTable)
+        .set({ cancelAtPeriodEnd: 1, updatedAt: new Date() })
+        .where(eq(subscriptionsTable.userId, userId));
+    } else {
+      // Manual grant / trial — cancel immediately.
+      await db
+        .update(subscriptionsTable)
+        .set({ status: "canceled", cancelAtPeriodEnd: 0, updatedAt: new Date() })
+        .where(eq(subscriptionsTable.userId, userId));
+    }
+    const ent = await getEntitlements(userId);
+    res.json({ ok: true, entitlements: ent });
+  } catch (err: any) {
+    res.status(502).json({ error: "cancel_failed", message: err?.message });
   }
 });
 

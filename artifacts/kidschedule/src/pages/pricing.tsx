@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles, Check, Rocket } from "lucide-react";
+import { Sparkles, Check, Rocket, AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 
 export default function PricingPage() {
   const { t } = useTranslation();
-  const { plans, entitlements, isPremium, checkout, loading } = useSubscription();
+  const { plans, entitlements, isPremium, checkout, loading, cancelSubscription } = useSubscription();
   const [selected, setSelected] = useState<Exclude<Plan, "free">>("six_month");
   const [submitting, setSubmitting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const cancelAtPeriodEnd = entitlements?.cancelAtPeriodEnd ?? false;
+  const periodEnd = entitlements?.currentPeriodEnd
+    ? new Date(entitlements.currentPeriodEnd).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+    : null;
 
   const onUpgrade = async () => {
     setSubmitting(true);
@@ -18,6 +25,18 @@ export default function PricingPage() {
     setSubmitting(false);
     if (!res.ok) setNotice(res.reason ?? t("pricing.checkout_unavailable"));
   };
+
+  const onCancel = async () => {
+    setCancelling(true);
+    setShowConfirm(false);
+    setNotice(null);
+    const res = await cancelSubscription();
+    setCancelling(false);
+    if (!res.ok) {
+      setNotice(res.reason ?? "Could not cancel. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-pink-50">
       <div className="max-w-5xl mx-auto px-4 py-12">
@@ -32,6 +51,9 @@ export default function PricingPage() {
           {isPremium && (
             <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-bold">
               <Check className="h-4 w-4" /> {t("pricing.on_plan", { plan: entitlements?.plan })}
+              {cancelAtPeriodEnd && periodEnd && (
+                <span className="font-normal text-amber-600 ml-1">· Cancels {periodEnd}</span>
+              )}
             </div>
           )}
         </div>
@@ -88,7 +110,7 @@ export default function PricingPage() {
           </div>
         )}
 
-        <div className="mt-8 max-w-md mx-auto">
+        <div className="mt-8 max-w-md mx-auto space-y-3">
           <Button
             onClick={onUpgrade}
             disabled={submitting || plans.length === 0 || isPremium}
@@ -98,9 +120,70 @@ export default function PricingPage() {
             <Rocket className="h-4 w-4 mr-2" />
             {isPremium ? t("pricing.already_premium") : submitting ? t("common.please_wait") : t("pricing.upgrade_now")}
           </Button>
-          <p className="text-center text-xs text-slate-400 mt-3">{t("pricing.cancel_anytime")}</p>
+
+          {isPremium && !cancelAtPeriodEnd && (
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirm(true)}
+              disabled={cancelling}
+              className="w-full h-11 text-sm font-semibold border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+              data-testid="button-cancel-subscription"
+            >
+              {cancelling ? "Cancelling…" : "Cancel Subscription"}
+            </Button>
+          )}
+
+          {isPremium && cancelAtPeriodEnd && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 text-center">
+              Your subscription is scheduled to cancel
+              {periodEnd ? ` on ${periodEnd}` : ""}. You'll keep premium access until then.
+            </div>
+          )}
+
+          <p className="text-center text-xs text-slate-400">{t("pricing.cancel_anytime")}</p>
         </div>
       </div>
+
+      {/* ── Cancel Confirmation Dialog ── */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-sm rounded-3xl bg-white shadow-2xl p-6">
+            <button
+              onClick={() => setShowConfirm(false)}
+              className="absolute top-4 right-4 rounded-full p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-red-500" />
+              </div>
+              <h2 className="text-lg font-extrabold text-slate-900">Cancel Subscription?</h2>
+              <p className="text-sm text-slate-500">
+                You'll lose access to all premium features
+                {periodEnd ? ` on ${periodEnd}` : " at the end of your current billing period"}.
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3 w-full mt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowConfirm(false)}
+                >
+                  Keep Premium
+                </Button>
+                <Button
+                  onClick={onCancel}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0"
+                  data-testid="button-confirm-cancel"
+                >
+                  Yes, Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
