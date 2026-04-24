@@ -1,10 +1,19 @@
 import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import { useAuth } from "@/lib/firebase-auth";
-import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+
+// expo-notifications remote push was removed from Expo Go in SDK 53.
+// Only attempt to import + use it when running in a standalone/dev build.
+const isExpoGo = Constants.appOwnership === "expo";
+// Dynamic import only in non-Expo-Go environments to avoid the SDK 53 crash.
+let Notifications: typeof import("expo-notifications") | null = null;
+if (!isExpoGo) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  Notifications = require("expo-notifications") as typeof import("expo-notifications");
+}
 
 /**
  * Registers the device for Expo push notifications and uploads the resulting
@@ -27,6 +36,8 @@ export function usePushRegistration(): void {
       lastKeyRef.current = null;
       return;
     }
+    // Push notifications are not available in Expo Go (SDK 53+). Skip silently.
+    if (isExpoGo || !Notifications) return;
     if (!Device.isDevice) return;
     if (Platform.OS === "web") return;
 

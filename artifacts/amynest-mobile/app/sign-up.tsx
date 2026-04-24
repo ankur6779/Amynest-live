@@ -74,9 +74,8 @@ export default function SignUpScreen() {
       } catch {
         /* non-fatal */
       }
-      // Firebase Auth treats accounts as immediately active. We skip the
-      // separate "verify code" step Clerk required and go straight to onboarding.
-      router.replace("/onboarding");
+      // AuthGate in _layout.tsx handles navigation once Firebase auth state updates.
+      // Do NOT call router.replace here — it races with AuthGate and causes +not-found.
     } catch (err: unknown) {
       console.error("[sign-up] create failed", err);
       Alert.alert("Sign Up Failed", humanizeError(err, "Please try again."));
@@ -87,9 +86,7 @@ export default function SignUpScreen() {
 
   const handleVerify = async () => {
     // Firebase Auth doesn't require an email verification code to sign in.
-    // This handler stays as a no-op for the legacy two-step UI; in practice
-    // the account is created and signed in by handleSignUp above.
-    router.replace("/onboarding");
+    // AuthGate handles navigation automatically once auth state is updated.
   };
 
   // Complete Google sign-up once expo-auth-session returns an idToken.
@@ -109,7 +106,7 @@ export default function SignUpScreen() {
       try {
         const cred = GoogleAuthProvider.credential(idToken);
         await signInWithCredential(firebaseAuth, cred);
-        router.replace("/onboarding");
+        // AuthGate handles navigation once Firebase auth state updates.
       } catch (err) {
         console.error("[sign-up] google credential failed", err);
         Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));

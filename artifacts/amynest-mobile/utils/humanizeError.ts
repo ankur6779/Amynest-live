@@ -1,6 +1,6 @@
-// Map common error shapes (Clerk, fetch, generic Error) to short, parent-friendly
-// strings safe to show in toasts and alerts. Never returns raw stack traces or
-// raw server error JSON — those are logged to Sentry/console instead.
+// Map common error shapes (Firebase, Clerk, fetch, generic Error) to short,
+// parent-friendly strings safe to show in toasts and alerts.
+// Never returns raw stack traces or raw server error JSON.
 
 type ClerkLikeError = {
   errors?: Array<{ code?: string; message?: string; longMessage?: string }>;
@@ -12,6 +12,30 @@ type FetchLikeError = {
   statusText?: string;
   message?: string;
 };
+
+// Firebase Auth error codes → friendly messages
+const FIREBASE_FRIENDLY: Record<string, string> = {
+  "auth/invalid-credential": "Incorrect email or password. Please try again.",
+  "auth/wrong-password": "Incorrect password. Please try again.",
+  "auth/user-not-found": "No account found with that email. Please sign up first.",
+  "auth/email-already-in-use": "An account with that email already exists. Try signing in instead.",
+  "auth/weak-password": "Please choose a stronger password (at least 8 characters).",
+  "auth/invalid-email": "Please enter a valid email address.",
+  "auth/too-many-requests": "Too many attempts. Please wait a minute and try again.",
+  "auth/network-request-failed": "Network error. Please check your connection and try again.",
+  "auth/user-disabled": "This account has been disabled. Please contact support.",
+  "auth/operation-not-allowed": "Email/password sign-in is not enabled. Please contact support.",
+  "auth/expired-action-code": "This link has expired. Please request a new one.",
+  "auth/invalid-action-code": "This link is invalid. Please request a new one.",
+  "auth/requires-recent-login": "Please sign out and sign in again to continue.",
+  "auth/account-exists-with-different-credential": "An account already exists with the same email but a different sign-in method.",
+};
+
+function fromFirebase(err: object & { code?: string }): string | null {
+  if (!err.code || typeof err.code !== "string") return null;
+  if (!err.code.startsWith("auth/")) return null;
+  return FIREBASE_FRIENDLY[err.code] ?? null;
+}
 
 const CLERK_FRIENDLY: Record<string, string> = {
   form_identifier_not_found: "We couldn't find an account with that email.",
@@ -67,7 +91,10 @@ export function humanizeError(
   }
 
   if (typeof err === "object") {
-    const e = err as ClerkLikeError & FetchLikeError;
+    const e = err as ClerkLikeError & FetchLikeError & { code?: string };
+    // Firebase errors take priority — they have a `code` like "auth/invalid-credential"
+    const fromFirebaseMsg = fromFirebase(e);
+    if (fromFirebaseMsg) return fromFirebaseMsg;
     const fromClerkMsg = fromClerk(e);
     if (fromClerkMsg) return fromClerkMsg;
     const fromStatus = fromFetchStatus(e.status);

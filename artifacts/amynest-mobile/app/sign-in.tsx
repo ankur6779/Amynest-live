@@ -59,7 +59,8 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
-      router.replace("/(tabs)");
+      // AuthGate in _layout.tsx handles navigation once Firebase auth state updates.
+      // Do NOT call router.replace here — it races with AuthGate and causes +not-found.
     } catch (err: unknown) {
       console.error("[sign-in] failed", err);
       Alert.alert("Sign In Failed", humanizeError(err, "Please check your details and try again."));
@@ -85,7 +86,7 @@ export default function SignInScreen() {
       try {
         const cred = GoogleAuthProvider.credential(idToken);
         await signInWithCredential(firebaseAuth, cred);
-        router.replace("/(tabs)");
+        // AuthGate handles navigation once Firebase auth state updates.
       } catch (err) {
         console.error("[sign-in] google credential failed", err);
         Alert.alert("Sign In Failed", humanizeError(err, "Google sign-in failed. Please try again."));
