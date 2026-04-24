@@ -24,17 +24,14 @@ vi.mock("@/hooks/useAuthFetch", () => ({
   useAuthFetch: () => mockAuthFetch,
 }));
 
-vi.mock("expo-speech", () => ({
-  stop: vi.fn().mockResolvedValue(undefined),
-  speak: vi.fn(),
-  getAvailableVoicesAsync: vi.fn().mockResolvedValue([]),
-}));
-
-vi.mock("@react-native-async-storage/async-storage", () => ({
-  default: {
-    getItem: vi.fn().mockResolvedValue(null),
-    setItem: vi.fn().mockResolvedValue(undefined),
-  },
+vi.mock("@/hooks/useAmyVoice", () => ({
+  useAmyVoice: () => ({
+    speak: vi.fn(),
+    stop: vi.fn(),
+    speaking: false,
+    loading: false,
+    error: null,
+  }),
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
