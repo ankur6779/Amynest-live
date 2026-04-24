@@ -36,7 +36,7 @@ import { ParentCommandCenter } from "@/components/parent-command-center";
 import { LockedBlock } from "@/components/locked-block";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
-import { RoutineInlineMeals } from "@/components/routine-inline-meals";
+import { SmartMealSuggestions } from "@/components/smart-meal-suggestions";
 import type { AgeGroup } from "@/lib/age-groups";
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
@@ -678,17 +678,13 @@ export default function ParentingHub() {
           <HubSection
             id="meal-suggestions"
             icon={<ChefHat className="h-5 w-5 text-emerald-600" />}
-            title="🍱 Amy AI Meal Suggestions"
-            description="AI-generated tiffin & meal ideas, tuned to your child"
+            title="🍱 Amy AI Meal Generator"
+            description="Describe what you want to cook — Amy generates recipes instantly"
             accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-lime-100 dark:to-lime-500/20"
             tryFree={tryFreeFor("hub_ai_meal_generator")}
             onOpen={() => hubUsage.markFeatureUsed("hub_ai_meal_generator")}
           >
-            <RoutineInlineMeals
-              audience="kids_tiffin"
-              childAge={effectiveChild?.age}
-              region="india"
-            />
+            <SmartMealSuggestions />
           </HubSection>
         </LockedBlock>
 
