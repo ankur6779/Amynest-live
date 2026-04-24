@@ -6,13 +6,25 @@ export interface UseAmyVoiceOptions {
   voiceId?: string;
   /** Optional override for the model id (defaults to Turbo v2.5 server-side). */
   modelId?: string;
+  /** Multiplier on HTMLAudioElement.playbackRate. Defaults to 1. Live-applied. */
+  playbackRate?: number;
+  /**
+   * Fired when the audio reaches its natural end (not on stop/abort/error).
+   * Used by the audio-lessons player to auto-advance to the next paragraph.
+   */
+  onFinished?: () => void;
 }
 
 export interface UseAmyVoiceState {
   speaking: boolean;
   loading: boolean;
   error: string | null;
-  /** Toggle: starts narration if idle, stops it if currently playing. */
+  /**
+   * Synthesises and plays the given text. Calling again while a previous
+   * synth/playback is in-flight cancels it and starts fresh — consumers that
+   * want toggle (tap-to-stop) UX should check `speaking || loading` first
+   * and call `stop()` themselves.
+   */
   speak: (text: string) => Promise<void>;
   stop: () => void;
 }
@@ -48,7 +60,20 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { voiceId, modelId } = options;
+  const { voiceId, modelId, playbackRate, onFinished } = options;
+
+  // Refs so live changes to rate / onFinished don't bust speak's identity
+  // (and don't accidentally re-trigger consumer effects that depend on it).
+  const playbackRateRef = useRef(playbackRate ?? 1);
+  const onFinishedRef = useRef(onFinished);
+  useEffect(() => {
+    playbackRateRef.current = playbackRate ?? 1;
+    // Apply rate change live to currently-playing audio.
+    if (audioRef.current) audioRef.current.playbackRate = playbackRateRef.current;
+  }, [playbackRate]);
+  useEffect(() => {
+    onFinishedRef.current = onFinished;
+  }, [onFinished]);
 
   const cleanup = useCallback(() => {
     const a = audioRef.current;
@@ -94,14 +119,14 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       const text = (rawText ?? "").trim();
       if (!text) return;
 
-      // Toggle behaviour: pressing play while already playing or loading
-      // cancels — including any in-flight synth/audio fetch.
-      if (speaking || loading) {
-        stop();
-        return;
-      }
-
+      // Always start fresh: cancel any in-flight fetch and tear down any
+      // currently-playing audio. Consumers wanting toggle behaviour gate
+      // the call on `speaking || loading` themselves.
       const myId = ++reqIdRef.current;
+      abortInFlight();
+      cleanup();
+      setSpeaking(false);
+
       const controller = new AbortController();
       abortRef.current = controller;
 
@@ -139,10 +164,13 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         objectUrlRef.current = url;
 
         const audio = new Audio(url);
+        audio.playbackRate = playbackRateRef.current;
         audio.onended = () => {
           if (myId !== reqIdRef.current) return;
           setSpeaking(false);
           cleanup();
+          // Natural completion → notify consumer (e.g. paragraph advance).
+          onFinishedRef.current?.();
         };
         audio.onerror = () => {
           if (myId !== reqIdRef.current) return;
@@ -175,7 +203,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         }
       }
     },
-    [authFetch, cleanup, loading, modelId, speaking, stop, voiceId],
+    [authFetch, cleanup, abortInFlight, modelId, voiceId],
   );
 
   return { speaking, loading, error, speak, stop };

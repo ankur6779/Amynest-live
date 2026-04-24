@@ -12,7 +12,12 @@ export interface UseAmyVoiceState {
   speaking: boolean;
   loading: boolean;
   error: string | null;
-  /** Toggle: starts narration if idle, stops it if currently playing. */
+  /**
+   * Synthesises and plays the given text. Calling again while a previous
+   * synth/playback is in-flight cancels it and starts fresh — consumers that
+   * want toggle (tap-to-stop) UX should check `speaking || loading` first
+   * and call `stop()` themselves.
+   */
   speak: (text: string) => Promise<void>;
   stop: () => void;
 }
@@ -96,13 +101,14 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       const text = (rawText ?? "").trim();
       if (!text) return;
 
-      // Toggle: pressing while already playing or loading stops + cancels.
-      if (speaking || loading) {
-        stop();
-        return;
-      }
-
+      // Always start fresh: cancel any in-flight fetch and pause current
+      // playback. Consumers wanting toggle behaviour gate the call on
+      // `speaking || loading` themselves.
       const myId = ++reqIdRef.current;
+      abortInFlight();
+      try { player.pause(); } catch {}
+      if (isMountedRef.current) setRequestedPlaying(false);
+
       const controller = new AbortController();
       abortRef.current = controller;
 
@@ -144,7 +150,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         }
       }
     },
-    [authFetch, loading, modelId, player, speaking, stop, voiceId],
+    [authFetch, abortInFlight, modelId, player, voiceId],
   );
 
   return { speaking, loading, error, speak, stop };

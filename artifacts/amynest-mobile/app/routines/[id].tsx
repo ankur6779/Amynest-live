@@ -21,18 +21,23 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
 import { paletteFor } from "@/lib/theme";
 import * as Haptics from "expo-haptics";
-import * as Speech from "expo-speech";
 import Animated, { FadeIn } from "react-native-reanimated";
 import SwipeableCard from "@/components/SwipeableCard";
 import RoutineItemModal from "@/components/RoutineItemModal";
 import colors, { brand, brandAlpha } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 import VoiceSettingsPanel, {
-  VOICE_KEY,
   loadVoiceSettings,
   saveVoiceSettings,
   type VoiceSettings,
 } from "@/components/VoiceSettingsPanel";
+
+// ElevenLabs voice ids — kept inline; same constants used in SmartMealSuggestions.
+const VOICE_AMY_FEMALE = "21m00Tcm4TlvDq8ikWAM"; // Rachel
+const VOICE_AMY_MALE = "pNInz6obpgDQGcFmaJgB";   // Adam
+// Multilingual model handles Hindi noticeably better than Turbo v2.5.
+const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
 
 type ItemStatus = "pending" | "completed" | "skipped" | "delayed";
 
@@ -553,7 +558,7 @@ export default function RoutineDetailScreen() {
     AsyncStorage.setItem(sleepKey, s).catch(() => {});
   };
 
-  // ─── Read-aloud current activity (TTS) ────────────────────────────
+  // ─── Read-aloud current activity (Amy TTS) ────────────────────────
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
     enabled: false, lang: "en-IN", gender: "female", voiceName: null,
   });
@@ -562,36 +567,51 @@ export default function RoutineDetailScreen() {
   const voiceLang = voiceSettings.lang;
   const announcedRef = useRef<string>("");
 
+  // Map persisted voice settings → ElevenLabs voice + model. Hindi uses the
+  // multilingual model; English stays on the default Turbo v2.5 (cheaper).
+  const ttsVoiceId = voiceSettings.gender === "male" ? VOICE_AMY_MALE : VOICE_AMY_FEMALE;
+  const ttsModelId = voiceLang === "hi-IN" ? MODEL_MULTILINGUAL : undefined;
+  const { speak: speakAmy, stop: stopAmy } = useAmyVoice({
+    voiceId: ttsVoiceId,
+    modelId: ttsModelId,
+  });
+
   useEffect(() => {
     loadVoiceSettings().then(setVoiceSettings).catch(() => {});
   }, []);
 
   const updateVoiceSettings = useCallback((next: VoiceSettings) => {
     setVoiceSettings((prev) => {
-      if (prev.enabled && !next.enabled) Speech.stop();
+      if (prev.enabled && !next.enabled) {
+        stopAmy();
+        // Reset dedup so the *next* enable re-announces the current
+        // activity instead of silently skipping it.
+        announcedRef.current = "";
+      }
       return next;
     });
-  }, []);
+  }, [stopAmy]);
 
   const toggleVoice = useCallback(() => {
     Haptics.selectionAsync().catch(() => {});
     setVoiceSettings((prev) => {
       const next = { ...prev, enabled: !prev.enabled };
       void saveVoiceSettings(next);
-      if (!next.enabled) Speech.stop();
+      if (!next.enabled) {
+        stopAmy();
+        announcedRef.current = "";
+      }
       showToast(next.enabled ? "🔊 Read-aloud on" : "🔇 Read-aloud off", "info");
       return next;
     });
-  }, []);
+  }, [stopAmy]);
 
   const openVoicePanel = useCallback(() => {
     Haptics.selectionAsync().catch(() => {});
     setVoicePanelOpen(true);
   }, []);
 
-  useEffect(() => {
-    return () => { Speech.stop(); };
-  }, []);
+  // Hook handles its own teardown on unmount; nothing extra needed here.
 
   const [nowTick, setNowTick] = useState(() => Date.now());
   useEffect(() => {
@@ -611,7 +631,9 @@ export default function RoutineDetailScreen() {
     });
   }, [items, nowTick, todayMood, todaySleep, dateMode]);
 
-  // Auto-announce current task when voice is on (today only)
+  // Auto-announce current task when voice is on (today only).
+  // Uses Amy (ElevenLabs) — same content-hash cache as the meal Read Aloud,
+  // so each unique announcement only synthesises once across the user base.
   useEffect(() => {
     if (!voiceOn || dateMode !== "today") return;
     const now = new Date(nowTick);
@@ -624,22 +646,17 @@ export default function RoutineDetailScreen() {
       return start <= nowMins && nowMins < end;
     });
     if (!current) return;
-    if (announcedRef.current === current.activity) return;
-    announcedRef.current = current.activity;
+    // Dedup on activity + lang so flipping language re-announces, but the
+    // 60-second nowTick refresh during the same activity stays silent.
+    const dedupKey = `${voiceLang}::${current.activity}`;
+    if (announcedRef.current === dedupKey) return;
+    announcedRef.current = dedupKey;
     const childName = routine?.childName ?? "buddy";
     const msg = voiceLang === "hi-IN"
       ? `${childName}, अब समय है ${current.activity} का!`
       : `Hey ${childName}, time for ${current.activity}!`;
-    try {
-      Speech.stop();
-      Speech.speak(msg, {
-        language: voiceLang,
-        voice: voiceSettings.voiceName ?? undefined,
-        pitch: 1.0,
-        rate: 0.9,
-      });
-    } catch {/* ignore */}
-  }, [voiceOn, voiceLang, voiceSettings.voiceName, nowTick, items, dateMode, routine?.childName]);
+    void speakAmy(msg);
+  }, [voiceOn, voiceLang, nowTick, items, dateMode, routine?.childName, speakAmy]);
 
   const lastPersistedRef = useRef<string>("");
   useEffect(() => {

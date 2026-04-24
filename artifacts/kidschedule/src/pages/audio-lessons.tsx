@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft, Volume2, Pause, Play, SkipBack, SkipForward, Headphones,
-  Sparkles, Gauge, X, Clock,
+  Sparkles, Gauge, X, Clock, Loader2,
 } from "lucide-react";
 import {
   LESSONS, lessonsForAge, getLessonText, getAgeLabel,
@@ -13,6 +13,13 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
+
+// Lessons currently use a single warm female narrator (Rachel). A male
+// alternative could be wired in later via a voice selector in the player.
+const VOICE_AMY_FEMALE = "21m00Tcm4TlvDq8ikWAM"; // Rachel
+// Multilingual model handles Hindi/Hinglish noticeably better than Turbo v2.5.
+const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
 
 const AGE_ORDER: AgeBucket[] = ["0-2", "2-4", "5-7", "8-10", "10+"];
 
@@ -220,12 +227,33 @@ function PlayerSheet({ lesson, lang, onClose }: { lesson: Lesson; lang: string; 
   const [playing, setPlaying] = useState(false);
   const [paragraphIdx, setParagraphIdx] = useState(0);
   const [rate, setRate] = useState<number>(1);
-  const [supported, setSupported] = useState(true);
-  const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  const text = getLessonText(lesson, lang);
+  // Memoise text so paragraphs has a stable reference across renders —
+  // otherwise every render would look like a content change to our effects.
+  const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
   const paragraphs = text.paragraphs;
-  const ttsLang = lang === "hi" ? "hi-IN" : "en-IN";
+  // Hindi/Hinglish go through the multilingual model; English stays on the
+  // default Turbo v2.5 (faster + cheaper) for the lesson voice.
+  const modelId = lang === "en" ? undefined : MODEL_MULTILINGUAL;
+
+  // Auto-advance to the next paragraph when the current one finishes
+  // playing, or stop if we're at the end.
+  const handleFinished = useCallback(() => {
+    setParagraphIdx((i) => {
+      if (i + 1 >= paragraphs.length) {
+        setPlaying(false);
+        return i;
+      }
+      return i + 1;
+    });
+  }, [paragraphs.length]);
+
+  const { speaking, loading, error, speak, stop } = useAmyVoice({
+    voiceId: VOICE_AMY_FEMALE,
+    modelId,
+    playbackRate: rate,
+    onFinished: handleFinished,
+  });
 
   // Resume from saved index
   useEffect(() => {
@@ -242,41 +270,17 @@ function PlayerSheet({ lesson, lang, onClose }: { lesson: Lesson; lang: string; 
     saveResume(r);
   }, [lesson.id, paragraphIdx]);
 
+  // Drive playback: when `playing` flips on (or paragraph/lang changes
+  // while playing) start a fresh synth; when it flips off, stop.
   useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      setSupported(false);
+    if (!playing) {
+      stop();
+      return;
     }
-    return () => {
-      try { window.speechSynthesis?.cancel(); } catch {}
-    };
-  }, []);
-
-  // Whenever play state, paragraph, rate or lang changes, restart utterance.
-  useEffect(() => {
-    if (!supported) return;
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    if (!playing) return;
     const txt = paragraphs[paragraphIdx];
     if (!txt) { setPlaying(false); return; }
-    const utt = new SpeechSynthesisUtterance(txt);
-    utt.rate = rate;
-    utt.pitch = 1;
-    utt.lang = ttsLang;
-    utt.onend = () => {
-      setParagraphIdx((i) => {
-        if (i + 1 >= paragraphs.length) {
-          setPlaying(false);
-          return i;
-        }
-        return i + 1;
-      });
-    };
-    utt.onerror = () => setPlaying(false);
-    utterRef.current = utt;
-    synth.speak(utt);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, paragraphIdx, rate, supported, ttsLang]);
+    void speak(txt);
+  }, [playing, paragraphIdx, paragraphs, speak, stop]);
 
   const next = () => {
     if (paragraphIdx + 1 < paragraphs.length) setParagraphIdx(paragraphIdx + 1);
@@ -320,17 +324,17 @@ function PlayerSheet({ lesson, lang, onClose }: { lesson: Lesson; lang: string; 
           </button>
         </div>
 
-        {!supported && (
+        {error && (
           <div style={{
             padding: 12, borderRadius: 12,
             background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)",
             color: "#fecaca", fontSize: 13, marginBottom: 12,
           }}>
             {lang === "hi"
-              ? "इस browser में audio playback support नहीं है। आप नीचे lesson पढ़ सकते हैं।"
+              ? "Amy की आवाज़ अभी नहीं चल पा रही। कुछ देर बाद try करें — आप नीचे lesson पढ़ भी सकते हैं।"
               : lang === "hinglish"
-              ? "Is browser mein audio playback support nahi hai. Aap neeche lesson padh sakte hain."
-              : "Audio playback is not supported in this browser. You can still read the lesson below."}
+              ? "Amy ki awaaz abhi load nahi ho payi. Thodi der baad try karein — aap neeche lesson padh bhi sakte hain."
+              : "Couldn't load Amy's voice right now. Please try again in a moment — you can still read the lesson below."}
           </div>
         )}
 
@@ -397,18 +401,25 @@ function PlayerSheet({ lesson, lang, onClose }: { lesson: Lesson; lang: string; 
 
           <button
             onClick={() => setPlaying((p) => !p)}
-            disabled={!supported}
             aria-label={playing ? "Pause" : "Play"}
             style={{
               color: "#fff", background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
               border: "none", borderRadius: 999, width: 64, height: 64,
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: supported ? "pointer" : "default",
+              cursor: "pointer",
               boxShadow: "0 8px 24px rgba(139,92,246,0.5)",
-              opacity: supported ? 1 : 0.4,
             }}
           >
-            {playing ? <Pause size={26} /> : <Play size={26} style={{ marginLeft: 3 }} />}
+            {loading && playing ? (
+              <Loader2 size={24} className="animate-spin" />
+            ) : playing && speaking ? (
+              <Pause size={26} />
+            ) : playing ? (
+              // Playing has been requested but audio is still preparing.
+              <Loader2 size={24} className="animate-spin" />
+            ) : (
+              <Play size={26} style={{ marginLeft: 3 }} />
+            )}
           </button>
 
           <button
@@ -448,10 +459,10 @@ function PlayerSheet({ lesson, lang, onClose }: { lesson: Lesson; lang: string; 
 
         <div style={{ marginTop: 14, fontSize: 11, color: "#7a749b", textAlign: "center" }}>
           {lang === "hi"
-            ? "आवाज़ आपके browser से आती है। Offline काम करता है। Jump करने के लिए transcript में paragraph tap करें।"
+            ? "Amy की natural आवाज़। Jump करने के लिए transcript में paragraph tap करें।"
             : lang === "hinglish"
-            ? "Awaaz aapke browser se aati hai. Offline kaam karta hai. Jump karne ke liye transcript mein paragraph tap karein."
-            : "Voice uses your browser. Works offline. Tap a paragraph in the transcript to jump to it."}
+            ? "Amy ki natural awaaz. Jump karne ke liye transcript mein paragraph tap karein."
+            : "Narrated by Amy. Tap a paragraph in the transcript to jump to it."}
         </div>
       </div>
     </div>

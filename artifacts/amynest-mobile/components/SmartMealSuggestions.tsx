@@ -372,7 +372,11 @@ function RecipeModal({
     });
   }, []);
 
-  const handleReadAloud = () => { void speak(meal.audioText); };
+  const handleReadAloud = () => {
+    // Toggle: tap while loading/playing stops, otherwise starts fresh.
+    if (speaking || loading) stop();
+    else void speak(meal.audioText);
+  };
 
   const switchVoice = (pref: "female" | "male") => {
     setVoicePref(pref);
