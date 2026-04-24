@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX } from "lucide-react";
 import { AgeGroup, SKILL_FOCUS_BY_GROUP, STORIES_BY_GROUP, PARENT_TASKS_BY_GROUP } from "@/lib/age-groups";
-import { speak } from "@/lib/voice";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 
 // ─────────────────────────────────────────────────────────────
 // Skill Focus Section
@@ -60,27 +60,14 @@ interface StorySectionProps {
 export function StorySection({ group, childName }: StorySectionProps) {
   const stories = STORIES_BY_GROUP[group];
   const [activeIdx, setActiveIdx] = useState(0);
-  const [speaking, setSpeaking] = useState(false);
+  const { speak, stop, speaking, loading } = useAmyVoice();
   const story = stories[activeIdx];
 
   const handleSpeak = () => {
     if (!story) return;
-    if (speaking) {
-      window.speechSynthesis?.cancel();
-      setSpeaking(false);
-      return;
-    }
-    setSpeaking(true);
+    if (speaking || loading) { stop(); return; }
     const text = `${story.title}. ${story.story}. Moral: ${story.moral}`;
-    speak(text).catch(() => {});
-    // Listen for end/error to flip speaking state
-    const utterThis = () => {
-      if (!("speechSynthesis" in window)) { setSpeaking(false); return; }
-      const checkDone = setInterval(() => {
-        if (!window.speechSynthesis.speaking) { setSpeaking(false); clearInterval(checkDone); }
-      }, 500);
-    };
-    setTimeout(utterThis, 100);
+    speak(text);
   };
 
   if (!story) return null;
@@ -104,7 +91,7 @@ export function StorySection({ group, childName }: StorySectionProps) {
             {stories.map((s, i) => (
               <button
                 key={s.title}
-                onClick={() => { setActiveIdx(i); setSpeaking(false); window.speechSynthesis?.cancel(); }}
+                onClick={() => { setActiveIdx(i); stop(); }}
                 className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
                   i === activeIdx
                     ? "bg-amber-600 text-white border-amber-600"
@@ -126,11 +113,11 @@ export function StorySection({ group, childName }: StorySectionProps) {
             <Button
               size="sm"
               variant="outline"
-              className={`rounded-full h-8 px-3 transition-all ${speaking ? "bg-amber-100 dark:bg-amber-500/20 border-amber-400 text-amber-700 dark:text-amber-200" : "border-amber-200 dark:border-amber-400/30 text-amber-700 dark:text-amber-200 hover:bg-amber-50 dark:bg-amber-500/15"}`}
+              className={`rounded-full h-8 px-3 transition-all ${(speaking || loading) ? "bg-amber-100 dark:bg-amber-500/20 border-amber-400 text-amber-700 dark:text-amber-200" : "border-amber-200 dark:border-amber-400/30 text-amber-700 dark:text-amber-200 hover:bg-amber-50 dark:bg-amber-500/15"}`}
               onClick={handleSpeak}
             >
-              {speaking ? (
-                <><VolumeX className="h-3.5 w-3.5 mr-1" /> Stop</>
+              {(speaking || loading) ? (
+                <><VolumeX className="h-3.5 w-3.5 mr-1" />{loading ? "…" : "Stop"}</>
               ) : (
                 <><Volume2 className="h-3.5 w-3.5 mr-1" /> Read Aloud</>
               )}

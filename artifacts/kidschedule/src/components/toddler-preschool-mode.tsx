@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX, ChevronRight, CheckCircle2, Star, SkipForward, Sparkles } from "lucide-react";
-import { speak } from "@/lib/voice";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
@@ -276,25 +276,17 @@ function InteractiveCard({ emoji, sectionLabel, title, desc, meta, extra, accent
 // ─────────────────────────────────────────────────────────────
 function StoryPlayer({ stories, childName, accentColor }: { stories: Story[]; childName: string; accentColor: string }) {
   const { idx, next } = useRotatingIndex(`amynest_story_${accentColor}`, stories);
-  const [speaking, setSpeaking] = useState(false);
+  const { speak, stop, speaking, loading } = useAmyVoice();
 
   const story = stories[idx];
 
   const handleSpeak = () => {
-    if (speaking) {
-      window.speechSynthesis?.cancel();
-      setSpeaking(false);
-      return;
-    }
-    setSpeaking(true);
-    speak(`${story.title}. ${story.story}. The moral is: ${story.moral}`).catch(() => {});
-    const checkDone = setInterval(() => {
-      if (!window.speechSynthesis?.speaking) { setSpeaking(false); clearInterval(checkDone); }
-    }, 500);
+    if (speaking || loading) { stop(); return; }
+    speak(`${story.title}. ${story.story}. The moral is: ${story.moral}`);
   };
 
   const handleNext = () => {
-    if (speaking) { window.speechSynthesis?.cancel(); setSpeaking(false); }
+    stop();
     next();
   };
 
@@ -319,10 +311,10 @@ function StoryPlayer({ stories, childName, accentColor }: { stories: Story[]; ch
               size="sm"
               variant="outline"
               onClick={handleSpeak}
-              className={`shrink-0 rounded-full h-8 px-3 text-xs font-bold border-amber-300 transition-all ${speaking ? "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-200" : "text-amber-700 dark:text-amber-200 hover:bg-amber-50 dark:bg-amber-500/15"}`}
+              className={`shrink-0 rounded-full h-8 px-3 text-xs font-bold border-amber-300 transition-all ${(speaking || loading) ? "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-200" : "text-amber-700 dark:text-amber-200 hover:bg-amber-50 dark:bg-amber-500/15"}`}
             >
-              {speaking
-                ? <><VolumeX className="h-3 w-3 mr-1" />Stop</>
+              {(speaking || loading)
+                ? <><VolumeX className="h-3 w-3 mr-1" />{loading ? "…" : "Stop"}</>
                 : <><Volume2 className="h-3 w-3 mr-1" />Read Aloud</>}
             </Button>
           </div>
@@ -345,12 +337,6 @@ function StoryPlayer({ stories, childName, accentColor }: { stories: Story[]; ch
           >
             <SkipForward className="h-4 w-4 mr-1.5" /> Next Story
           </Button>
-          {speaking && (
-            <Button size="sm" variant="outline" onClick={handleSpeak}
-              className="rounded-full h-9 px-4 border-amber-300 text-amber-700 dark:text-amber-200 font-bold text-sm">
-              <VolumeX className="h-4 w-4" />
-            </Button>
-          )}
         </div>
 
         <p className="text-[10px] text-amber-600 mt-3 text-center">

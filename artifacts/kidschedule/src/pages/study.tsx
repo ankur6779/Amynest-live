@@ -15,7 +15,7 @@ import {
   GraduationCap, ArrowLeft, Volume2, VolumeX, CheckCircle2, XCircle,
   Sparkles, RotateCcw, ChevronRight, Trophy,
 } from "lucide-react";
-import { speak, stopSpeaking, ttsAvailable } from "@/lib/study-tts";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 import {
   loadProgress, markPlayItem, markTopicResult,
   categoryPercent, subjectPercent, type StudyProgress,
@@ -63,14 +63,10 @@ export default function StudyPage() {
     if ("childId" in view) setProgress(loadProgress(view.childId));
   }, [("childId" in view) ? view.childId : null]);
 
-  // Stop any ongoing speech when navigating away from this page.
-  useEffect(() => () => stopSpeaking(), []);
-
   const child = "childId" in view ? list.find((c) => c.id === view.childId) : undefined;
   const mode: StudyMode | undefined = child ? resolveStudyMode(child.age, child.childClass) : undefined;
 
   const goBack = () => {
-    stopSpeaking();
     if (view.kind === "play-home" || view.kind === "study-home") {
       if (list.length > 1) setView({ kind: "child-pick" });
       else navigate("/parenting-hub");
@@ -239,7 +235,7 @@ function PlayCategoryView({
   const cat = PLAY_CATEGORIES.find((c) => c.id === (categoryId as PlayCategory["id"]));
   if (!cat) return <p className="text-sm text-muted-foreground">Category not found.</p>;
   const completed = new Set(progress?.play[cat.id] ?? []);
-  const tts = ttsAvailable();
+  const { speak } = useAmyVoice();
   const handleTap = (item: PlayItem) => {
     speak(item.speak);
     onItemDone(markPlayItem(childId, cat.id, item.id));
@@ -250,11 +246,6 @@ function PlayCategoryView({
         <h2 className="font-quicksand text-xl font-bold text-foreground flex items-center gap-2">
           <span className="text-2xl">{cat.emoji}</span> {cat.title}
         </h2>
-        {!tts && (
-          <span className="text-xs text-amber-600 inline-flex items-center gap-1">
-            <VolumeX className="h-3.5 w-3.5" /> Audio not supported
-          </span>
-        )}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {cat.items.map((item) => {
@@ -382,7 +373,7 @@ function TopicDetail({
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [picks, setPicks] = useState<number[]>(() => topic ? Array(topic.questions.length).fill(-1) : []);
   const [submitted, setSubmitted] = useState(false);
-  useEffect(() => () => stopSpeaking(), []);
+  const { speak: amySpeak, stop: amyStop, speaking: amySpeaking, loading: amyLoading } = useAmyVoice();
   if (!subj || !topic) return <p className="text-sm text-muted-foreground">Topic not found.</p>;
 
   const score = topic.questions.reduce((acc, q, i) => acc + (picks[i] === q.answer ? 1 : 0), 0);
@@ -421,10 +412,13 @@ function TopicDetail({
               size="sm"
               variant="outline"
               className="rounded-full"
-              onClick={() => speak(topic.notes.replace(/\n/g, ". "))}
-              disabled={!ttsAvailable()}
+              onClick={() => {
+                if (amySpeaking || amyLoading) { amyStop(); return; }
+                amySpeak(topic.notes.replace(/\n/g, ". "));
+              }}
             >
-              <Volume2 className="h-4 w-4 mr-1" /> Read aloud
+              {(amySpeaking || amyLoading) ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
+              {amySpeaking ? "Stop" : amyLoading ? "…" : "Read aloud"}
             </Button>
           </div>
           <div className="text-sm text-foreground whitespace-pre-line leading-relaxed">{topic.notes}</div>
@@ -432,8 +426,10 @@ function TopicDetail({
             <Button
               variant="secondary"
               className="rounded-full"
-              onClick={() => speak(topic.amyPrompt)}
-              disabled={!ttsAvailable()}
+              onClick={() => {
+                if (amySpeaking || amyLoading) { amyStop(); return; }
+                amySpeak(topic.amyPrompt);
+              }}
             >
               Hear Amy's prompt
             </Button>

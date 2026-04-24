@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { useLocation, Link } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -1778,14 +1779,13 @@ function WinCard({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// LISTEN BUTTON — speaks the win aloud using the browser's TTS engine.
-// No backend / no API key needed; works offline. Voice picks "en" by default.
+// LISTEN BUTTON — speaks the win aloud using Amy's ElevenLabs voice.
 // ═══════════════════════════════════════════════════════════════════════════
 function ListenButton({ win }: { win: Win }) {
-  const [speaking, setSpeaking] = useState(false);
+  const { speak, stop, speaking, loading } = useAmyVoice();
 
-  const buildText = () => {
-    const parts = [
+  const buildText = useCallback(() => {
+    return [
       `Win ${win.win}. ${win.title}.`,
       win.objective,
       win.deep_explanation,
@@ -1794,58 +1794,30 @@ function ListenButton({ win }: { win: Win }) {
       win.mistake_to_avoid ? `Mistake to avoid: ${win.mistake_to_avoid}.` : "",
       win.micro_task ? `Tiny task for today: ${win.micro_task}.` : "",
     ].filter(Boolean).join(" ");
-    return parts;
-  };
+  }, [win]);
 
-  const stop = () => {
-    if (typeof window === "undefined") return;
-    window.speechSynthesis?.cancel();
-    setSpeaking(false);
+  const handleClick = () => {
+    if (speaking || loading) { stop(); return; }
+    speak(buildText());
   };
-
-  const speak = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(buildText());
-    utter.rate = 0.95;
-    utter.pitch = 1.0;
-    utter.lang = "en-US";
-    // Prefer a softer female voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find((v) =>
-      /female|samantha|victoria|karen|google us english|aria|jenny|libby/i.test(v.name + " " + v.lang)
-    ) || voices.find((v) => v.lang?.startsWith("en"));
-    if (preferred) utter.voice = preferred;
-    utter.onend = () => setSpeaking(false);
-    utter.onerror = () => setSpeaking(false);
-    setSpeaking(true);
-    window.speechSynthesis.speak(utter);
-  };
-
-  // Stop speaking when card unmounts (user swipes away)
-  useEffect(() => {
-    return () => {
-      if (typeof window !== "undefined") window.speechSynthesis?.cancel();
-    };
-  }, []);
 
   return (
     <button
-      onClick={speaking ? stop : speak}
+      onClick={handleClick}
       style={{
         fontSize: 11, padding: "4px 10px", borderRadius: 999,
-        background: speaking ? "rgba(236,72,153,0.25)" : "rgba(34,197,94,0.18)",
-        color: speaking ? "#fbcfe8" : "#86efac",
+        background: (speaking || loading) ? "rgba(236,72,153,0.25)" : "rgba(34,197,94,0.18)",
+        color: (speaking || loading) ? "#fbcfe8" : "#86efac",
         fontWeight: 700,
-        border: speaking ? "1px solid rgba(236,72,153,0.4)" : "1px solid rgba(34,197,94,0.35)",
+        border: (speaking || loading) ? "1px solid rgba(236,72,153,0.4)" : "1px solid rgba(34,197,94,0.35)",
         display: "inline-flex", alignItems: "center", gap: 5,
         cursor: "pointer",
       }}
-      aria-label={speaking ? "Stop listening" : "Listen to this win"}
-      title={speaking ? "Stop" : "Amy reads this aloud"}
+      aria-label={(speaking || loading) ? "Stop listening" : "Listen to this win"}
+      title={(speaking || loading) ? "Stop" : "Amy reads this aloud"}
     >
-      {speaking ? <VolumeX size={12} /> : <Volume2 size={12} />}
-      {speaking ? "Stop" : "Listen"}
+      {(speaking || loading) ? <VolumeX size={12} /> : <Volume2 size={12} />}
+      {speaking ? "Stop" : loading ? "…" : "Listen"}
     </button>
   );
 }

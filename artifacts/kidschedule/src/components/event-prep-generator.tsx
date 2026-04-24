@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   EVENT_OCCASIONS, generateEventIdea,
   type AgeBand, type CostBudget, type EventOccasionId,
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Sparkles, Volume2, VolumeX, Clock, Heart, RefreshCw, Wand2,
 } from "lucide-react";
-import { speak, stopSpeaking, ttsAvailable } from "@/lib/study-tts";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 
 interface Props {
   onOpenCharacter: (characterId: string) => void;
@@ -38,6 +38,12 @@ export function EventPrepGenerator({ onOpenCharacter, defaultEvent }: Props) {
   const [budget, setBudget] = useState<CostBudget>("low");
   const [result, setResult] = useState<GeneratorResult | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const { speak: amySpeak, stop: amyStop, speaking: amySpeaking } = useAmyVoice();
+
+  // Sync speakingId when Amy finishes
+  useEffect(() => {
+    if (!amySpeaking) setSpeakingId(null);
+  }, [amySpeaking]);
 
   const onGenerate = () => {
     const input: GeneratorInput = {
@@ -46,21 +52,20 @@ export function EventPrepGenerator({ onOpenCharacter, defaultEvent }: Props) {
       timeMinutes: time,
       budget,
     };
-    stopSpeaking();
+    amyStop();
     setSpeakingId(null);
     setResult(generateEventIdea(input));
   };
 
   const handleSpeak = (id: string, text: string) => {
-    if (!ttsAvailable()) return;
-    if (speakingId === id) {
-      stopSpeaking();
+    if (speakingId === id && amySpeaking) {
+      amyStop();
       setSpeakingId(null);
       return;
     }
-    speak(text, { lang: /[\u0900-\u097F]/.test(text) ? "hi-IN" : "en-IN", rate: 0.92 });
+    amyStop();
     setSpeakingId(id);
-    setTimeout(() => setSpeakingId((s) => (s === id ? null : s)), 12000);
+    amySpeak(text);
   };
 
   return (
@@ -257,17 +262,15 @@ function IdeaCard({
         <div className="rounded-xl bg-pink-50 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-400/30 p-3">
           <div className="flex items-center justify-between mb-1">
             <div className="text-xs font-bold">🎤 Speech</div>
-            {ttsAvailable() && (
-              <Button
-                size="sm"
-                variant={speakingId === c.id ? "default" : "outline"}
-                onClick={() => onSpeak(c.id, idea.speech)}
-                className="rounded-full h-7 px-3 text-xs"
-              >
-                {speakingId === c.id ? <VolumeX className="h-3.5 w-3.5 mr-1" /> : <Volume2 className="h-3.5 w-3.5 mr-1" />}
-                {speakingId === c.id ? "Stop" : "Play"}
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant={speakingId === c.id ? "default" : "outline"}
+              onClick={() => onSpeak(c.id, idea.speech)}
+              className="rounded-full h-7 px-3 text-xs"
+            >
+              {speakingId === c.id ? <VolumeX className="h-3.5 w-3.5 mr-1" /> : <Volume2 className="h-3.5 w-3.5 mr-1" />}
+              {speakingId === c.id ? "Stop" : "Play"}
+            </Button>
           </div>
           <p className="text-sm italic">"{idea.speech}"</p>
         </div>

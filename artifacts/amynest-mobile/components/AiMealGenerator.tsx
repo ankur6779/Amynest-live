@@ -25,9 +25,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Speech from "expo-speech";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { brand } from "@/constants/colors";
 
 interface AiMeal {
@@ -59,7 +58,6 @@ interface Props {
   isVeg?: boolean;
 }
 
-const STORAGE_VOICE = "amynest.tts_voice.v1";
 
 const QUERY_SUGGESTIONS = [
   "Quick tiffin with rice",
@@ -133,7 +131,6 @@ export default function AiMealGenerator({
 
   const handleClose = useCallback(() => {
     setOpenMeal(null);
-    Speech.stop().catch(() => {});
   }, []);
 
   return (
@@ -320,64 +317,15 @@ function MealCard({ meal, onPress }: { meal: AiMeal; onPress: () => void }) {
 
 // ─── Recipe Sheet ─────────────────────────────────────────────────────────────
 function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
-  const [speaking, setSpeaking] = useState(false);
-  const [voicePref, setVoicePref] = useState<"female" | "male">("female");
-
-  React.useEffect(() => {
-    AsyncStorage.getItem(STORAGE_VOICE).then((v) => {
-      if (v === "male" || v === "female") setVoicePref(v);
-    });
-    return () => { Speech.stop().catch(() => {}); };
-  }, []);
-
-  const pickVoiceId = async (pref: "female" | "male"): Promise<string | undefined> => {
-    try {
-      const all = await Speech.getAvailableVoicesAsync();
-      const indian = all.filter(
-        (v) => /en[-_]?IN/i.test(v.language) || /india/i.test(v.name || "")
-      );
-      const pool = indian.length > 0 ? indian : all.filter((v) => v.language?.startsWith("en"));
-      if (pool.length === 0) return undefined;
-      const isMale = (v: Speech.Voice) => /male|david|alex|fred|mark/i.test(v.name || "");
-      const isFemale = (v: Speech.Voice) =>
-        /female|samantha|victoria|karen|tessa|veena|kate|zira/i.test(v.name || "");
-      const picked = pref === "male" ? pool.find(isMale) : pool.find(isFemale);
-      return (picked ?? pool[0])?.identifier;
-    } catch {
-      return undefined;
-    }
-  };
+  const { speak, stop, speaking, loading } = useAmyVoice();
 
   const audioText =
     meal.audioText ??
     `${meal.title}. Ingredients: ${meal.ingredients.join(", ")}. Steps: ${meal.steps.join(". ")}`;
 
-  const handleReadAloud = async () => {
-    if (speaking) {
-      await Speech.stop();
-      setSpeaking(false);
-      return;
-    }
-    const voice = await pickVoiceId(voicePref);
-    setSpeaking(true);
-    Speech.speak(audioText, {
-      language: "en-IN",
-      pitch: 1.0,
-      rate: 0.95,
-      voice,
-      onDone: () => setSpeaking(false),
-      onStopped: () => setSpeaking(false),
-      onError: () => setSpeaking(false),
-    });
-  };
-
-  const switchVoice = async (pref: "female" | "male") => {
-    setVoicePref(pref);
-    AsyncStorage.setItem(STORAGE_VOICE, pref).catch(() => {});
-    if (speaking) {
-      await Speech.stop();
-      setSpeaking(false);
-    }
+  const handleReadAloud = () => {
+    if (speaking || loading) { stop(); return; }
+    speak(audioText);
   };
 
   return (
@@ -433,27 +381,11 @@ function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
             {/* Read Aloud */}
             <View style={styles.audioBox}>
               <TouchableOpacity onPress={handleReadAloud} style={styles.readBtn} activeOpacity={0.8}>
-                <Ionicons name={speaking ? "volume-mute" : "volume-high"} size={14} color="#fff" />
-                <Text style={styles.readBtnText}>{speaking ? "Stop" : "Read Aloud"}</Text>
+                <Ionicons name={(speaking || loading) ? "volume-mute" : "volume-high"} size={14} color="#fff" />
+                <Text style={styles.readBtnText}>
+                  {speaking ? "Stop" : loading ? "Loading…" : "Read Aloud"}
+                </Text>
               </TouchableOpacity>
-              <View style={styles.voiceToggle}>
-                <TouchableOpacity
-                  onPress={() => switchVoice("female")}
-                  style={[styles.voicePill, voicePref === "female" && styles.voicePillActive]}
-                >
-                  <Text style={[styles.voicePillText, voicePref === "female" && styles.voicePillTextActive]}>
-                    ♀ Female
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => switchVoice("male")}
-                  style={[styles.voicePill, voicePref === "male" && styles.voicePillActive]}
-                >
-                  <Text style={[styles.voicePillText, voicePref === "male" && styles.voicePillTextActive]}>
-                    ♂ Male
-                  </Text>
-                </TouchableOpacity>
-              </View>
             </View>
 
             {/* Ingredients */}

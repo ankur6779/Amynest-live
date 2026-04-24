@@ -5,7 +5,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
-import * as Speech from "expo-speech";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import {
@@ -38,6 +38,7 @@ export default function EventPrepScreen() {
   const [filter, setFilter] = useState<EventFilter>({});
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [genOpen, setGenOpen] = useState(false);
+  const { speak, stop, speaking } = useAmyVoice();
 
   React.useEffect(() => {
     if (view.kind === "child-pick" && children.length === 1) {
@@ -45,30 +46,25 @@ export default function EventPrepScreen() {
     }
   }, [children, view.kind]);
 
+  // Sync speakingId with Amy's playing state
   React.useEffect(() => {
-    return () => { Speech.stop().catch(() => {}); };
-  }, []);
+    if (!speaking) setSpeakingId(null);
+  }, [speaking]);
 
   const child = useMemo(() => {
     if (view.kind === "child-pick") return null;
     return children.find((c) => c.id === (view as { childId: number }).childId) ?? null;
   }, [view, children]);
 
-  const handleSpeak = async (id: string, text: string) => {
-    if (speakingId === id) {
-      await Speech.stop();
+  const handleSpeak = (id: string, text: string) => {
+    if (speakingId === id && speaking) {
+      stop();
       setSpeakingId(null);
       return;
     }
-    await Speech.stop();
+    stop();
     setSpeakingId(id);
-    Speech.speak(text, {
-      language: /[\u0900-\u097F]/.test(text) ? "hi-IN" : "en-IN",
-      rate: 0.92,
-      onDone: () => setSpeakingId((s) => (s === id ? null : s)),
-      onStopped: () => setSpeakingId((s) => (s === id ? null : s)),
-      onError: () => setSpeakingId(null),
-    });
+    speak(text);
   };
 
   if (isLoading) {
