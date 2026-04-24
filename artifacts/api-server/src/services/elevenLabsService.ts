@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { ReplitConnectors } from "@replit/connectors-sdk";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
@@ -28,9 +27,6 @@ function ensureCacheDir(): Promise<void> {
   if (!cacheDirReady) cacheDirReady = fs.mkdir(CACHE_DIR, { recursive: true }).then(() => {});
   return cacheDirReady;
 }
-
-// Single shared connectors client (handles auth + token refresh internally).
-const connectors = new ReplitConnectors();
 
 // In-flight single-flight map: if two callers ask for the same cacheKey at the
 // same time we want exactly one ElevenLabs call (and one disk write). Without
@@ -154,12 +150,18 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   const { text, voiceId, modelId, cacheKey, audioPath } = args;
   await ensureCacheDir();
 
-  const response = await connectors.proxy(
-    "elevenlabs",
-    `/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  if (!apiKey) throw new Error("tts_missing_api_key");
+
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
+        "xi-api-key": apiKey,
+      },
       body: JSON.stringify({
         text,
         model_id: modelId,
