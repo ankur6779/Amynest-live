@@ -63,6 +63,11 @@ const REASON_COPY: Record<
     subtitle: "Free plan includes 1 log. Upgrade to track every win, tantrum & pattern Amy spots.",
     icon: BarChart3,
   },
+  child_locked: {
+    title: "Upgrade to track all your children",
+    subtitle: "Free plan covers your first child only. Upgrade to log and view behavior data for every child.",
+    icon: Users,
+  },
   coach_locked: {
     title: "Unlock Amy Coach",
     subtitle: "Get personalized 10–12 step plans for tantrums, screen time, focus & more.",

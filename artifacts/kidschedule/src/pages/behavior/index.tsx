@@ -160,14 +160,23 @@ export default function BehaviorTracker() {
           queryClient.invalidateQueries({ queryKey: getGetBehaviorStatsQueryKey() });
         },
         onError: (err: unknown) => {
-          // Global Paywall: free user used their one free behavior log.
           const status = (err as { status?: number })?.status;
           const data = (err as { data?: { error?: string; feature?: string } })?.data;
-          if (status === 402 && (data?.error === "feature_locked" || data?.feature === "behavior_log")) {
-            window.dispatchEvent(
-              new CustomEvent("amynest:open-paywall", { detail: { reason: "behavior_locked" } }),
-            );
-            return;
+          if (status === 402) {
+            // child_locked: free user trying to write data for a non-first child
+            if (data?.error === "child_locked") {
+              window.dispatchEvent(
+                new CustomEvent("amynest:open-paywall", { detail: { reason: "child_locked" } }),
+              );
+              return;
+            }
+            // feature_locked: free user exhausted their behavior log quota
+            if (data?.error === "feature_locked" || data?.feature === "behavior_log") {
+              window.dispatchEvent(
+                new CustomEvent("amynest:open-paywall", { detail: { reason: "behavior_locked" } }),
+              );
+              return;
+            }
           }
           toast({ title: "Failed to log", variant: "destructive" });
         },
@@ -183,6 +192,17 @@ export default function BehaviorTracker() {
           queryClient.invalidateQueries({ queryKey: getListBehaviorsQueryKey({ date: today }) });
           queryClient.invalidateQueries({ queryKey: getListBehaviorsQueryKey({}) });
           queryClient.invalidateQueries({ queryKey: getGetBehaviorStatsQueryKey() });
+        },
+        onError: (err: unknown) => {
+          const status = (err as { status?: number })?.status;
+          const data = (err as { data?: { error?: string } })?.data;
+          if (status === 402 && data?.error === "child_locked") {
+            window.dispatchEvent(
+              new CustomEvent("amynest:open-paywall", { detail: { reason: "child_locked" } }),
+            );
+            return;
+          }
+          toast({ title: "Failed to delete", variant: "destructive" });
         },
       }
     );
