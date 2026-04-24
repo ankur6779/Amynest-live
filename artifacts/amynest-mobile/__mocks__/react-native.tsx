@@ -9,11 +9,11 @@ const Text = ({ children, testID, style, ...rest }: any) =>
 const Pressable = ({ children, onPress, ...rest }: any) =>
   React.createElement("button", { onClick: onPress, ...rest }, children);
 
-const TouchableOpacity = ({ children, onPress, ...rest }: any) =>
-  React.createElement("button", { onClick: onPress, ...rest }, children);
+const TouchableOpacity = ({ children, onPress, testID, ...rest }: any) =>
+  React.createElement("button", { onClick: onPress, "data-testid": testID, ...rest }, children);
 
-const ScrollView = ({ children, ...rest }: any) =>
-  React.createElement("div", rest, children);
+const ScrollView = ({ children, testID, ...rest }: any) =>
+  React.createElement("div", { "data-testid": testID, ...rest }, children);
 
 const Modal = ({ children, visible }: any) =>
   visible ? React.createElement("div", {}, children) : null;
@@ -30,7 +30,22 @@ const StyleSheet = {
   absoluteFill: {},
 };
 
+const TextInput = ({ value, onChangeText, placeholder, testID, ...rest }: any) =>
+  React.createElement("input", {
+    value,
+    onChange: (e: any) => onChangeText?.(e.target.value),
+    placeholder,
+    "data-testid": testID,
+    ...rest,
+  });
+
+const KeyboardAvoidingView = ({ children, ...rest }: any) =>
+  React.createElement("div", rest, children);
+
+const Platform = { OS: "ios", select: (obj: any) => obj.ios ?? obj.default };
+
 export {
   View, Text, Pressable, TouchableOpacity, ScrollView,
   Modal, ActivityIndicator, Image, Dimensions, StyleSheet,
+  TextInput, KeyboardAvoidingView, Platform,
 };

@@ -194,6 +194,7 @@ export default function AiMealGenerator({
           activeOpacity={0.82}
           disabled={loading}
           style={styles.generateBtn}
+          testID="ai-meal-generate-btn"
         >
           <LinearGradient
             colors={["#7C3AED", "#4F46E5"]}
@@ -228,6 +229,7 @@ export default function AiMealGenerator({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.cardsRow}
           scrollEnabled={false}
+          testID="ai-meal-skeleton"
         >
           {[0, 1, 2, 3].map((i) => (
             <View key={i} style={[styles.skeletonCard, { opacity: 1 - i * 0.15 }]}>
