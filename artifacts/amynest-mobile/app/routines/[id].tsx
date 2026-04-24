@@ -206,6 +206,10 @@ export default function RoutineDetailScreen() {
 
   const [mealPrefs, setMealPrefs] = useState<{ region: string; isVeg?: boolean; childAge?: number }>({ region: "pan_indian" });
 
+  // Age-band filter — resets whenever a different routine is loaded
+  const [ageBandFilter, setAgeBandFilter] = useState<string | null>(null);
+  useEffect(() => { setAgeBandFilter(null); }, [id]);
+
   const [actionItem, setActionItem] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ activity: "", time: "", duration: "" });
@@ -500,6 +504,21 @@ export default function RoutineDetailScreen() {
   // ──────────────────────────────────────────────────────────────────────────
   const stats = useMemo(() => completionStats(items), [items]);
 
+  // Unique age bands present in this routine (for filter chips)
+  const ageBands = useMemo(
+    () => Array.from(new Set(items.filter((i) => i.ageBand).map((i) => i.ageBand!))),
+    [items],
+  );
+
+  // Items paired with their original index so actions still reference the correct position
+  const displayItems = useMemo(
+    () =>
+      items
+        .map((item, origIdx) => ({ item, origIdx }))
+        .filter(({ item }) => !ageBandFilter || !item.ageBand || item.ageBand === ageBandFilter),
+    [items, ageBandFilter],
+  );
+
   // ─── Adaptive Engine: today's mood + sleep + live ticking ───────────────
   const routineDateStr = (routine?.date ?? "").slice(0, 10);
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -689,8 +708,8 @@ export default function RoutineDetailScreen() {
         </View>
       ) : (
         <FlatList
-          data={items}
-          keyExtractor={(_, idx) => String(idx)}
+          data={displayItems}
+          keyExtractor={(entry) => String(entry.origIdx)}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: botPad, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
@@ -796,12 +815,58 @@ export default function RoutineDetailScreen() {
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
+
+              {/* Age-band filter chips */}
+              {ageBands.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6, paddingRight: 4, alignItems: "center" }}>
+                  <Text style={{ fontSize: 10, fontWeight: "700", color: "rgba(255,255,255,0.5)", alignSelf: "center", marginRight: 2, letterSpacing: 0.4 }}>
+                    AGE:
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setAgeBandFilter(null)}
+                    activeOpacity={0.75}
+                    style={{
+                      paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999,
+                      backgroundColor: ageBandFilter === null ? brand.primary : "rgba(255,255,255,0.06)",
+                      borderWidth: 1, borderColor: ageBandFilter === null ? brand.primary : "rgba(255,255,255,0.12)",
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: "800", color: ageBandFilter === null ? "#FFFFFF" : "rgba(255,255,255,0.85)" }}>
+                      All
+                    </Text>
+                  </TouchableOpacity>
+                  {ageBands.map((band) => {
+                    const active = ageBandFilter === band;
+                    return (
+                      <TouchableOpacity
+                        key={band}
+                        onPress={() => setAgeBandFilter(active ? null : band)}
+                        activeOpacity={0.75}
+                        style={{
+                          paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999,
+                          backgroundColor: active ? "rgba(14,165,233,0.85)" : "rgba(14,165,233,0.10)",
+                          borderWidth: 1, borderColor: active ? "rgba(14,165,233,0.9)" : "rgba(14,165,233,0.35)",
+                        }}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: "800", color: active ? "#FFFFFF" : "#38bdf8" /* audit-ok: sky-400 age-band label */ }}>
+                          Ages {band.replace("-", "–")}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              )}
+
               <Text style={styles.swipeHint}>← Swipe to skip   •   Swipe to complete →</Text>
             </View>
           }
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={styles.emptyText}>No activities in this routine</Text>
+              <Text style={styles.emptyText}>
+                {ageBandFilter
+                  ? `No activities for ages ${ageBandFilter.replace("-", "–")} in this routine`
+                  : "No activities in this routine"}
+              </Text>
             </View>
           }
           ListFooterComponent={
@@ -841,13 +906,15 @@ export default function RoutineDetailScreen() {
               </View>
             ) : null
           }
-          renderItem={({ item, index }) => (
+          renderItem={({ item: entry, index: displayIdx }) => {
+            const { item, origIdx } = entry;
+            return (
             <Animated.View
-              entering={Platform.OS !== "web" ? FadeIn.delay(index * 35).duration(280) : undefined}
+              entering={Platform.OS !== "web" ? FadeIn.delay(displayIdx * 35).duration(280) : undefined}
               style={styles.timelineRow}
             >
               <View style={styles.railCol}>
-                <View style={[styles.railLine, index === 0 && { top: 16 }, index === items.length - 1 && { bottom: "50%" }]} />
+                <View style={[styles.railLine, displayIdx === 0 && { top: 16 }, displayIdx === displayItems.length - 1 && { bottom: "50%" }]} />
                 <View style={[
                   styles.railDot,
                   { backgroundColor: c.railDotBg },
@@ -861,33 +928,34 @@ export default function RoutineDetailScreen() {
                   // School blocks are protected time — child is unavailable.
                   // Tap still opens the detail modal so parents can see notes,
                   // but no swipe-to-complete / swipe-to-skip handlers are wired.
-                  <TouchableOpacity activeOpacity={0.85} onPress={() => handleTap(index)}>
-                    <ItemCard item={item} seed={index + ((routine?.childId ?? 0) * 7)} />
+                  <TouchableOpacity activeOpacity={0.85} onPress={() => handleTap(origIdx)}>
+                    <ItemCard item={item} seed={origIdx + ((routine?.childId ?? 0) * 7)} />
                   </TouchableOpacity>
                 ) : (
                   <SwipeableCard
-                    onTap={() => handleTap(index)}
-                    onLongPress={() => setActionItem(index)}
-                    onSwipeRight={() => setItemStatus(index, item.status === "completed" ? "pending" : "completed")}
-                    onSwipeLeft={() => setItemStatus(index, item.status === "skipped" ? "pending" : "skipped")}
+                    onTap={() => handleTap(origIdx)}
+                    onLongPress={() => setActionItem(origIdx)}
+                    onSwipeRight={() => setItemStatus(origIdx, item.status === "completed" ? "pending" : "completed")}
+                    onSwipeLeft={() => setItemStatus(origIdx, item.status === "skipped" ? "pending" : "skipped")}
                     leftActionMode="skip"
                     borderRadius={18}
                     glowColor={item.status === "completed" ? "#22C55E" /* audit-ok: status-complete green glow */ : brand.violet500}
                   >
-                    <ItemCard item={item} seed={index + ((routine?.childId ?? 0) * 7)} />
+                    <ItemCard item={item} seed={origIdx + ((routine?.childId ?? 0) * 7)} />
                   </SwipeableCard>
                 )}
                 {(item.category === "meal" || item.category === "tiffin") && (
                   <RoutineInlineMeals
                     {...mealPrefs}
-                    instanceIndex={items.slice(0, index).filter(
+                    instanceIndex={items.slice(0, origIdx).filter(
                       (it: RoutineItem) => it.category === "meal" || it.category === "tiffin"
                     ).length}
                   />
                 )}
               </View>
             </Animated.View>
-          )}
+            );
+          }}
           ItemSeparatorComponent={null}
         />
       )}

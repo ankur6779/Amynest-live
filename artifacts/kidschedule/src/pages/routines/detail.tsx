@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useLocation, Link, useParams } from "wouter";
 import { useGetRoutine, getGetRoutineQueryKey, useDeleteRoutine, getListRoutinesQueryKey, useGetChild, getGetChildQueryKey } from "@workspace/api-client-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -484,6 +484,10 @@ export default function RoutineDetail() {
   // Expanded item modal
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
+  // Age-band filter — resets whenever a different routine is loaded
+  const [ageBandFilter, setAgeBandFilter] = useState<string | null>(null);
+  useEffect(() => { setAgeBandFilter(null); }, [routineId]);
+
   // Parent prefs for inline meal suggestions
   const [mealPrefs, setMealPrefs] = useState<{ region: string; isVeg?: boolean; childAge?: number }>({ region: "pan_indian" });
 
@@ -946,6 +950,21 @@ export default function RoutineDetail() {
 
   const items = localItems ?? (routine?.items as RoutineItem[]) ?? [];
 
+  // Unique age bands present in this routine's items (for the filter chips)
+  const ageBands = useMemo(
+    () => Array.from(new Set(items.filter((i) => i.ageBand).map((i) => i.ageBand!))),
+    [items],
+  );
+
+  // Items paired with their original index so all actions still use the correct index
+  const displayItems = useMemo(
+    () =>
+      items
+        .map((item, origIdx) => ({ item, origIdx }))
+        .filter(({ item }) => !ageBandFilter || !item.ageBand || item.ageBand === ageBandFilter),
+    [items, ageBandFilter],
+  );
+
   const completedCount = items.filter((i) => i.status === "completed").length;
   const totalCount = items.length;
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -1290,11 +1309,60 @@ export default function RoutineDetail() {
         </div>
       )}
 
+      {/* Age-band filter chips — only shown when at least one item has an ageBand */}
+      {ageBands.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-semibold text-muted-foreground">Filter by age:</span>
+          <button
+            type="button"
+            onClick={() => setAgeBandFilter(null)}
+            className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${
+              ageBandFilter === null
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted/40 text-foreground border-border hover:bg-muted"
+            }`}
+            aria-pressed={ageBandFilter === null}
+          >
+            All
+          </button>
+          {ageBands.map((band) => (
+            <button
+              key={band}
+              type="button"
+              onClick={() => setAgeBandFilter(ageBandFilter === band ? null : band)}
+              className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${
+                ageBandFilter === band
+                  ? "bg-sky-500 text-white border-sky-500"
+                  : "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800"
+              }`}
+              aria-pressed={ageBandFilter === band}
+            >
+              Ages {band.replace("-", "–")}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="relative mt-2">
         <div className="absolute left-[39px] sm:left-[55px] top-4 bottom-4 w-0.5 bg-border/60 z-0 rounded-full" />
 
         <div className="space-y-3 relative z-10">
-          {items.map((item, index) => {
+          {displayItems.length === 0 && ageBandFilter && (
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+              <span className="text-3xl">🔍</span>
+              <p className="text-sm font-semibold text-muted-foreground">
+                No activities for ages {ageBandFilter.replace("-", "–")} in this routine
+              </p>
+              <button
+                type="button"
+                onClick={() => setAgeBandFilter(null)}
+                className="text-xs font-bold text-primary underline underline-offset-2 hover:text-primary/80"
+              >
+                Clear filter
+              </button>
+            </div>
+          )}
+          {displayItems.map(({ item, origIdx: index }) => {
             const status = item.status ?? "pending";
             const catStyle = getCategoryStyle(item.category);
             const statusStyle = STATUS_STYLES[status];
