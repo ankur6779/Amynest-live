@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator,
-  TextInput, KeyboardAvoidingView, Platform,
+  TextInput, KeyboardAvoidingView, Platform, Image,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -118,6 +118,12 @@ export default function KidsControlCenterScreen() {
 
           {/* Header */}
           <View style={{ alignItems: "center", marginBottom: 20 }}>
+            {/* AmyNest Kids Logo */}
+            <Image
+              source={require("../assets/images/amynest-kids-logo.png")}
+              style={{ width: 160, height: 160, marginBottom: 12 }}
+              resizeMode="contain"
+            />
             <View style={{
               flexDirection: "row", alignItems: "center", gap: 6,
               paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999,
