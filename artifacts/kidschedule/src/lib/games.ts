@@ -61,7 +61,7 @@ export const CATEGORY_EMOJI: Record<GameCategory, string> = {
 const UNLOCKED_KEY  = "amynest_unlocked_games_v1";
 const PLAY_LOG_KEY  = "amynest_game_play_log_v1";
 const SKILLS_KEY    = "amynest_skill_progress_v1";
-const DAILY_LIMIT   = 3;
+const DAILY_LIMIT   = 15;
 
 export function getUnlocked(): string[] {
   try { return JSON.parse(localStorage.getItem(UNLOCKED_KEY) ?? "[]"); } catch { return []; }
