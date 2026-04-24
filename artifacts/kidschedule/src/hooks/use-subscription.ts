@@ -15,6 +15,8 @@ export type Entitlements = {
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  /** Payment provider — determines how cancellation works. */
+  provider: "none" | "manual" | "razorpay" | "revenuecat";
   limits: {
     aiQueriesPerDay: number;
     childrenMax: number;

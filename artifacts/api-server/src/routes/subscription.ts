@@ -263,6 +263,21 @@ router.post("/subscription/cancel", requireAuth, async (req, res): Promise<void>
     return;
   }
 
+  // RevenueCat subscriptions (Google Play / Apple App Store) cannot be
+  // cancelled server-side — the billing relationship is between the user
+  // and their app store. Attempting to cancel from our side would only
+  // corrupt the local DB while leaving the real subscription active.
+  // Return a specific error so the client can show the right instructions.
+  if (sub.provider === "revenuecat") {
+    res.status(422).json({
+      error: "redirect_to_store",
+      message:
+        "Your subscription is managed by Google Play or the App Store. " +
+        "To cancel, open your device's subscription settings and cancel AmyNest there.",
+    });
+    return;
+  }
+
   try {
     if (sub.provider === "razorpay" && sub.providerSubscriptionId) {
       // Cancel at end of billing cycle — user keeps access until period_end.
@@ -272,7 +287,7 @@ router.post("/subscription/cancel", requireAuth, async (req, res): Promise<void>
         .set({ cancelAtPeriodEnd: 1, updatedAt: new Date() })
         .where(eq(subscriptionsTable.userId, userId));
     } else {
-      // Manual grant / trial — cancel immediately.
+      // Manual grant / trial / none — cancel immediately.
       await db
         .update(subscriptionsTable)
         .set({ status: "canceled", cancelAtPeriodEnd: 0, updatedAt: new Date() })

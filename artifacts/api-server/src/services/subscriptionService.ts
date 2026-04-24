@@ -77,6 +77,10 @@ export type EntitlementSummary = {
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  /** Payment provider for the active subscription. Used by the client to
+   *  decide whether server-side cancellation is possible (razorpay) or the
+   *  user must cancel through their device's app store (revenuecat). */
+  provider: "none" | "manual" | "razorpay" | "revenuecat";
   limits: typeof FREE_LIMITS;
   usage: {
     // Today's AI message count (resets every UTC day).
@@ -241,6 +245,7 @@ export async function getEntitlements(userId: string): Promise<EntitlementSummar
     trialEndsAt: sub.trialEndsAt ? sub.trialEndsAt.toISOString() : null,
     currentPeriodEnd: sub.currentPeriodEnd ? sub.currentPeriodEnd.toISOString() : null,
     cancelAtPeriodEnd: sub.cancelAtPeriodEnd === 1,
+    provider: (sub.provider ?? "none") as EntitlementSummary["provider"],
     limits: FREE_LIMITS,
     usage: {
       aiQueriesToday: features.ai_query.used,

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles, Check, Rocket, AlertTriangle, X } from "lucide-react";
+import { Sparkles, Check, Rocket, AlertTriangle, X, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 
@@ -14,9 +14,14 @@ export default function PricingPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const cancelAtPeriodEnd = entitlements?.cancelAtPeriodEnd ?? false;
+  const provider = entitlements?.provider ?? "none";
   const periodEnd = entitlements?.currentPeriodEnd
     ? new Date(entitlements.currentPeriodEnd).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
     : null;
+  // RevenueCat = Google Play or Apple App Store — cannot cancel server-side.
+  const isManagedByStore = provider === "revenuecat";
+  // Razorpay or manual grants can be cancelled from here.
+  const canCancelHere = isPremium && !cancelAtPeriodEnd && !isManagedByStore;
 
   const onUpgrade = async () => {
     setSubmitting(true);
@@ -121,7 +126,8 @@ export default function PricingPage() {
             {isPremium ? t("pricing.already_premium") : submitting ? t("common.please_wait") : t("pricing.upgrade_now")}
           </Button>
 
-          {isPremium && !cancelAtPeriodEnd && (
+          {/* Razorpay / manual — cancel directly from here */}
+          {canCancelHere && (
             <Button
               variant="outline"
               onClick={() => setShowConfirm(true)}
@@ -133,6 +139,24 @@ export default function PricingPage() {
             </Button>
           )}
 
+          {/* RevenueCat — managed by Google Play / App Store */}
+          {isPremium && !cancelAtPeriodEnd && isManagedByStore && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+              <div className="flex items-start gap-2.5">
+                <Smartphone className="h-4 w-4 mt-0.5 shrink-0 text-blue-500" />
+                <div>
+                  <p className="font-bold mb-1">Subscribed via Google Play / App Store</p>
+                  <p className="text-xs leading-relaxed">
+                    Your billing is managed by your device's app store. To cancel, open{" "}
+                    <strong>Google Play → Subscriptions</strong> or{" "}
+                    <strong>iPhone → App Store → Subscriptions</strong> and cancel AmyNest there.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Already scheduled to cancel */}
           {isPremium && cancelAtPeriodEnd && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 text-center">
               Your subscription is scheduled to cancel
