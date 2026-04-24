@@ -79,7 +79,7 @@ isValidation = true
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
-integrations = ["github:1.0.0", "revenuecat:1.0.0"]
+integrations = ["github:1.0.0", "revenuecat:1.0.0", "elevenlabs:1.0.0"]
 
 [postMerge]
 path = "scripts/post-merge.sh"

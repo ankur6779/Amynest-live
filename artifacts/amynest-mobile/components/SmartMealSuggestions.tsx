@@ -5,9 +5,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Speech from "expo-speech";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useColors } from "@/hooks/useColors";
 import { brand, brandAlpha } from "@/constants/colors";
 import TiffinFeedbackPanel, { loadHistoryAsync as loadTiffinHistoryAsync } from "@/components/TiffinFeedbackPanel";
@@ -47,6 +47,11 @@ const FRIDGE_QUICK = [
 ];
 const STORAGE_FRIDGE = "amynest.fridge_items.v1";
 const STORAGE_VOICE = "amynest.tts_voice.v1";
+
+// ElevenLabs voice IDs used by the Amy persona on mobile.
+// Rachel — calm female narrator. Adam — warm male narrator.
+const VOICE_FEMALE_ID = "21m00Tcm4TlvDq8ikWAM";
+const VOICE_MALE_ID = "pNInz6obpgDQGcFmaJgB";
 
 interface Props {
   region?: string;
@@ -146,13 +151,9 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region, audience, fridge, childAge, isVeg, learning.liked.join(","), learning.disliked.join(","), manualSearch]);
 
-  // Stop speech when modal closes / unmount
-  useEffect(() => {
-    return () => { Speech.stop().catch(() => {}); };
-  }, []);
-  useEffect(() => {
-    if (!openMeal) Speech.stop().catch(() => {});
-  }, [openMeal]);
+  // Audio playback lifecycle is owned by useAmyVoice inside RecipeModal,
+  // which tears down the player on unmount. Closing the modal unmounts the
+  // hook, so no extra cleanup is required here.
 
   const addFridgeItem = (raw: string) => {
     const v = raw.trim().toLowerCase();
@@ -361,57 +362,23 @@ function MealCard({
 function RecipeModal({
   meal, showCalories, onClose, styles, colors,
 }: { meal: RankedMeal; showCalories: boolean; onClose: () => void; styles: any; colors: any }) {
-  const [speaking, setSpeaking] = useState(false);
   const [voicePref, setVoicePref] = useState<"female" | "male">("female");
+  const voiceId = voicePref === "male" ? VOICE_MALE_ID : VOICE_FEMALE_ID;
+  const { speaking, loading, speak, stop } = useAmyVoice({ voiceId });
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_VOICE).then(v => {
       if (v === "male" || v === "female") setVoicePref(v);
     });
-    return () => { Speech.stop().catch(() => {}); };
   }, []);
 
-  const pickVoiceId = async (pref: "female" | "male"): Promise<string | undefined> => {
-    try {
-      const all = await Speech.getAvailableVoicesAsync();
-      const indian = all.filter(v => /en[-_]?IN/i.test(v.language) || /india/i.test(v.name || ""));
-      const pool = indian.length > 0 ? indian : all.filter(v => v.language?.startsWith("en"));
-      if (pool.length === 0) return undefined;
-      const isMale = (v: Speech.Voice) => /male|david|alex|fred|mark/i.test(v.name || "");
-      const isFemale = (v: Speech.Voice) => /female|samantha|victoria|karen|tessa|veena|kate|zira/i.test(v.name || "");
-      const picked = pref === "male" ? pool.find(isMale) : pool.find(isFemale);
-      return (picked ?? pool[0])?.identifier;
-    } catch {
-      return undefined;
-    }
-  };
+  const handleReadAloud = () => { void speak(meal.audioText); };
 
-  const handleReadAloud = async () => {
-    if (speaking) {
-      await Speech.stop();
-      setSpeaking(false);
-      return;
-    }
-    const voice = await pickVoiceId(voicePref);
-    setSpeaking(true);
-    Speech.speak(meal.audioText, {
-      language: "en-IN",
-      pitch: 1.0,
-      rate: 0.95,
-      voice,
-      onDone: () => setSpeaking(false),
-      onStopped: () => setSpeaking(false),
-      onError: () => setSpeaking(false),
-    });
-  };
-
-  const switchVoice = async (pref: "female" | "male") => {
+  const switchVoice = (pref: "female" | "male") => {
     setVoicePref(pref);
     AsyncStorage.setItem(STORAGE_VOICE, pref).catch(() => {});
-    if (speaking) {
-      await Speech.stop();
-      setSpeaking(false);
-    }
+    // Stop in-flight playback so the next tap synthesises with the new voice.
+    stop();
   };
 
   return (
@@ -447,9 +414,17 @@ function RecipeModal({
 
             {/* Read Aloud */}
             <View style={styles.audioBox}>
-              <TouchableOpacity onPress={handleReadAloud} style={styles.readBtn}>
-                <Ionicons name={speaking ? "volume-mute" : "volume-high"} size={14} color="#fff" />
-                <Text style={styles.readBtnText}>{speaking ? "Stop" : "Read Aloud"}</Text>
+              <TouchableOpacity
+                onPress={handleReadAloud}
+                disabled={loading}
+                style={[styles.readBtn, loading && { opacity: 0.7 }]}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name={speaking ? "volume-mute" : "volume-high"} size={14} color="#fff" />
+                )}
+                <Text style={styles.readBtnText}>{loading ? "Loading…" : speaking ? "Stop" : "Read Aloud"}</Text>
               </TouchableOpacity>
               <View style={styles.voiceToggle}>
                 <TouchableOpacity onPress={() => switchVoice("female")} style={[styles.voicePill, voicePref === "female" && styles.voicePillActive]}>

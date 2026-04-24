@@ -24,6 +24,7 @@ import authDebugRouter from "./auth-debug";
 import featureFeedbackRouter from "./feature-feedback";
 import featureUsageRouter from "./feature-usage";
 import recipesRouter from "./recipes";
+import ttsRouter, { ttsPublicRouter } from "./tts";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -42,6 +43,10 @@ router.use(authDebugRouter);
 // /api/meals/suggest is pure local computation (no user data) — public.
 // /api/meals/generate has its own auth guard inside the handler.
 router.use(mealsRouter);
+// /api/tts/audio/:key.mp3 — content-addressed (SHA256) MP3 stream. Safe to
+// serve unauthenticated because keys can only originate from an authed
+// /api/tts/synthesize call. Lets <audio>/expo-audio load it without headers.
+router.use(ttsPublicRouter);
 router.use(requireAuth);
 router.use(onboardingRouter);
 router.use(childrenRouter);
@@ -62,5 +67,6 @@ router.use(accountRouter);
 router.use(pushRouter);
 router.use(notificationsRouter);
 router.use(recipesRouter);
+router.use(ttsRouter);
 
 export default router;

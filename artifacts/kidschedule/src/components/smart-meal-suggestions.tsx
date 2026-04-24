@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { AmyIcon } from "@/components/amy-icon";
 import {
   Utensils,
@@ -10,6 +11,7 @@ import {
   ChefHat,
   Flame,
   Clock,
+  Loader2,
   Sparkles,
 } from "lucide-react";
 
@@ -38,6 +40,10 @@ interface AiGenerateResult {
 
 type Audience = "kids_tiffin" | "parent_healthy";
 
+// ElevenLabs voice IDs — Rachel (calm female) and Adam (warm male).
+// Both work well for the "Amy" persona narrating in English.
+const VOICE_FEMALE_ID = "21m00Tcm4TlvDq8ikWAM";
+const VOICE_MALE_ID = "pNInz6obpgDQGcFmaJgB";
 const STORAGE_VOICE = "amynest.tts_voice.v1";
 
 function loadVoicePref(): "female" | "male" {
@@ -364,65 +370,24 @@ function MealCard({
 function RecipeModal({
   meal, showCalories, onClose,
 }: { meal: AiMeal; showCalories: boolean; onClose: () => void }) {
-  const [speaking, setSpeaking] = useState(false);
   const [voicePref, setVoicePref] = useState<"female" | "male">(() => loadVoicePref());
-  const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const voiceId = voicePref === "male" ? VOICE_MALE_ID : VOICE_FEMALE_ID;
+  const { speaking, loading, error, speak, stop } = useAmyVoice({ voiceId });
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
-    return () => {
-      document.removeEventListener("keydown", handler);
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
+    return () => document.removeEventListener("keydown", handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const pickVoice = (pref: "female" | "male"): SpeechSynthesisVoice | undefined => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return undefined;
-    const all = window.speechSynthesis.getVoices();
-    if (all.length === 0) return undefined;
-    const indian = all.filter(v => /en[-_]?IN/i.test(v.lang) || /india/i.test(v.name));
-    const pool = indian.length > 0 ? indian : all.filter(v => v.lang.startsWith("en"));
-    if (pool.length === 0) return undefined;
-    const isMale = (v: SpeechSynthesisVoice) => /male|david|alex|fred|mark/i.test(v.name);
-    const isFemale = (v: SpeechSynthesisVoice) => /female|samantha|victoria|karen|tessa|veena|kate|zira/i.test(v.name);
-    const filtered = pref === "male" ? pool.find(isMale) : pool.find(isFemale);
-    return filtered ?? pool[0];
-  };
-
-  const handleReadAloud = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      alert("Read Aloud is not supported in this browser.");
-      return;
-    }
-    const synth = window.speechSynthesis;
-    if (speaking) {
-      synth.cancel();
-      setSpeaking(false);
-      return;
-    }
-    const u = new SpeechSynthesisUtterance(meal.audioText);
-    u.rate = 0.95;
-    u.pitch = 1.0;
-    const voice = pickVoice(voicePref);
-    if (voice) u.voice = voice;
-    u.onend = () => setSpeaking(false);
-    u.onerror = () => setSpeaking(false);
-    utterRef.current = u;
-    synth.speak(u);
-    setSpeaking(true);
-  };
+  const handleReadAloud = () => { void speak(meal.audioText); };
 
   const switchVoice = (pref: "female" | "male") => {
     setVoicePref(pref);
     try { localStorage.setItem(STORAGE_VOICE, pref); } catch {}
-    if (speaking && typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      setSpeaking(false);
-    }
+    // Stop any in-flight playback so the next tap uses the new voice.
+    stop();
   };
 
   return (
@@ -474,11 +439,18 @@ function RecipeModal({
             <div className="flex items-center justify-between gap-2">
               <button
                 onClick={handleReadAloud}
-                className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs px-3.5 py-2 rounded-full"
+                disabled={loading}
+                className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-70 disabled:cursor-wait text-white font-bold text-xs px-3.5 py-2 rounded-full"
                 data-testid="meal-read-aloud"
               >
-                {speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-                {speaking ? "Stop" : "Read Aloud"}
+                {loading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : speaking ? (
+                  <VolumeX className="h-3.5 w-3.5" />
+                ) : (
+                  <Volume2 className="h-3.5 w-3.5" />
+                )}
+                {loading ? "Loading…" : speaking ? "Stop" : "Read Aloud"}
               </button>
               <div className="flex bg-white/70 dark:bg-slate-900/40 border border-border rounded-full p-0.5">
                 <button

@@ -35,3 +35,4 @@ export * from "./feature_feedback";
 export * from "./custom_recipes";
 export * from "./admin_premium_grants";
 export * from "./feature_usage";
+export * from "./tts_cache";
