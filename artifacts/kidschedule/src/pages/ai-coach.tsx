@@ -1361,7 +1361,7 @@ export default function AICoachPage() {
           ref={scrollerRef}
           style={{
             display: "flex", overflowX: "auto", scrollSnapType: "x mandatory",
-            width: "100%", height: "100%",
+            width: "100%", flex: "1 1 0", minHeight: 0,
             scrollbarWidth: "none",
           }}
           className="ws-no-scrollbar"
@@ -1411,8 +1411,11 @@ export default function AICoachPage() {
           const nextDisabled = atLastLoaded || !hasFeedback;
           return (
             <div style={{
-              position: "absolute", bottom: 16, left: 0, right: 0, zIndex: 20,
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+              flexShrink: 0, width: "100%", zIndex: 20,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+              padding: "10px 16px 14px",
+              background: "linear-gradient(0deg, rgba(13,10,30,0.98) 0%, rgba(13,10,30,0.85) 100%)",
+              backdropFilter: "blur(12px)",
             }}>
               {!hasFeedback && !atLastLoaded && (
                 <div style={{
@@ -1509,7 +1512,7 @@ function WinCard({
   return (
     <div
       style={{
-        flex: "0 0 100%", width: "100%", height: "100vh",
+        flex: "0 0 100%", width: "100%", height: "100%",
         scrollSnapAlign: "start", position: "relative",
         background: isExtension
           ? "linear-gradient(135deg, #1a0f2e 0%, #2d1b4e 50%, #1a1040 100%)"
