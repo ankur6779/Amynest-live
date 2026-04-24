@@ -589,3 +589,90 @@ describe("buildAgeBandGuidance — pre_teen (12-year-old)", () => {
     assert.ok(!/Sensory Basket Exploration/i.test(guidance), "should not recommend Sensory Basket Exploration");
   });
 });
+
+// ─── Age-band guidance: infant ────────────────────────────────────────────────
+
+describe("buildAgeBandGuidance — infant (0–11 months)", () => {
+  const guidance = buildAgeBandGuidance("infant");
+
+  it("mentions caregiver-led sensory activity: Tummy Time", () => {
+    assert.ok(/Tummy Time/i.test(guidance), "should mention Tummy Time");
+  });
+
+  it("mentions caregiver-led sensory activity: Baby Massage", () => {
+    assert.ok(/Baby Massage/i.test(guidance), "should mention Baby Massage");
+  });
+
+  it("describes activities as caregiver-led", () => {
+    assert.ok(/caregiver/i.test(guidance), "should describe activities as caregiver-led");
+  });
+
+  it("forbids independent activity — puzzles", () => {
+    assert.ok(/Do NOT suggest.*puzzles/i.test(guidance), "should forbid puzzles");
+  });
+
+  it("forbids independent activity — sports", () => {
+    assert.ok(/Do NOT suggest.*sports/i.test(guidance), "should forbid sports");
+  });
+
+  it("forbids independent activity — crafts", () => {
+    assert.ok(/Do NOT suggest.*crafts/i.test(guidance), "should forbid crafts");
+  });
+
+  it("does NOT contain school-age or pre-teen activity keywords", () => {
+    assert.ok(!/Homework/i.test(guidance), "should not mention Homework");
+    assert.ok(!/Financial Literacy Exercise/i.test(guidance), "should not mention Financial Literacy Exercise");
+    assert.ok(!/Journaling \/ Creative Writing/i.test(guidance), "should not mention Journaling / Creative Writing");
+    assert.ok(!/Outdoor Sport \(cricket/i.test(guidance), "should not list school-age Outdoor Sport");
+  });
+});
+
+// ─── Age-band guidance: early_school ─────────────────────────────────────────
+
+describe("buildAgeBandGuidance — early_school (5–10 years)", () => {
+  const guidance = buildAgeBandGuidance("early_school");
+
+  it("mentions school-age activity: Outdoor Sport", () => {
+    assert.ok(/Outdoor Sport/i.test(guidance), "should mention Outdoor Sport");
+  });
+
+  it("mentions school-age activity: STEM", () => {
+    assert.ok(/STEM/i.test(guidance), "should mention STEM");
+  });
+
+  it("mentions school-age activity: Homework", () => {
+    assert.ok(/Homework/i.test(guidance), "should mention Homework");
+  });
+
+  it("forbids toddler activity — finger painting", () => {
+    assert.ok(/Do NOT suggest.*finger painting/i.test(guidance), "should forbid finger painting");
+  });
+
+  it("forbids toddler activity — pretend play", () => {
+    assert.ok(/Do NOT suggest.*pretend/i.test(guidance), "should forbid pretend play / pretend tea parties");
+  });
+
+  it("forbids toddler activity — nap times", () => {
+    assert.ok(/Do NOT suggest.*nap times/i.test(guidance), "should forbid nap times");
+  });
+
+  it("forbids pre-teen activity — journaling", () => {
+    assert.ok(/Do NOT suggest.*journaling/i.test(guidance), "should forbid journaling");
+  });
+
+  it("forbids pre-teen activity — financial literacy", () => {
+    assert.ok(/Do NOT suggest.*financial literacy/i.test(guidance), "should forbid financial literacy");
+  });
+
+  it("does NOT contain named pre-teen activities as recommendations", () => {
+    assert.ok(!/Financial Literacy Exercise/i.test(guidance), "should not list Financial Literacy Exercise as a recommended activity");
+    assert.ok(!/Journaling \/ Creative Writing/i.test(guidance), "should not list Journaling / Creative Writing as a recommended activity");
+    assert.ok(!/Independent Curiosity Project/i.test(guidance), "should not list Independent Curiosity Project as a recommended activity");
+  });
+
+  it("does NOT contain named toddler activities as recommendations", () => {
+    assert.ok(!/Afternoon Nap/i.test(guidance), "should not list Afternoon Nap as a recommended activity");
+    assert.ok(!/Sensory Basket Exploration/i.test(guidance), "should not list Sensory Basket Exploration as a recommended activity");
+    assert.ok(!/Building Blocks/i.test(guidance), "should not list Building Blocks as a recommended activity");
+  });
+});
