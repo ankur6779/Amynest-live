@@ -63,6 +63,11 @@ function TaskCard({
           <View style={[styles.dot, { backgroundColor: c.border }]} />
           <Text style={[styles.metaText, { color: c.textSubtle }]}>{task.minutes} min</Text>
         </View>
+        {task.ageBand && (
+          <View style={styles.ageBandChip}>
+            <Text style={styles.ageBandChipText}>Ages {task.ageBand.replace("-", "–")}</Text>
+          </View>
+        )}
 
         <View style={styles.statusRow}>
           {isDone ? (
@@ -215,5 +220,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 13,
     fontWeight: "800",
+  },
+  ageBandChip: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(14,165,233,0.12)" /* audit-ok: sky-500 age badge bg */,
+    borderWidth: 1,
+    borderColor: "rgba(14,165,233,0.35)" /* audit-ok: sky-500 age badge border */,
+    marginBottom: 8,
+  },
+  ageBandChipText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#0ea5e9" /* audit-ok: sky-500 age badge */,
   },
 });

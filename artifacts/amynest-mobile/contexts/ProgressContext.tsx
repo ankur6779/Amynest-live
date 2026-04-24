@@ -7,6 +7,7 @@ export type RoutineTask = {
   minutes: number;
   icon: string;
   done: boolean;
+  ageBand?: "2-5" | "6-10" | "10+";
 };
 
 export type CoachStep = {
