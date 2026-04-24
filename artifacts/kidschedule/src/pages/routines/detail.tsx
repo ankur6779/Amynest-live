@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { getApiUrl } from "@/lib/api";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { addPoints, checkAndAwardBadges, getTotalPoints } from "@/lib/rewards";
-import { RoutineInlineMeals } from "@/components/routine-inline-meals";
 import { MealRecipeCard } from "@/components/MealRecipeCard";
 import { announceCurrentTask, isVoiceEnabled, getVoiceSettings } from "@/lib/voice";
 import { VoiceSettingsPanel } from "@/components/voice-settings";
@@ -1560,14 +1559,6 @@ export default function RoutineDetail() {
                           ) : item.notes ? (
                             <p className="text-muted-foreground text-xs mt-1 leading-relaxed line-clamp-3 break-words" style={{ overflowWrap: "break-word" }}>{item.notes}</p>
                           ) : null}
-                          {(item.category === "meal" || item.category === "tiffin") && editingIndex !== index && (
-                            <RoutineInlineMeals
-                              {...mealPrefs}
-                              instanceIndex={items.slice(0, index).filter(
-                                it => it.category === "meal" || it.category === "tiffin"
-                              ).length}
-                            />
-                          )}
                           {editingIndex !== index && (
                             <MealRecipeCard
                               meal={item.meal}
