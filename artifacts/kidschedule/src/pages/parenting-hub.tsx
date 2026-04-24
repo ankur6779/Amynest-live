@@ -34,7 +34,8 @@ import { AmyIcon } from "@/components/amy-icon";
 import { FuturePredictor } from "@/components/future-predictor";
 import { ParentCommandCenter } from "@/components/parent-command-center";
 import { LockedBlock } from "@/components/locked-block";
-import { useSectionUsage } from "@/hooks/use-section-usage";
+import { TryFreeBadge } from "@/components/try-free-badge";
+import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { RoutineInlineMeals } from "@/components/routine-inline-meals";
 import type { AgeGroup } from "@/lib/age-groups";
 
@@ -46,10 +47,12 @@ interface SectionProps {
   description: string;
   accentClass: string;
   defaultOpen?: boolean;
+  /** Show a small "Try Free" pill in the header (first-time-free features). */
+  tryFree?: boolean;
   children: React.ReactNode;
 }
 
-function HubSection({ id, icon, title, description, accentClass, defaultOpen = false, onOpen, children }: SectionProps & { onOpen?: () => void }) {
+function HubSection({ id, icon, title, description, accentClass, defaultOpen = false, tryFree = false, onOpen, children }: SectionProps & { onOpen?: () => void }) {
   const [open, setOpen] = useState(defaultOpen);
   const toggle = () => {
     setOpen((v) => {
@@ -97,7 +100,10 @@ function HubSection({ id, icon, title, description, accentClass, defaultOpen = f
             {icon}
           </div>
           <div className="min-w-0">
-            <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground truncate">{title}</p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground truncate">{title}</p>
+              {tryFree && <TryFreeBadge />}
+            </div>
             <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate">{description}</p>
           </div>
         </div>
@@ -326,9 +332,12 @@ export default function ParentingHub() {
     ? (effectiveChild.age * 12) + ((effectiveChild as any).ageMonths ?? 0)
     : 0;
 
-  // Smart usage-based paywall: free users may open exactly ONE of the
-  // premium-feel blocks (Activities / Olympiad / Life Skills) within this hub.
-  const hubUsage = useSectionUsage("parenting_hub");
+  // First-Time Free + Preview Lock — every Parent Hub feature is usable ONCE
+  // for free (server-tracked). After that, free users see the locked overlay;
+  // premium users always get full access.
+  const hubUsage = useFeatureUsage();
+  const tryFreeFor = (id: string) =>
+    !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
 
   const handleChildSelect = (id: number) => {
     setSelectedChildId(id);
@@ -460,8 +469,9 @@ export default function ParentingHub() {
         {/* 2. Parenting Articles */}
         <LockedBlock
           reason="hub_locked"
-          locked={hubUsage.isBlockLocked("articles")}
-          label="Premium feature"
+          locked={hubUsage.isFeatureLocked("hub_articles")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
         >
           <HubSection
             id="articles"
@@ -469,7 +479,8 @@ export default function ParentingHub() {
             title="Parenting Articles"
             description="Research-based, age-matched reading"
             accentClass="bg-emerald-100 dark:bg-emerald-500/20"
-            onOpen={() => hubUsage.markBlockUsed("articles")}
+            tryFree={tryFreeFor("hub_articles")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_articles")}
           >
             {effectiveChild ? (
               <ParentingArticles childAgeMonths={totalAgeMonths} />
@@ -483,8 +494,9 @@ export default function ParentingHub() {
         {effectiveChild && ageGroup && (
           <LockedBlock
             reason="hub_locked"
-            locked={hubUsage.isBlockLocked("tips")}
-            label="Premium feature"
+            locked={hubUsage.isFeatureLocked("hub_tips")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
           >
             <HubSection
               id="daily-tips"
@@ -492,7 +504,8 @@ export default function ParentingHub() {
               title="Daily Tips"
               description="Amy AI picks today's best tips for you"
               accentClass="bg-violet-100 dark:bg-violet-500/20"
-              onOpen={() => hubUsage.markBlockUsed("tips")}
+              tryFree={tryFreeFor("hub_tips")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_tips")}
             >
               <DailyTips ageGroup={ageGroup} childName={effectiveChild.name} />
             </HubSection>
@@ -502,8 +515,9 @@ export default function ParentingHub() {
         {/* 4. Emotional Support */}
         <LockedBlock
           reason="hub_locked"
-          locked={hubUsage.isBlockLocked("emotional")}
-          label="Premium feature"
+          locked={hubUsage.isFeatureLocked("hub_emotional")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
         >
           <HubSection
             id="emotional"
@@ -511,7 +525,8 @@ export default function ParentingHub() {
             title="Emotional Support"
             description="For the tough parenting days"
             accentClass="bg-rose-100 dark:bg-rose-500/20"
-            onOpen={() => hubUsage.markBlockUsed("emotional")}
+            tryFree={tryFreeFor("hub_emotional")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}
           >
             <EmotionalSupportSection />
           </HubSection>
@@ -521,8 +536,9 @@ export default function ParentingHub() {
         {effectiveChild && ageGroup && (
           <LockedBlock
             reason="hub_locked"
-            locked={hubUsage.isBlockLocked("activities")}
-            label="Premium feature"
+            locked={hubUsage.isFeatureLocked("hub_activities")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
           >
             <HubSection
               id="activities"
@@ -530,7 +546,8 @@ export default function ParentingHub() {
               title="Activities & Learning"
               description="Age-based games, stories & skills"
               accentClass="bg-fuchsia-100 dark:bg-fuchsia-500/20"
-              onOpen={() => hubUsage.markBlockUsed("activities")}
+              tryFree={tryFreeFor("hub_activities")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_activities")}
             >
               <ActivitiesSection
                 ageGroup={ageGroup}
@@ -545,8 +562,9 @@ export default function ParentingHub() {
         {effectiveChild && effectiveChild.age >= 3 && effectiveChild.age <= 17 && (
           <LockedBlock
             reason="hub_locked"
-            locked={hubUsage.isBlockLocked("ptm_prep")}
-            label="Premium feature"
+            locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
           >
             <HubSection
               id="ptm-prep"
@@ -554,7 +572,8 @@ export default function ParentingHub() {
               title="🧾 PTM Prep Assistant"
               description="Prepare questions, take notes & turn them into action steps"
               accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20"
-              onOpen={() => hubUsage.markBlockUsed("ptm_prep")}
+              tryFree={tryFreeFor("hub_ptm_prep")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}
             >
               <PtmPrepAssistant child={effectiveChild ? { id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age } : null} />
             </HubSection>
@@ -565,8 +584,9 @@ export default function ParentingHub() {
         {effectiveChild && effectiveChild.age >= 3 && effectiveChild.age <= 16 && (
           <LockedBlock
             reason="hub_locked"
-            locked={hubUsage.isBlockLocked("smart_study")}
-            label="Premium feature"
+            locked={hubUsage.isFeatureLocked("hub_smart_study")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
           >
             <HubSection
               id="smart-study"
@@ -574,7 +594,8 @@ export default function ParentingHub() {
               title="📚 Smart Study Zone"
               description="Adaptive learning Nursery → Class 10, with audio + practice"
               accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20"
-              onOpen={() => hubUsage.markBlockUsed("smart_study")}
+              tryFree={tryFreeFor("hub_smart_study")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}
             >
               <SmartStudyZone />
             </HubSection>
@@ -585,8 +606,9 @@ export default function ParentingHub() {
         {effectiveChild && effectiveChild.age >= 3 && effectiveChild.age <= 14 && (
           <LockedBlock
             reason="hub_locked"
-            locked={hubUsage.isBlockLocked("event_prep")}
-            label="Premium feature"
+            locked={hubUsage.isFeatureLocked("hub_event_prep")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
           >
             <HubSection
               id="event-prep"
@@ -594,7 +616,8 @@ export default function ParentingHub() {
               title="🎉 Event Prep (School Ready)"
               description="Fancy dress, DIY guide & speeches for school events"
               accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20"
-              onOpen={() => hubUsage.markBlockUsed("event_prep")}
+              tryFree={tryFreeFor("hub_event_prep")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}
             >
               <EventPrepCard />
             </HubSection>
@@ -605,8 +628,9 @@ export default function ParentingHub() {
         {effectiveChild && effectiveChild.age >= 3 && effectiveChild.age <= 15 && (
           <LockedBlock
             reason="hub_locked"
-            locked={hubUsage.isBlockLocked("olympiad")}
-            label="Premium feature"
+            locked={hubUsage.isFeatureLocked("hub_olympiad")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
           >
             <HubSection
               id="olympiad"
@@ -614,7 +638,8 @@ export default function ParentingHub() {
               title="Smart Olympiad Zone"
               description="Daily 5 MCQs, weekly tests, badges & insights"
               accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
-              onOpen={() => hubUsage.markBlockUsed("olympiad")}
+              tryFree={tryFreeFor("hub_olympiad")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}
             >
               <OlympiadZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
             </HubSection>
@@ -625,8 +650,9 @@ export default function ParentingHub() {
         {effectiveChild && effectiveChild.age >= 2 && effectiveChild.age <= 15 && (
           <LockedBlock
             reason="hub_locked"
-            locked={hubUsage.isBlockLocked("life_skills")}
-            label="Premium feature"
+            locked={hubUsage.isFeatureLocked("hub_life_skills")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
           >
             <HubSection
               id="life-skills"
@@ -634,7 +660,8 @@ export default function ParentingHub() {
               title="🧭 Life Skills Mode"
               description="Daily real-life skills tailored to your child's age"
               accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20"
-              onOpen={() => hubUsage.markBlockUsed("life_skills")}
+              tryFree={tryFreeFor("hub_life_skills")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
             >
               <LifeSkillsZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
             </HubSection>
@@ -644,8 +671,9 @@ export default function ParentingHub() {
         {/* 🍱 Amy AI Meal Suggestions */}
         <LockedBlock
           reason="hub_locked"
-          locked={hubUsage.isBlockLocked("meal_suggestions")}
-          label="Premium feature"
+          locked={hubUsage.isFeatureLocked("hub_ai_meal_generator")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
         >
           <HubSection
             id="meal-suggestions"
@@ -653,7 +681,8 @@ export default function ParentingHub() {
             title="🍱 Amy AI Meal Suggestions"
             description="AI-generated tiffin & meal ideas, tuned to your child"
             accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-lime-100 dark:to-lime-500/20"
-            onOpen={() => hubUsage.markBlockUsed("meal_suggestions")}
+            tryFree={tryFreeFor("hub_ai_meal_generator")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_ai_meal_generator")}
           >
             <RoutineInlineMeals
               audience="kids_tiffin"

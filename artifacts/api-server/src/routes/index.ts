@@ -22,6 +22,7 @@ import pushRouter from "./push";
 import notificationsRouter from "./notifications";
 import authDebugRouter from "./auth-debug";
 import featureFeedbackRouter from "./feature-feedback";
+import featureUsageRouter from "./feature-usage";
 import recipesRouter from "./recipes";
 import { requireAuth } from "../middlewares/requireAuth";
 
@@ -56,6 +57,7 @@ router.use(futurePredictorRouter);
 router.use(referralsRouter);
 router.use(featuresRouter);
 router.use(featureFeedbackRouter);
+router.use(featureUsageRouter);
 router.use(accountRouter);
 router.use(pushRouter);
 router.use(notificationsRouter);

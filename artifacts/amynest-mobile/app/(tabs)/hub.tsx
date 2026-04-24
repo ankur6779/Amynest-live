@@ -24,8 +24,9 @@ import AiMealGenerator from "@/components/AiMealGenerator";
 import ParentCommandCenter from "@/components/ParentCommandCenter";
 import { isInfantHubAge } from "@workspace/infant-hub";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
-import { useSectionUsage } from "@/hooks/useSectionUsage";
+import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
+import TryFreeBadge from "@/components/TryFreeBadge";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import colors, { brand } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
@@ -69,8 +70,12 @@ export default function HubScreen() {
   const styles = useMemo(() => makeStyles(c, mode), [c, mode]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [openSection, setOpenSection] = useState<string | null>("amy");
-  // Smart usage-based paywall — free users may open exactly ONE premium block.
-  const hubUsage = useSectionUsage("parenting_hub");
+  // First-Time Free + Preview Lock — every Parent Hub feature is usable ONCE
+  // for free (server-tracked). After that, free users see a locked overlay;
+  // premium users always get full access.
+  const hubUsage = useFeatureUsage();
+  const tryFreeFor = (id: string) =>
+    !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
 
   const { data: children = [], isLoading } = useQuery<Child[]>({
     queryKey: ["children"],
@@ -246,8 +251,9 @@ export default function HubScreen() {
         <View style={tileW("articles")}>
         <LockedBlock
           reason="hub_locked"
-          locked={!hubUsage.loaded ? false : hubUsage.isBlockLocked("articles")}
-          label="Premium feature"
+          locked={hubUsage.isFeatureLocked("hub_articles")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
         >
         <Section
           id="articles"
@@ -257,7 +263,8 @@ export default function HubScreen() {
           desc="Research-based, age-matched reading"
           open={openSection === "articles"}
           onToggle={() => setOpenSection(s => s === "articles" ? null : "articles")}
-          onOpen={() => hubUsage.markBlockUsed("articles")}
+          onOpen={() => hubUsage.markFeatureUsed("hub_articles")}
+          tryFree={tryFreeFor("hub_articles")}
         >
           <Text style={styles.sectionLead}>
             {effective
@@ -284,8 +291,9 @@ export default function HubScreen() {
         <View style={tileW("tips")}>
         <LockedBlock
           reason="hub_locked"
-          locked={!hubUsage.loaded ? false : hubUsage.isBlockLocked("tips")}
-          label="Premium feature"
+          locked={hubUsage.isFeatureLocked("hub_tips")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
         >
         <Section
           id="tips"
@@ -295,7 +303,8 @@ export default function HubScreen() {
           desc="Amy AI picks today's best tips"
           open={openSection === "tips"}
           onToggle={() => setOpenSection(s => s === "tips" ? null : "tips")}
-          onOpen={() => hubUsage.markBlockUsed("tips")}
+          onOpen={() => hubUsage.markFeatureUsed("hub_tips")}
+          tryFree={tryFreeFor("hub_tips")}
         >
           {effective ? (
             <View style={styles.tipsList}>
@@ -320,8 +329,9 @@ export default function HubScreen() {
         <View style={tileW("emotional")}>
         <LockedBlock
           reason="hub_locked"
-          locked={!hubUsage.loaded ? false : hubUsage.isBlockLocked("emotional")}
-          label="Premium feature"
+          locked={hubUsage.isFeatureLocked("hub_emotional")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
         >
         <Section
           id="emotional"
@@ -331,7 +341,8 @@ export default function HubScreen() {
           desc="For the tough parenting days"
           open={openSection === "emotional"}
           onToggle={() => setOpenSection(s => s === "emotional" ? null : "emotional")}
-          onOpen={() => hubUsage.markBlockUsed("emotional")}
+          onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}
+          tryFree={tryFreeFor("hub_emotional")}
         >
           <Text style={styles.sectionLead}>Parenting is hard. Amy will listen — no judgment.</Text>
           <View style={styles.emotionalGrid}>
@@ -348,13 +359,16 @@ export default function HubScreen() {
 
         {/* 🧾 PTM Prep Assistant — Prepare → Attend → Act flow */}
         <View style={tileW("ptm-prep")}>
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+          radius={18}
+        >
           <Pressable
             onPress={() => {
-              if (!hubUsage.loaded ? false : hubUsage.isBlockLocked("ptm_prep")) {
-                router.push({ pathname: "/paywall" as never, params: { reason: "hub_locked" } });
-                return;
-              }
-              hubUsage.markBlockUsed("ptm_prep");
+              hubUsage.markFeatureUsed("hub_ptm_prep");
               router.push({
                 pathname: "/ptm-prep" as never,
                 params: effective ? { childId: effective.id, childName: effective.name } as never : undefined,
@@ -372,24 +386,31 @@ export default function HubScreen() {
                   <Ionicons name="clipboard" size={20} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🧾 PTM Prep Assistant</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🧾 PTM Prep Assistant</Text>
+                    {tryFreeFor("hub_ptm_prep") ? <TryFreeBadge /> : null}
+                  </View>
                   <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Prepare · Attend · Act — for parent-teacher meetings</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
               </View>
             </LinearGradient>
           </Pressable>
+        </LockedBlock>
         </View>
 
         {/* Smart Study Zone — adaptive learning Nursery → Class 10 */}
         <View style={tileW("smart-study")}>
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_smart_study")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+          radius={18}
+        >
           <Pressable
             onPress={() => {
-              if (!hubUsage.loaded ? false : hubUsage.isBlockLocked("smart_study")) {
-                router.push({ pathname: "/paywall" as never, params: { reason: "hub_locked" } });
-                return;
-              }
-              hubUsage.markBlockUsed("smart_study");
+              hubUsage.markFeatureUsed("hub_smart_study");
               router.push("/study" as never);
             }}
             style={{ borderRadius: 18, overflow: "hidden" }}
@@ -404,24 +425,31 @@ export default function HubScreen() {
                   <Ionicons name="school" size={20} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>📚 Smart Study Zone</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>📚 Smart Study Zone</Text>
+                    {tryFreeFor("hub_smart_study") ? <TryFreeBadge /> : null}
+                  </View>
                   <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>Nursery → Class 10 · audio + practice</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
               </View>
             </LinearGradient>
           </Pressable>
+        </LockedBlock>
         </View>
 
         {/* 🌅 School Morning Flow — checklist + step flow + smart delay */}
         <View style={tileW("morning-flow")}>
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_morning_flow")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+          radius={18}
+        >
           <Pressable
             onPress={() => {
-              if (!hubUsage.loaded ? false : hubUsage.isBlockLocked("morning_flow")) {
-                router.push({ pathname: "/paywall" as never, params: { reason: "hub_locked" } });
-                return;
-              }
-              hubUsage.markBlockUsed("morning_flow");
+              hubUsage.markFeatureUsed("hub_morning_flow");
               router.push("/morning-flow" as never);
             }}
             style={{ borderRadius: 18, overflow: "hidden" }}
@@ -436,24 +464,31 @@ export default function HubScreen() {
                   <Ionicons name="sunny" size={20} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🌅 School Morning Flow</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🌅 School Morning Flow</Text>
+                    {tryFreeFor("hub_morning_flow") ? <TryFreeBadge /> : null}
+                  </View>
                   <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Night prep · steps · smart delay</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
               </View>
             </LinearGradient>
           </Pressable>
+        </LockedBlock>
         </View>
 
         {/* 🏆 Olympiad Zone — daily quizzes + practice across subjects */}
         <View style={tileW("olympiad")}>
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_olympiad")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+          radius={18}
+        >
           <Pressable
             onPress={() => {
-              if (!hubUsage.loaded ? false : hubUsage.isBlockLocked("olympiad")) {
-                router.push({ pathname: "/paywall" as never, params: { reason: "hub_locked" } });
-                return;
-              }
-              hubUsage.markBlockUsed("olympiad");
+              hubUsage.markFeatureUsed("hub_olympiad");
               router.push("/olympiad" as never);
             }}
             style={{ borderRadius: 18, overflow: "hidden" }}
@@ -468,13 +503,17 @@ export default function HubScreen() {
                   <Ionicons name="trophy" size={20} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🏆 Olympiad Zone</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🏆 Olympiad Zone</Text>
+                    {tryFreeFor("hub_olympiad") ? <TryFreeBadge /> : null}
+                  </View>
                   <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Daily 5 · practice · math, science, reasoning, GK</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
               </View>
             </LinearGradient>
           </Pressable>
+        </LockedBlock>
         </View>
 
         {/* 👶 Kids Control Center — Coming Soon + feedback */}
@@ -510,13 +549,16 @@ export default function HubScreen() {
 
         {/* 🍱 Tiffin & Meal Suggestions */}
         <View style={tileW("meals")}>
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_meals_tile")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+          radius={18}
+        >
           <Pressable
             onPress={() => {
-              if (!hubUsage.loaded ? false : hubUsage.isBlockLocked("meals")) {
-                router.push({ pathname: "/paywall" as never, params: { reason: "hub_locked" } });
-                return;
-              }
-              hubUsage.markBlockUsed("meals");
+              hubUsage.markFeatureUsed("hub_meals_tile");
               router.push("/meals" as never);
             }}
             style={{ borderRadius: 18, overflow: "hidden" }}
@@ -531,13 +573,17 @@ export default function HubScreen() {
                   <MaterialCommunityIcons name="food-apple" size={22} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🍱 Tiffin & Meals</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🍱 Tiffin & Meals</Text>
+                    {tryFreeFor("hub_meals_tile") ? <TryFreeBadge /> : null}
+                  </View>
                   <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Smart suggestions tuned to your child's taste</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
               </View>
             </LinearGradient>
           </Pressable>
+        </LockedBlock>
         </View>
 
         {/* 🥗 Nutrition Hub */}
@@ -574,13 +620,16 @@ export default function HubScreen() {
 
         {/* 🎉 Event Prep — fancy dress + DIY guide + speech generator */}
         <View style={tileW("event-prep")}>
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_event_prep")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+          radius={18}
+        >
           <Pressable
             onPress={() => {
-              if (!hubUsage.loaded ? false : hubUsage.isBlockLocked("event_prep")) {
-                router.push({ pathname: "/paywall" as never, params: { reason: "hub_locked" } });
-                return;
-              }
-              hubUsage.markBlockUsed("event_prep");
+              hubUsage.markFeatureUsed("hub_event_prep");
               router.push("/event-prep" as never);
             }}
             style={{ borderRadius: 18, overflow: "hidden" }}
@@ -595,19 +644,24 @@ export default function HubScreen() {
                   <MaterialCommunityIcons name="party-popper" size={22} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🎉 Event Prep</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🎉 Event Prep</Text>
+                    {tryFreeFor("hub_event_prep") ? <TryFreeBadge /> : null}
+                  </View>
                   <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>Fancy dress · DIY guide · speeches</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
               </View>
             </LinearGradient>
           </Pressable>
+        </LockedBlock>
         </View>
 
         <LockedBlock
           reason="hub_locked"
-          locked={!hubUsage.loaded ? false : hubUsage.isBlockLocked("activities")}
-          label="Premium feature"
+          locked={hubUsage.isFeatureLocked("hub_activities")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
           style={tileW("activities")}
         >
         <Section
@@ -618,7 +672,8 @@ export default function HubScreen() {
           desc="Games, audio lessons & more"
           open={openSection === "activities"}
           onToggle={() => setOpenSection(s => s === "activities" ? null : "activities")}
-          onOpen={() => hubUsage.markBlockUsed("activities")}
+          onOpen={() => hubUsage.markFeatureUsed("hub_activities")}
+          tryFree={tryFreeFor("hub_activities")}
         >
           <Text style={styles.sectionLead}>Educational activities curated by Amy for your child's age group.</Text>
 
@@ -740,8 +795,9 @@ export default function HubScreen() {
         {effective && effective.age >= 2 && effective.age <= 15 && (
           <LockedBlock
             reason="hub_locked"
-            locked={!hubUsage.loaded ? false : hubUsage.isBlockLocked("life_skills")}
-            label="Premium feature"
+            locked={hubUsage.isFeatureLocked("hub_life_skills")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
             style={tileW("life-skills")}
           >
             <Section
@@ -752,7 +808,8 @@ export default function HubScreen() {
               desc="Daily real-life skills, ages 2–15"
               open={openSection === "life-skills"}
               onToggle={() => setOpenSection(s => s === "life-skills" ? null : "life-skills")}
-              onOpen={() => hubUsage.markBlockUsed("life_skills")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
+              tryFree={tryFreeFor("hub_life_skills")}
             >
               <LifeSkillsZone child={{ id: effective.id, name: effective.name, age: effective.age }} />
             </Section>
@@ -764,8 +821,9 @@ export default function HubScreen() {
         <View style={tileW("meal-suggestions")}>
         <LockedBlock
           reason="hub_locked"
-          locked={!hubUsage.loaded ? false : hubUsage.isBlockLocked("meal_suggestions")}
-          label="Premium feature"
+          locked={hubUsage.isFeatureLocked("hub_ai_meal_generator")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
         >
         <Section
           id="meal-suggestions"
@@ -775,7 +833,8 @@ export default function HubScreen() {
           desc="AI-generated tiffin & meal ideas for your child"
           open={openSection === "meal-suggestions"}
           onToggle={() => setOpenSection(s => s === "meal-suggestions" ? null : "meal-suggestions")}
-          onOpen={() => hubUsage.markBlockUsed("meal_suggestions")}
+          onOpen={() => hubUsage.markFeatureUsed("hub_ai_meal_generator")}
+          tryFree={tryFreeFor("hub_ai_meal_generator")}
         >
           <AiMealGenerator childAge={effective?.age} />
         </Section>
@@ -793,7 +852,7 @@ export default function HubScreen() {
 }
 
 function Section({
-  id, icon, accent, title, desc, open, onToggle, onOpen, children,
+  id, icon, accent, title, desc, open, onToggle, onOpen, tryFree = false, children,
 }: {
   id: string;
   icon: React.ReactNode;
@@ -803,6 +862,8 @@ function Section({
   open: boolean;
   onToggle: () => void;
   onOpen?: () => void;
+  /** Show "Try Free" badge in header (first-time-free features). */
+  tryFree?: boolean;
   children: React.ReactNode;
 }) {
   const c = useColors();
@@ -834,7 +895,10 @@ function Section({
           {icon}
         </LinearGradient>
         <View style={{ flex: 1 }}>
-          <Text style={styles.sectionTitle}>{title}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            {tryFree ? <TryFreeBadge /> : null}
+          </View>
           <Text style={styles.sectionDesc}>{desc}</Text>
         </View>
         <View style={[styles.chevWrap, open && styles.chevWrapOpen]}>
