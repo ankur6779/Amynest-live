@@ -20,6 +20,7 @@ import { ArtCraftReels } from "@/components/ArtCraftReels";
 import { PrintableWorksheets } from "@/components/PrintableWorksheets";
 import { AmazingFacts } from "@/components/AmazingFacts";
 import FuturePredictor from "@/components/FuturePredictor";
+import AiMealGenerator from "@/components/AiMealGenerator";
 import ParentCommandCenter from "@/components/ParentCommandCenter";
 import { isInfantHubAge } from "@workspace/infant-hub";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
@@ -757,6 +758,28 @@ export default function HubScreen() {
             </Section>
           </LockedBlock>
         )}
+        </View>
+
+        {/* 🍱 Amy AI Meal Suggestions */}
+        <View style={tileW("meal-suggestions")}>
+        <LockedBlock
+          reason="hub_locked"
+          locked={!hubUsage.loaded ? false : hubUsage.isBlockLocked("meal_suggestions")}
+          label="Premium feature"
+        >
+        <Section
+          id="meal-suggestions"
+          icon={<MaterialCommunityIcons name="food" size={20} color="#fff" />}
+          accent={["#10B981", "#84CC16"]}
+          title="🍱 Amy AI Meal Suggestions"
+          desc="AI-generated tiffin & meal ideas for your child"
+          open={openSection === "meal-suggestions"}
+          onToggle={() => setOpenSection(s => s === "meal-suggestions" ? null : "meal-suggestions")}
+          onOpen={() => hubUsage.markBlockUsed("meal_suggestions")}
+        >
+          <AiMealGenerator childAge={effective?.age} />
+        </Section>
+        </LockedBlock>
         </View>
 
         {/* Bottom CTA */}

@@ -15,7 +15,6 @@ import { getApiUrl } from "@/lib/api";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { addPoints, checkAndAwardBadges, getTotalPoints } from "@/lib/rewards";
 import { MealRecipeCard } from "@/components/MealRecipeCard";
-import { RoutineInlineMeals } from "@/components/routine-inline-meals";
 import { announceCurrentTask, isVoiceEnabled, getVoiceSettings } from "@/lib/voice";
 import { VoiceSettingsPanel } from "@/components/voice-settings";
 import {
@@ -1377,14 +1376,8 @@ export default function RoutineDetail() {
             // Past routines are read-only; today and future allow full interaction
             const isInteractive = dateMode !== "past";
 
-            // Show AI meal generator once — after the last morning item (before noon)
-            const nextItem = displayItems[displayIdx + 1];
-            const nextMins = nextItem ? parse12hToMinutes(nextItem.item.time) : Infinity;
-            const showMealGen = taskStart < 720 && nextMins >= 720;
-
             return (
-              <React.Fragment key={index}>
-              <div className="flex gap-2 sm:gap-4 group items-start">
+              <div className="flex gap-2 sm:gap-4 group items-start" key={index}>
                 {/* Time column — fixed left */}
                 <div className="flex flex-col items-end pt-3.5 w-[64px] sm:w-[96px] shrink-0">
                   <div className={`text-xs sm:text-sm font-bold text-right whitespace-nowrap ${isPastTask ? "text-muted-foreground line-through" : isCurrentTask ? "text-primary" : "text-foreground"}`}>{item.time}</div>
@@ -1623,12 +1616,6 @@ export default function RoutineDetail() {
                   </CardContent>
                 </Card>
               </div>
-              {showMealGen && (
-                <div className="mt-1 pl-[80px] sm:pl-[112px]">
-                  <RoutineInlineMeals {...mealPrefs} />
-                </div>
-              )}
-              </React.Fragment>
             );
           })}
         </div>

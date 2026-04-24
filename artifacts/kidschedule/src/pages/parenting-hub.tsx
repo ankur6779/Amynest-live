@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   BookOpen, Brain, Sparkles, Heart, Palette,
   ChevronDown, ChevronUp, MessageCircleHeart,
-  Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList,
+  Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, ChefHat,
 } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
@@ -35,6 +35,7 @@ import { FuturePredictor } from "@/components/future-predictor";
 import { ParentCommandCenter } from "@/components/parent-command-center";
 import { LockedBlock } from "@/components/locked-block";
 import { useSectionUsage } from "@/hooks/use-section-usage";
+import { RoutineInlineMeals } from "@/components/routine-inline-meals";
 import type { AgeGroup } from "@/lib/age-groups";
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
@@ -639,6 +640,28 @@ export default function ParentingHub() {
             </HubSection>
           </LockedBlock>
         )}
+
+        {/* 🍱 Amy AI Meal Suggestions */}
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isBlockLocked("meal_suggestions")}
+          label="Premium feature"
+        >
+          <HubSection
+            id="meal-suggestions"
+            icon={<ChefHat className="h-5 w-5 text-emerald-600" />}
+            title="🍱 Amy AI Meal Suggestions"
+            description="AI-generated tiffin & meal ideas, tuned to your child"
+            accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-lime-100 dark:to-lime-500/20"
+            onOpen={() => hubUsage.markBlockUsed("meal_suggestions")}
+          >
+            <RoutineInlineMeals
+              audience="kids_tiffin"
+              childAge={effectiveChild?.age}
+              region="india"
+            />
+          </HubSection>
+        </LockedBlock>
 
       </div>
 
