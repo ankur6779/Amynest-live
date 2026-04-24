@@ -9,7 +9,7 @@ import {
   type GameDef, type GameCategory,
 } from "@/lib/games";
 import {
-  getTotalPoints, getRewards, saveRewards, redeemReward, getRedemptions,
+  getTotalPoints, addPoints, getRewards, saveRewards, redeemReward, getRedemptions,
   type Reward,
 } from "@/lib/rewards";
 import { PatternMatchGame } from "@/components/games/PatternMatch";
@@ -43,6 +43,12 @@ export default function GamesPage() {
   const limit = dailyLimit();
   const limitHit = dailyLimitReached();
   const suggestion = useMemo(() => amySuggestion(), [unlockedTick, active]);
+
+  const devGrantPoints = () => {
+    addPoints("DEV", "DEV: test grant", 1000);
+    setPoints(getTotalPoints());
+    setUnlockedTick((t) => t + 1);
+  };
 
   const onUnlock = (g: GameDef) => {
     setError(null);
@@ -115,6 +121,19 @@ export default function GamesPage() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {import.meta.env.DEV && (
+            <button
+              onClick={devGrantPoints}
+              title="DEV only — grant 1000 test points"
+              style={{
+                color: "#fff", background: "rgba(16,185,129,0.25)", border: "1px solid rgba(16,185,129,0.5)",
+                padding: "5px 10px", borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 4,
+              }}
+            >
+              <Plus size={11} /> 1000 pts <span style={{ opacity: 0.7, fontWeight: 400 }}>(DEV)</span>
+            </button>
+          )}
           <div style={{
             display: "flex", alignItems: "center", gap: 6,
             background: "linear-gradient(135deg, #f59e0b, #f97316)",
