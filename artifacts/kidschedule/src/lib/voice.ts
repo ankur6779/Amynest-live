@@ -3,7 +3,7 @@
 // Powered by ElevenLabs Indian voices (no browser TTS)
 // ─────────────────────────────────────────────────────────────
 
-import { firebaseAuth } from "./firebase";
+import { getAuth } from "firebase/auth";
 
 const KEY_ENABLED = "amynest_voice_enabled";
 const KEY_LANG    = "amynest_voice_lang";   // "en" | "hi"
@@ -101,7 +101,7 @@ export async function speak(text: string): Promise<void> {
   stopCurrentAudio();
 
   try {
-    const token = await firebaseAuth.currentUser?.getIdToken().catch(() => undefined);
+    const token = await getAuth().currentUser?.getIdToken().catch(() => undefined);
     const { voiceId, modelId } = resolveVoice(settings.lang, settings.gender);
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };

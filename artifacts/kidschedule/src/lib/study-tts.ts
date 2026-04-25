@@ -1,7 +1,7 @@
 // ElevenLabs-powered TTS for Smart Study Zone and Event Prep pages.
 // Replaces the old browser speechSynthesis with Indian ElevenLabs voices.
 
-import { firebaseAuth } from "./firebase";
+import { getAuth } from "firebase/auth";
 
 // ─── ElevenLabs Indian Voice IDs ──────────────────────────────
 // English Indian Female — Ananya K
@@ -64,7 +64,7 @@ export async function speak(
   }
 
   try {
-    const token = await firebaseAuth.currentUser?.getIdToken().catch(() => undefined);
+    const token = await getAuth().currentUser?.getIdToken().catch(() => undefined);
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
