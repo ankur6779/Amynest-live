@@ -13,6 +13,7 @@ import { API_BASE_URL } from "@/constants/api";
 import { ActivityIndicator, View } from "react-native";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import PremiumSplash from "@/components/PremiumSplash";
 import { ReferralAttributionBridge } from "@/components/ReferralAttributionBridge";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { useColors } from "@/hooks/useColors";
@@ -240,6 +241,13 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [splashVisible, setSplashVisible] = useState(true);
+
+  // Hide the native splash on first mount so our premium animated splash takes over.
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
   return (
     <FirebaseAuthProvider>
       <SafeAreaProvider>
@@ -259,6 +267,7 @@ export default function RootLayout() {
           </ErrorBoundary>
         </ThemeProvider>
       </SafeAreaProvider>
+      {splashVisible && <PremiumSplash onFinish={() => setSplashVisible(false)} />}
     </FirebaseAuthProvider>
   );
 }
