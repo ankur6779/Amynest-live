@@ -61,6 +61,7 @@ export default function SignInScreen() {
   };
 
   useEffect(() => {
+    if (Platform.OS === "web") return;
     const r = googleResponse as { type?: string; params?: Record<string, string> } | null;
     if (r?.type !== "success") {
       if (r && r.type !== "success") setGoogleLoading(false);
