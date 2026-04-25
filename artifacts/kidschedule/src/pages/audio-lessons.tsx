@@ -15,10 +15,10 @@ import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 
-// Lessons currently use a single warm female narrator (Rachel). A male
-// alternative could be wired in later via a voice selector in the player.
-const VOICE_AMY_FEMALE = "21m00Tcm4TlvDq8ikWAM"; // Rachel
-// Multilingual model handles Hindi/Hinglish noticeably better than Turbo v2.5.
+// Hindi Amy voice — ElevenLabs eleven_multilingual_v2 handles Hindi (Devanagari
+// script) natively. Replace the voice ID below with any Indian-accent voice
+// from the ElevenLabs voice library (e.g. "Priya", "Meera") if desired.
+const VOICE_AMY_HINDI    = "21m00Tcm4TlvDq8ikWAM"; // Rachel via multilingual model
 const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
 
 const AGE_ORDER: AgeBucket[] = ["0-2", "2-4", "5-7", "8-10", "10+"];
@@ -43,6 +43,21 @@ export default function AudioLessonsPage() {
   const sub = useSubscription();
 
   const lessons = lessonsForAge(age);
+
+  // Pre-warm the audio cache for all Hindi paragraphs of the current age
+  // group. Fire-and-forget — this is a background optimisation; failures are
+  // silently ignored. Premium-only: free users have limited plays anyway.
+  const isPremium = sub.isPremium;
+  useEffect(() => {
+    if (!isPremium) return;
+    const texts = lessonsForAge(age).flatMap((l) => getLessonText(l, "hi").paragraphs);
+    if (texts.length === 0) return;
+    void authFetch(getApiUrl("/api/audio-lessons/pregenerate"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texts }),
+    }).catch(() => {});
+  }, [age, isPremium]);
 
   // Global Paywall: free users get 1 audio lesson per UTC day. Premium users
   // bypass server-side. We always call /consume — the server returns 200
@@ -228,13 +243,12 @@ function PlayerSheet({ lesson, lang, onClose }: { lesson: Lesson; lang: string; 
   const [paragraphIdx, setParagraphIdx] = useState(0);
   const [rate, setRate] = useState<number>(1);
 
-  // Memoise text so paragraphs has a stable reference across renders —
-  // otherwise every render would look like a content change to our effects.
-  const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
+  // Display text follows the app language (titles, expert credit, buttons).
+  const displayText = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
+  // Audio is ALWAYS in Hindi — the multilingual model handles Devanagari script.
+  // `text` is the alias used by the player controls and transcript below.
+  const text = useMemo(() => getLessonText(lesson, "hi"), [lesson]);
   const paragraphs = text.paragraphs;
-  // Hindi/Hinglish go through the multilingual model; English stays on the
-  // default Turbo v2.5 (faster + cheaper) for the lesson voice.
-  const modelId = lang === "en" ? undefined : MODEL_MULTILINGUAL;
 
   // Auto-advance to the next paragraph when the current one finishes
   // playing, or stop if we're at the end.
@@ -249,8 +263,8 @@ function PlayerSheet({ lesson, lang, onClose }: { lesson: Lesson; lang: string; 
   }, [paragraphs.length]);
 
   const { speaking, loading, error, speak, stop } = useAmyVoice({
-    voiceId: VOICE_AMY_FEMALE,
-    modelId,
+    voiceId: VOICE_AMY_HINDI,
+    modelId: MODEL_MULTILINGUAL,
     playbackRate: rate,
     onFinished: handleFinished,
   });

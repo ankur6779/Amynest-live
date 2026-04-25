@@ -13,6 +13,19 @@ import { brand } from "@/constants/colors";
 import * as Haptics from "expo-haptics";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
+
+// Hindi Amy voice — eleven_multilingual_v2 handles Devanagari natively.
+// Swap the voice ID for any Indian-accent voice (e.g. Priya, Meera) if desired.
+const AMY_VOICE_HINDI    = "21m00Tcm4TlvDq8ikWAM"; // Rachel via multilingual model
+const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
+
+function formatTime(secs: number): string {
+  const s = Math.round(secs);
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}:${rem.toString().padStart(2, "0")}`;
+}
 
 // ── Lesson data — trilingual ───────────────────────────────────────────────
 type AgeBucket = "0-2" | "2-4" | "5-7" | "8-10" | "10+";
@@ -266,49 +279,6 @@ const AGE_EMOJIS: Record<AgeBucket, string> = {
 };
 const AGE_ORDER: AgeBucket[] = ["0-2", "2-4", "5-7", "8-10", "10+"];
 
-// ── Simulated TTS player ───────────────────────────────────────────────────
-function usePlayer(lessonId: string | null) {
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const elapsedRef  = useRef(0);
-  const TOTAL_SECS  = 240;
-
-  useEffect(() => {
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, []);
-
-  useEffect(() => {
-    elapsedRef.current = 0;
-    setProgress(0);
-    setPlaying(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  }, [lessonId]);
-
-  const play = () => {
-    setPlaying(true);
-    intervalRef.current = setInterval(() => {
-      elapsedRef.current += 1;
-      const pct = Math.min(elapsedRef.current / TOTAL_SECS, 1);
-      setProgress(pct);
-      if (pct >= 1) { clearInterval(intervalRef.current!); setPlaying(false); }
-    }, 1000);
-  };
-  const pause = () => {
-    setPlaying(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  };
-  const skip = (delta: number) => {
-    elapsedRef.current = Math.max(0, Math.min(TOTAL_SECS, elapsedRef.current + delta));
-    setProgress(elapsedRef.current / TOTAL_SECS);
-  };
-  const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60); const s = secs % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
-  return { playing, progress, play, pause, skip, elapsed: elapsedRef.current, total: TOTAL_SECS, formatTime };
-}
-
 export default function AudioLessonsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -320,10 +290,16 @@ export default function AudioLessonsScreen() {
   const [openLesson, setOpenLesson] = useState<Lesson | null>(null);
   const [unlocking, setUnlocking] = useState(false);
   const lessons = useMemo(() => LESSONS.filter(l => l.age === selectedAge), [selectedAge]);
-  const player = usePlayer(openLesson?.id ?? null);
+  const amy = useAmyVoice({ voiceId: AMY_VOICE_HINDI, modelId: MODEL_MULTILINGUAL });
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const authFetch = useAuthFetch();
   const refreshSub = useSubscriptionStore((s) => s.refresh);
+
+  // Stop audio whenever the open lesson changes (collapse or switch lesson).
+  useEffect(() => {
+    amy.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openLesson?.id]);
 
   // Global Paywall: free users get 1 audio lesson per UTC day. Premium users
   // bypass server-side. The /consume endpoint returns 200 (no-op for premium)
@@ -440,36 +416,73 @@ export default function AudioLessonsScreen() {
 
               {isOpen && (
                 <View style={styles.playerWrap}>
-                  {/* Progress bar */}
+                  {/* TTS error */}
+                  {amy.error && (
+                    <Text style={styles.errorText}>
+                      {lang === "hi"
+                        ? "Amy की आवाज़ अभी नहीं चल पा रही। थोड़ी देर बाद try करें।"
+                        : lang === "hinglish"
+                        ? "Amy ki awaaz load nahi ho payi. Thodi der baad try karein."
+                        : "Couldn't load Amy's voice. Please try again shortly."}
+                    </Text>
+                  )}
+
+                  {/* Progress bar — real position from expo-audio */}
                   <View style={styles.progressTrack}>
-                    <Animated.View style={[styles.progressFill, { width: `${player.progress * 100}%` as any }]} />
+                    <View style={[styles.progressFill, {
+                      width: `${amy.duration > 0 ? Math.min(amy.currentTime / amy.duration, 1) * 100 : 0}%` as any,
+                    }]} />
                   </View>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4 }}>
-                    <Text style={styles.timeText}>{player.formatTime(player.elapsed)}</Text>
+                    <Text style={styles.timeText}>{formatTime(amy.currentTime)}</Text>
                     <Text style={styles.timeText}>{lesson.duration}</Text>
                   </View>
 
                   {/* Controls */}
                   <View style={styles.controls}>
-                    <TouchableOpacity onPress={() => player.skip(-15)} style={styles.skipBtn} activeOpacity={0.7}>
+                    <TouchableOpacity
+                      onPress={() => amy.seekTo(amy.currentTime - 15)}
+                      style={[styles.skipBtn, { opacity: amy.speaking ? 1 : 0.4 }]}
+                      activeOpacity={0.7}
+                      disabled={!amy.speaking}
+                    >
                       <Ionicons name="play-back" size={22} color="#c4b5fd" />
                     </TouchableOpacity>
+
                     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
                       <TouchableOpacity
-                        onPress={() => { pulsePlay(); if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); player.playing ? player.pause() : player.play(); }}
-                        style={styles.playBtn} activeOpacity={0.85}
+                        onPress={() => {
+                          pulsePlay();
+                          if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                          if (amy.speaking || amy.loading) {
+                            amy.stop();
+                          } else {
+                            void amy.speak(getScript(lesson, "hi"));
+                          }
+                        }}
+                        style={styles.playBtn}
+                        activeOpacity={0.85}
                       >
                         <LinearGradient colors={[brand.primary, "#ec4899"]} style={styles.playBtnGrad}>
-                          <Ionicons name={player.playing ? "pause" : "play"} size={26} color="#fff" />
+                          {amy.loading
+                            ? <ActivityIndicator color="#fff" size="small" />
+                            : <Ionicons name={(amy.speaking || amy.loading) ? "pause" : "play"} size={26} color="#fff" />
+                          }
                         </LinearGradient>
                       </TouchableOpacity>
                     </Animated.View>
-                    <TouchableOpacity onPress={() => player.skip(15)} style={styles.skipBtn} activeOpacity={0.7}>
+
+                    <TouchableOpacity
+                      onPress={() => amy.seekTo(amy.currentTime + 15)}
+                      style={[styles.skipBtn, { opacity: amy.speaking ? 1 : 0.4 }]}
+                      activeOpacity={0.7}
+                      disabled={!amy.speaking}
+                    >
                       <Ionicons name="play-forward" size={22} color="#c4b5fd" />
                     </TouchableOpacity>
                   </View>
 
-                  {/* Script preview */}
+                  {/* Script preview — shown in app language for reading */}
                   <Text style={styles.script} numberOfLines={5}>{script}</Text>
                 </View>
               )}
@@ -532,5 +545,10 @@ const styles = StyleSheet.create({
     color: "#c7c0e8", fontSize: 12.5, lineHeight: 18.5,
     backgroundColor: "rgba(255,255,255,0.04)",
     borderRadius: 10, padding: 12,
+  },
+  errorText: {
+    color: "#fecaca", fontSize: 12.5, lineHeight: 18,
+    backgroundColor: "rgba(239,68,68,0.12)",
+    borderRadius: 10, padding: 10, marginBottom: 10,
   },
 });

@@ -12,6 +12,15 @@ export const AMY_VOICE_ID_DEFAULT = "21m00Tcm4TlvDq8ikWAM";
 // natural sounding. Right balance for Read-Aloud features.
 export const AMY_MODEL_ID_DEFAULT = "eleven_turbo_v2_5";
 
+// ─── Hindi / Indian Amy voice ────────────────────────────────────────────────
+// eleven_multilingual_v2 supports Hindi (Devanagari & Roman script) natively.
+// Voice "Rachel" (same as default) works well for Hindi via the multilingual
+// model. To swap in a native Indian-accent voice, replace AMY_VOICE_ID_HINDI
+// with the ElevenLabs voice-ID of your choice (e.g. "Priya", "Meera", etc.)
+// while keeping the model as eleven_multilingual_v2.
+export const AMY_VOICE_ID_HINDI = "21m00Tcm4TlvDq8ikWAM";
+export const AMY_MODEL_ID_HINDI  = "eleven_multilingual_v2";
+
 // Hard guard against huge payloads.
 export const TTS_MAX_INPUT_CHARS = 4000;
 

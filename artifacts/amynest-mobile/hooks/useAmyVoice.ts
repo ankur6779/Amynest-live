@@ -6,12 +6,18 @@ import { API_BASE_URL } from "@/constants/api";
 export interface UseAmyVoiceOptions {
   voiceId?: string;
   modelId?: string;
+  /** Called when the audio finishes playing naturally (not when stop() is called). */
+  onFinished?: () => void;
 }
 
 export interface UseAmyVoiceState {
   speaking: boolean;
   loading: boolean;
   error: string | null;
+  /** Current playback position in seconds (0 when not loaded). */
+  currentTime: number;
+  /** Total audio duration in seconds (0 until the audio is buffered). */
+  duration: number;
   /**
    * Synthesises and plays the given text. Calling again while a previous
    * synth/playback is in-flight cancels it and starts fresh — consumers that
@@ -20,6 +26,8 @@ export interface UseAmyVoiceState {
    */
   speak: (text: string) => Promise<void>;
   stop: () => void;
+  /** Seek to an absolute position in seconds. No-op if nothing is loaded. */
+  seekTo: (seconds: number) => void;
 }
 
 interface SynthesizeResponse {
@@ -56,6 +64,9 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   const abortRef = useRef<AbortController | null>(null);
   // Monotonic request token; stale resolves bail before touching the player.
   const reqIdRef = useRef(0);
+  // Keep latest onFinished in a ref so we don't re-create callbacks when it changes.
+  const onFinishedRef = useRef(options.onFinished);
+  onFinishedRef.current = options.onFinished;
 
   const { voiceId, modelId } = options;
 
@@ -79,10 +90,12 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     };
   }, [player, abortInFlight]);
 
-  // expo-audio fires `didJustFinish` on natural end → reset our state.
+  // expo-audio fires `didJustFinish` on natural end → reset our state and
+  // notify the caller via onFinished.
   useEffect(() => {
     if (status.didJustFinish) {
       setRequestedPlaying(false);
+      onFinishedRef.current?.();
     }
   }, [status.didJustFinish]);
 
@@ -95,6 +108,15 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
       setLoading(false);
     }
   }, [player, abortInFlight]);
+
+  const seekTo = useCallback(
+    (seconds: number) => {
+      try {
+        player.seekTo(Math.max(0, seconds));
+      } catch {}
+    },
+    [player],
+  );
 
   const speak = useCallback(
     async (rawText: string) => {
@@ -153,5 +175,14 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
     [authFetch, abortInFlight, modelId, player, voiceId],
   );
 
-  return { speaking, loading, error, speak, stop };
+  return {
+    speaking,
+    loading,
+    error,
+    currentTime: status.currentTime ?? 0,
+    duration: status.duration ?? 0,
+    speak,
+    stop,
+    seekTo,
+  };
 }
