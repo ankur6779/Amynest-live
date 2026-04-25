@@ -1,18 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Image,
 } from "react-native";
-import { createUserWithEmailAndPassword, updateProfile, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
-import * as Google from "expo-auth-session/providers/google";
-import * as WebBrowser from "expo-web-browser";
-import { signInWithGoogleOneTap } from "@/utils/googleOneTap";
-
-const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -20,32 +13,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { brand } from "@/constants/colors";
 import { humanizeError } from "@/utils/humanizeError";
-
-WebBrowser.maybeCompleteAuthSession();
-
-function useWarmUpBrowser() {
-  useEffect(() => {
-    if (Platform.OS !== "android") return;
-    void WebBrowser.warmUpAsync();
-    return () => { void WebBrowser.coolDownAsync(); };
-  }, []);
-}
+import PhoneAuthFlow from "@/components/PhoneAuthFlow";
 
 export default function SignUpScreen() {
-  useWarmUpBrowser();
-  const [, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
-    clientId: GOOGLE_WEB_CLIENT_ID,
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-  });
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -69,68 +45,11 @@ export default function SignUpScreen() {
       const cred = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
       try {
         await updateProfile(cred.user, { displayName: firstName.trim() });
-      } catch {
-        /* non-fatal */
-      }
+      } catch { /* non-fatal */ }
     } catch (err: unknown) {
       Alert.alert("Sign Up Failed", humanizeError(err, "Please try again."));
     } finally {
       setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const r = googleResponse as { type?: string; params?: Record<string, string> } | null;
-    if (r?.type !== "success") {
-      if (r && r.type !== "success") setGoogleLoading(false);
-      return;
-    }
-    const idToken = (r.params as { id_token?: string } | undefined)?.id_token;
-    if (!idToken) {
-      setGoogleLoading(false);
-      Alert.alert("Sign Up Failed", "Google did not return an ID token.");
-      return;
-    }
-    (async () => {
-      try {
-        const cred = GoogleAuthProvider.credential(idToken);
-        await signInWithCredential(firebaseAuth, cred);
-      } catch (err) {
-        Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));
-      } finally {
-        setGoogleLoading(false);
-      }
-    })();
-  }, [googleResponse, router]);
-
-  const handleGoogleSignUp = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setGoogleLoading(true);
-
-    if (Platform.OS === "web") {
-      if (!GOOGLE_WEB_CLIENT_ID) {
-        setGoogleLoading(false);
-        Alert.alert("Google Sign-In Not Configured", "Use email + password for now.");
-        return;
-      }
-      await signInWithGoogleOneTap(
-        GOOGLE_WEB_CLIENT_ID,
-        setGoogleLoading,
-        (msg) => Alert.alert("Sign Up Failed", msg),
-      );
-      return;
-    }
-
-    if (!GOOGLE_WEB_CLIENT_ID) {
-      setGoogleLoading(false);
-      Alert.alert("Google Sign-In Not Configured", "Use email + password for now.");
-      return;
-    }
-    try {
-      await promptGoogle();
-    } catch (err) {
-      setGoogleLoading(false);
-      Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));
     }
   };
 
@@ -143,7 +62,6 @@ export default function SignUpScreen() {
       colors={["#0D0022", "#180040", "#0A001E"]}
       style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
     >
-      {/* Ambient orbs */}
       <View style={styles.orb1} />
       <View style={styles.orb2} />
       <View style={styles.orb3} />
@@ -172,22 +90,10 @@ export default function SignUpScreen() {
             <Text style={styles.title}>{t("auth.create_account")}</Text>
             <Text style={styles.subtitle}>{t("auth.sign_up_subtitle")}</Text>
 
-            {/* Google */}
-            <TouchableOpacity
-              style={styles.googleBtn}
-              onPress={handleGoogleSignUp}
-              disabled={googleLoading}
-              testID="google-sign-up-btn"
-              activeOpacity={0.80}
-            >
-              {googleLoading
-                ? <ActivityIndicator size="small" color="#FFFFFF" />
-                : <Ionicons name="logo-google" size={20} color="#EA4335" />
-              }
-              <Text style={styles.googleBtnText}>
-                {googleLoading ? t("auth.connecting") : t("auth.continue_with_google")}
-              </Text>
-            </TouchableOpacity>
+            {/* Phone OTP — fastest signup */}
+            <PhoneAuthFlow
+              onError={(msg) => Alert.alert("Sign Up Failed", msg)}
+            />
 
             {/* Divider */}
             <View style={styles.dividerRow}>
@@ -338,14 +244,6 @@ const styles = StyleSheet.create({
 
   title: { fontSize: 24, fontWeight: "700", color: "#FFFFFF", fontFamily: "Inter_700Bold" },
   subtitle: { fontSize: 14, color: "rgba(200,180,255,0.65)", fontFamily: "Inter_400Regular", marginBottom: 4 },
-
-  googleBtn: {
-    height: 52, borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.14)",
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
-  },
-  googleBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
 
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   divider: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.10)" },
