@@ -285,13 +285,16 @@ export default function OnboardingPage() {
     setMessages((m) => [...m, { role: "amy", text: "Perfect! Saving your profile now... 💾" }]);
 
     try {
+      // Save all children sequentially. isOnboarding=true bypasses the
+      // free-tier 1-child cap so every child entered here gets stored.
       for (const child of children) {
         const goalsParts = ["balanced-routine"];
         if (child.dietNote) goalsParts.unshift(child.dietNote);
-        await authFetch("/api/children", {
+        const res = await authFetch("/api/children", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            isOnboarding: true,
             name: child.name,
             dob: child.dob || "",
             age: child.age || 0,
@@ -307,6 +310,10 @@ export default function OnboardingPage() {
             goals: goalsParts.join(" | "),
           }),
         });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error(`Failed to save child "${child.name}":`, err);
+        }
       }
 
       const parentBody: any = {
@@ -337,7 +344,8 @@ export default function OnboardingPage() {
 
       localStorage.setItem("onboardingComplete", "true");
       queryClient.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
-    } catch {
+    } catch (err) {
+      console.error("Onboarding save error:", err);
     }
 
     setTimeout(() => setStep("done"), 600);

@@ -47,20 +47,26 @@ router.post("/children", async (req, res): Promise<void> => {
     return;
   }
 
-  // Enforce free-tier child cap
-  const sub = await getOrCreateSubscription(userId);
-  if (!isPremiumNow(sub)) {
-    const [{ n }] = await db
-      .select({ n: sql<number>`count(*)::int` })
-      .from(childrenTable)
-      .where(eq(childrenTable.userId, userId));
-    if ((n ?? 0) >= FREE_LIMITS.childrenMax) {
-      res.status(402).json({
-        error: "child_limit_reached",
-        message: `Free plan supports up to ${FREE_LIMITS.childrenMax} child. Upgrade to add more.`,
-        limit: FREE_LIMITS.childrenMax,
-      });
-      return;
+  // During initial onboarding, bypass the per-child free-tier cap so all
+  // children entered in the setup wizard are saved correctly.
+  const isOnboarding = req.body?.isOnboarding === true;
+
+  if (!isOnboarding) {
+    // Enforce free-tier child cap
+    const sub = await getOrCreateSubscription(userId);
+    if (!isPremiumNow(sub)) {
+      const [{ n }] = await db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(childrenTable)
+        .where(eq(childrenTable.userId, userId));
+      if ((n ?? 0) >= FREE_LIMITS.childrenMax) {
+        res.status(402).json({
+          error: "child_limit_reached",
+          message: `Free plan supports up to ${FREE_LIMITS.childrenMax} child. Upgrade to add more.`,
+          limit: FREE_LIMITS.childrenMax,
+        });
+        return;
+      }
     }
   }
 
