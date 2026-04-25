@@ -64,39 +64,34 @@ export default function AudioLessonsPage() {
     return idx === 0 ? "free-sample" : "locked";
   };
 
-  // Global Paywall: free users get 1 audio lesson per UTC day. Premium users
-  // bypass server-side. We always call /consume — the server returns 200
-  // (no-op for premium) or 402 feature_locked when the cap is exhausted.
+  // Lesson 0 in each age section is ALWAYS free — open it directly, no
+  // server gate. Lessons 1+ require premium; free users see the paywall.
+  // Premium users bypass everything. Server /consume is only called for
+  // the premium path to track usage analytics (fire-and-forget).
   const handlePickLesson = async (l: Lesson, idx: number) => {
     if (unlocking) return;
 
-    // Non-free lesson → immediately open paywall for free users
+    // Free users: lesson 0 is always free — open immediately, no gate.
+    if (!isPremium && idx === 0) {
+      setOpen(l);
+      return;
+    }
+
+    // Free users: any other lesson → paywall.
     if (!isPremium && idx !== 0) {
       openPaywall("audio_lessons");
       return;
     }
 
+    // Premium users: consume endpoint (tracks analytics, never blocks).
     setUnlocking(true);
     try {
-      const res = await authFetch(
+      await authFetch(
         getApiUrl("/api/features/audio_lesson/consume"),
         { method: "POST" },
-      );
-      if (res.status === 402) {
-        openPaywall("audio_lessons");
-        return;
-      }
-      if (!res.ok) {
-        // Network / server error — best-effort: still open the lesson so the
-        // user isn't blocked by infra issues. Counter wasn't burned because
-        // featureGate refunds on non-2xx.
-        setOpen(l);
-        return;
-      }
-      sub.refresh();
+      ).catch(() => {/* fire-and-forget; never block the premium user */});
       setOpen(l);
     } catch {
-      // Same fail-open behaviour as above.
       setOpen(l);
     } finally {
       setUnlocking(false);

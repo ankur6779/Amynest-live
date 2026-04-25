@@ -54,6 +54,47 @@ function isSchoolDay(
   return days.includes(isoWeekday);
 }
 
+// ─── Age-appropriate meal guidance builder ──────────────────────────────────
+export function buildMealGuidance(ageGroup: AgeGroup): string {
+  if (ageGroup === "infant") {
+    return `MEAL RULES — INFANT (0–11 months):
+- Under 6 months: ONLY breast milk or formula. No solid food whatsoever.
+- 6–8 months: ONLY smooth single-ingredient purees — rice water, mashed banana, strained dal water, boiled apple puree, carrot puree. One new ingredient at a time.
+- 8–11 months: soft mashed foods — khichdi (well-mashed), suji halwa, mashed potato, soft cooked vegetables, mashed ripe banana.
+NEVER suggest: bread, sandwich, roti, paratha, chapati, idli, dosa, chappati, noodles, rice (whole grain), biscuits, juice, cow's milk as main drink, honey, nuts, whole fruits, or any choking hazard.
+All "meal" items must be labelled as feeding sessions (e.g. "Feeding — mashed banana puree", "Breastfeeding / Formula session").`;
+  }
+  if (ageGroup === "toddler") {
+    return `MEAL RULES — TODDLER (1–3 years):
+- Soft, easy-to-chew foods only. Small, bite-sized pieces.
+- Good options: soft khichdi, well-cooked dal-chawal, mashed sabzi with roti (torn small), soft idli, dosa (small pieces), upma, poha, suji halwa, banana, mango (small pieces), curd, paneer (soft).
+- Snacks: soft banana, steamed carrot, mashed fruit, small pieces of soft chapati with ghee.
+NEVER suggest: hard foods like whole nuts, raw carrot sticks, whole grapes, popcorn, chips, biscuits, junk food, carbonated drinks, excess sugar, or large bread sandwiches.
+Portions must be toddler-small. Prefer soft textures. Finger foods must be soft.`;
+  }
+  if (ageGroup === "preschool") {
+    return `MEAL RULES — PRESCHOOL (3–5 years):
+- Soft family foods but cut into small manageable pieces.
+- Good options: roti/chapati (small), dal, sabzi, rice, khichdi, idli, dosa, upma, poha, fruit salad, curd/lassi, paneer dishes, soft vegetables.
+- Snacks: fruits, soft crackers, small sandwiches with soft filling, milk, nuts (small, softened if needed).
+NEVER suggest: spicy food, carbonated drinks, excess fried items, raw whole nuts, or junk food.
+Meals should be nutritionally balanced with dal/protein + grain + vegetable + dairy at main meals.`;
+  }
+  if (ageGroup === "early_school") {
+    return `MEAL RULES — SCHOOL AGE (5–10 years):
+- Regular family meals appropriate for the regional cuisine. Well-balanced.
+- Must include protein (dal, eggs, paneer, meat), grain (roti/rice/bread), vegetable, and ideally a dairy component.
+- Tiffin/school lunch: portable items like paratha, sandwich, thepla, rice box, noodles — age-appropriate finger foods.
+- Snacks: fruits, nuts, milk, light snacks.
+Suggest 2–3 nutritious age-appropriate options. Avoid excess junk food, carbonated drinks, and very spicy preparations.`;
+  }
+  // pre_teen and unknown
+  return `MEAL RULES — PRE-TEEN / OLDER (10+ years):
+- Full family meals. Nutritionally dense. Include protein, complex carbs, healthy fats, vegetables.
+- Suggest 2–3 balanced meal options appropriate for the regional cuisine.
+- Avoid excessive junk food and carbonated drinks.`;
+}
+
 // ─── Age-band guidance builder (exported for testing) ──────────────────────
 export function buildAgeBandGuidance(ageGroup: AgeGroup): string {
   if (ageGroup === "infant") {
@@ -144,6 +185,7 @@ export async function generateAiRoutine(params: {
     : "Pre-Teen (10–15 years)";
 
   const ageBandGuidance = buildAgeBandGuidance(params.ageGroup);
+  const mealGuidance = buildMealGuidance(params.ageGroup);
 
   const systemPrompt = `You are an expert child development specialist and daily routine planner.
 Generate a complete, realistic daily schedule for a child as a JSON object.
@@ -173,6 +215,8 @@ ${params.hasSchool ? `- School hours: ${params.schoolStartTime} to ${params.scho
     : "Pan-Indian (mixed Indian cuisine — varied across regions)"
   }
 - IMPORTANT: All meal suggestions (breakfast, lunch, dinner, snacks, tiffin) MUST be from the regional cuisine above. Do not mix in dishes from other regions.
+- Age-appropriate meal rules (MANDATORY — every meal item MUST follow these rules before anything else):
+${mealGuidance}
 - Mood today: ${params.mood}
 ${params.goals ? `- Goals/focus: ${params.goals}` : ""}
 ${params.specialPlans ? `- Special plans: ${params.specialPlans}` : ""}
