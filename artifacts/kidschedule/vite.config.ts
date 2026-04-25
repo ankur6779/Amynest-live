@@ -117,13 +117,40 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
+      // Pin every React entry-point to the SAME on-disk file so Vite's
+      // pre-bundle graph cannot accidentally produce two React module
+      // instances. The missing `jsx-dev-runtime` / `react-dom/client`
+      // aliases were causing React 19's dispatcher to be null on first
+      // render, which surfaced as a misleading "more than one copy of
+      // React in the same app" warning + a `useState` null crash.
       react: path.resolve(import.meta.dirname, "node_modules/react"),
       "react-dom": path.resolve(import.meta.dirname, "node_modules/react-dom"),
-      "react/jsx-runtime": path.resolve(import.meta.dirname, "node_modules/react/jsx-runtime"),
+      "react-dom/client": path.resolve(
+        import.meta.dirname,
+        "node_modules/react-dom/client.js",
+      ),
+      "react/jsx-runtime": path.resolve(
+        import.meta.dirname,
+        "node_modules/react/jsx-runtime.js",
+      ),
+      "react/jsx-dev-runtime": path.resolve(
+        import.meta.dirname,
+        "node_modules/react/jsx-dev-runtime.js",
+      ),
     },
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
+    // Explicit entries force Vite to crawl the WHOLE app statically at
+    // startup so it discovers every dep up-front. Without this, Vite would
+    // discover deps lazily as files are requested, which triggers mid-session
+    // re-bundles. A re-bundle changes the `?v=` cache-bust hash on dep URLs;
+    // any code that already loaded React with the OLD hash now coexists with
+    // code that loads React with the NEW hash — two ESM module instances,
+    // each with its own `ReactSharedInternals` object, and `useState` blows
+    // up because the renderer set the dispatcher on instance A while the
+    // component reads it from instance B.
+    entries: ["index.html"],
     include: [
       "react",
       "react-dom",
@@ -166,6 +193,11 @@ export default defineConfig({
       "tailwind-merge",
       "framer-motion",
     ],
+    // After the initial crawl, refuse to silently re-bundle on the fly. If
+    // a dep is genuinely missing from `include`, Vite will throw a clear
+    // error pointing at it instead of triggering a hash-changing re-bundle
+    // that desyncs already-loaded React modules in the browser.
+    noDiscovery: true,
   },
   root: path.resolve(import.meta.dirname),
   build: {

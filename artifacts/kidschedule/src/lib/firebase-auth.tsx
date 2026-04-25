@@ -1,4 +1,44 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+
+// IMPORTANT: do NOT statically import "firebase/auth" or "./firebase" here.
+//
+// Why: in dev, Vite pre-bundles `firebase/auth` as a separate optimized
+// dependency. When this module's static graph pulls firebase/auth alongside
+// React, the chunk-load order can race React 19's internal dispatcher setup
+// and cause `useState` to throw "Cannot read properties of null" on first
+// render (React reports this as the misleading "more than one copy of React"
+// warning).
+//
+// Keeping all firebase access behind dynamic `import()` inside effects /
+// callbacks means this module's static dependency graph is just React, which
+// eliminates the race entirely.
+
+type LoadedAuth = typeof import("./firebase");
+type FirebaseUserLike = {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+  phoneNumber: string | null;
+  getIdToken: (forceRefresh?: boolean) => Promise<string>;
+};
+
+let firebaseModulePromise: Promise<LoadedAuth> | null = null;
+function loadFirebase(): Promise<LoadedAuth> {
+  if (!firebaseModulePromise) {
+    firebaseModulePromise = import("./firebase");
+  }
+  return firebaseModulePromise;
+}
 
 /**
  * A Clerk-shaped wrapper around Firebase Auth. Lets the existing app keep
@@ -47,7 +87,7 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function fbToShim(u: FirebaseUser): ShimUser {
+function fbToShim(u: FirebaseUserLike): ShimUser {
   const display = u.displayName ?? "";
   const [first, ...rest] = display.split(" ");
   const last = rest.join(" ");
@@ -71,27 +111,100 @@ function fbToShim(u: FirebaseUser): ShimUser {
 }
 
 export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
-  const [state] = useState<AuthState>({
+  const [state, setState] = useState<AuthState>({
     user: null,
-    isLoaded: true,
+    isLoaded: false,
   });
+  const listenersRef = useRef<Set<Listener>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    let unsub: () => void = () => {};
+
+    void (async () => {
+      try {
+        const [{ firebaseAuth }, authMod] = await Promise.all([
+          loadFirebase(),
+          import("firebase/auth"),
+        ]);
+        if (cancelled) return;
+
+        // Use onIdTokenChanged (not onAuthStateChanged) so token refreshes
+        // don't get missed — getToken() always returns a fresh token via the
+        // SDK cache.
+        unsub = authMod.onIdTokenChanged(firebaseAuth, (fbUser) => {
+          const shim = fbUser ? fbToShim(fbUser as FirebaseUserLike) : null;
+          setState({ user: shim, isLoaded: true });
+          for (const l of listenersRef.current) {
+            try {
+              l({ user: shim });
+            } catch {
+              /* ignore listener errors */
+            }
+          }
+        });
+      } catch (err) {
+        // If firebase fails to load (bad config, network, etc.), still mark
+        // the provider as loaded with no user so the UI can render the
+        // signed-out state instead of hanging on a spinner forever.
+        // eslint-disable-next-line no-console
+        console.error("[firebase-auth] failed to initialize:", err);
+        if (!cancelled) {
+          setState({ user: null, isLoaded: true });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      try {
+        unsub();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
 
   const getToken = useCallback(
     async (opts?: { skipCache?: boolean }): Promise<string | null> => {
-      return null;
+      try {
+        const { firebaseAuth } = await loadFirebase();
+        const u = firebaseAuth.currentUser;
+        if (!u) return null;
+        return await u.getIdToken(opts?.skipCache === true);
+      } catch {
+        return null;
+      }
     },
     [],
   );
 
   const signOut = useCallback(async (opts?: { redirectUrl?: string }) => {
+    try {
+      const [{ firebaseAuth }, authMod] = await Promise.all([
+        loadFirebase(),
+        import("firebase/auth"),
+      ]);
+      await authMod.signOut(firebaseAuth);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[firebase-auth] signOut failed:", err);
+    }
     if (opts?.redirectUrl && typeof window !== "undefined") {
       window.location.href = opts.redirectUrl;
     }
   }, []);
 
+  const addListener = useCallback((cb: Listener) => {
+    listenersRef.current.add(cb);
+    return () => {
+      listenersRef.current.delete(cb);
+    };
+  }, []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, getToken, signOut, addListener: () => () => {} }),
-    [state, getToken, signOut],
+    () => ({ ...state, getToken, signOut, addListener }),
+    [state, getToken, signOut, addListener],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
