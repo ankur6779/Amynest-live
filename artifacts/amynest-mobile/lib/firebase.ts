@@ -7,7 +7,6 @@ import {
 } from "firebase/auth";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getReactNativePersistence } from "firebase/auth/react-native";
 
 const config = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? "",
@@ -33,8 +32,16 @@ try {
       persistence: indexedDBLocalPersistence,
     });
   } else {
+    // On native (iOS/Android), Firebase v12's package.json `react-native`
+    // export condition resolves `firebase/auth` to its RN entry, which
+    // exports `getReactNativePersistence`. Web bundles do NOT have it,
+    // so we require it dynamically to keep web bundling working.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { getReactNativePersistence } = require("firebase/auth") as {
+      getReactNativePersistence: (storage: unknown) => unknown;
+    };
     _auth = initializeAuth(firebaseApp, {
-      persistence: getReactNativePersistence(AsyncStorage),
+      persistence: getReactNativePersistence(AsyncStorage) as never,
     });
   }
 } catch {
