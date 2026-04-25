@@ -3,9 +3,9 @@ import { getAuth, type Auth, browserLocalPersistence, setPersistence } from "fir
 
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string;
 
-// authDomain must be "<project-id>.firebaseapp.com" (or a custom domain with
-// Firebase Hosting configured). If the secret is set to the App ID value
-// (no dot), derive the standard auth domain automatically.
+// authDomain is set via VITE_FIREBASE_AUTH_DOMAIN (e.g. "amynest.in").
+// Firebase Hosting must serve /__/auth/handler at that domain.
+// Falls back to the default Firebase domain if the env var is missing or invalid.
 const rawAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined;
 export const authDomain =
   rawAuthDomain && rawAuthDomain.includes(".")
