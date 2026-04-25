@@ -1,4 +1,5 @@
-import {
+import React from "react";
+const {
   createContext,
   useCallback,
   useContext,
@@ -6,7 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react";
+} = React;
 import {
   onIdTokenChanged,
   browserLocalPersistence,
