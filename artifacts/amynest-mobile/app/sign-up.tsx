@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Image,
 } from "react-native";
-import { createUserWithEmailAndPassword, updateProfile, signInWithCredential, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, signInWithCredential, signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
@@ -109,11 +109,11 @@ export default function SignUpScreen() {
     if (Platform.OS === "web") {
       try {
         const provider = new GoogleAuthProvider();
-        await signInWithPopup(firebaseAuth, provider);
+        await signInWithRedirect(firebaseAuth, provider);
+        // Page navigates away — loading state resets when app reloads
       } catch (err) {
-        Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));
-      } finally {
         setGoogleLoading(false);
+        Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));
       }
       return;
     }

@@ -8,9 +8,11 @@ import {
 } from "react";
 import {
   onIdTokenChanged,
+  getRedirectResult,
   signOut as fbSignOut,
   type User as FirebaseUser,
 } from "firebase/auth";
+import { Platform } from "react-native";
 import { firebaseAuth } from "./firebase";
 
 /**
@@ -77,12 +79,22 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
     fbUser: null,
     isLoaded: false,
   });
+
   useEffect(() => {
     const unsub = onIdTokenChanged(firebaseAuth, (fbUser) => {
       const shim = fbUser ? fbToShim(fbUser) : null;
       setState({ user: shim, fbUser, isLoaded: true });
     });
     return unsub;
+  }, []);
+
+  // On web (PWA/WebView), complete the signInWithRedirect flow after the page
+  // reloads back from Google → firebaseapp.com/__/auth/handler → app.
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    getRedirectResult(firebaseAuth).catch((err) => {
+      console.warn("[firebase-auth] getRedirectResult error:", err);
+    });
   }, []);
 
   // Always delegate to the Firebase SDK's own token cache: getIdToken(false)

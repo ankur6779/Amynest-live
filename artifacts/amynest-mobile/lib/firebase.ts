@@ -2,7 +2,7 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import {
   initializeAuth,
   getAuth,
-  browserLocalPersistence,
+  indexedDBLocalPersistence,
   type Auth,
 } from "firebase/auth";
 import { Platform } from "react-native";
@@ -30,15 +30,14 @@ let _auth: Auth;
 try {
   if (Platform.OS === "web") {
     _auth = initializeAuth(firebaseApp, {
-      persistence: browserLocalPersistence,
+      persistence: indexedDBLocalPersistence,
     });
   } else {
     _auth = initializeAuth(firebaseApp, {
-      persistence: initializeReactNativePersistence(AsyncStorage),
+      persistence: getReactNativePersistence(AsyncStorage),
     });
   }
 } catch {
-  // initializeAuth throws if called twice (e.g. fast refresh) — fall back.
   _auth = getAuth(firebaseApp);
 }
 export const firebaseAuth: Auth = _auth;
