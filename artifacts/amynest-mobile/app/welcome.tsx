@@ -72,6 +72,55 @@ const TRUST_PILLARS: { icon: keyof typeof Ionicons.glyphMap; titleKey: string; d
   { icon: "shield-checkmark", titleKey: "landing.trust3_title", descKey: "landing.trust3_desc" },
 ];
 
+const SCIENCE_CITATIONS = [
+  "📚 Habit Loop — Charles Duhigg (2012)",
+  "🧠 Growth Mindset — Dr. Carol Dweck, Stanford",
+  "👶 AAP Screen Time Guidelines (2023)",
+  "💤 CDC Infant Sleep Standards",
+  "🎯 Positive Reinforcement — B.F. Skinner",
+  "🌱 Montessori Life Skills Framework",
+  "📊 Executive Function — Harvard Center on the Developing Child",
+  "❤️ Secure Attachment — Dr. Daniel Siegel",
+  "⚡ CPS Model — Dr. Ross Greene",
+  "🍎 SEL Framework — CASEL",
+];
+
+const KIDS_CC_BULLETS = [
+  "Screen Time Limits (AAP-aligned)",
+  "Child-Safe Focus Mode",
+  "Routine Sync with Parent App",
+  "PIN-Protected Parent Lock",
+];
+
+const ALL_FEATURES: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  desc: string;
+  gradient: readonly [string, string];
+  badge: string | null;
+}[] = [
+  { icon: "shield-checkmark", title: "Kids Control Center", desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.", gradient: ["#7B3FF2", "#FF4ECD"], badge: "Coming Soon" },
+  { icon: "stats-chart", title: "Behavior Tracking", desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC behavioral analysis.", gradient: ["#10B981", "#06B6D4"], badge: "Popular" },
+  { icon: "game-controller", title: "Gaming Reward Zone", desc: "Gamified milestones — kids earn real rewards tied to real-world achievements.", gradient: ["#FFD166", "#EF4444"], badge: "New" },
+  { icon: "moon", title: "Infant Sleep Tracker", desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.", gradient: ["#60A5FA", "#6366F1"], badge: "New" },
+  { icon: "play-circle", title: "Parenting Reels", desc: "Short, expert-curated video reels on positive parenting techniques.", gradient: ["#EC4899", "#A855F7"], badge: null },
+  { icon: "bulb", title: "Daily Parenting Tips", desc: "Science-backed tip daily — personalized to your child's age per Piaget's framework.", gradient: ["#FFD166", "#F97316"], badge: null },
+  { icon: "accessibility", title: "Life Skills Zone", desc: "Teach independence with Montessori-aligned milestone tracking.", gradient: ["#A855F7", "#6366F1"], badge: null },
+  { icon: "medal", title: "Olympiad Zone", desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14.", gradient: ["#F59E0B", "#EF4444"], badge: null },
+  { icon: "color-palette", title: "Art & Craft Reels", desc: "Step-by-step activity videos that stimulate creativity and fine motor development.", gradient: ["#EC4899", "#F97316"], badge: null },
+  { icon: "document-text", title: "Printable Worksheets", desc: "Age-appropriate worksheets for learning, colouring, and motor skill development.", gradient: ["#06B6D4", "#10B981"], badge: null },
+  { icon: "grid", title: "Daily Brain Puzzles", desc: "Brain-boosting puzzles tailored to your child's cognitive stage.", gradient: ["#F97316", "#A855F7"], badge: null },
+  { icon: "book", title: "Parenting Articles", desc: "Deep-dive articles by child development experts on every stage of childhood.", gradient: ["#3B82F6", "#06B6D4"], badge: null },
+  { icon: "people", title: "Babysitter Profiles", desc: "Create and share child care profiles securely. Routines, allergies, notes — all in one place.", gradient: ["#10B981", "#A855F7"], badge: null },
+  { icon: "trophy", title: "Parent Score & Streaks", desc: "Gamified motivation — earn points, build streaks, and celebrate every parenting win.", gradient: ["#FFD166", "#EF4444"], badge: null },
+];
+
+const TESTIMONIALS = [
+  { name: "Priya M.", location: "Mumbai, India", text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. It felt like talking to an actual child psychologist.", avatar: "P", color: "#A855F7", result: "Tantrums reduced 80% in 3 weeks" },
+  { name: "Rahul & Kavya", location: "Bangalore, India", text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings.", avatar: "R", color: "#06B6D4", result: "Identified pattern in 5 days" },
+  { name: "Sarah K.", location: "Dubai, UAE", text: "Twin toddlers + infant sleep tracker + Amy's CDC-aligned tips = sanity saved. Got our 6-month-old sleeping through the night in 11 days.", avatar: "S", color: "#EC4899", result: "Sleeping through night in 11 days" },
+];
+
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -83,6 +132,8 @@ export default function WelcomeScreen() {
   const colorAnim = useRef(new Animated.Value(0)).current;
   const fadeIn = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(24)).current;
+  const marqueeX = useRef(new Animated.Value(0)).current;
+  const [marqueeTotalW, setMarqueeTotalW] = useState(0);
 
   useEffect(() => {
     Animated.loop(
@@ -99,6 +150,18 @@ export default function WelcomeScreen() {
       Animated.timing(slideUp, { toValue: 0, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
   }, []);
+
+  useEffect(() => {
+    if (marqueeTotalW <= 0) return;
+    Animated.loop(
+      Animated.timing(marqueeX, {
+        toValue: -marqueeTotalW / 2,
+        duration: 28000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [marqueeTotalW]);
 
   const titleColor = colorAnim.interpolate({
     inputRange: [0, 1, 2, 3, 4],
@@ -246,6 +309,24 @@ export default function WelcomeScreen() {
             </Link>
           </Animated.View>
 
+          {/* SCIENCE CITATIONS MARQUEE */}
+          <View style={styles.marqueeWrap}>
+            <View style={styles.marqueeBorder} />
+            <View style={styles.marqueeClip}>
+              <Animated.View
+                style={[styles.marqueeTrack, { transform: [{ translateX: marqueeX }] }]}
+                onLayout={(e) => setMarqueeTotalW(e.nativeEvent.layout.width)}
+              >
+                {[...SCIENCE_CITATIONS, ...SCIENCE_CITATIONS].map((cite, i) => (
+                  <View key={i} style={styles.marqueeItem}>
+                    <Text style={styles.marqueeText}>{cite}</Text>
+                  </View>
+                ))}
+              </Animated.View>
+            </View>
+            <View style={styles.marqueeBorder} />
+          </View>
+
           {/* PROBLEM HOOK */}
           <View style={styles.sectionWrap}>
             <View style={styles.eyebrow}>
@@ -316,6 +397,42 @@ export default function WelcomeScreen() {
               </View>
             </View>
 
+            {/* Kids Control Center featured card */}
+            <View style={styles.kidsCCCard}>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 14, marginBottom: 16 }}>
+                <LinearGradient
+                  colors={["#7B3FF2", "#FF4ECD"]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={styles.kidsCCIcon}
+                >
+                  <Ionicons name="shield-checkmark" size={24} color="#fff" />
+                </LinearGradient>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                    <Text style={styles.kidsCCTitle}>Kids Control Center</Text>
+                    <LinearGradient
+                      colors={["#7B3FF2", "#FF4ECD"]}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={styles.comingSoonPill}
+                    >
+                      <Text style={styles.comingSoonText}>Coming Soon</Text>
+                    </LinearGradient>
+                  </View>
+                  <Text style={styles.kidsCCDesc}>
+                    A dedicated child-safe experience built on AAP's 2023 digital wellness guidelines — screen time limits, focus mode, parent lock, and synced routines.
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.kidsCCBullets}>
+                {KIDS_CC_BULLETS.map((feat) => (
+                  <View key={feat} style={styles.kidsCCBullet}>
+                    <Ionicons name="checkmark-circle" size={16} color="#F9A8D4" />
+                    <Text style={styles.kidsCCBulletText}>{feat}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
             {/* Secondary features grid (2-col) */}
             <View style={styles.secondaryGrid}>
               {SECONDARY_FEATURES.map((f) => (
@@ -349,6 +466,56 @@ export default function WelcomeScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* ALL FEATURES MEGA GRID */}
+          <View style={styles.sectionWrap}>
+            <View style={styles.eyebrow}>
+              <Ionicons name="sparkles" size={11} color="#67E8F9" />
+              <Text style={styles.eyebrowText}>Everything in One App</Text>
+            </View>
+            <Text style={styles.sectionTitle}>14+ Science-Backed Tools</Text>
+            <Text style={styles.sectionSub}>From newborns to teens — every feature grounded in child psychology, AAP guidelines, and developmental research.</Text>
+
+            <View style={styles.featuresGrid}>
+              {ALL_FEATURES.map((f) => (
+                <View key={f.title} style={styles.featureCard}>
+                  {f.badge && (
+                    <View style={[
+                      styles.featureBadge,
+                      { backgroundColor: f.badge === "New" ? "#0E7490" : f.badge === "Popular" ? "#7C3AED" : "#9A3412" },
+                    ]}>
+                      <Text style={styles.featureBadgeText}>{f.badge}</Text>
+                    </View>
+                  )}
+                  <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+                    <LinearGradient
+                      colors={f.gradient}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                      style={styles.featureIcon}
+                    >
+                      <Ionicons name={f.icon} size={18} color="#fff" />
+                    </LinearGradient>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.featureTitle}>{f.title}</Text>
+                      <Text style={styles.featureDesc}>{f.desc}</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity onPress={handleStart} activeOpacity={0.9} style={[styles.ctaWrap, { marginTop: 20 }]}>
+              <LinearGradient
+                colors={[brand.purple500, "#EC4899"]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={[styles.cta, { minWidth: 240, paddingVertical: 14 }]}
+              >
+                <Text style={[styles.ctaText, { fontSize: 15 }]}>Unlock All Features Free</Text>
+                <Ionicons name="arrow-forward" size={18} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
+            <Text style={styles.smallNote}>Free plan included · Upgrade anytime</Text>
+          </View>
+
           {/* HOW IT WORKS */}
           <View style={styles.sectionWrap}>
             <View style={styles.eyebrow}>
@@ -378,6 +545,44 @@ export default function WelcomeScreen() {
                 </LinearGradient>
                 <Text style={styles.stepTitle}>{t(s.titleKey)}</Text>
                 <Text style={styles.stepDesc}>{t(s.descKey)}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* TESTIMONIALS */}
+          <View style={styles.sectionWrap}>
+            <View style={styles.eyebrow}>
+              <Ionicons name="heart" size={11} color="#F472B6" />
+              <Text style={styles.eyebrowText}>Parent Stories</Text>
+            </View>
+            <Text style={styles.sectionTitle}>Real Parents, Real Results</Text>
+            <Text style={styles.sectionSub}>Thousands of families use AmyNest every day to raise happier, calmer, more confident kids.</Text>
+
+            {TESTIMONIALS.map((t) => (
+              <View key={t.name} style={styles.testimonialCard}>
+                {/* Stars */}
+                <View style={{ flexDirection: "row", gap: 2, marginBottom: 10 }}>
+                  {[1,2,3,4,5].map((s) => (
+                    <Ionicons key={s} name="star" size={14} color="#FBBF24" />
+                  ))}
+                </View>
+                {/* Outcome badge */}
+                <View style={[styles.outcomeBadge, { backgroundColor: `${t.color}33`, borderColor: `${t.color}55` }]}>
+                  <Ionicons name="bar-chart" size={11} color={t.color} />
+                  <Text style={[styles.outcomeBadgeText, { color: t.color }]}>{t.result}</Text>
+                </View>
+                {/* Quote */}
+                <Text style={styles.testimonialQuote}>"{t.text}"</Text>
+                {/* Author */}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14 }}>
+                  <View style={[styles.testimonialAvatar, { backgroundColor: t.color }]}>
+                    <Text style={styles.testimonialAvatarText}>{t.avatar}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.testimonialName}>{t.name}</Text>
+                    <Text style={styles.testimonialLocation}>{t.location}</Text>
+                  </View>
+                </View>
               </View>
             ))}
           </View>
@@ -1036,6 +1241,217 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "Inter_400Regular",
     marginBottom: 22,
+  },
+
+  /* SCIENCE CITATIONS MARQUEE */
+  marqueeWrap: {
+    marginHorizontal: -20,
+    marginBottom: 20,
+    marginTop: 4,
+  },
+  marqueeBorder: {
+    height: 1,
+    backgroundColor: "rgba(168,85,247,0.15)",
+  },
+  marqueeClip: {
+    overflow: "hidden",
+    paddingVertical: 10,
+    backgroundColor: "rgba(168,85,247,0.04)",
+  },
+  marqueeTrack: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  marqueeItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    flexShrink: 0,
+  },
+  marqueeText: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.55)",
+    fontFamily: "Inter_500Medium",
+    whiteSpace: "nowrap" as never,
+  },
+
+  /* KIDS CONTROL CENTER CARD */
+  kidsCCCard: {
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 14,
+    backgroundColor: "rgba(123,63,242,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(123,63,242,0.30)",
+    overflow: "hidden",
+  },
+  kidsCCIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#FF4ECD",
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  kidsCCTitle: {
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    color: "#FFFFFF",
+    lineHeight: 22,
+  },
+  comingSoonPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  comingSoonText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  kidsCCDesc: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.72)",
+    fontFamily: "Inter_400Regular",
+    lineHeight: 19,
+  },
+  kidsCCBullets: {
+    gap: 8,
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  kidsCCBullet: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    flexBasis: "47%",
+    flexGrow: 1,
+  },
+  kidsCCBulletText: {
+    fontSize: 11.5,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(255,255,255,0.85)",
+    flex: 1,
+  },
+
+  /* ALL FEATURES GRID */
+  featuresGrid: {
+    gap: 10,
+    marginTop: 14,
+  },
+  featureCard: {
+    borderRadius: 18,
+    padding: 16,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    position: "relative",
+    overflow: "hidden",
+  },
+  featureBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  featureBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: "#FFFFFF",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  featureIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  featureTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: "#FFFFFF",
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  featureDesc: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.60)",
+    lineHeight: 17,
+  },
+
+  /* TESTIMONIALS */
+  testimonialCard: {
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 12,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  outcomeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  outcomeBadgeText: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+  },
+  testimonialQuote: {
+    fontSize: 13.5,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.80)",
+    lineHeight: 20,
+  },
+  testimonialAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  testimonialAvatarText: {
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+    color: "#FFFFFF",
+  },
+  testimonialName: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: "#FFFFFF",
+  },
+  testimonialLocation: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.50)",
+    marginTop: 1,
   },
 
   /* FOOTER */
