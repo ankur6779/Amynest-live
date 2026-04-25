@@ -2,15 +2,12 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import {
   initializeAuth,
   getAuth,
-  initializeReactNativePersistence,
   browserLocalPersistence,
-  // @ts-expect-error — getReactNativePersistence is exported by firebase/auth
-  // for React Native but missing from the public TypeScript surface.
-  getReactNativePersistence,
   type Auth,
 } from "firebase/auth";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getReactNativePersistence } from "firebase/auth/react-native";
 
 const config = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? "",
