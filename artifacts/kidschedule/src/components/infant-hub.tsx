@@ -3,10 +3,14 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Brain, ThumbsUp, RotateCcw, CheckCircle2, ShieldAlert,
-  ChevronDown, ChevronUp, Syringe, Heart, Zap, BookOpen,
+  ChevronDown, ChevronUp, Syringe, Zap, BookOpen,
   Activity, Star, AlertTriangle, Lightbulb, Baby,
-  Moon, Sun, Clock, Flame,
+  Flame, MessageCircle, BedDouble, ListChecks,
 } from "lucide-react";
+import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-cues";
+import {
+  WakeWindowSystem, SleepIssueDetector, RoutineBuilder, SleepWeeklyInsights,
+} from "@/components/infant-sleep-module";
 import {
   INFANT_CATEGORIES,
   type InfantCategory,
@@ -91,22 +95,6 @@ const MILESTONES: Record<string, Milestone[]> = {
     { id: "m18_stairs", label: "Climbs stairs with support" },
   ],
 };
-
-// ─── Wake Windows ─────────────────────────────────────────────────────────────
-type WakeWindowEntry = { range: string; window: string; naps: string; nightSleep: string };
-
-function getWakeWindow(months: number): WakeWindowEntry {
-  if (months < 1)  return { range: "0–1 month", window: "45–60 min", naps: "5–7 micro-naps", nightSleep: "8–9 hrs (interrupted)" };
-  if (months < 2)  return { range: "1–2 months", window: "60–90 min", naps: "4–5 naps", nightSleep: "8–10 hrs (interrupted)" };
-  if (months < 3)  return { range: "2–3 months", window: "1.5–2 hrs", naps: "4–5 naps", nightSleep: "10–11 hrs" };
-  if (months < 5)  return { range: "3–5 months", window: "1.5–2.5 hrs", naps: "3–4 naps", nightSleep: "10–11 hrs" };
-  if (months < 7)  return { range: "5–7 months", window: "2–2.5 hrs", naps: "3 naps", nightSleep: "11 hrs" };
-  if (months < 9)  return { range: "7–9 months", window: "2.5–3 hrs", naps: "2–3 naps", nightSleep: "11 hrs" };
-  if (months < 12) return { range: "9–12 months", window: "3–4 hrs", naps: "2 naps", nightSleep: "11 hrs" };
-  if (months < 15) return { range: "12–15 months", window: "4–5 hrs", naps: "1–2 naps", nightSleep: "11–12 hrs" };
-  if (months < 18) return { range: "15–18 months", window: "5–6 hrs", naps: "1 nap", nightSleep: "11–12 hrs" };
-  return { range: "18–24 months", window: "5–6 hrs", naps: "1 nap (1.5–3 hrs)", nightSleep: "11–12 hrs" };
-}
 
 function getFeedingGuide(months: number): { type: string; freq: string; tip: string } {
   if (months < 6) return {
@@ -219,32 +207,6 @@ const COMMON_ISSUES = [
     content: "Babies can't blow their nose — use a nasal aspirator and saline drops before feeds. Keep room humidified. Slightly elevate head end of mattress (not pillow). Under 2 years: NO over-the-counter cough/cold medicine. Breastfeed frequently — milk transfers antibodies. See doctor if breathing is laboured or symptoms worsen after 10 days.",
   },
 ];
-
-// ─── Parent Coaching ──────────────────────────────────────────────────────────
-type CoachTip = { emoji: string; title: string; desc: string };
-
-function getCoachingTips(months: number): CoachTip[] {
-  if (months < 4) return [
-    { emoji: "🤝", title: "Serve & Return", desc: "When baby coos, coo back. When baby looks, look back and smile. These micro-interactions wire the brain more than any toy." },
-    { emoji: "🤗", title: "Skin-to-Skin Time", desc: "20–30 min of skin-to-skin daily regulates baby's temperature, heart rate, and stress hormones. It builds secure attachment." },
-    { emoji: "🗣️", title: "Narrate Your Day", desc: "Say what you're doing: 'Now we're putting on your blue socks.' Babies absorb language months before using it." },
-  ];
-  if (months < 9) return [
-    { emoji: "🔁", title: "Repetition is Learning", desc: "Babies need to hear a word 50–100 times before they store it. Repeat songs, games, and phrases — it's not boring, it's teaching." },
-    { emoji: "👀", title: "Follow Their Gaze", desc: "When baby looks at something, name it. This 'joint attention' is one of the biggest predictors of language development." },
-    { emoji: "🙏", title: "Respond to Cues", desc: "Consistently responding to baby's cries does NOT spoil them. It builds trust and reduces stress hormones in the developing brain." },
-  ];
-  if (months < 15) return [
-    { emoji: "📖", title: "Read Together Daily", desc: "Even 10 minutes of pointing at pictures and naming them each day makes a measurable difference in vocabulary by age 3." },
-    { emoji: "🎭", title: "Let Them Lead Play", desc: "Follow baby's interest rather than directing. If they're fascinated by the water bottle, narrate that. Child-led play builds executive function." },
-    { emoji: "⛔", title: "Redirect, Don't Just Say No", desc: "Say 'That's for grown-ups, here's your toy' rather than just 'No'. Toddlers respond better to what they CAN do." },
-  ];
-  return [
-    { emoji: "🌪️", title: "Tantrums Are Communication", desc: "Under 2 years, tantrums happen because the emotional brain is maturing faster than the reasoning brain. Stay calm, name the feeling: 'You're frustrated.'" },
-    { emoji: "💬", title: "Baby Sign Language", desc: "Teach 5–6 signs (milk, more, done, water, eat, sleep). This dramatically reduces frustration tantrums while speech develops." },
-    { emoji: "🧸", title: "Parallel Play is Normal", desc: "Toddlers 18–24 months play alongside, not with, other children. Don't force sharing yet — it's developmentally ahead of them." },
-  ];
-}
 
 // ─── Weekly Insight ───────────────────────────────────────────────────────────
 function getWeeklyInsight(name: string, months: number): { headline: string; body: string; next: string } {
@@ -413,47 +375,18 @@ function MilestoneTracker({ childName, ageMonths }: { childName: string; ageMont
 }
 
 // ─── Feeding & Sleep Module ───────────────────────────────────────────────────
-function FeedingSleepModule({ ageMonths }: { ageMonths: number }) {
-  const ww = getWakeWindow(ageMonths);
+function FeedingReference({ ageMonths }: { ageMonths: number }) {
   const feed = getFeedingGuide(ageMonths);
 
   return (
-    <div className="space-y-3">
-      {/* Feeding */}
-      <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-400/20 p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <Flame className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Feeding Guide</p>
-        </div>
-        <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{feed.type}</p>
-        <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">{feed.freq}</p>
-        <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-1.5 leading-snug">{feed.tip}</p>
+    <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-400/20 p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Flame className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Feeding Guide</p>
       </div>
-
-      {/* Sleep / Wake windows */}
-      <div className="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-400/20 p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <Moon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          <p className="text-xs font-bold text-indigo-900 dark:text-indigo-200">Sleep Reference</p>
-          <span className="text-[10px] text-indigo-600/80 dark:text-indigo-400/80 ml-auto">{ww.range}</span>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { icon: <Clock className="h-3 w-3" />, label: "Wake window", val: ww.window },
-            { icon: <Sun className="h-3 w-3" />, label: "Day naps", val: ww.naps },
-            { icon: <Moon className="h-3 w-3" />, label: "Night sleep", val: ww.nightSleep },
-          ].map((item) => (
-            <div key={item.label} className="rounded-lg bg-indigo-100/60 dark:bg-indigo-900/30 px-2 py-2 text-center">
-              <div className="flex justify-center text-indigo-500 dark:text-indigo-400 mb-1">{item.icon}</div>
-              <p className="text-[9px] uppercase tracking-wide text-indigo-500 dark:text-indigo-400 font-bold">{item.label}</p>
-              <p className="text-[11px] font-bold text-indigo-800 dark:text-indigo-200 leading-tight mt-0.5">{item.val}</p>
-            </div>
-          ))}
-        </div>
-        <p className="text-[10px] text-indigo-600/70 dark:text-indigo-400/70 mt-2 leading-snug">
-          Put baby down drowsy-but-awake at each nap to build self-settling skills over time.
-        </p>
-      </div>
+      <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{feed.type}</p>
+      <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">{feed.freq}</p>
+      <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-1.5 leading-snug">{feed.tip}</p>
     </div>
   );
 }
@@ -553,33 +486,6 @@ function HealthCare({ ageMonths }: { ageMonths: number }) {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── Parent Coaching ──────────────────────────────────────────────────────────
-function ParentCoaching({ ageMonths }: { ageMonths: number }) {
-  const tips = getCoachingTips(ageMonths);
-
-  return (
-    <div className="space-y-2.5">
-      {tips.map((tip) => (
-        <div key={tip.title} className="rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-400/20 p-3 flex gap-3">
-          <span className="text-xl leading-none shrink-0">{tip.emoji}</span>
-          <div className="min-w-0">
-            <p className="font-bold text-sm text-rose-900 dark:text-rose-100 mb-0.5">{tip.title}</p>
-            <p className="text-[12px] text-rose-800/80 dark:text-rose-200/80 leading-snug">{tip.desc}</p>
-          </div>
-        </div>
-      ))}
-      <div className="rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200/60 dark:border-violet-400/20 p-3 text-center">
-        <p className="text-xs font-bold text-violet-800 dark:text-violet-200">
-          💜 You're doing better than you think
-        </p>
-        <p className="text-[11px] text-violet-700/80 dark:text-violet-300/80 mt-1 leading-snug">
-          Research shows that parents who seek out information and support are already above-average parents. The worry itself is evidence of love.
-        </p>
-      </div>
     </div>
   );
 }
@@ -758,24 +664,61 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
         <MilestoneTracker childName={childName} ageMonths={ageMonths} />
       </IHSection>
 
-      {/* ── 3. Feeding & Sleep Module ────────────────────────────────────────── */}
-      <IHSection icon={<Moon className="h-4 w-4" />} title="Feeding & Sleep Reference">
-        <FeedingSleepModule ageMonths={ageMonths} />
+      {/* ── 3. Sleep System (Wake Window + Issues + Routine + Insights) ──────── */}
+      <IHSection icon={<BedDouble className="h-4 w-4" />} title="Sleep System" badge="Live">
+        <div className="space-y-5">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-2">Wake Window Tracker</p>
+            <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-2">Issue Detection</p>
+            <SleepIssueDetector childName={childName} ageMonths={ageMonths} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2">Daily Routine Builder</p>
+            <RoutineBuilder childName={childName} ageMonths={ageMonths} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2">Weekly Insights</p>
+            <SleepWeeklyInsights childName={childName} ageMonths={ageMonths} />
+          </div>
+        </div>
       </IHSection>
 
-      {/* ── 4. Daily Activities ──────────────────────────────────────────────── */}
+      {/* ── 4. Feeding Reference ─────────────────────────────────────────────── */}
+      <IHSection icon={<Flame className="h-4 w-4" />} title="Feeding Reference">
+        <FeedingReference ageMonths={ageMonths} />
+      </IHSection>
+
+      {/* ── 5. Daily Activities ──────────────────────────────────────────────── */}
       <IHSection icon={<Zap className="h-4 w-4" />} title="Today's Activities" badge="3 ideas">
         <DailyActivities ageMonths={ageMonths} />
       </IHSection>
 
-      {/* ── 5. Health & Care ─────────────────────────────────────────────────── */}
+      {/* ── 6. Health & Care ─────────────────────────────────────────────────── */}
       <IHSection icon={<Syringe className="h-4 w-4" />} title="Health & Care">
         <HealthCare ageMonths={ageMonths} />
       </IHSection>
 
-      {/* ── 6. Parent Coaching ───────────────────────────────────────────────── */}
-      <IHSection icon={<Heart className="h-4 w-4" />} title="Parent Coaching">
-        <ParentCoaching ageMonths={ageMonths} />
+      {/* ── 7. Parent Coaching — Baby Cues + Communication ───────────────────── */}
+      <IHSection icon={<MessageCircle className="h-4 w-4" />} title="Parent Coaching" badge="Interactive">
+        <div className="space-y-5">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2 flex items-center gap-1">
+              <ListChecks className="h-3 w-3" />
+              Baby Cues Engine
+            </p>
+            <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2 flex items-center gap-1">
+              <MessageCircle className="h-3 w-3" />
+              Communication Coaching
+            </p>
+            <CommunicationCoaching ageMonths={ageMonths} />
+          </div>
+        </div>
       </IHSection>
     </div>
   );
