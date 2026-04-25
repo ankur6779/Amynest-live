@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft, Volume2, Pause, Play, SkipBack, SkipForward, Headphones,
-  Sparkles, Gauge, X, Clock, Loader2,
+  Sparkles, Gauge, X, Clock, Loader2, Lock,
 } from "lucide-react";
 import {
   LESSONS, lessonsForAge, getLessonText, getAgeLabel,
@@ -59,11 +59,25 @@ export default function AudioLessonsPage() {
     }).catch(() => {});
   }, [age, isPremium]);
 
+  // Per-age-group access: index 0 is the free sample, rest are premium-only.
+  type LessonAccess = "free-sample" | "locked" | "open";
+  const getLessonAccess = (idx: number): LessonAccess => {
+    if (isPremium) return "open";
+    return idx === 0 ? "free-sample" : "locked";
+  };
+
   // Global Paywall: free users get 1 audio lesson per UTC day. Premium users
   // bypass server-side. We always call /consume — the server returns 200
   // (no-op for premium) or 402 feature_locked when the cap is exhausted.
-  const handlePickLesson = async (l: Lesson) => {
+  const handlePickLesson = async (l: Lesson, idx: number) => {
     if (unlocking) return;
+
+    // Non-free lesson → immediately open paywall for free users
+    if (!isPremium && idx !== 0) {
+      openPaywall("audio_lessons");
+      return;
+    }
+
     setUnlocking(true);
     try {
       const res = await authFetch(
@@ -170,17 +184,27 @@ export default function AudioLessonsPage() {
         padding: "8px 16px",
         display: "grid", gridTemplateColumns: "1fr", gap: 12,
       }}>
-        {lessons.map((l) => {
+        {lessons.map((l, idx) => {
           const text = getLessonText(l, lang);
+          const access = getLessonAccess(idx);
+          const isLocked = access === "locked";
+          const isFree = access === "free-sample";
+
           return (
             <button
               key={l.id}
-              onClick={() => void handlePickLesson(l)}
+              onClick={() => void handlePickLesson(l, idx)}
               disabled={unlocking}
               style={{
                 textAlign: "left",
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(139,92,246,0.25)",
+                background: isLocked
+                  ? "rgba(255,255,255,0.03)"
+                  : "rgba(255,255,255,0.06)",
+                border: isLocked
+                  ? "1px solid rgba(139,92,246,0.12)"
+                  : isFree
+                  ? "1px solid rgba(52,211,153,0.35)"
+                  : "1px solid rgba(139,92,246,0.25)",
                 borderRadius: 16,
                 padding: 16,
                 cursor: unlocking ? "wait" : "pointer",
@@ -190,27 +214,62 @@ export default function AudioLessonsPage() {
                 alignItems: "flex-start",
                 color: "#fff",
                 transition: "transform 0.15s, background 0.15s",
+                position: "relative",
               }}
               onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.99)")}
               onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
+              {/* Free / Lock badge */}
+              {isFree && (
+                <div style={{
+                  position: "absolute", top: 10, right: 10,
+                  background: "linear-gradient(135deg, #059669, #10b981)",
+                  color: "#fff", fontSize: 10, fontWeight: 800,
+                  padding: "3px 8px", borderRadius: 999,
+                  letterSpacing: "0.06em",
+                  boxShadow: "0 2px 8px rgba(16,185,129,0.45)",
+                }}>
+                  ✦ FREE
+                </div>
+              )}
+              {isLocked && (
+                <div style={{
+                  position: "absolute", top: 10, right: 10,
+                  background: "rgba(251,191,36,0.15)",
+                  border: "1px solid rgba(251,191,36,0.5)",
+                  color: "#fbbf24", fontSize: 10, fontWeight: 800,
+                  padding: "3px 8px", borderRadius: 999,
+                  letterSpacing: "0.06em",
+                  display: "flex", alignItems: "center", gap: 4,
+                }}>
+                  <Lock size={9} /> PREMIUM
+                </div>
+              )}
+
+              {/* Emoji icon */}
               <div style={{
                 fontSize: 30, lineHeight: 1, width: 48, height: 48,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                background: "rgba(139,92,246,0.15)", borderRadius: 12,
+                background: isLocked ? "rgba(139,92,246,0.08)" : "rgba(139,92,246,0.15)",
+                borderRadius: 12,
                 flexShrink: 0,
               }}>{l.emoji}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+
+              <div style={{ flex: 1, minWidth: 0, paddingRight: isLocked || isFree ? 60 : 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, fontFamily: "Quicksand, sans-serif" }}>
+                  <h3 style={{
+                    margin: 0, fontSize: 15, fontWeight: 800,
+                    fontFamily: "Quicksand, sans-serif",
+                    color: isLocked ? "rgba(255,255,255,0.7)" : "#fff",
+                  }}>
                     {text.title}
                   </h3>
                 </div>
-                <p style={{ margin: "0 0 8px", color: "#c7c0e8", fontSize: 13, lineHeight: 1.45 }}>
+                <p style={{ margin: "0 0 8px", color: isLocked ? "rgba(199,192,232,0.6)" : "#c7c0e8", fontSize: 13, lineHeight: 1.45 }}>
                   {text.description}
                 </p>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 11.5, color: "#a99fd9" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 11.5, color: isLocked ? "rgba(169,159,217,0.5)" : "#a99fd9" }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                     <Clock size={12} /> {l.durationMin} min
                   </span>
@@ -219,7 +278,12 @@ export default function AudioLessonsPage() {
                   </span>
                 </div>
               </div>
-              <Volume2 size={18} color="#c4b5fd" style={{ flexShrink: 0, marginTop: 4 }} />
+
+              {/* Right icon */}
+              {isLocked
+                ? <Lock size={16} color="rgba(251,191,36,0.6)" style={{ flexShrink: 0, marginTop: 4, display: "none" }} />
+                : <Volume2 size={18} color="#c4b5fd" style={{ flexShrink: 0, marginTop: 4 }} />
+              }
             </button>
           );
         })}
