@@ -1,13 +1,4 @@
-import React from "react";
-const {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} = React;
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   onIdTokenChanged,
   browserLocalPersistence,
