@@ -15,10 +15,8 @@ import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 
-// Hindi Amy voice — ElevenLabs eleven_multilingual_v2 handles Hindi (Devanagari
-// script) natively. Replace the voice ID below with any Indian-accent voice
-// from the ElevenLabs voice library (e.g. "Priya", "Meera") if desired.
-const VOICE_AMY_HINDI    = "21m00Tcm4TlvDq8ikWAM"; // Rachel via multilingual model
+// Hindi Amy voice — Anjura (Calm & Warm Hindi Female) via eleven_multilingual_v2.
+const VOICE_AMY_HINDI    = "TllHtNijgXBd45uTSCS7"; // Anjura — Indian Hindi Female
 const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
 
 const AGE_ORDER: AgeBucket[] = ["0-2", "2-4", "5-7", "8-10", "10+"];

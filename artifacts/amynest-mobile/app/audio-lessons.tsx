@@ -15,9 +15,8 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 
-// Hindi Amy voice — eleven_multilingual_v2 handles Devanagari natively.
-// Swap the voice ID for any Indian-accent voice (e.g. Priya, Meera) if desired.
-const AMY_VOICE_HINDI    = "21m00Tcm4TlvDq8ikWAM"; // Rachel via multilingual model
+// Hindi Amy voice — Anjura (Calm & Warm Hindi Female) via eleven_multilingual_v2.
+const AMY_VOICE_HINDI    = "TllHtNijgXBd45uTSCS7"; // Anjura — Indian Hindi Female
 const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
 
 function formatTime(secs: number): string {

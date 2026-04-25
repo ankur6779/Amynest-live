@@ -34,8 +34,8 @@ import VoiceSettingsPanel, {
 } from "@/components/VoiceSettingsPanel";
 
 // ElevenLabs voice ids — kept inline; same constants used in SmartMealSuggestions.
-const VOICE_AMY_FEMALE = "21m00Tcm4TlvDq8ikWAM"; // Rachel
-const VOICE_AMY_MALE = "pNInz6obpgDQGcFmaJgB";   // Adam
+const VOICE_AMY_FEMALE = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K — Indian English Female
+const VOICE_AMY_MALE   = "oaz5NvoRIhcJystOASAA"; // Karthik — Indian English Male
 // Multilingual model handles Hindi noticeably better than Turbo v2.5.
 const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
 

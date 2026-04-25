@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, Modal, Pressable, ScrollView, Platform } from "react-native";
+import React, { useCallback, useState } from "react";
+import { View, Text, StyleSheet, Modal, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Speech from "expo-speech";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { brand } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 
 export const VOICE_KEY = "amynest.voice_settings.v1";
 
@@ -35,7 +35,7 @@ export async function loadVoiceSettings(): Promise<VoiceSettings> {
       enabled: typeof parsed.enabled === "boolean" ? parsed.enabled : DEFAULTS.enabled,
       lang: parsed.lang === "hi-IN" || parsed.lang === "en-IN" ? parsed.lang : DEFAULTS.lang,
       gender: parsed.gender === "male" ? "male" : "female",
-      voiceName: typeof parsed.voiceName === "string" ? parsed.voiceName : null,
+      voiceName: null,
     };
   } catch {
     return { ...DEFAULTS };
@@ -48,15 +48,50 @@ export async function saveVoiceSettings(s: VoiceSettings): Promise<void> {
   } catch {/* ignore */}
 }
 
-// Heuristic: classify a voice as female/male/unknown based on identifier name.
-const FEMALE_HINTS = ["female", "samantha", "karen", "victoria", "moira", "tessa", "fiona", "ava", "allison", "susan", "zira", "hazel", "swara", "lekha", "veena", "kalpana", "aditi", "neeraj-female"];
-const MALE_HINTS = ["male", "daniel", "alex", "fred", "tom", "oliver", "thomas", "david", "mark", "ravi", "rishi", "neeraj", "sundar"];
-function classifyGender(name: string, identifier?: string): VoiceGender | null {
-  const blob = `${name} ${identifier ?? ""}`.toLowerCase();
-  if (FEMALE_HINTS.some((h) => blob.includes(h))) return "female";
-  if (MALE_HINTS.some((h) => blob.includes(h))) return "male";
-  return null;
+// ─── ElevenLabs Indian voices ─────────────────────────────────
+interface ElevenLabsVoice {
+  id: string;
+  label: string;
+  lang: VoiceLang;
+  gender: VoiceGender;
+  modelId: string;
+  previewText: string;
 }
+
+const ELEVENLABS_VOICES: ElevenLabsVoice[] = [
+  {
+    id: "QbQKfe9vgx5OsbZUvlFv",
+    label: "Ananya K",
+    lang: "en-IN",
+    gender: "female",
+    modelId: "eleven_turbo_v2_5",
+    previewText: "Hi! I am Ananya, your Indian English voice.",
+  },
+  {
+    id: "oaz5NvoRIhcJystOASAA",
+    label: "Karthik",
+    lang: "en-IN",
+    gender: "male",
+    modelId: "eleven_turbo_v2_5",
+    previewText: "Hi! I am Karthik, your Indian English voice.",
+  },
+  {
+    id: "TllHtNijgXBd45uTSCS7",
+    label: "Anjura",
+    lang: "hi-IN",
+    gender: "female",
+    modelId: "eleven_multilingual_v2",
+    previewText: "नमस्ते! मैं अंजुरा हूँ, आपकी हिंदी आवाज़।",
+  },
+  {
+    id: "2cdvnKJ5TZi631y5PN1s",
+    label: "Rahul S",
+    lang: "hi-IN",
+    gender: "male",
+    modelId: "eleven_multilingual_v2",
+    previewText: "नमस्ते! मैं राहुल हूँ, आपकी हिंदी आवाज़।",
+  },
+];
 
 interface Props {
   visible: boolean;
@@ -65,49 +100,47 @@ interface Props {
   onChange: (s: VoiceSettings) => void;
 }
 
+function VoicePreviewButton({ voice }: { voice: ElevenLabsVoice }) {
+  const { speaking, loading, speak, stop } = useAmyVoice({
+    voiceId: voice.id,
+    modelId: voice.modelId,
+  });
+  const c = useColors();
+
+  const handlePress = useCallback(() => {
+    Haptics.selectionAsync().catch(() => {});
+    if (speaking || loading) {
+      stop();
+    } else {
+      void speak(voice.previewText);
+    }
+  }, [speaking, loading, speak, stop, voice.previewText]);
+
+  return (
+    <Pressable onPress={handlePress} hitSlop={8} style={styles.playBtn}>
+      {loading ? (
+        <ActivityIndicator size={18} color={brand.violet500} />
+      ) : (
+        <Ionicons
+          name={speaking ? "stop-circle" : "play-circle"}
+          size={22}
+          color={brand.violet500}
+        />
+      )}
+    </Pressable>
+  );
+}
+
 export default function VoiceSettingsPanel({ visible, onClose, settings, onChange }: Props) {
   const c = useColors();
-  const [voices, setVoices] = useState<Speech.Voice[]>([]);
 
-  useEffect(() => {
-    if (!visible) return;
-    let cancelled = false;
-    Speech.getAvailableVoicesAsync()
-      .then((vs) => { if (!cancelled) setVoices(vs ?? []); })
-      .catch(() => { if (!cancelled) setVoices([]); });
-    return () => { cancelled = true; };
-  }, [visible]);
-
-  // Show all voices that match the chosen language. Gender is a soft hint —
-  // voices whose names match the preferred gender are sorted to the top, but
-  // nothing is hidden, so users always see every available voice.
-  const filtered = useMemo(() => {
-    const langPrefix = settings.lang.split("-")[0]; // "en" or "hi"
-    const matching = voices.filter((v) => (v.language || "").toLowerCase().startsWith(langPrefix));
-    const score = (v: Speech.Voice) => {
-      const g = classifyGender(v.name ?? "", v.identifier);
-      if (g === settings.gender) return 0;
-      if (g === null) return 1;
-      return 2;
-    };
-    return [...matching].sort((a, b) => score(a) - score(b));
-  }, [voices, settings.lang, settings.gender]);
+  const filtered = ELEVENLABS_VOICES.filter((v) => v.lang === settings.lang && v.gender === settings.gender);
 
   const update = (patch: Partial<VoiceSettings>) => {
     const next = { ...settings, ...patch };
     onChange(next);
     void saveVoiceSettings(next);
     Haptics.selectionAsync().catch(() => {});
-  };
-
-  const previewVoice = (voiceName: string) => {
-    try {
-      Speech.stop();
-      const msg = settings.lang === "hi-IN"
-        ? "नमस्ते! मैं आपकी आवाज़ हूँ।"
-        : "Hi! This is your voice preview.";
-      Speech.speak(msg, { language: settings.lang, voice: voiceName, pitch: 1.0, rate: 0.9 });
-    } catch {/* ignore */}
   };
 
   return (
@@ -181,50 +214,27 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
                   })}
                 </View>
 
-                {/* Voice picker */}
-                <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>SELECT VOICE</Text>
-                {filtered.length === 0 ? (
-                  <Text style={[styles.emptyVoices, { color: c.mutedForeground }]}>
-                    No matching voices on this device. Try switching language or use the system default.
-                  </Text>
-                ) : (
-                  <View style={[styles.voiceList, { borderColor: c.border }]}>
-                    <Pressable
-                      onPress={() => update({ voiceName: null })}
-                      style={[styles.voiceRow, settings.voiceName === null && { backgroundColor: c.muted }]}
-                    >
+                {/* ElevenLabs voice list */}
+                <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>VOICE</Text>
+                <View style={[styles.voiceList, { borderColor: c.border }]}>
+                  {filtered.map((v) => (
+                    <View key={v.id} style={styles.voiceRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.voiceName, { color: c.foreground }]}>System default</Text>
-                        <Text style={[styles.voiceMeta, { color: c.mutedForeground }]}>Uses {settings.lang}</Text>
+                        <Text style={[styles.voiceName, { color: c.foreground }]}>{v.label}</Text>
+                        <Text style={[styles.voiceMeta, { color: c.mutedForeground }]}>
+                          {v.lang === "hi-IN" ? "Hindi · ElevenLabs AI" : "Indian English · ElevenLabs AI"}
+                        </Text>
                       </View>
-                      {settings.voiceName === null && <Ionicons name="checkmark" size={18} color={brand.violet500} />}
-                    </Pressable>
-                    {filtered.map((v) => {
-                      const selected = settings.voiceName === v.identifier;
-                      return (
-                        <View key={v.identifier} style={[styles.voiceRow, selected && { backgroundColor: c.muted }]}>
-                          <Pressable style={{ flex: 1 }} onPress={() => update({ voiceName: v.identifier })}>
-                            <Text style={[styles.voiceName, { color: c.foreground }]} numberOfLines={1}>
-                              {v.name || v.identifier}
-                            </Text>
-                            <Text style={[styles.voiceMeta, { color: c.mutedForeground }]}>
-                              {v.language}{v.quality ? ` · ${v.quality}` : ""}
-                            </Text>
-                          </Pressable>
-                          <Pressable onPress={() => previewVoice(v.identifier)} hitSlop={8} style={styles.playBtn}>
-                            <Ionicons name="play-circle" size={22} color={brand.violet500} />
-                          </Pressable>
-                          {selected && <Ionicons name="checkmark" size={18} color={brand.violet500} style={{ marginLeft: 6 }} />}
-                        </View>
-                      );
-                    })}
-                  </View>
-                )}
+                      <VoicePreviewButton voice={v} />
+                      <Ionicons name="checkmark" size={18} color={brand.violet500} style={{ marginLeft: 6 }} />
+                    </View>
+                  ))}
+                </View>
               </>
             )}
           </ScrollView>
 
-          <Text style={[styles.footer, { color: c.mutedForeground }]}>Saved automatically 💾</Text>
+          <Text style={[styles.footer, { color: c.mutedForeground }]}>Powered by ElevenLabs AI 🎙</Text>
         </Pressable>
       </Pressable>
     </Modal>
@@ -249,6 +259,5 @@ const styles = StyleSheet.create({
   voiceName: { fontSize: 13, fontWeight: "600" },
   voiceMeta: { fontSize: 10, marginTop: 2 },
   playBtn: { padding: 4 },
-  emptyVoices: { fontSize: 12, textAlign: "center", paddingVertical: 12 },
   footer: { fontSize: 10, textAlign: "center", marginTop: 10 },
 });

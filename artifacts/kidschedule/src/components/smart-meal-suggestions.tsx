@@ -40,10 +40,10 @@ interface AiGenerateResult {
 
 type Audience = "kids_tiffin" | "parent_healthy";
 
-// ElevenLabs voice IDs — Rachel (calm female) and Adam (warm male).
+// ElevenLabs Indian voice IDs.
 // Both work well for the "Amy" persona narrating in English.
-const VOICE_FEMALE_ID = "21m00Tcm4TlvDq8ikWAM";
-const VOICE_MALE_ID = "pNInz6obpgDQGcFmaJgB";
+const VOICE_FEMALE_ID = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K — Indian English Female
+const VOICE_MALE_ID = "oaz5NvoRIhcJystOASAA";   // Karthik — Indian English Male
 const STORAGE_VOICE = "amynest.tts_voice.v1";
 
 function loadVoicePref(): "female" | "male" {

@@ -4,21 +4,22 @@ import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
-// ─── Defaults ───────────────────────────────────────────────────────────────
-// "Rachel" — calm, mature female narrator; the safest default for the "Amy"
-// persona. We expose voiceId so individual call sites can override per use.
-export const AMY_VOICE_ID_DEFAULT = "21m00Tcm4TlvDq8ikWAM";
-// Turbo v2.5 — half the cost of standard quality, latency optimised, still
-// natural sounding. Right balance for Read-Aloud features.
+// ─── Indian ElevenLabs Voice IDs ────────────────────────────────────────────
+// English Indian Female — Ananya K (Clear & Polished Indian Reel Voice)
+export const AMY_VOICE_ID_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv";
+// English Indian Male — Karthik (Indian AI Voice)
+export const AMY_VOICE_ID_EN_MALE   = "oaz5NvoRIhcJystOASAA";
+// Hindi Female — Anjura (Calm & Warm Hindi Agent)
+export const AMY_VOICE_ID_HI_FEMALE = "TllHtNijgXBd45uTSCS7";
+// Hindi Male — Rahul S (Professional Hindi Conversational Voice)
+export const AMY_VOICE_ID_HI_MALE   = "2cdvnKJ5TZi631y5PN1s";
+
+// Defaults (English Indian Female)
+export const AMY_VOICE_ID_DEFAULT = AMY_VOICE_ID_EN_FEMALE;
 export const AMY_MODEL_ID_DEFAULT = "eleven_turbo_v2_5";
 
-// ─── Hindi / Indian Amy voice ────────────────────────────────────────────────
-// eleven_multilingual_v2 supports Hindi (Devanagari & Roman script) natively.
-// Voice "Rachel" (same as default) works well for Hindi via the multilingual
-// model. To swap in a native Indian-accent voice, replace AMY_VOICE_ID_HINDI
-// with the ElevenLabs voice-ID of your choice (e.g. "Priya", "Meera", etc.)
-// while keeping the model as eleven_multilingual_v2.
-export const AMY_VOICE_ID_HINDI = "21m00Tcm4TlvDq8ikWAM";
+// Hindi defaults
+export const AMY_VOICE_ID_HINDI = AMY_VOICE_ID_HI_FEMALE;
 export const AMY_MODEL_ID_HINDI  = "eleven_multilingual_v2";
 
 // Hard guard against huge payloads.
@@ -79,8 +80,6 @@ async function gcsDownload(cacheKey: string): Promise<Buffer | null> {
 }
 
 // ─── In-flight single-flight map ────────────────────────────────────────────
-// If two callers ask for the same cacheKey simultaneously, only one ElevenLabs
-// call is made — the second awaits the first's result.
 const inFlight = new Map<string, Promise<SynthesizeResult>>();
 
 export interface SynthesizeOptions {
@@ -90,7 +89,7 @@ export interface SynthesizeOptions {
 
 export interface SynthesizeResult {
   cacheKey: string;
-  audioPath: string; // GCS object name (tts-cache/<key>.mp3)
+  audioPath: string;
   contentType: string;
   charCount: number;
   cached: boolean;
@@ -213,7 +212,6 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
 
   const contentType = response.headers.get("content-type") ?? "audio/mpeg";
 
-  // Upload to GCS — survives restarts, shared across all users.
   await gcsUpload(cacheKey, buffer, contentType);
 
   await db

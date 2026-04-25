@@ -1,44 +1,98 @@
-// Thin wrapper around the Web Speech API used by Smart Study Zone.
-// Falls back silently if the browser doesn't expose speech synthesis
-// (e.g. some embedded webviews).
+// ElevenLabs-powered TTS for Smart Study Zone and Event Prep pages.
+// Replaces the old browser speechSynthesis with Indian ElevenLabs voices.
 
-let cachedHindiVoice: SpeechSynthesisVoice | null | undefined;
+import { firebaseAuth } from "./firebase";
 
-function pickHindiVoice(): SpeechSynthesisVoice | null {
-  if (cachedHindiVoice !== undefined) return cachedHindiVoice;
-  if (typeof window === "undefined" || !window.speechSynthesis) {
-    cachedHindiVoice = null;
-    return null;
-  }
-  const voices = window.speechSynthesis.getVoices();
-  const hi = voices.find((v) => v.lang?.toLowerCase().startsWith("hi"));
-  cachedHindiVoice = hi ?? null;
-  return cachedHindiVoice;
-}
+// ─── ElevenLabs Indian Voice IDs ──────────────────────────────
+// English Indian Female — Ananya K
+const VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv";
+// English Indian Male — Karthik
+const VOICE_EN_MALE   = "oaz5NvoRIhcJystOASAA";
+// Hindi Female — Anjura
+const VOICE_HI_FEMALE = "TllHtNijgXBd45uTSCS7";
+// Hindi Male — Rahul S
+const VOICE_HI_MALE   = "2cdvnKJ5TZi631y5PN1s";
 
-export function speak(text: string, opts?: { lang?: string; rate?: number }) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  try {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = opts?.lang ?? "en-IN";
-    u.rate = opts?.rate ?? 0.95;
-    if (u.lang.startsWith("hi")) {
-      const v = pickHindiVoice();
-      if (v) u.voice = v;
-    }
-    window.speechSynthesis.speak(u);
-  } catch {
-    // best effort, ignore
-  }
-}
+const MODEL_EN = "eleven_turbo_v2_5";
+const MODEL_HI = "eleven_multilingual_v2";
+
+// ─── Audio singleton ─────────────────────────────────────────
+
+let _audio: HTMLAudioElement | null = null;
+let _objUrl: string | null = null;
 
 export function stopSpeaking() {
-  if (typeof window !== "undefined" && window.speechSynthesis) {
-    try { window.speechSynthesis.cancel(); } catch { /* noop */ }
+  if (_audio) {
+    _audio.pause();
+    _audio.removeAttribute("src");
+    _audio.load();
+    _audio = null;
+  }
+  if (_objUrl) {
+    URL.revokeObjectURL(_objUrl);
+    _objUrl = null;
   }
 }
 
 export function ttsAvailable(): boolean {
-  return typeof window !== "undefined" && !!window.speechSynthesis;
+  return true;
+}
+
+// ─── Speak via ElevenLabs ─────────────────────────────────────
+
+export async function speak(
+  text: string,
+  opts?: { lang?: string; gender?: "female" | "male" },
+): Promise<void> {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+
+  stopSpeaking();
+
+  const isHindi = (opts?.lang ?? "").startsWith("hi") || /[\u0900-\u097F]/.test(trimmed);
+  const isMale  = opts?.gender === "male";
+
+  let voiceId: string;
+  let modelId: string;
+
+  if (isHindi) {
+    voiceId = isMale ? VOICE_HI_MALE : VOICE_HI_FEMALE;
+    modelId = MODEL_HI;
+  } else {
+    voiceId = isMale ? VOICE_EN_MALE : VOICE_EN_FEMALE;
+    modelId = MODEL_EN;
+  }
+
+  try {
+    const token = await firebaseAuth.currentUser?.getIdToken().catch(() => undefined);
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const synthRes = await fetch("/api/tts/synthesize", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: trimmed, voiceId, modelId }),
+    });
+    if (!synthRes.ok) return;
+
+    const data = (await synthRes.json()) as { audioUrl: string };
+
+    const audioHeaders: Record<string, string> = {};
+    if (token) audioHeaders["Authorization"] = `Bearer ${token}`;
+
+    const audioRes = await fetch(data.audioUrl, { headers: audioHeaders });
+    if (!audioRes.ok) return;
+
+    const blob = await audioRes.blob();
+    const url  = URL.createObjectURL(blob);
+    _objUrl = url;
+
+    const audio = new Audio(url);
+    _audio = audio;
+    audio.onended = stopSpeaking;
+    audio.onerror = stopSpeaking;
+    await audio.play();
+  } catch {
+    stopSpeaking();
+  }
 }

@@ -5,8 +5,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, Stack } from "expo-router";
-import * as Speech from "expo-speech";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { SvgXml } from "react-native-svg";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -73,13 +73,15 @@ export default function StudyScreen() {
     if ("childId" in view) loadProgress(view.childId).then(setProgress);
   }, [("childId" in view) ? view.childId : null]);
 
-  useEffect(() => () => { Speech.stop(); }, []);
+  const { speak: amySpeak, stop: amyStop } = useAmyVoice();
+
+  useEffect(() => () => { amyStop(); }, [amyStop]);
 
   const child = "childId" in view ? children.find((c) => c.id === view.childId) : undefined;
   const mode: StudyMode | undefined = child ? resolveStudyMode(child.age, child.childClass) : undefined;
 
   const goBack = () => {
-    Speech.stop();
+    amyStop();
     if (view.kind === "play-home" || view.kind === "study-home") {
       if (children.length > 1) setView({ kind: "child-pick" });
       else router.back();
@@ -147,7 +149,7 @@ export default function StudyScreen() {
             categoryId={view.categoryId}
             progress={progress}
             onItemTap={(item, catId) => {
-              Speech.speak(item.speak, { language: "en-IN", rate: 0.95 });
+              void amySpeak(item.speak);
               updateProgress((prev) => {
                 const set = new Set(prev.play[catId] ?? []);
                 set.add(item.id);
@@ -365,7 +367,8 @@ function TopicDetail({
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [picks, setPicks] = useState<number[]>(() => topic ? Array(topic.questions.length).fill(-1) : []);
   const [submitted, setSubmitted] = useState(false);
-  useEffect(() => () => { Speech.stop(); }, []);
+  const { speak: amySpeak, stop: amyStop } = useAmyVoice();
+  useEffect(() => () => { amyStop(); }, [amyStop]);
   if (!subj || !topic) return <Text>Topic not found.</Text>;
 
   const total = topic.questions.length;
@@ -391,7 +394,7 @@ function TopicDetail({
           <Text style={styles.cardTitle}>✨ Notes from Amy</Text>
           <Pressable
             style={styles.outlineBtn}
-            onPress={() => Speech.speak(topic.notes.replace(/\n/g, ". "), { language: "en-IN", rate: 0.95 })}
+            onPress={() => void amySpeak(topic.notes.replace(/\n/g, ". "))}
           >
             <Ionicons name="volume-high" size={14} color="#6366F1" />
             <Text style={styles.outlineBtnText}>Read aloud</Text>
@@ -401,7 +404,7 @@ function TopicDetail({
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
           <Pressable
             style={styles.secondaryBtn}
-            onPress={() => Speech.speak(topic.amyPrompt, { language: "en-IN", rate: 0.95 })}
+            onPress={() => void amySpeak(topic.amyPrompt)}
           >
             <Text style={styles.secondaryBtnText}>Hear Amy's prompt</Text>
           </Pressable>

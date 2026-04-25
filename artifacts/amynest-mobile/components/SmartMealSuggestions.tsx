@@ -49,9 +49,9 @@ const STORAGE_FRIDGE = "amynest.fridge_items.v1";
 const STORAGE_VOICE = "amynest.tts_voice.v1";
 
 // ElevenLabs voice IDs used by the Amy persona on mobile.
-// Rachel — calm female narrator. Adam — warm male narrator.
-const VOICE_FEMALE_ID = "21m00Tcm4TlvDq8ikWAM";
-const VOICE_MALE_ID = "pNInz6obpgDQGcFmaJgB";
+// Indian ElevenLabs voices.
+const VOICE_FEMALE_ID = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K — Indian English Female
+const VOICE_MALE_ID   = "oaz5NvoRIhcJystOASAA"; // Karthik — Indian English Male
 
 interface Props {
   region?: string;

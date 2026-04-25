@@ -4,7 +4,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Speech from "expo-speech";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 import {
   EVENT_OCCASIONS, generateEventIdea,
   type AgeBand, type CostBudget, type EventOccasionId,
@@ -39,16 +39,19 @@ export function EventPrepGeneratorSheet({ visible, onClose, onOpenCharacter }: P
   const [budget, setBudget] = useState<CostBudget>("low");
   const [result, setResult] = useState<GeneratorResult | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const { speak: amySpeak, stop: amyStop } = useAmyVoice({
+    onFinished: () => setSpeakingId(null),
+  });
 
   React.useEffect(() => {
     if (!visible) {
-      Speech.stop().catch(() => {});
+      amyStop();
       setSpeakingId(null);
     }
-  }, [visible]);
+  }, [visible, amyStop]);
 
   const handleGenerate = () => {
-    Speech.stop().catch(() => {});
+    amyStop();
     setSpeakingId(null);
     setResult(generateEventIdea({
       event: event === "any" ? undefined : event,
@@ -58,21 +61,15 @@ export function EventPrepGeneratorSheet({ visible, onClose, onOpenCharacter }: P
     }));
   };
 
-  const handleSpeak = async (id: string, text: string) => {
+  const handleSpeak = (id: string, text: string) => {
     if (speakingId === id) {
-      await Speech.stop();
+      amyStop();
       setSpeakingId(null);
       return;
     }
-    await Speech.stop();
+    amyStop();
     setSpeakingId(id);
-    Speech.speak(text, {
-      language: /[\u0900-\u097F]/.test(text) ? "hi-IN" : "en-IN",
-      rate: 0.92,
-      onDone: () => setSpeakingId((s) => (s === id ? null : s)),
-      onStopped: () => setSpeakingId((s) => (s === id ? null : s)),
-      onError: () => setSpeakingId(null),
-    });
+    void amySpeak(text);
   };
 
   const openCharacter = (id: string) => { onClose(); onOpenCharacter(id); };

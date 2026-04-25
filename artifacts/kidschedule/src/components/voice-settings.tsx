@@ -1,14 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX } from "lucide-react";
 import {
   getVoiceSettings,
   saveVoiceSettings,
-  getVoicesForLang,
   setVoiceEnabled,
   type VoiceLang,
   type VoiceGender,
-  type LabeledVoice,
 } from "@/lib/voice";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,15 +14,15 @@ interface VoiceSettingsPanelProps {
   onToggle?: (enabled: boolean) => void;
 }
 
+const ELEVENLABS_VOICES: Record<VoiceLang, Record<VoiceGender, string>> = {
+  en: { female: "Ananya K (Indian English)", male: "Karthik (Indian English)" },
+  hi: { female: "Anjura (Hindi)", male: "Rahul S (Hindi)" },
+};
+
 export function VoiceSettingsPanel({ onToggle }: VoiceSettingsPanelProps) {
   const { toast } = useToast();
   const [settings, setSettings] = useState(() => getVoiceSettings());
-  const [voices, setVoices] = useState<LabeledVoice[]>([]);
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    getVoicesForLang(settings.lang).then(setVoices);
-  }, [settings.lang]);
 
   const update = (patch: Partial<typeof settings>) => {
     const next = { ...settings, ...patch };
@@ -42,6 +40,8 @@ export function VoiceSettingsPanel({ onToggle }: VoiceSettingsPanelProps) {
     toast({ title: next ? "🔊 Voice reminders on!" : "🔇 Voice reminders off" });
     if (!next) setOpen(false);
   };
+
+  const currentVoiceName = ELEVENLABS_VOICES[settings.lang]?.[settings.gender] ?? "ElevenLabs Indian";
 
   return (
     <div className="relative flex items-center gap-1">
@@ -88,11 +88,11 @@ export function VoiceSettingsPanel({ onToggle }: VoiceSettingsPanelProps) {
                 {(["en", "hi"] as VoiceLang[]).map((lang) => (
                   <button
                     key={lang}
-                    onClick={() => update({ lang, voiceName: null })}
+                    onClick={() => update({ lang })}
                     className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
                       settings.lang === lang
                         ? "bg-violet-600 text-white border-violet-600"
-                        : "bg-white text-violet-700 dark:text-violet-200 border-violet-200 dark:border-violet-400/30 hover:border-violet-400"
+                        : "bg-white text-violet-700 dark:text-violet-200 border-violet-200 dark:border-violet-400/30 hover:border-violet-400 dark:bg-transparent"
                     }`}
                   >
                     {lang === "en" ? "🇬🇧 English" : "🇮🇳 Hindi"}
@@ -110,11 +110,11 @@ export function VoiceSettingsPanel({ onToggle }: VoiceSettingsPanelProps) {
                 {(["female", "male"] as VoiceGender[]).map((g) => (
                   <button
                     key={g}
-                    onClick={() => update({ gender: g, voiceName: null })}
+                    onClick={() => update({ gender: g })}
                     className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
                       settings.gender === g
                         ? "bg-emerald-600 text-white border-emerald-600"
-                        : "bg-white text-emerald-700 dark:text-emerald-200 border-emerald-200 dark:border-emerald-400/30 hover:border-emerald-400"
+                        : "bg-white text-emerald-700 dark:text-emerald-200 border-emerald-200 dark:border-emerald-400/30 hover:border-emerald-400 dark:bg-transparent"
                     }`}
                   >
                     {g === "female" ? "👩 Female" : "👨 Male"}
@@ -123,48 +123,14 @@ export function VoiceSettingsPanel({ onToggle }: VoiceSettingsPanelProps) {
               </div>
             </div>
 
-            {/* Voice list */}
-            {voices.length > 0 ? (
-              <div>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Select Voice
-                </p>
-                <div className="max-h-40 overflow-y-auto space-y-1 rounded-xl border border-border p-1">
-                  {voices.map(({ voice, label }) => {
-                    const isSelected = settings.voiceName === voice.name;
-                    return (
-                      <button
-                        key={voice.name}
-                        onClick={() => {
-                          update({ voiceName: voice.name });
-                          toast({ title: `🎙 Voice: ${label}` });
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-all ${
-                          isSelected
-                            ? "bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-200 font-bold border border-violet-300"
-                            : "hover:bg-muted text-foreground"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-semibold leading-tight">{label}</p>
-                            <p className="text-[9px] text-muted-foreground">
-                              {voice.lang}{voice.localService ? " · local" : ""}
-                            </p>
-                          </div>
-                          {isSelected && <span className="text-violet-600 text-sm">✓</span>}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground text-center py-1">
-                No {settings.lang === "hi" ? "Hindi" : "English"} voices found on this device.
-                <br />Try switching language.
+            {/* Active voice info */}
+            <div className="rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-400/30 px-3 py-2.5">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                Active Voice
               </p>
-            )}
+              <p className="text-xs font-bold text-violet-800 dark:text-violet-200">{currentVoiceName}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Powered by ElevenLabs AI</p>
+            </div>
 
             <p className="text-[10px] text-muted-foreground text-center border-t border-border pt-2">
               Preferences saved automatically 💾

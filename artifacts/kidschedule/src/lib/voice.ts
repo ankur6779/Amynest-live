@@ -1,12 +1,13 @@
 // ─────────────────────────────────────────────────────────────
 // AmyNest Voice System — Hindi + English, Female / Male
-// Zero-cost: uses browser speechSynthesis only
+// Powered by ElevenLabs Indian voices (no browser TTS)
 // ─────────────────────────────────────────────────────────────
 
-const KEY_ENABLED   = "amynest_voice_enabled";
-const KEY_LANG      = "amynest_voice_lang";     // "en" | "hi"
-const KEY_GENDER    = "amynest_voice_gender";   // "female" | "male"
-const KEY_VOICE_NAME = "amynest_voice_name";    // specific voice name override
+import { firebaseAuth } from "./firebase";
+
+const KEY_ENABLED = "amynest_voice_enabled";
+const KEY_LANG    = "amynest_voice_lang";   // "en" | "hi"
+const KEY_GENDER  = "amynest_voice_gender"; // "female" | "male"
 
 export type VoiceLang   = "en" | "hi";
 export type VoiceGender = "female" | "male";
@@ -18,198 +19,121 @@ export interface VoiceSettings {
   voiceName: string | null;
 }
 
+// ─── ElevenLabs Indian Voice IDs ──────────────────────────────
+// English Indian Female — Ananya K (Clear & Polished)
+const VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv";
+// English Indian Male — Karthik (Indian AI Voice)
+const VOICE_EN_MALE   = "oaz5NvoRIhcJystOASAA";
+// Hindi Female — Anjura (Calm & Warm)
+const VOICE_HI_FEMALE = "TllHtNijgXBd45uTSCS7";
+// Hindi Male — Rahul S (Professional Hindi Conversational)
+const VOICE_HI_MALE   = "2cdvnKJ5TZi631y5PN1s";
+
+const MODEL_EN = "eleven_turbo_v2_5";
+const MODEL_HI = "eleven_multilingual_v2";
+
+// ─── Settings ────────────────────────────────────────────────
+
 export function getVoiceSettings(): VoiceSettings {
   return {
     enabled:   localStorage.getItem(KEY_ENABLED) === "true",
     lang:      (localStorage.getItem(KEY_LANG) as VoiceLang)     ?? "hi",
     gender:    (localStorage.getItem(KEY_GENDER) as VoiceGender) ?? "female",
-    voiceName: localStorage.getItem(KEY_VOICE_NAME),
+    voiceName: null,
   };
 }
 
 export function saveVoiceSettings(patch: Partial<VoiceSettings>): void {
-  if (patch.enabled   !== undefined) localStorage.setItem(KEY_ENABLED, patch.enabled ? "true" : "false");
-  if (patch.lang      !== undefined) localStorage.setItem(KEY_LANG, patch.lang);
-  if (patch.gender    !== undefined) localStorage.setItem(KEY_GENDER, patch.gender);
-  if (patch.voiceName !== undefined) {
-    if (patch.voiceName === null) localStorage.removeItem(KEY_VOICE_NAME);
-    else localStorage.setItem(KEY_VOICE_NAME, patch.voiceName);
-  }
+  if (patch.enabled !== undefined) localStorage.setItem(KEY_ENABLED, patch.enabled ? "true" : "false");
+  if (patch.lang    !== undefined) localStorage.setItem(KEY_LANG, patch.lang);
+  if (patch.gender  !== undefined) localStorage.setItem(KEY_GENDER, patch.gender);
 }
 
-// Legacy compat exports
 export function isVoiceEnabled(): boolean           { return getVoiceSettings().enabled; }
 export function setVoiceEnabled(val: boolean): void { saveVoiceSettings({ enabled: val }); }
-export function getSavedVoiceName(): string | null  { return getVoiceSettings().voiceName; }
-export function saveVoiceName(name: string): void   { saveVoiceSettings({ voiceName: name }); }
+export function getSavedVoiceName(): string | null  { return null; }
+export function saveVoiceName(_name: string): void  { /* no-op */ }
 
-// ─── Voice loading ────────────────────────────────────────────
+// ─── Voice resolution ─────────────────────────────────────────
 
-export function loadVoices(): Promise<SpeechSynthesisVoice[]> {
-  return new Promise((resolve) => {
-    if (!("speechSynthesis" in window)) { resolve([]); return; }
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) { resolve(voices); return; }
-    const onChanged = () => {
-      window.speechSynthesis.removeEventListener("voiceschanged", onChanged);
-      resolve(window.speechSynthesis.getVoices());
-    };
-    window.speechSynthesis.addEventListener("voiceschanged", onChanged);
-    setTimeout(() => {
-      window.speechSynthesis.removeEventListener("voiceschanged", onChanged);
-      resolve(window.speechSynthesis.getVoices());
-    }, 2500);
-  });
+function resolveVoice(lang: VoiceLang, gender: VoiceGender): { voiceId: string; modelId: string } {
+  if (lang === "hi") {
+    return { voiceId: gender === "male" ? VOICE_HI_MALE : VOICE_HI_FEMALE, modelId: MODEL_HI };
+  }
+  return { voiceId: gender === "male" ? VOICE_EN_MALE : VOICE_EN_FEMALE, modelId: MODEL_EN };
 }
 
-// ─── Gender detection ─────────────────────────────────────────
-
-const FEMALE_KEYWORDS = [
-  "female", "woman", "girl", "zira", "hazel", "susan", "karen",
-  "samantha", "victoria", "moira", "fiona", "tessa", "veena",
-  "priya", "aditi", "heera", "lekha", "swara",
-];
-const MALE_KEYWORDS = [
-  "male", "man", "guy", "david", "james", "daniel", "george",
-  "rishi", "hemant", "kalpana", "prabhat",
-];
-
-function isFemale(v: SpeechSynthesisVoice): boolean {
-  const name = v.name.toLowerCase();
-  return FEMALE_KEYWORDS.some((k) => name.includes(k));
-}
-function isMale(v: SpeechSynthesisVoice): boolean {
-  const name = v.name.toLowerCase();
-  return MALE_KEYWORDS.some((k) => name.includes(k));
-}
-
-// ─── Labeled voice list for UI ───────────────────────────────
-
+// ─── Legacy browser-voice stubs (removed, kept for import compat) ─────────
 export interface LabeledVoice {
-  voice: SpeechSynthesisVoice;
+  voice: { name: string; lang: string; localService: boolean };
   label: string;
 }
+export async function getVoicesForLang(_lang: VoiceLang): Promise<LabeledVoice[]> { return []; }
+export async function getEnglishVoices(): Promise<unknown[]>                       { return []; }
+export function loadVoices(): Promise<unknown[]>                                   { return Promise.resolve([]); }
 
-export async function getVoicesForLang(lang: VoiceLang): Promise<LabeledVoice[]> {
-  const voices = await loadVoices();
-  const hindi   = voices.filter((v) => v.lang.toLowerCase().startsWith("hi"));
-  const enIN    = voices.filter((v) => v.lang.toLowerCase() === "en-in");
-  const enOther = voices.filter((v) => v.lang.toLowerCase().startsWith("en") && v.lang.toLowerCase() !== "en-in");
+// ─── Audio singleton ─────────────────────────────────────────
 
-  let pool: SpeechSynthesisVoice[];
-  if (lang === "hi") {
-    pool = hindi.length > 0 ? hindi : [...enIN, ...enOther];
-  } else {
-    pool = [...enIN, ...enOther];
+let _audio: HTMLAudioElement | null = null;
+let _objUrl: string | null = null;
+
+function stopCurrentAudio() {
+  if (_audio) {
+    _audio.pause();
+    _audio.removeAttribute("src");
+    _audio.load();
+    _audio = null;
   }
-
-  // Sort: female first, then Indian variants, then local
-  const sorted = [...pool].sort((a, b) => {
-    const scoreOf = (v: SpeechSynthesisVoice) => {
-      let s = 0;
-      if (isFemale(v)) s += 20;
-      const l = v.lang.toLowerCase();
-      if (l === "en-in" || l.startsWith("hi")) s += 10;
-      if (v.localService) s += 5;
-      return s;
-    };
-    return scoreOf(b) - scoreOf(a);
-  });
-
-  // Build human-readable labels
-  const fCount: Record<string, number> = {};
-  const mCount: Record<string, number> = {};
-  const uCount: Record<string, number> = {};
-
-  return sorted.map((v) => {
-    const l = v.lang.toLowerCase();
-    const langLabel = l.startsWith("hi") ? "Hindi" : l === "en-in" ? "English Indian" : "English";
-    let genderLabel: string;
-    if (isFemale(v)) {
-      fCount[langLabel] = (fCount[langLabel] ?? 0) + 1;
-      genderLabel = `Female${fCount[langLabel] > 1 ? " " + fCount[langLabel] : ""}`;
-    } else if (isMale(v)) {
-      mCount[langLabel] = (mCount[langLabel] ?? 0) + 1;
-      genderLabel = `Male${mCount[langLabel] > 1 ? " " + mCount[langLabel] : ""}`;
-    } else {
-      uCount[langLabel] = (uCount[langLabel] ?? 0) + 1;
-      genderLabel = `Voice ${uCount[langLabel]}`;
-    }
-    return { voice: v, label: `${langLabel} ${genderLabel}` };
-  });
+  if (_objUrl) {
+    URL.revokeObjectURL(_objUrl);
+    _objUrl = null;
+  }
 }
 
-// Legacy compat
-export async function getEnglishVoices(): Promise<SpeechSynthesisVoice[]> {
-  const voices = await loadVoices();
-  return voices.filter((v) => v.lang.toLowerCase().startsWith("en"));
-}
-
-// ─── Voice picker ─────────────────────────────────────────────
-
-async function pickVoice(settings: VoiceSettings): Promise<SpeechSynthesisVoice | null> {
-  const voices = await loadVoices();
-  if (!voices.length) return null;
-
-  // Honour a specific saved voice name first
-  if (settings.voiceName) {
-    const saved = voices.find((v) => v.name === settings.voiceName);
-    if (saved) return saved;
-  }
-
-  const hindi   = voices.filter((v) => v.lang.toLowerCase().startsWith("hi"));
-  const enIN    = voices.filter((v) => v.lang.toLowerCase() === "en-in");
-  const enOther = voices.filter((v) => v.lang.toLowerCase().startsWith("en"));
-
-  const genderOk = (v: SpeechSynthesisVoice) =>
-    settings.gender === "female" ? (isFemale(v) || !isMale(v)) : (isMale(v) || !isFemale(v));
-
-  const priority =
-    settings.lang === "hi"
-      ? [
-          hindi.filter(genderOk),
-          hindi,
-          enIN.filter(genderOk),
-          enIN,
-          enOther.filter(genderOk),
-          voices,
-        ]
-      : [
-          enIN.filter(genderOk),
-          enIN,
-          enOther.filter(genderOk),
-          enOther,
-          voices.filter(genderOk),
-          voices,
-        ];
-
-  for (const pool of priority) {
-    if (pool.length > 0) return pool[0];
-  }
-  return null;
-}
-
-// ─── Core speak ───────────────────────────────────────────────
+// ─── Core speak via ElevenLabs ────────────────────────────────
 
 export async function speak(text: string): Promise<void> {
   const settings = getVoiceSettings();
   if (!settings.enabled) return;
-  if (!("speechSynthesis" in window)) return;
+  const trimmed = text.trim();
+  if (!trimmed) return;
 
-  window.speechSynthesis.cancel();
-  const voice = await pickVoice(settings);
+  stopCurrentAudio();
 
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate   = 0.88;
-  utter.pitch  = 1.0;
-  utter.volume = 1.0;
-  if (voice) {
-    utter.voice = voice;
-    utter.lang  = voice.lang;
-  } else {
-    utter.lang = settings.lang === "hi" ? "hi-IN" : "en-IN";
+  try {
+    const token = await firebaseAuth.currentUser?.getIdToken().catch(() => undefined);
+    const { voiceId, modelId } = resolveVoice(settings.lang, settings.gender);
+
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const synthRes = await fetch("/api/tts/synthesize", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: trimmed, voiceId, modelId }),
+    });
+    if (!synthRes.ok) return;
+
+    const data = (await synthRes.json()) as { audioUrl: string };
+
+    const audioHeaders: Record<string, string> = {};
+    if (token) audioHeaders["Authorization"] = `Bearer ${token}`;
+
+    const audioRes = await fetch(data.audioUrl, { headers: audioHeaders });
+    if (!audioRes.ok) return;
+
+    const blob = await audioRes.blob();
+    const url  = URL.createObjectURL(blob);
+    _objUrl = url;
+
+    const audio = new Audio(url);
+    _audio = audio;
+    audio.onended = stopCurrentAudio;
+    audio.onerror = stopCurrentAudio;
+    await audio.play();
+  } catch {
+    stopCurrentAudio();
   }
-  window.speechSynthesis.speak(utter);
 }
 
 // ─── Task announcements ───────────────────────────────────────
