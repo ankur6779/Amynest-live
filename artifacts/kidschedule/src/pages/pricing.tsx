@@ -6,7 +6,7 @@ import { useSubscription, type Plan } from "@/hooks/use-subscription";
 
 export default function PricingPage() {
   const { t } = useTranslation();
-  const { plans, entitlements, isPremium, checkout, loading, cancelSubscription } = useSubscription();
+  const { plans, entitlements, isPremium, checkoutRazorpay, loading, cancelSubscription } = useSubscription();
   const [selected, setSelected] = useState<Exclude<Plan, "free">>("six_month");
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -26,9 +26,9 @@ export default function PricingPage() {
   const onUpgrade = async () => {
     setSubmitting(true);
     setNotice(null);
-    const res = await checkout(selected);
+    const res = await checkoutRazorpay(selected);
     setSubmitting(false);
-    if (!res.ok) setNotice(res.reason ?? t("pricing.checkout_unavailable"));
+    if (!res.ok && !res.userCancelled) setNotice(res.reason ?? t("pricing.checkout_unavailable"));
   };
 
   const onCancel = async () => {
