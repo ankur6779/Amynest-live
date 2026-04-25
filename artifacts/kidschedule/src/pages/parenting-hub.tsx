@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
@@ -9,6 +9,7 @@ import {
   BookOpen, Brain, Sparkles, Heart, Palette,
   ChevronDown, ChevronUp, MessageCircleHeart,
   Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap,
+  UserPlus, CheckCircle2, Users,
 } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
@@ -309,13 +310,132 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
   );
 }
 
+// ─── Child Selector Panel ─────────────────────────────────────────────────────
+const AVATAR_COLORS = [
+  "from-violet-500 to-fuchsia-500",
+  "from-sky-500 to-indigo-500",
+  "from-emerald-500 to-teal-500",
+  "from-amber-500 to-orange-500",
+  "from-rose-500 to-pink-500",
+];
+
+function ChildSelectorPanel({
+  childList,
+  effectiveChild,
+  onSelect,
+}: {
+  childList: any[];
+  effectiveChild: any;
+  onSelect: (id: number) => void;
+}) {
+  if (childList.length === 0) return null;
+
+  const getInitials = (name: string) =>
+    name.trim().split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+
+  const getAge = (child: any) => {
+    const months = (child.ageMonths ?? 0);
+    if (child.age === 0) return `${months}m`;
+    if (months > 0) return `${child.age}y ${months}m`;
+    return `${child.age}y`;
+  };
+
+  return (
+    <div className="rounded-2xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-primary" />
+          <span className="text-xs font-bold text-foreground uppercase tracking-wide">
+            {childList.length === 1 ? "Current Child" : "Select Child"}
+          </span>
+        </div>
+        <Link href="/children/new">
+          <button className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+            <UserPlus className="h-3.5 w-3.5" />
+            Add child
+          </button>
+        </Link>
+      </div>
+
+      {/* Child cards */}
+      <div className="flex gap-3 px-3 pb-3 overflow-x-auto scrollbar-none">
+        {childList.map((child: any, idx: number) => {
+          const group = getAgeGroup(child.age, (child as any).ageMonths ?? 0);
+          const info = getAgeGroupInfo(group);
+          const isSelected = effectiveChild?.id === child.id;
+          const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+          const initials = getInitials(child.name);
+          const ageLabel = getAge(child);
+
+          return (
+            <button
+              key={child.id}
+              onClick={() => onSelect(child.id)}
+              className={[
+                "shrink-0 relative flex flex-col items-center gap-2 rounded-2xl px-4 py-3 min-w-[96px] transition-all duration-200",
+                isSelected
+                  ? "bg-primary/10 dark:bg-primary/15 border-2 border-primary shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_4px_16px_-4px_rgba(168,85,247,0.4)]"
+                  : "bg-white/50 dark:bg-white/[0.03] border-2 border-border hover:border-primary/50 hover:bg-primary/5",
+              ].join(" ")}
+            >
+              {/* Selected check */}
+              {isSelected && (
+                <span className="absolute top-2 right-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary fill-primary/20" />
+                </span>
+              )}
+
+              {/* Avatar */}
+              <div
+                className={[
+                  "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base",
+                  "bg-gradient-to-br shadow-md ring-2",
+                  colorClass,
+                  isSelected ? "ring-primary/60" : "ring-white dark:ring-white/10",
+                ].join(" ")}
+              >
+                {initials}
+              </div>
+
+              {/* Info */}
+              <div className="text-center min-w-0 w-full">
+                <p className={`font-bold text-sm truncate ${isSelected ? "text-primary" : "text-foreground"}`}>
+                  {child.name}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {info.emoji} {ageLabel}
+                </p>
+              </div>
+
+              {/* Active chip */}
+              {isSelected && (
+                <span className="text-[9px] font-bold uppercase tracking-wider text-primary/80 bg-primary/10 rounded-full px-2 py-0.5">
+                  Viewing
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ParentingHub() {
   const { t } = useTranslation();
   const { data: children = [], isLoading } = useListChildren({
     query: { queryKey: getListChildrenQueryKey() },
   });
-  const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
+  const STORAGE_KEY = "amynest:hub:activeChildId";
+  const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
+    if (typeof window !== "undefined") {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      return saved ? Number(saved) : null;
+    }
+    return null;
+  });
 
   const childList = (children as any[]) ?? [];
 
@@ -340,6 +460,9 @@ export default function ParentingHub() {
 
   const handleChildSelect = (id: number) => {
     setSelectedChildId(id);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, String(id));
+    }
   };
 
   // ── Loading ────────────────────────────────────────────────────────────────
@@ -378,35 +501,12 @@ export default function ParentingHub() {
     <div className="max-w-6xl mx-auto space-y-5 pb-12">
       <PageHeader />
 
-      {/* Child selector */}
-      {childList.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-          {childList.map((child: any) => {
-            const group = getAgeGroup(child.age, (child as any).ageMonths ?? 0);
-            const info  = getAgeGroupInfo(group);
-            const isSelected = effectiveChild?.id === child.id;
-            return (
-              <button
-                key={child.id}
-                onClick={() => handleChildSelect(child.id)}
-                className={`shrink-0 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border-2 transition-all ${
-                  isSelected
-                    ? "bg-primary text-primary-foreground border-primary shadow-md"
-                    : "bg-card border-border hover:border-primary/50"
-                }`}
-              >
-                <span className="text-xl">{info.emoji}</span>
-                <div className="text-left">
-                  <p className="font-bold text-sm leading-tight">{child.name}</p>
-                  <p className={`text-[10px] ${isSelected ? "text-primary-foreground/75" : "text-muted-foreground"}`}>
-                    {info.label}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* ── Child Selector Panel ────────────────────────────────────────── */}
+      <ChildSelectorPanel
+        childList={childList}
+        effectiveChild={effectiveChild}
+        onSelect={handleChildSelect}
+      />
 
       {/* 🧠 Parent Command Center — overview · insights · quick actions */}
       {effectiveChild && (
