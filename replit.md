@@ -42,7 +42,7 @@ The system is a monorepo utilizing pnpm workspaces, Node.js 24, and TypeScript 5
 **UI/UX Decisions:**
 - **Branding:** Features an "Amy AI Brand" with a character (AmyIcon), floating assistant button (AmyFab), and consistent branding.
 - **Responsiveness:** Mobile-first design with bottom navigation on mobile and a full sidebar on desktop.
-- **Specific Hubs:** Dedicated Amy Coach with a 4-phase coaching flow and Infant & Toddler Hubs with glass tabs and contextual AI insights.
+- **Specific Hubs:** Dedicated Amy Coach with a 4-phase coaching flow and Infant & Toddler Hubs with glass tabs and contextual AI insights. Amy Coach goal categories include behaviour, focus, eating, sleep, parent self-care, special situations, and a research-grounded "Kids Health Concern" section (Childhood Obesity, Nutrition Deficiency, Immunity, Dental Health, Digital Health & Eye Care, Early Development 0–5).
 - **Design System:** Indigo/purple theme with specific hex codes and Inter fonts.
 
 **Technical Implementations:**

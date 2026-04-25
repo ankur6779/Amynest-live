@@ -270,6 +270,14 @@ const GOAL_LABELS: Record<string, string> = {
   "welcoming-new-sibling": "Welcoming a New Sibling",
   "moving-houses": "Moving to a New Home",
 
+  // Kids Health Concern (research & science-based)
+  "child-obesity-management": "Childhood Obesity & Weight Management",
+  "nutrition-deficiency": "Nutrition Deficiency (Hidden Problem)",
+  "boost-immunity": "Immunity & Frequent Illness",
+  "dental-health": "Dental Health",
+  "digital-health-eye-care": "Screen Addiction & Digital Health",
+  "early-milestones-0-5": "Early Development & Milestones (0–5 yrs)",
+
   // For You (Parent Self-Care)
   "parent-burnout": "Beat Parent Burnout",
   "stay-calm-anger": "Stay Calm When Angry",

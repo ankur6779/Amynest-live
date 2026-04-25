@@ -146,6 +146,19 @@ const GOAL_CATEGORIES: GoalCategory[] = [
       { id: "moving-houses",        title: "Moving to a New Home",       emoji: "📦", gradient: "from-emerald-100 dark:from-emerald-500/20 to-teal-200 dark:to-teal-500/25" },
     ],
   },
+  // ─── NEW: Kids Health Concern (research & science-based) ─────────────
+  {
+    id: "kids-health-concern", title: "Kids Health Concern", emoji: "🩺",
+    gradient: "from-emerald-100 dark:from-emerald-500/20 via-teal-50 dark:via-teal-500/15 to-cyan-100 dark:to-cyan-500/20",
+    items: [
+      { id: "child-obesity-management", title: "Childhood Obesity & Weight Management",   emoji: "⚖️", gradient: "from-emerald-100 dark:from-emerald-500/20 to-teal-200 dark:to-teal-500/25" },
+      { id: "nutrition-deficiency",     title: "Nutrition Deficiency (Hidden Problem)",    emoji: "🥗", gradient: "from-lime-100 dark:from-lime-500/20 to-green-200 dark:to-green-500/25" },
+      { id: "boost-immunity",           title: "Immunity & Frequent Illness",              emoji: "🛡️", gradient: "from-cyan-100 dark:from-cyan-500/20 to-sky-200 dark:to-sky-500/25" },
+      { id: "dental-health",            title: "Dental Health",                            emoji: "🦷", gradient: "from-blue-100 dark:from-blue-500/20 to-indigo-200 dark:to-indigo-500/25" },
+      { id: "digital-health-eye-care",  title: "Screen Addiction & Digital Health",        emoji: "👀", gradient: "from-violet-100 dark:from-violet-500/20 to-purple-200 dark:to-purple-500/25" },
+      { id: "early-milestones-0-5",     title: "Early Development & Milestones (0–5 yrs)", emoji: "🌱", gradient: "from-amber-100 dark:from-amber-500/20 to-yellow-200 dark:to-yellow-500/25" },
+    ],
+  },
   // ─── For You (Parent Self-Care) — age question is skipped for this category ─
   {
     id: "for-you", title: "For You (Parent Self-Care)", emoji: "💖",

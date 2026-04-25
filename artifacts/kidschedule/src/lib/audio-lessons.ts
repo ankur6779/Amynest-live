@@ -783,6 +783,236 @@ export const LESSONS: Lesson[] = [
       ],
     },
   }),
+
+  // ─── Kids Health Concern (research & science-based) ───────────────
+  L({
+    id: "health-early-milestones",
+    title: {
+      en: "Milestones 0–5: Sign-Posts, Not Deadlines (and the Red Flags You Must Not Wait On)",
+      hi: "0–5 साल के Milestones: समय-सीमा नहीं, संकेत — और जिन red flags पर रुकना नहीं है",
+      hinglish: "Milestones 0–5 saal: deadlines nahi, sign-posts — aur Red Flags jin par wait nahi karna",
+    },
+    description: {
+      en: "What's normal range, what's not, and exactly when to ask for an evaluation.",
+      hi: "क्या सामान्य है, क्या नहीं, और evaluation कब मांगनी है।",
+      hinglish: "Normal range kya hai, kya nahi, aur evaluation kab maangni hai.",
+    },
+    durationMin: 5, ageBucket: "0-2", emoji: "🌱",
+    expert: "Based on CDC Learn the Signs / AAP Bright Futures & Indian Academy of Pediatrics",
+    paragraphs: {
+      en: [
+        "Developmental milestones are the typical age range when most children reach a skill — not deadlines. The CDC updated its checklist in 2022 specifically because the old '50 percent of kids do this by X' was making families wait too long. The new checklist marks milestones at the age 75 percent of kids should be doing them. If your child has not, that is the moment to ask, not to wait.",
+        "By 12 months, most babies respond to their name, look where you point, babble, and stand with help. By 18 months, single words, walking, pointing to ask for things, and simple play (feeding a doll). By 2 years, two-word phrases, running, and copying you doing chores. By 3 years, short sentences, riding a tricycle, separating from you without a meltdown most days. By 4 years, telling a simple story, drawing a person with two body parts, hopping on one foot.",
+        "Red flags that need a same-week paediatric review, no waiting: no babbling by 12 months, no single words by 16 months, no two-word phrases by 24 months, ANY loss of skills they previously had at any age, no eye contact, not responding to their name by 12 months, walking on toes only, hand flapping, lining up toys repeatedly, or major delays compared to siblings at the same age.",
+        "The single biggest brain-builder is serve-and-return: your baby coos, you coo back. Your toddler points at a dog, you say 'yes, big brown dog'. This back-and-forth, not flashcards or apps, builds language and the social brain. Harvard's Center on the Developing Child has 30 years of evidence: the quality of these tiny exchanges predicts cognition more than any toy or programme.",
+        "If something feels off, trust the gut. Early intervention before age 3 changes the lifelong trajectory of autism, speech delay, motor delay, and learning differences. A normal evaluation reassures you. An early diagnosis gets the help started. Both are wins. The only loss is waiting and watching.",
+      ],
+      hi: [
+        "Developmental milestones वह typical age range हैं जब ज्यादातर बच्चे एक skill पाते हैं — deadline नहीं। CDC ने 2022 में checklist update की क्योंकि पुरानी '50% बच्चे यह X तक करते हैं' families को बहुत देर तक wait कराती थी। नई checklist उस उम्र पर milestone रखती है जब 75% बच्चे यह करते हैं। अगर आपका बच्चा नहीं कर रहा तो पूछने का यही समय है, wait करने का नहीं।",
+        "12 महीने तक: नाम पर response, इशारे को follow करना, बबलिंग, मदद से खड़े होना। 18 महीने तक: एक शब्द, चलना, मांगने के लिए point करना, simple play। 2 साल तक: दो-शब्दों के phrases, दौड़ना, आपकी नकल करना। 3 साल तक: छोटे sentences, tricycle, ज़्यादातर दिन बिना meltdown अलग होना। 4 साल तक: छोटी कहानी बताना, इंसान का चित्र दो body parts के साथ, एक पैर पर hop।",
+        "Red flags जिन पर उसी हफ्ते paediatric review चाहिए: 12 महीने तक बबलिंग नहीं, 16 महीने तक एक शब्द नहीं, 24 महीने तक दो-शब्दों के phrases नहीं, किसी भी उम्र में पहले की skills खो देना, eye contact नहीं, 12 महीने तक नाम पर react नहीं, सिर्फ पंजों पर चलना, hand flapping, खिलौनों को बार-बार line करना, या भाई-बहन के मुकाबले बड़ी देरी।",
+        "सबसे बड़ा brain-builder है serve-and-return: बच्चा coo करे, आप coo back करें। Toddler कुत्ते की तरफ point करे, आप कहें 'हाँ, बड़ा भूरा कुत्ता'। यह back-and-forth — flashcards या apps नहीं — language और social brain बनाता है। Harvard Center on the Developing Child की 30 साल की evidence है: इन tiny exchanges की quality किसी toy से ज्यादा cognition predict करती है।",
+        "अगर कुछ ठीक नहीं लगता, gut पर भरोसा करें। 3 साल से पहले early intervention autism, speech delay, motor delay और learning differences की lifelong trajectory बदल देती है। Normal evaluation आश्वासन देती है। Early diagnosis मदद शुरू कर देती है। दोनों जीत हैं। हार सिर्फ wait-and-watch में है।",
+      ],
+      hinglish: [
+        "Developmental milestones woh typical age range hain jab zyaadatar bacche ek skill paate hain — yeh deadlines nahi hain. CDC ne 2022 mein apni checklist isliye update ki kyunki purani '50% bacche yeh X tak karte hain' families ko bahut der tak wait karaati thi. Nayi checklist us umar par milestone rakhti hai jab 75% bacche yeh karte hain. Agar aapka bacha nahi kar raha, toh poochne ka yahi waqt hai — wait karne ka nahi.",
+        "12 mahine tak: naam par response, ishaare ko follow karna, babbling, madad se khade hona. 18 mahine tak: ek shabd, chalna, maangne ke liye point karna, simple play (gudiya ko khilana). 2 saal tak: do-shabdon ke phrases, daudna, aapki nakal karke kaam karna. 3 saal tak: chhote sentences, tricycle, zyaadatar din bina meltdown alag ho jaana. 4 saal tak: chhoti kahaani batana, insaan ka chitra do body parts ke saath, ek pair par hop karna.",
+        "Red flags jin par usi hafte paediatric review chahiye, wait mat karein: 12 mahine tak babbling nahi, 16 mahine tak ek shabd nahi, 24 mahine tak do-shabdon ke phrases nahi, kisi bhi umar par pehle ki skills kho dena, eye contact nahi, 12 mahine tak naam par react nahi, sirf panjon par chalna, haath flap karna, khilonon ko baar-baar line karna, ya behen-bhai ke mukaable badi der.",
+        "Sabse bada brain-builder hai serve-and-return: bacha coo kare, aap coo back karein. Toddler kutte ki taraf point kare, aap kahein 'haan, bada bhura kutta'. Yeh back-and-forth — flashcards ya apps nahi — language aur social brain banata hai. Harvard Center on the Developing Child ki 30 saal ki evidence: in tiny exchanges ki quality kisi toy se zyaada cognition predict karti hai.",
+        "Agar kuch theek nahi lagta, gut par bharosa karein. 3 saal se pehle early intervention autism, speech delay, motor delay aur learning differences ki lifelong trajectory badal deti hai. Normal evaluation aaschwasan deti hai. Early diagnosis madad shuru kar deti hai. Dono jeet hain. Haar sirf 'wait & watch' mein hai.",
+      ],
+    },
+  }),
+  L({
+    id: "health-dental-care",
+    title: {
+      en: "Cavity-Free Childhood: The 4 Habits That Beat 90% of Tooth Decay",
+      hi: "Cavity-Free बचपन: 90% दांतों की सड़न रोकने वाली 4 आदतें",
+      hinglish: "Cavity-Free Bachpan: 90% Tooth Decay Rokne Wali 4 Aadatein",
+    },
+    description: {
+      en: "Fluoride from the first tooth, sugar frequency rules, and the bottle-in-bed mistake.",
+      hi: "पहले दांत से fluoride, चीनी की frequency के नियम, और bottle-in-bed की गलती।",
+      hinglish: "Pehle daant se fluoride, sugar frequency rules, aur bottle-in-bed wali galti.",
+    },
+    durationMin: 4, ageBucket: "2-4", emoji: "🦷",
+    expert: "Based on AAPD, WHO Oral Health & Indian Society of Pedodontics",
+    paragraphs: {
+      en: [
+        "Tooth decay is the most common chronic disease of childhood worldwide — and almost 100 percent preventable. By age 5, nearly 50 percent of Indian children already have cavities. The science is settled: four habits prevent 90 percent of them.",
+        "Habit one: brush with fluoride toothpaste from the very first tooth. The American Academy of Pediatric Dentistry, the WHO, and the Indian Society of Pedodontics all agree. The amount matters: a smear the size of a rice grain for under-3s, a pea-size dab for ages 3 to 6, a full strip after that. Twice a day, morning and night. The night brush is the most important — saliva drops during sleep so anything left on the teeth feeds bacteria for 8 hours. After brushing, spit, do not rinse. The thin film of fluoride is what works.",
+        "Habit two: never put a child to bed with a bottle of milk, juice, or anything but water. This is the single biggest cause of 'bottle-mouth' decay in toddlers. Milk pools around the front teeth all night and ferments. If a bottle is needed for comfort, it must be water only.",
+        "Habit three: it is not the AMOUNT of sugar that causes decay — it is the FREQUENCY. Each sugar exposure starts a 20-minute acid attack on enamel. A chocolate after lunch is one attack. The same chocolate eaten one square at a time over an hour is six attacks. So the rule is: sweets and juice only with meals, never sipped or grazed between. Water between meals, always.",
+        "Habit four: first dental visit by age 1, or when the first tooth comes — whichever is earlier. The goal is not treatment, it is prevention and a lifelong friendly relationship with the dentist. Parents brush for kids until age 7 or 8 because their hand coordination is not enough before that. And one final thing: avoid sharing spoons and pre-chewing food. Cavity-causing bacteria pass from caregiver mouths to the baby's mouth that way.",
+      ],
+      hi: [
+        "दांतों की सड़न दुनिया में बचपन की सबसे आम chronic बीमारी है — और लगभग 100% रोकी जा सकती है। 5 साल की उम्र तक भारत में करीब 50% बच्चों को cavities होती हैं। Science साफ है: 4 आदतें इनमें से 90% रोक देती हैं।",
+        "आदत 1: पहले दांत के आते ही fluoride toothpaste से ब्रश करें। AAPD, WHO और Indian Society of Pedodontics सभी सहमत हैं। मात्रा matter करती है: 3 साल से छोटे के लिए चावल के दाने जितना, 3-6 साल के लिए मटर जितना, उसके बाद पूरी पट्टी। दिन में दो बार। रात की ब्रश सबसे ज़रूरी है — नींद में लार कम होती है तो दांत पर बचा कुछ भी 8 घंटे bacteria को खिलाता है। ब्रश के बाद थूकें, कुल्ला न करें। Fluoride की पतली परत ही काम करती है।",
+        "आदत 2: सोते समय कभी दूध, juice या पानी के अलावा कुछ नहीं देना। यही toddler 'bottle-mouth' decay का सबसे बड़ा कारण है। दूध सामने के दांतों पर पूरी रात जमता है और ferment होता है। आराम के लिए bottle चाहिए तो सिर्फ पानी।",
+        "आदत 3: सड़न चीनी की मात्रा से नहीं — frequency से होती है। हर बार चीनी = enamel पर 20 मिनट का acid attack। दोपहर के बाद एक chocolate = एक attack। वही chocolate एक-एक square करके एक घंटे में खाई = छह attacks। नियम: मिठाई और juice सिर्फ meal के साथ, beech में sip नहीं। बीच में हमेशा पानी।",
+        "आदत 4: पहले दांत के साथ या 1 साल तक — जो पहले हो — पहली dental visit। मकसद इलाज नहीं, prevention और जीवनभर की दोस्ती है। 7-8 साल तक माता-पिता बच्चे के लिए ब्रश करें क्योंकि उनकी hand coordination उससे पहले काफी नहीं है। एक आख़िरी बात: चम्मच share न करें और बच्चे का खाना चबाकर न दें — Cavity के bacteria बड़ों के मुंह से बच्चे के मुंह में ऐसे ही जाते हैं।",
+      ],
+      hinglish: [
+        "Daanton ki sadan duniya mein bachpan ki sabse aam chronic bimari hai — aur lagbhag 100% rok'i ja sakti hai. 5 saal ki umar tak Bharat mein karib 50% bacchon ko cavities hoti hain. Science clear hai: 4 aadatein inmein se 90% rok deti hain.",
+        "Aadat 1: pehle daant ke aate hi fluoride toothpaste se brush karein. AAPD, WHO aur Indian Society of Pedodontics — sab agree hain. Maatra matter karti hai: 3 saal se chhote ke liye chawal ke daane jitna, 3-6 saal ke liye matar jitna, uske baad poori patti. Din mein do baar — subah aur raat. Raat ki brush sabse zaruri hai — neend mein laar kam hoti hai, toh daant par bacha kuch bhi 8 ghante bacteria ko khilata hai. Brush ke baad thookein, kulla mat karein. Fluoride ki patli parat hi kaam karti hai.",
+        "Aadat 2: sote samay kabhi doodh, juice ya paani ke alawa kuch mat dein. Yahi toddler 'bottle-mouth' decay ka sabse bada karan hai. Doodh saamne ke daanton par poori raat jamta hai aur ferment hota hai. Comfort ke liye bottle chahiye toh sirf paani.",
+        "Aadat 3: sadan sugar ki AMOUNT se nahi — FREQUENCY se hoti hai. Har baar sugar = enamel par 20 minute ka acid attack. Lunch ke baad ek chocolate = ek attack. Wahi chocolate ek-ek square karke ek ghante mein khaayi = chhah attacks. Niyam: mithai aur juice sirf meal ke saath, beech mein sip-sip nahi. Beech mein hamesha paani.",
+        "Aadat 4: pehle daant ke saath ya 1 saal tak — jo pehle ho — pehli dental visit. Maksad ilaaj nahi, prevention aur lifelong dosti hai. 7-8 saal tak parents bachhe ke liye brush karein kyunki unki hand coordination usse pehle kafi nahi hoti. Ek aakhri baat: chamach share na karein aur bachhe ka khaana chabakar mat dein — cavity ke bacteria badon ke muh se bachhe ke muh mein aise hi jaate hain.",
+      ],
+    },
+  }),
+  L({
+    id: "health-immunity-truth",
+    title: {
+      en: "Building Real Immunity: What Works, What's a Myth, When to Worry",
+      hi: "असली Immunity कैसे बनाएं: क्या काम करता है, क्या myth है, कब चिंता करें",
+      hinglish: "Asli Immunity Kaise Banayein: Kya Kaam Karta Hai, Kya Myth Hai, Kab Chinta Karein",
+    },
+    description: {
+      en: "Why 8–12 colds a year is normal, the 3 evidence-based immunity levers, and the red flags.",
+      hi: "साल में 8-12 जुकाम क्यों normal है, 3 evidence-based immunity levers, और red flags।",
+      hinglish: "Saal mein 8-12 cold kyon normal hai, 3 evidence-based immunity levers, aur red flags.",
+    },
+    durationMin: 5, ageBucket: "2-4", emoji: "🛡️",
+    expert: "Based on Indian Academy of Pediatrics (IAP), WHO & Cochrane Reviews",
+    paragraphs: {
+      en: [
+        "If your toddler caught 8 to 12 colds last year, that is not weak immunity — that is a normal, healthy immune system going through its training years. Children under 5 average 6 to 12 viral infections a year, more if they go to daycare. Each one is a workout for the immune system. By age 6, the rate drops sharply. So before fixing 'low immunity', first know: this is probably normal.",
+        "Three things genuinely move the needle on a child's immunity, all backed by strong evidence. One: sleep. A child sleeping under their age-target hours produces fewer antibodies after vaccination and gets sick more often. The targets: 1 to 2 yrs need 11 to 14 hours, 3 to 5 yrs need 10 to 13 hours, 6 to 12 yrs need 9 to 12 hours, including any naps. Two: outdoor play and microbial diversity. The 'old friends' theory and decades of hygiene-hypothesis research show that children who play outside, get a bit dirty, have pets, and eat a fibre-diverse diet build stronger, better-calibrated immune systems. Three: gut health. About 70 percent of immune cells live in the gut. Fibre, fermented foods like yoghurt, dahi, kanji, and a wide variety of plants — not probiotic supplements — feed the right microbes.",
+        "The myths to drop. Mega-doses of Vitamin C do not prevent colds in healthy kids — Cochrane reviews are clear on this. Zinc lozenges are not safe for young children. Most 'immunity tonics' on the market have no robust evidence. Cold weather does not cause colds; viruses do. Going out with wet hair does not cause illness. What about Vitamin D? This is the one supplement worth checking — Indian children are widely deficient and a Cochrane review shows supplementation reduces respiratory infections in those who are low. Get a 25-OH-D test before supplementing.",
+        "Vaccines are the single biggest immunity intervention in human history. Follow the IAP schedule, including flu shots every year for children 6 months and older. A vaccinated child is not 'overloading' their immune system — they are training it against the worst threats with the smallest risk.",
+        "When to actually worry — these are the immune red flags from the Jeffrey Modell Foundation: more than four ear infections in a year, more than two serious sinus infections in a year, more than two pneumonias in a year, two or more deep-tissue or organ infections, recurrent thrush after age 1, failure to thrive, or a family history of immune disease. Any of these = ask your paediatrician for an immune workup, do not just keep treating the next infection.",
+      ],
+      hi: [
+        "अगर पिछले साल आपके toddler को 8-12 जुकाम हुए तो यह कमज़ोर immunity नहीं — यह सामान्य, स्वस्थ immune system की training years है। 5 साल से कम के बच्चों को साल में 6-12 viral infections औसतन होते हैं, daycare जाने पर ज़्यादा। हर एक immune system की workout है। 6 साल तक यह तेजी से कम हो जाती है। तो 'low immunity' fix करने से पहले जानें: यह शायद normal है।",
+        "तीन चीज़ें बच्चे की immunity पर असल में काम करती हैं, सब strong evidence पर। एक: नींद। उम्र के target से कम सोने वाला बच्चा vaccination के बाद कम antibodies बनाता है और ज़्यादा बीमार होता है। Targets: 1-2 साल = 11-14 घंटे, 3-5 साल = 10-13 घंटे, 6-12 साल = 9-12 घंटे (naps सहित)। दो: बाहर खेलना और microbial diversity। 'Old friends' theory और दशकों की hygiene-hypothesis research बताती है कि बाहर खेलने वाले, थोड़ा गंदे होने वाले, pets रखने वाले, fibre-rich diverse खाना खाने वाले बच्चे ज़्यादा मज़बूत immunity बनाते हैं। तीन: gut health। लगभग 70% immune cells gut में रहती हैं। Fibre, fermented foods जैसे दही, कांजी और कई तरह के पौधे — probiotic supplements नहीं — सही microbes को खिलाते हैं।",
+        "Myths जो छोड़ने हैं। Vitamin C की mega-doses healthy बच्चों में जुकाम नहीं रोकतीं — Cochrane reviews साफ हैं। Zinc lozenges छोटे बच्चों के लिए safe नहीं हैं। Market में ज़्यादातर 'immunity tonics' की कोई robust evidence नहीं है। ठंडा मौसम जुकाम नहीं करता; viruses करते हैं। गीले बाल से बाहर जाने से बीमारी नहीं होती। Vitamin D? यही एक supplement check करने लायक है — भारतीय बच्चों में widespread कमी है और Cochrane review कमी वालों में respiratory infections कम करना दिखाती है। Supplement से पहले 25-OH-D test करवाएं।",
+        "Vaccines मानव इतिहास का सबसे बड़ा immunity intervention हैं। IAP schedule follow करें, 6 महीने से ज़्यादा के बच्चों के लिए हर साल flu shot सहित। Vaccinated बच्चा अपनी immune system 'overload' नहीं कर रहा — वह उसे सबसे बुरे ख़तरों के खिलाफ train कर रहा है, सबसे कम जोखिम पर।",
+        "वाकई कब चिंता करें — Jeffrey Modell Foundation के immune red flags: साल में 4 से ज़्यादा ear infections, साल में 2 से ज़्यादा serious sinus infections, साल में 2 से ज़्यादा pneumonias, 2 या उससे ज़्यादा deep-tissue infections, 1 साल के बाद बार-बार thrush, failure to thrive, या परिवार में immune बीमारी का history। इनमें से कुछ भी = paediatrician से immune workup मांगें, सिर्फ अगले infection का इलाज न करते रहें।",
+      ],
+      hinglish: [
+        "Agar pichle saal aapke toddler ko 8-12 cold hue toh yeh kamzor immunity nahi — yeh normal, healthy immune system ke training years hain. 5 saal se chhote bacchon ko saal mein average 6-12 viral infections hote hain, daycare jaane par zyaada. Har ek immune system ke liye workout hai. 6 saal tak yeh sharply kam ho jaata hai. Toh 'low immunity' fix karne se pehle jaanein: yeh probably normal hai.",
+        "Teen cheezein bachhe ki immunity par asal mein move-the-needle karti hain, sab strong evidence par. Ek: neend. Apne age-target se kam sone wala bacha vaccination ke baad kam antibodies banata hai aur zyaada bimaar hota hai. Targets: 1-2 saal = 11-14 ghante, 3-5 saal = 10-13 ghante, 6-12 saal = 9-12 ghante (naps milake). Do: outdoor play aur microbial diversity. 'Old friends' theory aur decades ki hygiene-hypothesis research dikhati hai bahar khelne wale, thoda gande hone wale, pets rakhne wale, fibre-rich variety wala khaana khaane wale bacche zyaada mazboot, better-calibrated immune system banate hain. Teen: gut health. Lagbhag 70% immune cells gut mein rehti hain. Fibre, fermented foods jaise dahi, kanji, aur kayi tarah ke plants — probiotic supplements nahi — sahi microbes ko feed karte hain.",
+        "Myths jo chhodne hain. Vitamin C ki mega-doses healthy bacchon mein cold nahi rokti — Cochrane reviews clear hain. Zinc lozenges chhote bacchon ke liye safe nahi hain. Market ke zyaadatar 'immunity tonics' ki koi robust evidence nahi hai. Thanda mausam cold nahi karta; viruses karte hain. Geele baal lekar bahar jaane se bimari nahi hoti. Vitamin D? Yahi ek supplement check karne layak hai — Indian bacchon mein widespread deficiency hai aur Cochrane review kami wale bacchon mein respiratory infections kam karna dikhati hai. Supplement se pehle 25-OH-D test karwayein.",
+        "Vaccines maanav itihaas ka sabse bada immunity intervention hain. IAP schedule follow karein, 6 mahine se zyaada ke bacchon ke liye har saal flu shot ke saath. Vaccinated bacha apni immune system 'overload' nahi kar raha — woh use sabse bure khatron ke khilaaf train kar raha hai, sabse kam risk par.",
+        "Wakai kab chinta karein — Jeffrey Modell Foundation ke immune red flags: saal mein 4 se zyaada ear infections, 2 se zyaada serious sinus infections, 2 se zyaada pneumonias, 2 ya zyaada deep-tissue ya organ infections, 1 saal ke baad recurrent thrush, failure to thrive, ya parivar mein immune disease ka history. Inmein se kuch bhi = paediatrician se immune workup maango, bas next infection ka ilaaj mat karte raho.",
+      ],
+    },
+  }),
+  L({
+    id: "health-hidden-nutrition-gaps",
+    title: {
+      en: "The Hidden Hunger: Iron, Vitamin D & B12 in Indian Children",
+      hi: "Hidden Hunger: भारतीय बच्चों में Iron, Vitamin D और B12 की कमी",
+      hinglish: "Hidden Hunger: Indian Bacchon mein Iron, Vitamin D aur B12 ki Kami",
+    },
+    description: {
+      en: "Why a normal-weight, well-fed child can still be deficient — and how to fix it.",
+      hi: "Normal वज़न और भरपेट खाने वाला बच्चा भी कमी का शिकार क्यों हो सकता है — और इसे कैसे ठीक करें।",
+      hinglish: "Normal-weight aur bharpet khaane wala bacha bhi deficient kyon ho sakta hai — aur kaise theek karein.",
+    },
+    durationMin: 5, ageBucket: "2-4", emoji: "🥗",
+    expert: "Based on ICMR-NIN, WHO First-1000-Days & NFHS-5 data",
+    paragraphs: {
+      en: [
+        "There is a paradox in Indian families: the child eats three meals a day, the plate looks full, the child looks well, and yet blood tests show iron, vitamin D, or B12 deficiency. The NFHS-5 data is striking — 67 percent of Indian under-5s are anaemic. This is not because we feed too little. It is because of WHAT we feed and HOW the body absorbs it.",
+        "Iron is the most common deficiency and the one most strongly linked to focus, school performance, and behaviour. The trick is bioavailability. Heme iron from meat, eggs, and fish is absorbed at 15 to 35 percent. Non-heme iron from dal, palak, ragi, and rajma is absorbed at only 2 to 10 percent. Two simple tricks change everything. Add a vitamin C source — nimbu, amla, tomato, capsicum, guava — to the SAME meal as the iron-rich food. This boosts absorption 3 to 4 times. And do NOT serve milk, dahi, chai, or coffee within an hour of an iron meal — calcium and tannins block iron absorption sharply.",
+        "Vitamin D is the second silent crisis. 70 to 90 percent of Indian children are deficient even though we have abundant sunshine. Why? Sunscreen, indoor play, school timing during peak sun, dark skin needing more sun exposure, and pollution. The fix needs both: 15 to 20 minutes of midday sun on bare arms and legs three to four times a week, AND fortified foods or a tested supplement if levels are low. Get a 25-OH-D test before supplementing — never guess the dose.",
+        "Vitamin B12 hits vegetarian families hardest because it is found mainly in animal foods. Symptoms are sneaky: tiredness, irritability, low appetite, and in severe cases, developmental delay. Sources: eggs, milk, dahi, paneer, fortified cereals. Strict vegetarian or vegan children almost always need a supplement. Iodine, zinc, and omega-3 are the next gaps; iodised salt covers most iodine needs.",
+        "What to do this week. Watch for the red flag pattern: tiredness, pale lower eyelids and palms, poor appetite, frequent infections, poor focus, and slow growth. If you see two or more, ask your paediatrician for a CBC, ferritin, 25-OH-D, and B12 test. Then switch to food-first fixes guided by the result. Do not start your child on a multi-vitamin without testing — too much iron or vitamin A can be more dangerous than the deficiency.",
+      ],
+      hi: [
+        "भारतीय परिवारों में एक paradox है: बच्चा तीन meal खाता है, plate भरी दिखती है, बच्चा अच्छा दिखता है, फिर भी blood test में iron, Vitamin D या B12 की कमी निकलती है। NFHS-5 data चौंकाने वाला है — भारत में 5 साल से छोटे 67% बच्चे anaemic हैं। वजह यह नहीं कि हम कम खिलाते हैं। वजह है क्या खिलाते हैं और शरीर कैसे absorb करता है।",
+        "Iron सबसे आम कमी है और focus, पढ़ाई और behaviour से सबसे मज़बूती से जुड़ा है। राज है bioavailability। मांस, अंडा, मछली से heme iron 15-35% absorb होता है। दाल, पालक, रागी, राजमा से non-heme iron सिर्फ 2-10% absorb होता है। दो trick सब बदल देती हैं। Iron-rich खाने के SAME meal में Vitamin C — नींबू, आँवला, tomato, capsicum, अमरूद — डालें। Absorption 3-4 गुना बढ़ता है। और iron meal के एक घंटे के अंदर दूध, दही, चाय या कॉफी न दें — calcium और tannins iron absorption काफी रोकते हैं।",
+        "Vitamin D दूसरा silent crisis है। भारत में 70-90% बच्चे deficient हैं, धूप भरपूर होते हुए भी। क्यों? Sunscreen, indoor play, peak sun में school, dark skin को ज़्यादा सूरज चाहिए, pollution। Fix दोनों चाहिए: हफ्ते में 3-4 बार 15-20 मिनट दोपहर की धूप — खुले हाथ और पैर पर — और fortified foods या tested supplement अगर level कम है। Supplement से पहले 25-OH-D test करवाएं — dose कभी guess न करें।",
+        "Vitamin B12 vegetarian families पर सबसे ज़्यादा असर करता है क्योंकि यह मुख्यतः animal foods में होता है। लक्षण subtle: थकान, चिड़चिड़ापन, कम भूख, severe में developmental delay। Sources: अंडा, दूध, दही, पनीर, fortified cereals। Strict vegetarian या vegan बच्चों को लगभग हमेशा supplement चाहिए। Iodine, zinc, omega-3 अगले gaps हैं; iodised नमक ज़्यादातर iodine ज़रूरत पूरी करता है।",
+        "इस हफ्ते क्या करें। Red flag pattern देखें: थकान, पीली निचली पलक और हथेली, कम भूख, बार-बार infections, focus कमज़ोर, धीमी growth। दो या ज़्यादा हों तो paediatrician से CBC, ferritin, 25-OH-D और B12 test मांगें। Result के हिसाब से food-first fix करें। बिना test multi-vitamin शुरू न करें — ज़्यादा iron या Vitamin A कमी से भी ज़्यादा खतरनाक हो सकता है।",
+      ],
+      hinglish: [
+        "Indian families mein ek paradox hai: bacha teen meal khata hai, plate bhari dikhti hai, bacha accha dikhta hai, phir bhi blood test mein iron, Vitamin D ya B12 ki kami nikalti hai. NFHS-5 data striking hai — Bharat mein 5 saal se chhote 67% bacche anaemic hain. Wajah yeh nahi ki hum kam khilate hain. Wajah hai KYA khilate hain aur shareer kaise absorb karta hai.",
+        "Iron sabse aam kami hai aur focus, padhai aur behaviour se sabse mazbooti se juda hai. Raaz hai bioavailability. Maas, anda, machhli se heme iron 15-35% absorb hota hai. Daal, palak, ragi, rajma se non-heme iron sirf 2-10% absorb hota hai. Do simple tricks sab badal deti hain. Iron-rich khaane ke SAME meal mein Vitamin C — nimbu, amla, tamatar, capsicum, amrood — daalein. Yeh absorption 3-4 guna badhata hai. Aur iron meal ke ek ghante ke andar doodh, dahi, chai ya coffee mat dein — calcium aur tannins iron absorption ko sharply block karte hain.",
+        "Vitamin D doosra silent crisis hai. Bharat mein 70-90% bacche deficient hain, dhoop bharpoor hote hue bhi. Kyon? Sunscreen, indoor play, peak sun mein school, dark skin ko zyaada sun chahiye, pollution. Fix dono chahiye: hafte mein 3-4 baar 15-20 minute dopahar ki dhoop khule haath aur pair par, AUR fortified foods ya tested supplement agar level kam hai. Supplement se pehle 25-OH-D test karwayein — dose kabhi guess mat karein.",
+        "Vitamin B12 vegetarian families par sabse zyaada asar karta hai kyunki yeh mukhyatah animal foods mein hota hai. Lakshan sneaky hote hain: thakaan, chidchidaapan, kam bhookh, severe mein developmental delay. Sources: anda, doodh, dahi, paneer, fortified cereals. Strict vegetarian ya vegan bacchon ko lagbhag hamesha supplement chahiye. Iodine, zinc, omega-3 agle gaps hain; iodised namak zyaadatar iodine zarurat poori karta hai.",
+        "Is hafte kya karein. Red flag pattern dekhein: thakaan, peeli nichli palak aur hatheli, kam bhookh, baar-baar infections, kamzor focus, dheemi growth. Do ya zyaada hon toh paediatrician se CBC, ferritin, 25-OH-D aur B12 test maango. Result ke hisaab se food-first fix karein. Bina test multi-vitamin shuru mat karein — zyaada iron ya Vitamin A kami se bhi zyaada khatarnaak ho sakta hai.",
+      ],
+    },
+  }),
+  L({
+    id: "health-childhood-obesity",
+    title: {
+      en: "Childhood Weight Worry: The Family-First Way (No Diets, No Shame)",
+      hi: "बच्चों का वज़न: पूरे परिवार का तरीका (कोई diet नहीं, कोई शर्म नहीं)",
+      hinglish: "Bacchon ka Vazan: Pure Parivar ka Tarika (Diets Nahi, Sharam Nahi)",
+    },
+    description: {
+      en: "AAP-aligned 5-2-1-0 plan, weight-neutral language, and what NOT to do at the table.",
+      hi: "AAP-aligned 5-2-1-0 plan, weight-neutral भाषा, और table पर क्या नहीं करना है।",
+      hinglish: "AAP-aligned 5-2-1-0 plan, weight-neutral language, aur table par kya NAHI karna hai.",
+    },
+    durationMin: 5, ageBucket: "5-7", emoji: "⚖️",
+    expert: "Based on AAP 2023 Clinical Guideline & Ellyn Satter's Division of Responsibility",
+    paragraphs: {
+      en: [
+        "Childhood obesity in India has tripled in twenty years. Urban children are now at the same risk as Western kids. But the way most families try to solve it — restriction, dieting, lecturing — actually backfires. Decades of research show kids who are dieted at home become MORE likely to develop weight problems and disordered eating in their teens. The solution from the 2023 American Academy of Pediatrics guideline is the opposite: family-based behaviour change, not child-targeted restriction.",
+        "Rule one: language. Never talk about your child's body, weight, fat, size, or 'diet'. Not even kindly. Studies show parental weight comments — even loving ones — predict body dissatisfaction and disordered eating later. Talk instead about strong bodies, energy, what foods help us run, climb, and focus. The whole family plays. Nobody is on a diet.",
+        "Rule two: the AAP-endorsed 5-2-1-0 daily target for the WHOLE family. Five servings of fruit and vegetables. Two hours or less of recreational screen time. One hour of active play. Zero sugary drinks — including juice, sweetened milk, sodas, energy drinks. This works because it focuses on what to ADD, not what to subtract.",
+        "Rule three: Ellyn Satter's Division of Responsibility, the most-evidenced eating framework for children. Parents decide WHAT food is offered, WHEN it is offered, and WHERE it is eaten. The child decides WHETHER to eat it and HOW MUCH. No bribing, no forcing, no clearing the plate, no second-helping rules. Trust their hunger and fullness. Pressure increases the very behaviours you are trying to fix.",
+        "Rule four: environment beats willpower every time. What is in the home gets eaten. Restock, do not police. Move sweets and chips out of sight. Keep a fruit bowl on the counter. Pre-cut vegetables for snacking. Family meals at the table — no screens — three times a week or more is one of the strongest evidence-based predictors of healthy weight. And finally: when to involve the doctor. If your child's BMI percentile is at or above the 95th, or if you see dark velvety skin in neck folds, snoring with pauses, knee pain, or rapid weight gain, ask your paediatrician for a proper assessment. This is medicine, not parenting failure.",
+      ],
+      hi: [
+        "भारत में childhood obesity 20 साल में तीन गुना हो गई है। शहरी बच्चे अब Western kids जितने risk पर हैं। लेकिन ज़्यादातर families जो तरीका अपनाती हैं — restriction, diet, lecture — असल में backfire करता है। दशकों की research बताती है घर पर diet कराए गए बच्चों में teen ages में weight problems और disordered eating ज़्यादा होते हैं। 2023 AAP guideline का solution उल्टा है: परिवार-आधारित behaviour change, बच्चे-targeted restriction नहीं।",
+        "Rule 1: भाषा। बच्चे के शरीर, वज़न, मोटाई, size या 'diet' पर बात कभी न करें — प्यार से भी नहीं। Studies दिखाती हैं parents के weight comments — caring वाले भी — बाद में body dissatisfaction और disordered eating predict करते हैं। बजाय बात करें मज़बूत शरीर, energy, कौन से foods हमें दौड़ने, चढ़ने, focus करने में मदद करते हैं। पूरा परिवार खेलता है। कोई diet पर नहीं है।",
+        "Rule 2: AAP-endorsed 5-2-1-0 daily target — पूरे परिवार के लिए। 5 servings फल-सब्ज़ी। 2 घंटे या कम recreational screen time। 1 घंटा active play। Zero sugary drinks — juice, sweetened milk, sodas, energy drinks सहित। यह काम करता है क्योंकि focus जोड़ने पर है, घटाने पर नहीं।",
+        "Rule 3: Ellyn Satter की Division of Responsibility — बच्चों के लिए सबसे evidence-based eating framework। माता-पिता तय करते हैं क्या खाना दिया जाता है, कब और कहाँ। बच्चा तय करता है खाना है या नहीं, और कितना। कोई bribery, कोई force, कोई 'plate खत्म करो', कोई second-helping rule नहीं। उनकी भूख और तृप्ति पर भरोसा करें। Pressure वही behaviours बढ़ाता है जो आप fix करना चाहते हैं।",
+        "Rule 4: environment हर बार willpower को हरा देता है। घर में जो है वही खाया जाता है। Restock करें, police नहीं। मिठाई और chips नज़र से हटाएं। Counter पर फल का bowl रखें। सब्ज़ियाँ pre-cut करके snack के लिए रखें। Table पर family meals — बिना screen के — हफ्ते में 3+ बार healthy weight का सबसे मज़बूत evidence-based predictor है। और आख़िरी: doctor कब involve करें। अगर बच्चे का BMI percentile 95th या ज़्यादा है, या गर्दन पर काली velvety त्वचा, खर्राटे साथ pauses, घुटनों में दर्द, या तेज़ी से weight बढ़ रहा है — paediatrician से proper assessment मांगें। यह medicine है, parenting failure नहीं।",
+      ],
+      hinglish: [
+        "Bharat mein childhood obesity 20 saal mein teen guna ho gayi hai. Urban bacche ab Western kids jitne risk par hain. Lekin zyaadatar families jo tarika apnaati hain — restriction, dieting, lecturing — asal mein backfire karta hai. Decades ki research dikhati hai ghar par diet karaye gaye bacchon mein teen years mein weight problems aur disordered eating ZYAADA likely hote hain. 2023 American Academy of Pediatrics guideline ka solution ulta hai: family-based behaviour change, child-targeted restriction nahi.",
+        "Rule 1: language. Bachhe ke shareer, vazan, motai, size ya 'diet' par baat KABHI mat karein. Pyaar se bhi nahi. Studies dikhati hain parents ke weight comments — loving wale bhi — baad mein body dissatisfaction aur disordered eating predict karte hain. Bajaye baat karein mazboot bodies, energy, kaun se foods humein daudne, chadhne, focus karne mein madad karte hain. Pura parivar khelta hai. Koi diet par nahi hai.",
+        "Rule 2: AAP-endorsed 5-2-1-0 daily target — pure parivar ke liye. 5 servings phal-sabzi. 2 ghante ya kam recreational screen time. 1 ghanta active play. Zero sugary drinks — juice, sweetened doodh, sodas, energy drinks ke saath. Yeh kaam karta hai kyunki focus JODNE par hai, ghatane par nahi.",
+        "Rule 3: Ellyn Satter ki Division of Responsibility — bacchon ke liye sabse evidence-based eating framework. Parents tay karte hain KYA khaana diya jaata hai, KAB diya jaata hai, KAHAN khaaya jaata hai. Bacha tay karta hai khaana hai ya nahi, aur kitna. Koi bribing nahi, koi forcing nahi, koi 'plate khatam karo' nahi, koi second-helping rule nahi. Unki bhookh aur fullness par bharosa karein. Pressure unhi behaviours ko badhata hai jo aap fix karna chahte hain.",
+        "Rule 4: environment har baar willpower ko haraata hai. Ghar mein jo hai wahi khaaya jaata hai. Restock karein, police mat karein. Mithai aur chips najar se hatayein. Counter par phal ka bowl rakhein. Sabziyan pre-cut karke snack ke liye rakhein. Table par family meals — bina screen ke — hafte mein 3+ baar healthy weight ka sabse mazboot evidence-based predictor hai. Aur aakhri: doctor kab involve karein. Agar bacche ka BMI percentile 95th par ya zyaada hai, ya gardan ki silwaton mein kaali velvety skin, snoring with pauses, ghutnon mein dard, ya tezi se weight badh raha hai — paediatrician se proper assessment maango. Yeh medicine hai, parenting failure nahi.",
+      ],
+    },
+  }),
+  L({
+    id: "health-digital-eyes-posture",
+    title: {
+      en: "Digital Health Beyond Addiction: Eyes, Posture & Sleep",
+      hi: "Addiction से आगे Digital Health: आँखें, posture और नींद",
+      hinglish: "Addiction se Aage Digital Health: Aankhein, Posture aur Neend",
+    },
+    description: {
+      en: "20-20-20, the outdoor-time myopia shield, tech-neck, and the no-screen-1-hr-before-bed rule.",
+      hi: "20-20-20, बाहर का समय और myopia, tech-neck, और सोने से 1 घंटे पहले no-screen का rule।",
+      hinglish: "20-20-20, outdoor time aur myopia shield, tech-neck, aur no-screen-1-hr-before-bed rule.",
+    },
+    durationMin: 5, ageBucket: "5-7", emoji: "👀",
+    expert: "Based on AAP/AAO Joint Statement & All India Ophthalmological Society",
+    paragraphs: {
+      en: [
+        "We talk about screen time as if the only worry is addiction. The bigger silent damage is to the eyes, posture, and sleep of growing kids. Childhood myopia is an epidemic — Asian populations are heading to 80 percent short-sightedness by adulthood. India is on the same curve. The good news: the science of how to protect children is now very clear.",
+        "Habit one: the 20-20-20 rule, taught as a game. Every 20 minutes of screen, take a 20-second break and look at something 20 feet away. Why? Up-close focusing for long stretches is the strongest known driver of myopia progression. Set a soft alarm. Make it a family ritual at the dinner table screen-time window. Even a 20-second break resets the focusing muscles.",
+        "Habit two: at least 2 hours of daylight outdoor exposure every day. This is the single most-evidenced myopia-protection factor we have. Bright daylight stimulates dopamine release in the retina, which slows the eyeball's elongation that causes short-sight. It does not need to be exercise — even reading outdoors helps. Take walks. Eat a snack on the balcony. Find an outdoor sport.",
+        "Habit three: distance and posture. Tablets and phones at arm's length. Top of the monitor at eye level so the head is not tilted down. Feet flat on the floor. Why does it matter? A head tilted forward by 60 degrees puts 27 kilograms of load on a developing cervical spine. Years of this leads to 'tech-neck', headaches, and chronic pain by the teen years. Big screens at proper distance are vastly better for eyes than small screens held close.",
+        "Habit four: no screens for one full hour before bed. Bright screen light suppresses melatonin and delays sleep onset by 30 to 60 minutes in children. Worse, the type of content — fast-cut, exciting, social — keeps the brain aroused. Replace the last hour with a wind-down ritual: warm bath, dim lights, reading aloud, gentle stretches, music. And when to see an eye doctor: if your child squints, sits very close to screens or books, tilts their head while reading, complains of headaches, or has a sudden drop in school marks — get a pediatric optometrist appointment. Most childhood vision problems are easily corrected, but only if caught.",
+      ],
+      hi: [
+        "हम screen time के बारे में ऐसे बात करते हैं जैसे एकमात्र चिंता addiction है। बड़ा silent नुकसान बढ़ते बच्चों की आँखों, posture और नींद को होता है। Childhood myopia एक epidemic है — एशियाई आबादी adulthood तक 80% short-sightedness की तरफ जा रही है। भारत भी उसी curve पर है। अच्छी खबर: बच्चों की रक्षा का science अब बहुत साफ़ है।",
+        "आदत 1: 20-20-20 rule — game की तरह सिखाएं। हर 20 मिनट screen पर, 20 second का break और 20 feet दूर देखें। क्यों? लंबे समय तक पास focus करना myopia बढ़ाने का सबसे बड़ा driver है। एक soft alarm रखें। Family ritual बनाएं। 20 second का break भी focusing muscles को reset करता है।",
+        "आदत 2: रोज़ कम से कम 2 घंटे की धूप वाली बाहर की activity। यह myopia-protection का सबसे evidence-based factor है। तेज़ धूप retina में dopamine release करती है जो eyeball की वो elongation धीमी करती है जो short-sight करती है। Exercise ज़रूरी नहीं — बाहर पढ़ना भी मदद करता है। टहलें, balcony पर snack खाएं, outdoor sport खोजें।",
+        "आदत 3: दूरी और posture। Tablet और phone arm's length पर। Monitor का top eye level पर ताकि सिर नीचे न झुके। पैर ज़मीन पर flat। क्यों matter? 60 degree आगे झुका सिर developing cervical spine पर 27 kg load डालता है। सालों यही = teen years तक 'tech-neck', headaches, chronic pain। Proper distance पर बड़ी screens — पास रखी छोटी screens से आँखों के लिए बहुत बेहतर।",
+        "आदत 4: सोने से ठीक 1 घंटे पहले कोई screen नहीं। तेज़ screen light melatonin दबाती है और बच्चों में sleep onset 30-60 मिनट देर करती है। Worse, content का type — fast-cut, exciting, social — brain को aroused रखता है। आख़िरी घंटा wind-down ritual से बदलें: गर्म स्नान, dim lights, ज़ोर से पढ़ाना, gentle stretches, music। Eye doctor कब दिखाएँ: बच्चा squint करे, screen या book बहुत पास रखे, पढ़ते समय सिर tilt करे, headaches की शिकायत करे, या marks में अचानक गिरावट हो — pediatric optometrist के पास जाएं। बचपन की ज़्यादातर vision problems आसानी से ठीक होती हैं, बशर्ते pakdi जाएं।",
+      ],
+      hinglish: [
+        "Hum screen time ke baare mein aise baat karte hain jaise ek hi chinta addiction hai. Bada silent nuksaan badhte bacchon ki aankhon, posture aur neend ko hota hai. Childhood myopia ek epidemic hai — Asian populations adulthood tak 80% short-sightedness ki taraf ja rahi hain. Bharat bhi usi curve par hai. Achi khabar: bacchon ki raksha ka science ab bahut clear hai.",
+        "Aadat 1: 20-20-20 rule, game ki tarah sikhayein. Har 20 minute screen par, 20-second ka break aur 20 feet door dekho. Kyon? Lambe samay tak paas focus karna myopia badhane ka sabse bada known driver hai. Ek soft alarm rakhein. Family ritual banayein dinner ke screen-time window mein. 20-second ka break bhi focusing muscles ko reset karta hai.",
+        "Aadat 2: roz kam se kam 2 ghante ki dhoop wali bahar ki activity. Yeh myopia-protection ka sabse evidence-based factor hai. Tez dhoop retina mein dopamine release karti hai jo eyeball ki woh elongation dheemi karti hai jo short-sight karti hai. Exercise zaruri nahi — bahar padhna bhi madad karta hai. Tahlein, balcony par snack khayein, ek outdoor sport khojein.",
+        "Aadat 3: doori aur posture. Tablet aur phone arm's length par. Monitor ka top eye-level par taaki sar neeche na jhuke. Pair zameen par flat. Kyon matter? 60 degree aage jhuka sar developing cervical spine par 27 kg load daalta hai. Saalon yahi = teen years tak 'tech-neck', headaches, chronic pain. Proper distance par badi screens — paas rakhi chhoti screens se aankhon ke liye bahut behtar.",
+        "Aadat 4: sone se theek 1 ghante pehle koi screen nahi. Tez screen light melatonin dabati hai aur bacchon mein sleep onset 30-60 minute der karti hai. Worse, content ka type — fast-cut, exciting, social — brain ko aroused rakhta hai. Aakhri ghanta wind-down ritual se badlein: garam snaan, dim lights, zor se padhna, gentle stretches, music. Eye doctor kab dikhayein: bacha squint kare, screen ya kitaab bahut paas rakhe, padhte samay sar tilt kare, headaches ki shikayat kare, ya marks mein achanak girawat ho — pediatric optometrist ke paas jayein. Bachpan ki zyaadatar vision problems aasani se theek hoti hain, bashart pakdi jayein.",
+      ],
+    },
+  }),
 ];
 
 export const AGE_LABELS: Record<AgeBucket, Record<LangCode, string>> = {

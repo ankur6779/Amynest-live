@@ -88,6 +88,14 @@ export const GOAL_IDS = [
   "couple-time-balance",
   "improve-own-sleep",
   "manage-overwhelm",
+
+  // ── Kids Health Concern (research & science-based) ────────
+  "child-obesity-management",
+  "nutrition-deficiency",
+  "boost-immunity",
+  "dental-health",
+  "digital-health-eye-care",
+  "early-milestones-0-5",
 ] as const;
 
 export type GoalId = (typeof GOAL_IDS)[number];

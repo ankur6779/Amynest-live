@@ -12,7 +12,9 @@ type GoalFamily =
   | "stubborn"
   | "coparenting" | "generic"
   // NEW families
-  | "toddler" | "potty" | "siblings" | "selfcare" | "transitions";
+  | "toddler" | "potty" | "siblings" | "selfcare" | "transitions"
+  // Kids Health Concern (research & science-based)
+  | "obesity" | "nutrition" | "immunity" | "dental" | "digitalhealth" | "development";
 
 interface FamilyPrompt {
   focus: string[];
@@ -344,6 +346,140 @@ const FAMILIES: Record<GoalFamily, FamilyPrompt> = {
     ],
     experts: ["John Bowlby", "Donald Winnicott", "Carol Gray", "Tina Payne Bryson"],
   },
+
+  // ─── Kids Health Concern (research & science-based) ─────────────────
+  obesity: {
+    focus: [
+      "Family-based behaviour change (the parent is the system, not the child)",
+      "Environment > willpower — what's in the home is what gets eaten",
+      "Movement as joy, not punishment; sleep & stress as primary metabolic levers",
+    ],
+    concepts: [
+      "AAP 2023 clinical guideline: Intensive Health Behaviour & Lifestyle Treatment (IHBLT) ≥ 26 contact hours/year",
+      "Ellyn Satter's Division of Responsibility — never restrict food, never force",
+      "Energy density, ultra-processed food displacement, and the 'NOVA' classification",
+      "Sleep ↔ leptin/ghrelin axis; <9 hrs sleep doubles obesity risk in school-age kids (Cappuccio meta-analysis)",
+      "BMI percentile interpretation (≥85th overweight, ≥95th obesity) per CDC growth charts",
+    ],
+    mustInclude: [
+      "A 5-2-1-0 daily target (5 fruit/veg, ≤2 hrs recreational screen, 1 hr active play, 0 sugary drinks) — AAP-endorsed",
+      "Concrete pantry & fridge swaps (specific products to remove, specific products to add)",
+      "A weight-NEUTRAL language script — focus on 'strong body / energy', never on size, fat, or diet",
+      "When to involve a paediatrician (BMI ≥95th %ile, comorbidities like acanthosis nigricans, snoring, knee pain)",
+      "A non-food reward menu for celebrations and stress",
+    ],
+    experts: ["AAP (Hampl et al. 2023 guideline)", "Ellyn Satter", "Dr Yoni Freedhoff", "Dr David Ludwig"],
+  },
+  nutrition: {
+    focus: [
+      "Iron, vitamin D, B12, zinc and iodine are the silent shortfalls in Indian/South-Asian kids",
+      "Bioavailability matters more than raw quantity (heme vs non-heme iron, calcium-iron timing, phytate inhibition)",
+      "Hidden hunger looks like normal weight — flag fatigue, pallor, frequent infections, picky eating, poor focus",
+    ],
+    concepts: [
+      "ICMR-NIN 2020 RDA (recommended dietary allowances) for Indian children",
+      "WHO 'first 1000 days' window — deficiencies here cause permanent cognitive shortfalls",
+      "Iron-deficiency anaemia: 67% of Indian under-5s (NFHS-5) — strongest evidence-based link to school performance",
+      "Vitamin D deficiency in Indian kids ≈ 70-90% (sunlight is necessary but not sufficient with modern lifestyle)",
+      "Vegetarian-specific risks: B12 (only in animal foods or fortified) and absorbable iron",
+    ],
+    mustInclude: [
+      "A red-flag symptom checklist (when to ask the paediatrician for a CBC + ferritin + 25(OH)D test)",
+      "An Indian/desi 'iron-rich plate' template (palak/dal/rajma + vit-C source like nimbu/amla/tomato in same meal)",
+      "Smart pairings & anti-pairings (no chai/coffee/dairy with iron meal; vit-C boosts absorption 3-4×)",
+      "A weekly fortification swap list (e.g., double-fortified salt, ragi/bajra rotation, fortified milk, eggs)",
+      "When supplements are appropriate vs food-first (only after testing; never self-supplement multi-vitamins)",
+    ],
+    experts: ["ICMR-NIN India", "WHO/UNICEF", "Dr Nimali Fernando (Doctor Yum)", "Dr Tim Spector"],
+  },
+  immunity: {
+    focus: [
+      "Frequent illness in 1-5 yr olds is normal immune training (8-12 colds/year average) — not weakness",
+      "Sleep, gut microbiome, and outdoor play are the three biggest evidence-based immunity levers",
+      "When 'frequent illness' becomes a red flag (>1 ear infection/2 months, >2 pneumonias/year, failure to thrive)",
+    ],
+    concepts: [
+      "Hygiene hypothesis & old friends theory — microbial diversity calibrates the immune system",
+      "Vitamin D's role in innate + adaptive immunity (Cochrane review: supplementation reduces respiratory infections)",
+      "Gut-immune axis — 70% of immune cells live in the GALT; fibre & fermented foods feed them",
+      "Sleep deprivation halves antibody response to vaccines (Prather et al.)",
+      "Indian immunisation schedule (IAP) and the catch-up logic for missed vaccines",
+    ],
+    mustInclude: [
+      "A daily immunity stack the family can sustain (sleep target by age, ≥60 min outdoor play, fibre + fermented food)",
+      "Hand-hygiene script (when, how long — '20 sec = sing happy birthday twice')",
+      "A 'sick day' decision tree: when to keep home, when to call doctor, when ER",
+      "What does NOT boost immunity (zinc lozenges for kids, mega-vit-C, immunity 'tonics' — debunk gently)",
+      "Vaccination catch-up reminder + ICMR/IAP-aligned calendar reference",
+    ],
+    experts: ["Indian Academy of Pediatrics (IAP)", "WHO", "Dr Tim Spector", "Dr Tina Bhutani"],
+  },
+  dental: {
+    focus: [
+      "Tooth decay in under-5s is the #1 chronic disease worldwide — and almost 100% preventable",
+      "Two non-negotiables: fluoride toothpaste from the FIRST tooth + no bottle/sippy in bed with anything but water",
+      "Sugar frequency matters more than sugar quantity (each sugar exposure = 20-min acid attack)",
+    ],
+    concepts: [
+      "AAPD/Indian Society of Pedodontics: brush twice daily with fluoride from age 0 (rice-grain → pea-size at 3)",
+      "Early Childhood Caries (ECC) and 'baby bottle tooth decay' — mechanism is biofilm + sugar + time",
+      "Streptococcus mutans transmission from caregiver to baby (no shared spoons, no pre-chewing food)",
+      "First dental visit by age 1 (AAPD) — preventive care, not treatment, is the goal",
+      "Fluoride debate evidence: WHO/AAP/IAP unanimously recommend appropriate-dose fluoride; risk is over- not under-use",
+    ],
+    mustInclude: [
+      "An age-specific brushing protocol (who brushes, how long, technique, parent supervision until age 7-8)",
+      "Toothpaste amount script (rice grain 0-3 yrs, pea-size 3-6 yrs, full strip 6+) — and 'spit, don't rinse'",
+      "Sugar-frequency rules (sweet treats only with meals, never sipped/grazed; water between meals)",
+      "First dental visit timing + what to expect (and how to make it fun, not scary)",
+      "Tooth-injury first-aid (knocked-out milk vs permanent tooth — DIFFERENT protocols)",
+    ],
+    experts: ["AAPD (American Academy of Pediatric Dentistry)", "Indian Society of Pedodontics", "WHO Oral Health Programme"],
+  },
+  digitalhealth: {
+    focus: [
+      "This is NOT just about addiction — it's about EYES, posture, sleep, and developing brains",
+      "The 20-20-20 rule and 2 hours of daylight outdoor exposure are the strongest myopia-prevention evidence we have",
+      "Blue-light fear is overblown; what matters is total screen TIME, screen DISTANCE, and the LAST hour before bed",
+    ],
+    concepts: [
+      "AAP/AAO screen-time guidelines (0 under 18 mo except video calls; ≤1 hr 2-5 yr; consistent limits 6+)",
+      "Childhood myopia epidemic — Asian populations 80%+ by adulthood; outdoor time is the single biggest protective factor",
+      "Digital eye strain (asthenopia): blink rate drops by 60% at screens; dryness, headache, blur",
+      "Melatonin suppression: bright screens 1 hr pre-bed delay sleep onset by 30-60 min in kids (Hale & Guan meta-analysis)",
+      "Tech-neck posture: 60° head flexion = 27 kg load on developing cervical spine",
+    ],
+    mustInclude: [
+      "20-20-20 rule (every 20 min, 20-sec break, look 20 ft away) — taught as a game",
+      "≥ 2 hrs/day daylight outdoor target — myopia prevention, dose-dependent",
+      "Screen distance & posture rules (arm's length for tablet, eye-level top of monitor, feet flat)",
+      "A no-screen-1-hr-before-bed protocol with a substitute wind-down ritual",
+      "Symptom checklist: when to see optometrist (squinting, head-tilt, sitting too close, complaining of headaches)",
+    ],
+    experts: ["AAP/AAO joint statement", "All India Ophthalmological Society", "Dr Anna Lembke (Dopamine Nation)", "WHO"],
+  },
+  development: {
+    focus: [
+      "Milestones are signposts, not deadlines — but RED FLAGS need same-week paediatric review (don't wait & watch)",
+      "Serve-and-return interactions are the brain-builder — quality > quantity > toys > apps",
+      "Early intervention before age 3 changes lifelong trajectory; after age 5 the cost of inaction multiplies"
+    ],
+    concepts: [
+      "CDC/AAP developmental milestone checklist (updated 2022) — gross motor, fine motor, language, social, cognitive",
+      "Critical periods of synaptic pruning — most rapid in first 1000 days",
+      "Harvard Center on the Developing Child — toxic stress vs serve-and-return architecture",
+      "M-CHAT-R/F autism screening at 18 + 24 months (universal screening recommended by AAP)",
+      "Indian context: Trivandrum Developmental Screening Chart (TDSC) and IAP red-flag list",
+    ],
+    mustInclude: [
+      "Age-specific 'should-do-by-now' milestones AND specific RED FLAGS that need a paediatrician this week",
+      "Serve-and-return script for daily play (5 simple steps to do during diaper change, meal, bath)",
+      "A no-screen-under-2 reminder + the WHY (passive viewing replaces the language input that builds the brain)",
+      "When/how to ask for a developmental assessment (pediatrician → developmental ped → therapist) without panic",
+      "A weekly 'milestone check-in' the parent does without the child knowing they're being assessed",
+    ],
+    experts: ["CDC Learn the Signs / AAP Bright Futures", "Harvard Center on the Developing Child", "Indian Academy of Pediatrics", "Dr T. Berry Brazelton"],
+  },
 };
 
 const GOAL_TO_FAMILY: Record<string, GoalFamily> = {
@@ -413,6 +549,13 @@ const GOAL_TO_FAMILY: Record<string, GoalFamily> = {
   "daycare-school-transition": "transitions",
   "welcoming-new-sibling": "transitions",
   "moving-houses": "transitions",
+  // Kids Health Concern (research & science-based)
+  "child-obesity-management": "obesity",
+  "nutrition-deficiency": "nutrition",
+  "boost-immunity": "immunity",
+  "dental-health": "dental",
+  "digital-health-eye-care": "digitalhealth",
+  "early-milestones-0-5": "development",
 };
 
 // ─── HINDI / HINGLISH BRIEFS for the 5 NEW families ─────────────────
