@@ -50,6 +50,7 @@ import { ReferralAttributionBridge } from "@/components/referral-attribution-bri
 import { PaywallProvider } from "@/contexts/paywall-context";
 import { PaywallModal } from "@/components/paywall-modal";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
+import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -267,11 +268,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <FirebaseAuthProvider>
-      <WouterRouter base={basePath}>
-        <AppRoutes />
-      </WouterRouter>
-    </FirebaseAuthProvider>
+    <ReactInstanceRecovery>
+      <FirebaseAuthProvider>
+        <WouterRouter base={basePath}>
+          <AppRoutes />
+        </WouterRouter>
+      </FirebaseAuthProvider>
+    </ReactInstanceRecovery>
   );
 }
 
