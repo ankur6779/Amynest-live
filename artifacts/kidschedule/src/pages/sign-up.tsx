@@ -14,23 +14,90 @@ import { prettyAuthError } from "@/lib/auth-errors";
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const googleProvider = new GoogleAuthProvider();
 
+const ORB1: React.CSSProperties = {
+  position: "absolute", top: "-140px", right: "-100px",
+  width: "420px", height: "420px", borderRadius: "50%",
+  background: "radial-gradient(circle, rgba(123,63,242,0.40) 0%, transparent 70%)",
+  filter: "blur(48px)", pointerEvents: "none",
+};
+const ORB2: React.CSSProperties = {
+  position: "absolute", bottom: "-80px", left: "-120px",
+  width: "380px", height: "380px", borderRadius: "50%",
+  background: "radial-gradient(circle, rgba(255,78,205,0.28) 0%, transparent 70%)",
+  filter: "blur(48px)", pointerEvents: "none",
+};
+const ORB3: React.CSSProperties = {
+  position: "absolute", top: "45%", left: "30%",
+  width: "260px", height: "260px", borderRadius: "50%",
+  background: "radial-gradient(circle, rgba(80,30,180,0.22) 0%, transparent 70%)",
+  filter: "blur(60px)", pointerEvents: "none",
+};
+
+const CARD: React.CSSProperties = {
+  background: "rgba(18, 4, 45, 0.70)",
+  backdropFilter: "blur(28px)",
+  WebkitBackdropFilter: "blur(28px)",
+  borderRadius: "28px",
+  border: "1px solid rgba(123,63,242,0.32)",
+  boxShadow: "0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 48px rgba(123,63,242,0.18), 0 32px 80px rgba(0,0,0,0.55)",
+};
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: "100%", height: "48px", padding: "0 16px",
+  borderRadius: "14px", outline: "none", fontSize: "15px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(123,63,242,0.25)",
+  color: "#F0E8FF",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+  transition: "border-color 0.18s, box-shadow 0.18s",
+};
+
+function glowFocus(e: React.FocusEvent<HTMLInputElement>) {
+  e.currentTarget.style.borderColor = "rgba(123,63,242,0.80)";
+  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(123,63,242,0.22)";
+}
+function glowBlur(e: React.FocusEvent<HTMLInputElement>) {
+  e.currentTarget.style.borderColor = "rgba(123,63,242,0.25)";
+  e.currentTarget.style.boxShadow = "none";
+}
+
 function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-4 py-10"
-      style={{ background: "linear-gradient(160deg,#EEF2FF 0%,#F5F3FF 50%,#FDF2F8 100%)" }}
+      style={{
+        minHeight: "100vh", display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "40px 16px",
+        background: "linear-gradient(140deg, #0D0022 0%, #180040 35%, #0A001E 65%, #130035 100%)",
+        position: "relative", overflow: "hidden",
+      }}
     >
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl shadow-indigo-100/60 border border-indigo-100 overflow-hidden">
-        <div className="px-7 pt-8 pb-6 text-center">
-          <img
-            src={`${basePath}/amynest-logo.png`}
-            alt="AmyNest"
-            className="h-14 w-14 mx-auto rounded-full mb-3"
-          />
-          {children}
+      <div style={ORB1} />
+      <div style={ORB2} />
+      <div style={ORB3} />
+
+      <div style={{ width: "100%", maxWidth: "420px", position: "relative", zIndex: 1 }}>
+        <div style={CARD}>
+          <div style={{ padding: "36px 32px 28px", textAlign: "center" }}>
+            <div style={{
+              width: "72px", height: "72px", borderRadius: "50%",
+              margin: "0 auto 20px",
+              background: "rgba(123,63,242,0.18)",
+              border: "1.5px solid rgba(123,63,242,0.55)",
+              boxShadow: "0 0 28px rgba(123,63,242,0.45), 0 0 8px rgba(123,63,242,0.25) inset",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              overflow: "hidden",
+            }}>
+              <img src={`${basePath}/amynest-logo.png`} alt="AmyNest" style={{ width: "56px", height: "56px", borderRadius: "50%" }} />
+            </div>
+            {children}
+          </div>
         </div>
+        <p style={{ marginTop: "20px", textAlign: "center", fontSize: "12px", color: "rgba(255,255,255,0.28)" }}>
+          Where Smart Parenting Begins
+        </p>
       </div>
-      <p className="mt-6 text-xs text-slate-400">Where Smart Parenting Begins</p>
     </div>
   );
 }
@@ -41,13 +108,12 @@ export default function SignUpPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      setLocation("/");
-    }
+    if (isLoaded && isSignedIn) setLocation("/");
   }, [isLoaded, isSignedIn, setLocation]);
 
   const onEmail = async (e: React.FormEvent) => {
@@ -55,11 +121,7 @@ export default function SignUpPage() {
     setError(null);
     setBusy(true);
     try {
-      const cred = await createUserWithEmailAndPassword(
-        firebaseAuth,
-        email.trim(),
-        password,
-      );
+      const cred = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
       if (name.trim()) {
         try {
           await updateProfile(cred.user, { displayName: name.trim() });
@@ -101,18 +163,34 @@ export default function SignUpPage() {
     }
   };
 
+  const canSubmit = email.trim() && password.length >= 6;
+
   return (
     <AuthShell>
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">Join AmyNest AI</h1>
-      <p className="text-sm text-slate-500 mb-6">
+      <h1 style={{ margin: "0 0 6px", fontSize: "26px", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.5px" }}>
+        Join AmyNest AI
+      </h1>
+      <p style={{ margin: "0 0 28px", fontSize: "14px", color: "rgba(200,180,255,0.70)" }}>
         Your AI-powered parenting coach, personalized for your family
       </p>
 
+      {/* Google */}
       <button
         type="button"
         onClick={onGoogle}
         disabled={busy}
-        className="w-full h-11 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 font-semibold text-slate-900 disabled:opacity-60"
+        style={{
+          width: "100%", height: "50px", borderRadius: "14px",
+          background: "rgba(255,255,255,0.07)",
+          border: "1px solid rgba(255,255,255,0.14)",
+          color: "#FFFFFF", fontSize: "15px", fontWeight: 600,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+          cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1,
+          transition: "background 0.18s, border-color 0.18s",
+          fontFamily: "inherit",
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(123,63,242,0.18)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(123,63,242,0.50)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.14)"; }}
       >
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
           <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.49h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.63z"/>
@@ -123,64 +201,106 @@ export default function SignUpPage() {
         Continue with Google
       </button>
 
-      <div className="flex items-center gap-3 my-5">
-        <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs text-slate-400">or</span>
-        <div className="h-px flex-1 bg-slate-200" />
+      {/* Divider */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "20px 0" }}>
+        <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.10)" }} />
+        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>or</span>
+        <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.10)" }} />
       </div>
 
-      <form onSubmit={onEmail} className="space-y-3 text-left">
+      <form onSubmit={onEmail} style={{ display: "flex", flexDirection: "column", gap: "14px", textAlign: "left" }}>
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Your name</label>
+          <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)", marginBottom: "7px" }}>
+            Your name
+          </label>
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 outline-none"
+            onChange={e => setName(e.target.value)}
+            placeholder="First name"
+            style={INPUT_STYLE}
+            onFocus={glowFocus}
+            onBlur={glowBlur}
           />
         </div>
+
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+          <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)", marginBottom: "7px" }}>
+            Email
+          </label>
           <input
             type="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 outline-none"
+            onChange={e => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            style={INPUT_STYLE}
+            onFocus={glowFocus}
+            onBlur={glowBlur}
           />
         </div>
+
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 outline-none"
-          />
-          <p className="mt-1 text-[11px] text-slate-400">
-            At least 6 characters.
-          </p>
+          <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)", marginBottom: "7px" }}>
+            Password
+          </label>
+          <div style={{ position: "relative" }}>
+            <input
+              type={showPass ? "text" : "password"}
+              required
+              minLength={6}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Min. 6 characters"
+              style={{ ...INPUT_STYLE, paddingRight: "44px" }}
+              onFocus={glowFocus}
+              onBlur={glowBlur}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass(s => !s)}
+              style={{
+                position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer",
+                color: "rgba(200,180,255,0.55)", fontSize: "13px", padding: "0",
+              }}
+            >
+              {showPass ? "Hide" : "Show"}
+            </button>
+          </div>
         </div>
+
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+          <div style={{
+            fontSize: "13px", color: "#FF8080",
+            background: "rgba(255,60,60,0.12)", border: "1px solid rgba(255,60,60,0.25)",
+            borderRadius: "12px", padding: "10px 14px",
+          }}>
             {error}
           </div>
         )}
+
         <button
           type="submit"
-          disabled={busy}
-          className="w-full h-11 rounded-xl font-semibold text-white shadow-lg shadow-indigo-200/50 disabled:opacity-60"
-          style={{ background: "linear-gradient(90deg,#6366F1,#A855F7)" }}
+          disabled={busy || !canSubmit}
+          style={{
+            width: "100%", height: "50px", borderRadius: "14px",
+            background: (busy || !canSubmit) ? "rgba(75,75,107,0.7)" : "linear-gradient(90deg, #7B3FF2 0%, #FF4ECD 100%)",
+            border: "none", color: "#FFFFFF", fontSize: "16px", fontWeight: 700,
+            cursor: (busy || !canSubmit) ? "not-allowed" : "pointer",
+            boxShadow: (busy || !canSubmit) ? "none" : "0 4px 24px rgba(123,63,242,0.55), 0 0 0 1px rgba(255,78,205,0.20)",
+            transition: "opacity 0.18s, box-shadow 0.18s",
+            fontFamily: "inherit",
+            marginTop: "4px",
+          }}
         >
           {busy ? "Creating account…" : "Create account"}
         </button>
       </form>
 
-      <p className="mt-5 text-sm text-slate-500">
+      <p style={{ marginTop: "20px", fontSize: "14px", color: "rgba(200,180,255,0.55)", textAlign: "center" }}>
         Already have an account?{" "}
-        <Link href="/sign-in" className="text-indigo-600 font-semibold">
+        <Link href="/sign-in" style={{ color: "#C084FC", fontWeight: 600, textDecoration: "none" }}>
           Sign in
         </Link>
       </p>
