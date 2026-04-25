@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { createHash, randomUUID } from "crypto";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { db, aiCacheTable, userProgressTable, userCoachSessionsTable } from "@workspace/db";
 import { logger } from "../lib/logger.js";
@@ -1317,6 +1317,23 @@ router.get("/ai-coach/progress", async (req, res): Promise<void> => {
       s.feedbacks.push({ win: r.winNumber, feedback: r.feedback, at: r.createdAt.toISOString() });
     }
 
+    // Check which sessions have a restorable coach-session row
+    // (old sessions created before the sessions table existed won't have one)
+    const allSessionIds = Array.from(sessionsMap.keys());
+    const resumableSet = new Set<string>();
+    if (allSessionIds.length > 0) {
+      const coachRows = await db
+        .select({ sessionId: userCoachSessionsTable.sessionId })
+        .from(userCoachSessionsTable)
+        .where(
+          and(
+            eq(userCoachSessionsTable.userId, userId),
+            inArray(userCoachSessionsTable.sessionId, allSessionIds),
+          ),
+        );
+      for (const r of coachRows) resumableSet.add(r.sessionId);
+    }
+
     const sessions = Array.from(sessionsMap.values()).map((s) => ({
       sessionId: s.sessionId,
       goalId: s.goalId,
@@ -1327,6 +1344,7 @@ router.get("/ai-coach/progress", async (req, res): Promise<void> => {
       lastFeedback: s.lastFeedback,
       lastUpdated: s.lastUpdated,
       feedbacks: s.feedbacks.sort((a, b) => a.win - b.win),
+      canResume: resumableSet.has(s.sessionId),
     }));
 
     res.json({ sessions });

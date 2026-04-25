@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { UserCircle, Save, Plus, Trash2, Clock, Utensils, Camera, Loader2 } from "lucide-react";
+import { UserCircle, Save, Plus, Trash2, Clock, Utensils, Camera, Loader2, Bell } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface FreeSlot {
   start: string;
@@ -46,6 +47,7 @@ export default function ParentProfilePage() {
   const { toast } = useToast();
   const { user } = useUser();
   const { getToken } = useAuth();
+  const [, navigate] = useLocation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingPic, setUploadingPic] = useState(false);
@@ -420,6 +422,15 @@ export default function ParentProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <Button
+        variant="outline"
+        onClick={() => navigate("/notification-settings")}
+        className="w-full rounded-xl h-11"
+      >
+        <Bell className="h-4 w-4 mr-2" />
+        Notification Settings
+      </Button>
 
       <Button onClick={handleSave} disabled={saving} className="w-full rounded-xl h-11">
         <Save className="h-4 w-4 mr-2" />

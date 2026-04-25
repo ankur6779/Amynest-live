@@ -579,6 +579,17 @@ export default function ProfileScreen() {
               Last recap sent {new Date(notifPrefs.lastWeeklyRecapSentAt).toLocaleDateString()}.
             </Text>
           ) : null}
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push("/notifications-settings");
+            }}
+            style={[styles.smallActionBtn, { borderColor: colors.primary, marginTop: 8 }]}
+          >
+            <Ionicons name="notifications-outline" size={14} color={colors.primary} />
+            <Text style={[styles.smallActionText, { color: colors.primary }]}>Push notification settings</Text>
+            <Ionicons name="chevron-forward" size={12} color={colors.primary} style={{ marginLeft: "auto" }} />
+          </TouchableOpacity>
         </Section>
 
         {/* My Recipes */}
