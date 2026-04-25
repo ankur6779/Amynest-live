@@ -11,6 +11,7 @@ import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-
 import {
   WakeWindowSystem, SleepIssueDetector, RoutineBuilder, SleepWeeklyInsights,
 } from "@/components/infant-sleep-module";
+import { BuddyMilestonePlanner } from "@/components/infant-milestones";
 import {
   INFANT_CATEGORIES,
   type InfantCategory,
@@ -42,59 +43,6 @@ function getBand(months: number): "0-3" | "3-6" | "6-9" | "9-12" | "12-18" | "18
   if (months < 18) return "12-18";
   return "18-24";
 }
-
-// ─── Milestone Data ───────────────────────────────────────────────────────────
-type Milestone = { id: string; label: string; delayAlert?: string };
-
-const MILESTONES: Record<string, Milestone[]> = {
-  "0-3": [
-    { id: "m0_lift_head", label: "Lifts head briefly during tummy time" },
-    { id: "m0_eye_track", label: "Eyes track a moving face or toy" },
-    { id: "m0_social_smile", label: "Shows first social smile (by 6–8 wks)", delayAlert: "No social smile by 2 months — mention to paediatrician" },
-    { id: "m0_coo", label: "Makes cooing / soft vowel sounds" },
-    { id: "m0_voice_react", label: "Reacts to your voice by turning head" },
-  ],
-  "3-6": [
-    { id: "m3_roll_front", label: "Rolls from tummy to back" },
-    { id: "m3_laughs", label: "Laughs and squeals with delight" },
-    { id: "m3_reach", label: "Reaches for and bats at objects", delayAlert: "Not reaching for objects by 5 months — worth a check-up" },
-    { id: "m3_babble", label: "Babbles ('ba-ba', 'da-da' sounds)" },
-    { id: "m3_head_steady", label: "Holds head steady without support" },
-    { id: "m3_mirror", label: "Recognises self / others in mirror" },
-  ],
-  "6-9": [
-    { id: "m6_sit", label: "Sits with minimal support", delayAlert: "Cannot sit with support by 9 months — discuss with doctor" },
-    { id: "m6_solids", label: "Shows interest in solid foods" },
-    { id: "m6_bye_wave", label: "Waves bye-bye when prompted" },
-    { id: "m6_pass_hands", label: "Passes objects hand to hand" },
-    { id: "m6_stranger", label: "Shows stranger anxiety (normal stage)" },
-    { id: "m6_object_perm", label: "Looks for a toy when it's hidden" },
-  ],
-  "9-12": [
-    { id: "m9_crawl", label: "Crawls or bottom-shuffles to move", delayAlert: "No movement method (crawl, roll, shuffle) by 12 months — mention to doctor" },
-    { id: "m9_pull_stand", label: "Pulls to standing with support" },
-    { id: "m9_pincer", label: "Uses pincer grip (thumb + forefinger)" },
-    { id: "m9_mama_dada", label: "Says 'mama' / 'dada' meaningfully" },
-    { id: "m9_points", label: "Points at interesting things" },
-    { id: "m9_imitate", label: "Imitates simple gestures / actions" },
-  ],
-  "12-18": [
-    { id: "m12_walk", label: "Walks independently (±3 months is normal)", delayAlert: "Not walking by 18 months — paediatrician visit recommended" },
-    { id: "m12_words", label: "Says 5–10 single words meaningfully" },
-    { id: "m12_commands", label: "Follows simple one-step commands" },
-    { id: "m12_spoon", label: "Attempts to self-feed with a spoon" },
-    { id: "m12_stack", label: "Stacks 2–3 blocks or cups" },
-    { id: "m12_scribble", label: "Scribbles with a crayon" },
-  ],
-  "18-24": [
-    { id: "m18_run", label: "Runs (though unsteadily)" },
-    { id: "m18_words50", label: "Vocabulary of 20–50+ words", delayAlert: "Fewer than 15 words by 18 months — early speech evaluation recommended" },
-    { id: "m18_two_word", label: "Begins two-word phrases ('more milk')" },
-    { id: "m18_body_parts", label: "Points to 4–5 body parts when named" },
-    { id: "m18_pretend", label: "Engages in simple pretend play" },
-    { id: "m18_stairs", label: "Climbs stairs with support" },
-  ],
-};
 
 function getFeedingGuide(months: number): { type: string; freq: string; tip: string } {
   if (months < 6) return {
@@ -277,99 +225,6 @@ function IHSection({
           : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
       </button>
       {open && <div className="px-4 pb-4">{children}</div>}
-    </div>
-  );
-}
-
-// ─── Milestone Tracker ────────────────────────────────────────────────────────
-function MilestoneTracker({ childName, ageMonths }: { childName: string; ageMonths: number }) {
-  const band = getBand(ageMonths);
-  const milestones = MILESTONES[band] ?? [];
-  const storageKey = `amynest:milestones:${childName}`;
-
-  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(storageKey) ?? "{}");
-    } catch {
-      return {};
-    }
-  });
-
-  const toggle = useCallback((id: string) => {
-    setChecked((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
-      return next;
-    });
-  }, [storageKey]);
-
-  const doneCount = milestones.filter((m) => checked[m.id]).length;
-  const pct = milestones.length ? Math.round((doneCount / milestones.length) * 100) : 0;
-
-  const bandLabel: Record<string, string> = {
-    "0-3": "0–3 months", "3-6": "3–6 months", "6-9": "6–9 months",
-    "9-12": "9–12 months", "12-18": "12–18 months", "18-24": "18–24 months",
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className="font-semibold">{bandLabel[band]} milestones</span>
-        <span className="font-bold text-primary">{doneCount}/{milestones.length} done</span>
-      </div>
-
-      {/* Progress bar */}
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all duration-500"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-
-      {/* Checklist */}
-      <div className="space-y-2">
-        {milestones.map((m) => (
-          <div key={m.id} className="space-y-1">
-            <button
-              onClick={() => toggle(m.id)}
-              className={[
-                "w-full flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
-                checked[m.id]
-                  ? "bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-400/20"
-                  : "bg-white/50 dark:bg-white/5 border border-border hover:border-primary/40",
-              ].join(" ")}
-            >
-              <div className={[
-                "mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-all",
-                checked[m.id]
-                  ? "bg-emerald-500 border-emerald-500"
-                  : "border-muted-foreground",
-              ].join(" ")}>
-                {checked[m.id] && <span className="text-white text-[9px] font-bold">✓</span>}
-              </div>
-              <span className={`text-sm leading-snug ${checked[m.id] ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                {m.label}
-              </span>
-            </button>
-            {!checked[m.id] && m.delayAlert && (
-              <div className="flex items-start gap-1.5 px-3 text-[11px] text-amber-700 dark:text-amber-400">
-                <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
-                <span>{m.delayAlert}</span>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {doneCount === milestones.length && milestones.length > 0 && (
-        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/20 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-400 font-semibold text-center">
-          🎉 All milestones checked for this stage!
-        </div>
-      )}
-
-      <p className="text-[11px] text-muted-foreground leading-snug">
-        Milestones are ranges, not deadlines. A few weeks' variation is completely normal.
-      </p>
     </div>
   );
 }
@@ -659,9 +514,9 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
         <WeeklyInsight childName={childName} ageMonths={ageMonths} />
       </IHSection>
 
-      {/* ── 2. Milestone Tracker ─────────────────────────────────────────────── */}
-      <IHSection icon={<Activity className="h-4 w-4" />} title="Milestone Tracker">
-        <MilestoneTracker childName={childName} ageMonths={ageMonths} />
+      {/* ── 2. Milestone Tracker — Buddy Planner ─────────────────────────────── */}
+      <IHSection icon={<Activity className="h-4 w-4" />} title="Milestone Buddy" badge="Plan">
+        <BuddyMilestonePlanner childName={childName} ageMonths={ageMonths} />
       </IHSection>
 
       {/* ── 3. Sleep System (Wake Window + Issues + Routine + Insights) ──────── */}
