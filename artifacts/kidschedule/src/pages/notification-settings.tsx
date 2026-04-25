@@ -2,10 +2,24 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useWebPush } from "@/hooks/use-web-push";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft } from "lucide-react";
+import {
+  Bell,
+  Calendar,
+  Sparkles,
+  Heart,
+  Moon,
+  Apple,
+  BarChart3,
+  ChevronLeft,
+  Monitor,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Prefs = {
@@ -80,6 +94,91 @@ const CATEGORIES: CategoryDef[] = [
   },
 ];
 
+function WebPushCard() {
+  const { status, enable, disable } = useWebPush();
+
+  const label =
+    status === "granted"
+      ? "Enabled"
+      : status === "denied"
+        ? "Blocked in browser"
+        : status === "unsupported"
+          ? "Not supported in this browser"
+          : status === "requesting"
+            ? "Requesting permission…"
+            : status === "error"
+              ? "Setup failed — try again"
+              : "Not enabled";
+
+  const Icon =
+    status === "granted"
+      ? CheckCircle2
+      : status === "denied" || status === "error"
+        ? XCircle
+        : status === "requesting"
+          ? Loader2
+          : Monitor;
+
+  const iconColor =
+    status === "granted"
+      ? "text-green-400"
+      : status === "denied" || status === "error"
+        ? "text-red-400"
+        : "text-purple-300";
+
+  return (
+    <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md">
+      <CardContent className="flex items-start gap-4 p-4">
+        <div className="w-10 h-10 rounded-lg bg-purple-500/15 border border-purple-400/20 flex items-center justify-center shrink-0">
+          <Icon
+            className={`w-5 h-5 ${iconColor} ${status === "requesting" ? "animate-spin" : ""}`}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-white">Browser notifications</div>
+          <div className="text-sm text-purple-200/70 mt-1">
+            Receive AmyNest alerts directly in this browser, even when the tab
+            is closed.
+          </div>
+          <div className="text-xs text-purple-300/60 mt-1">{label}</div>
+          {status !== "unsupported" && (
+            <div className="flex gap-2 mt-2">
+              {status !== "granted" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-purple-300 hover:text-white hover:bg-purple-500/20"
+                  onClick={enable}
+                  disabled={status === "requesting" || status === "denied"}
+                >
+                  {status === "requesting" ? "Enabling…" : "Enable"}
+                </Button>
+              )}
+              {status === "granted" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-purple-300/60 hover:text-white hover:bg-purple-500/10"
+                  onClick={disable}
+                >
+                  Disable
+                </Button>
+              )}
+              {status === "denied" && (
+                <span className="text-xs text-red-300/70 mt-1 self-center">
+                  Unblock in browser settings → Site permissions → Notifications
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function NotificationSettingsPage() {
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
@@ -132,7 +231,8 @@ export default function NotificationSettingsPage() {
       } else if (status === "no_tokens") {
         toast({
           title: "No device registered",
-          description: "Open AmyNest on your phone first to register for push.",
+          description:
+            "Enable browser notifications above, or open AmyNest on your phone first.",
         });
       } else {
         toast({
@@ -182,6 +282,16 @@ export default function NotificationSettingsPage() {
           day, never during quiet hours.
         </p>
 
+        <h2 className="text-xs uppercase tracking-widest text-purple-400/60 mb-3">
+          This browser
+        </h2>
+        <div className="mb-6">
+          <WebPushCard />
+        </div>
+
+        <h2 className="text-xs uppercase tracking-widest text-purple-400/60 mb-3">
+          Notification types
+        </h2>
         <div className="space-y-3">
           {CATEGORIES.map((cat) => {
             const enabled = Boolean(local[cat.key]);

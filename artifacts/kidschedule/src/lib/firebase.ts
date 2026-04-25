@@ -37,3 +37,30 @@ export const firebaseAuth: Auth = getAuth(firebaseApp);
 
 // Persist sessions across page reloads.
 void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
+
+/**
+ * Requests an FCM web push token.
+ * Registers the Firebase Messaging service worker, then calls getToken().
+ * Throws if permission is not granted or if the VAPID key is missing.
+ */
+export async function getWebPushToken(vapidKey: string): Promise<string> {
+  const { getMessaging, getToken } = await import("firebase/messaging");
+
+  const basePath = (import.meta.env.BASE_URL as string).replace(/\/$/, "");
+  const swUrl = `${basePath}/firebase-messaging-sw.js`;
+
+  const swReg = await navigator.serviceWorker.register(swUrl, {
+    scope: `${basePath}/`,
+  });
+
+  const messaging = getMessaging(firebaseApp);
+  const token = await getToken(messaging, {
+    vapidKey,
+    serviceWorkerRegistration: swReg,
+  });
+
+  if (!token) {
+    throw new Error("FCM returned an empty token — permission may be blocked.");
+  }
+  return token;
+}

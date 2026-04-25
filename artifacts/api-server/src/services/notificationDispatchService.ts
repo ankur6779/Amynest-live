@@ -7,6 +7,8 @@ import {
   type NotificationCategory,
 } from "@workspace/db";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
+import { getMessaging } from "firebase-admin/messaging";
+import { adminApp } from "../lib/firebase-admin";
 import { logger } from "../lib/logger";
 
 const expo = new Expo();
@@ -175,8 +177,44 @@ async function logEvent(
 }
 
 /**
+ * Send via Firebase Admin to a single FCM web push token.
+ * Errors are logged but do not abort Expo sends.
+ */
+async function sendFcmWebPush(
+  token: string,
+  input: DispatchInput,
+): Promise<void> {
+  await getMessaging(adminApp()).send({
+    token,
+    notification: {
+      title: input.title,
+      body: input.body,
+    },
+    webpush: {
+      notification: {
+        icon: "/pwa-icon-192.png",
+        badge: "/pwa-icon-192.png",
+      },
+      fcmOptions: {
+        link: input.deepLink ?? "/",
+      },
+    },
+    data: {
+      category: input.category,
+      deepLink: input.deepLink ?? "",
+      ...(input.data
+        ? Object.fromEntries(
+            Object.entries(input.data).map(([k, v]) => [k, String(v)]),
+          )
+        : {}),
+    },
+  });
+}
+
+/**
  * Main entry point. Validates against prefs/cap/quiet hours/dedup, then
- * sends the notification to every registered Expo push token for the user.
+ * sends the notification to every registered Expo push token (mobile) and
+ * every FCM web push token (browser) for the user.
  */
 export async function dispatchNotification(input: DispatchInput): Promise<DispatchResult> {
   const prefs = await getOrCreatePreferences(input.userId);
@@ -209,49 +247,91 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     .from(pushTokensTable)
     .where(eq(pushTokensTable.userId, input.userId));
 
-  const valid = tokens.filter((t) => Expo.isExpoPushToken(t.token));
-  if (valid.length === 0) {
+  const expoTokens = tokens.filter((t) => Expo.isExpoPushToken(t.token));
+  const webTokens = tokens.filter(
+    (t) => !Expo.isExpoPushToken(t.token) && t.platform === "web",
+  );
+
+  if (expoTokens.length === 0 && webTokens.length === 0) {
     await logEvent(input, "no_tokens", "no_valid_tokens");
     return { status: "no_tokens", reason: "no_valid_tokens" };
   }
 
-  const messages: ExpoPushMessage[] = valid.map((t) => ({
-    to: t.token,
-    sound: "default",
-    title: input.title,
-    body: input.body,
-    data: {
-      category: input.category,
-      deepLink: input.deepLink,
-      ...(input.data ?? {}),
-    },
-  }));
+  const ticketIds: string[] = [];
 
-  const tickets: ExpoPushTicket[] = [];
-  try {
-    const chunks = expo.chunkPushNotifications(messages);
-    for (const chunk of chunks) {
-      const chunkTickets = await expo.sendPushNotificationsAsync(chunk);
-      tickets.push(...chunkTickets);
+  // ── Expo (mobile) ──────────────────────────────────────────────────────────
+  if (expoTokens.length > 0) {
+    const messages: ExpoPushMessage[] = expoTokens.map((t) => ({
+      to: t.token,
+      sound: "default",
+      title: input.title,
+      body: input.body,
+      data: {
+        category: input.category,
+        deepLink: input.deepLink,
+        ...(input.data ?? {}),
+      },
+    }));
+
+    const tickets: ExpoPushTicket[] = [];
+    try {
+      const chunks = expo.chunkPushNotifications(messages);
+      for (const chunk of chunks) {
+        const chunkTickets = await expo.sendPushNotificationsAsync(chunk);
+        tickets.push(...chunkTickets);
+      }
+    } catch (err) {
+      logger.error(
+        { err, userId: input.userId, category: input.category },
+        "Expo dispatch failed",
+      );
+      await logEvent(input, "failed", err instanceof Error ? err.message : String(err), "expo");
+      return { status: "failed", reason: "expo_error" };
     }
-  } catch (err) {
-    logger.error({ err, userId: input.userId, category: input.category }, "Expo dispatch failed");
-    await logEvent(input, "failed", err instanceof Error ? err.message : String(err));
-    return { status: "failed", reason: "expo_error" };
+
+    const errorTicket = tickets.find((t) => t.status === "error");
+    if (errorTicket && errorTicket.status === "error") {
+      await logEvent(input, "failed", errorTicket.message, "expo");
+      return { status: "failed", reason: errorTicket.message };
+    }
+
+    tickets
+      .map((t) => (t.status === "ok" ? t.id : null))
+      .filter((id): id is string => Boolean(id))
+      .forEach((id) => ticketIds.push(id));
   }
 
-  const errorTicket = tickets.find((t) => t.status === "error");
-  if (errorTicket && errorTicket.status === "error") {
-    await logEvent(input, "failed", errorTicket.message, valid[0]?.platform);
-    return { status: "failed", reason: errorTicket.message };
+  // ── FCM web push (browser) ─────────────────────────────────────────────────
+  if (webTokens.length > 0) {
+    await Promise.allSettled(
+      webTokens.map(async (t) => {
+        try {
+          await sendFcmWebPush(t.token, input);
+        } catch (err) {
+          logger.error(
+            { err, userId: input.userId, token: t.token.slice(0, 20) },
+            "FCM web push failed",
+          );
+        }
+      }),
+    );
   }
 
-  const ticketIds = tickets
-    .map((t) => (t.status === "ok" ? t.id : null))
-    .filter((id): id is string => Boolean(id));
-  await logEvent(input, "sent", undefined, valid[0]?.platform);
+  const platform =
+    expoTokens.length > 0 && webTokens.length > 0
+      ? "expo+web"
+      : expoTokens.length > 0
+        ? "expo"
+        : "web";
+
+  await logEvent(input, "sent", undefined, platform);
   logger.info(
-    { userId: input.userId, category: input.category, tokens: valid.length },
+    {
+      userId: input.userId,
+      category: input.category,
+      expoTokens: expoTokens.length,
+      webTokens: webTokens.length,
+    },
     "Notification dispatched",
   );
   return { status: "sent", ticketIds };
