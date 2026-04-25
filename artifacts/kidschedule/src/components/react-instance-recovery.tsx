@@ -1,11 +1,10 @@
 import { Component, type ReactNode } from "react";
 
-const RECOVERY_FLAG_KEY = "amynest:react-instance-recovery";
 const RECOVERY_TS_KEY = "amynest:react-instance-recovery:ts";
 const RECOVERY_COUNT_KEY = "amynest:react-instance-recovery:count";
 
 const RECOVERY_WINDOW_MS = 30_000;
-const MAX_RECOVERIES_IN_WINDOW = 2;
+const MAX_RECOVERIES_IN_WINDOW = 3;
 
 function isReactInstanceCrash(err: unknown): boolean {
   if (!err) return false;
@@ -25,8 +24,33 @@ function isReactInstanceCrash(err: unknown): boolean {
   );
 }
 
-function tryHardReload(): void {
+async function clearAllCaches(): Promise<void> {
   if (typeof window === "undefined") return;
+
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister().catch(() => false)));
+    }
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k).catch(() => false)));
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+let reloadInFlight = false;
+
+function tryHardReload(): boolean {
+  if (typeof window === "undefined") return false;
+  if (reloadInFlight) return true;
 
   const now = Date.now();
   let lastTs = 0;
@@ -42,7 +66,7 @@ function tryHardReload(): void {
 
   if (lastTs && now - lastTs < RECOVERY_WINDOW_MS) {
     if (count >= MAX_RECOVERIES_IN_WINDOW) {
-      return;
+      return false;
     }
     count += 1;
   } else {
@@ -50,16 +74,22 @@ function tryHardReload(): void {
   }
 
   try {
-    window.sessionStorage.setItem(RECOVERY_FLAG_KEY, "1");
     window.sessionStorage.setItem(RECOVERY_TS_KEY, String(now));
     window.sessionStorage.setItem(RECOVERY_COUNT_KEY, String(count));
   } catch {
     /* ignore */
   }
 
-  const url = new URL(window.location.href);
-  url.searchParams.set("_r", String(now));
-  window.location.replace(url.toString());
+  reloadInFlight = true;
+
+  void (async () => {
+    await clearAllCaches();
+    const url = new URL(window.location.href);
+    url.searchParams.set("_r", String(now));
+    window.location.replace(url.toString());
+  })();
+
+  return true;
 }
 
 let globalListenersInstalled = false;
@@ -82,8 +112,9 @@ function installGlobalRecoveryListeners(): void {
 }
 
 interface State {
-  recovered: boolean;
   fatal: boolean;
+  reloading: boolean;
+  message: string;
 }
 
 export class ReactInstanceRecovery extends Component<
@@ -92,72 +123,91 @@ export class ReactInstanceRecovery extends Component<
 > {
   constructor(props: { children: ReactNode }) {
     super(props);
-    this.state = { recovered: false, fatal: false };
+    this.state = { fatal: false, reloading: false, message: "" };
     installGlobalRecoveryListeners();
   }
 
-  static getDerivedStateFromError(err: unknown): Partial<State> | null {
+  static getDerivedStateFromError(err: unknown): Partial<State> {
+    const message =
+      err instanceof Error ? err.message : String(err ?? "Unknown error");
     if (isReactInstanceCrash(err)) {
-      tryHardReload();
-      return { recovered: true };
+      const willReload = tryHardReload();
+      if (willReload) {
+        return { reloading: true, message };
+      }
+      return { fatal: true, message };
     }
-    return { fatal: true };
+    return { fatal: true, message };
   }
 
-  componentDidCatch(err: unknown): void {
-    if (isReactInstanceCrash(err)) {
-      tryHardReload();
-    }
+  componentDidCatch(_err: unknown): void {
+    /* getDerivedStateFromError already handled it */
+  }
+
+  private renderFallback(reloading: boolean) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px",
+          background: "#0b0820",
+          color: "#fff",
+          fontFamily:
+            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        }}
+      >
+        <div style={{ maxWidth: 420, textAlign: "center" }}>
+          <h1 style={{ fontSize: 22, marginBottom: 12 }}>
+            {reloading ? "Refreshing AmyNest…" : "Something went wrong"}
+          </h1>
+          <p style={{ opacity: 0.8, marginBottom: 20, lineHeight: 1.5 }}>
+            {reloading
+              ? "Clearing the cache and reloading the page."
+              : "Tap the button below to clear the cache and reload."}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window === "undefined") return;
+              this.setState({ reloading: true });
+              void (async () => {
+                try {
+                  window.sessionStorage.removeItem(RECOVERY_TS_KEY);
+                  window.sessionStorage.removeItem(RECOVERY_COUNT_KEY);
+                } catch {
+                  /* ignore */
+                }
+                await clearAllCaches();
+                const url = new URL(window.location.href);
+                url.searchParams.set("_r", String(Date.now()));
+                window.location.replace(url.toString());
+              })();
+            }}
+            style={{
+              padding: "12px 24px",
+              borderRadius: 9999,
+              background: "linear-gradient(135deg,#a855f7,#ec4899)",
+              color: "#fff",
+              fontWeight: 600,
+              border: 0,
+              cursor: "pointer",
+              fontSize: 16,
+            }}
+            disabled={reloading}
+          >
+            {reloading ? "Reloading…" : "Reload AmyNest"}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   render(): ReactNode {
-    if (this.state.recovered) {
-      return null;
-    }
-    if (this.state.fatal) {
-      return (
-        <div
-          style={{
-            minHeight: "100vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "24px",
-            background: "#0b0820",
-            color: "#fff",
-            fontFamily:
-              "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          }}
-        >
-          <div style={{ maxWidth: 420, textAlign: "center" }}>
-            <h1 style={{ fontSize: 22, marginBottom: 12 }}>
-              Something went wrong
-            </h1>
-            <p style={{ opacity: 0.8, marginBottom: 20 }}>
-              Please reload the page to try again.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.location.reload();
-                }
-              }}
-              style={{
-                padding: "10px 20px",
-                borderRadius: 9999,
-                background: "linear-gradient(135deg,#a855f7,#ec4899)",
-                color: "#fff",
-                fontWeight: 600,
-                border: 0,
-                cursor: "pointer",
-              }}
-            >
-              Reload
-            </button>
-          </div>
-        </div>
-      );
+    if (this.state.reloading || this.state.fatal) {
+      return this.renderFallback(this.state.reloading);
     }
     return this.props.children;
   }
