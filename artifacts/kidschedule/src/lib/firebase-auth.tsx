@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   onIdTokenChanged,
   browserLocalPersistence,
@@ -79,7 +79,7 @@ function fbToShim(u: FirebaseUser): ShimUser {
   };
 }
 
-export function FirebaseAuthProvider({ children }: { children: React.ReactNode }) {
+export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     fbUser: null,
@@ -195,7 +195,7 @@ export function Show({
   children,
 }: {
   when: "signed-in" | "signed-out";
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const { isLoaded, isSignedIn } = useAuth();
   if (!isLoaded) return null;
