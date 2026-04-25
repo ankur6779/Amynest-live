@@ -1,0 +1,59 @@
+We identified a critical UX and data issue in Parent Hub for multi-child accounts.
+
+Problem:
+- When a parent has more than one child, content is not fully displayed or is inconsistent.
+- Current system is age-based, but there is NO option to select or switch between children.
+- As a result, content is either mixed, incorrect, or partially rendered.
+
+Fix Requirements:
+
+1. Active Child Selection (Core Fix)
+- Introduce a "Child Selector" at the top of Parent Hub.
+- UI options:
+  • Dropdown OR horizontal child avatar switcher
+  • Show: Name + Age of each child
+- Default behavior:
+  • Auto-select last active child OR first child
+- Switching child should dynamically reload all content.
+
+2. State Management
+- Maintain a global "activeChildId"
+- All APIs and UI rendering must depend on activeChildId
+- On child switch:
+  • Reset state
+  • Refetch all data (activities, insights, recommendations)
+
+3. Content Personalization Fix
+- Ensure ALL content is filtered strictly by selected child:
+  • Age-based recommendations
+  • Health insights
+  • Activities / learning modules
+- No mixed data from multiple children
+
+4. Backend/API Alignment
+- Update all relevant APIs to require childId parameter
+- Validate:
+  • Correct child-specific data is returned
+  • No fallback to parent-level generic data unless needed
+
+5. Empty / Edge States
+- If no child selected → force selection (no content load)
+- If child has no data → show "No data available for this child"
+- Handle multiple children smoothly (2–5 children UX tested)
+
+6. Persistence
+- Save last selected child locally (AsyncStorage / local storage)
+- Restore on app reopen
+
+7. Optional Enhancement (if feasible)
+- Add "All Children View" (aggregated insights dashboard)
+- Clearly separate combined vs individual data
+
+8. Testing
+- Test with:
+  • 1 child (no selector visible or optional)
+  • 2+ children (selector mandatory)
+- Validate full flow:
+  Parent Hub → Switch Child → Content updates correctly
+
+Deliver clean implementation with reusable component for Child Selector.

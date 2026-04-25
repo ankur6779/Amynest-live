@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   BookOpen, Brain, Sparkles, Heart, Palette,
   ChevronDown, ChevronUp, MessageCircleHeart,
-  Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList,
+  Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap,
 } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
@@ -410,7 +410,16 @@ export default function ParentingHub() {
 
       {/* 🧠 Parent Command Center — overview · insights · quick actions */}
       {effectiveChild && (
-        <ParentCommandCenter child={{ id: effectiveChild.id, name: effectiveChild.name }} />
+        <HubSection
+          id="command-center"
+          icon={<Zap className="h-5 w-5 text-sky-600" />}
+          title="Command Center"
+          description="Today's overview, mood, sleep & quick actions"
+          accentClass="bg-sky-100 dark:bg-sky-500/20"
+          defaultOpen={false}
+        >
+          <ParentCommandCenter child={{ id: effectiveChild.id, name: effectiveChild.name }} />
+        </HubSection>
       )}
 
       {/* Infant & Toddler Hub — only when any child is ≤ 24 months */}
@@ -446,9 +455,18 @@ export default function ParentingHub() {
         </div>
       )}
 
-      {/* 🔮 Future Predictor — top placement */}
+      {/* 🔮 Amy AI Tomorrow Forecast — collapsible */}
       {effectiveChild && (
-        <FuturePredictor childId={effectiveChild.id} />
+        <HubSection
+          id="tomorrow-forecast"
+          icon={<Sparkles className="h-5 w-5 text-violet-600" />}
+          title="Amy AI — Tomorrow's Forecast"
+          description="Mood, energy & sleep prediction for tomorrow"
+          accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20"
+          defaultOpen={false}
+        >
+          <FuturePredictor childId={effectiveChild.id} />
+        </HubSection>
       )}
 
       {/* ── Sections — 2-column on lg+, single column on mobile/tablet ── */}
