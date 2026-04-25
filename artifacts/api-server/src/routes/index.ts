@@ -20,6 +20,7 @@ import mealsRouter from "./meals";
 import accountRouter from "./account";
 import pushRouter from "./push";
 import notificationsRouter from "./notifications";
+import notificationPrefsRouter from "./notification-prefs";
 import authDebugRouter from "./auth-debug";
 import featureFeedbackRouter from "./feature-feedback";
 import featureUsageRouter from "./feature-usage";
@@ -68,6 +69,7 @@ router.use(giftTokensRouter);
 router.use(accountRouter);
 router.use(pushRouter);
 router.use(notificationsRouter);
+router.use(notificationPrefsRouter);
 router.use(recipesRouter);
 router.use(ttsRouter);
 

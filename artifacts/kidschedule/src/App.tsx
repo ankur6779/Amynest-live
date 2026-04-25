@@ -45,6 +45,7 @@ import PricingPage from "@/pages/pricing";
 import ReferralsPage from "@/pages/referrals";
 import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
+import NotificationSettingsPage from "@/pages/notification-settings";
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { PaywallProvider } from "@/contexts/paywall-context";
 import { PaywallModal } from "@/components/paywall-modal";
@@ -200,6 +201,9 @@ function AppRoutes() {
           </Route>
           <Route path="/parent-profile">
             {() => <ProtectedRoute component={ParentProfile} requiresProfile={false} />}
+          </Route>
+          <Route path="/notification-settings">
+            {() => <ProtectedRoute component={NotificationSettingsPage} requiresProfile={false} />}
           </Route>
           <Route path="/babysitters">
             {() => <ProtectedRoute component={BabysittersPage} />}

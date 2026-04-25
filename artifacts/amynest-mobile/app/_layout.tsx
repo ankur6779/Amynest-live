@@ -22,6 +22,7 @@ import { useAppDataBootstrap } from "@/hooks/useAppData";
 import { useOfflineSyncBootstrap } from "@/hooks/useOfflineSync";
 import { useSubscriptionBootstrap } from "@/hooks/useSubscription";
 import { usePushRegistration } from "@/hooks/usePushRegistration";
+import { useNotificationDeepLink } from "@/hooks/useNotificationDeepLink";
 import "@/i18n";
 import { brand } from "@/constants/colors";
 import { initCrashReporter } from "@/utils/crashReporter";
@@ -71,6 +72,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useSubscriptionBootstrap();
   // Register Expo push token with backend (best-effort, no-ops on web/sim)
   usePushRegistration();
+  // Listen for notification taps and deep-link into the right screen
+  useNotificationDeepLink();
 
   // Hidden component — captures `?ref=CODE` from deep links and submits to API.
   // Rendering inline keeps it inside the QueryClient + ClerkProvider tree.

@@ -37,3 +37,5 @@ export * from "./admin_premium_grants";
 export * from "./feature_usage";
 export * from "./tts_cache";
 export * from "./gift_tokens";
+export * from "./notification_preferences";
+export * from "./notification_log";
