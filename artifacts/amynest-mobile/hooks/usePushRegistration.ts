@@ -2,17 +2,28 @@ import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import { useAuth } from "@/lib/firebase-auth";
 import * as Device from "expo-device";
-import Constants from "expo-constants";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 
 // expo-notifications remote push was removed from Expo Go in SDK 53.
 // Only attempt to import + use it when running in a standalone/dev build.
-const isExpoGo = Constants.appOwnership === "expo";
+// Constants.appOwnership is deprecated in SDK 49+ and unreliable in SDK 54
+// (returns undefined in Expo Go), so use executionEnvironment instead.
+const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
+  Constants.appOwnership === "expo";
 // Dynamic import only in non-Expo-Go environments to avoid the SDK 53 crash.
+// Wrapped in try/catch as a final safety net — if the native module is missing
+// for any reason (Expo Go, web, simulator without push), we degrade gracefully
+// instead of crashing the JS bundle on boot.
 let Notifications: typeof import("expo-notifications") | null = null;
-if (!isExpoGo) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Notifications = require("expo-notifications") as typeof import("expo-notifications");
+if (!isExpoGo && Platform.OS !== "web") {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Notifications = require("expo-notifications") as typeof import("expo-notifications");
+  } catch {
+    Notifications = null;
+  }
 }
 
 /**

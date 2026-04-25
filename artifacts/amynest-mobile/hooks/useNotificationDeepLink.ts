@@ -1,12 +1,21 @@
 import { useEffect } from "react";
+import { Platform } from "react-native";
 import { useRouter } from "expo-router";
-import Constants from "expo-constants";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 
-const isExpoGo = Constants.appOwnership === "expo";
+// Constants.appOwnership is deprecated in SDK 49+ and unreliable in SDK 54
+// (returns undefined in Expo Go), so use executionEnvironment instead.
+const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
+  Constants.appOwnership === "expo";
 let Notifications: typeof import("expo-notifications") | null = null;
-if (!isExpoGo) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Notifications = require("expo-notifications") as typeof import("expo-notifications");
+if (!isExpoGo && Platform.OS !== "web") {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Notifications = require("expo-notifications") as typeof import("expo-notifications");
+  } catch {
+    Notifications = null;
+  }
 }
 
 /**
