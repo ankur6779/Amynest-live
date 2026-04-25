@@ -6,7 +6,14 @@ import {
   signOut as fbSignOut,
   type User as FirebaseUser,
 } from "firebase/auth";
-import { firebaseAuth } from "./firebase";
+let firebaseAuthPromise: Promise<import("firebase/auth").Auth> | null = null;
+
+async function getFirebaseAuth() {
+  if (!firebaseAuthPromise) {
+    firebaseAuthPromise = import("./firebase").then((m) => m.firebaseAuth);
+  }
+  return firebaseAuthPromise;
+}
 
 /**
  * A Clerk-shaped wrapper around Firebase Auth. Lets the existing app keep
@@ -90,24 +97,28 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Use onIdTokenChanged (not onAuthStateChanged) so token refreshes don't
     // get missed — getToken() always returns a fresh token via the SDK cache.
-    void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
-    const unsub = onIdTokenChanged(firebaseAuth, (fbUser) => {
-      const shim = fbUser ? fbToShim(fbUser) : null;
-      setState({ user: shim, fbUser, isLoaded: true });
-      for (const l of listenersRef.current) {
-        try {
-          l({ user: shim });
-        } catch {
-          /* ignore listener errors */
+    let unsub = () => {};
+    void getFirebaseAuth().then((firebaseAuth) => {
+      void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
+      unsub = onIdTokenChanged(firebaseAuth, (fbUser) => {
+        const shim = fbUser ? fbToShim(fbUser) : null;
+        setState({ user: shim, fbUser, isLoaded: true });
+        for (const l of listenersRef.current) {
+          try {
+            l({ user: shim });
+          } catch {
+            /* ignore listener errors */
+          }
         }
-      }
+      });
     });
-    return unsub;
+    return () => unsub();
   }, []);
 
   const getToken = useCallback(
     async (opts?: { skipCache?: boolean }): Promise<string | null> => {
-      const u = firebaseAuth.currentUser;
+      const auth = await getFirebaseAuth();
+      const u = auth.currentUser;
       if (!u) return null;
       try {
         return await u.getIdToken(opts?.skipCache === true);
@@ -119,7 +130,8 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async (opts?: { redirectUrl?: string }) => {
-    await fbSignOut(firebaseAuth);
+    const auth = await getFirebaseAuth();
+    await fbSignOut(auth);
     if (opts?.redirectUrl && typeof window !== "undefined") {
       window.location.href = opts.redirectUrl;
     }
