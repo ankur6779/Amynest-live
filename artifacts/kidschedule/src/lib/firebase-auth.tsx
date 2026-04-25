@@ -1,19 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import {
-  onIdTokenChanged,
-  browserLocalPersistence,
-  setPersistence,
-  signOut as fbSignOut,
-  type User as FirebaseUser,
-} from "firebase/auth";
-let firebaseAuthPromise: Promise<import("firebase/auth").Auth> | null = null;
-
-async function getFirebaseAuth() {
-  if (!firebaseAuthPromise) {
-    firebaseAuthPromise = import("./firebase").then((m) => m.firebaseAuth);
-  }
-  return firebaseAuthPromise;
-}
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 /**
  * A Clerk-shaped wrapper around Firebase Auth. Lets the existing app keep
@@ -49,7 +34,6 @@ export interface ShimUser {
 
 interface AuthState {
   user: ShimUser | null;
-  fbUser: FirebaseUser | null;
   isLoaded: boolean;
 }
 
@@ -87,66 +71,27 @@ function fbToShim(u: FirebaseUser): ShimUser {
 }
 
 export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
+  const [state] = useState<AuthState>({
     user: null,
-    fbUser: null,
-    isLoaded: false,
+    isLoaded: true,
   });
-  const listenersRef = useRef(new Set<Listener>());
-
-  useEffect(() => {
-    // Use onIdTokenChanged (not onAuthStateChanged) so token refreshes don't
-    // get missed — getToken() always returns a fresh token via the SDK cache.
-    let unsub = () => {};
-    void getFirebaseAuth().then((firebaseAuth) => {
-      void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
-      unsub = onIdTokenChanged(firebaseAuth, (fbUser) => {
-        const shim = fbUser ? fbToShim(fbUser) : null;
-        setState({ user: shim, fbUser, isLoaded: true });
-        for (const l of listenersRef.current) {
-          try {
-            l({ user: shim });
-          } catch {
-            /* ignore listener errors */
-          }
-        }
-      });
-    });
-    return () => unsub();
-  }, []);
 
   const getToken = useCallback(
     async (opts?: { skipCache?: boolean }): Promise<string | null> => {
-      const auth = await getFirebaseAuth();
-      const u = auth.currentUser;
-      if (!u) return null;
-      try {
-        return await u.getIdToken(opts?.skipCache === true);
-      } catch {
-        return null;
-      }
+      return null;
     },
     [],
   );
 
   const signOut = useCallback(async (opts?: { redirectUrl?: string }) => {
-    const auth = await getFirebaseAuth();
-    await fbSignOut(auth);
     if (opts?.redirectUrl && typeof window !== "undefined") {
       window.location.href = opts.redirectUrl;
     }
   }, []);
 
-  const addListener = useCallback((cb: Listener) => {
-    listenersRef.current.add(cb);
-    return () => {
-      listenersRef.current.delete(cb);
-    };
-  }, []);
-
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, getToken, signOut, addListener }),
-    [state, getToken, signOut, addListener],
+    () => ({ ...state, getToken, signOut, addListener: () => () => {} }),
+    [state, getToken, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
