@@ -3,7 +3,7 @@ import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useCreateChild, useUpdateChild, useGetChild, getGetChildQueryKey, useDeleteChild, getListChildrenQueryKey } from "@workspace/api-client-react";
+import { useCreateChild, useUpdateChild, useGetChild, getGetChildQueryKey, useDeleteChild, getListChildrenQueryKey, useListChildren } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Trash2, Loader2, Baby, Camera, X, GraduationCap, School } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Loader2, Baby, Camera, X, GraduationCap, School, Crown, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -87,6 +87,7 @@ export default function ChildForm() {
   const authFetch = useAuthFetch();
   const [babysitters, setBabysitters] = useState<Babysitter[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = !!params.id && params.id !== "new";
@@ -95,6 +96,12 @@ export default function ChildForm() {
   const { data: child, isLoading: isLoadingChild } = useGetChild(childId, {
     query: { enabled: isEditing, queryKey: getGetChildQueryKey(childId) }
   });
+
+  // Check existing children count to show upgrade warning upfront
+  const { data: existingChildren } = useListChildren({ query: { enabled: !isEditing, queryKey: getListChildrenQueryKey() } });
+  const existingCount = existingChildren?.length ?? 0;
+  const FREE_CHILD_LIMIT = 1;
+  const isAtFreeLimit = !isEditing && existingCount >= FREE_CHILD_LIMIT;
 
   const createMutation = useCreateChild();
   const updateMutation = useUpdateChild();
@@ -236,7 +243,13 @@ export default function ChildForm() {
             // and the user can immediately use everything.
             window.location.href = "/dashboard";
           },
-          onError: () => toast({ title: "Failed to add child", variant: "destructive" }),
+          onError: (err: any) => {
+            if (err?.status === 402 && err?.data?.error === "child_limit_reached") {
+              setShowUpgradePrompt(true);
+            } else {
+              toast({ title: "Failed to add child", variant: "destructive" });
+            }
+          },
         }
       );
     }
@@ -262,6 +275,33 @@ export default function ChildForm() {
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500 max-w-2xl mx-auto">
+
+      {/* Upgrade prompt dialog — shown when 402 is returned */}
+      <AlertDialog open={showUpgradePrompt} onOpenChange={setShowUpgradePrompt}>
+        <AlertDialogContent className="rounded-3xl max-w-sm mx-auto">
+          <AlertDialogHeader>
+            <div className="flex justify-center mb-3">
+              <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center">
+                <Crown className="h-7 w-7 text-amber-500" />
+              </div>
+            </div>
+            <AlertDialogTitle className="text-center text-xl">Upgrade to Premium</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              The free plan supports <strong>1 child</strong>. Upgrade to Premium to add unlimited children and unlock all AmyNest features.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <Link href="/pricing">
+              <AlertDialogAction className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white rounded-2xl h-12 font-bold text-base">
+                <Sparkles className="h-4 w-4 mr-2" />
+                See Upgrade Plans
+              </AlertDialogAction>
+            </Link>
+            <AlertDialogCancel className="w-full rounded-2xl">Maybe Later</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <header className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild className="rounded-full">
           <Link href="/children"><ArrowLeft className="h-5 w-5" /></Link>
@@ -275,6 +315,26 @@ export default function ChildForm() {
           </p>
         </div>
       </header>
+
+      {/* Upfront banner when user is already at the free limit */}
+      {isAtFreeLimit && (
+        <div className="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+            <Crown className="h-4 w-4 text-amber-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-amber-900 text-sm">Free plan: 1 child only</p>
+            <p className="text-amber-700 text-xs mt-1">
+              You already have {existingCount} child profile. Upgrade to Premium to add more children and unlock all features.
+            </p>
+            <Link href="/pricing">
+              <button className="mt-2 text-xs font-bold text-amber-700 underline underline-offset-2 hover:text-amber-900">
+                View upgrade plans →
+              </button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card">
         <CardContent className="p-6 sm:p-8">
