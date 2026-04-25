@@ -3,10 +3,11 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Image,
 } from "react-native";
-import { createUserWithEmailAndPassword, updateProfile, signInWithCredential, signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
+import { signInWithGoogleOneTap } from "@/utils/googleOneTap";
 
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
@@ -107,14 +108,16 @@ export default function SignUpScreen() {
     setGoogleLoading(true);
 
     if (Platform.OS === "web") {
-      try {
-        const provider = new GoogleAuthProvider();
-        await signInWithRedirect(firebaseAuth, provider);
-        // Page navigates away — loading state resets when app reloads
-      } catch (err) {
+      if (!GOOGLE_WEB_CLIENT_ID) {
         setGoogleLoading(false);
-        Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));
+        Alert.alert("Google Sign-In Not Configured", "Use email + password for now.");
+        return;
       }
+      await signInWithGoogleOneTap(
+        GOOGLE_WEB_CLIENT_ID,
+        setGoogleLoading,
+        (msg) => Alert.alert("Sign Up Failed", msg),
+      );
       return;
     }
 
