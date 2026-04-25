@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Image,
 } from "react-native";
-import { createUserWithEmailAndPassword, updateProfile, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, signInWithCredential, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
@@ -103,12 +103,26 @@ export default function SignUpScreen() {
   }, [googleResponse, router]);
 
   const handleGoogleSignUp = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setGoogleLoading(true);
+
+    if (Platform.OS === "web") {
+      try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(firebaseAuth, provider);
+      } catch (err) {
+        Alert.alert("Sign Up Failed", humanizeError(err, "Google sign-in failed. Please try again."));
+      } finally {
+        setGoogleLoading(false);
+      }
+      return;
+    }
+
     if (!GOOGLE_WEB_CLIENT_ID) {
+      setGoogleLoading(false);
       Alert.alert("Google Sign-In Not Configured", "Use email + password for now.");
       return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setGoogleLoading(true);
     try {
       await promptGoogle();
     } catch (err) {
