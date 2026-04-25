@@ -8,7 +8,7 @@ import { usePaywall } from "@/contexts/paywall-context";
 import {
   Sparkles, ArrowLeft, ArrowRight, Loader2, Search,
   Check, ChevronLeft, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart,
-  Printer, Volume2, VolumeX,
+  Printer, Volume2, VolumeX, Lock,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -177,6 +177,43 @@ const GOAL_CATEGORIES: GoalCategory[] = [
 
 const ALL_GOALS: GoalItem[] = GOAL_CATEGORIES.flatMap((c) => c.items);
 
+// ─── Free vs Premium goal gating ──────────────────────────────────────────
+// Exactly ONE goal per category is offered as a free sample.
+// Every other goal requires a premium subscription.
+const FREE_GOAL_IDS = new Set<string>([
+  "manage-tantrums",                    // Behavior
+  "balance-screen-time",                // Screen & Focus
+  "navigate-fussy-eating",              // Eating
+  "improve-sleep-patterns",             // Sleep
+  "boost-concentration",                // Learning
+  "baby-not-sleeping",                  // Infant Problems (0–2 yrs)
+  "manage-grandparents-interference",   // Parenting Challenges
+  "toddler-tantrums",                   // Toddler Behavior (2–4 yrs)
+  "potty-training-readiness",           // Daily Skills & Independence
+  "sibling-rivalry",                    // Family Dynamics
+  "travel-with-kids",                   // Special Situations
+  "child-obesity-management",           // Kids Health Concern
+  "parent-burnout",                     // For You (Parent Self-Care)
+]);
+
+type GoalAccess = "open" | "try-free" | "locked";
+
+function GoalBadge({ access }: { access: GoalAccess }) {
+  if (access === "open") return null;
+  if (access === "try-free") {
+    return (
+      <span className="absolute top-2 right-2 flex items-center gap-0.5 text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full shadow-md pointer-events-none select-none">
+        ✦ Try Free
+      </span>
+    );
+  }
+  return (
+    <span className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold bg-black/30 text-white/90 px-1.5 py-0.5 rounded-full border border-white/25 backdrop-blur-sm pointer-events-none select-none">
+      <Lock className="h-2.5 w-2.5" /> Premium
+    </span>
+  );
+}
+
 // Goals whose parent category already implies an age → skip the ageGroup question.
 // "for-you" is parent self-care, so age is irrelevant — we mark it as adult.
 const CATEGORY_IMPLIED_AGE: Record<string, string> = {
@@ -316,6 +353,14 @@ export default function AICoachPage() {
   const coachUsage = useSectionUsage("amy_coach");
   const { openPaywall } = usePaywall();
 
+  // Returns the access level for a given goal card.
+  const getGoalAccess = useCallback((goalId: string): GoalAccess => {
+    if (coachUsage.isPremium) return "open";
+    if (!FREE_GOAL_IDS.has(goalId)) return "locked";
+    if (coachUsage.fullyUsed) return "locked";
+    return "try-free";
+  }, [coachUsage.isPremium, coachUsage.fullyUsed]);
+
   // ─── Resume session: detect ?resume=<sessionId>, load plan + feedback ────
   useEffect(() => {
     if (!resumeSessionId) return;
@@ -373,6 +418,12 @@ export default function AICoachPage() {
 
   // ─── Goals → Questions (or → 12-card Result for the 0–2 yr topic)
   const handlePickGoal = (id: string) => {
+    // Non-free goal → paywall immediately for free users
+    if (!coachUsage.isPremium && !FREE_GOAL_IDS.has(id)) {
+      openPaywall("coach_locked");
+      return;
+    }
+    // Free goal but free try already used → paywall
     if (!coachUsage.isPremium && coachUsage.fullyUsed) {
       openPaywall("coach_locked");
       return;
@@ -882,18 +933,29 @@ export default function AICoachPage() {
                   <span>{cat.emoji}</span> {cat.title}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {cat.items.map((g) => (
-                    <button key={g.id} onClick={() => handlePickGoal(g.id)}
-                      className="relative rounded-2xl p-4 border border-white/10 text-left backdrop-blur-md hover:border-violet-400/50 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center gap-3 overflow-hidden"
-                      style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%)", boxShadow: "0 0 15px rgba(139,92,246,0.1), inset 0 1px 0 rgba(255,255,255,0.05)" }}
-                    >
-                      <span className="text-2xl shrink-0">{g.emoji}</span>
-                      <div>
-                        <p className="font-quicksand font-bold text-sm text-white leading-tight">{g.title}</p>
-                        <p className="text-[11px] text-white/40 mt-0.5">Tap to start →</p>
-                      </div>
-                    </button>
-                  ))}
+                  {cat.items.map((g) => {
+                    const access = getGoalAccess(g.id);
+                    return (
+                      <button key={g.id} onClick={() => handlePickGoal(g.id)}
+                        className="relative rounded-2xl p-4 border text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center gap-3 overflow-hidden"
+                        style={{
+                          background: "linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%)",
+                          boxShadow: "0 0 15px rgba(139,92,246,0.1), inset 0 1px 0 rgba(255,255,255,0.05)",
+                          borderColor: access === "locked" ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.18)",
+                          opacity: access === "locked" ? 0.8 : 1,
+                        }}
+                      >
+                        <GoalBadge access={access} />
+                        <span className="text-2xl shrink-0">{g.emoji}</span>
+                        <div className="pr-14">
+                          <p className="font-quicksand font-bold text-sm text-white leading-tight">{g.title}</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: access === "locked" ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.5)" }}>
+                            {access === "locked" ? "Unlock with Premium" : "Tap to start →"}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </section>
             ))}
@@ -942,18 +1004,29 @@ export default function AICoachPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {activeCat.items.map((g) => (
-              <button key={g.id} data-on-dark onClick={() => handlePickGoal(g.id)}
-                className="relative rounded-2xl p-5 border border-violet-400/40 text-left backdrop-blur-md hover:border-violet-300/70 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center gap-4 overflow-hidden"
-                style={{ background: "linear-gradient(135deg,rgba(76,29,149,0.85) 0%,rgba(124,58,237,0.78) 60%,rgba(190,24,93,0.72) 100%)", boxShadow: "0 6px 22px rgba(124,58,237,0.4), inset 0 1px 0 rgba(255,255,255,0.14)" }}
-              >
-                <span className="text-3xl shrink-0">{g.emoji}</span>
-                <div className="flex-1">
-                  <p className="font-quicksand font-bold text-base text-white leading-tight">{g.title}</p>
-                  <p className="text-[11px] text-white/80 mt-1">Tap to start →</p>
-                </div>
-              </button>
-            ))}
+            {activeCat.items.map((g) => {
+              const access = getGoalAccess(g.id);
+              return (
+                <button key={g.id} data-on-dark onClick={() => handlePickGoal(g.id)}
+                  className="relative rounded-2xl p-5 border text-left backdrop-blur-md hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center gap-4 overflow-hidden"
+                  style={{
+                    background: "linear-gradient(135deg,rgba(76,29,149,0.85) 0%,rgba(124,58,237,0.78) 60%,rgba(190,24,93,0.72) 100%)",
+                    boxShadow: "0 6px 22px rgba(124,58,237,0.4), inset 0 1px 0 rgba(255,255,255,0.14)",
+                    borderColor: access === "locked" ? "rgba(255,255,255,0.15)" : "rgba(167,139,250,0.6)",
+                    opacity: access === "locked" ? 0.85 : 1,
+                  }}
+                >
+                  <GoalBadge access={access} />
+                  <span className="text-3xl shrink-0">{g.emoji}</span>
+                  <div className="flex-1 pr-14">
+                    <p className="font-quicksand font-bold text-base text-white leading-tight">{g.title}</p>
+                    <p className="text-[11px] mt-1" style={{ color: access === "locked" ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.8)" }}>
+                      {access === "locked" ? "Unlock with Premium" : "Tap to start →"}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       );
