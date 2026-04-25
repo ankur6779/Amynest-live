@@ -10,7 +10,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 import { API_BASE_URL } from "@/constants/api";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PremiumSplash from "@/components/PremiumSplash";
@@ -165,15 +165,29 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   const c = useColors();
 
-  if (isAuthTransition) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: c.background }}>
-        <ActivityIndicator size="large" color={brand.primary} />
-      </View>
-    );
-  }
-
-  return <>{children}</>;
+  // Always render children so the Stack navigator stays mounted — unmounting it
+  // and remounting after the onboarding check creates a race where router.replace()
+  // fires before the navigator is ready, landing the user on the +not-found screen.
+  // Instead, overlay a full-screen spinner on top while the check is in flight.
+  return (
+    <>
+      {children}
+      {isAuthTransition && (
+        <View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: c.background,
+          }}
+          pointerEvents="box-only"
+        >
+          <ActivityIndicator size="large" color={brand.primary} />
+        </View>
+      )}
+    </>
+  );
 }
 
 function RootLayoutNav() {

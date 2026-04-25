@@ -1275,7 +1275,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "rgba(255,255,255,0.55)",
     fontFamily: "Inter_500Medium",
-    whiteSpace: "nowrap" as never,
   },
 
   /* KIDS CONTROL CENTER CARD */
