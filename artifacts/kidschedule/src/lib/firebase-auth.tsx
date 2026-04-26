@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -8,21 +7,29 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { onIdTokenChanged, signOut as fbSignOut } from "firebase/auth";
+import { firebaseAuth } from "./firebase";
+import {
+  AuthContext,
+  type AuthContextValue,
+  type AuthState,
+  type Listener,
+  type ShimUser,
+} from "./firebase-auth-context";
 
-// IMPORTANT: do NOT statically import "firebase/auth" or "./firebase" here.
-//
-// Why: in dev, Vite pre-bundles `firebase/auth` as a separate optimized
-// dependency. When this module's static graph pulls firebase/auth alongside
-// React, the chunk-load order can race React 19's internal dispatcher setup
-// and cause `useState` to throw "Cannot read properties of null" on first
-// render (React reports this as the misleading "more than one copy of React"
-// warning).
-//
-// Keeping all firebase access behind dynamic `import()` inside effects /
-// callbacks means this module's static dependency graph is just React, which
-// eliminates the race entirely.
+// All firebase modules ("firebase/app", "firebase/auth") are listed in
+// vite.config.ts -> optimizeDeps.include, so they're pre-bundled at startup
+// alongside React. Static imports here ensure:
+//   1. The dependency graph is fully known when the dev server starts, so
+//      Vite never needs to re-bundle deps mid-session (a re-bundle changes
+//      the `?v=` cache-bust hash, which would create two ESM React instances
+//      in the browser — the cause of the recurring "Invalid hook call" /
+//      "more than one copy of React" crash this file used to suffer from).
+//   2. ESM resolves all static imports before this module executes, so there
+//      is no chunk-load race with React's internals.
+// Do NOT convert these back to dynamic imports — that re-introduces the
+// mid-session dep-discovery → re-bundle → hash-mismatch crash loop.
 
-type LoadedAuth = typeof import("./firebase");
 type FirebaseUserLike = {
   uid: string;
   displayName: string | null;
@@ -31,14 +38,6 @@ type FirebaseUserLike = {
   phoneNumber: string | null;
   getIdToken: (forceRefresh?: boolean) => Promise<string>;
 };
-
-let firebaseModulePromise: Promise<LoadedAuth> | null = null;
-function loadFirebase(): Promise<LoadedAuth> {
-  if (!firebaseModulePromise) {
-    firebaseModulePromise = import("./firebase");
-  }
-  return firebaseModulePromise;
-}
 
 /**
  * A Clerk-shaped wrapper around Firebase Auth. Lets the existing app keep
@@ -52,40 +51,11 @@ function loadFirebase(): Promise<LoadedAuth> {
  *   user.imageUrl                 → photoURL
  *   user.emailAddresses[0].e..    → email (single entry)
  *   user.primaryEmailAddress      → { emailAddress: email }
+ *
+ * The context object, value type, and shim user types live in
+ * `./firebase-auth-context` so this file can stay a clean Fast Refresh
+ * boundary that exports ONLY components.
  */
-
-export interface ShimEmailAddress {
-  emailAddress: string;
-}
-
-export interface ShimUser {
-  id: string;
-  uid: string;
-  firstName: string | null;
-  lastName: string | null;
-  fullName: string | null;
-  imageUrl: string | null;
-  emailAddresses: ShimEmailAddress[];
-  primaryEmailAddress: ShimEmailAddress | null;
-  primaryPhoneNumber: { phoneNumber: string } | null;
-  /** Stub — Firebase Auth alone can't host avatars. */
-  setProfileImage: (args: { file: File }) => Promise<void>;
-}
-
-interface AuthState {
-  user: ShimUser | null;
-  isLoaded: boolean;
-}
-
-type Listener = (snapshot: { user: ShimUser | null }) => void;
-
-export interface AuthContextValue extends AuthState {
-  getToken: (opts?: { skipCache?: boolean }) => Promise<string | null>;
-  signOut: (opts?: { redirectUrl?: string }) => Promise<void>;
-  addListener: (cb: Listener) => () => void;
-}
-
-export const AuthContext = createContext<AuthContextValue | null>(null);
 
 function fbToShim(u: FirebaseUserLike): ShimUser {
   const display = u.displayName ?? "";
@@ -118,44 +88,22 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const listenersRef = useRef<Set<Listener>>(new Set());
 
   useEffect(() => {
-    let cancelled = false;
-    let unsub: () => void = () => {};
-
-    void (async () => {
-      try {
-        const [{ firebaseAuth }, authMod] = await Promise.all([
-          loadFirebase(),
-          import("firebase/auth"),
-        ]);
-        if (cancelled) return;
-
-        // Use onIdTokenChanged (not onAuthStateChanged) so token refreshes
-        // don't get missed — getToken() always returns a fresh token via the
-        // SDK cache.
-        unsub = authMod.onIdTokenChanged(firebaseAuth, (fbUser) => {
-          const shim = fbUser ? fbToShim(fbUser as FirebaseUserLike) : null;
-          setState({ user: shim, isLoaded: true });
-          for (const l of listenersRef.current) {
-            try {
-              l({ user: shim });
-            } catch {
-              /* ignore listener errors */
-            }
-          }
-        });
-      } catch (err) {
-        // If firebase fails to load (bad config, network, etc.), still mark
-        // the provider as loaded with no user so the UI can render the
-        // signed-out state instead of hanging on a spinner forever.
-        console.error("[firebase-auth] failed to initialize:", err);
-        if (!cancelled) {
-          setState({ user: null, isLoaded: true });
+    // Use onIdTokenChanged (not onAuthStateChanged) so token refreshes
+    // don't get missed — getToken() always returns a fresh token via the
+    // SDK cache.
+    const unsub = onIdTokenChanged(firebaseAuth, (fbUser) => {
+      const shim = fbUser ? fbToShim(fbUser as FirebaseUserLike) : null;
+      setState({ user: shim, isLoaded: true });
+      for (const l of listenersRef.current) {
+        try {
+          l({ user: shim });
+        } catch {
+          /* ignore listener errors */
         }
       }
-    })();
+    });
 
     return () => {
-      cancelled = true;
       try {
         unsub();
       } catch {
@@ -167,7 +115,6 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const getToken = useCallback(
     async (opts?: { skipCache?: boolean }): Promise<string | null> => {
       try {
-        const { firebaseAuth } = await loadFirebase();
         const u = firebaseAuth.currentUser;
         if (!u) return null;
         return await u.getIdToken(opts?.skipCache === true);
@@ -180,11 +127,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async (opts?: { redirectUrl?: string }) => {
     try {
-      const [{ firebaseAuth }, authMod] = await Promise.all([
-        loadFirebase(),
-        import("firebase/auth"),
-      ]);
-      await authMod.signOut(firebaseAuth);
+      await fbSignOut(firebaseAuth);
     } catch (err) {
       console.error("[firebase-auth] signOut failed:", err);
     }

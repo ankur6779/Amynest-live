@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { AuthContext, type AuthContextValue, type ShimUser } from "./firebase-auth";
+import { AuthContext, type AuthContextValue, type ShimUser } from "./firebase-auth-context";
 
 function useCtx(): AuthContextValue {
   const ctx = useContext(AuthContext);
