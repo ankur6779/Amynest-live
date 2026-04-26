@@ -58,7 +58,7 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
           src={mascotImg}
           alt="Amy AI"
           className="amy-mascot-glow"
-          style={{ width: size, height: size, objectFit: "contain", display: "block", pointerEvents: "none", position: "relative", zIndex: 1, mixBlendMode: "screen" }}
+          style={{ width: size, height: size, objectFit: "contain", display: "block", pointerEvents: "none", position: "relative", zIndex: 1 }}
           draggable={false}
         />
 
