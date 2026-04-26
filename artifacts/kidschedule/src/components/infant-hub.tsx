@@ -5,13 +5,14 @@ import {
   Brain, ThumbsUp, RotateCcw, CheckCircle2, ShieldAlert,
   ChevronDown, ChevronUp, Syringe, Zap, BookOpen,
   Activity, Star, AlertTriangle, Lightbulb, Baby,
-  Flame, MessageCircle, BedDouble, ListChecks,
+  Flame, MessageCircle, BedDouble, ListChecks, Music2,
 } from "lucide-react";
 import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-cues";
 import {
   WakeWindowSystem, SleepIssueDetector, RoutineBuilder, SleepWeeklyInsights,
 } from "@/components/infant-sleep-module";
 import { BuddyMilestonePlanner } from "@/components/infant-milestones";
+import { WhiteNoiseLullaby } from "@/components/infant-sounds";
 import {
   INFANT_CATEGORIES,
   type InfantCategory,
@@ -79,9 +80,7 @@ const ACTIVITIES: Record<string, Activity[]> = {
   "0-3": [
     { emoji: "🖤🤍", title: "High-Contrast Visuals", desc: "Show black-and-white patterns or simple faces 20–30 cm from baby's eyes. Newborn vision is still developing — high contrast is what they can actually see.", duration: "5 min" },
   ],
-  "3-6": [
-    { emoji: "🎶", title: "Bouncing Songs", desc: "Hold baby upright and bounce gently to rhythm. 'Twinkle Twinkle', 'Baa Baa Black Sheep' — the vestibular (balance) stimulation is unique to bouncing and can't be replicated any other way.", duration: "5–10 min" },
-  ],
+  "3-6": [],
   "6-9": [
     { emoji: "🛁", title: "Bath Play", desc: "Add cups and soft toys to bath. Pouring, splashing, squeezing — rich sensory experience that supports tactile development in a way land play can't match.", duration: "10–15 min" },
   ],
@@ -93,9 +92,7 @@ const ACTIVITIES: Record<string, Activity[]> = {
     { emoji: "🎨", title: "Finger Painting", desc: "Use edible or non-toxic paint on paper. Squishing and smearing is pure sensory-motor play — messy is the point. This is distinct from crayon scribbling — the texture feedback is richer.", duration: "15 min" },
     { emoji: "🚶", title: "Outdoor Stroll & Name", desc: "Walk outside and name everything — dog, flower, car, puddle, sky. Novel outdoor environments stimulate attention and curiosity that indoor play can't replicate.", duration: "20 min" },
   ],
-  "18-24": [
-    { emoji: "💃", title: "Dance & Jump", desc: "Put on music and dance together — jumping, spinning, clapping, falling down. Gross motor + rhythm + shared joy all at once. One of the best things you can do at this age.", duration: "10–15 min" },
-  ],
+  "18-24": [],
 };
 
 // ─── Vaccination Schedule (India NIS + IAP) ───────────────────────────────────
@@ -531,19 +528,26 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
         </div>
       </IHSection>
 
-      {/* ── 4. Feeding Reference ─────────────────────────────────────────────── */}
+      {/* ── 4. White Noise & Lullabies ───────────────────────────────────────── */}
+      <IHSection icon={<Music2 className="h-4 w-4" />} title="White Noise & Lullabies">
+        <WhiteNoiseLullaby ageMonths={ageMonths} />
+      </IHSection>
+
+      {/* ── 5. Feeding Reference ─────────────────────────────────────────────── */}
       <IHSection icon={<Flame className="h-4 w-4" />} title="Feeding Reference">
         <FeedingReference ageMonths={ageMonths} />
       </IHSection>
 
-      {/* ── 5. Daily Activities ──────────────────────────────────────────────── */}
-      <IHSection
-        icon={<Zap className="h-4 w-4" />}
-        title="Today's Activities"
-        badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}
-      >
-        <DailyActivities ageMonths={ageMonths} />
-      </IHSection>
+      {/* ── 6. Daily Activities — only shown when there are ideas for this age── */}
+      {(ACTIVITIES[getBand(ageMonths)] ?? []).length > 0 && (
+        <IHSection
+          icon={<Zap className="h-4 w-4" />}
+          title="Today's Activities"
+          badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}
+        >
+          <DailyActivities ageMonths={ageMonths} />
+        </IHSection>
+      )}
 
       {/* ── 6. Health & Care ─────────────────────────────────────────────────── */}
       <IHSection icon={<Syringe className="h-4 w-4" />} title="Health & Care">
