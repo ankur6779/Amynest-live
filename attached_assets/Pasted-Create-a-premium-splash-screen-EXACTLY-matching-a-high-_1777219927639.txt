@@ -1,0 +1,131 @@
+Create a premium splash screen EXACTLY matching a high-end neon AI style.
+
+GOAL:
+Replicate a glowing futuristic ring UI with depth, gradients, light flares, and premium animation.
+
+--------------------------------------------------
+1. BACKGROUND (DEPTH REQUIRED)
+--------------------------------------------------
+- Use deep gradient:
+  #0a061a → #120a2e → #050010
+
+- Add:
+  • radial light at center
+  • subtle wave pattern (low opacity)
+  • NO flat background
+
+--------------------------------------------------
+2. MAIN RING (CORE ELEMENT – VERY IMPORTANT)
+--------------------------------------------------
+Create a multi-layer glowing ring:
+
+Layer 1 (Base Ring):
+- Circular border using conic-gradient:
+  purple → pink → purple
+
+Layer 2 (Glow Layer):
+- Outer glow using blur (20–40px)
+- Color:
+  rgba(168,85,247,0.6) + rgba(236,72,153,0.6)
+
+Layer 3 (Inner Glass Effect):
+- Inner soft gradient circle (dark center)
+- Slight transparency for depth
+
+Layer 4 (Highlight Flare):
+- Add 1–2 small bright light flares on ring edge
+- Animate slowly moving
+
+--------------------------------------------------
+3. RING ANIMATION
+--------------------------------------------------
+- Slow rotation (very subtle, NOT fast)
+- Pulse scale:
+  1 → 1.05 → 1
+
+- Add shimmer sweep:
+  • light streak rotates once every 3–4 sec
+
+--------------------------------------------------
+4. TEXT: "Meet AMY"
+--------------------------------------------------
+- Center aligned inside ring
+
+"Meet":
+- white
+- lighter weight
+
+"AMY":
+- gradient text:
+  purple → pink (same as button)
+
+- Slight glow:
+  text-shadow: 0 0 20px rgba(236,72,153,0.6)
+
+- Fade + scale animation
+
+--------------------------------------------------
+5. TAGLINE
+--------------------------------------------------
+Text:
+"Where Smart Parenting Starts"
+
+Style:
+- mix color:
+  "Smart Parenting" → gradient highlight
+  rest → soft white
+
+Animation:
+- fade in + slight blur → sharp
+
+--------------------------------------------------
+6. BOTTOM LIGHT PLATFORM (IMPORTANT DETAIL)
+--------------------------------------------------
+- Add circular glow under ring
+- Looks like ring is floating above surface
+
+- Use:
+  radial gradient + blur
+
+--------------------------------------------------
+7. CTA BUTTON (MATCH PROVIDED DESIGN)
+--------------------------------------------------
+- Gradient:
+  purple → pink
+
+- Rounded pill shape
+
+- Glow shadow:
+  rgba(236,72,153,0.5)
+
+- Text:
+  "Start Parenting Smart →"
+
+- Hover:
+  slight scale + glow increase
+
+--------------------------------------------------
+8. MICRO ANIMATIONS (PREMIUM FEEL)
+--------------------------------------------------
+- Floating particles (very minimal)
+- Light streak passing across ring
+- Subtle breathing glow
+
+--------------------------------------------------
+9. TIMING
+--------------------------------------------------
+- Total splash: 2.5–3 sec
+- Then smooth fade to homepage
+
+--------------------------------------------------
+10. PERFORMANCE
+--------------------------------------------------
+- Use CSS animations + minimal JS
+- Avoid heavy libraries
+
+--------------------------------------------------
+DELIVERABLE:
+- High-end premium splash screen
+- NOT flat UI
+- Real depth, glow, and motion
+- Close match to futuristic neon design

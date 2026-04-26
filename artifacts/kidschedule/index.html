@@ -39,12 +39,12 @@
 
     <style>
       html, body {
-        background-color: #0B0B1A;
+        background: #0a061a;
         margin: 0;
         padding: 0;
       }
 
-      /* ── Splash — Neural Light Sweep edition ───────────────────────── */
+      /* ── Splash — premium neon ring edition ────────────────────────── */
       #splash {
         position: fixed;
         inset: 0;
@@ -53,8 +53,10 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        /* #0B0B1A → #1A1035 as specified */
-        background: linear-gradient(158deg, #0B0B1A 0%, #110D28 45%, #1A1035 100%);
+        /* Layered depth: radial centre light + gradient */
+        background:
+          radial-gradient(circle at 50% 44%, rgba(120,50,220,0.22) 0%, transparent 58%),
+          linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%);
         overflow: hidden;
         transition: opacity 0.75s ease, visibility 0.75s ease;
       }
@@ -64,61 +66,64 @@
         pointer-events: none;
       }
 
-      /* ── Grain / noise texture (subtle, premium print feel) ─────────── */
+      /* Grain texture */
       #splash::before {
         content: "";
         position: absolute;
         inset: 0;
         pointer-events: none;
-        opacity: 0.045;
+        opacity: 0.03;
         mix-blend-mode: screen;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
         background-size: 200px 200px;
       }
 
-      /* ── Neural Light Sweep beam ────────────────────────────────────── */
-      /* A blurred, glowing horizontal band that sweeps left → right,
-         creating an "intelligence activation / scan" impression.        */
-      .splash-beam {
+      /* Subtle concentric wave rings (very low opacity) */
+      .splash-waves {
         position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        width: 42%;
-        /* soft gradient cross-section so edges feather to nothing */
-        background: linear-gradient(
-          90deg,
-          transparent   0%,
-          rgba(130,100,255,0.06)  25%,
-          rgba(160,125,255,0.14)  50%,
-          rgba(130,100,255,0.06)  75%,
-          transparent   100%
-        );
-        filter: blur(48px);
-        transform: translateX(-110%);
-        animation: beamSweep 5s ease-in-out infinite;
-        will-change: transform;
+        top: 50%;
+        left: 50%;
+        width: 0; height: 0;
+        border-radius: 50%;
+        transform: translate(-50%, -52%);
         pointer-events: none;
+        box-shadow:
+          0 0 0  80px rgba(168,85,247,0.04),
+          0 0 0 170px rgba(168,85,247,0.03),
+          0 0 0 280px rgba(100,50,200,0.02),
+          0 0 0 420px rgba(80,30,160,0.015),
+          0 0 0 580px rgba(60,20,120,0.01);
+        animation: wavePulse 7s ease-in-out infinite;
       }
-      /* A second, narrower, brighter core inside the beam */
-      .splash-beam::after {
-        content: "";
-        position: absolute;
-        inset: 0 18% 0 18%;
-        background: linear-gradient(
-          90deg,
-          transparent 0%,
-          rgba(180,155,255,0.18) 50%,
-          transparent 100%
-        );
-        filter: blur(18px);
-      }
-      @keyframes beamSweep {
-        0%   { transform: translateX(-110%); }
-        100% { transform: translateX(290%);  }
+      @keyframes wavePulse {
+        0%, 100% { transform: translate(-50%, -52%) scale(1);    opacity: 1; }
+        50%      { transform: translate(-50%, -52%) scale(1.05); opacity: 0.7; }
       }
 
-      /* ── Center stage ───────────────────────────────────────────────── */
+      /* Floating particles */
+      .splash-particles {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .splash-particle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.75);
+        box-shadow: 0 0 5px rgba(168,85,247,0.7);
+        opacity: 0;
+        animation: particleFloat var(--dur, 18s) var(--d, 0s) ease-in-out infinite;
+        will-change: transform, opacity;
+      }
+      @keyframes particleFloat {
+        0%   { transform: translateY(0) translateX(0); opacity: 0; }
+        10%  { opacity: 0.8; }
+        90%  { opacity: 0.45; }
+        100% { transform: translateY(-90vh) translateX(var(--dx, 30px)); opacity: 0; }
+      }
+
+      /* ── Stage ──────────────────────────────────────────────────────── */
       .splash-stage {
         position: relative;
         z-index: 1;
@@ -126,109 +131,299 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
-        padding: 0 32px;
+        padding: 0 24px;
+        animation: stageIn 0.9s 0.15s cubic-bezier(0.22,1,0.36,1) both;
+      }
+      @keyframes stageIn {
+        from { opacity: 0; transform: translateY(18px) scale(0.94); }
+        to   { opacity: 1; transform: translateY(0)    scale(1); }
       }
 
-      /* ── "Meet AMY" title ───────────────────────────────────────────── */
-      .splash-title {
-        font-family: 'Inter', -apple-system, 'SF Pro Display', system-ui, sans-serif;
-        font-size: 50px;
-        font-weight: 600;
-        letter-spacing: 4px;
-        color: #FFFFFF;
-        margin: 0 0 28px;
-        opacity: 0;
-        /* Fade in + upward motion at ~0.8s */
-        animation:
-          titleIn   0.85s 0.8s  cubic-bezier(0.22,1,0.36,1) forwards,
-          titleGlow 4s    1.65s ease-in-out infinite;
+      /* ── Ring area ──────────────────────────────────────────────────── */
+      .splash-ring-area {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 34px;
       }
-      @keyframes titleIn {
-        from { opacity: 0; transform: translateY(16px); }
+
+      /* Outer atmospheric glow (bleeds well outside ring) */
+      .splash-glow-outer {
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 380px; height: 380px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: radial-gradient(circle,
+          rgba(168,85,247,0.30) 0%,
+          rgba(236,72,153,0.22) 40%,
+          transparent 70%
+        );
+        filter: blur(34px);
+        animation: outerGlowBreathe 3.5s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+      @keyframes outerGlowBreathe {
+        0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
+        50%      { transform: translate(-50%, -50%) scale(1.10); opacity: 0.75; }
+      }
+
+      /* Ring scene — all ring layers stacked in 280 × 280 space */
+      .splash-ring-scene {
+        position: relative;
+        width: 280px; height: 280px;
+        z-index: 1;
+      }
+
+      /* Pulse wrapper — scale 1 → 1.05 → 1, wraps ring + shimmer + inner */
+      .splash-ring-pulse {
+        position: absolute;
+        inset: 0;
+        animation: ringPulse 2.8s ease-in-out infinite;
+      }
+      @keyframes ringPulse {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.05); }
+      }
+
+      /* Layer 1: base conic-gradient ring */
+      .splash-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: conic-gradient(
+          from 0deg,
+          #a855f7 0deg,
+          #ec4899 90deg,
+          #a855f7 180deg,
+          #ec4899 270deg,
+          #a855f7 360deg
+        );
+        -webkit-mask: radial-gradient(circle, transparent 122px, black 126px);
+                mask: radial-gradient(circle, transparent 122px, black 126px);
+        animation: ringRotate 14s linear infinite;
+        will-change: transform;
+        z-index: 1;
+      }
+      @keyframes ringRotate {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+      }
+
+      /* Layer 2: shimmer arc — bright 20° streak orbiting every 3.5 s */
+      .splash-ring-shimmer {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: conic-gradient(
+          from 0deg,
+          transparent                    0deg,
+          rgba(255,255,255,0.00)         6deg,
+          rgba(255,255,255,0.85)        14deg,
+          rgba(255,255,255,0.00)        22deg,
+          transparent                   22deg
+        );
+        -webkit-mask: radial-gradient(circle, transparent 122px, black 126px);
+                mask: radial-gradient(circle, transparent 122px, black 126px);
+        animation: shimmerOrbit 3.5s linear infinite;
+        will-change: transform;
+        z-index: 2;
+      }
+      @keyframes shimmerOrbit {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+      }
+
+      /* Layer 3: inner glass circle (dark, transparent center) */
+      .splash-ring-inner {
+        position: absolute;
+        top: 25px; left: 25px;
+        width: 230px; height: 230px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 38% 36%,
+          rgba(30,12,65,0.82) 0%,
+          rgba(10,6,26,0.90) 60%,
+          rgba(5,0,16,0.95)  100%
+        );
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+      }
+
+      /* "Meet" — lighter weight, white */
+      .splash-meet {
+        display: block;
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        font-size: 21px;
+        font-weight: 300;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.85);
+        margin: 0;
+        line-height: 1.2;
+        opacity: 0;
+        animation: ringTextIn 0.7s 0.6s cubic-bezier(0.22,1,0.36,1) forwards;
+      }
+
+      /* "AMY" — gradient purple → pink with glow */
+      .splash-amy {
+        display: block;
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        font-size: 54px;
+        font-weight: 700;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        background: linear-gradient(92deg, #a855f7 0%, #ec4899 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+        line-height: 1.05;
+        opacity: 0;
+        animation:
+          ringTextIn 0.8s 0.78s cubic-bezier(0.22,1,0.36,1) forwards,
+          amyGlow    3.2s 1.58s ease-in-out infinite;
+      }
+      @keyframes ringTextIn {
+        from { opacity: 0; transform: scale(0.86); filter: blur(6px); }
+        to   { opacity: 1; transform: scale(1);    filter: blur(0); }
+      }
+      @keyframes amyGlow {
+        0%, 100% { filter: drop-shadow(0 0 14px rgba(236,72,153,0.50)); }
+        50%      { filter: drop-shadow(0 0 28px rgba(236,72,153,0.80)) drop-shadow(0 0 50px rgba(168,85,247,0.40)); }
+      }
+
+      /* Bottom platform — ring appears to float above a lit surface */
+      .splash-platform {
+        width: 200px; height: 28px;
+        margin-top: -6px;
+        background: radial-gradient(ellipse at center,
+          rgba(168,85,247,0.55) 0%,
+          rgba(236,72,153,0.35) 40%,
+          transparent 70%
+        );
+        filter: blur(14px);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ── Tagline ────────────────────────────────────────────────────── */
+      .splash-tagline {
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 0.5px;
+        color: rgba(210,200,255,0.70);
+        margin: 0 0 30px;
+        opacity: 0;
+        animation: tagIn 0.9s 1.2s cubic-bezier(0.22,1,0.36,1) forwards;
+      }
+      @keyframes tagIn {
+        from { opacity: 0; filter: blur(5px); transform: translateY(6px); }
+        to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
+      }
+      /* "Smart Parenting" gradient highlight */
+      .splash-tagline .hl {
+        background: linear-gradient(90deg, #a855f7, #ec4899);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+        font-weight: 500;
+      }
+
+      /* ── CTA button ─────────────────────────────────────────────────── */
+      .splash-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 13px 28px;
+        background: linear-gradient(90deg, #a855f7, #ec4899);
+        border: none;
+        border-radius: 999px;
+        color: #fff;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        box-shadow: 0 0 24px rgba(236,72,153,0.45), 0 4px 16px rgba(0,0,0,0.30);
+        opacity: 0;
+        animation: ctaIn 0.8s 1.55s cubic-bezier(0.22,1,0.36,1) forwards;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+      }
+      .splash-cta:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 40px rgba(236,72,153,0.65), 0 6px 22px rgba(0,0,0,0.35);
+      }
+      @keyframes ctaIn {
+        from { opacity: 0; transform: translateY(10px); }
         to   { opacity: 1; transform: translateY(0); }
       }
-      /* Very subtle glow pulse — not aggressive */
-      @keyframes titleGlow {
-        0%, 100% { text-shadow: 0 0 22px rgba(160,130,255,0.28); }
-        50%      { text-shadow: 0 0 40px rgba(160,130,255,0.48), 0 0 72px rgba(120,90,255,0.20); }
-      }
 
-      /* ── "Where Smart Parenting Starts" — word-by-word fade in ─────── */
-      .splash-tagline {
-        position: relative;
-        font-family: 'Inter', -apple-system, 'SF Pro Display', system-ui, sans-serif;
-        font-size: 16px;
-        font-weight: 400;
-        letter-spacing: 0.6px;
-        color: rgba(210,200,255,0.72);
-        margin: 0;
-        /* clip the shimmer to the text block */
-        overflow: hidden;
-        padding: 2px 4px;
-      }
-
-      /* Shimmer pass after all words are in (~2.9s) */
-      .splash-tagline::after {
-        content: "";
-        position: absolute;
-        top: 0; bottom: 0;
-        left: 0;
-        width: 55%;
-        background: linear-gradient(
-          90deg,
-          transparent 0%,
-          rgba(255,255,255,0.22) 50%,
-          transparent 100%
-        );
-        opacity: 0;
-        transform: translateX(-120%);
-        animation: taglineShimmer 0.85s 2.9s ease-in-out forwards;
-        pointer-events: none;
-      }
-      @keyframes taglineShimmer {
-        0%   { opacity: 0; transform: translateX(-120%); }
-        15%  { opacity: 1; }
-        85%  { opacity: 1; }
-        100% { opacity: 0; transform: translateX(240%); }
-      }
-
-      /* Each word is an inline-block that fades in from slight blur */
-      .splash-word {
-        display: inline;
-        opacity: 0;
-        animation: wordIn 0.65s cubic-bezier(0.22,1,0.36,1) forwards;
-      }
-      /* Non-breaking space before each word except the first */
-      .splash-word + .splash-word::before {
-        content: "\00a0";
-      }
-      .splash-word:nth-child(1) { animation-delay: 1.65s; }
-      .splash-word:nth-child(2) { animation-delay: 1.95s; }
-      .splash-word:nth-child(3) { animation-delay: 2.25s; }
-      .splash-word:nth-child(4) { animation-delay: 2.55s; }
-      @keyframes wordIn {
-        from { opacity: 0; filter: blur(5px); }
-        to   { opacity: 1; filter: blur(0); }
-      }
-
-      /* ── Mobile tweaks ──────────────────────────────────────────────── */
+      /* ── Mobile ─────────────────────────────────────────────────────── */
       @media (max-width: 480px) {
-        .splash-title    { font-size: 38px; letter-spacing: 3px; }
-        .splash-tagline  { font-size: 14px; }
+        .splash-ring-scene { width: 220px; height: 220px; }
+        .splash-ring,
+        .splash-ring-shimmer {
+          -webkit-mask: radial-gradient(circle, transparent 94px, black 98px);
+                  mask: radial-gradient(circle, transparent 94px, black 98px);
+        }
+        .splash-ring-inner { width: 178px; height: 178px; top: 21px; left: 21px; }
+        .splash-glow-outer { width: 290px; height: 290px; }
+        .splash-meet  { font-size: 17px; letter-spacing: 4px; }
+        .splash-amy   { font-size: 42px; letter-spacing: 5px; }
+        .splash-platform { width: 150px; }
+        .splash-tagline  { font-size: 13px; }
+        .splash-cta      { font-size: 14px; padding: 11px 22px; }
       }
     </style>
   </head>
   <body>
     <!-- ── Splash (shown immediately, dismissed after React mounts) ── -->
     <div id="splash" role="status" aria-label="Loading AmyNest AI…">
-      <!-- Neural Light Sweep beam — the core hero animation -->
-      <div class="splash-beam" aria-hidden="true"></div>
+      <div class="splash-waves" aria-hidden="true"></div>
+
+      <div class="splash-particles" aria-hidden="true">
+        <span class="splash-particle" style="width:2px;height:2px;bottom:18%;left:10%;--dur:16s;--d:0s;--dx:28px"></span>
+        <span class="splash-particle" style="width:1px;height:1px;bottom:9%;left:26%;--dur:21s;--d:3s;--dx:-22px"></span>
+        <span class="splash-particle" style="width:2px;height:2px;bottom:22%;left:44%;--dur:18s;--d:1s;--dx:32px"></span>
+        <span class="splash-particle" style="width:1px;height:1px;bottom:6%;left:62%;--dur:23s;--d:5s;--dx:-18px"></span>
+        <span class="splash-particle" style="width:2px;height:2px;bottom:14%;left:78%;--dur:17s;--d:2s;--dx:24px"></span>
+        <span class="splash-particle" style="width:1px;height:1px;bottom:28%;left:90%;--dur:20s;--d:6s;--dx:-14px"></span>
+      </div>
 
       <div class="splash-stage">
-        <h1 class="splash-title">Meet AMY</h1>
-        <p class="splash-tagline" aria-label="Where Smart Parenting Starts">
-          <span class="splash-word">Where</span><span class="splash-word">Smart</span><span class="splash-word">Parenting</span><span class="splash-word">Starts</span>
+        <div class="splash-ring-area">
+          <div class="splash-glow-outer" aria-hidden="true"></div>
+          <div class="splash-ring-scene" aria-hidden="true">
+            <div class="splash-ring-pulse">
+              <div class="splash-ring"></div>
+              <div class="splash-ring-shimmer"></div>
+              <div class="splash-ring-inner">
+                <span class="splash-meet">Meet</span>
+                <span class="splash-amy">AMY</span>
+              </div>
+            </div>
+          </div>
+          <div class="splash-platform" aria-hidden="true"></div>
+        </div>
+
+        <p class="splash-tagline">
+          Where <span class="hl">Smart Parenting</span> Starts
         </p>
+
+        <button
+          class="splash-cta"
+          onclick="var s=document.getElementById('splash');if(s){s.classList.add('splash-hide');s.addEventListener('transitionend',function(){s.remove();},{once:true});}"
+        >Start Parenting Smart &#8594;</button>
       </div>
     </div>
 
