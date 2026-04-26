@@ -277,11 +277,11 @@ const listQuery = z.object({
 
 router.get("/", async (req, res) => {
   const auth = getAuth(req);
-  if (!auth) {
+  if (!auth.userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
-  const userId = auth.uid;
+  const userId = auth.userId;
 
   const parsed = listQuery.safeParse(req.query);
   if (!parsed.success) {
@@ -425,11 +425,11 @@ const lastForcedSyncByUser = new Map<string, number>();
 
 router.post("/sync", async (req, res) => {
   const auth = getAuth(req);
-  if (!auth) {
+  if (!auth.userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
-  const userId = auth.uid;
+  const userId = auth.userId;
   const now = Date.now();
   const last = lastForcedSyncByUser.get(userId) ?? 0;
   const elapsed = now - last;
@@ -466,11 +466,11 @@ const progressBody = z.object({
 
 router.post("/progress", async (req, res) => {
   const auth = getAuth(req);
-  if (!auth) {
+  if (!auth.userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
-  const userId = auth.uid;
+  const userId = auth.userId;
 
   const parsed = progressBody.safeParse(req.body);
   if (!parsed.success) {

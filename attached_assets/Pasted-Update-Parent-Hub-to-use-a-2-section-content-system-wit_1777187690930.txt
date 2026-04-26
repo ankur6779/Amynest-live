@@ -1,0 +1,129 @@
+Update Parent Hub to use a 2-section content system with expanded exploration logic.
+
+GOAL:
+Show current age content as primary, and ALL remaining content (future stages) in a single exploration section to increase retention and awareness.
+
+--------------------------------------------------
+1. AGE BAND SYSTEM
+--------------------------------------------------
+Define age groups:
+- 0–2
+- 2–4
+- 4–6
+- 6–8
+- 8–10
+- 10–12
+- 12–15
+
+- Calculate child age → assign currentAgeGroup
+
+--------------------------------------------------
+2. SECTION 1: "For {Child Name}"
+--------------------------------------------------
+- Fetch content where:
+  age_group == currentAgeGroup
+
+- This section is:
+  • Fully unlocked
+  • High priority
+  • Personalized
+
+- Sort by:
+  • engagement
+  • recency
+  • AI recommendation
+
+--------------------------------------------------
+3. SECTION 2: "Explore Next Stage for {Child Name}"
+--------------------------------------------------
+CRITICAL LOGIC:
+
+- Fetch content where:
+  age_group != currentAgeGroup
+
+- This includes:
+  • immediate next age group
+  • all higher age groups
+
+- DO NOT restrict to only nextAgeGroup
+
+--------------------------------------------------
+4. INTERNAL GROUPING (INSIDE EXPLORE SECTION)
+--------------------------------------------------
+Inside Explore section, group content by age bands:
+
+Example:
+- "Age 2–4"
+- "Age 4–6"
+- "Age 6–8"
+- etc.
+
+- Show nearest age group FIRST (ascending order from current age)
+
+--------------------------------------------------
+5. UI BEHAVIOR
+--------------------------------------------------
+- Current age content → normal UI
+
+- Explore content:
+  • Slightly dimmed OR premium look
+  • Label each group:
+    "For Age 4–6"
+    "For Age 6–8"
+
+- Highlight nearest age group:
+  "Coming Up Next"
+
+--------------------------------------------------
+6. INTERACTION RULES
+--------------------------------------------------
+Option A (Recommended):
+- Allow preview (partial access)
+
+Option B:
+- Allow full access but visually differentiate
+
+(Choose based on product strategy)
+
+--------------------------------------------------
+7. PROGRESSION LOGIC
+--------------------------------------------------
+- As child grows:
+  • Current section updates automatically
+  • Content shifts from Explore → Main
+
+- No duplication:
+  • Content must exist in only one section at a time
+
+--------------------------------------------------
+8. MULTI-CHILD SUPPORT
+--------------------------------------------------
+- Use activeChildId
+- Recompute sections on child switch
+
+--------------------------------------------------
+9. PERFORMANCE
+--------------------------------------------------
+- Load "For You" first
+- Lazy load Explore section
+- Paginate large datasets
+
+--------------------------------------------------
+10. DATA QUERY LOGIC (IMPORTANT)
+--------------------------------------------------
+Pseudo:
+
+current = getCurrentAgeGroup(child)
+
+section1 = content.filter(c => c.age_group == current)
+
+section2 = content.filter(c => c.age_group != current)
+                 .sort(by age_group ascending)
+
+--------------------------------------------------
+DELIVERABLE:
+Clean implementation with:
+- Two sections only
+- Correct filtering (no overlap)
+- Grouped Explore UI
+- Scalable for 0–15 years

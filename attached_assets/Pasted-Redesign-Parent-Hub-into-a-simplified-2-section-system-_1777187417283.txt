@@ -1,0 +1,143 @@
+Redesign Parent Hub into a simplified 2-section system with scalable age progression (0–15 years).
+
+GOAL:
+Show highly relevant content for the child first, and a second section to preview upcoming learning stages to improve retention and long-term engagement.
+
+--------------------------------------------------
+1. AGE BAND SYSTEM (SCALABLE)
+--------------------------------------------------
+Define dynamic age groups:
+- 0–2
+- 2–4
+- 4–6
+- 6–8
+- 8–10
+- 10–12
+- 12–15
+
+Logic:
+- Calculate child age from DOB
+- Assign currentAgeGroup
+- Assign nextAgeGroup (next band)
+
+IMPORTANT:
+Content difficulty and complexity must automatically increase as the child grows.
+
+--------------------------------------------------
+2. CONTENT STRUCTURE
+--------------------------------------------------
+All content must include:
+- age_group (primary)
+- level (progression inside age group)
+- category (phonics, stories, activities, etc.)
+
+IMPORTANT:
+Existing age-wise content should NOT remain static.
+It must scale in difficulty and depth as child age increases.
+
+--------------------------------------------------
+3. SECTION 1: "For {Child Name}"
+--------------------------------------------------
+Primary personalized section.
+
+Content Rules:
+- Fetch content where:
+  age_group == currentAgeGroup
+
+Enhancements:
+- Sort by:
+  • engagement
+  • recency
+  • AI recommendation
+
+- Mix content types:
+  • phonics
+  • stories
+  • activities
+  • AI insights
+
+- Show progress indicators:
+  • completed %
+  • continue where left
+
+UI:
+- Clean, high-priority section
+- Fully unlocked content
+- Fast loading (top priority rendering)
+
+--------------------------------------------------
+4. SECTION 2: "Explore Next Stage for {Child Name}"
+--------------------------------------------------
+Retention + curiosity section.
+
+Content Rules:
+- Fetch content where:
+  age_group == nextAgeGroup
+
+Purpose:
+- Show what the child will learn next
+- Create aspiration and excitement
+
+UI Behavior:
+- Cards slightly dimmed / premium look
+- Label:
+  "Coming Next"
+  "For Age X+"
+
+Interaction Options:
+Option A (Recommended):
+- Allow preview (5–10 sec playback or sample interaction)
+
+Option B:
+- Show soft message:
+  "This will unlock as your child grows"
+
+--------------------------------------------------
+5. PROGRESSION SYSTEM (VERY IMPORTANT)
+--------------------------------------------------
+- As child age updates:
+  • Automatically shift currentAgeGroup
+  • Move nextAgeGroup content into main section
+
+- No manual migration needed
+
+- Ensure continuity:
+  • Previously completed progress remains saved
+
+--------------------------------------------------
+6. MULTI-CHILD SUPPORT
+--------------------------------------------------
+- Use activeChildId
+- Recalculate both sections on child switch
+
+--------------------------------------------------
+7. PERFORMANCE
+--------------------------------------------------
+- Load "For You" first (critical)
+- Lazy load "Explore Next"
+- Cache results
+
+--------------------------------------------------
+8. AI HOOK (RETENTION DRIVER)
+--------------------------------------------------
+Generate dynamic message:
+- "Your child is progressing well, next level unlocked soon"
+- Trigger based on:
+  • completion rate
+  • engagement
+
+--------------------------------------------------
+9. FUTURE READY (0–15 YEARS)
+--------------------------------------------------
+- System must support additional age bands without UI redesign
+- Content should be easily extendable for:
+  • advanced learning
+  • skill-based modules
+
+--------------------------------------------------
+DELIVERABLE:
+Clean, modular implementation with:
+- Reusable age filtering engine
+- Two-section UI only
+- Smooth progression logic
+- No hardcoded age dependencies
