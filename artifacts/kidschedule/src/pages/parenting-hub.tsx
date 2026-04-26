@@ -23,8 +23,6 @@ import { isInfantHubAge } from "@workspace/infant-hub";
 import { SkillFocusSection, StorySection, ParentTasksSection } from "@/components/age-based-sections";
 import { ToddlerPreschoolMode, type ToddlerShowOnly } from "@/components/toddler-preschool-mode";
 import { DailyPuzzle } from "@/components/daily-puzzle";
-import { InfantSleepTracker } from "@/components/infant-sleep-tracker";
-import { BabySleepAssistant } from "@/components/baby-sleep-assistant";
 import { AmazingFacts } from "@/components/amazing-facts";
 import { DailyKidsActivity } from "@/components/daily-kids-activity";
 import { ArtCraftReels } from "@/components/art-craft-reels";
@@ -243,14 +241,6 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
       {/* INFANT */}
       {isInfant && (
         <>
-          <InfantSleepTracker
-            childName={effectiveChild.name}
-            ageMonths={totalAgeMonths}
-          />
-          <BabySleepAssistant
-            childName={effectiveChild.name}
-            ageMonths={totalAgeMonths}
-          />
           <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           <InfantMode
             childName={effectiveChild.name}
