@@ -4,9 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles, Target, Lightbulb, ChevronDown, ChevronUp, CheckCircle2,
-  RefreshCw, BookOpen, Trophy, AlertCircle, Loader2,
+  RefreshCw, BookOpen, Trophy, AlertCircle, Loader2, Lock,
 } from "lucide-react";
 import { AudioPlayButton, preloadAmyVoice } from "@/components/audio-play-button";
+import { MediaPreviewLockOverlay } from "@/components/media-preview-lock";
+import type { PreviewLockMode } from "@/components/preview-lock-wrapper";
+import type { HubPhonicsDto } from "@/hooks/use-hub-content";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   usePhonicsData,
@@ -116,12 +119,22 @@ interface PhonicsLearningProps {
   childId: number | string;
   childName: string;
   totalAgeMonths: number;
+  /**
+   * Section-2 phonics items from /api/hub/content (concept-grouped, next
+   * level per concept). Rendered as a "Next Stage" card with each tile in
+   * preview-and-lock mode.
+   */
+  nextStagePhonics?: readonly HubPhonicsDto[];
+  /** Mode for the preview lock copy. Defaults to "next-level". */
+  previewMode?: PreviewLockMode;
 }
 
 export function PhonicsLearning({
   childId,
   childName,
   totalAgeMonths,
+  nextStagePhonics,
+  previewMode = "next-level",
 }: PhonicsLearningProps) {
   const data = usePhonicsData(childId, totalAgeMonths);
   const { level, loading, items, dailyItems, progress, insights, recordPlay, toggleMastered } = data;
@@ -187,6 +200,101 @@ export function PhonicsLearning({
         progress={progress}
         insights={insights}
       />
+      {nextStagePhonics && nextStagePhonics.length > 0 && (
+        <NextStagePhonicsCard
+          items={nextStagePhonics}
+          previewMode={previewMode}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Section 2: Next-Stage Preview ───────────────────────────────────────────
+
+/**
+ * Renders Section-2 (next-level) phonics as a row of preview tiles. Each
+ * tile's audio button has a 6 s hard cap; once the cap fires the tile dims
+ * and a lock overlay appears explaining how to unlock it for real.
+ */
+export function NextStagePhonicsCard({
+  items,
+  previewMode,
+}: {
+  items: readonly HubPhonicsDto[];
+  previewMode: PreviewLockMode;
+}) {
+  return (
+    <Card
+      data-testid="phonics-next-stage"
+      className="rounded-3xl overflow-hidden bg-gradient-to-br from-amber-50/80 via-rose-50/60 to-violet-50/80 dark:from-amber-500/10 dark:via-rose-500/5 dark:to-violet-500/10 border border-amber-300/40 dark:border-amber-400/20 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]"
+    >
+      <CardContent className="p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
+            <Lock className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-quicksand text-sm font-bold text-foreground">
+              Next Stage — preview only
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Tap a sound for a quick listen. Unlock the full set as your child
+              progresses.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {items.map((item) => (
+            <NextStagePhonicsTile
+              key={item.id}
+              item={item}
+              previewMode={previewMode}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function NextStagePhonicsTile({
+  item,
+  previewMode,
+}: {
+  item: HubPhonicsDto;
+  previewMode: PreviewLockMode;
+}) {
+  const [capped, setCapped] = useState(false);
+  // Per-item gate: only apply the 5–8 s cap when the server marked this
+  // item `previewOnly`. An unlocked next-stage phonics item (e.g., user
+  // early-unlocked the band) plays at full length with no overlay.
+  const isPreview = item.previewOnly;
+  return (
+    <div
+      data-testid={`phonics-next-stage-tile-${item.id}`}
+      data-preview-only={isPreview ? "true" : "false"}
+      className="relative rounded-2xl bg-white/70 dark:bg-white/[0.05] border border-white/60 dark:border-white/10 p-2 flex flex-col items-center gap-1.5"
+    >
+      <div className={capped ? "opacity-40 saturate-50" : ""}>
+        <div className="text-2xl font-quicksand font-bold text-foreground">
+          {item.symbol}
+        </div>
+        <div className="text-[10px] text-muted-foreground text-center mb-1">
+          {item.example ?? item.sound}
+        </div>
+        <AudioPlayButton
+          text={item.sound}
+          size="sm"
+          variant="amber"
+          {...(isPreview
+            ? { maxPlayMs: 6000, onCapped: () => setCapped(true) }
+            : {})}
+        />
+      </div>
+      {isPreview && capped && (
+        <MediaPreviewLockOverlay mode={previewMode} appearance="light" />
+      )}
     </div>
   );
 }

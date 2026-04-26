@@ -3,6 +3,11 @@ import { X, AlertCircle, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { StoryDto } from "@/hooks/use-stories-data";
+import {
+  MediaPreviewLockOverlay,
+  useMediaPreviewCap,
+} from "@/components/media-preview-lock";
+import type { PreviewLockMode } from "@/components/preview-lock-wrapper";
 
 interface StoryPlayerProps {
   story: StoryDto | null;
@@ -12,9 +17,23 @@ interface StoryPlayerProps {
     positionSec: number,
     options?: { durationSec?: number; completed?: boolean; startedSession?: boolean },
   ) => void;
+  /**
+   * When set, the player is in preview mode: native controls are hidden,
+   * playback is hard-capped at 5–8 s and a lock overlay appears the moment
+   * the cap is hit. The cap is enforced even if the user attempts to seek.
+   */
+  previewMode?: PreviewLockMode | null;
+  /** Cap for preview mode in seconds. Default 6, clamped to 5–8. */
+  previewCapSeconds?: number;
 }
 
-export function StoryPlayer({ story, onClose, onProgress }: StoryPlayerProps) {
+export function StoryPlayer({
+  story,
+  onClose,
+  onProgress,
+  previewMode = null,
+  previewCapSeconds = 6,
+}: StoryPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [errored, setErrored] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -93,6 +112,15 @@ export function StoryPlayer({ story, onClose, onProgress }: StoryPlayerProps) {
     onClose();
   };
 
+  // Hard playback cap when in preview mode. Enforced even if the consumer
+  // forgets to hide the controls — the hook re-pins currentTime back to the
+  // cap on every seek/play attempt.
+  const isPreview = previewMode !== null;
+  const capped = useMediaPreviewCap(videoRef, {
+    active: isPreview && !!story && !errored,
+    capSeconds: previewCapSeconds,
+  });
+
   if (!story) return null;
 
   // story.streamUrl is "/api/reels/stream/:fileId" — relative paths work
@@ -133,11 +161,21 @@ export function StoryPlayer({ story, onClose, onProgress }: StoryPlayerProps) {
               key={`${story.id}-${retryKey}`}
               ref={videoRef}
               src={streamSrc}
-              controls
+              // In preview mode the native scrubber/controls are hidden so the
+              // user has no UI handle for seeking past the cap; the cap hook
+              // handles programmatic seek attempts in addition.
+              controls={!isPreview}
+              controlsList={isPreview ? "nodownload noplaybackrate" : undefined}
               autoPlay
               playsInline
               className="aspect-video w-full bg-black"
+              data-preview-mode={previewMode ?? undefined}
+              data-preview-capped={capped ? "true" : undefined}
             />
+          )}
+
+          {isPreview && previewMode && capped && (
+            <MediaPreviewLockOverlay mode={previewMode} onClose={handleClose} />
           )}
 
           <button

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Volume2, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
@@ -41,6 +42,15 @@ interface AudioPlayButtonProps {
   onFinished?: () => void;
   /** Optional callback when the user taps Play (used for progress tracking). */
   onPlay?: () => void;
+  /**
+   * Hard cap on playback duration in milliseconds. When set, playback is
+   * stopped automatically after this much time has elapsed and `onCapped` is
+   * fired exactly once per play session. Used by the Section-2 preview-and-
+   * lock UX so phonics audio never exceeds the 5–8 s preview window.
+   */
+  maxPlayMs?: number;
+  /** Fired once when `maxPlayMs` is hit. */
+  onCapped?: () => void;
   className?: string;
 }
 
@@ -76,10 +86,25 @@ export function AudioPlayButton({
   ariaLabel,
   onFinished,
   onPlay,
+  maxPlayMs,
+  onCapped,
   className,
 }: AudioPlayButtonProps) {
   const { speak, stop, speaking, loading } = useAmyVoice({ onFinished });
   const busy = speaking || loading;
+
+  // Hard cap on actual playback time. We arm the timer the moment audio
+  // starts (`speaking` flips true) and tear it down when playback stops or
+  // the component unmounts. Loading time intentionally doesn't count toward
+  // the cap — kids only experience the audible portion as "play time".
+  useEffect(() => {
+    if (!speaking || !maxPlayMs) return;
+    const t = setTimeout(() => {
+      stop();
+      onCapped?.();
+    }, maxPlayMs);
+    return () => clearTimeout(t);
+  }, [speaking, maxPlayMs, stop, onCapped]);
 
   const handleClick = () => {
     if (busy) {

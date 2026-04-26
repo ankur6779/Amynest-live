@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
@@ -43,6 +43,13 @@ import { getAgeBand, getNextAgeBand, bandLabel } from "@/lib/age-bands";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 import { StageMilestonesCard, GraduationStageCard } from "@/components/stage-milestones-card";
 import { HubProgressiveContent } from "@/components/hub-progressive-content";
+import {
+  PreviewLockWrapper,
+  HubSectionAutoCloseContext,
+  type PreviewLockMode,
+} from "@/components/preview-lock-wrapper";
+import { useHubContent, type HubBandProgress } from "@/hooks/use-hub-content";
+import { Lock as LockIcon } from "lucide-react";
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
 interface SectionProps {
@@ -59,6 +66,12 @@ interface SectionProps {
 
 function HubSection({ id, icon, title, description, accentClass, defaultOpen = false, tryFree = false, onOpen, children }: SectionProps & { onOpen?: () => void }) {
   const [open, setOpen] = useState(defaultOpen);
+  // Stable close callback exposed to descendants via context. PreviewLockWrapper
+  // calls this when its 5–8 s cap fires, which collapses the section
+  // (auto-close behaviour required by the brief for non-media Section 2 tiles).
+  const closeRef = useRef<() => void>(() => setOpen(false));
+  closeRef.current = () => setOpen(false);
+  const close = useCallback(() => closeRef.current(), []);
   const toggle = () => {
     setOpen((v) => {
       const next = !v;
@@ -125,7 +138,9 @@ function HubSection({ id, icon, title, description, accentClass, defaultOpen = f
       </button>
       {open && (
         <div className="px-4 pb-5 pt-3 border-t border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/[0.015] animate-in fade-in slide-in-from-top-1 duration-300">
-          {children}
+          <HubSectionAutoCloseContext.Provider value={close}>
+            {children}
+          </HubSectionAutoCloseContext.Provider>
         </div>
       )}
     </div>
@@ -500,6 +515,15 @@ export default function ParentingHub() {
     : null;
   const nextBand: AgeBand | null = currentBand ? getNextAgeBand(currentBand) : null;
 
+  type SectionRenderOptions = {
+    /**
+     * Optional inner-content wrapper. Section 2 passes a wrapper that injects
+     * the non-media preview-lock around the section's interactive children;
+     * Section 1 calls render() with no options so the section renders as-is.
+     */
+    wrapInner?: (n: React.ReactNode) => React.ReactNode;
+  };
+
   type SectionEntry = {
     id: string;
     /** Always renders in "For You" regardless of band. */
@@ -508,8 +532,21 @@ export default function ParentingHub() {
     bands?: AgeBand[];
     /** Render full-width above the grid (only honoured in "For You"). */
     featured?: boolean;
-    render: () => React.ReactNode;
+    render: (opts?: SectionRenderOptions) => React.ReactNode;
   };
+
+  // ── Hub content (Section 1 + Section 2 partition) ───────────────────────
+  const hubContent = useHubContent(effectiveChild?.id ?? null);
+  const previewMode: PreviewLockMode =
+    currentBand === "0-2" ? "infant" : "next-level";
+  // Helper used for Section 2 sections — wraps the inner content in the
+  // non-media preview-lock so the timer + overlay fire as soon as the user
+  // opens the section.
+  const wrapInPreviewLock = (n: React.ReactNode) => (
+    <PreviewLockWrapper mode={previewMode}>{n}</PreviewLockWrapper>
+  );
+  const wrap = (opts: SectionRenderOptions | undefined, n: React.ReactNode) =>
+    opts?.wrapInner ? opts.wrapInner(n) : n;
 
   const sections: SectionEntry[] = effectiveChild ? [
     // ── FEATURED (full-width, always-current) ─────────────────────────────
@@ -686,7 +723,7 @@ export default function ParentingHub() {
     {
       id: "story-hub",
       bands: ["0-2", "2-4", "4-6", "6-8"],
-      render: () => (
+      render: (opts) => (
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_story_hub")}
@@ -702,7 +739,16 @@ export default function ParentingHub() {
             tryFree={tryFreeFor("hub_story_hub")}
             onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}
           >
-            <StoryHub childId={effectiveChild.id} childName={effectiveChild.name} />
+            {wrap(
+              opts,
+              <StoryHub
+                childId={effectiveChild.id}
+                childName={effectiveChild.name}
+                previewStoryIds={hubContent.previewStoryIds}
+                nextStageStories={hubContent.data?.section2.stories}
+                previewMode={previewMode}
+              />,
+            )}
           </HubSection>
         </LockedBlock>
       ),
@@ -711,7 +757,7 @@ export default function ParentingHub() {
     {
       id: "phonics",
       bands: ["2-4", "4-6"],
-      render: () => (totalAgeMonths >= 12 && totalAgeMonths < 72) ? (
+      render: (opts) => (totalAgeMonths >= 12 && totalAgeMonths < 72) ? (
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_phonics")}
@@ -727,11 +773,16 @@ export default function ParentingHub() {
             tryFree={tryFreeFor("hub_phonics")}
             onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}
           >
-            <PhonicsLearning
-              childId={effectiveChild.id}
-              childName={effectiveChild.name}
-              totalAgeMonths={totalAgeMonths}
-            />
+            {wrap(
+              opts,
+              <PhonicsLearning
+                childId={effectiveChild.id}
+                childName={effectiveChild.name}
+                totalAgeMonths={totalAgeMonths}
+                nextStagePhonics={hubContent.data?.section2.phonics}
+                previewMode={previewMode}
+              />,
+            )}
           </HubSection>
         </LockedBlock>
       ) : null,
@@ -740,7 +791,7 @@ export default function ParentingHub() {
     {
       id: "ptm-prep",
       bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 216) ? (
+      render: (opts) => (totalAgeMonths >= 36 && totalAgeMonths < 216) ? (
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
@@ -756,7 +807,7 @@ export default function ParentingHub() {
             tryFree={tryFreeFor("hub_ptm_prep")}
             onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}
           >
-            <PtmPrepAssistant child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
+            {wrap(opts, <PtmPrepAssistant child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />)}
           </HubSection>
         </LockedBlock>
       ) : null,
@@ -765,7 +816,7 @@ export default function ParentingHub() {
     {
       id: "smart-study",
       bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 204) ? (
+      render: (opts) => (totalAgeMonths >= 36 && totalAgeMonths < 204) ? (
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_smart_study")}
@@ -781,7 +832,7 @@ export default function ParentingHub() {
             tryFree={tryFreeFor("hub_smart_study")}
             onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}
           >
-            <SmartStudyZone />
+            {wrap(opts, <SmartStudyZone />)}
           </HubSection>
         </LockedBlock>
       ) : null,
@@ -790,7 +841,7 @@ export default function ParentingHub() {
     {
       id: "event-prep",
       bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 180) ? (
+      render: (opts) => (totalAgeMonths >= 36 && totalAgeMonths < 180) ? (
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_event_prep")}
@@ -806,7 +857,7 @@ export default function ParentingHub() {
             tryFree={tryFreeFor("hub_event_prep")}
             onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}
           >
-            <EventPrepCard />
+            {wrap(opts, <EventPrepCard />)}
           </HubSection>
         </LockedBlock>
       ) : null,
@@ -815,7 +866,7 @@ export default function ParentingHub() {
     {
       id: "olympiad",
       bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 192) ? (
+      render: (opts) => (totalAgeMonths >= 36 && totalAgeMonths < 192) ? (
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_olympiad")}
@@ -831,7 +882,7 @@ export default function ParentingHub() {
             tryFree={tryFreeFor("hub_olympiad")}
             onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}
           >
-            <OlympiadZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
+            {wrap(opts, <OlympiadZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />)}
           </HubSection>
         </LockedBlock>
       ) : null,
@@ -840,7 +891,7 @@ export default function ParentingHub() {
     {
       id: "life-skills",
       bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 24 && totalAgeMonths < 192) ? (
+      render: (opts) => (totalAgeMonths >= 24 && totalAgeMonths < 192) ? (
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_life_skills")}
@@ -856,25 +907,37 @@ export default function ParentingHub() {
             tryFree={tryFreeFor("hub_life_skills")}
             onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
           >
-            <LifeSkillsZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
+            {wrap(opts, <LifeSkillsZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />)}
           </HubSection>
         </LockedBlock>
       ) : null,
     },
   ] : [];
 
-  // Bucket sections by age band.
+  // Bucket sections using the API-provided `unlockedBands`. Anything whose
+  // band list intersects an unlocked band belongs in Section 1 ("For You")
+  // — this keeps DOB-driven *and* early-unlock progression in sync without
+  // re-deriving it on the client. We fall back to `currentBand` while the
+  // hub-content payload is still loading so the UI stays usable.
+  const unlockedBands: ReadonlySet<AgeBand> = new Set(
+    hubContent.data?.unlockedBands ??
+      (currentBand ? [currentBand] : []),
+  );
+  const sectionMatchesUnlocked = (s: SectionEntry) =>
+    !!s.bands && s.bands.some((b) => unlockedBands.has(b));
+
   const inForYou = (s: SectionEntry) =>
-    s.alwaysCurrent || (currentBand !== null && (s.bands?.includes(currentBand) ?? false));
+    s.alwaysCurrent || sectionMatchesUnlocked(s);
 
   // "Coming Next" sections are exclusive to the next band — they intentionally
   // exclude anything already shown in "For You" so we never render the same
-  // section twice.
+  // section twice. A section that's already unlocked (anywhere in
+  // `unlockedBands`) never appears here, even if it also matches `nextBand`.
   const inComingNext = (s: SectionEntry) =>
     !s.alwaysCurrent &&
     nextBand !== null &&
     (s.bands?.includes(nextBand) ?? false) &&
-    !(currentBand !== null && (s.bands?.includes(currentBand) ?? false));
+    !sectionMatchesUnlocked(s);
 
   const forYouAll = sections.filter(inForYou);
   const forYouFeatured = forYouAll.filter((s) => s.featured);
@@ -900,6 +963,14 @@ export default function ParentingHub() {
             band={currentBand}
             ageGroup={ageGroup}
           />
+
+          {hubContent.data && (
+            <BandProgressChip
+              progress={hubContent.data.bandProgress}
+              earlyUnlocked={hubContent.data.nextBandEarlyUnlocked}
+              hasNextBand={!!nextBand}
+            />
+          )}
 
           {/* Featured (full-width) */}
           {forYouFeatured.length > 0 && (
@@ -938,7 +1009,7 @@ export default function ParentingHub() {
               {exclusiveNext.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
                   {exclusiveNext.map((s) => {
-                    const node = s.render();
+                    const node = s.render({ wrapInner: wrapInPreviewLock });
                     return node ? (
                       <ComingNextWrapper key={s.id} band={nextBand}>
                         {node}
@@ -1004,6 +1075,47 @@ function ForYouHeader({
       <p className="text-xs text-muted-foreground mt-0.5">
         Personalised content tuned to where {childName} is right now.
       </p>
+    </div>
+  );
+}
+
+function BandProgressChip({
+  progress,
+  earlyUnlocked,
+  hasNextBand,
+}: {
+  progress: HubBandProgress;
+  earlyUnlocked: boolean;
+  hasNextBand: boolean;
+}) {
+  const { totalCount, finishedCount, percentage } = progress;
+  // No tagged content for this band — don't show a misleading "0 of 0" chip.
+  if (totalCount === 0) return null;
+
+  const tone = earlyUnlocked
+    ? "bg-emerald-100 dark:bg-emerald-500/15 border-emerald-300/50 dark:border-emerald-400/30 text-emerald-900 dark:text-emerald-100"
+    : "bg-amber-100/80 dark:bg-amber-500/10 border-amber-300/50 dark:border-amber-400/30 text-amber-900 dark:text-amber-100";
+  const message = !hasNextBand
+    ? `${finishedCount} of ${totalCount} finished — you're at the top stage!`
+    : earlyUnlocked
+      ? "Next stage unlocked early — explore it whenever you're ready."
+      : `${finishedCount} of ${totalCount} finished — ${percentage}% to unlock the next stage.`;
+  return (
+    <div
+      data-testid="band-progress-chip"
+      data-band-percentage={percentage}
+      className={`mt-2 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-bold ${tone}`}
+    >
+      <LockIcon className="h-3 w-3" />
+      <span>{message}</span>
+      {hasNextBand && !earlyUnlocked && (
+        <span className="relative ml-1 h-1.5 w-16 overflow-hidden rounded-full bg-white/60 dark:bg-white/10">
+          <span
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-500 to-rose-500"
+            style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+          />
+        </span>
+      )}
     </div>
   );
 }
