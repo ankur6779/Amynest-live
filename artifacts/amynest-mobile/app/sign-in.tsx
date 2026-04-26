@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Image,
 } from "react-native";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { Link } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,14 +15,25 @@ import { brand } from "@/constants/colors";
 import { humanizeError } from "@/utils/humanizeError";
 import PhoneAuthFlow from "@/components/PhoneAuthFlow";
 
+type ViewMode = "signin" | "reset" | "reset-sent";
+
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const [mode, setMode] = useState<ViewMode>("signin");
+
+  // Sign-in state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  // Reset-password state
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetFocused, setResetFocused] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const handleSignIn = async () => {
     if (!email || !password) return;
@@ -37,10 +48,169 @@ export default function SignInScreen() {
     }
   };
 
+  const openReset = () => {
+    setResetEmail(email);
+    setResetError(null);
+    setMode("reset");
+  };
+
+  const handleSendReset = async () => {
+    if (!resetEmail.trim()) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setResetLoading(true);
+    setResetError(null);
+    try {
+      await sendPasswordResetEmail(firebaseAuth, resetEmail.trim());
+      setMode("reset-sent");
+    } catch (err: unknown) {
+      setResetError(humanizeError(err, "Couldn't send reset email. Please try again."));
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const botPad = insets.bottom + (Platform.OS === "web" ? 34 : 0);
   const canSignIn = !loading && !!email && !!password;
+  const canReset = !resetLoading && !!resetEmail.trim();
 
+  // ─── Reset-sent confirmation ────────────────────────────────────────────────
+  if (mode === "reset-sent") {
+    return (
+      <LinearGradient
+        colors={["#0D0022", "#180040", "#0A001E"]}
+        style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
+      >
+        <View style={styles.orb1} />
+        <View style={styles.orb2} />
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.logoWrap}>
+            <View style={styles.logoGlowRing}>
+              <Image
+                source={require("../assets/images/amynest-logo.png")}
+                style={styles.logoImg}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+          <View style={styles.card}>
+            <Text style={styles.sentEmoji}>📬</Text>
+            <Text style={styles.title}>Check your inbox</Text>
+            <Text style={styles.subtitle}>
+              We've sent a reset link to{"\n"}
+              <Text style={styles.resetEmailHighlight}>{resetEmail}</Text>
+              {"\n"}Check spam if you don't see it.
+            </Text>
+            <TouchableOpacity
+              onPress={() => setMode("signin")}
+              activeOpacity={0.85}
+              style={styles.primaryBtnWrap}
+            >
+              <LinearGradient
+                colors={[brand.primary, "#FF4ECD"]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={styles.primaryBtn}
+              >
+                <Text style={styles.primaryBtnText}>Back to Sign in</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </LinearGradient>
+    );
+  }
+
+  // ─── Forgot-password form ────────────────────────────────────────────────────
+  if (mode === "reset") {
+    return (
+      <LinearGradient
+        colors={["#0D0022", "#180040", "#0A001E"]}
+        style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
+      >
+        <View style={styles.orb1} />
+        <View style={styles.orb2} />
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.logoWrap}>
+              <View style={styles.logoGlowRing}>
+                <Image
+                  source={require("../assets/images/amynest-logo.png")}
+                  style={styles.logoImg}
+                  resizeMode="contain"
+                />
+              </View>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.title}>Reset password</Text>
+              <Text style={styles.subtitle}>Enter your email and we'll send you a reset link.</Text>
+
+              {/* Email */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t("auth.email")}</Text>
+                <View style={[styles.inputWrap, resetFocused && styles.inputWrapFocused]}>
+                  <Ionicons name="mail-outline" size={18} color={resetFocused ? "#A78BFA" : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    value={resetEmail}
+                    onChangeText={setResetEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    placeholderTextColor="rgba(200,180,255,0.28)"
+                    onFocus={() => setResetFocused(true)}
+                    onBlur={() => setResetFocused(false)}
+                    autoFocus
+                    testID="reset-email-input"
+                  />
+                </View>
+              </View>
+
+              {resetError && (
+                <View style={styles.errorBox}>
+                  <Ionicons name="alert-circle-outline" size={15} color="#FF8080" style={{ marginRight: 6 }} />
+                  <Text style={styles.errorText}>{resetError}</Text>
+                </View>
+              )}
+
+              {/* Send button */}
+              <TouchableOpacity
+                onPress={handleSendReset}
+                disabled={!canReset}
+                activeOpacity={0.85}
+                style={styles.primaryBtnWrap}
+                testID="send-reset-btn"
+              >
+                <LinearGradient
+                  colors={canReset ? [brand.primary, "#FF4ECD"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={styles.primaryBtn}
+                >
+                  {resetLoading
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={styles.primaryBtnText}>Send reset link</Text>
+                  }
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Back link */}
+              <TouchableOpacity onPress={() => setMode("signin")} style={styles.backBtn}>
+                <Ionicons name="arrow-back" size={14} color="rgba(200,180,255,0.55)" style={{ marginRight: 4 }} />
+                <Text style={styles.backBtnText}>Back to Sign in</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    );
+  }
+
+  // ─── Normal sign-in form ─────────────────────────────────────────────────────
   return (
     <LinearGradient
       colors={["#0D0022", "#180040", "#0A001E"]}
@@ -109,7 +279,12 @@ export default function SignInScreen() {
 
             {/* Password */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t("auth.password")}</Text>
+              <View style={styles.passwordLabelRow}>
+                <Text style={styles.label}>{t("auth.password")}</Text>
+                <TouchableOpacity onPress={openReset} hitSlop={8} testID="forgot-password-btn">
+                  <Text style={styles.forgotLink}>Forgot password?</Text>
+                </TouchableOpacity>
+              </View>
               <View style={[styles.inputWrap, focusedField === "password" && styles.inputWrapFocused]}>
                 <Ionicons name="lock-closed-outline" size={18} color={focusedField === "password" ? "#A78BFA" : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
                 <TextInput
@@ -213,7 +388,10 @@ const styles = StyleSheet.create({
   },
 
   title: { fontSize: 24, fontWeight: "700", color: "#FFFFFF", fontFamily: "Inter_700Bold" },
-  subtitle: { fontSize: 14, color: "rgba(200,180,255,0.65)", fontFamily: "Inter_400Regular", marginBottom: 4 },
+  subtitle: { fontSize: 14, color: "rgba(200,180,255,0.65)", fontFamily: "Inter_400Regular", marginBottom: 4, lineHeight: 20 },
+
+  sentEmoji: { fontSize: 40, textAlign: "center" },
+  resetEmailHighlight: { color: "#C084FC", fontWeight: "600" },
 
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   divider: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.10)" },
@@ -221,6 +399,19 @@ const styles = StyleSheet.create({
 
   inputGroup: { gap: 7 },
   label: { fontSize: 12, fontWeight: "600", color: "rgba(200,180,255,0.80)", fontFamily: "Inter_600SemiBold" },
+
+  passwordLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  forgotLink: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#C084FC",
+    fontFamily: "Inter_600SemiBold",
+  },
+
   inputWrap: {
     flexDirection: "row", alignItems: "center",
     height: 52, borderRadius: 14,
@@ -237,6 +428,23 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontSize: 15, color: "#F0E8FF", fontFamily: "Inter_400Regular" },
   eyeBtn: { padding: 4 },
 
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "rgba(255,60,60,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,60,60,0.25)",
+    borderRadius: 12,
+    padding: 10,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#FF8080",
+    fontFamily: "Inter_400Regular",
+    lineHeight: 18,
+  },
+
   primaryBtnWrap: { marginTop: 4 },
   primaryBtn: {
     height: 54, borderRadius: 16, alignItems: "center", justifyContent: "center",
@@ -244,6 +452,19 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold" },
+
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+    paddingVertical: 6,
+  },
+  backBtnText: {
+    fontSize: 14,
+    color: "rgba(200,180,255,0.55)",
+    fontFamily: "Inter_400Regular",
+  },
 
   footer: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
   footerText: { color: "rgba(200,180,255,0.50)", fontFamily: "Inter_400Regular", fontSize: 14 },
