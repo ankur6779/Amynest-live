@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import mascotImg from "@assets/ChatGPT_Image_Apr_26,_2026,_10_36_21_PM_1777223202857.png";
+import mascotImg from "@assets/ChatGPT_Image_Apr_26,_2026,_11_07_57_PM_1777225089415.png";
 
 interface AmyMascotLogoProps {
   size?: number;
@@ -33,11 +33,11 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
     return () => { clearTimeout(init); clearTimeout(timer); };
   }, []);
 
-  const ew = size * 0.062;
-  const eh = size * 0.074;
-  const lx  = size * 0.348;
-  const rx  = size * 0.558;
-  const ey  = size * 0.468;
+  const ew = size * 0.055;
+  const eh = size * 0.065;
+  const lx = size * 0.412;
+  const rx = size * 0.552;
+  const ey = size * 0.455;
 
   return (
     <div
@@ -53,56 +53,14 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
         {/* Hover glow ring (box-shadow layer, opacity transitions on hover) */}
         <div className="amy-mascot-hover-ring" style={{ position: "absolute", inset: 0, borderRadius: "50%", pointerEvents: "none", zIndex: 4 }} />
 
-        {/* Circular themed badge — dark purple bg + neon ring border, clips white PNG edges */}
-        <div
+        {/* Mascot image — transparent PNG with breathing neon glow */}
+        <img
+          src={mascotImg}
+          alt="Amy AI"
           className="amy-mascot-glow"
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            overflow: "hidden",
-            background: "radial-gradient(circle at 50% 45%, #3a1f6b 0%, #1a0a2e 75%, #0a061a 100%)",
-            boxShadow: "inset 0 0 0 1.5px rgba(180, 120, 255, 0.55), inset 0 0 8px rgba(120, 80, 200, 0.4)",
-            zIndex: 1,
-          }}
-        >
-          <img
-            src={mascotImg}
-            alt="Amy AI"
-            style={{
-              width: "118%",
-              height: "118%",
-              marginLeft: "-9%",
-              marginTop: "-9%",
-              objectFit: "contain",
-              display: "block",
-              pointerEvents: "none",
-              filter: "hue-rotate(15deg) saturate(1.3) brightness(0.92)",
-            }}
-            draggable={false}
-          />
-          {/* Purple multiply overlay — tints white bird body to purple, matches dark theme */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(135deg, #a06bff 0%, #c084fc 50%, #e879f9 100%)",
-              mixBlendMode: "multiply",
-              pointerEvents: "none",
-              opacity: 0.85,
-            }}
-          />
-          {/* Subtle purple glow tint on top — adds neon shimmer */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "radial-gradient(circle at 50% 35%, rgba(200, 130, 255, 0.18) 0%, transparent 60%)",
-              mixBlendMode: "screen",
-              pointerEvents: "none",
-            }}
-          />
-        </div>
+          style={{ width: size, height: size, objectFit: "contain", display: "block", pointerEvents: "none", position: "relative", zIndex: 1 }}
+          draggable={false}
+        />
 
         {/* Eye eyelid overlays — scaleY(0)=open, scaleY(1)=closed */}
         <div
@@ -114,7 +72,7 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
             width: ew,
             height: eh,
             borderRadius: "50%",
-            background: "#e4daf2",
+            background: "#fde8e8",
             transform: "scaleY(0)",
             transformOrigin: "center center",
             transition: "transform 0.12s ease-in-out",
@@ -131,7 +89,7 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
             width: ew,
             height: eh,
             borderRadius: "50%",
-            background: "#e4daf2",
+            background: "#fde8e8",
             transform: "scaleY(0)",
             transformOrigin: "center center",
             transition: "transform 0.12s ease-in-out",
