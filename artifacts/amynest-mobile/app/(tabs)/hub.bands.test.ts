@@ -13,6 +13,7 @@ import {
   HUB_AGE_BANDS,
   getAgeBand,
   HUB_CONTENT_AGE_BANDS,
+  partitionTilesByBand,
 } from "./hub-bands";
 
 describe("getAgeBand", () => {
@@ -110,42 +111,32 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
   });
 });
 
-describe("Hub section partition", () => {
-  // Mirrors the partitioning rule used in hub.tsx so the test acts as the
-  // contract: a tile belongs in Section 1 ("For You") when its ageBands
-  // include the current band, and in Section 2 ("Explore Next Stage") when
-  // it has at least one strictly-future band but does not cover the current
-  // band. Tiles whose bands are all in the past are intentionally hidden.
+describe("partitionTilesByBand", () => {
+  // Exercise the real production helper used by hub.tsx so any regression
+  // in the partition rule (e.g. Section 2 accidentally including past-only
+  // tiles, or "Coming Up Next" pinning to the wrong band) is caught here
+  // instead of slipping past a parallel-implementation test.
   type Tile = { id: string; ageBands: readonly number[] };
   const allTiles: Tile[] = Object.entries(HUB_CONTENT_AGE_BANDS).map(
     ([id, ageBands]) => ({ id, ageBands }),
   );
+  const allBandIds = HUB_AGE_BANDS.map((b) => b.idx);
 
-  const partition = (currentBand: number) => {
-    const section1 = allTiles.filter((t) => t.ageBands.includes(currentBand));
-    const section2 = allTiles.filter(
-      (t) =>
-        !t.ageBands.includes(currentBand) &&
-        t.ageBands.some((b) => b > currentBand),
-    );
-    const hidden = allTiles.filter(
-      (t) =>
-        !t.ageBands.includes(currentBand) &&
-        !t.ageBands.some((b) => b > currentBand),
-    );
-    return { section1, section2, hidden };
-  };
+  for (const band of allBandIds) {
+    const label = HUB_AGE_BANDS[band].label;
 
-  for (const band of HUB_AGE_BANDS.map((b) => b.idx)) {
-    it(`band ${band} (${HUB_AGE_BANDS[band].label}): Section 1 and Section 2 are disjoint`, () => {
-      const { section1, section2 } = partition(band);
+    it(`band ${band} (${label}): Section 1 and Section 2 are disjoint`, () => {
+      const { section1, section2 } = partitionTilesByBand(allTiles, band);
       const s2ids = new Set(section2.map((t) => t.id));
       const overlap = section1.filter((t) => s2ids.has(t.id)).map((t) => t.id);
       expect(overlap, `tiles in both sections for band ${band}`).toEqual([]);
     });
 
-    it(`band ${band} (${HUB_AGE_BANDS[band].label}): Section 1 ∪ Section 2 ∪ hidden covers every tile exactly once`, () => {
-      const { section1, section2, hidden } = partition(band);
+    it(`band ${band} (${label}): Section 1 ∪ Section 2 ∪ hidden covers every tile exactly once`, () => {
+      const { section1, section2, hidden } = partitionTilesByBand(
+        allTiles,
+        band,
+      );
       const ids = [
         ...section1.map((t) => t.id),
         ...section2.map((t) => t.id),
@@ -155,5 +146,116 @@ describe("Hub section partition", () => {
       expect(new Set(ids).size).toBe(allTiles.length);
       expect(new Set(ids)).toEqual(new Set(allTiles.map((t) => t.id)));
     });
+
+    it(`band ${band} (${label}): Section 1 contains exactly the tiles that include the current band`, () => {
+      const { section1 } = partitionTilesByBand(allTiles, band);
+      const expected = allTiles
+        .filter((t) => t.ageBands.includes(band))
+        .map((t) => t.id)
+        .sort();
+      expect(section1.map((t) => t.id).sort()).toEqual(expected);
+    });
+
+    it(`band ${band} (${label}): Section 2 only ever contains future-bearing tiles that don't cover the current band`, () => {
+      const { section2 } = partitionTilesByBand(allTiles, band);
+      for (const tile of section2) {
+        expect(
+          tile.ageBands.includes(band),
+          `tile "${tile.id}" in Section 2 also covers current band ${band}`,
+        ).toBe(false);
+        expect(
+          tile.ageBands.some((b) => b > band),
+          `tile "${tile.id}" in Section 2 has no future band > ${band}`,
+        ).toBe(true);
+      }
+    });
+
+    it(`band ${band} (${label}): hidden tiles have no current and no future band`, () => {
+      const { hidden } = partitionTilesByBand(allTiles, band);
+      for (const tile of hidden) {
+        expect(
+          tile.ageBands.includes(band),
+          `hidden tile "${tile.id}" unexpectedly covers current band ${band}`,
+        ).toBe(false);
+        expect(
+          tile.ageBands.some((b) => b > band),
+          `hidden tile "${tile.id}" unexpectedly has a future band`,
+        ).toBe(false);
+      }
+    });
+
+    it(`band ${band} (${label}): groupsByFutureBand keys are all strictly > current band and tiles appear in exactly one group`, () => {
+      const { section2, groupsByFutureBand } = partitionTilesByBand(
+        allTiles,
+        band,
+      );
+      const seen = new Set<string>();
+      for (const [futureBand, tiles] of groupsByFutureBand) {
+        expect(
+          futureBand,
+          `groupsByFutureBand key ${futureBand} is not strictly future`,
+        ).toBeGreaterThan(band);
+        for (const tile of tiles) {
+          expect(
+            seen.has(tile.id),
+            `tile "${tile.id}" appears in more than one future group`,
+          ).toBe(false);
+          seen.add(tile.id);
+        }
+      }
+      // Every Section 2 tile must land in some group, and only Section 2
+      // tiles ever land in groups.
+      expect(seen).toEqual(new Set(section2.map((t) => t.id)));
+    });
+
+    it(`band ${band} (${label}): each Section 2 tile sits under its smallest future band`, () => {
+      const { groupsByFutureBand } = partitionTilesByBand(allTiles, band);
+      for (const [futureBand, tiles] of groupsByFutureBand) {
+        for (const tile of tiles) {
+          const expected = Math.min(
+            ...tile.ageBands.filter((b) => b > band),
+          );
+          expect(
+            futureBand,
+            `tile "${tile.id}" placed under band ${futureBand} but its nearest future band is ${expected}`,
+          ).toBe(expected);
+        }
+      }
+    });
+
+    it(`band ${band} (${label}): nearestFutureBand and isLatestStage agree with groupsByFutureBand`, () => {
+      const { groupsByFutureBand, nearestFutureBand, isLatestStage } =
+        partitionTilesByBand(allTiles, band);
+      const keys = [...groupsByFutureBand.keys()].sort((a, b) => a - b);
+      if (keys.length === 0) {
+        expect(nearestFutureBand).toBeNull();
+        expect(isLatestStage).toBe(true);
+      } else {
+        expect(nearestFutureBand).toBe(keys[0]);
+        expect(isLatestStage).toBe(false);
+      }
+    });
   }
+
+  it("returns the original tile objects (preserving extra fields like `node`)", () => {
+    // The helper is generic over T; callers attach a rendered React node to
+    // each tile and rely on it surviving the partition.
+    const marker = Symbol("node");
+    const tiles = [
+      { id: "amy", ageBands: [0, 1] as const, node: marker },
+      { id: "olympiad", ageBands: [3, 4] as const, node: marker },
+    ];
+    const { section1, section2 } = partitionTilesByBand(tiles, 0);
+    expect(section1[0].node).toBe(marker);
+    expect(section2[0].node).toBe(marker);
+  });
+
+  it("treats the last band as 'latest stage' (no future content)", () => {
+    const lastBand = HUB_AGE_BANDS.length - 1;
+    const { isLatestStage, nearestFutureBand, section2 } =
+      partitionTilesByBand(allTiles, lastBand);
+    expect(isLatestStage).toBe(true);
+    expect(nearestFutureBand).toBeNull();
+    expect(section2).toEqual([]);
+  });
 });

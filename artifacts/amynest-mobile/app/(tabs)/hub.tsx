@@ -23,8 +23,8 @@ import FuturePredictor from "@/components/FuturePredictor";
 import AiMealGenerator from "@/components/AiMealGenerator";
 import ParentCommandCenter from "@/components/ParentCommandCenter";
 import { isInfantHubAge } from "@workspace/infant-hub";
-import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS } from "./hub-bands";
-export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS };
+import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand } from "./hub-bands";
+export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand };
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
@@ -1026,19 +1026,26 @@ export default function HubScreen() {
             ),
           });
 
-            // Filter into the two age-band sections. A tile lives in Section 1
-            // when its ageBands include the child's current band. Section 2 is
-            // strictly forward-looking: a tile only enters Section 2 when it has
-            // at least one *future* band (> currentBand). Tiles whose bands are
-            // all in the past are intentionally hidden — Explore is for
-            // "what's coming next", not catch-up content.
-            const section1 = allTiles.filter(t => t.ageBands.includes(currentBand));
-            const section2 = allTiles.filter(t =>
-              !t.ageBands.includes(currentBand) &&
-              t.ageBands.some(b => b > currentBand)
-            );
+            // Partition tiles into the two age-band sections via the pure
+            // helper in ./hub-bands so the rule lives in one tested place.
+            // A tile lives in Section 1 when its ageBands include the child's
+            // current band. Section 2 is strictly forward-looking: a tile
+            // only enters Section 2 when it has at least one *future* band
+            // (> currentBand). Tiles whose bands are all in the past are
+            // intentionally hidden — Explore is for "what's coming next",
+            // not catch-up content.
+            const {
+              section1,
+              section2,
+              groupsByFutureBand: groupsMap,
+              orderedFutureBands: orderedBands,
+              nearestFutureBand,
+              isLatestStage,
+            } = partitionTilesByBand(allTiles, currentBand);
 
             // Render-time guard: assert no overlap between the two sections.
+            // The pure helper already guarantees this, but the warning helps
+            // surface accidental data-shape regressions in dev builds.
             if (__DEV__) {
               const overlap = section1.find(s1 => section2.some(s2 => s2.id === s1.id));
               if (overlap) {
@@ -1046,22 +1053,6 @@ export default function HubScreen() {
                 console.warn(`[hub] Tile "${overlap.id}" appears in both sections — check HUB_CONTENT_AGE_BANDS.`);
               }
             }
-
-            // Group Section 2 tiles by their nearest *future* band only.
-            const groupsMap = new Map<number, Tile[]>();
-            for (const tile of section2) {
-              const future = tile.ageBands
-                .filter(b => b > currentBand)
-                .sort((a, b) => a - b);
-              if (future.length === 0) continue;
-              const groupBand = future[0];
-              const arr = groupsMap.get(groupBand) ?? [];
-              arr.push(tile);
-              groupsMap.set(groupBand, arr);
-            }
-            const orderedBands = [...groupsMap.keys()].sort((a, b) => a - b);
-            const nearestFutureBand = orderedBands[0] ?? null;
-            const isLatestStage = orderedBands.length === 0;
 
             return (
               <>
