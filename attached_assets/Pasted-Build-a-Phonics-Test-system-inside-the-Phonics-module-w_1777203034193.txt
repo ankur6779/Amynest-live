@@ -1,0 +1,184 @@
+Build a "Phonics Test" system inside the Phonics module with Daily and Weekly assessments.
+
+GOAL:
+- Evaluate child’s phonics ability
+- Track progress over time
+- Generate insights for parents
+- Improve engagement and retention
+
+--------------------------------------------------
+1. TEST TYPES
+--------------------------------------------------
+A) Daily Test
+- 5 questions
+- Quick assessment
+- Available once per day
+
+B) Weekly Test
+- 20 questions
+- Comprehensive evaluation
+- Available once per week
+
+--------------------------------------------------
+2. AGE-BASED ADAPTATION
+--------------------------------------------------
+- Detect child age_group
+
+- Load questions based on:
+  • age_group
+  • difficulty level
+
+Example:
+- 2–4 → letter sounds
+- 4–6 → blending (CVC)
+- 6–8 → words + sentences
+
+--------------------------------------------------
+3. QUESTION TYPES
+--------------------------------------------------
+Support multiple formats:
+
+1. Sound Recognition
+- Play audio → select correct letter
+
+2. Letter Identification
+- Show letter → choose correct sound
+
+3. Word Recognition
+- Show image → select correct word
+
+4. Blending
+- c-a-t → choose "cat"
+
+5. Listening
+- Play word → select matching option
+
+--------------------------------------------------
+4. QUESTION STRUCTURE (DB)
+--------------------------------------------------
+Table: phonics_questions
+
+Fields:
+- id
+- age_group
+- type
+- question_text
+- audio_url
+- image_url
+- options (array)
+- correct_answer
+- difficulty
+- concept_id
+
+--------------------------------------------------
+5. TEST GENERATION
+--------------------------------------------------
+Daily Test:
+- Random 5 questions
+- Mix of types
+- Avoid repeating recent questions
+
+Weekly Test:
+- 20 questions
+- Cover multiple concepts
+- Include difficulty progression
+
+--------------------------------------------------
+6. TEST FLOW
+--------------------------------------------------
+- Start test → show 1 question at a time
+- Immediate feedback (optional)
+- Progress indicator (1/5 or 1/20)
+
+--------------------------------------------------
+7. SCORING SYSTEM
+--------------------------------------------------
+- Score = correct answers / total
+
+Daily:
+- Simple score
+
+Weekly:
+- Detailed breakdown:
+  • sound accuracy
+  • word recognition
+  • weak areas
+
+--------------------------------------------------
+8. RESULT SCREEN
+--------------------------------------------------
+Show:
+- Score %
+- Performance label:
+  • Beginner
+  • Improving
+  • Strong
+
+- Highlight:
+  • Weak sounds (e.g., B, SH)
+
+--------------------------------------------------
+9. AI INSIGHT (IMPORTANT)
+--------------------------------------------------
+Generate message:
+
+Examples:
+- "Your child struggles with 'B' sound"
+- "Practice blending words more"
+
+- Suggest:
+  • related phonics exercises
+
+--------------------------------------------------
+10. PROGRESS TRACKING
+--------------------------------------------------
+Table: phonics_test_results
+
+Fields:
+- id
+- child_id
+- test_type (daily/weekly)
+- score
+- weak_concepts
+- completed_at
+
+--------------------------------------------------
+11. LIMIT RULES
+--------------------------------------------------
+- Daily test:
+  • once per day
+
+- Weekly test:
+  • once per 7 days
+
+--------------------------------------------------
+12. GAMIFICATION (OPTIONAL BUT RECOMMENDED)
+--------------------------------------------------
+- Show:
+  • stars ⭐
+  • badges
+  • streaks
+
+--------------------------------------------------
+13. MULTI-CHILD SUPPORT
+--------------------------------------------------
+- Store results per childId
+- Switch child → separate history
+
+--------------------------------------------------
+14. UI
+--------------------------------------------------
+Section:
+"Phonics Test"
+
+Buttons:
+- Start Daily Test
+- Start Weekly Test
+
+--------------------------------------------------
+DELIVERABLE:
+- Dynamic test system
+- Question engine
+- Scoring + insights
+- Progress tracking
+- Age-based adaptation
