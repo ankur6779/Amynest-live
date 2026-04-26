@@ -77,34 +77,24 @@ type Activity = { emoji: string; title: string; desc: string; duration: string }
 
 const ACTIVITIES: Record<string, Activity[]> = {
   "0-3": [
-    { emoji: "🤰", title: "Tummy Time", desc: "Place baby on tummy on a firm surface while awake & supervised. Start with 1–2 min, build to 10–15 min/day.", duration: "5–15 min" },
-    { emoji: "🎵", title: "Sing & Talk", desc: "Narrate everything you do. Babies love your voice — this builds language pathways months before first words.", duration: "All day" },
-    { emoji: "🖤🤍", title: "High-Contrast Visuals", desc: "Show black-and-white patterns or simple faces 20–30 cm from baby's eyes. Vision is still developing.", duration: "5 min" },
+    { emoji: "🖤🤍", title: "High-Contrast Visuals", desc: "Show black-and-white patterns or simple faces 20–30 cm from baby's eyes. Newborn vision is still developing — high contrast is what they can actually see.", duration: "5 min" },
   ],
   "3-6": [
-    { emoji: "🎪", title: "Peekaboo", desc: "Hide your face behind your hands, then reveal with a big smile. This teaches object permanence and brings big laughs.", duration: "5 min" },
-    { emoji: "🎯", title: "Reach & Grab", desc: "Hang soft colourful toys within reach. Let baby bat at them — this builds hand-eye coordination.", duration: "10 min" },
-    { emoji: "🎶", title: "Bouncing Songs", desc: "Hold baby upright and bounce gently to rhythm. 'Twinkle Twinkle', 'Baa Baa Black Sheep' — repetition is key.", duration: "5–10 min" },
+    { emoji: "🎶", title: "Bouncing Songs", desc: "Hold baby upright and bounce gently to rhythm. 'Twinkle Twinkle', 'Baa Baa Black Sheep' — the vestibular (balance) stimulation is unique to bouncing and can't be replicated any other way.", duration: "5–10 min" },
   ],
   "6-9": [
-    { emoji: "🧺", title: "Object Hide & Seek", desc: "Hide a toy under a cloth while baby watches. Let them uncover it — this builds object permanence.", duration: "5 min" },
-    { emoji: "🛁", title: "Bath Play", desc: "Add cups and soft toys to bath. Pouring water in and out is perfect sensory play at this age.", duration: "10–15 min" },
-    { emoji: "📚", title: "Board Book Story", desc: "Point to pictures and name them slowly. 'Dog! Woof woof.' Short, repetitive board books work best.", duration: "5 min" },
+    { emoji: "🛁", title: "Bath Play", desc: "Add cups and soft toys to bath. Pouring, splashing, squeezing — rich sensory experience that supports tactile development in a way land play can't match.", duration: "10–15 min" },
   ],
   "9-12": [
-    { emoji: "🏗️", title: "Stacking & Knocking", desc: "Stack 3 cups or blocks and let baby knock them over. They'll find this hilarious and will want to repeat.", duration: "10 min" },
-    { emoji: "⚽", title: "Roll the Ball", desc: "Sit opposite each other, roll a soft ball back and forth. Teaches turn-taking — a foundation of conversation.", duration: "5–10 min" },
-    { emoji: "🏡", title: "Safe Exploration Crawl", desc: "Create a safe floor area with cushions and tunnels. Let baby crawl and explore freely.", duration: "15–20 min" },
+    { emoji: "⚽", title: "Roll the Ball", desc: "Sit opposite each other, roll a soft ball back and forth. Teaches turn-taking — the social back-and-forth that is the foundation of conversation.", duration: "5–10 min" },
+    { emoji: "🏡", title: "Safe Exploration Crawl", desc: "Create a safe floor area with cushions, low boxes, and tunnels. Let baby crawl and explore freely — unprompted self-directed movement builds confidence and spatial awareness.", duration: "15–20 min" },
   ],
   "12-18": [
-    { emoji: "🎨", title: "Finger Painting", desc: "Use edible or non-toxic paint on paper. Squishing, smearing — all sensory gold. Expect mess, embrace it!", duration: "15 min" },
-    { emoji: "🎭", title: "Pretend Play", desc: "Offer toy phone, cups, spoons. Toddlers love imitating — 'Hello? Yes, I want samosa.' Follow their lead.", duration: "15 min" },
-    { emoji: "🚶", title: "Outdoor Stroll & Name", desc: "Walk outside, name everything — dog, flower, car, sky. Every word heard now is a word spoken later.", duration: "20 min" },
+    { emoji: "🎨", title: "Finger Painting", desc: "Use edible or non-toxic paint on paper. Squishing and smearing is pure sensory-motor play — messy is the point. This is distinct from crayon scribbling — the texture feedback is richer.", duration: "15 min" },
+    { emoji: "🚶", title: "Outdoor Stroll & Name", desc: "Walk outside and name everything — dog, flower, car, puddle, sky. Novel outdoor environments stimulate attention and curiosity that indoor play can't replicate.", duration: "20 min" },
   ],
   "18-24": [
-    { emoji: "🧩", title: "Simple Shape Sorters", desc: "Match shapes to holes — great for problem-solving, patience, and hand precision.", duration: "10 min" },
-    { emoji: "📖", title: "Interactive Storytime", desc: "Ask 'Where's the doggie?' and wait. At this age, babies can point and participate.", duration: "10 min" },
-    { emoji: "💃", title: "Dance & Jump", desc: "Put on music, dance together. Jumping, spinning, clapping — gross motor + joy combo.", duration: "10–15 min" },
+    { emoji: "💃", title: "Dance & Jump", desc: "Put on music and dance together — jumping, spinning, clapping, falling down. Gross motor + rhythm + shared joy all at once. One of the best things you can do at this age.", duration: "10–15 min" },
   ],
 };
 
@@ -547,7 +537,11 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
       </IHSection>
 
       {/* ── 5. Daily Activities ──────────────────────────────────────────────── */}
-      <IHSection icon={<Zap className="h-4 w-4" />} title="Today's Activities" badge="3 ideas">
+      <IHSection
+        icon={<Zap className="h-4 w-4" />}
+        title="Today's Activities"
+        badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}
+      >
         <DailyActivities ageMonths={ageMonths} />
       </IHSection>
 
