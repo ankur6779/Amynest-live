@@ -11,6 +11,7 @@ import {
   type PhonicsContentRow,
   type PhonicsProgressRow,
 } from "@workspace/db";
+import { evaluateEarlyUnlockSafe } from "../services/parentHubService";
 
 const router: IRouter = Router();
 
@@ -347,6 +348,11 @@ router.post("/phonics/progress", async (req, res): Promise<void> => {
           },
         })
         .returning();
+
+      // Re-evaluate the Parent Hub early-unlock rule. Fire-and-forget so a
+      // failure here cannot break the user-visible mastery write.
+      evaluateEarlyUnlockSafe(childId, userId);
+
       res.json({ ok: true, progress: row });
       return;
     }
