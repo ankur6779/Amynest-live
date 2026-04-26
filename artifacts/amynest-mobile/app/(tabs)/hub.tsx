@@ -1043,17 +1043,6 @@ export default function HubScreen() {
               isLatestStage,
             } = partitionTilesByBand(allTiles, currentBand);
 
-            // Render-time guard: assert no overlap between the two sections.
-            // The pure helper already guarantees this, but the warning helps
-            // surface accidental data-shape regressions in dev builds.
-            if (__DEV__) {
-              const overlap = section1.find(s1 => section2.some(s2 => s2.id === s1.id));
-              if (overlap) {
-                // eslint-disable-next-line no-console
-                console.warn(`[hub] Tile "${overlap.id}" appears in both sections — check HUB_CONTENT_AGE_BANDS.`);
-              }
-            }
-
             return (
               <>
                 {/* SECTION 1 — primary content for the child's current band */}
