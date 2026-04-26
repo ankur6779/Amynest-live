@@ -39,7 +39,7 @@ import {
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AmyIcon } from "@/components/amy-icon";
 
-import heroImg from "@assets/ChatGPT_Image_Apr_19,_2026,_02_10_25_PM_1776588039438.png";
+import heroImg from "@assets/ChatGPT_Image_Apr_26,_2026,_10_12_39_PM_1777221791989.png";
 import { useTranslation } from "react-i18next";
 
 const COACH_HIGHLIGHT_KEYS = [
