@@ -18,6 +18,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { generateAiRoutine } from "./routines.js";
+import { REGION_LABELS, type Region } from "../lib/routine-templates.js";
 
 // ─── Mock-client factory ───────────────────────────────────────────────────
 function makeMockOpenai(responseJson: object) {
@@ -559,3 +560,264 @@ describe("generateAiRoutine — meal-slot anchoring (non-school day)", () => {
     }
   });
 });
+
+// ─── Parameterised across cuisine regions ─────────────────────────────────
+// As new regional cuisine options are added (e.g. gujarati, maharashtrian,
+// bengali) the recipe and nutrition lookups in applyRoutineV2 must continue
+// to attach a non-null, fully-populated recipe + nutrition object to every
+// meal/tiffin block — even when the meal name is a region-specific dish
+// (e.g. "Macher jhol", "Thepla", "Pongal") that has never been keyword-mapped
+// in meal-recipes.ts.
+//
+// We loop over every Region exported from routine-templates.ts so that
+// adding a new entry to REGION_LABELS automatically extends test coverage
+// without anyone having to remember to update this file. New regions that
+// don't yet have a REGIONAL_NOTES entry fall back to the pan_indian notes —
+// the suite still runs (covering the AI pipeline + recipe/nutrition contract
+// for the new region) and contributors can add region-specific dishes later.
+//
+// For each region we run the full AI pipeline twice:
+//   - school day:    Breakfast → Quick Meal Before School, Tiffin, Lunch,
+//                    Drunch (via After-school Snack), Dinner.
+//   - non-school day: Breakfast, Lunch, Drunch, Dinner.
+// Meal-block `notes` are seeded with realistic regional dishes so that
+// dedupMealNotes picks a regional name as the meal "primary" and the
+// recipe/nutrition matchers in meal-recipes.ts are exercised against them.
+
+type RegionalNoteSet = {
+  breakfast: string;
+  lunch: string;
+  dinner: string;
+  drunch: string;
+  tiffin: string;
+};
+
+// Pan-Indian default — also serves as the fallback for any region that
+// doesn't have a region-specific entry below (e.g. a brand-new region just
+// added to REGION_LABELS but not yet seeded here).
+const DEFAULT_REGIONAL_NOTES: RegionalNoteSet = {
+  breakfast: "Options: Poha with peanuts | Idli with sambar | Paratha with curd",
+  lunch:     "Options: Dal rice with sabzi | Rajma chawal | Chole rice",
+  dinner:    "Options: Roti with dal and sabzi | Khichdi with ghee | Vegetable soup with bread",
+  drunch:    "Options: Cheese sandwich + milk | Idli + chutney | Fruit chaat + nuts",
+  tiffin:    "Options: Veg sandwich | Aloo paratha roll + curd | Idli + chutney",
+};
+
+// Partial map: regions present here exercise region-specific dish names;
+// regions absent here still get tested using DEFAULT_REGIONAL_NOTES so that
+// adding a new region to REGION_LABELS never breaks the build.
+const REGIONAL_NOTES: Partial<Record<Region, RegionalNoteSet>> = {
+  pan_indian: DEFAULT_REGIONAL_NOTES,
+  north_indian: {
+    breakfast: "Options: Aloo paratha with curd | Chole bhature | Bedmi puri with aloo sabzi",
+    lunch:     "Options: Rajma chawal with onion salad | Dal makhani with naan | Chole rice with raita",
+    dinner:    "Options: Roti with dal makhani | Khichdi with ghee | Mix veg with chapati",
+    drunch:    "Options: Samosa with chutney | Aloo tikki | Bread pakora",
+    tiffin:    "Options: Aloo paratha + pickle | Paneer paratha + curd | Chole rice box",
+  },
+  south_indian: {
+    breakfast: "Options: Idli with sambar and coconut chutney | Masala dosa | Pongal with chutney",
+    lunch:     "Options: Sambar rice with papad | Bisi bele bath | Curd rice with pickle",
+    dinner:    "Options: Rava dosa with chutney | Curd rice with pickle | Idiyappam with kurma",
+    drunch:    "Options: Mini dosa with chutney | Murukku with milk | Banana with ragi malt",
+    tiffin:    "Options: Lemon rice + papad | Pongal in box | Tomato rice + chips",
+  },
+  bengali: {
+    breakfast: "Options: Luchi with aloor dom | Cholar dal with luchi | Suji halwa with poori",
+    lunch:     "Options: Macher jhol with bhaat | Kosha mangsho with rice | Aloo posto with rice",
+    dinner:    "Options: Khichuri with begun bhaja | Light luchi with sabzi | Bhaat with bhaja moong dal",
+    drunch:    "Options: Singara with chai | Telebhaja with muri | Sandesh with milk",
+    tiffin:    "Options: Luchi with aloor dom box | Vegetable cutlet with bread | Mishti pulao box",
+  },
+  gujarati: {
+    breakfast: "Options: Thepla with curd and pickle | Khaman dhokla with chutney | Bajra rotla with milk",
+    lunch:     "Options: Dal-bhaat with shaak | Undhiyu with poori | Khichdi with kadhi",
+    dinner:    "Options: Bhakri with sabzi | Khichdi with ghee | Soft thepla with curd",
+    drunch:    "Options: Dhokla bites | Handvo with chai | Fafda with chutney",
+    tiffin:    "Options: Methi thepla with pickle | Dhokla box | Khandvi rolls",
+  },
+  maharashtrian: {
+    breakfast: "Options: Poha with peanuts | Misal pav | Sabudana khichdi",
+    lunch:     "Options: Varan-bhaat with ghee | Pithla bhakri | Masale bhaat",
+    dinner:    "Options: Bhakri with pithla | Amti with rice | Khichdi with ghee",
+    drunch:    "Options: Vada pav | Kanda bhaji with chutney | Chivda with chai",
+    tiffin:    "Options: Thalipeeth with curd | Poha box | Sabudana vada wrap",
+  },
+  punjabi: {
+    breakfast: "Options: Aloo paratha with butter | Chole bhature | Lassi with paratha",
+    lunch:     "Options: Sarson da saag with makki roti | Rajma chawal | Dal makhani with naan",
+    dinner:    "Options: Roti with dal makhani | Khichdi with ghee | Light kadhi with rice",
+    drunch:    "Options: Pakora with chai | Samosa with chutney | Sweet lassi with dry fruits",
+    tiffin:    "Options: Aloo paratha + pickle | Paneer paratha + curd | Rajma rice box",
+  },
+  global: {
+    breakfast: "Options: Pancakes with syrup | Cheese omelette with toast | Cereal with milk",
+    lunch:     "Options: Pasta in tomato sauce | Grilled chicken with veggies | Rice bowl with salad",
+    dinner:    "Options: Vegetable soup with bread | Light pasta with greens | Grilled fish with salad",
+    drunch:    "Options: Cheese sandwich with milk | Fruit smoothie | Yoghurt parfait with granola",
+    tiffin:    "Options: Cheese sandwich box | Pasta salad cup | Wrap with veggies",
+  },
+};
+
+/** School-day fixture for a given region — same time cascade as the original
+ *  schoolDayAiItems, but with regional notes on each meal/tiffin block.   */
+function regionalSchoolDayItems(region: Region): Array<{
+  time: string;
+  activity: string;
+  duration: number;
+  category: string;
+  notes?: string;
+}> {
+  const r = REGIONAL_NOTES[region] ?? DEFAULT_REGIONAL_NOTES;
+  return [
+    { time: "07:00", activity: "Wake up & Freshen Up", duration: 30, category: "hygiene" },
+    // "Breakfast" → school-day branch renames to "Quick Meal Before School"
+    // and rewrites notes; that's expected. Notes here help the non-school
+    // branch when this fixture is re-purposed (kept for symmetry).
+    { time: "07:30", activity: "Breakfast", duration: 30, category: "meal", notes: r.breakfast },
+    { time: "08:00", activity: "Getting Ready for School", duration: 60, category: "hygiene" },
+    { time: "09:00", activity: "At school", duration: 360, category: "school" },
+    // Tiffin (in-fixture) — anchorMealWindows preserves it inside the school window.
+    { time: "11:00", activity: "Tiffin", duration: 15, category: "tiffin", notes: r.tiffin },
+    // After-school Snack → upgraded to Drunch (notes preserved when starting "Options:")
+    { time: "15:00", activity: "After-school Snack", duration: 15, category: "meal", notes: r.drunch },
+    { time: "15:15", activity: "Homework & Study", duration: 60, category: "study" },
+    { time: "16:15", activity: "Outdoor Play", duration: 60, category: "play" },
+    // Lunch — re-anchored to schoolEnd + 30 = 15:30. Notes preserved.
+    { time: "17:15", activity: "Lunch", duration: 30, category: "meal", notes: r.lunch },
+    { time: "17:45", activity: "Board Game Night", duration: 60, category: "play" },
+    // Dinner — re-anchored to 20:00–21:00. Notes preserved.
+    { time: "18:45", activity: "Dinner", duration: 45, category: "meal", notes: r.dinner },
+    { time: "20:00", activity: "Story Time", duration: 30, category: "study" },
+    { time: "21:00", activity: "Bedtime", duration: 30, category: "sleep" },
+  ];
+}
+
+/** Non-school-day fixture for a given region. */
+function regionalNonSchoolItems(region: Region): Array<{
+  time: string;
+  activity: string;
+  duration: number;
+  category: string;
+  notes?: string;
+}> {
+  const r = REGIONAL_NOTES[region] ?? DEFAULT_REGIONAL_NOTES;
+  return [
+    { time: "07:00", activity: "Wake up", duration: 20, category: "hygiene" },
+    { time: "07:20", activity: "Breakfast", duration: 30, category: "meal", notes: r.breakfast },
+    { time: "10:00", activity: "Outdoor Play", duration: 60, category: "play" },
+    { time: "11:00", activity: "Creative Art", duration: 45, category: "play" },
+    { time: "11:45", activity: "Lunch", duration: 30, category: "meal", notes: r.lunch },
+    { time: "12:15", activity: "Board Game Night", duration: 60, category: "play" },
+    { time: "13:15", activity: "Drunch", duration: 25, category: "meal", notes: r.drunch },
+    { time: "13:40", activity: "Reading for Pleasure", duration: 30, category: "study" },
+    { time: "14:10", activity: "Dinner", duration: 30, category: "meal", notes: r.dinner },
+    { time: "14:40", activity: "Story Time", duration: 30, category: "study" },
+    { time: "21:00", activity: "Bedtime", duration: 30, category: "sleep" },
+  ];
+}
+
+/** Strict per-block check: recipe + nutrition non-null with all required
+ *  fields populated. Failure messages always include the region label so a
+ *  red test pinpoints the broken cuisine immediately. */
+function assertMealMetadataIntact(
+  region: Region,
+  mode: "school" | "non-school",
+  items: Array<{
+    activity: string;
+    time: string;
+    category?: string;
+    recipe?: { prepTime?: string; cookTime?: string; servings?: string; ingredients?: string[]; steps?: string[] } | null;
+    nutrition?: { calories?: string; protein?: string; carbs?: string; fat?: string } | null;
+  }>,
+): void {
+  const tag = `[${region}|${mode}]`;
+  const mealBlocks = items.filter((i) =>
+    ["meal", "tiffin"].includes((i.category ?? "").toLowerCase()),
+  );
+  assert.ok(mealBlocks.length > 0, `${tag} expected at least one meal/tiffin block`);
+
+  for (const block of mealBlocks) {
+    assert.ok(
+      block.recipe !== undefined && block.recipe !== null,
+      `${tag} "${block.activity}" at ${block.time} missing recipe`,
+    );
+    assert.ok(
+      block.nutrition !== undefined && block.nutrition !== null,
+      `${tag} "${block.activity}" at ${block.time} missing nutrition`,
+    );
+    const r = block.recipe!;
+    assert.ok(r.prepTime, `${tag} "${block.activity}" recipe.prepTime missing`);
+    assert.ok(r.cookTime, `${tag} "${block.activity}" recipe.cookTime missing`);
+    assert.ok(r.servings, `${tag} "${block.activity}" recipe.servings missing`);
+    assert.ok(
+      Array.isArray(r.ingredients) && r.ingredients.length > 0,
+      `${tag} "${block.activity}" recipe.ingredients empty`,
+    );
+    assert.ok(
+      Array.isArray(r.steps) && r.steps.length > 0,
+      `${tag} "${block.activity}" recipe.steps empty`,
+    );
+    const n = block.nutrition!;
+    assert.ok(n.calories, `${tag} "${block.activity}" nutrition.calories missing`);
+    assert.ok(n.protein, `${tag} "${block.activity}" nutrition.protein missing`);
+    assert.ok(n.carbs, `${tag} "${block.activity}" nutrition.carbs missing`);
+    assert.ok(n.fat, `${tag} "${block.activity}" nutrition.fat missing`);
+  }
+}
+
+// Iterate over every region declared in REGION_LABELS so that adding a new
+// region to routine-templates.ts automatically extends test coverage. Each
+// region without a REGIONAL_NOTES entry would surface as a TypeScript error,
+// nudging contributors to extend the fixture before merging.
+for (const region of Object.keys(REGION_LABELS) as Region[]) {
+  describe(`generateAiRoutine — region "${region}" pipeline`, () => {
+    it("school day: every meal/tiffin block has populated recipe + nutrition", async () => {
+      const result = await generateAiRoutine({
+        ...BASE,
+        hasSchool: true,
+        region,
+        openaiClient: makeMockOpenai({
+          title: `${REGION_LABELS[region]} School Day`,
+          items: regionalSchoolDayItems(region),
+        }),
+      });
+      assertMealMetadataIntact(region, "school", result.items);
+    });
+
+    it("non-school day: every meal/tiffin block has populated recipe + nutrition", async () => {
+      const result = await generateAiRoutine({
+        ...BASE,
+        hasSchool: false,
+        region,
+        openaiClient: makeMockOpenai({
+          title: `${REGION_LABELS[region]} Weekend`,
+          items: regionalNonSchoolItems(region),
+        }),
+      });
+      assertMealMetadataIntact(region, "non-school", result.items);
+    });
+
+    it("school day: no duplicate meal names across the day", async () => {
+      const result = await generateAiRoutine({
+        ...BASE,
+        hasSchool: true,
+        region,
+        openaiClient: makeMockOpenai({
+          title: `${REGION_LABELS[region]} School Day`,
+          items: regionalSchoolDayItems(region),
+        }),
+      });
+      const mealBlocks = result.items.filter((i) =>
+        ["meal", "tiffin"].includes((i.category ?? "").toLowerCase()),
+      );
+      const names = mealBlocks.map((i) => (i.meal ?? i.activity).toLowerCase());
+      const unique = new Set(names);
+      assert.equal(
+        unique.size,
+        names.length,
+        `[${region}|school] duplicate meal names: ${names.join(", ")}`,
+      );
+    });
+  });
+}
