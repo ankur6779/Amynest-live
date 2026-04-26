@@ -1,7 +1,5 @@
 import React from "react";
 
-// Strip animation-only props that would otherwise be passed straight through
-// to a DOM node and trip React DOM's attribute coercion.
 function stripAnimProps({
   entering: _entering,
   exiting: _exiting,
@@ -19,8 +17,7 @@ const Animated = {
     React.createElement("span", stripAnimProps(props), children),
   createAnimatedComponent: (Component: any) => Component,
 };
-// Chainable stub: any property access returns a function returning the same
-// chainable object, so calls like FadeIn.duration(400).delay(60) are no-ops.
+
 const chainable: any = new Proxy(
   {},
   {

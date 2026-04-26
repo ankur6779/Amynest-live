@@ -133,6 +133,22 @@ export default function DashboardScreen() {
     },
   });
 
+  const onPressCard = useCallback(
+    (taskId: string) => {
+      if (!todaysRoutine) return;
+      const idx = parseInt(taskId.split("-")[2] ?? "-1", 10);
+      const params: Record<string, string> = {};
+      if (!Number.isNaN(idx) && idx >= 0 && idx < todaysRoutine.items.length) {
+        params.highlight = String(idx);
+      }
+      router.push({
+        pathname: "/routines/[id]",
+        params: { id: String(todaysRoutine.id), ...params },
+      });
+    },
+    [todaysRoutine, router],
+  );
+
   const onToggle = useCallback(
     (taskId: string) => {
       if (!todaysRoutine) return;
@@ -229,7 +245,7 @@ export default function DashboardScreen() {
             <ActivityIndicator color={c.primary} />
           </View>
         ) : tasks.length > 0 ? (
-          <RoutineCarousel tasks={tasks} onToggle={onToggle} />
+          <RoutineCarousel tasks={tasks} onToggle={onToggle} onPressCard={onPressCard} />
         ) : (
           <View style={styles.emptyWrap}>
             <Text style={[styles.emptyTitle, { color: c.foreground }]}>

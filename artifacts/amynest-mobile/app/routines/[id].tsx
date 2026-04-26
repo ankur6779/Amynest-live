@@ -199,7 +199,7 @@ function hapticSuccess() { if (Platform.OS !== "web") Haptics.notificationAsync(
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════
 export default function RoutineDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, highlight } = useLocalSearchParams<{ id: string; highlight?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const authFetch = useAuthFetch();
@@ -257,6 +257,19 @@ export default function RoutineDetailScreen() {
 
   const [items, setItems] = useState<RoutineItem[]>([]);
   React.useEffect(() => { if (routine?.items) setItems(routine.items); }, [routine]);
+
+  // Highlight + auto-scroll when arriving with a `?highlight=<origIdx>` deep link
+  // (e.g. tapping a card on the dashboard carousel). The FlatList scrolls the
+  // matching row into view and we apply a brief glow that fades after a few seconds.
+  const flatListRef = useRef<FlatList<{ item: RoutineItem; origIdx: number }>>(null);
+  const [highlightedOrigIdx, setHighlightedOrigIdx] = useState<number | null>(null);
+  const lastHighlightRef = useRef<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => {
+    return () => {
+      if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    };
+  }, []);
 
   // Fetch parent prefs for inline meal suggestions
   React.useEffect(() => {
@@ -585,6 +598,56 @@ export default function RoutineDetailScreen() {
     [items, ageBandFilter],
   );
 
+  // When the screen opens with a `highlight` deep-link param (e.g. from the
+  // dashboard carousel), clear any active age-band filter that would hide the
+  // target row, scroll the matching item into view, and apply a brief glow.
+  // The highlight key combines id + index so re-tapping the same card later
+  // re-triggers the effect even though the URL didn't change between mounts.
+  useEffect(() => {
+    if (!highlight || !id || items.length === 0) return;
+    const targetOrig = parseInt(highlight, 10);
+    if (Number.isNaN(targetOrig) || targetOrig < 0 || targetOrig >= items.length) return;
+
+    const key = `${id}:${highlight}`;
+    if (lastHighlightRef.current === key) return;
+
+    // If a filter would hide the target row, drop the filter and bail out.
+    // The effect re-runs once `ageBandFilter` flushes to null with up-to-date
+    // `displayItems` and proceeds with the scroll on that next run.
+    const targetItem = items[targetOrig];
+    if (
+      ageBandFilter &&
+      targetItem.ageBand &&
+      targetItem.ageBand !== ageBandFilter
+    ) {
+      setAgeBandFilter(null);
+      return;
+    }
+
+    setHighlightedOrigIdx(targetOrig);
+    if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    highlightTimer.current = setTimeout(() => setHighlightedOrigIdx(null), 2400);
+
+    // Defer scroll until after the next paint so the FlatList has measured rows.
+    setTimeout(() => {
+      const displayIdx = displayItems.findIndex((e) => e.origIdx === targetOrig);
+      if (displayIdx < 0) return;
+      try {
+        flatListRef.current?.scrollToIndex({
+          index: displayIdx,
+          animated: true,
+          viewPosition: 0.3,
+        });
+      } catch {
+        // Layout not ready yet — onScrollToIndexFailed will retry.
+      }
+    }, 250);
+
+    // Only mark this highlight key as handled after we've actually applied it,
+    // so a filter-induced early return above doesn't prevent the retry.
+    lastHighlightRef.current = key;
+  }, [highlight, id, items, displayItems, ageBandFilter, setAgeBandFilter]);
+
   // ─── Adaptive Engine: today's mood + sleep + live ticking ───────────────
   const routineDateStr = (routine?.date ?? "").slice(0, 10);
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -786,10 +849,23 @@ export default function RoutineDetailScreen() {
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={displayItems}
           keyExtractor={(entry) => String(entry.origIdx)}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: botPad, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
+          onScrollToIndexFailed={(info) => {
+            // Row hasn't been measured yet — wait a beat and retry.
+            setTimeout(() => {
+              try {
+                flatListRef.current?.scrollToIndex({
+                  index: info.index,
+                  animated: true,
+                  viewPosition: 0.3,
+                });
+              } catch {}
+            }, 250);
+          }}
           ListHeaderComponent={
             <View style={{ marginBottom: 16 }}>
               <Text style={styles.dateLabel}>{formatDate(routine.date)}</Text>
@@ -986,10 +1062,24 @@ export default function RoutineDetailScreen() {
           }
           renderItem={({ item: entry, index: displayIdx }) => {
             const { item, origIdx } = entry;
+            const isHighlighted = highlightedOrigIdx === origIdx;
             return (
             <Animated.View
               entering={Platform.OS !== "web" ? FadeIn.delay(displayIdx * 35).duration(280) : undefined}
-              style={styles.timelineRow}
+              style={[
+                styles.timelineRow,
+                isHighlighted && {
+                  borderRadius: 20,
+                  borderWidth: 2,
+                  borderColor: brand.violet400,
+                  backgroundColor: "rgba(167,139,250,0.10)" /* audit-ok: violet-400 highlight tint */,
+                  shadowColor: brand.violet400,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.55,
+                  shadowRadius: 12,
+                  elevation: 6,
+                },
+              ]}
             >
               <View style={styles.railCol}>
                 <View style={[styles.railLine, displayIdx === 0 && { top: 16 }, displayIdx === displayItems.length - 1 && { bottom: "50%" }]} />

@@ -40,17 +40,47 @@ const Text = ({ children, testID, ...props }: any) =>
     children,
   );
 
-const Pressable = ({ children, onPress, ...props }: any) =>
+// Pressable / TouchableOpacity translate RN accessibility props to DOM aria-*
+// before stripping, so testing-library's getByLabelText / getByRole queries
+// can find them. stripRnProps then removes the original RN-only prop names
+// so they don't leak onto the underlying <button>.
+const Pressable = ({
+  children,
+  onPress,
+  accessibilityLabel,
+  accessibilityRole,
+  testID,
+  ...props
+}: any) =>
   React.createElement(
     "button",
-    { onClick: onPress, ...stripRnProps(props) },
+    {
+      onClick: onPress,
+      "aria-label": accessibilityLabel,
+      role: accessibilityRole,
+      "data-testid": testID,
+      ...stripRnProps(props),
+    },
     children,
   );
 
-const TouchableOpacity = ({ children, onPress, testID, ...props }: any) =>
+const TouchableOpacity = ({
+  children,
+  onPress,
+  testID,
+  accessibilityLabel,
+  accessibilityRole,
+  ...props
+}: any) =>
   React.createElement(
     "button",
-    { onClick: onPress, "data-testid": testID, ...stripRnProps(props) },
+    {
+      onClick: onPress,
+      "data-testid": testID,
+      "aria-label": accessibilityLabel,
+      role: accessibilityRole,
+      ...stripRnProps(props),
+    },
     children,
   );
 

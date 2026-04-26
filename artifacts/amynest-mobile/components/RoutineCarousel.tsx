@@ -18,15 +18,18 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 type Props = {
   tasks: RoutineTask[];
   onToggle: (id: string) => void;
+  onPressCard?: (id: string) => void;
 };
 
 function TaskCard({
   task,
   onToggle,
+  onPressCard,
   index,
 }: {
   task: RoutineTask;
   onToggle: () => void;
+  onPressCard?: () => void;
   index: number;
 }) {
   const scale = useSharedValue(1);
@@ -38,50 +41,77 @@ function TaskCard({
     ? ["#10B981", "#059669"]
     : gradients.violetToPurple;
 
+  const cardA11yLabel = `${task.title}, ${task.time}, ${task.minutes} minutes, ${
+    isDone ? "completed" : "pending"
+  }`;
+  const topRegion = (
+    <>
+      <LinearGradient
+        colors={accent}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.iconWrap}
+      >
+        <Ionicons name={task.icon as any} size={20} color="#fff" />
+      </LinearGradient>
+
+      <Text style={[styles.title, { color: c.textStrong }]} numberOfLines={1}>{task.title}</Text>
+      <View style={styles.metaRow}>
+        <Ionicons name="time-outline" size={12} color={c.textSubtle} />
+        <Text style={[styles.metaText, { color: c.textSubtle }]}>{task.time}</Text>
+        <View style={[styles.dot, { backgroundColor: c.border }]} />
+        <Text style={[styles.metaText, { color: c.textSubtle }]}>{task.minutes} min</Text>
+      </View>
+      {task.ageBand && (
+        <View style={styles.ageBandChip}>
+          <Text style={styles.ageBandChipText}>Ages {task.ageBand.replace("-", "–")}</Text>
+        </View>
+      )}
+
+      <View style={styles.statusRow}>
+        {isDone ? (
+          <View style={[styles.statusPill, { backgroundColor: "#10B98118" }]}>
+            <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+            <Text style={[styles.statusText, { color: "#10B981" }]}>Completed</Text>
+          </View>
+        ) : (
+          <View style={[styles.statusPill, { backgroundColor: `${brand.purple500}18` }]}>
+            <Ionicons name="ellipse-outline" size={11} color={brand.purple500} />
+            <Text style={[styles.statusText, { color: brand.purple500 }]}>Pending</Text>
+          </View>
+        )}
+      </View>
+    </>
+  );
+
   return (
     <Animated.View entering={FadeIn.duration(400).delay(index * 60)}>
       <View
-        accessible
-        accessibilityLabel={`${task.title}, ${task.time}, ${task.minutes} minutes, ${
-          isDone ? "completed" : "pending"
-        }`}
+        accessible={!onPressCard}
+        accessibilityLabel={onPressCard ? undefined : cardA11yLabel}
         style={[styles.card, { backgroundColor: c.surface }]}
       >
-        <LinearGradient
-          colors={accent}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.iconWrap}
-        >
-          <Ionicons name={task.icon as any} size={20} color="#fff" />
-        </LinearGradient>
-
-        <Text style={[styles.title, { color: c.textStrong }]} numberOfLines={1}>{task.title}</Text>
-        <View style={styles.metaRow}>
-          <Ionicons name="time-outline" size={12} color={c.textSubtle} />
-          <Text style={[styles.metaText, { color: c.textSubtle }]}>{task.time}</Text>
-          <View style={[styles.dot, { backgroundColor: c.border }]} />
-          <Text style={[styles.metaText, { color: c.textSubtle }]}>{task.minutes} min</Text>
-        </View>
-        {task.ageBand && (
-          <View style={styles.ageBandChip}>
-            <Text style={styles.ageBandChipText}>Ages {task.ageBand.replace("-", "–")}</Text>
-          </View>
+        {/* Top region — opens the routine detail when tapped, leaving the
+            action button below as an independent press target so toggling
+            "Done" / "Undo" never triggers navigation. */}
+        {onPressCard ? (
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== "web") Haptics.selectionAsync();
+              onPressCard();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`Open routine details for ${task.title}`}
+            style={({ pressed }) => [
+              styles.cardPressArea,
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            {topRegion}
+          </Pressable>
+        ) : (
+          <View style={styles.cardPressArea}>{topRegion}</View>
         )}
-
-        <View style={styles.statusRow}>
-          {isDone ? (
-            <View style={[styles.statusPill, { backgroundColor: "#10B98118" }]}>
-              <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-              <Text style={[styles.statusText, { color: "#10B981" }]}>Completed</Text>
-            </View>
-          ) : (
-            <View style={[styles.statusPill, { backgroundColor: `${brand.purple500}18` }]}>
-              <Ionicons name="ellipse-outline" size={11} color={brand.purple500} />
-              <Text style={[styles.statusText, { color: brand.purple500 }]}>Pending</Text>
-            </View>
-          )}
-        </View>
 
         <AnimatedPressable
           onPressIn={() => {
@@ -119,7 +149,7 @@ function TaskCard({
   );
 }
 
-export default function RoutineCarousel({ tasks, onToggle }: Props) {
+export default function RoutineCarousel({ tasks, onToggle, onPressCard }: Props) {
   return (
     <ScrollView
       horizontal
@@ -135,6 +165,7 @@ export default function RoutineCarousel({ tasks, onToggle }: Props) {
           task={t}
           index={i}
           onToggle={() => onToggle(t.id)}
+          onPressCard={onPressCard ? () => onPressCard(t.id) : undefined}
         />
       ))}
     </ScrollView>
@@ -157,6 +188,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 12,
     elevation: 4,
+  },
+  cardPressArea: {
+    // Sits inside the card padding; lays out the icon, title, meta, and status
+    // pill the same way they were before the action button was split out.
   },
   iconWrap: {
     width: 40,
