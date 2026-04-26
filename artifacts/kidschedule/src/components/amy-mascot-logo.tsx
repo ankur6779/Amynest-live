@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import mascotImg from "@assets/ChatGPT_Image_Apr_26,_2026,_11_07_57_PM_1777225089415.png";
+import mascotImg from "@assets/ChatGPT_Image_Apr_26,_2026,_11_13_52_PM_1777225444907.png";
 
 interface AmyMascotLogoProps {
   size?: number;
@@ -33,11 +33,11 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
     return () => { clearTimeout(init); clearTimeout(timer); };
   }, []);
 
-  const ew = size * 0.055;
-  const eh = size * 0.065;
-  const lx = size * 0.412;
-  const rx = size * 0.552;
-  const ey = size * 0.455;
+  const ew = size * 0.058;
+  const eh = size * 0.072;
+  const lx = size * 0.405;
+  const rx = size * 0.585;
+  const ey = size * 0.460;
 
   return (
     <div
@@ -47,20 +47,37 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
     >
       <div className="amy-mascot-float" style={{ width: size, height: size, position: "relative" }}>
 
-        {/* Orbiting shimmer arc */}
+        {/* Orbiting shimmer arc — rotates over the neon ring */}
         <div className="amy-mascot-shimmer" style={{ position: "absolute", inset: 0, borderRadius: "50%", pointerEvents: "none", zIndex: 3 }} />
 
-        {/* Hover glow ring (box-shadow layer, opacity transitions on hover) */}
+        {/* Hover glow ring (box-shadow burst on hover) */}
         <div className="amy-mascot-hover-ring" style={{ position: "absolute", inset: 0, borderRadius: "50%", pointerEvents: "none", zIndex: 4 }} />
 
-        {/* Mascot image — transparent PNG with breathing neon glow */}
-        <img
-          src={mascotImg}
-          alt="Amy AI"
+        {/* Mascot image — circular crop, themed image already matches dark header */}
+        <div
           className="amy-mascot-glow"
-          style={{ width: size, height: size, objectFit: "contain", display: "block", pointerEvents: "none", position: "relative", zIndex: 1 }}
-          draggable={false}
-        />
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            overflow: "hidden",
+            zIndex: 1,
+          }}
+        >
+          <img
+            src={mascotImg}
+            alt="Amy AI"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center",
+              display: "block",
+              pointerEvents: "none",
+            }}
+            draggable={false}
+          />
+        </div>
 
         {/* Eye eyelid overlays — scaleY(0)=open, scaleY(1)=closed */}
         <div
