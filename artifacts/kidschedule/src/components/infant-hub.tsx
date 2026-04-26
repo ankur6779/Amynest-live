@@ -369,6 +369,7 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
 
   const [active, setActive] = useState<InfantCategory>("sleep");
   const [tipIndex, setTipIndex] = useState(0);
+  const [isParentingOpen, setIsParentingOpen] = useState(false);
 
   const tips = useMemo(() => getTipsForAge(ageMonths, active), [ageMonths, active]);
   const insight = useMemo(() => getAmyInsight(ageMonths, active), [ageMonths, active]);
@@ -509,7 +510,12 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
 
           <CardContent className="relative p-4 sm:p-5 space-y-3">
             {/* Major section header */}
-            <div className="flex items-start gap-3 pb-3 border-b border-violet-200/50 dark:border-violet-400/20">
+            <button
+              type="button"
+              onClick={() => setIsParentingOpen((v) => !v)}
+              className="w-full flex items-start gap-3 pb-3 border-b border-violet-200/50 dark:border-violet-400/20 text-left"
+              aria-expanded={isParentingOpen}
+            >
               <div className="shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-[0_6px_20px_-4px_rgba(217,70,239,0.6)] ring-1 ring-white/40 dark:ring-white/10">
                 <Baby className="h-5 w-5 text-white drop-shadow" />
               </div>
@@ -524,90 +530,92 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
                   Complete toolkit for babies 0–24 months · sleep, feeding, milestones &amp; more
                 </p>
               </div>
-            </div>
+              <div className="shrink-0 pt-1 text-muted-foreground">
+                {isParentingOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              </div>
+            </button>
 
-            {/* The 7 nested infant tools */}
-            <div className="space-y-3">
+            {isParentingOpen && (
+              <div className="space-y-3">
+                {/* ── 1. Weekly AI Insight ─────────────────────────────────────── */}
+                <IHSection icon={<Star className="h-4 w-4" />} title="Weekly Insight" badge="New" defaultOpen>
+                  <WeeklyInsight childName={childName} ageMonths={ageMonths} />
+                </IHSection>
 
-              {/* ── 1. Weekly AI Insight ─────────────────────────────────────── */}
-              <IHSection icon={<Star className="h-4 w-4" />} title="Weekly Insight" badge="New" defaultOpen>
-        <WeeklyInsight childName={childName} ageMonths={ageMonths} />
-      </IHSection>
+                {/* ── 2. Milestone Tracker — Buddy Planner ─────────────────────────────── */}
+                <IHSection icon={<Activity className="h-4 w-4" />} title="Milestone Buddy" badge="Plan">
+                  <BuddyMilestonePlanner childName={childName} ageMonths={ageMonths} />
+                </IHSection>
 
-      {/* ── 2. Milestone Tracker — Buddy Planner ─────────────────────────────── */}
-      <IHSection icon={<Activity className="h-4 w-4" />} title="Milestone Buddy" badge="Plan">
-        <BuddyMilestonePlanner childName={childName} ageMonths={ageMonths} />
-      </IHSection>
-
-      {/* ── 3. Sleep System (Wake Window + Issues + Routine + Insights) ──────── */}
-      <IHSection icon={<BedDouble className="h-4 w-4" />} title="Sleep System" badge="Live">
-        <div className="space-y-5">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-2">Wake Window Tracker</p>
-            <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-2">Issue Detection</p>
-            <SleepIssueDetector childName={childName} ageMonths={ageMonths} />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2">Daily Routine Builder</p>
-            <RoutineBuilder childName={childName} ageMonths={ageMonths} />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2">Weekly Insights</p>
-            <SleepWeeklyInsights childName={childName} ageMonths={ageMonths} />
-          </div>
-        </div>
-      </IHSection>
-
-      {/* ── 4. White Noise & Lullabies ───────────────────────────────────────── */}
-      <IHSection icon={<Music2 className="h-4 w-4" />} title="White Noise & Lullabies">
-        <WhiteNoiseLullaby ageMonths={ageMonths} />
-      </IHSection>
-
-      {/* ── 5. Feeding Reference ─────────────────────────────────────────────── */}
-      <IHSection icon={<Flame className="h-4 w-4" />} title="Feeding Reference">
-        <FeedingReference ageMonths={ageMonths} />
-      </IHSection>
-
-      {/* ── 6. Daily Activities — only shown when there are ideas for this age── */}
-      {(ACTIVITIES[getBand(ageMonths)] ?? []).length > 0 && (
-        <IHSection
-          icon={<Zap className="h-4 w-4" />}
-          title="Today's Activities"
-          badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}
-        >
-          <DailyActivities ageMonths={ageMonths} />
-        </IHSection>
-      )}
-
-      {/* ── 6. Health & Care ─────────────────────────────────────────────────── */}
-      <IHSection icon={<Syringe className="h-4 w-4" />} title="Health & Care">
-        <HealthCare ageMonths={ageMonths} />
-      </IHSection>
-
-              {/* ── 7. Parent Coaching — Baby Cues + Communication ─────────── */}
-              <IHSection icon={<MessageCircle className="h-4 w-4" />} title="Parent Coaching" badge="Interactive">
-                <div className="space-y-5">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2 flex items-center gap-1">
-                      <ListChecks className="h-3 w-3" />
-                      Baby Cues Engine
-                    </p>
-                    <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
+                {/* ── 3. Sleep System (Wake Window + Issues + Routine + Insights) ──────── */}
+                <IHSection icon={<BedDouble className="h-4 w-4" />} title="Sleep System" badge="Live">
+                  <div className="space-y-5">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-2">Wake Window Tracker</p>
+                      <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-2">Issue Detection</p>
+                      <SleepIssueDetector childName={childName} ageMonths={ageMonths} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2">Daily Routine Builder</p>
+                      <RoutineBuilder childName={childName} ageMonths={ageMonths} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2">Weekly Insights</p>
+                      <SleepWeeklyInsights childName={childName} ageMonths={ageMonths} />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2 flex items-center gap-1">
-                      <MessageCircle className="h-3 w-3" />
-                      Communication Coaching
-                    </p>
-                    <CommunicationCoaching ageMonths={ageMonths} />
-                  </div>
-                </div>
-              </IHSection>
+                </IHSection>
 
-            </div>
+                {/* ── 4. White Noise & Lullabies ───────────────────────────────────────── */}
+                <IHSection icon={<Music2 className="h-4 w-4" />} title="White Noise & Lullabies">
+                  <WhiteNoiseLullaby ageMonths={ageMonths} />
+                </IHSection>
+
+                {/* ── 5. Feeding Reference ─────────────────────────────────────────────── */}
+                <IHSection icon={<Flame className="h-4 w-4" />} title="Feeding Reference">
+                  <FeedingReference ageMonths={ageMonths} />
+                </IHSection>
+
+                {/* ── 6. Daily Activities — only shown when there are ideas for this age── */}
+                {(ACTIVITIES[getBand(ageMonths)] ?? []).length > 0 && (
+                  <IHSection
+                    icon={<Zap className="h-4 w-4" />}
+                    title="Today's Activities"
+                    badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}
+                  >
+                    <DailyActivities ageMonths={ageMonths} />
+                  </IHSection>
+                )}
+
+                {/* ── 6. Health & Care ─────────────────────────────────────────────────── */}
+                <IHSection icon={<Syringe className="h-4 w-4" />} title="Health & Care">
+                  <HealthCare ageMonths={ageMonths} />
+                </IHSection>
+
+                {/* ── 7. Parent Coaching — Baby Cues + Communication ─────────── */}
+                <IHSection icon={<MessageCircle className="h-4 w-4" />} title="Parent Coaching" badge="Interactive">
+                  <div className="space-y-5">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2 flex items-center gap-1">
+                        <ListChecks className="h-3 w-3" />
+                        Baby Cues Engine
+                      </p>
+                      <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2 flex items-center gap-1">
+                        <MessageCircle className="h-3 w-3" />
+                        Communication Coaching
+                      </p>
+                      <CommunicationCoaching ageMonths={ageMonths} />
+                    </div>
+                  </div>
+                </IHSection>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
