@@ -20,7 +20,6 @@ import {
   storyWatchProgressTable,
   type StoryContent,
 } from "@workspace/db";
-import { evaluateEarlyUnlockSafe } from "../services/parentHubService";
 
 const router: IRouter = Router();
 
@@ -536,10 +535,6 @@ router.post("/progress", async (req, res) => {
           updatedAt: sql`now()`,
         },
       });
-
-    // Re-evaluate the Parent Hub early-unlock rule. Fire-and-forget — a
-    // failure here must not break the user-visible progress write.
-    evaluateEarlyUnlockSafe(childId, userId);
 
     res.json({ ok: true });
   } catch (err) {

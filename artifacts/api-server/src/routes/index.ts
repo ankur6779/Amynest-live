@@ -30,7 +30,6 @@ import ttsRouter, { ttsPublicRouter } from "./tts";
 import audioLessonsRouter from "./audio-lessons";
 import phonicsRouter from "./phonics";
 import storiesRouter from "./stories";
-import hubContentRouter from "./hub-content";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -79,6 +78,5 @@ router.use(ttsRouter);
 router.use(audioLessonsRouter);
 router.use(phonicsRouter);
 router.use("/stories", storiesRouter);
-router.use("/hub", hubContentRouter);
 
 export default router;

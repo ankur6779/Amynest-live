@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { getGetHubContentQueryKey } from "@workspace/api-client-react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   getPhonicsLevel,
@@ -179,7 +177,6 @@ export function usePhonicsData(
   totalAgeMonths: number,
 ): UsePhonicsDataResult {
   const authFetch = useAuthFetch();
-  const queryClient = useQueryClient();
   const level = getPhonicsLevel(totalAgeMonths);
   const ageGroup = level?.ageGroup ?? "";
 
@@ -349,22 +346,12 @@ export function usePhonicsData(
             contentId,
             action: "play",
           }),
-        })
-          .then(() => {
-            const numericId =
-              typeof childId === "number" ? childId : Number(childId);
-            if (Number.isFinite(numericId)) {
-              void queryClient.invalidateQueries({
-                queryKey: getGetHubContentQueryKey({ childId: numericId }),
-              });
-            }
-          })
-          .catch((err) => {
-            console.warn("[phonics] play write failed:", err);
-          });
+        }).catch((err) => {
+          console.warn("[phonics] play write failed:", err);
+        });
       }
     },
-    [authFetch, childId, level, queryClient],
+    [authFetch, childId, level],
   );
 
   const toggleMastered = useCallback(
@@ -397,25 +384,12 @@ export function usePhonicsData(
             contentId,
             action: willBeMastered ? "mastered" : "unmastered",
           }),
-        })
-          .then(() => {
-            // Mastery flips drive the early-unlock evaluator — invalidate
-            // the Parent Hub query so newly-unlocked items go live without
-            // re-login.
-            const numericId =
-              typeof childId === "number" ? childId : Number(childId);
-            if (Number.isFinite(numericId)) {
-              void queryClient.invalidateQueries({
-                queryKey: getGetHubContentQueryKey({ childId: numericId }),
-              });
-            }
-          })
-          .catch((err) => {
-            console.warn("[phonics] mastery write failed:", err);
-          });
+        }).catch((err) => {
+          console.warn("[phonics] mastery write failed:", err);
+        });
       }
     },
-    [authFetch, childId, level, queryClient],
+    [authFetch, childId, level],
   );
 
   return {

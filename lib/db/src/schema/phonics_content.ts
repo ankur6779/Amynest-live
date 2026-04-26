@@ -38,14 +38,6 @@ export const phonicsContentTable = pgTable(
     /** Short caption shown under the tile ("Cow says…", "Sight word"). */
     hint: text("hint"),
     /**
-     * Optional concept identifier — groups items that teach the same concept
-     * across age tiers (e.g. all "letter-A" rows share `concept_id = "letter_a"`).
-     * The Parent Hub Section 2 uses this to surface the "next-higher level
-     * per concept" for age-2+ children. `null` means the item is not part of
-     * a tracked concept progression.
-     */
-    conceptId: text("concept_id"),
-    /**
      * Optional pre-generated audio URL. Left null for now — the frontend
      * synthesises on demand and the server-side ElevenLabs cache means each
      * unique sound is generated exactly once across the whole user base.

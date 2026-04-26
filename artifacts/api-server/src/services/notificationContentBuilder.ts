@@ -304,43 +304,6 @@ export async function buildAmyInsight(
   };
 }
 
-/* ----------------------  Band-unlock celebration  ---------------------- */
-
-/**
- * Builds the in-app notification fired the FIRST time a child crosses the
- * Parent Hub early-unlock threshold (≥75 % of their current band's tagged
- * media completed). Synchronous because the caller already has the child
- * row in scope — no DB round-trip needed here.
- *
- * The deepLink lands on the Parent Hub. The `data.section: 2` payload tells
- * client UIs that just opened the Hub to scroll/focus the "Coming next"
- * section so the parent immediately sees what was unlocked.
- *
- * The dedupKey is `band_unlock:<childId>:<nextBand>` — combined with the
- * notification_log unique partial index on (user_id, dedup_key) this gives
- * us a hard, race-free guarantee that a parent never receives the same
- * unlock celebration twice for the same band.
- */
-export function buildBandUnlockNotification(args: {
-  childName: string;
-  childId: number;
-  nextBand: string;
-}): BuiltNotification {
-  const { childName, childId, nextBand } = args;
-  return {
-    title: `Great job! 🎉 ${childName} unlocked the next stage`,
-    body: `${childName} just unlocked the next stage of stories and phonics. Tap to peek at what's coming next.`,
-    deepLink: "/hub",
-    dedupKey: `band_unlock:${childId}:${nextBand}`,
-    data: {
-      childId,
-      ageBand: nextBand,
-      section: 2,
-      source: "early_unlock",
-    },
-  };
-}
-
 /** Map a category to its content builder. */
 export const contentBuilders: Record<
   NotificationCategory,

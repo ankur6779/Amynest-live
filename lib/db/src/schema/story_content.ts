@@ -40,13 +40,6 @@ export const storyContentTable = pgTable(
     folderId: text("folder_id").notNull(),
     /** Optional duration in seconds, if available from Drive metadata. */
     durationSec: integer("duration_sec"),
-    /**
-     * Optional Parent Hub age band tag — one of "0-2" | "2-4" | "4-6" |
-     * "6-8" | "8-10" | "10-12" | "12-15". `null` means the story is
-     * "universal" and surfaces in Section 1 (current band) for every child.
-     * Drives the two-section Parent Hub payload.
-     */
-    ageBand: text("age_band"),
     /** Soft-delete flag — clearing this hides a story from the hub. */
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -56,7 +49,6 @@ export const storyContentTable = pgTable(
     uniqueIndex("story_content_drive_file_id_uniq").on(table.driveFileId),
     index("story_content_active_idx").on(table.active),
     index("story_content_category_idx").on(table.category),
-    index("story_content_age_band_idx").on(table.ageBand),
   ],
 );
 

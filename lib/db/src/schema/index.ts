@@ -43,4 +43,3 @@ export * from "./phonics_content";
 export * from "./phonics_progress";
 export * from "./story_content";
 export * from "./story_watch_progress";
-export * from "./child_band_unlocks";

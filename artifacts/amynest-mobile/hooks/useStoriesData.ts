@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import type { StoriesPayload } from "@/services/storiesApi";
-
-const HUB_CONTENT_QUERY_KEY = (childId: number | null | undefined) =>
-  ["hub-content", childId] as const;
 
 export interface UseStoriesDataResult {
   loading: boolean;
@@ -20,7 +16,6 @@ export interface UseStoriesDataResult {
 
 export function useStoriesData(childId: number | null): UseStoriesDataResult {
   const authFetch = useAuthFetch();
-  const queryClient = useQueryClient();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<StoriesPayload | null>(null);
@@ -94,17 +89,10 @@ export function useStoriesData(childId: number | null): UseStoriesDataResult {
       })
         .then((r) => {
           if (!r.ok) console.warn("[stories] progress write HTTP", r.status);
-          // Refresh Parent Hub progressive content so early-unlock flips
-          // (previewOnly → false) render immediately, no re-login needed.
-          if (r.ok && (options?.completed || options?.startedSession)) {
-            void queryClient.invalidateQueries({
-              queryKey: HUB_CONTENT_QUERY_KEY(childId),
-            });
-          }
         })
         .catch((err) => console.warn("[stories] progress write failed:", err));
     },
-    [authFetch, childId, queryClient],
+    [authFetch, childId],
   );
 
   return { loading, error, data, refresh, recordProgress };

@@ -22,7 +22,6 @@ import { AmazingFacts } from "@/components/AmazingFacts";
 import FuturePredictor from "@/components/FuturePredictor";
 import AiMealGenerator from "@/components/AiMealGenerator";
 import ParentCommandCenter from "@/components/ParentCommandCenter";
-import HubProgressiveContent from "@/components/HubProgressiveContent";
 import { isInfantHubAge } from "@workspace/infant-hub";
 import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand } from "./hub-bands";
 export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand };
@@ -277,14 +276,6 @@ export default function HubScreen() {
         {/* 🔮 Future Predictor — top placement */}
         {effective && (
           <FuturePredictor childId={effective.id} />
-        )}
-
-        {/* 📚 Progressive Library — Section 1 (live) + Section 2 (preview) */}
-        {effective && (
-          <HubProgressiveContent
-            childId={effective.id}
-            childName={effective.name}
-          />
         )}
 
         {/* === 2-section age-band content system ===================
