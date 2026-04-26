@@ -69,8 +69,38 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
           <img
             src={mascotImg}
             alt="Amy AI"
-            style={{ width: "118%", height: "118%", marginLeft: "-9%", marginTop: "-9%", objectFit: "contain", display: "block", pointerEvents: "none" }}
+            style={{
+              width: "118%",
+              height: "118%",
+              marginLeft: "-9%",
+              marginTop: "-9%",
+              objectFit: "contain",
+              display: "block",
+              pointerEvents: "none",
+              filter: "hue-rotate(15deg) saturate(1.3) brightness(0.92)",
+            }}
             draggable={false}
+          />
+          {/* Purple multiply overlay — tints white bird body to purple, matches dark theme */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(135deg, #a06bff 0%, #c084fc 50%, #e879f9 100%)",
+              mixBlendMode: "multiply",
+              pointerEvents: "none",
+              opacity: 0.85,
+            }}
+          />
+          {/* Subtle purple glow tint on top — adds neon shimmer */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "radial-gradient(circle at 50% 35%, rgba(200, 130, 255, 0.18) 0%, transparent 60%)",
+              mixBlendMode: "screen",
+              pointerEvents: "none",
+            }}
           />
         </div>
 
