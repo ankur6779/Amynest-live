@@ -1,0 +1,164 @@
+Redesign the Sign In / Sign Up screen to match a premium futuristic neon UI (similar to high-end AI product design).
+
+GOAL:
+Create a visually rich, glowing neon login screen with a central animated ring and premium depth effects.
+
+--------------------------------------------------
+1. BACKGROUND (DEPTH + PREMIUM)
+--------------------------------------------------
+- Use multi-layer gradient:
+  #0a061a → #120a2e → #050010
+
+- Add:
+  • subtle radial glow in center
+  • soft wave/mesh pattern (low opacity)
+  • slight noise texture for premium feel
+
+--------------------------------------------------
+2. HERO NEON RING (TOP CENTER)
+--------------------------------------------------
+Create a multi-layer glowing ring:
+
+Layer 1:
+- Circular ring using conic-gradient:
+  purple (#a855f7) → pink (#ec4899)
+
+Layer 2:
+- Outer glow:
+  blur(25–40px)
+  opacity soft
+
+Layer 3:
+- Inner dark glass circle (depth effect)
+
+Layer 4:
+- Light flare:
+  • small bright star on ring edge
+  • positioned top-right
+  • slight glow
+
+Layer 5 (IMPORTANT):
+- Add thin secondary orbit line (faint circle around main ring)
+
+--------------------------------------------------
+3. RING ANIMATION (PREMIUM, NOT DISTRACTING)
+--------------------------------------------------
+- Slow rotation (8–12 seconds)
+- Gentle pulse:
+  scale 1 → 1.04 → 1
+
+- Add shimmer sweep:
+  • subtle highlight rotates around ring
+
+--------------------------------------------------
+4. TEXT INSIDE RING
+--------------------------------------------------
+Text:
+"Meet AMY"
+
+Style:
+- "Meet":
+  white, light weight
+
+- "AMY":
+  gradient text:
+  purple → pink
+
+- Add glow:
+  text-shadow: 0 0 20px rgba(236,72,153,0.5)
+
+- Center aligned
+
+--------------------------------------------------
+5. BOTTOM LIGHT PLATFORM (IMPORTANT DETAIL)
+--------------------------------------------------
+- Add circular glow under ring
+- Makes ring look floating
+
+- Use radial gradient + blur
+
+--------------------------------------------------
+6. HEADING SECTION
+--------------------------------------------------
+Text:
+"Welcome back"
+
+- Large font
+- White
+- Bold
+
+Subtext:
+"Sign in to your personal parenting coach"
+
+- Light gray / purple tint
+
+--------------------------------------------------
+7. BUTTON (CONTINUE WITH PHONE)
+--------------------------------------------------
+- Transparent dark background
+- Neon border:
+  purple glow
+
+- Rounded corners
+
+- Add hover:
+  glow increase
+
+--------------------------------------------------
+8. INPUT FIELDS
+--------------------------------------------------
+- Dark glass style inputs
+- Border:
+  subtle purple glow
+
+- Placeholder:
+  low opacity white
+
+- Focus:
+  glow highlight
+
+--------------------------------------------------
+9. DIVIDER
+--------------------------------------------------
+- Horizontal lines with "or" in center
+- Very subtle
+
+--------------------------------------------------
+10. SIGN IN BUTTON
+--------------------------------------------------
+- Gradient:
+  purple → pink (match brand)
+
+- Strong glow:
+  rgba(236,72,153,0.4)
+
+- Rounded pill shape
+
+- Hover:
+  scale + glow increase
+
+--------------------------------------------------
+11. MICRO ANIMATIONS
+--------------------------------------------------
+- Floating particles (very minimal)
+- Ring glow breathing
+- Light flare flicker (very subtle)
+
+--------------------------------------------------
+12. RESPONSIVENESS
+--------------------------------------------------
+- Mobile optimized
+- Ring size reduced on small screens
+
+--------------------------------------------------
+13. PERFORMANCE
+--------------------------------------------------
+- Use CSS animations
+- Avoid heavy libraries
+
+--------------------------------------------------
+DELIVERABLE:
+- Premium neon login UI
+- High-end visual depth (not flat)
+- Animated ring + glow effects
+- Close visual match to reference design

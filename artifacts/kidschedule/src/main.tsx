@@ -10,7 +10,14 @@ root.render(<App />);
 // Dismiss the splash screen after React has painted AND a minimum display
 // time has elapsed, so the "Meet AMY" intro animation can play in full.
 // Total perceived duration ≈ 2.7s visible + 0.7s fade = ~3.4s.
-const SPLASH_MIN_MS = 3200; // keep visible long enough for shimmer at 2.9s to complete
+// Skip the full animation when the user navigates directly to an inner page
+// (e.g. /sign-in, /sign-up) — the splash belongs only to the root entry.
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const isRootEntry =
+  window.location.pathname === "/" ||
+  window.location.pathname === BASE ||
+  window.location.pathname === BASE + "/";
+const SPLASH_MIN_MS = isRootEntry ? 3200 : 0;
 const splashStartedAt = performance.now();
 
 requestAnimationFrame(() => {
