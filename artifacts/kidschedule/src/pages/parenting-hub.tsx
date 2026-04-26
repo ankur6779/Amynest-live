@@ -9,13 +9,14 @@ import {
   BookOpen, Brain, Sparkles, Heart, Palette,
   ChevronDown, ChevronUp, MessageCircleHeart,
   Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap,
-  UserPlus, CheckCircle2, Users,
+  UserPlus, CheckCircle2, Users, AudioLines,
 } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
+import { PhonicsLearning } from "@/components/phonics-learning";
 import { getAgeGroup, getAgeGroupInfo } from "@/lib/age-groups";
 import { InfantMode, type InfantShowOnly } from "@/components/infant-mode";
 import { InfantHub } from "@/components/infant-hub";
@@ -717,6 +718,32 @@ export default function ParentingHub() {
               onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}
             >
               <EventPrepCard />
+            </HubSection>
+          </LockedBlock>
+        )}
+
+        {/* 5b. Phonics Learning — ages 1-6 only */}
+        {effectiveChild && totalAgeMonths >= 12 && totalAgeMonths < 72 && (
+          <LockedBlock
+            reason="hub_locked"
+            locked={hubUsage.isFeatureLocked("hub_phonics")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
+          >
+            <HubSection
+              id="phonics"
+              icon={<AudioLines className="h-5 w-5 text-violet-600" />}
+              title="🔤 Phonics Learning"
+              description="Sound awareness → blending → reading, paced for your child's age"
+              accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20"
+              tryFree={tryFreeFor("hub_phonics")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}
+            >
+              <PhonicsLearning
+                childId={effectiveChild.id}
+                childName={effectiveChild.name}
+                totalAgeMonths={totalAgeMonths}
+              />
             </HubSection>
           </LockedBlock>
         )}
