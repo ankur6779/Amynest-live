@@ -14,7 +14,7 @@ import {
   getAgeBand,
   HUB_CONTENT_AGE_BANDS,
   partitionTilesByBand,
-} from "./hub-bands";
+} from "../app/(tabs)/hub-bands";
 
 describe("getAgeBand", () => {
   it("maps representative ages to the correct band index", () => {
