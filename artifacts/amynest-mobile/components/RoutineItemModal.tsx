@@ -5,7 +5,18 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, { FadeIn, SlideInDown, SlideOutDown } from "react-native-reanimated";
+import Animated, {
+  FadeIn,
+  FadeInUp,
+  FadeOutUp,
+  SlideInDown,
+  SlideOutDown,
+  LinearTransition,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import SlideToComplete from "./SlideToComplete";
 import { MobileRecipeCard } from "./MobileRecipeCard";
 import { useColors } from "@/hooks/useColors";
@@ -110,10 +121,25 @@ export default function RoutineItemModal({
   const [recipeLoading, setRecipeLoading] = useState(false);
   const [recipeError, setRecipeError] = useState<string | null>(null);
   const [recipeOpen, setRecipeOpen] = useState(isFirstMeal);
+  const chevronRotation = useSharedValue(isFirstMeal ? 1 : 0);
 
   useEffect(() => {
-    if (visible) setRecipeOpen(isFirstMeal);
-  }, [visible, isFirstMeal]);
+    if (visible) {
+      setRecipeOpen(isFirstMeal);
+      chevronRotation.value = isFirstMeal ? 1 : 0;
+    }
+  }, [visible, isFirstMeal, chevronRotation]);
+
+  useEffect(() => {
+    chevronRotation.value = withTiming(recipeOpen ? 1 : 0, {
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [recipeOpen, chevronRotation]);
+
+  const chevronAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${chevronRotation.value * 180}deg` }],
+  }));
 
   const fetchRecipe = async (mealName: string) => {
     setSelectedMeal(mealName);
@@ -319,7 +345,7 @@ export default function RoutineItemModal({
               ) : null}
 
               {(item.recipe || item.nutrition) ? (
-                <View style={s.notesBox}>
+                <Animated.View style={s.notesBox} layout={LinearTransition.duration(240)}>
                   <TouchableOpacity
                     onPress={() => setRecipeOpen(o => !o)}
                     activeOpacity={0.8}
@@ -329,21 +355,27 @@ export default function RoutineItemModal({
                   >
                     <MaterialCommunityIcons name="chef-hat" size={14} color="#c2410c" />
                     <Text style={s.recipeToggleLabel}>{"Recipe & Nutrition"}{item.meal ? ` — ${item.meal}` : ""}</Text>
-                    <Ionicons
-                      name={recipeOpen ? "chevron-up" : "chevron-down"}
-                      size={14}
-                      color="#c2410c"
-                      style={{ marginLeft: "auto" }}
-                    />
+                    <Animated.View style={[{ marginLeft: "auto" }, chevronAnimatedStyle]}>
+                      <Ionicons
+                        name="chevron-down"
+                        size={14}
+                        color="#c2410c"
+                      />
+                    </Animated.View>
                   </TouchableOpacity>
                   {recipeOpen && (
-                    <MobileRecipeCard
-                      meal={item.meal}
-                      recipe={item.recipe}
-                      nutrition={item.nutrition}
-                    />
+                    <Animated.View
+                      entering={FadeInUp.duration(220).easing(Easing.out(Easing.cubic))}
+                      exiting={FadeOutUp.duration(160)}
+                    >
+                      <MobileRecipeCard
+                        meal={item.meal}
+                        recipe={item.recipe}
+                        nutrition={item.nutrition}
+                      />
+                    </Animated.View>
                   )}
-                </View>
+                </Animated.View>
               ) : null}
 
               {isMealOptions ? (
