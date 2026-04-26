@@ -39,7 +39,7 @@ import {
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AmyIcon } from "@/components/amy-icon";
 
-import heroImg from "@assets/ChatGPT_Image_Apr_26,_2026,_10_12_39_PM_1777221791989.png";
+import heroImg from "@assets/ChatGPT_Image_Apr_26,_2026,_10_19_57_PM_1777222212106.png";
 import { useTranslation } from "react-i18next";
 
 const COACH_HIGHLIGHT_KEYS = [
@@ -485,16 +485,12 @@ export default function LandingPage() {
       {/* HERO */}
       <section className="relative z-10 flex flex-col items-center text-center px-5 pt-12 pb-16">
         <div className="amy-fade-up-1 relative -mb-6 flex items-center justify-center">
-          <div className="amy-float">
+          <div className="amy-hero-float">
             <img
               src={heroImg}
               alt="AmyNest AI"
-              className="w-96 md:w-[620px] object-contain"
-              style={{
-                mixBlendMode: "screen",
-                filter:
-                  "drop-shadow(0 0 40px rgba(168,85,247,0.55)) drop-shadow(0 0 80px rgba(99,102,241,0.35))",
-              }}
+              className="amy-hero-glow w-80 md:w-[560px] object-contain"
+              style={{ mixBlendMode: "screen" }}
             />
           </div>
         </div>

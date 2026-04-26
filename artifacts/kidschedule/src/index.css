@@ -2,6 +2,24 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+/* ── Hero neon ring logo — float + glow-breathe + shimmer flash ──── */
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0px)   scale(1);    }
+  50%       { transform: translateY(-14px) scale(1.025); }
+}
+@keyframes heroRingGlow {
+  0%   { filter: drop-shadow(0 0 28px rgba(168,85,247,.65))  drop-shadow(0 0  60px rgba(236,72,153,.40))  brightness(1);    }
+  40%  { filter: drop-shadow(0 0 55px rgba(168,85,247,.88))  drop-shadow(0 0 110px rgba(236,72,153,.68))  drop-shadow(0 0 180px rgba(168,85,247,.30)) brightness(1.10); }
+  50%  { filter: drop-shadow(0 0 80px rgba(255,220,255,.50)) drop-shadow(0 0 150px rgba(168,85,247,1.0))  drop-shadow(0 0 240px rgba(236,72,153,.80)) brightness(1.22); }
+  60%  { filter: drop-shadow(0 0 55px rgba(168,85,247,.88))  drop-shadow(0 0 110px rgba(236,72,153,.68))  drop-shadow(0 0 180px rgba(168,85,247,.30)) brightness(1.10); }
+  100% { filter: drop-shadow(0 0 28px rgba(168,85,247,.65))  drop-shadow(0 0  60px rgba(236,72,153,.40))  brightness(1);    }
+}
+.amy-hero-float { animation: heroFloat    4s   ease-in-out infinite; }
+.amy-hero-glow  { animation: heroRingGlow 3.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .amy-hero-float, .amy-hero-glow { animation: none !important; filter: none !important; }
+}
+
 /* ── Landing page animations ─────────────────────────────────────── */
 @keyframes landingFadeUp {
   from { opacity: 0; transform: translateY(28px); }
