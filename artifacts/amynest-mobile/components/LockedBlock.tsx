@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, type ViewStyle } from "react-native";
+import { View, Pressable, StyleSheet, type ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
 import PremiumBadge from "@/components/PremiumBadge";
 
@@ -8,10 +8,6 @@ type Props = {
   locked: boolean;
   /** Reason passed to /paywall (used for analytics + paywall headline). */
   reason?: string;
-  /**
-   * Older props (kept for API compatibility — they used to drive the
-   * blurred-overlay copy and are now unused). Safe to omit.
-   */
   label?: string;
   cta?: string;
   radius?: number;
@@ -20,15 +16,15 @@ type Props = {
 };
 
 /**
- * Mobile twin of the web `<LockedBlock>`. Children are ALWAYS rendered
- * passthrough — the section is fully visible and interactive at all times.
- * When `locked=true`, a small "Premium" pill is floated in the top-right
- * corner; tapping it pushes to /paywall. Premium users (locked=false) see no
- * badge.
+ * Mobile twin of the web <LockedBlock>.
  *
- * Replaces the previous BlurView + dim overlay treatment per product
- * feedback — the user wants the surface visible after the free trial is
- * consumed and only a non-intrusive Premium hint shown.
+ * locked=false → children rendered fully interactive (free first-use OR premium)
+ * locked=true  → children visible but an absolute Pressable overlay covers the
+ *                 entire tile and intercepts every touch, routing to /paywall.
+ *                 The "Premium" badge sits above the overlay so it stays tappable.
+ *
+ * This prevents free users from expanding (or interacting with) a section
+ * after their one free use has been consumed.
  */
 export default function LockedBlock({
   locked,
@@ -41,18 +37,30 @@ export default function LockedBlock({
 
   if (!locked) return <>{children}</>;
 
+  const goPaywall = () =>
+    router.push({ pathname: "/paywall", params: { reason } });
+
   return (
     <View
       style={[styles.wrap, { borderRadius: radius }, style]}
       testID="locked-block"
     >
-      {children}
+      {/* Section renders visually in its collapsed state */}
+      <View pointerEvents="none">
+        {children}
+      </View>
+
+      {/* Full-cover Pressable — intercepts every touch, opens paywall */}
+      <Pressable
+        onPress={goPaywall}
+        style={styles.overlay}
+        accessibilityLabel="Premium feature — tap to unlock"
+        accessibilityRole="button"
+      />
+
+      {/* Premium badge — above the overlay so it stays tappable */}
       <View style={styles.badgeAnchor} pointerEvents="box-none">
-        <PremiumBadge
-          onPress={() =>
-            router.push({ pathname: "/paywall", params: { reason } })
-          }
-        />
+        <PremiumBadge onPress={goPaywall} />
       </View>
     </View>
   );
@@ -62,10 +70,16 @@ const styles = StyleSheet.create({
   wrap: {
     position: "relative",
   },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    borderRadius: 22,
+  },
   badgeAnchor: {
-    // Anchored just before the Section's right-side chevron control so the
-    // two never overlap. The chevron sits ~right:14-42px; the badge starts
-    // at right:50 and stays clear.
     position: "absolute",
     top: 12,
     right: 50,
