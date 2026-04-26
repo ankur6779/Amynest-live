@@ -496,8 +496,41 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
         </CardContent>
       </Card>
 
-      {/* ── 1. Weekly AI Insight ─────────────────────────────────────────────── */}
-      <IHSection icon={<Star className="h-4 w-4" />} title="Weekly Insight" badge="New" defaultOpen>
+      {/* ══════════════════════════════════════════════════════════════════════
+          MAJOR SECTION — Infant Parenting (0–24 months only)
+          Glass + glow wrapper grouping all 7 infant tools under one umbrella.
+          ══════════════════════════════════════════════════════════════════════ */}
+      {ageMonths >= 0 && ageMonths < 24 && (
+        <Card className="relative overflow-hidden rounded-3xl border-2 border-violet-300/40 dark:border-violet-400/20 shadow-[0_8px_40px_-12px_rgba(168,85,247,0.4)] bg-gradient-to-br from-violet-50/60 via-fuchsia-50/40 to-pink-50/60 dark:from-violet-950/30 dark:via-fuchsia-950/20 dark:to-pink-950/30 backdrop-blur-xl">
+          {/* Glow accents */}
+          <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-fuchsia-400/25 dark:bg-fuchsia-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-violet-400/25 dark:bg-violet-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute top-1/2 left-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-300/15 dark:bg-pink-500/10 blur-2xl" />
+
+          <CardContent className="relative p-4 sm:p-5 space-y-3">
+            {/* Major section header */}
+            <div className="flex items-start gap-3 pb-3 border-b border-violet-200/50 dark:border-violet-400/20">
+              <div className="shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-[0_6px_20px_-4px_rgba(217,70,239,0.6)] ring-1 ring-white/40 dark:ring-white/10">
+                <Baby className="h-5 w-5 text-white drop-shadow" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300 mb-0.5">
+                  Major Section
+                </p>
+                <h2 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-violet-700 via-fuchsia-700 to-pink-700 dark:from-violet-200 dark:via-fuchsia-200 dark:to-pink-200 bg-clip-text text-transparent leading-tight">
+                  Infant Parenting
+                </h2>
+                <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                  Complete toolkit for babies 0–24 months · sleep, feeding, milestones &amp; more
+                </p>
+              </div>
+            </div>
+
+            {/* The 7 nested infant tools */}
+            <div className="space-y-3">
+
+              {/* ── 1. Weekly AI Insight ─────────────────────────────────────── */}
+              <IHSection icon={<Star className="h-4 w-4" />} title="Weekly Insight" badge="New" defaultOpen>
         <WeeklyInsight childName={childName} ageMonths={ageMonths} />
       </IHSection>
 
@@ -554,25 +587,30 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
         <HealthCare ageMonths={ageMonths} />
       </IHSection>
 
-      {/* ── 7. Parent Coaching — Baby Cues + Communication ───────────────────── */}
-      <IHSection icon={<MessageCircle className="h-4 w-4" />} title="Parent Coaching" badge="Interactive">
-        <div className="space-y-5">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2 flex items-center gap-1">
-              <ListChecks className="h-3 w-3" />
-              Baby Cues Engine
-            </p>
-            <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2 flex items-center gap-1">
-              <MessageCircle className="h-3 w-3" />
-              Communication Coaching
-            </p>
-            <CommunicationCoaching ageMonths={ageMonths} />
-          </div>
-        </div>
-      </IHSection>
+              {/* ── 7. Parent Coaching — Baby Cues + Communication ─────────── */}
+              <IHSection icon={<MessageCircle className="h-4 w-4" />} title="Parent Coaching" badge="Interactive">
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2 flex items-center gap-1">
+                      <ListChecks className="h-3 w-3" />
+                      Baby Cues Engine
+                    </p>
+                    <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2 flex items-center gap-1">
+                      <MessageCircle className="h-3 w-3" />
+                      Communication Coaching
+                    </p>
+                    <CommunicationCoaching ageMonths={ageMonths} />
+                  </div>
+                </div>
+              </IHSection>
+
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
