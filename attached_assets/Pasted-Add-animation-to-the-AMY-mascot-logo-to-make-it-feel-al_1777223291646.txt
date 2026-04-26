@@ -1,0 +1,105 @@
+Add animation to the AMY mascot logo to make it feel alive and interactive.
+
+GOAL:
+Animate the bird’s eyes (blinking) and create a smooth glowing neon ring effect for a premium AI feel.
+
+--------------------------------------------------
+1. STRUCTURE
+--------------------------------------------------
+- Separate elements into layers:
+  • Ring layer
+  • Mascot image layer
+  • Eyes (overlay or mask if needed)
+
+IMPORTANT:
+- Eyes must be individually animatable
+
+--------------------------------------------------
+2. EYE BLINK ANIMATION (VERY IMPORTANT)
+--------------------------------------------------
+Create natural blinking behavior:
+
+- Blink interval:
+  random between 3–6 seconds
+
+- Animation steps:
+  open → close → open
+
+- Duration:
+  150–250ms (fast blink)
+
+- Use scaleY transform:
+  scaleY(1 → 0.1 → 1)
+
+- Add slight delay randomness for realism
+
+--------------------------------------------------
+3. NEON RING GLOW ANIMATION
+--------------------------------------------------
+Create breathing glow effect:
+
+- Animate box-shadow / outer glow
+
+Cycle:
+- low glow → high glow → low glow
+
+Timing:
+- 3–4 seconds ease-in-out infinite
+
+Colors:
+- purple (#a855f7)
+- pink (#ec4899)
+
+--------------------------------------------------
+4. RING ROTATION (SUBTLE)
+--------------------------------------------------
+- Very slow rotation:
+  12–15 seconds
+
+- Keep subtle (premium feel)
+
+--------------------------------------------------
+5. SHIMMER EFFECT (PREMIUM TOUCH)
+--------------------------------------------------
+- Add a light streak on ring edge
+
+Animation:
+- rotates once every 4–5 seconds
+- soft white/pink glow
+
+--------------------------------------------------
+6. FLOATING EFFECT (OPTIONAL)
+--------------------------------------------------
+- Slight up-down movement:
+
+translateY:
+0px → -4px → 0px
+
+Timing:
+- 4 seconds
+
+--------------------------------------------------
+7. HOVER / TAP INTERACTION (OPTIONAL)
+--------------------------------------------------
+On hover or tap:
+
+- Increase glow intensity
+- Slight scale up (1.05)
+
+--------------------------------------------------
+8. PERFORMANCE
+--------------------------------------------------
+- Use CSS animations + minimal JS
+- Avoid heavy libraries
+
+--------------------------------------------------
+9. RESPONSIVE
+--------------------------------------------------
+- Maintain animation smoothness on mobile
+
+--------------------------------------------------
+DELIVERABLE:
+- Blinking eyes (natural)
+- Breathing neon glow ring
+- Smooth premium animation
+- Reusable animated mascot component

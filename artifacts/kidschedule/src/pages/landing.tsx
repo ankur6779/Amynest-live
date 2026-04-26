@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AmyIcon } from "@/components/amy-icon";
+import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 
 import heroImg from "@assets/ChatGPT_Image_Apr_26,_2026,_10_19_57_PM_1777222212106.png";
 import { useTranslation } from "react-i18next";
@@ -449,7 +450,7 @@ export default function LandingPage() {
       <header className="relative z-20 flex items-center justify-between px-5 py-4">
         <Link href="/">
           <div className="flex items-center gap-3 cursor-pointer">
-            <AmyIcon size={44} ring bounce />
+            <AmyMascotLogo size={44} />
             <div className="flex flex-col leading-tight">
               <span
                 className="font-quicksand font-black text-xl"
