@@ -1,0 +1,79 @@
+Redesign splash screen to a premium, non-generic animation (NO ring, NO common loaders).
+
+GOAL:
+Create a high-end AI presence feel using light, motion, and typography.
+
+--------------------------------------------------
+1. BACKGROUND
+--------------------------------------------------
+- Gradient:
+  #0B0B1A → #1A1035
+- Add subtle grain/noise texture
+- No particles
+
+--------------------------------------------------
+2. HERO ANIMATION (CORE DIFFERENTIATOR)
+--------------------------------------------------
+Create a "Neural Light Sweep":
+
+- A soft horizontal light beam
+- Blurred edges + glow
+- Moves left → right slowly
+
+- Slight opacity fade as it passes
+- Should feel like a scan / intelligence activation
+
+--------------------------------------------------
+3. MAIN TEXT
+--------------------------------------------------
+Text:
+"Meet AMY"
+
+Style:
+- Clean modern font (Inter / SF Pro)
+- White (#FFFFFF)
+- Slight letter spacing
+
+Animation:
+- Fade in + slight upward motion
+- Delay: ~1s
+
+--------------------------------------------------
+4. TAGLINE (IMPORTANT)
+--------------------------------------------------
+Text:
+"Where Smart Parenting Starts"
+
+Animation:
+- Smooth typewriter effect (not mechanical)
+- Each word fades in progressively
+- Add subtle shimmer pass after full reveal
+
+--------------------------------------------------
+5. MICRO MOTION
+--------------------------------------------------
+- Very subtle glow pulse on text
+- No aggressive animation
+
+--------------------------------------------------
+6. TIMING
+--------------------------------------------------
+- Total: ~2.5–3 seconds
+
+--------------------------------------------------
+7. TRANSITION
+--------------------------------------------------
+- Soft fade into homepage
+- No hard cut
+
+--------------------------------------------------
+8. PERFORMANCE
+--------------------------------------------------
+- Use CSS animations / lightweight JS
+- Avoid heavy libraries
+
+--------------------------------------------------
+DELIVERABLE:
+- Premium, minimal splash screen
+- No ring or generic loader
+- AI-like presence using light and motion

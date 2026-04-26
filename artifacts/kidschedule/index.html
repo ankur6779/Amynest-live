@@ -35,16 +35,16 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Quicksand:wght@500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Nunito:wght@400;500;600;700;800;900&family=Quicksand:wght@500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
       html, body {
-        background-color: #0E0830;
+        background-color: #0B0B1A;
         margin: 0;
         padding: 0;
       }
 
-      /* ── Splash — "Meet AMY" premium edition ───────────────────────── */
+      /* ── Splash — Neural Light Sweep edition ───────────────────────── */
       #splash {
         position: fixed;
         inset: 0;
@@ -53,13 +53,10 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        /* Deep purple → dark blue */
-        background:
-          radial-gradient(ellipse at 30% 20%, rgba(123,63,242,0.32) 0%, transparent 55%),
-          radial-gradient(ellipse at 75% 85%, rgba(74,139,255,0.28) 0%, transparent 55%),
-          linear-gradient(165deg, #1B0A3E 0%, #14083A 35%, #0A1240 70%, #07173E 100%);
+        /* #0B0B1A → #1A1035 as specified */
+        background: linear-gradient(158deg, #0B0B1A 0%, #110D28 45%, #1A1035 100%);
         overflow: hidden;
-        transition: opacity 0.7s ease, visibility 0.7s ease;
+        transition: opacity 0.75s ease, visibility 0.75s ease;
       }
       #splash.splash-hide {
         opacity: 0;
@@ -67,43 +64,61 @@
         pointer-events: none;
       }
 
-      /* Cinematic vignette */
+      /* ── Grain / noise texture (subtle, premium print feel) ─────────── */
       #splash::before {
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.55) 100%);
         pointer-events: none;
+        opacity: 0.045;
+        mix-blend-mode: screen;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+        background-size: 200px 200px;
       }
 
-      /* ── Floating particles ─────────────────────────────────────────── */
-      .splash-particles {
+      /* ── Neural Light Sweep beam ────────────────────────────────────── */
+      /* A blurred, glowing horizontal band that sweeps left → right,
+         creating an "intelligence activation / scan" impression.        */
+      .splash-beam {
         position: absolute;
-        inset: 0;
-        overflow: hidden;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 42%;
+        /* soft gradient cross-section so edges feather to nothing */
+        background: linear-gradient(
+          90deg,
+          transparent   0%,
+          rgba(130,100,255,0.06)  25%,
+          rgba(160,125,255,0.14)  50%,
+          rgba(130,100,255,0.06)  75%,
+          transparent   100%
+        );
+        filter: blur(48px);
+        transform: translateX(-110%);
+        animation: beamSweep 5s ease-in-out infinite;
+        will-change: transform;
         pointer-events: none;
       }
-      .splash-particles span {
+      /* A second, narrower, brighter core inside the beam */
+      .splash-beam::after {
+        content: "";
         position: absolute;
-        bottom: -12px;
-        left: var(--x, 50%);
-        width: var(--s, 2px);
-        height: var(--s, 2px);
-        border-radius: 50%;
-        background: rgba(255,255,255,0.85);
-        box-shadow: 0 0 6px rgba(180,140,255,0.65);
-        opacity: 0;
-        animation: particleRise var(--dur, 16s) var(--d, 0s) linear infinite;
-        will-change: transform, opacity;
+        inset: 0 18% 0 18%;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(180,155,255,0.18) 50%,
+          transparent 100%
+        );
+        filter: blur(18px);
       }
-      @keyframes particleRise {
-        0%   { transform: translate(0, 0); opacity: 0; }
-        8%   { opacity: 0.85; }
-        92%  { opacity: 0.55; }
-        100% { transform: translate(var(--drift, 20px), -108vh); opacity: 0; }
+      @keyframes beamSweep {
+        0%   { transform: translateX(-110%); }
+        100% { transform: translateX(290%);  }
       }
 
-      /* ── Stage ──────────────────────────────────────────────────────── */
+      /* ── Center stage ───────────────────────────────────────────────── */
       .splash-stage {
         position: relative;
         z-index: 1;
@@ -111,136 +126,109 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
-        padding: 0 24px;
+        padding: 0 32px;
       }
 
-      /* ── Glowing rotating + pulsing gradient ring ───────────────────── */
-      .splash-ring-wrap {
-        width: 140px;
-        height: 140px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 38px;
-        animation: ringPulse 2.6s ease-in-out infinite;
-      }
-      .splash-ring {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background: conic-gradient(
-          from 0deg,
-          #7B3FF2 0deg,
-          #B85FFF 90deg,
-          #4A8BFF 180deg,
-          #6B4DFF 270deg,
-          #7B3FF2 360deg
-        );
-        -webkit-mask: radial-gradient(circle, transparent 56px, black 60px);
-                mask: radial-gradient(circle, transparent 56px, black 60px);
-        box-shadow:
-          0 0 30px rgba(123,63,242,0.55),
-          0 0 70px rgba(74,139,255,0.35),
-          0 0 120px rgba(123,63,242,0.18);
-        filter: drop-shadow(0 0 8px rgba(184,95,255,0.45));
-        animation: ringRotate 8s linear infinite;
-        will-change: transform;
-      }
-      @keyframes ringRotate {
-        from { transform: rotate(0deg); }
-        to   { transform: rotate(360deg); }
-      }
-      @keyframes ringPulse {
-        0%, 100% { transform: scale(1); }
-        50%      { transform: scale(1.05); }
-      }
-
-      /* ── Title: "Meet AMY" ──────────────────────────────────────────── */
+      /* ── "Meet AMY" title ───────────────────────────────────────────── */
       .splash-title {
-        font-family: 'Quicksand', 'Nunito', system-ui, sans-serif;
-        font-size: 44px;
+        font-family: 'Inter', -apple-system, 'SF Pro Display', system-ui, sans-serif;
+        font-size: 50px;
         font-weight: 600;
-        letter-spacing: 2px;
+        letter-spacing: 4px;
         color: #FFFFFF;
-        margin: 0;
-        text-shadow:
-          0 0 14px rgba(184,140,255,0.55),
-          0 0 32px rgba(123,63,242,0.45),
-          0 1px 2px rgba(0,0,0,0.4);
+        margin: 0 0 28px;
         opacity: 0;
-        animation: titleFadeIn 0.9s 0.8s cubic-bezier(0.22,1,0.36,1) forwards;
+        /* Fade in + upward motion at ~0.8s */
+        animation:
+          titleIn   0.85s 0.8s  cubic-bezier(0.22,1,0.36,1) forwards,
+          titleGlow 4s    1.65s ease-in-out infinite;
       }
-      @keyframes titleFadeIn {
-        from { opacity: 0; transform: translateY(12px); letter-spacing: 6px; }
-        to   { opacity: 1; transform: translateY(0);    letter-spacing: 2px; }
-      }
-
-      /* ── Subtext ─────────────────────────────────────────────────────── */
-      .splash-sub {
-        font-family: 'Quicksand', 'Nunito', system-ui, sans-serif;
-        color: rgba(225,215,255,0.78);
-        margin: 0;
-        opacity: 0;
-      }
-      .splash-sub-1 {
-        font-size: 15px;
-        font-weight: 500;
-        margin-top: 18px;
-        letter-spacing: 0.4px;
-        animation: subFadeIn 0.9s 1.5s cubic-bezier(0.22,1,0.36,1) forwards;
-      }
-      .splash-sub-2 {
-        font-size: 12px;
-        font-weight: 400;
-        margin-top: 10px;
-        letter-spacing: 1.4px;
-        text-transform: uppercase;
-        color: rgba(180,165,225,0.55);
-        animation: subFadeIn 0.9s 1.9s cubic-bezier(0.22,1,0.36,1) forwards;
-      }
-      @keyframes subFadeIn {
-        from { opacity: 0; transform: translateY(8px); }
+      @keyframes titleIn {
+        from { opacity: 0; transform: translateY(16px); }
         to   { opacity: 1; transform: translateY(0); }
       }
+      /* Very subtle glow pulse — not aggressive */
+      @keyframes titleGlow {
+        0%, 100% { text-shadow: 0 0 22px rgba(160,130,255,0.28); }
+        50%      { text-shadow: 0 0 40px rgba(160,130,255,0.48), 0 0 72px rgba(120,90,255,0.20); }
+      }
 
-      /* ── Mobile responsive tweaks ──────────────────────────────────── */
+      /* ── "Where Smart Parenting Starts" — word-by-word fade in ─────── */
+      .splash-tagline {
+        position: relative;
+        font-family: 'Inter', -apple-system, 'SF Pro Display', system-ui, sans-serif;
+        font-size: 16px;
+        font-weight: 400;
+        letter-spacing: 0.6px;
+        color: rgba(210,200,255,0.72);
+        margin: 0;
+        /* clip the shimmer to the text block */
+        overflow: hidden;
+        padding: 2px 4px;
+      }
+
+      /* Shimmer pass after all words are in (~2.9s) */
+      .splash-tagline::after {
+        content: "";
+        position: absolute;
+        top: 0; bottom: 0;
+        left: 0;
+        width: 55%;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255,255,255,0.22) 50%,
+          transparent 100%
+        );
+        opacity: 0;
+        transform: translateX(-120%);
+        animation: taglineShimmer 0.85s 2.9s ease-in-out forwards;
+        pointer-events: none;
+      }
+      @keyframes taglineShimmer {
+        0%   { opacity: 0; transform: translateX(-120%); }
+        15%  { opacity: 1; }
+        85%  { opacity: 1; }
+        100% { opacity: 0; transform: translateX(240%); }
+      }
+
+      /* Each word is an inline-block that fades in from slight blur */
+      .splash-word {
+        display: inline;
+        opacity: 0;
+        animation: wordIn 0.65s cubic-bezier(0.22,1,0.36,1) forwards;
+      }
+      /* Non-breaking space before each word except the first */
+      .splash-word + .splash-word::before {
+        content: "\00a0";
+      }
+      .splash-word:nth-child(1) { animation-delay: 1.65s; }
+      .splash-word:nth-child(2) { animation-delay: 1.95s; }
+      .splash-word:nth-child(3) { animation-delay: 2.25s; }
+      .splash-word:nth-child(4) { animation-delay: 2.55s; }
+      @keyframes wordIn {
+        from { opacity: 0; filter: blur(5px); }
+        to   { opacity: 1; filter: blur(0); }
+      }
+
+      /* ── Mobile tweaks ──────────────────────────────────────────────── */
       @media (max-width: 480px) {
-        .splash-ring-wrap { width: 110px; height: 110px; margin-bottom: 32px; }
-        .splash-ring {
-          -webkit-mask: radial-gradient(circle, transparent 44px, black 47px);
-                  mask: radial-gradient(circle, transparent 44px, black 47px);
-        }
-        .splash-title { font-size: 34px; letter-spacing: 1.5px; }
-        .splash-sub-1 { font-size: 14px; }
-        .splash-sub-2 { font-size: 11px; letter-spacing: 1.2px; }
+        .splash-title    { font-size: 38px; letter-spacing: 3px; }
+        .splash-tagline  { font-size: 14px; }
       }
     </style>
   </head>
   <body>
     <!-- ── Splash (shown immediately, dismissed after React mounts) ── -->
     <div id="splash" role="status" aria-label="Loading AmyNest AI…">
-      <div class="splash-particles" aria-hidden="true">
-        <span style="--x:6%;--s:2px;--d:0s;--dur:14s;--drift:30px"></span>
-        <span style="--x:14%;--s:1px;--d:2s;--dur:18s;--drift:-20px"></span>
-        <span style="--x:22%;--s:3px;--d:4s;--dur:16s;--drift:25px"></span>
-        <span style="--x:30%;--s:2px;--d:1s;--dur:20s;--drift:-15px"></span>
-        <span style="--x:38%;--s:1px;--d:5s;--dur:22s;--drift:35px"></span>
-        <span style="--x:46%;--s:2px;--d:3s;--dur:15s;--drift:-30px"></span>
-        <span style="--x:54%;--s:3px;--d:6s;--dur:19s;--drift:20px"></span>
-        <span style="--x:62%;--s:1px;--d:0s;--dur:17s;--drift:-25px"></span>
-        <span style="--x:70%;--s:2px;--d:4s;--dur:21s;--drift:30px"></span>
-        <span style="--x:78%;--s:2px;--d:2s;--dur:14s;--drift:-20px"></span>
-        <span style="--x:86%;--s:1px;--d:7s;--dur:18s;--drift:15px"></span>
-        <span style="--x:94%;--s:2px;--d:3s;--dur:16s;--drift:-30px"></span>
-      </div>
+      <!-- Neural Light Sweep beam — the core hero animation -->
+      <div class="splash-beam" aria-hidden="true"></div>
 
       <div class="splash-stage">
-        <div class="splash-ring-wrap" aria-hidden="true">
-          <div class="splash-ring"></div>
-        </div>
         <h1 class="splash-title">Meet AMY</h1>
-        <p class="splash-sub splash-sub-1">Your child&rsquo;s smart learning companion</p>
-        <p class="splash-sub splash-sub-2">Built for growth. Designed for curiosity.</p>
+        <p class="splash-tagline" aria-label="Where Smart Parenting Starts">
+          <span class="splash-word">Where</span><span class="splash-word">Smart</span><span class="splash-word">Parenting</span><span class="splash-word">Starts</span>
+        </p>
       </div>
     </div>
 
