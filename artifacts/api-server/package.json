@@ -8,7 +8,7 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx/esm --test src/lib/routine-templates.test.ts src/routes/routines.test.ts",
+    "test": "node --import tsx/esm --test src/lib/routine-templates.test.ts src/lib/phonicsTests.test.ts src/routes/routines.test.ts",
     "test:ai-pipeline": "node --import tsx/esm --test src/routes/routines.test.ts"
   },
   "dependencies": {

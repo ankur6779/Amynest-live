@@ -45,6 +45,7 @@ export const HUB_CONTENT_AGE_BANDS: Record<string, readonly number[]> = {
   facts:                 [2, 3, 4, 5, 6],
   "life-skills":         [1, 2, 3, 4, 5, 6],
   "meal-suggestions":    [0, 1, 2, 3, 4, 5, 6],
+  "phonics-test":        [0, 1, 2],
 };
 
 // Minimal shape required by `partitionTilesByBand`. The function is generic

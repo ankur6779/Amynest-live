@@ -66,16 +66,16 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
 
   // Locks the tile inventory so an accidental deletion (or addition) of a
   // tile from HUB_CONTENT_AGE_BANDS is caught instead of silently shipping.
-  it("contains the expected 19 tiles", () => {
+  it("contains the expected 20 tiles", () => {
     const expectedIds = [
       "amy", "articles", "tips", "emotional", "ptm-prep", "smart-study",
       "morning-flow", "olympiad", "kids-control-center", "meals", "nutrition",
       "event-prep", "activities", "story-hub", "art-craft", "worksheets",
-      "facts", "life-skills", "meal-suggestions",
+      "facts", "life-skills", "meal-suggestions", "phonics-test",
     ].sort();
     const actualIds = Object.keys(HUB_CONTENT_AGE_BANDS).sort();
     expect(actualIds).toEqual(expectedIds);
-    expect(actualIds.length).toBe(19);
+    expect(actualIds.length).toBe(20);
   });
 
   // Locks expected tile membership for two representative bands. This catches
@@ -86,7 +86,7 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
     const band = 0;
     const expected = [
       "amy", "articles", "tips", "emotional", "nutrition", "activities",
-      "meal-suggestions",
+      "meal-suggestions", "phonics-test",
     ].sort();
     const section1Ids = Object.entries(HUB_CONTENT_AGE_BANDS)
       .filter(([, bands]) => bands.includes(band))

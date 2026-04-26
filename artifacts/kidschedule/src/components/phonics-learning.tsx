@@ -7,6 +7,7 @@ import {
   RefreshCw, BookOpen, Trophy, AlertCircle, Loader2, Download, FileText,
 } from "lucide-react";
 import { AudioPlayButton, preloadAmyVoice } from "@/components/audio-play-button";
+import { PhonicsTest } from "@/components/phonics-test";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   usePhonicsData,
@@ -162,6 +163,11 @@ export function PhonicsLearning({
   return (
     <div className="space-y-4">
       <PersonalizationBadge level={level} childName={childName} />
+      <PhonicsTest
+        childId={childId}
+        childName={childName}
+        totalAgeMonths={totalAgeMonths}
+      />
       <PhonicsDownloadCard childId={childId} />
       <TodaysActivityCard
         level={level}
