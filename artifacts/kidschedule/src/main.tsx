@@ -7,17 +7,24 @@ const root = createRoot(document.getElementById("root")!);
 
 root.render(<App />);
 
-// Dismiss the splash screen once React has painted its first frame.
-// Two rAF calls ensure the browser has actually committed the paint before
-// we start fading the splash out (avoids a brief white flash on fast devices).
+// Dismiss the splash screen after React has painted AND a minimum display
+// time has elapsed, so the "Meet AMY" intro animation can play in full.
+// Total perceived duration ≈ 2.7s visible + 0.7s fade = ~3.4s.
+const SPLASH_MIN_MS = 2700;
+const splashStartedAt = performance.now();
+
 requestAnimationFrame(() => {
   requestAnimationFrame(() => {
-    const splash = document.getElementById("splash");
-    if (splash) {
-      splash.classList.add("splash-hide");
-      // Remove from DOM after the CSS transition ends so it no longer
-      // intercepts pointer events or occupies the accessibility tree.
-      splash.addEventListener("transitionend", () => splash.remove(), { once: true });
-    }
+    const elapsed = performance.now() - splashStartedAt;
+    const wait = Math.max(0, SPLASH_MIN_MS - elapsed);
+    setTimeout(() => {
+      const splash = document.getElementById("splash");
+      if (splash) {
+        splash.classList.add("splash-hide");
+        // Remove from DOM after the CSS transition ends so it no longer
+        // intercepts pointer events or occupies the accessibility tree.
+        splash.addEventListener("transitionend", () => splash.remove(), { once: true });
+      }
+    }, wait);
   });
 });
