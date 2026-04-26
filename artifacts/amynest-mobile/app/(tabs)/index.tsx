@@ -1,11 +1,14 @@
 import React, { useCallback, useMemo } from "react";
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
-  Platform, ActivityIndicator,
+  Platform, ActivityIndicator, TouchableOpacity,
 } from "react-native";
 import { useUser } from "@/lib/firebase-auth";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -15,6 +18,7 @@ import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import RoutineCarousel from "@/components/RoutineCarousel";
 import type { RoutineTask } from "@/contexts/ProgressContext";
+import { brand } from "@/constants/colors";
 
 type ItemStatus = "pending" | "completed" | "skipped" | "delayed";
 
@@ -71,8 +75,14 @@ export default function DashboardScreen() {
   const c = useColors();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
+  const router = useRouter();
   const { t } = useTranslation();
   const { profileComplete, isLoading: profileLoading } = useProfileComplete();
+
+  const goToGenerate = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push("/routines/generate" as never);
+  }, [router]);
 
   const todayStr = formatYMD(new Date());
 
@@ -228,6 +238,26 @@ export default function DashboardScreen() {
             <Text style={[styles.emptyText, { color: c.mutedForeground }]}>
               {t("dashboard.no_plan_subtitle")}
             </Text>
+            <TouchableOpacity
+              onPress={goToGenerate}
+              activeOpacity={0.85}
+              style={{ marginTop: 16 }}
+              testID="dashboard-generate-today-cta"
+              accessibilityRole="button"
+              accessibilityLabel={t("dashboard.generate_today")}
+            >
+              <LinearGradient
+                colors={[brand.violet600, "#EC4899"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.emptyCta}
+              >
+                <Ionicons name="sparkles" size={16} color="#fff" />
+                <Text style={styles.emptyCtaText}>
+                  {t("dashboard.generate_today")}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -296,5 +326,20 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     textAlign: "center",
     fontWeight: "500",
+  },
+  emptyCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 999,
+  },
+  emptyCtaText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: -0.2,
   },
 });
