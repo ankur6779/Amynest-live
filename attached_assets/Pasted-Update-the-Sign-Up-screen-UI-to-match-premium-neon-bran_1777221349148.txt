@@ -1,0 +1,133 @@
+Update the Sign Up screen UI to match premium neon branding with AMY ring and updated heading.
+
+GOAL:
+Replace logo with animated neon ring and update heading to create a consistent high-end AI product experience.
+
+--------------------------------------------------
+1. REMOVE EXISTING LOGO
+--------------------------------------------------
+- Remove circular logo at top completely
+
+--------------------------------------------------
+2. ADD NEON AMY RING (TOP HERO)
+--------------------------------------------------
+Create a reusable "AmyRing" component:
+
+Design:
+- Circular ring using conic-gradient:
+  purple (#a855f7) → pink (#ec4899)
+
+Layers:
+- Outer glow:
+  blur(20–30px)
+- Inner dark circle (glass effect)
+- Optional thin orbit line
+
+Size:
+- 120–140px (mobile friendly)
+
+--------------------------------------------------
+3. TEXT INSIDE RING
+--------------------------------------------------
+Text:
+"AMY"
+
+Style:
+- Bold
+- Gradient text (purple → pink)
+- Subtle glow
+
+Optional:
+- Small "Meet" above (light font)
+
+--------------------------------------------------
+4. RING ANIMATION
+--------------------------------------------------
+- Slow rotation (8–10s)
+- Gentle pulse:
+  scale 1 → 1.03 → 1
+
+- Optional shimmer sweep (very subtle)
+
+--------------------------------------------------
+5. HEADING CHANGE (IMPORTANT)
+--------------------------------------------------
+Replace:
+"Join AmyNest AI"
+
+With:
+"Start Parenting Smart"
+
+Style:
+- Bold
+- White
+- Center aligned
+
+--------------------------------------------------
+6. SUBTEXT (KEEP OR REFINE)
+--------------------------------------------------
+"Your AI-powered parenting coach, personalized for your family"
+
+- Light gray / purple tint
+
+--------------------------------------------------
+7. SPACING & LAYOUT
+--------------------------------------------------
+Structure:
+
+[ Neon Ring ]
+[ Heading ]
+[ Subtext ]
+[ Continue with Phone ]
+[ OR Divider ]
+[ Form Fields ]
+
+- Add spacing:
+  margin-bottom: 16–24px after ring
+
+--------------------------------------------------
+8. FORM UI ENHANCEMENT (MATCH PREMIUM FEEL)
+--------------------------------------------------
+Inputs:
+- Dark glass style
+- Border:
+  subtle purple glow
+
+Focus state:
+- Glow increase
+
+Buttons:
+- Gradient:
+  purple → pink
+
+- Glow shadow:
+  rgba(236,72,153,0.4)
+
+--------------------------------------------------
+9. BACKGROUND
+--------------------------------------------------
+- Keep dark gradient theme
+
+Add:
+- subtle radial glow behind ring
+
+--------------------------------------------------
+10. PERFORMANCE
+--------------------------------------------------
+- Use CSS animations only
+- Avoid heavy JS
+
+--------------------------------------------------
+11. REUSABILITY (IMPORTANT)
+--------------------------------------------------
+- Use same AmyRing component from:
+  • Splash
+  • Login
+  • Onboarding
+
+--------------------------------------------------
+DELIVERABLE:
+- Premium signup screen
+- Consistent neon identity
+- Smooth animation
+- Clean layout
