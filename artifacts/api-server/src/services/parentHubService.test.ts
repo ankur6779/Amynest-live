@@ -31,6 +31,8 @@ import {
   phonicsContentTable,
   phonicsProgressTable,
   childBandUnlocksTable,
+  notificationLogTable,
+  notificationPreferencesTable,
 } from "@workspace/db";
 import {
   EARLY_UNLOCK_THRESHOLD_PCT,
@@ -39,6 +41,7 @@ import {
   evaluateEarlyUnlock,
   resolveUnlockedBands,
 } from "./parentHubService";
+import { buildBandUnlockNotification } from "./notificationContentBuilder";
 import {
   type AgeBand,
   getAgeBand,
@@ -149,6 +152,12 @@ async function makeFixture(opts: {
     await db
       .delete(childBandUnlocksTable)
       .where(eq(childBandUnlocksTable.userId, userId));
+    await db
+      .delete(notificationLogTable)
+      .where(eq(notificationLogTable.userId, userId));
+    await db
+      .delete(notificationPreferencesTable)
+      .where(eq(notificationPreferencesTable.userId, userId));
     await db.delete(childrenTable).where(eq(childrenTable.id, child.id));
   };
 
@@ -469,6 +478,94 @@ describe("evaluateEarlyUnlock", () => {
     );
   });
 
+  it("queues exactly one celebratory notification on the first unlock and not on idempotent re-runs", async (t: TestContext) => {
+    const f = await setup(t, {
+      childAge: 7, // band "6-8", next "8-10"
+      stories: [
+        { ageBand: "6-8" },
+        { ageBand: "6-8" },
+        { ageBand: "6-8" },
+        { ageBand: "6-8" },
+      ],
+    });
+
+    // Pre-seed notification preferences with quiet hours disabled
+    // (start === end short-circuits `inQuietHours` to false). Without
+    // this, runs between 22:00 and 07:00 Asia/Kolkata would have the
+    // dispatch returning `throttled` instead of `no_tokens`, which
+    // would make the status assertion below time-sensitive.
+    await db.insert(notificationPreferencesTable).values({
+      userId: f.userId,
+      quietHoursStart: "00:00",
+      quietHoursEnd: "00:00",
+    });
+
+    // Cross threshold (3 of 4 = 75 %).
+    for (const id of f.storyIds.slice(0, 3)) {
+      await markStoryCompleted(f.childId, f.userId, id);
+    }
+    let r = await evaluateEarlyUnlock(f.childId, f.userId);
+    assert.equal(r.evaluated, true);
+    if (r.evaluated === true) assert.equal(r.unlockedNow, true);
+
+    // Re-evaluate twice more — must not queue additional notifications.
+    await evaluateEarlyUnlock(f.childId, f.userId);
+    await evaluateEarlyUnlock(f.childId, f.userId);
+
+    const expectedDedup = `band_unlock:${f.childId}:8-10`;
+    const notifs = await db
+      .select()
+      .from(notificationLogTable)
+      .where(
+        and(
+          eq(notificationLogTable.userId, f.userId),
+          eq(notificationLogTable.dedupKey, expectedDedup),
+        ),
+      );
+    assert.equal(
+      notifs.length,
+      1,
+      "exactly one band-unlock notification should be logged per (child, band)",
+    );
+    const notif = notifs[0];
+    assert.ok(notif);
+    assert.equal(notif.category, "engagement");
+    assert.equal(notif.deepLink, "/hub");
+    assert.match(notif.title, /unlocked the next stage/);
+    // No push tokens are registered in tests, so dispatch logs
+    // "no_tokens". The notification_log row still exists — that's what
+    // powers the in-app inbox view.
+    assert.equal(notif.status, "no_tokens");
+  });
+
+  it("does NOT queue a notification when the threshold is not crossed", async (t: TestContext) => {
+    const f = await setup(t, {
+      childAge: 7, // band "6-8"
+      stories: [
+        { ageBand: "6-8" },
+        { ageBand: "6-8" },
+        { ageBand: "6-8" },
+        { ageBand: "6-8" },
+      ],
+    });
+    // Only 1 of 4 = 25 % → below threshold.
+    if (f.storyIds[0]) {
+      await markStoryCompleted(f.childId, f.userId, f.storyIds[0]);
+    }
+    const r = await evaluateEarlyUnlock(f.childId, f.userId);
+    assert.equal(r.evaluated, false);
+
+    const notifs = await db
+      .select()
+      .from(notificationLogTable)
+      .where(eq(notificationLogTable.userId, f.userId));
+    assert.equal(
+      notifs.length,
+      0,
+      "no notification should be logged when no unlock fires",
+    );
+  });
+
   it("returns no_next_band for a child already in the highest band", async (t: TestContext) => {
     const f = await setup(t, {
       childAge: 14, // band "12-15", no next.
@@ -477,6 +574,35 @@ describe("evaluateEarlyUnlock", () => {
     const r = await evaluateEarlyUnlock(f.childId, f.userId);
     assert.equal(r.evaluated, false);
     if (r.evaluated === false) assert.equal(r.reason, "no_next_band");
+  });
+});
+
+// ─── 2b. Notification builder payload contract ──────────────────────────────
+
+describe("buildBandUnlockNotification", () => {
+  it("emits the contract clients depend on for routing and dedup", () => {
+    const built = buildBandUnlockNotification({
+      childName: "Aria",
+      childId: 42,
+      nextBand: "8-10",
+    });
+    // Deep link must stay on the strict allowlist consumed by the
+    // mobile router (`useNotificationDeepLink` → `/(tabs)/hub`).
+    assert.equal(built.deepLink, "/hub");
+    // Section payload tells the Hub UI to focus the "Coming next"
+    // section on launch.
+    assert.equal(built.data?.["section"], 2);
+    assert.equal(built.data?.["ageBand"], "8-10");
+    assert.equal(built.data?.["childId"], 42);
+    assert.equal(built.data?.["source"], "early_unlock");
+    // Per-(child, band) dedup key — combined with the unique partial
+    // index on notification_log(user_id, dedup_key) it makes "first
+    // unlock per band only" race-free.
+    assert.equal(built.dedupKey, "band_unlock:42:8-10");
+    // Title personalises with the child's name so the parent
+    // immediately knows who the celebration is about.
+    assert.match(built.title, /Aria/);
+    assert.match(built.body, /Aria/);
   });
 });
 

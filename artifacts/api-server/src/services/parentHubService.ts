@@ -32,6 +32,8 @@ import {
   phonicsBandFor,
 } from "../lib/age-bands";
 import { logger } from "../lib/logger";
+import { dispatchNotification } from "./notificationDispatchService";
+import { buildBandUnlockNotification } from "./notificationContentBuilder";
 
 /**
  * Threshold at which the next band is auto-unlocked. The product brief
@@ -180,6 +182,7 @@ export async function evaluateEarlyUnlock(
   const childRows = await db
     .select({
       id: childrenTable.id,
+      name: childrenTable.name,
       age: childrenTable.age,
       ageMonths: childrenTable.ageMonths,
     })
@@ -222,12 +225,44 @@ export async function evaluateEarlyUnlock(
     })
     .returning({ id: childBandUnlocksTable.id });
 
+  const unlockedNow = inserted.length > 0;
+
+  // First-time crossing → queue a celebratory in-app notification for the
+  // parent. The unique index on (child_id, age_band) guarantees this branch
+  // runs at most once per (child, band); the dedupKey on notification_log
+  // adds a second layer of idempotency at the dispatch layer. Errors are
+  // caught locally so a notification failure can never break the unlock —
+  // the row in child_band_unlocks is the source of truth.
+  if (unlockedNow) {
+    try {
+      const built = buildBandUnlockNotification({
+        childName: child.name,
+        childId,
+        nextBand,
+      });
+      await dispatchNotification({
+        userId,
+        category: "engagement",
+        title: built.title,
+        body: built.body,
+        deepLink: built.deepLink,
+        dedupKey: built.dedupKey,
+        data: built.data,
+      });
+    } catch (err) {
+      logger.warn(
+        { err, childId, userId, nextBand },
+        "Band-unlock notification dispatch failed (non-fatal)",
+      );
+    }
+  }
+
   return {
     evaluated: true,
     childCurrentBand: currentBand,
     nextBand,
     progress,
-    unlockedNow: inserted.length > 0,
+    unlockedNow,
     alreadyUnlocked: true,
   };
 }
