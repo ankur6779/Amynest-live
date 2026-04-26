@@ -483,9 +483,12 @@ export default function RoutineDetail() {
   // Expanded item modal
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  // Age-band filter — resets whenever a different routine is loaded
-  const [ageBandFilter, setAgeBandFilter] = useState<string | null>(null);
-  useEffect(() => { setAgeBandFilter(null); }, [routineId]);
+  // Age-band filter — persisted per routine in localStorage. The stored value
+  // is paired with a signature of the routine's activities so that when the
+  // routine items change (e.g. after AI regeneration) the filter resets to
+  // "All" instead of pointing at a stale band.
+  const [ageBandFilter, setAgeBandFilterState] = useState<string | null>(null);
+  const ageFilterHydratedRef = useRef<{ routineId: number; signature: string } | null>(null);
 
   // Parent prefs for inline meal suggestions
   const [mealPrefs, setMealPrefs] = useState<{ region: string; isVeg?: boolean; childAge?: number }>({ region: "pan_indian" });
@@ -964,6 +967,55 @@ export default function RoutineDetail() {
     }
     return counts;
   }, [items, ageBands]);
+
+  // Signature that captures the structural shape of the activities (names + bands).
+  // Status / time changes don't affect it, so completing or cascading tasks keeps
+  // the saved filter; AI regenerations / add / remove / rename invalidate it.
+  const itemsSignature = useMemo(
+    () => items.map((i) => `${i.activity}|${i.ageBand ?? ""}`).join("\n"),
+    [items],
+  );
+
+  // Hydrate from / reset against localStorage when the routine or its activity
+  // signature changes. Keyed per routine id so each routine remembers its own
+  // last filter selection.
+  useEffect(() => {
+    if (!routineId || items.length === 0) return;
+    const storageKey = `kidschedule:ageBandFilter:${routineId}`;
+    let stored: { signature: string; filter: string | null } | null = null;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.signature === "string") {
+          stored = { signature: parsed.signature, filter: parsed.filter ?? null };
+        }
+      }
+    } catch { /* ignore corrupt storage */ }
+
+    if (stored && stored.signature === itemsSignature) {
+      setAgeBandFilterState(stored.filter);
+    } else {
+      setAgeBandFilterState(null);
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify({ signature: itemsSignature, filter: null }));
+      } catch { /* storage full / unavailable */ }
+    }
+    ageFilterHydratedRef.current = { routineId, signature: itemsSignature };
+  }, [routineId, itemsSignature, items.length]);
+
+  // Wrapper that updates state and persists the user's selection.
+  const setAgeBandFilter = useCallback((next: string | null) => {
+    setAgeBandFilterState(next);
+    const hydrated = ageFilterHydratedRef.current;
+    if (!hydrated || hydrated.routineId !== routineId) return;
+    try {
+      window.localStorage.setItem(
+        `kidschedule:ageBandFilter:${routineId}`,
+        JSON.stringify({ signature: hydrated.signature, filter: next }),
+      );
+    } catch { /* storage full / unavailable */ }
+  }, [routineId]);
 
   // Items paired with their original index so all actions still use the correct index
   const displayItems = useMemo(

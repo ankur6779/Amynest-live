@@ -210,9 +210,12 @@ export default function RoutineDetailScreen() {
 
   const [mealPrefs, setMealPrefs] = useState<{ region: string; isVeg?: boolean; childAge?: number }>({ region: "pan_indian" });
 
-  // Age-band filter — resets whenever a different routine is loaded
-  const [ageBandFilter, setAgeBandFilter] = useState<string | null>(null);
-  useEffect(() => { setAgeBandFilter(null); }, [id]);
+  // Age-band filter — persisted per routine in AsyncStorage. The stored value
+  // is paired with a signature of the routine's activities so that when the
+  // routine items change (e.g. after AI regeneration) the filter resets to
+  // "All" instead of pointing at a stale band.
+  const [ageBandFilter, setAgeBandFilterState] = useState<string | null>(null);
+  const ageFilterHydratedRef = useRef<{ id: string; signature: string } | null>(null);
 
   const [actionItem, setActionItem] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
@@ -523,6 +526,55 @@ export default function RoutineDetailScreen() {
     }
     return counts;
   }, [items, ageBands]);
+
+  // Signature that captures the structural shape of the activities (names + bands).
+  // Status / time changes don't affect it, so completing or cascading tasks keeps
+  // the saved filter; AI regenerations / add / remove / rename invalidate it.
+  const itemsSignature = useMemo(
+    () => items.map((i) => `${i.activity}|${i.ageBand ?? ""}`).join("\n"),
+    [items],
+  );
+
+  // Hydrate from / reset against AsyncStorage when the routine or its activity
+  // signature changes. Keyed per routine id so each routine remembers its own
+  // last filter selection.
+  useEffect(() => {
+    if (!id || items.length === 0) return;
+    const storageKey = `amynest:ageBandFilter:${id}`;
+    let cancelled = false;
+    (async () => {
+      let stored: { signature: string; filter: string | null } | null = null;
+      try {
+        const raw = await AsyncStorage.getItem(storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.signature === "string") {
+            stored = { signature: parsed.signature, filter: parsed.filter ?? null };
+          }
+        }
+      } catch { /* ignore corrupt storage */ }
+      if (cancelled) return;
+      if (stored && stored.signature === itemsSignature) {
+        setAgeBandFilterState(stored.filter);
+      } else {
+        setAgeBandFilterState(null);
+        AsyncStorage.setItem(storageKey, JSON.stringify({ signature: itemsSignature, filter: null })).catch(() => {});
+      }
+      ageFilterHydratedRef.current = { id, signature: itemsSignature };
+    })();
+    return () => { cancelled = true; };
+  }, [id, itemsSignature, items.length]);
+
+  // Wrapper that updates state and persists the user's selection.
+  const setAgeBandFilter = useCallback((next: string | null) => {
+    setAgeBandFilterState(next);
+    const hydrated = ageFilterHydratedRef.current;
+    if (!hydrated || hydrated.id !== id) return;
+    AsyncStorage.setItem(
+      `amynest:ageBandFilter:${id}`,
+      JSON.stringify({ signature: hydrated.signature, filter: next }),
+    ).catch(() => {});
+  }, [id]);
 
   // Items paired with their original index so actions still reference the correct position
   const displayItems = useMemo(
