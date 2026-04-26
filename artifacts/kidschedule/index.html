@@ -37,16 +37,178 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Quicksand:wght@500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- PWA splash screen background (shown before app loads on Android) -->
     <style>
       html, body {
         background-color: #0f0c29;
         margin: 0;
         padding: 0;
       }
+
+      /* ── Splash screen ───────────────────────────────────────────────── */
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(140deg, #0D0022 0%, #180040 35%, #0A001E 65%, #130035 100%);
+        transition: opacity 0.55s ease, visibility 0.55s ease;
+      }
+      #splash.splash-hide {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      /* Ambient glow orbs */
+      .splash-orb {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+        filter: blur(72px);
+      }
+      .splash-orb-1 {
+        width: 480px; height: 480px;
+        top: -160px; right: -140px;
+        background: radial-gradient(circle, rgba(123,63,242,0.45) 0%, transparent 70%);
+        animation: orbFloat1 7s ease-in-out infinite;
+      }
+      .splash-orb-2 {
+        width: 400px; height: 400px;
+        bottom: -100px; left: -140px;
+        background: radial-gradient(circle, rgba(255,78,205,0.30) 0%, transparent 70%);
+        animation: orbFloat2 9s ease-in-out infinite;
+      }
+      .splash-orb-3 {
+        width: 280px; height: 280px;
+        top: 42%; left: 25%;
+        background: radial-gradient(circle, rgba(80,30,180,0.25) 0%, transparent 70%);
+        animation: orbFloat3 11s ease-in-out infinite;
+      }
+
+      @keyframes orbFloat1 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50%       { transform: translate(-20px, 30px) scale(1.06); }
+      }
+      @keyframes orbFloat2 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50%       { transform: translate(24px, -18px) scale(1.04); }
+      }
+      @keyframes orbFloat3 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50%       { transform: translate(-14px, 22px) scale(1.08); }
+      }
+
+      /* Logo ring with pulse glow */
+      .splash-logo-wrap {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        animation: splashFadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+      }
+
+      @keyframes splashFadeUp {
+        from { opacity: 0; transform: translateY(28px) scale(0.88); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      .splash-ring {
+        width: 108px; height: 108px;
+        border-radius: 50%;
+        background: rgba(123,63,242,0.18);
+        border: 2px solid rgba(123,63,242,0.55);
+        box-shadow:
+          0 0 0 12px rgba(123,63,242,0.07),
+          0 0 48px rgba(123,63,242,0.55),
+          0 0 12px rgba(123,63,242,0.30) inset;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-bottom: 22px;
+        animation: ringPulse 2.4s ease-in-out infinite;
+      }
+
+      @keyframes ringPulse {
+        0%, 100% { box-shadow: 0 0 0 12px rgba(123,63,242,0.07), 0 0 48px rgba(123,63,242,0.55), 0 0 12px rgba(123,63,242,0.30) inset; }
+        50%       { box-shadow: 0 0 0 20px rgba(123,63,242,0.04), 0 0 80px rgba(123,63,242,0.75), 0 0 20px rgba(123,63,242,0.40) inset; }
+      }
+
+      .splash-ring img {
+        width: 82px; height: 82px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      /* Brand text */
+      .splash-brand {
+        font-family: 'Nunito', 'Quicksand', system-ui, sans-serif;
+        font-size: 30px;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+        margin: 0 0 6px;
+        animation: splashFadeUp 0.7s 0.1s cubic-bezier(0.22,1,0.36,1) both;
+      }
+
+      .splash-tag {
+        font-family: 'Quicksand', 'Nunito', system-ui, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(200,180,255,0.55);
+        letter-spacing: 0.3px;
+        margin: 0 0 40px;
+        animation: splashFadeUp 0.7s 0.18s cubic-bezier(0.22,1,0.36,1) both;
+      }
+
+      /* Loading dots */
+      .splash-dots {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: splashFadeUp 0.7s 0.26s cubic-bezier(0.22,1,0.36,1) both;
+      }
+
+      .splash-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #7B3FF2, #FF4ECD);
+        animation: dotBounce 1.3s ease-in-out infinite;
+      }
+      .splash-dot:nth-child(1) { animation-delay: 0s; }
+      .splash-dot:nth-child(2) { animation-delay: 0.18s; }
+      .splash-dot:nth-child(3) { animation-delay: 0.36s; }
+
+      @keyframes dotBounce {
+        0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+        40%            { transform: scale(1.25); opacity: 1; }
+      }
     </style>
   </head>
   <body>
+    <!-- ── Splash (shown immediately, dismissed after React mounts) ── -->
+    <div id="splash" role="status" aria-label="Loading AmyNest AI…">
+      <div class="splash-orb splash-orb-1"></div>
+      <div class="splash-orb splash-orb-2"></div>
+      <div class="splash-orb splash-orb-3"></div>
+
+      <div class="splash-logo-wrap">
+        <div class="splash-ring">
+          <img src="amynest-logo.png" alt="AmyNest AI" />
+        </div>
+        <p class="splash-brand">AmyNest AI</p>
+        <p class="splash-tag">Where Smart Parenting Begins</p>
+        <div class="splash-dots" aria-hidden="true">
+          <div class="splash-dot"></div>
+          <div class="splash-dot"></div>
+          <div class="splash-dot"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx?v=20260426-fix"></script>
   </body>
