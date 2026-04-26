@@ -192,11 +192,11 @@ const TIPS: Record<TipCategory, TipData> = {
   },
 };
 
-const TIP_CATEGORY_META: Record<TipCategory, { label: string; emoji: string; color: string; bgColor: string; borderColor: string; badgeColor: string }> = {
-  feeding:     { label: "Feeding Tip",       emoji: "🍼", color: "text-amber-900 dark:text-amber-100",   bgColor: "bg-amber-50 dark:bg-amber-500/15",  borderColor: "border-amber-200 dark:border-amber-400/30",  badgeColor: "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200" },
-  health:      { label: "Health Tip",        emoji: "🏥", color: "text-blue-900 dark:text-blue-100",    bgColor: "bg-blue-50 dark:bg-blue-500/15",   borderColor: "border-blue-200 dark:border-blue-400/30",   badgeColor: "bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200" },
-  development: { label: "Development Tip",   emoji: "🧠", color: "text-violet-900 dark:text-violet-100",  bgColor: "bg-violet-50 dark:bg-violet-500/15", borderColor: "border-violet-200 dark:border-violet-400/30", badgeColor: "bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-200" },
-  bonding:     { label: "Bonding Activity",  emoji: "❤️", color: "text-rose-900 dark:text-rose-100",    bgColor: "bg-rose-50 dark:bg-rose-500/15",   borderColor: "border-rose-200 dark:border-rose-400/30",   badgeColor: "bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-200" },
+const TIP_CATEGORY_META: Record<TipCategory, { label: string; emoji: string; color: string; bgColor: string; borderColor: string; badgeColor: string; iconBg: string }> = {
+  feeding:     { label: "Feeding Tip",       emoji: "🍼", color: "text-amber-700 dark:text-amber-200",   bgColor: "bg-amber-50 dark:bg-amber-500/15",  borderColor: "border-amber-200 dark:border-amber-400/30",  badgeColor: "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200", iconBg: "bg-amber-100 dark:bg-amber-500/20" },
+  health:      { label: "Health Tip",        emoji: "🏥", color: "text-blue-700 dark:text-blue-200",    bgColor: "bg-blue-50 dark:bg-blue-500/15",   borderColor: "border-blue-200 dark:border-blue-400/30",   badgeColor: "bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200",   iconBg: "bg-blue-100 dark:bg-blue-500/20" },
+  development: { label: "Development Tip",   emoji: "🧠", color: "text-violet-700 dark:text-violet-200",  bgColor: "bg-violet-50 dark:bg-violet-500/15", borderColor: "border-violet-200 dark:border-violet-400/30", badgeColor: "bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-200", iconBg: "bg-violet-100 dark:bg-violet-500/20" },
+  bonding:     { label: "Bonding Activity",  emoji: "❤️", color: "text-rose-700 dark:text-rose-200",    bgColor: "bg-rose-50 dark:bg-rose-500/15",   borderColor: "border-rose-200 dark:border-rose-400/30",   badgeColor: "bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-200",   iconBg: "bg-rose-100 dark:bg-rose-500/20" },
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -332,15 +332,17 @@ function TipCard({ category, tips, ageRange }: { category: TipCategory; tips: Ti
   const totalCount = tips.length;
 
   return (
-    <Card className={`rounded-3xl border-2 ${meta.borderColor} ${meta.bgColor} shadow-none overflow-hidden`}>
+    <Card className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-0">
         {/* Header */}
-        <div className={`px-5 py-4 flex items-center justify-between border-b ${meta.borderColor}`}>
+        <div className="px-5 py-4 flex items-center justify-between border-b border-white/40 dark:border-white/10">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{meta.emoji}</span>
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10 ${meta.iconBg}`}>
+              <span className="text-2xl">{meta.emoji}</span>
+            </div>
             <div>
               <h3 className={`font-quicksand text-base font-bold ${meta.color}`}>{meta.label}</h3>
-              <p className={`text-xs ${meta.color} opacity-70`}>{index + 1} of {totalCount}</p>
+              <p className="text-xs text-muted-foreground">{index + 1} of {totalCount}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -472,14 +474,16 @@ function MemoryMoments({ childName }: { childName: string }) {
   };
 
   return (
-    <Card className="rounded-3xl border-2 border-yellow-200 dark:border-yellow-400/30 bg-yellow-50 dark:bg-yellow-500/15 shadow-none">
+    <Card className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">📸</span>
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-yellow-100 dark:bg-yellow-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+              <span className="text-2xl">📸</span>
+            </div>
             <div>
-              <h3 className="font-quicksand text-base font-bold text-yellow-900 dark:text-yellow-100">Today's Moments</h3>
-              <p className="text-xs text-yellow-700 dark:text-yellow-200">Save precious milestones & memories</p>
+              <h3 className="font-quicksand text-base font-bold text-foreground">Today's Moments</h3>
+              <p className="text-xs text-muted-foreground">Save precious milestones & memories</p>
             </div>
           </div>
           <Button
@@ -499,7 +503,7 @@ function MemoryMoments({ childName }: { childName: string }) {
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && save()}
               placeholder={`e.g. ${childName} laughed for the first time!`}
-              className="flex-1 rounded-2xl border-2 border-yellow-200 dark:border-yellow-400/30 bg-white px-4 py-2 text-sm text-yellow-900 dark:text-yellow-100 placeholder:text-yellow-400 focus:outline-none focus:border-yellow-400"
+              className="flex-1 rounded-2xl border border-border bg-white/70 dark:bg-white/[0.06] px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30"
             />
             <Button size="sm" onClick={save} className="rounded-2xl bg-yellow-500 hover:bg-yellow-600 text-white font-bold border-0 px-4">
               Save
@@ -516,11 +520,11 @@ function MemoryMoments({ childName }: { childName: string }) {
         ) : (
           <div className="space-y-2">
             {moments.map((m) => (
-              <div key={m.id} className="flex items-start gap-3 bg-white rounded-2xl p-3 border border-yellow-100 dark:border-yellow-400/30 group">
+              <div key={m.id} className="flex items-start gap-3 bg-white/70 dark:bg-white/[0.05] rounded-2xl p-3 border border-white/60 dark:border-white/10 group">
                 <span className="text-xl shrink-0">{m.emoji}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100 leading-snug">{m.text}</p>
-                  <p className="text-xs text-yellow-600 mt-0.5">{m.date}</p>
+                  <p className="text-sm font-medium text-foreground leading-snug">{m.text}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{m.date}</p>
                 </div>
                 <button onClick={() => remove(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-yellow-400 hover:text-rose-500 shrink-0 p-1">
                   ×
@@ -629,13 +633,15 @@ export function InfantMode({ childName, ageYears, ageMonths, showOnly }: InfantM
       )}
 
       {/* ── Lullaby Player ── */}
-      {show("lullaby") && <Card className="rounded-3xl border-2 border-purple-200 dark:border-purple-400/30 bg-gradient-to-br from-purple-50 dark:from-purple-500/15 to-pink-50 dark:to-pink-500/15 shadow-none">
+      {show("lullaby") && <Card className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
         <CardContent className="p-5">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">🎵</span>
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-purple-100 dark:bg-purple-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+              <span className="text-2xl">🎵</span>
+            </div>
             <div className="flex-1">
-              <h3 className="font-quicksand text-base font-bold text-purple-900 dark:text-purple-100">Lullaby Player</h3>
-              <p className="text-xs text-purple-700 dark:text-purple-200">
+              <h3 className="font-quicksand text-base font-bold text-foreground">Lullaby Player</h3>
+              <p className="text-xs text-muted-foreground">
                 {isNight ? "🌙 Night mode — sleep melodies" : "☀️ Daytime — soft play sounds"}
               </p>
             </div>
@@ -728,19 +734,23 @@ export function InfantMode({ childName, ageYears, ageMonths, showOnly }: InfantM
       </Card>}
 
       {/* ── Vaccination Timeline (Collapsible) ── */}
-      {show("vaccines") && <Card className="rounded-3xl border-2 border-blue-200 dark:border-blue-400/30 bg-blue-50 dark:bg-blue-500/15 shadow-none">
+      {show("vaccines") && <Card className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
         <button
-          className="w-full px-5 py-4 flex items-center justify-between"
+          className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/40 dark:hover:bg-white/[0.03] transition-colors"
           onClick={() => setVacOpen(!vacOpen)}
         >
           <div className="flex items-center gap-3">
-            <span className="text-2xl">💉</span>
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-blue-100 dark:bg-blue-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+              <span className="text-2xl">💉</span>
+            </div>
             <div className="text-left">
-              <h3 className="font-quicksand text-base font-bold text-blue-900 dark:text-blue-100">Vaccination Schedule</h3>
-              <p className="text-xs text-blue-600">Track your baby's immunization journey</p>
+              <h3 className="font-quicksand text-base font-bold text-foreground">Vaccination Schedule</h3>
+              <p className="text-xs text-muted-foreground">Track your baby's immunization journey</p>
             </div>
           </div>
-          {vacOpen ? <ChevronUp className="h-5 w-5 text-blue-400" /> : <ChevronDown className="h-5 w-5 text-blue-400" />}
+          <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center border border-border/50 bg-white/50 dark:bg-white/5 transition-transform duration-300 ${vacOpen ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground"}`}>
+            <ChevronDown className="h-4 w-4" />
+          </span>
         </button>
         {vacOpen && (
           <CardContent className="px-5 pb-5 pt-0 space-y-2">
