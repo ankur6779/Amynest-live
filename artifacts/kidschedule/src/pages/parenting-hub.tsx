@@ -41,7 +41,6 @@ import type { AgeGroup } from "@/lib/age-groups";
 import type { AgeBand } from "@/lib/age-bands";
 import { getAgeBand, getNextAgeBand, bandLabel } from "@/lib/age-bands";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
-import { StageMilestonesCard, GraduationStageCard } from "@/components/stage-milestones-card";
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
 interface SectionProps {
@@ -866,19 +865,15 @@ export default function ParentingHub() {
   const inForYou = (s: SectionEntry) =>
     s.alwaysCurrent || (currentBand !== null && (s.bands?.includes(currentBand) ?? false));
 
-  // "Coming Next" sections are exclusive to the next band — they intentionally
-  // exclude anything already shown in "For You" so we never render the same
-  // section twice.
-  const inComingNext = (s: SectionEntry) =>
-    !s.alwaysCurrent &&
-    nextBand !== null &&
-    (s.bands?.includes(nextBand) ?? false) &&
-    !(currentBand !== null && (s.bands?.includes(currentBand) ?? false));
-
   const forYouAll = sections.filter(inForYou);
   const forYouFeatured = forYouAll.filter((s) => s.featured);
   const forYouGrid = forYouAll.filter((s) => !s.featured);
-  const exclusiveNext = sections.filter(inComingNext);
+
+  // Section 2 ("Explore Next Stage") is shown ONLY for children whose age is
+  // 0–24 months (band "0-2"). For 2+ children, Section 2 is removed entirely.
+  // The preview tiles below are a fixed set the user has asked us to surface
+  // for 0–24 month children, regardless of each tile's own band metadata.
+  const showSection2 = currentBand === "0-2" && nextBand !== null;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
@@ -920,34 +915,30 @@ export default function ParentingHub() {
             </div>
           )}
 
-          {/* ── SECTION 2: Explore Next Stage for {Child Name} ──────────── */}
-          {nextBand ? (
+          {/* ── SECTION 2: Explore Next Stage — ONLY for 0-24 month children ── */}
+          {showSection2 && nextBand && (
             <>
               <ExploreNextHeader
                 childName={effectiveChild.name}
                 band={nextBand}
               />
-
-              {exclusiveNext.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
-                  {exclusiveNext.map((s) => {
-                    const node = s.render();
-                    return node ? (
-                      <ComingNextWrapper key={s.id} band={nextBand}>
-                        {node}
-                      </ComingNextWrapper>
-                    ) : null;
-                  })}
-                </div>
-              ) : (
-                <StageMilestonesCard
-                  childName={effectiveChild.name}
-                  nextBand={nextBand}
-                />
-              )}
+              <div
+                data-testid="section-2-previews"
+                className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2"
+              >
+                {SECTION_2_PREVIEW_TILES.map((t) => (
+                  <ComingNextWrapper key={t.id} band={nextBand}>
+                    <PreviewHubCard
+                      id={t.id}
+                      icon={t.icon}
+                      title={t.title}
+                      description={t.description}
+                      accentClass={t.accentClass}
+                    />
+                  </ComingNextWrapper>
+                ))}
+              </div>
             </>
-          ) : (
-            <GraduationStageCard childName={effectiveChild.name} />
           )}
         </>
       )}
@@ -997,6 +988,109 @@ function ForYouHeader({
       <p className="text-xs text-muted-foreground mt-0.5">
         Personalised content tuned to where {childName} is right now.
       </p>
+    </div>
+  );
+}
+
+// ─── Section 2 preview tiles ────────────────────────────────────────────────
+// Fixed list shown ONLY for 0–24 month children. These mirror the metadata of
+// the corresponding interactive sections (life-skills, olympiad, event-prep,
+// smart-study, ptm-prep, phonics) so parents can preview what's coming.
+const SECTION_2_PREVIEW_TILES: Array<{
+  id: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  accentClass: string;
+}> = [
+  {
+    id: "life-skills",
+    icon: <Compass className="h-5 w-5 text-emerald-600" />,
+    title: "🧭 Life Skills Mode",
+    description: "Daily real-life skills tailored to your child's age",
+    accentClass: "bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20",
+  },
+  {
+    id: "olympiad",
+    icon: <Trophy className="h-5 w-5 text-amber-600" />,
+    title: "🏆 Smart Olympiad Zone",
+    description: "Daily 5 MCQs, weekly tests, badges & insights",
+    accentClass: "bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20",
+  },
+  {
+    id: "event-prep",
+    icon: <Sparkles className="h-5 w-5 text-pink-600" />,
+    title: "🎉 Event Prep (School Ready)",
+    description: "Fancy dress, DIY guide & speeches for school events",
+    accentClass: "bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20",
+  },
+  {
+    id: "smart-study",
+    icon: <GraduationCap className="h-5 w-5 text-indigo-600" />,
+    title: "📚 Smart Study Zone",
+    description: "Adaptive learning Nursery → Class 10, with audio + practice",
+    accentClass: "bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20",
+  },
+  {
+    id: "ptm-prep",
+    icon: <ClipboardList className="h-5 w-5 text-violet-600" />,
+    title: "🧾 PTM Prep Assistance",
+    description: "Prepare questions, take notes & turn them into action steps",
+    accentClass: "bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20",
+  },
+  {
+    id: "phonics",
+    icon: <AudioLines className="h-5 w-5 text-violet-600" />,
+    title: "🔤 Phonics Learning",
+    description: "Sound awareness → blending → reading, paced for your child's age",
+    accentClass: "bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20",
+  },
+];
+
+function PreviewHubCard({
+  id,
+  icon,
+  title,
+  description,
+  accentClass,
+}: {
+  id: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  accentClass: string;
+}) {
+  return (
+    <div
+      data-section-id={id}
+      data-preview-only="true"
+      className={[
+        "group relative rounded-2xl overflow-hidden",
+        "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl",
+        "border border-white/50 dark:border-white/10",
+        "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]",
+      ].join(" ")}
+    >
+      <div className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
+        <div
+          className={[
+            "w-11 h-11 rounded-2xl flex items-center justify-center shrink-0",
+            "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]",
+            "ring-1 ring-white/40 dark:ring-white/10",
+            accentClass,
+          ].join(" ")}
+        >
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground truncate">
+            {title}
+          </p>
+          <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate">
+            {description}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
