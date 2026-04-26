@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useAuth } from "@/lib/firebase-auth";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import { getApiUrl } from "@/lib/api";
 
 /**

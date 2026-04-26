@@ -117,27 +117,11 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
-      // Pin every React entry-point to the SAME on-disk file so Vite's
-      // pre-bundle graph cannot accidentally produce two React module
-      // instances. The missing `jsx-dev-runtime` / `react-dom/client`
-      // aliases were causing React 19's dispatcher to be null on first
-      // render, which surfaced as a misleading "more than one copy of
-      // React in the same app" warning + a `useState` null crash.
-      react: path.resolve(import.meta.dirname, "node_modules/react"),
-      "react-dom": path.resolve(import.meta.dirname, "node_modules/react-dom"),
-      "react-dom/client": path.resolve(
-        import.meta.dirname,
-        "node_modules/react-dom/client.js",
-      ),
-      "react/jsx-runtime": path.resolve(
-        import.meta.dirname,
-        "node_modules/react/jsx-runtime.js",
-      ),
-      "react/jsx-dev-runtime": path.resolve(
-        import.meta.dirname,
-        "node_modules/react/jsx-dev-runtime.js",
-      ),
     },
+    // Guarantee a single React instance across all packages (local + workspace).
+    // Do NOT add sub-path aliases (react/jsx-dev-runtime, react-dom/client, etc.)
+    // because aliases run before dedupe and would direct those sub-path imports
+    // to the artifact-local node_modules/react copy, creating a second instance.
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
@@ -193,11 +177,6 @@ export default defineConfig({
       "tailwind-merge",
       "framer-motion",
     ],
-    // After the initial crawl, refuse to silently re-bundle on the fly. If
-    // a dep is genuinely missing from `include`, Vite will throw a clear
-    // error pointing at it instead of triggering a hash-changing re-bundle
-    // that desyncs already-loaded React modules in the browser.
-    noDiscovery: true,
   },
   root: path.resolve(import.meta.dirname),
   build: {

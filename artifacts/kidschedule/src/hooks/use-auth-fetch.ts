@@ -1,4 +1,4 @@
-import { useAuth } from "@/lib/firebase-auth";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useCallback } from "react";
 
 export function useAuthFetch() {

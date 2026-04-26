@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
-import { useAuth } from "@/lib/firebase-auth";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError } from "@/lib/auth-errors";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 

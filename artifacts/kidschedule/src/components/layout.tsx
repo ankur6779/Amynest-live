@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Home, Users, Calendar, Star, Menu, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useClerk, useUser } from "@/lib/firebase-auth";
+import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/brand-logo";
 import { AmyFab } from "@/components/amy-fab";

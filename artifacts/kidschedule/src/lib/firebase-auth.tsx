@@ -79,13 +79,13 @@ interface AuthState {
 
 type Listener = (snapshot: { user: ShimUser | null }) => void;
 
-interface AuthContextValue extends AuthState {
+export interface AuthContextValue extends AuthState {
   getToken: (opts?: { skipCache?: boolean }) => Promise<string | null>;
   signOut: (opts?: { redirectUrl?: string }) => Promise<void>;
   addListener: (cb: Listener) => () => void;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 function fbToShim(u: FirebaseUserLike): ShimUser {
   const display = u.displayName ?? "";
@@ -147,7 +147,6 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
         // If firebase fails to load (bad config, network, etc.), still mark
         // the provider as loaded with no user so the UI can render the
         // signed-out state instead of hanging on a spinner forever.
-        // eslint-disable-next-line no-console
         console.error("[firebase-auth] failed to initialize:", err);
         if (!cancelled) {
           setState({ user: null, isLoaded: true });
@@ -187,7 +186,6 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       ]);
       await authMod.signOut(firebaseAuth);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("[firebase-auth] signOut failed:", err);
     }
     if (opts?.redirectUrl && typeof window !== "undefined") {
@@ -210,54 +208,6 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-function useCtx(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error(
-      "useAuth/useUser/useClerk must be used inside <FirebaseAuthProvider>",
-    );
-  }
-  return ctx;
-}
-
-// ─── Clerk-compat hooks ────────────────────────────────────────────────────
-
-export function useAuth(): {
-  isLoaded: boolean;
-  isSignedIn: boolean;
-  userId: string | null;
-  sessionId: string | null;
-  getToken: AuthContextValue["getToken"];
-  signOut: AuthContextValue["signOut"];
-} {
-  const c = useCtx();
-  return {
-    isLoaded: c.isLoaded,
-    isSignedIn: !!c.user,
-    userId: c.user?.id ?? null,
-    sessionId: c.user?.id ?? null, // Firebase has no concept of separate session id
-    getToken: c.getToken,
-    signOut: c.signOut,
-  };
-}
-
-export function useUser(): {
-  isLoaded: boolean;
-  isSignedIn: boolean;
-  user: ShimUser | null;
-} {
-  const c = useCtx();
-  return { isLoaded: c.isLoaded, isSignedIn: !!c.user, user: c.user };
-}
-
-export function useClerk(): {
-  signOut: AuthContextValue["signOut"];
-  addListener: AuthContextValue["addListener"];
-} {
-  const c = useCtx();
-  return { signOut: c.signOut, addListener: c.addListener };
-}
-
 // ─── <Show when="signed-in" | "signed-out"> drop-in ────────────────────────
 
 export function Show({
@@ -267,7 +217,9 @@ export function Show({
   when: "signed-in" | "signed-out";
   children: ReactNode;
 }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const ctx = useContext(AuthContext);
+  const isLoaded = ctx?.isLoaded ?? false;
+  const isSignedIn = !!ctx?.user;
   if (!isLoaded) return null;
   if (when === "signed-in" && isSignedIn) return <>{children}</>;
   if (when === "signed-out" && !isSignedIn) return <>{children}</>;

@@ -3,12 +3,8 @@ import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
-import {
-  FirebaseAuthProvider,
-  Show,
-  useAuth,
-  useClerk,
-} from "@/lib/firebase-auth";
+import { FirebaseAuthProvider, Show } from "@/lib/firebase-auth";
+import { useAuth, useClerk } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";

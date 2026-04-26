@@ -6,7 +6,7 @@ import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, TrendingDown, 
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUser } from "@/lib/firebase-auth";
+import { useUser } from "@/lib/firebase-auth-hooks";
 import { useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
