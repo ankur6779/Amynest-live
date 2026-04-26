@@ -53,14 +53,26 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
         {/* Hover glow ring (box-shadow layer, opacity transitions on hover) */}
         <div className="amy-mascot-hover-ring" style={{ position: "absolute", inset: 0, borderRadius: "50%", pointerEvents: "none", zIndex: 4 }} />
 
-        {/* Mascot image with breathing glow */}
-        <img
-          src={mascotImg}
-          alt="Amy AI"
+        {/* Circular themed badge — dark purple bg + neon ring border, clips white PNG edges */}
+        <div
           className="amy-mascot-glow"
-          style={{ width: size, height: size, objectFit: "contain", display: "block", pointerEvents: "none", position: "relative", zIndex: 1 }}
-          draggable={false}
-        />
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            overflow: "hidden",
+            background: "radial-gradient(circle at 50% 45%, #3a1f6b 0%, #1a0a2e 75%, #0a061a 100%)",
+            boxShadow: "inset 0 0 0 1.5px rgba(180, 120, 255, 0.55), inset 0 0 8px rgba(120, 80, 200, 0.4)",
+            zIndex: 1,
+          }}
+        >
+          <img
+            src={mascotImg}
+            alt="Amy AI"
+            style={{ width: "118%", height: "118%", marginLeft: "-9%", marginTop: "-9%", objectFit: "contain", display: "block", pointerEvents: "none" }}
+            draggable={false}
+          />
+        </div>
 
         {/* Eye eyelid overlays — scaleY(0)=open, scaleY(1)=closed */}
         <div
