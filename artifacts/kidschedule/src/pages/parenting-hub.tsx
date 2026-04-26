@@ -522,25 +522,15 @@ export default function ParentingHub() {
         </HubSection>
       )}
 
-      {/* Infant & Toddler Hub — only when any child is ≤ 24 months */}
+      {/* Infant Parenting Hub — ONLY shown when the currently selected child
+          is 0–24 months. Do NOT silently fall back to a sibling, otherwise the
+          section appears for older kids whose parent simply has a baby too. */}
       {(() => {
-        const selectedMonths = effectiveChild
-          ? (effectiveChild.age * 12) + ((effectiveChild as any).ageMonths ?? 0)
-          : -1;
-        // Prefer the selected child if they're in the window; else pick the
-        // youngest infant/toddler child in the family.
-        const target = isInfantHubAge(selectedMonths)
-          ? effectiveChild
-          : childList
-              .map((c: any) => ({
-                child: c,
-                months: (c.age * 12) + ((c as any).ageMonths ?? 0),
-              }))
-              .filter((x) => isInfantHubAge(x.months))
-              .sort((a, b) => a.months - b.months)[0]?.child;
-        if (!target) return null;
-        const targetMonths = (target.age * 12) + ((target as any).ageMonths ?? 0);
-        return <InfantHub childName={target.name} ageMonths={targetMonths} />;
+        if (!effectiveChild) return null;
+        const selectedMonths =
+          (effectiveChild.age * 12) + ((effectiveChild as any).ageMonths ?? 0);
+        if (!isInfantHubAge(selectedMonths)) return null;
+        return <InfantHub childName={effectiveChild.name} ageMonths={selectedMonths} />;
       })()}
 
       {/* Age group pill */}
