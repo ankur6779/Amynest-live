@@ -26,10 +26,10 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
           }, 160);
         }
         scheduleBlink();
-      }, 3000 + Math.random() * 3000);
+      }, 1300 + Math.random() * 400);
     }
 
-    const init = setTimeout(scheduleBlink, 1200 + Math.random() * 800);
+    const init = setTimeout(scheduleBlink, 800 + Math.random() * 400);
     return () => { clearTimeout(init); clearTimeout(timer); };
   }, []);
 
@@ -58,7 +58,7 @@ export function AmyMascotLogo({ size = 44, className = "" }: AmyMascotLogoProps)
           src={mascotImg}
           alt="Amy AI"
           className="amy-mascot-glow"
-          style={{ width: size, height: size, objectFit: "contain", display: "block", pointerEvents: "none", position: "relative", zIndex: 1 }}
+          style={{ width: size, height: size, objectFit: "contain", display: "block", pointerEvents: "none", position: "relative", zIndex: 1, mixBlendMode: "screen" }}
           draggable={false}
         />
 
