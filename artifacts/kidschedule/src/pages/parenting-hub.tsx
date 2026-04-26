@@ -1045,6 +1045,13 @@ const SECTION_2_PREVIEW_TILES: Array<{
     description: "Sound awareness → blending → reading, paced for your child's age",
     accentClass: "bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20",
   },
+  {
+    id: "coloring-books",
+    icon: <Palette className="h-5 w-5 text-rose-600" />,
+    title: "🎨 Coloring Books",
+    description: "Printable coloring sheets with preview & one-tap download",
+    accentClass: "bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20",
+  },
 ];
 
 function PreviewHubCard({
