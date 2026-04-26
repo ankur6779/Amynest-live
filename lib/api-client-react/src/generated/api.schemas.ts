@@ -309,6 +309,104 @@ export interface DashboardSummary {
   routinesGeneratedThisWeek: number;
 }
 
+export type HubAgeBand = (typeof HubAgeBand)[keyof typeof HubAgeBand];
+
+export const HubAgeBand = {
+  "0-2": "0-2",
+  "2-4": "2-4",
+  "4-6": "4-6",
+  "6-8": "6-8",
+  "8-10": "8-10",
+  "10-12": "10-12",
+  "12-15": "12-15",
+} as const;
+
+export interface HubBandProgress {
+  band: HubAgeBand;
+  storyTotal: number;
+  storyFinished: number;
+  phonicsTotal: number;
+  phonicsFinished: number;
+  totalCount: number;
+  finishedCount: number;
+  percentage: number;
+}
+
+export interface HubStory {
+  id: number;
+  driveFileId: string;
+  title: string;
+  category: string;
+  /** @nullable */
+  thumbnailUrl: string | null;
+  /** @nullable */
+  durationSec: number | null;
+  streamUrl: string;
+  ageBand: HubAgeBand | null;
+  isUniversal: boolean;
+  previewOnly: boolean;
+  positionSec?: number;
+  playCount?: number;
+  completed?: boolean;
+}
+
+export interface HubPhonics {
+  id: number;
+  ageGroup: string;
+  band: HubAgeBand | null;
+  level: number;
+  type: string;
+  symbol: string;
+  sound: string;
+  /** @nullable */
+  example: string | null;
+  /** @nullable */
+  emoji: string | null;
+  /** @nullable */
+  hint: string | null;
+  /** @nullable */
+  conceptId: string | null;
+  isUniversal: boolean;
+  previewOnly: boolean;
+  playCount?: number;
+  mastered?: boolean;
+}
+
+export type HubContentChild = {
+  id: number;
+  name: string;
+};
+
+export type HubContentSection1 = {
+  stories: HubStory[];
+  phonics: HubPhonics[];
+};
+
+export type HubContentSection2Mode =
+  (typeof HubContentSection2Mode)[keyof typeof HubContentSection2Mode];
+
+export const HubContentSection2Mode = {
+  discovery: "discovery",
+  "concept-grouped": "concept-grouped",
+} as const;
+
+export type HubContentSection2 = {
+  mode: HubContentSection2Mode;
+  stories: HubStory[];
+  phonics: HubPhonics[];
+};
+
+export interface HubContent {
+  child: HubContentChild;
+  currentBand: HubAgeBand;
+  nextBand: HubAgeBand | null;
+  bandProgress: HubBandProgress;
+  nextBandEarlyUnlocked: boolean;
+  unlockedBands: HubAgeBand[];
+  section1: HubContentSection1;
+  section2: HubContentSection2;
+}
+
 export interface BehaviorStat {
   childId: number;
   childName: string;
@@ -329,4 +427,11 @@ export type ListBehaviorsParams = {
 export type CheckRoutineParams = {
   childId: number;
   date: string;
+};
+
+export type GetHubContentParams = {
+  /**
+   * @minimum 1
+   */
+  childId: number;
 };

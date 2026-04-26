@@ -33,10 +33,12 @@ import type {
   GenerateInsightsResponse,
   GenerateRoutineBody,
   GeneratedRoutine,
+  GetHubContentParams,
   GetParentProfileResponse,
   GetRecipeBody,
   GetRecipeResponse,
   HealthStatus,
+  HubContent,
   ListBehaviorsParams,
   ListRoutinesParams,
   Routine,
@@ -2234,6 +2236,100 @@ export const useAskAssistant = <
 > => {
   return useMutation(getAskAssistantMutationOptions(options));
 };
+
+/**
+ * @summary Get progressive Parent Hub content (Section 1 + Section 2) for a child
+ */
+export const getGetHubContentUrl = (params: GetHubContentParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/hub/content?${stringifiedParams}`
+    : `/api/hub/content`;
+};
+
+export const getHubContent = async (
+  params: GetHubContentParams,
+  options?: RequestInit,
+): Promise<HubContent> => {
+  return customFetch<HubContent>(getGetHubContentUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetHubContentQueryKey = (params?: GetHubContentParams) => {
+  return [`/api/hub/content`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetHubContentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHubContent>>,
+  TError = ErrorType<void>,
+>(
+  params: GetHubContentParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHubContent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetHubContentQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getHubContent>>> = ({
+    signal,
+  }) => getHubContent(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHubContent>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHubContentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHubContent>>
+>;
+export type GetHubContentQueryError = ErrorType<void>;
+
+/**
+ * @summary Get progressive Parent Hub content (Section 1 + Section 2) for a child
+ */
+
+export function useGetHubContent<
+  TData = Awaited<ReturnType<typeof getHubContent>>,
+  TError = ErrorType<void>,
+>(
+  params: GetHubContentParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHubContent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHubContentQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get behavior stats per child

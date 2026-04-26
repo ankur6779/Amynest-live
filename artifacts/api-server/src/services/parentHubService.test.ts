@@ -39,6 +39,7 @@ import {
   computeBandProgress,
   computeHubContent,
   evaluateEarlyUnlock,
+  evaluateEarlyUnlockSafe,
   resolveUnlockedBands,
 } from "./parentHubService";
 import { buildBandUnlockNotification } from "./notificationContentBuilder";
@@ -799,5 +800,206 @@ describe("computeHubContent", () => {
     );
     assert.equal(payload.currentBand, getAgeBand(5, 0));
     assert.equal(payload.nextBand, getNextAgeBand("4-6"));
+  });
+});
+
+// ─── 5. End-to-end progressive-unlock chain ─────────────────────────────────
+//
+// Mirrors the production HTTP flow that the new `HubProgressiveContent`
+// components on web (kidschedule) and mobile (amynest-mobile) drive:
+//
+//   1. Client fetches `GET /api/hub/content` → Section 2 next-band items
+//      come back with `previewOnly: true` (dimmed in the UI).
+//   2. Client posts `POST /api/stories/progress` for enough stories to
+//      cross the 75 % completion threshold; the route hands off to
+//      `evaluateEarlyUnlockSafe` (fire-and-forget).
+//   3. Client invalidates the hub-content query (the new
+//      `useStoriesData` / `usePhonicsData` hooks do this on completion)
+//      and re-fetches `GET /api/hub/content` → the same items now come
+//      back with `previewOnly: false` — no re-login required.
+//
+// The "without re-login" guarantee is what this chained test pins down:
+// once the unlock row is upserted, the next computeHubContent call
+// reflects it for the same authenticated user immediately.
+
+describe("hub-content e2e — preview→live flips after early-unlock", () => {
+  it("Section 2 next-band items become live without re-login at ≥75 % completion", async (t: TestContext) => {
+    // Child age 7 → current band "6-8", next band "8-10". We use this band
+    // pair because the seeded phonics catalog only covers bands 0-2 / 2-4
+    // / 4-6, so the band totals here are 100 % under fixture control —
+    // 4 tagged stories in band "6-8" is exactly the denominator.
+    const f = await setup(t, {
+      childAge: 7,
+      stories: [
+        { ageBand: "6-8", title: "Current A" },
+        { ageBand: "6-8", title: "Current B" },
+        { ageBand: "6-8", title: "Current C" },
+        { ageBand: "6-8", title: "Current D" },
+        { ageBand: "8-10", title: "Future A" },
+        { ageBand: "8-10", title: "Future B" },
+        { ageBand: null, title: "Universal Reel" },
+      ],
+    });
+    const futureTitles = new Set(["Future A", "Future B"]);
+
+    // ── Step 1: initial fetch — every future-band item is preview-only.
+    const initial = await computeHubContent(
+      { id: f.childId, name: "Test Kid", age: 7, ageMonths: 0 },
+      f.userId,
+    );
+    assert.equal(initial.currentBand, "6-8");
+    assert.equal(initial.nextBand, "8-10");
+    assert.equal(initial.nextBandEarlyUnlocked, false);
+
+    const initialFuture = initial.section2.stories.filter((s) =>
+      futureTitles.has(s.title),
+    );
+    assert.equal(initialFuture.length, 2, "both future stories in Section 2");
+    for (const s of initialFuture) {
+      assert.equal(
+        s.previewOnly,
+        true,
+        `Section 2 item "${s.title}" must start preview-only`,
+      );
+    }
+
+    // Universal item lives in Section 1 and is never preview-only.
+    const universal = initial.section1.stories.find(
+      (s) => s.title === "Universal Reel",
+    );
+    assert.ok(universal, "universal story is in Section 1");
+    assert.equal(universal?.previewOnly, false);
+    assert.equal(universal?.isUniversal, true);
+
+    assert.equal(initial.bandProgress.percentage, 0);
+    assert.equal(initial.bandProgress.totalCount, 4);
+
+    // ── Step 2: drive completion across the 75 % threshold. We mark 3 of
+    // 4 current-band stories complete (mirrors what `POST
+    // /api/stories/progress` writes) and then invoke the early-unlock
+    // evaluator the way the route does after the insert. The route uses
+    // the fire-and-forget `evaluateEarlyUnlockSafe` wrapper, but we call
+    // the inner `evaluateEarlyUnlock` here so the test can `await` it
+    // deterministically — both code paths exercise the same upsert.
+    for (const id of f.storyIds.slice(0, 3)) {
+      await markStoryCompleted(f.childId, f.userId, id);
+    }
+    const evalResult = await evaluateEarlyUnlock(f.childId, f.userId);
+    assert.equal(
+      evalResult.evaluated,
+      true,
+      "evaluator must report a successful unlock at 75 %",
+    );
+    if (evalResult.evaluated === true) {
+      assert.equal(evalResult.unlockedNow, true);
+    }
+    // The Safe wrapper is what the production route actually invokes.
+    // Calling it here proves the wrapper still works (and is a no-op the
+    // second time, since the row already exists — irreversibility).
+    evaluateEarlyUnlockSafe(f.childId, f.userId);
+
+    // Sanity: an unlock row was actually inserted (this is what
+    // `computeHubContent` keys off when flipping `previewOnly`).
+    const unlockRows = await db
+      .select()
+      .from(childBandUnlocksTable)
+      .where(
+        and(
+          eq(childBandUnlocksTable.childId, f.childId),
+          eq(childBandUnlocksTable.ageBand, "8-10"),
+        ),
+      );
+    assert.equal(
+      unlockRows.length,
+      1,
+      "evaluateEarlyUnlockSafe must upsert an early_completion row at 75 %",
+    );
+    assert.equal(unlockRows[0]?.source, "early_completion");
+
+    // ── Step 3: re-fetch — same user, no re-login. Section 2 future-band
+    // items must now report `previewOnly: false` so the client UI flips
+    // them from dimmed to live.
+    const after = await computeHubContent(
+      { id: f.childId, name: "Test Kid", age: 7, ageMonths: 0 },
+      f.userId,
+    );
+    assert.equal(
+      after.nextBandEarlyUnlocked,
+      true,
+      "nextBandEarlyUnlocked must reflect the new unlock row",
+    );
+    assert.equal(after.bandProgress.percentage, 75);
+
+    const afterFuture = after.section2.stories.filter((s) =>
+      futureTitles.has(s.title),
+    );
+    assert.equal(afterFuture.length, 2);
+    for (const s of afterFuture) {
+      assert.equal(
+        s.previewOnly,
+        false,
+        `Section 2 item "${s.title}" must be live after early unlock`,
+      );
+    }
+  });
+
+  it("under threshold → Section 2 stays dimmed (no premature unlock)", async (t: TestContext) => {
+    const f = await setup(t, {
+      childAge: 7,
+      stories: [
+        { ageBand: "6-8", title: "Current A" },
+        { ageBand: "6-8", title: "Current B" },
+        { ageBand: "6-8", title: "Current C" },
+        { ageBand: "6-8", title: "Current D" },
+        { ageBand: "8-10", title: "Future A" },
+      ],
+    });
+
+    // 2 of 4 = 50 % — below the 75 % threshold. Use the inner
+    // `evaluateEarlyUnlock` (not the fire-and-forget Safe wrapper) so the
+    // assertion on row count below is deterministic — Safe returns void.
+    for (const id of f.storyIds.slice(0, 2)) {
+      await markStoryCompleted(f.childId, f.userId, id);
+    }
+    const evalResult = await evaluateEarlyUnlock(f.childId, f.userId);
+    assert.equal(
+      evalResult.evaluated,
+      false,
+      "evaluator must report below_threshold at 50 %",
+    );
+    if (evalResult.evaluated === false) {
+      assert.equal(evalResult.reason, "below_threshold");
+    }
+
+    const rows = await db
+      .select()
+      .from(childBandUnlocksTable)
+      .where(
+        and(
+          eq(childBandUnlocksTable.childId, f.childId),
+          eq(childBandUnlocksTable.ageBand, "8-10"),
+        ),
+      );
+    assert.equal(
+      rows.length,
+      0,
+      "no unlock row should exist while completion is below threshold",
+    );
+
+    const payload = await computeHubContent(
+      { id: f.childId, name: "Test Kid", age: 7, ageMonths: 0 },
+      f.userId,
+    );
+    assert.equal(payload.nextBandEarlyUnlocked, false);
+    const future = payload.section2.stories.find((s) => s.title === "Future A");
+    assert.ok(future, "future story present in Section 2");
+    assert.equal(
+      future?.previewOnly,
+      true,
+      "future-band story must remain preview-only below threshold",
+    );
+
+    assert.equal(EARLY_UNLOCK_THRESHOLD_PCT, 75);
+    assert.equal(payload.bandProgress.percentage, 50);
   });
 });

@@ -42,6 +42,7 @@ import type { AgeBand } from "@/lib/age-bands";
 import { getAgeBand, getNextAgeBand, bandLabel } from "@/lib/age-bands";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 import { StageMilestonesCard, GraduationStageCard } from "@/components/stage-milestones-card";
+import { HubProgressiveContent } from "@/components/hub-progressive-content";
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
 interface SectionProps {
@@ -909,6 +910,12 @@ export default function ParentingHub() {
               })}
             </div>
           )}
+
+          {/* Progressive Library — Section 1 (live) + Section 2 (preview) */}
+          <HubProgressiveContent
+            childId={effectiveChild.id}
+            childName={effectiveChild.name}
+          />
 
           {/* 2-column grid */}
           {forYouGrid.length > 0 && (
