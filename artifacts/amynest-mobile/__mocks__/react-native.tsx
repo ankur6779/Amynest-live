@@ -1,19 +1,65 @@
 import React from "react";
 
-const View = ({ children, testID, style, ...rest }: any) =>
-  React.createElement("div", { "data-testid": testID, ...rest }, children);
+// Strip props that React Native accepts but the DOM does not, so RN style
+// arrays / refresh controls don't leak into div/button attributes (which
+// triggers React DOM proxy errors).
+function stripRnProps({
+  style,
+  contentContainerStyle,
+  refreshControl,
+  showsHorizontalScrollIndicator,
+  showsVerticalScrollIndicator,
+  decelerationRate,
+  snapToInterval,
+  snapToAlignment,
+  horizontal,
+  numberOfLines,
+  onPressIn,
+  onPressOut,
+  accessibilityRole,
+  accessibilityLabel,
+  accessible,
+  hitSlop,
+  pointerEvents,
+  ...rest
+}: any) {
+  return rest;
+}
 
-const Text = ({ children, testID, style, ...rest }: any) =>
-  React.createElement("span", { "data-testid": testID, ...rest }, children);
+const View = ({ children, testID, ...props }: any) =>
+  React.createElement(
+    "div",
+    { "data-testid": testID, ...stripRnProps(props) },
+    children,
+  );
 
-const Pressable = ({ children, onPress, ...rest }: any) =>
-  React.createElement("button", { onClick: onPress, ...rest }, children);
+const Text = ({ children, testID, ...props }: any) =>
+  React.createElement(
+    "span",
+    { "data-testid": testID, ...stripRnProps(props) },
+    children,
+  );
 
-const TouchableOpacity = ({ children, onPress, testID, ...rest }: any) =>
-  React.createElement("button", { onClick: onPress, "data-testid": testID, ...rest }, children);
+const Pressable = ({ children, onPress, ...props }: any) =>
+  React.createElement(
+    "button",
+    { onClick: onPress, ...stripRnProps(props) },
+    children,
+  );
 
-const ScrollView = ({ children, testID, ...rest }: any) =>
-  React.createElement("div", { "data-testid": testID, ...rest }, children);
+const TouchableOpacity = ({ children, onPress, testID, ...props }: any) =>
+  React.createElement(
+    "button",
+    { onClick: onPress, "data-testid": testID, ...stripRnProps(props) },
+    children,
+  );
+
+const ScrollView = ({ children, testID, ...props }: any) =>
+  React.createElement(
+    "div",
+    { "data-testid": testID, ...stripRnProps(props) },
+    children,
+  );
 
 const Modal = ({ children, visible }: any) =>
   visible ? React.createElement("div", {}, children) : null;
