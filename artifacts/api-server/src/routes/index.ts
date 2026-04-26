@@ -29,6 +29,7 @@ import recipesRouter from "./recipes";
 import ttsRouter, { ttsPublicRouter } from "./tts";
 import audioLessonsRouter from "./audio-lessons";
 import phonicsRouter from "./phonics";
+import coloringRouter from "./coloring";
 import storiesRouter from "./stories";
 import { requireAuth } from "../middlewares/requireAuth";
 
@@ -77,6 +78,7 @@ router.use(recipesRouter);
 router.use(ttsRouter);
 router.use(audioLessonsRouter);
 router.use(phonicsRouter);
+router.use(coloringRouter);
 router.use("/stories", storiesRouter);
 
 export default router;

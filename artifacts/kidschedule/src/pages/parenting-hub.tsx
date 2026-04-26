@@ -17,6 +17,7 @@ import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
 import { PhonicsLearning } from "@/components/phonics-learning";
+import { ColoringBooks } from "@/components/coloring-books";
 import { StoryHub } from "@/components/story-hub";
 import { getAgeGroup, getAgeGroupInfo } from "@/lib/age-groups";
 import { InfantMode, type InfantShowOnly } from "@/components/infant-mode";
@@ -857,6 +858,29 @@ export default function ParentingHub() {
             <LifeSkillsZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
           </HubSection>
         </LockedBlock>
+      ) : null,
+    },
+
+    {
+      // Coloring Books — Google-Drive-backed PDF library. Shows for age
+      // 2+ only (preview tile in Section 2 covers the 0-2 band). Daily
+      // download cap (2/day per child) and the "never repeat" rule are
+      // enforced server-side in artifacts/api-server/src/routes/coloring.ts.
+      id: "coloring-books",
+      bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
+      render: () => totalAgeMonths >= 24 ? (
+        <HubSection
+          id="coloring-books"
+          icon={<Palette className="h-5 w-5 text-rose-600" />}
+          title="🎨 Coloring Books"
+          description="Printable coloring sheets — preview, then download (2/day)"
+          accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
+        >
+          <ColoringBooks
+            childId={effectiveChild.id}
+            childName={effectiveChild.name}
+          />
+        </HubSection>
       ) : null,
     },
   ] : [];
