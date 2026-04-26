@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandLogo } from "@/components/brand-logo";
 import { AmyFab } from "@/components/amy-fab";
 import { AmyIcon } from "@/components/amy-icon";
+import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTheme } from "@/contexts/theme-context";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -116,7 +117,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="fixed top-0 left-0 right-0 z-40 flex h-20 w-full items-center justify-between border-b bg-background px-4 md:hidden shadow-sm">
         <div className="flex items-center gap-2">
           <BrandLogo size="sm" showTagline={true} />
-          <AmyIcon size={34} bounce ring />
+          <AmyMascotLogo size={34} />
         </div>
         <div className="flex items-center gap-2">
           <LanguageSwitcher compact />
@@ -200,7 +201,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <aside className="hidden w-64 flex-col border-r bg-card md:flex">
           <div className="flex h-24 items-center justify-between border-b px-5 shadow-sm">
             <BrandLogo size="md" showTagline={true} />
-            <AmyIcon size={42} bounce ring />
+            <AmyMascotLogo size={42} />
           </div>
           <div className="px-4 pt-3">
             <LanguageSwitcher />

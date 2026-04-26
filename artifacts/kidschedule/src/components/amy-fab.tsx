@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { AmyIcon } from "@/components/amy-icon";
+import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 
 export function AmyFab() {
   const [location] = useLocation();
@@ -13,7 +13,7 @@ export function AmyFab() {
         aria-label="Ask Amy AI"
         className="group relative flex items-center justify-center hover:scale-105 active:scale-95 transition-transform focus:outline-none"
       >
-        <AmyIcon size={58} bounce ring />
+        <AmyMascotLogo size={58} />
         <span className="absolute -top-2 -right-1 bg-white text-[9px] font-black text-violet-700 dark:text-violet-200 px-1.5 py-0.5 rounded-full shadow border border-violet-200 dark:border-violet-400/30 pointer-events-none">
           Amy AI
         </span>
