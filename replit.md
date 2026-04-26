@@ -10,7 +10,7 @@ AmyNest is an AI-powered daily routine planner for parents. It aims to simplify 
 - I want a time-based personalized greeting on the dashboard.
 - I expect the system to handle age detection for children automatically.
 - I want to see conditional fields for school/travel based on child profiles.
-- I prefer a 7-section collapsible layout for the Parenting Hub.
+- I prefer a 2-section Parent Hub layout: "For {Child Name}" (current age band) and "Explore Next Stage for {Child Name}" (next age band, dimmed with a "Coming Next · For Age X+" label) so retention scales with the child's growth.
 - I want the Olympiad Zone to have adaptive difficulty and track progress.
 - I prefer the Life Skills Mode to be tri-lingual (English / Hindi / Hinglish) with an in-section language toggle.
 - I want to track task status (Complete/Delay/Skip) with auto-shift on delay.
@@ -48,7 +48,7 @@ The system is a monorepo utilizing pnpm workspaces, Node.js 24, and TypeScript 5
 **Technical Implementations:**
 - **Authentication:** Clerk-based login with email/Google OAuth and protected routes.
 - **Profiles:** Management of child and parent profiles with smart logic for school, goals, and availability.
-- **Parenting Hub:** A 7-section collapsible layout offering AI prompts, articles, daily tips, and specialized zones like Smart Olympiad Zone and Life Skills Mode (tri-lingual).
+- **Parenting Hub:** A 2-section layout driven by an age-band engine (`lib/age-bands.ts`, 7 bands from 0–2 to 12–15). "For {Child}" shows current-band sections (AI prompts, articles, daily tips, Activities, Story Hub, Smart Olympiad Zone, Life Skills Mode, etc.); "Explore Next Stage for {Child}" previews exclusive next-band sections in a dimmed wrapper, falling back to a stage-milestones card when nothing is exclusive (older kids).
 - **Routine Generation:** Rule-based engine (`routine-templates.ts`) providing age-appropriate templates, handling various conditions like school, mood, and parent availability.
 - **Smart Nutrition:** Offers localized meal options (veg/non-veg) with seeded rotation and regional tailoring. Custom recipes can be saved and integrated.
 - **Routine Management:** Features include task status tracking (Complete/Delay/Skip) with auto-shift, progress bars, browser notifications, inline editing, partial regeneration, and sharing options.

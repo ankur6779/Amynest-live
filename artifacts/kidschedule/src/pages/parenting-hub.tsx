@@ -38,6 +38,10 @@ import { LockedBlock } from "@/components/locked-block";
 import { TryFreeBadge } from "@/components/try-free-badge";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import type { AgeGroup } from "@/lib/age-groups";
+import type { AgeBand } from "@/lib/age-bands";
+import { getAgeBand, getNextAgeBand, bandLabel } from "@/lib/age-bands";
+import { ComingNextWrapper } from "@/components/coming-next-wrapper";
+import { StageMilestonesCard, GraduationStageCard } from "@/components/stage-milestones-card";
 
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
 interface SectionProps {
@@ -489,19 +493,30 @@ export default function ParentingHub() {
     );
   }
 
-  return (
-    <div className="max-w-6xl mx-auto space-y-5 pb-12">
-      <PageHeader />
+  // ── Two-section layout: For You (current band) + Explore Next (next band) ──
+  const currentBand: AgeBand | null = effectiveChild
+    ? getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0)
+    : null;
+  const nextBand: AgeBand | null = currentBand ? getNextAgeBand(currentBand) : null;
 
-      {/* ── Child Selector Panel ────────────────────────────────────────── */}
-      <ChildSelectorPanel
-        childList={childList}
-        effectiveChild={effectiveChild}
-        onSelect={handleChildSelect}
-      />
+  type SectionEntry = {
+    id: string;
+    /** Always renders in "For You" regardless of band. */
+    alwaysCurrent?: boolean;
+    /** Bands this section is appropriate for. Required when !alwaysCurrent. */
+    bands?: AgeBand[];
+    /** Render full-width above the grid (only honoured in "For You"). */
+    featured?: boolean;
+    render: () => React.ReactNode;
+  };
 
-      {/* 🧠 Parent Command Center — overview · insights · quick actions */}
-      {effectiveChild && (
+  const sections: SectionEntry[] = effectiveChild ? [
+    // ── FEATURED (full-width, always-current) ─────────────────────────────
+    {
+      id: "command-center",
+      alwaysCurrent: true,
+      featured: true,
+      render: () => (
         <HubSection
           id="command-center"
           icon={<Zap className="h-5 w-5 text-sky-600" />}
@@ -512,33 +527,26 @@ export default function ParentingHub() {
         >
           <ParentCommandCenter child={{ id: effectiveChild.id, name: effectiveChild.name }} />
         </HubSection>
-      )}
+      ),
+    },
 
-      {/* Infant Parenting Hub — ONLY shown when the currently selected child
-          is 0–24 months. Do NOT silently fall back to a sibling, otherwise the
-          section appears for older kids whose parent simply has a baby too. */}
-      {(() => {
-        if (!effectiveChild) return null;
-        const selectedMonths =
-          (effectiveChild.age * 12) + ((effectiveChild as any).ageMonths ?? 0);
-        if (!isInfantHubAge(selectedMonths)) return null;
-        return <InfantHub childName={effectiveChild.name} ageMonths={selectedMonths} />;
-      })()}
+    // ── INFANT HUB (band-restricted, featured) ────────────────────────────
+    // ONLY shown when the currently selected child is 0–24 months.
+    {
+      id: "infant-hub",
+      bands: ["0-2"],
+      featured: true,
+      render: () => {
+        if (!isInfantHubAge(totalAgeMonths)) return null;
+        return <InfantHub childName={effectiveChild.name} ageMonths={totalAgeMonths} />;
+      },
+    },
 
-      {/* Age group pill */}
-      {effectiveChild && ageGroup && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="outline" className="rounded-full px-3 py-1 font-semibold text-xs gap-1.5">
-            {getAgeGroupInfo(ageGroup).emoji} {getAgeGroupInfo(ageGroup).label}
-          </Badge>
-          <span className="text-xs text-muted-foreground">
-            Personalised for <strong>{effectiveChild.name}</strong>
-          </span>
-        </div>
-      )}
-
-      {/* 🔮 Amy AI Tomorrow Forecast — collapsible */}
-      {effectiveChild && (
+    {
+      id: "tomorrow-forecast",
+      alwaysCurrent: true,
+      featured: true,
+      render: () => (
         <HubSection
           id="tomorrow-forecast"
           icon={<Sparkles className="h-5 w-5 text-violet-600" />}
@@ -549,12 +557,14 @@ export default function ParentingHub() {
         >
           <FuturePredictor childId={effectiveChild.id} />
         </HubSection>
-      )}
+      ),
+    },
 
-      {/* ── Sections — 2-column on lg+, single column on mobile/tablet ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-
-        {/* 1. Amy AI Suggestions */}
+    // ── GRID — always-current ─────────────────────────────────────────────
+    {
+      id: "amy-ai",
+      alwaysCurrent: true,
+      render: () => (
         <HubSection
           id="amy-ai"
           icon={<AmyIcon size={22} bounce />}
@@ -564,8 +574,13 @@ export default function ParentingHub() {
         >
           <AmyAISuggestionsSection />
         </HubSection>
+      ),
+    },
 
-        {/* 2. Parenting Articles */}
+    {
+      id: "articles",
+      alwaysCurrent: true,
+      render: () => (
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_articles")}
@@ -581,37 +596,41 @@ export default function ParentingHub() {
             tryFree={tryFreeFor("hub_articles")}
             onOpen={() => hubUsage.markFeatureUsed("hub_articles")}
           >
-            {effectiveChild ? (
-              <ParentingArticles childAgeMonths={totalAgeMonths} />
-            ) : (
-              <p className="text-sm text-muted-foreground py-4 text-center">Select a child to see matched articles</p>
-            )}
+            <ParentingArticles childAgeMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock>
+      ),
+    },
 
-        {/* 3. Daily Tips */}
-        {effectiveChild && ageGroup && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_tips")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
+    {
+      id: "daily-tips",
+      alwaysCurrent: true,
+      render: () => ageGroup ? (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_tips")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="daily-tips"
+            icon={<Sparkles className="h-5 w-5 text-violet-600" />}
+            title="Daily Tips"
+            description="Amy AI picks today's best tips for you"
+            accentClass="bg-violet-100 dark:bg-violet-500/20"
+            tryFree={tryFreeFor("hub_tips")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_tips")}
           >
-            <HubSection
-              id="daily-tips"
-              icon={<Sparkles className="h-5 w-5 text-violet-600" />}
-              title="Daily Tips"
-              description="Amy AI picks today's best tips for you"
-              accentClass="bg-violet-100 dark:bg-violet-500/20"
-              tryFree={tryFreeFor("hub_tips")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_tips")}
-            >
-              <DailyTips ageGroup={ageGroup} childName={effectiveChild.name} />
-            </HubSection>
-          </LockedBlock>
-        )}
+            <DailyTips ageGroup={ageGroup} childName={effectiveChild.name} />
+          </HubSection>
+        </LockedBlock>
+      ) : null,
+    },
 
-        {/* 4. Emotional Support */}
+    {
+      id: "emotional",
+      alwaysCurrent: true,
+      render: () => (
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_emotional")}
@@ -630,196 +649,308 @@ export default function ParentingHub() {
             <EmotionalSupportSection />
           </HubSection>
         </LockedBlock>
+      ),
+    },
 
-        {/* 5. Activities & Learning */}
-        {effectiveChild && ageGroup && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_activities")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
+    {
+      id: "activities",
+      alwaysCurrent: true,
+      render: () => ageGroup ? (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_activities")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="activities"
+            icon={<Palette className="h-5 w-5 text-fuchsia-600" />}
+            title="Activities & Learning"
+            description="Age-based games, stories & skills"
+            accentClass="bg-fuchsia-100 dark:bg-fuchsia-500/20"
+            tryFree={tryFreeFor("hub_activities")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_activities")}
           >
-            <HubSection
-              id="activities"
-              icon={<Palette className="h-5 w-5 text-fuchsia-600" />}
-              title="Activities & Learning"
-              description="Age-based games, stories & skills"
-              accentClass="bg-fuchsia-100 dark:bg-fuchsia-500/20"
-              tryFree={tryFreeFor("hub_activities")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_activities")}
-            >
-              <ActivitiesSection
-                ageGroup={ageGroup}
-                effectiveChild={effectiveChild}
-                totalAgeMonths={totalAgeMonths}
-              />
-            </HubSection>
-          </LockedBlock>
-        )}
+            <ActivitiesSection
+              ageGroup={ageGroup}
+              effectiveChild={effectiveChild}
+              totalAgeMonths={totalAgeMonths}
+            />
+          </HubSection>
+        </LockedBlock>
+      ) : null,
+    },
 
-        {/* 🎬 Kids Story Hub — Netflix-style story browsing */}
-        {effectiveChild && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_story_hub")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
+    // ── GRID — band-based ─────────────────────────────────────────────────
+    {
+      id: "story-hub",
+      bands: ["0-2", "2-4", "4-6", "6-8"],
+      render: () => (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_story_hub")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="story-hub"
+            icon={<Film className="h-5 w-5 text-rose-600" />}
+            title="🎬 Kids Story Hub"
+            description="A whole library of bedtime, moral & fun stories — for ages 0–8"
+            accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-purple-100 dark:to-purple-500/20"
+            tryFree={tryFreeFor("hub_story_hub")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}
           >
-            <HubSection
-              id="story-hub"
-              icon={<Film className="h-5 w-5 text-rose-600" />}
-              title="🎬 Kids Story Hub"
-              description="A whole library of bedtime, moral & fun stories — for ages 0–8"
-              accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-purple-100 dark:to-purple-500/20"
-              tryFree={tryFreeFor("hub_story_hub")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}
-            >
-              <StoryHub
-                childId={effectiveChild.id}
+            <StoryHub childId={effectiveChild.id} childName={effectiveChild.name} />
+          </HubSection>
+        </LockedBlock>
+      ),
+    },
+
+    {
+      id: "phonics",
+      bands: ["2-4", "4-6"],
+      render: () => (totalAgeMonths >= 12 && totalAgeMonths < 72) ? (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_phonics")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="phonics"
+            icon={<AudioLines className="h-5 w-5 text-violet-600" />}
+            title="🔤 Phonics Learning"
+            description="Sound awareness → blending → reading, paced for your child's age"
+            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20"
+            tryFree={tryFreeFor("hub_phonics")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}
+          >
+            <PhonicsLearning
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+              totalAgeMonths={totalAgeMonths}
+            />
+          </HubSection>
+        </LockedBlock>
+      ) : null,
+    },
+
+    {
+      id: "ptm-prep",
+      bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
+      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 216) ? (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="ptm-prep"
+            icon={<ClipboardList className="h-5 w-5 text-violet-600" />}
+            title="🧾 PTM Prep Assistant"
+            description="Prepare questions, take notes & turn them into action steps"
+            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20"
+            tryFree={tryFreeFor("hub_ptm_prep")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}
+          >
+            <PtmPrepAssistant child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
+          </HubSection>
+        </LockedBlock>
+      ) : null,
+    },
+
+    {
+      id: "smart-study",
+      bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
+      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 204) ? (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_smart_study")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="smart-study"
+            icon={<GraduationCap className="h-5 w-5 text-indigo-600" />}
+            title="📚 Smart Study Zone"
+            description="Adaptive learning Nursery → Class 10, with audio + practice"
+            accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20"
+            tryFree={tryFreeFor("hub_smart_study")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}
+          >
+            <SmartStudyZone />
+          </HubSection>
+        </LockedBlock>
+      ) : null,
+    },
+
+    {
+      id: "event-prep",
+      bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
+      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 180) ? (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_event_prep")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="event-prep"
+            icon={<Sparkles className="h-5 w-5 text-pink-600" />}
+            title="🎉 Event Prep (School Ready)"
+            description="Fancy dress, DIY guide & speeches for school events"
+            accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20"
+            tryFree={tryFreeFor("hub_event_prep")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}
+          >
+            <EventPrepCard />
+          </HubSection>
+        </LockedBlock>
+      ) : null,
+    },
+
+    {
+      id: "olympiad",
+      bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
+      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 192) ? (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_olympiad")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="olympiad"
+            icon={<Trophy className="h-5 w-5 text-amber-600" />}
+            title="Smart Olympiad Zone"
+            description="Daily 5 MCQs, weekly tests, badges & insights"
+            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
+            tryFree={tryFreeFor("hub_olympiad")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}
+          >
+            <OlympiadZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
+          </HubSection>
+        </LockedBlock>
+      ) : null,
+    },
+
+    {
+      id: "life-skills",
+      bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
+      render: () => (totalAgeMonths >= 24 && totalAgeMonths < 192) ? (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_life_skills")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="life-skills"
+            icon={<Compass className="h-5 w-5 text-emerald-600" />}
+            title="🧭 Life Skills Mode"
+            description="Daily real-life skills tailored to your child's age"
+            accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20"
+            tryFree={tryFreeFor("hub_life_skills")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
+          >
+            <LifeSkillsZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
+          </HubSection>
+        </LockedBlock>
+      ) : null,
+    },
+  ] : [];
+
+  // Bucket sections by age band.
+  const inForYou = (s: SectionEntry) =>
+    s.alwaysCurrent || (currentBand !== null && (s.bands?.includes(currentBand) ?? false));
+
+  // "Coming Next" sections are exclusive to the next band — they intentionally
+  // exclude anything already shown in "For You" so we never render the same
+  // section twice.
+  const inComingNext = (s: SectionEntry) =>
+    !s.alwaysCurrent &&
+    nextBand !== null &&
+    (s.bands?.includes(nextBand) ?? false) &&
+    !(currentBand !== null && (s.bands?.includes(currentBand) ?? false));
+
+  const forYouAll = sections.filter(inForYou);
+  const forYouFeatured = forYouAll.filter((s) => s.featured);
+  const forYouGrid = forYouAll.filter((s) => !s.featured);
+  const exclusiveNext = sections.filter(inComingNext);
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6 pb-12">
+      <PageHeader />
+
+      {/* ── Child Selector Panel ────────────────────────────────────────── */}
+      <ChildSelectorPanel
+        childList={childList}
+        effectiveChild={effectiveChild}
+        onSelect={handleChildSelect}
+      />
+
+      {effectiveChild && currentBand && (
+        <>
+          {/* ── SECTION 1: For {Child Name} ─────────────────────────────── */}
+          <ForYouHeader
+            childName={effectiveChild.name}
+            band={currentBand}
+            ageGroup={ageGroup}
+          />
+
+          {/* Featured (full-width) */}
+          {forYouFeatured.length > 0 && (
+            <div className="space-y-3">
+              {forYouFeatured.map((s) => {
+                const node = s.render();
+                return node ? <div key={s.id}>{node}</div> : null;
+              })}
+            </div>
+          )}
+
+          {/* 2-column grid */}
+          {forYouGrid.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+              {forYouGrid.map((s) => {
+                const node = s.render();
+                return node ? <div key={s.id}>{node}</div> : null;
+              })}
+            </div>
+          )}
+
+          {/* ── SECTION 2: Explore Next Stage for {Child Name} ──────────── */}
+          {nextBand ? (
+            <>
+              <ExploreNextHeader
                 childName={effectiveChild.name}
+                band={nextBand}
               />
-            </HubSection>
-          </LockedBlock>
-        )}
 
-        {/* 🧾 PTM Prep Assistant — Prepare → Attend → Act flow */}
-        {effectiveChild && effectiveChild.age >= 3 && effectiveChild.age <= 17 && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
-          >
-            <HubSection
-              id="ptm-prep"
-              icon={<ClipboardList className="h-5 w-5 text-violet-600" />}
-              title="🧾 PTM Prep Assistant"
-              description="Prepare questions, take notes & turn them into action steps"
-              accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20"
-              tryFree={tryFreeFor("hub_ptm_prep")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}
-            >
-              <PtmPrepAssistant child={effectiveChild ? { id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age } : null} />
-            </HubSection>
-          </LockedBlock>
-        )}
-
-        {/* Smart Study Zone (Nursery–Class 10) — sits alongside Olympiad */}
-        {effectiveChild && effectiveChild.age >= 3 && effectiveChild.age <= 16 && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_smart_study")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
-          >
-            <HubSection
-              id="smart-study"
-              icon={<GraduationCap className="h-5 w-5 text-indigo-600" />}
-              title="📚 Smart Study Zone"
-              description="Adaptive learning Nursery → Class 10, with audio + practice"
-              accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20"
-              tryFree={tryFreeFor("hub_smart_study")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}
-            >
-              <SmartStudyZone />
-            </HubSection>
-          </LockedBlock>
-        )}
-
-        {/* 🎉 Event Prep — fancy dress + speech generator + DIY guide */}
-        {effectiveChild && effectiveChild.age >= 3 && effectiveChild.age <= 14 && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_event_prep")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
-          >
-            <HubSection
-              id="event-prep"
-              icon={<Sparkles className="h-5 w-5 text-pink-600" />}
-              title="🎉 Event Prep (School Ready)"
-              description="Fancy dress, DIY guide & speeches for school events"
-              accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20"
-              tryFree={tryFreeFor("hub_event_prep")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}
-            >
-              <EventPrepCard />
-            </HubSection>
-          </LockedBlock>
-        )}
-
-        {/* 5b. Phonics Learning — ages 1-6 only */}
-        {effectiveChild && totalAgeMonths >= 12 && totalAgeMonths < 72 && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_phonics")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
-          >
-            <HubSection
-              id="phonics"
-              icon={<AudioLines className="h-5 w-5 text-violet-600" />}
-              title="🔤 Phonics Learning"
-              description="Sound awareness → blending → reading, paced for your child's age"
-              accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20"
-              tryFree={tryFreeFor("hub_phonics")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}
-            >
-              <PhonicsLearning
-                childId={effectiveChild.id}
-                childName={effectiveChild.name}
-                totalAgeMonths={totalAgeMonths}
-              />
-            </HubSection>
-          </LockedBlock>
-        )}
-
-        {/* 6. Smart Olympiad Zone */}
-        {effectiveChild && effectiveChild.age >= 3 && effectiveChild.age <= 15 && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_olympiad")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
-          >
-            <HubSection
-              id="olympiad"
-              icon={<Trophy className="h-5 w-5 text-amber-600" />}
-              title="Smart Olympiad Zone"
-              description="Daily 5 MCQs, weekly tests, badges & insights"
-              accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
-              tryFree={tryFreeFor("hub_olympiad")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}
-            >
-              <OlympiadZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
-            </HubSection>
-          </LockedBlock>
-        )}
-
-        {/* 7. Life Skills Mode */}
-        {effectiveChild && effectiveChild.age >= 2 && effectiveChild.age <= 15 && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_life_skills")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
-          >
-            <HubSection
-              id="life-skills"
-              icon={<Compass className="h-5 w-5 text-emerald-600" />}
-              title="🧭 Life Skills Mode"
-              description="Daily real-life skills tailored to your child's age"
-              accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20"
-              tryFree={tryFreeFor("hub_life_skills")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
-            >
-              <LifeSkillsZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
-            </HubSection>
-          </LockedBlock>
-        )}
-
-
-      </div>
+              {exclusiveNext.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
+                  {exclusiveNext.map((s) => {
+                    const node = s.render();
+                    return node ? (
+                      <ComingNextWrapper key={s.id} band={nextBand}>
+                        {node}
+                      </ComingNextWrapper>
+                    ) : null;
+                  })}
+                </div>
+              ) : (
+                <StageMilestonesCard
+                  childName={effectiveChild.name}
+                  nextBand={nextBand}
+                />
+              )}
+            </>
+          ) : (
+            <GraduationStageCard childName={effectiveChild.name} />
+          )}
+        </>
+      )}
 
       {/* Bottom CTA */}
       <div className="text-center pt-2">
@@ -830,6 +961,73 @@ export default function ParentingHub() {
           </button>
         </Link>
       </div>
+    </div>
+  );
+}
+
+// ─── Section 1 / Section 2 headers ───────────────────────────────────────────
+function ForYouHeader({
+  childName,
+  band,
+  ageGroup,
+}: {
+  childName: string;
+  band: AgeBand;
+  ageGroup: AgeGroup | null;
+}) {
+  const groupInfo = ageGroup ? getAgeGroupInfo(ageGroup) : null;
+  return (
+    <div className="pt-1">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80">
+          Section 1 · For you
+        </span>
+        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1">
+          {bandLabel(band)}
+        </Badge>
+      </div>
+      <h2 className="font-quicksand text-xl font-bold text-foreground mt-1.5 flex items-center gap-2 flex-wrap">
+        <span>For {childName}</span>
+        {groupInfo && (
+          <span className="text-base font-medium text-muted-foreground">
+            {groupInfo.emoji} {groupInfo.label}
+          </span>
+        )}
+      </h2>
+      <p className="text-xs text-muted-foreground mt-0.5">
+        Personalised content tuned to where {childName} is right now.
+      </p>
+    </div>
+  );
+}
+
+function ExploreNextHeader({
+  childName,
+  band,
+}: {
+  childName: string;
+  band: AgeBand;
+}) {
+  return (
+    <div className="pt-6">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
+          Section 2 · Coming next
+        </span>
+        <Badge
+          variant="outline"
+          className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1 border-amber-300/60 dark:border-amber-400/30 text-amber-800 dark:text-amber-200"
+        >
+          {bandLabel(band)}
+        </Badge>
+      </div>
+      <h2 className="font-quicksand text-xl font-bold text-foreground mt-1.5">
+        Explore the next stage for {childName}
+      </h2>
+      <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
+        We grow as {childName} grows — here's a peek at what unlocks next so you
+        can plan ahead and stay one step in front.
+      </p>
     </div>
   );
 }
