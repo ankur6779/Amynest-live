@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
 const RECOVERY_TS_KEY = "amynest:react-instance-recovery:ts";
 const RECOVERY_COUNT_KEY = "amynest:react-instance-recovery:count";
@@ -140,8 +140,23 @@ export class ReactInstanceRecovery extends Component<
     return { fatal: true, message };
   }
 
-  componentDidCatch(_err: unknown): void {
-    /* getDerivedStateFromError already handled it */
+  componentDidCatch(err: unknown, info: ErrorInfo): void {
+    // Log the FULL component stack so we can see the ACTUAL component that
+    // threw, not just the immediate child of this error boundary. Without
+    // this, every crash is reported as "occurred in <FirebaseAuthProvider>"
+    // because that's what wraps everything below us in the tree — useless
+    // for debugging where the bad hook call really is.
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    // eslint-disable-next-line no-console
+    console.error(
+      "[amynest-recovery] CAUGHT:",
+      message,
+      "\nerror.stack:\n",
+      stack ?? "(no stack)",
+      "\nreact componentStack:\n",
+      info.componentStack ?? "(no component stack)",
+    );
   }
 
   private renderFallback(reloading: boolean) {

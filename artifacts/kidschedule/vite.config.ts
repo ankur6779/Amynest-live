@@ -135,6 +135,13 @@ export default defineConfig({
     // up because the renderer set the dispatcher on instance A while the
     // component reads it from instance B.
     entries: ["index.html"],
+    // HARD GUARANTEE that mid-session re-bundles never happen. With
+    // `noDiscovery: true`, Vite ONLY pre-bundles the explicit `include`
+    // list below — it never lazily discovers a new dep at request time and
+    // never bumps the browserHash mid-session. Any missing dep surfaces as
+    // a request-time 404 (loud failure) instead of a silent re-bundle that
+    // duplicates React in the browser.
+    noDiscovery: true,
     include: [
       "react",
       "react-dom",
