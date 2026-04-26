@@ -1,0 +1,105 @@
+Animate the neon ring logo (AmyNest AI) to create a premium, futuristic effect.
+
+GOAL:
+Make the ring feel alive using smooth glow, rotation, shimmer, and floating motion.
+
+--------------------------------------------------
+1. BASE STRUCTURE
+--------------------------------------------------
+- Use the existing logo image inside a circular container
+- Place neon ring around it
+
+Structure:
+[ Ring Layer ]
+[ Logo Image Center ]
+[ Glow Layers ]
+
+--------------------------------------------------
+2. RING ROTATION (SUBTLE)
+--------------------------------------------------
+- Apply slow rotation:
+  duration: 10–15 seconds
+  linear infinite
+
+IMPORTANT:
+- Keep it very slow (premium feel)
+- Avoid fast spinning
+
+--------------------------------------------------
+3. GLOW BREATHING EFFECT
+--------------------------------------------------
+- Animate outer glow intensity:
+
+Cycle:
+- low glow → high glow → low glow
+
+Timing:
+- 3–4 seconds ease-in-out
+
+Effect:
+- Looks like energy pulse
+
+--------------------------------------------------
+4. PULSE SCALE ANIMATION
+--------------------------------------------------
+- Slight scale animation:
+
+1 → 1.04 → 1
+
+- Sync with glow breathing
+
+--------------------------------------------------
+5. LIGHT SHIMMER SWEEP
+--------------------------------------------------
+- Add a highlight streak on ring
+
+Animation:
+- Rotates around ring every 4–5 seconds
+- Soft white/pink glow
+
+This creates “premium shine” effect
+
+--------------------------------------------------
+6. FLOATING EFFECT (VERY SUBTLE)
+--------------------------------------------------
+- Move entire ring slightly up/down:
+
+translateY:
+0px → -5px → 0px
+
+Timing:
+- 4–5 seconds
+
+--------------------------------------------------
+7. LIGHT FLARE (OPTIONAL BUT PREMIUM)
+--------------------------------------------------
+- Add 1 small star flare on ring edge
+
+Animation:
+- Flicker glow slightly
+- Very subtle
+
+--------------------------------------------------
+8. BACKGROUND GLOW
+--------------------------------------------------
+- Add radial glow under ring
+
+- Slight animation:
+  opacity pulse
+
+--------------------------------------------------
+9. PERFORMANCE
+--------------------------------------------------
+- Use CSS animations only
+- Avoid heavy JS
+
+--------------------------------------------------
+10. RESPONSIVE
+--------------------------------------------------
+- Maintain proportions on mobile
+
+--------------------------------------------------
+DELIVERABLE:
+- Smooth animated neon ring
+- Premium feel (not flashy)
+- Reusable component for splash/login/onboarding
