@@ -98,14 +98,14 @@ describe("MealRecipeCard – rendering", () => {
 
   it("is closed by default (defaultOpen = false)", () => {
     render(<MealRecipeCard recipe={sampleRecipe} />);
-    const details = screen.getByTestId("meal-recipe-card");
-    expect(details).not.toHaveAttribute("open");
+    const card = screen.getByTestId("meal-recipe-card");
+    expect(card).toHaveAttribute("data-state", "closed");
   });
 
   it("can be opened by default via defaultOpen prop", () => {
     render(<MealRecipeCard recipe={sampleRecipe} defaultOpen />);
-    const details = screen.getByTestId("meal-recipe-card");
-    expect(details).toHaveAttribute("open");
+    const card = screen.getByTestId("meal-recipe-card");
+    expect(card).toHaveAttribute("data-state", "open");
   });
 
   it("renders both recipe and nutrition sections together", () => {
@@ -234,10 +234,10 @@ describe("MealRecipeCard – interactive toggle", () => {
   it("opens when user clicks the summary", async () => {
     const user = userEvent.setup();
     render(<MealRecipeCard recipe={sampleRecipe} />);
-    const details = screen.getByTestId("meal-recipe-card");
+    const card = screen.getByTestId("meal-recipe-card");
     const summary = screen.getByText(/Recipe & Nutrition/i);
-    expect(details).not.toHaveAttribute("open");
+    expect(card).toHaveAttribute("data-state", "closed");
     await user.click(summary);
-    expect(details).toHaveAttribute("open");
+    expect(card).toHaveAttribute("data-state", "open");
   });
 });
