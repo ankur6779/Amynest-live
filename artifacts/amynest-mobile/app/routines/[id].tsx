@@ -514,6 +514,16 @@ export default function RoutineDetailScreen() {
     [items],
   );
 
+  // How many activities each chip will show when tapped — mirrors the displayItems filter
+  // so the badge accurately previews the count parents will see.
+  const ageBandCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const band of ageBands) {
+      counts[band] = items.filter((i) => !i.ageBand || i.ageBand === band).length;
+    }
+    return counts;
+  }, [items, ageBands]);
+
   // Items paired with their original index so actions still reference the correct position
   const displayItems = useMemo(
     () =>
@@ -848,7 +858,7 @@ export default function RoutineDetailScreen() {
                     }}
                   >
                     <Text style={{ fontSize: 11, fontWeight: "800", color: ageBandFilter === null ? "#FFFFFF" : "rgba(255,255,255,0.85)" }}>
-                      All
+                      All ({items.length})
                     </Text>
                   </TouchableOpacity>
                   {ageBands.map((band) => {
@@ -865,7 +875,7 @@ export default function RoutineDetailScreen() {
                         }}
                       >
                         <Text style={{ fontSize: 11, fontWeight: "800", color: active ? "#FFFFFF" : "#38bdf8" /* audit-ok: sky-400 age-band label */ }}>
-                          Ages {band.replace("-", "–")}
+                          Ages {band.replace("-", "–")} ({ageBandCounts[band] ?? 0})
                         </Text>
                       </TouchableOpacity>
                     );

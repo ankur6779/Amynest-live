@@ -955,6 +955,16 @@ export default function RoutineDetail() {
     [items],
   );
 
+  // How many activities each chip will show when tapped — mirrors the displayItems filter
+  // so the badge accurately previews the count parents will see.
+  const ageBandCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const band of ageBands) {
+      counts[band] = items.filter((i) => !i.ageBand || i.ageBand === band).length;
+    }
+    return counts;
+  }, [items, ageBands]);
+
   // Items paired with their original index so all actions still use the correct index
   const displayItems = useMemo(
     () =>
@@ -1322,7 +1332,7 @@ export default function RoutineDetail() {
             }`}
             aria-pressed={ageBandFilter === null}
           >
-            All
+            All ({items.length})
           </button>
           {ageBands.map((band) => (
             <button
@@ -1336,7 +1346,7 @@ export default function RoutineDetail() {
               }`}
               aria-pressed={ageBandFilter === band}
             >
-              Ages {band.replace("-", "–")}
+              Ages {band.replace("-", "–")} ({ageBandCounts[band] ?? 0})
             </button>
           ))}
         </div>
