@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator,
   Image, Platform, LayoutAnimation, UIManager,
@@ -60,6 +60,52 @@ function ageGroup(age: number, months = 0): { label: string; emoji: string } {
   return { label: "Teen", emoji: "🎒" };
 }
 
+// 2-section Parent Hub age band system. The 7 bands span 0–15y, while older
+// helpers (ageGroup / InfantHub) keep their own logic for backwards compat.
+export const HUB_AGE_BANDS = [
+  { idx: 0, label: "0–2", minMonths: 0,   maxMonths: 24  },
+  { idx: 1, label: "2–4", minMonths: 24,  maxMonths: 48  },
+  { idx: 2, label: "4–6", minMonths: 48,  maxMonths: 72  },
+  { idx: 3, label: "6–8", minMonths: 72,  maxMonths: 96  },
+  { idx: 4, label: "8–10", minMonths: 96, maxMonths: 120 },
+  { idx: 5, label: "10–12", minMonths: 120, maxMonths: 144 },
+  { idx: 6, label: "12–15", minMonths: 144, maxMonths: 180 },
+] as const;
+
+export function getAgeBand(ageYears: number, ageMonths = 0): number {
+  const total = ageYears * 12 + ageMonths;
+  if (total < 0) return 0;
+  for (let i = 0; i < HUB_AGE_BANDS.length; i++) {
+    const b = HUB_AGE_BANDS[i];
+    if (total >= b.minMonths && total < b.maxMonths) return i;
+  }
+  return HUB_AGE_BANDS.length - 1;
+}
+
+// Standalone metadata: which bands each tile is intended for. Lives outside
+// the JSX so it's easy to tweak/scale without touching the render code.
+const HUB_CONTENT_AGE_BANDS: Record<string, readonly number[]> = {
+  amy:                   [0, 1, 2, 3, 4, 5, 6],
+  articles:              [0, 1, 2, 3, 4, 5, 6],
+  tips:                  [0, 1, 2, 3, 4, 5, 6],
+  emotional:             [0, 1, 2, 3, 4, 5, 6],
+  "ptm-prep":            [2, 3, 4, 5, 6],
+  "smart-study":         [1, 2, 3, 4, 5, 6],
+  "morning-flow":        [2, 3, 4, 5, 6],
+  olympiad:              [3, 4, 5, 6],
+  "kids-control-center": [3, 4, 5, 6],
+  meals:                 [1, 2, 3, 4, 5, 6],
+  nutrition:             [0, 1, 2, 3, 4, 5, 6],
+  "event-prep":          [1, 2, 3, 4, 5],
+  activities:            [0, 1, 2, 3, 4, 5],
+  "story-hub":           [1, 2, 3, 4, 5],
+  "art-craft":           [1, 2, 3, 4],
+  worksheets:            [1, 2, 3, 4, 5],
+  facts:                 [2, 3, 4, 5, 6],
+  "life-skills":         [1, 2, 3, 4, 5, 6],
+  "meal-suggestions":    [0, 1, 2, 3, 4, 5, 6],
+};
+
 export default function HubScreen() {
   const { profileComplete, isLoading: profileLoading } = useProfileComplete();
   const insets = useSafeAreaInsets();
@@ -70,6 +116,9 @@ export default function HubScreen() {
   const styles = useMemo(() => makeStyles(c, mode), [c, mode]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [openSection, setOpenSection] = useState<string | null>("amy");
+  // Lazy-load Section 2 ("Explore") so the primary band content paints first.
+  // Reset on child switch so the deferred render happens fresh per child.
+  const [showExplore, setShowExplore] = useState(false);
   // First-Time Free + Preview Lock — every Parent Hub feature is usable ONCE
   // for free (server-tracked). After that, free users see a locked overlay;
   // premium users always get full access.
@@ -92,6 +141,16 @@ export default function HubScreen() {
   }, [children, selectedId]);
 
   const grp = effective ? ageGroup(effective.age, effective.ageMonths ?? 0) : null;
+  const currentBand = effective ? getAgeBand(effective.age, effective.ageMonths ?? 0) : 0;
+  const childName = effective?.name ?? "your child";
+
+  // Reset + lazy-mount Section 2 every time the active child changes so the
+  // primary "For You" content paints first.
+  useEffect(() => {
+    setShowExplore(false);
+    const t = setTimeout(() => setShowExplore(true), 250);
+    return () => clearTimeout(t);
+  }, [effective?.id, currentBand]);
 
   const askAmy = (q: string) => {
     router.push({ pathname: "/amy-ai", params: { q } });
@@ -219,666 +278,846 @@ export default function HubScreen() {
           <FuturePredictor childId={effective.id} />
         )}
 
-        {/* Sections — 2-col tile grid (open section spans full width) */}
-        <View style={styles.sectionsGrid}>
-        <View style={tileW("amy")}>
-        <Section
-          id="amy"
-          icon={<MaterialCommunityIcons name="brain" size={20} color="#fff" />}
-          accent={[brand.primary, "#FF4ECD"]}
-          title="Ask Amy AI"
-          desc="Warm, practical parenting advice — instantly"
-          open={openSection === "amy"}
-          onToggle={() => setOpenSection(s => s === "amy" ? null : "amy")}
-        >
-          <Text style={styles.sectionLead}>Tap a topic and Amy will reply.</Text>
-          <View style={styles.promptsGrid}>
-            {AMY_PROMPTS.map(p => (
-              <Pressable key={p.label} onPress={() => askAmy(p.prompt)} style={styles.promptChip}>
-                <Text style={{ fontSize: 18 }}>{p.emoji}</Text>
-                <Text style={styles.promptLabel}>{p.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Pressable onPress={() => router.push("/amy-ai")} style={styles.askAmyFull}>
-            <Ionicons name="chatbubbles" size={16} color="#fff" />
-            <Text style={styles.askAmyFullText}>Ask Amy anything</Text>
-            <Ionicons name="arrow-forward" size={16} color="#fff" />
-          </Pressable>
-        </Section>
-        </View>
+        {/* === 2-section age-band content system ===================
+            Only rendered when an active child is selected — the no-child
+            case is already covered upstream by the add-child empty state. */}
+          {effective && (() => {
+            type Tile = { id: string; ageBands: readonly number[]; node: React.ReactNode };
+            const allTiles: Tile[] = [];
 
-        <View style={tileW("articles")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_articles")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-        >
-        <Section
-          id="articles"
-          icon={<Ionicons name="book" size={20} color="#fff" />}
-          accent={["#10B981", "#34D399"]}
-          title="Parenting Articles"
-          desc="Research-based, age-matched reading"
-          open={openSection === "articles"}
-          onToggle={() => setOpenSection(s => s === "articles" ? null : "articles")}
-          onOpen={() => hubUsage.markFeatureUsed("hub_articles")}
-          tryFree={tryFreeFor("hub_articles")}
-        >
-          <Text style={styles.sectionLead}>
-            {effective
-              ? `Curated for ${effective.name}'s age. Open the web app for the full library.`
-              : "Add a child to see matched articles."}
-          </Text>
-          <View style={styles.articleList}>
-            {[
-              { t: "Positive discipline 101", e: "🌱" },
-              { t: "Building emotional vocabulary", e: "💬" },
-              { t: "Why play matters", e: "🧩" },
-            ].map(a => (
-              <View key={a.t} style={styles.articleItem}>
-                <Text style={{ fontSize: 18 }}>{a.e}</Text>
-                <Text style={styles.articleTitle}>{a.t}</Text>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+            allTiles.push({
+            id: "amy",
+            ageBands: HUB_CONTENT_AGE_BANDS.amy,
+            node: (
+              <View style={tileW("amy")}>
+              <Section
+                id="amy"
+                icon={<MaterialCommunityIcons name="brain" size={20} color="#fff" />}
+                accent={[brand.primary, "#FF4ECD"]}
+                title="Ask Amy AI"
+                desc="Warm, practical parenting advice — instantly"
+                open={openSection === "amy"}
+                onToggle={() => setOpenSection(s => s === "amy" ? null : "amy")}
+              >
+                <Text style={styles.sectionLead}>Tap a topic and Amy will reply.</Text>
+                <View style={styles.promptsGrid}>
+                  {AMY_PROMPTS.map(p => (
+                    <Pressable key={p.label} onPress={() => askAmy(p.prompt)} style={styles.promptChip}>
+                      <Text style={{ fontSize: 18 }}>{p.emoji}</Text>
+                      <Text style={styles.promptLabel}>{p.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Pressable onPress={() => router.push("/amy-ai")} style={styles.askAmyFull}>
+                  <Ionicons name="chatbubbles" size={16} color="#fff" />
+                  <Text style={styles.askAmyFullText}>Ask Amy anything</Text>
+                  <Ionicons name="arrow-forward" size={16} color="#fff" />
+                </Pressable>
+              </Section>
               </View>
-            ))}
-          </View>
-        </Section>
-        </LockedBlock>
-        </View>
-
-        <View style={tileW("tips")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_tips")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-        >
-        <Section
-          id="tips"
-          icon={<Ionicons name="sparkles" size={20} color="#fff" />}
-          accent={[brand.violet400, colors.light.primary]}
-          title="Daily Tips"
-          desc="Amy AI picks today's best tips"
-          open={openSection === "tips"}
-          onToggle={() => setOpenSection(s => s === "tips" ? null : "tips")}
-          onOpen={() => hubUsage.markFeatureUsed("hub_tips")}
-          tryFree={tryFreeFor("hub_tips")}
-        >
-          {effective ? (
-            <View style={styles.tipsList}>
-              {[
-                "Catch them being good — name the behavior aloud.",
-                "Offer two acceptable choices to defuse power struggles.",
-                "Read together for 10 min before bed to anchor the routine.",
-              ].map((t, i) => (
-                <View key={i} style={styles.tipCard}>
-                  <Text style={styles.tipNum}>{i + 1}</Text>
-                  <Text style={styles.tipText}>{t}</Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Text style={styles.sectionLead}>Add a child to unlock daily tips.</Text>
-          )}
-        </Section>
-        </LockedBlock>
-        </View>
-
-        <View style={tileW("emotional")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_emotional")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-        >
-        <Section
-          id="emotional"
-          icon={<Ionicons name="heart" size={20} color="#fff" />}
-          accent={["#F472B6", "#FF4ECD"]}
-          title="Emotional Support"
-          desc="For the tough parenting days"
-          open={openSection === "emotional"}
-          onToggle={() => setOpenSection(s => s === "emotional" ? null : "emotional")}
-          onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}
-          tryFree={tryFreeFor("hub_emotional")}
-        >
-          <Text style={styles.sectionLead}>Parenting is hard. Amy will listen — no judgment.</Text>
-          <View style={styles.emotionalGrid}>
-            {EMOTIONAL.map(e => (
-              <Pressable key={e.title} onPress={() => askAmy(e.prompt)} style={styles.emoCard}>
-                <Text style={{ fontSize: 22 }}>{e.emoji}</Text>
-                <Text style={styles.emoTitle}>{e.title}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </Section>
-        </LockedBlock>
-        </View>
-
-        {/* 🧾 PTM Prep Assistant — Prepare → Attend → Act flow */}
-        <View style={tileW("ptm-prep")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-          radius={18}
-        >
-          <Pressable
-            onPress={() => {
-              hubUsage.markFeatureUsed("hub_ptm_prep");
-              router.push({
-                pathname: "/ptm-prep" as never,
-                params: effective ? { childId: effective.id, childName: effective.name } as never : undefined,
-              });
-            }}
-            style={{ borderRadius: 18, overflow: "hidden" }}
-          >
-            <LinearGradient
-              colors={["#8B5CF6", "#EC4899"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ padding: 16, gap: 8 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name="clipboard" size={20} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🧾 PTM Prep Assistant</Text>
-                    {tryFreeFor("hub_ptm_prep") ? <TryFreeBadge /> : null}
-                  </View>
-                  <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Prepare · Attend · Act — for parent-teacher meetings</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </LockedBlock>
-        </View>
-
-        {/* Smart Study Zone — adaptive learning Nursery → Class 10 */}
-        <View style={tileW("smart-study")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_smart_study")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-          radius={18}
-        >
-          <Pressable
-            onPress={() => {
-              hubUsage.markFeatureUsed("hub_smart_study");
-              router.push("/study" as never);
-            }}
-            style={{ borderRadius: 18, overflow: "hidden" }}
-          >
-            <LinearGradient
-              colors={["#6366F1", "#A855F7"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ padding: 16, gap: 8 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name="school" size={20} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>📚 Smart Study Zone</Text>
-                    {tryFreeFor("hub_smart_study") ? <TryFreeBadge /> : null}
-                  </View>
-                  <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>Nursery → Class 10 · audio + practice</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </LockedBlock>
-        </View>
-
-        {/* 🌅 School Morning Flow — checklist + step flow + smart delay */}
-        <View style={tileW("morning-flow")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_morning_flow")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-          radius={18}
-        >
-          <Pressable
-            onPress={() => {
-              hubUsage.markFeatureUsed("hub_morning_flow");
-              router.push("/morning-flow" as never);
-            }}
-            style={{ borderRadius: 18, overflow: "hidden" }}
-          >
-            <LinearGradient
-              colors={["#F97316", "#FBBF24"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ padding: 16, gap: 8 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name="sunny" size={20} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🌅 School Morning Flow</Text>
-                    {tryFreeFor("hub_morning_flow") ? <TryFreeBadge /> : null}
-                  </View>
-                  <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Night prep · steps · smart delay</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </LockedBlock>
-        </View>
-
-        {/* 🏆 Olympiad Zone — daily quizzes + practice across subjects */}
-        <View style={tileW("olympiad")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_olympiad")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-          radius={18}
-        >
-          <Pressable
-            onPress={() => {
-              hubUsage.markFeatureUsed("hub_olympiad");
-              router.push("/olympiad" as never);
-            }}
-            style={{ borderRadius: 18, overflow: "hidden" }}
-          >
-            <LinearGradient
-              colors={["#F59E0B", "#EF4444"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ padding: 16, gap: 8 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name="trophy" size={20} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🏆 Olympiad Zone</Text>
-                    {tryFreeFor("hub_olympiad") ? <TryFreeBadge /> : null}
-                  </View>
-                  <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Daily 5 · practice · math, science, reasoning, GK</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </LockedBlock>
-        </View>
-
-        {/* 👶 Kids Control Center — Coming Soon + feedback */}
-        <View style={tileW("kids-control-center")}>
-          <Pressable
-            onPress={() => router.push("/kids-control-center" as never)}
-            style={{ borderRadius: 18, overflow: "hidden" }}
-            testID="card-kids-control-center"
-          >
-            <LinearGradient
-              colors={["#7C3AED", "#EC4899", "#F59E0B"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ padding: 16, gap: 8 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.22)", alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontSize: 22 }}>👶</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>Kids Control Center</Text>
-                    <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.25)" }}>
-                      <Text style={{ color: "#fff", fontSize: 9.5, fontWeight: "800" }}>SOON 🚀</Text>
+            ),
+          });
+          allTiles.push({
+            id: "articles",
+            ageBands: HUB_CONTENT_AGE_BANDS.articles,
+            node: (
+              <View style={tileW("articles")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_articles")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+              >
+              <Section
+                id="articles"
+                icon={<Ionicons name="book" size={20} color="#fff" />}
+                accent={["#10B981", "#34D399"]}
+                title="Parenting Articles"
+                desc="Research-based, age-matched reading"
+                open={openSection === "articles"}
+                onToggle={() => setOpenSection(s => s === "articles" ? null : "articles")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_articles")}
+                tryFree={tryFreeFor("hub_articles")}
+              >
+                <Text style={styles.sectionLead}>
+                  {effective
+                    ? `Curated for ${effective.name}'s age. Open the web app for the full library.`
+                    : "Add a child to see matched articles."}
+                </Text>
+                <View style={styles.articleList}>
+                  {[
+                    { t: "Positive discipline 101", e: "🌱" },
+                    { t: "Building emotional vocabulary", e: "💬" },
+                    { t: "Why play matters", e: "🧩" },
+                  ].map(a => (
+                    <View key={a.t} style={styles.articleItem}>
+                      <Text style={{ fontSize: 18 }}>{a.e}</Text>
+                      <Text style={styles.articleTitle}>{a.t}</Text>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
                     </View>
+                  ))}
+                </View>
+              </Section>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "tips",
+            ageBands: HUB_CONTENT_AGE_BANDS.tips,
+            node: (
+              <View style={tileW("tips")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_tips")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+              >
+              <Section
+                id="tips"
+                icon={<Ionicons name="sparkles" size={20} color="#fff" />}
+                accent={[brand.violet400, colors.light.primary]}
+                title="Daily Tips"
+                desc="Amy AI picks today's best tips"
+                open={openSection === "tips"}
+                onToggle={() => setOpenSection(s => s === "tips" ? null : "tips")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_tips")}
+                tryFree={tryFreeFor("hub_tips")}
+              >
+                {effective ? (
+                  <View style={styles.tipsList}>
+                    {[
+                      "Catch them being good — name the behavior aloud.",
+                      "Offer two acceptable choices to defuse power struggles.",
+                      "Read together for 10 min before bed to anchor the routine.",
+                    ].map((t, i) => (
+                      <View key={i} style={styles.tipCard}>
+                        <Text style={styles.tipNum}>{i + 1}</Text>
+                        <Text style={styles.tipText}>{t}</Text>
+                      </View>
+                    ))}
                   </View>
-                  <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Smart control · Safe child experience</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.85)" />
+                ) : (
+                  <Text style={styles.sectionLead}>Add a child to unlock daily tips.</Text>
+                )}
+              </Section>
+              </LockedBlock>
               </View>
-            </LinearGradient>
-          </Pressable>
-        </View>
-
-        {/* 🍱 Tiffin & Meal Suggestions */}
-        <View style={tileW("meals")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_meals_tile")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-          radius={18}
-        >
-          <Pressable
-            onPress={() => {
-              hubUsage.markFeatureUsed("hub_meals_tile");
-              router.push("/meals" as never);
-            }}
-            style={{ borderRadius: 18, overflow: "hidden" }}
-          >
-            <LinearGradient
-              colors={["#10B981", "#84CC16"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ padding: 16, gap: 8 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                  <MaterialCommunityIcons name="food-apple" size={22} color="#fff" />
+            ),
+          });
+          allTiles.push({
+            id: "emotional",
+            ageBands: HUB_CONTENT_AGE_BANDS.emotional,
+            node: (
+              <View style={tileW("emotional")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_emotional")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+              >
+              <Section
+                id="emotional"
+                icon={<Ionicons name="heart" size={20} color="#fff" />}
+                accent={["#F472B6", "#FF4ECD"]}
+                title="Emotional Support"
+                desc="For the tough parenting days"
+                open={openSection === "emotional"}
+                onToggle={() => setOpenSection(s => s === "emotional" ? null : "emotional")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}
+                tryFree={tryFreeFor("hub_emotional")}
+              >
+                <Text style={styles.sectionLead}>Parenting is hard. Amy will listen — no judgment.</Text>
+                <View style={styles.emotionalGrid}>
+                  {EMOTIONAL.map(e => (
+                    <Pressable key={e.title} onPress={() => askAmy(e.prompt)} style={styles.emoCard}>
+                      <Text style={{ fontSize: 22 }}>{e.emoji}</Text>
+                      <Text style={styles.emoTitle}>{e.title}</Text>
+                    </Pressable>
+                  ))}
                 </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🍱 Tiffin & Meals</Text>
-                    {tryFreeFor("hub_meals_tile") ? <TryFreeBadge /> : null}
+              </Section>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "ptm-prep",
+            ageBands: HUB_CONTENT_AGE_BANDS["ptm-prep"],
+            node: (
+              <View style={tileW("ptm-prep")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+                radius={18}
+              >
+                <Pressable
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_ptm_prep");
+                    router.push({
+                      pathname: "/ptm-prep" as never,
+                      params: effective ? { childId: effective.id, childName: effective.name } as never : undefined,
+                    });
+                  }}
+                  style={{ borderRadius: 18, overflow: "hidden" }}
+                >
+                  <LinearGradient
+                    colors={["#8B5CF6", "#EC4899"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ padding: 16, gap: 8 }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name="clipboard" size={20} color="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🧾 PTM Prep Assistant</Text>
+                          {tryFreeFor("hub_ptm_prep") ? <TryFreeBadge /> : null}
+                        </View>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Prepare · Attend · Act — for parent-teacher meetings</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "smart-study",
+            ageBands: HUB_CONTENT_AGE_BANDS["smart-study"],
+            node: (
+              <View style={tileW("smart-study")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_smart_study")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+                radius={18}
+              >
+                <Pressable
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_smart_study");
+                    router.push("/study" as never);
+                  }}
+                  style={{ borderRadius: 18, overflow: "hidden" }}
+                >
+                  <LinearGradient
+                    colors={["#6366F1", "#A855F7"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ padding: 16, gap: 8 }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name="school" size={20} color="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>📚 Smart Study Zone</Text>
+                          {tryFreeFor("hub_smart_study") ? <TryFreeBadge /> : null}
+                        </View>
+                        <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>Nursery → Class 10 · audio + practice</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "morning-flow",
+            ageBands: HUB_CONTENT_AGE_BANDS["morning-flow"],
+            node: (
+              <View style={tileW("morning-flow")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_morning_flow")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+                radius={18}
+              >
+                <Pressable
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_morning_flow");
+                    router.push("/morning-flow" as never);
+                  }}
+                  style={{ borderRadius: 18, overflow: "hidden" }}
+                >
+                  <LinearGradient
+                    colors={["#F97316", "#FBBF24"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ padding: 16, gap: 8 }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name="sunny" size={20} color="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🌅 School Morning Flow</Text>
+                          {tryFreeFor("hub_morning_flow") ? <TryFreeBadge /> : null}
+                        </View>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Night prep · steps · smart delay</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "olympiad",
+            ageBands: HUB_CONTENT_AGE_BANDS.olympiad,
+            node: (
+              <View style={tileW("olympiad")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_olympiad")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+                radius={18}
+              >
+                <Pressable
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_olympiad");
+                    router.push("/olympiad" as never);
+                  }}
+                  style={{ borderRadius: 18, overflow: "hidden" }}
+                >
+                  <LinearGradient
+                    colors={["#F59E0B", "#EF4444"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ padding: 16, gap: 8 }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name="trophy" size={20} color="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🏆 Olympiad Zone</Text>
+                          {tryFreeFor("hub_olympiad") ? <TryFreeBadge /> : null}
+                        </View>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Daily 5 · practice · math, science, reasoning, GK</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "kids-control-center",
+            ageBands: HUB_CONTENT_AGE_BANDS["kids-control-center"],
+            node: (
+              <View style={tileW("kids-control-center")}>
+                <Pressable
+                  onPress={() => router.push("/kids-control-center" as never)}
+                  style={{ borderRadius: 18, overflow: "hidden" }}
+                  testID="card-kids-control-center"
+                >
+                  <LinearGradient
+                    colors={["#7C3AED", "#EC4899", "#F59E0B"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ padding: 16, gap: 8 }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.22)", alignItems: "center", justifyContent: "center" }}>
+                        <Text style={{ fontSize: 22 }}>👶</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>Kids Control Center</Text>
+                          <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.25)" }}>
+                            <Text style={{ color: "#fff", fontSize: 9.5, fontWeight: "800" }}>SOON 🚀</Text>
+                          </View>
+                        </View>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Smart control · Safe child experience</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.85)" />
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "meals",
+            ageBands: HUB_CONTENT_AGE_BANDS.meals,
+            node: (
+              <View style={tileW("meals")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_meals_tile")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+                radius={18}
+              >
+                <Pressable
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_meals_tile");
+                    router.push("/meals" as never);
+                  }}
+                  style={{ borderRadius: 18, overflow: "hidden" }}
+                >
+                  <LinearGradient
+                    colors={["#10B981", "#84CC16"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ padding: 16, gap: 8 }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                        <MaterialCommunityIcons name="food-apple" size={22} color="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🍱 Tiffin & Meals</Text>
+                          {tryFreeFor("hub_meals_tile") ? <TryFreeBadge /> : null}
+                        </View>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Smart suggestions tuned to your child's taste</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "nutrition",
+            ageBands: HUB_CONTENT_AGE_BANDS.nutrition,
+            node: (
+              <View style={tileW("nutrition")}>
+                <Pressable
+                  onPress={() => router.push("/nutrition" as never)}
+                  style={{ borderRadius: 18, overflow: "hidden" }}
+                >
+                  <LinearGradient
+                    colors={["#7c3aed", "#4f46e5"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ padding: 16, gap: 8 }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                        <MaterialCommunityIcons name="food-apple-outline" size={22} color="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🥗 Nutrition Hub</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>न्यूट्रिशन हब · Age-wise nutrition science</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 6 }}>
+                      {["WHO", "ICMR", "Indian meals", "Family mode"].map(tag => (
+                        <View key={tag} style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
+                          <Text style={{ color: "#fff", fontSize: 9, fontWeight: "600" }}>{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "event-prep",
+            ageBands: HUB_CONTENT_AGE_BANDS["event-prep"],
+            node: (
+              <View style={tileW("event-prep")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_event_prep")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+                radius={18}
+              >
+                <Pressable
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_event_prep");
+                    router.push("/event-prep" as never);
+                  }}
+                  style={{ borderRadius: 18, overflow: "hidden" }}
+                >
+                  <LinearGradient
+                    colors={["#EC4899", "#F97316"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ padding: 16, gap: 8 }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                        <MaterialCommunityIcons name="party-popper" size={22} color="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🎉 Event Prep</Text>
+                          {tryFreeFor("hub_event_prep") ? <TryFreeBadge /> : null}
+                        </View>
+                        <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>Fancy dress · DIY guide · speeches</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "activities",
+            ageBands: HUB_CONTENT_AGE_BANDS.activities,
+            node: (
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_activities")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+                style={tileW("activities")}
+              >
+              <Section
+                id="activities"
+                icon={<Ionicons name="color-palette" size={20} color="#fff" />}
+                accent={["#FB7185", "#F59E0B"]}
+                title="Activities & Learning"
+                desc="Games, audio lessons & more"
+                open={openSection === "activities"}
+                onToggle={() => setOpenSection(s => s === "activities" ? null : "activities")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_activities")}
+                tryFree={tryFreeFor("hub_activities")}
+              >
+                <Text style={styles.sectionLead}>Educational activities curated by Amy for your child's age group.</Text>
+
+                {/* Gaming Reward entry */}
+                <Pressable
+                  onPress={() => router.push("/games" as never)}
+                  style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}
+                >
+                  <LinearGradient
+                    colors={["#7b3ff2", "#a855f7"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
+                  >
+                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <Ionicons name="game-controller" size={20} color="#fff" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Gaming Reward</Text>
+                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>10 educational mini-games · earn points</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
+                  </LinearGradient>
+                </Pressable>
+
+                {/* Rewards Shop entry */}
+                <Pressable
+                  onPress={() => router.push("/rewards" as never)}
+                  style={{ borderRadius: 14, overflow: "hidden", marginTop: 8 }}
+                >
+                  <LinearGradient
+                    colors={["#f59e0b", "#ec4899"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
+                  >
+                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <Ionicons name="gift" size={20} color="#fff" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Rewards Shop</Text>
+                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>Spend points on real-world treats</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
+                  </LinearGradient>
+                </Pressable>
+
+                {/* Audio Lessons entry */}
+                <Pressable
+                  onPress={() => router.push("/audio-lessons" as never)}
+                  style={{ borderRadius: 14, overflow: "hidden", marginTop: 8 }}
+                >
+                  <LinearGradient
+                    colors={["#0e7490", "#0891b2"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
+                  >
+                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <Ionicons name="headset" size={20} color="#fff" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Amy Audio Lessons</Text>
+                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>3–5 min parenting lessons · hands-free</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
+                  </LinearGradient>
+                </Pressable>
+
+              </Section>
+              </LockedBlock>
+            ),
+          });
+          allTiles.push({
+            id: "story-hub",
+            ageBands: HUB_CONTENT_AGE_BANDS["story-hub"],
+            node: (
+              <View style={tileW("story-hub")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_story_hub")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+                radius={18}
+              >
+                <Pressable
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_story_hub");
+                    router.push("/stories" as never);
+                  }}
+                  style={{ borderRadius: 18, overflow: "hidden" }}
+                >
+                  <LinearGradient
+                    colors={["#EC4899", "#A855F7"]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={{ padding: 16, gap: 8 }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name="film" size={22} color="#fff" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🎬 Kids Story Hub</Text>
+                          {tryFreeFor("hub_story_hub") ? <TryFreeBadge /> : null}
+                        </View>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Bedtime, moral & fun stories — Netflix-style</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "art-craft",
+            ageBands: HUB_CONTENT_AGE_BANDS["art-craft"],
+            node: (
+              <View style={tileW("art-craft")}>
+              <Section
+                id="art-craft"
+                icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
+                accent={["#F472B6", "#A855F7"]}
+                title="🎨 Art & Craft Videos"
+                desc="Short creative videos to inspire your child"
+                open={openSection === "art-craft"}
+                onToggle={() => setOpenSection(s => s === "art-craft" ? null : "art-craft")}
+              >
+                <ArtCraftReels />
+              </Section>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "worksheets",
+            ageBands: HUB_CONTENT_AGE_BANDS.worksheets,
+            node: (
+              <View style={tileW("worksheets")}>
+              <Section
+                id="worksheets"
+                icon={<MaterialCommunityIcons name="file-document-outline" size={20} color="#fff" />}
+                accent={["#0EA5E9", "#6366F1"]}
+                title="📄 Printable Worksheets"
+                desc="Coloring, math, tracing & more · 5 free / day"
+                open={openSection === "worksheets"}
+                onToggle={() => setOpenSection(s => s === "worksheets" ? null : "worksheets")}
+              >
+                <PrintableWorksheets />
+              </Section>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "facts",
+            ageBands: HUB_CONTENT_AGE_BANDS.facts,
+            node: (
+              <View style={tileW("facts")}>
+              <Section
+                id="facts"
+                icon={<Ionicons name="sparkles" size={20} color="#fff" />}
+                accent={["#F59E0B", "#FB7185"]}
+                title="✨ Amazing Facts"
+                desc="Mind-blowing facts for curious kids"
+                open={openSection === "facts"}
+                onToggle={() => setOpenSection(s => s === "facts" ? null : "facts")}
+              >
+                {effective ? (
+                  <AmazingFacts ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)} />
+                ) : (
+                  <Text style={styles.sectionLead}>Add a child to unlock age-matched facts.</Text>
+                )}
+              </Section>
+              </View>
+            ),
+          });
+          if (effective && effective.age >= 2 && effective.age <= 15) {
+            allTiles.push({
+              id: "life-skills",
+              ageBands: HUB_CONTENT_AGE_BANDS["life-skills"],
+              node: (
+                <LockedBlock
+                  reason="hub_locked"
+                  locked={hubUsage.isFeatureLocked("hub_life_skills")}
+                  label="Unlock to continue"
+                  cta="Unlock Premium"
+                  style={tileW("life-skills")}
+                >
+                  <Section
+                    id="life-skills"
+                    icon={<Ionicons name="compass" size={20} color="#fff" />}
+                    accent={["#10B981", "#34D399"]}
+                    title="🧭 Life Skills Mode"
+                    desc="Daily real-life skills, ages 2–15"
+                    open={openSection === "life-skills"}
+                    onToggle={() => setOpenSection(s => s === "life-skills" ? null : "life-skills")}
+                    onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
+                    tryFree={tryFreeFor("hub_life_skills")}
+                  >
+                    <LifeSkillsZone child={{ id: effective.id, name: effective.name, age: effective.age }} />
+                  </Section>
+                </LockedBlock>
+              ),
+            });
+          }
+          allTiles.push({
+            id: "meal-suggestions",
+            ageBands: HUB_CONTENT_AGE_BANDS["meal-suggestions"],
+            node: (
+              <View style={tileW("meal-suggestions")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_ai_meal_generator")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+              >
+              <Section
+                id="meal-suggestions"
+                icon={<MaterialCommunityIcons name="food" size={20} color="#fff" />}
+                accent={["#10B981", "#84CC16"]}
+                title="🍱 Amy AI Meal Suggestions"
+                desc="AI-generated tiffin & meal ideas for your child"
+                open={openSection === "meal-suggestions"}
+                onToggle={() => setOpenSection(s => s === "meal-suggestions" ? null : "meal-suggestions")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_ai_meal_generator")}
+                tryFree={tryFreeFor("hub_ai_meal_generator")}
+              >
+                <AiMealGenerator childAge={effective?.age} />
+              </Section>
+              </LockedBlock>
+              </View>
+            ),
+          });
+
+            // Filter into the two age-band sections. A tile lives in Section 1
+            // when its ageBands include the child's current band. Section 2 is
+            // strictly forward-looking: a tile only enters Section 2 when it has
+            // at least one *future* band (> currentBand). Tiles whose bands are
+            // all in the past are intentionally hidden — Explore is for
+            // "what's coming next", not catch-up content.
+            const section1 = allTiles.filter(t => t.ageBands.includes(currentBand));
+            const section2 = allTiles.filter(t =>
+              !t.ageBands.includes(currentBand) &&
+              t.ageBands.some(b => b > currentBand)
+            );
+
+            // Render-time guard: assert no overlap between the two sections.
+            if (__DEV__) {
+              const overlap = section1.find(s1 => section2.some(s2 => s2.id === s1.id));
+              if (overlap) {
+                // eslint-disable-next-line no-console
+                console.warn(`[hub] Tile "${overlap.id}" appears in both sections — check HUB_CONTENT_AGE_BANDS.`);
+              }
+            }
+
+            // Group Section 2 tiles by their nearest *future* band only.
+            const groupsMap = new Map<number, Tile[]>();
+            for (const tile of section2) {
+              const future = tile.ageBands
+                .filter(b => b > currentBand)
+                .sort((a, b) => a - b);
+              if (future.length === 0) continue;
+              const groupBand = future[0];
+              const arr = groupsMap.get(groupBand) ?? [];
+              arr.push(tile);
+              groupsMap.set(groupBand, arr);
+            }
+            const orderedBands = [...groupsMap.keys()].sort((a, b) => a - b);
+            const nearestFutureBand = orderedBands[0] ?? null;
+            const isLatestStage = orderedBands.length === 0;
+
+            return (
+              <>
+                {/* SECTION 1 — primary content for the child's current band */}
+                <View style={styles.bandSectionHeader}>
+                  <Text style={styles.bandSectionTitle}>For {childName}</Text>
+                  <Text style={styles.bandSectionSub}>
+                    Age {HUB_AGE_BANDS[currentBand].label} · matched to {childName}
+                  </Text>
+                </View>
+                <View style={styles.sectionsGrid}>
+                  {section1.map(t => (
+                    <React.Fragment key={t.id}>{t.node}</React.Fragment>
+                  ))}
+                </View>
+
+                {/* SECTION 2 — Explore Next Stage, lazy-mounted, dimmed.
+                    Only future bands ever appear here; if the child is in the
+                    last band we hide the section entirely (isLatestStage). */}
+                {showExplore && !isLatestStage && (
+                  <View style={styles.exploreSection}>
+                    <View style={styles.bandSectionHeader}>
+                      <Text style={styles.bandSectionTitle}>
+                        Explore Next Stage for {childName}
+                      </Text>
+                      <Text style={styles.bandSectionSub}>
+                        Preview what's coming up as {childName} grows
+                      </Text>
+                    </View>
+                    {orderedBands.map(band => (
+                      <View key={band} style={styles.exploreGroup}>
+                        <View style={styles.exploreGroupHeader}>
+                          <Text style={styles.exploreGroupTitle}>
+                            For Age {HUB_AGE_BANDS[band].label}
+                          </Text>
+                          {band === nearestFutureBand && (
+                            <View style={styles.comingNextPill}>
+                              <Text style={styles.comingNextText}>Coming Up Next</Text>
+                            </View>
+                          )}
+                        </View>
+                        <View style={styles.exploreGroupBody}>
+                          <View style={[styles.sectionsGrid, styles.exploreDimmed]}>
+                            {(groupsMap.get(band) ?? []).map(t => (
+                              <React.Fragment key={t.id}>{t.node}</React.Fragment>
+                            ))}
+                          </View>
+                          <View pointerEvents="none" style={styles.exploreOverlay} />
+                        </View>
+                      </View>
+                    ))}
                   </View>
-                  <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Smart suggestions tuned to your child's taste</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </LockedBlock>
-        </View>
-
-        {/* 🥗 Nutrition Hub */}
-        <View style={tileW("nutrition")}>
-          <Pressable
-            onPress={() => router.push("/nutrition" as never)}
-            style={{ borderRadius: 18, overflow: "hidden" }}
-          >
-            <LinearGradient
-              colors={["#7c3aed", "#4f46e5"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ padding: 16, gap: 8 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                  <MaterialCommunityIcons name="food-apple-outline" size={22} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🥗 Nutrition Hub</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>न्यूट्रिशन हब · Age-wise nutrition science</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-              </View>
-              <View style={{ flexDirection: "row", gap: 6 }}>
-                {["WHO", "ICMR", "Indian meals", "Family mode"].map(tag => (
-                  <View key={tag} style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
-                    <Text style={{ color: "#fff", fontSize: 9, fontWeight: "600" }}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </View>
-
-        {/* 🎉 Event Prep — fancy dress + DIY guide + speech generator */}
-        <View style={tileW("event-prep")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_event_prep")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-          radius={18}
-        >
-          <Pressable
-            onPress={() => {
-              hubUsage.markFeatureUsed("hub_event_prep");
-              router.push("/event-prep" as never);
-            }}
-            style={{ borderRadius: 18, overflow: "hidden" }}
-          >
-            <LinearGradient
-              colors={["#EC4899", "#F97316"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ padding: 16, gap: 8 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                  <MaterialCommunityIcons name="party-popper" size={22} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🎉 Event Prep</Text>
-                    {tryFreeFor("hub_event_prep") ? <TryFreeBadge /> : null}
-                  </View>
-                  <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>Fancy dress · DIY guide · speeches</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </LockedBlock>
-        </View>
-
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_activities")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-          style={tileW("activities")}
-        >
-        <Section
-          id="activities"
-          icon={<Ionicons name="color-palette" size={20} color="#fff" />}
-          accent={["#FB7185", "#F59E0B"]}
-          title="Activities & Learning"
-          desc="Games, audio lessons & more"
-          open={openSection === "activities"}
-          onToggle={() => setOpenSection(s => s === "activities" ? null : "activities")}
-          onOpen={() => hubUsage.markFeatureUsed("hub_activities")}
-          tryFree={tryFreeFor("hub_activities")}
-        >
-          <Text style={styles.sectionLead}>Educational activities curated by Amy for your child's age group.</Text>
-
-          {/* Gaming Reward entry */}
-          <Pressable
-            onPress={() => router.push("/games" as never)}
-            style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}
-          >
-            <LinearGradient
-              colors={["#7b3ff2", "#a855f7"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
-            >
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="game-controller" size={20} color="#fff" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Gaming Reward</Text>
-                <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>10 educational mini-games · earn points</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
-            </LinearGradient>
-          </Pressable>
-
-          {/* Rewards Shop entry */}
-          <Pressable
-            onPress={() => router.push("/rewards" as never)}
-            style={{ borderRadius: 14, overflow: "hidden", marginTop: 8 }}
-          >
-            <LinearGradient
-              colors={["#f59e0b", "#ec4899"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
-            >
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="gift" size={20} color="#fff" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Rewards Shop</Text>
-                <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>Spend points on real-world treats</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
-            </LinearGradient>
-          </Pressable>
-
-          {/* Audio Lessons entry */}
-          <Pressable
-            onPress={() => router.push("/audio-lessons" as never)}
-            style={{ borderRadius: 14, overflow: "hidden", marginTop: 8 }}
-          >
-            <LinearGradient
-              colors={["#0e7490", "#0891b2"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
-            >
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="headset" size={20} color="#fff" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Amy Audio Lessons</Text>
-                <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>3–5 min parenting lessons · hands-free</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
-            </LinearGradient>
-          </Pressable>
-
-        </Section>
-        </LockedBlock>
-
-        {/* 🎬 Kids Story Hub — Netflix-style story browsing */}
-        <View style={tileW("story-hub")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_story_hub")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-          radius={18}
-        >
-          <Pressable
-            onPress={() => {
-              hubUsage.markFeatureUsed("hub_story_hub");
-              router.push("/stories" as never);
-            }}
-            style={{ borderRadius: 18, overflow: "hidden" }}
-          >
-            <LinearGradient
-              colors={["#EC4899", "#A855F7"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ padding: 16, gap: 8 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name="film" size={22} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🎬 Kids Story Hub</Text>
-                    {tryFreeFor("hub_story_hub") ? <TryFreeBadge /> : null}
-                  </View>
-                  <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Bedtime, moral & fun stories — Netflix-style</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </LockedBlock>
-        </View>
-
-        {/* Art & Craft Videos — Google Drive */}
-        <View style={tileW("art-craft")}>
-        <Section
-          id="art-craft"
-          icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
-          accent={["#F472B6", "#A855F7"]}
-          title="🎨 Art & Craft Videos"
-          desc="Short creative videos to inspire your child"
-          open={openSection === "art-craft"}
-          onToggle={() => setOpenSection(s => s === "art-craft" ? null : "art-craft")}
-        >
-          <ArtCraftReels />
-        </Section>
-        </View>
-
-        {/* Printable Worksheets — Google Drive */}
-        <View style={tileW("worksheets")}>
-        <Section
-          id="worksheets"
-          icon={<MaterialCommunityIcons name="file-document-outline" size={20} color="#fff" />}
-          accent={["#0EA5E9", "#6366F1"]}
-          title="📄 Printable Worksheets"
-          desc="Coloring, math, tracing & more · 5 free / day"
-          open={openSection === "worksheets"}
-          onToggle={() => setOpenSection(s => s === "worksheets" ? null : "worksheets")}
-        >
-          <PrintableWorksheets />
-        </Section>
-        </View>
-
-        {/* Amazing Facts */}
-        <View style={tileW("facts")}>
-        <Section
-          id="facts"
-          icon={<Ionicons name="sparkles" size={20} color="#fff" />}
-          accent={["#F59E0B", "#FB7185"]}
-          title="✨ Amazing Facts"
-          desc="Mind-blowing facts for curious kids"
-          open={openSection === "facts"}
-          onToggle={() => setOpenSection(s => s === "facts" ? null : "facts")}
-        >
-          {effective ? (
-            <AmazingFacts ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)} />
-          ) : (
-            <Text style={styles.sectionLead}>Add a child to unlock age-matched facts.</Text>
-          )}
-        </Section>
-        </View>
-
-        {effective && effective.age >= 2 && effective.age <= 15 && (
-          <LockedBlock
-            reason="hub_locked"
-            locked={hubUsage.isFeatureLocked("hub_life_skills")}
-            label="Unlock to continue"
-            cta="Unlock Premium"
-            style={tileW("life-skills")}
-          >
-            <Section
-              id="life-skills"
-              icon={<Ionicons name="compass" size={20} color="#fff" />}
-              accent={["#10B981", "#34D399"]}
-              title="🧭 Life Skills Mode"
-              desc="Daily real-life skills, ages 2–15"
-              open={openSection === "life-skills"}
-              onToggle={() => setOpenSection(s => s === "life-skills" ? null : "life-skills")}
-              onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
-              tryFree={tryFreeFor("hub_life_skills")}
-            >
-              <LifeSkillsZone child={{ id: effective.id, name: effective.name, age: effective.age }} />
-            </Section>
-          </LockedBlock>
-        )}
-        </View>
-
-        {/* 🍱 Amy AI Meal Suggestions */}
-        <View style={tileW("meal-suggestions")}>
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_ai_meal_generator")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-        >
-        <Section
-          id="meal-suggestions"
-          icon={<MaterialCommunityIcons name="food" size={20} color="#fff" />}
-          accent={["#10B981", "#84CC16"]}
-          title="🍱 Amy AI Meal Suggestions"
-          desc="AI-generated tiffin & meal ideas for your child"
-          open={openSection === "meal-suggestions"}
-          onToggle={() => setOpenSection(s => s === "meal-suggestions" ? null : "meal-suggestions")}
-          onOpen={() => hubUsage.markFeatureUsed("hub_ai_meal_generator")}
-          tryFree={tryFreeFor("hub_ai_meal_generator")}
-        >
-          <AiMealGenerator childAge={effective?.age} />
-        </Section>
-        </LockedBlock>
-        </View>
+                )}
+              </>
+            );
+          })()}
 
         {/* Bottom CTA */}
         <Pressable onPress={() => router.push("/(tabs)/routines")} style={styles.bottomCta}>
@@ -1089,5 +1328,34 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
 
     bottomCta: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12 },
     bottomCtaText: { color: "#FF4ECD", fontWeight: "700" },
+
+    // 2-section age-band layout: section/group headers and Explore styling.
+    bandSectionHeader: { gap: 2, marginTop: 4, marginBottom: 4 },
+    bandSectionTitle: { color: c.foreground, fontSize: 18, fontWeight: "800", letterSpacing: -0.2 },
+    bandSectionSub: { color: c.textMuted, fontSize: 12 },
+
+    exploreSection: { gap: 14, marginTop: 8 },
+    exploreGroup: { gap: 8 },
+    exploreGroupHeader: {
+      flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap",
+      paddingHorizontal: 4,
+    },
+    exploreGroupTitle: { color: c.foreground, fontSize: 14, fontWeight: "800" },
+    comingNextPill: {
+      paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999,
+      backgroundColor: "rgba(255,78,205,0.18)",
+      borderWidth: 1, borderColor: "rgba(255,78,205,0.5)",
+    },
+    comingNextText: {
+      color: "#FF4ECD", fontSize: 10, fontWeight: "800",
+      letterSpacing: 0.5, textTransform: "uppercase",
+    },
+    exploreGroupBody: { position: "relative" },
+    exploreDimmed: { opacity: 0.6 },
+    exploreOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: isLight ? "rgba(15,23,42,0.04)" : "rgba(0,0,0,0.18)",
+      borderRadius: 16,
+    },
   });
 }
