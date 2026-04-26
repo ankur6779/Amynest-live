@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles, Target, Lightbulb, ChevronDown, ChevronUp, CheckCircle2,
-  RefreshCw, BookOpen, Trophy, AlertCircle, Loader2,
+  RefreshCw, BookOpen, Trophy, AlertCircle, Loader2, Download, FileText,
 } from "lucide-react";
 import { AudioPlayButton, preloadAmyVoice } from "@/components/audio-play-button";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -162,6 +162,7 @@ export function PhonicsLearning({
   return (
     <div className="space-y-4">
       <PersonalizationBadge level={level} childName={childName} />
+      <PhonicsDownloadCard childId={childId} />
       <TodaysActivityCard
         level={level}
         dailyItems={dailyItems.length > 0 ? dailyItems : items}
@@ -761,6 +762,158 @@ function ParentTipsCard({
               </div>
             ))}
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Card 0: Download printable workbook (PDF) ───────────────────────────────
+
+const PHONICS_PDF = {
+  fileKey: "phonics-mastery-15-sets",
+  fileName: "Phonics-Mastery-15-Sets.pdf",
+  url: "/phonics-mastery-15-sets.pdf",
+} as const;
+
+function PhonicsDownloadCard({ childId }: { childId: number | string }) {
+  const numericChildId =
+    typeof childId === "number"
+      ? childId
+      : Number.isFinite(Number(childId))
+        ? Number(childId)
+        : null;
+  const authFetch = useAuthFetch();
+  const [downloading, setDownloading] = useState(false);
+  const [downloadCount, setDownloadCount] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Hydrate the historical count once on mount so the badge isn't blank.
+  useEffect(() => {
+    const ctrl = new AbortController();
+    void (async () => {
+      try {
+        const res = await authFetch("/api/phonics/downloads", {
+          method: "GET",
+          signal: ctrl.signal,
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          ok?: boolean;
+          downloads?: Array<{ fileKey: string; count: number }>;
+        };
+        const row = data.downloads?.find((d) => d.fileKey === PHONICS_PDF.fileKey);
+        if (row) setDownloadCount(row.count);
+      } catch {
+        // Silent — historical count is nice-to-have, not blocking.
+      }
+    })();
+    return () => ctrl.abort();
+  }, [authFetch]);
+
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    setError(null);
+
+    // Strict requirement: every download MUST be saved to the DB. So we
+    // log first and only trigger the browser download if logging succeeds.
+    // The badge count is server-authoritative — never incremented on
+    // failure — so it always reflects what's actually in the DB.
+    try {
+      const res = await authFetch("/api/phonics/downloads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileKey: PHONICS_PDF.fileKey,
+          ...(numericChildId !== null ? { childId: numericChildId } : {}),
+        }),
+      });
+      if (!res.ok) {
+        setError(
+          res.status === 401
+            ? "Please sign in again to download."
+            : "Couldn't record your download. Please try again.",
+        );
+        setDownloading(false);
+        return;
+      }
+      const data = (await res.json()) as {
+        ok?: boolean;
+        totalDownloads?: number;
+      };
+      if (typeof data.totalDownloads === "number") {
+        setDownloadCount(data.totalDownloads);
+      }
+
+      // Logging confirmed — now trigger the browser download.
+      const a = document.createElement("a");
+      a.href = PHONICS_PDF.url;
+      a.download = PHONICS_PDF.fileName;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      setError("Network error — please check your connection and try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <Card
+      data-testid="phonics-download-card"
+      className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]"
+    >
+      <CardContent className="p-5">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-fuchsia-100 dark:bg-fuchsia-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <FileText className="h-5 w-5 text-fuchsia-600 dark:text-fuchsia-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-quicksand text-base font-bold text-foreground">
+              Phonics Mastery — Printable Workbook
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              15 sets covering short vowels, blends, digraphs & more
+            </p>
+          </div>
+          {downloadCount !== null && downloadCount > 0 && (
+            <Badge
+              data-testid="phonics-download-count"
+              className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border-emerald-200/80 dark:border-emerald-400/30 font-bold text-[10px] shrink-0"
+            >
+              {downloadCount}× downloaded
+            </Badge>
+          )}
+        </div>
+
+        <Button
+          type="button"
+          onClick={handleDownload}
+          disabled={downloading}
+          data-testid="phonics-download-button"
+          className="w-full rounded-2xl gap-2 font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md disabled:opacity-70"
+        >
+          {downloading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Preparing download…
+            </>
+          ) : (
+            <>
+              <Download className="h-4 w-4" />
+              Download PDF (free, unlimited re-downloads)
+            </>
+          )}
+        </Button>
+
+        {error && (
+          <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1.5">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {error}
+          </p>
         )}
       </CardContent>
     </Card>

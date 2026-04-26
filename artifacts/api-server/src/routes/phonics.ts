@@ -7,6 +7,7 @@ import {
   db,
   childrenTable,
   phonicsContentTable,
+  phonicsDownloadsTable,
   phonicsProgressTable,
   type PhonicsContentRow,
   type PhonicsProgressRow,
@@ -230,6 +231,125 @@ router.get("/phonics", async (req, res): Promise<void> => {
   } catch (err) {
     logger.error(
       `phonics GET failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// ─── POST /api/phonics/downloads ─────────────────────────────────────────────
+//
+// Body: { fileKey, fileName, childId? }
+//
+// Records every download of a phonics resource (e.g. the Phonics Mastery PDF).
+// One row per download — users can download as many times as they like and we
+// keep the full history.
+
+// Allowlist of downloadable phonics resources. Adding a new file means
+// adding a row here so users can't pollute analytics with arbitrary keys.
+const PHONICS_DOWNLOADABLE_FILES = {
+  "phonics-mastery-15-sets": "Phonics-Mastery-15-Sets.pdf",
+} as const;
+type PhonicsDownloadableKey = keyof typeof PHONICS_DOWNLOADABLE_FILES;
+
+const DownloadBody = z.object({
+  fileKey: z.enum(
+    Object.keys(PHONICS_DOWNLOADABLE_FILES) as [PhonicsDownloadableKey, ...PhonicsDownloadableKey[]],
+  ),
+  childId: z.number().int().positive().optional(),
+});
+
+router.post("/phonics/downloads", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = DownloadBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+  const { fileKey, childId } = parsed.data;
+  // Server is the source of truth for the file name — never trust the client.
+  const fileName = PHONICS_DOWNLOADABLE_FILES[fileKey];
+
+  try {
+    // If a child is specified, ensure it belongs to this user — otherwise
+    // refuse the write so we don't attribute downloads to children the
+    // caller doesn't own.
+    if (typeof childId === "number") {
+      const child = await loadOwnedChild(childId, userId);
+      if (!child) {
+        res.status(404).json({ error: "child_not_found" });
+        return;
+      }
+    }
+
+    const userAgent =
+      typeof req.headers["user-agent"] === "string"
+        ? req.headers["user-agent"].slice(0, 500)
+        : null;
+
+    const [row] = await db
+      .insert(phonicsDownloadsTable)
+      .values({
+        userId,
+        childId: childId ?? null,
+        fileKey,
+        fileName,
+        userAgent,
+      })
+      .returning();
+
+    // Return the full row plus a cumulative count for this user+file so the
+    // UI can show "downloaded N times" without a second round-trip.
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(phonicsDownloadsTable)
+      .where(
+        and(
+          eq(phonicsDownloadsTable.userId, userId),
+          eq(phonicsDownloadsTable.fileKey, fileKey),
+        ),
+      );
+
+    res.json({ ok: true, download: row, totalDownloads: count });
+  } catch (err) {
+    logger.error(
+      `phonics download log failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// ─── GET /api/phonics/downloads ──────────────────────────────────────────────
+//
+// Returns the cumulative download count for the caller per file key. Used
+// by the UI to show "Downloaded N times" alongside the button.
+
+router.get("/phonics/downloads", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  try {
+    const rows = await db
+      .select({
+        fileKey: phonicsDownloadsTable.fileKey,
+        count: sql<number>`count(*)::int`,
+        lastDownloadedAt: sql<string>`max(${phonicsDownloadsTable.downloadedAt})`,
+      })
+      .from(phonicsDownloadsTable)
+      .where(eq(phonicsDownloadsTable.userId, userId))
+      .groupBy(phonicsDownloadsTable.fileKey);
+
+    res.json({ ok: true, downloads: rows });
+  } catch (err) {
+    logger.error(
+      `phonics downloads list failed: ${err instanceof Error ? err.message : String(err)}`,
     );
     res.status(500).json({ error: "server_error" });
   }

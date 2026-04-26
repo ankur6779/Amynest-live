@@ -1,0 +1,135 @@
+Build a "Coloring Books" section inside Parent Hub using Google Drive as source.
+
+GOAL:
+- Fetch only PDF files from a Drive folder (including subfolders)
+- Show preview before download
+- Allow download once per child (no repeat showing after download)
+
+--------------------------------------------------
+1. DATA SOURCE (GOOGLE DRIVE)
+--------------------------------------------------
+Root Folder:
+https://drive.google.com/drive/folders/1n937xIi5gjhWMtVUaxuaSLHe96ZLSdkT
+
+Requirements:
+- Recursively fetch ALL files inside folder + subfolders
+- Filter:
+  mimeType = "application/pdf"
+
+- Extract:
+  • fileId
+  • name
+  • thumbnailLink (if available)
+
+--------------------------------------------------
+2. CONTENT FILTER
+--------------------------------------------------
+- Show ONLY for age 2+
+- If child age < 2:
+  • hide this section completely
+
+--------------------------------------------------
+3. UI STRUCTURE
+--------------------------------------------------
+Section Title:
+"Coloring Books"
+
+Cards:
+- Thumbnail (PDF preview or placeholder)
+- Title (cleaned filename)
+- Button:
+  • "Preview"
+  • "Download"
+
+--------------------------------------------------
+4. PDF PREVIEW SYSTEM
+--------------------------------------------------
+On "Preview" click:
+
+- Open in-app viewer (WebView or PDF renderer)
+- Use:
+  https://drive.google.com/file/d/{fileId}/preview
+
+- Allow:
+  • scroll
+  • view pages
+
+- Disable:
+  • direct download from preview
+
+--------------------------------------------------
+5. DOWNLOAD SYSTEM
+--------------------------------------------------
+On "Download" click:
+
+- Use:
+  https://drive.google.com/uc?export=download&id={fileId}
+
+- Download file to device
+
+--------------------------------------------------
+6. ONE-TIME DOWNLOAD RULE (IMPORTANT)
+--------------------------------------------------
+- After download:
+
+Store:
+  childId + fileId
+
+- Once downloaded:
+  • Do NOT show that PDF again for that child
+  OR
+  • Mark as "Downloaded" and disable button
+
+(Recommended: hide from list for cleaner UX)
+
+--------------------------------------------------
+7. DATABASE / STORAGE
+--------------------------------------------------
+Create table:
+
+coloring_downloads:
+- id
+- child_id
+- file_id
+- downloaded_at
+
+--------------------------------------------------
+8. FETCH LOGIC
+--------------------------------------------------
+When loading list:
+
+- Get all PDFs from Drive
+- Remove files already downloaded by child
+
+--------------------------------------------------
+9. PERFORMANCE
+--------------------------------------------------
+- Cache Drive API response
+- Lazy load list
+- Paginate if large dataset
+
+--------------------------------------------------
+10. MULTI-CHILD SUPPORT
+--------------------------------------------------
+- Downloads tracked per child
+- Switching child updates available list
+
+--------------------------------------------------
+11. ERROR HANDLING
+--------------------------------------------------
+- If preview fails → show fallback message
+- If download fails → retry option
+
+--------------------------------------------------
+12. FUTURE READY (OPTIONAL)
+--------------------------------------------------
+- Add tags:
+  • easy / medium / hard
+  • theme (animals, fruits, etc.)
+
+--------------------------------------------------
+DELIVERABLE:
+- Recursive Drive PDF fetch system
+- In-app preview before download
+- One-time download restriction
+- Clean UI with filtered content

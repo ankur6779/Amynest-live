@@ -41,5 +41,6 @@ export * from "./notification_preferences";
 export * from "./notification_log";
 export * from "./phonics_content";
 export * from "./phonics_progress";
+export * from "./phonics_downloads";
 export * from "./story_content";
 export * from "./story_watch_progress";
