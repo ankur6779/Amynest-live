@@ -27,7 +27,7 @@ type QuestionType = "letter_to_sound" | "sound_to_letter" | "word_pic" | "animal
 interface ClientQuestion {
   id: string;
   type: QuestionType;
-  prompt: { instruction: string; symbol?: string; emoji?: string; ttsText?: string };
+  prompt: { instruction: string; text?: string; symbol?: string; emoji?: string; ttsText?: string };
   options: { label: string; emoji?: string }[];
 }
 

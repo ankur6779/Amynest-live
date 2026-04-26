@@ -1,12 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { X, AlertCircle, RotateCcw } from "lucide-react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { X, AlertCircle, RotateCcw, ChevronRight, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { StoryDto } from "@/hooks/use-stories-data";
 
-interface StoryPlayerProps {
-  story: StoryDto | null;
+interface StoryFlowPlayerProps {
+  story: StoryDto;
+  storyIndex: number;
+  totalStories: number;
+  /** Countdown in seconds before auto-advancing (null = not counting down). */
+  autoAdvanceIn: number | null;
+  /** Show the "Great! Let's watch again 🎉" loop-complete banner. */
+  showLoopBanner: boolean;
+  /** Increment to seek the current video back to 0 and replay. */
+  replaySignal: number;
+  onNext: () => void;
+  onReplay: () => void;
   onClose: () => void;
+  onEnded: () => void;
+  onError: () => void;
   onProgress: (
     storyId: number,
     positionSec: number,
@@ -14,22 +25,43 @@ interface StoryPlayerProps {
   ) => void;
 }
 
-export function StoryPlayer({ story, onClose, onProgress }: StoryPlayerProps) {
+export function StoryFlowPlayer({
+  story,
+  storyIndex,
+  totalStories,
+  autoAdvanceIn,
+  showLoopBanner,
+  replaySignal,
+  onNext,
+  onReplay,
+  onClose,
+  onEnded,
+  onError,
+  onProgress,
+}: StoryFlowPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [errored, setErrored] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const startedRef = useRef(false);
 
-  // Reset error state and "started" flag when the story changes.
+  // Reset on story change.
   useEffect(() => {
     setErrored(false);
     startedRef.current = false;
-  }, [story?.id, retryKey]);
+  }, [story.id]);
 
-  // Resume from last position once metadata is loaded.
+  // Replay signal: seek to start and play.
   useEffect(() => {
-    if (!story || !videoRef.current) return;
+    if (replaySignal === 0) return;
     const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = 0;
+    void v.play().catch(() => {});
+  }, [replaySignal]);
+
+  // Resume from last position once metadata loads.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !story) return;
     const handleLoaded = () => {
       const resumeFrom = story.positionSec ?? 0;
       if (resumeFrom > 5 && resumeFrom < (v.duration || Infinity) - 5) {
@@ -38,21 +70,19 @@ export function StoryPlayer({ story, onClose, onProgress }: StoryPlayerProps) {
     };
     v.addEventListener("loadedmetadata", handleLoaded);
     return () => v.removeEventListener("loadedmetadata", handleLoaded);
-  }, [story, retryKey]);
+  }, [story.id]);
 
-  // Periodic progress writes.
+  // Progress writes + lifecycle events.
   useEffect(() => {
-    if (!story || !videoRef.current) return;
     const v = videoRef.current;
+    if (!v) return;
 
     const handleTimeUpdate = () => {
-      if (!story) return;
       onProgress(story.id, v.currentTime, {
         durationSec: Number.isFinite(v.duration) ? v.duration : undefined,
       });
     };
     const handlePlay = () => {
-      if (!story) return;
       if (!startedRef.current) {
         startedRef.current = true;
         onProgress(story.id, v.currentTime, {
@@ -62,13 +92,16 @@ export function StoryPlayer({ story, onClose, onProgress }: StoryPlayerProps) {
       }
     };
     const handleEnded = () => {
-      if (!story) return;
       onProgress(story.id, v.duration || 0, {
         durationSec: Number.isFinite(v.duration) ? v.duration : undefined,
         completed: true,
       });
+      onEnded();
     };
-    const handleError = () => setErrored(true);
+    const handleError = () => {
+      setErrored(true);
+      onError();
+    };
 
     v.addEventListener("timeupdate", handleTimeUpdate);
     v.addEventListener("play", handlePlay);
@@ -80,81 +113,128 @@ export function StoryPlayer({ story, onClose, onProgress }: StoryPlayerProps) {
       v.removeEventListener("ended", handleEnded);
       v.removeEventListener("error", handleError);
     };
-  }, [story, onProgress, retryKey]);
-
-  // On close, write current position one final time.
-  const handleClose = () => {
-    const v = videoRef.current;
-    if (story && v && v.currentTime > 0) {
-      onProgress(story.id, v.currentTime, {
-        durationSec: Number.isFinite(v.duration) ? v.duration : undefined,
-      });
-    }
-    onClose();
-  };
-
-  if (!story) return null;
-
-  // story.streamUrl is "/api/reels/stream/:fileId" — relative paths work
-  // because Vite proxies /api to the api-server in dev and the prod deploy
-  // serves both from the same origin.
-  const streamSrc = story.streamUrl;
+  }, [story.id, onProgress, onEnded, onError]);
 
   return (
-    <Dialog open={!!story} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent
-        className="max-w-5xl border-0 bg-black p-0 sm:rounded-xl"
-        showCloseButton={false}
-        data-testid={`story-player-${story.id}`}
-      >
-        <DialogTitle className="sr-only">{story.title}</DialogTitle>
-        <div className="relative">
-          {errored ? (
-            <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-black p-8 text-center">
-              <AlertCircle className="h-12 w-12 text-red-400" />
-              <p className="text-base font-semibold text-white">
-                Couldn't load this story
-              </p>
-              <p className="max-w-sm text-sm text-white/60">
-                The video stream failed. This can happen if Drive is rate-limiting
-                or the file is temporarily unavailable.
-              </p>
-              <Button
-                onClick={() => setRetryKey((k) => k + 1)}
-                variant="secondary"
-                className="mt-2"
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Try again
-              </Button>
-            </div>
-          ) : (
-            <video
-              key={`${story.id}-${retryKey}`}
-              ref={videoRef}
-              src={streamSrc}
-              controls
-              autoPlay
-              playsInline
-              className="aspect-video w-full bg-black"
-            />
-          )}
+    <div
+      className="relative overflow-hidden rounded-2xl bg-black shadow-2xl shadow-purple-900/40"
+      data-testid={`story-flow-player-${story.id}`}
+    >
+      {/* Top bar: progress dots + close */}
+      <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
+        <div className="flex items-center gap-2">
+          {/* Dot indicators — capped at 20 visible dots */}
+          <div className="flex gap-1">
+            {Array.from({ length: Math.min(totalStories, 20) }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 rounded-full transition-all ${
+                  i === (storyIndex % 20)
+                    ? "w-6 bg-white"
+                    : i < (storyIndex % 20)
+                    ? "w-3 bg-white/40"
+                    : "w-3 bg-white/20"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="ml-1 text-[11px] tabular-nums text-white/60">
+            {storyIndex + 1}&thinsp;/&thinsp;{totalStories}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/30"
+          aria-label="Close player"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
 
-          <button
-            type="button"
-            onClick={handleClose}
-            className="absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/40"
-            aria-label="Close player"
-          >
-            <X className="h-5 w-5" />
-          </button>
+      {/* Video element or error state */}
+      {errored ? (
+        <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-black p-8 text-center">
+          <AlertCircle className="h-10 w-10 text-red-400" />
+          <p className="text-sm font-semibold text-white">Couldn't load this story</p>
+          <p className="text-xs text-white/50">Skipping to next…</p>
+        </div>
+      ) : (
+        <video
+          key={story.id}
+          ref={videoRef}
+          src={story.streamUrl}
+          controls
+          autoPlay
+          playsInline
+          className="aspect-video w-full bg-black"
+        />
+      )}
 
-          <div className="bg-gradient-to-t from-black to-black/0 px-4 py-3">
-            <p className="text-base font-semibold text-white">{story.title}</p>
-            <p className="text-xs capitalize text-white/60">{story.category}</p>
+      {/* Auto-advance countdown overlay */}
+      {autoAdvanceIn !== null && !showLoopBanner && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/75 backdrop-blur-sm">
+          <p className="text-sm text-white/70">Up next</p>
+          <p className="text-2xl font-bold text-white">
+            Next story in {autoAdvanceIn}s…
+          </p>
+          <div className="flex gap-3">
+            <Button
+              variant="ghost"
+              className="border border-white/30 text-white hover:bg-white/10"
+              onClick={onReplay}
+            >
+              <RotateCcw className="mr-2 h-3.5 w-3.5" />
+              Watch again
+            </Button>
+            <Button
+              className="bg-white text-black hover:bg-white/90"
+              onClick={onNext}
+            >
+              <Play className="mr-2 h-3.5 w-3.5 fill-current" />
+              Play now
+            </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+
+      {/* Loop-complete banner */}
+      {showLoopBanner && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-black/90">
+          <span className="text-5xl" role="img" aria-label="party">🎉</span>
+          <p className="text-2xl font-bold text-white">All stories watched!</p>
+          <p className="text-sm text-white/60">
+            Starting over…
+          </p>
+        </div>
+      )}
+
+      {/* Bottom bar: title + controls */}
+      <div className="flex items-end justify-between gap-4 bg-gradient-to-t from-black to-black/0 px-4 pb-4 pt-8">
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold text-white">{story.title}</p>
+          <p className="mt-0.5 text-xs capitalize text-white/50">{story.category}</p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onReplay}
+            className="h-8 gap-1.5 text-xs text-white/70 hover:bg-white/10 hover:text-white"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Replay
+          </Button>
+          <Button
+            size="sm"
+            onClick={onNext}
+            className="h-8 gap-1.5 bg-violet-600 text-xs text-white hover:bg-violet-500"
+          >
+            Next
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

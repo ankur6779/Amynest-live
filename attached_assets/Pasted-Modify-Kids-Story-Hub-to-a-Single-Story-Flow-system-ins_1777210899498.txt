@@ -1,0 +1,129 @@
+Modify Kids Story Hub to a "Single Story Flow" system instead of list/grid view.
+
+GOAL:
+- Show only ONE story at a time
+- Provide "Next" navigation
+- After all stories complete → restart from beginning (loop)
+
+--------------------------------------------------
+1. STORY FLOW MODE
+--------------------------------------------------
+Replace carousel/list UI with:
+
+- Single active story screen
+- Full focus player experience
+
+--------------------------------------------------
+2. DATA ORDERING
+--------------------------------------------------
+- Fetch all stories (Drive / DB)
+
+- Maintain ordered list:
+  stories = [story1, story2, story3, ...]
+
+- Order by:
+  • default: name or created_at
+  • optional: recommendation later
+
+--------------------------------------------------
+3. STATE MANAGEMENT
+--------------------------------------------------
+Track per child:
+
+- currentStoryIndex
+- lastCompletedStoryIndex
+
+Store:
+childId + storyIndex
+
+--------------------------------------------------
+4. INITIAL LOAD
+--------------------------------------------------
+On opening Story Hub:
+
+IF user has history:
+  → Resume from currentStoryIndex
+
+ELSE:
+  → Start from index = 0
+
+--------------------------------------------------
+5. STORY PLAYER SCREEN
+--------------------------------------------------
+Show:
+- Story video/player
+- Title
+- Progress indicator (optional)
+
+Controls:
+- Next button (primary CTA)
+- Replay button
+
+--------------------------------------------------
+6. NEXT BUTTON LOGIC
+--------------------------------------------------
+On "Next":
+
+IF currentStoryIndex < totalStories - 1:
+  → currentStoryIndex++
+
+ELSE:
+  → Reset to 0 (LOOP START)
+
+--------------------------------------------------
+7. AUTO LOOP SYSTEM
+--------------------------------------------------
+When last story completes:
+
+- Show message:
+  "Great! Let’s watch again 🎉"
+
+- Restart:
+  currentStoryIndex = 0
+
+--------------------------------------------------
+8. AUTO-ADVANCE (OPTIONAL BUT RECOMMENDED)
+--------------------------------------------------
+After story ends:
+
+- Wait 2–3 seconds
+- Auto move to next story
+
+- Show small overlay:
+  "Next story starting..."
+
+--------------------------------------------------
+9. CONTINUE WATCHING
+--------------------------------------------------
+- Save progress after each story
+- Resume from last index
+
+--------------------------------------------------
+10. MULTI-CHILD SUPPORT
+--------------------------------------------------
+- Maintain separate story index per childId
+
+--------------------------------------------------
+11. PERFORMANCE
+--------------------------------------------------
+- Preload next story (buffering)
+- Cache previous story
+
+--------------------------------------------------
+12. FALLBACK (IMPORTANT)
+--------------------------------------------------
+- If story fails:
+  → Skip to next automatically
+
+--------------------------------------------------
+13. FUTURE READY (OPTIONAL)
+--------------------------------------------------
+- Add shuffle mode
+- Add AI recommended order
+
+--------------------------------------------------
+DELIVERABLE:
+- Single story player system
+- Next navigation
+- Infinite loop playback
+- Resume support per child
