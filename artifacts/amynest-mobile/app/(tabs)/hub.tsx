@@ -743,6 +743,45 @@ export default function HubScreen() {
         </Section>
         </LockedBlock>
 
+        {/* 🎬 Kids Story Hub — Netflix-style story browsing */}
+        <View style={tileW("story-hub")}>
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_story_hub")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+          radius={18}
+        >
+          <Pressable
+            onPress={() => {
+              hubUsage.markFeatureUsed("hub_story_hub");
+              router.push("/stories" as never);
+            }}
+            style={{ borderRadius: 18, overflow: "hidden" }}
+          >
+            <LinearGradient
+              colors={["#EC4899", "#A855F7"]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={{ padding: 16, gap: 8 }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="film" size={22} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🎬 Kids Story Hub</Text>
+                    {tryFreeFor("hub_story_hub") ? <TryFreeBadge /> : null}
+                  </View>
+                  <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Bedtime, moral & fun stories — Netflix-style</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+              </View>
+            </LinearGradient>
+          </Pressable>
+        </LockedBlock>
+        </View>
+
         {/* Art & Craft Videos — Google Drive */}
         <View style={tileW("art-craft")}>
         <Section

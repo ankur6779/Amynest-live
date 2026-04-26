@@ -9,7 +9,7 @@ import {
   BookOpen, Brain, Sparkles, Heart, Palette,
   ChevronDown, ChevronUp, MessageCircleHeart,
   Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap,
-  UserPlus, CheckCircle2, Users, AudioLines,
+  UserPlus, CheckCircle2, Users, AudioLines, Film,
 } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
@@ -17,6 +17,7 @@ import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
 import { PhonicsLearning } from "@/components/phonics-learning";
+import { StoryHub } from "@/components/story-hub";
 import { getAgeGroup, getAgeGroupInfo } from "@/lib/age-groups";
 import { InfantMode, type InfantShowOnly } from "@/components/infant-mode";
 import { InfantHub } from "@/components/infant-hub";
@@ -651,6 +652,31 @@ export default function ParentingHub() {
                 ageGroup={ageGroup}
                 effectiveChild={effectiveChild}
                 totalAgeMonths={totalAgeMonths}
+              />
+            </HubSection>
+          </LockedBlock>
+        )}
+
+        {/* 🎬 Kids Story Hub — Netflix-style story browsing */}
+        {effectiveChild && (
+          <LockedBlock
+            reason="hub_locked"
+            locked={hubUsage.isFeatureLocked("hub_story_hub")}
+            label="Unlock to continue"
+            cta="Unlock Premium"
+          >
+            <HubSection
+              id="story-hub"
+              icon={<Film className="h-5 w-5 text-rose-600" />}
+              title="🎬 Kids Story Hub"
+              description="A whole library of bedtime, moral & fun stories — for ages 0–8"
+              accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-purple-100 dark:to-purple-500/20"
+              tryFree={tryFreeFor("hub_story_hub")}
+              onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}
+            >
+              <StoryHub
+                childId={effectiveChild.id}
+                childName={effectiveChild.name}
               />
             </HubSection>
           </LockedBlock>

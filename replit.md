@@ -78,7 +78,7 @@ The system is a monorepo utilizing pnpm workspaces, Node.js 24, and TypeScript 5
 - **RevenueCat:** Subscription management for iOS.
 - **Razorpay:** Payment gateway for web and Android in India.
 - **ElevenLabs:** Text-to-speech for the "Amy" Read Aloud voice (Turbo v2.5), accessed via the Replit ElevenLabs connector.
-- **Google Drive API:** Video streaming for Reels app.
+- **Google Drive API:** Video streaming for Reels app and the unified Kids Story Hub (catalog auto-synced from two folders, served via the existing `/api/reels/stream/:fileId` proxy on both web and mobile).
 - **Google Fonts:** For `inter` font.
 - **Expo:** React Native framework.
 - **Zod:** Schema validation.

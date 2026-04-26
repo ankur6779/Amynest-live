@@ -87,6 +87,7 @@
     "expo-notifications": "~0.32.16",
     "expo-secure-store": "~15.0.8",
     "expo-speech": "~14.0.8",
+    "expo-video": "^55.0.15",
     "firebase": "^12.12.1",
     "i18next": "^26.0.5",
     "react-i18next": "^17.0.4",
