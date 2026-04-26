@@ -1,0 +1,140 @@
+We already have Google Drive API integrated. Build a unified "Kids Story Hub" inside Parent Hub (no age filtering, content available for 0–8 years).
+
+GOAL:
+Create a Netflix-style content browsing + playback experience using Google Drive folders as content source.
+
+--------------------------------------------------
+1. DATA SOURCE (Google Drive)
+--------------------------------------------------
+Use the following folder IDs:
+
+Folder A:
+https://drive.google.com/drive/folders/1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj
+
+Folder B:
+https://drive.google.com/drive/folders/1pSrec0X4nD3cTwf68qylNCFlKJbACjA4
+
+- Fetch all files using Drive API
+- Extract:
+  • id
+  • name
+  • thumbnailLink
+  • mimeType
+
+--------------------------------------------------
+2. METADATA PROCESSING
+--------------------------------------------------
+- Do NOT rely on age filtering
+- Normalize file names into clean titles:
+  Example:
+  "Lion_and_Mouse_story.mp4" → "Lion and Mouse"
+
+- Auto-generate:
+  • title
+  • category (basic logic: bedtime, moral, fun, general)
+  • duration (if available)
+
+- Store in local DB/cache:
+  Table: story_content
+    - id
+    - drive_file_id
+    - title
+    - category
+    - thumbnail_url
+    - duration
+    - created_at
+
+--------------------------------------------------
+3. UI (NETFLIX STYLE)
+--------------------------------------------------
+Build premium OTT-like UI:
+
+Sections:
+- Continue Watching
+- Recommended for You
+- Trending Stories
+- All Stories
+
+Layout:
+- Vertical scroll
+- Horizontal carousels per section
+- Large thumbnails with title overlay
+
+Cards:
+- Thumbnail image
+- Title
+- Optional duration badge
+
+--------------------------------------------------
+4. PLAYER IMPLEMENTATION
+--------------------------------------------------
+- Use ExoPlayer (Android)
+
+Playback URL:
+https://drive.google.com/uc?export=download&id={fileId}
+
+Features:
+- Fullscreen player
+- Play / Pause / Seek
+- Landscape mode
+- Buffer handling
+
+--------------------------------------------------
+5. CONTINUE WATCHING
+--------------------------------------------------
+- Track:
+  • childId
+  • storyId
+  • last_position
+
+- Show "Continue Watching" row at top
+- Resume from last position
+
+--------------------------------------------------
+6. PERSONALIZATION (LIGHT, NOT AGE-BASED)
+--------------------------------------------------
+- Use:
+  • watch history
+  • most played content
+
+- Generate:
+  "Recommended for you"
+  "Because you watched..."
+
+--------------------------------------------------
+7. PERFORMANCE OPTIMIZATION
+--------------------------------------------------
+- Lazy load images
+- Cache thumbnails
+- Limit initial fetch (20 items, then paginate)
+- Cache Drive API response
+
+--------------------------------------------------
+8. ERROR HANDLING
+--------------------------------------------------
+- If file fails to load:
+  • show retry button
+- If no thumbnail:
+  • show placeholder image
+
+--------------------------------------------------
+9. MULTI-CHILD SUPPORT
+--------------------------------------------------
+- Use activeChildId
+- Maintain separate:
+  • watch history
+  • continue watching
+
+--------------------------------------------------
+10. SCALABILITY PREP
+--------------------------------------------------
+- Abstract storage layer (Drive → future CDN)
+- Keep fileId mapping flexible
+
+--------------------------------------------------
+DELIVERABLE:
+Clean, modular, production-ready code with reusable components for:
+- Story cards
+- Carousel rows
+- Video player
+- Data service layer

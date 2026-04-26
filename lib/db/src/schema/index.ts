@@ -39,3 +39,5 @@ export * from "./tts_cache";
 export * from "./gift_tokens";
 export * from "./notification_preferences";
 export * from "./notification_log";
+export * from "./phonics_content";
+export * from "./phonics_progress";

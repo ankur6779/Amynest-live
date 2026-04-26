@@ -28,6 +28,7 @@ import giftTokensRouter from "./gift-tokens";
 import recipesRouter from "./recipes";
 import ttsRouter, { ttsPublicRouter } from "./tts";
 import audioLessonsRouter from "./audio-lessons";
+import phonicsRouter from "./phonics";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -74,5 +75,6 @@ router.use(notificationPrefsRouter);
 router.use(recipesRouter);
 router.use(ttsRouter);
 router.use(audioLessonsRouter);
+router.use(phonicsRouter);
 
 export default router;

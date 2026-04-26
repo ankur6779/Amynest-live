@@ -1,93 +1,60 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles, Target, Lightbulb, ChevronDown, ChevronUp, CheckCircle2,
-  RefreshCw, BookOpen, Trophy, AlertCircle,
+  RefreshCw, BookOpen, Trophy, AlertCircle, Loader2,
 } from "lucide-react";
 import { AudioPlayButton, preloadAmyVoice } from "@/components/audio-play-button";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
-  getPhonicsLevel,
-  type PhonicsLevel,
-  type PhonicsItem,
-} from "@/lib/phonics-content";
+  usePhonicsData,
+  type DisplayPhonicsItem,
+  type PhonicsInsight,
+  type PhonicsProgressMap,
+} from "@/hooks/use-phonics-data";
+import { type PhonicsLevel } from "@/lib/phonics-content";
 import { cn } from "@/lib/utils";
 
-// ─── Per-child progress (localStorage) ───────────────────────────────────────
-
-type PhonicsProgress = {
-  /** itemId → number of times Played */
-  practiced: Record<string, number>;
-  /** itemId → "got it" toggled by parent ("yes, my child knows this") */
-  mastered: Record<string, true>;
-  lastPracticedAt?: number;
-};
-
-const EMPTY_PROGRESS: PhonicsProgress = { practiced: {}, mastered: {} };
-
-function progressKey(childId: number | string, ageGroup: string) {
-  return `amynest_phonics_${childId}_${ageGroup}`;
-}
-
-function loadProgress(childId: number | string, ageGroup: string): PhonicsProgress {
-  try {
-    const raw = localStorage.getItem(progressKey(childId, ageGroup));
-    if (!raw) return { ...EMPTY_PROGRESS };
-    const parsed = JSON.parse(raw);
-    return {
-      practiced: parsed.practiced ?? {},
-      mastered:  parsed.mastered  ?? {},
-      lastPracticedAt: parsed.lastPracticedAt,
-    };
-  } catch {
-    return { ...EMPTY_PROGRESS };
-  }
-}
-
-function saveProgress(childId: number | string, ageGroup: string, p: PhonicsProgress) {
-  try {
-    localStorage.setItem(progressKey(childId, ageGroup), JSON.stringify(p));
-  } catch {}
-}
-
-// ─── Today's Activity (deterministic daily rotation) ─────────────────────────
+// ─── Today's Activity helpers ────────────────────────────────────────────────
 
 function getTodaySeed(): number {
   const d = new Date();
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
 }
 
-function pickTodaysItem(items: PhonicsItem[], tick = 0): PhonicsItem {
-  // Tick lets the parent press "another sound" and rotate without losing the
-  // daily-deterministic baseline (tick=0 always returns today's pick).
-  return items[(getTodaySeed() + tick) % items.length];
+function pickTodaysItem(
+  items: DisplayPhonicsItem[],
+  tick = 0,
+): DisplayPhonicsItem | null {
+  if (items.length === 0) return null;
+  return items[(getTodaySeed() + tick) % items.length] ?? null;
 }
 
-// ─── Rule-based AI insights from progress data ───────────────────────────────
+// ─── Local insight builder (used only when API insights aren't available) ────
 
-type Insight = { tone: "good" | "warn" | "info"; emoji: string; text: string };
-
-function buildInsights(level: PhonicsLevel, progress: PhonicsProgress): Insight[] {
-  const ins: Insight[] = [];
-  const items = level.items;
+function buildLocalInsights(
+  items: DisplayPhonicsItem[],
+  progress: PhonicsProgressMap,
+  shortLabel: string,
+): PhonicsInsight[] {
+  const ins: PhonicsInsight[] = [];
   const playedIds = Object.keys(progress.practiced);
   const masteredIds = Object.keys(progress.mastered);
   const totalPlays = Object.values(progress.practiced).reduce((a, b) => a + b, 0);
 
-  // Empty state
   if (playedIds.length === 0) {
     ins.push({
       tone: "info",
       emoji: "✨",
-      text: `Tap any sound below to begin — ${level.shortLabel} is the perfect level for your child right now.`,
+      text: `Tap any sound below to begin — ${shortLabel} is the perfect level for your child right now.`,
     });
     return ins;
   }
 
-  // Coverage
-  const coveragePct = Math.round((playedIds.length / items.length) * 100);
+  const coveragePct =
+    items.length > 0 ? Math.round((playedIds.length / items.length) * 100) : 0;
   if (coveragePct >= 80) {
     ins.push({
       tone: "good",
@@ -97,11 +64,13 @@ function buildInsights(level: PhonicsLevel, progress: PhonicsProgress): Insight[
   } else if (coveragePct >= 40) {
     const unseen = items.filter((i) => !progress.practiced[i.id]);
     const next = unseen.slice(0, 3).map((i) => i.symbol).join(", ");
-    ins.push({
-      tone: "info",
-      emoji: "🎯",
-      text: `Halfway there! Try these next: ${next}.`,
-    });
+    if (next) {
+      ins.push({
+        tone: "info",
+        emoji: "🎯",
+        text: `Halfway there! Try these next: ${next}.`,
+      });
+    }
   } else {
     ins.push({
       tone: "info",
@@ -110,7 +79,6 @@ function buildInsights(level: PhonicsLevel, progress: PhonicsProgress): Insight[
     });
   }
 
-  // Mastery
   if (masteredIds.length >= 3) {
     ins.push({
       tone: "good",
@@ -119,8 +87,9 @@ function buildInsights(level: PhonicsLevel, progress: PhonicsProgress): Insight[
     });
   }
 
-  // Repetition warning — sounds played a lot but never marked mastered
-  const stuck = items.filter((i) => (progress.practiced[i.id] ?? 0) >= 5 && !progress.mastered[i.id]);
+  const stuck = items.filter(
+    (i) => (progress.practiced[i.id] ?? 0) >= 5 && !progress.mastered[i.id],
+  );
   if (stuck.length > 0) {
     const list = stuck.slice(0, 3).map((i) => i.symbol).join(", ");
     ins.push({
@@ -130,7 +99,6 @@ function buildInsights(level: PhonicsLevel, progress: PhonicsProgress): Insight[
     });
   }
 
-  // Streak / engagement
   if (totalPlays >= 20) {
     ins.push({
       tone: "good",
@@ -150,8 +118,13 @@ interface PhonicsLearningProps {
   totalAgeMonths: number;
 }
 
-export function PhonicsLearning({ childId, childName, totalAgeMonths }: PhonicsLearningProps) {
-  const level = useMemo(() => getPhonicsLevel(totalAgeMonths), [totalAgeMonths]);
+export function PhonicsLearning({
+  childId,
+  childName,
+  totalAgeMonths,
+}: PhonicsLearningProps) {
+  const data = usePhonicsData(childId, totalAgeMonths);
+  const { level, loading, items, dailyItems, progress, insights, recordPlay, toggleMastered } = data;
 
   // Out-of-range fallback
   if (!level) {
@@ -162,9 +135,25 @@ export function PhonicsLearning({ childId, childName, totalAgeMonths }: PhonicsL
           <div>
             <p className="font-semibold text-foreground">Phonics is for ages 1–6</p>
             <p className="text-sm text-muted-foreground mt-1">
-              {childName} is {totalAgeMonths < 12 ? "still building sound awareness through everyday talk" : "ready for chapter books — phonics is no longer the focus"}.
+              {childName}{" "}
+              {totalAgeMonths < 12
+                ? "is still building sound awareness through everyday talk"
+                : "is ready for chapter books — phonics is no longer the focus"}
+              .
             </p>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Initial loading skeleton
+  if (loading && items.length === 0) {
+    return (
+      <Card className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]">
+        <CardContent className="p-8 flex items-center justify-center gap-3 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm">Loading phonics for {childName}…</span>
         </CardContent>
       </Card>
     );
@@ -173,15 +162,36 @@ export function PhonicsLearning({ childId, childName, totalAgeMonths }: PhonicsL
   return (
     <div className="space-y-4">
       <PersonalizationBadge level={level} childName={childName} />
-      <TodaysActivityCard level={level} childId={childId} />
-      <PracticeSoundsCard level={level} childId={childId} />
-      <ProgressTrackerCard level={level} childId={childId} />
-      <ParentTipsCard level={level} childId={childId} />
+      <TodaysActivityCard
+        level={level}
+        dailyItems={dailyItems.length > 0 ? dailyItems : items}
+        progress={progress}
+        recordPlay={recordPlay}
+        toggleMastered={toggleMastered}
+      />
+      <PracticeSoundsCard
+        level={level}
+        items={items}
+        progress={progress}
+        recordPlay={recordPlay}
+      />
+      <ProgressTrackerCard
+        level={level}
+        items={items}
+        progress={progress}
+        sourceLabel={data.source === "api" ? "synced to your account" : "saved on this device"}
+      />
+      <ParentTipsCard
+        level={level}
+        items={items}
+        progress={progress}
+        insights={insights}
+      />
     </div>
   );
 }
 
-// ─── Personalization banner — shows the parent the level is age-targeted ────
+// ─── Personalization banner ──────────────────────────────────────────────────
 
 function PersonalizationBadge({ level, childName }: { level: PhonicsLevel; childName: string }) {
   return (
@@ -202,54 +212,43 @@ function PersonalizationBadge({ level, childName }: { level: PhonicsLevel; child
 
 // ─── Card 1: Today's Activity ────────────────────────────────────────────────
 
-function TodaysActivityCard({ level, childId }: { level: PhonicsLevel; childId: number | string }) {
+function TodaysActivityCard({
+  level,
+  dailyItems,
+  progress,
+  recordPlay,
+  toggleMastered,
+}: {
+  level: PhonicsLevel;
+  dailyItems: DisplayPhonicsItem[];
+  progress: PhonicsProgressMap;
+  recordPlay: (id: string, contentId?: number) => void;
+  toggleMastered: (id: string, contentId?: number) => void;
+}) {
   const authFetch = useAuthFetch();
-  const [tick, setTick] = useState(0); // for refresh
-  const [progress, setProgress] = useState<PhonicsProgress>(() => loadProgress(childId, level.ageGroup));
-  const todaysItem = useMemo(() => pickTodaysItem(level.items, tick), [level.ageGroup, level.items, tick]);
-
-  useEffect(() => {
-    setProgress(loadProgress(childId, level.ageGroup));
-  }, [childId, level.ageGroup]);
+  const [tick, setTick] = useState(0);
+  const todaysItem = useMemo(
+    () => pickTodaysItem(dailyItems, tick),
+    [dailyItems, tick],
+  );
 
   // Warm the TTS cache for today's sound — first tap then plays instantly.
   useEffect(() => {
+    if (!todaysItem) return;
     const ctrl = new AbortController();
     void preloadAmyVoice(authFetch, todaysItem.sound, { signal: ctrl.signal });
     return () => ctrl.abort();
-  }, [authFetch, todaysItem.sound]);
+  }, [authFetch, todaysItem?.sound]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const recordPlay = useCallback(() => {
-    setProgress((p) => {
-      const next: PhonicsProgress = {
-        ...p,
-        practiced: { ...p.practiced, [todaysItem.id]: (p.practiced[todaysItem.id] ?? 0) + 1 },
-        lastPracticedAt: Date.now(),
-      };
-      saveProgress(childId, level.ageGroup, next);
-      return next;
-    });
-  }, [childId, level.ageGroup, todaysItem.id]);
-
-  const toggleMastered = useCallback(() => {
-    setProgress((p) => {
-      const isMastered = !!p.mastered[todaysItem.id];
-      const hasPlayed = (p.practiced[todaysItem.id] ?? 0) > 0;
-      // Don't let a parent mark a sound mastered before the child has heard
-      // it once — this keeps the accuracy metric meaningful.
-      if (!isMastered && !hasPlayed) return p;
-      const nextMastered = { ...p.mastered };
-      if (isMastered) delete nextMastered[todaysItem.id];
-      else nextMastered[todaysItem.id] = true;
-      const next: PhonicsProgress = { ...p, mastered: nextMastered };
-      saveProgress(childId, level.ageGroup, next);
-      return next;
-    });
-  }, [childId, level.ageGroup, todaysItem.id]);
+  if (!todaysItem) return null;
 
   const playCount = progress.practiced[todaysItem.id] ?? 0;
   const isMastered = !!progress.mastered[todaysItem.id];
   const canMaster = playCount > 0 || isMastered;
+
+  // ── Type-aware focus tile rendering ─────────────────────────────────────
+  const isLongForm =
+    todaysItem.type === "sentence" || todaysItem.type === "story";
 
   return (
     <Card
@@ -263,7 +262,9 @@ function TodaysActivityCard({ level, childId }: { level: PhonicsLevel; childId: 
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-quicksand text-base font-bold text-foreground">Today's Activity</h3>
-            <p className="text-xs text-muted-foreground">{level.focus}</p>
+            <p className="text-xs text-muted-foreground">
+              {todaysItem.type === "story" ? "Story time" : level.focus}
+            </p>
           </div>
           <Button
             type="button"
@@ -277,11 +278,32 @@ function TodaysActivityCard({ level, childId }: { level: PhonicsLevel; childId: 
           </Button>
         </div>
 
-        {/* Big focus tile */}
-        <div className="rounded-3xl bg-gradient-to-br from-violet-50 dark:from-violet-500/15 to-fuchsia-50 dark:to-fuchsia-500/15 border border-violet-200/60 dark:border-violet-400/20 p-5 flex items-center gap-4">
-          {todaysItem.emoji && <span className="text-5xl shrink-0" aria-hidden>{todaysItem.emoji}</span>}
-          <div className="flex-1 min-w-0">
-            <p className="font-quicksand text-3xl font-bold text-foreground leading-none mb-1">{todaysItem.symbol}</p>
+        {/* Focus tile — taller layout for sentences/stories */}
+        <div
+          className={cn(
+            "rounded-3xl bg-gradient-to-br from-violet-50 dark:from-violet-500/15 to-fuchsia-50 dark:to-fuchsia-500/15 border border-violet-200/60 dark:border-violet-400/20 p-5",
+            isLongForm
+              ? "flex flex-col items-start gap-4"
+              : "flex items-center gap-4",
+          )}
+        >
+          {todaysItem.emoji && (
+            <span
+              className={isLongForm ? "text-4xl" : "text-5xl shrink-0"}
+              aria-hidden
+            >
+              {todaysItem.emoji}
+            </span>
+          )}
+          <div className="flex-1 min-w-0 w-full">
+            <p
+              className={cn(
+                "font-quicksand font-bold text-foreground leading-tight",
+                isLongForm ? "text-xl mb-2" : "text-3xl leading-none mb-1",
+              )}
+            >
+              {todaysItem.symbol}
+            </p>
             {todaysItem.example && (
               <p className="text-xs text-muted-foreground">{todaysItem.example}</p>
             )}
@@ -291,19 +313,21 @@ function TodaysActivityCard({ level, childId }: { level: PhonicsLevel; childId: 
             size="lg"
             variant="violet"
             ariaLabel={`Play sound ${todaysItem.symbol}`}
-            onPlay={recordPlay}
+            onPlay={() => recordPlay(todaysItem.id, todaysItem.contentId)}
           />
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-2">
           <div className="text-xs text-muted-foreground">
-            {playCount > 0 ? `Played ${playCount} time${playCount !== 1 ? "s" : ""}` : "Not practised yet"}
+            {playCount > 0
+              ? `Played ${playCount} time${playCount !== 1 ? "s" : ""}`
+              : "Not practised yet"}
           </div>
           <Button
             type="button"
             size="sm"
             variant="outline"
-            onClick={toggleMastered}
+            onClick={() => toggleMastered(todaysItem.id, todaysItem.contentId)}
             disabled={!canMaster}
             title={canMaster ? undefined : "Play the sound at least once first"}
             className={cn(
@@ -325,41 +349,38 @@ function TodaysActivityCard({ level, childId }: { level: PhonicsLevel; childId: 
 
 // ─── Card 2: Practice Sounds ─────────────────────────────────────────────────
 
-function PracticeSoundsCard({ level, childId }: { level: PhonicsLevel; childId: number | string }) {
+function PracticeSoundsCard({
+  level,
+  items,
+  progress,
+  recordPlay,
+}: {
+  level: PhonicsLevel;
+  items: DisplayPhonicsItem[];
+  progress: PhonicsProgressMap;
+  recordPlay: (id: string, contentId?: number) => void;
+}) {
   const authFetch = useAuthFetch();
-  const [progress, setProgress] = useState<PhonicsProgress>(() => loadProgress(childId, level.ageGroup));
-  const [blendItem, setBlendItem] = useState<PhonicsItem | null>(null);
+  const [blendItem, setBlendItem] = useState<DisplayPhonicsItem | null>(null);
 
-  useEffect(() => {
-    setProgress(loadProgress(childId, level.ageGroup));
-  }, [childId, level.ageGroup]);
-
-  // Preload the first batch of sounds so the first taps are instant. We
-  // sequentialise to avoid stampeding the TTS server with N parallel calls.
+  // Preload the first batch of sounds so the first taps are instant.
   useEffect(() => {
     const ctrl = new AbortController();
     (async () => {
-      for (const it of level.items.slice(0, 6)) {
+      for (const it of items.slice(0, 6)) {
         if (ctrl.signal.aborted) return;
         await preloadAmyVoice(authFetch, it.sound, { signal: ctrl.signal });
       }
     })();
     return () => ctrl.abort();
-  }, [authFetch, level.items]);
+  }, [authFetch, items]);
 
-  const recordPlay = (id: string) => {
-    setProgress((p) => {
-      const next: PhonicsProgress = {
-        ...p,
-        practiced: { ...p.practiced, [id]: (p.practiced[id] ?? 0) + 1 },
-        lastPracticedAt: Date.now(),
-      };
-      saveProgress(childId, level.ageGroup, next);
-      return next;
-    });
-  };
-
-  const useGrid = !level.features.sentenceReading; // letters use grid; sentences use list
+  // Type-driven layout: items that are long-form (sentences/stories) get a
+  // list layout with full-width text; everything else uses the tile grid.
+  const hasLongForm = items.some(
+    (i) => i.type === "sentence" || i.type === "story",
+  );
+  const useGrid = !hasLongForm && !level.features.sentenceReading;
 
   return (
     <Card
@@ -376,15 +397,17 @@ function PracticeSoundsCard({ level, childId }: { level: PhonicsLevel; childId: 
             <p className="text-xs text-muted-foreground">Tap any tile to hear the sound</p>
           </div>
           <Badge className="bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-200 border-0 text-[10px] font-bold">
-            {level.items.length} sounds
+            {items.length} {items.length === 1 ? "sound" : "sounds"}
           </Badge>
         </div>
 
         {useGrid ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {level.items.map((it) => {
+            {items.map((it) => {
               const count = progress.practiced[it.id] ?? 0;
               const mastered = !!progress.mastered[it.id];
+              const showBlend =
+                level.features.blending && it.example?.includes("–");
               return (
                 <div
                   key={it.id}
@@ -414,9 +437,9 @@ function PracticeSoundsCard({ level, childId }: { level: PhonicsLevel; childId: 
                       size="sm"
                       variant="violet"
                       ariaLabel={`Play sound ${it.symbol}`}
-                      onPlay={() => recordPlay(it.id)}
+                      onPlay={() => recordPlay(it.id, it.contentId)}
                     />
-                    {level.features.blending && it.example?.includes("–") && (
+                    {showBlend && (
                       <Button
                         type="button"
                         size="sm"
@@ -437,15 +460,16 @@ function PracticeSoundsCard({ level, childId }: { level: PhonicsLevel; childId: 
           </div>
         ) : (
           <div className="space-y-2">
-            {level.items.map((it) => {
+            {items.map((it) => {
               const count = progress.practiced[it.id] ?? 0;
               const mastered = !!progress.mastered[it.id];
+              const isLong = it.type === "sentence" || it.type === "story";
               return (
                 <div
                   key={it.id}
                   data-testid={`phonics-tile-${it.id}`}
                   className={cn(
-                    "flex items-center gap-3 rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all",
+                    "flex items-start gap-3 rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all",
                     mastered
                       ? "border-emerald-300 dark:border-emerald-400/40"
                       : "border-white/60 dark:border-white/10 hover:border-primary/30",
@@ -453,18 +477,28 @@ function PracticeSoundsCard({ level, childId }: { level: PhonicsLevel; childId: 
                 >
                   {it.emoji && <span className="text-xl shrink-0">{it.emoji}</span>}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground leading-snug">{it.symbol}</p>
+                    <p
+                      className={cn(
+                        "font-semibold text-foreground leading-snug",
+                        isLong ? "text-sm" : "text-sm",
+                      )}
+                    >
+                      {it.symbol}
+                    </p>
                     {it.example && (
-                      <p className="text-[10px] text-muted-foreground">{it.example}{count > 0 ? ` · played ${count}×` : ""}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {it.example}
+                        {count > 0 ? ` · played ${count}×` : ""}
+                      </p>
                     )}
                   </div>
-                  {mastered && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                  {mastered && <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-1" />}
                   <AudioPlayButton
                     text={it.sound}
                     size="sm"
                     variant="violet"
                     ariaLabel={`Read aloud: ${it.symbol}`}
-                    onPlay={() => recordPlay(it.id)}
+                    onPlay={() => recordPlay(it.id, it.contentId)}
                   />
                 </div>
               );
@@ -473,17 +507,32 @@ function PracticeSoundsCard({ level, childId }: { level: PhonicsLevel; childId: 
         )}
 
         {blendItem && (
-          <BlendPanel item={blendItem} onClose={() => setBlendItem(null)} onPlay={() => recordPlay(blendItem.id)} />
+          <BlendPanel
+            item={blendItem}
+            onClose={() => setBlendItem(null)}
+            onPlay={() => recordPlay(blendItem.id, blendItem.contentId)}
+          />
         )}
       </CardContent>
     </Card>
   );
 }
 
-// ─── Blend panel — shown for 3+ when user taps "Blend" ───────────────────────
+// ─── Blend panel ─────────────────────────────────────────────────────────────
 
-function BlendPanel({ item, onClose, onPlay }: { item: PhonicsItem; onClose: () => void; onPlay: () => void }) {
-  const sounds = (item.example ?? item.symbol).split("–").map((s) => s.trim()).filter(Boolean);
+function BlendPanel({
+  item,
+  onClose,
+  onPlay,
+}: {
+  item: DisplayPhonicsItem;
+  onClose: () => void;
+  onPlay: () => void;
+}) {
+  const sounds = (item.example ?? item.symbol)
+    .split("–")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   return (
     <div
@@ -531,42 +580,40 @@ function BlendPanel({ item, onClose, onPlay }: { item: PhonicsItem; onClose: () 
 
 // ─── Card 3: Progress Tracker ────────────────────────────────────────────────
 
-function ProgressTrackerCard({ level, childId }: { level: PhonicsLevel; childId: number | string }) {
-  const [progress, setProgress] = useState<PhonicsProgress>(() => loadProgress(childId, level.ageGroup));
-
-  useEffect(() => {
-    setProgress(loadProgress(childId, level.ageGroup));
-    // Re-read on storage events (other tabs / cards in same page write directly)
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === progressKey(childId, level.ageGroup)) {
-        setProgress(loadProgress(childId, level.ageGroup));
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [childId, level.ageGroup]);
-
-  // Light polling — local writes don't fire storage events
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setProgress(loadProgress(childId, level.ageGroup));
-    }, 1500);
-    return () => window.clearInterval(id);
-  }, [childId, level.ageGroup]);
-
-  const totalItems = level.items.length;
-  const practicedCount = Object.keys(progress.practiced).length;
-  // Only count mastered items that the child has actually played at least once,
-  // otherwise accuracy can exceed 100% (e.g. 1 played, 2 marked mastered).
-  const masteredFromPlayed = Object.keys(progress.mastered).filter(
-    (id) => (progress.practiced[id] ?? 0) > 0,
+function ProgressTrackerCard({
+  level,
+  items,
+  progress,
+  sourceLabel,
+}: {
+  level: PhonicsLevel;
+  items: DisplayPhonicsItem[];
+  progress: PhonicsProgressMap;
+  sourceLabel: string;
+}) {
+  const totalItems = Math.max(items.length, 1);
+  const validIds = new Set(items.map((i) => i.id));
+  const practicedCount = Object.keys(progress.practiced).filter((id) =>
+    validIds.has(id),
   ).length;
-  const masteredCount = Object.keys(progress.mastered).length;
-  const totalPlays = Object.values(progress.practiced).reduce((a, b) => a + b, 0);
-  const completionPct = Math.min(100, Math.round((masteredCount / totalItems) * 100));
-  const accuracyPct = practicedCount > 0
-    ? Math.min(100, Math.round((masteredFromPlayed / practicedCount) * 100))
-    : 0;
+  const masteredFromPlayed = Object.keys(progress.mastered).filter(
+    (id) => validIds.has(id) && (progress.practiced[id] ?? 0) > 0,
+  ).length;
+  const masteredCount = Object.keys(progress.mastered).filter((id) =>
+    validIds.has(id),
+  ).length;
+  const totalPlays = Object.entries(progress.practiced).reduce(
+    (sum, [id, n]) => (validIds.has(id) ? sum + n : sum),
+    0,
+  );
+  const completionPct = Math.min(
+    100,
+    Math.round((masteredCount / totalItems) * 100),
+  );
+  const accuracyPct =
+    practicedCount > 0
+      ? Math.min(100, Math.round((masteredFromPlayed / practicedCount) * 100))
+      : 0;
 
   return (
     <Card
@@ -580,18 +627,20 @@ function ProgressTrackerCard({ level, childId }: { level: PhonicsLevel; childId:
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-quicksand text-base font-bold text-foreground">Progress Tracker</h3>
-            <p className="text-xs text-muted-foreground">{level.shortLabel} • saved on this device</p>
+            <p className="text-xs text-muted-foreground">{level.shortLabel} • {sourceLabel}</p>
           </div>
         </div>
 
-        {/* Stats grid */}
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <Stat label="Practised" value={`${practicedCount}/${totalItems}`} />
-          <Stat label="Accuracy" value={`${accuracyPct}%`} sub={practicedCount === 0 ? "no data" : undefined} />
+          <Stat label="Practised" value={`${practicedCount}/${items.length}`} />
+          <Stat
+            label="Accuracy"
+            value={`${accuracyPct}%`}
+            sub={practicedCount === 0 ? "no data" : undefined}
+          />
           <Stat label="Total plays" value={`${totalPlays}`} />
         </div>
 
-        {/* Completion bar */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-semibold text-foreground">Mastery</span>
@@ -607,7 +656,7 @@ function ProgressTrackerCard({ level, childId }: { level: PhonicsLevel; childId:
           <p className="text-[10px] text-muted-foreground mt-1.5">
             {masteredCount === 0
               ? "Tap 'Mark mastered' on a sound your child knows confidently."
-              : `${masteredCount} of ${totalItems} mastered • keep going!`}
+              : `${masteredCount} of ${items.length} mastered • keep going!`}
           </p>
         </div>
       </CardContent>
@@ -625,19 +674,29 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
   );
 }
 
-// ─── Card 4: Parent Tips (with rule-based AI insights) ──────────────────────
+// ─── Card 4: Parent Tips ─────────────────────────────────────────────────────
 
-function ParentTipsCard({ level, childId }: { level: PhonicsLevel; childId: number | string }) {
+function ParentTipsCard({
+  level,
+  items,
+  progress,
+  insights,
+}: {
+  level: PhonicsLevel;
+  items: DisplayPhonicsItem[];
+  progress: PhonicsProgressMap;
+  insights: PhonicsInsight[] | null;
+}) {
   const [open, setOpen] = useState(false);
-  const [progress, setProgress] = useState<PhonicsProgress>(() => loadProgress(childId, level.ageGroup));
 
-  useEffect(() => {
-    setProgress(loadProgress(childId, level.ageGroup));
-    const id = window.setInterval(() => setProgress(loadProgress(childId, level.ageGroup)), 1500);
-    return () => window.clearInterval(id);
-  }, [childId, level.ageGroup]);
-
-  const insights = useMemo(() => buildInsights(level, progress), [level, progress]);
+  // Prefer server-built insights (richer + cached) — fall back to local rules.
+  const display = useMemo(
+    () =>
+      insights && insights.length > 0
+        ? insights
+        : buildLocalInsights(items, progress, level.shortLabel),
+    [insights, items, progress, level.shortLabel],
+  );
 
   return (
     <Card
@@ -655,9 +714,8 @@ function ParentTipsCard({ level, childId }: { level: PhonicsLevel; childId: numb
           </div>
         </div>
 
-        {/* Insights */}
         <div className="space-y-2 mb-4">
-          {insights.map((ins, i) => (
+          {display.map((ins, i) => (
             <div
               key={i}
               data-testid={`phonics-insight-${ins.tone}`}
@@ -681,7 +739,6 @@ function ParentTipsCard({ level, childId }: { level: PhonicsLevel; childId: numb
           ))}
         </div>
 
-        {/* Static tips list — collapsible */}
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
