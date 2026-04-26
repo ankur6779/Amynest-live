@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator,
-  Image, Platform, LayoutAnimation, UIManager,
+  Image, Platform, LayoutAnimation, UIManager, findNodeHandle,
 } from "react-native";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -119,6 +119,12 @@ export default function HubScreen() {
   // Lazy-load Section 2 ("Explore") so the primary band content paints first.
   // Reset on child switch so the deferred render happens fresh per child.
   const [showExplore, setShowExplore] = useState(false);
+  // Quick band switcher (Task #108): when set to a future band, that group is
+  // shown in full opacity (un-dimmed) and we scroll to it. Tapping the current
+  // band chip clears it and returns to the default 2-section view.
+  const [previewBand, setPreviewBand] = useState<number | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const groupRefs = useRef<Record<number, View | null>>({});
   // First-Time Free + Preview Lock — every Parent Hub feature is usable ONCE
   // for free (server-tracked). After that, free users see a locked overlay;
   // premium users always get full access.
@@ -148,9 +154,42 @@ export default function HubScreen() {
   // primary "For You" content paints first.
   useEffect(() => {
     setShowExplore(false);
+    setPreviewBand(null);
     const t = setTimeout(() => setShowExplore(true), 250);
     return () => clearTimeout(t);
   }, [effective?.id, currentBand]);
+
+  // Scroll the ScrollView so the preview band's group is near the top.
+  const scrollToBand = (band: number) => {
+    const groupView = groupRefs.current[band];
+    const scrollNode = scrollRef.current;
+    if (!groupView || !scrollNode) return;
+    const handle = findNodeHandle(scrollNode);
+    if (handle == null) return;
+    groupView.measureLayout(
+      handle,
+      (_x, y) => {
+        scrollRef.current?.scrollTo({ y: Math.max(y - 16, 0), animated: true });
+      },
+      () => {},
+    );
+  };
+
+  const handleBandChipPress = (band: number) => {
+    LayoutAnimation.configureNext({
+      duration: 220,
+      create: { type: "easeInEaseOut", property: "opacity" },
+      update: { type: "easeInEaseOut" },
+      delete: { type: "easeInEaseOut", property: "opacity" },
+    });
+    if (band === currentBand) {
+      setPreviewBand(null);
+      return;
+    }
+    setPreviewBand(band);
+    // Defer scroll so layout has time to settle if anything just changed.
+    setTimeout(() => scrollToBand(band), 50);
+  };
 
   const askAmy = (q: string) => {
     router.push({ pathname: "/amy-ai", params: { q } });
@@ -180,6 +219,7 @@ export default function HubScreen() {
   return (
     <LinearGradient colors={theme.gradient} style={{ flex: 1 }}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{
           paddingTop: insets.top + 16,
           paddingBottom: 140,
@@ -1088,31 +1128,94 @@ export default function HubScreen() {
                         Explore Next Stage for {childName}
                       </Text>
                       <Text style={styles.bandSectionSub}>
-                        Preview what's coming up as {childName} grows
+                        {previewBand !== null
+                          ? `Previewing age ${HUB_AGE_BANDS[previewBand].label} · tap "Now" to reset`
+                          : `Preview what's coming up as ${childName} grows`}
                       </Text>
                     </View>
-                    {orderedBands.map(band => (
-                      <View key={band} style={styles.exploreGroup}>
-                        <View style={styles.exploreGroupHeader}>
-                          <Text style={styles.exploreGroupTitle}>
-                            For Age {HUB_AGE_BANDS[band].label}
-                          </Text>
-                          {band === nearestFutureBand && (
-                            <View style={styles.comingNextPill}>
-                              <Text style={styles.comingNextText}>Coming Up Next</Text>
-                            </View>
-                          )}
-                        </View>
-                        <View style={styles.exploreGroupBody}>
-                          <View style={[styles.sectionsGrid, styles.exploreDimmed]}>
-                            {(groupsMap.get(band) ?? []).map(t => (
-                              <React.Fragment key={t.id}>{t.node}</React.Fragment>
-                            ))}
+
+                    {/* Quick band switcher (Task #108): chips for the current
+                        band + each future band that has tiles. Tapping a future
+                        chip un-dims that group and scrolls to it; tapping the
+                        current "Now" chip clears the preview. */}
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.bandPillRow}
+                    >
+                      {[currentBand, ...orderedBands].map(band => {
+                        const isCurrent = band === currentBand;
+                        const isPreviewing = previewBand === band;
+                        const isDefault = previewBand === null && isCurrent;
+                        return (
+                          <Pressable
+                            key={`band-pill-${band}`}
+                            onPress={() => handleBandChipPress(band)}
+                            style={[
+                              styles.bandPill,
+                              isCurrent && styles.bandPillCurrent,
+                              isPreviewing && !isCurrent && styles.bandPillPreview,
+                              isDefault && styles.bandPillCurrentActive,
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={
+                              isCurrent
+                                ? `Current age band ${HUB_AGE_BANDS[band].label}, tap to reset preview`
+                                : `Preview age ${HUB_AGE_BANDS[band].label} content`
+                            }
+                            accessibilityState={{ selected: isPreviewing || isDefault }}
+                          >
+                            <Text
+                              style={[
+                                styles.bandPillText,
+                                isCurrent && styles.bandPillTextCurrent,
+                                isPreviewing && !isCurrent && styles.bandPillTextPreview,
+                              ]}
+                            >
+                              {HUB_AGE_BANDS[band].label}
+                              {isCurrent ? " · Now" : ""}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+
+                    {orderedBands.map(band => {
+                      const isPreviewed = previewBand === band;
+                      return (
+                        <View
+                          key={band}
+                          ref={(node) => { groupRefs.current[band] = node; }}
+                          style={styles.exploreGroup}
+                        >
+                          <View style={styles.exploreGroupHeader}>
+                            <Text style={styles.exploreGroupTitle}>
+                              For Age {HUB_AGE_BANDS[band].label}
+                            </Text>
+                            {isPreviewed && (
+                              <View style={styles.previewingPill}>
+                                <Text style={styles.previewingText}>Previewing</Text>
+                              </View>
+                            )}
+                            {!isPreviewed && band === nearestFutureBand && (
+                              <View style={styles.comingNextPill}>
+                                <Text style={styles.comingNextText}>Coming Up Next</Text>
+                              </View>
+                            )}
                           </View>
-                          <View pointerEvents="none" style={styles.exploreOverlay} />
+                          <View style={styles.exploreGroupBody}>
+                            <View style={[styles.sectionsGrid, !isPreviewed && styles.exploreDimmed]}>
+                              {(groupsMap.get(band) ?? []).map(t => (
+                                <React.Fragment key={t.id}>{t.node}</React.Fragment>
+                              ))}
+                            </View>
+                            {!isPreviewed && (
+                              <View pointerEvents="none" style={styles.exploreOverlay} />
+                            )}
+                          </View>
                         </View>
-                      </View>
-                    ))}
+                      );
+                    })}
                   </View>
                 )}
               </>
@@ -1350,6 +1453,41 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       color: "#FF4ECD", fontSize: 10, fontWeight: "800",
       letterSpacing: 0.5, textTransform: "uppercase",
     },
+    previewingPill: {
+      paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999,
+      backgroundColor: isLight ? "rgba(217,119,6,0.12)" : "rgba(255,210,122,0.18)",
+      borderWidth: 1,
+      borderColor: isLight ? "rgba(217,119,6,0.45)" : "rgba(255,210,122,0.55)",
+    },
+    previewingText: {
+      color: isLight ? "#B45309" : "#FFD27A",
+      fontSize: 10, fontWeight: "800",
+      letterSpacing: 0.5, textTransform: "uppercase",
+    },
+
+    // Band switcher pills above the Explore groups (Task #108)
+    bandPillRow: { flexDirection: "row", gap: 8, paddingVertical: 4, paddingHorizontal: 2 },
+    bandPill: {
+      paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999,
+      backgroundColor: glassBg,
+      borderWidth: 1, borderColor: glassBorder,
+    },
+    bandPillCurrent: {
+      backgroundColor: isLight ? "rgba(217,119,6,0.10)" : "rgba(255,210,122,0.14)",
+      borderColor: isLight ? "rgba(217,119,6,0.40)" : "rgba(255,210,122,0.55)",
+    },
+    bandPillCurrentActive: {
+      backgroundColor: isLight ? "rgba(217,119,6,0.18)" : "rgba(255,210,122,0.22)",
+      borderColor: isLight ? "rgba(217,119,6,0.65)" : "rgba(255,210,122,0.85)",
+    },
+    bandPillPreview: {
+      backgroundColor: "rgba(255,78,205,0.18)",
+      borderColor: "rgba(255,78,205,0.65)",
+    },
+    bandPillText: { color: c.foreground, fontSize: 12, fontWeight: "700" },
+    bandPillTextCurrent: { color: isLight ? "#B45309" : "#FFD27A" },
+    bandPillTextPreview: { color: "#FF4ECD" },
+
     exploreGroupBody: { position: "relative" },
     exploreDimmed: { opacity: 0.6 },
     exploreOverlay: {
