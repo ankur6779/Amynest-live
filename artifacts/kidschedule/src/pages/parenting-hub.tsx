@@ -870,18 +870,27 @@ export default function ParentingHub() {
       id: "coloring-books",
       bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
       render: () => totalAgeMonths >= 24 ? (
-        <HubSection
-          id="coloring-books"
-          icon={<Palette className="h-5 w-5 text-rose-600" />}
-          title="🎨 Coloring Books"
-          description="Printable coloring sheets — preview, then download (2/day)"
-          accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_coloring_books")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
         >
-          <ColoringBooks
-            childId={effectiveChild.id}
-            childName={effectiveChild.name}
-          />
-        </HubSection>
+          <HubSection
+            id="coloring-books"
+            icon={<Palette className="h-5 w-5 text-rose-600" />}
+            title="🎨 Coloring Books"
+            description="Printable coloring sheets — preview, then download (2/day)"
+            accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
+            tryFree={tryFreeFor("hub_coloring_books")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}
+          >
+            <ColoringBooks
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+            />
+          </HubSection>
+        </LockedBlock>
       ) : null,
     },
 
@@ -893,18 +902,27 @@ export default function ParentingHub() {
       id: "fun-sheets",
       bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
       render: () => totalAgeMonths >= 24 ? (
-        <HubSection
-          id="fun-sheets"
-          icon={<FileDown className="h-5 w-5 text-teal-600" />}
-          title="📄 Fun Sheets"
-          description="Printable activity & learning PDFs — preview, then download (2/day)"
-          accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20"
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_fun_sheets")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
         >
-          <FunSheets
-            childId={effectiveChild.id}
-            childName={effectiveChild.name}
-          />
-        </HubSection>
+          <HubSection
+            id="fun-sheets"
+            icon={<FileDown className="h-5 w-5 text-teal-600" />}
+            title="📄 Fun Sheets"
+            description="Printable activity & learning PDFs — preview, then download (2/day)"
+            accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20"
+            tryFree={tryFreeFor("hub_fun_sheets")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}
+          >
+            <FunSheets
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+            />
+          </HubSection>
+        </LockedBlock>
       ) : null,
     },
   ] : [];
