@@ -199,9 +199,17 @@ export function suggestActions(notes: PtmNotes): PtmActionItem[] {
     { src: "suggestion", text: notes.suggestions },
     { src: "feedback", text: notes.teacherFeedback },
   ];
+  // Sentence-boundary splitter without regex lookbehind. The original used
+  // `(?<=[.!?])\s+` to split AFTER sentence-ending punctuation, but that
+  // assertion is a parse-time SyntaxError on Safari < 16.4 — the entire
+  // bundle fails to load on those iOS versions. Equivalent fix: replace
+  // "punctuation + whitespace" with "punctuation + U+0001 sentinel" first,
+  // then include the sentinel in the regular split regex.
+  const SENT_BREAK = "\u0001";
   for (const { src, text } of sources) {
     const clauses = (text || "")
-      .split(/\r?\n|[•\-*]| {2,}|(?<=[.!?])\s+/g)
+      .replace(/([.!?])\s+/g, `$1${SENT_BREAK}`)
+      .split(/\r?\n|[•\-*]| {2,}|\u0001/g)
       .map((s) => s.trim())
       .filter((s) => s.length >= 8);
     for (const raw of clauses) {
