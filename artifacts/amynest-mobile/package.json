@@ -92,6 +92,7 @@
     "i18next": "^26.0.5",
     "react-i18next": "^17.0.4",
     "react-native-purchases": "9.7.2",
+    "react-native-purchases-ui": "9.7.2",
     "react-native-razorpay": "^2.3.1",
     "zustand": "^5.0.12"
   }

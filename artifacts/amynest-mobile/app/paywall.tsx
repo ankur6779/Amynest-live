@@ -17,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import type { Plan } from "@/services/subscriptionApi";
 import { brand } from "@/constants/colors";
+import { presentRCPaywall } from "@/lib/revenuecat";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -98,6 +99,7 @@ export default function PaywallScreen() {
   const ent = useSubscriptionStore((s) => s.entitlements);
   const loading = useSubscriptionStore((s) => s.loading);
   const load = useSubscriptionStore((s) => s.load);
+  const refresh = useSubscriptionStore((s) => s.refresh);
   const upgrade = useSubscriptionStore((s) => s.upgrade);
   const upgradeRazorpay = useSubscriptionStore((s) => s.upgradeRazorpay);
   const beginTrial = useSubscriptionStore((s) => s.beginTrial);
@@ -129,6 +131,22 @@ export default function PaywallScreen() {
     if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSubmitting(true);
     setNotice(null);
+
+    // iOS: use RevenueCat's native Paywall Editor UI (published in RC dashboard).
+    // The RC paywall handles plan selection + Apple IAP sheet internally.
+    // Android: keep custom flow so we can show the Razorpay UCB alternative
+    // required by Google Play User Choice Billing policy.
+    if (Platform.OS === "ios") {
+      const res = await presentRCPaywall();
+      setSubmitting(false);
+      if (res.purchased || res.restored) {
+        void refresh(); // sync entitlements from server after purchase
+        router.back();
+      }
+      // cancelled or error: stay on screen, no error notice needed
+      return;
+    }
+
     const res = await upgrade(selected);
     setSubmitting(false);
     if (res.ok) {

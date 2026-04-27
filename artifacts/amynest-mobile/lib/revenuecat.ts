@@ -4,6 +4,7 @@
 // the active entitlement.
 import { Platform } from "react-native";
 import Purchases, { type CustomerInfo, type PurchasesPackage } from "react-native-purchases";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 import Constants from "expo-constants";
 
 const TEST_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
@@ -133,4 +134,69 @@ export async function restorePurchases(): Promise<{ isPremium: boolean }> {
   if (!initialized) return { isPremium: false };
   const customerInfo = await Purchases.restorePurchases();
   return { isPremium: customerInfo.entitlements.active[RC_ENTITLEMENT_ID] !== undefined };
+}
+
+export type RCPaywallResult =
+  | { purchased: true; restored: false; cancelled: false }
+  | { purchased: false; restored: true; cancelled: false }
+  | { purchased: false; restored: false; cancelled: true }
+  | { purchased: false; restored: false; cancelled: false; error: true };
+
+/**
+ * Show the RevenueCat-published Paywall Editor paywall natively.
+ * Uses `RevenueCatUI.presentPaywall()` — the paywall design and package
+ * configuration come from the RevenueCat dashboard, not from our custom UI.
+ *
+ * Call this on iOS (where we don't need the Razorpay UCB alternative).
+ * Android keeps the custom paywall so the Google Play UCB Razorpay option
+ * can be shown as required by Play store policy.
+ */
+export async function presentRCPaywall(): Promise<RCPaywallResult> {
+  if (!initialized) initializeRevenueCat();
+  try {
+    await ensureIdentified();
+    const result = await RevenueCatUI.presentPaywall();
+    switch (result) {
+      case PAYWALL_RESULT.PURCHASED:
+        return { purchased: true, restored: false, cancelled: false };
+      case PAYWALL_RESULT.RESTORED:
+        return { purchased: false, restored: true, cancelled: false };
+      case PAYWALL_RESULT.CANCELLED:
+      case PAYWALL_RESULT.NOT_PRESENTED:
+        return { purchased: false, restored: false, cancelled: true };
+      default:
+        return { purchased: false, restored: false, cancelled: false, error: true };
+    }
+  } catch (e) {
+    console.warn("[RevenueCat] presentPaywall error", e);
+    return { purchased: false, restored: false, cancelled: false, error: true };
+  }
+}
+
+/**
+ * Show the RC Paywall only if the user does not already have the
+ * `premium` entitlement active. Useful for feature-gate entry points.
+ */
+export async function presentRCPaywallIfNeeded(): Promise<RCPaywallResult> {
+  if (!initialized) initializeRevenueCat();
+  try {
+    await ensureIdentified();
+    const result = await RevenueCatUI.presentPaywallIfNeeded({
+      requiredEntitlementIdentifier: RC_ENTITLEMENT_ID,
+    });
+    switch (result) {
+      case PAYWALL_RESULT.PURCHASED:
+        return { purchased: true, restored: false, cancelled: false };
+      case PAYWALL_RESULT.RESTORED:
+        return { purchased: false, restored: true, cancelled: false };
+      case PAYWALL_RESULT.NOT_PRESENTED:
+      case PAYWALL_RESULT.CANCELLED:
+        return { purchased: false, restored: false, cancelled: true };
+      default:
+        return { purchased: false, restored: false, cancelled: false, error: true };
+    }
+  } catch (e) {
+    console.warn("[RevenueCat] presentPaywallIfNeeded error", e);
+    return { purchased: false, restored: false, cancelled: false, error: true };
+  }
 }
