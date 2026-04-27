@@ -43,30 +43,80 @@ const isLiteSplash =
   document.documentElement.classList.contains("lite-splash");
 const SPLASH_MIN_MS = !isRootEntry ? 0 : isLiteSplash ? 1200 : 3200;
 
+// Hard cap: even if the lazy AppCore chunk never arrives (offline, captive
+// portal, CDN failure), force the splash off after this so the recovery
+// error boundary can take over instead of stranding the user on a splash.
+const SPLASH_MAX_MS = 12000;
+
 const splashStartedAt = performance.now();
+
+declare global {
+  interface Window {
+    __amynestAppCoreReady?: boolean;
+  }
+}
+
+function dismissSplash() {
+  mark("splash-timer-fired");
+  const splash = document.getElementById("splash");
+  if (splash) {
+    splash.classList.add("splash-hide");
+    mark("splash-hide-class-added");
+    // Remove from DOM after the CSS transition ends so it no longer
+    // intercepts pointer events or occupies the accessibility tree.
+    splash.addEventListener("transitionend", () => {
+      splash.remove();
+      mark("splash-hidden");
+    }, { once: true });
+  } else {
+    // No splash element — mark immediately so the crash detector
+    // doesn't flag this load as incomplete.
+    mark("splash-hidden");
+  }
+}
+
+let splashDismissed = false;
+let pollHandle: ReturnType<typeof setInterval> | null = null;
+
+function maybeDismissSplash() {
+  if (splashDismissed) return false;
+  const elapsed = performance.now() - splashStartedAt;
+  const minElapsed = elapsed >= SPLASH_MIN_MS;
+  const coreReady = window.__amynestAppCoreReady === true;
+  // Wait for BOTH the min display time AND AppCore to mount, so the
+  // splash always covers the lazy-chunk download. The SPLASH_MAX_MS
+  // hard cap below overrides this if AppCore never arrives.
+  if (!minElapsed || !coreReady) return false;
+  splashDismissed = true;
+  if (pollHandle !== null) {
+    clearInterval(pollHandle);
+    pollHandle = null;
+  }
+  dismissSplash();
+  return true;
+}
 
 requestAnimationFrame(() => {
   requestAnimationFrame(() => {
     mark("splash-raf-fired");
-    const elapsed = performance.now() - splashStartedAt;
-    const wait = Math.max(0, SPLASH_MIN_MS - elapsed);
+    // Poll every 80ms for both the min-time AND AppCore readiness.
+    // Polling is simpler & more robust than wiring an event listener
+    // through the React tree — no race between listener registration,
+    // React commit timing, and the AppCore module's useEffect.
+    pollHandle = setInterval(() => {
+      maybeDismissSplash();
+    }, 80);
+    // Hard cap fallback so a stuck AppCore can never trap the user on
+    // the splash forever (offline, captive portal, CDN failure, etc.).
     setTimeout(() => {
-      mark("splash-timer-fired");
-      const splash = document.getElementById("splash");
-      if (splash) {
-        splash.classList.add("splash-hide");
-        mark("splash-hide-class-added");
-        // Remove from DOM after the CSS transition ends so it no longer
-        // intercepts pointer events or occupies the accessibility tree.
-        splash.addEventListener("transitionend", () => {
-          splash.remove();
-          mark("splash-hidden");
-        }, { once: true });
-      } else {
-        // No splash element — mark immediately so the crash detector
-        // doesn't flag this load as incomplete.
-        mark("splash-hidden");
+      if (splashDismissed) return;
+      mark("splash-max-timeout");
+      splashDismissed = true;
+      if (pollHandle !== null) {
+        clearInterval(pollHandle);
+        pollHandle = null;
       }
-    }, wait);
+      dismissSplash();
+    }, SPLASH_MAX_MS);
   });
 });

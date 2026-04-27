@@ -1,325 +1,56 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
-import { FirebaseAuthProvider, Show } from "@/lib/firebase-auth";
-import { useAuth, useClerk } from "@/lib/firebase-auth-hooks";
-import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/contexts/theme-context";
-import { Layout } from "@/components/layout";
-
-// Eager imports — landing + sign-in flow are the most common first views,
-// and NotFound is tiny + needed as a fallback. Everything else is lazy
-// (see below) so the initial JS bundle stays small enough for iOS Safari's
-// WebContent process to fit in the in-app browser memory budget that
-// WhatsApp / Instagram / etc. provide. Before code-splitting, the main
-// chunk was 2.58 MB minified (762 KB gzipped) and was getting killed by
-// iOS Jetsam mid-mount on iPhones opened from in-app browsers.
-import NotFound from "@/pages/not-found";
-import LandingPage from "@/pages/landing";
-import SignInPage from "@/pages/sign-in";
-import SignUpPage from "@/pages/sign-up";
-
-// Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
-// when its route is first matched. The Suspense boundary below renders
-// `null` while a chunk is loading so there's no flash of fallback UI.
-const PrivacyPolicyPage = lazy(() => import("@/pages/privacy"));
-const Dashboard = lazy(() => import("@/pages/dashboard"));
-const ChildrenList = lazy(() => import("@/pages/children/index"));
-const ChildForm = lazy(() => import("@/pages/children/form"));
-const RoutinesList = lazy(() => import("@/pages/routines/index"));
-const RoutineGenerate = lazy(() => import("@/pages/routines/generate"));
-const RoutineDetail = lazy(() => import("@/pages/routines/detail"));
-const BehaviorTracker = lazy(() => import("@/pages/behavior/index"));
-const ParentProfile = lazy(() => import("@/pages/parent-profile"));
-const BabysittersPage = lazy(() => import("@/pages/babysitters/index"));
-const AssistantPage = lazy(() => import("@/pages/assistant"));
-const ProgressPage = lazy(() => import("@/pages/progress"));
-const ParentingHub = lazy(() => import("@/pages/parenting-hub"));
-const KidsControlCenterPage = lazy(() => import("@/pages/kids-control-center"));
-const StudyPage = lazy(() => import("@/pages/study"));
-const EventPrepPage = lazy(() => import("@/pages/event-prep"));
-const SchoolMorningFlowPage = lazy(() => import("@/pages/school-morning-flow"));
-const AmyCoachPage = lazy(() => import("@/pages/ai-coach"));
-const AmyCoachProgressPage = lazy(() => import("@/pages/ai-coach-progress"));
-const RecipesPage = lazy(() => import("@/pages/recipes"));
-const NutritionHubPage = lazy(() => import("@/pages/nutrition"));
-const AudioLessonsPage = lazy(() => import("@/pages/audio-lessons"));
-const GamesPage = lazy(() => import("@/pages/games"));
-const OnboardingPage = lazy(() => import("@/pages/onboarding"));
-const PricingPage = lazy(() => import("@/pages/pricing"));
-const ReferralsPage = lazy(() => import("@/pages/referrals"));
-const InsightsPage = lazy(() => import("@/pages/insights"));
-const RewardsPage = lazy(() => import("@/pages/rewards"));
-const NotificationSettingsPage = lazy(() => import("@/pages/notification-settings"));
-
-import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
-import { PaywallProvider } from "@/contexts/paywall-context";
-import { PaywallModal } from "@/components/paywall-modal";
-import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
+import { lazy, Suspense } from "react";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
 
-// Phase marker helper — installed by the inline boot script in index.html.
-// We call this from a top-level useEffect to confirm React's mount actually
-// completed (not just `root.render()` returning synchronously, which is
-// what the existing `react-rendered` mark in main.tsx records).
+// Everything heavy — Firebase Auth, React Query, i18n providers, the
+// router, every page route, the Layout shell — lives in AppCore. By
+// lazy-loading it here we keep the eager bundle minimal so iOS Safari's
+// WebContent process on memory-constrained iPhones (e.g. iPhone 13
+// with 4 GB RAM) doesn't get killed by Jetsam during initial parse +
+// React mount. The splash screen rendered by index.html stays visible
+// until AppCore loads and renders, so there's no blank-screen flash.
+//
+// Retry once on ChunkLoadError. On a flaky mobile network the first
+// fetch can fail (or be served a stale 404 from a CDN edge mid-deploy);
+// a single retry with a cache-busting query string recovers without a
+// full page reload. If it still fails, the rejection bubbles up to the
+// ReactInstanceRecovery error boundary, which renders the recovery UI
+// (rather than leaving the user on a permanent splash).
+const AppCore = lazy(() =>
+  import("./AppCore").catch((firstErr) => {
+    if (typeof window !== "undefined") {
+      try { window.__amynestMark?.("appcore-chunk-retry"); } catch (_e) { /* best-effort */ }
+    }
+    return import(/* @vite-ignore */ `./AppCore?retry=${Date.now()}`).catch(
+      (secondErr) => {
+        if (typeof window !== "undefined") {
+          try { window.__amynestMark?.("appcore-chunk-failed"); } catch (_e) { /* best-effort */ }
+        }
+        // Re-throw the original error so the recovery boundary shows
+        // it. The retry's error is logged via the phase marker above.
+        throw firstErr instanceof Error ? firstErr : secondErr;
+      },
+    );
+  }),
+);
+
 declare global {
   interface Window {
     __amynestMark?: (phase: string) => void;
   }
 }
-const bootMark = (phase: string) => {
-  try { window.__amynestMark?.(phase); } catch (_e) { /* breadcrumbs are best-effort */ }
-};
-
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-function useOnboardingStatus() {
-  const { isSignedIn } = useAuth();
-  const authFetch = useAuthFetch();
-  return useQuery({
-    queryKey: ["onboarding-status"],
-    queryFn: async () => {
-      const res = await authFetch("/api/onboarding");
-      if (!res.ok) {
-        localStorage.removeItem("onboardingComplete");
-        return { onboardingComplete: false, profileComplete: false };
-      }
-      const data = await res.json() as { onboardingComplete: boolean; profileComplete: boolean };
-      if (data.onboardingComplete) {
-        localStorage.setItem("onboardingComplete", "true");
-      } else {
-        localStorage.removeItem("onboardingComplete");
-      }
-      return data;
-    },
-    enabled: !!isSignedIn,
-    staleTime: 30_000,
-  });
-}
-
-function HomeRedirect() {
-  const { data, isLoading } = useOnboardingStatus();
-  return (
-    <>
-      <Show when="signed-in">
-        {isLoading
-          ? null
-          : data?.onboardingComplete
-            ? <Redirect to="/dashboard" />
-            : <Redirect to="/onboarding" />
-        }
-      </Show>
-      <Show when="signed-out">
-        <LandingPage />
-      </Show>
-    </>
-  );
-}
-
-function ProtectedRoute({ component: Component }: { component: React.ComponentType; requiresProfile?: boolean }) {
-  const { data, isLoading } = useOnboardingStatus();
-  return (
-    <>
-      <Show when="signed-in">
-        {isLoading
-          ? null
-          : !data?.onboardingComplete
-            ? <Redirect to="/onboarding" />
-            : <Layout><Component /></Layout>
-        }
-      </Show>
-      <Show when="signed-out">
-        <Redirect to="/sign-in" />
-      </Show>
-    </>
-  );
-}
-
-function FirebaseAuthBootstrap() {
-  const { getToken, isSignedIn } = useAuth();
-
-  useEffect(() => {
-    if (isSignedIn) {
-      setAuthTokenGetter(() => getToken());
-    } else {
-      setAuthTokenGetter(null);
-    }
-  }, [isSignedIn, getToken]);
-
-  return null;
-}
-
-function QueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
-  const queryClient = useQueryClient();
-  const prevUserIdRef = useRef<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
-      if (
-        prevUserIdRef.current !== undefined &&
-        prevUserIdRef.current !== userId
-      ) {
-        queryClient.clear();
-      }
-      prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, queryClient]);
-
-  return null;
-}
-
-const queryClient = new QueryClient();
-
-function ReactMountMarker() {
-  // Confirms React's reconciliation actually completed and effects are
-  // running — not just that `root.render()` returned synchronously (which
-  // is what the existing `react-rendered` mark in main.tsx captures).
-  // If a boot record on the next load shows `react-rendered` but NOT
-  // `react-effect-fired`, the iOS WebContent process was killed during
-  // initial reconciliation — almost always a memory-pressure crash from
-  // the bundle being too large.
-  useEffect(() => {
-    bootMark("react-effect-fired");
-  }, []);
-  return null;
-}
-
-function AppRoutes() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <PaywallProvider>
-            <ReactMountMarker />
-            <FirebaseAuthBootstrap />
-            <QueryClientCacheInvalidator />
-            <ReferralAttributionBridge />
-            <Suspense fallback={null}>
-            <Switch>
-          <Route path="/" component={HomeRedirect} />
-          <Route path="/privacy" component={PrivacyPolicyPage} />
-          <Route path="/sign-in" component={SignInPage} />
-          <Route path="/sign-up" component={SignUpPage} />
-          <Route path="/onboarding">
-            {() => (
-              <>
-                <Show when="signed-in"><OnboardingPage /></Show>
-                <Show when="signed-out"><Redirect to="/sign-in" /></Show>
-              </>
-            )}
-          </Route>
-          <Route path="/dashboard">
-            {() => <ProtectedRoute component={Dashboard} />}
-          </Route>
-          <Route path="/children">
-            {() => <ProtectedRoute component={ChildrenList} requiresProfile={false} />}
-          </Route>
-          <Route path="/children/new">
-            {() => <ProtectedRoute component={ChildForm} requiresProfile={false} />}
-          </Route>
-          <Route path="/children/:id">
-            {() => <ProtectedRoute component={ChildForm} requiresProfile={false} />}
-          </Route>
-          <Route path="/routines">
-            {() => <ProtectedRoute component={RoutinesList} />}
-          </Route>
-          <Route path="/routines/generate">
-            {() => <ProtectedRoute component={RoutineGenerate} />}
-          </Route>
-          <Route path="/routines/:id">
-            {() => <ProtectedRoute component={RoutineDetail} />}
-          </Route>
-          <Route path="/behavior">
-            {() => <ProtectedRoute component={BehaviorTracker} />}
-          </Route>
-          <Route path="/parent-profile">
-            {() => <ProtectedRoute component={ParentProfile} requiresProfile={false} />}
-          </Route>
-          <Route path="/notification-settings">
-            {() => <ProtectedRoute component={NotificationSettingsPage} requiresProfile={false} />}
-          </Route>
-          <Route path="/babysitters">
-            {() => <ProtectedRoute component={BabysittersPage} />}
-          </Route>
-          <Route path="/assistant">
-            {() => <ProtectedRoute component={AssistantPage} />}
-          </Route>
-          <Route path="/progress">
-            {() => <ProtectedRoute component={ProgressPage} />}
-          </Route>
-          <Route path="/parenting-hub">
-            {() => <ProtectedRoute component={ParentingHub} />}
-          </Route>
-          <Route path="/kids-control-center">
-            {() => <ProtectedRoute component={KidsControlCenterPage} />}
-          </Route>
-          <Route path="/study">
-            {() => <ProtectedRoute component={StudyPage} />}
-          </Route>
-          <Route path="/event-prep">
-            {() => <ProtectedRoute component={EventPrepPage} />}
-          </Route>
-          <Route path="/school-morning-flow">
-            {() => <ProtectedRoute component={SchoolMorningFlowPage} />}
-          </Route>
-          <Route path="/amy-coach">
-            {() => <ProtectedRoute component={AmyCoachPage} />}
-          </Route>
-          <Route path="/amy-coach/progress">
-            {() => <ProtectedRoute component={AmyCoachProgressPage} />}
-          </Route>
-          <Route path="/recipes">
-            {() => <ProtectedRoute component={RecipesPage} />}
-          </Route>
-          <Route path="/nutrition">
-            {() => <ProtectedRoute component={NutritionHubPage} />}
-          </Route>
-          <Route path="/audio-lessons">
-            {() => <ProtectedRoute component={AudioLessonsPage} />}
-          </Route>
-          <Route path="/games">
-            {() => <ProtectedRoute component={GamesPage} />}
-          </Route>
-          <Route path="/pricing">
-            {() => <ProtectedRoute component={PricingPage} requiresProfile={false} />}
-          </Route>
-          <Route path="/referrals">
-            {() => <ProtectedRoute component={ReferralsPage} requiresProfile={false} />}
-          </Route>
-          <Route path="/insights">
-            {() => <ProtectedRoute component={InsightsPage} />}
-          </Route>
-          <Route path="/rewards">
-            {() => <ProtectedRoute component={RewardsPage} />}
-          </Route>
-          <Route component={NotFound} />
-            </Switch>
-            </Suspense>
-            <PaywallModal />
-            <SubscriptionEventBridge />
-            <Toaster />
-          </PaywallProvider>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  );
-}
 
 function App() {
+  // Suspense fallback is `null` rather than a spinner because the
+  // index.html splash screen is still visible at this point — it's not
+  // dismissed until BOTH the splash min-time has elapsed AND
+  // `__amynestAppCoreReady` is true (see main.tsx). That readiness
+  // gate means the splash always covers the lazy AppCore download, so
+  // the user never sees a blank Suspense fallback even on slow networks.
   return (
     <ReactInstanceRecovery>
-      <FirebaseAuthProvider>
-        <WouterRouter base={basePath}>
-          <AppRoutes />
-        </WouterRouter>
-      </FirebaseAuthProvider>
+      <Suspense fallback={null}>
+        <AppCore />
+      </Suspense>
     </ReactInstanceRecovery>
   );
 }
