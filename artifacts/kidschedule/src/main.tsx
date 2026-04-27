@@ -36,9 +36,14 @@ const isRootEntry =
   window.location.pathname === BASE + "/";
 
 // On a known-affected device (lite-splash class set by the inline boot
-// script — either iOS or post-crash recovery) shorten the splash to
-// 1200ms so its animations stop competing with React mount for GPU
-// memory. Other browsers keep the full 3200ms intro.
+// script — iOS, post-crash recovery, or `?liteSplash=1`) shorten the
+// splash to 1200ms so its animations stop competing with React mount
+// for GPU memory. Other browsers keep the full 3200ms intro.
+//
+// The boot script in index.html ALWAYS adds `lite-splash` on iOS, so
+// every iPhone / iPad load takes the 1200ms path here without needing
+// the alternating crash-detection cycle. See the iOS UA detection
+// comment in index.html for why this is necessary.
 const isLiteSplash =
   document.documentElement.classList.contains("lite-splash");
 const SPLASH_MIN_MS = !isRootEntry ? 0 : isLiteSplash ? 1200 : 3200;

@@ -82,7 +82,24 @@
           prev.phases.indexOf("splash-hidden") === -1
         );
 
-        if (prevCrashed || liteForced) {
+        // 2b. Detect iOS / iPadOS via UA. We force lite-splash mode on
+        //     every iOS load — not just after a crash — because the
+        //     crash-then-lite alternating cycle still trips the
+        //     "A problem repeatedly occurred" overlay on memory-tight
+        //     iPhones (iPhone 13 / 4 GB RAM in particular). With this in
+        //     place every iOS boot is the minimal-memory boot.
+        //
+        //     UA detection covers:
+        //       - iPhone / iPad / iPod (classic UA)
+        //       - iPadOS 13+ which lies and reports "Mac" — disambiguated
+        //         by the presence of touch points (`maxTouchPoints > 1`).
+        var ua = navigator.userAgent || "";
+        var isIOS = /iPad|iPhone|iPod/.test(ua) || (
+          /Mac/.test(ua) && typeof navigator.maxTouchPoints === "number" &&
+          navigator.maxTouchPoints > 1
+        );
+
+        if (prevCrashed || liteForced || isIOS) {
           document.documentElement.classList.add("lite-splash");
         }
 
@@ -685,6 +702,6 @@
     </div>
 
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx?v=20260426-fix"></script>
+    <script type="module" src="/src/main.tsx?v=20260427-ios-always-lite"></script>
   </body>
 </html>
