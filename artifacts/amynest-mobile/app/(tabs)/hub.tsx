@@ -23,6 +23,7 @@ import FuturePredictor from "@/components/FuturePredictor";
 import AiMealGenerator from "@/components/AiMealGenerator";
 import ParentCommandCenter from "@/components/ParentCommandCenter";
 import { PhonicsTestCard } from "@/components/PhonicsTestCard";
+import { HubDebugOverlay } from "@/components/HubDebugOverlay";
 import { isInfantHubAge } from "@workspace/infant-hub";
 import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand } from "./hub-bands";
 export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand };
@@ -175,6 +176,37 @@ export default function HubScreen() {
 
   if (!profileComplete) {
     return <ProfileLockScreen sectionName="Hub" />;
+  }
+
+  // Dev-only: snapshot of what the IIFE below renders, captured by reference
+  // so the floating HubDebugOverlay (mounted as a sibling outside the
+  // ScrollView) can show a live mobile-vs-web tile diff without us having
+  // to refactor the imperative allTiles builder. Mutated synchronously
+  // during render — same render pass, JS execution order — and only read
+  // by the overlay component, never used for hub render decisions.
+  const debugSnapshot: {
+    section1Ids: string[];
+    section2Ids: string[];
+    showsSection2: boolean;
+  } = { section1Ids: [], section2Ids: [], showsSection2: false };
+
+  // Dev-only: capture which featured tiles (rendered above the IIFE) the
+  // mobile hub is actually showing right now, so the overlay diff doesn't
+  // produce false "missing on mobile" warnings for command-center / infant-hub
+  // / tomorrow-forecast (web treats those as Section 1 featured tiles too).
+  // Mirrors the gating used by the JSX immediately below.
+  const debugFeaturedIds: string[] = [];
+  if (effective) {
+    debugFeaturedIds.push("command-center");
+    const selMonthsForDebug =
+      effective.age * 12 + (effective.ageMonths ?? 0);
+    const anyInfantChild =
+      isInfantHubAge(selMonthsForDebug) ||
+      children.some(
+        (c) => isInfantHubAge(c.age * 12 + (c.ageMonths ?? 0)),
+      );
+    if (anyInfantChild) debugFeaturedIds.push("infant-hub");
+    debugFeaturedIds.push("tomorrow-forecast");
   }
 
   return (
@@ -1053,6 +1085,19 @@ export default function HubScreen() {
               isLatestStage,
             } = partitionTilesByBand(allTiles, currentBand);
 
+            // Capture render snapshot for HubDebugOverlay (dev-only diff aid).
+            // Same render pass — read by the overlay sibling further down.
+            // Featured tile ids (rendered above this IIFE) are prepended so
+            // the diff matches what's actually visible on screen, not just
+            // what allTiles contains.
+            debugSnapshot.section1Ids = [
+              ...debugFeaturedIds,
+              ...section1.map(t => t.id),
+            ];
+            debugSnapshot.section2Ids = section2.map(t => t.id);
+            debugSnapshot.showsSection2 =
+              currentBand === 0 && showExplore && !isLatestStage;
+
             return (
               <>
                 {/* SECTION 1 — primary content for the child's current band */}
@@ -1182,6 +1227,21 @@ export default function HubScreen() {
           <Text style={styles.bottomCtaText}>Generate today's routine</Text>
         </Pressable>
       </ScrollView>
+
+      {/* Dev-only floating debug overlay — shows mobile-vs-web tile diff
+          for the active child. Mounted as ScrollView sibling so it floats
+          over content. Reads debugSnapshot which the IIFE above populates
+          synchronously during this same render pass. */}
+      {__DEV__ && effective && (
+        <HubDebugOverlay
+          mobileSection1Ids={debugSnapshot.section1Ids}
+          mobileSection2Ids={debugSnapshot.section2Ids}
+          mobileShowsSection2={debugSnapshot.showsSection2}
+          currentBand={currentBand}
+          ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
+          childName={childName}
+        />
+      )}
     </LinearGradient>
   );
 }

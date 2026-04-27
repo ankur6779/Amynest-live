@@ -1,0 +1,127 @@
+Fix UI/UX differences between the website and the iOS native (WebView-based) app so that the native app visually and functionally matches the website.
+
+GOAL:
+Ensure pixel-level consistency between browser version and iOS app (WebView).
+
+--------------------------------------------------
+1. VIEWPORT & SCALING (CRITICAL)
+--------------------------------------------------
+- Ensure correct meta viewport exists in website:
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+- In iOS WebView:
+  • disable unwanted zoom
+  • ensure content fits screen width
+
+--------------------------------------------------
+2. SAFE AREA (iPhone notch fix)
+--------------------------------------------------
+- Add CSS support:
+
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+- Ensure no content overlaps notch or bottom bar
+
+--------------------------------------------------
+3. WEBVIEW SETTINGS (iOS)
+--------------------------------------------------
+- Enable:
+  • JavaScript
+  • DOM storage
+  • localStorage / sessionStorage
+
+- Disable:
+  • overscroll bounce if breaking UI
+
+--------------------------------------------------
+4. CACHE & REFRESH ISSUES
+--------------------------------------------------
+- Force latest content load:
+
+  • disable aggressive caching
+  • add cache-busting headers if needed
+
+- Ensure app always loads updated website
+
+--------------------------------------------------
+5. FONT & TEXT RENDERING
+--------------------------------------------------
+- Ensure fonts are loaded properly (Google Fonts / local)
+
+- Fix:
+  • font scaling issues
+  • text overflow
+
+--------------------------------------------------
+6. MEDIA & VIDEO FIX
+--------------------------------------------------
+- Ensure videos/images behave same as web:
+
+  • allow inline playback (iOS requirement)
+  • disable auto fullscreen
+
+--------------------------------------------------
+7. CLICK / TOUCH ISSUES
+--------------------------------------------------
+- Fix tap delays or non-clickable elements
+
+- Ensure:
+  • buttons respond instantly
+  • no double tap issues
+
+--------------------------------------------------
+8. SCROLL BEHAVIOR
+--------------------------------------------------
+- Ensure smooth scrolling
+
+- Fix:
+  • scroll lock issues
+  • nested scroll problems
+
+--------------------------------------------------
+9. NOTIFICATION / STORAGE SYNC
+--------------------------------------------------
+- Ensure login/session persists
+
+- Fix:
+  • cookies
+  • localStorage access
+
+--------------------------------------------------
+10. DEBUG COMPARISON MODE (IMPORTANT)
+--------------------------------------------------
+- Compare:
+  • website (Chrome/Safari)
+  • iOS WebView
+
+- Identify differences in:
+  • spacing
+  • alignment
+  • missing components
+
+- Fix each mismatch
+
+--------------------------------------------------
+11. UI CONSISTENCY
+--------------------------------------------------
+- Ensure:
+  • same colors
+  • same spacing
+  • same components rendering
+
+--------------------------------------------------
+12. PERFORMANCE
+--------------------------------------------------
+- Optimize load speed
+- Avoid blank screen on load
+
+--------------------------------------------------
+DELIVERABLE:
+- iOS app UI matches website
+- No layout breaking
+- Smooth interaction
+- Production-ready consistency
