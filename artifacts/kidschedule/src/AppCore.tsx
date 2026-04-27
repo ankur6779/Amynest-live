@@ -56,6 +56,7 @@ const ReferralsPage = lazy(() => import("@/pages/referrals"));
 const InsightsPage = lazy(() => import("@/pages/insights"));
 const RewardsPage = lazy(() => import("@/pages/rewards"));
 const NotificationSettingsPage = lazy(() => import("@/pages/notification-settings"));
+const NotifyPromptPage = lazy(() => import("@/pages/notify-prompt"));
 
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { PaywallProvider } from "@/contexts/paywall-context";
@@ -249,6 +250,9 @@ function AppRoutes() {
           </Route>
           <Route path="/notification-settings">
             {() => <ProtectedRoute component={NotificationSettingsPage} requiresProfile={false} />}
+          </Route>
+          <Route path="/notify-prompt">
+            {() => <ProtectedRoute component={NotifyPromptPage} requiresProfile={false} />}
           </Route>
           <Route path="/babysitters">
             {() => <ProtectedRoute component={BabysittersPage} />}

@@ -35,8 +35,9 @@ export function usePushRegistration(): void {
 
     void (async () => {
       try {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") return;
+        // Never auto-ask — permission is requested explicitly via /notify-prompt
+        // or the onboarding notifications step.
+        if (Notification.permission !== "granted") return;
 
         const { getWebPushToken } = await import("@/lib/firebase");
         const token = await getWebPushToken(vapidKey);
