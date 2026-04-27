@@ -1,0 +1,142 @@
+Build a "Fun Sheets" section inside Parent Hub using Google Drive API.
+
+GOAL:
+Fetch and display only PDF files from Drive folders (including subfolders), allow limited downloads per day, and manage sorting based on user activity.
+
+--------------------------------------------------
+1. DATA SOURCE (GOOGLE DRIVE)
+--------------------------------------------------
+Folders:
+- https://drive.google.com/drive/folders/1G0KcIN8otcleOOBqosFyg_k4o9GK4eRz
+- https://drive.google.com/drive/folders/1f-H6WufGb3Q7F8jJHXC13UrdooV1bBab
+
+Requirements:
+- Recursively fetch ALL files (including subfolders)
+- Filter:
+  mimeType = "application/pdf"
+
+Extract:
+- fileId
+- name
+- thumbnailLink (if available)
+
+--------------------------------------------------
+2. AGE FILTER
+--------------------------------------------------
+- Show section ONLY if child age >= 2
+- Otherwise hide completely
+
+--------------------------------------------------
+3. UI STRUCTURE
+--------------------------------------------------
+Section Title:
+"Fun Sheets"
+
+Grid / Cards:
+- Thumbnail (PDF preview or placeholder)
+- Title (clean filename)
+- Button: "Download"
+
+Optional:
+- "Preview" button (recommended)
+
+--------------------------------------------------
+4. DOWNLOAD LIMIT SYSTEM (IMPORTANT)
+--------------------------------------------------
+- Max 2 downloads per day per child
+
+Logic:
+- Track:
+  childId
+  download_count
+  date
+
+If downloads_today >= 2:
+- Disable download button
+- Show message:
+  "Daily limit reached (2 downloads/day)"
+
+--------------------------------------------------
+5. DOWNLOAD ACTION
+--------------------------------------------------
+Download URL:
+https://drive.google.com/uc?export=download&id={fileId}
+
+- Trigger file download
+
+--------------------------------------------------
+6. TRACK DOWNLOADED FILES
+--------------------------------------------------
+Store:
+- childId
+- fileId
+- downloaded_at
+
+--------------------------------------------------
+7. SORTING LOGIC (IMPORTANT)
+--------------------------------------------------
+When displaying files:
+
+STEP 1:
+- Separate:
+  A) Not downloaded
+  B) Already downloaded
+
+STEP 2:
+- Show order:
+  1. Not downloaded (top)
+  2. Downloaded (bottom)
+
+--------------------------------------------------
+8. PREVIEW SYSTEM (OPTIONAL BUT STRONG UX)
+--------------------------------------------------
+Preview URL:
+https://drive.google.com/file/d/{fileId}/preview
+
+- Open in modal / viewer
+- Allow scroll
+- Disable download inside preview
+
+--------------------------------------------------
+9. DATABASE STRUCTURE
+--------------------------------------------------
+Table: funsheet_downloads
+
+Fields:
+- id
+- child_id
+- file_id
+- downloaded_at
+
+--------------------------------------------------
+10. DAILY RESET LOGIC
+--------------------------------------------------
+- Reset download count every new day
+- Use server date (not device time)
+
+--------------------------------------------------
+11. MULTI-CHILD SUPPORT
+--------------------------------------------------
+- Track downloads per child
+- Switch child → update list
+
+--------------------------------------------------
+12. PERFORMANCE
+--------------------------------------------------
+- Cache Drive API response
+- Lazy load PDFs
+- Pagination if large data
+
+--------------------------------------------------
+13. ERROR HANDLING
+--------------------------------------------------
+- If file fails → show retry
+- If Drive API fails → fallback message
+
+--------------------------------------------------
+DELIVERABLE:
+- Fun Sheets section
+- Drive PDF integration (recursive)
+- Daily 2-download limit
+- Smart sorting (downloaded last)
+- Clean UI

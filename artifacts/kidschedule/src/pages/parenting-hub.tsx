@@ -9,7 +9,7 @@ import {
   BookOpen, Brain, Sparkles, Heart, Palette,
   ChevronDown, ChevronUp, MessageCircleHeart,
   Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap,
-  UserPlus, CheckCircle2, Users, AudioLines, Film,
+  UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown,
 } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
@@ -1075,6 +1075,13 @@ const SECTION_2_PREVIEW_TILES: Array<{
     title: "🎨 Coloring Books",
     description: "Printable coloring sheets with preview & one-tap download",
     accentClass: "bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20",
+  },
+  {
+    id: "fun-sheets",
+    icon: <FileDown className="h-5 w-5 text-teal-600" />,
+    title: "📄 Fun Sheets",
+    description: "Printable activity & learning PDFs — 2 downloads/day per child",
+    accentClass: "bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20",
   },
 ];
 
