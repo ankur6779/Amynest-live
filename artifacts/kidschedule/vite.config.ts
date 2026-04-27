@@ -125,6 +125,12 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
+    // Same Safari 14 target as build.target above — ensures the dev-server's
+    // pre-bundled copies of Firebase et al. also have class static blocks and
+    // private fields transformed, so Safari works in both dev and production.
+    esbuildOptions: {
+      target: ["es2020", "safari14"],
+    },
     // Explicit entries force Vite to crawl the WHOLE app statically at
     // startup so it discovers every dep up-front. Without this, Vite would
     // discover deps lazily as files are requested, which triggers mid-session
@@ -189,6 +195,13 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Explicitly target Safari 14+ so esbuild transpiles ES2022 syntax
+    // (class static blocks, private class fields #field, logical-assign
+    // operators ??=) that Firebase 12 and other modern deps use.
+    // Without this Vite's default "modules" preset leaves those constructs
+    // un-transformed; Safari < 16.4 fails to parse the bundle, the React
+    // app never mounts, and users see "A problem repeatedly occurred".
+    target: ["es2020", "safari14"],
   },
   server: {
     port,

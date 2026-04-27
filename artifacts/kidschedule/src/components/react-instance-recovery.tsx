@@ -4,7 +4,11 @@ const RECOVERY_TS_KEY = "amynest:react-instance-recovery:ts";
 const RECOVERY_COUNT_KEY = "amynest:react-instance-recovery:count";
 
 const RECOVERY_WINDOW_MS = 30_000;
-const MAX_RECOVERIES_IN_WINDOW = 3;
+// Cap at 1 so that Safari never sees the "A problem repeatedly occurred"
+// overlay (Safari shows this after ≥3 consecutive page failures). With 1
+// recovery attempt: first crash → reload once → if it crashes again the
+// error screen is shown manually instead of another location.replace().
+const MAX_RECOVERIES_IN_WINDOW = 1;
 
 function isReactInstanceCrash(err: unknown): boolean {
   if (!err) return false;
