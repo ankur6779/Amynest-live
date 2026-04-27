@@ -39,6 +39,8 @@ import GamesPage from "@/pages/games";
 import OnboardingPage from "@/pages/onboarding";
 import PricingPage from "@/pages/pricing";
 import ReferralsPage from "@/pages/referrals";
+import InsightsPage from "@/pages/insights";
+import RewardsPage from "@/pages/rewards";
 import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
 import NotificationSettingsPage from "@/pages/notification-settings";
@@ -249,6 +251,12 @@ function AppRoutes() {
           </Route>
           <Route path="/referrals">
             {() => <ProtectedRoute component={ReferralsPage} requiresProfile={false} />}
+          </Route>
+          <Route path="/insights">
+            {() => <ProtectedRoute component={InsightsPage} />}
+          </Route>
+          <Route path="/rewards">
+            {() => <ProtectedRoute component={RewardsPage} />}
           </Route>
           <Route component={NotFound} />
             </Switch>
