@@ -22,6 +22,7 @@ import { AmazingFacts } from "@/components/AmazingFacts";
 import FuturePredictor from "@/components/FuturePredictor";
 import AiMealGenerator from "@/components/AiMealGenerator";
 import ParentCommandCenter from "@/components/ParentCommandCenter";
+import { PhonicsTestCard } from "@/components/PhonicsTestCard";
 import { isInfantHubAge } from "@workspace/infant-hub";
 import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand } from "./hub-bands";
 export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand };
@@ -621,28 +622,7 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS["phonics-test"],
             node: (
               <View style={tileW("phonics-test")}>
-                <Pressable
-                  onPress={() => router.push("/phonics-test" as never)}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
-                  testID="card-phonics-test"
-                >
-                  <LinearGradient
-                    colors={["#7C3AED", "#D946EF"]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
-                  >
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <Ionicons name="school" size={20} color="#fff" />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🔤 Phonics Test</Text>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Daily 5Q · Weekly 20Q · age-tuned</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-                    </View>
-                  </LinearGradient>
-                </Pressable>
+                <PhonicsTestCard childId={effective?.id} />
               </View>
             ),
           });
