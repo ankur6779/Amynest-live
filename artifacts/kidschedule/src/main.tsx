@@ -3,9 +3,26 @@ import App from "./App";
 import "./index.css";
 import "./i18n";
 
+// Boot diagnostic helpers installed by the inline <script> in index.html.
+// They write phase markers to localStorage so we can detect mid-boot crashes
+// on the next load and auto-fall back to a minimal splash. See the comment
+// block in index.html for the full design.
+declare global {
+  interface Window {
+    __amynestMark?: (phase: string) => void;
+    __amynestDiag?: () => unknown;
+  }
+}
+const mark = (p: string) => {
+  try { window.__amynestMark?.(p); } catch (_e) { /* breadcrumbs are best-effort */ }
+};
+
+mark("bundle-loaded");
+
 const root = createRoot(document.getElementById("root")!);
 
 root.render(<App />);
+mark("react-rendered");
 
 // Dismiss the splash screen after React has painted AND a minimum display
 // time has elapsed, so the "Meet AMY" intro animation can play in full.
@@ -17,7 +34,15 @@ const isRootEntry =
   window.location.pathname === "/" ||
   window.location.pathname === BASE ||
   window.location.pathname === BASE + "/";
-const SPLASH_MIN_MS = isRootEntry ? 3200 : 0;
+
+// On a known-affected device (lite-splash class set by the inline boot
+// script — either iOS or post-crash recovery) shorten the splash to
+// 1200ms so its animations stop competing with React mount for GPU
+// memory. Other browsers keep the full 3200ms intro.
+const isLiteSplash =
+  document.documentElement.classList.contains("lite-splash");
+const SPLASH_MIN_MS = !isRootEntry ? 0 : isLiteSplash ? 1200 : 3200;
+
 const splashStartedAt = performance.now();
 
 requestAnimationFrame(() => {
@@ -30,7 +55,14 @@ requestAnimationFrame(() => {
         splash.classList.add("splash-hide");
         // Remove from DOM after the CSS transition ends so it no longer
         // intercepts pointer events or occupies the accessibility tree.
-        splash.addEventListener("transitionend", () => splash.remove(), { once: true });
+        splash.addEventListener("transitionend", () => {
+          splash.remove();
+          mark("splash-hidden");
+        }, { once: true });
+      } else {
+        // No splash element — mark immediately so the crash detector
+        // doesn't flag this load as incomplete.
+        mark("splash-hidden");
       }
     }, wait);
   });

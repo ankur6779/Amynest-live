@@ -37,6 +37,131 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Nunito:wght@400;500;600;700;800;900&family=Quicksand:wght@500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <!--
+      Boot diagnostics + auto-recovery.
+
+      This inline script runs BEFORE the splash CSS is parsed and BEFORE the
+      main bundle loads, so it can mark the page as `.lite-splash` (which
+      disables every heavy splash animation — see CSS below) the moment we
+      detect either a manual kill-switch or evidence that the previous
+      attempt to load this page on this device crashed mid-boot.
+
+      Why this exists: production users on iOS Safari have hit
+      "A problem repeatedly occurred" overlays. Those crashes happen at the
+      WebContent process level — they aren't catchable by a JS error
+      boundary. The only signal we get is that the page reloads without
+      ever reaching `splash-hidden`. So we record boot-phase breadcrumbs in
+      localStorage and, on the next boot, use them to diagnose AND to step
+      down the splash to a minimal version that won't repeat the crash.
+
+      No server endpoint is needed. To inspect locally on a stuck device:
+        - Visit `?diag=1` to see the last boot record.
+        - Or call `__amynestDiag()` from the JS console.
+        - Visit `?liteSplash=1` to force-disable splash animations.
+    -->
+    <script>
+      (function () {
+        var KEY = "__amynest_boot_v1";
+        var now = Date.now();
+
+        // 1. Read the previous boot record (may be partial if it crashed).
+        var prev = null;
+        try { prev = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (_e) {}
+
+        var query = (location.search || "");
+        var liteForced = /[?&]liteSplash=1/.test(query);
+        var diagForced = /[?&]diag=1/.test(query);
+
+        // 2. If the previous boot started recently (< 30s ago) and never
+        //    reached the "splash-hidden" phase, treat it as a crash.
+        var prevCrashed = !!(
+          prev &&
+          typeof prev.ts === "number" &&
+          (now - prev.ts) < 30000 &&
+          Array.isArray(prev.phases) &&
+          prev.phases.indexOf("splash-hidden") === -1
+        );
+
+        if (prevCrashed || liteForced) {
+          document.documentElement.classList.add("lite-splash");
+        }
+
+        // 3. Start a new boot record.
+        var rec = {
+          ts: now,
+          ua: navigator.userAgent,
+          vw: window.innerWidth,
+          vh: window.innerHeight,
+          dpr: window.devicePixelRatio || 1,
+          path: location.pathname,
+          lite: prevCrashed || liteForced,
+          prevCrashed: prevCrashed,
+          phases: ["html-parsed"],
+        };
+        try { localStorage.setItem(KEY, JSON.stringify(rec)); } catch (_e) {}
+
+        // 4. Helpers callable from the bundle and the console.
+        window.__amynestMark = function (phase) {
+          try {
+            var r = JSON.parse(localStorage.getItem(KEY) || "null");
+            if (!r || !Array.isArray(r.phases)) return;
+            if (r.phases.indexOf(phase) === -1) r.phases.push(phase);
+            r["t_" + phase] = Date.now() - r.ts;
+            localStorage.setItem(KEY, JSON.stringify(r));
+          } catch (_e) {}
+        };
+        window.__amynestDiag = function () {
+          try { return JSON.parse(localStorage.getItem(KEY) || "null"); }
+          catch (_e) { return null; }
+        };
+
+        // 5. Capture uncaught errors as breadcrumbs (for post-mortem on the
+        //    next load — they survive a process kill via localStorage).
+        window.addEventListener("error", function (e) {
+          try {
+            var r = JSON.parse(localStorage.getItem(KEY) || "null");
+            if (!r) return;
+            r.lastError = {
+              msg: String((e && e.message) || ""),
+              src: String((e && e.filename) || ""),
+              line: (e && e.lineno) | 0,
+              col: (e && e.colno) | 0,
+              t: Date.now() - r.ts,
+            };
+            localStorage.setItem(KEY, JSON.stringify(r));
+          } catch (_e) {}
+        });
+        window.addEventListener("unhandledrejection", function (e) {
+          try {
+            var r = JSON.parse(localStorage.getItem(KEY) || "null");
+            if (!r) return;
+            var reason = e && e.reason;
+            r.lastReject = {
+              msg: String((reason && reason.message) || reason || ""),
+              t: Date.now() - r.ts,
+            };
+            localStorage.setItem(KEY, JSON.stringify(r));
+          } catch (_e) {}
+        });
+
+        // 6. Visible diagnostic panel when ?diag=1 is set — gives the user
+        //    a one-tap way to share boot info from a stuck device.
+        if (diagForced) {
+          window.addEventListener("DOMContentLoaded", function () {
+            var pre = document.createElement("pre");
+            pre.style.cssText =
+              "position:fixed;inset:0;z-index:2147483647;background:#000;color:#0f0;" +
+              "font:12px/1.4 monospace;padding:16px;margin:0;overflow:auto;" +
+              "white-space:pre-wrap;word-break:break-all;";
+            pre.textContent =
+              "AmyNest boot diagnostics\n\n" +
+              JSON.stringify(window.__amynestDiag(), null, 2);
+            document.body && document.body.appendChild(pre);
+          });
+        }
+      })();
+    </script>
+
     <style>
       html, body {
         background: #0a061a;
@@ -383,6 +508,132 @@
         .splash-platform { width: 150px; }
         .splash-tagline  { font-size: 13px; }
         .splash-cta      { font-size: 14px; padding: 11px 22px; }
+      }
+
+      /* ─────────────────────────────────────────────────────────────────
+       * iOS Safari renderer-crash mitigation
+       * ─────────────────────────────────────────────────────────────────
+       * Symptom: "A problem repeatedly occurred on https://amynest.in/"
+       *
+       * Cause: iOS Safari's WebContent process allocates a separate
+       * IOSurface (GPU-backed bitmap) for every layer that uses
+       * `filter: blur()`, `filter: drop-shadow()`, animated
+       * `conic-gradient` with a mask, or `will-change`. iOS Jetsam
+       * (the kernel memory enforcer) aggressively kills WebContent
+       * processes that exceed its IOSurface budget. When this happens
+       * 3+ times in quick succession, Safari shows the dreaded
+       * "A problem repeatedly occurred" overlay.
+       *
+       * The original splash had: an animated 34px blur on a 380px
+       * element, two rotating masked conic-gradients, 9 independently-
+       * animated particles, a 14px blur platform, and an animated
+       * dual-drop-shadow chain on the AMY text — all running for
+       * 3.2 s WHILE React was simultaneously mounting and allocating
+       * its own GPU layers. On iPhones the combined IOSurface usage
+       * blew through Jetsam's budget on every load.
+       *
+       * Fix: detect iOS Safari (and other touch-only WebKit) with a
+       * compound @supports query that combines the iOS-only
+       * `-webkit-touch-callout` property with `pointer:coarse` and
+       * `not (hover:hover)`. This excludes macOS Safari (which has a
+       * fine pointer + hover) so desktop Safari users keep the full
+       * splash. Other browsers also keep full effects.
+       *
+       * Also gated by the `.lite-splash` class which the inline
+       * boot script adds when:
+       *   - `?liteSplash=1` is in the URL (manual kill-switch)
+       *   - localStorage has a recent boot-incomplete breadcrumb
+       *     (auto-recovery: previous load didn't complete, so fall
+       *     back to a minimal splash on this attempt)
+       * ───────────────────────────────────────────────────────────── */
+      @supports (-webkit-touch-callout: none) and (pointer: coarse) and (not (hover: hover)) {
+        /* Drop the 34 px blurred outer glow → simpler radial fade. */
+        .splash-glow-outer {
+          filter: none;
+          animation: none;
+          background: radial-gradient(circle,
+            rgba(168,85,247,0.20) 0%,
+            rgba(236,72,153,0.10) 35%,
+            transparent 65%
+          );
+        }
+
+        /* Drop the second conic-gradient + mask shimmer layer entirely.
+         * The base ring still rotates and looks great on its own. */
+        .splash-ring-shimmer {
+          display: none;
+        }
+
+        /* Drop the 14 px blurred platform glow. */
+        .splash-platform {
+          filter: none;
+          opacity: 0.45;
+        }
+
+        /* Replace the animated chained drop-shadow with a static
+         * text-shadow (no GPU layer required, no animation cost). */
+        .splash-amy {
+          animation: ringTextIn 0.8s 0.78s cubic-bezier(0.22,1,0.36,1) forwards;
+          text-shadow: 0 0 18px rgba(236,72,153,0.50);
+        }
+
+        /* Hide the 9 independently-animated particles. Each was
+         * allocating its own composited layer. */
+        .splash-particle {
+          display: none;
+        }
+
+        /* Stop the wave-pulse animation — the box-shadow rings cause
+         * iOS to repaint a large area each frame. */
+        .splash-waves {
+          animation: none;
+          opacity: 0.30;
+        }
+
+        /* Drop ringPulse scale animation — keep the rotation only. */
+        .splash-ring-pulse {
+          animation: none;
+        }
+      }
+
+      /* ─────────────────────────────────────────────────────────────────
+       * .lite-splash — emergency fallback applied to <html> when the
+       * boot script detects either `?liteSplash=1` or a previous
+       * boot that crashed before completing. Strips ALL splash
+       * animations and effects to the absolute minimum. The page
+       * still shows the ring + AMY text + CTA but with zero GPU work.
+       *
+       * Triggered automatically on the *second* attempt after a
+       * mid-boot crash, regardless of browser. So even if our iOS
+       * @supports detector is wrong about which devices are affected,
+       * the second attempt always succeeds.
+       * ───────────────────────────────────────────────────────────── */
+      .lite-splash .splash-glow-outer,
+      .lite-splash .splash-ring-shimmer,
+      .lite-splash .splash-particle,
+      .lite-splash .splash-platform,
+      .lite-splash .splash-waves {
+        display: none !important;
+      }
+      .lite-splash .splash-ring,
+      .lite-splash .splash-ring-pulse,
+      .lite-splash .splash-amy,
+      .lite-splash .splash-meet,
+      .lite-splash .splash-tagline,
+      .lite-splash .splash-cta {
+        animation: none !important;
+        filter: none !important;
+        text-shadow: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+        will-change: auto !important;
+      }
+      .lite-splash .splash-amy {
+        background: linear-gradient(92deg, #a855f7 0%, #ec4899 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
       }
     </style>
   </head>
