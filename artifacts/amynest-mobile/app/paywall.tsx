@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { getLocales } from "expo-localization";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import type { Plan } from "@/services/subscriptionApi";
 import { brand } from "@/constants/colors";
@@ -107,13 +108,12 @@ export default function PaywallScreen() {
   const [selected, setSelected] = useState<Exclude<Plan, "free">>("six_month");
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  // Google Play User Choice Billing (UCB): on Android we show BOTH
-  // Google Play Billing (primary, via RevenueCat) and Razorpay (alternative).
-  // UCB lets apps in supported markets (incl. India) offer an alternative
-  // billing system alongside Play Billing. Google Play Billing must be the
-  // primary/first option; the alternative is secondary. iOS uses Apple IAP
-  // (RevenueCat) exclusively — Razorpay must not appear there.
-  const showRazorpay = Platform.OS === "android";
+  // Razorpay (Google Play UCB alternative billing) is an India-only gateway.
+  // Show it only when the device region is India (ISO "IN").
+  // All other countries — US, UK, AU, etc. — use Google Play Billing only.
+  // iOS always uses RevenueCat's native paywall (Apple IAP) — no Razorpay.
+  const deviceRegion = getLocales()[0]?.regionCode ?? null;
+  const showRazorpay = Platform.OS === "android" && deviceRegion === "IN";
 
   const canStartTrial =
     !!ent &&
