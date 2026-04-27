@@ -30,6 +30,7 @@ import ttsRouter, { ttsPublicRouter } from "./tts";
 import audioLessonsRouter from "./audio-lessons";
 import phonicsRouter from "./phonics";
 import coloringRouter from "./coloring";
+import funsheetsRouter from "./funsheets";
 import storiesRouter from "./stories";
 import { requireAuth } from "../middlewares/requireAuth";
 
@@ -79,6 +80,7 @@ router.use(ttsRouter);
 router.use(audioLessonsRouter);
 router.use(phonicsRouter);
 router.use(coloringRouter);
+router.use(funsheetsRouter);
 router.use("/stories", storiesRouter);
 
 export default router;

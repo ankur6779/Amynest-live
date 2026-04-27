@@ -18,6 +18,7 @@ import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
 import { PhonicsLearning } from "@/components/phonics-learning";
 import { ColoringBooks } from "@/components/coloring-books";
+import { FunSheets } from "@/components/fun-sheets";
 import { StoryHub } from "@/components/story-hub";
 import { getAgeGroup, getAgeGroupInfo } from "@/lib/age-groups";
 import { InfantMode, type InfantShowOnly } from "@/components/infant-mode";
@@ -877,6 +878,29 @@ export default function ParentingHub() {
           accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
         >
           <ColoringBooks
+            childId={effectiveChild.id}
+            childName={effectiveChild.name}
+          />
+        </HubSection>
+      ) : null,
+    },
+
+    {
+      // Fun Sheets — activity & learning PDFs from two Google Drive folders.
+      // Shows for age 2+ only; preview tile in Section 2 covers 0–24m.
+      // Daily cap: 2 downloads/day per child (server-enforced).
+      // Sorting: not-yet-downloaded first, already-downloaded last.
+      id: "fun-sheets",
+      bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
+      render: () => totalAgeMonths >= 24 ? (
+        <HubSection
+          id="fun-sheets"
+          icon={<FileDown className="h-5 w-5 text-teal-600" />}
+          title="📄 Fun Sheets"
+          description="Printable activity & learning PDFs — preview, then download (2/day)"
+          accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20"
+        >
+          <FunSheets
             childId={effectiveChild.id}
             childName={effectiveChild.name}
           />

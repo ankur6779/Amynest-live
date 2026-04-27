@@ -44,5 +44,6 @@ export * from "./phonics_progress";
 export * from "./phonics_downloads";
 export * from "./phonics_test_results";
 export * from "./coloring_downloads";
+export * from "./funsheet_downloads";
 export * from "./story_content";
 export * from "./story_watch_progress";
