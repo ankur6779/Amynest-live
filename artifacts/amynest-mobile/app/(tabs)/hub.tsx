@@ -1069,9 +1069,13 @@ export default function HubScreen() {
                 </View>
 
                 {/* SECTION 2 — Explore Next Stage, lazy-mounted, dimmed.
-                    Only future bands ever appear here; if the child is in the
-                    last band we hide the section entirely (isLatestStage). */}
-                {showExplore && !isLatestStage && (
+                    Only shown when the active child is in the 0–24 month band
+                    (currentBand === 0), matching the website's behaviour where
+                    Section 2 is exclusively a forward-looking infant preview.
+                    Older children only ever see Section 1. Also hidden on the
+                    last band (isLatestStage) — defensive but redundant for
+                    band 0. */}
+                {currentBand === 0 && showExplore && !isLatestStage && (
                   <View style={styles.exploreSection}>
                     <View style={styles.bandSectionHeader}>
                       <Text style={styles.bandSectionTitle}>
