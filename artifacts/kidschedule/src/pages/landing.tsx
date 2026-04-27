@@ -1272,6 +1272,7 @@ export default function LandingPage() {
             <Link href="/sign-up"><span className="hover:text-white/70 transition-colors cursor-pointer">Sign Up</span></Link>
             <Link href="/sign-in"><span className="hover:text-white/70 transition-colors cursor-pointer">Sign In</span></Link>
             <Link href="/privacy"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-privacy">Privacy Policy</span></Link>
+            <Link href="/terms"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-terms">Terms of Service</span></Link>
           </div>
           <p className="text-xs text-white/30">© 2026 AmyNest AI. All rights reserved.</p>
         </div>

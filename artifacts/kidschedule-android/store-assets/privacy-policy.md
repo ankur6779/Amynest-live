@@ -40,7 +40,7 @@ if required by law.
 
 ## 5. Data retention and deletion
 You can delete your account and all associated data at any time from inside
-the App, or by emailing **support@amynest.ai**. Backups are removed within
+the App, or by emailing **support@amynest.in**. Backups are removed within
 30 days.
 
 ## 6. Permissions used by the Android app
@@ -49,4 +49,4 @@ the App, or by emailing **support@amynest.ai**. Backups are removed within
   feature that needs them (e.g. uploading a profile picture). Always optional.
 
 ## 7. Contact
-Questions or requests: **support@amynest.ai**
+Questions or requests: **support@amynest.in**
