@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Sparkles, Check, Rocket, AlertTriangle, X, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
+import { isIndiaRegion } from "@/lib/geo";
 
 export default function PricingPage() {
   const { t } = useTranslation();
@@ -12,6 +13,10 @@ export default function PricingPage() {
   const [cancelling, setCancelling] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // Razorpay is India-only — hide for international users and prompt them to
+  // use the mobile app where Apple IAP / Google Play handle local currency.
+  const showRazorpay = isIndiaRegion();
 
   const cancelAtPeriodEnd = entitlements?.cancelAtPeriodEnd ?? false;
   const provider = entitlements?.provider ?? "none";
@@ -116,15 +121,25 @@ export default function PricingPage() {
         )}
 
         <div className="mt-8 max-w-md mx-auto space-y-3">
-          <Button
-            onClick={onUpgrade}
-            disabled={submitting || plans.length === 0 || isPremium}
-            className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-violet-500 to-pink-500 hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(236,72,153,0.4)]"
-            data-testid="button-upgrade"
-          >
-            <Rocket className="h-4 w-4 mr-2" />
-            {isPremium ? t("pricing.already_premium") : submitting ? t("common.please_wait") : t("pricing.upgrade_now")}
-          </Button>
+          {showRazorpay ? (
+            <Button
+              onClick={onUpgrade}
+              disabled={submitting || plans.length === 0 || isPremium}
+              className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-violet-500 to-pink-500 hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(236,72,153,0.4)]"
+              data-testid="button-upgrade"
+            >
+              <Rocket className="h-4 w-4 mr-2" />
+              {isPremium ? t("pricing.already_premium") : submitting ? t("common.please_wait") : t("pricing.upgrade_now")}
+            </Button>
+          ) : !isPremium && (
+            <div className="w-full rounded-xl border border-violet-200 bg-violet-50 px-4 py-4 text-center space-y-2">
+              <Smartphone className="h-5 w-5 mx-auto text-violet-500" />
+              <p className="text-sm font-bold text-slate-800">Subscribe via the AmyNest app</p>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Web payments are currently available in India only. Download the AmyNest app on iOS or Android to subscribe in your country.
+              </p>
+            </div>
+          )}
 
           {/* Razorpay / manual — cancel directly from here */}
           {canCancelHere && (

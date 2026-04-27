@@ -16,6 +16,7 @@ import {
   LayoutGrid,
   type LucideIcon,
 } from "lucide-react";
+import { isIndiaRegion } from "@/lib/geo";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -249,7 +250,7 @@ export function PaywallModal() {
               {nativeBilling.unavailableReason ??
                 "In-app purchases aren't available right now. Please update the app from the Play Store."}
             </div>
-          ) : (
+          ) : isIndiaRegion() ? (
             <Button
               onClick={onPayWithRazorpay}
               disabled={submitting || plans.length === 0}
@@ -258,6 +259,14 @@ export function PaywallModal() {
               <Zap className="h-4 w-4 mr-2" />
               {submitting ? "Opening Razorpay…" : "Pay with UPI / Card"}
             </Button>
+          ) : (
+            <div className="w-full rounded-xl border border-white/15 bg-white/8 px-4 py-4 text-center space-y-2">
+              <Smartphone className="h-5 w-5 mx-auto text-pink-300" />
+              <p className="text-sm font-bold text-white/90">Subscribe via the AmyNest app</p>
+              <p className="text-xs text-white/55 leading-relaxed">
+                Web payments are currently available in India only. Download the AmyNest app on iOS or Android to subscribe in your country.
+              </p>
+            </div>
           )}
 
           <button
