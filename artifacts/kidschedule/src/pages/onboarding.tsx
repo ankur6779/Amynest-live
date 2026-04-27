@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
+import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -107,20 +108,9 @@ const GRAD = "linear-gradient(135deg,#6366F1,#A855F7)";
 const BG = "linear-gradient(160deg,#EEF2FF 0%,#F5F3FF 55%,#FDF2F8 100%)";
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
+// size prop is in Tailwind spacing units (×4px), matching the old convention.
 function AmyAvatar({ size = 8 }: { size?: number }) {
-  const px = size * 4;
-  return (
-    <div
-      className="rounded-full shrink-0 shadow-md overflow-hidden border-2 border-indigo-200"
-      style={{ width: px, height: px, background: GRAD, flexShrink: 0 }}
-    >
-      <img
-        src="/amynest-logo.png"
-        alt="Amy"
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-      />
-    </div>
-  );
+  return <AmyMascotLogo size={size * 4} />;
 }
 
 function TypingBubble() {
