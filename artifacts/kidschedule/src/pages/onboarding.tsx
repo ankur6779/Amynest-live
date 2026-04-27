@@ -4,6 +4,7 @@ import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useWebPush } from "@/hooks/use-web-push";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface ChildData {
@@ -44,7 +45,7 @@ type Step =
   | "add-more"
   | "parent-name" | "parent-role" | "parent-work"
   | "parent-region" | "parent-mobile" | "parent-allergies"
-  | "saving" | "done";
+  | "saving" | "done" | "notifications";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function dobToAge(dob: string): { years: number; months: number } {
@@ -214,8 +215,10 @@ export default function OnboardingPage() {
   const { user } = useUser();
   const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
+  const { enable: enableNotif } = useWebPush();
 
   const [step, setStep] = useState<Step>("intro");
+  const [notifLoading, setNotifLoading] = useState(false);
   const [typing, setTyping] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [textInput, setTextInput] = useState("");
@@ -341,6 +344,82 @@ export default function OnboardingPage() {
     setTimeout(() => setStep("done"), 600);
   }
 
+  function goDashboard() {
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    window.location.assign(`${base}/dashboard`);
+  }
+
+  // ─── Notifications step ─────────────────────────────────────────────────────
+  if (step === "notifications") {
+    return (
+      <div
+        className="min-h-dvh flex flex-col items-center justify-center gap-5 px-5"
+        style={{ background: BG }}
+      >
+        <AmyMascotLogo size={64} />
+
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg"
+          style={{ background: GRAD }}
+        >
+          <span style={{ fontSize: 30 }}>🔔</span>
+        </div>
+
+        <div className="text-center">
+          <h2 className="text-xl font-extrabold text-indigo-900 mb-2">
+            Stay on Track with Reminders
+          </h2>
+          <p className="text-sm text-indigo-500 leading-relaxed max-w-xs mx-auto">
+            Amy can remind you about routines, bedtime, and meals — right on time, every day.
+          </p>
+        </div>
+
+        <div
+          className="w-full max-w-sm rounded-2xl p-4"
+          style={{ background: "rgba(255,255,255,0.9)", border: "1px solid rgba(99,102,241,0.15)" }}
+        >
+          {[
+            { emoji: "⏰", text: "Routine reminders so nothing gets missed" },
+            { emoji: "🌙", text: "Bedtime alerts for a calm night routine" },
+            { emoji: "🍎", text: "Meal time nudges for your child" },
+          ].map(({ emoji, text }) => (
+            <div key={text} className="flex items-center gap-3 py-2">
+              <span style={{ fontSize: 18 }}>{emoji}</span>
+              <p className="text-sm font-medium text-indigo-900">{text}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+          <button
+            disabled={notifLoading}
+            onClick={async () => {
+              setNotifLoading(true);
+              await enableNotif();
+              goDashboard();
+            }}
+            className="w-full py-4 rounded-2xl text-white font-bold text-base active:scale-95 transition-all"
+            style={{
+              background: GRAD,
+              boxShadow: "0 6px 24px rgba(99,102,241,0.4)",
+              opacity: notifLoading ? 0.7 : 1,
+            }}
+          >
+            {notifLoading ? "Enabling…" : "Allow Notifications 🔔"}
+          </button>
+
+          <button
+            onClick={goDashboard}
+            className="w-full py-3 text-sm font-semibold"
+            style={{ color: "#6366F1", background: "none", border: "none", cursor: "pointer" }}
+          >
+            Maybe later — Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // ─── Render ─────────────────────────────────────────────────────────────────
   if (step === "saving" || step === "done") {
     const childName = children[0]?.name || "your child";
@@ -387,10 +466,15 @@ export default function OnboardingPage() {
             </div>
             <button
               onClick={() => {
-                // Hard refresh so the app re-fetches onboarding status fresh
-                // and every section is immediately usable.
-                const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-                window.location.assign(`${base}/dashboard`);
+                if (
+                  typeof window !== "undefined" &&
+                  "Notification" in window &&
+                  Notification.permission === "default"
+                ) {
+                  setStep("notifications");
+                } else {
+                  goDashboard();
+                }
               }}
               className="w-full py-4 rounded-2xl text-white font-bold text-base active:scale-95 transition-all"
               style={{ background: GRAD, boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}

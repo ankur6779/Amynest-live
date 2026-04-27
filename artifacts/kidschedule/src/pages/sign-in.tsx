@@ -265,8 +265,19 @@ export default function SignInPage() {
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetBusy, setResetBusy] = useState(false);
 
+  function postSignInPath() {
+    if (
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "default"
+    ) {
+      return "/notify-prompt?next=/";
+    }
+    return "/";
+  }
+
   useEffect(() => {
-    if (isLoaded && isSignedIn) setLocation("/");
+    if (isLoaded && isSignedIn) setLocation(postSignInPath());
   }, [isLoaded, isSignedIn, setLocation]);
 
   const onEmail = async (e: React.FormEvent) => {
@@ -275,7 +286,7 @@ export default function SignInPage() {
     setBusy(true);
     try {
       await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
-      setLocation("/");
+      setLocation(postSignInPath());
     } catch (err: any) {
       setError(prettyAuthError(err));
     } finally {
