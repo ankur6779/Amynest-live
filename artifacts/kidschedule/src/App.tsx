@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -9,46 +9,71 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/theme-context";
-import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
-import LandingPage from "@/pages/landing";
-import PrivacyPolicyPage from "@/pages/privacy";
 
-import Dashboard from "@/pages/dashboard";
-import ChildrenList from "@/pages/children/index";
-import ChildForm from "@/pages/children/form";
-import RoutinesList from "@/pages/routines/index";
-import RoutineGenerate from "@/pages/routines/generate";
-import RoutineDetail from "@/pages/routines/detail";
-import BehaviorTracker from "@/pages/behavior/index";
-import ParentProfile from "@/pages/parent-profile";
-import BabysittersPage from "@/pages/babysitters/index";
-import AssistantPage from "@/pages/assistant";
-import ProgressPage from "@/pages/progress";
-import ParentingHub from "@/pages/parenting-hub";
-import KidsControlCenterPage from "@/pages/kids-control-center";
-import StudyPage from "@/pages/study";
-import EventPrepPage from "@/pages/event-prep";
-import SchoolMorningFlowPage from "@/pages/school-morning-flow";
-import AmyCoachPage from "@/pages/ai-coach";
-import AmyCoachProgressPage from "@/pages/ai-coach-progress";
-import RecipesPage from "@/pages/recipes";
-import NutritionHubPage from "@/pages/nutrition";
-import AudioLessonsPage from "@/pages/audio-lessons";
-import GamesPage from "@/pages/games";
-import OnboardingPage from "@/pages/onboarding";
-import PricingPage from "@/pages/pricing";
-import ReferralsPage from "@/pages/referrals";
-import InsightsPage from "@/pages/insights";
-import RewardsPage from "@/pages/rewards";
+// Eager imports — landing + sign-in flow are the most common first views,
+// and NotFound is tiny + needed as a fallback. Everything else is lazy
+// (see below) so the initial JS bundle stays small enough for iOS Safari's
+// WebContent process to fit in the in-app browser memory budget that
+// WhatsApp / Instagram / etc. provide. Before code-splitting, the main
+// chunk was 2.58 MB minified (762 KB gzipped) and was getting killed by
+// iOS Jetsam mid-mount on iPhones opened from in-app browsers.
+import NotFound from "@/pages/not-found";
+import LandingPage from "@/pages/landing";
 import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
-import NotificationSettingsPage from "@/pages/notification-settings";
+
+// Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
+// when its route is first matched. The Suspense boundary below renders
+// `null` while a chunk is loading so there's no flash of fallback UI.
+const PrivacyPolicyPage = lazy(() => import("@/pages/privacy"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const ChildrenList = lazy(() => import("@/pages/children/index"));
+const ChildForm = lazy(() => import("@/pages/children/form"));
+const RoutinesList = lazy(() => import("@/pages/routines/index"));
+const RoutineGenerate = lazy(() => import("@/pages/routines/generate"));
+const RoutineDetail = lazy(() => import("@/pages/routines/detail"));
+const BehaviorTracker = lazy(() => import("@/pages/behavior/index"));
+const ParentProfile = lazy(() => import("@/pages/parent-profile"));
+const BabysittersPage = lazy(() => import("@/pages/babysitters/index"));
+const AssistantPage = lazy(() => import("@/pages/assistant"));
+const ProgressPage = lazy(() => import("@/pages/progress"));
+const ParentingHub = lazy(() => import("@/pages/parenting-hub"));
+const KidsControlCenterPage = lazy(() => import("@/pages/kids-control-center"));
+const StudyPage = lazy(() => import("@/pages/study"));
+const EventPrepPage = lazy(() => import("@/pages/event-prep"));
+const SchoolMorningFlowPage = lazy(() => import("@/pages/school-morning-flow"));
+const AmyCoachPage = lazy(() => import("@/pages/ai-coach"));
+const AmyCoachProgressPage = lazy(() => import("@/pages/ai-coach-progress"));
+const RecipesPage = lazy(() => import("@/pages/recipes"));
+const NutritionHubPage = lazy(() => import("@/pages/nutrition"));
+const AudioLessonsPage = lazy(() => import("@/pages/audio-lessons"));
+const GamesPage = lazy(() => import("@/pages/games"));
+const OnboardingPage = lazy(() => import("@/pages/onboarding"));
+const PricingPage = lazy(() => import("@/pages/pricing"));
+const ReferralsPage = lazy(() => import("@/pages/referrals"));
+const InsightsPage = lazy(() => import("@/pages/insights"));
+const RewardsPage = lazy(() => import("@/pages/rewards"));
+const NotificationSettingsPage = lazy(() => import("@/pages/notification-settings"));
+
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { PaywallProvider } from "@/contexts/paywall-context";
 import { PaywallModal } from "@/components/paywall-modal";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
 import { ReactInstanceRecovery } from "@/components/react-instance-recovery";
+
+// Phase marker helper — installed by the inline boot script in index.html.
+// We call this from a top-level useEffect to confirm React's mount actually
+// completed (not just `root.render()` returning synchronously, which is
+// what the existing `react-rendered` mark in main.tsx records).
+declare global {
+  interface Window {
+    __amynestMark?: (phase: string) => void;
+  }
+}
+const bootMark = (phase: string) => {
+  try { window.__amynestMark?.(phase); } catch (_e) { /* breadcrumbs are best-effort */ }
+};
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -152,15 +177,31 @@ function QueryClientCacheInvalidator() {
 
 const queryClient = new QueryClient();
 
+function ReactMountMarker() {
+  // Confirms React's reconciliation actually completed and effects are
+  // running — not just that `root.render()` returned synchronously (which
+  // is what the existing `react-rendered` mark in main.tsx captures).
+  // If a boot record on the next load shows `react-rendered` but NOT
+  // `react-effect-fired`, the iOS WebContent process was killed during
+  // initial reconciliation — almost always a memory-pressure crash from
+  // the bundle being too large.
+  useEffect(() => {
+    bootMark("react-effect-fired");
+  }, []);
+  return null;
+}
+
 function AppRoutes() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
           <PaywallProvider>
+            <ReactMountMarker />
             <FirebaseAuthBootstrap />
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />
+            <Suspense fallback={null}>
             <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/privacy" component={PrivacyPolicyPage} />
@@ -260,6 +301,7 @@ function AppRoutes() {
           </Route>
           <Route component={NotFound} />
             </Switch>
+            </Suspense>
             <PaywallModal />
             <SubscriptionEventBridge />
             <Toaster />

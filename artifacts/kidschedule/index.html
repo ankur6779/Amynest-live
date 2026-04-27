@@ -145,7 +145,9 @@
         });
 
         // 6. Visible diagnostic panel when ?diag=1 is set — gives the user
-        //    a one-tap way to share boot info from a stuck device.
+        //    a one-tap way to share boot info from a stuck device. We show
+        //    BOTH the current record and the previous one (which might
+        //    contain a `lastError` from a crashed boot).
         if (diagForced) {
           window.addEventListener("DOMContentLoaded", function () {
             var pre = document.createElement("pre");
@@ -153,9 +155,13 @@
               "position:fixed;inset:0;z-index:2147483647;background:#000;color:#0f0;" +
               "font:12px/1.4 monospace;padding:16px;margin:0;overflow:auto;" +
               "white-space:pre-wrap;word-break:break-all;";
-            pre.textContent =
-              "AmyNest boot diagnostics\n\n" +
-              JSON.stringify(window.__amynestDiag(), null, 2);
+            var current = window.__amynestDiag();
+            var text = "AmyNest boot diagnostics\n\n";
+            text += "── CURRENT BOOT ──\n";
+            text += JSON.stringify(current, null, 2) + "\n\n";
+            text += "── PREVIOUS BOOT (from before this page load) ──\n";
+            text += prev ? JSON.stringify(prev, null, 2) : "(none)";
+            pre.textContent = text;
             document.body && document.body.appendChild(pre);
           });
         }

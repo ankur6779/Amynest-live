@@ -47,12 +47,15 @@ const splashStartedAt = performance.now();
 
 requestAnimationFrame(() => {
   requestAnimationFrame(() => {
+    mark("splash-raf-fired");
     const elapsed = performance.now() - splashStartedAt;
     const wait = Math.max(0, SPLASH_MIN_MS - elapsed);
     setTimeout(() => {
+      mark("splash-timer-fired");
       const splash = document.getElementById("splash");
       if (splash) {
         splash.classList.add("splash-hide");
+        mark("splash-hide-class-added");
         // Remove from DOM after the CSS transition ends so it no longer
         // intercepts pointer events or occupies the accessibility tree.
         splash.addEventListener("transitionend", () => {
