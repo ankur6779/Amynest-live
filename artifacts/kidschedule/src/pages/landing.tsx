@@ -1112,23 +1112,6 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                {/* Social proof mini */}
-                <div className="mt-6 flex items-center gap-3">
-                  <div className="flex -space-x-1.5">
-                    {["P","R","S","K"].map((l,i) => (
-                      <div
-                        key={i}
-                        className="h-7 w-7 rounded-full border-2 border-white/10 flex items-center justify-center text-[10px] font-bold text-white"
-                        style={{ background: ["#A855F7","#06B6D4","#EC4899","#F97316"][i] }}
-                      >
-                        {l}
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-white/55 text-xs">
-                    <span className="text-white font-semibold">12,000+</span> parents already using the app
-                  </p>
-                </div>
               </div>
 
               {/* Right: phone mockup */}
