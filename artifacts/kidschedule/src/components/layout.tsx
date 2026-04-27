@@ -13,6 +13,7 @@ import { useTheme } from "@/contexts/theme-context";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useSubscription } from "@/hooks/use-subscription";
+import { usePushRegistration } from "@/hooks/use-push-registration";
 
 function SmartParentBadge({ className = "" }: { className?: string }) {
   return (
@@ -99,6 +100,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { isPremium } = useSubscription();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  usePushRegistration();
 
   const initials = user
     ? (user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? user.emailAddresses?.[0]?.emailAddress?.[0] ?? "U")
