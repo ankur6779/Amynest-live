@@ -64,6 +64,7 @@ vi.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Light: "light", Medium: "medium", Heavy: "heavy" },
 }));
 
+// audit-block-ignore-start (mock theme fixtures for useTheme in tests)
 vi.mock("@/contexts/ThemeContext", () => ({
   useTheme: () => ({
     theme: {
@@ -75,6 +76,7 @@ vi.mock("@/contexts/ThemeContext", () => ({
   }),
   ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
+// audit-block-ignore-end
 
 vi.mock("expo-router", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
