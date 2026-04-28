@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { humanizeError } from "@/utils/humanizeError";
 import PhoneAuthFlow from "@/components/PhoneAuthFlow";
 import NeonRingHero from "@/components/NeonRingHero";
+import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED } from "@/constants/colors";
 
 export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
@@ -165,7 +166,7 @@ export default function SignUpScreen() {
               style={styles.primaryBtnWrap}
             >
               <LinearGradient
-                colors={canSubmit ? ["#a855f7", "#ec4899"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+                colors={canSubmit ? BRAND_GRADIENT : BRAND_GRADIENT_DISABLED}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.primaryBtn}
               >
