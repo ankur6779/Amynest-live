@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(168,85,247,0.28)",
     padding: 24,
-    shadowColor: "#a855f7",
+    shadowColor: BRAND_GRADIENT[0],
     shadowOpacity: 0.18,
     shadowRadius: 40,
     shadowOffset: { width: 0, height: 12 },
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, fontWeight: "600", color: "rgba(200,180,255,0.80)", fontFamily: "Inter_600SemiBold" },
 
   passwordLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  forgotLink: { fontSize: 12, fontWeight: "600", color: "#a855f7", fontFamily: "Inter_600SemiBold" },
+  forgotLink: { fontSize: 12, fontWeight: "600", color: BRAND_GRADIENT[0], fontFamily: "Inter_600SemiBold" },
 
   inputWrap: {
     flexDirection: "row", alignItems: "center",
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   },
   inputWrapFocused: {
     borderColor: "rgba(168,85,247,0.75)",
-    shadowColor: "#a855f7", shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
+    shadowColor: BRAND_GRADIENT[0], shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
     elevation: 4,
   },
   inputIcon: { marginRight: 10 },
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#ec4899",
+    shadowColor: BRAND_GRADIENT[1],
     shadowOpacity: 0.50,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 4 },
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
 
   footer: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
   footerText: { color: "rgba(200,180,255,0.50)", fontFamily: "Inter_400Regular", fontSize: 14 },
-  linkText: { color: "#a855f7", fontWeight: "600", fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  linkText: { color: BRAND_GRADIENT[0], fontWeight: "600", fontFamily: "Inter_600SemiBold", fontSize: 14 },
 
   tagline: { marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.22)", fontFamily: "Inter_400Regular" },
 });
