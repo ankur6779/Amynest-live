@@ -138,7 +138,7 @@ export default function CoachScreen() {
   const insets = useSafeAreaInsets();
   const authFetch = useAuthFetch();
   const c = useColors();
-  const { mode } = useTheme();
+  const { mode, theme: ctxTheme } = useTheme();
   const theme = paletteFor(mode);
   const GOAL_CATEGORIES = useMemo(() => getGoalCategories(c.statusInfoBg), [c.statusInfoBg]);
   const ALL_GOALS = useMemo(() => GOAL_CATEGORIES.flatMap((cat) => cat.items), [GOAL_CATEGORIES]);
@@ -427,7 +427,7 @@ export default function CoachScreen() {
 
   if (profileLoading) {
     return (
-      <LinearGradient colors={["#0f0c29", "#302b63", "#24243e"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <LinearGradient colors={ctxTheme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={c.primary} />
       </LinearGradient>
     );
@@ -444,7 +444,7 @@ export default function CoachScreen() {
   // ── PHASE: RESUMING ──────────────────────────────────────────────────
   if (phase === "resuming") {
     return (
-      <LinearGradient colors={["#0f0c29", "#302b63", "#24243e"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 12 }}>
+      <LinearGradient colors={ctxTheme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 12 }}>
         <ActivityIndicator size="large" color={c.primary} />
         <Text style={{ color: c.textSubtle, fontSize: 13, fontWeight: "600" }}>Loading your plan…</Text>
       </LinearGradient>
@@ -1426,5 +1426,5 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 999,
   },
-  nextHintText: { color: "#FBBF24", fontSize: 11.5, fontFamily: "Inter_700Bold", letterSpacing: 0.2 },
+  nextHintText: { color: brand.amber400, fontSize: 11.5, fontFamily: "Inter_700Bold", letterSpacing: 0.2 },
 });

@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import { brand } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
@@ -20,7 +21,6 @@ import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import RoutineCarousel from "@/components/RoutineCarousel";
 import type { RoutineTask } from "@/contexts/ProgressContext";
 
-const BG_GRADIENT = ["#0f0c29", "#302b63", "#24243e"] as const;
 
 function formatDate(d: Date): string {
   return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -77,6 +77,7 @@ function formatYMD(d: Date): string {
 
 export default function DashboardScreen() {
   const { user } = useUser();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const c = useColors();
   const authFetch = useAuthFetch();
@@ -192,7 +193,7 @@ export default function DashboardScreen() {
 
   if (profileLoading) {
     return (
-      <LinearGradient colors={BG_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.center}>
+      <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.center}>
         <ActivityIndicator size="large" color={c.primary} />
       </LinearGradient>
     );
@@ -208,7 +209,7 @@ export default function DashboardScreen() {
   const todayLabel = formatDate(new Date());
 
   return (
-    <LinearGradient colors={BG_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
+    <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
       <ScrollView
         contentContainerStyle={{
           paddingTop: topPad + 16,

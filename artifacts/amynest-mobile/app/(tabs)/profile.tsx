@@ -600,7 +600,7 @@ export default function ProfileScreen() {
 
         {/* My Recipes */}
         <TouchableOpacity
-          style={[styles.logoutBtn, { backgroundColor: "#FFF7ED", borderColor: "#FDBA7455" }]}
+          style={[styles.logoutBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
           onPress={() => {
             Haptics.selectionAsync();
             router.push("/recipes");

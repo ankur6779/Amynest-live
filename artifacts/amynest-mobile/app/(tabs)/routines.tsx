@@ -19,7 +19,6 @@ import FuturePredictor from "@/components/FuturePredictor";
 import SmartMealSuggestions from "@/components/SmartMealSuggestions";
 import colors, { brand } from "@/constants/colors";
 
-const BG_GRADIENT = ["#0f0c29", "#302b63", "#24243e"] as const;
 
 type RoutineItem = {
   time: string; activity: string; duration: number;
@@ -72,6 +71,7 @@ function completionPct(items: RoutineItem[]): number {
 
 export default function RoutinesScreen() {
   const { profileComplete, isLoading: profileLoading } = useProfileComplete();
+  const { theme } = useTheme();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -155,7 +155,7 @@ export default function RoutinesScreen() {
 
   if (profileLoading) {
     return (
-      <LinearGradient colors={BG_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+      <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </LinearGradient>
     );
@@ -166,7 +166,7 @@ export default function RoutinesScreen() {
   }
 
   return (
-    <LinearGradient colors={BG_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
+    <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
       <ScrollView
         contentContainerStyle={{ paddingTop: topPad + 16, paddingBottom: botPad + 100 }}
         showsVerticalScrollIndicator={false}

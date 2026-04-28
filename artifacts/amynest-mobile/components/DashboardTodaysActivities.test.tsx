@@ -62,6 +62,18 @@ vi.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Light: "light", Medium: "medium", Heavy: "heavy" },
 }));
 
+vi.mock("@/contexts/ThemeContext", () => ({
+  useTheme: () => ({
+    theme: {
+      gradient: ["#0f0c29", "#302b63", "#24243e"] as const,
+      bg: { primary: "#0f0c29", surface: "#1a1633" },
+      text: { primary: "#ffffff", secondary: "rgba(255,255,255,0.7)" },
+    },
+    mode: "dark",
+  }),
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 vi.mock("expo-router", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
   useLocalSearchParams: () => ({}),

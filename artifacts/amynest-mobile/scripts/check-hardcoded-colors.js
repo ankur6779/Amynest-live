@@ -37,9 +37,7 @@ const ROOT = path.resolve(__dirname, "..");
 const DEFERRED_FILES = [
   // tabs
   "app/(tabs)/_layout.tsx",
-  "app/(tabs)/coach.tsx",
   "app/(tabs)/hub.tsx",
-  "app/(tabs)/index.tsx",
   "app/(tabs)/profile.tsx",
   "app/(tabs)/routines.tsx",
   // app screens
