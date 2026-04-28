@@ -251,7 +251,7 @@ export function LifeSkillsZone({ child }: Props) {
             </View>
 
             <View style={styles.tipBox}>
-              <Ionicons name="bulb" size={14} color="#FFD27A" />
+              <Ionicons name="bulb" size={14} color={brand.amber400} />
               <Text style={styles.tipText}>
                 <Text style={{ fontWeight: "700" }}>{uiLabel("parentTip", lang)}: </Text>
                 {task.parentTip[lang]}
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: "700",
     backgroundColor: "rgba(255,255,255,0.08)", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999,
   },
-  pointPill: { backgroundColor: "rgba(255,210,122,0.18)", color: "#FFD27A" },
+  pointPill: { backgroundColor: "rgba(255,210,122,0.18)", color: brand.amber400 },
 
   tipBox: {
     flexDirection: "row", gap: 6, alignItems: "flex-start",

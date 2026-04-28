@@ -34,7 +34,7 @@ type Prediction = {
 const SEV_COLOR: Record<Severity, { bg: string; border: string; text: string; dot: string }> = {
   good:    { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.45)", text: "#34d399", dot: "#10b981" },
   caution: { bg: "rgba(245,158,11,0.15)", border: "rgba(245,158,11,0.45)", text: "#fbbf24", dot: "#f59e0b" },
-  risk:    { bg: "rgba(244,63,94,0.18)",  border: "rgba(244,63,94,0.50)",  text: "#fb7185", dot: "#f43f5e" },
+  risk:    { bg: "rgba(244,63,94,0.18)",  border: "rgba(244,63,94,0.50)",  text: brand.rose400, dot: "#f43f5e" },
 };
 
 const CONF_COLOR: Record<Prediction["confidence"], { bg: string; text: string }> = {
@@ -92,7 +92,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
       {/* Header */}
       <View style={styles.headerRow}>
         <LinearGradient
-          colors={["#FFD27A", brand.accent, brand.purple500]}
+          colors={[brand.amber400, brand.accent, brand.purple500]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.iconRing}
         >

@@ -173,8 +173,8 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
         <Metric label="Behavior" value={`${overview.behaviorScore}`}        sub={overview.behaviorLabel}                                                  accent="#34D399" />
         <Metric label="Mood"     value={MOOD_LABEL[overview.mood].split(" ")[0]} sub={MOOD_LABEL[overview.mood].split(" ").slice(1).join(" ")}            accent="#FBBF24" />
         <Metric label="Sleep"    value={SLEEP_LABEL[overview.sleepQuality].split(" ")[0]} sub={SLEEP_LABEL[overview.sleepQuality].split(" ").slice(1).join(" ")} accent="#60A5FA" />
-        <Metric label="Screen"   value={`${overview.screenMinutes}m`}        sub={overview.screenMinutes >= 90 ? "High" : "OK"}                            accent="#FB7185" />
-        <Metric label="Quality"  value={`${overview.qualityMinutes}m`}       sub={overview.qualityMinutes >= 30 ? "Connected" : "Add 15m"}                accent="#F472B6" />
+        <Metric label="Screen"   value={`${overview.screenMinutes}m`}        sub={overview.screenMinutes >= 90 ? "High" : "OK"}                            accent={brand.rose400} />
+        <Metric label="Quality"  value={`${overview.qualityMinutes}m`}       sub={overview.qualityMinutes >= 30 ? "Connected" : "Add 15m"}                accent={brand.pink400} />
       </ScrollView>
 
       {/* Mood + Sleep selectors */}

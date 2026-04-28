@@ -141,7 +141,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   school: brand.indigo500, travel: "#818CF8",
   homework: brand.violet500, study: brand.violet500,
   play: "#F97316", exercise: "#84CC16",
-  family: brand.pink500, bonding: "#F472B6",
+  family: brand.pink500, bonding: brand.pink400,
   creative: "#14B8A6", outdoor: "#84CC16",
   self_care: "#06B6D4", hygiene: brand.pink500,
   rest: "", "wind-down": brand.violet400,

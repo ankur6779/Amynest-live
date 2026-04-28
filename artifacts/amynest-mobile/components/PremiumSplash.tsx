@@ -340,7 +340,7 @@ export default function PremiumSplash({ onFinish }: Props) {
           <View style={styles.logoGlowOuter} />
           <View style={styles.logoGlowInner} />
           <LinearGradient
-            colors={["#7B3FF2", brand.accent, "#4FC3F7"]}
+            colors={["#7B3FF2", brand.accent, brand.sky300]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.logoRingGradient}

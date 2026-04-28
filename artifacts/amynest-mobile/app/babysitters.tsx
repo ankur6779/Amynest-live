@@ -79,7 +79,7 @@ export default function BabysittersScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
           <Ionicons name="chevron-back" size={22} color={c.text} />
         </Pressable>
-        <LinearGradient colors={["#FB7185", brand.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerIcon}>
+        <LinearGradient colors={[brand.rose400, brand.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerIcon}>
           <MaterialCommunityIcons name="baby-face-outline" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
@@ -120,7 +120,7 @@ export default function BabysittersScreen() {
               {s.notes && <Text style={styles.cardNotes} numberOfLines={2}>{s.notes}</Text>}
             </View>
             <Pressable onPress={() => handleDelete(s.id, s.name)} hitSlop={10} style={styles.delBtn}>
-              <Ionicons name="trash-outline" size={18} color="#FB7185" />
+              <Ionicons name="trash-outline" size={18} color={brand.rose400} />
             </Pressable>
           </View>
         ))}
