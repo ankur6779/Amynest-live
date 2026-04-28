@@ -11,6 +11,7 @@ export default function NeonRingHero() {
   const spinAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(1)).current;
+  const amyGlowAnim = useRef(new Animated.Value(0.72)).current;
 
   useEffect(() => {
     const spinLoop = Animated.loop(
@@ -56,14 +57,33 @@ export default function NeonRingHero() {
       ])
     );
 
+    const amyGlowLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(amyGlowAnim, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(amyGlowAnim, {
+          toValue: 0.72,
+          duration: 1600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
     spinLoop.start();
     pulseLoop.start();
     glowLoop.start();
+    amyGlowLoop.start();
 
     return () => {
       spinLoop.stop();
       pulseLoop.stop();
       glowLoop.stop();
+      amyGlowLoop.stop();
     };
   }, []);
 
@@ -105,26 +125,28 @@ export default function NeonRingHero() {
         <View style={styles.innerCircle}>
           <Text style={styles.meetText}>Meet</Text>
 
-          {/* Gradient "AMY" using SVG */}
-          <Svg width={90} height={40}>
-            <Defs>
-              <SvgLinearGradient id="amyGrad" x1="0" y1="0" x2="1" y2="0">
-                <Stop offset="0" stopColor="#a855f7" />
-                <Stop offset="1" stopColor="#ec4899" />
-              </SvgLinearGradient>
-            </Defs>
-            <SvgText
-              fill="url(#amyGrad)"
-              fontSize="32"
-              fontWeight="700"
-              letterSpacing="4"
-              x="4"
-              y="33"
-              textAnchor="start"
-            >
-              AMY
-            </SvgText>
-          </Svg>
+          {/* Gradient "AMY" using SVG — opacity-glow pulse on ~3.2s loop */}
+          <Animated.View style={{ opacity: amyGlowAnim }}>
+            <Svg width={90} height={40}>
+              <Defs>
+                <SvgLinearGradient id="amyGrad" x1="0" y1="0" x2="1" y2="0">
+                  <Stop offset="0" stopColor="#a855f7" />
+                  <Stop offset="1" stopColor="#ec4899" />
+                </SvgLinearGradient>
+              </Defs>
+              <SvgText
+                fill="url(#amyGrad)"
+                fontSize="32"
+                fontWeight="700"
+                letterSpacing="4"
+                x="4"
+                y="33"
+                textAnchor="start"
+              >
+                AMY
+              </SvgText>
+            </Svg>
+          </Animated.View>
         </View>
 
         {/* Light flare dot */}
