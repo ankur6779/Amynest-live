@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, {  useRef, useState } from "react";
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 import { markTutorialSeen } from "@/utils/tutorialState";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -41,13 +41,13 @@ const SLIDES: Slide[] = [
     icon: "calendar-outline",
     title: "Routines that adapt",
     body: "Tell Amy about your child once. She builds the right schedule each day — and shifts it when life happens.",
-    gradient: ["#6366F1", "#8B5CF6"],
+    gradient: [palette.indigo500, brand.violet500],
   },
   {
     icon: "notifications-outline",
     title: "Gentle reminders",
     body: "Optional nudges keep your family on track without feeling pushy. You stay in control.",
-    gradient: ["#F59E0B", "#EF4444"],
+    gradient: [palette.amber500, palette.red500],
   },
 ];
 
@@ -87,7 +87,7 @@ export default function TutorialScreen() {
     <View style={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient
-        colors={["#0a061a", "#120a2e", "#050010"]}
+        colors={["#0a061a", "#120a2e", "#050010"]} // audit-ok: intentional dark bg / custom color
         start={{ x: 0.1, y: 0 }}
         end={{ x: 0.9, y: 1 }}
         style={StyleSheet.absoluteFill}

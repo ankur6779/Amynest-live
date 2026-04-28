@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {  useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { humanizeError } from "@/utils/humanizeError";
 import PhoneAuthFlow from "@/components/PhoneAuthFlow";
 import NeonRingHero from "@/components/NeonRingHero";
-import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brandAlpha } from "@/constants/colors";
+import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brand, brandAlpha, brandExtended } from "@/constants/colors";
 
 type ViewMode = "signin" | "reset" | "reset-sent";
 
@@ -77,7 +77,7 @@ export default function SignInScreen() {
   if (mode === "reset-sent") {
     return (
       <LinearGradient
-        colors={["#0f0c29", "#302b63", "#24243e"]}
+        colors={["#0f0c29", "#302b63", "#24243e"]} // audit-ok: intentional dark bg / custom color
         style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
       >
         <View style={styles.orb1} />
@@ -117,7 +117,7 @@ export default function SignInScreen() {
   if (mode === "reset") {
     return (
       <LinearGradient
-        colors={["#0f0c29", "#302b63", "#24243e"]}
+        colors={["#0f0c29", "#302b63", "#24243e"]} // audit-ok: intentional dark bg / custom color
         style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
       >
         <View style={styles.orb1} />
@@ -139,7 +139,7 @@ export default function SignInScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("auth.email")}</Text>
                 <View style={[styles.inputWrap, resetFocused && styles.inputWrapFocused]}>
-                  <Ionicons name="mail-outline" size={18} color={resetFocused ? "#A78BFA" : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
+                  <Ionicons name="mail-outline" size={18} color={resetFocused ? brand.violet400 : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     value={resetEmail}
@@ -159,7 +159,7 @@ export default function SignInScreen() {
 
               {resetError && (
                 <View style={styles.errorBox}>
-                  <Ionicons name="alert-circle-outline" size={15} color="#FF8080" style={{ marginRight: 6 }} />
+                  <Ionicons name="alert-circle-outline" size={15} color={brandExtended.errorSoft} style={{ marginRight: 6 }} />
                   <Text style={styles.errorText}>{resetError}</Text>
                 </View>
               )}
@@ -197,7 +197,7 @@ export default function SignInScreen() {
   // ─── Normal sign-in form ─────────────────────────────────────────────────────
   return (
     <LinearGradient
-      colors={["#0f0c29", "#302b63", "#24243e"]}
+      colors={["#0f0c29", "#302b63", "#24243e"]} // audit-ok: intentional dark bg / custom color
       style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
     >
       <View style={styles.orb1} />
@@ -238,7 +238,7 @@ export default function SignInScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t("auth.email")}</Text>
               <View style={[styles.inputWrap, focusedField === "email" && styles.inputWrapFocused]}>
-                <Ionicons name="mail-outline" size={18} color={focusedField === "email" ? "#A78BFA" : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
+                <Ionicons name="mail-outline" size={18} color={focusedField === "email" ? brand.violet400 : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={email}
@@ -264,7 +264,7 @@ export default function SignInScreen() {
                 </TouchableOpacity>
               </View>
               <View style={[styles.inputWrap, focusedField === "password" && styles.inputWrapFocused]}>
-                <Ionicons name="lock-closed-outline" size={18} color={focusedField === "password" ? "#A78BFA" : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
+                <Ionicons name="lock-closed-outline" size={18} color={focusedField === "password" ? brand.violet400 : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
                   value={password}
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, color: "rgba(200,180,255,0.65)", fontFamily: "Inter_400Regular", marginBottom: 4, lineHeight: 20 },
 
   sentEmoji: { fontSize: 40, textAlign: "center" },
-  resetEmailHighlight: { color: "#C084FC", fontWeight: "600" },
+  resetEmailHighlight: { color: brand.purple400, fontWeight: "600" },
 
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   divider: { flex: 1, height: 1, backgroundColor: brandAlpha.purple500_15 },
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 15, color: "#F0E8FF", fontFamily: "Inter_400Regular" },
+  input: { flex: 1, fontSize: 15, color: brandExtended.softPurple, fontFamily: "Inter_400Regular" },
   eyeBtn: { padding: 4 },
 
   errorBox: {
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(255,60,60,0.25)",
     borderRadius: 12, padding: 10,
   },
-  errorText: { flex: 1, fontSize: 13, color: "#FF8080", fontFamily: "Inter_400Regular", lineHeight: 18 },
+  errorText: { flex: 1, fontSize: 13, color: brandExtended.errorSoft, fontFamily: "Inter_400Regular", lineHeight: 18 },
 
   primaryBtnWrap: { marginTop: 4 },
   primaryBtn: {

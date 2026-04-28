@@ -231,26 +231,38 @@ describe("MobileRecipeCard — integration with generateRuleBasedRoutine", () =>
     schoolItems = generateRuleBasedRoutine({
       childName: "TestChild",
       ageGroup: "early_school",
+      totalAgeMonths: 84,
       wakeUpTime: "07:00 AM",
       sleepTime: "09:00 PM",
       schoolStartTime: SCHOOL_START_TIME,
       schoolEndTime: SCHOOL_END_TIME,
+      travelMode: "car",
       hasSchool: true,
       mood: "balanced",
       foodType: "veg",
       region: "pan_indian",
+      p1Free: true,
+      p2Free: false,
+      bothBusy: false,
       date: "Monday",
     }).items;
 
     nonSchoolItems = generateRuleBasedRoutine({
       childName: "TestChild",
       ageGroup: "early_school",
+      totalAgeMonths: 84,
       wakeUpTime: "07:00 AM",
       sleepTime: "09:00 PM",
+      schoolStartTime: "08:30 AM",
+      schoolEndTime: "03:00 PM",
+      travelMode: "car",
       hasSchool: false,
       mood: "balanced",
       foodType: "veg",
       region: "pan_indian",
+      p1Free: true,
+      p2Free: false,
+      bothBusy: false,
       date: "Saturday",
     }).items;
   });

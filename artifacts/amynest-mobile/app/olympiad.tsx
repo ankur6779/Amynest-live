@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, {  useEffect, useMemo, useState, useCallback } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator,
 } from "react-native";
@@ -22,7 +22,7 @@ import {
   pickDailyQuestions,
   pickPracticeQuestions,
 } from "@workspace/olympiad";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 
 type Child = { id: number; name: string; age: number };
 
@@ -126,9 +126,9 @@ export default function OlympiadScreen() {
     return (
       <View style={[styles.center, { paddingTop: insets.top + 40, padding: 20 }]}>
         <Stack.Screen options={{ title: "Olympiad Zone" }} />
-        <Ionicons name="trophy-outline" size={48} color="#9CA3AF" />
+        <Ionicons name="trophy-outline" size={48} color={palette.gray400} />
         <Text style={{ marginTop: 12, fontWeight: "700", fontSize: 16 }}>Add a child first</Text>
-        <Text style={{ marginTop: 4, color: "#6B7280", textAlign: "center" }}>
+        <Text style={{ marginTop: 4, color: palette.gray500, textAlign: "center" }}>
           Olympiad practice is personalised to your child's age band.
         </Text>
         <Pressable onPress={() => router.back()} style={[styles.btn, { marginTop: 16 }]}>
@@ -146,6 +146,7 @@ function OlympiadInner({
 }: { child: Child; childOptions: Child[]; onChange: (id: number) => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { theme } = useTheme();
   const [stats, setStats] = useState<ChildOlympiadStats | null>(null);
   const [mode, setMode] = useState<Mode>("home");
 
@@ -244,7 +245,7 @@ function OlympiadInner({
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 14 }}>
         {/* Header */}
         <LinearGradient
-          colors={["#F59E0B", "#EF4444"]}
+          colors={[palette.amber500, palette.red500]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.headerCard}
         >
@@ -347,7 +348,7 @@ function OlympiadInner({
                         <Text style={{ fontSize: 13, fontWeight: "600" }}>
                           {SUBJECT_EMOJI[s]} {SUBJECT_LABELS[s]}
                         </Text>
-                        <Text style={{ fontSize: 12, color: "#6B7280" }}>
+                        <Text style={{ fontSize: 12, color: palette.gray500 }}>
                           {e.correct} / {e.total} ({pct}%)
                         </Text>
                       </View>
@@ -407,7 +408,7 @@ function QuizRunner({
   const [done, setDone] = useState(initialAnswers.length >= questions.length);
 
   if (questions.length === 0) {
-    return <Text style={{ color: "#6B7280" }}>No questions available yet.</Text>;
+    return <Text style={{ color: palette.gray500 }}>No questions available yet.</Text>;
   }
 
   if (done) {
@@ -421,7 +422,7 @@ function QuizRunner({
         <View style={[styles.card, { alignItems: "center" }]}>
           <Text style={{ fontSize: 48 }}>{perfect ? "🏆" : score >= questions.length / 2 ? "🎉" : "💪"}</Text>
           <Text style={{ fontSize: 22, fontWeight: "800" }}>{score} / {questions.length}</Text>
-          <Text style={{ color: "#6B7280", marginTop: 4 }}>
+          <Text style={{ color: palette.gray500, marginTop: 4 }}>
             +{pts} points{perfect && perfectBonus > 0 ? ` (incl. ${perfectBonus} bonus)` : ""}
           </Text>
         </View>
@@ -433,14 +434,14 @@ function QuizRunner({
                 <Ionicons
                   name={ok ? "checkmark-circle" : "close-circle"}
                   size={18}
-                  color={ok ? "#16A34A" : "#E11D48"}
+                  color={ok ? palette.green600 : palette.rose600}
                 />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontWeight: "600", fontSize: 13 }}>{q.question}</Text>
-                  <Text style={{ fontSize: 12, marginTop: 4, color: "#6B7280" }}>
-                    Correct: <Text style={{ fontWeight: "700", color: "#111" }}>{q.options[q.correct]}</Text>
+                  <Text style={{ fontSize: 12, marginTop: 4, color: palette.gray500 }}>
+                    Correct: <Text style={{ fontWeight: "700", color: "#111" /* audit-ok: near-black answer text */ }}>{q.options[q.correct]}</Text>
                   </Text>
-                  <Text style={{ fontSize: 12, marginTop: 4, color: "#6B7280", fontStyle: "italic" }}>
+                  <Text style={{ fontSize: 12, marginTop: 4, color: palette.gray500, fontStyle: "italic" }}>
                     {q.explanation}
                   </Text>
                 </View>
@@ -468,8 +469,8 @@ function QuizRunner({
   return (
     <View style={{ gap: 12 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ fontSize: 12, color: "#6B7280" }}>Question {idx + 1} of {questions.length}</Text>
-        <Text style={{ fontSize: 12, color: "#6B7280" }}>
+        <Text style={{ fontSize: 12, color: palette.gray500 }}>Question {idx + 1} of {questions.length}</Text>
+        <Text style={{ fontSize: 12, color: palette.gray500 }}>
           {SUBJECT_EMOJI[q.subject]} {SUBJECT_LABELS[q.subject]} · {DIFFICULTY_LABELS[q.difficulty]}
         </Text>
       </View>
@@ -489,10 +490,10 @@ function QuizRunner({
                 disabled={isAnswered}
                 style={[
                   styles.opt,
-                  showCorrect && { borderColor: "#16A34A", backgroundColor: "#F0FDF4" },
-                  showWrong && { borderColor: "#E11D48", backgroundColor: "#FFF1F2" },
+                  showCorrect && { borderColor: palette.green600, backgroundColor: palette.emerald50 },
+                  showWrong && { borderColor: palette.rose600, backgroundColor: palette.rose50 },
                   isAnswered && !showCorrect && !showWrong && { opacity: 0.6 },
-                  picked === i && !isAnswered && { borderColor: brand.primary, backgroundColor: "#F5F3FF" },
+                  picked === i && !isAnswered && { borderColor: brand.primary, backgroundColor: palette.violet50 },
                 ]}
               >
                 <Text style={{ fontWeight: "600", fontSize: 14 }}>
@@ -503,8 +504,8 @@ function QuizRunner({
           })}
         </View>
         {isAnswered && (
-          <View style={[styles.expl, picked === q.correct ? { backgroundColor: "#F0FDF4" } : { backgroundColor: "#FFFBEB" }]}>
-            <Ionicons name="bulb-outline" size={16} color={picked === q.correct ? "#16A34A" : "#D97706"} />
+          <View style={[styles.expl, picked === q.correct ? { backgroundColor: palette.emerald50 } : { backgroundColor: palette.amber50 }]}>
+            <Ionicons name="bulb-outline" size={16} color={picked === q.correct ? palette.green600 : palette.amber600} />
             <Text style={{ flex: 1, fontSize: 13 }}>{q.explanation}</Text>
           </View>
         )}
@@ -602,7 +603,7 @@ function PracticeRunner({
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8F7FF" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8F7FF" }, // audit-ok: light lavender loading bg
   headerCard: { borderRadius: 18, padding: 16, gap: 6 },
   headerTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
   headerSub: { color: "rgba(255,255,255,0.92)", fontSize: 12 },
@@ -610,32 +611,32 @@ const styles = StyleSheet.create({
   statCell: { flex: 1, backgroundColor: "rgba(255,255,255,0.18)", padding: 10, borderRadius: 12, alignItems: "center" },
   statNum: { color: "#fff", fontSize: 18, fontWeight: "800" },
   statLbl: { color: "rgba(255,255,255,0.85)", fontSize: 11, marginTop: 2 },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E7EB" },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: "#fff", borderWidth: 1, borderColor: palette.gray200 },
   chipActive: { backgroundColor: brand.primary, borderColor: brand.primary },
-  chipText: { fontSize: 13, fontWeight: "600", color: "#374151" },
+  chipText: { fontSize: 13, fontWeight: "600", color: palette.gray700 },
   chipTextActive: { color: "#fff" },
   tabs: { flexDirection: "row", backgroundColor: "#fff", borderRadius: 12, padding: 4, gap: 4 },
   tab: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
   tabActive: { backgroundColor: brand.primary },
-  tabText: { fontSize: 13, fontWeight: "600", color: "#6B7280" },
+  tabText: { fontSize: 13, fontWeight: "600", color: palette.gray500 },
   tabTextActive: { color: "#fff" },
-  card: { backgroundColor: "#fff", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#EEE" },
+  card: { backgroundColor: "#fff", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#EEE" /* audit-ok: light gray card border */ },
   cardTitle: { fontWeight: "700", fontSize: 15 },
-  cardSub: { fontSize: 13, color: "#6B7280", marginTop: 4 },
-  diffPill: { flex: 1, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: "#E5E7EB", alignItems: "center" },
-  diffPillActive: { borderColor: brand.primary, backgroundColor: "#F5F3FF" },
-  diffPillText: { fontSize: 13, fontWeight: "600", color: "#6B7280" },
+  cardSub: { fontSize: 13, color: palette.gray500, marginTop: 4 },
+  diffPill: { flex: 1, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: palette.gray200, alignItems: "center" },
+  diffPillActive: { borderColor: brand.primary, backgroundColor: palette.violet50 },
+  diffPillText: { fontSize: 13, fontWeight: "600", color: palette.gray500 },
   diffPillTextActive: { color: brand.primary },
-  subjPill: { width: "47%", padding: 12, borderRadius: 12, borderWidth: 1, borderColor: "#E5E7EB", alignItems: "center", gap: 4 },
-  subjPillActive: { borderColor: brand.primary, backgroundColor: "#F5F3FF" },
-  subjPillText: { fontSize: 13, fontWeight: "600", color: "#374151" },
+  subjPill: { width: "47%", padding: 12, borderRadius: 12, borderWidth: 1, borderColor: palette.gray200, alignItems: "center", gap: 4 },
+  subjPillActive: { borderColor: brand.primary, backgroundColor: palette.violet50 },
+  subjPillText: { fontSize: 13, fontWeight: "600", color: palette.gray700 },
   subjPillTextActive: { color: brand.primary },
-  bar: { height: 8, backgroundColor: "#E5E7EB", borderRadius: 4, overflow: "hidden", marginTop: 4 },
+  bar: { height: 8, backgroundColor: palette.gray200, borderRadius: 4, overflow: "hidden", marginTop: 4 },
   barFill: { height: "100%", backgroundColor: brand.primary },
-  opt: { borderWidth: 2, borderColor: "#E5E7EB", padding: 12, borderRadius: 10, backgroundColor: "#fff" },
+  opt: { borderWidth: 2, borderColor: palette.gray200, padding: 12, borderRadius: 10, backgroundColor: "#fff" },
   expl: { flexDirection: "row", gap: 8, padding: 10, borderRadius: 10, marginTop: 12, alignItems: "flex-start" },
   btn: { backgroundColor: brand.primary, padding: 12, borderRadius: 12, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6 },
   btnText: { color: "#fff", fontWeight: "700" },
-  btnSecondary: { padding: 12, borderRadius: 12, borderWidth: 1, borderColor: "#E5E7EB", alignItems: "center" },
-  btnSecondaryText: { fontWeight: "600", color: "#374151" },
+  btnSecondary: { padding: 12, borderRadius: 12, borderWidth: 1, borderColor: palette.gray200, alignItems: "center" },
+  btnSecondaryText: { fontWeight: "600", color: palette.gray700 },
 });

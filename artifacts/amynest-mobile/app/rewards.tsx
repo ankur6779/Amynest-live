@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {  useCallback, useEffect, useRef, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable, RefreshControl,
   ActivityIndicator, Platform, Alert,
@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -240,7 +240,7 @@ export default function RewardsScreen() {
                       {e.childName} · {new Date(e.date).toLocaleDateString()}
                     </Text>
                   </View>
-                  <Text style={[styles.listCost, { color: "#10B981" }]}>+{e.points}</Text>
+                  <Text style={[styles.listCost, { color: palette.emerald500 }]}>+{e.points}</Text>
                 </View>
               ))}
             </View>

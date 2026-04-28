@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, {  useState, useRef, useEffect, useMemo } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated,
   Platform, ActivityIndicator,
@@ -9,7 +9,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand } from "@/constants/colors";
+import { brand, brandExtended, palette } from "@/constants/colors";
 import * as Haptics from "expo-haptics";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
@@ -347,13 +347,13 @@ export default function AudioLessonsScreen() {
     : "Hands full? Let Amy talk you through the most important parenting topics for your child's age. Each lesson is 3–5 minutes.";
 
   return (
-    <LinearGradient colors={["#0f0c29", "#1a1040", "#0c1220"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#0f0c29", "#1a1040", "#0c1220"]} style={{ flex: 1 }}> // audit-ok: intentional dark bg / custom color
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={20} color="#c4b5fd" />
+          <Ionicons name="chevron-back" size={20} color={brand.violet300} />
         </TouchableOpacity>
-        <Ionicons name="headset" size={20} color="#c4b5fd" style={{ marginRight: 6 }} />
+        <Ionicons name="headset" size={20} color={brand.violet300} style={{ marginRight: 6 }} />
         <Text style={styles.headerTitle}>Amy Audio Lessons</Text>
       </View>
 
@@ -406,11 +406,11 @@ export default function AudioLessonsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.lessonTitle}>{title}</Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 }}>
-                    <Ionicons name="time-outline" size={11} color="#a99fd9" />
+                    <Ionicons name="time-outline" size={11} color={brandExtended.violetMuted} />
                     <Text style={styles.lessonMeta}>{lesson.duration}</Text>
                   </View>
                 </View>
-                <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={16} color="#a99fd9" />
+                <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={16} color={brandExtended.violetMuted} />
               </TouchableOpacity>
 
               {isOpen && (
@@ -445,7 +445,7 @@ export default function AudioLessonsScreen() {
                       activeOpacity={0.7}
                       disabled={!amy.speaking}
                     >
-                      <Ionicons name="play-back" size={22} color="#c4b5fd" />
+                      <Ionicons name="play-back" size={22} color={brand.violet300} />
                     </TouchableOpacity>
 
                     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -477,7 +477,7 @@ export default function AudioLessonsScreen() {
                       activeOpacity={0.7}
                       disabled={!amy.speaking}
                     >
-                      <Ionicons name="play-forward" size={22} color="#c4b5fd" />
+                      <Ionicons name="play-forward" size={22} color={brand.violet300} />
                     </TouchableOpacity>
                   </View>
 
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center", marginRight: 4,
   },
   headerTitle: { color: "#fff", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
-  intro: { color: "#c7c0e8", fontSize: 13, lineHeight: 20, marginVertical: 16 },
+  intro: { color: brandExtended.violetSoft, fontSize: 13, lineHeight: 20, marginVertical: 16 },
   agePills: { gap: 8, paddingVertical: 4 },
   pill: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999 },
   pillInactive: {
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(139,92,246,0.35)",
     backgroundColor: "rgba(255,255,255,0.04)",
   },
-  pillText: { color: "#c4b5fd", fontSize: 13, fontWeight: "600" },
+  pillText: { color: brand.violet300, fontSize: 13, fontWeight: "600" },
   pillTextActive: { color: "#fff", fontSize: 13, fontWeight: "700" },
   lessonCard: {
     backgroundColor: "rgba(255,255,255,0.05)",
@@ -529,24 +529,24 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   lessonTitle: { color: "#fff", fontSize: 14, fontWeight: "800", lineHeight: 19 },
-  lessonMeta: { color: "#a99fd9", fontSize: 11 },
+  lessonMeta: { color: brandExtended.violetMuted, fontSize: 11 },
   playerWrap: { paddingHorizontal: 16, paddingBottom: 16 },
   progressTrack: {
     height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.1)", overflow: "hidden",
   },
   progressFill: { height: "100%", borderRadius: 3, backgroundColor: brand.primary },
-  timeText: { color: "#a99fd9", fontSize: 11 },
+  timeText: { color: brandExtended.violetMuted, fontSize: 11 },
   controls: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 20, marginVertical: 16 },
   skipBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   playBtn: { width: 60, height: 60, borderRadius: 30, overflow: "hidden" },
   playBtnGrad: { width: 60, height: 60, alignItems: "center", justifyContent: "center" },
   script: {
-    color: "#c7c0e8", fontSize: 12.5, lineHeight: 18.5,
+    color: brandExtended.violetSoft, fontSize: 12.5, lineHeight: 18.5,
     backgroundColor: "rgba(255,255,255,0.04)",
     borderRadius: 10, padding: 12,
   },
   errorText: {
-    color: "#fecaca", fontSize: 12.5, lineHeight: 18,
+    color: palette.rose200, fontSize: 12.5, lineHeight: 18,
     backgroundColor: "rgba(239,68,68,0.12)",
     borderRadius: 10, padding: 10, marginBottom: 10,
   },

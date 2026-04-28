@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, {  useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 import { useReferrals, type GiftToken } from "@/hooks/useReferrals";
 
 const SHARE_BASE = "https://amynest.ai";
@@ -72,7 +72,7 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
     >
       <View style={styles.giftItemHeader}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Ionicons name="ticket" size={15} color={isAvailable ? "#7C3AED" : colors.textMuted} />
+          <Ionicons name="ticket" size={15} color={isAvailable ? brand.violet600 : colors.textMuted} />
           <Text style={[styles.giftItemTitle, { color: colors.text }]}>
             {token.bonusDays} days free premium
           </Text>
@@ -94,7 +94,7 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
             style={[
               styles.statusPillText,
               {
-                color: isAvailable ? "#7C3AED" : token.status === "redeemed" ? "#047857" : colors.textMuted,
+                color: isAvailable ? brand.violet600 : token.status === "redeemed" ? palette.emerald700 : colors.textMuted,
               },
             ]}
           >
@@ -109,7 +109,7 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
           { backgroundColor: "rgba(124,58,237,0.06)", borderColor: "rgba(124,58,237,0.3)" },
         ]}
       >
-        <Text style={[styles.giftCode, { color: "#7C3AED" }]}>{token.giftCode}</Text>
+        <Text style={[styles.giftCode, { color: brand.violet600 }]}>{token.giftCode}</Text>
         {isAvailable && (
           <TouchableOpacity
             onPress={() => onCopy(token.giftCode)}
@@ -118,7 +118,7 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
             <Ionicons
               name={copiedCode === token.giftCode ? "checkmark-circle" : "copy-outline"}
               size={14}
-              color={copiedCode === token.giftCode ? "#22C55E" : colors.text}
+              color={copiedCode === token.giftCode ? palette.green500 : colors.text}
             />
             <Text style={[styles.smallBtnText, { color: colors.text }]}>
               {copiedCode === token.giftCode ? "Copied" : "Copy"}
@@ -133,15 +133,15 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
             onPress={shareGift}
             style={[styles.shareBtn, { backgroundColor: "rgba(124,58,237,0.1)", borderColor: "rgba(124,58,237,0.3)" }]}
           >
-            <Ionicons name="share-social" size={15} color="#7C3AED" />
-            <Text style={[styles.shareBtnText, { color: "#7C3AED" }]}>Share gift</Text>
+            <Ionicons name="share-social" size={15} color={brand.violet600} />
+            <Text style={[styles.shareBtnText, { color: brand.violet600 }]}>Share gift</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={whatsappGift}
             style={[styles.shareBtn, { backgroundColor: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.3)" }]}
           >
-            <Ionicons name="logo-whatsapp" size={15} color="#16A34A" />
-            <Text style={[styles.shareBtnText, { color: "#16A34A" }]}>WhatsApp</Text>
+            <Ionicons name="logo-whatsapp" size={15} color={palette.green600} />
+            <Text style={[styles.shareBtnText, { color: palette.green600 }]}>WhatsApp</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -196,7 +196,7 @@ function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bo
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <Ionicons name="gift" size={18} color="#F59E0B" />
+        <Ionicons name="gift" size={18} color={palette.amber500} />
         <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 0 }]}>Redeem a Gift Code</Text>
       </View>
       <Text style={[styles.fineprint, { color: colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 }]}>
@@ -205,8 +205,8 @@ function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bo
 
       {state === "success" ? (
         <View style={[styles.notice, { backgroundColor: "rgba(16,185,129,0.12)", borderColor: "rgba(16,185,129,0.4)" }]}>
-          <Ionicons name="checkmark-circle" size={18} color="#047857" />
-          <Text style={{ color: "#047857", fontSize: 13, flex: 1, fontWeight: "700" }}>
+          <Ionicons name="checkmark-circle" size={18} color={palette.emerald700} />
+          <Text style={{ color: palette.emerald700, fontSize: 13, flex: 1, fontWeight: "700" }}>
             🎉 Gift redeemed! {bonusDays > 0 ? `+${bonusDays} days of premium added.` : "Premium days added!"}
           </Text>
         </View>
@@ -224,7 +224,7 @@ function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bo
               styles.redeemInput,
               {
                 color: colors.text,
-                borderColor: state === "error" ? "#EF4444" : colors.border,
+                borderColor: state === "error" ? palette.red500 : colors.border,
                 backgroundColor: colors.surfaceElevated,
               },
             ]}
@@ -250,7 +250,7 @@ function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bo
         </View>
       )}
       {state === "error" && (
-        <Text style={{ color: "#EF4444", fontSize: 12, marginTop: 6 }}>{errorMsg}</Text>
+        <Text style={{ color: palette.red500, fontSize: 12, marginTop: 6 }}>{errorMsg}</Text>
       )}
     </View>
   );
@@ -309,7 +309,7 @@ export default function ReferralsScreen() {
       <Stack.Screen
         options={{
           title: "Invite & Earn",
-          headerStyle: { backgroundColor: "#0f0c29" },
+          headerStyle: { backgroundColor: "#0f0c29" }, // audit-ok: intentional dark bg / custom color
           headerTintColor: colors.foreground,
         }}
       />
@@ -351,7 +351,7 @@ export default function ReferralsScreen() {
                   <Ionicons
                     name={copiedKind === stats!.code ? "checkmark-circle" : "copy-outline"}
                     size={16}
-                    color={copiedKind === stats!.code ? "#22C55E" : colors.text}
+                    color={copiedKind === stats!.code ? palette.green500 : colors.text}
                   />
                   <Text style={[styles.smallBtnText, { color: colors.text }]}>
                     {copiedKind === stats!.code ? "Copied" : "Copy"}
@@ -369,8 +369,8 @@ export default function ReferralsScreen() {
                   onPress={onWhatsApp}
                   style={[styles.shareBtn, { backgroundColor: "#22C55E15", borderColor: "#22C55E55" }]}
                 >
-                  <Ionicons name="logo-whatsapp" size={18} color="#16A34A" />
-                  <Text style={[styles.shareBtnText, { color: "#16A34A" }]}>WhatsApp</Text>
+                  <Ionicons name="logo-whatsapp" size={18} color={palette.green600} />
+                  <Text style={[styles.shareBtnText, { color: palette.green600 }]}>WhatsApp</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => onCopy(link)}
@@ -394,7 +394,7 @@ export default function ReferralsScreen() {
               >
                 <View style={styles.cardHeader}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Ionicons name="ticket" size={18} color="#7C3AED" />
+                    <Ionicons name="ticket" size={18} color={brand.violet600} />
                     <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 0 }]}>Your Gift Tokens</Text>
                   </View>
                   <View
@@ -403,7 +403,7 @@ export default function ReferralsScreen() {
                       { backgroundColor: "rgba(124,58,237,0.12)", borderColor: "rgba(124,58,237,0.3)" },
                     ]}
                   >
-                    <Text style={[styles.countPillText, { color: "#7C3AED" }]}>
+                    <Text style={[styles.countPillText, { color: brand.violet600 }]}>
                       {availableGifts.length} available
                     </Text>
                   </View>
@@ -446,7 +446,7 @@ export default function ReferralsScreen() {
                           styles.statusDot,
                           {
                             backgroundColor:
-                              r.status === "paid" ? "#22C55E" : r.status === "valid" ? brand.purple500 : "#F59E0B",
+                              r.status === "paid" ? palette.green500 : r.status === "valid" ? brand.purple500 : palette.amber500,
                           },
                         ]}
                       />
@@ -457,9 +457,9 @@ export default function ReferralsScreen() {
                         styles.statusPill,
                         {
                           backgroundColor:
-                            r.status === "paid" ? "#22C55E" : r.status === "valid" ? brand.purple500 : colors.surface,
+                            r.status === "paid" ? palette.green500 : r.status === "valid" ? brand.purple500 : colors.surface,
                           borderColor:
-                            r.status === "paid" ? "#22C55E" : r.status === "valid" ? brand.purple500 : colors.border,
+                            r.status === "paid" ? palette.green500 : r.status === "valid" ? brand.purple500 : colors.border,
                         },
                       ]}
                     >
@@ -526,7 +526,7 @@ function HeroCard({
 
   return (
     <LinearGradient
-      colors={["#7C3AED", "#C026D3", "#F59E0B"]}
+      colors={[brand.violet600, palette.fuchsia600, palette.amber500]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.hero}
@@ -572,7 +572,7 @@ function ProgressCard({ stats }: { stats: NonNullable<ReturnType<typeof useRefer
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Ionicons name="trophy" size={18} color="#F59E0B" />
+          <Ionicons name="trophy" size={18} color={palette.amber500} />
           <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 0 }]}>Progress</Text>
         </View>
         <View style={[styles.countPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
@@ -587,7 +587,7 @@ function ProgressCard({ stats }: { stats: NonNullable<ReturnType<typeof useRefer
         sub="Friends who signed up & used Amy AI"
         value={`${stats.validReferrals} / ${stats.validThreshold}`}
         pct={validPct}
-        color="#7C3AED"
+        color={brand.violet600}
       />
       <View style={{ height: 14 }} />
       <ProgressBar
@@ -595,13 +595,13 @@ function ProgressCard({ stats }: { stats: NonNullable<ReturnType<typeof useRefer
         sub="At least 1 must purchase a paid plan"
         value={`${stats.paidReferrals} / ${stats.paidThreshold}`}
         pct={paidPct}
-        color="#22C55E"
+        color={palette.green500}
       />
       <View style={{ height: 14 }} />
       {capReached ? (
         <View style={[styles.notice, { backgroundColor: "#F59E0B15", borderColor: "#F59E0B55" }]}>
-          <Ionicons name="sparkles" size={16} color="#B45309" />
-          <Text style={{ color: "#B45309", fontSize: 13, flex: 1 }}>
+          <Ionicons name="sparkles" size={16} color={palette.amber700} />
+          <Text style={{ color: palette.amber700, fontSize: 13, flex: 1 }}>
             You've earned the maximum {stats.rewardCap} referral rewards. Thank you!
           </Text>
         </View>

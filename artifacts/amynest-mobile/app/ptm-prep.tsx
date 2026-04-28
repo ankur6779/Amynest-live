@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {  useEffect, useMemo, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert,
 } from "react-native";
@@ -17,7 +17,7 @@ import {
 } from "@workspace/ptm-prep";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 
 const STAGE_ORDER: PtmStage[] = ["prepare", "attend", "act"];
 
@@ -87,18 +87,18 @@ export default function PtmPrepScreen() {
       <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <Stack.Screen options={{
         headerTitle: "PTM Prep",
-        headerStyle: { backgroundColor: "#0f0c29" },
+        headerStyle: { backgroundColor: "#0f0c29" }, // audit-ok: intentional dark bg / custom color
         headerTintColor: colors.foreground,
       }} />
       <ScrollView contentContainerStyle={{ padding: 14, gap: 12, paddingBottom: 60 }}>
         {!session ? (
           <>
-            <LinearGradient colors={["#A78BFA", brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+            <LinearGradient colors={[brand.violet400, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
               <Text style={{ fontSize: 28 }}>🧾</Text>
               <Text style={styles.heroTitle}>PTM Prep Assistant</Text>
               <Text style={styles.heroSub}>A simple Prepare → Attend → Act flow for your child's next Parent-Teacher Meeting.</Text>
               <Pressable onPress={start} style={styles.heroBtn}>
-                <Ionicons name="sparkles" size={14} color="#7C3AED" />
+                <Ionicons name="sparkles" size={14} color={brand.violet600} />
                 <Text style={styles.heroBtnText}>Start a PTM Prep</Text>
               </Pressable>
             </LinearGradient>
@@ -113,7 +113,7 @@ export default function PtmPrepScreen() {
                 <Pressable onPress={() => Alert.alert("Discard draft?", "This will clear your current PTM prep.", [
                   { text: "Cancel" }, { text: "Discard", style: "destructive", onPress: () => setSession(null) },
                 ])}>
-                  <Text style={{ fontSize: 11, color: "#9CA3AF" }}>🗑 Discard</Text>
+                  <Text style={{ fontSize: 11, color: palette.gray400 }}>🗑 Discard</Text>
                 </Pressable>
               </View>
               <View style={{ flexDirection: "row", gap: 6 }}>
@@ -123,7 +123,7 @@ export default function PtmPrepScreen() {
                   return (
                     <Pressable key={s} onPress={() => setSession((cur) => cur ? setStage(cur, s) : cur)}
                       style={[styles.stageBtn, active ? styles.stageActive : done ? styles.stageDone : styles.stageIdle]}>
-                      <Text style={[styles.stageText, active ? { color: "#fff" } : done ? { color: "#047857" } : { color: colors.textMuted }]}>
+                      <Text style={[styles.stageText, active ? { color: "#fff" } : done ? { color: palette.emerald700 } : { color: colors.textMuted }]}>
                         {STAGE_LABELS[s].emoji} {STAGE_LABELS[s].title}
                       </Text>
                     </Pressable>
@@ -203,12 +203,12 @@ function PrepareStage({ session, setSession, colors }: any) {
             ) : items.map((q: any) => (
               <View key={q.id} style={styles.qRow}>
                 <Pressable onPress={() => setSession((s: PtmSession | null) => s ? toggleQuestion(s, q.id, "selected") : s)}>
-                  <Ionicons name={q.selected ? "checkmark-circle" : "ellipse-outline"} size={18} color={q.selected ? "#7C3AED" : colors.textMuted} />
+                  <Ionicons name={q.selected ? "checkmark-circle" : "ellipse-outline"} size={18} color={q.selected ? brand.violet600 : colors.textMuted} />
                 </Pressable>
                 <Text style={[styles.qText, { color: q.selected ? colors.text : colors.textMuted }]}>{q.text}</Text>
                 {q.category === "custom" && (
                   <Pressable onPress={() => setSession((s: PtmSession | null) => s ? removeQuestion(s, q.id) : s)} hitSlop={8}>
-                    <Ionicons name="trash-outline" size={14} color="#F43F5E" />
+                    <Ionicons name="trash-outline" size={14} color={palette.rose500} />
                   </Pressable>
                 )}
               </View>
@@ -273,7 +273,7 @@ function AttendStage({ session, setSession, colors }: any) {
             <View key={q.id} style={{ marginTop: 6 }}>
               <View style={styles.qRow}>
                 <Pressable onPress={() => setSession((s: PtmSession | null) => s ? toggleQuestion(s, q.id, "asked") : s)}>
-                  <Ionicons name={q.asked ? "checkmark-circle" : "ellipse-outline"} size={18} color={q.asked ? "#10B981" : colors.textMuted} />
+                  <Ionicons name={q.asked ? "checkmark-circle" : "ellipse-outline"} size={18} color={q.asked ? palette.emerald500 : colors.textMuted} />
                 </Pressable>
                 <Text style={[styles.qText, q.asked && { textDecorationLine: "line-through", color: colors.textMuted }]}>{q.text}</Text>
               </View>
@@ -343,11 +343,11 @@ function ActStage({ session, setSession, amyHint, onComplete, colors }: any) {
         ) : session.actions.map((a: any) => (
           <View key={a.id} style={styles.qRow}>
             <Pressable onPress={() => setSession((s: PtmSession | null) => s ? { ...s, actions: toggleAction(s.actions, a.id) } : s)}>
-              <Ionicons name={a.done ? "checkmark-circle" : "ellipse-outline"} size={18} color={a.done ? "#10B981" : colors.textMuted} />
+              <Ionicons name={a.done ? "checkmark-circle" : "ellipse-outline"} size={18} color={a.done ? palette.emerald500 : colors.textMuted} />
             </Pressable>
             <Text style={[styles.qText, a.done && { textDecorationLine: "line-through", color: colors.textMuted }]}>{a.text}</Text>
             <Pressable onPress={() => setSession((s: PtmSession | null) => s ? { ...s, actions: removeAction(s.actions, a.id) } : s)} hitSlop={8}>
-              <Ionicons name="trash-outline" size={14} color="#F43F5E" />
+              <Ionicons name="trash-outline" size={14} color={palette.rose500} />
             </Pressable>
           </View>
         ))}
@@ -415,7 +415,7 @@ function HistoryBlock({ history, colors, onDelete }: { history: PtmSession[]; co
                 <Pressable onPress={() => Alert.alert("Delete this past PTM?", "", [
                   { text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => onDelete(s.id) },
                 ])}>
-                  <Text style={{ fontSize: 11, color: "#F43F5E" }}>🗑 Delete</Text>
+                  <Text style={{ fontSize: 11, color: palette.rose500 }}>🗑 Delete</Text>
                 </Pressable>
               </View>
             )}
@@ -443,7 +443,7 @@ function makeStyles(colors: any) {
     heroTitle: { color: "#fff", fontWeight: "800", fontSize: 18 },
     heroSub: { color: "rgba(255,255,255,0.92)", fontSize: 12.5, lineHeight: 18 },
     heroBtn: { marginTop: 8, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#fff", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
-    heroBtnText: { color: "#7C3AED", fontWeight: "800", fontSize: 13 },
+    heroBtnText: { color: brand.violet600, fontWeight: "800", fontSize: 13 },
 
     card: { backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 12 },
     metaLabel: { fontSize: 10.5, fontWeight: "800", letterSpacing: 0.4, textTransform: "uppercase", color: colors.textMuted },
@@ -453,7 +453,7 @@ function makeStyles(colors: any) {
     statText: { fontSize: 10.5, color: colors.textMuted },
 
     stageBtn: { flex: 1, paddingVertical: 7, paddingHorizontal: 4, borderRadius: 10, borderWidth: 1, alignItems: "center" },
-    stageActive: { backgroundColor: "#7C3AED", borderColor: "#7C3AED" },
+    stageActive: { backgroundColor: brand.violet600, borderColor: brand.violet600 },
     stageDone: { backgroundColor: "rgba(16,185,129,0.10)", borderColor: "rgba(16,185,129,0.35)" },
     stageIdle: { backgroundColor: colors.surface, borderColor: colors.border },
     stageText: { fontSize: 11.5, fontWeight: "800" },
@@ -464,19 +464,19 @@ function makeStyles(colors: any) {
     input: { height: 38, paddingHorizontal: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.text, fontSize: 12.5 },
     textarea: { height: 70, paddingTop: 8, textAlignVertical: "top" },
 
-    primaryBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, height: 38, borderRadius: 10, backgroundColor: "#7C3AED" },
+    primaryBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, height: 38, borderRadius: 10, backgroundColor: brand.violet600 },
     primaryBtnText: { color: "#fff", fontWeight: "800", fontSize: 12.5 },
     secondaryBtn: { height: 42, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
     secondaryBtnText: { color: colors.text, fontWeight: "800", fontSize: 13 },
-    advanceBtn: { height: 42, borderRadius: 12, backgroundColor: "#7C3AED", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+    advanceBtn: { height: 42, borderRadius: 12, backgroundColor: brand.violet600, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
     advanceBtnText: { color: "#fff", fontWeight: "800", fontSize: 13 },
-    completeBtn: { height: 42, borderRadius: 12, backgroundColor: "#10B981", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+    completeBtn: { height: 42, borderRadius: 12, backgroundColor: palette.emerald500, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
 
     carryBox: { padding: 10, borderRadius: 12, backgroundColor: "rgba(245,158,11,0.10)", borderWidth: 1, borderColor: "rgba(245,158,11,0.35)" },
     carryText: { fontSize: 12, color: colors.text },
 
     amyBox: { flexDirection: "row", gap: 8, alignItems: "flex-start", padding: 10, borderRadius: 12, backgroundColor: "rgba(139,92,246,0.10)", borderWidth: 1, borderColor: "rgba(139,92,246,0.20)" },
     amyText: { flex: 1, fontSize: 12, lineHeight: 17, color: colors.text },
-    regenLink: { fontSize: 11, color: "#7C3AED", fontWeight: "800" },
+    regenLink: { fontSize: 11, color: brand.violet600, fontWeight: "800" },
   });
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {   useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { SUPPORTED_LANGUAGES, setLanguage, type LanguageCode } from "@/i18n";
-import colors, { brand, brandAlpha, ACCENT_PINK } from "@/constants/colors";
+import colors, { brand, brandAlpha, ACCENT_PINK, palette, brandExtended } from "@/constants/colors";
 
 const LOGO = require("../assets/images/amynest-logo.png");
 
@@ -31,10 +31,10 @@ const COACH_HIGHLIGHT_KEYS = [
 ];
 
 const PROBLEMS: { icon: keyof typeof Ionicons.glyphMap; labelKey: string; color: string }[] = [
-  { icon: "flame", labelKey: "landing.problem_tantrums", color: "#EF4444" },
-  { icon: "phone-portrait", labelKey: "landing.problem_screen", color: "#06B6D4" },
+  { icon: "flame", labelKey: "landing.problem_tantrums", color: palette.red500 },
+  { icon: "phone-portrait", labelKey: "landing.problem_screen", color: palette.cyan500 },
   { icon: "moon", labelKey: "landing.problem_sleep", color: brand.indigo500 },
-  { icon: "ear-outline", labelKey: "landing.problem_listening", color: "#F97316" },
+  { icon: "ear-outline", labelKey: "landing.problem_listening", color: palette.orange500 },
   { icon: "restaurant", labelKey: "landing.problem_eating", color: brand.pink500 },
   { icon: "locate", labelKey: "landing.problem_focus", color: brand.purple500 },
 ];
@@ -44,19 +44,19 @@ const SECONDARY_FEATURES: { icon: keyof typeof Ionicons.glyphMap; titleKey: stri
     icon: "calendar",
     titleKey: "landing.feature_routine_title",
     descKey: "landing.feature_routine_desc",
-    gradient: ["#06B6D4", "#3B82F6"] as const,
+    gradient: [palette.cyan500, palette.blue500] as const,
   },
   {
     icon: "grid",
     titleKey: "landing.feature_hub_title",
     descKey: "landing.feature_hub_desc",
-    gradient: [brand.pink500, "#F97316"] as const,
+    gradient: [brand.pink500, palette.orange500] as const,
   },
   {
     icon: "flash",
     titleKey: "landing.feature_ai_title",
     descKey: "landing.feature_ai_desc",
-    gradient: ["#FFD166", "#F97316"] as const,
+    gradient: [brandExtended.gold, palette.orange500] as const,
   },
 ];
 
@@ -99,25 +99,25 @@ const ALL_FEATURES: {
   gradient: readonly [string, string];
   badge: string | null;
 }[] = [
-  { icon: "shield-checkmark", title: "Kids Control Center", desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.", gradient: ["#7B3FF2", ACCENT_PINK], badge: "Coming Soon" },
-  { icon: "stats-chart", title: "Behavior Tracking", desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC behavioral analysis.", gradient: ["#10B981", "#06B6D4"], badge: "Popular" },
-  { icon: "game-controller", title: "Gaming Reward Zone", desc: "Gamified milestones — kids earn real rewards tied to real-world achievements.", gradient: ["#FFD166", "#EF4444"], badge: "New" },
-  { icon: "moon", title: "Infant Sleep Tracker", desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.", gradient: ["#60A5FA", "#6366F1"], badge: "New" },
+  { icon: "shield-checkmark", title: "Kids Control Center", desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.", gradient: [brand.violet600, ACCENT_PINK], badge: "Coming Soon" },
+  { icon: "stats-chart", title: "Behavior Tracking", desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC behavioral analysis.", gradient: [palette.emerald500, palette.cyan500], badge: "Popular" },
+  { icon: "game-controller", title: "Gaming Reward Zone", desc: "Gamified milestones — kids earn real rewards tied to real-world achievements.", gradient: [brandExtended.gold, palette.red500], badge: "New" },
+  { icon: "moon", title: "Infant Sleep Tracker", desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.", gradient: [palette.blue400, palette.indigo500], badge: "New" },
   { icon: "play-circle", title: "Parenting Reels", desc: "Short, expert-curated video reels on positive parenting techniques.", gradient: [brand.pink500, brand.purple500], badge: null },
-  { icon: "bulb", title: "Daily Parenting Tips", desc: "Science-backed tip daily — personalized to your child's age per Piaget's framework.", gradient: ["#FFD166", "#F97316"], badge: null },
-  { icon: "accessibility", title: "Life Skills Zone", desc: "Teach independence with Montessori-aligned milestone tracking.", gradient: [brand.purple500, "#6366F1"], badge: null },
-  { icon: "medal", title: "Olympiad Zone", desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14.", gradient: ["#F59E0B", "#EF4444"], badge: null },
-  { icon: "color-palette", title: "Art & Craft Reels", desc: "Step-by-step activity videos that stimulate creativity and fine motor development.", gradient: [brand.pink500, "#F97316"], badge: null },
-  { icon: "document-text", title: "Printable Worksheets", desc: "Age-appropriate worksheets for learning, colouring, and motor skill development.", gradient: ["#06B6D4", "#10B981"], badge: null },
-  { icon: "grid", title: "Daily Brain Puzzles", desc: "Brain-boosting puzzles tailored to your child's cognitive stage.", gradient: ["#F97316", brand.purple500], badge: null },
-  { icon: "book", title: "Parenting Articles", desc: "Deep-dive articles by child development experts on every stage of childhood.", gradient: ["#3B82F6", "#06B6D4"], badge: null },
-  { icon: "people", title: "Babysitter Profiles", desc: "Create and share child care profiles securely. Routines, allergies, notes — all in one place.", gradient: ["#10B981", brand.purple500], badge: null },
-  { icon: "trophy", title: "Parent Score & Streaks", desc: "Gamified motivation — earn points, build streaks, and celebrate every parenting win.", gradient: ["#FFD166", "#EF4444"], badge: null },
+  { icon: "bulb", title: "Daily Parenting Tips", desc: "Science-backed tip daily — personalized to your child's age per Piaget's framework.", gradient: [brandExtended.gold, palette.orange500], badge: null },
+  { icon: "accessibility", title: "Life Skills Zone", desc: "Teach independence with Montessori-aligned milestone tracking.", gradient: [brand.purple500, palette.indigo500], badge: null },
+  { icon: "medal", title: "Olympiad Zone", desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14.", gradient: [palette.amber500, palette.red500], badge: null },
+  { icon: "color-palette", title: "Art & Craft Reels", desc: "Step-by-step activity videos that stimulate creativity and fine motor development.", gradient: [brand.pink500, palette.orange500], badge: null },
+  { icon: "document-text", title: "Printable Worksheets", desc: "Age-appropriate worksheets for learning, colouring, and motor skill development.", gradient: [palette.cyan500, palette.emerald500], badge: null },
+  { icon: "grid", title: "Daily Brain Puzzles", desc: "Brain-boosting puzzles tailored to your child's cognitive stage.", gradient: [palette.orange500, brand.purple500], badge: null },
+  { icon: "book", title: "Parenting Articles", desc: "Deep-dive articles by child development experts on every stage of childhood.", gradient: [palette.blue500, palette.cyan500], badge: null },
+  { icon: "people", title: "Babysitter Profiles", desc: "Create and share child care profiles securely. Routines, allergies, notes — all in one place.", gradient: [palette.emerald500, brand.purple500], badge: null },
+  { icon: "trophy", title: "Parent Score & Streaks", desc: "Gamified motivation — earn points, build streaks, and celebrate every parenting win.", gradient: [brandExtended.gold, palette.red500], badge: null },
 ];
 
 const TESTIMONIALS = [
   { name: "Priya M.", location: "Mumbai, India", text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. It felt like talking to an actual child psychologist.", avatar: "P", color: brand.purple500, result: "Tantrums reduced 80% in 3 weeks" },
-  { name: "Rahul & Kavya", location: "Bangalore, India", text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings.", avatar: "R", color: "#06B6D4", result: "Identified pattern in 5 days" },
+  { name: "Rahul & Kavya", location: "Bangalore, India", text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings.", avatar: "R", color: palette.cyan500, result: "Identified pattern in 5 days" },
   { name: "Sarah K.", location: "Dubai, UAE", text: "Twin toddlers + infant sleep tracker + Amy's CDC-aligned tips = sanity saved. Got our 6-month-old sleeping through the night in 11 days.", avatar: "S", color: brand.pink500, result: "Sleeping through night in 11 days" },
 ];
 
@@ -165,7 +165,7 @@ export default function WelcomeScreen() {
 
   const titleColor = colorAnim.interpolate({
     inputRange: [0, 1, 2, 3, 4],
-    outputRange: [brand.primary, ACCENT_PINK, "#4FC3F7", "#FFD166", brand.primary],
+    outputRange: [brand.primary, ACCENT_PINK, palette.sky300, brandExtended.gold, brand.primary],
   });
 
   const tap = () => {
@@ -180,7 +180,7 @@ export default function WelcomeScreen() {
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
-        colors={["#0f0c29", "#302b63", "#24243e"]}
+        colors={["#0f0c29", "#302b63", "#24243e"]} // audit-ok: intentional dark bg / custom color
         locations={[0, 0.55, 1]}
         style={styles.container}
         start={{ x: 0.1, y: 0 }}
@@ -401,7 +401,7 @@ export default function WelcomeScreen() {
             <View style={styles.kidsCCCard}>
               <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 14, marginBottom: 16 }}>
                 <LinearGradient
-                  colors={["#7B3FF2", ACCENT_PINK]}
+                  colors={[brand.violet600, ACCENT_PINK]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                   style={styles.kidsCCIcon}
                 >
@@ -411,7 +411,7 @@ export default function WelcomeScreen() {
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                     <Text style={styles.kidsCCTitle}>Kids Control Center</Text>
                     <LinearGradient
-                      colors={["#7B3FF2", ACCENT_PINK]}
+                      colors={[brand.violet600, ACCENT_PINK]}
                       start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                       style={styles.comingSoonPill}
                     >
@@ -426,7 +426,7 @@ export default function WelcomeScreen() {
               <View style={styles.kidsCCBullets}>
                 {KIDS_CC_BULLETS.map((feat) => (
                   <View key={feat} style={styles.kidsCCBullet}>
-                    <Ionicons name="checkmark-circle" size={16} color="#F9A8D4" />
+                    <Ionicons name="checkmark-circle" size={16} color={palette.pink300} />
                     <Text style={styles.kidsCCBulletText}>{feat}</Text>
                   </View>
                 ))}
@@ -469,7 +469,7 @@ export default function WelcomeScreen() {
           {/* ALL FEATURES MEGA GRID */}
           <View style={styles.sectionWrap}>
             <View style={styles.eyebrow}>
-              <Ionicons name="sparkles" size={11} color="#67E8F9" />
+              <Ionicons name="sparkles" size={11} color={palette.cyan400} />
               <Text style={styles.eyebrowText}>Everything in One App</Text>
             </View>
             <Text style={styles.sectionTitle}>14+ Science-Backed Tools</Text>
@@ -481,7 +481,7 @@ export default function WelcomeScreen() {
                   {f.badge && (
                     <View style={[
                       styles.featureBadge,
-                      { backgroundColor: f.badge === "New" ? "#0E7490" : f.badge === "Popular" ? "#7C3AED" : "#9A3412" },
+                      { backgroundColor: f.badge === "New" ? palette.cyan700 : f.badge === "Popular" ? brand.violet600 : palette.orange800 },
                     ]}>
                       <Text style={styles.featureBadgeText}>{f.badge}</Text>
                     </View>
@@ -519,7 +519,7 @@ export default function WelcomeScreen() {
           {/* HOW IT WORKS */}
           <View style={styles.sectionWrap}>
             <View style={styles.eyebrow}>
-              <Ionicons name="flash" size={11} color="#FFD166" />
+              <Ionicons name="flash" size={11} color={brandExtended.gold} />
               <Text style={styles.eyebrowText}>{t("landing.how_eyebrow")}</Text>
             </View>
             <Text style={styles.sectionTitle}>{t("landing.how_heading")}</Text>
@@ -563,7 +563,7 @@ export default function WelcomeScreen() {
                 {/* Stars */}
                 <View style={{ flexDirection: "row", gap: 2, marginBottom: 10 }}>
                   {[1,2,3,4,5].map((s) => (
-                    <Ionicons key={s} name="star" size={14} color="#FBBF24" />
+                    <Ionicons key={s} name="star" size={14} color={palette.amber400} />
                   ))}
                 </View>
                 {/* Outcome badge */}
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
   },
   navBrandAi: {
-    color: "#06B6D4",
+    color: palette.cyan500,
     fontFamily: "Inter_700Bold",
   },
   navBrandTag: {
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   langSheet: {
-    backgroundColor: "#14142B",
+    backgroundColor: "#14142B", // audit-ok: intentional dark bg / custom color
     borderRadius: 20,
     paddingVertical: 20,
     paddingHorizontal: 8,

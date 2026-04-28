@@ -34,50 +34,7 @@ const ROOT = path.resolve(__dirname, "..");
  * They produce warnings but do not fail the build.
  * Remove a file from this list once its audit is complete.
  */
-const DEFERRED_FILES = [
-  // tabs
-  "app/(tabs)/_layout.tsx",
-  "app/(tabs)/hub.tsx",
-  "app/(tabs)/profile.tsx",
-  "app/(tabs)/routines.tsx",
-  // app screens
-  "app/amy-ai.tsx",
-  "app/audio-lessons.tsx",
-  "app/babysitters.tsx",
-  "app/behavior.tsx",
-  "app/behavior-history.tsx",
-  "app/children/[id].tsx",
-  "app/coach/premium.tsx",
-  "app/coach/progress.tsx",
-  "app/dev/theme.tsx",
-  "app/event-prep.tsx",
-  "app/games.tsx",
-  "app/insights.tsx",
-  "app/kids-control-center.tsx",
-  "app/meals.tsx",
-  "app/morning-flow.tsx",
-  "app/notifications-settings.tsx",
-  "app/nutrition.tsx",
-  "app/olympiad.tsx",
-  "app/onboarding.tsx",
-  "app/paywall.tsx",
-  "app/phonics-test.tsx",
-  "app/privacy.tsx",
-  "app/progress.tsx",
-  "app/ptm-prep.tsx",
-  "app/recipes.tsx",
-  "app/referrals.tsx",
-  "app/rewards.tsx",
-  "app/routines/[id].tsx",
-  "app/routines/generate.tsx",
-  "app/routines/premium.tsx",
-  "app/sign-in.tsx",
-  "app/sign-up.tsx",
-  "app/stories.tsx",
-  "app/study.tsx",
-  "app/tutorial.tsx",
-  "app/welcome.tsx",
-];
+const DEFERRED_FILES = [];
 
 /**
  * Hex values that are globally allowed (pure black / pure white only).

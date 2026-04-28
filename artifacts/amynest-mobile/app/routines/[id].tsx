@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import React, {  useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   runAdaptiveEngine,
   type AdaptiveMood,
@@ -24,7 +24,7 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeIn } from "react-native-reanimated";
 import SwipeableCard from "@/components/SwipeableCard";
 import RoutineItemModal from "@/components/RoutineItemModal";
-import colors, { brand, brandAlpha, ACCENT_PINK } from "@/constants/colors";
+import colors, { brand, brandAlpha, ACCENT_PINK, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import VoiceSettingsPanel, {
@@ -885,7 +885,7 @@ export default function RoutineDetailScreen() {
                 <BlurView intensity={Platform.OS === "android" ? 70 : 40} tint="dark" style={styles.statsCard}>
                   <View style={styles.statsRow}>
                     {/* audit-ok: semantic success-green "Done" count */}
-                    <Stat num={stats.done} label="Done" color="#10B981" />
+                    <Stat num={stats.done} label="Done" color={palette.emerald500} />
                     <Divider />
                     <Stat num={stats.remaining} label="Remaining" color="#FFFFFF" />
                     <Divider />
@@ -1032,7 +1032,7 @@ export default function RoutineDetailScreen() {
                     <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 14 }}>Daily Summary</Text>
                   </View>
                   <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: "rgba(167,139,250,0.18)" }}>
-                    <Text style={{ color: "#C4B5FD", fontWeight: "800", fontSize: 11 }}>{adaptive.summary.completionPct}% done</Text>
+                    <Text style={{ color: brand.violet300, fontWeight: "800", fontSize: 11 }}>{adaptive.summary.completionPct}% done</Text>
                   </View>
                 </View>
                 <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
@@ -1196,7 +1196,7 @@ export default function RoutineDetailScreen() {
             {actionItem !== null && (
               <ScrollView showsVerticalScrollIndicator={false}>
                 {/* audit-ok: semantic success-green "Mark complete" action */}
-                <ActionRow icon="checkmark-circle" iconColor="#10B981" label="Mark complete"
+                <ActionRow icon="checkmark-circle" iconColor={palette.emerald500} label="Mark complete"
                   onPress={() => setItemStatus(actionItem, "completed")}
                   active={items[actionItem]?.status === "completed"} />
 
@@ -1205,7 +1205,7 @@ export default function RoutineDetailScreen() {
                   {[15, 30, 60].map(m => (
                     <TouchableOpacity key={m} style={styles.delayBtn} onPress={() => delayItem(actionItem, m)} activeOpacity={0.8}>
                       {/* audit-ok: semantic delay-amber time icon */}
-                      <Ionicons name="time" size={16} color="#F59E0B" />
+                      <Ionicons name="time" size={16} color={palette.amber500} />
                       <Text style={styles.delayText}>+{m}m</Text>
                     </TouchableOpacity>
                   ))}
@@ -1218,7 +1218,7 @@ export default function RoutineDetailScreen() {
                   onPress={() => setItemStatus(actionItem, "pending")}
                   active={!items[actionItem]?.status || items[actionItem]?.status === "pending"} />
                 {/* audit-ok: semantic blue "Edit" action icon */}
-                <ActionRow icon="create-outline" iconColor="#60A5FA" label="Edit time / activity"
+                <ActionRow icon="create-outline" iconColor={palette.blue400} label="Edit time / activity"
                   onPress={() => openEdit(actionItem)} />
                 {/* audit-ok: accent pink "Remove" destructive action icon */}
                 <ActionRow icon="trash-outline" iconColor={ACCENT_PINK} label="Remove from routine"
@@ -1307,7 +1307,7 @@ export default function RoutineDetailScreen() {
             <ActionRow icon="sparkles" iconColor={brand.primary} label={regenLoading ? "Regenerating…" : "Regenerate day with AI"}
               onPress={partialRegen} />
             {/* audit-ok: semantic success-green "Share" action icon */}
-            <ActionRow icon="share-outline" iconColor="#10B981" label="Share routine" onPress={shareRoutine} />
+            <ActionRow icon="share-outline" iconColor={palette.emerald500} label="Share routine" onPress={shareRoutine} />
             <ActionRow icon="trash-outline" iconColor={c.accent} label="Delete routine" onPress={confirmDelete} />
             <TouchableOpacity style={styles.cancelBtn} onPress={() => setMoreMenu(false)} activeOpacity={0.7}>
               <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -1402,12 +1402,12 @@ function AmyAISuggests({
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
             {delayedCount > 0 && (
               <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: "rgba(245,158,11,0.18)", borderWidth: 1, borderColor: "rgba(245,158,11,0.45)" }}>
-                <Text style={{ color: "#FBBF24", fontSize: 10, fontWeight: "800" }}>⏱ {delayedCount} delayed</Text>
+                <Text style={{ color: palette.amber400, fontSize: 10, fontWeight: "800" }}>⏱ {delayedCount} delayed</Text>
               </View>
             )}
             {adjustedCount > 0 && (
               <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: "rgba(167,139,250,0.18)", borderWidth: 1, borderColor: "rgba(167,139,250,0.45)" }}>
-                <Text style={{ color: "#C4B5FD", fontSize: 10, fontWeight: "800" }}>⚡ {adjustedCount} auto-adjusted</Text>
+                <Text style={{ color: brand.violet300, fontSize: 10, fontWeight: "800" }}>⚡ {adjustedCount} auto-adjusted</Text>
               </View>
             )}
           </View>
@@ -1470,7 +1470,7 @@ function ItemCard({ item, seed = 0 }: { item: RoutineItem; seed?: number }) {
         ]} numberOfLines={2}>{item.activity}</Text>
         {item.ageBand && (
           <View style={styles.ageBandChip}>
-            <Ionicons name="people-outline" size={9} color="#0369a1" />
+            <Ionicons name="people-outline" size={9} color={palette.sky700} />
             <Text style={styles.ageBandChipText}>Ages {item.ageBand.replace("-", "–")}</Text>
           </View>
         )}
@@ -1493,7 +1493,7 @@ function ItemCard({ item, seed = 0 }: { item: RoutineItem; seed?: number }) {
           {isDone && <Ionicons name="checkmark" size={14} color="#fff" />}
           {isSkipped && <Ionicons name="play-skip-forward" size={11} color="rgba(255,255,255,0.5)" />}
           {/* audit-ok: semantic delay-amber time icon in checkBox */}
-          {isDelayed && <Ionicons name="time" size={12} color="#F59E0B" />}
+          {isDelayed && <Ionicons name="time" size={12} color={palette.amber500} />}
         </View>
       )}
     </View>

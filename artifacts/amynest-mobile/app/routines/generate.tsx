@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {  useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing } from "react-native";
 import {
   View,
@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import colors, { brand, brandAlpha } from "@/constants/colors";
+import colors, { brand, brandAlpha, palette } from "@/constants/colors";
 import {
   HANDLER_TYPES,
   type HandlerKey,
@@ -48,10 +48,10 @@ type MoodEntry = { value: Mood; emoji: string; label: string; hint: string; bg: 
 
 function getMoods(roseBg: string): MoodEntry[] {
   return [
-    { value: "happy",  emoji: "😊", label: "Happy",  hint: "Productive & energetic", bg: "#F0FDF4", border: "#86EFAC", text: "#166534" },
-    { value: "normal", emoji: "😐", label: "Normal", hint: "Balanced day",            bg: "#EFF6FF", border: "#BFDBFE", text: "#1E40AF" },
-    { value: "lazy",   emoji: "😴", label: "Lazy",   hint: "Easier tasks",            bg: "#FFFBEB", border: "#FCD34D", text: "#92400E" },
-    { value: "angry",  emoji: "😡", label: "Upset",  hint: "Calming activities",      bg: roseBg,    border: "#FDA4AF", text: "#9F1239" },
+    { value: "happy",  emoji: "😊", label: "Happy",  hint: "Productive & energetic", bg: palette.emerald50, border: palette.green300, text: palette.green800 },
+    { value: "normal", emoji: "😐", label: "Normal", hint: "Balanced day",            bg: palette.blue50, border: palette.blue200, text: palette.blue800 },
+    { value: "lazy",   emoji: "😴", label: "Lazy",   hint: "Easier tasks",            bg: palette.amber50, border: palette.amber300, text: palette.amber800 },
+    { value: "angry",  emoji: "😡", label: "Upset",  hint: "Calming activities",      bg: roseBg,    border: palette.rose300, text: palette.rose800 },
   ];
 }
 
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "#13102e",
+    backgroundColor: "#13102e", // audit-ok: intentional dark bg / custom color
     flexDirection: "row",
     alignItems: "baseline",
     gap: 6,
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "#13102e",
+    backgroundColor: "#13102e", // audit-ok: intentional dark bg / custom color
     alignItems: "center",
   },
   toggleChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
   textarea: {
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "#13102e",
+    backgroundColor: "#13102e", // audit-ok: intentional dark bg / custom color
     borderRadius: 14,
     padding: 12,
     fontSize: 14,
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
   progressCard: {
     width: "100%",
     maxWidth: 360,
-    backgroundColor: "#1A1530",
+    backgroundColor: "#1A1530", // audit-ok: intentional dark bg / custom color
     borderRadius: 24,
     padding: 28,
     alignItems: "center",

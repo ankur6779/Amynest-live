@@ -9,6 +9,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { palette, brand } from "@/constants/colors";
 import {
   AGE_GROUPS, NUTRIENTS, MEAL_PLANS, FAMILY_PORTIONS,
   MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient,
@@ -22,9 +23,9 @@ type Tab = "nutrients" | "meals" | "family" | "score";
 
 // ─── Score helpers ────────────────────────────────────────────────────────────
 function scoreColor(s: number, c: ReturnType<typeof useColors>) {
-  if (s >= 80) return "#22c55e";
-  if (s >= 50) return "#f59e0b";
-  return "#ef4444";
+  if (s >= 80) return palette.green500;
+  if (s >= 50) return palette.amber500;
+  return palette.red500;
 }
 function scoreLabel(s: number) {
   if (s >= 80) return "Excellent · Shandar 🌟";
@@ -35,27 +36,27 @@ function scoreLabel(s: number) {
 
 // ─── Age Group colors (simple mapping) ───────────────────────────────────────
 const AGE_COLORS: Record<AgeGroupId, { bg: string; text: string; border: string }> = {
-  infant_0_6:    { bg: "#fdf2f8", text: "#be185d", border: "#fbcfe8" },
-  infant_6_12:   { bg: "#fff1f2", text: "#be123c", border: "#fecdd3" },
-  toddler_1_3:   { bg: "#f5f3ff", text: "#7c3aed", border: "#ddd6fe" },
-  preschool_3_6: { bg: "#eef2ff", text: "#4338ca", border: "#c7d2fe" },
-  school_6_10:   { bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe" },
-  preteen_10_15: { bg: "#ecfeff", text: "#0e7490", border: "#a5f3fc" },
-  adult:         { bg: "#f0fdfa", text: "#0f766e", border: "#99f6e4" },
-  pregnancy:     { bg: "#f5f3ff", text: "#7c3aed", border: "#ddd6fe" },
-  postpartum:    { bg: "#fdf4ff", text: "#a21caf", border: "#f0abfc" },
+  infant_0_6:    { bg: palette.pink50, text: palette.pink700, border: palette.pink200 },
+  infant_6_12:   { bg: palette.rose50, text: palette.rose700, border: palette.rose200 },
+  toddler_1_3:   { bg: palette.violet50, text: brand.violet600, border: palette.violet200 },
+  preschool_3_6: { bg: palette.indigo50, text: palette.indigo700, border: palette.indigo200 },
+  school_6_10:   { bg: palette.blue50, text: palette.blue700, border: palette.blue200 },
+  preteen_10_15: { bg: palette.cyan50, text: palette.cyan700, border: palette.cyan200 },
+  adult:         { bg: palette.teal50, text: palette.teal700, border: palette.teal200 },
+  pregnancy:     { bg: palette.violet50, text: brand.violet600, border: palette.violet200 },
+  postpartum:    { bg: palette.fuchsia50, text: palette.fuchsia700, border: palette.fuchsia300 },
 };
 
 const NUTRIENT_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  protein:    { bg: "#fff7ed", text: "#c2410c", border: "#fed7aa" },
-  iron:       { bg: "#fff1f2", text: "#be123c", border: "#fecdd3" },
-  calcium:    { bg: "#f0f9ff", text: "#0369a1", border: "#bae6fd" },
-  vitamin_a:  { bg: "#fffbeb", text: "#b45309", border: "#fde68a" },
-  vitamin_c:  { bg: "#fefce8", text: "#a16207", border: "#fef08a" },
-  vitamin_d:  { bg: "#fff7ed", text: "#c2410c", border: "#fed7aa" },
-  vitamin_b:  { bg: "#f0fdf4", text: "#15803d", border: "#bbf7d0" },
-  vitamin_b12:{ bg: "#fff1f2", text: "#be123c", border: "#fecdd3" },
-  vitamin_k:  { bg: "#f0fdf4", text: "#065f46", border: "#a7f3d0" },
+  protein:    { bg: palette.orange50, text: palette.orange700, border: palette.orange200 },
+  iron:       { bg: palette.rose50, text: palette.rose700, border: palette.rose200 },
+  calcium:    { bg: palette.sky50, text: palette.sky700, border: palette.sky200 },
+  vitamin_a:  { bg: palette.amber50, text: palette.amber700, border: palette.amber200 },
+  vitamin_c:  { bg: palette.yellow50, text: palette.yellow700, border: palette.yellow200 },
+  vitamin_d:  { bg: palette.orange50, text: palette.orange700, border: palette.orange200 },
+  vitamin_b:  { bg: palette.emerald50, text: palette.green700, border: palette.green200 },
+  vitamin_b12:{ bg: palette.rose50, text: palette.rose700, border: palette.rose200 },
+  vitamin_k:  { bg: palette.emerald50, text: palette.emerald800, border: palette.emerald200 },
 };
 
 // ─── NutrientCard ─────────────────────────────────────────────────────────────
@@ -67,7 +68,7 @@ function NutrientCard({
   onPress: () => void;
 }) {
   const c = useColors();
-  const nc = NUTRIENT_COLORS[nutrient.id] ?? { bg: "#f9fafb", text: "#374151", border: "#e5e7eb" };
+  const nc = NUTRIENT_COLORS[nutrient.id] ?? { bg: palette.gray50, text: palette.gray700, border: palette.gray200 };
   const need = nutrient.dailyNeeds[ageGroupId];
   return (
     <Pressable
@@ -83,7 +84,7 @@ function NutrientCard({
       </View>
       <Text style={[styles.nutrientName, { color: nc.text }]}>{nutrient.name}</Text>
       <Text style={[styles.nutrientNameHi, { color: nc.text + "99" }]}>{nutrient.nameHi}</Text>
-      <Text style={[styles.tagline, { color: "#64748b" }]}>{nutrient.tagline}</Text>
+      <Text style={[styles.tagline, { color: palette.slate500 }]}>{nutrient.tagline}</Text>
       <View style={[styles.needBadge, { backgroundColor: "#ffffff88" }]}>
         <Text style={[{ color: nc.text, fontSize: 11, fontWeight: "700" }]}>
           {need.amount} {need.unit} / day
@@ -101,7 +102,7 @@ function NutrientDetail({
   ageGroupId: AgeGroupId;
   onClose: () => void;
 }) {
-  const nc = NUTRIENT_COLORS[nutrient.id] ?? { bg: "#f9fafb", text: "#374151", border: "#e5e7eb" };
+  const nc = NUTRIENT_COLORS[nutrient.id] ?? { bg: palette.gray50, text: palette.gray700, border: palette.gray200 };
   const need = nutrient.dailyNeeds[ageGroupId];
   const ag = AGE_GROUPS.find(a => a.id === ageGroupId)!;
 
@@ -111,7 +112,7 @@ function NutrientDetail({
         {/* Header */}
         <View style={[styles.detailHeader, { backgroundColor: nc.bg, borderBottomColor: nc.border }]}>
           <Pressable onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={20} color="#64748b" />
+            <Ionicons name="close" size={20} color={palette.slate500} />
           </Pressable>
           <Text style={{ fontSize: 40, textAlign: "center", marginBottom: 8 }}>{nutrient.emoji}</Text>
           <Text style={[styles.detailTitle, { color: nc.text }]}>{nutrient.name}</Text>
@@ -121,13 +122,13 @@ function NutrientDetail({
         <View style={{ padding: 16, gap: 16 }}>
           {/* Daily need */}
           <View style={[styles.needCard, { backgroundColor: nc.bg, borderColor: nc.border }]}>
-            <Text style={{ fontSize: 11, color: "#64748b", fontWeight: "600", marginBottom: 4 }}>
+            <Text style={{ fontSize: 11, color: palette.slate500, fontWeight: "600", marginBottom: 4 }}>
               DAILY NEED FOR {ag.label.toUpperCase()} · {ag.labelHi.toUpperCase()}
             </Text>
             <Text style={[{ fontSize: 28, fontWeight: "900", color: nc.text }]}>
               {need.amount} <Text style={{ fontSize: 16 }}>{need.unit}</Text>
             </Text>
-            {need.note && <Text style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>{need.note}</Text>}
+            {need.note && <Text style={{ fontSize: 11, color: palette.slate500, marginTop: 4 }}>{need.note}</Text>}
           </View>
 
           {/* Benefits */}
@@ -135,13 +136,13 @@ function NutrientDetail({
             <Text style={styles.sectionTitle}>✅ Benefits · फायदे</Text>
             {nutrient.benefits.map((b, i) => (
               <View key={i} style={styles.listItem}>
-                <Text style={{ color: "#22c55e", marginRight: 6 }}>✓</Text>
-                <Text style={{ color: "#374151", flex: 1, fontSize: 13 }}>{b}</Text>
+                <Text style={{ color: palette.green500, marginRight: 6 }}>✓</Text>
+                <Text style={{ color: palette.gray700, flex: 1, fontSize: 13 }}>{b}</Text>
               </View>
             ))}
-            <View style={{ marginTop: 8, backgroundColor: "#f0fdf4", borderRadius: 10, padding: 10 }}>
+            <View style={{ marginTop: 8, backgroundColor: palette.emerald50, borderRadius: 10, padding: 10 }}>
               {nutrient.benefitsHi.map((b, i) => (
-                <Text key={i} style={{ fontSize: 12, color: "#15803d", marginBottom: 2 }}>• {b}</Text>
+                <Text key={i} style={{ fontSize: 12, color: palette.green700, marginBottom: 2 }}>• {b}</Text>
               ))}
             </View>
           </View>
@@ -155,19 +156,19 @@ function NutrientDetail({
                   <Text style={{ fontSize: 22, marginRight: 10 }}>{src.emoji}</Text>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={{ fontWeight: "600", color: "#1e293b", fontSize: 13 }}>{src.name}</Text>
+                      <Text style={{ fontWeight: "600", color: palette.slate800, fontSize: 13 }}>{src.name}</Text>
                       {src.type === "veg" ? (
-                        <View style={[styles.typeBadge, { backgroundColor: "#dcfce7" }]}>
-                          <Text style={{ fontSize: 9, color: "#15803d", fontWeight: "700" }}>VEG</Text>
+                        <View style={[styles.typeBadge, { backgroundColor: palette.green100 }]}>
+                          <Text style={{ fontSize: 9, color: palette.green700, fontWeight: "700" }}>VEG</Text>
                         </View>
                       ) : (
-                        <View style={[styles.typeBadge, { backgroundColor: "#fed7aa" }]}>
-                          <Text style={{ fontSize: 9, color: "#c2410c", fontWeight: "700" }}>NON-VEG</Text>
+                        <View style={[styles.typeBadge, { backgroundColor: palette.orange200 }]}>
+                          <Text style={{ fontSize: 9, color: palette.orange700, fontWeight: "700" }}>NON-VEG</Text>
                         </View>
                       )}
                     </View>
-                    <Text style={{ fontSize: 11, color: "#64748b" }}>{src.nameHi} · {src.serving}</Text>
-                    <Text style={{ fontSize: 11, color: "#475569", fontWeight: "600" }}>→ {src.amount}</Text>
+                    <Text style={{ fontSize: 11, color: palette.slate500 }}>{src.nameHi} · {src.serving}</Text>
+                    <Text style={{ fontSize: 11, color: palette.slate600, fontWeight: "600" }}>→ {src.amount}</Text>
                   </View>
                 </View>
               ))}
@@ -177,21 +178,21 @@ function NutrientDetail({
           {/* Deficiency */}
           <View>
             <Text style={styles.sectionTitle}>⚠️ Deficiency Signs · कमी के लक्षण</Text>
-            <View style={[styles.deficiencyBox, { borderColor: "#fecdd3" }]}>
+            <View style={[styles.deficiencyBox, { borderColor: palette.rose200 }]}>
               {nutrient.deficiencySymptoms.map((d, i) => (
-                <Text key={i} style={{ color: "#be123c", fontSize: 12, marginBottom: 4 }}>⚠ {d}</Text>
+                <Text key={i} style={{ color: palette.rose700, fontSize: 12, marginBottom: 4 }}>⚠ {d}</Text>
               ))}
             </View>
-            <View style={[styles.hindiBox, { backgroundColor: "#fffbeb", borderColor: "#fef08a" }]}>
-              <Text style={{ fontSize: 11, fontWeight: "700", color: "#92400e", marginBottom: 4 }}>हिंदी में लक्षण:</Text>
+            <View style={[styles.hindiBox, { backgroundColor: palette.amber50, borderColor: palette.yellow200 }]}>
+              <Text style={{ fontSize: 11, fontWeight: "700", color: palette.amber800, marginBottom: 4 }}>हिंदी में लक्षण:</Text>
               {nutrient.deficiencyHi.map((d, i) => (
-                <Text key={i} style={{ fontSize: 12, color: "#a16207" }}>• {d}</Text>
+                <Text key={i} style={{ fontSize: 12, color: palette.yellow700 }}>• {d}</Text>
               ))}
             </View>
           </View>
 
           {/* Source */}
-          <Text style={{ fontSize: 10, color: "#94a3b8", textAlign: "center" }}>
+          <Text style={{ fontSize: 10, color: palette.slate400, textAlign: "center" }}>
             📚 Source: ICMR-NIN Nutrient Requirements for Indians (2020) & WHO Guidelines
           </Text>
         </View>
@@ -210,14 +211,14 @@ function MealPlanTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
     return (
       <View style={{ padding: 24, alignItems: "center" }}>
         <Text style={{ fontSize: 48, marginBottom: 12 }}>🍼</Text>
-        <Text style={{ fontSize: 16, fontWeight: "700", color: "#1e293b", textAlign: "center", marginBottom: 8 }}>
+        <Text style={{ fontSize: 16, fontWeight: "700", color: palette.slate800, textAlign: "center", marginBottom: 8 }}>
           Exclusive Breastfeeding (0–6 Months)
         </Text>
-        <Text style={{ fontSize: 13, color: "#475569", textAlign: "center", lineHeight: 20 }}>
+        <Text style={{ fontSize: 13, color: palette.slate600, textAlign: "center", lineHeight: 20 }}>
           WHO recommends only breast milk for the first 6 months. No other food or water is needed.
         </Text>
-        <View style={{ marginTop: 12, backgroundColor: "#f5f3ff", borderRadius: 12, padding: 12 }}>
-          <Text style={{ fontSize: 12, color: "#7c3aed", textAlign: "center" }}>
+        <View style={{ marginTop: 12, backgroundColor: palette.violet50, borderRadius: 12, padding: 12 }}>
+          <Text style={{ fontSize: 12, color: brand.violet600, textAlign: "center" }}>
             विश्व स्वास्थ्य संगठन 6 महीने तक केवल माँ के दूध की सलाह देता है।
           </Text>
         </View>
@@ -228,40 +229,40 @@ function MealPlanTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
   const day = plan.days[dayIdx];
   const meal = isVeg ? day.veg : day.nonVeg;
   const MEAL_SLOTS = [
-    { key: "breakfast", time: "🌅 Breakfast", color: "#fff7ed", border: "#fed7aa", text: "#92400e" },
-    meal.midMorning ? { key: "midMorning", time: "🍎 Mid-Morning", color: "#f0fdf4", border: "#bbf7d0", text: "#065f46" } : null,
-    { key: "lunch", time: "🌞 Lunch", color: "#fff7ed", border: "#fdba74", text: "#9a3412" },
-    { key: "snack", time: "🍪 Snack", color: "#f5f3ff", border: "#ddd6fe", text: "#5b21b6" },
-    { key: "dinner", time: "🌙 Dinner", color: "#eff6ff", border: "#bfdbfe", text: "#1e40af" },
+    { key: "breakfast", time: "🌅 Breakfast", color: palette.orange50, border: palette.orange200, text: palette.amber800 },
+    meal.midMorning ? { key: "midMorning", time: "🍎 Mid-Morning", color: palette.emerald50, border: palette.green200, text: palette.emerald800 } : null,
+    { key: "lunch", time: "🌞 Lunch", color: palette.orange50, border: palette.orange300, text: palette.orange800 },
+    { key: "snack", time: "🍪 Snack", color: palette.violet50, border: palette.violet200, text: brand.violet800 },
+    { key: "dinner", time: "🌙 Dinner", color: palette.blue50, border: palette.blue200, text: palette.blue800 },
   ].filter(Boolean) as { key: string; time: string; color: string; border: string; text: string }[];
 
   return (
     <View style={{ gap: 12 }}>
       {/* Header */}
       <View>
-        <Text style={{ fontSize: 16, fontWeight: "800", color: "#1e293b" }}>{plan.ageCategory}</Text>
-        <Text style={{ fontSize: 12, color: "#64748b" }}>{plan.ageCategoryHi}</Text>
+        <Text style={{ fontSize: 16, fontWeight: "800", color: palette.slate800 }}>{plan.ageCategory}</Text>
+        <Text style={{ fontSize: 12, color: palette.slate500 }}>{plan.ageCategoryHi}</Text>
       </View>
 
       {/* Portion note */}
-      <View style={{ backgroundColor: "#eff6ff", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#bfdbfe" }}>
-        <Text style={{ fontSize: 12, color: "#1e40af" }}>📏 {plan.portionNote}</Text>
-        <Text style={{ fontSize: 11, color: "#3b82f6", marginTop: 4 }}>{plan.portionNoteHi}</Text>
+      <View style={{ backgroundColor: palette.blue50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.blue200 }}>
+        <Text style={{ fontSize: 12, color: palette.blue800 }}>📏 {plan.portionNote}</Text>
+        <Text style={{ fontSize: 11, color: palette.blue500, marginTop: 4 }}>{plan.portionNoteHi}</Text>
       </View>
 
       {/* Veg / Non-veg toggle */}
-      <View style={{ flexDirection: "row", backgroundColor: "#f1f5f9", borderRadius: 30, padding: 3 }}>
+      <View style={{ flexDirection: "row", backgroundColor: palette.slate100, borderRadius: 30, padding: 3 }}>
         <Pressable
           onPress={() => setIsVeg(true)}
-          style={[styles.toggleBtn, isVeg && { backgroundColor: "#22c55e" }]}
+          style={[styles.toggleBtn, isVeg && { backgroundColor: palette.green500 }]}
         >
-          <Text style={{ fontSize: 12, fontWeight: "700", color: isVeg ? "#fff" : "#64748b" }}>🌿 Veg</Text>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: isVeg ? "#fff" : palette.slate500 }}>🌿 Veg</Text>
         </Pressable>
         <Pressable
           onPress={() => setIsVeg(false)}
-          style={[styles.toggleBtn, !isVeg && { backgroundColor: "#f97316" }]}
+          style={[styles.toggleBtn, !isVeg && { backgroundColor: palette.orange500 }]}
         >
-          <Text style={{ fontSize: 12, fontWeight: "700", color: !isVeg ? "#fff" : "#64748b" }}>🍗 Non-Veg</Text>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: !isVeg ? "#fff" : palette.slate500 }}>🍗 Non-Veg</Text>
         </Pressable>
       </View>
 
@@ -273,10 +274,10 @@ function MealPlanTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
             onPress={() => setDayIdx(i)}
             style={[
               styles.dayBtn,
-              dayIdx === i && { backgroundColor: "#7c3aed", borderColor: "#7c3aed" },
+              dayIdx === i && { backgroundColor: brand.violet600, borderColor: brand.violet600 },
             ]}
           >
-            <Text style={[{ fontSize: 12, fontWeight: "700" }, dayIdx === i ? { color: "#fff" } : { color: "#64748b" }]}>
+            <Text style={[{ fontSize: 12, fontWeight: "700" }, dayIdx === i ? { color: "#fff" } : { color: palette.slate500 }]}>
               {d.day.slice(0, 3)}
             </Text>
           </Pressable>
@@ -288,7 +289,7 @@ function MealPlanTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
         {MEAL_SLOTS.map(slot => (
           <View key={slot.key} style={[styles.mealCard, { backgroundColor: slot.color, borderColor: slot.border }]}>
             <Text style={{ fontSize: 12, fontWeight: "700", color: slot.text, marginBottom: 4 }}>{slot.time}</Text>
-            <Text style={{ fontSize: 13, color: "#374151", lineHeight: 18 }}>
+            <Text style={{ fontSize: 13, color: palette.gray700, lineHeight: 18 }}>
               {(meal as Record<string, string | undefined>)[slot.key] ?? "—"}
             </Text>
           </View>
@@ -303,11 +304,11 @@ function FamilyModeTab() {
   return (
     <View style={{ gap: 12 }}>
       {/* Info */}
-      <View style={{ backgroundColor: "#f5f3ff", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#ddd6fe" }}>
-        <Text style={{ fontSize: 13, fontWeight: "700", color: "#7c3aed", marginBottom: 4 }}>
+      <View style={{ backgroundColor: palette.violet50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.violet200 }}>
+        <Text style={{ fontSize: 13, fontWeight: "700", color: brand.violet600, marginBottom: 4 }}>
           👨‍👩‍👧 एक खाना, अलग-अलग हिस्से
         </Text>
-        <Text style={{ fontSize: 12, color: "#5b21b6" }}>
+        <Text style={{ fontSize: 12, color: brand.violet800 }}>
           Cook one meal for the whole family and serve age-appropriate portions. No separate cooking needed!
         </Text>
       </View>
@@ -315,29 +316,29 @@ function FamilyModeTab() {
       {/* Column headers */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View>
-          <View style={[styles.tableRow, { backgroundColor: "#f1f5f9" }]}>
+          <View style={[styles.tableRow, { backgroundColor: palette.slate100 }]}>
             <Text style={[styles.tableCell, styles.tableCellFirst, styles.tableHeader]}>Food Item</Text>
             {["🍼\n6–12m", "🧒\n1–3y", "📚\n6–10y", "🌱\n10–15y", "👨‍👩\nAdult", "🤰\nPregnant"].map((h, i) => (
               <Text key={i} style={[styles.tableCell, styles.tableHeader]}>{h}</Text>
             ))}
           </View>
           {FAMILY_PORTIONS.map((row, ri) => (
-            <View key={ri} style={[styles.tableRow, ri % 2 === 0 ? { backgroundColor: "#ffffff" } : { backgroundColor: "#f8fafc" }]}>
+            <View key={ri} style={[styles.tableRow, ri % 2 === 0 ? { backgroundColor: "#ffffff" } : { backgroundColor: palette.slate50 }]}>
               <View style={[styles.tableCell, styles.tableCellFirst, { flexDirection: "row", alignItems: "center", gap: 6 }]}>
                 <Text style={{ fontSize: 18 }}>{row.emoji}</Text>
                 <View>
-                  <Text style={{ fontSize: 11, fontWeight: "600", color: "#1e293b" }}>{row.food}</Text>
-                  <Text style={{ fontSize: 10, color: "#64748b" }}>{row.foodHi}</Text>
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: palette.slate800 }}>{row.food}</Text>
+                  <Text style={{ fontSize: 10, color: palette.slate500 }}>{row.foodHi}</Text>
                 </View>
               </View>
               {[row.infant, row.toddler, row.schoolChild, row.teen, row.adult, row.pregnant].map((v, ci) => (
-                <Text key={ci} style={[styles.tableCell, { fontSize: 10, color: "#374151" }]}>{v}</Text>
+                <Text key={ci} style={[styles.tableCell, { fontSize: 10, color: palette.gray700 }]}>{v}</Text>
               ))}
             </View>
           ))}
         </View>
       </ScrollView>
-      <Text style={{ fontSize: 10, color: "#94a3b8", textAlign: "center" }}>
+      <Text style={{ fontSize: 10, color: palette.slate400, textAlign: "center" }}>
         * 1 katori ≈ 150ml cup. Adjust to child's appetite.
       </Text>
     </View>
@@ -369,11 +370,11 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
   return (
     <View style={{ gap: 14 }}>
       {/* Info */}
-      <View style={{ backgroundColor: "#f0fdf4", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#bbf7d0" }}>
-        <Text style={{ fontSize: 13, fontWeight: "700", color: "#15803d", marginBottom: 2 }}>
+      <View style={{ backgroundColor: palette.emerald50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.green200 }}>
+        <Text style={{ fontSize: 13, fontWeight: "700", color: palette.green700, marginBottom: 2 }}>
           🏆 Daily Nutrition Score · दैनिक पोषण स्कोर
         </Text>
-        <Text style={{ fontSize: 12, color: "#166534" }}>
+        <Text style={{ fontSize: 12, color: palette.green800 }}>
           Track for {ag.label} · आज क्या खाया वो चेक करें
         </Text>
       </View>
@@ -385,7 +386,7 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
           <View style={[styles.scoreBarFill, { width: `${score}%` as any, backgroundColor: sc }]} />
         </View>
         <Text style={[{ fontSize: 14, fontWeight: "700", color: sc, marginTop: 8 }]}>{scoreLabel(score)}</Text>
-        <Text style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+        <Text style={{ fontSize: 12, color: palette.slate500, marginTop: 2 }}>
           {checkedCount} of {items.length} daily goals met
         </Text>
       </View>
@@ -400,17 +401,17 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
               onPress={() => toggle(item.id)}
               style={[
                 styles.checkItem,
-                done && { backgroundColor: "#f0fdf4", borderColor: "#86efac" },
+                done && { backgroundColor: palette.emerald50, borderColor: palette.green300 },
               ]}
             >
-              <View style={[styles.checkbox, done && { backgroundColor: "#22c55e", borderColor: "#22c55e" }]}>
+              <View style={[styles.checkbox, done && { backgroundColor: palette.green500, borderColor: palette.green500 }]}>
                 {done && <Ionicons name="checkmark" size={14} color="#fff" />}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: "500", color: done ? "#94a3b8" : "#1e293b", textDecorationLine: done ? "line-through" : "none" }}>
+                <Text style={{ fontSize: 13, fontWeight: "500", color: done ? palette.slate400 : palette.slate800, textDecorationLine: done ? "line-through" : "none" }}>
                   {item.label}
                 </Text>
-                <Text style={{ fontSize: 11, color: "#94a3b8" }}>{item.labelHi}</Text>
+                <Text style={{ fontSize: 11, color: palette.slate400 }}>{item.labelHi}</Text>
               </View>
             </Pressable>
           );
@@ -419,9 +420,9 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
 
       {/* Tip */}
       {score < 80 ? (
-        <View style={{ backgroundColor: "#f5f3ff", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#ddd6fe" }}>
-          <Text style={{ fontSize: 12, fontWeight: "700", color: "#7c3aed", marginBottom: 4 }}>🧠 Amy AI Tip</Text>
-          <Text style={{ fontSize: 12, color: "#5b21b6", lineHeight: 18 }}>
+        <View style={{ backgroundColor: palette.violet50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.violet200 }}>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: brand.violet600, marginBottom: 4 }}>🧠 Amy AI Tip</Text>
+          <Text style={{ fontSize: 12, color: brand.violet800, lineHeight: 18 }}>
             {score < 40
               ? "Boost your nutrition — add dal, a fruit, and a glass of milk. · दाल, फल और दूध जरूर लें।"
               : score < 60
@@ -430,10 +431,10 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
           </Text>
         </View>
       ) : (
-        <View style={{ backgroundColor: "#f0fdf4", borderRadius: 12, padding: 16, alignItems: "center", borderWidth: 1, borderColor: "#86efac" }}>
+        <View style={{ backgroundColor: palette.emerald50, borderRadius: 12, padding: 16, alignItems: "center", borderWidth: 1, borderColor: palette.green300 }}>
           <Text style={{ fontSize: 28, marginBottom: 4 }}>🌟</Text>
-          <Text style={{ fontSize: 15, fontWeight: "800", color: "#15803d" }}>Outstanding! · Shandar!</Text>
-          <Text style={{ fontSize: 12, color: "#166534", textAlign: "center", marginTop: 4 }}>
+          <Text style={{ fontSize: 15, fontWeight: "800", color: palette.green700 }}>Outstanding! · Shandar!</Text>
+          <Text style={{ fontSize: 12, color: palette.green800, textAlign: "center", marginTop: 4 }}>
             Consistency is the key to health. Keep it up tomorrow too! · हर दिन यही करें!
           </Text>
         </View>
@@ -485,7 +486,7 @@ export default function NutritionScreen() {
 
       {/* Hero Header */}
       <LinearGradient
-        colors={["#7c3aed", "#6d28d9", "#4f46e5"]}
+        colors={[brand.violet600, brand.violet700, palette.indigo600]}
         style={[styles.hero, { paddingTop: insets.top + 8 }]}
       >
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
@@ -496,7 +497,7 @@ export default function NutritionScreen() {
           <Text style={styles.heroTitle}>Nutrition Hub</Text>
           <Text style={styles.heroSubtitle}>न्यूट्रिशन हब · Poshan Ka Ghar</Text>
           <View style={styles.heroBadge}>
-            <Text style={{ fontSize: 10, color: "#a78bfa", fontWeight: "600" }}>WHO · ICMR-NIN · Science-backed</Text>
+            <Text style={{ fontSize: 10, color: brand.violet400, fontWeight: "600" }}>WHO · ICMR-NIN · Science-backed</Text>
           </View>
         </View>
       </LinearGradient>
@@ -515,12 +516,12 @@ export default function NutritionScreen() {
                   styles.agePill,
                   sel
                     ? { backgroundColor: agc.bg, borderColor: agc.border }
-                    : { backgroundColor: "#f1f5f9", borderColor: "#e2e8f0" },
+                    : { backgroundColor: palette.slate100, borderColor: palette.slate200 },
                   sel && styles.agePillSelected,
                 ]}
               >
                 <Text style={{ fontSize: 14 }}>{ag.emoji}</Text>
-                <Text style={[styles.agePillLabel, { color: sel ? agc.text : "#64748b" }]}>
+                <Text style={[styles.agePillLabel, { color: sel ? agc.text : palette.slate500 }]}>
                   {ag.label}
                 </Text>
               </Pressable>
@@ -540,8 +541,8 @@ export default function NutritionScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.ageCardTitle, { color: ac.text }]}>{activeAg.label}</Text>
               <Text style={{ fontSize: 12, color: ac.text + "99", marginBottom: 4 }}>{activeAg.labelHi} · {activeAg.labelHinglish}</Text>
-              <Text style={{ fontSize: 12, color: "#374151", lineHeight: 18 }}>{activeAg.description}</Text>
-              <Text style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>{activeAg.descriptionHi}</Text>
+              <Text style={{ fontSize: 12, color: palette.gray700, lineHeight: 18 }}>{activeAg.description}</Text>
+              <Text style={{ fontSize: 11, color: palette.slate500, marginTop: 4 }}>{activeAg.descriptionHi}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                 {activeAg.keyFocus.map((f, i) => (
                   <View key={i} style={[styles.focusBadge, { borderColor: ac.border }]}>
@@ -561,15 +562,15 @@ export default function NutritionScreen() {
               onPress={() => setActiveTab(tab.id)}
               style={[
                 styles.tabBtn,
-                activeTab === tab.id && { backgroundColor: "#7c3aed", borderColor: "#7c3aed" },
+                activeTab === tab.id && { backgroundColor: brand.violet600, borderColor: brand.violet600 },
               ]}
             >
               <Ionicons
                 name={tab.icon as any}
                 size={14}
-                color={activeTab === tab.id ? "#fff" : "#64748b"}
+                color={activeTab === tab.id ? "#fff" : palette.slate500}
               />
-              <Text style={[styles.tabLabel, { color: activeTab === tab.id ? "#fff" : "#64748b" }]}>
+              <Text style={[styles.tabLabel, { color: activeTab === tab.id ? "#fff" : palette.slate500 }]}>
                 {tab.label}
               </Text>
             </Pressable>
@@ -582,7 +583,7 @@ export default function NutritionScreen() {
           {activeTab === "nutrients" && (
             <View>
               <Text style={styles.sectionHeader}>Nutrient Library · पोषक तत्व पुस्तकालय</Text>
-              <Text style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
+              <Text style={{ fontSize: 12, color: palette.slate500, marginBottom: 12 }}>
                 Tap a nutrient to see benefits, Indian food sources & daily needs for {activeAg.label}.
               </Text>
               <View style={styles.nutrientGrid}>
@@ -602,7 +603,7 @@ export default function NutritionScreen() {
           {activeTab === "meals" && (
             <View>
               <Text style={styles.sectionHeader}>Weekly Meal Plan · साप्ताहिक भोजन योजना</Text>
-              <Text style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
+              <Text style={{ fontSize: 12, color: palette.slate500, marginBottom: 12 }}>
                 Age-appropriate Indian meals for every day of the week.
               </Text>
               <MealPlanTab ageGroupId={activeAgeId} />
@@ -613,7 +614,7 @@ export default function NutritionScreen() {
           {activeTab === "family" && (
             <View>
               <Text style={styles.sectionHeader}>Family Mode · परिवार मोड</Text>
-              <Text style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
+              <Text style={{ fontSize: 12, color: palette.slate500, marginBottom: 12 }}>
                 Same meal — different portions for each family member. Cook once, serve smart!
               </Text>
               <FamilyModeTab />
@@ -633,27 +634,27 @@ export default function NutritionScreen() {
             onPress={() => setShowDisclaimer(!showDisclaimer)}
             style={styles.disclaimerHeader}
           >
-            <Ionicons name="warning-outline" size={16} color="#d97706" />
-            <Text style={{ fontSize: 12, fontWeight: "700", color: "#d97706", flex: 1 }}>
+            <Ionicons name="warning-outline" size={16} color={palette.amber600} />
+            <Text style={{ fontSize: 12, fontWeight: "700", color: palette.amber600, flex: 1 }}>
               Medical Disclaimer · चिकित्सा अस्वीकरण
             </Text>
-            <Ionicons name={showDisclaimer ? "chevron-up" : "chevron-down"} size={14} color="#d97706" />
+            <Ionicons name={showDisclaimer ? "chevron-up" : "chevron-down"} size={14} color={palette.amber600} />
           </Pressable>
           {showDisclaimer && (
             <View style={styles.disclaimerBody}>
-              <Text style={{ fontSize: 11, color: "#92400e", lineHeight: 17, marginBottom: 8 }}>
+              <Text style={{ fontSize: 11, color: palette.amber800, lineHeight: 17, marginBottom: 8 }}>
                 {MEDICAL_DISCLAIMER.en}
               </Text>
-              <Text style={{ fontSize: 11, color: "#b45309", lineHeight: 17 }}>
+              <Text style={{ fontSize: 11, color: palette.amber700, lineHeight: 17 }}>
                 {MEDICAL_DISCLAIMER.hi}
               </Text>
               <Pressable onPress={() => setShowRefs(!showRefs)} style={{ marginTop: 10 }}>
-                <Text style={{ fontSize: 10, color: "#b45309", textDecorationLine: "underline" }}>
+                <Text style={{ fontSize: 10, color: palette.amber700, textDecorationLine: "underline" }}>
                   {showRefs ? "Hide" : "Show"} References / स्रोत
                 </Text>
               </Pressable>
               {showRefs && REFERENCES.map((ref, i) => (
-                <Text key={i} style={{ fontSize: 9, color: "#a16207", marginTop: 3 }}>
+                <Text key={i} style={{ fontSize: 9, color: palette.yellow700, marginTop: 3 }}>
                   {i + 1}. {ref}
                 </Text>
               ))}
@@ -667,10 +668,10 @@ export default function NutritionScreen() {
           >
             <Text style={{ fontSize: 24 }}>📈</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: "#1e293b" }}>Track Growth Progress</Text>
-              <Text style={{ fontSize: 11, color: "#64748b" }}>बच्चे की वृद्धि ट्रैक करें</Text>
+              <Text style={{ fontSize: 13, fontWeight: "700", color: palette.slate800 }}>Track Growth Progress</Text>
+              <Text style={{ fontSize: 11, color: palette.slate500 }}>बच्चे की वृद्धि ट्रैक करें</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+            <Ionicons name="chevron-forward" size={18} color={palette.slate400} />
           </Pressable>
         </View>
       </ScrollView>
@@ -702,7 +703,7 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontSize: 12,
-    color: "#c4b5fd",
+    color: brand.violet300,
     marginTop: 2,
   },
   heroBadge: {
@@ -715,7 +716,7 @@ const styles = StyleSheet.create({
   ageBar: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
+    borderBottomColor: palette.slate200,
     backgroundColor: "#fff",
   },
   agePill: {
@@ -760,8 +761,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#f8fafc",
+    borderColor: palette.slate200,
+    backgroundColor: palette.slate50,
     marginBottom: 12,
   },
   tabLabel: {
@@ -771,7 +772,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#1e293b",
+    color: palette.slate800,
     marginBottom: 4,
   },
   nutrientGrid: {
@@ -814,8 +815,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#f8fafc",
+    borderColor: palette.slate200,
+    backgroundColor: palette.slate50,
   },
   mealCard: {
     borderRadius: 12,
@@ -823,12 +824,12 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   scoreCard: {
-    backgroundColor: "#f8fafc",
+    backgroundColor: palette.slate50,
     borderRadius: 16,
     padding: 20,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: palette.slate200,
   },
   scoreNumber: {
     fontSize: 64,
@@ -838,7 +839,7 @@ const styles = StyleSheet.create({
   scoreBarBg: {
     width: "100%",
     height: 10,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: palette.slate200,
     borderRadius: 5,
     overflow: "hidden",
     marginTop: 10,
@@ -853,7 +854,7 @@ const styles = StyleSheet.create({
     gap: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: palette.slate200,
     backgroundColor: "#fff",
     padding: 12,
   },
@@ -862,7 +863,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: "#cbd5e1",
+    borderColor: palette.slate300,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -884,7 +885,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: palette.slate100,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -901,7 +902,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#374151",
+    color: palette.gray700,
     marginBottom: 10,
     marginTop: 4,
   },
@@ -913,11 +914,11 @@ const styles = StyleSheet.create({
   sourceRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "#f8fafc",
+    backgroundColor: palette.slate50,
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: palette.slate200,
   },
   typeBadge: {
     borderRadius: 4,
@@ -925,7 +926,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   deficiencyBox: {
-    backgroundColor: "#fff1f2",
+    backgroundColor: palette.rose50,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
@@ -939,7 +940,7 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: palette.slate100,
   },
   tableCell: {
     width: 100,
@@ -954,41 +955,41 @@ const styles = StyleSheet.create({
   tableHeader: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748b",
+    color: palette.slate500,
     textAlign: "center",
   },
   divider: {
     height: 1,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: palette.slate200,
     marginVertical: 20,
   },
   disclaimerHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#fffbeb",
+    backgroundColor: palette.amber50,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#fde68a",
+    borderColor: palette.amber200,
   },
   disclaimerBody: {
-    backgroundColor: "#fffbeb",
+    backgroundColor: palette.amber50,
     borderRadius: 12,
     padding: 14,
     marginTop: 4,
     borderWidth: 1,
-    borderColor: "#fde68a",
+    borderColor: palette.amber200,
   },
   growthCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#f8fafc",
+    backgroundColor: palette.slate50,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: palette.slate200,
     marginTop: 12,
   },
 });

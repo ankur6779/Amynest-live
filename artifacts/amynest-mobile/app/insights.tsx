@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {  useState } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { useRouter, Stack } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand, ACCENT_PINK } from "@/constants/colors";
+import { brand, ACCENT_PINK, palette } from "@/constants/colors";
 
 type Range = "week" | "month";
 
@@ -166,7 +166,7 @@ export default function InsightsScreen() {
           <>
             <DeltaCard
               icon="calendar-outline"
-              color="#34D399"
+              color={palette.emerald400}
               label={`Routines ${periodLabel}`}
               value={data.summary.routinesThisPeriod}
               previousValue={data.summary.routinesPreviousPeriod}
@@ -175,7 +175,7 @@ export default function InsightsScreen() {
             />
             <DeltaCard
               icon="happy-outline"
-              color="#FBBF24"
+              color={palette.amber400}
               label={`Moments logged ${periodLabel}`}
               value={data.summary.behaviorsThisPeriod}
               previousValue={data.summary.behaviorsPreviousPeriod}
@@ -270,19 +270,19 @@ export default function InsightsScreen() {
                 label="Morning"
                 value={data.timeOfDay.morning}
                 max={timeOfDayMax(data.timeOfDay)}
-                color="#FBBF24"
+                color={palette.amber400}
               />
               <BarRow
                 label="Afternoon"
                 value={data.timeOfDay.afternoon}
                 max={timeOfDayMax(data.timeOfDay)}
-                color="#34D399"
+                color={palette.emerald400}
               />
               <BarRow
                 label="Evening"
                 value={data.timeOfDay.evening}
                 max={timeOfDayMax(data.timeOfDay)}
-                color="#8B5CF6"
+                color={brand.violet500}
               />
             </Section>
 
@@ -370,7 +370,7 @@ function DeltaCard({
   const isUp = change > 0;
   const isDown = change < 0;
   const arrow = isUp ? "arrow-up" : isDown ? "arrow-down" : "remove";
-  const arrowColor = isUp ? "#34D399" : isDown ? "#F87171" : "rgba(255,255,255,0.5)";
+  const arrowColor = isUp ? palette.emerald400 : isDown ? palette.red400 : "rgba(255,255,255,0.5)";
   const formatted =
     changePts !== undefined
       ? `${change >= 0 ? "+" : ""}${change} pts`
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minWidth: 64,
   },
-  childBadgeValue: { color: "#34D399", fontSize: 16, fontWeight: "800" },
+  childBadgeValue: { color: palette.emerald400, fontSize: 16, fontWeight: "800" },
   childBadgeLabel: { color: "rgba(52, 211, 153, 0.7)", fontSize: 9, fontWeight: "600" },
   childSubline: { color: "rgba(255,255,255,0.5)", fontSize: 11, marginTop: 3 },
 

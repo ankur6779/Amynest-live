@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { palette } from "@/constants/colors";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator,
   TextInput, KeyboardAvoidingView, Platform, Image,
@@ -297,7 +298,7 @@ export default function KidsControlCenterScreen() {
                   style={{ borderRadius: 18, overflow: "hidden", opacity: canSubmit ? 1 : 0.45 }}
                 >
                   <LinearGradient
-                    colors={canSubmit ? [c.primary, c.accent, "#F59E0B"] : [c.border, c.border]}
+                    colors={canSubmit ? [c.primary, c.accent, palette.amber500] : [c.border, c.border]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{
                       paddingVertical: 16, alignItems: "center", justifyContent: "center",
@@ -370,7 +371,7 @@ function SelectionButton({
   const isInterested = kind === "interested";
   const gradient: [string, string] = isInterested
     ? [c.primary, c.accent]
-    : ["#64748B", "#475569"];
+    : [palette.slate500, palette.slate600];
 
   if (selected) {
     return (

@@ -1,11 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
+import {  View, Text, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useColors } from "@/hooks/useColors";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 import { useTheme } from "@/contexts/ThemeContext";
 
 const PRIVACY_MD = `# Privacy Policy — AmyNest AI
@@ -113,7 +113,7 @@ export default function PrivacyScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
           <Ionicons name="chevron-back" size={22} color={c.text} />
         </Pressable>
-        <LinearGradient colors={[brand.purple500, "#06B6D4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
+        <LinearGradient colors={[brand.purple500, palette.cyan500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
           <Ionicons name="shield-checkmark-outline" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>

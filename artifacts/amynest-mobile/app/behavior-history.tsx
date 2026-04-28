@@ -12,7 +12,7 @@ import * as Haptics from "expo-haptics";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 
 type Child = { id: number; name: string };
 type Behavior = {
@@ -29,9 +29,9 @@ type Behavior = {
 type Filter = "all" | "positive" | "negative" | "neutral";
 
 const TYPE_META: Record<string, { color: string; emoji: string; label: string }> = {
-  positive:   { color: "#10B981", emoji: "✨", label: "Positive" },
-  negative:   { color: "#EF4444", emoji: "⚡", label: "Challenging" },
-  neutral:    { color: "#6B7280", emoji: "•",  label: "Neutral" },
+  positive:   { color: palette.emerald500, emoji: "✨", label: "Positive" },
+  negative:   { color: palette.red500,     emoji: "⚡", label: "Challenging" },
+  neutral:    { color: palette.gray500,    emoji: "•",  label: "Neutral" },
 };
 
 function formatDateGroup(dateStr: string): string {

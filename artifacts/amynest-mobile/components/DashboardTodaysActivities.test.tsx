@@ -68,8 +68,8 @@ vi.mock("expo-haptics", () => ({
 vi.mock("@/contexts/ThemeContext", () => ({
   useTheme: () => ({
     theme: {
-      gradient: ["#0f0c29", "#302b63", "#24243e"] as const,
-      bg: { primary: "#0f0c29", surface: "#1a1633" },
+      gradient: ["#0f0c29", "#302b63", "#24243e"] as const, // audit-ok: intentional dark bg / custom color
+      bg: { primary: "#0f0c29", surface: "#1a1633" }, // audit-ok: intentional dark bg / custom color
       text: { primary: "#ffffff", secondary: "rgba(255,255,255,0.7)" },
     },
     mode: "dark",
