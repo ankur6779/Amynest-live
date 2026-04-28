@@ -427,9 +427,9 @@ export default function CoachScreen() {
 
   if (profileLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: c.background, justifyContent: "center", alignItems: "center" }}>
+      <LinearGradient colors={["#0f0c29", "#302b63", "#24243e"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={c.primary} />
-      </View>
+      </LinearGradient>
     );
   }
 
@@ -444,10 +444,10 @@ export default function CoachScreen() {
   // ── PHASE: RESUMING ──────────────────────────────────────────────────
   if (phase === "resuming") {
     return (
-      <View style={{ flex: 1, backgroundColor: c.background, justifyContent: "center", alignItems: "center", gap: 12 }}>
+      <LinearGradient colors={["#0f0c29", "#302b63", "#24243e"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 12 }}>
         <ActivityIndicator size="large" color={c.primary} />
         <Text style={{ color: c.textSubtle, fontSize: 13, fontWeight: "600" }}>Loading your plan…</Text>
-      </View>
+      </LinearGradient>
     );
   }
 

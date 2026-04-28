@@ -80,19 +80,19 @@ const colors = {
     text: "#FFFFFF",
     tint: "#7B3FF2",
 
-    background: "#0B0B1A",
+    background: "#0f0c29",
     foreground: "#FFFFFF",
 
-    card: "#14142B",
+    card: "#13102e",
     cardForeground: "#FFFFFF",
 
     primary: "#7B3FF2",
     primaryForeground: "#FFFFFF",
 
-    secondary: "#1B1B3A",
+    secondary: "#1c1240",
     secondaryForeground: "#FFFFFF",
 
-    muted: "#1B1B3A",
+    muted: "#1c1240",
     mutedForeground: "rgba(255,255,255,0.6)",
 
     accent: "#FF4ECD",
@@ -107,12 +107,12 @@ const colors = {
     amyGradientStart: "#7B3FF2",
     amyGradientEnd: "#FF4ECD",
 
-    glass: "rgba(20,20,43,0.72)",
+    glass: "rgba(15,12,41,0.80)",
     glassBorder: "rgba(255,255,255,0.08)",
     glow: "#7B3FF2",
     glowAccent: "#FF4ECD",
-    surface: "#14142B",
-    surfaceElevated: "#1B1B3A",
+    surface: "#13102e",
+    surfaceElevated: "#1c1240",
     highlight: "#4FC3F7",
     textMuted: "rgba(255,255,255,0.6)",
     textDim: "rgba(255,255,255,0.45)",
