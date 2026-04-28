@@ -1,0 +1,111 @@
+We need to align a React Native (Expo) mobile app with an existing website.
+
+IMPORTANT CONTEXT:
+- Website = source of truth
+- Mobile app = React Native (not WebView)
+- Goal is NOT pixel-perfect UI, but:
+  • same structure
+  • same content
+  • same feature behavior
+  • same user flow
+
+We will proceed PHASE BY PHASE starting from Splash Screen.
+
+--------------------------------------------------
+PHASE 0: SETUP COMPARISON SYSTEM
+--------------------------------------------------
+Create a structured comparison framework:
+
+For each screen:
+1. Web version analysis
+2. Native version analysis
+3. Differences (UI / logic / missing features)
+4. Fix plan
+5. Implementation
+
+--------------------------------------------------
+PHASE 1: SPLASH SCREEN (START HERE)
+--------------------------------------------------
+Compare:
+
+WEB:
+- Animation
+- Timing
+- Branding (ring, glow, text)
+- Transition behavior
+
+NATIVE:
+- What is currently shown
+- Timing / delay
+- Animation differences
+
+OUTPUT:
+- List exact differences
+- Identify what is missing in native
+
+Then:
+- Implement native splash to match web behavior as closely as possible
+- Ensure:
+  • smooth transition
+  • no white screen
+  • correct timing
+
+--------------------------------------------------
+PHASE STRUCTURE (FOR ALL NEXT SCREENS)
+--------------------------------------------------
+
+For each page (Login, Onboarding, Parent Hub, etc.):
+
+STEP 1: WEB BREAKDOWN
+- Layout structure
+- Components
+- Data shown
+- Interactions
+
+STEP 2: NATIVE BREAKDOWN
+- Current implementation
+- Missing components
+- UI mismatches
+
+STEP 3: GAP ANALYSIS
+Classify gaps:
+- Missing feature
+- UI mismatch
+- Logic mismatch
+- Data mismatch
+
+STEP 4: FIX PLAN
+- What to change
+- What to add
+- What to ignore (if not needed)
+
+STEP 5: IMPLEMENTATION
+- Update native code accordingly
+
+--------------------------------------------------
+DEBUG TOOL (IMPORTANT)
+--------------------------------------------------
+Add a DEV MODE comparison helper:
+
+- Show:
+  • current screen name
+  • feature checklist
+  • missing items
+
+This helps track progress screen-by-screen.
+
+--------------------------------------------------
+RULES
+--------------------------------------------------
+- Do NOT rewrite entire UI blindly
+- Fix incrementally
+- Keep performance optimized
+- Maintain native UX standards
+
+--------------------------------------------------
+NEXT STEPS
+--------------------------------------------------
+Start with:
+PHASE 1 → Splash Screen comparison and fix
+
+Then wait for approval before moving to next screen.
