@@ -136,12 +136,12 @@ export default function InsightsScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={refetch}
-            tintColor="#FF4ECD"
+            tintColor={brand.accent}
           />
         }
       >
         {isLoading && !data && (
-          <ActivityIndicator color="#FF4ECD" style={{ marginTop: 40 }} />
+          <ActivityIndicator color={brand.accent} style={{ marginTop: 40 }} />
         )}
 
         {data && !data.hasChildren && (
@@ -184,7 +184,7 @@ export default function InsightsScreen() {
             />
             <DeltaCard
               icon="heart-outline"
-              color="#FF4ECD"
+              color={brand.accent}
               label="Positive moments rate"
               value={`${data.summary.positiveRateThisPeriod}%`}
               previousValue={`${data.summary.positiveRatePreviousPeriod}%`}

@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   code: {
-    color: "#FF4ECD",
+    color: brand.accent,
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
   },
   swatchRow: {

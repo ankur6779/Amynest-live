@@ -221,7 +221,7 @@ export default function PaywallScreen() {
           {/* Hero */}
           <View style={styles.hero}>
             <LinearGradient
-              colors={[brand.primary, "#FF4ECD"]}
+              colors={[brand.primary, brand.accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.heroIcon}
@@ -259,7 +259,7 @@ export default function PaywallScreen() {
                       {p.badge && (
                         <View style={styles.badgeWrap}>
                           <LinearGradient
-                            colors={[brand.primary, "#FF4ECD"]}
+                            colors={[brand.primary, brand.accent]}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             style={styles.badge}
@@ -284,7 +284,7 @@ export default function PaywallScreen() {
                             <Ionicons
                               name="checkmark-circle"
                               size={14}
-                              color={isSelected ? "#FF4ECD" : "rgba(255,255,255,0.6)"}
+                              color={isSelected ? brand.accent : "rgba(255,255,255,0.6)"}
                             />
                             <Text style={styles.featureText}>{f}</Text>
                           </View>
@@ -319,7 +319,7 @@ export default function PaywallScreen() {
             }
           >
             <LinearGradient
-              colors={[brand.primary, "#FF4ECD"]}
+              colors={[brand.primary, brand.accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.primary}
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
-    shadowColor: "#FF4ECD",
+    shadowColor: brand.accent,
     shadowOpacity: 0.5,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
@@ -496,8 +496,8 @@ const styles = StyleSheet.create({
   },
   cardSelected: {
     backgroundColor: "rgba(123,63,242,0.18)",
-    borderColor: "#FF4ECD",
-    shadowColor: "#FF4ECD",
+    borderColor: brand.accent,
+    shadowColor: brand.accent,
     shadowOpacity: 0.45,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   savings: {
-    color: "#FF4ECD",
+    color: brand.accent,
     fontSize: 12,
     fontWeight: "800",
     marginTop: 4,
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
   },
   primaryWrap: {
     borderRadius: 999,
-    shadowColor: "#FF4ECD",
+    shadowColor: brand.accent,
     shadowOpacity: 0.5,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 10 },
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   trialText: {
-    color: "#FF4ECD",
+    color: brand.accent,
     fontSize: 13,
     fontWeight: "800",
   },

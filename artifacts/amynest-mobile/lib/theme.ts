@@ -34,9 +34,9 @@ export const darkTheme: ThemePalette = {
   },
   brand: {
     primary: brand.primary,
-    accent: "#FF4ECD",
+    accent: brand.accent,
     gradientStart: brand.primary,
-    gradientEnd: "#FF4ECD",
+    gradientEnd: brand.accent,
   },
   status: {
     success: "#10B981",
@@ -69,9 +69,9 @@ export const lightTheme: ThemePalette = {
   },
   brand: {
     primary: brand.primary,
-    accent: "#FF4ECD",
+    accent: brand.accent,
     gradientStart: brand.primary,
-    gradientEnd: "#FF4ECD",
+    gradientEnd: brand.accent,
   },
   status: {
     success: "#059669",

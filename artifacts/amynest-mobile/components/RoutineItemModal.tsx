@@ -97,7 +97,7 @@ const CATEGORY_ICON: Record<string, { icon: keyof typeof Ionicons.glyphMap; grad
 
 function pickCategory(category = "") {
   const k = Object.keys(CATEGORY_ICON).find((x) => category.toLowerCase().includes(x));
-  return k ? CATEGORY_ICON[k] : { icon: "ellipse" as const, gradient: ["#7B3FF2", "#FF4ECD"] as const };
+  return k ? CATEGORY_ICON[k] : { icon: "ellipse" as const, gradient: ["#7B3FF2", brand.accent] as const };
 }
 
 function statusBadge(status: ItemStatus) {

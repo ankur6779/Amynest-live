@@ -92,7 +92,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
       {/* Header */}
       <View style={styles.headerRow}>
         <LinearGradient
-          colors={["#FFD27A", "#FF4ECD", brand.purple500]}
+          colors={["#FFD27A", brand.accent, brand.purple500]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.iconRing}
         >
