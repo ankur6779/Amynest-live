@@ -28,6 +28,7 @@ import SignUpPage from "@/pages/sign-up";
 // `null` while a chunk is loading so there's no flash of fallback UI.
 const PrivacyPolicyPage = lazy(() => import("@/pages/privacy"));
 const TermsOfServicePage = lazy(() => import("@/pages/terms"));
+const DeleteAccountPage = lazy(() => import("@/pages/delete-account"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const ChildrenList = lazy(() => import("@/pages/children/index"));
 const ChildForm = lazy(() => import("@/pages/children/form"));
@@ -211,6 +212,7 @@ function AppRoutes() {
           <Route path="/" component={HomeRedirect} />
           <Route path="/privacy" component={PrivacyPolicyPage} />
           <Route path="/terms" component={TermsOfServicePage} />
+          <Route path="/delete-account" component={DeleteAccountPage} />
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/onboarding">
