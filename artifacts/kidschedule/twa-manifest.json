@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.bubblewrap.dev/v1/twa-manifest.schema.json",
-  "packageId": "com.amynest.ai",
+  "packageId": "com.amynest.app",
   "host": "YOUR_DEPLOYED_HOSTNAME",
   "name": "AmyNest AI \u2014 Smart Parenting Coach",
   "launcherName": "AmyNest AI",
