@@ -115,16 +115,119 @@ function getGoalCategories(infoBg: string): GoalCategory[] {
         { id: "set-consistent-family-rules",      title: "Family Rules",         emoji: "📋", bg: ["#FEF3C7", "#FED7AA"] },
       ],
     },
+    // ── NEW: Toddler Behavior (2–4 yrs) ──────────────────────────────────
+    {
+      id: "toddler-behavior", title: "Toddler Behavior (2–4 yrs)", emoji: "🧒", bg: ["#FFE4E6", "#FED7AA"],
+      items: [
+        { id: "toddler-tantrums",       title: "Toddler Tantrums (2–4)", emoji: "😤", bg: ["#FFE4E6", "#FBCFE8"] },
+        { id: "hitting-biting",         title: "Hitting & Biting",        emoji: "🦷", bg: ["#FEE2E2", "#FECACA"] },
+        { id: "no-phase",               title: "The 'No' Phase",          emoji: "🙅", bg: ["#FEF3C7", "#FED7AA"] },
+        { id: "public-meltdowns",       title: "Public Meltdowns",        emoji: "🛒", bg: ["#FCE7F3", "#FBCFE8"] },
+        { id: "whining-and-clinginess", title: "Whining & Clinginess",    emoji: "🥺", bg: [brand.violet100, brand.violet200] },
+      ],
+    },
+    // ── NEW: Daily Skills & Independence ─────────────────────────────────
+    {
+      id: "daily-skills", title: "Daily Skills & Independence", emoji: "🚽", bg: ["#D1FAE5", "#A7F3D0"],
+      items: [
+        { id: "potty-training-readiness", title: "Potty Training Readiness", emoji: "🪴", bg: ["#D1FAE5", "#A7F3D0"] },
+        { id: "potty-day-training",       title: "Day Toilet Training",      emoji: "🚽", bg: ["#CCFBF1", "#A7F3D0"] },
+        { id: "potty-night-training",     title: "Night-Time Dry",            emoji: "🌙", bg: [brand.indigo100, brand.violet200] },
+        { id: "potty-public-anxiety",     title: "Public Toilet Anxiety",     emoji: "🚻", bg: ["#E0F2FE", "#BFDBFE"] },
+        { id: "self-dressing",            title: "Self-Dressing & Hygiene",   emoji: "👕", bg: ["#BBF7D0", "#D1FAE5"] },
+      ],
+    },
+    // ── NEW: Family Dynamics ──────────────────────────────────────────────
+    {
+      id: "family-dynamics", title: "Family Dynamics", emoji: "👨‍👩‍👧‍👦", bg: [brand.violet100, "#FCE7F3"],
+      items: [
+        { id: "sibling-rivalry",      title: "Sibling Rivalry",             emoji: "⚔️", bg: ["#FFE4E6", "#FBCFE8"] },
+        { id: "sharing-turn-taking",  title: "Sharing & Turn-Taking",       emoji: "🤲", bg: ["#FEF3C7", "#FED7AA"] },
+        { id: "new-baby-adjustment",  title: "Adjusting to New Baby",       emoji: "👶", bg: ["#FCE7F3", "#FBCFE8"] },
+        { id: "sibling-fights",       title: "Sibling Fights & Hitting",    emoji: "🥊", bg: ["#FEE2E2", "#FECACA"] },
+        { id: "favouritism-feelings", title: "Handle Favouritism Feelings", emoji: "💔", bg: [brand.violet100, brand.violet200] },
+      ],
+    },
+    // ── NEW: Special Situations ───────────────────────────────────────────
+    {
+      id: "special-situations", title: "Special Situations", emoji: "✈️", bg: ["#FEF3C7", "#FED7AA"],
+      items: [
+        { id: "travel-with-kids",          title: "Travel With Kids",           emoji: "✈️", bg: ["#E0F2FE", "#BFDBFE"] },
+        { id: "hospital-doctor-visit",     title: "Hospital / Doctor Visit",    emoji: "🏥", bg: ["#FFE4E6", "#FECACA"] },
+        { id: "daycare-school-transition", title: "Daycare / School Transition",emoji: "🎒", bg: ["#FEF3C7", "#FED7AA"] },
+        { id: "welcoming-new-sibling",     title: "Welcoming a New Sibling",    emoji: "🎀", bg: ["#FCE7F3", "#FBCFE8"] },
+        { id: "moving-houses",             title: "Moving to a New Home",       emoji: "📦", bg: ["#D1FAE5", "#A7F3D0"] },
+      ],
+    },
+    // ── NEW: Kids Health Concern ──────────────────────────────────────────
+    {
+      id: "kids-health-concern", title: "Kids Health Concern", emoji: "🩺", bg: ["#D1FAE5", "#CCFBF1"],
+      items: [
+        { id: "child-obesity-management", title: "Obesity & Weight",           emoji: "⚖️", bg: ["#D1FAE5", "#A7F3D0"] },
+        { id: "nutrition-deficiency",     title: "Nutrition Deficiency",        emoji: "🥗", bg: ["#ECFCCB", "#BBF7D0"] },
+        { id: "boost-immunity",           title: "Immunity & Frequent Illness", emoji: "🛡️", bg: ["#CCFBF1", "#A7F3D0"] },
+        { id: "dental-health",            title: "Dental Health",               emoji: "🦷", bg: ["#E0F2FE", "#BFDBFE"] },
+        { id: "digital-health-eye-care",  title: "Screen & Digital Health",     emoji: "👀", bg: [brand.violet100, brand.violet200] },
+        { id: "early-milestones-0-5",     title: "Early Milestones (0–5 yrs)", emoji: "🌱", bg: ["#FEF3C7", "#FDE68A"] },
+      ],
+    },
+    // ── NEW: For You (Parent Self-Care) — age question skipped ────────────
+    {
+      id: "for-you", title: "For You (Parent Self-Care)", emoji: "💖", bg: ["#FCE7F3", "#FFE4E6"],
+      items: [
+        { id: "parent-burnout",      title: "Beat Parent Burnout",          emoji: "🪫", bg: ["#FFE4E6", "#FBCFE8"] },
+        { id: "stay-calm-anger",     title: "Stay Calm When Angry",         emoji: "🧘", bg: [brand.violet100, brand.violet200] },
+        { id: "guilt-after-yelling", title: "Handle Guilt After Yelling",   emoji: "💔", bg: ["#FCE7F3", "#FBCFE8"] },
+        { id: "find-me-time",        title: "Find 'Me Time' Daily",         emoji: "☕", bg: ["#FEF3C7", "#FED7AA"] },
+        { id: "couple-time-balance", title: "Balance Partner & Parent Time",emoji: "💑", bg: ["#FCE7F3", "#FBCFE8"] },
+        { id: "improve-own-sleep",   title: "Improve Your Own Sleep",       emoji: "🌙", bg: [brand.indigo100, brand.violet100] },
+        { id: "manage-overwhelm",    title: "Manage Daily Overwhelm",       emoji: "🌪️", bg: ["#E0F2FE", "#BFDBFE"] },
+      ],
+    },
   ];
 }
 // audit-block-ignore-end
+
+// ─── Free goal IDs (one per category — shows "Try Free" badge on free tier) ──
+const FREE_GOAL_IDS = new Set<string>([
+  "manage-tantrums",                    // Behavior
+  "balance-screen-time",                // Screen & Focus
+  "navigate-fussy-eating",              // Eating
+  "improve-sleep-patterns",             // Sleep
+  "boost-concentration",                // Learning
+  "baby-not-sleeping",                  // Infant Problems (0–2 yrs)
+  "manage-grandparents-interference",   // Parenting Challenges
+  "toddler-tantrums",                   // Toddler Behavior (2–4 yrs)
+  "potty-training-readiness",           // Daily Skills & Independence
+  "sibling-rivalry",                    // Family Dynamics
+  "travel-with-kids",                   // Special Situations
+  "child-obesity-management",           // Kids Health Concern
+  "parent-burnout",                     // For You (Parent Self-Care)
+]);
+
+// ─── Categories whose items imply an age → age question is skipped ────────────
+const CATEGORY_IMPLIED_AGE: Record<string, string> = {
+  "toddler-behavior": "2–4 years",
+  "daily-skills":     "2–4 years",
+  "for-you":          "Adult (parent self-care)",
+};
+
+/** Build a fast goalId → implied-age lookup from the category map above. */
+function buildGoalImpliedAge(categories: GoalCategory[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const cat of categories) {
+    const implied = CATEGORY_IMPLIED_AGE[cat.id];
+    if (implied) cat.items.forEach((g) => { out[g.id] = implied; });
+  }
+  return out;
+}
 
 const COMMON_TRIGGERS = [
   "Hunger or tiredness", "Transitions or changes", "Being told 'no'", "Boredom",
   "Sibling conflict", "School/social stress", "Inconsistent rules", "Sensory overload",
 ];
 const QUESTIONS: Question[] = [
-  { id: "ageGroup",       prompt: "What's your child's age?",          type: "single", options: ["2–4 years", "5–7 years", "8–10 years"] },
+  { id: "ageGroup",       prompt: "What's your child's age?",          type: "single", options: ["2–4 years", "5–7 years", "8–10 years", "10+ years (tween/teen)"] },
   { id: "severity",       prompt: "How challenging is it right now?",  type: "single", options: ["Mild – occasional", "Moderate – frequent", "Severe – daily struggle"] },
   { id: "triggers",       prompt: "What triggers it most? (pick any)", type: "multi",  options: COMMON_TRIGGERS },
   { id: "routine",        prompt: "What's your current approach?",     type: "single", options: ["No clear routine yet", "I try but it's inconsistent", "Strict rules, lots of pushback", "Trying gentle parenting", "Just starting to figure it out"] },
@@ -142,6 +245,7 @@ export default function CoachScreen() {
   const theme = paletteFor(mode);
   const GOAL_CATEGORIES = useMemo(() => getGoalCategories(c.statusInfoBg), [c.statusInfoBg]);
   const ALL_GOALS = useMemo(() => GOAL_CATEGORIES.flatMap((cat) => cat.items), [GOAL_CATEGORIES]);
+  const GOAL_IMPLIED_AGE = useMemo(() => buildGoalImpliedAge(GOAL_CATEGORIES), [GOAL_CATEGORIES]);
   const { profileComplete, isLoading: profileLoading } = useProfileComplete();
   const { width } = useWindowDimensions();
 
@@ -240,6 +344,17 @@ export default function CoachScreen() {
   // they don't finish must NOT burn the allowance.
   const coachUsage = useSectionUsage("amy_coach");
 
+  // Returns "open" (premium), "try-free" (free tier, one free goal available),
+  // or "locked" (free tier exhausted / goal is not a free sample).
+  const getGoalAccess = useCallback(
+    (id: string): "open" | "try-free" | "locked" => {
+      if (coachUsage.isPremium) return "open";
+      if (FREE_GOAL_IDS.has(id)) return coachUsage.fullyUsed ? "locked" : "try-free";
+      return "locked";
+    },
+    [coachUsage.isPremium, coachUsage.fullyUsed],
+  );
+
   // ─── Goal pick → questions (or → Infant Problem detail for the 0–2 yr topic)
   const handlePickGoal = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -262,7 +377,15 @@ export default function CoachScreen() {
       setPhase("infantProblem");
       return;
     }
-    setQIndex(0); setAnswers({}); setPhase("questions");
+    // If the goal's category implies an age, skip the ageGroup question.
+    const impliedAge = GOAL_IMPLIED_AGE[id];
+    if (impliedAge) {
+      setAnswers({ ageGroup: impliedAge });
+      setQIndex(1); // jump past q0 (ageGroup)
+    } else {
+      setQIndex(0); setAnswers({});
+    }
+    setPhase("questions");
   };
 
   const currentQ = QUESTIONS[qIndex];
@@ -288,7 +411,9 @@ export default function CoachScreen() {
     else submitPlan();
   };
   const handleBackQ = () => {
-    if (qIndex > 0) setQIndex((i) => i - 1);
+    const ageSkipped = !!GOAL_IMPLIED_AGE[goalId];
+    const firstQ = ageSkipped ? 1 : 0;
+    if (qIndex > firstQ) setQIndex((i) => i - 1);
     else setPhase("goals");
   };
 
@@ -296,7 +421,11 @@ export default function CoachScreen() {
   const submitPlan = async () => {
     setPhase("loading");
     setActiveIdx(0); setFeedbackByWin({});
-    const ageMap: Record<string, string> = { "2–4 years": "2-4", "5–7 years": "5-7", "8–10 years": "8-10" };
+    const ageMap: Record<string, string> = {
+      "2–4 years": "2-4", "5–7 years": "5-7", "8–10 years": "8-10",
+      "10+ years (tween/teen)": "10+",
+      "Adult (parent self-care)": "adult",
+    };
     const sevMap: Record<string, string> = { "Mild – occasional": "mild", "Moderate – frequent": "moderate", "Severe – daily struggle": "severe" };
     const payload = {
       goal: goalId,
@@ -510,17 +639,30 @@ export default function CoachScreen() {
               <View key={cat.id} style={{ marginTop: 18 }}>
                 <Text style={styles.catHeader}>{cat.emoji}  {cat.title.toUpperCase()}</Text>
                 <View style={{ gap: 10, marginTop: 8 }}>
-                  {cat.items.map((g) => (
-                    <TouchableOpacity key={g.id} onPress={() => handlePickGoal(g.id)} activeOpacity={0.85}>
-                      <LinearGradient colors={g.bg} style={styles.goalRow}>
-                        <Text style={{ fontSize: 24 }}>{g.emoji}</Text>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.goalRowTitle}>{g.title}</Text>
-                          <Text style={styles.goalRowSub}>Tap to start →</Text>
-                        </View>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  ))}
+                  {cat.items.map((g) => {
+                    const access = getGoalAccess(g.id);
+                    return (
+                      <TouchableOpacity key={g.id} onPress={() => handlePickGoal(g.id)} activeOpacity={0.85}>
+                        <LinearGradient colors={g.bg} style={[styles.goalRow, { overflow: "hidden" }]}>
+                          <Text style={{ fontSize: 24 }}>{g.emoji}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.goalRowTitle}>{g.title}</Text>
+                            <Text style={styles.goalRowSub}>
+                              {access === "locked" ? "🔒 Premium" : "Tap to start →"}
+                            </Text>
+                          </View>
+                          {access === "try-free" && (
+                            <View style={goalBadgeStyles.tryFree}>
+                              <Text style={goalBadgeStyles.tryFreeText}>✦ Try Free</Text>
+                            </View>
+                          )}
+                          {access === "locked" && (
+                            <Ionicons name="lock-closed" size={14} color="rgba(0,0,0,0.35)" style={{ marginRight: 4 }} />
+                          )}
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
             ))}
@@ -564,17 +706,30 @@ export default function CoachScreen() {
             </View>
 
             <View style={{ gap: 10, marginTop: 16 }}>
-              {activeCat.items.map((g) => (
-                <TouchableOpacity key={g.id} onPress={() => handlePickGoal(g.id)} activeOpacity={0.85}>
-                  <LinearGradient colors={g.bg} style={styles.goalRow}>
-                    <Text style={{ fontSize: 28 }}>{g.emoji}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.goalRowTitle}>{g.title}</Text>
-                      <Text style={styles.goalRowSub}>Tap to start →</Text>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-              ))}
+              {activeCat.items.map((g) => {
+                const access = getGoalAccess(g.id);
+                return (
+                  <TouchableOpacity key={g.id} onPress={() => handlePickGoal(g.id)} activeOpacity={0.85}>
+                    <LinearGradient colors={g.bg} style={[styles.goalRow, { overflow: "hidden" }]}>
+                      <Text style={{ fontSize: 28 }}>{g.emoji}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.goalRowTitle}>{g.title}</Text>
+                        <Text style={styles.goalRowSub}>
+                          {access === "locked" ? "🔒 Premium" : "Tap to start →"}
+                        </Text>
+                      </View>
+                      {access === "try-free" && (
+                        <View style={goalBadgeStyles.tryFree}>
+                          <Text style={goalBadgeStyles.tryFreeText}>✦ Try Free</Text>
+                        </View>
+                      )}
+                      {access === "locked" && (
+                        <Ionicons name="lock-closed" size={14} color="rgba(0,0,0,0.35)" style={{ marginRight: 4 }} />
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </ScrollView>
         </View>
@@ -659,7 +814,11 @@ export default function CoachScreen() {
 
   // ── PHASE: QUESTIONS ──────────────────────────────────────────────────
   if (phase === "questions" && currentQ) {
-    const qProgress = ((qIndex + 1) / QUESTIONS.length) * 100;
+    const ageSkipped = !!GOAL_IMPLIED_AGE[goalId];
+    const firstQ = ageSkipped ? 1 : 0;
+    const visibleTotal = QUESTIONS.length - firstQ;
+    const visibleNum = qIndex - firstQ + 1;
+    const qProgress = (visibleNum / visibleTotal) * 100;
     return (
       <View style={[styles.screen, { paddingTop: topPad }]}>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: botPad + 120 }}>
@@ -671,7 +830,7 @@ export default function CoachScreen() {
           <View style={{ marginTop: 18 }}>
             <View style={styles.qProgressRow}>
               <Text style={[styles.qProgressText, { color: c.textMuted }]}>
-                Question {qIndex + 1} of {QUESTIONS.length}
+                Question {visibleNum} of {visibleTotal}
               </Text>
               <Text style={[styles.qProgressGoal, { color: c.textMuted }]}>
                 {selectedGoal?.title}
@@ -1224,6 +1383,19 @@ function WinCard({
     </LinearGradient>
   );
 }
+
+// ─── Goal badge (free sample / premium lock) ──────────────────────────────
+const goalBadgeStyles = StyleSheet.create({
+  tryFree: {
+    backgroundColor: "#16A34A", // audit-ok: semantic green "Try Free" badge
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: "center",
+    marginRight: 4,
+  },
+  tryFreeText: { color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 0.3 },
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STYLES
