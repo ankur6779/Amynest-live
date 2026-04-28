@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
+import { palette } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { API_BASE_URL } from "@/constants/api";
 import { PhonicsTestRunner, type TestType } from "@/components/PhonicsTestRunner";
@@ -227,7 +228,7 @@ export default function PhonicsTestScreen() {
                   <LinearGradient
                     colors={
                       disabled
-                        ? ["#94a3b8", "#64748b"]
+                        ? [palette.slate400, palette.slate500]
                         : [theme.brand.gradientStart, theme.brand.gradientEnd]
                     }
                     start={{ x: 0, y: 0 }}

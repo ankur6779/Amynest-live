@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, {  useState, useMemo, useRef } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator,
   Modal, KeyboardAvoidingView, Platform, Alert, LayoutAnimation, UIManager,
@@ -10,7 +10,7 @@ import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
-import colors, { brand, ACCENT_PINK } from "@/constants/colors";
+import colors, { brand, ACCENT_PINK, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import {
   QUICK_BEHAVIORS, QUICK_BEHAVIOR_KEYS, TRIGGERS, TRIGGER_KEYS,
@@ -251,7 +251,7 @@ export default function BehaviorScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
           <Ionicons name="chevron-back" size={22} color={c.text} />
         </Pressable>
-        <LinearGradient colors={["#FBBF24", brand.rose400]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
+        <LinearGradient colors={[palette.amber400, brand.rose400]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
           <Ionicons name="happy" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
@@ -307,8 +307,8 @@ export default function BehaviorScreen() {
                   <Text style={[styles.childStatName, { color: c.text }]} numberOfLines={1}>{child.name}</Text>
                   <Text style={[styles.childStatLabel, { color: c.textMuted }]}>Today</Text>
                   <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "800", color: "#10B981" }}>😊 {childPos}</Text>
-                    <Text style={{ fontSize: 11, fontWeight: "800", color: "#EF4444" }}>😡 {childNeg}</Text>
+                    <Text style={{ fontSize: 11, fontWeight: "800", color: palette.emerald500 }}>😊 {childPos}</Text>
+                    <Text style={{ fontSize: 11, fontWeight: "800", color: palette.red500 }}>😡 {childNeg}</Text>
                   </View>
                 </View>
               );
@@ -340,12 +340,12 @@ export default function BehaviorScreen() {
 
         {/* BLOCK 1: Quick Log */}
         <Block
-          icon={<LinearGradient colors={["#F59E0B", brand.rose400]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="flash" size={18} color="#fff" /></LinearGradient>}
+          icon={<LinearGradient colors={[palette.amber500, brand.rose400]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="flash" size={18} color="#fff" /></LinearGradient>}
           title={L.quickLog}
           subtitle={L.tap1Log}
           open={openBlock === "quick-log"}
           onToggle={() => toggle("quick-log")}
-          accentColor="#F59E0B"
+          accentColor={palette.amber500}
         >
           {/* Behavior buttons */}
           <View style={styles.quickGrid}>
@@ -411,12 +411,12 @@ export default function BehaviorScreen() {
 
         {/* BLOCK 2: Today Summary */}
         <Block
-          icon={<LinearGradient colors={["#3B82F6", brand.violet500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="stats-chart" size={18} color="#fff" /></LinearGradient>}
+          icon={<LinearGradient colors={[palette.blue500, brand.violet500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="stats-chart" size={18} color="#fff" /></LinearGradient>}
           title={L.todaySummary}
           subtitle={`${todayLogs.length} ${L.loggedToday}`}
           open={openBlock === "summary"}
           onToggle={() => toggle("summary")}
-          accentColor="#3B82F6"
+          accentColor={palette.blue500}
         >
           {/* Score */}
           <View style={styles.scoreCard}>
@@ -428,8 +428,8 @@ export default function BehaviorScreen() {
           </View>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
             {[
-              { label: L.positive, count: pos, color: "#10B981" },
-              { label: L.challenging, count: neg, color: "#EF4444" },
+              { label: L.positive, count: pos, color: palette.emerald500 },
+              { label: L.challenging, count: neg, color: palette.red500 },
               { label: L.neutral, count: neu, color: c.textSubtle },
             ].map((item) => (
               <View key={item.label} style={[styles.countCard, { borderColor: item.color + "44" }]}>
@@ -461,19 +461,19 @@ export default function BehaviorScreen() {
 
         {/* BLOCK 4: Weekly Trends */}
         <Block
-          icon={<LinearGradient colors={["#0EA5E9", brand.indigo500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="bar-chart" size={18} color="#fff" /></LinearGradient>}
+          icon={<LinearGradient colors={[palette.sky500, brand.indigo500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="bar-chart" size={18} color="#fff" /></LinearGradient>}
           title={L.weeklyTrends}
           subtitle="Last 7 days at a glance"
           open={openBlock === "trends"}
           onToggle={() => toggle("trends")}
-          accentColor="#0EA5E9"
+          accentColor={palette.sky500}
         >
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4, height: 80 }}>
             {weekData.map((d, i) => (
               <View key={i} style={{ flex: 1, alignItems: "center", gap: 2 }}>
                 <View style={{ width: "100%", justifyContent: "flex-end", height: 64, gap: 1 }}>
-                  {d.pos > 0 && <View style={{ width: "100%", height: Math.max(4, (d.pos / maxWeek) * 60), backgroundColor: "#10B981", borderRadius: 3 }} />}
-                  {d.neg > 0 && <View style={{ width: "100%", height: Math.max(4, (d.neg / maxWeek) * 60), backgroundColor: "#EF4444", borderRadius: 3 }} />}
+                  {d.pos > 0 && <View style={{ width: "100%", height: Math.max(4, (d.pos / maxWeek) * 60), backgroundColor: palette.emerald500, borderRadius: 3 }} />}
+                  {d.neg > 0 && <View style={{ width: "100%", height: Math.max(4, (d.neg / maxWeek) * 60), backgroundColor: palette.red500, borderRadius: 3 }} />}
                   {d.total === 0 && <View style={{ width: "100%", height: 3, backgroundColor: c.surfaceTrack, borderRadius: 3 }} />}
                 </View>
                 <Text style={{ color: c.textMuted, fontSize: 9, fontWeight: "700" }}>{d.label}</Text>
@@ -482,11 +482,11 @@ export default function BehaviorScreen() {
           </View>
           <View style={{ flexDirection: "row", gap: 14, marginTop: 8 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-              <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: "#10B981" }} />
+              <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: palette.emerald500 }} />
               <Text style={{ color: c.textMuted, fontSize: 11 }}>{L.positive}</Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-              <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: "#EF4444" }} />
+              <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: palette.red500 }} />
               <Text style={{ color: c.textMuted, fontSize: 11 }}>{L.challenging}</Text>
             </View>
           </View>
@@ -506,8 +506,8 @@ export default function BehaviorScreen() {
             accessibilityRole="button"
             accessibilityLabel="View full behavior history"
           >
-            <Ionicons name="time-outline" size={14} color="#0EA5E9" />
-            <Text style={{ color: "#0EA5E9", fontSize: 12.5, fontWeight: "800" }}>
+            <Ionicons name="time-outline" size={14} color={palette.sky500} />
+            <Text style={{ color: palette.sky500, fontSize: 12.5, fontWeight: "800" }}>
               View full history (last 90 days)
             </Text>
           </Pressable>
@@ -515,12 +515,12 @@ export default function BehaviorScreen() {
 
         {/* BLOCK 5: Solutions */}
         <Block
-          icon={<LinearGradient colors={["#F97316", "#EAB308"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="sparkles" size={18} color="#fff" /></LinearGradient>}
+          icon={<LinearGradient colors={[palette.orange500, palette.yellow500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="sparkles" size={18} color="#fff" /></LinearGradient>}
           title={L.solutions}
           subtitle="Amy's proven tips per situation"
           open={openBlock === "solutions"}
           onToggle={() => toggle("solutions")}
-          accentColor="#F97316"
+          accentColor={palette.orange500}
         >
           {(["tantrum", "crying", "not_listening", "good_behavior", "low_energy"] as QuickBehaviorKey[]).map((key) => {
             const def = QUICK_BEHAVIORS[key];

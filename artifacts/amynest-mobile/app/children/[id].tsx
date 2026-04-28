@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { palette } from "@/constants/colors";
 import * as Haptics from "expo-haptics";
 
 type Colors = ReturnType<typeof useColors>;
@@ -251,7 +252,7 @@ export default function ChildDetailScreen() {
               </TouchableOpacity>
               {photoUrl && (
                 <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setPhotoUrl(null); }}>
-                  <Text style={[styles.photoHint, { color: "#EF4444" }]}>Remove photo</Text>
+                  <Text style={[styles.photoHint, { color: palette.red500 }]}>Remove photo</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -401,11 +402,11 @@ export default function ChildDetailScreen() {
         )}
 
         <TouchableOpacity
-          style={[styles.deleteBtn, { backgroundColor: "#FEF2F2", borderColor: "#FECACA" }]}
+          style={[styles.deleteBtn, { backgroundColor: palette.red50, borderColor: palette.rose200 }]}
           onPress={handleDelete}
           testID="delete-child-btn"
         >
-          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+          <Ionicons name="trash-outline" size={18} color={palette.red500} />
           <Text style={styles.deleteBtnText}>Remove Child</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -490,7 +491,7 @@ const styles = StyleSheet.create({
   infoLabel: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
   infoValue: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   deleteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1 },
-  deleteBtnText: { color: "#EF4444", fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  deleteBtnText: { color: palette.red500, fontSize: 15, fontFamily: "Inter_600SemiBold" },
   photoCircle: {
     width: 96, height: 96, borderRadius: 48,
     alignItems: "center", justifyContent: "center", borderWidth: 1.5,

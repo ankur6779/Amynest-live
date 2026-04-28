@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {   useState, useEffect, useRef, useCallback } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Platform, ActivityIndicator, KeyboardAvoidingView, Alert, Image, Modal,
@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
-import { brand } from "@/constants/colors";
+import { brand, palette, brandExtended } from "@/constants/colors";
 import { LinearGradient } from "expo-linear-gradient";
 
 type ChatRole = "amy" | "user";
@@ -211,7 +211,7 @@ export default function OnboardingScreen() {
   if (step === "saving") {
     return (
       <LinearGradient
-        colors={["#0a061a", "#120a2e", "#050010"]}
+        colors={["#0a061a", "#120a2e", "#050010"]} // audit-ok: intentional dark bg / custom color
         start={{ x: 0.1, y: 0 }}
         end={{ x: 0.9, y: 1 }}
         style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad }]}
@@ -230,12 +230,12 @@ export default function OnboardingScreen() {
   if (step === "done") {
     return (
       <LinearGradient
-        colors={["#0a061a", "#120a2e", "#050010"]}
+        colors={["#0a061a", "#120a2e", "#050010"]} // audit-ok: intentional dark bg / custom color
         start={{ x: 0.1, y: 0 }}
         end={{ x: 0.9, y: 1 }}
         style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad }]}
       >
-        <View style={[styles.amyBigBubble, { backgroundColor: "#10B981" }]}>
+        <View style={[styles.amyBigBubble, { backgroundColor: palette.emerald500 }]}>
           <Ionicons name="checkmark" size={36} color="#fff" />
         </View>
         <Text style={styles.doneTitle}>Profile ready!</Text>
@@ -266,12 +266,12 @@ export default function OnboardingScreen() {
   if (step === "save-error") {
     return (
       <LinearGradient
-        colors={["#0a061a", "#120a2e", "#050010"]}
+        colors={["#0a061a", "#120a2e", "#050010"]} // audit-ok: intentional dark bg / custom color
         start={{ x: 0.1, y: 0 }}
         end={{ x: 0.9, y: 1 }}
         style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad }]}
       >
-        <View style={[styles.amyBigBubble, { backgroundColor: "#EF4444" }]}>
+        <View style={[styles.amyBigBubble, { backgroundColor: palette.red500 }]}>
           <Ionicons name="alert-circle" size={36} color="#fff" />
         </View>
         <Text style={styles.doneTitle}>Something went wrong</Text>
@@ -279,7 +279,7 @@ export default function OnboardingScreen() {
           We couldn't save your profile. Check your connection and try again.
         </Text>
         {saveError ? (
-          <Text style={[styles.doneSub, { color: "#FF8080", fontSize: 12, marginTop: -8 }]}>{saveError}</Text>
+          <Text style={[styles.doneSub, { color: brandExtended.errorSoft, fontSize: 12, marginTop: -8 }]}>{saveError}</Text>
         ) : null}
         <TouchableOpacity
           onPress={() => {
@@ -789,7 +789,7 @@ export default function OnboardingScreen() {
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
-        colors={["#0a061a", "#120a2e", "#050010"]}
+        colors={["#0a061a", "#120a2e", "#050010"]} // audit-ok: intentional dark bg / custom color
         start={{ x: 0.1, y: 0 }}
         end={{ x: 0.9, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -872,7 +872,7 @@ const styles = StyleSheet.create({
   amyRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   amyAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   amyName: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#FFFFFF", letterSpacing: -0.2 },
-  amyStatus: { fontSize: 11, fontFamily: "Inter_500Medium", color: "#10B981" },
+  amyStatus: { fontSize: 11, fontFamily: "Inter_500Medium", color: palette.emerald500 },
   msgRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginBottom: 12 },
   bubble: { maxWidth: "78%", padding: 12, borderRadius: 18, borderWidth: 1, borderColor: "transparent" },
   bubbleAmy: { backgroundColor: "rgba(18,4,45,0.80)", borderColor: "rgba(168,85,247,0.22)" },

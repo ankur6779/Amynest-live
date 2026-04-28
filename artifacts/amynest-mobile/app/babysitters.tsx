@@ -79,7 +79,7 @@ export default function BabysittersScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
           <Ionicons name="chevron-back" size={22} color={c.text} />
         </Pressable>
-        <LinearGradient colors={["#FB7185", ACCENT_PINK]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerIcon}>
+        <LinearGradient colors={[brand.rose400, ACCENT_PINK]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerIcon}>
           <MaterialCommunityIcons name="baby-face-outline" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>

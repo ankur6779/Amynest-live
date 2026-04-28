@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {  useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   View,
@@ -17,7 +17,7 @@ import * as Haptics from "expo-haptics";
 import { getLocales } from "expo-localization";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import type { Plan } from "@/services/subscriptionApi";
-import { brand, ACCENT_PINK } from "@/constants/colors";
+import { brand, ACCENT_PINK, palette } from "@/constants/colors";
 import { presentRCPaywall } from "@/lib/revenuecat";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -185,7 +185,7 @@ export default function PaywallScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient
-        colors={["#0B0B1A", "#1A0B2E", "#0B0B1A"]}
+        colors={["#0B0B1A", "#1A0B2E", "#0B0B1A"]} // audit-ok: intentional dark bg / custom color
         locations={[0, 0.5, 1]}
         style={styles.bg}
       >
@@ -299,7 +299,7 @@ export default function PaywallScreen() {
 
           {notice && (
             <View style={styles.noticeBox}>
-              <Ionicons name="information-circle" size={16} color="#FCD34D" />
+              <Ionicons name="information-circle" size={16} color={palette.amber300} />
               <Text style={styles.noticeText}>{notice}</Text>
             </View>
           )}
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   noticeText: {
-    color: "#FCD34D",
+    color: palette.amber300,
     fontSize: 12.5,
     fontWeight: "700",
     flex: 1,

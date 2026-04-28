@@ -6,6 +6,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@api-lib/*": [
+        "../../artifacts/api-server/src/lib/*"
       ]
     }
   },

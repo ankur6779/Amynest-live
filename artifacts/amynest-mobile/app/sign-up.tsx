@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {  useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { humanizeError } from "@/utils/humanizeError";
 import PhoneAuthFlow from "@/components/PhoneAuthFlow";
 import NeonRingHero from "@/components/NeonRingHero";
-import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brandAlpha } from "@/constants/colors";
+import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brand, brandAlpha, brandExtended } from "@/constants/colors";
 
 export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
@@ -60,7 +60,7 @@ export default function SignUpScreen() {
 
   return (
     <LinearGradient
-      colors={["#0a061a", "#120a2e", "#050010"]}
+      colors={["#0a061a", "#120a2e", "#050010"]} // audit-ok: intentional dark bg / custom color
       start={{ x: 0.1, y: 0 }}
       end={{ x: 0.9, y: 1 }}
       style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
@@ -103,7 +103,7 @@ export default function SignUpScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t("auth.first_name")}</Text>
               <View style={[styles.inputWrap, focusedField === "name" && styles.inputWrapFocused]}>
-                <Ionicons name="person-outline" size={18} color={focusedField === "name" ? "#A78BFA" : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
+                <Ionicons name="person-outline" size={18} color={focusedField === "name" ? brand.violet400 : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={firstName}
@@ -121,7 +121,7 @@ export default function SignUpScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t("auth.email")}</Text>
               <View style={[styles.inputWrap, focusedField === "email" && styles.inputWrapFocused]}>
-                <Ionicons name="mail-outline" size={18} color={focusedField === "email" ? "#A78BFA" : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
+                <Ionicons name="mail-outline" size={18} color={focusedField === "email" ? brand.violet400 : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={email}
@@ -141,7 +141,7 @@ export default function SignUpScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t("auth.password")}</Text>
               <View style={[styles.inputWrap, focusedField === "password" && styles.inputWrapFocused]}>
-                <Ionicons name="lock-closed-outline" size={18} color={focusedField === "password" ? "#A78BFA" : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
+                <Ionicons name="lock-closed-outline" size={18} color={focusedField === "password" ? brand.violet400 : "rgba(200,180,255,0.40)"} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
                   value={password}
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 15, color: "#F0E8FF", fontFamily: "Inter_400Regular" },
+  input: { flex: 1, fontSize: 15, color: brandExtended.softPurple, fontFamily: "Inter_400Regular" },
   eyeBtn: { padding: 4 },
 
   primaryBtnWrap: { marginTop: 4 },

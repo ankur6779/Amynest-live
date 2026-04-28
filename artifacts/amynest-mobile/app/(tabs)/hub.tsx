@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {  useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator,
   Image, Platform, LayoutAnimation, UIManager, findNodeHandle,
@@ -32,7 +32,7 @@ import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
 import TryFreeBadge from "@/components/TryFreeBadge";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
-import colors, { brand, ACCENT_PINK } from "@/constants/colors";
+import colors, { brand, ACCENT_PINK, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 
 const LOGO = require("../../assets/images/amynest-logo.png");
@@ -81,7 +81,7 @@ export default function HubScreen() {
   // Lazy-load Section 2 ("Explore") so the primary band content paints first.
   // Reset on child switch so the deferred render happens fresh per child.
   const [showExplore, setShowExplore] = useState(false);
-  // Quick band switcher (Task #108): when set to a future band, that group is
+  // Quick band switcher (Task #108): when set to a future band, that group is // audit-ok: task ref not hex
   // shown in full opacity (un-dimmed) and we scroll to it. Tapping the current
   // band chip clears it and returns to the default 2-section view.
   const [previewBand, setPreviewBand] = useState<number | null>(null);
@@ -231,7 +231,7 @@ export default function HubScreen() {
             onPress={() => router.push("/amy-ai")}
             style={styles.askAmyBtn}
           >
-            <LinearGradient colors={["#FFD27A", ACCENT_PINK, brand.primary]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyGrad}>
+            <LinearGradient colors={[brand.amber400, ACCENT_PINK, brand.primary]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyGrad}>
               <Ionicons name="chatbubbles" size={14} color="#fff" />
               <Text style={styles.askAmyText}>Ask Amy</Text>
             </LinearGradient>
@@ -364,7 +364,7 @@ export default function HubScreen() {
               <Section
                 id="articles"
                 icon={<Ionicons name="book" size={20} color="#fff" />}
-                accent={["#10B981", "#34D399"]}
+                accent={[palette.emerald500, palette.emerald400]}
                 title="Parenting Articles"
                 desc="Research-based, age-matched reading"
                 open={openSection === "articles"}
@@ -452,7 +452,7 @@ export default function HubScreen() {
               <Section
                 id="emotional"
                 icon={<Ionicons name="heart" size={20} color="#fff" />}
-                accent={["#F472B6", ACCENT_PINK]}
+                accent={[brand.pink400, ACCENT_PINK]}
                 title="Emotional Support"
                 desc="For the tough parenting days"
                 open={openSection === "emotional"}
@@ -497,7 +497,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#8B5CF6", brand.pink500]}
+                    colors={[brand.violet500, brand.pink500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -540,7 +540,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#6366F1", brand.purple500]}
+                    colors={[palette.indigo500, brand.purple500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -583,7 +583,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#F97316", "#FBBF24"]}
+                    colors={[palette.orange500, palette.amber400]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -626,7 +626,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#F59E0B", "#EF4444"]}
+                    colors={[palette.amber500, palette.red500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -669,7 +669,7 @@ export default function HubScreen() {
                   testID="card-kids-control-center"
                 >
                   <LinearGradient
-                    colors={["#7C3AED", brand.pink500, "#F59E0B"]}
+                    colors={[brand.violet600, brand.pink500, palette.amber500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -713,7 +713,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#10B981", "#84CC16"]}
+                    colors={[palette.emerald500, palette.lime500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -746,7 +746,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#7c3aed", "#4f46e5"]}
+                    colors={[brand.violet600, palette.indigo600]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -792,7 +792,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={[brand.pink500, "#F97316"]}
+                    colors={[brand.pink500, palette.orange500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -829,7 +829,7 @@ export default function HubScreen() {
               <Section
                 id="activities"
                 icon={<Ionicons name="color-palette" size={20} color="#fff" />}
-                accent={[brand.rose400, "#F59E0B"]}
+                accent={[brand.rose400, palette.amber500]}
                 title="Activities & Learning"
                 desc="Games, audio lessons & more"
                 open={openSection === "activities"}
@@ -845,7 +845,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}
                 >
                   <LinearGradient
-                    colors={["#7b3ff2", brand.purple500]}
+                    colors={[brand.violet600, brand.purple500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
                   >
@@ -866,7 +866,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 14, overflow: "hidden", marginTop: 8 }}
                 >
                   <LinearGradient
-                    colors={["#f59e0b", brand.pink500]}
+                    colors={[palette.amber500, brand.pink500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
                   >
@@ -887,7 +887,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 14, overflow: "hidden", marginTop: 8 }}
                 >
                   <LinearGradient
-                    colors={["#0e7490", "#0891b2"]}
+                    colors={[palette.cyan700, palette.cyan600]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
                   >
@@ -976,7 +976,7 @@ export default function HubScreen() {
               <Section
                 id="worksheets"
                 icon={<MaterialCommunityIcons name="file-document-outline" size={20} color="#fff" />}
-                accent={["#0EA5E9", "#6366F1"]}
+                accent={[palette.sky500, palette.indigo500]}
                 title="📄 Printable Worksheets"
                 desc="Coloring, math, tracing & more · 5 free / day"
                 open={openSection === "worksheets"}
@@ -995,7 +995,7 @@ export default function HubScreen() {
               <Section
                 id="facts"
                 icon={<Ionicons name="sparkles" size={20} color="#fff" />}
-                accent={["#F59E0B", brand.rose400]}
+                accent={[palette.amber500, brand.rose400]}
                 title="✨ Amazing Facts"
                 desc="Mind-blowing facts for curious kids"
                 open={openSection === "facts"}
@@ -1025,7 +1025,7 @@ export default function HubScreen() {
                   <Section
                     id="life-skills"
                     icon={<Ionicons name="compass" size={20} color="#fff" />}
-                    accent={["#10B981", "#34D399"]}
+                    accent={[palette.emerald500, palette.emerald400]}
                     title="🧭 Life Skills Mode"
                     desc="Daily real-life skills, ages 2–15"
                     open={openSection === "life-skills"}
@@ -1053,7 +1053,7 @@ export default function HubScreen() {
               <Section
                 id="meal-suggestions"
                 icon={<MaterialCommunityIcons name="food" size={20} color="#fff" />}
-                accent={["#10B981", "#84CC16"]}
+                accent={[palette.emerald500, palette.lime500]}
                 title="🍱 Amy AI Meal Suggestions"
                 desc="AI-generated tiffin & meal ideas for your child"
                 open={openSection === "meal-suggestions"}
@@ -1133,7 +1133,7 @@ export default function HubScreen() {
                       </Text>
                     </View>
 
-                    {/* Quick band switcher (Task #108): chips for the current
+                    {/* Quick band switcher (Task #108 audit-ok: task ref): chips for the current
                         band + each future band that has tiles. Tapping a future
                         chip un-dims that group and scrolls to it; tapping the
                         current "Now" chip clears the preview. */}
@@ -1474,12 +1474,12 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       borderColor: isLight ? "rgba(217,119,6,0.45)" : "rgba(255,210,122,0.55)",
     },
     previewingText: {
-      color: isLight ? "#B45309" : brand.amber400,
+      color: isLight ? palette.amber700 : brand.amber400,
       fontSize: 10, fontWeight: "800",
       letterSpacing: 0.5, textTransform: "uppercase",
     },
 
-    // Band switcher pills above the Explore groups (Task #108)
+    // Band switcher pills above the Explore groups (Task 108)
     bandPillRow: { flexDirection: "row", gap: 8, paddingVertical: 4, paddingHorizontal: 2 },
     bandPill: {
       paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999,
@@ -1499,7 +1499,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       borderColor: "rgba(255,78,205,0.65)",
     },
     bandPillText: { color: c.foreground, fontSize: 12, fontWeight: "700" },
-    bandPillTextCurrent: { color: isLight ? "#B45309" : "#FFD27A" },
+    bandPillTextCurrent: { color: isLight ? palette.amber700 : brand.amber400 },
     bandPillTextPreview: { color: ACCENT_PINK },
 
     exploreGroupBody: { position: "relative" },

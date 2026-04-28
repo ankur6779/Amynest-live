@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo } from "react";
+import React, {  useCallback, useState, useMemo } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, RefreshControl, Platform, ViewStyle, ScrollView,
@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useSubscriptionStore, selectIsPremium } from "@/store/useSubscriptionStore";
@@ -17,7 +18,7 @@ import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import FuturePredictor from "@/components/FuturePredictor";
 import SmartMealSuggestions from "@/components/SmartMealSuggestions";
-import colors, { brand } from "@/constants/colors";
+import colors, { brand, palette } from "@/constants/colors";
 
 
 type RoutineItem = {
@@ -187,7 +188,7 @@ export default function RoutinesScreen() {
               accessibilityRole="button"
               accessibilityLabel="Open premium routines view"
             >
-              <Ionicons name="star" size={14} color="#FACC15" />
+              <Ionicons name="star" size={14} color={palette.yellow400} />
               <Text style={styles.premiumBtnText}>Premium</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={goToGenerate} activeOpacity={0.85}>
@@ -308,7 +309,7 @@ export default function RoutinesScreen() {
                 if (isToday) {
                   dayBg = colors.primary; dayBorder = colors.primary; dayText = "#fff";
                 } else if (dayRoutines.length > 0) {
-                  dayBg = "rgba(34,197,94,0.18)"; dayBorder = "rgba(34,197,94,0.45)"; dayText = "#BBF7D0";
+                  dayBg = "rgba(34,197,94,0.18)"; dayBorder = "rgba(34,197,94,0.45)"; dayText = palette.green200;
                 } else if (isWeekend) {
                   dayBg = colors.muted; dayBorder = colors.border; dayText = colors.mutedForeground;
                 }
@@ -352,9 +353,9 @@ export default function RoutinesScreen() {
                     {dayRoutines.length > 0 ? (
                       <View style={{ width: "100%", alignItems: "center", gap: 2 }}>
                         <View style={[styles.dayBar, { backgroundColor: isToday ? "rgba(255,255,255,0.25)" : "rgba(34,197,94,0.2)" }]}>
-                          <View style={{ height: "100%", width: `${dayPct}%`, backgroundColor: isToday ? "rgba(255,255,255,0.7)" : "#22C55E", borderRadius: 2 }} />
+                          <View style={{ height: "100%", width: `${dayPct}%`, backgroundColor: isToday ? "rgba(255,255,255,0.7)" : palette.green500, borderRadius: 2 }} />
                         </View>
-                        <Text style={[styles.dayPctText, { color: isToday ? "rgba(255,255,255,0.85)" : "#16A34A" }]}>
+                        <Text style={[styles.dayPctText, { color: isToday ? "rgba(255,255,255,0.85)" : palette.green600 }]}>
                           {dayRoutines.length > 1 ? `${dayRoutines.length}×` : `${dayPct}%`}
                         </Text>
                       </View>
@@ -433,7 +434,7 @@ export default function RoutinesScreen() {
               const isLocked = isRoutineLocked(r.id);
               const progressFill: ViewStyle = {
                 height: "100%", borderRadius: 2,
-                width: `${pct}%`, backgroundColor: "#10B981",
+                width: `${pct}%`, backgroundColor: palette.emerald500,
               };
               return (
                 <LockedBlock
@@ -467,7 +468,7 @@ export default function RoutinesScreen() {
                           <View style={[styles.progressBar, { backgroundColor: colors.muted }]}>
                             <View style={progressFill} />
                           </View>
-                          <Text style={[styles.pctText, { color: "#10B981" }]}>{pct}%</Text>
+                          <Text style={[styles.pctText, { color: palette.emerald500 }]}>{pct}%</Text>
                         </View>
                       )}
                     </View>
@@ -490,7 +491,7 @@ const styles = StyleSheet.create({
   genBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999 },
   genBtnText: { color: "#fff", fontSize: 13, fontFamily: "Inter_700Bold" },
   premiumBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 999, backgroundColor: "rgba(250,204,21,0.12)", borderWidth: 1, borderColor: "rgba(250,204,21,0.35)" },
-  premiumBtnText: { color: "#FACC15", fontSize: 13, fontFamily: "Inter_700Bold" },
+  premiumBtnText: { color: palette.yellow400, fontSize: 13, fontFamily: "Inter_700Bold" },
 
   toggleRow: { flexDirection: "row", marginHorizontal: 20, marginBottom: 16, padding: 4, borderRadius: 16, gap: 4 },
   toggleBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 12 },

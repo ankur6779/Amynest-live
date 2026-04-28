@@ -11,7 +11,7 @@ import * as Haptics from "expo-haptics";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 
 interface Session {
   sessionId: string;
@@ -108,7 +108,7 @@ export default function CoachProgressScreen() {
                 </View>
                 {completed && (
                   <View style={styles.trophyBadge}>
-                    <Ionicons name="trophy" size={18} color="#F59E0B" />
+                    <Ionicons name="trophy" size={18} color={palette.amber500} />
                   </View>
                 )}
               </View>

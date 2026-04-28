@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {   useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable,
   Animated, Platform, Modal, Dimensions, FlatList,
@@ -9,7 +9,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand } from "@/constants/colors";
+import { brand, palette, brandExtended } from "@/constants/colors";
 import {
   GAMES, CATEGORY_LABEL, CATEGORY_EMOJI,
   getTotalPoints, getUnlocked, isUnlocked, unlockGame, recordPlay,
@@ -67,8 +67,8 @@ function SpeedMathGame({ onFinish }: { onFinish: (s: number, t: number) => void 
   const r = rounds[idx];
   return (
     <View style={gs.gameWrap}>
-      <View style={gs.gameTopRow}><Text style={gs.gameMeta}>{idx + 1}/{TOTAL}</Text><Text style={[gs.gameMeta, { color: timeLeft <= 3 ? "#fca5a5" : "#a99fd9", fontWeight: "700" }]}>⏱ {timeLeft}s</Text></View>
-      {fb ? <View style={gs.fbWrap}><Text style={[gs.fbText, { color: fb === "✓" ? "#4ade80" : "#ef4444" }]}>{fb}</Text></View>
+      <View style={gs.gameTopRow}><Text style={gs.gameMeta}>{idx + 1}/{TOTAL}</Text><Text style={[gs.gameMeta, { color: timeLeft <= 3 ? palette.red300 : brandExtended.violetMuted, fontWeight: "700" }]}>⏱ {timeLeft}s</Text></View>
+      {fb ? <View style={gs.fbWrap}><Text style={[gs.fbText, { color: fb === "✓" ? palette.green400 : palette.red500 }]}>{fb}</Text></View>
         : (<><Text style={gs.mathQ}>{r.q} = ?</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
               {r.choices.map(c => (
@@ -110,7 +110,7 @@ function NumberMatchGame({ onFinish }: { onFinish: (s: number, t: number) => voi
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 8 }}>
         {r.choices.map(c => {
           const isC = c === r.count, isP = picked === c;
-          const bg = picked !== null ? (isC ? "#22c55e" : isP ? "#ef4444" : "rgba(255,255,255,0.08)") : "rgba(255,255,255,0.08)";
+          const bg = picked !== null ? (isC ? palette.green500 : isP ? palette.red500 : "rgba(255,255,255,0.08)") : "rgba(255,255,255,0.08)";
           return (<TouchableOpacity key={c} disabled={picked !== null} onPress={() => onPick(c)} style={[gs.choiceBtn, { backgroundColor: bg }]} activeOpacity={0.8}>
             <Text style={gs.choiceText}>{c}</Text></TouchableOpacity>);
         })}
@@ -152,7 +152,7 @@ function FindMistakeGame({ onFinish }: { onFinish: (s: number, t: number) => voi
       <View style={gs.gridWrap}>
         {r.tiles.map((c, i) => {
           const isM = i === r.mistakeIdx, isP = picked === i;
-          const bg = picked !== null ? (isM ? "#22c55e" : isP ? "#ef4444" : "rgba(255,255,255,0.08)") : "rgba(255,255,255,0.08)";
+          const bg = picked !== null ? (isM ? palette.green500 : isP ? palette.red500 : "rgba(255,255,255,0.08)") : "rgba(255,255,255,0.08)";
           return (<TouchableOpacity key={i} disabled={picked !== null} onPress={() => onPick(i)} style={[gs.gridCell, { backgroundColor: bg }]} activeOpacity={0.8}>
             <Text style={gs.gridText}>{c}</Text></TouchableOpacity>);
         })}
@@ -164,9 +164,9 @@ function FindMistakeGame({ onFinish }: { onFinish: (s: number, t: number) => voi
 
 // ─── Color Memory ──────────────────────────────────────────────────
 const CMCOLORS = [
-  { id: "r", name: "Red",    color: "#ef4444" }, { id: "b", name: "Blue",  color: "#3b82f6" },
-  { id: "g", name: "Green",  color: "#22c55e" }, { id: "y", name: "Yellow",color: "#facc15" },
-  { id: "p", name: "Purple", color: brand.purple500 }, { id: "o", name: "Orange",color: "#fb923c" },
+  { id: "r", name: "Red",    color: palette.red500 }, { id: "b", name: "Blue",  color: palette.blue500 },
+  { id: "g", name: "Green",  color: palette.green500 }, { id: "y", name: "Yellow",color: palette.yellow400 },
+  { id: "p", name: "Purple", color: brand.purple500 }, { id: "o", name: "Orange",color: palette.orange400 },
 ];
 function ColorMemoryGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
   const seqLens = [3, 4, 5, 5];
@@ -206,7 +206,7 @@ function ColorMemoryGame({ onFinish }: { onFinish: (s: number, t: number) => voi
       <View style={gs.cmDisplay}>
         {phase === "show" && <View style={[gs.cmSwatch, { backgroundColor: CMCOLORS.find(c => c.id === seq[showIdx])?.color }]} />}
         {phase === "input" && <Text style={gs.cmHint}>Tap the colours in order ({input.length}/{seq.length})</Text>}
-        {phase === "fb" && <Text style={[gs.fbText, { color: okRound ? "#4ade80" : "#ef4444" }]}>{okRound ? "✓" : "✗"}</Text>}
+        {phase === "fb" && <Text style={[gs.fbText, { color: okRound ? palette.green400 : palette.red500 }]}>{okRound ? "✓" : "✗"}</Text>}
       </View>
       <View style={gs.gridWrap}>
         {CMCOLORS.map(c => (
@@ -256,7 +256,7 @@ function TargetTapGame({ onFinish }: { onFinish: (s: number, t: number) => void 
 
   return (
     <View style={gs.gameWrap}>
-      <View style={gs.gameTopRow}><Text style={gs.gameMeta}>Hits: {score}/{total}</Text><Text style={[gs.gameMeta, { color: timeLeft <= 5 ? "#fca5a5" : "#a99fd9", fontWeight: "700" }]}>⏱ {timeLeft}s</Text></View>
+      <View style={gs.gameTopRow}><Text style={gs.gameMeta}>Hits: {score}/{total}</Text><Text style={[gs.gameMeta, { color: timeLeft <= 5 ? palette.red300 : brandExtended.violetMuted, fontWeight: "700" }]}>⏱ {timeLeft}s</Text></View>
       <View style={gs.tapArena}>
         {targets.map(t => {
           const age = Date.now() - t.born; const scale = 1 - Math.min(0.35, age / LIFE_MS * 0.35);
@@ -299,8 +299,8 @@ function BehaviorChoiceGame({ onFinish }: { onFinish: (s: number, t: number) => 
       <View style={{ gap: 10, width: "100%" }}>
         {r.choices.map((c, i) => {
           const isC = i === r.correct, isP = picked === i;
-          const bg = picked !== null ? (isC ? "#22c55e" : isP ? "#ef4444" : "rgba(255,255,255,0.06)") : "rgba(255,255,255,0.08)";
-          const border = picked !== null && isC ? "#4ade80" : "rgba(139,92,246,0.35)";
+          const bg = picked !== null ? (isC ? palette.green500 : isP ? palette.red500 : "rgba(255,255,255,0.06)") : "rgba(255,255,255,0.08)";
+          const border = picked !== null && isC ? palette.green400 : "rgba(139,92,246,0.35)";
           return (<TouchableOpacity key={i} disabled={picked !== null} onPress={() => onPick(i)} style={[gs.bcChoice, { backgroundColor: bg, borderColor: border }]} activeOpacity={0.8}>
             <Text style={gs.bcChoiceText}>{c}</Text></TouchableOpacity>);
         })}
@@ -337,12 +337,12 @@ function PatternMatchGame({ onFinish }: { onFinish: (s: number, t: number) => vo
       <Text style={gs.gameMeta}>{idx + 1}/{TOTAL} — What comes from this set?</Text>
       <View style={{ flexDirection: "row", gap: 14, justifyContent: "center", marginVertical: 12 }}>
         {r.seq.map((s, i) => <View key={i} style={gs.seqBox}><Text style={gs.seqText}>{s}</Text></View>)}
-        <View style={[gs.seqBox, { borderColor: "#fbbf24", borderStyle: "dashed" }]}><Text style={gs.seqText}>?</Text></View>
+        <View style={[gs.seqBox, { borderColor: palette.amber400, borderStyle: "dashed" }]}><Text style={gs.seqText}>?</Text></View>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
         {r.choices.map(c => {
           const isC = c === r.correct, isP = picked === c;
-          const bg = picked !== null ? (isC ? "#22c55e" : isP ? "#ef4444" : "rgba(255,255,255,0.08)") : "rgba(255,255,255,0.08)";
+          const bg = picked !== null ? (isC ? palette.green500 : isP ? palette.red500 : "rgba(255,255,255,0.08)") : "rgba(255,255,255,0.08)";
           return (<TouchableOpacity key={c} disabled={picked !== null} onPress={() => onPick(c)} style={[gs.choiceBtn, { backgroundColor: bg }]} activeOpacity={0.8}>
             <Text style={[gs.choiceText, { fontSize: 24 }]}>{c}</Text></TouchableOpacity>);
         })}
@@ -378,7 +378,7 @@ function OddOneOutGame({ onFinish }: { onFinish: (s: number, t: number) => void 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginVertical: 12 }}>
         {r.items.map((c, i) => {
           const isO = c === r.oddItem, isP = picked === c;
-          const bg = picked !== null ? (isO ? "#22c55e" : isP ? "#ef4444" : "rgba(255,255,255,0.08)") : "rgba(255,255,255,0.08)";
+          const bg = picked !== null ? (isO ? palette.green500 : isP ? palette.red500 : "rgba(255,255,255,0.08)") : "rgba(255,255,255,0.08)";
           return (<TouchableOpacity key={i} disabled={picked !== null} onPress={() => onPick(c)} style={[gs.seqBox, { backgroundColor: bg, width: 62, height: 62, borderRadius: 14 }]} activeOpacity={0.8}>
             <Text style={[gs.seqText, { fontSize: 28 }]}>{c}</Text></TouchableOpacity>);
         })}
@@ -416,7 +416,7 @@ function GameModal({ game, onClose, onResult }: { game: GameDef; onClose: () => 
                 <Text style={ms.sheetBlurb}>{game.blurb}</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={onClose} style={ms.closeBtn}><Ionicons name="close" size={18} color="#c4b5fd" /></TouchableOpacity>
+            <TouchableOpacity onPress={onClose} style={ms.closeBtn}><Ionicons name="close" size={18} color={brand.violet300} /></TouchableOpacity>
           </View>
           <ScrollView showsVerticalScrollIndicator={false}>
             {!done ? (
@@ -433,7 +433,7 @@ function GameModal({ game, onClose, onResult }: { game: GameDef; onClose: () => 
               </>
             ) : (
               <View style={gs.gameWrap}>
-                <Ionicons name="trophy" size={52} color={done.perfect ? "#fbbf24" : "#c4b5fd"} style={{ alignSelf: "center", marginVertical: 12 }} />
+                <Ionicons name="trophy" size={52} color={done.perfect ? palette.amber400 : brand.violet300} style={{ alignSelf: "center", marginVertical: 12 }} />
                 <Text style={[ms.sheetTitle, { textAlign: "center", fontSize: 20 }]}>{done.perfect ? "Perfect Score!" : "Nice work!"}</Text>
                 <Text style={[ms.sheetBlurb, { textAlign: "center", marginBottom: 16 }]}>You scored {done.score}/{done.total}</Text>
                 <View style={ms.earnedBadge}><Ionicons name="star" size={16} color="#fff" /><Text style={ms.earnedText}>+{done.earned} points</Text></View>
@@ -500,17 +500,17 @@ export default function GamesScreen() {
   }, []);
 
   return (
-    <LinearGradient colors={["#0f0c29","#1a1040","#0c1220"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#0f0c29","#1a1040","#0c1220"]} style={{ flex: 1 }}> // audit-ok: intentional dark bg / custom color
       {/* Header */}
       <View style={[scr.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => router.back()} style={scr.backBtn} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={20} color="#c4b5fd" />
+          <Ionicons name="chevron-back" size={20} color={brand.violet300} />
         </TouchableOpacity>
-        <MaterialCommunityIcons name="gamepad-variant" size={20} color="#c4b5fd" style={{ marginRight: 6 }} />
+        <MaterialCommunityIcons name="gamepad-variant" size={20} color={brand.violet300} style={{ marginRight: 6 }} />
         <Text style={scr.headerTitle}>Gaming Reward</Text>
         <View style={{ flex: 1 }} />
         {/* Points pill */}
-        <LinearGradient colors={["#f59e0b","#f97316"]} style={scr.ptsPill}>
+        <LinearGradient colors={[palette.amber500,palette.orange500]} style={scr.ptsPill}>
           <Ionicons name="star" size={12} color="#fff" />
           <Text style={scr.ptsText}>{points}</Text>
         </LinearGradient>
@@ -522,11 +522,11 @@ export default function GamesScreen() {
       >
         {/* Daily limit banner */}
         <View style={scr.bannerRow}>
-          <Ionicons name="sparkles" size={16} color="#fbbf24" />
+          <Ionicons name="sparkles" size={16} color={palette.amber400} />
           <Text style={scr.bannerText} numberOfLines={3}>{suggestion}</Text>
         </View>
         <View style={scr.limitRow}>
-          <Text style={scr.limitText}>Played today: <Text style={{ color: limitHit ? "#fca5a5" : "#fff", fontWeight: "700" }}>{playedToday}/{DAILY_LIMIT_N}</Text></Text>
+          <Text style={scr.limitText}>Played today: <Text style={{ color: limitHit ? palette.red300 : "#fff", fontWeight: "700" }}>{playedToday}/{DAILY_LIMIT_N}</Text></Text>
           <Text style={scr.limitText}>50 pts to unlock a game</Text>
         </View>
 
@@ -534,7 +534,7 @@ export default function GamesScreen() {
         {error && (
           <View style={scr.errorRow}>
             <Text style={scr.errorText} numberOfLines={2}>{error}</Text>
-            <TouchableOpacity onPress={() => setError(null)}><Ionicons name="close" size={14} color="#fecaca" /></TouchableOpacity>
+            <TouchableOpacity onPress={() => setError(null)}><Ionicons name="close" size={14} color={palette.rose200} /></TouchableOpacity>
           </View>
         )}
 
@@ -543,12 +543,12 @@ export default function GamesScreen() {
           <Text style={scr.skillTitle}>Skill Progress</Text>
           {SKILL_CATS.map(cat => {
             const pct = skills[cat] ?? 0;
-            const barColor = pct >= 75 ? ["#22c55e","#4ade80"] : pct >= 40 ? ["#f59e0b","#fbbf24"] : [brand.primary, "#a78bfa"] as any;
+            const barColor = pct >= 75 ? [palette.green500,palette.green400] : pct >= 40 ? [palette.amber500,palette.amber400] : [brand.primary, brand.violet400] as any;
             return (
               <View key={cat} style={{ marginBottom: 10 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
                   <Text style={scr.skillCat}>{CATEGORY_EMOJI[cat]} {CATEGORY_LABEL[cat]}</Text>
-                  <Text style={[scr.skillCat, { color: pct >= 75 ? "#4ade80" : pct >= 40 ? "#fbbf24" : "#a99fd9", fontWeight: "700" }]}>{pct}%</Text>
+                  <Text style={[scr.skillCat, { color: pct >= 75 ? palette.green400 : pct >= 40 ? palette.amber400 : brandExtended.violetMuted, fontWeight: "700" }]}>{pct}%</Text>
                 </View>
                 <View style={scr.skillTrack}>
                   <LinearGradient colors={barColor} style={[scr.skillFill, { width: `${pct}%` as any }]} />
@@ -573,7 +573,7 @@ export default function GamesScreen() {
                 return (
                   <View key={g.id} style={[scr.gameCard, soon && { opacity: 0.55 }]}>
                     {!unlocked && !soon && (
-                      <View style={scr.lockBadge}><Ionicons name="lock-closed" size={10} color="#fbbf24" /></View>
+                      <View style={scr.lockBadge}><Ionicons name="lock-closed" size={10} color={palette.amber400} /></View>
                     )}
                     <Text style={{ fontSize: 32, marginBottom: 6 }}>{g.emoji}</Text>
                     <Text style={scr.gameTitle} numberOfLines={2}>{g.title}</Text>
@@ -586,7 +586,7 @@ export default function GamesScreen() {
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity onPress={() => onUnlock(g)} style={scr.unlockBtn} activeOpacity={0.85}>
-                        <Ionicons name="lock-closed" size={10} color="#fbbf24" />
+                        <Ionicons name="lock-closed" size={10} color={palette.amber400} />
                         <Text style={scr.unlockBtnText}>{g.unlockCost} pts</Text>
                       </TouchableOpacity>
                     )}
@@ -615,19 +615,19 @@ const scr = StyleSheet.create({
   ptsPill: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
   ptsText: { color: "#fff", fontWeight: "800", fontSize: 13 },
   bannerRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: "rgba(139,92,246,0.25)", borderRadius: 14, padding: 12, marginTop: 14 },
-  bannerText: { flex: 1, color: "#e6e1f5", fontSize: 13, lineHeight: 18 },
+  bannerText: { flex: 1, color: "#e6e1f5", fontSize: 13, lineHeight: 18 }, // audit-ok: custom dark-mode text
   limitRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 8, marginBottom: 2 },
-  limitText: { color: "#a99fd9", fontSize: 12 },
+  limitText: { color: brandExtended.violetMuted, fontSize: 12 },
   errorRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "rgba(239,68,68,0.15)", borderRadius: 12, padding: 10, marginVertical: 8, gap: 8 },
-  errorText: { flex: 1, color: "#fecaca", fontSize: 12 },
+  errorText: { flex: 1, color: palette.rose200, fontSize: 12 },
   skillCard: { backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: "rgba(139,92,246,0.22)", borderRadius: 14, padding: 14, marginVertical: 14 },
-  skillTitle: { color: "#c4b5fd", fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 },
-  skillCat: { color: "#e6e1f5", fontSize: 11 },
+  skillTitle: { color: brand.violet300, fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 },
+  skillCat: { color: "#e6e1f5", fontSize: 11 }, // audit-ok: custom dark-mode text
   skillTrack: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" },
   skillFill: { height: "100%", borderRadius: 3 },
   catHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-  catLabel: { color: "#e6e1f5", fontWeight: "800", fontSize: 13, textTransform: "uppercase", letterSpacing: 0.4, flex: 1 },
-  catCount: { color: "#7c6fb8", fontSize: 11 },
+  catLabel: { color: "#e6e1f5", fontWeight: "800", fontSize: 13, textTransform: "uppercase", letterSpacing: 0.4, flex: 1 }, // audit-ok: custom dark-mode text
+  catCount: { color: "#7c6fb8", fontSize: 11 }, // audit-ok: muted violet label
   gamesRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   gameCard: {
     width: (SW - 44) / 2 - 5, backgroundColor: "rgba(255,255,255,0.05)",
@@ -636,8 +636,8 @@ const scr = StyleSheet.create({
   },
   lockBadge: { position: "absolute", top: 8, right: 8, backgroundColor: "rgba(0,0,0,0.45)", borderRadius: 999, padding: 4 },
   gameTitle: { color: "#fff", fontWeight: "800", fontSize: 13, textAlign: "center", lineHeight: 17, marginBottom: 4 },
-  gameAge: { color: "#a99fd9", fontSize: 10.5, marginBottom: 6 },
-  soonTag: { color: "#fbbf24", fontWeight: "700", fontSize: 11, marginTop: 4 },
+  gameAge: { color: brandExtended.violetMuted, fontSize: 10.5, marginBottom: 6 },
+  soonTag: { color: palette.amber400, fontWeight: "700", fontSize: 11, marginTop: 4 },
   playBtn: { width: "100%", borderRadius: 999, overflow: "hidden", marginTop: 4 },
   playBtnGrad: { paddingVertical: 7, alignItems: "center" },
   playBtnText: { color: "#fff", fontWeight: "700", fontSize: 12.5 },
@@ -647,12 +647,12 @@ const scr = StyleSheet.create({
 
 const ms = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(8,5,25,0.88)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#1a1040", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18, maxHeight: "90%", paddingBottom: 36 },
+  sheet: { backgroundColor: "#1a1040", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18, maxHeight: "90%", paddingBottom: 36 }, // audit-ok: intentional dark bg / custom color
   sheetHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 },
   sheetTitle: { color: "#fff", fontWeight: "800", fontSize: 16, lineHeight: 20 },
-  sheetBlurb: { color: "#a99fd9", fontSize: 11, marginTop: 2 },
+  sheetBlurb: { color: brandExtended.violetMuted, fontSize: 11, marginTop: 2 },
   closeBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(167,139,250,0.15)", alignItems: "center", justifyContent: "center" },
-  earnedBadge: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "center", backgroundColor: "#f59e0b", paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999, marginVertical: 16 },
+  earnedBadge: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "center", backgroundColor: palette.amber500, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999, marginVertical: 16 },
   earnedText: { color: "#fff", fontWeight: "800", fontSize: 15 },
   doneBtn: { alignSelf: "center", borderRadius: 999, overflow: "hidden" },
   doneBtnGrad: { paddingHorizontal: 32, paddingVertical: 12 },
@@ -663,13 +663,13 @@ const ms = StyleSheet.create({
 const gs = StyleSheet.create({
   gameWrap: { paddingTop: 8, alignItems: "center", width: "100%", gap: 6 },
   gameTopRow: { flexDirection: "row", justifyContent: "space-between", width: "100%", marginBottom: 4 },
-  gameMeta: { color: "#a99fd9", fontSize: 12 },
+  gameMeta: { color: brandExtended.violetMuted, fontSize: 12 },
   fbWrap: { height: 100, alignItems: "center", justifyContent: "center" },
   fbText: { fontSize: 56, fontWeight: "900" },
   mathQ: { fontSize: 36, fontWeight: "900", color: "#fff", marginVertical: 14 },
   choiceBtn: { width: (SW - 80) / 2, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 14, paddingVertical: 16, borderWidth: 1, borderColor: "rgba(139,92,246,0.35)" },
   choiceText: { color: "#fff", fontSize: 20, fontWeight: "800" },
-  scoreLabel: { color: "#c4b5fd", fontSize: 12, fontWeight: "700", marginTop: 8 },
+  scoreLabel: { color: brand.violet300, fontSize: 12, fontWeight: "700", marginTop: 8 },
   dotsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 14, padding: 14, justifyContent: "center", width: "100%", minHeight: 90 },
   dot: { width: 18, height: 18, borderRadius: 9, backgroundColor: brand.primary },
   gridWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center", marginVertical: 8 },
@@ -677,9 +677,9 @@ const gs = StyleSheet.create({
   gridText: { color: "#fff", fontSize: 24, fontWeight: "800" },
   cmDisplay: { height: 90, alignItems: "center", justifyContent: "center", marginVertical: 8 },
   cmSwatch: { width: 70, height: 70, borderRadius: 18 },
-  cmHint: { color: "#c7c0e8", fontSize: 13, textAlign: "center" },
+  cmHint: { color: brandExtended.violetSoft, fontSize: 13, textAlign: "center" },
   tapArena: { width: "100%", height: 240, backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: "rgba(139,92,246,0.3)", borderRadius: 16, position: "relative", overflow: "hidden", alignItems: "center", justifyContent: "center" },
-  target: { position: "absolute", width: 48, height: 48, borderRadius: 24, backgroundColor: "#fbbf24", shadowColor: "#fbbf24", shadowOpacity: 0.7, shadowRadius: 12, elevation: 8 },
+  target: { position: "absolute", width: 48, height: 48, borderRadius: 24, backgroundColor: palette.amber400, shadowColor: palette.amber400, shadowOpacity: 0.7, shadowRadius: 12, elevation: 8 },
   bcQ: { color: "#fff", fontSize: 15, fontWeight: "700", textAlign: "center", lineHeight: 22, marginVertical: 12 },
   bcChoice: { width: "100%", padding: 14, borderRadius: 12, borderWidth: 1, borderColor: "rgba(139,92,246,0.35)" },
   bcChoiceText: { color: "#fff", fontSize: 14, fontWeight: "600" },

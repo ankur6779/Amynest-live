@@ -213,7 +213,7 @@ export default function NotificationSettingsScreen() {
             <Switch
               value={enabled}
               onValueChange={(v) => toggle(cat.key, v)}
-              trackColor={{ true: brand.primary, false: "#444" }}
+              trackColor={{ true: brand.primary, false: "#444" /* audit-ok: switch off-state track */ }}
               thumbColor="#fff"
             />
           </View>

@@ -212,7 +212,7 @@ export default function PremiumRoutineScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient
-        colors={["#1A0F2E", "#2D1B4E", "#1F0F3A"]}
+        colors={["#1A0F2E", "#2D1B4E", "#1F0F3A"]} // audit-ok: intentional dark bg / custom color
         locations={[0, 0.55, 1]}
         style={styles.container}
       >
@@ -315,7 +315,7 @@ export default function PremiumRoutineScreen() {
           enablePanDownToClose
           backdropComponent={renderBackdrop}
           handleIndicatorStyle={{ backgroundColor: "rgba(255,255,255,0.4)" }}
-          backgroundStyle={{ backgroundColor: "#1A0F2E" }}
+          backgroundStyle={{ backgroundColor: "#1A0F2E" }} // audit-ok: intentional dark bg / custom color
         >
           {activeRoutine && (
             <BottomSheetScrollView contentContainerStyle={styles.sheetContent}>

@@ -21,7 +21,7 @@ import ProgressBar from "@/components/ProgressBar";
 import AppDataStatusBanner from "@/components/AppDataStatusBanner";
 import { useAppStore } from "@/store/useAppStore";
 import { type ActionResult } from "@/components/ActionButtons";
-import { brand, gradients } from "@/constants/colors";
+import { brand, gradients, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 
 const { height: SCREEN_H } = Dimensions.get("window");
@@ -395,7 +395,7 @@ export default function PremiumCoachScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient
-        colors={[brand.violet50, "#EFF6FF", "#FDF4FF"]}
+        colors={[brand.violet50, palette.blue50, palette.fuchsia50]}
         locations={[0, 0.5, 1]}
         style={styles.bg}
       >

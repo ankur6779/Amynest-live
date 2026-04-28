@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {  useState, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, ActivityIndicator, Alert, Platform, Linking,
@@ -11,7 +11,7 @@ import { Switch } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand, brandAlpha } from "@/constants/colors";
+import { brand, brandAlpha, palette } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -480,7 +480,7 @@ export default function ProfileScreen() {
                   <Text style={[styles.toLabel, { color: colors.mutedForeground }]}>to</Text>
                   <TimeField value={slot.end} onChange={(v) => updateFreeSlot(i, "end", v)} colors={colors} compact />
                   <TouchableOpacity onPress={() => removeFreeSlot(i)} style={styles.trashBtn}>
-                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    <Ionicons name="trash-outline" size={16} color={palette.red500} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -606,9 +606,9 @@ export default function ProfileScreen() {
             router.push("/recipes");
           }}
         >
-          <Ionicons name="restaurant-outline" size={20} color="#F97316" />
-          <Text style={[styles.logoutText, { color: "#F97316" }]}>My Recipes</Text>
-          <Ionicons name="chevron-forward" size={16} color="#F97316" style={{ marginLeft: "auto" }} />
+          <Ionicons name="restaurant-outline" size={20} color={palette.orange500} />
+          <Text style={[styles.logoutText, { color: palette.orange500 }]}>My Recipes</Text>
+          <Ionicons name="chevron-forward" size={16} color={palette.orange500} style={{ marginLeft: "auto" }} />
         </TouchableOpacity>
 
         {/* Invite & Earn */}
@@ -648,7 +648,7 @@ export default function ProfileScreen() {
           style={[styles.logoutBtn, { backgroundColor: colors.statusErrorBg, borderColor: colors.statusErrorBorder }]}
           onPress={handleLogout}
         >
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+          <Ionicons name="log-out-outline" size={20} color={palette.red500} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
@@ -660,11 +660,11 @@ export default function ProfileScreen() {
           testID="delete-account-button"
         >
           {deleting ? (
-            <ActivityIndicator size="small" color="#EF4444" />
+            <ActivityIndicator size="small" color={palette.red500} />
           ) : (
-            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            <Ionicons name="trash-outline" size={18} color={palette.red500} />
           )}
-          <Text style={[styles.logoutText, { color: "#EF4444" }]}>
+          <Text style={[styles.logoutText, { color: palette.red500 }]}>
             {deleting ? "Deleting…" : "Delete Account"}
           </Text>
         </TouchableOpacity>
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     paddingVertical: 14, borderRadius: 16, borderWidth: 1,
   },
-  logoutText: { color: "#EF4444", fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  logoutText: { color: palette.red500, fontSize: 15, fontFamily: "Inter_600SemiBold" },
 
   devToolsBtn: {
     flexDirection: "row", alignItems: "center", gap: 10,

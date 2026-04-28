@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {  useEffect, useMemo, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator,
 } from "react-native";
@@ -11,7 +11,7 @@ import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { SvgXml } from "react-native-svg";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 import {
   PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
   resolveStudyMode, MODE_LABELS,
@@ -124,7 +124,7 @@ export default function StudyScreen() {
         end={{ x: 0, y: 1 }}
       />
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={["#6366F1", brand.purple500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+      <LinearGradient colors={[palette.indigo500, brand.purple500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
         <Pressable onPress={goBack} style={styles.backBtn} hitSlop={10}>
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
@@ -138,7 +138,7 @@ export default function StudyScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 12 }}>
         {isLoading ? (
-          <ActivityIndicator color="#6366F1" style={{ marginTop: 24 }} />
+          <ActivityIndicator color={palette.indigo500} style={{ marginTop: 24 }} />
         ) : children.length === 0 ? (
           <EmptyChildren />
         ) : view.kind === "child-pick" ? (
@@ -232,7 +232,7 @@ function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Chil
                 {c.age} yr{c.childClass ? ` · Class ${c.childClass}` : ""} · {label.title}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+            <Ionicons name="chevron-forward" size={18} color={palette.slate400} />
           </Pressable>
         );
       })}
@@ -279,19 +279,19 @@ function PlayCategoryView({
           return (
             <Pressable
               key={item.id}
-              style={[styles.playCard, { borderColor: isDone ? "#34d399" : "#c7d2fe" }]}
+              style={[styles.playCard, { borderColor: isDone ? palette.emerald400 : palette.indigo200 }]}
               onPress={() => onItemTap(item, cat.id)}
             >
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                 <Text style={{ fontSize: 32 }}>{item.emoji ?? ""}</Text>
-                {isDone && <Ionicons name="checkmark-circle" size={18} color="#16a34a" />}
+                {isDone && <Ionicons name="checkmark-circle" size={18} color={palette.green600} />}
               </View>
               <Text style={styles.playLabel}>{item.label}</Text>
               <Text style={styles.playSub} numberOfLines={isRhyme ? 3 : 2}>
                 {isRhyme && item.body ? item.body : item.speak}
               </Text>
               <View style={styles.tapHint}>
-                <Ionicons name="volume-high" size={11} color="#6366F1" />
+                <Ionicons name="volume-high" size={11} color={palette.indigo500} />
                 <Text style={styles.tapHintText}>Tap to hear</Text>
               </View>
             </Pressable>
@@ -319,7 +319,7 @@ function StudyHome({
               <Text style={styles.rowDesc}>{completed}/{s.topics.length} topics</Text>
               <View style={styles.barTrack}><View style={[styles.barFill, { width: `${pct}%` }]} /></View>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+            <Ionicons name="chevron-forward" size={18} color={palette.slate400} />
           </Pressable>
         );
       })}
@@ -349,12 +349,12 @@ function SubjectTopicList({
               <Text style={styles.rowTitle}>{t.title}</Text>
               <Text style={styles.rowDesc} numberOfLines={1}>{t.notes.split("\n")[0]}</Text>
               {stat && (
-                <Text style={[styles.rowDesc, { color: "#6366F1", marginTop: 2 }]}>
+                <Text style={[styles.rowDesc, { color: palette.indigo500, marginTop: 2 }]}>
                   🏆 Best: {stat.score}/{stat.total}
                 </Text>
               )}
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+            <Ionicons name="chevron-forward" size={18} color={palette.slate400} />
           </Pressable>
         );
       })}
@@ -405,7 +405,7 @@ function TopicDetail({
             style={styles.outlineBtn}
             onPress={() => void amySpeak(topic.notes.replace(/\n/g, ". "))}
           >
-            <Ionicons name="volume-high" size={14} color="#6366F1" />
+            <Ionicons name="volume-high" size={14} color={palette.indigo500} />
             <Text style={styles.outlineBtnText}>Read aloud</Text>
           </Pressable>
         </View>
@@ -441,11 +441,11 @@ function TopicDetail({
                   {q.options.map((opt, oi) => {
                     const selected = picks[qi] === oi;
                     const correct = q.answer === oi;
-                    let bg = "#fff", border = "#e5e7eb";
-                    if (!submitted && selected) { bg = "#eef2ff"; border = "#6366F1"; }
+                    let bg: string = "#fff", border: string = palette.gray200;
+                    if (!submitted && selected) { bg = palette.indigo50; border = palette.indigo500; }
                     if (submitted) {
-                      if (correct) { bg = "#ecfdf5"; border = "#10b981"; }
-                      else if (selected) { bg = "#fef2f2"; border = "#ef4444"; }
+                      if (correct) { bg = palette.emerald50; border = palette.emerald500; }
+                      else if (selected) { bg = palette.red50; border = palette.red500; }
                     }
                     return (
                       <Pressable
@@ -476,7 +476,7 @@ function TopicDetail({
                   You got {score} / {total} {score === total ? "🎉" : score >= Math.ceil(total * 0.6) ? "👍" : "💪"}
                 </Text>
                 <Pressable style={styles.outlineBtn} onPress={reset}>
-                  <Ionicons name="refresh" size={14} color="#6366F1" />
+                  <Ionicons name="refresh" size={14} color={palette.indigo500} />
                   <Text style={styles.outlineBtnText}>Try again</Text>
                 </Pressable>
               </View>
@@ -490,54 +490,54 @@ function TopicDetail({
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F8FAFC" },
+  root: { flex: 1, backgroundColor: palette.slate50 },
   header: { paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 10 },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.18)" },
   title: { color: "#fff", fontSize: 20, fontWeight: "800" },
   subtitle: { color: "rgba(255,255,255,0.85)", fontSize: 12, marginTop: 2 },
 
-  card: { backgroundColor: "#fff", borderRadius: 18, padding: 16, borderWidth: 1, borderColor: "#e5e7eb" },
-  cardTitle: { fontSize: 15, fontWeight: "800", color: "#0f172a" },
-  cardDesc: { fontSize: 13, color: "#64748b", marginTop: 6 },
-  notes: { fontSize: 14, color: "#0f172a", lineHeight: 22 },
-  h1: { fontSize: 22, fontWeight: "800", color: "#0f172a" },
-  h2: { fontSize: 18, fontWeight: "800", color: "#0f172a", marginBottom: 8 },
+  card: { backgroundColor: "#fff", borderRadius: 18, padding: 16, borderWidth: 1, borderColor: palette.gray200 },
+  cardTitle: { fontSize: 15, fontWeight: "800", color: palette.slate900 },
+  cardDesc: { fontSize: 13, color: palette.slate500, marginTop: 6 },
+  notes: { fontSize: 14, color: palette.slate900, lineHeight: 22 },
+  h1: { fontSize: 22, fontWeight: "800", color: palette.slate900 },
+  h2: { fontSize: 18, fontWeight: "800", color: palette.slate900, marginBottom: 8 },
 
-  row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, backgroundColor: "#fff", borderRadius: 16, borderWidth: 1, borderColor: "#e5e7eb" },
-  rowTitle: { fontSize: 15, fontWeight: "800", color: "#0f172a" },
-  rowDesc: { fontSize: 12, color: "#64748b", marginTop: 2 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, backgroundColor: "#fff", borderRadius: 16, borderWidth: 1, borderColor: palette.gray200 },
+  rowTitle: { fontSize: 15, fontWeight: "800", color: palette.slate900 },
+  rowDesc: { fontSize: 12, color: palette.slate500, marginTop: 2 },
 
   grid2: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  tile: { width: "47.5%", backgroundColor: "#fff", borderRadius: 16, padding: 14, borderWidth: 1, borderColor: "#e5e7eb", gap: 4 },
-  tileTitle: { fontSize: 14, fontWeight: "800", color: "#0f172a" },
-  tileMeta: { fontSize: 11, color: "#64748b" },
+  tile: { width: "47.5%", backgroundColor: "#fff", borderRadius: 16, padding: 14, borderWidth: 1, borderColor: palette.gray200, gap: 4 },
+  tileTitle: { fontSize: 14, fontWeight: "800", color: palette.slate900 },
+  tileMeta: { fontSize: 11, color: palette.slate500 },
 
   playCard: { width: "47.5%", backgroundColor: "#fff", borderRadius: 16, padding: 12, borderWidth: 2, gap: 4 },
-  playLabel: { fontSize: 16, fontWeight: "800", color: "#0f172a" },
-  playSub: { fontSize: 11, color: "#64748b" },
+  playLabel: { fontSize: 16, fontWeight: "800", color: palette.slate900 },
+  playSub: { fontSize: 11, color: palette.slate500 },
   tapHint: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
-  tapHintText: { fontSize: 10, color: "#6366F1", fontWeight: "700" },
+  tapHintText: { fontSize: 10, color: palette.indigo500, fontWeight: "700" },
 
-  barTrack: { height: 6, backgroundColor: "#e5e7eb", borderRadius: 3, overflow: "hidden", marginTop: 6 },
-  barFill: { height: "100%", backgroundColor: "#6366F1" },
+  barTrack: { height: 6, backgroundColor: palette.gray200, borderRadius: 3, overflow: "hidden", marginTop: 6 },
+  barFill: { height: "100%", backgroundColor: palette.indigo500 },
 
-  primaryBtn: { backgroundColor: "#6366F1", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999, alignItems: "center" },
+  primaryBtn: { backgroundColor: palette.indigo500, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999, alignItems: "center" },
   primaryBtnText: { color: "#fff", fontWeight: "800", fontSize: 13 },
-  secondaryBtn: { backgroundColor: "#eef2ff", paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999 },
-  secondaryBtnText: { color: "#4338ca", fontWeight: "700", fontSize: 12 },
+  secondaryBtn: { backgroundColor: palette.indigo50, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999 },
+  secondaryBtnText: { color: palette.indigo700, fontWeight: "700", fontSize: 12 },
   ghostBtn: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999 },
-  ghostBtnText: { color: "#6366F1", fontWeight: "700", fontSize: 12 },
-  outlineBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: "#c7d2fe", backgroundColor: "#fff" },
-  outlineBtnText: { color: "#6366F1", fontWeight: "700", fontSize: 12 },
+  ghostBtnText: { color: palette.indigo500, fontWeight: "700", fontSize: 12 },
+  outlineBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: palette.indigo200, backgroundColor: "#fff" },
+  outlineBtnText: { color: palette.indigo500, fontWeight: "700", fontSize: 12 },
 
-  qBox: { borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, padding: 12 },
-  qText: { fontSize: 14, fontWeight: "700", color: "#0f172a" },
-  qHint: { fontSize: 12, color: "#64748b", marginTop: 8 },
+  qBox: { borderWidth: 1, borderColor: palette.gray200, borderRadius: 12, padding: 12 },
+  qText: { fontSize: 14, fontWeight: "700", color: palette.slate900 },
+  qHint: { fontSize: 12, color: palette.slate500, marginTop: 8 },
   opt: { borderWidth: 2, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 },
-  optText: { fontSize: 13, color: "#0f172a" },
+  optText: { fontSize: 13, color: palette.slate900 },
 
-  emptyTitle: { fontSize: 16, fontWeight: "800", color: "#0f172a" },
-  emptyDesc: { fontSize: 13, color: "#64748b", marginTop: 4 },
+  emptyTitle: { fontSize: 16, fontWeight: "800", color: palette.slate900 },
+  emptyDesc: { fontSize: 13, color: palette.slate500, marginTop: 4 },
 
-  imageWrap: { backgroundColor: "#fff", borderRadius: 16, padding: 8, borderWidth: 1, borderColor: "#e5e7eb", overflow: "hidden" },
+  imageWrap: { backgroundColor: "#fff", borderRadius: 16, padding: 8, borderWidth: 1, borderColor: palette.gray200, overflow: "hidden" },
 });

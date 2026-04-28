@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { palette } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 
 type Recipe = {
@@ -267,7 +268,7 @@ export default function RecipesScreen() {
 
           {!!formError && (
             <View style={s.errorBox}>
-              <Ionicons name="alert-circle" size={16} color="#DC2626" />
+              <Ionicons name="alert-circle" size={16} color={palette.red600} />
               <Text style={s.errorText}>{formError}</Text>
             </View>
           )}
@@ -316,7 +317,7 @@ export default function RecipesScreen() {
 
         {!isLoading && recipes.length === 0 && (
           <View style={s.emptyBox}>
-            <MaterialCommunityIcons name="chef-hat" size={40} color="#F97316" />
+            <MaterialCommunityIcons name="chef-hat" size={40} color={palette.orange500} />
             <Text style={s.emptyTitle}>No recipes saved yet</Text>
             <Text style={s.emptySubtitle}>
               Add your family's favourite recipes and they'll appear automatically in routines when the meal name matches.
@@ -330,7 +331,7 @@ export default function RecipesScreen() {
         {recipes.map((recipe) => (
           <View key={recipe.id} style={s.card}>
             <View style={s.cardHeader}>
-              <MaterialCommunityIcons name="chef-hat" size={16} color="#F97316" />
+              <MaterialCommunityIcons name="chef-hat" size={16} color={palette.orange500} />
               <Text style={s.cardName} numberOfLines={2}>{recipe.name}</Text>
             </View>
             <View style={s.cardMeta}>
@@ -356,7 +357,7 @@ export default function RecipesScreen() {
                 activeOpacity={0.85}
                 onPress={() => openEdit(recipe)}
               >
-                <Ionicons name="pencil" size={14} color="#6366F1" />
+                <Ionicons name="pencil" size={14} color={palette.indigo500} />
                 <Text style={s.editBtnText}>Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -364,7 +365,7 @@ export default function RecipesScreen() {
                 activeOpacity={0.85}
                 onPress={() => confirmDelete(recipe)}
               >
-                <Ionicons name="trash-outline" size={14} color="#DC2626" />
+                <Ionicons name="trash-outline" size={14} color={palette.red600} />
                 <Text style={s.deleteBtnText}>Delete</Text>
               </TouchableOpacity>
             </View>
@@ -397,7 +398,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       width: 36, height: 36,
       borderRadius: 18,
       alignItems: "center", justifyContent: "center",
-      backgroundColor: "#F97316",
+      backgroundColor: palette.orange500,
     },
     headerTitle: {
       fontSize: 17, fontWeight: "800", color: c.foreground,
@@ -448,7 +449,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       borderWidth: 1, borderColor: "rgba(99,102,241,0.25)",
     },
     editBtnText: {
-      fontSize: 12, fontWeight: "700", color: "#6366F1",
+      fontSize: 12, fontWeight: "700", color: palette.indigo500,
     },
     deleteBtn: {
       flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
@@ -457,10 +458,10 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       borderWidth: 1, borderColor: "rgba(220,38,38,0.2)",
     },
     deleteBtnText: {
-      fontSize: 12, fontWeight: "700", color: "#DC2626",
+      fontSize: 12, fontWeight: "700", color: palette.red600,
     },
     saveBtn: {
-      backgroundColor: "#F97316",
+      backgroundColor: palette.orange500,
       paddingVertical: 14, borderRadius: 14,
       alignItems: "center", justifyContent: "center",
       marginTop: 8,
@@ -495,7 +496,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       marginTop: 8,
     },
     errorText: {
-      flex: 1, fontSize: 13, color: "#DC2626", fontWeight: "600",
+      flex: 1, fontSize: 13, color: palette.red600, fontWeight: "600",
     },
   });
 }
