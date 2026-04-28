@@ -260,17 +260,19 @@ export default function PremiumSplash({ onFinish }: Props) {
         { opacity: containerOpacity, zIndex: 9999, elevation: 9999 },
       ]}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#1A1530" translucent={Platform.OS === "android"} />
+      <StatusBar barStyle="light-content" backgroundColor="#0f0c29" translucent={Platform.OS === "android"} />
+
+      {/* Background: dark deep-purple matching web palette */}
       <LinearGradient
-        colors={["#1A1530", "#3B1F77", "#7B3FF2", "#FF4ECD"]}
+        colors={["#0f0c29", "#302b63", "#24243e"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Soft radial-ish overlay using gradient */}
+      {/* Soft radial-ish overlay */}
       <LinearGradient
-        colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0)"]}
+        colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0)"]}
         start={{ x: 0.5, y: 0.2 }}
         end={{ x: 0.5, y: 0.9 }}
         style={StyleSheet.absoluteFillObject}
@@ -314,20 +316,38 @@ export default function PremiumSplash({ onFinish }: Props) {
         {/* Logo halo */}
         <View style={styles.halo} />
 
-        {/* Logo */}
+        {/* "MEET AMY" branding label above logo */}
+        <Animated.View
+          style={[
+            styles.meetAmyWrapper,
+            { opacity: logoOpacity, transform: [{ scale: logoScale }] },
+          ]}
+        >
+          <Text style={styles.meetLabel}>MEET</Text>
+          <Text style={styles.amyLabel}>AMY</Text>
+        </Animated.View>
+
+        {/* Logo inside gradient ring border */}
         <Animated.View
           style={{
             opacity: logoOpacity,
             transform: [{ scale: logoScale }],
           }}
         >
-          <View style={styles.logoCard}>
-            <Image
-              source={require("../assets/images/amynest-logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
+          <LinearGradient
+            colors={["#7B3FF2", "#FF4ECD", "#4FC3F7"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.logoRingGradient}
+          >
+            <View style={styles.logoRingInner}>
+              <Image
+                source={require("../assets/images/amynest-logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+          </LinearGradient>
         </Animated.View>
 
         {/* Title */}
@@ -347,7 +367,7 @@ export default function PremiumSplash({ onFinish }: Props) {
             { opacity: subtitleOpacity, transform: [{ translateY: subtitleTranslate }] },
           ]}
         >
-          Your child's smart companion
+          Where Smart Parenting Begins
         </Animated.Text>
 
         {/* Loading dots */}
@@ -368,6 +388,8 @@ export default function PremiumSplash({ onFinish }: Props) {
 
 const LOGO_SIZE = 120;
 const HALO_SIZE = 200;
+const RING_BORDER = 3;
+const RING_OUTER = LOGO_SIZE + 32;
 
 const styles = StyleSheet.create({
   center: {
@@ -380,8 +402,8 @@ const styles = StyleSheet.create({
     width: HALO_SIZE,
     height: HALO_SIZE,
     borderRadius: HALO_SIZE / 2,
-    backgroundColor: "rgba(255,255,255,0.10)",
-    shadowColor: "#FFFFFF",
+    backgroundColor: "rgba(123,63,242,0.12)",
+    shadowColor: "#7B3FF2",
     shadowOpacity: 0.5,
     shadowRadius: 30,
     shadowOffset: { width: 0, height: 0 },
@@ -394,18 +416,46 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.55)",
   },
-  logoCard: {
-    width: LOGO_SIZE + 32,
-    height: LOGO_SIZE + 32,
-    borderRadius: 32,
-    backgroundColor: "rgba(255,255,255,0.96)",
+  meetAmyWrapper: {
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  meetLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 4,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.70)",
+  },
+  amyLabel: {
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: 6,
+    textTransform: "uppercase",
+    color: "#FFFFFF",
+    textShadowColor: "rgba(123,63,242,0.6)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
+  },
+  logoRingGradient: {
+    width: RING_OUTER,
+    height: RING_OUTER,
+    borderRadius: RING_OUTER / 2,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#7B3FF2",
+    shadowColor: "#FF4ECD",
     shadowOpacity: 0.55,
     shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
+    shadowOffset: { width: 0, height: 8 },
     elevation: 18,
+  },
+  logoRingInner: {
+    width: RING_OUTER - RING_BORDER * 2,
+    height: RING_OUTER - RING_BORDER * 2,
+    borderRadius: (RING_OUTER - RING_BORDER * 2) / 2,
+    backgroundColor: "#1a1535",
+    alignItems: "center",
+    justifyContent: "center",
   },
   logo: {
     width: LOGO_SIZE,
