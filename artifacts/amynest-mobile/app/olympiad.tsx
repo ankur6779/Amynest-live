@@ -5,6 +5,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useRouter, Stack, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
@@ -91,6 +92,7 @@ type Mode = "home" | "daily" | "practice";
 
 export default function OlympiadScreen() {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ childId?: string }>();
   const authFetch = useAuthFetch();
@@ -231,7 +233,13 @@ function OlympiadInner({
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F7FF" }}>
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={theme.gradient}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      />
       <Stack.Screen options={{ title: "🏆 Olympiad Zone" }} />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 14 }}>
         {/* Header */}
