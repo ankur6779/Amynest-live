@@ -16,6 +16,7 @@ import {
   type PtmCategory, type PtmSession, type PtmStage,
 } from "@workspace/ptm-prep";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import { brand } from "@/constants/colors";
 
 const STAGE_ORDER: PtmStage[] = ["prepare", "attend", "act"];
@@ -37,6 +38,7 @@ async function saveHistory(h: PtmSession[]) {
 
 export default function PtmPrepScreen() {
   const colors = useColors();
+  const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const params = useLocalSearchParams<{ childId?: string; childName?: string }>();
   const childId = typeof params.childId === "string" ? params.childId : undefined;
@@ -81,11 +83,12 @@ export default function PtmPrepScreen() {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <View style={styles.root}>
+      <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <Stack.Screen options={{
         headerTitle: "PTM Prep",
-        headerStyle: { backgroundColor: colors.background },
-        headerTintColor: colors.text,
+        headerStyle: { backgroundColor: "#0f0c29" },
+        headerTintColor: colors.foreground,
       }} />
       <ScrollView contentContainerStyle={{ padding: 14, gap: 12, paddingBottom: 60 }}>
         {!session ? (
