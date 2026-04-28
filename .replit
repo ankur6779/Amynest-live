@@ -36,6 +36,10 @@ args = "test-ai-routine-pipeline"
 task = "workflow.run"
 args = "brand-hex-drift"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "mobile-color-audit"
+
 [[workflows.workflow]]
 name = "test-routine-meals"
 author = "agent"
@@ -87,6 +91,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "bash artifacts/amynest-mobile/scripts/check-brand-hex-drift.sh"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "mobile-color-audit"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node artifacts/amynest-mobile/scripts/check-hardcoded-colors.js"
 
 [workflows.workflow.metadata]
 isValidation = true
