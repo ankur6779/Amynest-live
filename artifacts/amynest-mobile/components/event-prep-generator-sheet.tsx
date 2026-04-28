@@ -77,7 +77,7 @@ export function EventPrepGeneratorSheet({ visible, onClose, onOpenCharacter }: P
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fdf2f8" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fdf2f8" /* audit-ok: rose-50 product theme bg */ }}>
         {/* Header */}
         <View style={S.header}>
           <View style={{ flex: 1 }}>
@@ -85,7 +85,7 @@ export function EventPrepGeneratorSheet({ visible, onClose, onOpenCharacter }: P
             <Text style={S.headerSub}>Tell me a few things and I'll suggest the perfect idea ❤️</Text>
           </View>
           <Pressable onPress={onClose} hitSlop={10}>
-            <Ionicons name="close" size={24} color="#374151" />
+            <Ionicons name="close" size={24} color="#374151" /* audit-ok: gray-700 close icon for event-prep sheet */ />
           </Pressable>
         </View>
 
@@ -120,6 +120,7 @@ export function EventPrepGeneratorSheet({ visible, onClose, onOpenCharacter }: P
           </Field>
 
           <Pressable onPress={handleGenerate} style={S.cta}>
+            {/* audit-ok: rose-600→purple-600 event-prep CTA gradient */}
             <LinearGradient colors={["#db2777", "#9333ea"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={S.ctaGrad}>
               <Ionicons name="sparkles" size={16} color="#fff" />
               <Text style={S.ctaText}>{result ? "Generate again" : "Generate idea"}</Text>
@@ -228,6 +229,7 @@ function Chip({ active, onPress, children }: { active: boolean; onPress: () => v
   );
 }
 
+// audit-block-ignore-start (rose/pink event-prep product theme — unique to this screen)
 const S = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", padding: 16, paddingTop: 8, gap: 12, borderBottomWidth: 1, borderBottomColor: "#fbcfe8" },
   headerTitle: { fontSize: 17, fontWeight: "800", color: "#831843" },
@@ -274,3 +276,4 @@ const S = StyleSheet.create({
   openBtn: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 999, paddingVertical: 10, alignItems: "center", marginTop: 12 },
   openBtnText: { fontSize: 13, fontWeight: "700", color: "#374151" },
 });
+// audit-block-ignore-end

@@ -27,7 +27,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 
 interface AiMeal {
   id: string;
@@ -194,7 +194,7 @@ export default function AiMealGenerator({
           testID="ai-meal-generate-btn"
         >
           <LinearGradient
-            colors={["#7C3AED", "#4F46E5"]}
+            colors={[brand.violet600, palette.indigo600]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.generateBtnGrad}
@@ -243,7 +243,7 @@ export default function AiMealGenerator({
       {/* Error state */}
       {error && !loading ? (
         <View style={styles.errorBox}>
-          <Ionicons name="alert-circle-outline" size={20} color="#F87171" />
+          <Ionicons name="alert-circle-outline" size={20} color={palette.red400} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={() => handleGenerate()} style={styles.retryBtn} activeOpacity={0.8}>
             <Text style={styles.retryBtnText}>Retry</Text>
@@ -307,7 +307,7 @@ function MealCard({ meal, onPress }: { meal: AiMeal; onPress: () => void }) {
       <View style={styles.cardInfo}>
         <Text style={styles.cardTitle} numberOfLines={2}>{meal.title}</Text>
         <View style={styles.cardMeta}>
-          <Ionicons name="time-outline" size={10} color="#94A3B8" />
+          <Ionicons name="time-outline" size={10} color={palette.slate400} />
           <Text style={styles.cardMetaText}>{meal.prepMinutes}m</Text>
         </View>
       </View>
@@ -363,7 +363,7 @@ function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
                 </View>
               ))}
               <View style={styles.sheetTag}>
-                <Ionicons name="time-outline" size={10} color="#F97316" />
+                <Ionicons name="time-outline" size={10} color={palette.orange500} />
                 <Text style={styles.sheetTagText}> {meal.prepMinutes}m</Text>
               </View>
               {meal.calories > 0 && (
@@ -373,7 +373,7 @@ function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
               )}
               {meal.isVeg && (
                 <View style={[styles.sheetTag, { backgroundColor: "rgba(34,197,94,0.2)" }]}>
-                  <Text style={[styles.sheetTagText, { color: "#16A34A" }]}>🌿 Veg</Text>
+                  <Text style={[styles.sheetTagText, { color: palette.green600 }]}>🌿 Veg</Text>
                 </View>
               )}
             </View>
@@ -418,8 +418,8 @@ function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const ORANGE = "#F97316";
-const VIOLET = "#7C3AED";
+const ORANGE = palette.orange500;
+const VIOLET = brand.violet600;
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -540,14 +540,14 @@ const styles = StyleSheet.create({
     borderColor: "rgba(239,68,68,0.25)",
     flexWrap: "wrap",
   },
-  errorText: { flex: 1, fontSize: 12, color: "#FCA5A5", lineHeight: 16 },
+  errorText: { flex: 1, fontSize: 12, color: palette.red300, lineHeight: 16 },
   retryBtn: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     backgroundColor: "rgba(239,68,68,0.25)",
   },
-  retryBtnText: { fontSize: 11, fontWeight: "800", color: "#FCA5A5" },
+  retryBtnText: { fontSize: 11, fontWeight: "800", color: palette.red300 },
 
   emptyText: {
     fontSize: 12,
@@ -575,11 +575,11 @@ const styles = StyleSheet.create({
     paddingVertical: 1.5,
     borderRadius: 999,
   },
-  tagPillText: { fontSize: 8.5, fontWeight: "800", color: "#0F172A" },
+  tagPillText: { fontSize: 8.5, fontWeight: "800", color: palette.slate900 },
   cardInfo: { padding: 7 },
   cardTitle: { fontSize: 11.5, fontWeight: "800", color: "#FFFFFF", lineHeight: 15, marginBottom: 3 },
   cardMeta: { flexDirection: "row", alignItems: "center", gap: 2 },
-  cardMetaText: { fontSize: 10, color: "#94A3B8" },
+  cardMetaText: { fontSize: 10, color: palette.slate400 },
 
   sheetScrim: {
     flex: 1,
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#141428",
+    backgroundColor: "#141428", // audit-ok: deep navy recipe sheet bg
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: "90%",

@@ -9,6 +9,7 @@ import {
   type TiffinHistory, type TiffinStatus,
 } from "@workspace/tiffin-feedback";
 import { useColors } from "@/hooks/useColors";
+import { palette } from "@/constants/colors";
 
 const STORAGE_KEY = "amynest.tiffin_feedback.v1";
 
@@ -92,12 +93,12 @@ export default function TiffinFeedbackPanel({ pickableMeals, onChange }: Props) 
       <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
         {todayDone && todayEntry ? (
           <View style={styles.loggedRow}>
-            <Ionicons name="checkmark-circle" size={16} color="#059669" />
+            <Ionicons name="checkmark-circle" size={16} color={palette.emerald600} />
             <Text style={styles.loggedText} numberOfLines={2}>
               Logged today: <Text style={{ fontWeight: "800" }}>{todayEntry.mealTitle}</Text> — {STATUS_EMOJI[todayEntry.status]} {STATUS_LABEL[todayEntry.status]}
             </Text>
             <TouchableOpacity onPress={undoToday} hitSlop={8} style={styles.undoBtn}>
-              <Ionicons name="trash-outline" size={11} color="#94A3B8" />
+              <Ionicons name="trash-outline" size={11} color={palette.slate400} />
               <Text style={styles.undoText}>Undo</Text>
             </TouchableOpacity>
           </View>
@@ -120,17 +121,17 @@ export default function TiffinFeedbackPanel({ pickableMeals, onChange }: Props) 
                   onPress={() => submit(s)}
                   style={[
                     styles.statusBtn,
-                    s === "eaten" && { borderColor: "#86EFAC" },
-                    s === "half" && { borderColor: "#FCD34D" },
-                    s === "not_eaten" && { borderColor: "#FDA4AF" },
+                    s === "eaten" && { borderColor: "#86EFAC" }, // audit-ok: emerald-300 status border
+                    s === "half" && { borderColor: "#FCD34D" }, // audit-ok: amber-300 status border
+                    s === "not_eaten" && { borderColor: "#FDA4AF" }, // audit-ok: rose-300 status border
                   ]}
                 >
                   <Text style={styles.statusEmoji}>{STATUS_EMOJI[s]}</Text>
                   <Text style={[
                     styles.statusLabel,
-                    s === "eaten" && { color: "#047857" },
-                    s === "half" && { color: "#B45309" },
-                    s === "not_eaten" && { color: "#BE123C" },
+                    s === "eaten" && { color: palette.emerald700 },
+                    s === "half" && { color: palette.amber700 },
+                    s === "not_eaten" && { color: palette.rose700 },
                   ]} numberOfLines={1}>{STATUS_LABEL[s]}</Text>
                 </TouchableOpacity>
               ))}
@@ -172,11 +173,11 @@ export default function TiffinFeedbackPanel({ pickableMeals, onChange }: Props) 
                   <TouchableOpacity
                     key={m.id}
                     onPress={() => { setPickedMealId(m.id); setPickerOpen(false); }}
-                    style={[styles.modalRow, active && { backgroundColor: "#FECDD3" }]}
+                    style={[styles.modalRow, active && { backgroundColor: palette.red200 }]}
                   >
                     <Text style={{ fontSize: 18 }}>{m.emoji ?? "🍱"}</Text>
                     <Text style={[styles.modalRowText, active && { fontWeight: "800" }]}>{m.title}</Text>
-                    {active ? <Ionicons name="checkmark" size={16} color="#BE123C" /> : null}
+                    {active ? <Ionicons name="checkmark" size={16} color={palette.rose700} /> : null}
                   </TouchableOpacity>
                 );
               })}
@@ -212,7 +213,7 @@ function makeStyles(colors: any) {
     title: { fontWeight: "800", fontSize: 13.5, color: colors.text },
     subtitle: { fontSize: 10.5, color: colors.textMuted, marginTop: 1 },
     eatenPill: { backgroundColor: "rgba(16,185,129,0.18)", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-    eatenPillText: { fontSize: 10.5, fontWeight: "800", color: "#047857" },
+    eatenPillText: { fontSize: 10.5, fontWeight: "800", color: palette.emerald700 },
 
     loggedRow: {
       flexDirection: "row", alignItems: "center", gap: 8,
@@ -261,7 +262,7 @@ function makeStyles(colors: any) {
       backgroundColor: "rgba(244,63,94,0.15)",
       borderWidth: 1, borderColor: "rgba(244,63,94,0.30)",
     },
-    likedChipText: { fontSize: 11, fontWeight: "800", color: "#BE123C" },
+    likedChipText: { fontSize: 11, fontWeight: "800", color: palette.rose700 },
     likedCount: { fontSize: 10.5, color: "rgba(190,18,60,0.7)", fontWeight: "600" },
 
     modalBack: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 24 },

@@ -41,7 +41,7 @@ function makeMeal(overrides: Partial<Record<string, unknown>> = {}) {
     id: "meal-1",
     title: "Paneer Paratha",
     emoji: "🫓",
-    bgGradient: ["#7C3AED", "#4F46E5"] as [string, string],
+    bgGradient: ["#7C3AED", "#4F46E5"] as [string, string], // audit-ok: test fixture data
     region: "pan_indian",
     category: "tiffin",
     ingredients: ["1 cup flour", "100g paneer"],

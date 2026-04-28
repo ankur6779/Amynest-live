@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, Pressable, Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { brand, palette } from "@/constants/colors";
 import {
   WEB_HUB_TILES,
   WEB_SECTION_2_TILES,
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
     right: 14,
     bottom: 100,
     width: 48, height: 48, borderRadius: 24,
-    backgroundColor: "#7C3AED",
+    backgroundColor: brand.violet600,
     alignItems: "center", justifyContent: "center",
     shadowColor: "#000", shadowOpacity: 0.35, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10,
     elevation: 8,
@@ -255,43 +256,43 @@ const styles = StyleSheet.create({
   badge: {
     position: "absolute", top: -4, right: -4,
     minWidth: 20, height: 20, borderRadius: 10,
-    backgroundColor: "#EF4444",
+    backgroundColor: palette.red500,
     alignItems: "center", justifyContent: "center",
     paddingHorizontal: 5,
   },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "800" },
 
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
-  sheet: { maxHeight: "90%", backgroundColor: "#0F172A", borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: "hidden" },
+  sheet: { maxHeight: "90%", backgroundColor: palette.slate900, borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: "hidden" },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 14, paddingVertical: 12,
-    backgroundColor: "#1E293B",
+    backgroundColor: palette.slate800,
     borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)",
   },
   headerTitle: { color: "#fff", fontSize: 14, fontWeight: "700" },
 
   block: { backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 12, gap: 8 },
-  blockLabel: { color: "#A78BFA", fontSize: 11, fontWeight: "800", letterSpacing: 0.4, textTransform: "uppercase" },
+  blockLabel: { color: brand.violet400, fontSize: 11, fontWeight: "800", letterSpacing: 0.4, textTransform: "uppercase" },
 
   row: { flexDirection: "row", justifyContent: "space-between" },
   rowKey: { color: "rgba(255,255,255,0.6)", fontSize: 12 },
   rowVal: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  rowGood: { color: "#34D399" },
-  rowBad: { color: "#F87171" },
+  rowGood: { color: palette.emerald400 },
+  rowBad: { color: palette.red400 },
 
-  ok: { color: "#34D399", fontSize: 12, fontWeight: "600" },
+  ok: { color: palette.emerald400, fontSize: 12, fontWeight: "600" },
 
-  diffTitleWarn: { color: "#FBBF24", fontSize: 11, fontWeight: "700" },
-  diffTitleBad: { color: "#F87171", fontSize: 11, fontWeight: "700" },
+  diffTitleWarn: { color: palette.amber400, fontSize: 11, fontWeight: "700" },
+  diffTitleBad: { color: palette.red400, fontSize: 11, fontWeight: "700" },
   diffItem: { color: "rgba(255,255,255,0.85)", fontSize: 12, marginLeft: 4, fontFamily: "Menlo" },
   bold: { fontWeight: "700" },
 
   sideHeaderRow: { flexDirection: "row", gap: 8 },
-  sideHeader: { flex: 1, color: "#A78BFA", fontSize: 10, fontWeight: "800", textTransform: "uppercase" },
+  sideHeader: { flex: 1, color: brand.violet400, fontSize: 10, fontWeight: "800", textTransform: "uppercase" },
   sideRow: { flexDirection: "row", gap: 8 },
   sideCell: { flex: 1, color: "rgba(255,255,255,0.75)", fontSize: 11, fontFamily: "Menlo" },
-  sideCellMatch: { color: "#34D399" },
+  sideCellMatch: { color: palette.emerald400 },
 
   footnote: { color: "rgba(255,255,255,0.45)", fontSize: 10, marginTop: 4 },
 });

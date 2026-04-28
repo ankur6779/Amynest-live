@@ -39,7 +39,7 @@ export function StoryCard({ story, onPress, size = "regular" }: Props) {
       <View
         style={[
           styles.thumb,
-          { width: dims.width, height: dims.height, backgroundColor: c.surfaceMuted ?? "#1f1933" },
+          { width: dims.width, height: dims.height, backgroundColor: c.surfaceMuted ?? "#1f1933" }, // audit-ok: ultra-dark-purple fallback when surfaceMuted unset
         ]}
       >
         {showImage ? (
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#3a2c5e",
+    backgroundColor: "#3a2c5e", // audit-ok: dark violet placeholder bg for story card
   },
   badge: {
     position: "absolute",

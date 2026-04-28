@@ -11,17 +11,17 @@ import {
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import colors, { brand } from "@/constants/colors";
+import colors, { brand, palette } from "@/constants/colors";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const FEATURES = [
-  { emoji: "🧠", label: "Amy AI Routines", desc: "Smart daily schedules for your child's age.", glow: brand.indigo500, grad: [brand.indigo500, "#4F46E5"] as [string, string] },
-  { emoji: "📊", label: "Progress Tracking", desc: "Streaks, milestones & growth in one view.", glow: "#10B981", grad: ["#10B981", "#059669"] as [string, string] },
-  { emoji: "🎯", label: "Daily Activities", desc: "Age-based activities to keep kids engaged.", glow: "#F59E0B", grad: ["#F59E0B", "#D97706"] as [string, string] },
+  { emoji: "🧠", label: "Amy AI Routines", desc: "Smart daily schedules for your child's age.", glow: brand.indigo500, grad: [brand.indigo500, palette.indigo600] as [string, string] },
+  { emoji: "📊", label: "Progress Tracking", desc: "Streaks, milestones & growth in one view.", glow: palette.emerald500, grad: [palette.emerald500, palette.emerald600] as [string, string] },
+  { emoji: "🎯", label: "Daily Activities", desc: "Age-based activities to keep kids engaged.", glow: palette.amber500, grad: [palette.amber500, palette.amber600] as [string, string] },
   { emoji: "🏆", label: "Behavior Tracker", desc: "Reward positive habits and celebrate wins.", glow: brand.violet500, grad: [brand.violet500, brand.violet600] as [string, string] },
-  { emoji: "❤️", label: "Parenting Tips", desc: "Expert tips, sleep guides, and insights.", glow: brand.pink500, grad: [brand.pink500, "#DB2777"] as [string, string] },
-  { emoji: "🧩", label: "Life Skills Mode", desc: "Challenges that level up as your child grows.", glow: "#14B8A6", grad: ["#14B8A6", "#0D9488"] as [string, string] },
+  { emoji: "❤️", label: "Parenting Tips", desc: "Expert tips, sleep guides, and insights.", glow: brand.pink500, grad: [brand.pink500, "#DB2777"] as [string, string] }, // audit-ok: #DB2777 deep pink gradient endpoint
+  { emoji: "🧩", label: "Life Skills Mode", desc: "Challenges that level up as your child grows.", glow: palette.teal500, grad: [palette.teal500, palette.teal600] as [string, string] },
 ];
 
 export function ProfileLockScreen({ sectionName }: { sectionName?: string }) {
@@ -30,7 +30,7 @@ export function ProfileLockScreen({ sectionName }: { sectionName?: string }) {
 
   return (
     <LinearGradient
-      colors={["#0f0c29", "#1a1560", "#24243e"]}
+      colors={["#0f0c29", "#1a1560", "#24243e"]} // audit-ok: deep purple-navy lock screen gradient
       style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
     >
       <ScrollView

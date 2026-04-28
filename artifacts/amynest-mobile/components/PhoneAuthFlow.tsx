@@ -12,7 +12,7 @@ import {
 import { firebaseAuth } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brandAlpha } from "@/constants/colors";
+import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brandAlpha, brand } from "@/constants/colors";
 
 type Step = "idle" | "phone" | "sending" | "otp" | "verifying";
 
@@ -117,7 +117,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
           activeOpacity={0.80}
           testID="phone-auth-btn"
         >
-          <Ionicons name="phone-portrait-outline" size={20} color="#A78BFA" />
+          <Ionicons name="phone-portrait-outline" size={20} color={brand.violet400} />
           <Text style={s.btnText}>Continue with Phone</Text>
         </TouchableOpacity>
       </>
@@ -232,11 +232,11 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: brandAlpha.purple500_40,
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
   },
-  btnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#C4B5FD" },
+  btnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: brand.violet300 },
 
   wrap: { gap: 10 },
   stepLabel: { fontSize: 12, color: "rgba(200,180,255,0.65)", fontFamily: "Inter_400Regular" },
-  phoneDisplay: { fontSize: 14, color: "#C4B5FD", fontFamily: "Inter_600SemiBold" },
+  phoneDisplay: { fontSize: 14, color: brand.violet300, fontFamily: "Inter_600SemiBold" },
 
   phoneRow: { flexDirection: "row", gap: 8 },
   countryCode: {
@@ -245,20 +245,20 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: brandAlpha.purple500_22,
     alignItems: "center", justifyContent: "center",
   },
-  countryCodeText: { fontSize: 15, color: "#F0E8FF", fontFamily: "Inter_600SemiBold" },
+  countryCodeText: { fontSize: 15, color: "#F0E8FF", fontFamily: "Inter_600SemiBold" }, // audit-ok: very-light lavender for phone field text
   phoneInput: {
     flex: 1, height: 52, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1, borderColor: brandAlpha.purple500_60,
     paddingHorizontal: 14,
-    fontSize: 16, color: "#F0E8FF", fontFamily: "Inter_400Regular",
+    fontSize: 16, color: "#F0E8FF", fontFamily: "Inter_400Regular", // audit-ok: very-light lavender for phone input text
   },
 
   otpInput: {
     height: 60, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1, borderColor: brandAlpha.purple500_60,
-    fontSize: 28, color: "#F0E8FF", fontFamily: "Inter_700Bold",
+    fontSize: 28, color: "#F0E8FF", fontFamily: "Inter_700Bold", // audit-ok: very-light lavender for OTP input
     letterSpacing: 8,
   },
 
@@ -278,6 +278,6 @@ const s = StyleSheet.create({
 
   resendRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   resendTimer: { fontSize: 12, color: "rgba(200,180,255,0.45)", fontFamily: "Inter_400Regular" },
-  resendLink: { fontSize: 13, color: "#A78BFA", fontFamily: "Inter_600SemiBold" },
+  resendLink: { fontSize: 13, color: brand.violet400, fontFamily: "Inter_600SemiBold" },
   changePhone: { fontSize: 13, color: "rgba(200,180,255,0.50)", fontFamily: "Inter_400Regular" },
 });

@@ -9,7 +9,7 @@ import Animated, {
   useAnimatedStyle,
   SharedValue,
 } from "react-native-reanimated";
-import { brand, gradients, brandAlpha } from "@/constants/colors";
+import { brand, gradients, brandAlpha, palette } from "@/constants/colors";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 export const CARD_W = Math.round(SCREEN_W * 0.78);
@@ -126,9 +126,9 @@ export default function RoutineCard({ routine, index, scrollX, onPress, onToggle
               <Ionicons
                 name={routine.completed ? "checkmark-circle" : "play"}
                 size={18}
-                color={routine.completed ? "#10B981" : brand.purple500}
+                color={routine.completed ? palette.emerald500 : brand.purple500}
               />
-              <Text style={[styles.ctaText, routine.completed && { color: "#10B981" }]}>
+              <Text style={[styles.ctaText, routine.completed && { color: palette.emerald500 }]}>
                 {routine.completed ? "Completed" : "Start"}
               </Text>
             </TouchableOpacity>
@@ -193,8 +193,8 @@ const styles = StyleSheet.create({
     backgroundColor: brandAlpha.purple500_10,
   },
   statusDotDone: {
-    backgroundColor: "#10B981",
-    borderColor: "#10B981",
+    backgroundColor: palette.emerald500,
+    borderColor: palette.emerald500,
   },
   pendingDot: {
     width: 8,

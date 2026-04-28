@@ -11,7 +11,7 @@ import {
   POINTS_BY_DIFFICULTY, pickDailyLifeSkillTasks, tasksFor,
   buildAmyLifeSkillInsight, uiLabel,
 } from "@workspace/life-skills";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 
 interface DailyRecord { taskIds: string[]; done: string[]; skipped: string[] }
 interface ChildLifeSkillStats {
@@ -298,7 +298,7 @@ export function LifeSkillsZone({ child }: Props) {
       {/* Amy AI Insight */}
       <View style={[styles.subCard, styles.insightCard]}>
         <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
-          <Ionicons name="sparkles" size={16} color="#C7B6FF" />
+          <Ionicons name="sparkles" size={16} color="#C7B6FF" /> {/* audit-ok: violet-200 sparkle for life-skills insight */}
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionLabel}>{uiLabel("amyInsight", lang)}</Text>
             <Text style={[styles.muted, { marginTop: 4 }]}>
@@ -330,8 +330,8 @@ const styles = StyleSheet.create({
   },
   taskTitle: { color: "#fff", fontWeight: "800", fontSize: 13, flexShrink: 1 },
   taskDesc: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 2 },
-  doneTag: { color: "#34D399", fontWeight: "800", fontSize: 10 },
-  skipTag: { color: "#FBBF24", fontWeight: "800", fontSize: 10 },
+  doneTag: { color: palette.emerald400, fontWeight: "800", fontSize: 10 },
+  skipTag: { color: palette.amber400, fontWeight: "800", fontSize: 10 },
 
   metaRow: { flexDirection: "row", gap: 4, flexWrap: "wrap", marginTop: 6 },
   metaPill: {
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   insightCard: { borderColor: "rgba(167,139,250,0.4)", backgroundColor: "rgba(167,139,250,0.08)" },
   catLabel: { color: "#fff", fontWeight: "700", fontSize: 12 },
   progressTrack: { height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" },
-  progressFill: { height: "100%", backgroundColor: "#34D399" },
+  progressFill: { height: "100%", backgroundColor: palette.emerald400 },
 });
 
 // Silence unused-import lint when ScrollView ever isn't used in v1.

@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { brand, ACCENT_PINK } from "@/constants/colors";
+import { brand, ACCENT_PINK, palette } from "@/constants/colors";
 import Animated, {
   FadeIn,
   FadeInUp,
@@ -78,26 +78,26 @@ interface Props {
 }
 
 const CATEGORY_ICON: Record<string, { icon: keyof typeof Ionicons.glyphMap; gradient: readonly [string, string] }> = {
-  morning:  { icon: "sunny",       gradient: ["#F59E0B", "#FB923C"] as const },
-  meal:     { icon: "restaurant",  gradient: ["#F97316", "#F43F5E"] as const },
-  tiffin:   { icon: "fast-food",   gradient: ["#FB923C", "#EF4444"] as const },
-  snack:    { icon: "ice-cream",   gradient: ["#FACC15", "#F97316"] as const },
-  school:   { icon: "school",      gradient: ["#3B82F6", "#6366F1"] as const },
-  homework: { icon: "create",      gradient: ["#6366F1", "#8B5CF6"] as const },
-  reading:  { icon: "book",        gradient: ["#8B5CF6", brand.pink500] as [string, string] },
-  exercise: { icon: "fitness",     gradient: ["#10B981", "#059669"] as const },
+  morning:  { icon: "sunny",       gradient: [palette.amber500, palette.orange400] as const },
+  meal:     { icon: "restaurant",  gradient: [palette.orange500, palette.rose500] as const },
+  tiffin:   { icon: "fast-food",   gradient: [palette.orange400, palette.red500] as const },
+  snack:    { icon: "ice-cream",   gradient: [palette.yellow400, palette.orange500] as const },
+  school:   { icon: "school",      gradient: [palette.blue500, brand.indigo500] as const },
+  homework: { icon: "create",      gradient: [brand.indigo500, brand.violet500] as const },
+  reading:  { icon: "book",        gradient: [brand.violet500, brand.pink500] as [string, string] },
+  exercise: { icon: "fitness",     gradient: [palette.emerald500, palette.emerald600] as const },
   play:     { icon: "happy",       gradient: [brand.pink500, brand.purple500] as [string, string] },
   bonding:  { icon: "heart",       gradient: [brand.pink400, brand.pink500] as [string, string] },
-  hygiene:  { icon: "water",       gradient: ["#22D3EE", "#3B82F6"] as const },
-  travel:   { icon: "car",         gradient: ["#0EA5E9", "#6366F1"] as const },
-  screen:   { icon: "tv",          gradient: ["#64748B", "#475569"] as const },
-  sleep:    { icon: "moon",        gradient: ["#6366F1", "#1E1B4B"] as const },
-  "wind-down": { icon: "cloud-outline", gradient: ["#7C3AED", "#1E1B4B"] as const },
+  hygiene:  { icon: "water",       gradient: [palette.cyan300, palette.blue500] as const },
+  travel:   { icon: "car",         gradient: [palette.sky500, brand.indigo500] as const },
+  screen:   { icon: "tv",          gradient: [palette.slate500, palette.slate600] as const },
+  sleep:    { icon: "moon",        gradient: [brand.indigo500, palette.indigo950] as const },
+  "wind-down": { icon: "cloud-outline", gradient: [brand.violet600, palette.indigo950] as const },
 };
 
 function pickCategory(category = "") {
   const k = Object.keys(CATEGORY_ICON).find((x) => category.toLowerCase().includes(x));
-  return k ? CATEGORY_ICON[k] : { icon: "ellipse" as const, gradient: ["#7B3FF2", ACCENT_PINK] as const };
+  return k ? CATEGORY_ICON[k] : { icon: "ellipse" as const, gradient: [brand.primary, ACCENT_PINK] as const };
 }
 
 function statusBadge(status: ItemStatus) {
@@ -200,7 +200,7 @@ export default function RoutineItemModal({
         >
           {selectedMeal !== null ? (
             <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-              <LinearGradient colors={["#FB923C", "#F43F5E"] as const} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
+              <LinearGradient colors={[palette.orange400, palette.rose500] as const} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
                 <View style={s.handle} />
                 <TouchableOpacity onPress={closeRecipe} style={s.closeBtn} activeOpacity={0.85} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close recipe">
                   <Ionicons name="close" size={20} color="#fff" />
@@ -216,7 +216,7 @@ export default function RoutineItemModal({
               <View style={s.body}>
                 {recipeLoading && (
                   <View style={{ alignItems: "center", paddingVertical: 24, gap: 10 }}>
-                    <ActivityIndicator color="#F97316" />
+                    <ActivityIndicator color={palette.orange500} />
                     <Text style={[s.notesText, { textAlign: "center" }]}>Generating recipe…</Text>
                   </View>
                 )}
@@ -232,17 +232,17 @@ export default function RoutineItemModal({
                   <View style={{ gap: 16 }}>
                     <View style={s.statsRow}>
                       <View style={[s.statBox, { backgroundColor: "rgba(251,146,60,0.12)" }]}>
-                        <Ionicons name="timer-outline" size={16} color="#F97316" />
+                        <Ionicons name="timer-outline" size={16} color={palette.orange500} />
                         <Text style={s.statValue}>{recipe.prepTime}</Text>
                         <Text style={s.statLabel}>Prep</Text>
                       </View>
                       <View style={[s.statBox, { backgroundColor: "rgba(244,63,94,0.12)" }]}>
-                        <Ionicons name="flame-outline" size={16} color="#F43F5E" />
+                        <Ionicons name="flame-outline" size={16} color={palette.rose500} />
                         <Text style={s.statValue}>{recipe.cookTime}</Text>
                         <Text style={s.statLabel}>Cook</Text>
                       </View>
                       <View style={[s.statBox, { backgroundColor: "rgba(16,185,129,0.12)" }]}>
-                        <Ionicons name="people-outline" size={16} color="#10B981" />
+                        <Ionicons name="people-outline" size={16} color={palette.emerald500} />
                         <Text style={s.statValue}>{recipe.servings}</Text>
                         <Text style={s.statLabel}>Serves</Text>
                       </View>
@@ -253,7 +253,7 @@ export default function RoutineItemModal({
                       <View style={{ marginTop: 6, gap: 6 }}>
                         {(recipe.ingredients ?? []).map((ing, i) => (
                           <View key={i} style={{ flexDirection: "row", gap: 8 }}>
-                            <Text style={{ color: "#F97316", fontWeight: "800" }}>•</Text>
+                            <Text style={{ color: palette.orange500, fontWeight: "800" }}>•</Text>
                             <Text style={[s.notesText, { flex: 1 }]}>{ing}</Text>
                           </View>
                         ))}
@@ -354,13 +354,13 @@ export default function RoutineItemModal({
                     accessibilityRole="button"
                     accessibilityLabel={recipeOpen ? "Collapse recipe" : "Expand recipe"}
                   >
-                    <MaterialCommunityIcons name="chef-hat" size={14} color="#c2410c" />
+                    <MaterialCommunityIcons name="chef-hat" size={14} color={palette.orange700} />
                     <Text style={s.recipeToggleLabel}>{"Recipe & Nutrition"}{item.meal ? ` — ${item.meal}` : ""}</Text>
                     <Animated.View style={[{ marginLeft: "auto" }, chevronAnimatedStyle]}>
                       <Ionicons
                         name="chevron-down"
                         size={14}
-                        color="#c2410c"
+                        color={palette.orange700}
                       />
                     </Animated.View>
                   </TouchableOpacity>
@@ -392,7 +392,7 @@ export default function RoutineItemModal({
                         accessibilityRole="button"
                         accessibilityLabel={`View recipe for ${opt}`}
                       >
-                        <MaterialCommunityIcons name="chef-hat" size={12} color="#c2410c" />
+                        <MaterialCommunityIcons name="chef-hat" size={12} color={palette.orange700} />
                         <Text style={s.optionText}>{opt}</Text>
                       </TouchableOpacity>
                     ))}
@@ -536,7 +536,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: "rgba(251,146,60,0.18)",
       borderWidth: 1, borderColor: "rgba(251,146,60,0.45)",
     },
-    optionText: { color: "#c2410c", fontSize: 12, fontWeight: "700" },
+    optionText: { color: palette.orange700, fontSize: 12, fontWeight: "700" },
     optionHint: { color: c.textMuted, fontSize: 11, fontStyle: "italic" },
     heroImage: { width: 72, height: 72, borderRadius: 24 },
     statsRow: { flexDirection: "row", gap: 8 },
@@ -549,14 +549,14 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: "rgba(251,146,60,0.2)", borderWidth: 1, borderColor: "rgba(251,146,60,0.4)",
       marginTop: 2,
     },
-    stepNumText: { color: "#c2410c", fontSize: 11, fontWeight: "800" },
+    stepNumText: { color: palette.orange700, fontSize: 11, fontWeight: "800" },
     tipBox: {
       backgroundColor: "rgba(245,158,11,0.12)",
       borderWidth: 1, borderColor: "rgba(245,158,11,0.35)",
       borderRadius: 14, padding: 12, gap: 4,
     },
-    tipLabel: { color: "#92400E", fontSize: 11, fontWeight: "800" },
-    tipText: { color: "#92400E", fontSize: 12, lineHeight: 17 },
+    tipLabel: { color: palette.amber800, fontSize: 11, fontWeight: "800" },
+    tipText: { color: palette.amber800, fontSize: 12, lineHeight: 17 },
 
     notesBox: {
       backgroundColor: c.calloutBg,
@@ -567,7 +567,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       flexDirection: "row", alignItems: "center", gap: 6,
     },
     recipeToggleLabel: {
-      color: "#c2410c", fontSize: 13, fontWeight: "700", flex: 1,
+      color: palette.orange700, fontSize: 13, fontWeight: "700", flex: 1,
     },
     notesText: { color: c.textBody, fontSize: 13, lineHeight: 19 },
 

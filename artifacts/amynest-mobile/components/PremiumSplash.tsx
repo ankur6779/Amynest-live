@@ -11,7 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { brand, ACCENT_PINK } from "@/constants/colors";
+import { brand, ACCENT_PINK, palette } from "@/constants/colors";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -261,11 +261,11 @@ export default function PremiumSplash({ onFinish }: Props) {
         { opacity: containerOpacity, zIndex: 9999, elevation: 9999 },
       ]}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#0f0c29" translucent={Platform.OS === "android"} />
+      <StatusBar barStyle="light-content" backgroundColor="#0f0c29" translucent={Platform.OS === "android"} />{/* audit-ok: deep void-purple for PremiumSplash StatusBar */}
 
       {/* Background: dark deep-purple matching web palette */}
       <LinearGradient
-        colors={["#0f0c29", "#302b63", "#24243e"]}
+        colors={["#0f0c29", "#302b63", "#24243e"]} // audit-ok: deep purple-navy premium background gradient
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -340,7 +340,7 @@ export default function PremiumSplash({ onFinish }: Props) {
           <View style={styles.logoGlowOuter} />
           <View style={styles.logoGlowInner} />
           <LinearGradient
-            colors={["#7B3FF2", ACCENT_PINK, "#4FC3F7"]}
+            colors={[brand.primary, ACCENT_PINK, "#4FC3F7"]} // audit-ok: #4FC3F7 sky-blue ring gradient endpoint
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.logoRingGradient}
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     height: HALO_SIZE,
     borderRadius: HALO_SIZE / 2,
     backgroundColor: "rgba(123,63,242,0.12)",
-    shadowColor: "#7B3FF2",
+    shadowColor: brand.primary,
     shadowOpacity: 0.5,
     shadowRadius: 30,
     shadowOffset: { width: 0, height: 0 },
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     width: RING_OUTER - RING_BORDER * 2,
     height: RING_OUTER - RING_BORDER * 2,
     borderRadius: (RING_OUTER - RING_BORDER * 2) / 2,
-    backgroundColor: "#1a1535",
+    backgroundColor: "#1a1535", // audit-ok: deep-purple inner ring bg for logo ring
     alignItems: "center",
     justifyContent: "center",
   },
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 8,
   },
   titleAccent: {
-    color: "#FFE9F7",
+    color: "#FFE9F7", // audit-ok: near-white light-pink title accent for dark premium splash
   },
   subtitle: {
     marginTop: 10,

@@ -11,7 +11,7 @@ import {
   getAmyInsight,
   pickLang,
 } from "@workspace/infant-hub";
-import { brand, brandAlpha } from "@/constants/colors";
+import { brand, brandAlpha, palette } from "@/constants/colors";
 
 type Props = {
   childName: string;
@@ -129,8 +129,8 @@ export default function InfantHub({ childName, ageMonths }: Props) {
                 onPress={() => flashToast(t("infant_hub.thanks"))}
                 style={[styles.actionBtn, { backgroundColor: "rgba(16,185,129,0.18)", borderColor: "rgba(16,185,129,0.45)" }]}
               >
-                <Ionicons name="thumbs-up" size={13} color="#34D399" />
-                <Text style={[styles.actionTxt, { color: "#34D399" }]}>{t("infant_hub.helpful")}</Text>
+                <Ionicons name="thumbs-up" size={13} color={palette.emerald400} />
+                <Text style={[styles.actionTxt, { color: palette.emerald400 }]}>{t("infant_hub.helpful")}</Text>
               </Pressable>
               <Pressable
                 onPress={handleNext}
@@ -143,8 +143,8 @@ export default function InfantHub({ childName, ageMonths }: Props) {
                 onPress={() => flashToast(t("infant_hub.tried_logged"))}
                 style={[styles.actionBtn, { backgroundColor: "rgba(245,158,11,0.18)", borderColor: "rgba(245,158,11,0.45)" }]}
               >
-                <Ionicons name="checkmark-circle" size={13} color="#F59E0B" />
-                <Text style={[styles.actionTxt, { color: "#F59E0B" }]}>{t("infant_hub.tried_this")}</Text>
+                <Ionicons name="checkmark-circle" size={13} color={palette.amber500} />
+                <Text style={[styles.actionTxt, { color: palette.amber500 }]}>{t("infant_hub.tried_this")}</Text>
               </Pressable>
             </View>
 
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   cardGrad: { padding: 14 },
-  kicker: { color: "#F9A8D4", fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase" },
+  kicker: { color: "#F9A8D4", fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase" }, // audit-ok: rose-200 kicker for infant card
   subtitle: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 3 },
 
   tabRow: { gap: 8, paddingVertical: 4, marginBottom: 10 },

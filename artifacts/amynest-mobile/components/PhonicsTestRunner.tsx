@@ -10,7 +10,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { API_BASE_URL } from "@/constants/api";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 
 // ─── Shared types (mirror server payloads) ───────────────────────────────────
 
@@ -320,9 +320,9 @@ function ResultView({ data, childName, onDone }: { data: SubmitResponse; childNa
   const { breakdown, weakConcepts, insight } = data;
   const accuracy = breakdown.accuracyPct;
   const ringColors: readonly [string, string] =
-    accuracy >= 80 ? ["#10b981", "#14b8a6"] :
-    accuracy >= 50 ? ["#f59e0b", "#f97316"] :
-                     ["#f43f5e", brand.pink500];
+    accuracy >= 80 ? [palette.emerald500, palette.teal500] :
+    accuracy >= 50 ? [palette.amber500, palette.orange500] :
+                     [palette.rose500, brand.pink500];
 
   return (
     <ScrollView
@@ -340,7 +340,7 @@ function ResultView({ data, childName, onDone }: { data: SubmitResponse; childNa
           <Text style={styles.scoreFrac}>{breakdown.correct}/{breakdown.total}</Text>
         </LinearGradient>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 }}>
-          <Ionicons name="trophy" size={18} color="#f59e0b" />
+          <Ionicons name="trophy" size={18} color={palette.amber500} />
           <Text style={[styles.perfLabel, { color: theme.text.primary }]}>
             {insight.performanceLabel}
           </Text>

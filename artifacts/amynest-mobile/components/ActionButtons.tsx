@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Pressable, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { palette } from "@/constants/colors";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -68,8 +69,8 @@ export default function ActionButtons({ onAction, disabled }: Props) {
       <PressBtn
         label="Worked"
         icon="checkmark-circle"
-        color="#059669"
-        bg="#ECFDF5"
+        color={palette.emerald600}
+        bg={palette.emerald50}
         onPress={() => onAction("worked")}
         testID="action-worked"
         accessibilityLabel="Mark this win as worked"
@@ -77,8 +78,8 @@ export default function ActionButtons({ onAction, disabled }: Props) {
       <PressBtn
         label="Partially"
         icon="contrast"
-        color="#D97706"
-        bg="#FFFBEB"
+        color={palette.amber600}
+        bg={palette.amber50}
         onPress={() => onAction("partial")}
         testID="action-partial"
         accessibilityLabel="Mark this win as partially worked"
@@ -86,8 +87,8 @@ export default function ActionButtons({ onAction, disabled }: Props) {
       <PressBtn
         label="Not yet"
         icon="refresh-circle"
-        color="#DC2626"
-        bg="#FEF2F2"
+        color={palette.red600}
+        bg={palette.red50}
         onPress={() => onAction("not_worked")}
         testID="action-not-worked"
         accessibilityLabel="This did not work, give me more options"

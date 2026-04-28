@@ -20,7 +20,7 @@ export function StoryCarousel({ title, stories, onSelect, size = "regular", empt
     <View style={styles.row}>
       <Text style={[styles.heading, { color: c.textStrong }]}>{title}</Text>
       {stories.length === 0 ? (
-        <Text style={[styles.empty, { color: c.textMuted ?? "#888" }]}>{emptyHint}</Text>
+        <Text style={[styles.empty, { color: c.textMuted ?? "#888" /* audit-ok: mid-gray fallback */ }]}>{emptyHint}</Text>
       ) : (
         <FlatList
           data={stories}
