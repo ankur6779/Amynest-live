@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { brand } from "@/constants/colors";
 import Animated, {
   FadeIn,
   FadeInUp,
@@ -83,10 +84,10 @@ const CATEGORY_ICON: Record<string, { icon: keyof typeof Ionicons.glyphMap; grad
   snack:    { icon: "ice-cream",   gradient: ["#FACC15", "#F97316"] as const },
   school:   { icon: "school",      gradient: ["#3B82F6", "#6366F1"] as const },
   homework: { icon: "create",      gradient: ["#6366F1", "#8B5CF6"] as const },
-  reading:  { icon: "book",        gradient: ["#8B5CF6", "#EC4899"] as const },
+  reading:  { icon: "book",        gradient: ["#8B5CF6", brand.pink500] as [string, string] },
   exercise: { icon: "fitness",     gradient: ["#10B981", "#059669"] as const },
-  play:     { icon: "happy",       gradient: ["#EC4899", "#A855F7"] as const },
-  bonding:  { icon: "heart",       gradient: ["#F472B6", "#EC4899"] as const },
+  play:     { icon: "happy",       gradient: [brand.pink500, brand.purple500] as [string, string] },
+  bonding:  { icon: "heart",       gradient: ["#F472B6", brand.pink500] as [string, string] },
   hygiene:  { icon: "water",       gradient: ["#22D3EE", "#3B82F6"] as const },
   travel:   { icon: "car",         gradient: ["#0EA5E9", "#6366F1"] as const },
   screen:   { icon: "tv",          gradient: ["#64748B", "#475569"] as const },

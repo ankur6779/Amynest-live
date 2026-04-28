@@ -240,7 +240,7 @@ export default function GenerateRoutineScreen() {
             style={{ marginTop: 18 }}
           >
             <LinearGradient
-              colors={[brand.purple500, "#EC4899"]}
+              colors={[brand.purple500, brand.pink500]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.primaryBtn}
@@ -447,7 +447,7 @@ export default function GenerateRoutineScreen() {
           style={{ marginTop: 24, opacity: isFormValid && !isGenerating ? 1 : 0.6 }}
         >
           <LinearGradient
-            colors={[brand.purple500, "#EC4899"]}
+            colors={[brand.purple500, brand.pink500]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.primaryBtn}
@@ -525,7 +525,7 @@ function GenerateProgressOverlay({ childName }: { childName: string }) {
     <View style={styles.progressOverlay} pointerEvents="auto">
       <View style={styles.progressCard}>
         <LinearGradient
-          colors={[brand.purple500, "#EC4899"]}
+          colors={[brand.purple500, brand.pink500]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.progressIconWrap}

@@ -23,7 +23,7 @@ export default function DashboardHeader({ parentName, childName, onProfilePress 
           <Text style={[styles.greeting, { color: c.textStrong }]}>Hi, {parentName} 👋</Text>
           {isPremium && (
             <LinearGradient
-              colors={[brand.purple500, "#EC4899"]}
+              colors={[brand.purple500, brand.pink500]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.badge}
@@ -44,7 +44,7 @@ export default function DashboardHeader({ parentName, childName, onProfilePress 
         hitSlop={8}
       >
         <LinearGradient
-          colors={[brand.purple500, "#EC4899"]}
+          colors={[brand.purple500, brand.pink500]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.avatar}

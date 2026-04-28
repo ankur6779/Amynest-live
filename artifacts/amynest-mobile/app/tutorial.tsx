@@ -35,7 +35,7 @@ const SLIDES: Slide[] = [
     icon: "sparkles",
     title: "Meet Amy",
     body: "Your AI co-parent for stress-free mornings, smoother evenings, and routines that actually stick.",
-    gradient: [brand.purple500, "#EC4899"],
+    gradient: [brand.purple500, brand.pink500],
   },
   {
     icon: "calendar-outline",
@@ -145,7 +145,7 @@ export default function TutorialScreen() {
 
         <TouchableOpacity onPress={next} activeOpacity={0.9} style={styles.cta}>
           <LinearGradient
-            colors={[brand.purple500, "#EC4899"]}
+            colors={[brand.purple500, brand.pink500]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.ctaInner}
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     marginBottom: 36,
     ...Platform.select({
       ios: {
-        shadowColor: "#EC4899",
+        shadowColor: brand.pink500,
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.4,
         shadowRadius: 24,

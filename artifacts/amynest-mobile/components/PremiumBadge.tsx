@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, Text, View, StyleSheet, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { brand } from "@/constants/colors";
 
 type Props = {
   /** Tap handler — when provided, the badge becomes pressable (paywall route). */
@@ -21,7 +22,7 @@ type Props = {
 export default function PremiumBadge({ onPress, label = "Premium", style }: Props) {
   const inner = (
     <LinearGradient
-      colors={["#7B3FF2", "#EC4899", "#F59E0B"]}
+      colors={[brand.primary, brand.pink500, "#F59E0B"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.pill, style]}

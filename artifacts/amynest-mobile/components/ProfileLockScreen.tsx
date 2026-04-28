@@ -20,7 +20,7 @@ const FEATURES = [
   { emoji: "📊", label: "Progress Tracking", desc: "Streaks, milestones & growth in one view.", glow: "#10B981", grad: ["#10B981", "#059669"] as [string, string] },
   { emoji: "🎯", label: "Daily Activities", desc: "Age-based activities to keep kids engaged.", glow: "#F59E0B", grad: ["#F59E0B", "#D97706"] as [string, string] },
   { emoji: "🏆", label: "Behavior Tracker", desc: "Reward positive habits and celebrate wins.", glow: brand.violet500, grad: [brand.violet500, brand.violet600] as [string, string] },
-  { emoji: "❤️", label: "Parenting Tips", desc: "Expert tips, sleep guides, and insights.", glow: "#EC4899", grad: ["#EC4899", "#DB2777"] as [string, string] },
+  { emoji: "❤️", label: "Parenting Tips", desc: "Expert tips, sleep guides, and insights.", glow: brand.pink500, grad: [brand.pink500, "#DB2777"] as [string, string] },
   { emoji: "🧩", label: "Life Skills Mode", desc: "Challenges that level up as your child grows.", glow: "#14B8A6", grad: ["#14B8A6", "#0D9488"] as [string, string] },
 ];
 

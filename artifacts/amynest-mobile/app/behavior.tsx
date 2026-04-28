@@ -442,7 +442,7 @@ export default function BehaviorScreen() {
 
         {/* BLOCK 3: Amy Insights */}
         <Block
-          icon={<LinearGradient colors={[brand.violet600, "#EC4899"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="bulb" size={18} color="#fff" /></LinearGradient>}
+          icon={<LinearGradient colors={[brand.violet600, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="bulb" size={18} color="#fff" /></LinearGradient>}
           title={L.amyInsights}
           subtitle={insights.length > 0 ? `${insights.length} pattern${insights.length > 1 ? "s" : ""} detected` : "Log more to unlock"}
           open={openBlock === "insights"}

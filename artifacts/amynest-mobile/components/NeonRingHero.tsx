@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { View, Text, Animated, Easing, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from "react-native-svg";
+import { brand } from "@/constants/colors";
 
 const OUTER = 170;
 const INNER = 136;
@@ -120,7 +121,7 @@ export default function NeonRingHero() {
             style={[StyleSheet.absoluteFill, { transform: [{ rotate: spin }] }]}
           >
             <LinearGradient
-              colors={["#a855f7", "#ec4899", "#a855f7", "#ec4899", "#a855f7"]}
+              colors={[brand.purple500, brand.pink500, brand.purple500, brand.pink500, brand.purple500]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.gradientFill}
@@ -137,8 +138,8 @@ export default function NeonRingHero() {
             <Svg width={90} height={40}>
               <Defs>
                 <SvgLinearGradient id="amyGrad" x1="0" y1="0" x2="1" y2="0">
-                  <Stop offset="0" stopColor="#a855f7" />
-                  <Stop offset="1" stopColor="#ec4899" />
+                  <Stop offset="0" stopColor={brand.purple500} />
+                  <Stop offset="1" stopColor={brand.pink500} />
                 </SvgLinearGradient>
               </Defs>
               <SvgText

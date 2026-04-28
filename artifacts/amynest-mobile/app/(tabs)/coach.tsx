@@ -477,7 +477,7 @@ export default function CoachScreen() {
               style={{ marginTop: 12, marginBottom: 14, borderRadius: 20, overflow: "hidden" }}
             >
               <LinearGradient
-                colors={[brand.purple500, "#EC4899" /* audit-ok: accent pink gradient end-stop */]}
+                colors={[brand.purple500, brand.pink500 /* audit-ok: accent pink gradient end-stop */]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{ flexDirection: "row", alignItems: "center", padding: 16, gap: 12 }}
@@ -679,7 +679,7 @@ export default function CoachScreen() {
             </View>
             <View style={[styles.qProgressBar, { backgroundColor: c.surfaceTrack }]}>
               <LinearGradient
-                colors={[brand.violet500, "#EC4899" /* audit-ok: accent pink gradient end-stop */]}
+                colors={[brand.violet500, brand.pink500 /* audit-ok: accent pink gradient end-stop */]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={[styles.qProgressFill, { width: `${qProgress}%` }]}
               />
@@ -725,7 +725,7 @@ export default function CoachScreen() {
             style={{ marginTop: 24, opacity: isAnswered ? 1 : 0.4 }}
           >
             <LinearGradient
-              colors={[brand.violet600, "#EC4899" /* audit-ok: accent pink gradient end-stop */]}
+              colors={[brand.violet600, brand.pink500 /* audit-ok: accent pink gradient end-stop */]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={styles.qNextBtn}
             >
@@ -946,7 +946,7 @@ export default function CoachScreen() {
           </TouchableOpacity>
 
           <LinearGradient
-            colors={[brand.violet500, "#EC4899" /* audit-ok: accent pink gradient end-stop */]}
+            colors={[brand.violet500, brand.pink500 /* audit-ok: accent pink gradient end-stop */]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.progressPill}
           >
@@ -1038,7 +1038,7 @@ export default function CoachScreen() {
                   style={{ opacity: nextDisabled ? 0.4 : 1 }}
                 >
                   <LinearGradient
-                    colors={[brand.violet500, "#EC4899" /* audit-ok: accent pink gradient end-stop */]}
+                    colors={[brand.violet500, brand.pink500 /* audit-ok: accent pink gradient end-stop */]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={styles.nextBtn}
                   >
@@ -1082,7 +1082,7 @@ function WinCard({
       >
         {/* Win counter chip */}
         <LinearGradient
-          colors={isExtension ? ["#F59E0B" /* audit-ok: amber gradient for extension chip */, "#EC4899" /* audit-ok: accent pink */] : [brand.violet500, "#EC4899" /* audit-ok: accent pink gradient end-stop */]}
+          colors={isExtension ? ["#F59E0B" /* audit-ok: amber gradient for extension chip */, brand.pink500 /* audit-ok: accent pink */] : [brand.violet500, brand.pink500 /* audit-ok: accent pink gradient end-stop */]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           style={styles.winChip}
         >
@@ -1121,7 +1121,7 @@ function WinCard({
             {w.actions.map((a, i) => (
               <View key={i} style={styles.actionRow}>
                 <LinearGradient
-                  colors={[brand.violet500, "#EC4899" /* audit-ok: accent pink gradient end-stop */]}
+                  colors={[brand.violet500, brand.pink500 /* audit-ok: accent pink gradient end-stop */]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={styles.actionDot}
                 >

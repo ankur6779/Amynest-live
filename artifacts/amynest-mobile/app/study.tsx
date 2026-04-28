@@ -10,6 +10,7 @@ import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { SvgXml } from "react-native-svg";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { brand } from "@/constants/colors";
 import {
   PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
   resolveStudyMode, MODE_LABELS,
@@ -115,7 +116,7 @@ export default function StudyScreen() {
   return (
     <View style={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={["#6366F1", "#A855F7"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+      <LinearGradient colors={["#6366F1", brand.purple500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
         <Pressable onPress={goBack} style={styles.backBtn} hitSlop={10}>
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>

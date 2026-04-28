@@ -96,7 +96,7 @@ export default function ProgressScreen() {
         ))}
 
         <Pressable onPress={() => router.push("/insights" as never)} style={styles.askAmyCta}>
-          <LinearGradient colors={[brand.purple500, "#EC4899"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyCtaGrad}>
+          <LinearGradient colors={[brand.purple500, brand.pink500]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyCtaGrad}>
             <Ionicons name="analytics" size={20} color="#fff" />
             <View style={{ flex: 1 }}>
               <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>View full insights</Text>

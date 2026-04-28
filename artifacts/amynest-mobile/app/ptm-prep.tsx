@@ -16,6 +16,7 @@ import {
   type PtmCategory, type PtmSession, type PtmStage,
 } from "@workspace/ptm-prep";
 import { useColors } from "@/hooks/useColors";
+import { brand } from "@/constants/colors";
 
 const STAGE_ORDER: PtmStage[] = ["prepare", "attend", "act"];
 
@@ -89,7 +90,7 @@ export default function PtmPrepScreen() {
       <ScrollView contentContainerStyle={{ padding: 14, gap: 12, paddingBottom: 60 }}>
         {!session ? (
           <>
-            <LinearGradient colors={["#A78BFA", "#EC4899"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+            <LinearGradient colors={["#A78BFA", brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
               <Text style={{ fontSize: 28 }}>🧾</Text>
               <Text style={styles.heroTitle}>PTM Prep Assistant</Text>
               <Text style={styles.heroSub}>A simple Prepare → Attend → Act flow for your child's next Parent-Teacher Meeting.</Text>

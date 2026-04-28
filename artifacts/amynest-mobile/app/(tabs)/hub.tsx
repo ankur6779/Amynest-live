@@ -497,7 +497,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#8B5CF6", "#EC4899"]}
+                    colors={["#8B5CF6", brand.pink500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -540,7 +540,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#6366F1", "#A855F7"]}
+                    colors={["#6366F1", brand.purple500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -669,7 +669,7 @@ export default function HubScreen() {
                   testID="card-kids-control-center"
                 >
                   <LinearGradient
-                    colors={["#7C3AED", "#EC4899", "#F59E0B"]}
+                    colors={["#7C3AED", brand.pink500, "#F59E0B"]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -792,7 +792,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#EC4899", "#F97316"]}
+                    colors={[brand.pink500, "#F97316"]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -845,7 +845,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}
                 >
                   <LinearGradient
-                    colors={["#7b3ff2", "#a855f7"]}
+                    colors={["#7b3ff2", brand.purple500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
                   >
@@ -866,7 +866,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 14, overflow: "hidden", marginTop: 8 }}
                 >
                   <LinearGradient
-                    colors={["#f59e0b", "#ec4899"]}
+                    colors={["#f59e0b", brand.pink500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
                   >
@@ -926,7 +926,7 @@ export default function HubScreen() {
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
-                    colors={["#EC4899", "#A855F7"]}
+                    colors={[brand.pink500, brand.purple500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     style={{ padding: 16, gap: 8 }}
                   >
@@ -957,7 +957,7 @@ export default function HubScreen() {
               <Section
                 id="art-craft"
                 icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
-                accent={["#F472B6", "#A855F7"]}
+                accent={["#F472B6", brand.purple500]}
                 title="🎨 Art & Craft Videos"
                 desc="Short creative videos to inspire your child"
                 open={openSection === "art-craft"}

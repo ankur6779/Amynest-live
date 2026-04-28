@@ -263,7 +263,7 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
           ]}
         >
           <LinearGradient
-            colors={searchFlash ? ["#EA580C", "#DB2777"] : ["#F97316", "#EC4899"]}
+            colors={searchFlash ? ["#EA580C", "#DB2777"] : ["#F97316", brand.pink500]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.findBtnGrad}

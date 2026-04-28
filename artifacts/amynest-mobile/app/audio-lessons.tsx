@@ -376,7 +376,7 @@ export default function AudioLessonsScreen() {
                 activeOpacity={0.8}
               >
                 {active ? (
-                  <LinearGradient colors={[brand.primary, "#ec4899"]} style={styles.pill}>
+                  <LinearGradient colors={[brand.primary, brand.pink500]} style={styles.pill}>
                     <Text style={styles.pillTextActive}>{label}</Text>
                   </LinearGradient>
                 ) : (
@@ -462,7 +462,7 @@ export default function AudioLessonsScreen() {
                         style={styles.playBtn}
                         activeOpacity={0.85}
                       >
-                        <LinearGradient colors={[brand.primary, "#ec4899"]} style={styles.playBtnGrad}>
+                        <LinearGradient colors={[brand.primary, brand.pink500]} style={styles.playBtnGrad}>
                           {amy.loading
                             ? <ActivityIndicator color="#fff" size="small" />
                             : <Ionicons name={(amy.speaking || amy.loading) ? "pause" : "play"} size={26} color="#fff" />

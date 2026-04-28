@@ -35,7 +35,7 @@ const PROBLEMS: { icon: keyof typeof Ionicons.glyphMap; labelKey: string; color:
   { icon: "phone-portrait", labelKey: "landing.problem_screen", color: "#06B6D4" },
   { icon: "moon", labelKey: "landing.problem_sleep", color: brand.indigo500 },
   { icon: "ear-outline", labelKey: "landing.problem_listening", color: "#F97316" },
-  { icon: "restaurant", labelKey: "landing.problem_eating", color: "#EC4899" },
+  { icon: "restaurant", labelKey: "landing.problem_eating", color: brand.pink500 },
   { icon: "locate", labelKey: "landing.problem_focus", color: brand.purple500 },
 ];
 
@@ -50,7 +50,7 @@ const SECONDARY_FEATURES: { icon: keyof typeof Ionicons.glyphMap; titleKey: stri
     icon: "grid",
     titleKey: "landing.feature_hub_title",
     descKey: "landing.feature_hub_desc",
-    gradient: ["#EC4899", "#F97316"] as const,
+    gradient: [brand.pink500, "#F97316"] as const,
   },
   {
     icon: "flash",
@@ -103,22 +103,22 @@ const ALL_FEATURES: {
   { icon: "stats-chart", title: "Behavior Tracking", desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC behavioral analysis.", gradient: ["#10B981", "#06B6D4"], badge: "Popular" },
   { icon: "game-controller", title: "Gaming Reward Zone", desc: "Gamified milestones — kids earn real rewards tied to real-world achievements.", gradient: ["#FFD166", "#EF4444"], badge: "New" },
   { icon: "moon", title: "Infant Sleep Tracker", desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.", gradient: ["#60A5FA", "#6366F1"], badge: "New" },
-  { icon: "play-circle", title: "Parenting Reels", desc: "Short, expert-curated video reels on positive parenting techniques.", gradient: ["#EC4899", "#A855F7"], badge: null },
+  { icon: "play-circle", title: "Parenting Reels", desc: "Short, expert-curated video reels on positive parenting techniques.", gradient: [brand.pink500, brand.purple500], badge: null },
   { icon: "bulb", title: "Daily Parenting Tips", desc: "Science-backed tip daily — personalized to your child's age per Piaget's framework.", gradient: ["#FFD166", "#F97316"], badge: null },
-  { icon: "accessibility", title: "Life Skills Zone", desc: "Teach independence with Montessori-aligned milestone tracking.", gradient: ["#A855F7", "#6366F1"], badge: null },
+  { icon: "accessibility", title: "Life Skills Zone", desc: "Teach independence with Montessori-aligned milestone tracking.", gradient: [brand.purple500, "#6366F1"], badge: null },
   { icon: "medal", title: "Olympiad Zone", desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14.", gradient: ["#F59E0B", "#EF4444"], badge: null },
-  { icon: "color-palette", title: "Art & Craft Reels", desc: "Step-by-step activity videos that stimulate creativity and fine motor development.", gradient: ["#EC4899", "#F97316"], badge: null },
+  { icon: "color-palette", title: "Art & Craft Reels", desc: "Step-by-step activity videos that stimulate creativity and fine motor development.", gradient: [brand.pink500, "#F97316"], badge: null },
   { icon: "document-text", title: "Printable Worksheets", desc: "Age-appropriate worksheets for learning, colouring, and motor skill development.", gradient: ["#06B6D4", "#10B981"], badge: null },
-  { icon: "grid", title: "Daily Brain Puzzles", desc: "Brain-boosting puzzles tailored to your child's cognitive stage.", gradient: ["#F97316", "#A855F7"], badge: null },
+  { icon: "grid", title: "Daily Brain Puzzles", desc: "Brain-boosting puzzles tailored to your child's cognitive stage.", gradient: ["#F97316", brand.purple500], badge: null },
   { icon: "book", title: "Parenting Articles", desc: "Deep-dive articles by child development experts on every stage of childhood.", gradient: ["#3B82F6", "#06B6D4"], badge: null },
-  { icon: "people", title: "Babysitter Profiles", desc: "Create and share child care profiles securely. Routines, allergies, notes — all in one place.", gradient: ["#10B981", "#A855F7"], badge: null },
+  { icon: "people", title: "Babysitter Profiles", desc: "Create and share child care profiles securely. Routines, allergies, notes — all in one place.", gradient: ["#10B981", brand.purple500], badge: null },
   { icon: "trophy", title: "Parent Score & Streaks", desc: "Gamified motivation — earn points, build streaks, and celebrate every parenting win.", gradient: ["#FFD166", "#EF4444"], badge: null },
 ];
 
 const TESTIMONIALS = [
-  { name: "Priya M.", location: "Mumbai, India", text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. It felt like talking to an actual child psychologist.", avatar: "P", color: "#A855F7", result: "Tantrums reduced 80% in 3 weeks" },
+  { name: "Priya M.", location: "Mumbai, India", text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. It felt like talking to an actual child psychologist.", avatar: "P", color: brand.purple500, result: "Tantrums reduced 80% in 3 weeks" },
   { name: "Rahul & Kavya", location: "Bangalore, India", text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings.", avatar: "R", color: "#06B6D4", result: "Identified pattern in 5 days" },
-  { name: "Sarah K.", location: "Dubai, UAE", text: "Twin toddlers + infant sleep tracker + Amy's CDC-aligned tips = sanity saved. Got our 6-month-old sleeping through the night in 11 days.", avatar: "S", color: "#EC4899", result: "Sleeping through night in 11 days" },
+  { name: "Sarah K.", location: "Dubai, UAE", text: "Twin toddlers + infant sleep tracker + Amy's CDC-aligned tips = sanity saved. Got our 6-month-old sleeping through the night in 11 days.", avatar: "S", color: brand.pink500, result: "Sleeping through night in 11 days" },
 ];
 
 export default function WelcomeScreen() {
@@ -286,7 +286,7 @@ export default function WelcomeScreen() {
             {/* Primary CTA */}
             <TouchableOpacity onPress={handleStart} activeOpacity={0.9} testID="button-hero-cta" style={styles.ctaWrap}>
               <LinearGradient
-                colors={[brand.purple500, "#EC4899"]}
+                colors={[brand.purple500, brand.pink500]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.cta}
@@ -376,7 +376,7 @@ export default function WelcomeScreen() {
                   <View style={styles.coachTitleRow}>
                     <Text style={styles.coachTitle}>Amy Coach</Text>
                     <LinearGradient
-                      colors={[brand.purple500, "#EC4899"] as const}
+                      colors={[brand.purple500, brand.pink500] as const}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.corePill}
@@ -455,7 +455,7 @@ export default function WelcomeScreen() {
             <Text style={styles.midCtaText}>{t("landing.mid_cta")}</Text>
             <TouchableOpacity onPress={handleStart} activeOpacity={0.9} testID="button-features-cta" style={[styles.ctaWrap, { marginTop: 14 }]}>
               <LinearGradient
-                colors={[brand.purple500, "#EC4899"] as const}
+                colors={[brand.purple500, brand.pink500] as const}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.cta, { minWidth: 220, paddingVertical: 14 }]}
@@ -505,7 +505,7 @@ export default function WelcomeScreen() {
 
             <TouchableOpacity onPress={handleStart} activeOpacity={0.9} style={[styles.ctaWrap, { marginTop: 20 }]}>
               <LinearGradient
-                colors={[brand.purple500, "#EC4899"]}
+                colors={[brand.purple500, brand.pink500]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={[styles.cta, { minWidth: 240, paddingVertical: 14 }]}
               >
@@ -528,7 +528,7 @@ export default function WelcomeScreen() {
             {STEPS.map((s, idx) => (
               <View key={s.titleKey} style={styles.stepCard}>
                 <LinearGradient
-                  colors={[brand.purple500, "#EC4899"] as const}
+                  colors={[brand.purple500, brand.pink500] as const}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.stepNumber}
@@ -610,7 +610,7 @@ export default function WelcomeScreen() {
           {/* FINAL CTA */}
           <View style={styles.finalCtaCard}>
             <LinearGradient
-              colors={[brand.purple500, "#EC4899"]}
+              colors={[brand.purple500, brand.pink500]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.finalCtaIcon}
@@ -621,7 +621,7 @@ export default function WelcomeScreen() {
             <Text style={styles.finalCtaSub}>{t("landing.final_cta_sub")}</Text>
             <TouchableOpacity onPress={handleStart} activeOpacity={0.9} testID="button-final-cta" style={styles.ctaWrap}>
               <LinearGradient
-                colors={[brand.purple500, "#EC4899"]}
+                colors={[brand.purple500, brand.pink500]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.cta}
@@ -677,11 +677,11 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   navBrandAmy: {
-    color: "#A855F7",
+    color: brand.purple500,
     fontFamily: "Inter_700Bold",
   },
   navBrandNest: {
-    color: "#EC4899",
+    color: brand.pink500,
     fontFamily: "Inter_700Bold",
   },
   navBrandAi: {
@@ -1092,7 +1092,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#EC4899",
+    shadowColor: brand.pink500,
     shadowOpacity: 0.5,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -1219,7 +1219,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 18,
-    shadowColor: "#EC4899",
+    shadowColor: brand.pink500,
     shadowOpacity: 0.45,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },

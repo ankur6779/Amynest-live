@@ -101,7 +101,7 @@ export default function InsightsScreen() {
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
         <LinearGradient
-          colors={[brand.purple500, "#EC4899"]}
+          colors={[brand.purple500, brand.pink500]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerIcon}
@@ -319,7 +319,7 @@ export default function InsightsScreen() {
 
             <Pressable onPress={() => router.push("/amy-ai")} style={styles.askAmyCta}>
               <LinearGradient
-                colors={[brand.purple500, "#EC4899"]}
+                colors={[brand.purple500, brand.pink500]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.askAmyCtaGrad}

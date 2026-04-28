@@ -166,7 +166,7 @@ function FindMistakeGame({ onFinish }: { onFinish: (s: number, t: number) => voi
 const CMCOLORS = [
   { id: "r", name: "Red",    color: "#ef4444" }, { id: "b", name: "Blue",  color: "#3b82f6" },
   { id: "g", name: "Green",  color: "#22c55e" }, { id: "y", name: "Yellow",color: "#facc15" },
-  { id: "p", name: "Purple", color: "#a855f7" }, { id: "o", name: "Orange",color: "#fb923c" },
+  { id: "p", name: "Purple", color: brand.purple500 }, { id: "o", name: "Orange",color: "#fb923c" },
 ];
 function ColorMemoryGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
   const seqLens = [3, 4, 5, 5];
@@ -438,7 +438,7 @@ function GameModal({ game, onClose, onResult }: { game: GameDef; onClose: () => 
                 <Text style={[ms.sheetBlurb, { textAlign: "center", marginBottom: 16 }]}>You scored {done.score}/{done.total}</Text>
                 <View style={ms.earnedBadge}><Ionicons name="star" size={16} color="#fff" /><Text style={ms.earnedText}>+{done.earned} points</Text></View>
                 <TouchableOpacity onPress={() => { onResult(done!); onClose(); }} style={ms.doneBtn} activeOpacity={0.85}>
-                  <LinearGradient colors={[brand.primary, "#ec4899"]} style={ms.doneBtnGrad}><Text style={ms.doneBtnText}>Done</Text></LinearGradient>
+                  <LinearGradient colors={[brand.primary, brand.pink500]} style={ms.doneBtnGrad}><Text style={ms.doneBtnText}>Done</Text></LinearGradient>
                 </TouchableOpacity>
               </View>
             )}
@@ -582,7 +582,7 @@ export default function GamesScreen() {
                       <Text style={scr.soonTag}>Coming soon</Text>
                     ) : unlocked ? (
                       <TouchableOpacity onPress={() => onPlay(g)} disabled={limitHit} style={[scr.playBtn, limitHit && { opacity: 0.4 }]} activeOpacity={0.85}>
-                        <LinearGradient colors={[brand.primary,"#ec4899"]} style={scr.playBtnGrad}><Text style={scr.playBtnText}>Play</Text></LinearGradient>
+                        <LinearGradient colors={[brand.primary,brand.pink500]} style={scr.playBtnGrad}><Text style={scr.playBtnText}>Play</Text></LinearGradient>
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity onPress={() => onUnlock(g)} style={scr.unlockBtn} activeOpacity={0.85}>

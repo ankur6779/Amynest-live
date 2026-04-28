@@ -11,6 +11,7 @@ import { Switch } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { brand, brandAlpha } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -612,15 +613,15 @@ export default function ProfileScreen() {
 
         {/* Invite & Earn */}
         <TouchableOpacity
-          style={[styles.logoutBtn, { backgroundColor: "#A855F715", borderColor: "#A855F755" }]}
+          style={[styles.logoutBtn, { backgroundColor: brandAlpha.purple500_08, borderColor: brandAlpha.purple500_33 }]}
           onPress={() => {
             Haptics.selectionAsync();
             router.push("/referrals");
           }}
         >
-          <Ionicons name="gift" size={20} color="#A855F7" />
-          <Text style={[styles.logoutText, { color: "#A855F7" }]}>Invite & Earn Premium</Text>
-          <Ionicons name="chevron-forward" size={16} color="#A855F7" style={{ marginLeft: "auto" }} />
+          <Ionicons name="gift" size={20} color={brand.purple500} />
+          <Text style={[styles.logoutText, { color: brand.purple500 }]}>Invite & Earn Premium</Text>
+          <Ionicons name="chevron-forward" size={16} color={brand.purple500} style={{ marginLeft: "auto" }} />
         </TouchableOpacity>
 
         <TouchableOpacity
