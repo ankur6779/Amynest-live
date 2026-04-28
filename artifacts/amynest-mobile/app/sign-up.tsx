@@ -59,7 +59,9 @@ export default function SignUpScreen() {
 
   return (
     <LinearGradient
-      colors={["#0f0c29", "#302b63", "#24243e"]}
+      colors={["#0a061a", "#120a2e", "#050010"]}
+      start={{ x: 0.1, y: 0 }}
+      end={{ x: 0.9, y: 1 }}
       style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
     >
       <View style={styles.orb1} />
@@ -233,7 +235,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
 
-  title: { fontSize: 24, fontWeight: "700", color: "#FFFFFF", fontFamily: "Inter_700Bold" },
+  title: { fontSize: 24, fontWeight: "700", color: "#FFFFFF", fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
   subtitle: { fontSize: 14, color: "rgba(200,180,255,0.65)", fontFamily: "Inter_400Regular", marginBottom: 4 },
 
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },

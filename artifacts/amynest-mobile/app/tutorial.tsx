@@ -86,6 +86,12 @@ export default function TutorialScreen() {
   return (
     <View style={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
+      <LinearGradient
+        colors={["#0a061a", "#120a2e", "#050010"]}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
       <TouchableOpacity
         onPress={finish}
@@ -154,7 +160,7 @@ export default function TutorialScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0A0420" },
+  root: { flex: 1 },
   scroll: { flex: 1 },
   slide: {
     flex: 1,
@@ -187,13 +193,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "800",
+    fontFamily: "Inter_700Bold",
     color: "#fff",
     textAlign: "center",
     marginBottom: 14,
+    letterSpacing: -0.5,
   },
   body: {
     fontSize: 16,
     lineHeight: 24,
+    fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.72)",
     textAlign: "center",
     maxWidth: 320,
@@ -232,7 +241,9 @@ const styles = StyleSheet.create({
   ctaText: {
     color: "#fff",
     fontSize: 17,
-    fontWeight: "800",
+    fontWeight: "700",
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.1,
   },
   skip: {
     position: "absolute",
@@ -245,5 +256,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.6)",
     fontSize: 14,
     fontWeight: "600",
+    fontFamily: "Inter_600SemiBold",
   },
 });

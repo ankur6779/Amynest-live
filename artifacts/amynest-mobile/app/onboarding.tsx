@@ -9,10 +9,10 @@ import { useUser } from "@/lib/firebase-auth";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { useColors } from "@/hooks/useColors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 import { brand } from "@/constants/colors";
+import { LinearGradient } from "expo-linear-gradient";
 
 type ChatRole = "amy" | "user";
 type ChatMsg = { id: string; role: ChatRole; text: string };
@@ -77,10 +77,13 @@ const REGION_OPTS: { label: string; value: string }[] = [
   { label: "Global / Continental", value: "global" },
 ];
 
-const PRIMARY = brand.indigo500;
+const PRIMARY = brand.purple500;
+const GLASS_BG = "rgba(18,4,45,0.80)";
+const GLASS_BORDER = "rgba(168,85,247,0.22)";
+const TEXT_ON_DARK = "#FFFFFF";
+const TEXT_MUTED = "rgba(200,180,255,0.55)";
 
 export default function OnboardingScreen() {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useUser();
@@ -207,66 +210,97 @@ export default function OnboardingScreen() {
 
   if (step === "saving") {
     return (
-      <View style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad, backgroundColor: colors.background }]}>
+      <LinearGradient
+        colors={["#0a061a", "#120a2e", "#050010"]}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad }]}
+      >
         <Image
           source={require("../assets/images/amynest-logo.png")}
           style={styles.amyBigBubble}
           resizeMode="cover"
         />
-        <Text style={[styles.doneTitle, { color: colors.foreground }]}>Amy is setting up your profile...</Text>
+        <Text style={styles.doneTitle}>Amy is setting up your profile...</Text>
         <ActivityIndicator color={PRIMARY} style={{ marginTop: 16 }} />
-      </View>
+      </LinearGradient>
     );
   }
 
   if (step === "done") {
     return (
-      <View style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad, backgroundColor: colors.background }]}>
+      <LinearGradient
+        colors={["#0a061a", "#120a2e", "#050010"]}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad }]}
+      >
         <View style={[styles.amyBigBubble, { backgroundColor: "#10B981" }]}>
           <Ionicons name="checkmark" size={36} color="#fff" />
         </View>
-        <Text style={[styles.doneTitle, { color: colors.foreground }]}>Profile ready!</Text>
-        <Text style={[styles.doneSub, { color: colors.mutedForeground }]}>All set for {children[0]?.name ?? "your child"}</Text>
+        <Text style={styles.doneTitle}>Profile ready!</Text>
+        <Text style={styles.doneSub}>All set for {children[0]?.name ?? "your child"}</Text>
         <TouchableOpacity
-          style={[styles.doneBtn, { backgroundColor: PRIMARY }]}
           onPress={() => {
             qc.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
             router.replace("/(tabs)");
           }}
+          activeOpacity={0.9}
+          style={styles.doneBtnWrap}
           testID="go-dashboard-btn"
         >
-          <Text style={styles.doneBtnText}>Go to Dashboard</Text>
-          <Ionicons name="arrow-forward" size={18} color="#fff" />
+          <LinearGradient
+            colors={[brand.purple500, "#EC4899"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.doneBtn}
+          >
+            <Text style={styles.doneBtnText}>Go to Dashboard</Text>
+            <Ionicons name="arrow-forward" size={18} color="#fff" />
+          </LinearGradient>
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
     );
   }
 
   if (step === "save-error") {
     return (
-      <View style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad, backgroundColor: colors.background }]}>
+      <LinearGradient
+        colors={["#0a061a", "#120a2e", "#050010"]}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad }]}
+      >
         <View style={[styles.amyBigBubble, { backgroundColor: "#EF4444" }]}>
           <Ionicons name="alert-circle" size={36} color="#fff" />
         </View>
-        <Text style={[styles.doneTitle, { color: colors.foreground }]}>Something went wrong</Text>
-        <Text style={[styles.doneSub, { color: colors.mutedForeground }]}>
+        <Text style={styles.doneTitle}>Something went wrong</Text>
+        <Text style={styles.doneSub}>
           We couldn't save your profile. Check your connection and try again.
         </Text>
         {saveError ? (
-          <Text style={[styles.doneSub, { color: "#EF4444", fontSize: 12, marginTop: -8 }]}>{saveError}</Text>
+          <Text style={[styles.doneSub, { color: "#FF8080", fontSize: 12, marginTop: -8 }]}>{saveError}</Text>
         ) : null}
         <TouchableOpacity
-          style={[styles.doneBtn, { backgroundColor: PRIMARY }]}
           onPress={() => {
             stepRef.current = "parent-work";
             setStep("parent-work");
           }}
+          activeOpacity={0.9}
+          style={styles.doneBtnWrap}
           testID="retry-save-btn"
         >
-          <Ionicons name="refresh" size={18} color="#fff" />
-          <Text style={styles.doneBtnText}>Try Again</Text>
+          <LinearGradient
+            colors={[brand.purple500, "#EC4899"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.doneBtn}
+          >
+            <Ionicons name="refresh" size={18} color="#fff" />
+            <Text style={styles.doneBtnText}>Try Again</Text>
+          </LinearGradient>
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
     );
   }
 
@@ -279,11 +313,11 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.inputRow}>
             <TextInput
-              style={[styles.textInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+              style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
               value={textInput}
               onChangeText={setTextInput}
               placeholder="Child's name"
-              placeholderTextColor={colors.mutedForeground}
+              placeholderTextColor={TEXT_MUTED}
               autoFocus
               returnKeyType="send"
               onSubmitEditing={() => {
@@ -320,11 +354,11 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.dobContainer}>
             <TouchableOpacity
-              style={[styles.textInput, { flex: 1, justifyContent: "center", borderColor: colors.border, backgroundColor: colors.card }]}
+              style={[styles.textInput, { flex: 1, justifyContent: "center", borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
               onPress={() => setShowDatePicker(true)}
               activeOpacity={0.75}
             >
-              <Text style={{ color: colors.foreground, fontSize: 15, fontFamily: "Inter_400Regular" }}>
+              <Text style={{ color: TEXT_ON_DARK, fontSize: 15, fontFamily: "Inter_400Regular" }}>
                 {formatDob(dobDate)}
               </Text>
             </TouchableOpacity>
@@ -332,7 +366,7 @@ export default function OnboardingScreen() {
               Platform.OS === "ios" ? (
                 <Modal transparent animationType="slide">
                   <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" }}>
-                    <View style={{ backgroundColor: colors.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16 }}>
+                    <View style={{ backgroundColor: GLASS_BG, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, borderWidth: 1, borderColor: GLASS_BORDER }}>
                       <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 8 }}>
                         <TouchableOpacity onPress={() => setShowDatePicker(false)}>
                           <Text style={{ color: PRIMARY, fontSize: 16, fontFamily: "Inter_600SemiBold" }}>Done</Text>
@@ -382,7 +416,7 @@ export default function OnboardingScreen() {
             {["Yes, school going", "No, not yet"].map(opt => (
               <TouchableOpacity
                 key={opt}
-                style={[styles.optionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[styles.optionBtn, { backgroundColor: GLASS_BG, borderColor: GLASS_BORDER }]}
                 onPress={() => {
                   const isSchool = opt.startsWith("Yes");
                   setCurr(c => ({ ...c, isSchoolGoing: isSchool }));
@@ -394,7 +428,7 @@ export default function OnboardingScreen() {
                   }
                 }}
               >
-                <Text style={[styles.optionBtnText, { color: colors.foreground }]}>{opt}</Text>
+                <Text style={[styles.optionBtnText, { color: TEXT_ON_DARK }]}>{opt}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -406,7 +440,7 @@ export default function OnboardingScreen() {
             {CLASSES.map(c => (
               <TouchableOpacity
                 key={c}
-                style={[styles.chip, { backgroundColor: selected === c ? PRIMARY : colors.card, borderColor: selected === c ? PRIMARY : colors.border }]}
+                style={[styles.chip, { backgroundColor: selected === c ? PRIMARY : GLASS_BG, borderColor: selected === c ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(c);
                   Haptics.selectionAsync();
@@ -414,7 +448,7 @@ export default function OnboardingScreen() {
                   userReplies(c, "child-school-start", "What time does school start?");
                 }}
               >
-                <Text style={[styles.chipText, { color: selected === c ? "#fff" : colors.foreground }]}>{c}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{c}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -425,13 +459,13 @@ export default function OnboardingScreen() {
           <View style={styles.chipGrid}>
             {SCHOOL_START.map(t => (
               <TouchableOpacity key={t}
-                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : colors.card, borderColor: selected === t ? PRIMARY : colors.border }]}
+                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : GLASS_BG, borderColor: selected === t ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(t); Haptics.selectionAsync();
                   setCurr(c => ({ ...c, schoolStartTime: to24h(t) }));
                   userReplies(t, "child-school-end", "And school ends at?");
                 }}>
-                <Text style={[styles.chipText, { color: selected === t ? "#fff" : colors.foreground }]}>{t}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -442,13 +476,13 @@ export default function OnboardingScreen() {
           <View style={styles.chipGrid}>
             {SCHOOL_END.map(t => (
               <TouchableOpacity key={t}
-                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : colors.card, borderColor: selected === t ? PRIMARY : colors.border }]}
+                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : GLASS_BG, borderColor: selected === t ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(t); Haptics.selectionAsync();
                   setCurr(c => ({ ...c, schoolEndTime: to24h(t), schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
                   userReplies(t, "child-school-days", `Which days does ${curr.name} have school?`);
                 }}>
-                <Text style={[styles.chipText, { color: selected === t ? "#fff" : colors.foreground }]}>{t}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -479,9 +513,9 @@ export default function OnboardingScreen() {
                 return (
                   <TouchableOpacity
                     key={day}
-                    style={[styles.chip, { backgroundColor: on ? PRIMARY : colors.card, borderColor: on ? PRIMARY : colors.border }]}
+                    style={[styles.chip, { backgroundColor: on ? PRIMARY : GLASS_BG, borderColor: on ? PRIMARY : GLASS_BORDER }]}
                     onPress={() => toggle(day)}>
-                    <Text style={[styles.chipText, { color: on ? "#fff" : colors.foreground }]}>{label}</Text>
+                    <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{label}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -504,13 +538,13 @@ export default function OnboardingScreen() {
           <View style={styles.chipGrid}>
             {WAKE_OPTS.map(t => (
               <TouchableOpacity key={t}
-                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : colors.card, borderColor: selected === t ? PRIMARY : colors.border }]}
+                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : GLASS_BG, borderColor: selected === t ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(t); Haptics.selectionAsync();
                   setCurr(c => ({ ...c, wakeUpTime: to24h(t) }));
                   userReplies(t, "child-sleep", `And bedtime for ${curr.name}?`);
                 }}>
-                <Text style={[styles.chipText, { color: selected === t ? "#fff" : colors.foreground }]}>{t}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -521,13 +555,13 @@ export default function OnboardingScreen() {
           <View style={styles.chipGrid}>
             {SLEEP_OPTS.map(t => (
               <TouchableOpacity key={t}
-                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : colors.card, borderColor: selected === t ? PRIMARY : colors.border }]}
+                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : GLASS_BG, borderColor: selected === t ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(t); Haptics.selectionAsync();
                   setCurr(c => ({ ...c, sleepTime: to24h(t) }));
                   userReplies(t, "child-food", `What does ${curr.name} eat?`);
                 }}>
-                <Text style={[styles.chipText, { color: selected === t ? "#fff" : colors.foreground }]}>{t}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -543,7 +577,7 @@ export default function OnboardingScreen() {
           <View style={styles.chipGrid}>
             {foodOpts.map(opt => (
               <TouchableOpacity key={opt.value}
-                style={[styles.chip, { backgroundColor: selected === opt.label ? PRIMARY : colors.card, borderColor: selected === opt.label ? PRIMARY : colors.border }]}
+                style={[styles.chip, { backgroundColor: selected === opt.label ? PRIMARY : GLASS_BG, borderColor: selected === opt.label ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(opt.label); Haptics.selectionAsync();
                   const finishedChild = { ...curr, foodType: opt.value } as ChildData;
@@ -551,7 +585,7 @@ export default function OnboardingScreen() {
                   setCurr({});
                   userReplies(opt.label, "add-more", "Got it! Do you have another child to add?");
                 }}>
-                <Text style={[styles.chipText, { color: selected === opt.label ? "#fff" : colors.foreground }]}>{opt.label}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -563,7 +597,7 @@ export default function OnboardingScreen() {
           <View style={styles.rowBtns}>
             {["Yes, add another", "No, continue"].map(opt => (
               <TouchableOpacity key={opt}
-                style={[styles.optionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[styles.optionBtn, { backgroundColor: GLASS_BG, borderColor: GLASS_BORDER }]}
                 onPress={() => {
                   if (opt.startsWith("Yes")) {
                     userReplies(opt, "child-name", "Great! What's the next child's name?");
@@ -571,7 +605,7 @@ export default function OnboardingScreen() {
                     userReplies(opt, "parent-name", "Almost done! What's your name?");
                   }
                 }}>
-                <Text style={[styles.optionBtnText, { color: colors.foreground }]}>{opt}</Text>
+                <Text style={[styles.optionBtnText, { color: TEXT_ON_DARK }]}>{opt}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -581,11 +615,11 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.inputRow}>
             <TextInput
-              style={[styles.textInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+              style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
               value={textInput}
               onChangeText={setTextInput}
               placeholder="Your name"
-              placeholderTextColor={colors.mutedForeground}
+              placeholderTextColor={TEXT_MUTED}
               autoFocus
               returnKeyType="send"
               onSubmitEditing={() => {
@@ -614,13 +648,13 @@ export default function OnboardingScreen() {
           <View style={styles.chipGrid}>
             {ROLES.map(r => (
               <TouchableOpacity key={r}
-                style={[styles.chip, { backgroundColor: selected === r ? PRIMARY : colors.card, borderColor: selected === r ? PRIMARY : colors.border }]}
+                style={[styles.chip, { backgroundColor: selected === r ? PRIMARY : GLASS_BG, borderColor: selected === r ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(r); Haptics.selectionAsync();
                   setParent(p => ({ ...p, role: r }));
                   userReplies(r, "parent-work", "And your work situation?");
                 }}>
-                <Text style={[styles.chipText, { color: selected === r ? "#fff" : colors.foreground }]}>{r}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{r}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -631,13 +665,13 @@ export default function OnboardingScreen() {
           <View style={styles.chipGrid}>
             {WORK_TYPES.map(wt => (
               <TouchableOpacity key={wt.value}
-                style={[styles.chip, { backgroundColor: selected === wt.value ? PRIMARY : colors.card, borderColor: selected === wt.value ? PRIMARY : colors.border }]}
+                style={[styles.chip, { backgroundColor: selected === wt.value ? PRIMARY : GLASS_BG, borderColor: selected === wt.value ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(wt.value); Haptics.selectionAsync();
                   setParent(p => ({ ...p, workType: wt.value }));
                   userReplies(wt.label, "parent-region", "Which regional cuisine should Amy plan meals from? 🍛");
                 }}>
-                <Text style={[styles.chipText, { color: selected === wt.value ? "#fff" : colors.foreground }]}>{wt.label}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{wt.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -648,13 +682,13 @@ export default function OnboardingScreen() {
           <View style={styles.chipGrid}>
             {REGION_OPTS.map(opt => (
               <TouchableOpacity key={opt.value}
-                style={[styles.chip, { backgroundColor: selected === opt.value ? PRIMARY : colors.card, borderColor: selected === opt.value ? PRIMARY : colors.border }]}
+                style={[styles.chip, { backgroundColor: selected === opt.value ? PRIMARY : GLASS_BG, borderColor: selected === opt.value ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(opt.value); Haptics.selectionAsync();
                   setParent(p => ({ ...p, region: opt.value }));
                   userReplies(opt.label, "parent-mobile", "📱 What's your mobile number for reminders? (You can skip this.)");
                 }}>
-                <Text style={[styles.chipText, { color: selected === opt.value ? "#fff" : colors.foreground }]}>{opt.label}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -665,11 +699,11 @@ export default function OnboardingScreen() {
           <View style={{ gap: 8 }}>
             <View style={styles.inputRow}>
               <TextInput
-                style={[styles.textInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+                style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
                 value={textInput}
                 onChangeText={setTextInput}
                 placeholder="+91 98765 43210"
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor={TEXT_MUTED}
                 keyboardType="phone-pad"
                 autoFocus
                 returnKeyType="send"
@@ -694,7 +728,7 @@ export default function OnboardingScreen() {
             <TouchableOpacity
               onPress={() => userReplies("Skip — I'll add it later", "parent-allergies", "🌾 Any food allergies to avoid in meal plans? (Skip if none.)")}
               style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12 }}>
-              <Text style={{ fontSize: 13, color: colors.mutedForeground }}>Skip — I'll add it later</Text>
+              <Text style={{ fontSize: 13, color: TEXT_MUTED }}>Skip — I'll add it later</Text>
             </TouchableOpacity>
           </View>
         );
@@ -704,11 +738,11 @@ export default function OnboardingScreen() {
           <View style={{ gap: 8 }}>
             <View style={styles.inputRow}>
               <TextInput
-                style={[styles.textInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+                style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
                 value={textInput}
                 onChangeText={setTextInput}
                 placeholder="e.g. peanuts, dairy, shellfish..."
-                placeholderTextColor={colors.mutedForeground}
+                placeholderTextColor={TEXT_MUTED}
                 autoFocus
                 returnKeyType="send"
                 onSubmitEditing={() => {
@@ -740,7 +774,7 @@ export default function OnboardingScreen() {
                 setTimeout(() => saveEverything(updatedParent, children), 800);
               }}
               style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12 }}>
-              <Text style={{ fontSize: 13, color: colors.mutedForeground }}>Skip — no allergies</Text>
+              <Text style={{ fontSize: 13, color: TEXT_MUTED }}>Skip — no allergies</Text>
             </TouchableOpacity>
           </View>
         );
@@ -753,12 +787,19 @@ export default function OnboardingScreen() {
   const inputNode = renderInput();
 
   return (
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={["#0a061a", "#120a2e", "#050010"]}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
-      <View style={[styles.topBar, { paddingTop: topPad + 8 }]}>
+      <View style={[styles.topBar, { paddingTop: topPad + 8, backgroundColor: "rgba(10,6,26,0.80)" }]}>
         <View style={styles.amyRow}>
           <Image
             source={require("../assets/images/amynest-logo.png")}
@@ -766,8 +807,8 @@ export default function OnboardingScreen() {
             resizeMode="cover"
           />
           <View>
-            <Text style={[styles.amyName, { color: colors.foreground }]}>Amy</Text>
-            <Text style={[styles.amyStatus, { color: "#10B981" }]}>Parenting Coach</Text>
+            <Text style={styles.amyName}>Amy</Text>
+            <Text style={styles.amyStatus}>Parenting Coach</Text>
           </View>
         </View>
       </View>
@@ -787,7 +828,7 @@ export default function OnboardingScreen() {
                 style={{ width: 28, height: 28, borderRadius: 14 }}
                 resizeMode="cover"
               />
-              <View style={[styles.typingBubble, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.typingBubble, styles.bubbleAmy]}>
                 <View style={[styles.dot, { backgroundColor: PRIMARY }]} />
                 <View style={[styles.dot, { backgroundColor: PRIMARY }]} />
                 <View style={[styles.dot, { backgroundColor: PRIMARY }]} />
@@ -807,21 +848,22 @@ export default function OnboardingScreen() {
             <View style={[
               styles.bubble,
               m.role === "amy"
-                ? { backgroundColor: colors.card, borderColor: colors.border }
-                : { backgroundColor: PRIMARY },
+                ? styles.bubbleAmy
+                : styles.bubbleUser,
             ]}>
-              <Text style={[styles.bubbleText, { color: m.role === "amy" ? colors.foreground : "#fff" }]}>{m.text}</Text>
+              <Text style={[styles.bubbleText, { color: "#fff" }]}>{m.text}</Text>
             </View>
           </View>
         )}
       />
 
       {inputNode && (
-        <View style={[styles.inputContainer, { paddingBottom: botPad + 16, borderTopColor: colors.border, backgroundColor: colors.background }]}>
+        <View style={[styles.inputContainer, { paddingBottom: botPad + 16, borderTopColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(10,6,26,0.85)" }]}>
           {inputNode}
         </View>
       )}
     </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -829,10 +871,12 @@ const styles = StyleSheet.create({
   topBar: { paddingHorizontal: 16, paddingBottom: 12 },
   amyRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   amyAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  amyName: { fontSize: 16, fontFamily: "Inter_700Bold" },
-  amyStatus: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  amyName: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#FFFFFF", letterSpacing: -0.2 },
+  amyStatus: { fontSize: 11, fontFamily: "Inter_500Medium", color: "#10B981" },
   msgRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginBottom: 12 },
   bubble: { maxWidth: "78%", padding: 12, borderRadius: 18, borderWidth: 1, borderColor: "transparent" },
+  bubbleAmy: { backgroundColor: "rgba(18,4,45,0.80)", borderColor: "rgba(168,85,247,0.22)" },
+  bubbleUser: { backgroundColor: brand.purple500 },
   bubbleText: { fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 22 },
   typingBubble: { flexDirection: "row", gap: 4, padding: 14, borderRadius: 18, borderWidth: 1, alignItems: "center" },
   dot: { width: 7, height: 7, borderRadius: 4 },
@@ -851,8 +895,9 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   doneContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingHorizontal: 32 },
   amyBigBubble: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center" },
-  doneTitle: { fontSize: 24, fontFamily: "Inter_700Bold", textAlign: "center" },
-  doneSub: { fontSize: 15, fontFamily: "Inter_400Regular", textAlign: "center" },
-  doneBtn: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 28, paddingVertical: 16, borderRadius: 16, marginTop: 8 },
-  doneBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 },
+  doneTitle: { fontSize: 24, fontFamily: "Inter_700Bold", textAlign: "center", color: "#FFFFFF", letterSpacing: -0.4 },
+  doneSub: { fontSize: 15, fontFamily: "Inter_400Regular", textAlign: "center", color: "rgba(255,255,255,0.65)" },
+  doneBtnWrap: { borderRadius: 16, overflow: "hidden", marginTop: 8 },
+  doneBtn: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 28, paddingVertical: 16 },
+  doneBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16, letterSpacing: 0.1 },
 });
