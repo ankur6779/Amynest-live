@@ -1,0 +1,151 @@
+We have already aligned UI (colors, layout) between the website and the mobile app.
+
+Now we need to align FEATURES and CONTENT between:
+- Website (source of truth)
+- Mobile App (React Native / current app)
+
+GOAL:
+Ensure mobile app matches website in:
+• features
+• content availability
+• behavior
+• data flow
+
+--------------------------------------------------
+PHASE 0: SYSTEM SETUP
+--------------------------------------------------
+Create a structured comparison system for each screen:
+
+For every page:
+1. Feature list (Web)
+2. Feature list (Mobile)
+3. Content list (Web)
+4. Content list (Mobile)
+5. Missing / mismatch analysis
+6. Fix plan
+7. Implementation
+
+--------------------------------------------------
+PHASE 1: SELECT FIRST SCREEN
+--------------------------------------------------
+Start with:
+Parent Hub (or next screen after UI phase)
+
+--------------------------------------------------
+STEP 1: WEB FEATURE ANALYSIS
+--------------------------------------------------
+List all features on website screen:
+
+Example:
+- Story section
+- Phonics section
+- AI insights
+- Age-based filtering
+- Multiple child support
+- Explore section
+
+Also list:
+- Data sources
+- API calls (if any)
+- Content types
+
+--------------------------------------------------
+STEP 2: MOBILE FEATURE ANALYSIS
+--------------------------------------------------
+List all currently implemented features in mobile app:
+
+- Which features exist
+- Which are partial
+- Which are missing
+
+--------------------------------------------------
+STEP 3: CONTENT COMPARISON
+--------------------------------------------------
+Compare:
+
+Web:
+- What content is shown?
+- How much content?
+- Structure?
+
+Mobile:
+- Same content?
+- Less / more?
+- Missing categories?
+
+--------------------------------------------------
+STEP 4: GAP CLASSIFICATION
+--------------------------------------------------
+Classify differences into:
+
+1. Missing Feature
+2. Partial Feature
+3. Content Missing
+4. Logic Difference
+
+--------------------------------------------------
+STEP 5: PRIORITIZATION
+--------------------------------------------------
+Mark priority:
+
+High:
+- Core features (AI, content, navigation)
+
+Medium:
+- Enhancements
+
+Low:
+- Optional items
+
+--------------------------------------------------
+STEP 6: FIX PLAN
+--------------------------------------------------
+For each gap:
+- Define exact change needed
+- Define data source
+- Define UI/logic update
+
+--------------------------------------------------
+STEP 7: IMPLEMENTATION
+--------------------------------------------------
+- Update mobile app to match website behavior
+- Ensure:
+  • same content visibility
+  • same logic (age filtering, etc.)
+  • same flow
+
+--------------------------------------------------
+STEP 8: VALIDATION
+--------------------------------------------------
+After implementation:
+
+Check:
+- Feature parity
+- Content parity
+- No missing sections
+
+--------------------------------------------------
+DEBUG TOOL (IMPORTANT)
+--------------------------------------------------
+Add a "Feature Debug Mode":
+
+- Show checklist:
+  • Features matched
+  • Features missing
+  • Content differences
+
+--------------------------------------------------
+RULES
+--------------------------------------------------
+- Do NOT rebuild everything
+- Work incrementally
+- One screen at a time
+- Keep performance optimized
+
+--------------------------------------------------
+NEXT STEPS
+--------------------------------------------------
+Start with:
+Parent Hub → complete full feature + content alignment
+
+Then wait before moving to next screen.
