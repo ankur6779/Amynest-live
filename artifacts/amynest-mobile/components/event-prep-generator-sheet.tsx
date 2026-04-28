@@ -4,6 +4,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { brand } from "@/constants/colors";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import {
   EVENT_OCCASIONS, generateEventIdea,
@@ -128,7 +129,7 @@ export function EventPrepGeneratorSheet({ visible, onClose, onOpenCharacter }: P
           {result && result.ideas.length > 0 && (
             <View style={{ gap: 10, marginTop: 8 }}>
               <View style={S.introRow}>
-                <Ionicons name="heart" size={14} color="#ec4899" />
+                <Ionicons name="heart" size={14} color={brand.pink500} />
                 <Text style={S.introText}>{result.intro}</Text>
               </View>
 
@@ -247,7 +248,7 @@ const S = StyleSheet.create({
   altHead: { fontSize: 11, fontWeight: "800", color: "#6b7280", marginTop: 8, letterSpacing: 0.5 },
 
   card: { backgroundColor: "#fff", borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "#e5e7eb" },
-  cardHighlight: { borderWidth: 2, borderColor: "#ec4899" },
+  cardHighlight: { borderWidth: 2, borderColor: brand.pink500 },
   cardHero: { padding: 16 },
   cardTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
   cardTag: { color: "rgba(255,255,255,0.92)", fontSize: 12, marginTop: 2 },

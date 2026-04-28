@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { brand } from "@/constants/colors";
 import { useReferrals, type GiftToken } from "@/hooks/useReferrals";
 
 const SHARE_BASE = "https://amynest.ai";
@@ -445,7 +446,7 @@ export default function ReferralsScreen() {
                           styles.statusDot,
                           {
                             backgroundColor:
-                              r.status === "paid" ? "#22C55E" : r.status === "valid" ? "#A855F7" : "#F59E0B",
+                              r.status === "paid" ? "#22C55E" : r.status === "valid" ? brand.purple500 : "#F59E0B",
                           },
                         ]}
                       />
@@ -456,9 +457,9 @@ export default function ReferralsScreen() {
                         styles.statusPill,
                         {
                           backgroundColor:
-                            r.status === "paid" ? "#22C55E" : r.status === "valid" ? "#A855F7" : colors.surface,
+                            r.status === "paid" ? "#22C55E" : r.status === "valid" ? brand.purple500 : colors.surface,
                           borderColor:
-                            r.status === "paid" ? "#22C55E" : r.status === "valid" ? "#A855F7" : colors.border,
+                            r.status === "paid" ? "#22C55E" : r.status === "valid" ? brand.purple500 : colors.border,
                         },
                       ]}
                     >

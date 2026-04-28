@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { useColors } from "@/hooks/useColors";
+import { brand } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
@@ -277,7 +278,7 @@ export default function DashboardScreen() {
               accessibilityLabel={t("dashboard.generate_today")}
             >
               <LinearGradient
-                colors={[brand.violet600, "#EC4899"]}
+                colors={[brand.violet600, brand.pink500]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.emptyCta}

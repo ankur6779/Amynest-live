@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
     // glow
-    shadowColor: "#A855F7",
+    shadowColor: brand.purple500,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.35,
     shadowRadius: 24,

@@ -250,7 +250,7 @@ export default function OnboardingScreen() {
           testID="go-dashboard-btn"
         >
           <LinearGradient
-            colors={[brand.purple500, "#EC4899"]}
+            colors={[brand.purple500, brand.pink500]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.doneBtn}
@@ -291,7 +291,7 @@ export default function OnboardingScreen() {
           testID="retry-save-btn"
         >
           <LinearGradient
-            colors={[brand.purple500, "#EC4899"]}
+            colors={[brand.purple500, brand.pink500]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.doneBtn}

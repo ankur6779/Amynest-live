@@ -192,7 +192,7 @@ export default function RoutinesScreen() {
             </TouchableOpacity>
             <TouchableOpacity onPress={goToGenerate} activeOpacity={0.85}>
               <LinearGradient
-                colors={[brand.violet600, "#EC4899"]}
+                colors={[brand.violet600, brand.pink500]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.genBtn}
               >
@@ -416,7 +416,7 @@ export default function RoutinesScreen() {
             </Text>
             <TouchableOpacity onPress={goToGenerate} activeOpacity={0.85} style={{ marginTop: 16 }}>
               <LinearGradient
-                colors={[brand.violet600, "#EC4899"]}
+                colors={[brand.violet600, brand.pink500]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.bigCta}
               >

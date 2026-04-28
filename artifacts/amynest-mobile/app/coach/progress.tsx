@@ -58,7 +58,7 @@ export default function CoachProgressScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
           <Ionicons name="chevron-back" size={22} color={c.text} />
         </Pressable>
-        <LinearGradient colors={[brand.primary, "#EC4899"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
+        <LinearGradient colors={[brand.primary, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
           <Ionicons name="bar-chart" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
@@ -89,7 +89,7 @@ export default function CoachProgressScreen() {
               }}
               style={styles.primaryBtn}
             >
-              <LinearGradient colors={[brand.primary, "#EC4899"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtnGrad}>
+              <LinearGradient colors={[brand.primary, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtnGrad}>
                 <Text style={styles.primaryBtnText}>Start a plan</Text>
               </LinearGradient>
             </Pressable>
@@ -122,7 +122,7 @@ export default function CoachProgressScreen() {
                 </View>
                 <View style={[styles.progressBarBg, { backgroundColor: c.border }]}>
                   <LinearGradient
-                    colors={[brand.primary, "#EC4899"]}
+                    colors={[brand.primary, brand.pink500]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={[styles.progressBarFill, { width: `${pct}%` }]}
                   />

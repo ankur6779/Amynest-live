@@ -14,6 +14,7 @@ import {
   type EventCategory, type EventCharacter, type EventCategoryId, type EventFilter,
 } from "@workspace/event-prep";
 import { EventPrepGeneratorSheet } from "@/components/event-prep-generator-sheet";
+import { brand } from "@/constants/colors";
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
@@ -149,7 +150,7 @@ export default function EventPrepScreen() {
             style={S.lastMinHero}
           >
             <LinearGradient
-              colors={["#fbbf24", "#f97316", "#ec4899"]}
+              colors={["#fbbf24", "#f97316", brand.pink500]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
               style={S.heroGrad}
             >
