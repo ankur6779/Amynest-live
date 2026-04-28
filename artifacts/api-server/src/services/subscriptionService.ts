@@ -277,25 +277,57 @@ export async function getEntitlements(userId: string): Promise<EntitlementSummar
 }
 
 /**
- * Checks if the given email has a manual premium grant in `admin_premium_grants`.
- * If so, and the user's current subscription is not already active, upgrades it
- * to active/yearly with a far-future period end. Idempotent — safe to call on
- * every entitlement fetch.
+ * Returns true if this userId or email is in the env-var allowlists:
+ *   ADMIN_PREMIUM_UIDS  — comma-separated Firebase UIDs (works for phone-auth users)
+ *   ADMIN_PREMIUM_EMAILS — comma-separated email addresses
+ * These are checked BEFORE the DB table so they work in production without a
+ * DB migration (just set the env var and redeploy).
+ */
+function isEnvGranted(userId: string, email: string | null): boolean {
+  const uids = (process.env.ADMIN_PREMIUM_UIDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (uids.includes(userId)) return true;
+
+  if (email) {
+    const emails = (process.env.ADMIN_PREMIUM_EMAILS ?? "")
+      .split(",")
+      .map((s) => s.toLowerCase().trim())
+      .filter(Boolean);
+    if (emails.includes(email.toLowerCase().trim())) return true;
+  }
+  return false;
+}
+
+/**
+ * Checks if the given userId/email has a manual premium grant — first via
+ * env-var allowlists (ADMIN_PREMIUM_UIDS / ADMIN_PREMIUM_EMAILS, works even
+ * in production without a DB migration), then via the admin_premium_grants DB
+ * table. If granted and the subscription is not yet active, upgrades it to
+ * active/yearly with a far-future period end. Idempotent.
  */
 export async function maybeAutoGrantPremium(
   userId: string,
   email: string | null,
 ): Promise<void> {
-  if (!email) return;
-  const grant = await db
-    .select()
-    .from(adminPremiumGrantsTable)
-    .where(eq(adminPremiumGrantsTable.email, email.toLowerCase().trim()))
-    .limit(1);
-  if (!grant[0]) return;
+  let plan: Exclude<Plan, "free"> = "yearly";
+
+  if (isEnvGranted(userId, email)) {
+    // Fast-path: env var grant — no DB lookup needed.
+  } else {
+    if (!email) return;
+    const grant = await db
+      .select()
+      .from(adminPremiumGrantsTable)
+      .where(eq(adminPremiumGrantsTable.email, email.toLowerCase().trim()))
+      .limit(1);
+    if (!grant[0]) return;
+    plan = (grant[0].plan as Exclude<Plan, "free">) ?? "yearly";
+  }
+
   const sub = await getOrCreateSubscription(userId);
   if (sub.status === "active") return;
-  const plan = (grant[0].plan as Exclude<Plan, "free">) ?? "yearly";
   await db
     .update(subscriptionsTable)
     .set({
