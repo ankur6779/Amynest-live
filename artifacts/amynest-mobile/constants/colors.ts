@@ -184,6 +184,10 @@ export const brand = {
   purple900: "#581C87",
   indigo100: "#E0E7FF",
   indigo500: "#6366F1",
+  amber400: "#FFD27A",
+  rose400: "#FB7185",
+  sky300: "#4FC3F7",
+  pink400: "#F472B6",
 } as const;
 
 export const brandAlpha = {

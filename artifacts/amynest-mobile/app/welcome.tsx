@@ -165,7 +165,7 @@ export default function WelcomeScreen() {
 
   const titleColor = colorAnim.interpolate({
     inputRange: [0, 1, 2, 3, 4],
-    outputRange: [brand.primary, brand.accent, "#4FC3F7", "#FFD166", brand.primary],
+    outputRange: [brand.primary, brand.accent, brand.sky300, "#FFD166", brand.primary],
   });
 
   const tap = () => {
@@ -330,7 +330,7 @@ export default function WelcomeScreen() {
           {/* PROBLEM HOOK */}
           <View style={styles.sectionWrap}>
             <View style={styles.eyebrow}>
-              <Ionicons name="sparkles" size={11} color="#F472B6" />
+              <Ionicons name="sparkles" size={11} color={brand.pink400} />
               <Text style={styles.eyebrowText}>{t("landing.problems_eyebrow")}</Text>
             </View>
             <Text style={styles.sectionTitle}>{t("landing.problems_heading")}</Text>
@@ -552,7 +552,7 @@ export default function WelcomeScreen() {
           {/* TESTIMONIALS */}
           <View style={styles.sectionWrap}>
             <View style={styles.eyebrow}>
-              <Ionicons name="heart" size={11} color="#F472B6" />
+              <Ionicons name="heart" size={11} color={brand.pink400} />
               <Text style={styles.eyebrowText}>Parent Stories</Text>
             </View>
             <Text style={styles.sectionTitle}>Real Parents, Real Results</Text>

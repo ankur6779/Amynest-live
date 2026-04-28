@@ -251,7 +251,7 @@ export default function BehaviorScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
           <Ionicons name="chevron-back" size={22} color={c.text} />
         </Pressable>
-        <LinearGradient colors={["#FBBF24", "#FB7185"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
+        <LinearGradient colors={["#FBBF24", brand.rose400]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
           <Ionicons name="happy" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
@@ -334,13 +334,13 @@ export default function BehaviorScreen() {
           onPress={() => setSituationKey("crying")}
           style={styles.quickHelpBtn}
         >
-          <Ionicons name="help-circle-outline" size={16} color="#FB7185" />
+          <Ionicons name="help-circle-outline" size={16} color={brand.rose400} />
           <Text style={styles.quickHelpText}>{L.situationMode}</Text>
         </Pressable>
 
         {/* BLOCK 1: Quick Log */}
         <Block
-          icon={<LinearGradient colors={["#F59E0B", "#FB7185"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="flash" size={18} color="#fff" /></LinearGradient>}
+          icon={<LinearGradient colors={["#F59E0B", brand.rose400]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="flash" size={18} color="#fff" /></LinearGradient>}
           title={L.quickLog}
           subtitle={L.tap1Log}
           open={openBlock === "quick-log"}
@@ -619,7 +619,7 @@ const makeStyles = (c: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
     backgroundColor: "rgba(251,113,133,0.12)", borderWidth: 1, borderColor: "rgba(251,113,133,0.3)",
   },
-  quickHelpText: { color: "#FB7185" /* audit-ok: brand accent */, fontWeight: "700", fontSize: 13 },
+  quickHelpText: { color: brand.rose400, fontWeight: "700", fontSize: 13 },
 
   block: {
     borderRadius: 20, borderWidth: 1, overflow: "hidden",

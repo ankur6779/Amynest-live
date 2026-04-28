@@ -231,7 +231,7 @@ export default function HubScreen() {
             onPress={() => router.push("/amy-ai")}
             style={styles.askAmyBtn}
           >
-            <LinearGradient colors={["#FFD27A", brand.accent, brand.primary]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyGrad}>
+            <LinearGradient colors={[brand.amber400, brand.accent, brand.primary]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyGrad}>
               <Ionicons name="chatbubbles" size={14} color="#fff" />
               <Text style={styles.askAmyText}>Ask Amy</Text>
             </LinearGradient>
@@ -300,7 +300,7 @@ export default function HubScreen() {
         {effective && grp && (
           <View style={styles.agePillRow}>
             <View style={styles.agePill}>
-              <Text style={{ color: "#FFD27A", fontWeight: "700" }}>{grp.emoji} {grp.label}</Text>
+              <Text style={{ color: brand.amber400, fontWeight: "700" }}>{grp.emoji} {grp.label}</Text>
             </View>
             <Text style={styles.personalised}>Personalised for <Text style={{ color: "#fff", fontWeight: "700" }}>{effective.name}</Text></Text>
           </View>
@@ -452,7 +452,7 @@ export default function HubScreen() {
               <Section
                 id="emotional"
                 icon={<Ionicons name="heart" size={20} color="#fff" />}
-                accent={["#F472B6", brand.accent]}
+                accent={[brand.pink400, brand.accent]}
                 title="Emotional Support"
                 desc="For the tough parenting days"
                 open={openSection === "emotional"}
@@ -829,7 +829,7 @@ export default function HubScreen() {
               <Section
                 id="activities"
                 icon={<Ionicons name="color-palette" size={20} color="#fff" />}
-                accent={["#FB7185", "#F59E0B"]}
+                accent={[brand.rose400, "#F59E0B"]}
                 title="Activities & Learning"
                 desc="Games, audio lessons & more"
                 open={openSection === "activities"}
@@ -957,7 +957,7 @@ export default function HubScreen() {
               <Section
                 id="art-craft"
                 icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
-                accent={["#F472B6", brand.purple500]}
+                accent={[brand.pink400, brand.purple500]}
                 title="🎨 Art & Craft Videos"
                 desc="Short creative videos to inspire your child"
                 open={openSection === "art-craft"}
@@ -995,7 +995,7 @@ export default function HubScreen() {
               <Section
                 id="facts"
                 icon={<Ionicons name="sparkles" size={20} color="#fff" />}
-                accent={["#F59E0B", "#FB7185"]}
+                accent={["#F59E0B", brand.rose400]}
                 title="✨ Amazing Facts"
                 desc="Mind-blowing facts for curious kids"
                 open={openSection === "facts"}
@@ -1474,7 +1474,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       borderColor: isLight ? "rgba(217,119,6,0.45)" : "rgba(255,210,122,0.55)",
     },
     previewingText: {
-      color: isLight ? "#B45309" : "#FFD27A",
+      color: isLight ? "#B45309" : brand.amber400,
       fontSize: 10, fontWeight: "800",
       letterSpacing: 0.5, textTransform: "uppercase",
     },
@@ -1499,7 +1499,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       borderColor: "rgba(255,78,205,0.65)",
     },
     bandPillText: { color: c.foreground, fontSize: 12, fontWeight: "700" },
-    bandPillTextCurrent: { color: isLight ? "#B45309" : "#FFD27A" },
+    bandPillTextCurrent: { color: isLight ? "#B45309" : brand.amber400 },
     bandPillTextPreview: { color: brand.accent },
 
     exploreGroupBody: { position: "relative" },
