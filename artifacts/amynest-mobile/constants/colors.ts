@@ -251,5 +251,7 @@ export const gradients = {
   purpleToPurple: ["#A855F7", "#9333EA"] as const,
 } as const;
 
+export const ACCENT_PINK = "#FF4ECD" as const;
+
 export const BRAND_GRADIENT = ["#a855f7", "#ec4899"] as const;
 export const BRAND_GRADIENT_DISABLED = ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"] as const;

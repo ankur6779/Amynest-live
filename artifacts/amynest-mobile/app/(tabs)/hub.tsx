@@ -32,7 +32,7 @@ import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
 import TryFreeBadge from "@/components/TryFreeBadge";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
-import colors, { brand } from "@/constants/colors";
+import colors, { brand, ACCENT_PINK } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 
 const LOGO = require("../../assets/images/amynest-logo.png");
@@ -231,7 +231,7 @@ export default function HubScreen() {
             onPress={() => router.push("/amy-ai")}
             style={styles.askAmyBtn}
           >
-            <LinearGradient colors={[brand.amber400, brand.accent, brand.primary]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyGrad}>
+            <LinearGradient colors={["#FFD27A", ACCENT_PINK, brand.primary]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyGrad}>
               <Ionicons name="chatbubbles" size={14} color="#fff" />
               <Text style={styles.askAmyText}>Ask Amy</Text>
             </LinearGradient>
@@ -240,13 +240,13 @@ export default function HubScreen() {
 
         {isLoading && (
           <View style={{ paddingVertical: 40, alignItems: "center" }}>
-            <ActivityIndicator color={brand.accent} />
+            <ActivityIndicator color={ACCENT_PINK} />
           </View>
         )}
 
         {!isLoading && children.length === 0 && (
           <View style={styles.emptyCard}>
-            <MaterialCommunityIcons name="baby-face-outline" size={48} color={brand.accent} />
+            <MaterialCommunityIcons name="baby-face-outline" size={48} color={ACCENT_PINK} />
             <Text style={styles.emptyTitle}>Add a child to get started</Text>
             <Text style={styles.emptyDesc}>Personalized tips, articles, and activities unlock once Amy knows your child.</Text>
             <Pressable onPress={() => router.push("/children/new")} style={styles.primaryBtn}>
@@ -326,7 +326,7 @@ export default function HubScreen() {
               <Section
                 id="amy"
                 icon={<MaterialCommunityIcons name="brain" size={20} color="#fff" />}
-                accent={[brand.primary, brand.accent]}
+                accent={[brand.primary, ACCENT_PINK]}
                 title="Ask Amy AI"
                 desc="Warm, practical parenting advice — instantly"
                 open={openSection === "amy"}
@@ -452,7 +452,7 @@ export default function HubScreen() {
               <Section
                 id="emotional"
                 icon={<Ionicons name="heart" size={20} color="#fff" />}
-                accent={[brand.pink400, brand.accent]}
+                accent={["#F472B6", ACCENT_PINK]}
                 title="Emotional Support"
                 desc="For the tough parenting days"
                 open={openSection === "emotional"}
@@ -1223,7 +1223,7 @@ export default function HubScreen() {
 
         {/* Bottom CTA */}
         <Pressable onPress={() => router.push("/(tabs)/routines")} style={styles.bottomCta}>
-          <Ionicons name="calendar" size={16} color={brand.accent} />
+          <Ionicons name="calendar" size={16} color={ACCENT_PINK} />
           <Text style={styles.bottomCtaText}>Generate today's routine</Text>
         </Pressable>
       </ScrollView>
@@ -1300,7 +1300,7 @@ function Section({
           <Ionicons
             name={open ? "chevron-up" : "chevron-down"}
             size={14}
-            color={open ? brand.accent : (mode === "light" ? c.textBody : "rgba(255,255,255,0.65)")}
+            color={open ? ACCENT_PINK : (mode === "light" ? c.textBody : "rgba(255,255,255,0.65)")}
           />
         </View>
       </Pressable>
@@ -1342,7 +1342,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18,
       backgroundColor: glassBg, borderWidth: 1, borderColor: glassBorder,
     },
-    chipActive: { backgroundColor: "rgba(123,63,242,0.4)", borderColor: brand.accent },
+    chipActive: { backgroundColor: "rgba(123,63,242,0.4)", borderColor: ACCENT_PINK },
     chipName: { color: c.foreground, fontWeight: "700", fontSize: 13 },
     chipAge: { color: c.textMuted, fontSize: 10 },
 
@@ -1370,7 +1370,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     sectionOpen: {
       borderColor: "rgba(255,78,205,0.55)",
       backgroundColor: glassBgOpen,
-      shadowColor: brand.accent,
+      shadowColor: ACCENT_PINK,
       shadowOpacity: isLight ? 0.25 : 0.45,
       shadowRadius: 22,
       shadowOffset: { width: 0, height: 10 },
@@ -1427,7 +1427,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       backgroundColor: "rgba(167,139,250,0.10)",
       borderWidth: 1, borderColor: "rgba(167,139,250,0.25)",
     },
-    tipNum: { color: brand.accent, fontWeight: "800", fontSize: 16 },
+    tipNum: { color: ACCENT_PINK, fontWeight: "800", fontSize: 16 },
     tipText: { color: c.foreground, flex: 1, fontSize: 13, lineHeight: 18 },
 
     emotionalGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
@@ -1444,7 +1444,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     },
 
     bottomCta: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12 },
-    bottomCtaText: { color: brand.accent, fontWeight: "700" },
+    bottomCtaText: { color: ACCENT_PINK, fontWeight: "700" },
 
     // 2-section age-band layout: section/group headers and Explore styling.
     bandSectionHeader: { gap: 2, marginTop: 4, marginBottom: 4 },
@@ -1464,7 +1464,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       borderWidth: 1, borderColor: "rgba(255,78,205,0.5)",
     },
     comingNextText: {
-      color: brand.accent, fontSize: 10, fontWeight: "800",
+      color: ACCENT_PINK, fontSize: 10, fontWeight: "800",
       letterSpacing: 0.5, textTransform: "uppercase",
     },
     previewingPill: {
@@ -1499,8 +1499,8 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       borderColor: "rgba(255,78,205,0.65)",
     },
     bandPillText: { color: c.foreground, fontSize: 12, fontWeight: "700" },
-    bandPillTextCurrent: { color: isLight ? "#B45309" : brand.amber400 },
-    bandPillTextPreview: { color: brand.accent },
+    bandPillTextCurrent: { color: isLight ? "#B45309" : "#FFD27A" },
+    bandPillTextPreview: { color: ACCENT_PINK },
 
     exploreGroupBody: { position: "relative" },
     exploreDimmed: { opacity: 0.6 },

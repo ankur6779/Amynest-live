@@ -13,7 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
-import { brand } from "@/constants/colors";
+import { brand, ACCENT_PINK } from "@/constants/colors";
 
 type TabKey = "index" | "routines" | "coach" | "hub";
 
@@ -147,7 +147,7 @@ function CoachHeroTab({
       />
       <Animated.View style={{ transform: [{ scale: bounce }, { translateY: -COACH_LIFT }] }}>
         <LinearGradient
-          colors={focused ? [brand.primaryLight, brand.primary, brand.accent] : [brand.primary, brand.accent]}
+          colors={focused ? [brand.primaryLight, brand.primary, ACCENT_PINK] : [brand.primary, ACCENT_PINK]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.coachDisc}
@@ -296,8 +296,8 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: brand.accent,
-    shadowColor: brand.accent,
+    backgroundColor: ACCENT_PINK,
+    shadowColor: ACCENT_PINK,
     shadowOpacity: 0.9,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 0 },

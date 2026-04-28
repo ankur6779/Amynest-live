@@ -3,7 +3,7 @@ import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { formatDuration, type StoryDto } from "@/services/storiesApi";
-import { brand } from "@/constants/colors";
+import { ACCENT_PINK } from "@/constants/colors";
 
 type Size = "regular" | "wide";
 
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: "rgba(255,255,255,0.2)",
   },
-  progressBar: { height: 3, backgroundColor: brand.accent },
+  progressBar: { height: 3, backgroundColor: ACCENT_PINK },
   title: {
     marginTop: 6,
     fontSize: 12,

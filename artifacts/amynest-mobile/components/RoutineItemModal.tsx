@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { brand } from "@/constants/colors";
+import { brand, ACCENT_PINK } from "@/constants/colors";
 import Animated, {
   FadeIn,
   FadeInUp,
@@ -97,7 +97,7 @@ const CATEGORY_ICON: Record<string, { icon: keyof typeof Ionicons.glyphMap; grad
 
 function pickCategory(category = "") {
   const k = Object.keys(CATEGORY_ICON).find((x) => category.toLowerCase().includes(x));
-  return k ? CATEGORY_ICON[k] : { icon: "ellipse" as const, gradient: ["#7B3FF2", brand.accent] as const };
+  return k ? CATEGORY_ICON[k] : { icon: "ellipse" as const, gradient: ["#7B3FF2", ACCENT_PINK] as const };
 }
 
 function statusBadge(status: ItemStatus) {

@@ -24,7 +24,7 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeIn } from "react-native-reanimated";
 import SwipeableCard from "@/components/SwipeableCard";
 import RoutineItemModal from "@/components/RoutineItemModal";
-import colors, { brand, brandAlpha } from "@/constants/colors";
+import colors, { brand, brandAlpha, ACCENT_PINK } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import VoiceSettingsPanel, {
@@ -892,7 +892,7 @@ export default function RoutineDetailScreen() {
                     <Stat num={stats.skipped} label="Skipped" color="rgba(255,255,255,0.5)" />
                   </View>
                   <View style={styles.progressOuter}>
-                    <LinearGradient colors={[brand.primary, brand.accent /* audit-ok: accent pink gradient end-stop */]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    <LinearGradient colors={[brand.primary, ACCENT_PINK /* audit-ok: accent pink gradient end-stop */]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                       style={[styles.progressFill, { width: `${stats.pct}%` }]} />
                   </View>
                   <Text style={styles.progressLabel}>{stats.pct}% complete</Text>
@@ -963,7 +963,7 @@ export default function RoutineDetailScreen() {
               <View style={styles.activitiesHeaderRow}>
                 <Text style={styles.sectionTitle}>ACTIVITIES</Text>
                 <TouchableOpacity onPress={() => setAddOpen(true)} style={styles.addBtn} activeOpacity={0.85}>
-                  <LinearGradient colors={[brand.primary, brand.accent /* audit-ok: accent pink gradient end-stop */]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtnGrad}>
+                  <LinearGradient colors={[brand.primary, ACCENT_PINK /* audit-ok: accent pink gradient end-stop */]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtnGrad}>
                     <Ionicons name="add" size={14} color="#FFFFFF" />
                     <Text style={styles.addBtnText}>Add</Text>
                   </LinearGradient>
@@ -1221,7 +1221,7 @@ export default function RoutineDetailScreen() {
                 <ActionRow icon="create-outline" iconColor="#60A5FA" label="Edit time / activity"
                   onPress={() => openEdit(actionItem)} />
                 {/* audit-ok: accent pink "Remove" destructive action icon */}
-                <ActionRow icon="trash-outline" iconColor={brand.accent} label="Remove from routine"
+                <ActionRow icon="trash-outline" iconColor={ACCENT_PINK} label="Remove from routine"
                   onPress={() => deleteItem(actionItem)} />
 
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => setActionItem(null)} activeOpacity={0.7}>
@@ -1530,7 +1530,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
 
-  dateLabel: { color: brand.accent /* audit-ok: accent pink date label on always-dark header */, fontSize: 12, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
+  dateLabel: { color: ACCENT_PINK /* audit-ok: accent pink date label on always-dark header */, fontSize: 12, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
   routineTitle: { color: "#FFFFFF", fontSize: 24, fontWeight: "800", lineHeight: 30, marginTop: 6 },
   childRow: { flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" },
   childChip: {
@@ -1645,7 +1645,7 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 22, alignSelf: "center",
     alignItems: "center", justifyContent: "center",
     backgroundColor: brand.primary, marginBottom: 4,
-    shadowColor: brand.accent /* audit-ok: accent pink glow on add icon */, shadowOpacity: 0.5, shadowRadius: 10,
+    shadowColor: ACCENT_PINK /* audit-ok: accent pink glow on add icon */, shadowOpacity: 0.5, shadowRadius: 10,
   },
   editTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "700", textAlign: "center" },
   editLabel: { color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "600", letterSpacing: 0.5, marginTop: 8, textTransform: "uppercase" },
@@ -1672,7 +1672,7 @@ const styles = StyleSheet.create({
   },
   confirmTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "700" },
   confirmBody: { color: "rgba(255,255,255,0.65)", fontSize: 13, textAlign: "center", lineHeight: 19 },
-  confirmDelete: { backgroundColor: brand.accent /* audit-ok: accent pink destructive confirm button */ },
+  confirmDelete: { backgroundColor: ACCENT_PINK /* audit-ok: accent pink destructive confirm button */ },
   confirmDeleteText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 
   /* Toast */

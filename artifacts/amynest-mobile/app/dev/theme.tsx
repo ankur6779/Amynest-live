@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import colors, { brand, brandAlpha, gradients } from "@/constants/colors";
+import colors, { brand, brandAlpha, gradients, ACCENT_PINK } from "@/constants/colors";
 
 
 type ColorMode = "light" | "dark";
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   code: {
-    color: brand.accent,
+    color: ACCENT_PINK,
     fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
   },
   swatchRow: {
