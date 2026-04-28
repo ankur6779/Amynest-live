@@ -80,6 +80,7 @@
     "@workspace/tiffin-feedback": "workspace:*",
     "expo-audio": "~1.1.1",
     "expo-auth-session": "~7.0.10",
+    "expo-build-properties": "^55.0.13",
     "expo-clipboard": "^8.0.8",
     "expo-crypto": "~15.0.8",
     "expo-device": "~8.0.10",
