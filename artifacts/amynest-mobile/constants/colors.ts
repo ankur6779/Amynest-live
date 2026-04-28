@@ -75,6 +75,8 @@ const colors = {
     mutedBannerBg: "rgba(255,255,255,0.7)",
     mutedBannerBorder: "rgba(0,0,0,0.05)",
     heroBadgeBg: "#F3E8FF",
+    cardBackground: "#FFFFFF",
+    surfaceMuted: "#F1F5F9",
   },
   dark: {
     text: "#FFFFFF",
@@ -152,6 +154,8 @@ const colors = {
     mutedBannerBg: "rgba(255,255,255,0.06)",
     mutedBannerBorder: "rgba(255,255,255,0.08)",
     heroBadgeBg: "rgba(123,63,242,0.20)",
+    cardBackground: "#13102e",
+    surfaceMuted: "#1c1240",
   },
   radius: 20,
 };
