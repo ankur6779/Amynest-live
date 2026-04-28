@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     shadowRadius: 28,
     shadowOffset: { width: 0, height: 8 },
     elevation: 16,
-    backgroundColor: "rgba(11,11,26,0.7)",
+    backgroundColor: "rgba(15,12,41,0.75)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.09)",
     overflow: "hidden",
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     paddingHorizontal: 6,
     paddingVertical: PILL_PADDING_V,
-    backgroundColor: "rgba(20,20,43,0.5)",
+    backgroundColor: "rgba(19,16,46,0.5)",
   },
   itemHit: {
     flex: 1,

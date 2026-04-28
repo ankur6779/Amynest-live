@@ -20,6 +20,12 @@ import RoutineCarousel from "@/components/RoutineCarousel";
 import type { RoutineTask } from "@/contexts/ProgressContext";
 import { brand } from "@/constants/colors";
 
+const BG_GRADIENT = ["#0f0c29", "#302b63", "#24243e"] as const;
+
+function formatDate(d: Date): string {
+  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
 type ItemStatus = "pending" | "completed" | "skipped" | "delayed";
 
 type RoutineItem = {
@@ -186,9 +192,9 @@ export default function DashboardScreen() {
 
   if (profileLoading) {
     return (
-      <View style={[styles.center, { backgroundColor: c.background }]}>
+      <LinearGradient colors={BG_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.center}>
         <ActivityIndicator size="large" color={c.primary} />
-      </View>
+      </LinearGradient>
     );
   }
 
@@ -199,9 +205,10 @@ export default function DashboardScreen() {
   const displayName = user?.firstName ?? "";
   const topPad = insets.top + (Platform.OS === "web" ? 16 : 0);
   const botPad = insets.bottom + (Platform.OS === "web" ? 16 : 0);
+  const todayLabel = formatDate(new Date());
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
+    <LinearGradient colors={BG_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
       <ScrollView
         contentContainerStyle={{
           paddingTop: topPad + 16,
@@ -216,10 +223,17 @@ export default function DashboardScreen() {
           />
         }
       >
-        <View style={styles.headerWrap}>
-          <Text style={[styles.eyebrow, { color: c.mutedForeground }]}>
-            {t(getGreetingKey()).toUpperCase()}
-          </Text>
+        {/* ── Violet glass hero card (mirrors web HeroGreeting) ── */}
+        <View style={styles.heroCard}>
+          <View style={styles.eyebrowRow}>
+            <Text style={styles.eyebrow}>
+              {t(getGreetingKey()).toUpperCase()}
+            </Text>
+            <View style={styles.datePill}>
+              <View style={styles.liveDot} />
+              <Text style={styles.dateLabel}>{todayLabel}</Text>
+            </View>
+          </View>
           <Text style={[styles.title, { color: c.foreground }]}>
             👋{" "}
             {displayName
@@ -277,22 +291,55 @@ export default function DashboardScreen() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  headerWrap: {
-    paddingHorizontal: 20,
+  heroCard: {
+    marginHorizontal: 20,
     marginBottom: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(168,85,247,0.18)",
+    backgroundColor: "rgba(168,85,247,0.07)",
+  },
+  eyebrowRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
   },
   eyebrow: {
     fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 1.2,
-    marginBottom: 6,
+    letterSpacing: 1.4,
+    color: "#A855F7",
+  },
+  datePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(168,85,247,0.12)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  liveDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "#A855F7",
+  },
+  dateLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+    color: "#A855F7",
   },
   title: {
     fontSize: 22,
@@ -327,7 +374,8 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(127,127,127,0.2)",
+    borderColor: "rgba(168,85,247,0.20)",
+    backgroundColor: "rgba(168,85,247,0.04)",
     alignItems: "center",
   },
   emptyTitle: {
