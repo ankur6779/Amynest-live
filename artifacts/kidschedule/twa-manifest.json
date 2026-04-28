@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.bubblewrap.dev/v1/twa-manifest.schema.json",
+  "packageId": "com.amynest.ai",
+  "host": "YOUR_DEPLOYED_HOSTNAME",
+  "name": "AmyNest AI \u2014 Smart Parenting Coach",
+  "launcherName": "AmyNest AI",
+  "display": "standalone",
+  "themeColor": "#A855F7",
+  "navigationColor": "#0f0c29",
+  "navigationColorDark": "#0f0c29",
+  "navigationDividerColor": "#0f0c29",
+  "navigationDividerColorDark": "#0f0c29",
+  "backgroundColor": "#0f0c29",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://YOUR_DEPLOYED_HOSTNAME/pwa-icon-512.png",
+  "maskableIconUrl": "https://YOUR_DEPLOYED_HOSTNAME/pwa-icon-512.png",
+  "monochromeIconUrl": "https://YOUR_DEPLOYED_HOSTNAME/pwa-icon-192.png",
+  "appVersionCode": 2,
+  "appVersionName": "1.0.1",
+  "shortcuts": [
+    {
+      "name": "AI Coach",
+      "short_name": "Coach",
+      "url": "/ai-coach",
+      "icons": [{ "src": "https://YOUR_DEPLOYED_HOSTNAME/pwa-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Children",
+      "short_name": "Children",
+      "url": "/children",
+      "icons": [{ "src": "https://YOUR_DEPLOYED_HOSTNAME/pwa-icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://YOUR_DEPLOYED_HOSTNAME/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 21,
+  "targetSdkVersion": 35,
+  "orientation": "portrait",
+  "fingerprints": []
+}
