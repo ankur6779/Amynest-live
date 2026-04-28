@@ -18,9 +18,9 @@ export type ThemePalette = {
 export const darkTheme: ThemePalette = {
   mode: "dark",
   bg: {
-    primary: "#0B0B1A",
-    secondary: "#14142B",
-    tertiary: "#1B1B3A",
+    primary: "#0f0c29",
+    secondary: "#13102e",
+    tertiary: "#1c1240",
   },
   card: {
     bg: "rgba(255,255,255,0.05)",
@@ -45,7 +45,7 @@ export const darkTheme: ThemePalette = {
     info: "#06B6D4",
   },
   glow: { color: brand.primary, opacity: 0.5 },
-  gradient: ["#0B0B1A", "#14142B", "#1B1B3A"] as const,
+  gradient: ["#0f0c29", "#302b63", "#24243e"] as const,
   borderMuted: "rgba(255,255,255,0.20)",
   dividerMuted: "rgba(255,255,255,0.15)",
 };
