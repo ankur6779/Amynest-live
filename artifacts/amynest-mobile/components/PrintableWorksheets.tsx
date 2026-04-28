@@ -11,7 +11,7 @@ import {
 } from "@/services/hubApi";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { ACCENT_PINK } from "@/constants/colors";
+import { ACCENT_PINK, palette } from "@/constants/colors";
 
 const DAILY_LIMIT = 5;
 const PAGE_SIZE = 8;
@@ -105,8 +105,8 @@ export function PrintableWorksheets() {
     let result: WebBrowser.WebBrowserResult;
     try {
       result = await WebBrowser.openBrowserAsync(drivePreviewUrl(ws.id), {
-        toolbarColor: mode === "light" ? "#FFFFFF" : "#1e293b",
-        controlsColor: mode === "light" ? "#0F172A" : "#fff",
+        toolbarColor: mode === "light" ? "#FFFFFF" : palette.slate800,
+        controlsColor: mode === "light" ? palette.slate900 : "#fff",
         showTitle: true,
       });
     } catch (e) {

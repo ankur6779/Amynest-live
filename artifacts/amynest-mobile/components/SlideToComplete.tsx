@@ -9,6 +9,7 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { palette } from "@/constants/colors";
 
 const KNOB = 44;
 const PADDING = 4;
@@ -87,7 +88,7 @@ export default function SlideToComplete({ onComplete, disabled = false, label = 
 
   const onLayout = (e: LayoutChangeEvent) => setTrackW(e.nativeEvent.layout.width);
 
-  const knobIconColor = done ? "#16a34a" : (mode === "light" ? "#fff" : "#94a3b8");
+  const knobIconColor = done ? palette.green600 : (mode === "light" ? "#fff" : palette.slate400);
 
   return (
     <View style={[s.track, disabled && { opacity: 0.5 }]} onLayout={onLayout}>
@@ -140,7 +141,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       letterSpacing: 0.4,
     },
     successLabel: {
-      color: mode === "light" ? "#15803d" : "#bbf7d0",
+      color: mode === "light" ? palette.green700 : "#bbf7d0", // audit-ok: emerald-100 for dark-mode success label
       fontSize: 13,
       fontWeight: "800",
       letterSpacing: 0.4,

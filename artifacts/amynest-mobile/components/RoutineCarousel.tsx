@@ -10,7 +10,7 @@ import Animated, {
   FadeIn,
 } from "react-native-reanimated";
 import type { RoutineTask } from "@/contexts/ProgressContext";
-import { brand, gradients } from "@/constants/colors";
+import { brand, gradients, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -38,7 +38,7 @@ function TaskCard({
 
   const isDone = task.done;
   const accent: readonly [string, string] = isDone
-    ? ["#10B981", "#059669"]
+    ? [palette.emerald500, palette.emerald600]
     : gradients.violetToPurple;
 
   const cardA11yLabel = `${task.title}, ${task.time}, ${task.minutes} minutes, ${
@@ -70,9 +70,9 @@ function TaskCard({
 
       <View style={styles.statusRow}>
         {isDone ? (
-          <View style={[styles.statusPill, { backgroundColor: "#10B98118" }]}>
-            <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-            <Text style={[styles.statusText, { color: "#10B981" }]}>Completed</Text>
+          <View style={[styles.statusPill, { backgroundColor: `${palette.emerald500}18` }]}>
+            <Ionicons name="checkmark-circle" size={12} color={palette.emerald500} />
+            <Text style={[styles.statusText, { color: palette.emerald500 }]}>Completed</Text>
           </View>
         ) : (
           <View style={[styles.statusPill, { backgroundColor: `${brand.purple500}18` }]}>

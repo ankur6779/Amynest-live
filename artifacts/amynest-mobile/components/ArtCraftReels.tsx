@@ -60,7 +60,7 @@ export function ArtCraftReels() {
     try {
       await WebBrowser.openBrowserAsync(drivePreviewUrl(video.id), {
         toolbarColor: mode === "light" ? "#FFFFFF" : "#000000",
-        controlsColor: mode === "light" ? "#0F172A" : "#FFFFFF",
+        controlsColor: mode === "light" ? c.foreground : "#FFFFFF",
         showTitle: true,
       });
     } catch {
@@ -186,7 +186,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: c.calloutBg, borderWidth: 1, borderColor: c.glassBorder,
     },
     thumbBox: { height: 130, backgroundColor: "#000", position: "relative" },
-    thumb: { width: "100%", height: "100%", backgroundColor: "#1f1f1f" },
+    thumb: { width: "100%", height: "100%", backgroundColor: "#1f1f1f" }, // audit-ok: video thumbnail placeholder
     playOverlay: {
       position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
       alignItems: "center", justifyContent: "center",

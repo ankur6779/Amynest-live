@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 import { API_BASE_URL } from "@/constants/api";
 
 interface RankedMeal {
@@ -163,7 +163,7 @@ function MiniCard({ meal, onPress }: { meal: RankedMeal; onPress: () => void }) 
       <View style={styles.miniInfo}>
         <Text style={styles.miniTitle} numberOfLines={2}>{meal.title}</Text>
         <View style={styles.metaRow}>
-          <Ionicons name="time-outline" size={10} color="#94A3B8" />
+          <Ionicons name="time-outline" size={10} color={palette.slate400} />
           <Text style={styles.metaText}>{meal.prepMinutes}m</Text>
         </View>
       </View>
@@ -211,7 +211,7 @@ function RecipeSheet({ meal, onClose }: { meal: RankedMeal; onClose: () => void 
                 </View>
               ))}
               <View style={styles.recipeTag}>
-                <Ionicons name="time-outline" size={10} color="#F97316" />
+                <Ionicons name="time-outline" size={10} color={palette.orange500} />
                 <Text style={styles.recipeTagText}> {meal.prepMinutes}m</Text>
               </View>
               {meal.calories > 0 && (
@@ -266,10 +266,10 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(251,146,60,0.2)",
   },
   headerEmoji: { fontSize: 14 },
-  headerText: { fontSize: 11.5, fontWeight: "800", color: "#EA580C", letterSpacing: 0.2 },
+  headerText: { fontSize: 11.5, fontWeight: "800", color: palette.orange600, letterSpacing: 0.2 },
   loadingRow: { flexDirection: "row", gap: 8, padding: 10 },
   skeleton: { width: 120, height: 130, borderRadius: 12 },
-  emptyText: { fontSize: 12, color: "#94A3B8", padding: 12 },
+  emptyText: { fontSize: 12, color: palette.slate400, padding: 12 },
   scrollContent: { paddingHorizontal: 10, paddingVertical: 8, gap: 8 },
 
   miniCard: {
@@ -290,11 +290,11 @@ const styles = StyleSheet.create({
     paddingVertical: 1.5,
     borderRadius: 999,
   },
-  tagText: { fontSize: 8.5, fontWeight: "800", color: "#0F172A" },
+  tagText: { fontSize: 8.5, fontWeight: "800", color: palette.slate900 },
   miniInfo: { padding: 7 },
-  miniTitle: { fontSize: 11.5, fontWeight: "800", color: "#FFFFFF", lineHeight: 15, marginBottom: 3 },
+  miniTitle: { fontSize: 11.5, fontWeight: "800", color: "#FFFFFF", lineHeight: 15, marginBottom: 3 }, // audit-ok: white text on dark meal card
   metaRow: { flexDirection: "row", alignItems: "center", gap: 2 },
-  metaText: { fontSize: 10, color: "#94A3B8" },
+  metaText: { fontSize: 10, color: palette.slate400 },
 
   recipeScrim: {
     flex: 1,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   recipeSheet: {
-    backgroundColor: "#141428",
+    backgroundColor: "#141428", // audit-ok: deep navy-purple for recipe sheet bg
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: "88%",
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   recipeTitle: {
     fontSize: 18,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: "#FFFFFF", // audit-ok: white title text on dark recipe sheet
     marginBottom: 10,
   },
   recipeTagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 },
@@ -345,11 +345,11 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 999,
   },
-  recipeTagText: { fontSize: 10, fontWeight: "800", color: "#FB923C" },
+  recipeTagText: { fontSize: 10, fontWeight: "800", color: palette.orange400 },
   sectionLabel: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#F97316",
+    color: palette.orange500,
     marginBottom: 8,
     marginTop: 4,
     letterSpacing: 0.4,
@@ -374,12 +374,12 @@ const styles = StyleSheet.create({
   stepNum: {
     width: 22, height: 22,
     borderRadius: 11,
-    backgroundColor: "#F97316",
+    backgroundColor: palette.orange500,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
     marginTop: 1,
   },
-  stepNumText: { fontSize: 11, fontWeight: "900", color: "#FFFFFF" },
+  stepNumText: { fontSize: 11, fontWeight: "900", color: "#FFFFFF" }, // audit-ok: white text on orange step bubble
   stepText: { flex: 1, fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 18 },
 });

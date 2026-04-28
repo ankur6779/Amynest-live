@@ -32,7 +32,7 @@ export function LanguageRow() {
         <Pressable style={styles.scrim} onPress={() => setOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <LinearGradient
-              colors={["#1B1B3A", "#0F0C29"]}
+              colors={["#1B1B3A", "#0F0C29"]} // audit-ok: deep navy gradient for language picker sheet
               style={styles.sheetInner}
             >
               <Text style={styles.sheetTitle}>{t("nav.language")}</Text>

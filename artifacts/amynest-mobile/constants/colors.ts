@@ -255,3 +255,56 @@ export const ACCENT_PINK = "#FF4ECD" as const;
 
 export const BRAND_GRADIENT = ["#a855f7", "#ec4899"] as const;
 export const BRAND_GRADIENT_DISABLED = ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"] as const;
+
+/**
+ * Full Tailwind-compatible palette for use in components that cannot use
+ * useColors() (e.g. static components, icon colours, category gradients).
+ * Import this instead of writing hardcoded hex strings.
+ */
+export const palette = {
+  emerald50:  "#ECFDF5",
+  emerald100: "#D1FAE5",
+  emerald200: "#A7F3D0",
+  emerald400: "#34D399",
+  emerald500: "#10B981",
+  emerald600: "#059669",
+  emerald700: "#047857",
+  green500:   "#22C55E",
+  green600:   "#16A34A",
+  green700:   "#15803D",
+  amber50:    "#FFFBEB",
+  amber400:   "#FBBF24",
+  amber500:   "#F59E0B",
+  amber600:   "#D97706",
+  amber700:   "#B45309",
+  amber800:   "#92400E",
+  yellow400:  "#FACC15",
+  orange400:  "#FB923C",
+  orange500:  "#F97316",
+  orange600:  "#EA580C",
+  orange700:  "#C2410C",
+  red50:      "#FEF2F2",
+  red200:     "#FECDD3",
+  red300:     "#FCA5A5",
+  red400:     "#F87171",
+  red500:     "#EF4444",
+  red600:     "#DC2626",
+  rose100:    "#FFE4E6",
+  rose500:    "#F43F5E",
+  rose700:    "#BE123C",
+  blue400:    "#60A5FA",
+  blue500:    "#3B82F6",
+  cyan300:    "#22D3EE",
+  sky500:     "#0EA5E9",
+  teal500:    "#14B8A6",
+  teal600:    "#0D9488",
+  slate400:   "#94A3B8",
+  slate500:   "#64748B",
+  slate600:   "#475569",
+  slate800:   "#1E293B",
+  slate900:   "#0F172A",
+  gray700:    "#374151",
+  gray800:    "#1F2937",
+  indigo600:  "#4F46E5",
+  indigo950:  "#1E1B4B",
+} as const;

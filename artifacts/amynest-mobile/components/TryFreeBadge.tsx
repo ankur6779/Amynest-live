@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { palette } from "@/constants/colors";
 
 /**
  * Small "Try Free" pill shown on Parent Hub features the user hasn't used
@@ -9,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 export default function TryFreeBadge({ style }: { style?: any }) {
   return (
     <View style={[styles.pill, style]} testID="try-free-badge">
-      <Ionicons name="sparkles" size={9} color="#047857" />
+      <Ionicons name="sparkles" size={9} color={palette.emerald700} />
       <Text style={styles.text}>Try Free</Text>
     </View>
   );
@@ -29,7 +30,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   text: {
-    color: "#047857",
+    color: palette.emerald700,
     fontSize: 9.5,
     fontWeight: "800",
     letterSpacing: 0.4,

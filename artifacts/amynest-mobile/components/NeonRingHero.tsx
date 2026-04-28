@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     borderRadius: INNER / 2,
     top: OFFSET,
     left: OFFSET,
-    backgroundColor: "#080316",
+    backgroundColor: "#080316", // audit-ok: deep void black for NeonRing inner circle
     alignItems: "center",
     justifyContent: "center",
   },

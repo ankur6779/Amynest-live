@@ -8,12 +8,12 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import { brand } from "@/constants/colors";
+import { brand, palette } from "@/constants/colors";
 
 const THRESHOLD = 100;
-const COMPLETE_COLOR = "#22C55E";
-const DELETE_COLOR = "#EF4444";
-const SKIP_COLOR = "#EF4444";
+const COMPLETE_COLOR = palette.green500;
+const DELETE_COLOR = palette.red500;
+const SKIP_COLOR = palette.red500;
 const SPRING = { damping: 18, stiffness: 200, mass: 0.7 } as const;
 
 function hImpact() { if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }
@@ -186,7 +186,7 @@ export default function SwipeableCard({
       <View style={[styles.bgRow, { borderRadius }]} pointerEvents="none">
         <Animated.View style={[styles.bg, { borderRadius, alignItems: "flex-start", paddingLeft: 24 }, rightBgStyle]}>
           <LinearGradient
-            colors={[COMPLETE_COLOR, "#16A34A"]}
+            colors={[COMPLETE_COLOR, palette.green600]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={[StyleSheet.absoluteFillObject, { borderRadius }]}
           />
@@ -196,7 +196,7 @@ export default function SwipeableCard({
         </Animated.View>
         <Animated.View style={[styles.bg, { borderRadius, alignItems: "flex-end", paddingRight: 24 }, leftBgStyle]}>
           <LinearGradient
-            colors={["#F87171", DELETE_COLOR]}
+            colors={[palette.red400, DELETE_COLOR]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={[StyleSheet.absoluteFillObject, { borderRadius }]}
           />

@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { brand } from "@/constants/colors";
 
 interface PhonicsTestCardProps {
   childId?: number;
@@ -32,7 +33,7 @@ export function PhonicsTestCard({ childId, onPress, testID = "card-phonics-test"
       testID={testID}
     >
       <LinearGradient
-        colors={["#7C3AED", "#D946EF"]}
+        colors={[brand.violet600, "#D946EF"]} // audit-ok: fuchsia-500 phonics gradient endpoint
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ padding: 16, gap: 8 }}

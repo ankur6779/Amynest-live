@@ -28,6 +28,7 @@ vi.mock("@/hooks/useProfileComplete", () => ({
   useProfileComplete: () => ({ profileComplete: true, isLoading: false }),
 }));
 
+// audit-block-ignore-start (mock color fixtures for useColors in tests)
 vi.mock("@/hooks/useColors", () => ({
   useColors: () => ({
     background: "#ffffff",
@@ -41,6 +42,7 @@ vi.mock("@/hooks/useColors", () => ({
     radius: 12,
   }),
 }));
+// audit-block-ignore-end
 
 vi.mock("@/lib/firebase-auth", () => ({
   useUser: () => ({ user: { firstName: "Aarav" } }),

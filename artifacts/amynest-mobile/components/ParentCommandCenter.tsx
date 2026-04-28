@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
-import { brand, ACCENT_PINK } from "@/constants/colors";
+import { brand, ACCENT_PINK, palette } from "@/constants/colors";
 import {
   computeCommandCenter,
   type AdaptiveItem,
@@ -169,10 +169,10 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
 
       {/* (A) Today Overview — horizontal metric strip */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.metricRow}>
-        <Metric label="Routine"  value={`${overview.routineCompletionPct}%`} sub={`${overview.routineCompletedTasks}/${overview.routineTotalTasks} done`} accent="#A78BFA" />
-        <Metric label="Behavior" value={`${overview.behaviorScore}`}        sub={overview.behaviorLabel}                                                  accent="#34D399" />
-        <Metric label="Mood"     value={MOOD_LABEL[overview.mood].split(" ")[0]} sub={MOOD_LABEL[overview.mood].split(" ").slice(1).join(" ")}            accent="#FBBF24" />
-        <Metric label="Sleep"    value={SLEEP_LABEL[overview.sleepQuality].split(" ")[0]} sub={SLEEP_LABEL[overview.sleepQuality].split(" ").slice(1).join(" ")} accent="#60A5FA" />
+        <Metric label="Routine"  value={`${overview.routineCompletionPct}%`} sub={`${overview.routineCompletedTasks}/${overview.routineTotalTasks} done`} accent={brand.violet400} />
+        <Metric label="Behavior" value={`${overview.behaviorScore}`}        sub={overview.behaviorLabel}                                                  accent={palette.emerald400} />
+        <Metric label="Mood"     value={MOOD_LABEL[overview.mood].split(" ")[0]} sub={MOOD_LABEL[overview.mood].split(" ").slice(1).join(" ")}            accent={palette.amber400} />
+        <Metric label="Sleep"    value={SLEEP_LABEL[overview.sleepQuality].split(" ")[0]} sub={SLEEP_LABEL[overview.sleepQuality].split(" ").slice(1).join(" ")} accent={palette.blue400} />
         <Metric label="Screen"   value={`${overview.screenMinutes}m`}        sub={overview.screenMinutes >= 90 ? "High" : "OK"}                            accent={brand.rose400} />
         <Metric label="Quality"  value={`${overview.qualityMinutes}m`}       sub={overview.qualityMinutes >= 30 ? "Connected" : "Add 15m"}                accent={brand.pink400} />
       </ScrollView>
@@ -244,7 +244,7 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
           <Text style={[styles.bottomTitle, { color: c.foreground }]} numberOfLines={2}>{week.behaviorTrendLabel}</Text>
           <View style={styles.barWrap}>
             <View style={styles.barBg}>
-              <LinearGradient colors={[brand.primary, "#34D399"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              <LinearGradient colors={[brand.primary, palette.emerald400]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={[styles.barFill, { width: `${week.routineConsistencyPct}%` }]} />
             </View>
             <Text style={styles.barLabel}>{week.routineConsistencyPct}%</Text>

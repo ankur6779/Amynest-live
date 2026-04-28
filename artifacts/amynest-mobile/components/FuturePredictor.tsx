@@ -6,7 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand, ACCENT_PINK } from "@/constants/colors";
+import { brand, ACCENT_PINK, palette } from "@/constants/colors";
 
 type Severity = "good" | "caution" | "risk";
 type Indicator = { label: string; emoji: string; severity: Severity };
@@ -32,15 +32,15 @@ type Prediction = {
 };
 
 const SEV_COLOR: Record<Severity, { bg: string; border: string; text: string; dot: string }> = {
-  good:    { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.45)", text: "#34d399", dot: "#10b981" },
-  caution: { bg: "rgba(245,158,11,0.15)", border: "rgba(245,158,11,0.45)", text: "#fbbf24", dot: "#f59e0b" },
-  risk:    { bg: "rgba(244,63,94,0.18)",  border: "rgba(244,63,94,0.50)",  text: brand.rose400, dot: "#f43f5e" },
+  good:    { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.45)", text: palette.emerald400, dot: palette.emerald500 },
+  caution: { bg: "rgba(245,158,11,0.15)", border: "rgba(245,158,11,0.45)", text: palette.amber400,   dot: palette.amber500  },
+  risk:    { bg: "rgba(244,63,94,0.18)",  border: "rgba(244,63,94,0.50)",  text: brand.rose400,       dot: palette.rose500   },
 };
 
 const CONF_COLOR: Record<Prediction["confidence"], { bg: string; text: string }> = {
-  Low:    { bg: "rgba(148,163,184,0.18)", text: "#cbd5e1" },
-  Medium: { bg: "rgba(14,165,233,0.18)",  text: "#7dd3fc" },
-  High:   { bg: "rgba(16,185,129,0.18)",  text: "#6ee7b7" },
+  Low:    { bg: "rgba(148,163,184,0.18)", text: palette.slate400 }, // audit-ok: sky-100 confidence chip
+  Medium: { bg: "rgba(14,165,233,0.18)",  text: "#7dd3fc"        }, // audit-ok: sky-300 medium conf text
+  High:   { bg: "rgba(16,185,129,0.18)",  text: "#6ee7b7"        }, // audit-ok: emerald-300 high conf text
 };
 
 interface Props {
@@ -92,7 +92,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
       {/* Header */}
       <View style={styles.headerRow}>
         <LinearGradient
-          colors={["#FFD27A", ACCENT_PINK, brand.purple500]}
+          colors={[brand.amber400, ACCENT_PINK, brand.purple500]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.iconRing}
         >
@@ -100,7 +100,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
         </LinearGradient>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons name="sparkles" size={13} color="#c084fc" />
+            <Ionicons name="sparkles" size={13} color={brand.purple400} />
             <Text style={styles.title}>Amy AI · Tomorrow's Forecast</Text>
           </View>
           <Text style={styles.subtitle}>
@@ -190,7 +190,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
 
 function makeStyles(c: any, mode: "light" | "dark") {
   const onDarkText = "#fff";
-  const lightText = mode === "light" ? "#1f2937" : onDarkText;
+  const lightText = mode === "light" ? palette.gray800 : onDarkText;
   const lightSubtle = mode === "light" ? "rgba(31,41,55,0.7)" : "rgba(255,255,255,0.7)";
 
   return StyleSheet.create({
@@ -265,7 +265,7 @@ function makeStyles(c: any, mode: "light" | "dark") {
       color: lightSubtle,
     },
     sugRow: { flexDirection: "row", gap: 6, marginTop: 4 },
-    sugBullet: { color: "#c084fc", fontWeight: "800", fontSize: 14, lineHeight: 18 },
+    sugBullet: { color: brand.purple400, fontWeight: "800", fontSize: 14, lineHeight: 18 },
     sugText: { flex: 1, color: lightText, fontSize: 13, lineHeight: 18 },
     footer: {
       flexDirection: "row",

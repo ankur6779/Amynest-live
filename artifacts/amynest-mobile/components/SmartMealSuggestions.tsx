@@ -9,7 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useColors } from "@/hooks/useColors";
-import { brand, brandAlpha } from "@/constants/colors";
+import { brand, brandAlpha, palette } from "@/constants/colors";
 import TiffinFeedbackPanel, { loadHistoryAsync as loadTiffinHistoryAsync } from "@/components/TiffinFeedbackPanel";
 import { getLearningSignals, type TiffinHistory } from "@workspace/tiffin-feedback";
 
@@ -263,7 +263,7 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
           ]}
         >
           <LinearGradient
-            colors={searchFlash ? ["#EA580C", "#DB2777"] : ["#F97316", brand.pink500]}
+            colors={searchFlash ? [palette.orange600, "#DB2777"] : [palette.orange500, brand.pink500]} // audit-ok: #DB2777 deep pink for search-flash accent
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.findBtnGrad}
@@ -343,12 +343,12 @@ function MealCard({
         <Text style={styles.cardTitle} numberOfLines={1}>{meal.title}</Text>
         <View style={styles.cardMetaRow}>
           <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={11} color="#94A3B8" />
+            <Ionicons name="time-outline" size={11} color={palette.slate400} />
             <Text style={styles.metaText}>{meal.prepMinutes}m</Text>
           </View>
           {showCalories ? (
             <View style={styles.metaItem}>
-              <Ionicons name="flame-outline" size={11} color="#F97316" />
+              <Ionicons name="flame-outline" size={11} color={palette.orange500} />
               <Text style={styles.metaText}>{meal.calories} kcal</Text>
             </View>
           ) : null}
@@ -391,7 +391,7 @@ function RecipeModal({
         <ScrollView showsVerticalScrollIndicator={false}>
           <LinearGradient colors={meal.bgGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.modalHero}>
             <TouchableOpacity onPress={onClose} style={styles.modalClose}>
-              <Ionicons name="close" size={18} color="#1E293B" />
+              <Ionicons name="close" size={18} color={palette.slate800} />
             </TouchableOpacity>
             <Text style={styles.modalEmoji}>{meal.emoji}</Text>
           </LinearGradient>
@@ -410,8 +410,8 @@ function RecipeModal({
               </View>
               {showCalories ? (
                 <View style={[styles.tagChip, { backgroundColor: "rgba(249,115,22,0.15)" }]}>
-                  <Ionicons name="flame-outline" size={10} color="#C2410C" />
-                  <Text style={[styles.tagChipText, { color: "#C2410C" }]}> {meal.calories} kcal</Text>
+                  <Ionicons name="flame-outline" size={10} color={palette.orange700} />
+                  <Text style={[styles.tagChipText, { color: palette.orange700 }]}> {meal.calories} kcal</Text>
                 </View>
               ) : null}
             </View>
@@ -576,10 +576,10 @@ function makeStyles(colors: any) {
       backgroundColor: "rgba(255,255,255,0.85)",
       paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999,
     },
-    tagPillText: { fontSize: 9.5, fontWeight: "900", color: "#1E293B", letterSpacing: 0.4, textTransform: "uppercase" },
+    tagPillText: { fontSize: 9.5, fontWeight: "900", color: palette.slate800, letterSpacing: 0.4, textTransform: "uppercase" },
     matchPillTR: {
       position: "absolute", top: 8, right: 8,
-      backgroundColor: "#10B981",
+      backgroundColor: palette.emerald500,
       paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999,
     },
     matchPillText: { fontSize: 9.5, fontWeight: "900", color: "#fff" },
@@ -645,7 +645,7 @@ function makeStyles(colors: any) {
       borderColor: "rgba(16,185,129,0.4)", backgroundColor: "rgba(16,185,129,0.12)",
     },
     ingChipText: { fontSize: 11, color: colors.text },
-    ingChipTextMatched: { color: "#047857", fontWeight: "700" },
+    ingChipTextMatched: { color: palette.emerald700, fontWeight: "700" },
     stepBullet: {
       width: 22, height: 22, borderRadius: 11,
       backgroundColor: brand.violet600,
