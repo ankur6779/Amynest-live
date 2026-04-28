@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { humanizeError } from "@/utils/humanizeError";
 import PhoneAuthFlow from "@/components/PhoneAuthFlow";
 import NeonRingHero from "@/components/NeonRingHero";
+import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED } from "@/constants/colors";
 
 type ViewMode = "signin" | "reset" | "reset-sent";
 
@@ -99,7 +100,7 @@ export default function SignInScreen() {
               style={styles.primaryBtnWrap}
             >
               <LinearGradient
-                colors={["#a855f7", "#ec4899"]}
+                colors={BRAND_GRADIENT}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.primaryBtn}
               >
@@ -171,7 +172,7 @@ export default function SignInScreen() {
                 testID="send-reset-btn"
               >
                 <LinearGradient
-                  colors={canReset ? ["#a855f7", "#ec4899"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+                  colors={canReset ? BRAND_GRADIENT : BRAND_GRADIENT_DISABLED}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={styles.primaryBtn}
                 >
@@ -291,7 +292,7 @@ export default function SignInScreen() {
               style={styles.primaryBtnWrap}
             >
               <LinearGradient
-                colors={canSignIn ? ["#a855f7", "#ec4899"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+                colors={canSignIn ? BRAND_GRADIENT : BRAND_GRADIENT_DISABLED}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.primaryBtn}
               >

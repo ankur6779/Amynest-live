@@ -12,6 +12,7 @@ import {
 import { firebaseAuth } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED } from "@/constants/colors";
 
 type Step = "idle" | "phone" | "sending" | "otp" | "verifying";
 
@@ -155,7 +156,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
               disabled={!canSend}
             >
               <LinearGradient
-                colors={canSend ? ["#a855f7", "#ec4899"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+                colors={canSend ? BRAND_GRADIENT : BRAND_GRADIENT_DISABLED}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={s.sendBtn}
               >
@@ -194,7 +195,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
           disabled={!canVerify}
         >
           <LinearGradient
-            colors={canVerify ? ["#a855f7", "#ec4899"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+            colors={canVerify ? BRAND_GRADIENT : BRAND_GRADIENT_DISABLED}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.sendBtn}
           >
