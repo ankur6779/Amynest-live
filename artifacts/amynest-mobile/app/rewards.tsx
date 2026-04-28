@@ -10,6 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { brand } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   getTotalPoints, getRewards, getRedemptions, getLedger, getBadges,
   redeemReward, type Reward, type Redemption, type LedgerEntry, type Badge,
@@ -18,6 +19,7 @@ import {
 export default function RewardsScreen() {
   const router = useRouter();
   const c = useColors();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -112,14 +114,16 @@ export default function RewardsScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: c.background }]}>
+      <View style={styles.center}>
+        <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
         <ActivityIndicator size="large" color={brand.primary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
+    <View style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <View style={[styles.header, { paddingTop: topPad + 8 }]}>
         <Pressable onPress={() => router.back()} style={styles.headerBtn} hitSlop={8}>
           <Ionicons name="chevron-back" size={22} color={c.foreground} />

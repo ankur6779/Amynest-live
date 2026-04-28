@@ -7,7 +7,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 
 type Recipe = {
@@ -69,6 +71,7 @@ type Screen = "list" | "form";
 
 export default function RecipesScreen() {
   const c = useColors();
+  const { theme } = useTheme();
   const s = makeStyles(c);
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -163,9 +166,10 @@ export default function RecipesScreen() {
   if (screen === "form") {
     return (
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: c.background }}
+        style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
+        <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
         <View style={[s.header, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity onPress={() => setScreen("list")} style={s.backBtn} hitSlop={8}>
             <Ionicons name="arrow-back" size={22} color={c.foreground} />
@@ -286,7 +290,8 @@ export default function RecipesScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.background }}>
+    <View style={{ flex: 1 }}>
+      <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
           <Ionicons name="arrow-back" size={22} color={c.foreground} />

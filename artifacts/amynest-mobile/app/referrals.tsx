@@ -18,6 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useReferrals, type GiftToken } from "@/hooks/useReferrals";
 
 const SHARE_BASE = "https://amynest.ai";
@@ -258,6 +259,7 @@ function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bo
 
 export default function ReferralsScreen() {
   const colors = useColors();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { payload, isLoading, redeemGift } = useReferrals();
   const [copiedKind, setCopiedKind] = useState<string | null>(null);
@@ -301,12 +303,13 @@ export default function ReferralsScreen() {
   const isReady = !isLoading && stats;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1 }}>
+      <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <Stack.Screen
         options={{
           title: "Invite & Earn",
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.text,
+          headerStyle: { backgroundColor: "#0f0c29" },
+          headerTintColor: colors.foreground,
         }}
       />
 

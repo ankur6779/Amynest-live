@@ -479,7 +479,8 @@ export default function NutritionScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.background }}>
+    <View style={{ flex: 1 }}>
+      <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Hero Header */}
