@@ -12,7 +12,7 @@ import {
 import { firebaseAuth } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED } from "@/constants/colors";
+import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brandAlpha } from "@/constants/colors";
 
 type Step = "idle" | "phone" | "sending" | "otp" | "verifying";
 
@@ -228,8 +228,8 @@ export default function PhoneAuthFlow({ onError }: Props) {
 const s = StyleSheet.create({
   btn: {
     height: 52, borderRadius: 14,
-    backgroundColor: "rgba(168,85,247,0.15)",
-    borderWidth: 1, borderColor: "rgba(168,85,247,0.40)",
+    backgroundColor: brandAlpha.purple500_15,
+    borderWidth: 1, borderColor: brandAlpha.purple500_40,
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
   },
   btnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#C4B5FD" },
@@ -242,14 +242,14 @@ const s = StyleSheet.create({
   countryCode: {
     height: 52, paddingHorizontal: 14, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1, borderColor: "rgba(168,85,247,0.22)",
+    borderWidth: 1, borderColor: brandAlpha.purple500_22,
     alignItems: "center", justifyContent: "center",
   },
   countryCodeText: { fontSize: 15, color: "#F0E8FF", fontFamily: "Inter_600SemiBold" },
   phoneInput: {
     flex: 1, height: 52, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1, borderColor: "rgba(168,85,247,0.60)",
+    borderWidth: 1, borderColor: brandAlpha.purple500_60,
     paddingHorizontal: 14,
     fontSize: 16, color: "#F0E8FF", fontFamily: "Inter_400Regular",
   },
@@ -257,7 +257,7 @@ const s = StyleSheet.create({
   otpInput: {
     height: 60, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1, borderColor: "rgba(168,85,247,0.60)",
+    borderWidth: 1, borderColor: brandAlpha.purple500_60,
     fontSize: 28, color: "#F0E8FF", fontFamily: "Inter_700Bold",
     letterSpacing: 8,
   },

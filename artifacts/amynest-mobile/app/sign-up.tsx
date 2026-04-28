@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { humanizeError } from "@/utils/humanizeError";
 import PhoneAuthFlow from "@/components/PhoneAuthFlow";
 import NeonRingHero from "@/components/NeonRingHero";
-import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED } from "@/constants/colors";
+import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brandAlpha } from "@/constants/colors";
 
 export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   orb2: {
     position: "absolute", bottom: 60, left: -120,
     width: 300, height: 300, borderRadius: 150,
-    backgroundColor: "rgba(168,85,247,0.10)",
+    backgroundColor: brandAlpha.purple500_10,
   },
 
   scroll: { flexGrow: 1, paddingHorizontal: 24, alignItems: "center", justifyContent: "center", paddingVertical: 36 },
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     marginTop: -4,
     marginBottom: 8,
     borderRadius: 65,
-    backgroundColor: "rgba(168,85,247,0.30)",
+    backgroundColor: brandAlpha.purple500_30,
   },
 
   card: {
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(12,6,30,0.78)",
     borderRadius: 26,
     borderWidth: 1,
-    borderColor: "rgba(168,85,247,0.28)",
+    borderColor: brandAlpha.purple500_28,
     padding: 24,
     shadowColor: BRAND_GRADIENT[0],
     shadowOpacity: 0.18,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, color: "rgba(200,180,255,0.65)", fontFamily: "Inter_400Regular", marginBottom: 4 },
 
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  divider: { flex: 1, height: 1, backgroundColor: "rgba(168,85,247,0.15)" },
+  divider: { flex: 1, height: 1, backgroundColor: brandAlpha.purple500_15 },
   dividerText: { fontSize: 12, color: "rgba(255,255,255,0.30)", fontFamily: "Inter_400Regular" },
 
   inputGroup: { gap: 7 },
@@ -249,11 +249,11 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center",
     height: 52, borderRadius: 14,
     backgroundColor: "rgba(10,6,26,0.72)",
-    borderWidth: 1, borderColor: "rgba(168,85,247,0.25)",
+    borderWidth: 1, borderColor: brandAlpha.purple500_25,
     paddingHorizontal: 14,
   },
   inputWrapFocused: {
-    borderColor: "rgba(168,85,247,0.75)",
+    borderColor: brandAlpha.purple500_75,
     shadowColor: BRAND_GRADIENT[0], shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
     elevation: 4,
   },
