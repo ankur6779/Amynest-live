@@ -334,6 +334,10 @@ export default function PremiumSplash({ onFinish }: Props) {
             transform: [{ scale: logoScale }],
           }}
         >
+          {/* Cross-platform colored glow — background-based so it renders on Android
+              (Android ignores shadowColor, only honouring elevation with a black shadow) */}
+          <View style={styles.logoGlowOuter} />
+          <View style={styles.logoGlowInner} />
           <LinearGradient
             colors={["#7B3FF2", "#FF4ECD", "#4FC3F7"]}
             start={{ x: 0, y: 0 }}
@@ -407,6 +411,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 30,
     shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
   },
   ring: {
     position: "absolute",
@@ -436,6 +441,24 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(123,63,242,0.6)",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
+  },
+  logoGlowOuter: {
+    position: "absolute",
+    width: RING_OUTER + 60,
+    height: RING_OUTER + 60,
+    borderRadius: (RING_OUTER + 60) / 2,
+    top: -30,
+    left: -30,
+    backgroundColor: "rgba(255,78,205,0.16)",
+  },
+  logoGlowInner: {
+    position: "absolute",
+    width: RING_OUTER + 30,
+    height: RING_OUTER + 30,
+    borderRadius: (RING_OUTER + 30) / 2,
+    top: -15,
+    left: -15,
+    backgroundColor: "rgba(123,63,242,0.20)",
   },
   logoRingGradient: {
     width: RING_OUTER,
