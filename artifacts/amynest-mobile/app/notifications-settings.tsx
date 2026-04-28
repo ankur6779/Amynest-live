@@ -13,8 +13,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import { brand } from "@/constants/colors";
 
 type Prefs = {
@@ -95,6 +97,7 @@ export default function NotificationSettingsScreen() {
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
   const c = useColors();
+  const { theme } = useTheme();
   const styles = React.useMemo(() => makeStyles(c), [c]);
 
   const { data, isLoading } = useQuery<Prefs>({
@@ -154,6 +157,7 @@ export default function NotificationSettingsScreen() {
   if (isLoading || !local) {
     return (
       <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
+        <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
         <ActivityIndicator color={brand.primary} />
       </View>
     );
@@ -166,10 +170,12 @@ export default function NotificationSettingsScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}
-    >
+    <View style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}
+      >
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.back} hitSlop={8}>
           <Ionicons name="chevron-back" size={26} color={c.text} />
@@ -223,13 +229,14 @@ export default function NotificationSettingsScreen() {
           We never send notifications during this window.
         </Text>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 function makeStyles(c: ReturnType<typeof useColors>) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: c.background },
+    container: { flex: 1 },
     content: { paddingHorizontal: 16 },
     center: { justifyContent: "center", alignItems: "center" },
     header: { flexDirection: "row", alignItems: "center", marginBottom: 8 },

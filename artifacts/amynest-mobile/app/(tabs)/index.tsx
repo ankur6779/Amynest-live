@@ -19,7 +19,6 @@ import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import RoutineCarousel from "@/components/RoutineCarousel";
 import type { RoutineTask } from "@/contexts/ProgressContext";
-import { brand } from "@/constants/colors";
 
 const BG_GRADIENT = ["#0f0c29", "#302b63", "#24243e"] as const;
 
