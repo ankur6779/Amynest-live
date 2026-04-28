@@ -14,6 +14,10 @@ export default function NeonRingHero() {
   const amyGlowAnim = useRef(new Animated.Value(0.72)).current;
 
   useEffect(() => {
+    // Reset to initial value on every mount so the glow always starts in sync,
+    // regardless of where the Animated.Value was left on a prior mount.
+    amyGlowAnim.setValue(0.72);
+
     const spinLoop = Animated.loop(
       Animated.timing(spinAnim, {
         toValue: 1,
