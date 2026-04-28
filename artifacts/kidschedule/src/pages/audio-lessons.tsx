@@ -42,20 +42,21 @@ export default function AudioLessonsPage() {
 
   const lessons = lessonsForAge(age);
 
-  // Pre-warm the audio cache for all Hindi paragraphs of the current age
-  // group. Fire-and-forget — this is a background optimisation; failures are
-  // silently ignored. Premium-only: free users have limited plays anyway.
+  // Pre-warm the audio cache for paragraphs of the current age group in the
+  // user's selected language. Fire-and-forget — this is a background
+  // optimisation; failures are silently ignored. Premium-only: free users
+  // have limited plays anyway.
   const isPremium = sub.isPremium;
   useEffect(() => {
     if (!isPremium) return;
-    const texts = lessonsForAge(age).flatMap((l) => getLessonText(l, "hi").paragraphs);
+    const texts = lessonsForAge(age).flatMap((l) => getLessonText(l, lang).paragraphs);
     if (texts.length === 0) return;
     void authFetch(getApiUrl("/api/audio-lessons/pregenerate"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ texts }),
     }).catch(() => {});
-  }, [age, isPremium]);
+  }, [age, isPremium, lang]);
 
   // Per-age-group access: index 0 is the free sample, rest are premium-only.
   type LessonAccess = "free-sample" | "locked" | "open";
@@ -300,11 +301,13 @@ function PlayerSheet({ lesson, lang, onClose }: { lesson: Lesson; lang: string; 
   const [paragraphIdx, setParagraphIdx] = useState(0);
   const [rate, setRate] = useState<number>(1);
 
-  // Display text follows the app language (titles, expert credit, buttons).
-  const displayText = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
-  // Audio is ALWAYS in Hindi — the multilingual model handles Devanagari script.
-  // `text` is the alias used by the player controls and transcript below.
-  const text = useMemo(() => getLessonText(lesson, "hi"), [lesson]);
+  // Both the displayed transcript AND the spoken audio follow the user's
+  // selected language. `eleven_multilingual_v2` with the Anjura voice handles
+  // English, Hindi (Devanagari) and Hinglish (romanized) cleanly with the
+  // same warm Indian-female timbre. If we ever add a paragraph index that's
+  // mid-lesson when the user swaps language, the index stays valid because
+  // every lesson has the same paragraph count across languages.
+  const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
   const paragraphs = text.paragraphs;
 
   // Auto-advance to the next paragraph when the current one finishes
