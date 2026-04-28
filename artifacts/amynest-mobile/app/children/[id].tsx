@@ -8,7 +8,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 
@@ -46,6 +48,7 @@ const TRAVEL_MODES: { label: string; value: string }[] = [
 export default function ChildDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const authFetch = useAuthFetch();
@@ -182,14 +185,16 @@ export default function ChildDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
+      <View style={styles.center}>
+        <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <ScrollView
         contentContainerStyle={{ paddingBottom: botPad + 32, paddingHorizontal: 20 }}
         showsVerticalScrollIndicator={false}

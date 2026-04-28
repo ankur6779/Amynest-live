@@ -8,7 +8,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 
@@ -38,6 +40,7 @@ function dobToAge(dob: string): { years: number; months: number } {
 
 export default function NewChildScreen() {
   const colors = useColors();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const authFetch = useAuthFetch();
@@ -129,7 +132,8 @@ export default function NewChildScreen() {
   const botPad = insets.bottom + (Platform.OS === "web" ? 34 : 0);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: botPad + 32, paddingTop: 20 }}
         showsVerticalScrollIndicator={false}

@@ -8,7 +8,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Switch } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -66,6 +68,7 @@ const REGIONS: { label: string; value: string }[] = [
 
 export default function ProfileScreen() {
   const colors = useColors();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const { signOut } = useAuth();
@@ -335,14 +338,16 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, styles.center]}>
+        <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <ScrollView
         contentContainerStyle={{ paddingTop: topPad + 16, paddingBottom: botPad + 100, paddingHorizontal: 20 }}
         showsVerticalScrollIndicator={false}

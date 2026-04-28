@@ -20,6 +20,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import colors, { brand, brandAlpha } from "@/constants/colors";
 import {
   HANDLER_TYPES,
@@ -74,6 +75,7 @@ export default function GenerateRoutineScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { theme } = useTheme();
   const MOODS = useMemo(() => getMoods(colors.statusRoseBg), [colors.statusRoseBg]);
   const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
@@ -214,7 +216,8 @@ export default function GenerateRoutineScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }]}>
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <LinearGradient colors={theme.gradient} style={StyleSheet.absoluteFillObject} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
         <ActivityIndicator size="large" color={brand.purple500} />
       </View>
     );
@@ -222,7 +225,8 @@ export default function GenerateRoutineScreen() {
 
   if (children.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: topPad + 60, paddingHorizontal: 24 }]}>
+      <View style={[styles.container, { paddingTop: topPad + 60, paddingHorizontal: 24 }]}>
+        <LinearGradient colors={theme.gradient} style={StyleSheet.absoluteFillObject} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
         <Stack.Screen options={{ title: "Generate Routine" }} />
         <View style={styles.emptyWrap}>
           <Text style={{ fontSize: 48, marginBottom: 12 }}>👶</Text>
@@ -251,7 +255,8 @@ export default function GenerateRoutineScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={StyleSheet.absoluteFillObject} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <Stack.Screen options={{ title: "Generate Routine" }} />
       <ScrollView
         contentContainerStyle={{ paddingTop: topPad + 16, paddingBottom: insets.bottom + 140, paddingHorizontal: 16 }}
@@ -315,7 +320,7 @@ export default function GenerateRoutineScreen() {
                 <Ionicons
                   name="calendar-outline"
                   size={14}
-                  color={active ? "#fff" : brand.violet600}
+                  color={active ? "#fff" : "rgba(255,255,255,0.65)"}
                 />
                 <Text style={[styles.dateChipText, active && { color: "#fff" }]}>
                   {opt.label}
@@ -556,8 +561,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 4,
   },
-  heroTitle: { fontSize: 18, fontWeight: "800", color: brand.purple900 },
-  heroSub: { fontSize: 13, color: brand.violet600 },
+  heroTitle: { fontSize: 18, fontWeight: "800", color: "rgba(255,255,255,0.95)" },
+  heroSub: { fontSize: 13, color: "rgba(255,255,255,0.65)" },
   sectionLabel: {
     fontSize: 13,
     fontWeight: "800",
@@ -572,7 +577,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "#14142B",
+    backgroundColor: "#13102e",
     flexDirection: "row",
     alignItems: "baseline",
     gap: 6,
@@ -586,14 +591,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: brand.violet200,
-    backgroundColor: brand.violet50,
+    borderColor: "rgba(168,85,247,0.25)",
+    backgroundColor: "rgba(168,85,247,0.12)",
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-  dateChipActive: { backgroundColor: colors.light.primary, borderColor: colors.light.primary },
-  dateChipText: { fontSize: 14, fontWeight: "700", color: brand.violet700 },
+  dateChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
+  dateChipText: { fontSize: 14, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
   dateHint: { fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: -8, marginBottom: 16, marginLeft: 2 },
   moodGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
   moodCard: {
@@ -612,10 +617,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "#14142B",
+    backgroundColor: "#13102e",
     alignItems: "center",
   },
-  toggleChipActive: { backgroundColor: colors.light.primary, borderColor: colors.light.primary },
+  toggleChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
   toggleChipText: { fontSize: 13, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
   handlerGrid: {
     flexDirection: "row",
@@ -645,7 +650,7 @@ const styles = StyleSheet.create({
   textarea: {
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "#14142B",
+    backgroundColor: "#13102e",
     borderRadius: 14,
     padding: 12,
     fontSize: 14,
