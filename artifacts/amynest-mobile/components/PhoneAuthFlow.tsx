@@ -11,7 +11,7 @@ import {
 } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
-import { brand } from "@/constants/colors";
+import { LinearGradient } from "expo-linear-gradient";
 
 type Step = "idle" | "phone" | "sending" | "otp" | "verifying";
 
@@ -150,14 +150,20 @@ export default function PhoneAuthFlow({ onError }: Props) {
               <Text style={s.cancelText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[s.sendBtn, !canSend && s.sendBtnDisabled]}
+              style={s.sendBtnWrap}
               onPress={() => sendOtp()}
               disabled={!canSend}
             >
-              {step === "sending"
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={s.sendBtnText}>Send OTP</Text>
-              }
+              <LinearGradient
+                colors={canSend ? ["#a855f7", "#ec4899"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={s.sendBtn}
+              >
+                {step === "sending"
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={s.sendBtnText}>Send OTP</Text>
+                }
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -183,14 +189,20 @@ export default function PhoneAuthFlow({ onError }: Props) {
           textAlign="center"
         />
         <TouchableOpacity
-          style={[s.sendBtn, !canVerify && s.sendBtnDisabled]}
+          style={s.verifyBtnWrap}
           onPress={verifyOtp}
           disabled={!canVerify}
         >
-          {step === "verifying"
-            ? <ActivityIndicator size="small" color="#fff" />
-            : <Text style={s.sendBtnText}>Verify & Sign In</Text>
-          }
+          <LinearGradient
+            colors={canVerify ? ["#a855f7", "#ec4899"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={s.sendBtn}
+          >
+            {step === "verifying"
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Text style={s.sendBtnText}>Verify & Sign In</Text>
+            }
+          </LinearGradient>
         </TouchableOpacity>
         <View style={s.resendRow}>
           {resendTimer > 0
@@ -215,8 +227,8 @@ export default function PhoneAuthFlow({ onError }: Props) {
 const s = StyleSheet.create({
   btn: {
     height: 52, borderRadius: 14,
-    backgroundColor: "rgba(123,63,242,0.15)",
-    borderWidth: 1, borderColor: "rgba(123,63,242,0.40)",
+    backgroundColor: "rgba(168,85,247,0.15)",
+    borderWidth: 1, borderColor: "rgba(168,85,247,0.40)",
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
   },
   btnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#C4B5FD" },
@@ -229,14 +241,14 @@ const s = StyleSheet.create({
   countryCode: {
     height: 52, paddingHorizontal: 14, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1, borderColor: "rgba(123,63,242,0.22)",
+    borderWidth: 1, borderColor: "rgba(168,85,247,0.22)",
     alignItems: "center", justifyContent: "center",
   },
   countryCodeText: { fontSize: 15, color: "#F0E8FF", fontFamily: "Inter_600SemiBold" },
   phoneInput: {
     flex: 1, height: 52, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1, borderColor: "rgba(123,63,242,0.60)",
+    borderWidth: 1, borderColor: "rgba(168,85,247,0.60)",
     paddingHorizontal: 14,
     fontSize: 16, color: "#F0E8FF", fontFamily: "Inter_400Regular",
   },
@@ -244,7 +256,7 @@ const s = StyleSheet.create({
   otpInput: {
     height: 60, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1, borderColor: "rgba(123,63,242,0.60)",
+    borderWidth: 1, borderColor: "rgba(168,85,247,0.60)",
     fontSize: 28, color: "#F0E8FF", fontFamily: "Inter_700Bold",
     letterSpacing: 8,
   },
@@ -256,11 +268,11 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(255,255,255,0.10)",
   },
   cancelText: { color: "rgba(200,180,255,0.60)", fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  sendBtnWrap: { flex: 2, borderRadius: 14, overflow: "hidden" },
+  verifyBtnWrap: { borderRadius: 14, overflow: "hidden" },
   sendBtn: {
-    flex: 2, height: 48, borderRadius: 14, alignItems: "center", justifyContent: "center",
-    backgroundColor: brand.primary,
+    height: 48, borderRadius: 14, alignItems: "center", justifyContent: "center",
   },
-  sendBtnDisabled: { backgroundColor: "rgba(123,63,242,0.35)" },
   sendBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 },
 
   resendRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
