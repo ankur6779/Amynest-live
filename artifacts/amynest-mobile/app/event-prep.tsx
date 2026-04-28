@@ -4,6 +4,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "@/contexts/ThemeContext";
 import { router, Stack } from "expo-router";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +26,7 @@ type View0 =
   | { kind: "detail"; childId: number; characterId: string };
 
 export default function EventPrepScreen() {
+  const { theme } = useTheme();
   const authFetch = useAuthFetch();
   const { data: children = [], isLoading } = useQuery<Child[]>({
     queryKey: ["children"],
@@ -70,7 +72,7 @@ export default function EventPrepScreen() {
 
   if (isLoading) {
     return (
-      <LinearGradient colors={["#fdf2f8", "#fff7ed"]} style={S.center}>
+      <LinearGradient colors={theme.gradient} style={S.center} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
         <ActivityIndicator size="large" color="#db2777" />
       </LinearGradient>
     );
@@ -78,7 +80,7 @@ export default function EventPrepScreen() {
 
   if (children.length === 0) {
     return (
-      <LinearGradient colors={["#fdf2f8", "#fff7ed"]} style={S.center}>
+      <LinearGradient colors={theme.gradient} style={S.center} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
         <Stack.Screen options={{ title: "Event Prep" }} />
         <Text style={S.emptyTitle}>Add a child first</Text>
         <Text style={S.emptyDesc}>Event Prep needs your child's age to suggest the best ideas.</Text>
@@ -92,7 +94,7 @@ export default function EventPrepScreen() {
   // ── child-pick ───────────────────────────────────────────────────────────
   if (view.kind === "child-pick") {
     return (
-      <LinearGradient colors={["#fdf2f8", "#fff7ed"]} style={{ flex: 1 }}>
+      <LinearGradient colors={theme.gradient} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
         <Stack.Screen options={{ title: "🎉 Event Prep" }} />
         <ScrollView contentContainerStyle={S.scroll}>
           <Text style={S.h1}>🎉 Event Prep</Text>
@@ -119,7 +121,7 @@ export default function EventPrepScreen() {
   // ── home ─────────────────────────────────────────────────────────────────
   if (view.kind === "home" && child) {
     return (
-      <LinearGradient colors={["#fdf2f8", "#fff7ed"]} style={{ flex: 1 }}>
+      <LinearGradient colors={theme.gradient} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
         <Stack.Screen options={{ title: "🎉 Event Prep" }} />
         <ScrollView contentContainerStyle={S.scroll}>
           <Text style={S.h1}>🎉 Event Prep</Text>
@@ -211,7 +213,7 @@ export default function EventPrepScreen() {
     const filtered = applyFilters(all, filter);
 
     return (
-      <LinearGradient colors={["#fdf2f8", "#fff7ed"]} style={{ flex: 1 }}>
+      <LinearGradient colors={theme.gradient} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
         <Stack.Screen options={{ title: filter.lastMinute ? "Last-Minute Picks" : cat.title }} />
         <ScrollView contentContainerStyle={S.scroll}>
           <Pressable onPress={() => setView({ kind: "home", childId: child.id })} style={S.backRow}>
@@ -270,7 +272,7 @@ export default function EventPrepScreen() {
     }
     const speech = speechForAge(ch, child.age);
     return (
-      <LinearGradient colors={["#fdf2f8", "#fff7ed"]} style={{ flex: 1 }}>
+      <LinearGradient colors={theme.gradient} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
         <Stack.Screen options={{ title: ch.character }} />
         <ScrollView contentContainerStyle={S.scroll}>
           <Pressable onPress={() => setView({ kind: "home", childId: child.id })} style={S.backRow}>

@@ -4,6 +4,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "@/contexts/ThemeContext";
 import { router, Stack } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
@@ -47,6 +48,7 @@ type View0 =
   | { kind: "study-topic"; childId: number; mode: "basic" | "advanced"; subjectId: string; topicId: string };
 
 export default function StudyScreen() {
+  const { theme } = useTheme();
   const authFetch = useAuthFetch();
   const { data: children = [], isLoading } = useQuery<Child[]>({
     queryKey: ["children"],
@@ -115,6 +117,12 @@ export default function StudyScreen() {
 
   return (
     <View style={styles.root}>
+      <LinearGradient
+        colors={theme.gradient}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      />
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={["#6366F1", brand.purple500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
         <Pressable onPress={goBack} style={styles.backBtn} hitSlop={10}>

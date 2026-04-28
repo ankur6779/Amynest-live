@@ -4,6 +4,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "@/contexts/ThemeContext";
 import { router, Stack } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -34,6 +35,7 @@ async function save(s: MorningFlowDayState) {
 }
 
 export default function MorningFlowScreen() {
+  const { theme } = useTheme();
   const [state, setState] = useState<MorningFlowDayState>(() => emptyDayState());
   const [tick, setTick] = useState(0);
 
@@ -72,6 +74,12 @@ export default function MorningFlowScreen() {
 
   return (
     <View style={S.root}>
+      <LinearGradient
+        colors={theme.gradient}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      />
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient colors={["#F97316", "#FBBF24"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={S.header}>
         <Pressable onPress={() => router.back()} style={S.backBtn} hitSlop={10}>

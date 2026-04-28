@@ -63,7 +63,7 @@ export default function StoriesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useColors();
-  const { mode } = useTheme();
+  const { mode, theme } = useTheme();
   const authFetch = useAuthFetch();
   const styles = useMemo(() => makeStyles(c, mode), [c, mode]);
 
@@ -215,9 +215,8 @@ export default function StoriesScreen() {
 
   const currentStory = stories[flowIndex] ?? null;
 
-  // ── Colour scheme ──
-  const gradient: [string, string] =
-    mode === "light" ? ["#FFE4F2", "#FFF4E0"] : ["#1a0d2e", "#2a1340"];
+  // ── Colour scheme — always dark ──
+  const gradient = theme.gradient;
 
   // ── Render ──
   return (

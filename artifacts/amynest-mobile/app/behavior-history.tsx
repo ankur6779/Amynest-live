@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/contexts/ThemeContext";
 import { brand } from "@/constants/colors";
 
 type Child = { id: number; name: string };
@@ -54,6 +55,7 @@ export default function BehaviorHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();
+  const { theme } = useTheme();
   const qc = useQueryClient();
   const authFetch = useAuthFetch();
   const params = useLocalSearchParams<{ childId?: string }>();
@@ -127,8 +129,10 @@ export default function BehaviorHistoryScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient
-        colors={[c.background, c.background]}
+        colors={theme.gradient}
         style={{ flex: 1 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
       >
         <View style={[styles.header, { paddingTop: insets.top + 12, borderBottomColor: c.border }]}>
           <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
