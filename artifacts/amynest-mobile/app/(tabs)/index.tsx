@@ -631,12 +631,12 @@ function BehaviorHighlights({ stats, loading }: { stats: BehaviorStat[]; loading
               <Text style={[behaviorStyles.statNum, { color: brand.violet700 ?? brand.violet600 }]}>{stat.positive}</Text>
             </View>
             <View style={[behaviorStyles.statBadge, { backgroundColor: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.2)" }]}>
-              <Ionicons name="trending-down-outline" size={12} color="#EF4444" />
-              <Text style={[behaviorStyles.statNum, { color: "#EF4444" }]}>{stat.negative}</Text>
+              <Ionicons name="trending-down-outline" size={12} color={c.destructive} />
+              <Text style={[behaviorStyles.statNum, { color: c.destructive }]}>{stat.negative}</Text>
             </View>
             <View style={[behaviorStyles.statBadge, { backgroundColor: "rgba(120,120,120,0.08)", borderColor: "rgba(120,120,120,0.2)" }]}>
-              <Ionicons name="remove-outline" size={12} color="#888" />
-              <Text style={[behaviorStyles.statNum, { color: "#888" }]}>{stat.neutral}</Text>
+              <Ionicons name="remove-outline" size={12} color={c.mutedForeground} />
+              <Text style={[behaviorStyles.statNum, { color: c.mutedForeground }]}>{stat.neutral}</Text>
             </View>
           </View>
         </View>
@@ -736,7 +736,7 @@ function RewardsCard({ onViewAll }: { onViewAll: () => void }) {
                 style={[rewardsStyles.redeemBtn, points >= r.cost ? rewardsStyles.redeemBtnActive : rewardsStyles.redeemBtnDisabled]}
                 activeOpacity={0.8}
               >
-                <Text style={[rewardsStyles.redeemBtnText, points < r.cost && { color: "#888" }]}>Redeem</Text>
+                <Text style={[rewardsStyles.redeemBtnText, points < r.cost && { color: c.mutedForeground }]}>Redeem</Text>
               </TouchableOpacity>
             </View>
           ))}
@@ -758,7 +758,7 @@ const rewardsStyles = StyleSheet.create({
   pointsPts: { fontSize: 11, fontWeight: "500", color: brand.violet600 },
   body: { padding: 14 },
   redeemMsg: { backgroundColor: "rgba(34,197,94,0.12)", borderWidth: 1, borderColor: "rgba(34,197,94,0.3)", borderRadius: 10, padding: 10, marginBottom: 10, alignItems: "center" },
-  redeemMsgText: { fontSize: 13, fontWeight: "600", color: "#16a34a" },
+  redeemMsgText: { fontSize: 13, fontWeight: "600", color: "#16a34a" }, // audit-ok: semantic success green for redemption confirmation; no brand token
   subLabel: { fontSize: 9.5, fontWeight: "800", letterSpacing: 1 },
   badgePill: { backgroundColor: brandAlpha.violet600_12, borderWidth: 1, borderColor: brandAlpha.violet600_18, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   badgePillText: { fontSize: 11, fontWeight: "700", color: brand.violet600 },
@@ -797,7 +797,7 @@ function OnboardingScreen({ displayName, onGetStarted, onExploreHub }: {
       showsVerticalScrollIndicator={false}
     >
       <LinearGradient
-        colors={[brand.violet600, "#4F46E5", brand.violet700 ?? brand.violet600]}
+        colors={[brand.violet600, brand.indigo500, brand.violet700 ?? brand.violet600]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={onboardStyles.hero}
