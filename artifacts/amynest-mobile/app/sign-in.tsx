@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Image,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
@@ -11,9 +11,9 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
-import { brand } from "@/constants/colors";
 import { humanizeError } from "@/utils/humanizeError";
 import PhoneAuthFlow from "@/components/PhoneAuthFlow";
+import NeonRingHero from "@/components/NeonRingHero";
 
 type ViewMode = "signin" | "reset" | "reset-sent";
 
@@ -22,14 +22,12 @@ export default function SignInScreen() {
   const { t } = useTranslation();
   const [mode, setMode] = useState<ViewMode>("signin");
 
-  // Sign-in state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  // Reset-password state
   const [resetEmail, setResetEmail] = useState("");
   const [resetFocused, setResetFocused] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -78,20 +76,14 @@ export default function SignInScreen() {
   if (mode === "reset-sent") {
     return (
       <LinearGradient
-        colors={["#0D0022", "#180040", "#0A001E"]}
+        colors={["#0f0c29", "#302b63", "#24243e"]}
         style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
       >
         <View style={styles.orb1} />
         <View style={styles.orb2} />
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.logoWrap}>
-            <View style={styles.logoGlowRing}>
-              <Image
-                source={require("../assets/images/amynest-logo.png")}
-                style={styles.logoImg}
-                resizeMode="contain"
-              />
-            </View>
+          <View style={styles.heroWrap}>
+            <NeonRingHero />
           </View>
           <View style={styles.card}>
             <Text style={styles.sentEmoji}>📬</Text>
@@ -107,7 +99,7 @@ export default function SignInScreen() {
               style={styles.primaryBtnWrap}
             >
               <LinearGradient
-                colors={[brand.primary, "#FF4ECD"]}
+                colors={["#a855f7", "#ec4899"]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.primaryBtn}
               >
@@ -124,7 +116,7 @@ export default function SignInScreen() {
   if (mode === "reset") {
     return (
       <LinearGradient
-        colors={["#0D0022", "#180040", "#0A001E"]}
+        colors={["#0f0c29", "#302b63", "#24243e"]}
         style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
       >
         <View style={styles.orb1} />
@@ -135,21 +127,14 @@ export default function SignInScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.logoWrap}>
-              <View style={styles.logoGlowRing}>
-                <Image
-                  source={require("../assets/images/amynest-logo.png")}
-                  style={styles.logoImg}
-                  resizeMode="contain"
-                />
-              </View>
+            <View style={styles.heroWrap}>
+              <NeonRingHero />
             </View>
 
             <View style={styles.card}>
               <Text style={styles.title}>Reset password</Text>
               <Text style={styles.subtitle}>Enter your email and we'll send you a reset link.</Text>
 
-              {/* Email */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("auth.email")}</Text>
                 <View style={[styles.inputWrap, resetFocused && styles.inputWrapFocused]}>
@@ -178,7 +163,6 @@ export default function SignInScreen() {
                 </View>
               )}
 
-              {/* Send button */}
               <TouchableOpacity
                 onPress={handleSendReset}
                 disabled={!canReset}
@@ -187,7 +171,7 @@ export default function SignInScreen() {
                 testID="send-reset-btn"
               >
                 <LinearGradient
-                  colors={canReset ? [brand.primary, "#FF4ECD"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+                  colors={canReset ? ["#a855f7", "#ec4899"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={styles.primaryBtn}
                 >
@@ -198,7 +182,6 @@ export default function SignInScreen() {
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Back link */}
               <TouchableOpacity onPress={() => setMode("signin")} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={14} color="rgba(200,180,255,0.55)" style={{ marginRight: 4 }} />
                 <Text style={styles.backBtnText}>Back to Sign in</Text>
@@ -213,12 +196,11 @@ export default function SignInScreen() {
   // ─── Normal sign-in form ─────────────────────────────────────────────────────
   return (
     <LinearGradient
-      colors={["#0D0022", "#180040", "#0A001E"]}
+      colors={["#0f0c29", "#302b63", "#24243e"]}
       style={[styles.container, { paddingTop: topPad, paddingBottom: botPad }]}
     >
       <View style={styles.orb1} />
       <View style={styles.orb2} />
-      <View style={styles.orb3} />
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <ScrollView
@@ -226,18 +208,13 @@ export default function SignInScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo */}
-          <View style={styles.logoWrap}>
-            <View style={styles.logoGlowRing}>
-              <Image
-                source={require("../assets/images/amynest-logo.png")}
-                style={styles.logoImg}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={styles.brandName}>AmyNest AI</Text>
-            <Text style={styles.brandTag}>Where Smart Parenting Starts</Text>
+          {/* Neon ring hero */}
+          <View style={styles.heroWrap}>
+            <NeonRingHero />
           </View>
+
+          {/* Platform glow under ring */}
+          <View style={styles.platformGlow} />
 
           {/* Glass card */}
           <View style={styles.card}>
@@ -314,7 +291,7 @@ export default function SignInScreen() {
               style={styles.primaryBtnWrap}
             >
               <LinearGradient
-                colors={canSignIn ? [brand.primary, "#FF4ECD"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
+                colors={canSignIn ? ["#a855f7", "#ec4899"] : ["rgba(60,30,100,0.6)", "rgba(60,30,100,0.6)"]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.primaryBtn}
               >
@@ -334,6 +311,8 @@ export default function SignInScreen() {
               </Link>
             </View>
           </View>
+
+          <Text style={styles.tagline}>Where Smart Parenting Begins</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -346,43 +325,38 @@ const styles = StyleSheet.create({
   orb1: {
     position: "absolute", top: -140, right: -100,
     width: 340, height: 340, borderRadius: 170,
-    backgroundColor: "rgba(123,63,242,0.28)",
+    backgroundColor: "rgba(100,40,200,0.20)",
   },
   orb2: {
     position: "absolute", bottom: 60, left: -120,
     width: 300, height: 300, borderRadius: 150,
-    backgroundColor: "rgba(255,78,205,0.18)",
-  },
-  orb3: {
-    position: "absolute", top: "45%", left: "15%",
-    width: 200, height: 200, borderRadius: 100,
-    backgroundColor: "rgba(80,30,180,0.16)",
+    backgroundColor: "rgba(168,85,247,0.10)",
   },
 
-  scroll: { flexGrow: 1, paddingHorizontal: 24, justifyContent: "center", paddingVertical: 36 },
+  scroll: { flexGrow: 1, paddingHorizontal: 24, alignItems: "center", justifyContent: "center", paddingVertical: 36 },
 
-  logoWrap: { alignItems: "center", marginBottom: 28 },
-  logoGlowRing: {
-    width: 84, height: 84, borderRadius: 42,
-    backgroundColor: "rgba(123,63,242,0.18)",
-    borderWidth: 1.5, borderColor: "rgba(123,63,242,0.55)",
-    alignItems: "center", justifyContent: "center",
-    marginBottom: 12,
-    shadowColor: "#7B3FF2", shadowOpacity: 0.60, shadowRadius: 20, shadowOffset: { width: 0, height: 0 },
-    elevation: 12,
-    overflow: "hidden",
+  heroWrap: { alignItems: "center", marginBottom: 0 },
+
+  platformGlow: {
+    width: 130,
+    height: 22,
+    marginTop: -4,
+    marginBottom: 8,
+    borderRadius: 65,
+    backgroundColor: "rgba(168,85,247,0.30)",
   },
-  logoImg: { width: 66, height: 66 },
-  brandName: { fontSize: 22, fontWeight: "800", color: "#FFFFFF", fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
-  brandTag: { fontSize: 12, color: "rgba(200,180,255,0.50)", fontFamily: "Inter_400Regular", marginTop: 2 },
 
   card: {
-    backgroundColor: "rgba(18,4,45,0.72)",
+    width: "100%",
+    backgroundColor: "rgba(12,6,30,0.78)",
     borderRadius: 26,
     borderWidth: 1,
-    borderColor: "rgba(123,63,242,0.30)",
+    borderColor: "rgba(168,85,247,0.28)",
     padding: 24,
-    shadowColor: "#7B3FF2", shadowOpacity: 0.22, shadowRadius: 32, shadowOffset: { width: 0, height: 8 },
+    shadowColor: "#a855f7",
+    shadowOpacity: 0.18,
+    shadowRadius: 40,
+    shadowOffset: { width: 0, height: 12 },
     elevation: 14,
     gap: 14,
   },
@@ -394,34 +368,25 @@ const styles = StyleSheet.create({
   resetEmailHighlight: { color: "#C084FC", fontWeight: "600" },
 
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  divider: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.10)" },
-  dividerText: { fontSize: 12, color: "rgba(200,180,255,0.35)", fontFamily: "Inter_400Regular" },
+  divider: { flex: 1, height: 1, backgroundColor: "rgba(168,85,247,0.15)" },
+  dividerText: { fontSize: 12, color: "rgba(255,255,255,0.30)", fontFamily: "Inter_400Regular" },
 
   inputGroup: { gap: 7 },
   label: { fontSize: 12, fontWeight: "600", color: "rgba(200,180,255,0.80)", fontFamily: "Inter_600SemiBold" },
 
-  passwordLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  forgotLink: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#C084FC",
-    fontFamily: "Inter_600SemiBold",
-  },
+  passwordLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  forgotLink: { fontSize: 12, fontWeight: "600", color: "#a855f7", fontFamily: "Inter_600SemiBold" },
 
   inputWrap: {
     flexDirection: "row", alignItems: "center",
     height: 52, borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1, borderColor: "rgba(123,63,242,0.22)",
+    backgroundColor: "rgba(10,6,26,0.72)",
+    borderWidth: 1, borderColor: "rgba(168,85,247,0.25)",
     paddingHorizontal: 14,
   },
   inputWrapFocused: {
-    borderColor: "rgba(123,63,242,0.80)",
-    shadowColor: "#7B3FF2", shadowOpacity: 0.30, shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
+    borderColor: "rgba(168,85,247,0.75)",
+    shadowColor: "#a855f7", shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
     elevation: 4,
   },
   inputIcon: { marginRight: 10 },
@@ -429,44 +394,33 @@ const styles = StyleSheet.create({
   eyeBtn: { padding: 4 },
 
   errorBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+    flexDirection: "row", alignItems: "flex-start",
     backgroundColor: "rgba(255,60,60,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(255,60,60,0.25)",
-    borderRadius: 12,
-    padding: 10,
+    borderWidth: 1, borderColor: "rgba(255,60,60,0.25)",
+    borderRadius: 12, padding: 10,
   },
-  errorText: {
-    flex: 1,
-    fontSize: 13,
-    color: "#FF8080",
-    fontFamily: "Inter_400Regular",
-    lineHeight: 18,
-  },
+  errorText: { flex: 1, fontSize: 13, color: "#FF8080", fontFamily: "Inter_400Regular", lineHeight: 18 },
 
   primaryBtnWrap: { marginTop: 4 },
   primaryBtn: {
-    height: 54, borderRadius: 16, alignItems: "center", justifyContent: "center",
-    shadowColor: "#7B3FF2", shadowOpacity: 0.65, shadowRadius: 20, shadowOffset: { width: 0, height: 6 },
+    height: 50,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#ec4899",
+    shadowOpacity: 0.50,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 12,
   },
   primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold" },
 
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 4,
-    paddingVertical: 6,
-  },
-  backBtnText: {
-    fontSize: 14,
-    color: "rgba(200,180,255,0.55)",
-    fontFamily: "Inter_400Regular",
-  },
+  backBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 4, paddingVertical: 6 },
+  backBtnText: { fontSize: 14, color: "rgba(200,180,255,0.55)", fontFamily: "Inter_400Regular" },
 
   footer: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
   footerText: { color: "rgba(200,180,255,0.50)", fontFamily: "Inter_400Regular", fontSize: 14 },
-  linkText: { color: "#C084FC", fontWeight: "600", fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  linkText: { color: "#a855f7", fontWeight: "600", fontFamily: "Inter_600SemiBold", fontSize: 14 },
+
+  tagline: { marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.22)", fontFamily: "Inter_400Regular" },
 });
