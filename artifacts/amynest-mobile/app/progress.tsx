@@ -10,7 +10,7 @@ import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
-import colors, { brand } from "@/constants/colors";
+import colors, { brand, ACCENT_PINK } from "@/constants/colors";
 
 type Routine = { id: number; childId: number; childName?: string; title?: string; createdAt: string; activities?: any[] };
 type Behavior = { id: number; type: string; date: string };
@@ -51,7 +51,7 @@ export default function ProgressScreen() {
   const insights = useMemo(() => {
     const out: { icon: any; color: string; title: string; text: string }[] = [];
     if (stats.routinesThisWeek >= 3) out.push({ icon: "trophy", color: "#FBBF24", title: "Routine champion", text: `${stats.routinesThisWeek} routines created this week — consistency builds calm.` });
-    if (stats.positiveRate >= 70) out.push({ icon: "heart", color: brand.accent, title: "Positive momentum", text: `${stats.positiveRate}% of logged moments were wins. Keep noticing the good.` });
+    if (stats.positiveRate >= 70) out.push({ icon: "heart", color: ACCENT_PINK, title: "Positive momentum", text: `${stats.positiveRate}% of logged moments were wins. Keep noticing the good.` });
     if (stats.milestones > 0) out.push({ icon: "star", color: brand.violet400, title: "Milestones tracked", text: `${stats.milestones} milestone${stats.milestones>1?"s":""} captured. Memories your future self will thank you for.` });
     if (out.length === 0 && !loadingR) out.push({ icon: "compass", color: "#34D399", title: "Just getting started", text: "Add a few routines and behavior moments — Amy will surface insights from your data." });
     return out;
@@ -73,12 +73,12 @@ export default function ProgressScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 140, gap: 16 }}>
-        {loadingR && <ActivityIndicator color={brand.accent} style={{ marginTop: 40 }} />}
+        {loadingR && <ActivityIndicator color={ACCENT_PINK} style={{ marginTop: 40 }} />}
 
         <View style={styles.statsGrid}>
           <StatCard icon="calendar" color={colors.light.primary} label="Routines this week" value={stats.routinesThisWeek} sub={`${stats.totalRoutines} total`} />
           <StatCard icon="happy" color="#FBBF24" label="Moments logged" value={stats.behaviorsThisWeek} sub="this week" />
-          <StatCard icon="heart" color={brand.accent} label="Positive rate" value={`${stats.positiveRate}%`} sub="last 7 days" />
+          <StatCard icon="heart" color={ACCENT_PINK} label="Positive rate" value={`${stats.positiveRate}%`} sub="last 7 days" />
           <StatCard icon="trophy" color={brand.violet400} label="Milestones" value={stats.milestones} sub="all time" />
         </View>
 

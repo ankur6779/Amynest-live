@@ -1,4 +1,4 @@
-import { brand } from "@/constants/colors";
+import { brand, ACCENT_PINK } from "@/constants/colors";
 
 export type ThemeMode = "light" | "dark";
 
@@ -34,9 +34,9 @@ export const darkTheme: ThemePalette = {
   },
   brand: {
     primary: brand.primary,
-    accent: brand.accent,
+    accent: ACCENT_PINK,
     gradientStart: brand.primary,
-    gradientEnd: brand.accent,
+    gradientEnd: ACCENT_PINK,
   },
   status: {
     success: "#10B981",
@@ -69,9 +69,9 @@ export const lightTheme: ThemePalette = {
   },
   brand: {
     primary: brand.primary,
-    accent: brand.accent,
+    accent: ACCENT_PINK,
     gradientStart: brand.primary,
-    gradientEnd: brand.accent,
+    gradientEnd: ACCENT_PINK,
   },
   status: {
     success: "#059669",

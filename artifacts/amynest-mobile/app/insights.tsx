@@ -15,7 +15,7 @@ import { useRouter, Stack } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand } from "@/constants/colors";
+import { brand, ACCENT_PINK } from "@/constants/colors";
 
 type Range = "week" | "month";
 
@@ -136,12 +136,12 @@ export default function InsightsScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={refetch}
-            tintColor={brand.accent}
+            tintColor={ACCENT_PINK}
           />
         }
       >
         {isLoading && !data && (
-          <ActivityIndicator color={brand.accent} style={{ marginTop: 40 }} />
+          <ActivityIndicator color={ACCENT_PINK} style={{ marginTop: 40 }} />
         )}
 
         {data && !data.hasChildren && (
@@ -184,7 +184,7 @@ export default function InsightsScreen() {
             />
             <DeltaCard
               icon="heart-outline"
-              color={brand.accent}
+              color={ACCENT_PINK}
               label="Positive moments rate"
               value={`${data.summary.positiveRateThisPeriod}%`}
               previousValue={`${data.summary.positiveRatePreviousPeriod}%`}

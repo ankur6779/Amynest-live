@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 1.4,
-    color: "#A855F7",
+    color: brand.purple500,
   },
   datePill: {
     flexDirection: "row",
@@ -333,13 +333,13 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: "#A855F7",
+    backgroundColor: brand.purple500,
   },
   dateLabel: {
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.2,
-    color: "#A855F7",
+    color: brand.purple500,
   },
   title: {
     fontSize: 22,

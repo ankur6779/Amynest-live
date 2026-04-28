@@ -6,7 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand } from "@/constants/colors";
+import { brand, ACCENT_PINK } from "@/constants/colors";
 
 type Severity = "good" | "caution" | "risk";
 type Indicator = { label: string; emoji: string; severity: Severity };
@@ -92,7 +92,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
       {/* Header */}
       <View style={styles.headerRow}>
         <LinearGradient
-          colors={[brand.amber400, brand.accent, brand.purple500]}
+          colors={["#FFD27A", ACCENT_PINK, brand.purple500]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.iconRing}
         >

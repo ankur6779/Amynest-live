@@ -11,7 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { brand } from "@/constants/colors";
+import { brand, ACCENT_PINK } from "@/constants/colors";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -340,7 +340,7 @@ export default function PremiumSplash({ onFinish }: Props) {
           <View style={styles.logoGlowOuter} />
           <View style={styles.logoGlowInner} />
           <LinearGradient
-            colors={["#7B3FF2", brand.accent, brand.sky300]}
+            colors={["#7B3FF2", ACCENT_PINK, "#4FC3F7"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.logoRingGradient}
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     borderRadius: RING_OUTER / 2,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: brand.accent,
+    shadowColor: ACCENT_PINK,
     shadowOpacity: 0.55,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
