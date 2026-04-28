@@ -11,6 +11,7 @@ import {
 } from "@/services/hubApi";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { brand } from "@/constants/colors";
 
 const DAILY_LIMIT = 5;
 const PAGE_SIZE = 8;
@@ -123,7 +124,7 @@ export function PrintableWorksheets() {
   if (loading) {
     return (
       <View style={s.center}>
-        <ActivityIndicator color="#FF4ECD" />
+        <ActivityIndicator color={brand.accent} />
         <Text style={s.dim}>Loading worksheets…</Text>
       </View>
     );

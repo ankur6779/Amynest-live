@@ -99,7 +99,7 @@ const ALL_FEATURES: {
   gradient: readonly [string, string];
   badge: string | null;
 }[] = [
-  { icon: "shield-checkmark", title: "Kids Control Center", desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.", gradient: ["#7B3FF2", "#FF4ECD"], badge: "Coming Soon" },
+  { icon: "shield-checkmark", title: "Kids Control Center", desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.", gradient: ["#7B3FF2", brand.accent], badge: "Coming Soon" },
   { icon: "stats-chart", title: "Behavior Tracking", desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC behavioral analysis.", gradient: ["#10B981", "#06B6D4"], badge: "Popular" },
   { icon: "game-controller", title: "Gaming Reward Zone", desc: "Gamified milestones — kids earn real rewards tied to real-world achievements.", gradient: ["#FFD166", "#EF4444"], badge: "New" },
   { icon: "moon", title: "Infant Sleep Tracker", desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.", gradient: ["#60A5FA", "#6366F1"], badge: "New" },
@@ -165,7 +165,7 @@ export default function WelcomeScreen() {
 
   const titleColor = colorAnim.interpolate({
     inputRange: [0, 1, 2, 3, 4],
-    outputRange: [brand.primary, "#FF4ECD", "#4FC3F7", "#FFD166", brand.primary],
+    outputRange: [brand.primary, brand.accent, "#4FC3F7", "#FFD166", brand.primary],
   });
 
   const tap = () => {
@@ -401,7 +401,7 @@ export default function WelcomeScreen() {
             <View style={styles.kidsCCCard}>
               <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 14, marginBottom: 16 }}>
                 <LinearGradient
-                  colors={["#7B3FF2", "#FF4ECD"]}
+                  colors={["#7B3FF2", brand.accent]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                   style={styles.kidsCCIcon}
                 >
@@ -411,7 +411,7 @@ export default function WelcomeScreen() {
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                     <Text style={styles.kidsCCTitle}>Kids Control Center</Text>
                     <LinearGradient
-                      colors={["#7B3FF2", "#FF4ECD"]}
+                      colors={["#7B3FF2", brand.accent]}
                       start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                       style={styles.comingSoonPill}
                     >
@@ -1293,7 +1293,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#FF4ECD",
+    shadowColor: brand.accent,
     shadowOpacity: 0.4,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 },

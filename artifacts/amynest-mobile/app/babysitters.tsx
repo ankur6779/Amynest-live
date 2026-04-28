@@ -79,7 +79,7 @@ export default function BabysittersScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
           <Ionicons name="chevron-back" size={22} color={c.text} />
         </Pressable>
-        <LinearGradient colors={["#FB7185", "#FF4ECD"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerIcon}>
+        <LinearGradient colors={["#FB7185", brand.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerIcon}>
           <MaterialCommunityIcons name="baby-face-outline" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
@@ -92,7 +92,7 @@ export default function BabysittersScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 140, gap: 10 }}>
-        {isLoading && <ActivityIndicator color="#FF4ECD" style={{ marginTop: 40 }} />}
+        {isLoading && <ActivityIndicator color={brand.accent} style={{ marginTop: 40 }} />}
         {!isLoading && sitters.length === 0 && (
           <View style={styles.emptyCard}>
             <MaterialCommunityIcons name="baby-face-outline" size={48} color="rgba(255,78,205,0.5)" />
@@ -106,7 +106,7 @@ export default function BabysittersScreen() {
         )}
         {sitters.map(s => (
           <View key={s.id} style={styles.card}>
-            <LinearGradient colors={[brand.primary, "#FF4ECD"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.avatar}>
+            <LinearGradient colors={[brand.primary, brand.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.avatar}>
               <Text style={styles.avatarText}>{s.name[0]?.toUpperCase()}</Text>
             </LinearGradient>
             <View style={{ flex: 1 }}>
@@ -170,7 +170,7 @@ export default function BabysittersScreen() {
                   <Text style={{ color: c.text, fontWeight: "700" }}>Cancel</Text>
                 </Pressable>
                 <Pressable onPress={handleAdd} disabled={saving} style={[styles.modalBtn, { flex: 1 }]}>
-                  <LinearGradient colors={[brand.primary, "#FF4ECD"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.modalBtnGrad}>
+                  <LinearGradient colors={[brand.primary, brand.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.modalBtnGrad}>
                     {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: "#fff", fontWeight: "700" }}>Add Sitter</Text>}
                   </LinearGradient>
                 </Pressable>

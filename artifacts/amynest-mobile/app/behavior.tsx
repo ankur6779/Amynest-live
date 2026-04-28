@@ -51,7 +51,7 @@ function Block({
 }) {
   const c = useColors();
   const styles = React.useMemo(() => makeStyles(c), [c]);
-  const borderColor = open ? (accentColor ?? "#FF4ECD") : c.border;
+  const borderColor = open ? (accentColor ?? brand.accent) : c.border;
   return (
     <View style={[styles.block, { borderColor }]}>
       <Pressable
@@ -65,11 +65,11 @@ function Block({
           <Text style={styles.blockTitle}>{title}</Text>
           <Text style={styles.blockSubtitle}>{subtitle}</Text>
         </View>
-        <View style={[styles.chevWrap, open && { borderColor: accentColor ?? "#FF4ECD", backgroundColor: (accentColor ?? "#FF4ECD") + "22" }]}>
+        <View style={[styles.chevWrap, open && { borderColor: accentColor ?? brand.accent, backgroundColor: (accentColor ?? brand.accent) + "22" }]}>
           <Ionicons
             name={open ? "chevron-up" : "chevron-down"}
             size={14}
-            color={open ? (accentColor ?? "#FF4ECD") : c.textMuted}
+            color={open ? (accentColor ?? brand.accent) : c.textMuted}
           />
         </View>
       </Pressable>
@@ -384,7 +384,7 @@ export default function BehaviorScreen() {
           </View>
 
           {/* Today's log */}
-          {isLoading ? <ActivityIndicator color="#FF4ECD" style={{ marginTop: 12 }} /> : todayLogs.length > 0 ? (
+          {isLoading ? <ActivityIndicator color={brand.accent} style={{ marginTop: 12 }} /> : todayLogs.length > 0 ? (
             <View style={{ marginTop: 12, gap: 6 }}>
               <Text style={styles.sectionLabel}>{L.loggedToday} ({todayLogs.length})</Text>
               {todayLogs.map((b) => {

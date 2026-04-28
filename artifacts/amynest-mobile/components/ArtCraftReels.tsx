@@ -10,6 +10,7 @@ import {
 } from "@/services/hubApi";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { brand } from "@/constants/colors";
 
 const BATCH = 6;
 
@@ -70,7 +71,7 @@ export function ArtCraftReels() {
   if (loading && videos.length === 0) {
     return (
       <View style={s.center}>
-        <ActivityIndicator color="#FF4ECD" />
+        <ActivityIndicator color={brand.accent} />
         <Text style={s.dim}>Loading videos…</Text>
       </View>
     );

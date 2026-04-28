@@ -147,7 +147,7 @@ function CoachHeroTab({
       />
       <Animated.View style={{ transform: [{ scale: bounce }, { translateY: -COACH_LIFT }] }}>
         <LinearGradient
-          colors={focused ? [brand.primaryLight, brand.primary, "#FF4ECD"] : [brand.primary, "#FF4ECD"]}
+          colors={focused ? [brand.primaryLight, brand.primary, brand.accent] : [brand.primary, brand.accent]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.coachDisc}
@@ -296,8 +296,8 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#FF4ECD",
-    shadowColor: "#FF4ECD",
+    backgroundColor: brand.accent,
+    shadowColor: brand.accent,
     shadowOpacity: 0.9,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 0 },

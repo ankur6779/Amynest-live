@@ -147,7 +147,7 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
       <View style={styles.headerRow}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
           <View style={styles.headerIcon}>
-            <LinearGradient colors={[brand.primary, "#FF4ECD"]} style={StyleSheet.absoluteFillObject} />
+            <LinearGradient colors={[brand.primary, brand.accent]} style={StyleSheet.absoluteFillObject} />
             <Ionicons name="sparkles" size={14} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
@@ -228,7 +228,7 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
               pressed && { opacity: 0.85 },
             ]}>
               {isPrimary ? (
-                <LinearGradient colors={[brand.primary, "#FF4ECD"]} style={StyleSheet.absoluteFillObject} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+                <LinearGradient colors={[brand.primary, brand.accent]} style={StyleSheet.absoluteFillObject} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
               ) : null}
               <Text style={styles.actionEmoji}>{a.emoji}</Text>
               <Text style={[styles.actionLabel, isPrimary ? { color: "#fff" } : { color: c.foreground }]}>{a.label}</Text>

@@ -165,6 +165,7 @@ export default colors;
 export const brand = {
   primary: "#7B3FF2",
   primaryLight: "#9B5FF5",
+  accent: colors.light.accent,
   violet50: "#FAF5FF",
   violet100: "#EDE9FE",
   violet200: "#E9D5FF",

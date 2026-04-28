@@ -140,7 +140,7 @@ export default function AmyAIScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
-        <LinearGradient colors={[brand.primary, "#FF4ECD"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerIcon}>
+        <LinearGradient colors={[brand.primary, brand.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.headerIcon}>
           <MaterialCommunityIcons name="chat-processing" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
@@ -177,7 +177,7 @@ export default function AmyAIScreen() {
             <View key={m.id} style={{ gap: 4 }}>
               <View style={[styles.bubbleRow, m.role === "user" ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
                 {m.role === "amy" && (
-                  <LinearGradient colors={[brand.primary, "#FF4ECD"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.avatarSm}>
+                  <LinearGradient colors={[brand.primary, brand.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.avatarSm}>
                     <MaterialCommunityIcons name="brain" size={14} color="#fff" />
                   </LinearGradient>
                 )}
@@ -192,11 +192,11 @@ export default function AmyAIScreen() {
           ))}
           {loading && (
             <View style={styles.bubbleRowLeft}>
-              <LinearGradient colors={[brand.primary, "#FF4ECD"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.avatarSm}>
+              <LinearGradient colors={[brand.primary, brand.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.avatarSm}>
                 <MaterialCommunityIcons name="brain" size={14} color="#fff" />
               </LinearGradient>
               <View style={[styles.bubble, styles.bubbleAmy, { flexDirection: "row", alignItems: "center", gap: 8 }]}>
-                <ActivityIndicator size="small" color="#FF4ECD" />
+                <ActivityIndicator size="small" color={brand.accent} />
                 <Text style={styles.bubbleText}>{t("ai.thinking")}</Text>
               </View>
             </View>
@@ -235,7 +235,7 @@ export default function AmyAIScreen() {
             disabled={!input.trim() || loading}
             style={[styles.sendBtn, (!input.trim() || loading) && { opacity: 0.5 }]}
           >
-            <LinearGradient colors={[brand.primary, "#FF4ECD"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.sendBtnGrad}>
+            <LinearGradient colors={[brand.primary, brand.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.sendBtnGrad}>
               <Ionicons name="arrow-up" size={20} color="#fff" />
             </LinearGradient>
           </Pressable>
