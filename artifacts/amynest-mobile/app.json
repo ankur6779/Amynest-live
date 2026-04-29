@@ -54,7 +54,7 @@
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
-      "./plugins/withRemoveReadMediaImages",
+      "./plugins/withBlockedPermissions",
       [
         "expo-router",
         {
