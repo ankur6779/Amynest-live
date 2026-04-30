@@ -4,10 +4,10 @@ import {
   ActivityIndicator, StyleSheet, Platform,
 } from "react-native";
 import {
-  RecaptchaVerifier,
   signInWithPhoneNumber,
   type ConfirmationResult,
   type ApplicationVerifier,
+  type Auth,
 } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
@@ -49,8 +49,11 @@ export default function PhoneAuthFlow({ onError }: Props) {
     }, 1000);
   }
 
-  async function getOrCreateVerifier(): Promise<ApplicationVerifier> {
+  async function getOrCreateWebVerifier(): Promise<ApplicationVerifier> {
     if (recaptchaRef.current) return recaptchaRef.current;
+    // RecaptchaVerifier is web-only — import lazily so the native bundle
+    // never tries to instantiate it (it doesn't exist in the RN entry point).
+    const { RecaptchaVerifier } = await import("firebase/auth");
     const v = new RecaptchaVerifier(firebaseAuth, "recaptcha-container", {
       size: "invisible",
     });
@@ -66,14 +69,25 @@ export default function PhoneAuthFlow({ onError }: Props) {
     }
     setStep("sending");
     try {
-      if (forceResend && recaptchaRef.current) {
-        try {
-          (recaptchaRef.current as RecaptchaVerifier).clear();
-        } catch { /* ignore */ }
-        recaptchaRef.current = null;
+      let result: ConfirmationResult;
+
+      if (Platform.OS === "web") {
+        // Web: RecaptchaVerifier is required to satisfy Firebase's bot check.
+        if (forceResend && recaptchaRef.current) {
+          try { (recaptchaRef.current as unknown as { clear(): void }).clear(); } catch { /* ignore */ }
+          recaptchaRef.current = null;
+        }
+        const verifier = await getOrCreateWebVerifier();
+        result = await signInWithPhoneNumber(firebaseAuth, phoneFull, verifier);
+      } else {
+        // Native (iOS / Android): RecaptchaVerifier does not exist in the RN
+        // bundle of firebase/auth — Firebase handles silent push / native
+        // reCAPTCHA internally.  Passing no verifier is the correct approach.
+        result = await (signInWithPhoneNumber as unknown as (
+          auth: Auth, phone: string
+        ) => Promise<ConfirmationResult>)(firebaseAuth, phoneFull);
       }
-      const verifier = await getOrCreateVerifier();
-      const result = await signInWithPhoneNumber(firebaseAuth, phoneFull, verifier);
+
       confirmRef.current = result;
       setOtp("");
       setStep("otp");
