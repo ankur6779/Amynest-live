@@ -14,6 +14,8 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { brand, ACCENT_PINK } from "@/constants/colors";
+import { DrawerProvider, useDrawer } from "@/contexts/DrawerContext";
+import { NavDrawer } from "@/components/NavDrawer";
 
 type TabKey = "index" | "routines" | "coach" | "hub";
 
@@ -218,25 +220,58 @@ function FloatingTabBar({ state, navigation }: any) {
   );
 }
 
+function HamburgerButton() {
+  const { toggleDrawer } = useDrawer();
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      pointerEvents="box-none"
+      style={{
+        position: "absolute",
+        top: insets.top + (Platform.OS === "web" ? 16 : 8),
+        left: 12,
+        zIndex: 200,
+      }}
+    >
+      <Pressable
+        onPress={() => {
+          if (Platform.OS !== "web") Haptics.selectionAsync();
+          toggleDrawer();
+        }}
+        style={styles.hamburgerBtn}
+        hitSlop={12}
+      >
+        <Ionicons name="menu-outline" size={24} color="rgba(255,255,255,0.85)" />
+      </Pressable>
+    </View>
+  );
+}
+
 export default function TabLayout() {
   const colors = useColors();
 
   return (
-    <Tabs
-      tabBar={(props) => <FloatingTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Tabs.Screen name="index"    options={{ title: "Dashboard" }} />
-      <Tabs.Screen name="routines" options={{ title: "Routine" }} />
-      <Tabs.Screen name="coach"    options={{ title: "Coach" }} />
-      <Tabs.Screen name="hub"      options={{ title: "Hub" }} />
-      {/* Hidden from tab bar — accessible via drawer */}
-      <Tabs.Screen name="children" options={{ title: "Kids", href: null }} />
-      <Tabs.Screen name="profile"  options={{ title: "Profile", href: null }} />
-    </Tabs>
+    <DrawerProvider>
+      <Tabs
+        tabBar={(props) => <FloatingTabBar {...props} />}
+        screenOptions={{
+          headerShown: false,
+          sceneStyle: { backgroundColor: colors.background },
+        }}
+      >
+        <Tabs.Screen name="index"    options={{ title: "Dashboard" }} />
+        <Tabs.Screen name="routines" options={{ title: "Routine" }} />
+        <Tabs.Screen name="coach"    options={{ title: "Coach" }} />
+        <Tabs.Screen name="hub"      options={{ title: "Hub" }} />
+        {/* Hidden from tab bar — accessible via drawer */}
+        <Tabs.Screen name="children"  options={{ title: "Kids", href: null }} />
+        <Tabs.Screen name="profile"   options={{ title: "Profile", href: null }} />
+        {/* Utility module — suppress Expo Router route warning */}
+        <Tabs.Screen name="hub-bands" options={{ href: null }} />
+      </Tabs>
+      <HamburgerButton />
+      <NavDrawer />
+    </DrawerProvider>
   );
 }
 
@@ -244,6 +279,21 @@ const PILL_PADDING_V = 10;
 const PILL_ITEM_H = 52;
 
 const styles = StyleSheet.create({
+  hamburgerBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(15,12,41,0.72)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 6,
+  },
   barWrap: {
     position: "absolute",
     left: 16,
