@@ -85,6 +85,7 @@
   "dependencies": {
     "@workspace/behavior-tracker": "workspace:*",
     "@workspace/event-prep": "workspace:*",
+    "@workspace/audio-lessons": "workspace:*",
     "@workspace/family-routine": "workspace:*",
     "@workspace/infant-hub": "workspace:*",
     "@workspace/infant-problems": "workspace:*",

@@ -178,6 +178,9 @@ importers:
       '@react-native-community/netinfo':
         specifier: ^11.4.1
         version: 11.4.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))
+      '@workspace/audio-lessons':
+        specifier: workspace:*
+        version: link:../../lib/audio-lessons
       '@workspace/behavior-tracker':
         specifier: workspace:*
         version: link:../../lib/behavior-tracker
@@ -510,6 +513,9 @@ importers:
 
   artifacts/kidschedule:
     dependencies:
+      '@workspace/audio-lessons':
+        specifier: workspace:*
+        version: link:../../lib/audio-lessons
       '@workspace/behavior-tracker':
         specifier: workspace:*
         version: link:../../lib/behavior-tracker
@@ -1159,6 +1165,8 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.76
+
+  lib/audio-lessons: {}
 
   lib/behavior-tracker: {}
 
