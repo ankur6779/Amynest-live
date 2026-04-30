@@ -44,149 +44,166 @@ type Question = {
 };
 
 // ─── Goals (categorized) — mirrors web ────────────────────────────────────
-// audit-block-ignore-start: category gradient bg arrays — semantic pastel swatches, no theme tokens available
-function getGoalCategories(infoBg: string): GoalCategory[] {
+// Dark-theme card gradient pairs — all rgba so they layer naturally over the
+// app background and keep white text legible. // audit-ok: hex in comment only, not rendered
+const DK = {
+  rose:    ["rgba(225,29,72,0.32)",   "rgba(190,24,93,0.26)"]  as [string,string],
+  red:     ["rgba(220,38,38,0.30)",   "rgba(185,28,28,0.24)"]  as [string,string],
+  amber:   ["rgba(217,119,6,0.30)",   "rgba(180,83,9,0.24)"]   as [string,string],
+  orange:  ["rgba(234,88,12,0.28)",   "rgba(194,65,12,0.24)"]  as [string,string],
+  pink:    ["rgba(219,39,119,0.30)",  "rgba(190,24,93,0.24)"]  as [string,string],
+  fuchsia: ["rgba(192,38,211,0.28)",  "rgba(162,28,175,0.22)"] as [string,string],
+  violet:  ["rgba(124,58,237,0.32)",  "rgba(109,40,217,0.26)"] as [string,string],
+  purple:  ["rgba(147,51,234,0.30)",  "rgba(124,58,237,0.24)"] as [string,string],
+  indigo:  ["rgba(79,70,229,0.30)",   "rgba(55,48,163,0.24)"]  as [string,string],
+  blue:    ["rgba(37,99,235,0.30)",   "rgba(29,78,216,0.24)"]  as [string,string],
+  sky:     ["rgba(14,165,233,0.30)",  "rgba(3,105,161,0.24)"]  as [string,string],
+  teal:    ["rgba(13,148,136,0.30)",  "rgba(15,118,110,0.24)"] as [string,string],
+  emerald: ["rgba(16,185,129,0.30)",  "rgba(5,150,105,0.24)"]  as [string,string],
+  green:   ["rgba(22,163,74,0.28)",   "rgba(21,128,61,0.22)"]  as [string,string],
+} as const;
+
+function getGoalCategories(_infoBg: string): GoalCategory[] {
   return [
     {
-      id: "behavior", title: "Behavior", emoji: "🎯", bg: ["#FFE4E6", "#FED7AA"],
+      id: "behavior", title: "Behavior", emoji: "🎯", bg: DK.rose,
       items: [
-        { id: "manage-tantrums",      title: "Manage Tantrums",      emoji: "😤", bg: ["#FFE4E6", "#FBCFE8"] },
-        { id: "handle-aggression",    title: "Handle Aggression",    emoji: "✋", bg: ["#FEE2E2", "#FECACA"] },
-        { id: "reduce-defiance",      title: "Reduce Defiance",      emoji: "🛑", bg: ["#FEF3C7", "#FED7AA"] },
-        { id: "emotional-regulation", title: "Emotional Regulation", emoji: "💗", bg: ["#FCE7F3", "#FBCFE8"] },
-        { id: "separation-anxiety",   title: "Separation Anxiety",   emoji: "🫂", bg: [brand.violet100, brand.violet200] },
+        { id: "manage-tantrums",      title: "Manage Tantrums",      emoji: "😤", bg: DK.rose },
+        { id: "handle-aggression",    title: "Handle Aggression",    emoji: "✋", bg: DK.red },
+        { id: "reduce-defiance",      title: "Reduce Defiance",      emoji: "🛑", bg: DK.orange },
+        { id: "emotional-regulation", title: "Emotional Regulation", emoji: "💗", bg: DK.pink },
+        { id: "separation-anxiety",   title: "Separation Anxiety",   emoji: "🫂", bg: DK.violet },
       ],
     },
     {
-      id: "screen-focus", title: "Screen & Focus", emoji: "📱", bg: ["#E0F2FE", "#C7D2FE"],
+      id: "screen-focus", title: "Screen & Focus", emoji: "📱", bg: DK.blue,
       items: [
-        { id: "balance-screen-time",          title: "Balance Screen Time",        emoji: "📱", bg: ["#E0F2FE", "#BFDBFE"] },
-        { id: "reduce-mobile-addiction",      title: "Reduce Mobile Addiction",    emoji: "📵", bg: [infoBg, "#C7D2FE"] },
-        { id: "improve-focus-span",           title: "Improve Focus Span",         emoji: "🎯", bg: [brand.violet100, "#FBCFE8"] },
-        { id: "reduce-shorts-overuse",        title: "Reduce Shorts Overuse",      emoji: "🎬", bg: ["#FFE4E6", "#FECACA"] },
-        { id: "reduce-instant-gratification", title: "Reduce Instant Gratification",emoji: "⏳", bg: ["#FEF3C7", "#FDE68A"] },
+        { id: "balance-screen-time",          title: "Balance Screen Time",         emoji: "📱", bg: DK.blue },
+        { id: "reduce-mobile-addiction",      title: "Reduce Mobile Addiction",     emoji: "📵", bg: DK.indigo },
+        { id: "improve-focus-span",           title: "Improve Focus Span",          emoji: "🎯", bg: DK.violet },
+        { id: "reduce-shorts-overuse",        title: "Reduce Shorts Overuse",       emoji: "🎬", bg: DK.rose },
+        { id: "reduce-instant-gratification", title: "Reduce Instant Gratification",emoji: "⏳", bg: DK.amber },
       ],
     },
     {
-      id: "eating", title: "Eating", emoji: "🍽️", bg: ["#D1FAE5", "#CCFBF1"],
+      id: "eating", title: "Eating", emoji: "🍽️", bg: DK.emerald,
       items: [
-        { id: "encourage-independent-eating", title: "Independent Eating",  emoji: "🥄", bg: ["#D1FAE5", "#BBF7D0"] },
-        { id: "navigate-fussy-eating",        title: "Navigate Fussy Eating",emoji: "🥦", bg: ["#CCFBF1", "#A7F3D0"] },
-        { id: "stop-junk-food-craving",       title: "Stop Junk Cravings",  emoji: "🍟", bg: ["#FED7AA", "#FDE68A"] },
-        { id: "healthy-eating-routine",       title: "Healthy Eating",      emoji: "🍎", bg: ["#BBF7D0", "#D1FAE5"] },
-        { id: "improve-mealtime-behavior",    title: "Mealtime Behavior",   emoji: "🍽️", bg: ["#ECFCCB", "#BBF7D0"] },
+        { id: "encourage-independent-eating", title: "Independent Eating",   emoji: "🥄", bg: DK.emerald },
+        { id: "navigate-fussy-eating",        title: "Navigate Fussy Eating", emoji: "🥦", bg: DK.teal },
+        { id: "stop-junk-food-craving",       title: "Stop Junk Cravings",   emoji: "🍟", bg: DK.orange },
+        { id: "healthy-eating-routine",       title: "Healthy Eating",        emoji: "🍎", bg: DK.green },
+        { id: "improve-mealtime-behavior",    title: "Mealtime Behavior",    emoji: "🍽️", bg: DK.teal },
       ],
     },
     {
-      id: "sleep", title: "Sleep", emoji: "😴", bg: [brand.indigo100, brand.violet100],
+      id: "sleep", title: "Sleep", emoji: "😴", bg: DK.indigo,
       items: [
-        { id: "improve-sleep-patterns",   title: "Improve Sleep",        emoji: "😴", bg: [brand.indigo100, brand.violet200] },
-        { id: "fix-bedtime-resistance",   title: "Bedtime Resistance",   emoji: "🛏️", bg: [brand.violet100, brand.indigo100] },
-        { id: "stop-night-waking",        title: "Stop Night Waking",    emoji: "🌙", bg: [infoBg, brand.indigo100] },
-        { id: "consistent-sleep-routine", title: "Consistent Routine",   emoji: "🕘", bg: [brand.violet100, brand.violet200] },
-        { id: "reduce-late-sleeping",     title: "Reduce Late Sleep",    emoji: "⏰", bg: [brand.indigo100, infoBg] },
+        { id: "improve-sleep-patterns",   title: "Improve Sleep",      emoji: "😴", bg: DK.indigo },
+        { id: "fix-bedtime-resistance",   title: "Bedtime Resistance",  emoji: "🛏️", bg: DK.violet },
+        { id: "stop-night-waking",        title: "Stop Night Waking",  emoji: "🌙", bg: DK.blue },
+        { id: "consistent-sleep-routine", title: "Consistent Routine", emoji: "🕘", bg: DK.purple },
+        { id: "reduce-late-sleeping",     title: "Reduce Late Sleep",  emoji: "⏰", bg: DK.indigo },
       ],
     },
     {
-      id: "learning", title: "Learning", emoji: "📚", bg: [brand.violet100, "#FCE7F3"],
+      id: "learning", title: "Learning", emoji: "📚", bg: DK.purple,
       items: [
-        { id: "boost-concentration",        title: "Boost Concentration",  emoji: "🎯", bg: [brand.violet100, "#FBCFE8"] },
-        { id: "build-study-discipline",     title: "Study Discipline",     emoji: "📖", bg: [infoBg, "#BFDBFE"] },
-        { id: "increase-learning-interest", title: "Learning Interest",    emoji: "💡", bg: ["#FEF3C7", "#FDE68A"] },
-        { id: "reduce-homework-resistance", title: "Homework Resistance",  emoji: "✏️", bg: ["#CCFBF1", "#A7F3D0"] },
-        { id: "develop-growth-mindset",     title: "Growth Mindset",       emoji: "🌱", bg: ["#BBF7D0", "#ECFCCB"] },
+        { id: "boost-concentration",        title: "Boost Concentration", emoji: "🎯", bg: DK.purple },
+        { id: "build-study-discipline",     title: "Study Discipline",    emoji: "📖", bg: DK.blue },
+        { id: "increase-learning-interest", title: "Learning Interest",   emoji: "💡", bg: DK.amber },
+        { id: "reduce-homework-resistance", title: "Homework Resistance", emoji: "✏️", bg: DK.teal },
+        { id: "develop-growth-mindset",     title: "Growth Mindset",      emoji: "🌱", bg: DK.green },
       ],
     },
     {
-      id: "infant-problems", title: "Infant Problems (0–2 yrs)", emoji: "👶", bg: ["#FCE7F3", "#FED7AA"],
+      id: "infant-problems", title: "Infant Problems (0–2 yrs)", emoji: "👶", bg: DK.pink,
       items: INFANT_PROBLEMS.map((p) => ({
         id: p.id,
         title: p.title.en,
         emoji: p.emoji,
-        bg: ["#FCE7F3", "#FED7AA"] as [string, string],
+        bg: DK.pink,
       })),
     },
     {
-      id: "parenting-challenges", title: "Parenting", emoji: "💝", bg: ["#FEF3C7", "#FED7AA"],
+      id: "parenting-challenges", title: "Parenting", emoji: "💝", bg: DK.amber,
       items: [
-        { id: "manage-grandparents-interference", title: "Grandparents",         emoji: "👵", bg: ["#FFE4E6", "#FBCFE8"] },
-        { id: "align-parenting-between-parents",  title: "Align Co-Parenting",   emoji: "🤝", bg: [brand.violet100, brand.violet200] },
-        { id: "handle-working-parent-guilt",      title: "Working Parent Guilt", emoji: "💼", bg: ["#E0F2FE", "#BFDBFE"] },
-        { id: "set-consistent-family-rules",      title: "Family Rules",         emoji: "📋", bg: ["#FEF3C7", "#FED7AA"] },
+        { id: "manage-grandparents-interference", title: "Grandparents",         emoji: "👵", bg: DK.rose },
+        { id: "align-parenting-between-parents",  title: "Align Co-Parenting",   emoji: "🤝", bg: DK.violet },
+        { id: "handle-working-parent-guilt",      title: "Working Parent Guilt", emoji: "💼", bg: DK.blue },
+        { id: "set-consistent-family-rules",      title: "Family Rules",         emoji: "📋", bg: DK.amber },
       ],
     },
-    // ── NEW: Toddler Behavior (2–4 yrs) ──────────────────────────────────
+    // ── Toddler Behavior (2–4 yrs) ───────────────────────────────────────
     {
-      id: "toddler-behavior", title: "Toddler Behavior (2–4 yrs)", emoji: "🧒", bg: ["#FFE4E6", "#FED7AA"],
+      id: "toddler-behavior", title: "Toddler Behavior (2–4 yrs)", emoji: "🧒", bg: DK.red,
       items: [
-        { id: "toddler-tantrums",       title: "Toddler Tantrums (2–4)", emoji: "😤", bg: ["#FFE4E6", "#FBCFE8"] },
-        { id: "hitting-biting",         title: "Hitting & Biting",        emoji: "🦷", bg: ["#FEE2E2", "#FECACA"] },
-        { id: "no-phase",               title: "The 'No' Phase",          emoji: "🙅", bg: ["#FEF3C7", "#FED7AA"] },
-        { id: "public-meltdowns",       title: "Public Meltdowns",        emoji: "🛒", bg: ["#FCE7F3", "#FBCFE8"] },
-        { id: "whining-and-clinginess", title: "Whining & Clinginess",    emoji: "🥺", bg: [brand.violet100, brand.violet200] },
+        { id: "toddler-tantrums",       title: "Toddler Tantrums (2–4)", emoji: "😤", bg: DK.red },
+        { id: "hitting-biting",         title: "Hitting & Biting",        emoji: "🦷", bg: DK.rose },
+        { id: "no-phase",               title: "The 'No' Phase",          emoji: "🙅", bg: DK.orange },
+        { id: "public-meltdowns",       title: "Public Meltdowns",        emoji: "🛒", bg: DK.pink },
+        { id: "whining-and-clinginess", title: "Whining & Clinginess",    emoji: "🥺", bg: DK.violet },
       ],
     },
-    // ── NEW: Daily Skills & Independence ─────────────────────────────────
+    // ── Daily Skills & Independence ──────────────────────────────────────
     {
-      id: "daily-skills", title: "Daily Skills & Independence", emoji: "🚽", bg: ["#D1FAE5", "#A7F3D0"],
+      id: "daily-skills", title: "Daily Skills & Independence", emoji: "🚽", bg: DK.teal,
       items: [
-        { id: "potty-training-readiness", title: "Potty Training Readiness", emoji: "🪴", bg: ["#D1FAE5", "#A7F3D0"] },
-        { id: "potty-day-training",       title: "Day Toilet Training",      emoji: "🚽", bg: ["#CCFBF1", "#A7F3D0"] },
-        { id: "potty-night-training",     title: "Night-Time Dry",            emoji: "🌙", bg: [brand.indigo100, brand.violet200] },
-        { id: "potty-public-anxiety",     title: "Public Toilet Anxiety",     emoji: "🚻", bg: ["#E0F2FE", "#BFDBFE"] },
-        { id: "self-dressing",            title: "Self-Dressing & Hygiene",   emoji: "👕", bg: ["#BBF7D0", "#D1FAE5"] },
+        { id: "potty-training-readiness", title: "Potty Training Readiness", emoji: "🪴", bg: DK.teal },
+        { id: "potty-day-training",       title: "Day Toilet Training",      emoji: "🚽", bg: DK.emerald },
+        { id: "potty-night-training",     title: "Night-Time Dry",            emoji: "🌙", bg: DK.indigo },
+        { id: "potty-public-anxiety",     title: "Public Toilet Anxiety",     emoji: "🚻", bg: DK.sky },
+        { id: "self-dressing",            title: "Self-Dressing & Hygiene",   emoji: "👕", bg: DK.green },
       ],
     },
-    // ── NEW: Family Dynamics ──────────────────────────────────────────────
+    // ── Family Dynamics ──────────────────────────────────────────────────
     {
-      id: "family-dynamics", title: "Family Dynamics", emoji: "👨‍👩‍👧‍👦", bg: [brand.violet100, "#FCE7F3"],
+      id: "family-dynamics", title: "Family Dynamics", emoji: "👨‍👩‍👧‍👦", bg: DK.fuchsia,
       items: [
-        { id: "sibling-rivalry",      title: "Sibling Rivalry",             emoji: "⚔️", bg: ["#FFE4E6", "#FBCFE8"] },
-        { id: "sharing-turn-taking",  title: "Sharing & Turn-Taking",       emoji: "🤲", bg: ["#FEF3C7", "#FED7AA"] },
-        { id: "new-baby-adjustment",  title: "Adjusting to New Baby",       emoji: "👶", bg: ["#FCE7F3", "#FBCFE8"] },
-        { id: "sibling-fights",       title: "Sibling Fights & Hitting",    emoji: "🥊", bg: ["#FEE2E2", "#FECACA"] },
-        { id: "favouritism-feelings", title: "Handle Favouritism Feelings", emoji: "💔", bg: [brand.violet100, brand.violet200] },
+        { id: "sibling-rivalry",      title: "Sibling Rivalry",             emoji: "⚔️", bg: DK.rose },
+        { id: "sharing-turn-taking",  title: "Sharing & Turn-Taking",       emoji: "🤲", bg: DK.amber },
+        { id: "new-baby-adjustment",  title: "Adjusting to New Baby",       emoji: "👶", bg: DK.pink },
+        { id: "sibling-fights",       title: "Sibling Fights & Hitting",    emoji: "🥊", bg: DK.red },
+        { id: "favouritism-feelings", title: "Handle Favouritism Feelings", emoji: "💔", bg: DK.violet },
       ],
     },
-    // ── NEW: Special Situations ───────────────────────────────────────────
+    // ── Special Situations ───────────────────────────────────────────────
     {
-      id: "special-situations", title: "Special Situations", emoji: "✈️", bg: ["#FEF3C7", "#FED7AA"],
+      id: "special-situations", title: "Special Situations", emoji: "✈️", bg: DK.sky,
       items: [
-        { id: "travel-with-kids",          title: "Travel With Kids",           emoji: "✈️", bg: ["#E0F2FE", "#BFDBFE"] },
-        { id: "hospital-doctor-visit",     title: "Hospital / Doctor Visit",    emoji: "🏥", bg: ["#FFE4E6", "#FECACA"] },
-        { id: "daycare-school-transition", title: "Daycare / School Transition",emoji: "🎒", bg: ["#FEF3C7", "#FED7AA"] },
-        { id: "welcoming-new-sibling",     title: "Welcoming a New Sibling",    emoji: "🎀", bg: ["#FCE7F3", "#FBCFE8"] },
-        { id: "moving-houses",             title: "Moving to a New Home",       emoji: "📦", bg: ["#D1FAE5", "#A7F3D0"] },
+        { id: "travel-with-kids",          title: "Travel With Kids",            emoji: "✈️", bg: DK.sky },
+        { id: "hospital-doctor-visit",     title: "Hospital / Doctor Visit",     emoji: "🏥", bg: DK.rose },
+        { id: "daycare-school-transition", title: "Daycare / School Transition", emoji: "🎒", bg: DK.amber },
+        { id: "welcoming-new-sibling",     title: "Welcoming a New Sibling",     emoji: "🎀", bg: DK.pink },
+        { id: "moving-houses",             title: "Moving to a New Home",        emoji: "📦", bg: DK.emerald },
       ],
     },
-    // ── NEW: Kids Health Concern ──────────────────────────────────────────
+    // ── Kids Health Concern ──────────────────────────────────────────────
     {
-      id: "kids-health-concern", title: "Kids Health Concern", emoji: "🩺", bg: ["#D1FAE5", "#CCFBF1"],
+      id: "kids-health-concern", title: "Kids Health Concern", emoji: "🩺", bg: DK.green,
       items: [
-        { id: "child-obesity-management", title: "Obesity & Weight",           emoji: "⚖️", bg: ["#D1FAE5", "#A7F3D0"] },
-        { id: "nutrition-deficiency",     title: "Nutrition Deficiency",        emoji: "🥗", bg: ["#ECFCCB", "#BBF7D0"] },
-        { id: "boost-immunity",           title: "Immunity & Frequent Illness", emoji: "🛡️", bg: ["#CCFBF1", "#A7F3D0"] },
-        { id: "dental-health",            title: "Dental Health",               emoji: "🦷", bg: ["#E0F2FE", "#BFDBFE"] },
-        { id: "digital-health-eye-care",  title: "Screen & Digital Health",     emoji: "👀", bg: [brand.violet100, brand.violet200] },
-        { id: "early-milestones-0-5",     title: "Early Milestones (0–5 yrs)", emoji: "🌱", bg: ["#FEF3C7", "#FDE68A"] },
+        { id: "child-obesity-management", title: "Obesity & Weight",            emoji: "⚖️", bg: DK.green },
+        { id: "nutrition-deficiency",     title: "Nutrition Deficiency",         emoji: "🥗", bg: DK.emerald },
+        { id: "boost-immunity",           title: "Immunity & Frequent Illness",  emoji: "🛡️", bg: DK.teal },
+        { id: "dental-health",            title: "Dental Health",                emoji: "🦷", bg: DK.sky },
+        { id: "digital-health-eye-care",  title: "Screen & Digital Health",      emoji: "👀", bg: DK.violet },
+        { id: "early-milestones-0-5",     title: "Early Milestones (0–5 yrs)",  emoji: "🌱", bg: DK.amber },
       ],
     },
-    // ── NEW: For You (Parent Self-Care) — age question skipped ────────────
+    // ── For You (Parent Self-Care) — age question skipped ────────────────
     {
-      id: "for-you", title: "For You (Parent Self-Care)", emoji: "💖", bg: ["#FCE7F3", "#FFE4E6"],
+      id: "for-you", title: "For You (Parent Self-Care)", emoji: "💖", bg: DK.pink,
       items: [
-        { id: "parent-burnout",      title: "Beat Parent Burnout",          emoji: "🪫", bg: ["#FFE4E6", "#FBCFE8"] },
-        { id: "stay-calm-anger",     title: "Stay Calm When Angry",         emoji: "🧘", bg: [brand.violet100, brand.violet200] },
-        { id: "guilt-after-yelling", title: "Handle Guilt After Yelling",   emoji: "💔", bg: ["#FCE7F3", "#FBCFE8"] },
-        { id: "find-me-time",        title: "Find 'Me Time' Daily",         emoji: "☕", bg: ["#FEF3C7", "#FED7AA"] },
-        { id: "couple-time-balance", title: "Balance Partner & Parent Time",emoji: "💑", bg: ["#FCE7F3", "#FBCFE8"] },
-        { id: "improve-own-sleep",   title: "Improve Your Own Sleep",       emoji: "🌙", bg: [brand.indigo100, brand.violet100] },
-        { id: "manage-overwhelm",    title: "Manage Daily Overwhelm",       emoji: "🌪️", bg: ["#E0F2FE", "#BFDBFE"] },
+        { id: "parent-burnout",      title: "Beat Parent Burnout",           emoji: "🪫", bg: DK.rose },
+        { id: "stay-calm-anger",     title: "Stay Calm When Angry",          emoji: "🧘", bg: DK.violet },
+        { id: "guilt-after-yelling", title: "Handle Guilt After Yelling",    emoji: "💔", bg: DK.pink },
+        { id: "find-me-time",        title: "Find 'Me Time' Daily",          emoji: "☕", bg: DK.amber },
+        { id: "couple-time-balance", title: "Balance Partner & Parent Time", emoji: "💑", bg: DK.fuchsia },
+        { id: "improve-own-sleep",   title: "Improve Your Own Sleep",        emoji: "🌙", bg: DK.indigo },
+        { id: "manage-overwhelm",    title: "Manage Daily Overwhelm",        emoji: "🌪️", bg: DK.blue },
       ],
     },
   ];
 }
-// audit-block-ignore-end
 
 // ─── Free goal IDs (one per category — shows "Try Free" badge on free tier) ──
 const FREE_GOAL_IDS = new Set<string>([
@@ -657,7 +674,7 @@ export default function CoachScreen() {
                             </View>
                           )}
                           {access === "locked" && (
-                            <Ionicons name="lock-closed" size={14} color="rgba(0,0,0,0.35)" style={{ marginRight: 4 }} />
+                            <Ionicons name="lock-closed" size={14} color="rgba(255,255,255,0.50)" style={{ marginRight: 4 }} />
                           )}
                         </LinearGradient>
                       </TouchableOpacity>
