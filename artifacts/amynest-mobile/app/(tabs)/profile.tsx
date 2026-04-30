@@ -16,6 +16,8 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { SUPPORTED_LANGUAGES, setLanguage, type LanguageCode } from "@/i18n";
 
 type Colors = ReturnType<typeof useColors>;
 
@@ -77,6 +79,7 @@ export default function ProfileScreen() {
   const qc = useQueryClient();
 
   const router = useRouter();
+  const { i18n } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [uploadingPic, setUploadingPic] = useState(false);
 
@@ -596,6 +599,51 @@ export default function ProfileScreen() {
             <Text style={[styles.smallActionText, { color: colors.primary }]}>Push notification settings</Text>
             <Ionicons name="chevron-forward" size={12} color={colors.primary} style={{ marginLeft: "auto" }} />
           </TouchableOpacity>
+        </Section>
+
+        {/* Language */}
+        <Section
+          title="App Language"
+          subtitle="Choose the language for all content"
+          icon="language-outline"
+          colors={colors}
+        >
+          <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+            {SUPPORTED_LANGUAGES.map((lang) => {
+              const active = i18n.language === lang.code;
+              return (
+                <TouchableOpacity
+                  key={lang.code}
+                  onPress={async () => {
+                    Haptics.selectionAsync();
+                    await setLanguage(lang.code as LanguageCode);
+                  }}
+                  style={{
+                    flex: 1,
+                    minWidth: 90,
+                    paddingVertical: 10,
+                    paddingHorizontal: 12,
+                    borderRadius: 12,
+                    borderWidth: 1.5,
+                    borderColor: active ? brand.primary : colors.border,
+                    backgroundColor: active ? brand.primary + "20" : colors.background,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 14,
+                    fontWeight: active ? "700" : "500",
+                    color: active ? brand.primary : colors.mutedForeground,
+                  }}>
+                    {lang.native}
+                  </Text>
+                  {active && (
+                    <Text style={{ fontSize: 10, color: brand.primary, marginTop: 2 }}>✓ Active</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </Section>
 
         {/* My Recipes */}
