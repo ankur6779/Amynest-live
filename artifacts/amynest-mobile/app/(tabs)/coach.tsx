@@ -641,6 +641,41 @@ export default function CoachScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
+            {/* ── Amy Audio Lessons (search mode) ────────────────────── */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => { Haptics.selectionAsync(); router.push("/audio-lessons" as never); }}
+              accessibilityRole="button"
+              accessibilityLabel="Open Amy Audio Lessons"
+              style={{ marginBottom: 14, borderRadius: 20, overflow: "hidden" }}
+            >
+              <LinearGradient
+                colors={["rgba(6,182,212,0.38)", "rgba(99,102,241,0.30)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  flexDirection: "row", alignItems: "center", padding: 16, gap: 12,
+                  borderRadius: 20, borderWidth: 1,
+                  borderColor: "rgba(6,182,212,0.25)",
+                }}
+              >
+                <View style={{
+                  width: 44, height: 44, borderRadius: 14,
+                  backgroundColor: "rgba(6,182,212,0.25)",
+                  alignItems: "center", justifyContent: "center",
+                }}>
+                  <Ionicons name="headset-outline" size={22} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: "#fff", fontSize: 15, fontWeight: "800" }}>Amy Audio Lessons</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.80)", fontSize: 12.5, marginTop: 2 }}>
+                    Hindi, English & Hinglish parenting lessons
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" />
+              </LinearGradient>
+            </TouchableOpacity>
+
             <View style={styles.searchBox}>
               <Ionicons name="search" size={16} color={c.textFaint} />
               <TextInput
@@ -782,6 +817,41 @@ export default function CoachScreen() {
           </View>
 
           <AiQuotaBanner />
+
+          {/* ── Amy Audio Lessons banner ──────────────────────────────── */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => { Haptics.selectionAsync(); router.push("/audio-lessons" as never); }}
+            accessibilityRole="button"
+            accessibilityLabel="Open Amy Audio Lessons"
+            style={{ marginBottom: 14, borderRadius: 20, overflow: "hidden" }}
+          >
+            <LinearGradient
+              colors={["rgba(6,182,212,0.38)", "rgba(99,102,241,0.30)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                flexDirection: "row", alignItems: "center", padding: 16, gap: 12,
+                borderRadius: 20, borderWidth: 1,
+                borderColor: "rgba(6,182,212,0.25)",
+              }}
+            >
+              <View style={{
+                width: 44, height: 44, borderRadius: 14,
+                backgroundColor: "rgba(6,182,212,0.25)",
+                alignItems: "center", justifyContent: "center",
+              }}>
+                <Ionicons name="headset-outline" size={22} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#fff", fontSize: 15, fontWeight: "800" }}>Amy Audio Lessons</Text>
+                <Text style={{ color: "rgba(255,255,255,0.80)", fontSize: 12.5, marginTop: 2 }}>
+                  Hindi, English & Hinglish parenting lessons
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" />
+            </LinearGradient>
+          </TouchableOpacity>
 
           <View style={styles.searchBox}>
             <Ionicons name="search" size={16} color={c.textFaint} />
