@@ -7,11 +7,14 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useWebPush } from "@/hooks/use-web-push";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
+type AgeGroup = "infant" | "toddler" | "kid";
+
 interface ChildData {
   name: string;
   dob: string;
   age: number;
   ageMonths: number;
+  ageGroup: AgeGroup;
   isSchoolGoing: boolean;
   childClass: string;
   schoolStartTime: string;
@@ -21,6 +24,8 @@ interface ChildData {
   sleepTime: string;
   foodType: string;
   dietNote: string;
+  feedingType?: string;   // infants only
+  sleepPattern?: string;  // infants only
 }
 
 interface ParentData {
@@ -39,7 +44,9 @@ interface ChatMessage {
 
 type Step =
   | "intro"
-  | "child-name" | "child-dob" | "child-school" | "child-class"
+  | "child-name" | "child-dob"
+  | "infant-feeding" | "infant-sleep"               // infant path (age < 2)
+  | "child-school" | "child-class"                  // standard path (age >= 2)
   | "child-school-start" | "child-school-end" | "child-school-days"
   | "child-wake" | "child-sleep"
   | "add-more"
@@ -104,6 +111,24 @@ const REGION_OPTS = [
   { label: "Punjabi",            value: "punjabi" },
   { label: "Global / Continental", value: "global" },
 ];
+
+// ─── Infant-specific options ─────────────────────────────────────────────────
+const FEEDING_OPTS = [
+  "🤱 Breastfeeding",
+  "🍼 Formula Fed",
+  "🥣 Both / Starting Solids",
+];
+const SLEEP_PATTERN_OPTS = [
+  "😴 Flexible (naps as needed)",
+  "🌙 Irregular / Unpredictable",
+  "💤 Short naps, frequent waking",
+];
+
+function getAgeGroup(years: number): AgeGroup {
+  if (years < 2) return "infant";
+  if (years < 4) return "toddler";
+  return "kid";
+}
 
 const GRAD = "linear-gradient(135deg,#6366F1,#A855F7)";
 const BG = "linear-gradient(160deg,#EEF2FF 0%,#F5F3FF 55%,#FDF2F8 100%)";
@@ -187,14 +212,22 @@ function GridChips({ options, selected, onSelect }: { options: string[]; selecte
 }
 
 function ProgressBar({ step }: { step: Step }) {
-  const order: Step[] = [
+  // Infant path is short; standard path is longer. Both share the parent section.
+  const infantOrder: Step[] = [
+    "child-name", "child-dob", "infant-feeding", "infant-sleep",
+    "add-more", "parent-name", "parent-role", "parent-work",
+    "parent-region", "parent-mobile", "parent-allergies",
+  ];
+  const standardOrder: Step[] = [
     "child-name", "child-dob", "child-school", "child-class",
     "child-school-start", "child-school-end", "child-school-days",
     "child-wake", "child-sleep",
     "add-more", "parent-name", "parent-role", "parent-work",
     "parent-region", "parent-mobile", "parent-allergies",
   ];
-  const idx = order.indexOf(step);
+  const isInfant = (infantOrder as string[]).includes(step) && !(standardOrder.slice(2) as string[]).includes(step);
+  const order = isInfant ? infantOrder : standardOrder;
+  const idx = order.indexOf(step as any);
   const pct = idx < 0 ? 100 : Math.round(((idx + 1) / order.length) * 100);
   return (
     <div className="px-4 pt-4 pb-2">
@@ -539,10 +572,19 @@ export default function OnboardingPage() {
               disabled={!dobInput}
               onClick={() => {
                 const { years, months } = dobToAge(dobInput);
-                setCurr((c) => ({ ...c, dob: dobInput, age: years, ageMonths: months }));
-                const ageText = years > 0 ? `${years} year${years !== 1 ? "s" : ""} old` : `${months} months old`;
+                const ageGroup = getAgeGroup(years);
+                setCurr((c) => ({ ...c, dob: dobInput, age: years, ageMonths: months, ageGroup }));
                 const name = curr.name || "your child";
-                userReplies(dobInput, "child-school", `Is ${name} currently going to school? 🏫`, 900);
+                if (ageGroup === "infant") {
+                  userReplies(
+                    dobInput,
+                    "infant-feeding",
+                    `${name} is still a baby — how sweet! 🍼\n\nEvery child is different at this age — we'll adapt learning based on flexible routines.\n\nHow is ${name} being fed right now? (optional, you can skip)`,
+                    900,
+                  );
+                } else {
+                  userReplies(dobInput, "child-school", `Is ${name} currently going to school? 🏫`, 900);
+                }
                 setDobInput("");
               }}
               className="w-full py-3.5 rounded-2xl text-white font-semibold active:scale-95 transition-all disabled:opacity-40"
@@ -553,6 +595,81 @@ export default function OnboardingPage() {
           </div>
         );
 
+      // ── Infant path (age < 2) ──────────────────────────────────────────────
+      case "infant-feeding":
+        return (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              {FEEDING_OPTS.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => {
+                    setCurr((c) => ({ ...c, feedingType: opt }));
+                    userReplies(opt, "infant-sleep", `Got it! 😊 How would you describe ${curr.name || "your baby"}'s sleep pattern?`);
+                  }}
+                  className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
+                  style={{ background: "rgba(255,255,255,0.9)", color: "#1e1b4b", border: "1px solid #c7d2fe" }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => userReplies("Skip for now", "infant-sleep", `No problem! How would you describe ${curr.name || "your baby"}'s sleep pattern?`)}
+              className="text-xs text-indigo-400 hover:text-indigo-600 self-center mt-1"
+            >
+              Skip — I'll add it later
+            </button>
+          </div>
+        );
+
+      case "infant-sleep":
+        return (
+          <div className="flex flex-col gap-2">
+            {SLEEP_PATTERN_OPTS.map((opt) => (
+              <button
+                key={opt}
+                onClick={() => {
+                  const name = curr.name || "your baby";
+                  const finalChild: ChildData = {
+                    name: curr.name || "",
+                    dob: curr.dob || "",
+                    age: curr.age || 0,
+                    ageMonths: curr.ageMonths || 0,
+                    ageGroup: curr.ageGroup || "infant",
+                    isSchoolGoing: false,
+                    childClass: "",
+                    schoolStartTime: "09:00",
+                    schoolEndTime: "15:00",
+                    schoolDays: null,
+                    wakeUpTime: "07:00",
+                    sleepTime: "19:30",
+                    foodType: "veg",
+                    dietNote: "",
+                    feedingType: curr.feedingType,
+                    sleepPattern: opt,
+                  };
+                  setChildren((prev) => [...prev, finalChild]);
+                  setCurr({});
+                  const childCount = children.length + 1;
+                  userReplies(
+                    opt,
+                    "add-more",
+                    childCount === 1
+                      ? `Perfect! ${name}'s profile is ready. 🎉 Do you have another child to add?`
+                      : "Do you have one more child to add?",
+                  );
+                }}
+                className="w-full py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left px-4"
+                style={{ background: "rgba(255,255,255,0.9)", color: "#1e1b4b", border: "1px solid #c7d2fe" }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        );
+
+      // ── Standard path (age >= 2) ───────────────────────────────────────────
       case "child-school":
         return (
           <div className="flex gap-3">
@@ -692,6 +809,7 @@ export default function OnboardingPage() {
                 sleepTime: to24h(v),
                 foodType: "veg",
                 dietNote: "",
+                ageGroup: curr.ageGroup ?? getAgeGroup(curr.age ?? 3),
               } as ChildData;
               setChildren((prev) => [...prev, finalChild]);
               setCurr({});
