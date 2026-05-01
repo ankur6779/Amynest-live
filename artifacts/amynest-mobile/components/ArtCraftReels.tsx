@@ -12,7 +12,7 @@ import {
 } from "@/services/hubApi";
 import { absoluteStreamUrl } from "@/services/storiesApi";
 import { useColors } from "@/hooks/useColors";
-import { ACCENT_PINK, brand } from "@/constants/colors";
+import { ACCENT_PINK, brand, palette } from "@/constants/colors";
 
 const BATCH = 6;
 
@@ -335,7 +335,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: c.calloutBg, borderWidth: 1, borderColor: c.glassBorder,
     },
     thumbBox: { height: 130, backgroundColor: "#000", position: "relative" },
-    thumb: { width: "100%", height: "100%", backgroundColor: "#1f1f1f" },
+    thumb: { width: "100%", height: "100%", backgroundColor: palette.gray800 },
     playOverlay: {
       position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
       alignItems: "center", justifyContent: "center",
