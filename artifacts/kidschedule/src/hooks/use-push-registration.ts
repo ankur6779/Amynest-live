@@ -2,13 +2,33 @@ import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
+import {
+  ensureNativePushReady,
+  getNativePushBridge,
+  getNativePushToken,
+} from "@/lib/native-push-bridge";
+
+const REGISTERED_KEY = "notify_device_registered_at";
+function markRegistered() {
+  try {
+    localStorage.setItem(REGISTERED_KEY, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+}
 
 /**
- * Registers the browser for FCM web push and uploads the token to the backend.
- * Runs once per signed-in user. Silently skips if:
- *  - Browser doesn't support notifications / service workers / PushManager
- *  - User denies permission
- *  - VAPID key is missing
+ * Registers the device for push notifications and uploads the token to the
+ * backend. Runs once per signed-in user.
+ *
+ * Two paths:
+ *  1. KidSchedule Android WebView wrapper → uses `window.AmyNestPushNative`
+ *     bridge to obtain the native FCM token (platform="android"). Also
+ *     re-registers when the native bridge fires `amynest-push-token` after
+ *     a token rotation.
+ *  2. Standard browser / PWA → uses Web Push via Firebase Messaging
+ *     (platform="web"). Silently skips if the browser lacks support, the
+ *     user has not granted permission, or the VAPID key is missing.
  */
 export function usePushRegistration(): void {
   const { isSignedIn, userId } = useAuth();
@@ -18,20 +38,79 @@ export function usePushRegistration(): void {
   useEffect(() => {
     if (!isSignedIn || !userId) {
       lastKeyRef.current = null;
-      return;
+      return undefined;
+    }
+    if (typeof window === "undefined") return undefined;
+
+    const registerToken = async (token: string, platform: "web" | "android") => {
+      const key = `${userId}::${token}`;
+      if (lastKeyRef.current === key) return;
+      try {
+        const res = await authFetch(getApiUrl("/api/push/register"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            platform,
+            deviceName: platform === "android" ? "KidSchedule Android" : "Browser",
+          }),
+        });
+        if (res.ok) {
+          lastKeyRef.current = key;
+          // Tell the nudge banner the device is registered so it stays hidden.
+          markRegistered();
+        }
+      } catch {
+        // Best-effort — never crash the app
+      }
+    };
+
+    // ── Native Android wrapper path ──────────────────────────────────────
+    const native = getNativePushBridge();
+    if (native) {
+      // Hydrate cache then attempt initial registration (only succeeds
+      // if permission is already granted). Always subscribe to permission
+      // and token events so a LATER grant + token arrival triggers
+      // registration without requiring a remount.
+      const tryRegister = async () => {
+        if (!native.getFcmEnabled()) return;
+        if (native.getPermissionStatus() !== "granted") return;
+        const tok = await getNativePushToken(native);
+        if (tok) await registerToken(tok, "android");
+      };
+
+      void (async () => {
+        await ensureNativePushReady();
+        await tryRegister();
+      })();
+
+      const onTok = (e: Event) => {
+        const detail = (e as CustomEvent<{ token: string }>).detail;
+        if (detail?.token) void registerToken(detail.token, "android");
+      };
+      const onPerm = (e: Event) => {
+        const detail = (e as CustomEvent<{ status: string }>).detail;
+        if (detail?.status === "granted") void tryRegister();
+      };
+      window.addEventListener("amynest-push-token", onTok);
+      window.addEventListener("amynest-push-permission", onPerm);
+      return () => {
+        window.removeEventListener("amynest-push-token", onTok);
+        window.removeEventListener("amynest-push-permission", onPerm);
+      };
     }
 
+    // ── Standard browser / PWA path ──────────────────────────────────────
     if (
-      typeof window === "undefined" ||
       !("Notification" in window) ||
       !("serviceWorker" in navigator) ||
       !("PushManager" in window)
     ) {
-      return;
+      return undefined;
     }
 
     const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined;
-    if (!vapidKey) return;
+    if (!vapidKey) return undefined;
 
     void (async () => {
       try {
@@ -42,22 +121,11 @@ export function usePushRegistration(): void {
         const { getWebPushToken } = await import("@/lib/firebase");
         const token = await getWebPushToken(vapidKey);
         if (!token) return;
-
-        const key = `${userId}::${token}`;
-        if (lastKeyRef.current === key) return;
-
-        const res = await authFetch(getApiUrl("/api/push/register"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, platform: "web", deviceName: "Browser" }),
-        });
-
-        if (res.ok) {
-          lastKeyRef.current = key;
-        }
+        await registerToken(token, "web");
       } catch {
         // Best-effort — never crash the app
       }
     })();
+    return undefined;
   }, [isSignedIn, userId, authFetch]);
 }

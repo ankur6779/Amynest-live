@@ -4,8 +4,10 @@ import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import {
+  ensureNativePushReady,
   getNativePushBridge,
   registerNativePushToken,
+  requestNativePushPermission,
   type NativePushPermission,
 } from "@/lib/native-push-bridge";
 
@@ -85,11 +87,62 @@ export function NotificationNudgeBanner() {
   useEffect(() => {
     setState(computeState());
     setDismissed(isDismissed());
+    // Hydrate the native bridge cache so subsequent renders see the real
+    // permission/token instead of the "default" placeholder.
+    let cancelled = false;
+    void ensureNativePushReady().then(() => {
+      if (!cancelled) setState(computeState());
+    });
+
+    // Re-evaluate when the native bridge fires permission/token updates.
+    const onPerm = () => setState(computeState());
+    const onTok = () => setState(computeState());
+    window.addEventListener("amynest-push-permission", onPerm);
+    window.addEventListener("amynest-push-token", onTok);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("amynest-push-permission", onPerm);
+      window.removeEventListener("amynest-push-token", onTok);
+    };
   }, [computeState]);
 
   const requestAndRegister = async () => {
     setWorking(true);
     try {
+      // ── KidSchedule Android WebView wrapper path ────────────────────────
+      // The WebView has no Web Notification API, so we drive the
+      // POST_NOTIFICATIONS prompt + FCM token registration through the
+      // native bridge instead.
+      const native = getNativePushBridge();
+      if (native) {
+        const perm = await requestNativePushPermission(native);
+        if (perm !== "granted") {
+          setState("denied");
+          setWorking(false);
+          return;
+        }
+        const ok = await registerNativePushToken(
+          authFetch,
+          getApiUrl("/api/push/register"),
+        );
+        if (ok) {
+          markRegistered();
+          clearDismiss();
+          setState("hidden");
+        } else {
+          // Permission granted but token registration failed (FCM token
+          // still provisioning, no Play Services, network error). Snooze
+          // the nudge briefly — usePushRegistration's onNewToken listener
+          // will retry once the token arrives, at which point a fresh
+          // registration sets REGISTERED_KEY and the banner stays hidden.
+          snooze();
+          setDismissed(true);
+        }
+        setWorking(false);
+        return;
+      }
+
+      // ── Standard browser / PWA path ─────────────────────────────────────
       // Request OS-level permission (triggers native dialog on Android/iOS)
       const perm = await Notification.requestPermission();
       if (perm !== "granted") {

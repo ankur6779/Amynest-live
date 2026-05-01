@@ -77,6 +77,22 @@ The system is a monorepo utilizing pnpm workspaces, Node.js 24, and TypeScript 5
   - **Do NOT** put any provider, `Layout`, or page import directly into `App.tsx` — keeping `App.tsx` minimal is the whole point of the split.
   - **iOS auto-lite-splash:** the inline boot script in `index.html` ALWAYS adds the `lite-splash` class on iOS / iPadOS (UA test for `iPhone|iPad|iPod`, plus `Mac + maxTouchPoints > 1` to catch iPadOS-13+ which lies as "Mac"). This is in addition to the post-crash and `?liteSplash=1` triggers. Reason: the crash-then-lite alternating cycle still tripped the "A problem repeatedly occurred" overlay on iPhone 13 — every other boot was running in full splash mode and re-crashing. With UA-based always-lite, every iOS boot uses the minimal-memory CSS path AND the 1200 ms `SPLASH_MIN_MS` (vs 3200 ms desktop), so the splash's GPU layers tear down sooner and free memory for the lazy AppCore mount. Desktop and Android keep the full-quality splash.
 
+## KidSchedule Android wrapper — Native FCM push (v1.1.0+)
+
+The KidSchedule Android app (`com.kidschedule.app`, in `artifacts/kidschedule-android/`) is a **plain WebView wrapper** (not a Bubblewrap TWA, despite the leftover `twa-manifest.json`). The Android WebView does **not** expose the Web Notification, Service Worker push, or PushManager APIs, so push notifications cannot use Web Push from inside the wrapper. v1.1.0 (versionCode 2) ships native FCM behind a JS bridge:
+
+- **Native side:**
+  - `KidScheduleFcmService` (extends `FirebaseMessagingService`) handles `onNewToken` (caches in SharedPreferences, fires `amynest-push-token` on the WebView) and `onMessageReceived` (builds a tray notification, deep-link via `EXTRA_DEEP_LINK` Intent extra).
+  - `PushBridge` is added via `addJavascriptInterface(this, "AmyNestPushNative")` and exposes `getFcmEnabled()`, `getToken()`, `getPermissionStatus()`, `requestPermission()`. FirebaseMessaging is loaded via reflection so the build still succeeds when `google-services.json` is absent (`BuildConfig.FCM_ENABLED = false`).
+  - `MainActivity` installs the bridge, drains pending deep links in `onPageFinished`, handles `onNewIntent` for tray taps, forwards `POST_NOTIFICATIONS` permission results back to the bridge.
+  - Default channel `kidschedule_default` is created in `KidScheduleApp.onCreate()`.
+- **Web side:**
+  - `src/lib/native-push-bridge.ts` — `getNativePushBridge()`, `requestNativePushPermission()`, `getNativePushToken()`, `registerNativePushToken()`. Detects bridge by checking `window.AmyNestPushNative.getFcmEnabled() === true`.
+  - `usePushRegistration` hook prefers the native bridge (`platform: "android"`) over Web Push when available, and re-registers on `amynest-push-token` rotation events.
+  - `NotificationNudgeBanner` uses `requestNativePushPermission` (drives the Android 13+ system dialog) instead of `Notification.requestPermission()` when the bridge is present.
+- **Server side:** `notificationDispatchService.sendFcmWebPush` filter accepts both `platform === "web"` and `platform === "android"` — same FCM Admin SDK pipeline serves both.
+- **Setup:** drop `google-services.json` (Firebase Console → Add Android app → `com.kidschedule.app`) into `artifacts/kidschedule-android/app/`. The file is gitignored. See `artifacts/kidschedule-android/app/PUSH_SETUP.md` for full Firebase + Play Store steps.
+
 ## External Dependencies
 
 - **PostgreSQL:** Primary database.

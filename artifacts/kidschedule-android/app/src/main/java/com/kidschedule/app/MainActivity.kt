@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var webView: WebView
     private lateinit var swipe: SwipeRefreshLayout
-    private lateinit var pushBridge: PushBridge
+    private var pushBridge: PushBridge? = null
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var pendingPermissionRequest: PermissionRequest? = null
@@ -148,9 +148,11 @@ class MainActivity : AppCompatActivity() {
         // Native FCM bridge — the web app inside the WebView cannot use the
         // Web Notification / PushManager APIs, so we expose the device's
         // native FCM token and Android 13+ POST_NOTIFICATIONS permission
-        // helpers on `window.AmyNestPushNative`.
-        pushBridge = PushBridge(this, webView)
-        pushBridge.install()
+        // helpers on `window.AmyNestPushNative`. Installed via
+        // WebViewCompat.addWebMessageListener with a strict allowed-origin
+        // rule pinned to BuildConfig.WRAPPER_URL — same security model as
+        // BillingBridge.
+        pushBridge = PushBridge.installOn(this, webView, BuildConfig.WRAPPER_URL)
 
         val s = webView.settings
         s.javaScriptEnabled = true
@@ -417,10 +419,20 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == PushBridge.PERMISSION_REQUEST_CODE) {
             val granted = grantResults.isNotEmpty() &&
                 grantResults[0] == PackageManager.PERMISSION_GRANTED
-            if (::pushBridge.isInitialized) {
-                pushBridge.emitPermissionResult(granted)
-            }
+            pushBridge?.onPermissionResult(granted)
         }
+    }
+
+    override fun onDestroy() {
+        // Clear the process-level token-rotation listener so the FcmService
+        // does not hold a strong reference to a destroyed activity. The
+        // FcmService still persists rotated tokens to SharedPreferences,
+        // and the next PushBridge install picks them up.
+        if (PushBridge.tokenListener != null && pushBridge != null) {
+            PushBridge.tokenListener = null
+        }
+        pushBridge = null
+        super.onDestroy()
     }
 
     /**
