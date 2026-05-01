@@ -1,0 +1,100 @@
+Upgrade Origami Activities into an animated, step-by-step folding experience.
+
+GOAL:
+Replace static instructions with animated folding transitions to improve understanding and engagement.
+
+--------------------------------------------------
+1. CORE EXPERIENCE
+--------------------------------------------------
+Each origami activity should have:
+
+1. Cover Screen:
+   - Final origami preview (real image)
+   - Difficulty level (Easy/Medium)
+   - Time estimate
+   - Start button
+
+2. Step-by-Step Animated View
+
+--------------------------------------------------
+2. ANIMATION SYSTEM (CRITICAL)
+--------------------------------------------------
+For each step:
+
+- Use animation to show folding motion
+- Animate paper movement (rotate / fold / flip)
+- Show fold direction using arrow animation
+
+Animation types:
+- Fold inward
+- Fold outward
+- Flip paper
+- Rotate paper
+
+Use:
+- CSS animations OR
+- Lottie OR
+- Canvas-based animation
+
+--------------------------------------------------
+3. HYBRID VISUAL MODEL
+--------------------------------------------------
+Each step must include:
+
+- Animated folding visual (primary)
+- Real hand image (optional toggle)
+- Arrow overlay + fold line
+
+--------------------------------------------------
+4. STEP STRUCTURE
+--------------------------------------------------
+Each step:
+
+- Step number (Step 1, 2...)
+- Animated visual
+- Short instruction (max 1 line)
+
+--------------------------------------------------
+5. CONTROLS
+--------------------------------------------------
+Add controls:
+
+- ▶ Play animation
+- ⏸ Pause
+- ➡ Next step
+- ⬅ Previous step
+- 🔁 Replay step
+
+--------------------------------------------------
+6. PROGRESS UI
+--------------------------------------------------
+- "Step X of Y"
+- Progress bar / dots
+
+--------------------------------------------------
+7. UX REQUIREMENTS
+--------------------------------------------------
+- Smooth transitions (no lag)
+- Kid-friendly colors
+- Minimal text
+- Touch-friendly buttons
+
+--------------------------------------------------
+8. OPTIONAL (ADVANCED)
+--------------------------------------------------
+- Auto-play mode (guided learning)
+- Voice instruction ("Fold from left to right")
+- Sound effects (paper folding)
+
+--------------------------------------------------
+9. PERFORMANCE
+--------------------------------------------------
+- Lightweight animations
+- Lazy load assets
+- Optimize for mobile
+
+--------------------------------------------------
+DELIVERABLE:
+- Interactive animated origami system
+- Visual-first learning
+- High engagement and retention

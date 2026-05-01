@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
+import { useState, useMemo, useEffect, useCallback, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useAmyVoice } from "@/hooks/use-amy-voice";
 
 // ─── Drive embed helper ───────────────────────────────────────────────────────
 function toEmbedUrl(url: string): string {
@@ -703,6 +704,7 @@ function FoldDiagram({ fold, emoji, size = 88 }: { fold: FoldShape; emoji: strin
 // prevent `position:fixed` from covering the whole viewport.
 //
 // Phases: "cover" → "steps" → "done"
+// Animation: per-fold CSS keyframes + SVG arrow draw-in via stroke-dashoffset
 
 type OrigamiPhase = "cover" | "steps" | "done";
 
@@ -712,53 +714,226 @@ const DIFFICULTY_TIME: Record<string, string> = {
   Fun:    "~15 min",
 };
 
+// Per-fold: SVG arrow path (viewBox 0 0 100 100), CSS animation name, hint
+const FOLD_META: Record<FoldShape, { arrowD: string; paperAnim: string; hint: string }> = {
+  start:    { arrowD: "", paperAnim: "og-appear",   hint: "Flatten" },
+  halfH:    { arrowD: "M50,24 L50,50 M43,43 L50,51 L57,43",                                      paperAnim: "og-fold-h",    hint: "Fold ↓" },
+  halfV:    { arrowD: "M76,50 L50,50 M57,43 L49,50 L57,57",                                      paperAnim: "og-fold-v",    hint: "Fold →" },
+  diagFold: { arrowD: "M22,22 L68,68 M60,62 L70,70 L62,60",                                      paperAnim: "og-fold-diag", hint: "Fold ↘" },
+  diamond:  { arrowD: "M50,12 L50,45 M43,38 L50,46 L57,38 M50,88 L50,55 M43,62 L50,54 L57,62",  paperAnim: "og-rotate",    hint: "Rotate" },
+  kite:     { arrowD: "M22,58 L50,14 M46,25 L50,14 L54,25",                                      paperAnim: "og-fold-kite", hint: "Fold ↑" },
+  blintz:   { arrowD: "M16,16 L46,46 M78,16 L54,46 M16,78 L46,54 M78,78 L54,54",                paperAnim: "og-blintz",    hint: "Fold in" },
+  foldUp:   { arrowD: "M50,80 L50,46 M43,53 L50,45 L57,53",                                      paperAnim: "og-fold-up",   hint: "Fold ↑" },
+  foldDown: { arrowD: "M50,20 L50,54 M43,47 L50,55 L57,47",                                      paperAnim: "og-fold-dn",   hint: "Fold ↓" },
+  pullOpen: { arrowD: "M34,50 L12,50 M18,43 L10,50 L18,57 M66,50 L88,50 M82,43 L90,50 M82,57",  paperAnim: "og-pull",      hint: "Open" },
+  crease:   { arrowD: "M50,14 L50,86 M14,50 L86,50",                                             paperAnim: "og-crease",    hint: "Crease" },
+  done:     { arrowD: "", paperAnim: "og-done", hint: "Done!" },
+};
+
+// ── Animated fold stage ──────────────────────────────────────────────────────
+function AnimatedFoldStage({
+  fold, emoji, accent, animKey, isPlaying,
+}: { fold: FoldShape; emoji: string; accent: string; animKey: number; isPlaying: boolean }) {
+  const meta = FOLD_META[fold];
+  const ANIM_DUR = "900ms";
+
+  return (
+    <div style={{ position: "relative", width: 200, height: 200 }}>
+      {/* Paper diagram — CSS fold animation */}
+      <div
+        key={`paper-${animKey}`}
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          animation: isPlaying ? `${meta.paperAnim} ${ANIM_DUR} cubic-bezier(0.22,1,0.36,1) both` : "none",
+          transformOrigin: "center center",
+        }}
+      >
+        <FoldDiagram fold={fold} emoji={emoji} size={164} />
+      </div>
+
+      {/* Direction arrow overlay — draws itself in */}
+      {meta.arrowD && isPlaying && (
+        <svg
+          key={`arrow-${animKey}`}
+          viewBox="0 0 100 100"
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+            overflow: "visible",
+          }}
+        >
+          {/* Glow layer */}
+          <path
+            d={meta.arrowD}
+            stroke={accent}
+            strokeWidth="5"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.25"
+            style={{
+              strokeDasharray: 220,
+              strokeDashoffset: 220,
+              animation: "og-draw-arrow 700ms 200ms ease-out forwards",
+            }}
+          />
+          {/* Main arrow */}
+          <path
+            d={meta.arrowD}
+            stroke="#FBBF24"
+            strokeWidth="2.8"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              strokeDasharray: 220,
+              strokeDashoffset: 220,
+              animation: "og-draw-arrow 700ms 200ms ease-out forwards",
+            }}
+          />
+          {/* Hint text badge */}
+          <text
+            x="50"
+            y="96"
+            textAnchor="middle"
+            fontSize="7.5"
+            fontWeight="800"
+            fill="#FBBF24"
+            fontFamily="system-ui,sans-serif"
+            style={{
+              opacity: 0,
+              animation: "og-fade-in 300ms 700ms ease forwards",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            {meta.hint}
+          </text>
+        </svg>
+      )}
+
+      {/* Crease pulse line (when not playing — static indicator) */}
+      {!isPlaying && meta.arrowD && (
+        <svg
+          viewBox="0 0 100 100"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+        >
+          <path
+            d={meta.arrowD}
+            stroke="#FBBF2460"
+            strokeWidth="2"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="6 4"
+          />
+        </svg>
+      )}
+    </div>
+  );
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
 function OrigamiStepsModal({ item, onClose }: { item: Origami; onClose(): void }) {
-  const [phase, setPhase]   = useState<OrigamiPhase>("cover");
-  const [step,  setStep]    = useState(0);
-  const [animKey, setAnimKey] = useState(0); // bumped on step change to re-trigger animation
+  const [phase,     setPhase]     = useState<OrigamiPhase>("cover");
+  const [step,      setStep]      = useState(0);
+  const [animKey,   setAnimKey]   = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [autoPlay,  setAutoPlay]  = useState(false);
+  const [voiceOn,   setVoiceOn]   = useState(false);
   const total = item.steps.length;
 
-  const goTo = (next: number) => {
+  const { speak, stop, speaking } = useAmyVoice();
+
+  const goTo = useCallback((next: number) => {
     setStep(next);
     setAnimKey(k => k + 1);
-  };
-  const goNext = () => {
-    if (step < total - 1) { goTo(step + 1); }
-    else { setPhase("done"); }
-  };
-  const goPrev = () => { if (step > 0) goTo(step - 1); };
-  const restart = () => { setStep(0); setAnimKey(k => k + 1); setPhase("steps"); };
+    setIsPlaying(true);
+  }, []);
 
+  const goNext = useCallback(() => {
+    setStep(prev => {
+      const next = prev + 1;
+      if (next >= total) { setPhase("done"); return prev; }
+      setAnimKey(k => k + 1);
+      setIsPlaying(true);
+      return next;
+    });
+  }, [total]);
+
+  const goPrev = useCallback(() => {
+    setStep(prev => {
+      if (prev <= 0) return prev;
+      setAnimKey(k => k + 1);
+      setIsPlaying(true);
+      return prev - 1;
+    });
+  }, []);
+
+  const replay = useCallback(() => {
+    setAnimKey(k => k + 1);
+    setIsPlaying(true);
+  }, []);
+
+  const restart = () => {
+    setStep(0);
+    setAnimKey(k => k + 1);
+    setIsPlaying(true);
+    setPhase("steps");
+  };
+
+  // Voice — read instruction on step enter
+  useEffect(() => {
+    if (!voiceOn || phase !== "steps") { stop(); return; }
+    const instr = item.steps[step]?.instruction ?? "";
+    if (instr) { void speak(instr); }
+    return () => { stop(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, voiceOn, phase]);
+
+  // Auto-play — advance after animation duration (~3 s)
+  useEffect(() => {
+    if (!autoPlay || !isPlaying || phase !== "steps") return;
+    const t = setTimeout(() => { goNext(); }, 3200);
+    return () => clearTimeout(t);
+  }, [autoPlay, isPlaying, phase, animKey, goNext]);
+
+  // Keyboard nav
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (phase === "steps") {
         if (e.key === "ArrowRight" || e.key === "ArrowDown") goNext();
         if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   goPrev();
+        if (e.key === " ") { e.preventDefault(); setIsPlaying(p => !p); }
       }
     };
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handler);
     return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", handler); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, step, onClose]);
+  }, [phase, onClose, goNext, goPrev]);
 
-  const cur = item.steps[step]!;
+  const cur     = item.steps[step]!;
   const timeEst = DIFFICULTY_TIME[item.difficulty] ?? "~10 min";
 
   // ── shared shell ────────────────────────────────────────────────────────────
   const shell = (
     <div
       className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-      aria-label={item.title}
+      role="dialog" aria-modal="true" aria-label={item.title}
     >
-      {/* Backdrop — click to close */}
+      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        style={{ animation: "fadeIn 180ms ease both" }}
+        style={{ animation: "og-fade-in 180ms ease both" }}
         onClick={onClose}
       />
 
@@ -766,30 +941,32 @@ function OrigamiStepsModal({ item, onClose }: { item: Origami; onClose(): void }
       <div
         className="relative z-10 w-full sm:max-w-md flex flex-col overflow-hidden shadow-2xl"
         style={{
-          maxHeight: "95dvh",
+          maxHeight: "96dvh",
           borderRadius: "28px 28px 0 0",
-          animation: "slideUp 300ms cubic-bezier(0.34,1.56,0.64,1) both",
+          animation: "og-slide-up 320ms cubic-bezier(0.34,1.56,0.64,1) both",
         }}
       >
-        {/* ── PHASE: cover ─────────────────────────────────────────────── */}
+
+        {/* ── PHASE: cover ────────────────────────────────────────────── */}
         {phase === "cover" && (
           <div
             className="flex flex-col items-center text-center overflow-y-auto"
             style={{ background: "linear-gradient(160deg,#1e1b4b 0%,#0f0f1a 100%)" }}
           >
-            {/* close */}
             <button onClick={onClose} aria-label="Close"
               className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
-            {/* big emoji */}
-            <div className="mt-10 mb-4 w-32 h-32 rounded-3xl flex items-center justify-center shadow-2xl border border-white/10"
-              style={{ background: item.accent + "33" }}>
-              <span style={{ fontSize: 72 }}>{item.emoji}</span>
+            {/* Animated preview */}
+            <div
+              className="mt-10 mb-4 rounded-3xl flex items-center justify-center shadow-2xl border border-white/10"
+              style={{ width: 148, height: 148, background: item.accent + "28",
+                       animation: "og-appear 600ms cubic-bezier(0.34,1.56,0.64,1) both" }}
+            >
+              <span style={{ fontSize: 80 }}>{item.emoji}</span>
             </div>
 
             <h2 className="text-white font-black text-xl px-6 leading-snug mb-3">{item.title}</h2>
 
-            {/* badges */}
             <div className="flex items-center gap-2 flex-wrap justify-center mb-5 px-4">
               <span className={`text-xs font-black px-3 py-1 rounded-full ${DIFFICULTY_COLORS[item.difficulty]}`}>
                 {item.difficulty}
@@ -802,16 +979,22 @@ function OrigamiStepsModal({ item, onClose }: { item: Origami; onClose(): void }
               </span>
             </div>
 
-            {/* step preview dots */}
-            <div className="flex gap-1 mb-8">
+            {/* Step preview dots */}
+            <div className="flex gap-1.5 mb-4">
               {item.steps.map((_, i) => (
                 <div key={i} className="w-2 h-2 rounded-full bg-white/30" />
               ))}
             </div>
 
-            {/* start button */}
+            {/* Feature pills */}
+            <div className="flex gap-2 mb-8 text-[11px] text-white/50 font-semibold">
+              <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">▶ Animated</span>
+              <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">🔊 Voice</span>
+              <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚡ Auto-play</span>
+            </div>
+
             <button
-              onClick={() => setPhase("steps")}
+              onClick={() => { setPhase("steps"); setIsPlaying(true); }}
               className="mx-6 mb-10 w-[calc(100%-3rem)] py-4 rounded-2xl font-black text-lg text-white transition-all active:scale-95"
               style={{ background: `linear-gradient(135deg,${item.accent},${item.accent}bb)` }}
             >
@@ -820,27 +1003,57 @@ function OrigamiStepsModal({ item, onClose }: { item: Origami; onClose(): void }
           </div>
         )}
 
-        {/* ── PHASE: steps ─────────────────────────────────────────────── */}
+        {/* ── PHASE: steps ────────────────────────────────────────────── */}
         {phase === "steps" && (
           <div className="flex flex-col" style={{ background: "#0f0f18" }}>
-            {/* close */}
+            {/* Close */}
             <button onClick={onClose} aria-label="Close"
               className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
-            {/* ── Top header: step badge + progress bar ── */}
+            {/* ── Top bar: title + step badge + progress ── */}
             <div className="px-5 pt-4 pb-3 flex-shrink-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-black uppercase tracking-widest text-white/50">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40 truncate max-w-[55%]">
                   {item.title}
                 </span>
-                <span
-                  className="text-xs font-black px-2.5 py-0.5 rounded-full text-white"
-                  style={{ background: item.accent }}
-                >
-                  Step {step + 1} / {total}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {/* Auto-play toggle */}
+                  <button
+                    onClick={() => setAutoPlay(a => !a)}
+                    aria-label="Toggle auto-play"
+                    className="text-[10px] font-black px-2 py-0.5 rounded-full border transition-all"
+                    style={{
+                      borderColor: autoPlay ? item.accent : "rgba(255,255,255,0.15)",
+                      color: autoPlay ? item.accent : "rgba(255,255,255,0.35)",
+                      background: autoPlay ? item.accent + "22" : "transparent",
+                    }}
+                  >
+                    ⚡ AUTO
+                  </button>
+                  {/* Voice toggle */}
+                  <button
+                    onClick={() => setVoiceOn(v => !v)}
+                    aria-label="Toggle voice"
+                    className="text-[10px] font-black px-2 py-0.5 rounded-full border transition-all"
+                    style={{
+                      borderColor: voiceOn ? "#22c55e" : "rgba(255,255,255,0.15)",
+                      color: voiceOn ? "#22c55e" : "rgba(255,255,255,0.35)",
+                      background: voiceOn ? "#22c55e22" : "transparent",
+                    }}
+                  >
+                    {speaking ? "🔊" : voiceOn ? "🔊" : "🔇"}
+                  </button>
+                  {/* Step badge */}
+                  <span
+                    className="text-xs font-black px-2.5 py-0.5 rounded-full text-white"
+                    style={{ background: item.accent }}
+                  >
+                    {step + 1} / {total}
+                  </span>
+                </div>
               </div>
-              {/* segmented progress bar */}
+
+              {/* Segmented progress bar — clickable */}
               <div className="flex gap-1">
                 {item.steps.map((_, i) => (
                   <button
@@ -848,11 +1061,7 @@ function OrigamiStepsModal({ item, onClose }: { item: Origami; onClose(): void }
                     onClick={() => goTo(i)}
                     className="h-1.5 rounded-full flex-1 transition-all duration-300"
                     style={{
-                      background: i < step
-                        ? "#10b981"
-                        : i === step
-                          ? item.accent
-                          : "rgba(255,255,255,0.15)",
+                      background: i < step ? "#10b981" : i === step ? item.accent : "rgba(255,255,255,0.12)",
                     }}
                     aria-label={`Go to step ${i + 1}`}
                   />
@@ -860,46 +1069,90 @@ function OrigamiStepsModal({ item, onClose }: { item: Origami; onClose(): void }
               </div>
             </div>
 
-            {/* ── Large fold diagram (animated on step change) ── */}
+            {/* ── Animated fold stage ── */}
             <div
-              key={animKey}
-              className="flex flex-col items-center justify-center py-8"
-              style={{
-                background: "linear-gradient(180deg,#1a1a2e 0%,#0f0f18 100%)",
-                animation: "stepIn 240ms cubic-bezier(0.22,1,0.36,1) both",
-              }}
+              className="flex flex-col items-center justify-center py-6 relative"
+              style={{ background: "linear-gradient(180deg,#161628 0%,#0f0f18 100%)" }}
             >
-              <div
-                className="flex items-center justify-center rounded-3xl border border-white/10 shadow-2xl"
-                style={{
-                  width: 180,
-                  height: 180,
-                  background: item.accent + "18",
-                }}
-              >
-                <FoldDiagram fold={cur.fold} emoji={item.emoji} size={148} />
+              <AnimatedFoldStage
+                key={animKey}
+                fold={cur.fold}
+                emoji={item.emoji}
+                accent={item.accent}
+                animKey={animKey}
+                isPlaying={isPlaying}
+              />
+
+              {/* ── Playback controls: Replay | Play/Pause (below diagram) ── */}
+              <div className="flex items-center gap-3 mt-5">
+                <button
+                  onClick={goPrev}
+                  disabled={step === 0}
+                  aria-label="Previous step"
+                  className="w-10 h-10 flex items-center justify-center rounded-full font-bold text-base transition-all active:scale-90 disabled:opacity-25"
+                  style={{ background: "rgba(255,255,255,0.08)", color: "white" }}
+                >
+                  ⬅
+                </button>
+
+                {/* Replay */}
+                <button
+                  onClick={replay}
+                  aria-label="Replay animation"
+                  className="w-10 h-10 flex items-center justify-center rounded-full font-bold text-base transition-all active:scale-90"
+                  style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
+                >
+                  🔁
+                </button>
+
+                {/* Play / Pause */}
+                <button
+                  onClick={() => setIsPlaying(p => !p)}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                  className="w-14 h-14 flex items-center justify-center rounded-full font-black text-xl text-white transition-all active:scale-90 shadow-lg"
+                  style={{ background: `linear-gradient(135deg,${item.accent},${item.accent}cc)` }}
+                >
+                  {isPlaying ? "⏸" : "▶"}
+                </button>
+
+                {/* Replay = already done, next step uses goNext */}
+                <button
+                  onClick={replay}
+                  aria-label="Replay step"
+                  className="w-10 h-10 flex items-center justify-center rounded-full font-bold text-base transition-all active:scale-90 opacity-0 pointer-events-none"
+                  style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
+                  aria-hidden="true"
+                >
+                  🔁
+                </button>
+
+                <button
+                  onClick={goNext}
+                  aria-label="Next step"
+                  className="w-10 h-10 flex items-center justify-center rounded-full font-bold text-base transition-all active:scale-90"
+                  style={{ background: "rgba(255,255,255,0.08)", color: "white" }}
+                >
+                  ➡
+                </button>
               </div>
             </div>
 
             {/* ── Instruction ── */}
-            <div className="px-5 pt-1 pb-3 flex-shrink-0">
+            <div className="px-5 pt-3 pb-3 flex-shrink-0">
               <div
                 key={`inst-${animKey}`}
                 className="rounded-2xl p-4 mb-3 border border-white/10"
                 style={{
                   background: "rgba(255,255,255,0.05)",
-                  animation: "fadeSlideUp 200ms 80ms ease both",
+                  animation: "og-slide-up 220ms 120ms ease both",
                 }}
               >
                 <p className="text-white text-base font-semibold leading-relaxed text-center">
                   {cur.instruction}
                 </p>
               </div>
-              <p className="text-center text-white/30 text-[11px] italic mb-4">
-                ❤️ Sit with your child and follow each step together
-              </p>
 
-              {/* ── Navigation buttons ── */}
+              {/* ── Big Prev / Next nav buttons ── */}
               <div className="flex gap-2.5 mb-3">
                 <button
                   onClick={goPrev}
@@ -943,11 +1196,11 @@ function OrigamiStepsModal({ item, onClose }: { item: Origami; onClose(): void }
             <button onClick={onClose} aria-label="Close"
               className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
-            <div className="mt-12 mb-4" style={{ animation: "popIn 500ms cubic-bezier(0.34,1.56,0.64,1) both" }}>
+            <div className="mt-12 mb-4" style={{ animation: "og-pop-in 500ms cubic-bezier(0.34,1.56,0.64,1) both" }}>
               <span style={{ fontSize: 96 }}>{item.emoji}</span>
             </div>
 
-            <div className="text-4xl mb-2" style={{ animation: "popIn 500ms 120ms cubic-bezier(0.34,1.56,0.64,1) both" }}>
+            <div className="text-4xl mb-2" style={{ animation: "og-pop-in 500ms 120ms cubic-bezier(0.34,1.56,0.64,1) both" }}>
               🎉
             </div>
 
@@ -976,18 +1229,84 @@ function OrigamiStepsModal({ item, onClose }: { item: Origami; onClose(): void }
         )}
       </div>
 
-      {/* Keyframe animations injected once */}
+      {/* ── All CSS keyframes (injected once per portal render) ── */}
       <style>{`
-        @keyframes fadeIn   { from { opacity:0 } to { opacity:1 } }
-        @keyframes slideUp  { from { opacity:0; transform:translateY(60px) } to { opacity:1; transform:translateY(0) } }
-        @keyframes stepIn   { from { opacity:0; transform:scale(0.88) } to { opacity:1; transform:scale(1) } }
-        @keyframes fadeSlideUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
-        @keyframes popIn    { from { opacity:0; transform:scale(0.3) } to { opacity:1; transform:scale(1) } }
+        @keyframes og-fade-in    { from { opacity:0 } to { opacity:1 } }
+        @keyframes og-slide-up   { from { opacity:0; transform:translateY(50px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes og-pop-in     { from { opacity:0; transform:scale(0.3) } to { opacity:1; transform:scale(1) } }
+
+        @keyframes og-appear     { from { opacity:0; transform:scale(0.5) } to { opacity:1; transform:scale(1) } }
+        @keyframes og-fold-h     {
+          0%   { transform:scaleY(1); transform-origin:center bottom }
+          35%  { transform:scaleY(0.44); transform-origin:center bottom }
+          65%  { transform:scaleY(0.52); transform-origin:center bottom }
+          100% { transform:scaleY(1); transform-origin:center center }
+        }
+        @keyframes og-fold-v     {
+          0%   { transform:scaleX(1); transform-origin:right center }
+          35%  { transform:scaleX(0.56); transform-origin:right center }
+          65%  { transform:scaleX(0.62); transform-origin:right center }
+          100% { transform:scaleX(1); transform-origin:center center }
+        }
+        @keyframes og-fold-diag  {
+          0%   { transform:rotate(0deg) scale(1) }
+          30%  { transform:rotate(-10deg) scale(0.92) }
+          70%  { transform:rotate(3deg) scale(1.02) }
+          100% { transform:rotate(0deg) scale(1) }
+        }
+        @keyframes og-rotate     {
+          0%   { transform:rotate(-50deg) scale(0.75) }
+          60%  { transform:rotate(4deg) scale(1.04) }
+          100% { transform:rotate(0deg) scale(1) }
+        }
+        @keyframes og-fold-kite  {
+          0%   { transform:scaleX(1) scaleY(1) }
+          35%  { transform:scaleX(0.82) scaleY(1.06) }
+          70%  { transform:scaleX(1.03) scaleY(0.98) }
+          100% { transform:scaleX(1) scaleY(1) }
+        }
+        @keyframes og-blintz     {
+          0%   { transform:scale(1) }
+          35%  { transform:scale(0.70) }
+          65%  { transform:scale(0.78) }
+          100% { transform:scale(1) }
+        }
+        @keyframes og-fold-up    {
+          0%   { transform:translateY(16px) }
+          55%  { transform:translateY(-5px) }
+          100% { transform:translateY(0) }
+        }
+        @keyframes og-fold-dn    {
+          0%   { transform:translateY(-16px) }
+          55%  { transform:translateY(5px) }
+          100% { transform:translateY(0) }
+        }
+        @keyframes og-pull       {
+          0%   { transform:scaleX(0.65) }
+          55%  { transform:scaleX(1.07) }
+          100% { transform:scaleX(1) }
+        }
+        @keyframes og-crease     {
+          0%   { opacity:1; filter:brightness(1) }
+          25%  { opacity:0.5; filter:brightness(2) }
+          50%  { opacity:1; filter:brightness(1.4) }
+          75%  { opacity:0.7; filter:brightness(1.8) }
+          100% { opacity:1; filter:brightness(1) }
+        }
+        @keyframes og-done       {
+          0%   { transform:scale(0.2) rotate(-15deg) }
+          55%  { transform:scale(1.12) rotate(4deg) }
+          80%  { transform:scale(0.96) rotate(-1deg) }
+          100% { transform:scale(1) rotate(0deg) }
+        }
+        @keyframes og-draw-arrow {
+          from { stroke-dashoffset:220 }
+          to   { stroke-dashoffset:0 }
+        }
       `}</style>
     </div>
   );
 
-  // Portal to document.body — escapes any CSS stacking-context in the tree
   return createPortal(shell, document.body);
 }
 
