@@ -1,11 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from "react";
 import {
   View, Text, Image, Pressable, ActivityIndicator, StyleSheet,
-  Modal, StatusBar,
+  Modal, StatusBar, FlatList, useWindowDimensions,
 } from "react-native";
+import type { ViewToken } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { useEventListener } from "expo";
 import {
   fetchReelsBatch, type ReelVideo,
   driveThumbnailUrl,
@@ -16,77 +20,238 @@ import { ACCENT_PINK, brand, palette } from "@/constants/colors";
 
 const BATCH = 6;
 
-// ─── Full-screen video player (Story Hub style) ────────────────────────────
+// ─── Single full-screen reel item ──────────────────────────────────────────
 
-function ArtCraftVideoPlayer({
+function ReelVideoItem({
   video,
-  onClose,
+  isActive,
+  width,
+  height,
 }: {
-  video: ReelVideo | null;
-  onClose: () => void;
+  video: ReelVideo;
+  isActive: boolean;
+  width: number;
+  height: number;
 }) {
-  const insets = useSafeAreaInsets();
-  const sourceUrl = video ? absoluteStreamUrl(video.streamUrl) : null;
+  const displayName = video.name.replace(/\.[^.]+$/, "").replace(/_/g, " ");
   const [errored, setErrored] = useState(false);
 
-  const player = useVideoPlayer(sourceUrl, (p) => {
-    if (!video) return;
-    p.loop = false;
-    p.play();
+  const player = useVideoPlayer(absoluteStreamUrl(video.streamUrl), (p) => {
+    p.loop = true;
+    if (isActive) p.play();
+  });
+
+  useEventListener(player, "statusChange", ({ status }) => {
+    if (status === "error") setErrored(true);
   });
 
   useEffect(() => {
     setErrored(false);
-  }, [video?.id]);
+  }, [video.id]);
 
-  const displayName = video
-    ? video.name.replace(/\.[^.]+$/, "").replace(/_/g, " ")
-    : "";
+  useEffect(() => {
+    if (isActive) {
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [isActive]);
 
   return (
-    <Modal
-      visible={!!video}
-      animationType="slide"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-      <View style={styles.playerBg}>
-        {/* Video */}
-        {!errored ? (
-          <VideoView
-            player={player}
-            style={styles.videoView}
-            contentFit="contain"
-            nativeControls
-          />
-        ) : (
-          <View style={styles.errorBox}>
-            <Ionicons name="alert-circle-outline" size={48} color="#fff" />
-            <Text style={styles.errorText}>Couldn't play this video</Text>
-            <Pressable
-              onPress={() => { setErrored(false); player.play(); }}
-              style={styles.retryPill}
-            >
-              <Text style={styles.retryPillText}>Retry</Text>
-            </Pressable>
-          </View>
-        )}
+    <View style={{ width, height, backgroundColor: "#000" }}>
+      {!errored ? (
+        <VideoView
+          player={player}
+          style={StyleSheet.absoluteFill}
+          contentFit="contain"
+          nativeControls
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, itemStyles.errorBox]}>
+          <Ionicons name="alert-circle-outline" size={48} color="#fff" />
+          <Text style={itemStyles.errorText}>Couldn't play this video</Text>
+        </View>
+      )}
+      {/* Bottom title bar */}
+      <View style={itemStyles.titleBar} pointerEvents="none">
+        <Text numberOfLines={2} style={itemStyles.title}>{displayName}</Text>
+        <Text style={itemStyles.swipeHint}>Swipe up / down to browse</Text>
+      </View>
+    </View>
+  );
+}
 
-        {/* Header bar */}
-        <View style={[styles.playerHeader, { paddingTop: insets.top + 8 }]}>
-          <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={12}>
-            <Ionicons name="close" size={24} color="#fff" />
-          </Pressable>
-          <Text numberOfLines={1} style={styles.playerTitle}>{displayName}</Text>
-          <View style={{ width: 40 }} />
+const itemStyles = StyleSheet.create({
+  errorBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 32,
+  },
+  errorText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 15,
+    textAlign: "center",
+  },
+  titleBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 18,
+    paddingBottom: 32,
+    paddingTop: 60,
+    backgroundColor: "transparent",
+  },
+  title: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+    textShadowColor: "rgba(0,0,0,0.85)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+    marginBottom: 4,
+  },
+  swipeHint: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 11,
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+});
+
+// ─── Reel player (full-screen, vertical-paged FlatList) ───────────────────
+
+function ReelPlayer({
+  videos,
+  initialIndex,
+  onClose,
+  onLoadMore,
+  loadingMore,
+}: {
+  videos: ReelVideo[];
+  initialIndex: number;
+  onClose: () => void;
+  onLoadMore: () => void;
+  loadingMore: boolean;
+}) {
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0 && viewableItems[0].index != null) {
+        setActiveIndex(viewableItems[0].index);
+      }
+    },
+  );
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 });
+
+  const getItemLayout = useCallback(
+    (_: unknown, index: number) => ({ length: height, offset: height * index, index }),
+    [height],
+  );
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: ReelVideo; index: number }) => (
+      <ReelVideoItem
+        video={item}
+        isActive={index === activeIndex}
+        width={width}
+        height={height}
+      />
+    ),
+    [activeIndex, width, height],
+  );
+
+  return (
+    <Modal visible animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <View style={{ flex: 1, backgroundColor: "#000" }}>
+        <FlatList
+          data={videos}
+          keyExtractor={(v) => v.id}
+          renderItem={renderItem}
+          pagingEnabled
+          showsVerticalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged.current}
+          viewabilityConfig={viewabilityConfig.current}
+          getItemLayout={getItemLayout}
+          initialScrollIndex={initialIndex}
+          windowSize={3}
+          maxToRenderPerBatch={3}
+          removeClippedSubviews
+          onEndReachedThreshold={0.5}
+          onEndReached={onLoadMore}
+          ListFooterComponent={
+            loadingMore ? (
+              <View
+                style={{
+                  width,
+                  height: height * 0.3,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#000",
+                }}
+              >
+                <ActivityIndicator color={ACCENT_PINK} />
+                <Text style={{ color: "rgba(255,255,255,0.45)", marginTop: 10, fontSize: 12 }}>
+                  Loading more videos…
+                </Text>
+              </View>
+            ) : null
+          }
+        />
+
+        {/* Close button — top-left */}
+        <Pressable
+          onPress={onClose}
+          style={[playerStyles.closeBtn, { top: insets.top + 8 }]}
+          hitSlop={12}
+        >
+          <Ionicons name="close" size={22} color="#fff" />
+        </Pressable>
+
+        {/* Counter — top-right */}
+        <View style={[playerStyles.counter, { top: insets.top + 14 }]}>
+          <Text style={playerStyles.counterText}>
+            {activeIndex + 1} / {videos.length}
+          </Text>
         </View>
       </View>
     </Modal>
   );
 }
 
-// ─── Main component ────────────────────────────────────────────────────────
+const playerStyles = StyleSheet.create({
+  closeBtn: {
+    position: "absolute",
+    left: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  counter: {
+    position: "absolute",
+    right: 14,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  counterText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+});
+
+// ─── Main tile-grid component ──────────────────────────────────────────────
 
 export function ArtCraftReels() {
   const c = useColors();
@@ -95,16 +260,18 @@ export function ArtCraftReels() {
   const [videos, setVideos] = useState<ReelVideo[]>([]);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [playerVideo, setPlayerVideo] = useState<ReelVideo | null>(null);
+  const [playerIndex, setPlayerIndex] = useState<number | null>(null);
   const initRef = useRef(false);
   const loadingRef = useRef(false);
 
-  const loadMore = useCallback(async (nextOffset: number) => {
+  const loadMore = useCallback(async (nextOffset: number, isInitial = false) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
-    setLoading(true);
+    if (isInitial) setLoading(true);
+    else setLoadingMore(true);
     setError(null);
     try {
       const data = await fetchReelsBatch(nextOffset, BATCH);
@@ -119,16 +286,21 @@ export function ArtCraftReels() {
     } finally {
       loadingRef.current = false;
       setLoading(false);
+      setLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
-    loadMore(0);
+    loadMore(0, true);
   }, [loadMore]);
 
-  if (loading && videos.length === 0) {
+  const handleLoadMore = useCallback(() => {
+    if (hasMore && !loadingRef.current) loadMore(offset);
+  }, [hasMore, offset, loadMore]);
+
+  if (loading) {
     return (
       <View style={s.center}>
         <ActivityIndicator color={ACCENT_PINK} />
@@ -142,7 +314,7 @@ export function ArtCraftReels() {
       <View style={s.center}>
         <Text style={s.errText}>⚠ {error}</Text>
         <Pressable
-          onPress={() => { initRef.current = false; loadMore(0); }}
+          onPress={() => { initRef.current = false; loadMore(0, true); }}
           style={s.retryBtn}
         >
           <Text style={s.retryText}>Try again</Text>
@@ -161,19 +333,24 @@ export function ArtCraftReels() {
 
   return (
     <>
-      <ArtCraftVideoPlayer
-        video={playerVideo}
-        onClose={() => setPlayerVideo(null)}
-      />
+      {playerIndex !== null && (
+        <ReelPlayer
+          videos={videos}
+          initialIndex={playerIndex}
+          onClose={() => setPlayerIndex(null)}
+          onLoadMore={handleLoadMore}
+          loadingMore={loadingMore}
+        />
+      )}
 
       <View style={{ gap: 10 }}>
-        <Text style={s.lead}>🎨 Tap any video to watch</Text>
+        <Text style={s.lead}>🎨 Tap any video · swipe up/down to browse all</Text>
         <View style={s.grid}>
-          {videos.map(v => (
+          {videos.map((v, index) => (
             <ReelTile
               key={v.id}
               video={v}
-              onOpen={() => setPlayerVideo(v)}
+              onOpen={() => setPlayerIndex(index)}
               styles={s}
             />
           ))}
@@ -182,10 +359,10 @@ export function ArtCraftReels() {
         {hasMore && (
           <Pressable
             onPress={() => loadMore(offset)}
-            disabled={loading}
-            style={[s.loadMoreBtn, loading && { opacity: 0.6 }]}
+            disabled={loadingMore}
+            style={[s.loadMoreBtn, loadingMore && { opacity: 0.6 }]}
           >
-            {loading ? (
+            {loadingMore ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <>
@@ -208,7 +385,7 @@ export function ArtCraftReels() {
   );
 }
 
-// ─── Tile ──────────────────────────────────────────────────────────────────
+// ─── Tile card ─────────────────────────────────────────────────────────────
 
 function ReelTile({
   video,
@@ -251,71 +428,7 @@ function ReelTile({
   );
 }
 
-// ─── Player styles (fullscreen) ────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  playerBg: {
-    flex: 1,
-    backgroundColor: "#000",
-    justifyContent: "center",
-  },
-  videoView: {
-    flex: 1,
-  },
-  playerHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: "rgba(0,0,0,0.55)",
-  },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  playerTitle: {
-    flex: 1,
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-    textAlign: "center",
-    paddingHorizontal: 8,
-  },
-  errorBox: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    paddingHorizontal: 32,
-  },
-  errorText: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 16,
-    textAlign: "center",
-  },
-  retryPill: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: brand.primary,
-    marginTop: 4,
-  },
-  retryPillText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-});
-
-// ─── Grid styles ───────────────────────────────────────────────────────────
+// ─── Styles ────────────────────────────────────────────────────────────────
 
 function makeStyles(c: ReturnType<typeof useColors>) {
   return StyleSheet.create({
