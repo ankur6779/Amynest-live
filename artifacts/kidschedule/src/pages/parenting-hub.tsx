@@ -26,6 +26,7 @@ import { InfantMode, type InfantShowOnly } from "@/components/infant-mode";
 import { InfantHub } from "@/components/infant-hub";
 import { isInfantHubAge } from "@workspace/infant-hub";
 import { SkillFocusSection, StorySection, ParentTasksSection } from "@/components/age-based-sections";
+import { DailyStorySection } from "@/components/daily-story-section";
 import { ToddlerPreschoolMode, type ToddlerShowOnly } from "@/components/toddler-preschool-mode";
 import { DailyPuzzle } from "@/components/daily-puzzle";
 import { AmazingFacts } from "@/components/amazing-facts";
@@ -379,13 +380,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             description="Short story to read together today"
             accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20"
           >
-            <ToddlerPreschoolMode
-              ageGroup={ageGroup as "toddler" | "preschool"}
-              childName={effectiveChild.name}
-              ageYears={effectiveChild.age}
-              ageMonths={(effectiveChild as any).ageMonths ?? 0}
-              showOnly="story"
-            />
+            <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
           </SubSection>
 
           <SubSection
@@ -473,7 +468,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             description="A short story for your child today"
             accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20"
           >
-            <StorySection group={ageGroup} childName={effectiveChild.name} />
+            <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
           </SubSection>
 
           <SubSection

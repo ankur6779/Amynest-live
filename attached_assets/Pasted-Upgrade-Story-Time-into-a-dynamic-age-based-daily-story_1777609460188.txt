@@ -1,0 +1,107 @@
+Upgrade Story Time into a dynamic, age-based daily story system with multiple stories and load more functionality.
+
+GOAL:
+Show 4–5 fresh stories daily based on child age, with option to load more relevant stories.
+
+--------------------------------------------------
+1. DAILY STORY DELIVERY
+--------------------------------------------------
+- Each day show 4–5 stories automatically
+- Stories must be DIFFERENT every day
+- Use date-based rotation (avoid repetition)
+
+Logic:
+- Use current date + child age
+- Fetch new stories daily
+- Cache per day
+
+--------------------------------------------------
+2. AGE-BASED FILTERING
+--------------------------------------------------
+Stories must be filtered based on age group:
+
+- Age 2–4 → short, simple, visual stories
+- Age 4–6 → basic moral stories
+- Age 6–8 → slightly longer, learning-based stories
+
+--------------------------------------------------
+3. STORY CARD UI
+--------------------------------------------------
+Each story card should include:
+
+- Story title
+- Icon / thumbnail
+- Short preview (2–3 lines)
+- “Read Aloud” button
+- “Read Story” button
+
+--------------------------------------------------
+4. MULTI-STORY DISPLAY
+--------------------------------------------------
+Instead of 1 story:
+
+- Show 4–5 stories in a scrollable list
+- Highlight first story as “Featured Story”
+
+--------------------------------------------------
+5. LOAD MORE FUNCTION
+--------------------------------------------------
+Add "Load More Stories" button:
+
+- On click → fetch next set of stories
+- Must follow:
+  - Same age group
+  - No duplicates
+  - Different content from current list
+
+--------------------------------------------------
+6. STORY VARIETY SYSTEM
+--------------------------------------------------
+Ensure diversity:
+
+- Moral stories
+- Fun stories
+- Animal stories
+- Learning stories
+
+--------------------------------------------------
+7. PROGRESSION LOGIC
+--------------------------------------------------
+Track:
+
+- Stories read
+- Stories completed
+
+Optional:
+- Show “Continue reading”
+- Show “New today”
+
+--------------------------------------------------
+8. AUDIO SUPPORT
+--------------------------------------------------
+Each story should support:
+
+- Read Aloud (TTS)
+- Play / Pause
+
+--------------------------------------------------
+9. UX IMPROVEMENTS
+--------------------------------------------------
+- Smooth scroll
+- Card-based layout
+- Premium UI
+- Fast loading
+
+--------------------------------------------------
+10. OPTIONAL (ADVANCED)
+--------------------------------------------------
+- Daily story notification
+- Bookmark story
+- Favorite stories
+
+--------------------------------------------------
+DELIVERABLE:
+- Daily refreshed story system
+- Age-based filtering
+- Load more functionality
+- High engagement reading experience
