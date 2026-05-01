@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 // ─── Drive embed helper ───────────────────────────────────────────────────────
 function toEmbedUrl(url: string): string {
@@ -696,111 +697,298 @@ function FoldDiagram({ fold, emoji, size = 88 }: { fold: FoldShape; emoji: strin
 }
 
 // ─── Origami Steps Modal ─────────────────────────────────────────────────────
+//
+// Rendered via createPortal so it escapes any CSS stacking-context created by
+// parent containers (backdrop-blur, transform, will-change, etc.) which would
+// prevent `position:fixed` from covering the whole viewport.
+//
+// Phases: "cover" → "steps" → "done"
+
+type OrigamiPhase = "cover" | "steps" | "done";
+
+const DIFFICULTY_TIME: Record<string, string> = {
+  Easy:   "~5 min",
+  Medium: "~10 min",
+  Fun:    "~15 min",
+};
+
 function OrigamiStepsModal({ item, onClose }: { item: Origami; onClose(): void }) {
-  const [step, setStep] = useState(0);
+  const [phase, setPhase]   = useState<OrigamiPhase>("cover");
+  const [step,  setStep]    = useState(0);
+  const [animKey, setAnimKey] = useState(0); // bumped on step change to re-trigger animation
   const total = item.steps.length;
-  const cur = item.steps[step];
+
+  const goTo = (next: number) => {
+    setStep(next);
+    setAnimKey(k => k + 1);
+  };
+  const goNext = () => {
+    if (step < total - 1) { goTo(step + 1); }
+    else { setPhase("done"); }
+  };
+  const goPrev = () => { if (step > 0) goTo(step - 1); };
+  const restart = () => { setStep(0); setAnimKey(k => k + 1); setPhase("steps"); };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") setStep(s => Math.min(s + 1, total - 1));
-      if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   setStep(s => Math.max(s - 1, 0));
+      if (phase === "steps") {
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") goNext();
+        if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   goPrev();
+      }
     };
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handler);
-    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", handler); };
-  }, [onClose, total]);
+    return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", handler); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, step, onClose]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}/>
+  const cur = item.steps[step]!;
+  const timeEst = DIFFICULTY_TIME[item.difficulty] ?? "~10 min";
+
+  // ── shared shell ────────────────────────────────────────────────────────────
+  const shell = (
+    <div
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label={item.title}
+    >
+      {/* Backdrop — click to close */}
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        style={{ animation: "fadeIn 180ms ease both" }}
+        onClick={onClose}
+      />
 
       {/* Panel */}
-      <div className="relative z-10 w-full sm:max-w-md bg-[#0f0f0f] rounded-t-[28px] sm:rounded-[28px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 fade-in duration-350" style={{ maxHeight:"95vh" }}>
+      <div
+        className="relative z-10 w-full sm:max-w-md flex flex-col overflow-hidden shadow-2xl"
+        style={{
+          maxHeight: "95dvh",
+          borderRadius: "28px 28px 0 0",
+          animation: "slideUp 300ms cubic-bezier(0.34,1.56,0.64,1) both",
+        }}
+      >
+        {/* ── PHASE: cover ─────────────────────────────────────────────── */}
+        {phase === "cover" && (
+          <div
+            className="flex flex-col items-center text-center overflow-y-auto"
+            style={{ background: "linear-gradient(160deg,#1e1b4b 0%,#0f0f1a 100%)" }}
+          >
+            {/* close */}
+            <button onClick={onClose} aria-label="Close"
+              className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
-        {/* Close */}
-        <button onClick={onClose} aria-label="Close"
-          className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
-
-        {/* Header strip */}
-        <div className="px-5 pt-5 pb-3 border-b border-white/10 flex-shrink-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-2xl">{item.emoji}</span>
-            <div>
-              <p className="text-white font-black text-sm leading-tight">{item.title}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${DIFFICULTY_COLORS[item.difficulty]}`}>{item.difficulty}</span>
-                <span className="text-gray-500 text-[10px]">{total} steps total</span>
-              </div>
+            {/* big emoji */}
+            <div className="mt-10 mb-4 w-32 h-32 rounded-3xl flex items-center justify-center shadow-2xl border border-white/10"
+              style={{ background: item.accent + "33" }}>
+              <span style={{ fontSize: 72 }}>{item.emoji}</span>
             </div>
-          </div>
-          {/* Progress dots */}
-          <div className="flex gap-1 mt-2">
-            {item.steps.map((_, i) => (
-              <button key={i} onClick={() => setStep(i)}
-                className={`h-1.5 rounded-full transition-all ${i === step ? "bg-amber-400 flex-[2]" : i < step ? "bg-emerald-500 flex-1" : "bg-white/20 flex-1"}`}/>
-            ))}
-          </div>
-        </div>
 
-        {/* Step content */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Fold diagram */}
-          <div className="flex items-center justify-center py-7 bg-gradient-to-b from-[#1a1a2e] to-[#0f0f0f]">
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-36 h-36 flex items-center justify-center bg-white/5 rounded-3xl border border-white/10 shadow-xl">
-                <FoldDiagram fold={cur.fold} emoji={item.emoji} size={108}/>
-              </div>
-              <span className="text-amber-400 text-[11px] font-black uppercase tracking-widest">
-                Step {step + 1} of {total}
+            <h2 className="text-white font-black text-xl px-6 leading-snug mb-3">{item.title}</h2>
+
+            {/* badges */}
+            <div className="flex items-center gap-2 flex-wrap justify-center mb-5 px-4">
+              <span className={`text-xs font-black px-3 py-1 rounded-full ${DIFFICULTY_COLORS[item.difficulty]}`}>
+                {item.difficulty}
+              </span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-white/80">
+                🕐 {timeEst}
+              </span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-white/80">
+                {total} steps
               </span>
             </div>
-          </div>
 
-          {/* Instruction */}
-          <div className="px-5 pb-2">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
-              <p className="text-white text-base font-semibold leading-relaxed">{cur.instruction}</p>
+            {/* step preview dots */}
+            <div className="flex gap-1 mb-8">
+              {item.steps.map((_, i) => (
+                <div key={i} className="w-2 h-2 rounded-full bg-white/30" />
+              ))}
             </div>
 
-            {/* Parent guidance */}
-            <p className="text-center text-gray-500 text-[11px] italic mb-5">
-              ❤️ Sit with your child and follow each step together
+            {/* start button */}
+            <button
+              onClick={() => setPhase("steps")}
+              className="mx-6 mb-10 w-[calc(100%-3rem)] py-4 rounded-2xl font-black text-lg text-white transition-all active:scale-95"
+              style={{ background: `linear-gradient(135deg,${item.accent},${item.accent}bb)` }}
+            >
+              Let's Start Folding! 🚀
+            </button>
+          </div>
+        )}
+
+        {/* ── PHASE: steps ─────────────────────────────────────────────── */}
+        {phase === "steps" && (
+          <div className="flex flex-col" style={{ background: "#0f0f18" }}>
+            {/* close */}
+            <button onClick={onClose} aria-label="Close"
+              className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
+
+            {/* ── Top header: step badge + progress bar ── */}
+            <div className="px-5 pt-4 pb-3 flex-shrink-0">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-black uppercase tracking-widest text-white/50">
+                  {item.title}
+                </span>
+                <span
+                  className="text-xs font-black px-2.5 py-0.5 rounded-full text-white"
+                  style={{ background: item.accent }}
+                >
+                  Step {step + 1} / {total}
+                </span>
+              </div>
+              {/* segmented progress bar */}
+              <div className="flex gap-1">
+                {item.steps.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    className="h-1.5 rounded-full flex-1 transition-all duration-300"
+                    style={{
+                      background: i < step
+                        ? "#10b981"
+                        : i === step
+                          ? item.accent
+                          : "rgba(255,255,255,0.15)",
+                    }}
+                    aria-label={`Go to step ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* ── Large fold diagram (animated on step change) ── */}
+            <div
+              key={animKey}
+              className="flex flex-col items-center justify-center py-8"
+              style={{
+                background: "linear-gradient(180deg,#1a1a2e 0%,#0f0f18 100%)",
+                animation: "stepIn 240ms cubic-bezier(0.22,1,0.36,1) both",
+              }}
+            >
+              <div
+                className="flex items-center justify-center rounded-3xl border border-white/10 shadow-2xl"
+                style={{
+                  width: 180,
+                  height: 180,
+                  background: item.accent + "18",
+                }}
+              >
+                <FoldDiagram fold={cur.fold} emoji={item.emoji} size={148} />
+              </div>
+            </div>
+
+            {/* ── Instruction ── */}
+            <div className="px-5 pt-1 pb-3 flex-shrink-0">
+              <div
+                key={`inst-${animKey}`}
+                className="rounded-2xl p-4 mb-3 border border-white/10"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  animation: "fadeSlideUp 200ms 80ms ease both",
+                }}
+              >
+                <p className="text-white text-base font-semibold leading-relaxed text-center">
+                  {cur.instruction}
+                </p>
+              </div>
+              <p className="text-center text-white/30 text-[11px] italic mb-4">
+                ❤️ Sit with your child and follow each step together
+              </p>
+
+              {/* ── Navigation buttons ── */}
+              <div className="flex gap-2.5 mb-3">
+                <button
+                  onClick={goPrev}
+                  disabled={step === 0}
+                  className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95 border border-white/10 text-white disabled:opacity-30"
+                  style={{ background: "rgba(255,255,255,0.08)" }}
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={goNext}
+                  className="flex-[2] py-3.5 rounded-2xl font-black text-sm text-white transition-all active:scale-95"
+                  style={{
+                    background: step < total - 1
+                      ? `linear-gradient(135deg,${item.accent},${item.accent}bb)`
+                      : "linear-gradient(135deg,#10b981,#3b82f6)",
+                  }}
+                >
+                  {step < total - 1 ? "Next Step →" : "🎉 Finish!"}
+                </button>
+              </div>
+
+              <a
+                href={item.guideUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-2xl border border-white/10 mb-4 text-white/40 text-xs font-bold hover:text-white/60 transition-colors"
+              >
+                📥 Download Full Guide
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* ── PHASE: done ──────────────────────────────────────────────── */}
+        {phase === "done" && (
+          <div
+            className="flex flex-col items-center text-center overflow-y-auto pb-10"
+            style={{ background: "linear-gradient(160deg,#052e16 0%,#0f0f18 100%)" }}
+          >
+            <button onClick={onClose} aria-label="Close"
+              className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
+
+            <div className="mt-12 mb-4" style={{ animation: "popIn 500ms cubic-bezier(0.34,1.56,0.64,1) both" }}>
+              <span style={{ fontSize: 96 }}>{item.emoji}</span>
+            </div>
+
+            <div className="text-4xl mb-2" style={{ animation: "popIn 500ms 120ms cubic-bezier(0.34,1.56,0.64,1) both" }}>
+              🎉
+            </div>
+
+            <h2 className="text-white font-black text-2xl mb-2">You did it!</h2>
+            <p className="text-white/60 text-sm px-8 mb-8 leading-relaxed">
+              Amazing work! Your <strong className="text-white/80">{item.title}</strong> is complete!
             </p>
 
-            {/* Nav buttons */}
-            <div className="flex gap-3 mb-4">
-              <button onClick={() => setStep(s => Math.max(s - 1, 0))} disabled={step === 0}
-                className="flex-1 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white font-bold text-sm transition-all active:scale-95 border border-white/10">
-                ← Previous
+            <div className="flex flex-col gap-3 px-6 w-full">
+              <button
+                onClick={restart}
+                className="w-full py-4 rounded-2xl font-black text-base text-white transition-all active:scale-95"
+                style={{ background: `linear-gradient(135deg,${item.accent},${item.accent}bb)` }}
+              >
+                🔁 Try Again
               </button>
-              {step < total - 1
-                ? <button onClick={() => setStep(s => s + 1)}
-                    className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95"
-                    style={{ background:"linear-gradient(135deg,#f59e0b,#ef4444)" }}>
-                    <span className="text-white">Next Step →</span>
-                  </button>
-                : <button onClick={onClose}
-                    className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95"
-                    style={{ background:"linear-gradient(135deg,#10b981,#3b82f6)" }}>
-                    <span className="text-white">🎉 All Done!</span>
-                  </button>
-              }
+              <button
+                onClick={onClose}
+                className="w-full py-3.5 rounded-2xl font-bold text-sm text-white/70 hover:text-white transition-colors border border-white/10"
+                style={{ background: "rgba(255,255,255,0.05)" }}
+              >
+                ✓ Done
+              </button>
             </div>
-
-            {/* Download guide */}
-            <a href={item.guideUrl} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-all border border-white/10 mb-5">
-              <span className="text-base">⬇️</span>
-              <span className="text-gray-400 font-bold text-sm">Download Full Guide</span>
-            </a>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* Keyframe animations injected once */}
+      <style>{`
+        @keyframes fadeIn   { from { opacity:0 } to { opacity:1 } }
+        @keyframes slideUp  { from { opacity:0; transform:translateY(60px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes stepIn   { from { opacity:0; transform:scale(0.88) } to { opacity:1; transform:scale(1) } }
+        @keyframes fadeSlideUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes popIn    { from { opacity:0; transform:scale(0.3) } to { opacity:1; transform:scale(1) } }
+      `}</style>
     </div>
   );
+
+  // Portal to document.body — escapes any CSS stacking-context in the tree
+  return createPortal(shell, document.body);
 }
 
 // ─── Origami Card (redesigned) ───────────────────────────────────────────────
