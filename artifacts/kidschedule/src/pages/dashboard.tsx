@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
+import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
 
 import { getTotalPoints, getBadges, getRewards, redeemReward, type Reward } from "@/lib/rewards";
 
@@ -783,6 +784,9 @@ export default function Dashboard() {
         hasChildren={(childrenList?.length ?? 0) > 0}
         lastUpdated={lastUpdated}
       />
+
+      {/* ── Notification nudge for existing users ───────────────── */}
+      <NotificationNudgeBanner />
 
       {/* ── Two-column layout (desktop) / stacked (mobile) ─────── */}
       <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 items-start">
