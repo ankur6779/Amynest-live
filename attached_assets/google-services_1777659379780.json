@@ -1,0 +1,113 @@
+{
+  "project_info": {
+    "project_number": "573340015027",
+    "project_id": "amynest-836ff",
+    "storage_bucket": "amynest-836ff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:573340015027:android:f786117a652416a1a293c6",
+        "android_client_info": {
+          "package_name": "amynest.in"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "573340015027-qnn0mcquddv289n3s3in2o3qjuvl132m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "amynest.in",
+            "certificate_hash": "1120be407de36ea0da58b43e2d5dcab4d7567043"
+          }
+        },
+        {
+          "client_id": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTCmav18I7ZJVF9VXeKxC0yhtq03Lc144"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:573340015027:android:02ecf19e6840a03ba293c6",
+        "android_client_info": {
+          "package_name": "com.amynest.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTCmav18I7ZJVF9VXeKxC0yhtq03Lc144"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:573340015027:android:1e994f9bf94672cfa293c6",
+        "android_client_info": {
+          "package_name": "com.kidschedule.app.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "573340015027-eur2l3v1vl5ke3u0n0tkrh9b65ufv5hn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kidschedule.app.debug",
+            "certificate_hash": "1120be407de36ea0da58b43e2d5dcab4d7567043"
+          }
+        },
+        {
+          "client_id": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTCmav18I7ZJVF9VXeKxC0yhtq03Lc144"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "573340015027-s9pidrbahvsvq86esiispv6nqpng7i3j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

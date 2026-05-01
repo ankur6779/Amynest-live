@@ -199,7 +199,7 @@ kidschedule-android/
 ├── app/
 │   ├── src/main/
 │   │   ├── AndroidManifest.xml            # Permissions, launcher activity
-│   │   ├── java/com/kidschedule/app/
+│   │   ├── java/com/amynest/app/
 │   │   │   ├── KidScheduleApp.kt          # Application + RevenueCat init
 │   │   │   ├── BillingBridge.kt           # @JavascriptInterface for Play Billing
 │   │   │   └── MainActivity.kt            # WebView host + offline screen

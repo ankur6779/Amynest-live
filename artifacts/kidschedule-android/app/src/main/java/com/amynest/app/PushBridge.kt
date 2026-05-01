@@ -1,4 +1,4 @@
-package com.kidschedule.app
+package com.amynest.app
 
 import android.Manifest
 import android.app.Activity
