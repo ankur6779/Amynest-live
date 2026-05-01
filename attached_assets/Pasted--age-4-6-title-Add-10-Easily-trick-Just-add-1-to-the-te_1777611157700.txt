@@ -1,0 +1,181 @@
+[
+  {
+    "age": "4-6",
+    "title": "Add 10 Easily",
+    "trick": "Just add 1 to the tens place",
+    "example": "23 + 10 = 33"
+  },
+  {
+    "age": "4-6",
+    "title": "Add 9 Trick",
+    "trick": "Add 10 and subtract 1",
+    "example": "24 + 9 = 33"
+  },
+  {
+    "age": "4-6",
+    "title": "Double Numbers",
+    "trick": "Add the number to itself",
+    "example": "6 + 6 = 12"
+  },
+  {
+    "age": "4-6",
+    "title": "Near Double",
+    "trick": "Double and adjust",
+    "example": "6 + 7 = 6+6+1 = 13"
+  },
+  {
+    "age": "4-6",
+    "title": "Add 5 Trick",
+    "trick": "Add 10 and subtract 5",
+    "example": "12 + 5 = 17"
+  },
+
+  {
+    "age": "6-8",
+    "title": "Multiply by 9",
+    "trick": "Multiply by 10 and subtract the number",
+    "example": "9 × 7 = 70 - 7 = 63"
+  },
+  {
+    "age": "6-8",
+    "title": "Multiply by 11",
+    "trick": "Add digits and place in middle",
+    "example": "23 × 11 = 253"
+  },
+  {
+    "age": "6-8",
+    "title": "Square of Numbers Ending in 5",
+    "trick": "Multiply first digit by next and add 25",
+    "example": "25² = 625"
+  },
+  {
+    "age": "6-8",
+    "title": "Multiply by 5",
+    "trick": "Multiply by 10 and divide by 2",
+    "example": "8 × 5 = 40"
+  },
+  {
+    "age": "6-8",
+    "title": "Multiply by 4",
+    "trick": "Double twice",
+    "example": "6 × 4 = 6×2×2 = 24"
+  },
+
+  {
+    "age": "6-8",
+    "title": "Multiply by 25",
+    "trick": "Divide by 4 and multiply by 100",
+    "example": "8 × 25 = 200"
+  },
+  {
+    "age": "6-8",
+    "title": "Multiply by 50",
+    "trick": "Multiply by 100 and divide by 2",
+    "example": "6 × 50 = 300"
+  },
+  {
+    "age": "6-8",
+    "title": "Subtract from 100",
+    "trick": "Subtract each digit from 9, last from 10",
+    "example": "100 - 47 = 53"
+  },
+  {
+    "age": "6-8",
+    "title": "Add Big Numbers Fast",
+    "trick": "Round numbers and adjust",
+    "example": "98 + 36 = 100 + 34 = 134"
+  },
+  {
+    "age": "6-8",
+    "title": "Multiply Close to 100",
+    "trick": "Use base 100 method",
+    "example": "98 × 97 = 9506"
+  },
+
+  {
+    "age": "6-8",
+    "title": "Multiply by 2",
+    "trick": "Just double the number",
+    "example": "9 × 2 = 18"
+  },
+  {
+    "age": "6-8",
+    "title": "Multiply by 3",
+    "trick": "Double + add once",
+    "example": "7 × 3 = 21"
+  },
+  {
+    "age": "6-8",
+    "title": "Divide by 2",
+    "trick": "Half the number",
+    "example": "20 ÷ 2 = 10"
+  },
+  {
+    "age": "6-8",
+    "title": "Even Numbers Rule",
+    "trick": "Ends with 0,2,4,6,8",
+    "example": "24 is even"
+  },
+  {
+    "age": "6-8",
+    "title": "Odd Numbers Rule",
+    "trick": "Ends with 1,3,5,7,9",
+    "example": "35 is odd"
+  },
+
+  {
+    "age": "6-8",
+    "title": "Multiply by 10",
+    "trick": "Add zero at end",
+    "example": "7 × 10 = 70"
+  },
+  {
+    "age": "6-8",
+    "title": "Multiply by 100",
+    "trick": "Add two zeros",
+    "example": "5 × 100 = 500"
+  },
+  {
+    "age": "6-8",
+    "title": "Add 99 Trick",
+    "trick": "Add 100 and subtract 1",
+    "example": "45 + 99 = 144"
+  },
+  {
+    "age": "6-8",
+    "title": "Subtract 9 Trick",
+    "trick": "Subtract 10 and add 1",
+    "example": "56 - 9 = 47"
+  },
+
+  {
+    "age": "6-8",
+    "title": "Multiply by 8",
+    "trick": "Double 3 times",
+    "example": "5 × 8 = 40"
+  },
+  {
+    "age": "6-8",
+    "title": "Multiply by 6",
+    "trick": "Double and triple",
+    "example": "6 × 6 = 36"
+  },
+  {
+    "age": "6-8",
+    "title": "Multiply by 7",
+    "trick": "Practice pattern",
+    "example": "7 × 8 = 56"
+  },
+  {
+    "age": "6-8",
+    "title": "Quick Square 11",
+    "trick": "Add middle",
+    "example": "11 × 11 = 121"
+  },
+  {
+    "age": "6-8",
+    "title": "Quick Square 12",
+    "trick": "Use expansion",
+    "example": "12 × 12 = 144"
+  }
+]
