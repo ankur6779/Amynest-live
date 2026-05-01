@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type ReactNode } from "react";
+import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
 
 // ─── Drive embed helper ───────────────────────────────────────────────────────
 function toEmbedUrl(url: string): string {
