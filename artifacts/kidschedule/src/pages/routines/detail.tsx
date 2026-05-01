@@ -452,6 +452,7 @@ export default function RoutineDetail() {
   const authFetch = useAuthFetch();
 
   const [localItems, setLocalItems] = useState<RoutineItem[] | null>(null);
+  const notifSupported = typeof window !== "undefined" && "Notification" in window;
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [voiceOn, setVoiceOn] = useState(() => isVoiceEnabled());
   const announcedTaskRef = useRef<string | null>(null);
@@ -921,10 +922,7 @@ export default function RoutineDetail() {
   }, [routineId]);
 
   const toggleNotifications = async () => {
-    if (!("Notification" in window)) {
-      toast({ title: "Notifications not supported", description: "Your browser does not support notifications.", variant: "destructive" });
-      return;
-    }
+    if (!notifSupported) return;
     if (notificationsEnabled) {
       notifTimersRef.current.forEach(clearTimeout);
       notifTimersRef.current = [];
@@ -1151,18 +1149,20 @@ export default function RoutineDetail() {
               </Button>
             )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleNotifications}
-              className="rounded-full gap-2"
-            >
-              {notificationsEnabled ? (
-                <><BellOff className="h-4 w-4" /> Notifications On</>
-              ) : (
-                <><Bell className="h-4 w-4" /> Notify Me</>
-              )}
-            </Button>
+            {notifSupported && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleNotifications}
+                className="rounded-full gap-2"
+              >
+                {notificationsEnabled ? (
+                  <><BellOff className="h-4 w-4" /> Notifications On</>
+                ) : (
+                  <><Bell className="h-4 w-4" /> Notify Me</>
+                )}
+              </Button>
+            )}
 
             <VoiceSettingsPanel onToggle={(enabled) => setVoiceOn(enabled)} />
 
