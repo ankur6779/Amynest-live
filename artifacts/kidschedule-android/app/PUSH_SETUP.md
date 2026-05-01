@@ -1,7 +1,7 @@
 # KidSchedule Android — Push Notifications Setup
 
 **App version:** 1.1.0 (versionCode 2)
-**Package:** `com.kidschedule.app`
+**Package:** `com.amynest.app`
 **Bridge:** native FCM via `window.AmyNestPushNative` (the WebView itself
 has no Web Notification API).
 
@@ -14,7 +14,7 @@ has no Web Notification API).
    `VITE_FIREBASE_VAPID_KEY`).
 2. Project settings → **Your apps** → **Add app** → Android.
 3. Fill in:
-   - **Android package name:** `com.kidschedule.app`
+   - **Android package name:** `com.amynest.app`
    - **App nickname:** `KidSchedule Android`
    - **SHA-1:** (optional for FCM; required only if you later want Google
      Sign-In or Dynamic Links). Get it via:
@@ -50,7 +50,7 @@ cd artifacts/kidschedule-android
 
 You should see the `:app:processReleaseGoogleServices` task run. If it
 doesn't, double-check the file path and that the package name in
-`google-services.json` matches `com.kidschedule.app` exactly.
+`google-services.json` matches `com.amynest.app` exactly.
 
 ## 4. Build & ship the APK / AAB
 

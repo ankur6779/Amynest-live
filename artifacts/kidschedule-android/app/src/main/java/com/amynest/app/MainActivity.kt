@@ -1,4 +1,4 @@
-package com.kidschedule.app
+package com.amynest.app
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -32,7 +32,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.kidschedule.app.databinding.ActivityMainBinding
+import com.amynest.app.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 

@@ -29,11 +29,11 @@ if (firebaseEnabled) {
 }
 
 android {
-    namespace = "com.kidschedule.app"
+    namespace = "com.amynest.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.kidschedule.app"
+        applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 34
         versionCode = 2
@@ -81,7 +81,11 @@ android {
             }
         }
         debug {
-            applicationIdSuffix = ".debug"
+            // Intentionally NO applicationIdSuffix — google-services.json
+            // only contains com.amynest.app (production package). If you
+            // need a parallel debug install, add `com.amynest.app.debug`
+            // as a separate Android app in Firebase Console first, then
+            // re-add `applicationIdSuffix = ".debug"` here.
             isDebuggable = true
         }
     }

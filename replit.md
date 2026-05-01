@@ -64,7 +64,7 @@ The system is a monorepo using pnpm, Node.js 24, and TypeScript 5.9. The fronten
 - **Referral System:** Users receive unique referral codes for bonus premium time.
 - **Firebase Auth Module Boundaries:** Split into `firebase-auth.tsx` (components), `firebase-auth-hooks.ts` (hooks), and `firebase-auth-context.ts` (context) to prevent Fast Refresh issues.
 - **iOS Safari Memory Crash Fix:** Implements two-stage code splitting and a lite splash screen for iOS to reduce eager bundle size and prevent crashes on lower-RAM devices.
-- **KidSchedule Android wrapper:** A plain WebView wrapper for Android that uses native FCM for push notifications via a JS bridge.
+- **KidSchedule Android wrapper:** A plain WebView wrapper for Android (Play Store package `com.amynest.app`, source dir `artifacts/kidschedule-android/`) that uses native FCM for push notifications via a JS bridge (`window.AmyNestPushNative`). Note: source directory name is historical; Play Store identity is AmyNest.
 
 ## External Dependencies
 
