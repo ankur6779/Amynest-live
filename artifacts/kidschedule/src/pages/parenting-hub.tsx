@@ -783,7 +783,6 @@ export default function ParentingHub() {
           title="🧮 Smart Math Tricks"
           description="Fun mental math shortcuts — Vedic style!"
           accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100 dark:to-orange-500/20"
-          defaultOpen={true}
         >
           <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
         </HubSection>
