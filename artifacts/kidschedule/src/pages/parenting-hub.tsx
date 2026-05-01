@@ -29,6 +29,7 @@ import { SkillFocusSection, StorySection, ParentTasksSection } from "@/component
 import { DailyStorySection } from "@/components/daily-story-section";
 import { ToddlerPreschoolMode, type ToddlerShowOnly } from "@/components/toddler-preschool-mode";
 import { DailyPuzzle } from "@/components/daily-puzzle";
+import { SmartMathTricks } from "@/components/smart-math-tricks";
 import { AmazingFacts } from "@/components/amazing-facts";
 import { DailyKidsActivity } from "@/components/daily-kids-activity";
 import { ArtCraftReels } from "@/components/art-craft-reels";
@@ -428,6 +429,17 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             </SubSection>
           )}
 
+          {ageGroup === "preschool" && effectiveChild.age >= 4 && (
+            <SubSection
+              icon={<Sparkles className="h-4 w-4 text-amber-500" />}
+              title="Smart Math Tricks"
+              description="Quick mental math shortcuts — fun and fast!"
+              accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100 dark:to-orange-500/20"
+            >
+              <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
+            </SubSection>
+          )}
+
           <SubSection
             icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
             title="Amazing Facts"
@@ -483,6 +495,17 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
               ageYears={effectiveChild.age}
             />
           </SubSection>
+
+          {effectiveChild.age >= 6 && effectiveChild.age <= 8 && (
+            <SubSection
+              icon={<Sparkles className="h-4 w-4 text-amber-500" />}
+              title="Smart Math Tricks"
+              description="Quick mental math shortcuts — fun and fast!"
+              accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100 dark:to-orange-500/20"
+            >
+              <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
+            </SubSection>
+          )}
 
           <SubSection
             icon={<ScrollText className="h-4 w-4 text-rose-600" />}
