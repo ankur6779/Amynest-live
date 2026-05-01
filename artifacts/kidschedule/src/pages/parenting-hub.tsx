@@ -298,9 +298,6 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
         </>
       )}
 
-      {/* ── Google Drive: Art & Craft Reels ───────────────────── */}
-      <ArtCraftReels />
-
       {/* ── Google Drive: Printable Worksheets ────────────────── */}
       <PrintableWorksheets childAgeMonths={totalAgeMonths} />
     </div>
@@ -680,6 +677,32 @@ export default function ParentingHub() {
           </HubSection>
         </LockedBlock>
       ) : null,
+    },
+
+    // ── Art & Craft Videos (always-current, standalone tile) ─────────────
+    {
+      id: "art-craft",
+      alwaysCurrent: true,
+      render: () => (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_art_craft")}
+          label="Unlock to continue"
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="art-craft"
+            icon={<Palette className="h-5 w-5 text-orange-500" />}
+            title="🎨 Art & Craft Videos"
+            description="Creative video tutorials — tap to watch, swipe to browse"
+            accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-yellow-100 dark:to-yellow-500/20"
+            tryFree={tryFreeFor("hub_art_craft")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}
+          >
+            <ArtCraftReels />
+          </HubSection>
+        </LockedBlock>
+      ),
     },
 
     // ── GRID — band-based ─────────────────────────────────────────────────
