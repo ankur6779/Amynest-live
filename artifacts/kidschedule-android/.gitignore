@@ -15,3 +15,9 @@ local.properties
 *.keystore
 keystore.properties
 release-signing.properties
+
+# Firebase — google-services.json is per-Firebase-project and contains the
+# project's OAuth client IDs and API keys; download a fresh copy from the
+# Firebase Console (com.kidschedule.app) and drop it into app/.
+# See app/PUSH_SETUP.md for full instructions.
+app/google-services.json

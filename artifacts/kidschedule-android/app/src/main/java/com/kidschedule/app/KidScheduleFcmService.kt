@@ -41,16 +41,10 @@ class KidScheduleFcmService : FirebaseMessagingService() {
      */
     override fun onNewToken(token: String) {
         Log.i(TAG, "FCM token rotated (length=${token.length})")
-        // Best-effort: persist so PushBridge can hand it out synchronously
-        // before the async getToken() task completes after process restart.
-        try {
-            getSharedPreferences("kidschedule_push", Context.MODE_PRIVATE)
-                .edit()
-                .putString("fcm_token", token)
-                .apply()
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to cache fresh FCM token", t)
-        }
+        // Persist the token AND notify any active PushBridge so the WebView
+        // can re-register the token with the backend without waiting for the
+        // next cold start.
+        PushBridge.onTokenRotated(applicationContext, token)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
