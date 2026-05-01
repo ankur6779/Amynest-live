@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
+import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
 
 function SmartParentBadge({ className = "" }: { className?: string }) {
   return (
@@ -269,7 +270,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
-          <div className="mx-auto max-w-5xl p-4 md:p-8">{children}</div>
+          <div className="mx-auto max-w-5xl p-4 md:p-8">
+            {!["/sign-in", "/onboarding", "/notify-prompt"].some((p) => location.startsWith(p)) && (
+              <div className="mb-4">
+                <NotificationNudgeBanner />
+              </div>
+            )}
+            {children}
+          </div>
         </main>
       </div>
 
