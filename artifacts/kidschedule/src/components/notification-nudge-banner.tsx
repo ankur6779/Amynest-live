@@ -94,15 +94,17 @@ export function NotificationNudgeBanner() {
       if (!cancelled) setState(computeState());
     });
 
-    // Re-evaluate when the native bridge fires permission/token updates.
-    const onPerm = () => setState(computeState());
-    const onTok = () => setState(computeState());
-    window.addEventListener("amynest-push-permission", onPerm);
-    window.addEventListener("amynest-push-token", onTok);
+    // Re-evaluate when the native bridge fires permission/token updates,
+    // or when the push hook signals a successful background registration.
+    const recompute = () => setState(computeState());
+    window.addEventListener("amynest-push-permission", recompute);
+    window.addEventListener("amynest-push-token", recompute);
+    window.addEventListener("amynest-push-registered", recompute);
     return () => {
       cancelled = true;
-      window.removeEventListener("amynest-push-permission", onPerm);
-      window.removeEventListener("amynest-push-token", onTok);
+      window.removeEventListener("amynest-push-permission", recompute);
+      window.removeEventListener("amynest-push-token", recompute);
+      window.removeEventListener("amynest-push-registered", recompute);
     };
   }, [computeState]);
 
