@@ -10,6 +10,7 @@ import {
   ChevronDown, ChevronUp, MessageCircleHeart,
   Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap,
   UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown,
+  Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText,
 } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
@@ -231,6 +232,77 @@ function EmotionalSupportSection() {
   );
 }
 
+// ─── Sub-section tile (Glass + Glow, collapsed by default) ──────────────────
+interface SubSectionProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  accentClass: string;
+  children: React.ReactNode;
+}
+
+function SubSection({ icon, title, description, accentClass, children }: SubSectionProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      className={[
+        "relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
+        "bg-white/50 dark:bg-white/[0.035] backdrop-blur-xl",
+        "border border-white/60 dark:border-white/[0.08]",
+        "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)]",
+        open
+          ? "border-primary/50 dark:border-primary/40 shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_10px_28px_-8px_rgba(168,85,247,0.35)]"
+          : "hover:border-primary/25 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.12),0_6px_20px_-6px_rgba(168,85,247,0.18)]",
+      ].join(" ")}
+    >
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={[
+          "w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left",
+          "transition-colors duration-200",
+          open
+            ? "bg-primary/[0.04] dark:bg-primary/[0.06]"
+            : "hover:bg-white/40 dark:hover:bg-white/[0.025]",
+        ].join(" ")}
+        aria-expanded={open}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div
+            className={[
+              "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
+              "shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] ring-1 ring-white/40 dark:ring-white/10",
+              accentClass,
+            ].join(" ")}
+          >
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-[13px] leading-tight text-foreground truncate">{title}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{description}</p>
+          </div>
+        </div>
+        <span
+          className={[
+            "shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
+            "border border-border/50 bg-white/60 dark:bg-white/5",
+            "transition-transform duration-300",
+            open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground",
+          ].join(" ")}
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </span>
+      </button>
+
+      {open && (
+        <div className="px-3.5 pb-4 pt-3 border-t border-white/40 dark:border-white/[0.06] bg-white/20 dark:bg-white/[0.01] animate-in fade-in slide-in-from-top-1 duration-300">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Activities Section ───────────────────────────────────────────────────────
 interface ActivitiesSectionProps {
   ageGroup: AgeGroup;
@@ -244,62 +316,208 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
   const isOlder = !isInfant && !isToddlerOrPreschool;
 
   return (
-    <div className="space-y-4">
-      {/* INFANT */}
+    <div className="space-y-2.5">
+
+      {/* ── INFANT ─────────────────────────────────────────────────────── */}
       {isInfant && (
         <>
-          <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
-          <InfantMode
-            childName={effectiveChild.name}
-            ageYears={effectiveChild.age}
-            ageMonths={(effectiveChild as any).ageMonths ?? 0}
-            showOnly={null}
-          />
+          <SubSection
+            icon={<Baby className="h-4 w-4 text-pink-500" />}
+            title="Baby Activities"
+            description="Feeding, bonding, development & milestones"
+            accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-rose-100 dark:to-rose-500/20"
+          >
+            <InfantMode
+              childName={effectiveChild.name}
+              ageYears={effectiveChild.age}
+              ageMonths={(effectiveChild as any).ageMonths ?? 0}
+              showOnly={null}
+            />
+          </SubSection>
+
+          <SubSection
+            icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
+            title="Amazing Facts"
+            description="Fun facts about your baby's world"
+            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
+          >
+            <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
+          </SubSection>
         </>
       )}
 
-      {/* TODDLER / PRESCHOOL */}
+      {/* ── TODDLER / PRESCHOOL ────────────────────────────────────────── */}
       {isToddlerOrPreschool && (
         <>
-          <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
-          <ToddlerPreschoolMode
-            ageGroup={ageGroup as "toddler" | "preschool"}
-            childName={effectiveChild.name}
-            ageYears={effectiveChild.age}
-            ageMonths={(effectiveChild as any).ageMonths ?? 0}
-            showOnly={null}
-          />
+          <SubSection
+            icon={<Star className="h-4 w-4 text-orange-500" />}
+            title="Daily Activity"
+            description="Today's fun activity picked for your child"
+            accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-amber-100 dark:to-amber-500/20"
+          >
+            <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
+          </SubSection>
+
+          <SubSection
+            icon={<Brain className="h-4 w-4 text-violet-600" />}
+            title="Skills to Focus"
+            description="Age-matched skills to practise this week"
+            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-purple-100 dark:to-purple-500/20"
+          >
+            <ToddlerPreschoolMode
+              ageGroup={ageGroup as "toddler" | "preschool"}
+              childName={effectiveChild.name}
+              ageYears={effectiveChild.age}
+              ageMonths={(effectiveChild as any).ageMonths ?? 0}
+              showOnly="skill"
+            />
+          </SubSection>
+
+          <SubSection
+            icon={<BookOpen className="h-4 w-4 text-indigo-600" />}
+            title="Story Time"
+            description="Short story to read together today"
+            accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20"
+          >
+            <ToddlerPreschoolMode
+              ageGroup={ageGroup as "toddler" | "preschool"}
+              childName={effectiveChild.name}
+              ageYears={effectiveChild.age}
+              ageMonths={(effectiveChild as any).ageMonths ?? 0}
+              showOnly="story"
+            />
+          </SubSection>
+
+          <SubSection
+            icon={<Gamepad2 className="h-4 w-4 text-emerald-600" />}
+            title="Fun & Play"
+            description="Games and activities to enjoy together"
+            accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20"
+          >
+            <ToddlerPreschoolMode
+              ageGroup={ageGroup as "toddler" | "preschool"}
+              childName={effectiveChild.name}
+              ageYears={effectiveChild.age}
+              ageMonths={(effectiveChild as any).ageMonths ?? 0}
+              showOnly="fun"
+            />
+          </SubSection>
+
+          <SubSection
+            icon={<ScrollText className="h-4 w-4 text-rose-600" />}
+            title="Parent Tasks"
+            description="Quick things to do for your child today"
+            accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
+          >
+            <ToddlerPreschoolMode
+              ageGroup={ageGroup as "toddler" | "preschool"}
+              childName={effectiveChild.name}
+              ageYears={effectiveChild.age}
+              ageMonths={(effectiveChild as any).ageMonths ?? 0}
+              showOnly="task"
+            />
+          </SubSection>
+
           {ageGroup === "preschool" && (
+            <SubSection
+              icon={<LayoutGrid className="h-4 w-4 text-sky-600" />}
+              title="Daily Puzzle"
+              description="A brain-teaser to sharpen little minds"
+              accentClass="bg-gradient-to-br from-sky-100 dark:from-sky-500/20 to-cyan-100 dark:to-cyan-500/20"
+            >
+              <DailyPuzzle
+                childName={effectiveChild.name}
+                ageGroup={ageGroup}
+                ageYears={effectiveChild.age}
+              />
+            </SubSection>
+          )}
+
+          <SubSection
+            icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
+            title="Amazing Facts"
+            description="Fun things to tell your little one today"
+            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
+          >
+            <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
+          </SubSection>
+        </>
+      )}
+
+      {/* ── OLDER KIDS ─────────────────────────────────────────────────── */}
+      {isOlder && (
+        <>
+          {totalAgeMonths < 96 && (
+            <SubSection
+              icon={<Star className="h-4 w-4 text-orange-500" />}
+              title="Daily Activity"
+              description="Today's fun activity picked for your child"
+              accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-amber-100 dark:to-amber-500/20"
+            >
+              <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
+            </SubSection>
+          )}
+
+          <SubSection
+            icon={<Brain className="h-4 w-4 text-violet-600" />}
+            title="Skills to Focus"
+            description="Key skills to develop this stage"
+            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-purple-100 dark:to-purple-500/20"
+          >
+            <SkillFocusSection group={ageGroup} childName={effectiveChild.name} />
+          </SubSection>
+
+          <SubSection
+            icon={<BookOpen className="h-4 w-4 text-indigo-600" />}
+            title="Story Time"
+            description="A short story for your child today"
+            accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20"
+          >
+            <StorySection group={ageGroup} childName={effectiveChild.name} />
+          </SubSection>
+
+          <SubSection
+            icon={<LayoutGrid className="h-4 w-4 text-sky-600" />}
+            title="Daily Puzzle"
+            description="A brain-teaser to sharpen their mind"
+            accentClass="bg-gradient-to-br from-sky-100 dark:from-sky-500/20 to-cyan-100 dark:to-cyan-500/20"
+          >
             <DailyPuzzle
               childName={effectiveChild.name}
               ageGroup={ageGroup}
               ageYears={effectiveChild.age}
             />
-          )}
-          <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
+          </SubSection>
+
+          <SubSection
+            icon={<ScrollText className="h-4 w-4 text-rose-600" />}
+            title="Parent Tasks"
+            description="Quick things to do for your child today"
+            accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
+          >
+            <ParentTasksSection group={ageGroup} childName={effectiveChild.name} />
+          </SubSection>
+
+          <SubSection
+            icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
+            title="Amazing Facts"
+            description="Interesting facts to share with your child"
+            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
+          >
+            <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
+          </SubSection>
         </>
       )}
 
-      {/* OLDER KIDS */}
-      {isOlder && (
-        <>
-          {totalAgeMonths < 96 && (
-            <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
-          )}
-          <SkillFocusSection group={ageGroup} childName={effectiveChild.name} />
-          <StorySection group={ageGroup} childName={effectiveChild.name} />
-          <DailyPuzzle
-            childName={effectiveChild.name}
-            ageGroup={ageGroup}
-            ageYears={effectiveChild.age}
-          />
-          <ParentTasksSection group={ageGroup} childName={effectiveChild.name} />
-          <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
-        </>
-      )}
-
-      {/* ── Google Drive: Printable Worksheets ────────────────── */}
-      <PrintableWorksheets childAgeMonths={totalAgeMonths} />
+      {/* ── Printable Worksheets (all age groups) ──────────────────────── */}
+      <SubSection
+        icon={<FileDown className="h-4 w-4 text-teal-600" />}
+        title="Printable Worksheets"
+        description="Age-matched worksheets to download & print"
+        accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20"
+      >
+        <PrintableWorksheets childAgeMonths={totalAgeMonths} />
+      </SubSection>
     </div>
   );
 }
