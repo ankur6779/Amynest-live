@@ -429,17 +429,6 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             </SubSection>
           )}
 
-          {ageGroup === "preschool" && effectiveChild.age >= 4 && (
-            <SubSection
-              icon={<Sparkles className="h-4 w-4 text-amber-500" />}
-              title="Smart Math Tricks"
-              description="Quick mental math shortcuts — fun and fast!"
-              accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100 dark:to-orange-500/20"
-            >
-              <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
-            </SubSection>
-          )}
-
           <SubSection
             icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
             title="Amazing Facts"
@@ -495,17 +484,6 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
               ageYears={effectiveChild.age}
             />
           </SubSection>
-
-          {effectiveChild.age >= 6 && effectiveChild.age <= 8 && (
-            <SubSection
-              icon={<Sparkles className="h-4 w-4 text-amber-500" />}
-              title="Smart Math Tricks"
-              description="Quick mental math shortcuts — fun and fast!"
-              accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100 dark:to-orange-500/20"
-            >
-              <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
-            </SubSection>
-          )}
 
           <SubSection
             icon={<ScrollText className="h-4 w-4 text-rose-600" />}
@@ -912,6 +890,23 @@ export default function ParentingHub() {
             />
           </HubSection>
         </LockedBlock>
+      ) : null,
+    },
+
+    // ── Smart Math Tricks (age 4–8 only) ─────────────────────────────────
+    {
+      id: "smart-math-tricks",
+      bands: ["4-6", "6-8"] as AgeBand[],
+      render: () => (ageGroup && effectiveChild.age >= 4 && effectiveChild.age <= 8) ? (
+        <HubSection
+          id="smart-math-tricks"
+          icon={<Sparkles className="h-5 w-5 text-amber-500" />}
+          title="🧮 Smart Math Tricks"
+          description="Fun mental math shortcuts — Vedic style!"
+          accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100 dark:to-orange-500/20"
+        >
+          <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
+        </HubSection>
       ) : null,
     },
 
