@@ -3,6 +3,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { z } from "zod";
 import { db, pushTokensTable } from "@workspace/db";
+import { count } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -56,6 +57,29 @@ router.post("/push/register", async (req, res): Promise<void> => {
     });
 
   res.json({ ok: true });
+});
+
+/**
+ * GET /api/push/status
+ * Returns { registered: boolean } — whether the current user has any active
+ * web push token stored. Used by the dashboard nudge banner.
+ */
+router.get("/push/status", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const [{ value }] = await db
+    .select({ value: count() })
+    .from(pushTokensTable)
+    .where(
+      and(
+        eq(pushTokensTable.userId, userId),
+        eq(pushTokensTable.platform, "web"),
+      ),
+    );
+  res.json({ registered: (value ?? 0) > 0 });
 });
 
 /**
