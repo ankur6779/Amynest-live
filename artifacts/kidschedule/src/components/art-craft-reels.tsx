@@ -27,197 +27,412 @@ async function fetchBatch(offset: number): Promise<ApiResponse> {
   return res.json();
 }
 
-function ReelCard({
-  video,
-  globalMuted,
-  onToggleMute,
-  isActive,
-  onError,
-}: {
-  video: Video;
-  globalMuted: boolean;
-  onToggleMute: () => void;
-  isActive: boolean;
-  onError?: () => void;
-}) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const [showHint, setShowHint] = useState(false);
-  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    if (isActive) {
-      el.muted = globalMuted;
-      el.play().catch(() => {});
-    } else {
-      el.pause();
-    }
-  }, [isActive, globalMuted]);
-
-  const handleTap = () => {
-    onToggleMute();
-    setShowHint(true);
-    if (hintTimer.current) clearTimeout(hintTimer.current);
-    hintTimer.current = setTimeout(() => setShowHint(false), 1200);
-  };
-
-  const displayName = video.name.replace(/\.[^.]+$/, "").replace(/_/g, " ");
-
-  return (
-    <div
-      onClick={handleTap}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        background: "#111",
-        overflow: "hidden",
-        cursor: "pointer",
-        userSelect: "none",
-        scrollSnapAlign: "start",
-        flexShrink: 0,
-      }}
-    >
-      {!loaded && !hasError && (
-        <div style={{
-          position: "absolute", inset: 0, display: "flex",
-          alignItems: "center", justifyContent: "center", background: "#111", zIndex: 2,
-        }}>
-          <AcSpinner />
-        </div>
-      )}
-      {hasError && (
-        <div style={{
-          position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", background: "#111", gap: 8, zIndex: 2,
-        }}>
-          <span style={{ fontSize: 36, opacity: 0.45 }}>⚠</span>
-          <p style={{ color: "#fff", opacity: 0.6, fontSize: 14 }}>Video unavailable</p>
-          <small style={{ color: "#fff", opacity: 0.35, fontSize: 12, textAlign: "center", maxWidth: 200 }}>{displayName}</small>
-        </div>
-      )}
-      <video
-        ref={videoRef}
-        src={video.streamUrl}
-        muted={globalMuted}
-        loop
-        playsInline
-        preload="metadata"
-        onCanPlay={() => setLoaded(true)}
-        onError={() => {
-          setHasError(true);
-          setLoaded(true);
-          if (onError) setTimeout(onError, 800);
-        }}
-        style={{
-          position: "absolute", inset: 0, width: "100%", height: "100%",
-          objectFit: "cover", display: hasError ? "none" : "block",
-        }}
-      />
-      {showHint && (
-        <div style={{
-          position: "absolute", inset: 0, display: "flex",
-          alignItems: "center", justifyContent: "center",
-          pointerEvents: "none", zIndex: 20,
-          animation: "ac-hint-fade 1.2s ease forwards",
-        }}>
-          <div style={{
-            background: "rgba(0,0,0,0.45)", borderRadius: "50%",
-            padding: 16, width: 72, height: 72, display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {globalMuted ? (
-              <svg viewBox="0 0 24 24" fill="white" width="32" height="32">
-                <path d="M16.5 12A4.5 4.5 0 0014 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06A8.99 8.99 0 0017.73 18l2.27 2.27L21 18.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="white" width="32" height="32">
-                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-              </svg>
-            )}
-          </div>
-        </div>
-      )}
-      <div style={{
-        position: "absolute", inset: 0, display: "flex",
-        alignItems: "flex-end", justifyContent: "space-between",
-        padding: "16px 14px",
-        background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 50%, transparent 80%)",
-        pointerEvents: "none", zIndex: 10,
-      }}>
-        <p style={{
-          color: "#fff", fontSize: 13, fontWeight: 600, lineHeight: 1.4,
-          textShadow: "0 1px 6px rgba(0,0,0,0.8)",
-          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-          overflow: "hidden", flex: 1, paddingRight: 10,
-        }}>
-          {displayName}
-        </p>
-        <button
-          style={{
-            pointerEvents: "auto", background: "none", border: "none",
-            cursor: "pointer", display: "flex", flexDirection: "column",
-            alignItems: "center", gap: 4, color: "#fff", padding: "4px 6px",
-          }}
-          onClick={(e) => { e.stopPropagation(); onToggleMute(); }}
-        >
-          {globalMuted ? (
-            <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
-              <path d="M16.5 12A4.5 4.5 0 0014 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06A8.99 8.99 0 0017.73 18l2.27 2.27L21 18.73 4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
-              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-            </svg>
-          )}
-          <span style={{ fontSize: 10, fontWeight: 700, textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>
-            {globalMuted ? "Unmute" : "Mute"}
-          </span>
-        </button>
-      </div>
-    </div>
-  );
+function driveThumbnail(id: string) {
+  return `https://drive.google.com/thumbnail?id=${id}&sz=w480`;
 }
 
-function AcSpinner() {
+function displayName(name: string) {
+  return name.replace(/\.[^.]+$/, "").replace(/_/g, " ");
+}
+
+// ─── Spinner ───────────────────────────────────────────────────────────────
+
+function AcSpinner({ size = 32 }: { size?: number }) {
   return (
     <div style={{
-      width: 32, height: 32, borderRadius: "50%",
-      border: "3px solid rgba(255,255,255,0.15)",
+      width: size, height: size, borderRadius: "50%",
+      border: `3px solid rgba(255,255,255,0.15)`,
       borderTopColor: "#fff",
       animation: "ac-spin 0.7s linear infinite",
     }} />
   );
 }
 
+// ─── Single reel card (inside the overlay) ─────────────────────────────────
+
+function ReelCard({
+  video,
+  isActive,
+  muted,
+  onToggleMute,
+}: {
+  video: Video;
+  isActive: boolean;
+  muted: boolean;
+  onToggleMute: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const title = displayName(video.name);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = muted;
+    if (isActive) {
+      el.play().catch(() => {});
+    } else {
+      el.pause();
+      el.currentTime = 0;
+    }
+  }, [isActive, muted]);
+
+  return (
+    <div
+      style={{
+        position: "relative", width: "100%", height: "100%",
+        background: "#000", scrollSnapAlign: "start", flexShrink: 0,
+        overflow: "hidden",
+      }}
+    >
+      {/* Loading spinner */}
+      {!loaded && !hasError && (
+        <div style={{
+          position: "absolute", inset: 0, display: "flex",
+          alignItems: "center", justifyContent: "center", zIndex: 2,
+        }}>
+          <AcSpinner />
+        </div>
+      )}
+
+      {/* Error state */}
+      {hasError && (
+        <div style={{
+          position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 8, zIndex: 2,
+        }}>
+          <span style={{ fontSize: 36, opacity: 0.4 }}>⚠</span>
+          <p style={{ color: "#fff", opacity: 0.55, fontSize: 13, textAlign: "center", maxWidth: 200 }}>
+            Video unavailable
+          </p>
+        </div>
+      )}
+
+      <video
+        ref={videoRef}
+        src={video.streamUrl}
+        muted={muted}
+        loop
+        playsInline
+        preload="metadata"
+        onCanPlay={() => setLoaded(true)}
+        onError={() => { setHasError(true); setLoaded(true); }}
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          objectFit: "contain", display: hasError ? "none" : "block",
+        }}
+      />
+
+      {/* Bottom title + mute */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 45%, transparent 75%)",
+        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+        padding: "16px 14px", pointerEvents: "none", zIndex: 10,
+      }}>
+        <p style={{
+          color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.4,
+          textShadow: "0 1px 6px rgba(0,0,0,0.9)",
+          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+          overflow: "hidden", flex: 1, paddingRight: 10, margin: 0,
+        }}>
+          {title}
+        </p>
+        <button
+          onClick={onToggleMute}
+          style={{
+            pointerEvents: "auto", background: "rgba(0,0,0,0.55)",
+            border: "1px solid rgba(255,255,255,0.25)", borderRadius: "50%",
+            width: 38, height: 38, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 17, color: "#fff", flexShrink: 0,
+          }}
+        >
+          {muted ? "🔇" : "🔊"}
+        </button>
+      </div>
+
+      {/* Swipe hint (subtle) */}
+      <div style={{
+        position: "absolute", top: 14, left: 0, right: 0,
+        display: "flex", justifyContent: "center", pointerEvents: "none", zIndex: 10,
+      }}>
+        <span style={{
+          color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 500,
+          letterSpacing: 0.5,
+        }}>
+          ↑ Swipe up / down ↓
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Fullscreen overlay player ──────────────────────────────────────────────
+
+function ReelOverlay({
+  videos,
+  initialIndex,
+  onClose,
+  onLoadMore,
+  loadingMore,
+  hasMore,
+}: {
+  videos: Video[];
+  initialIndex: number;
+  onClose: () => void;
+  onLoadMore: () => void;
+  loadingMore: boolean;
+  hasMore: boolean;
+}) {
+  const feedRef = useRef<HTMLDivElement>(null);
+  const reelRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+  const [muted, setMuted] = useState(false);
+  const toggleMute = useCallback(() => setMuted((m) => !m), []);
+
+  // Scroll to initial index immediately on open
+  useEffect(() => {
+    const feed = feedRef.current;
+    if (!feed) return;
+    feed.scrollTop = initialIndex * feed.clientHeight;
+  }, [initialIndex]);
+
+  // Intersection observer to track active video
+  useEffect(() => {
+    const feed = feedRef.current;
+    if (!feed) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = parseInt((entry.target as HTMLElement).dataset["index"] ?? "0", 10);
+            setActiveIndex(idx);
+          }
+        });
+      },
+      { root: feed, threshold: 0.6 },
+    );
+    observerRef.current = obs;
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const obs = observerRef.current;
+    if (!obs) return;
+    reelRefs.current.forEach((el) => { if (el) obs.observe(el); });
+    return () => { reelRefs.current.forEach((el) => { if (el) obs.unobserve(el); }); };
+  }, [videos.length]);
+
+  // Load more near end
+  useEffect(() => {
+    if (hasMore && activeIndex >= videos.length - 2) onLoadMore();
+  }, [activeIndex, videos.length, hasMore, onLoadMore]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+        const next = reelRefs.current[activeIndex + 1];
+        next?.scrollIntoView({ behavior: "smooth" });
+      }
+      if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        const prev = reelRefs.current[activeIndex - 1];
+        prev?.scrollIntoView({ behavior: "smooth" });
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [activeIndex, onClose]);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "#000", display: "flex", flexDirection: "column",
+    }}>
+      {/* Feed */}
+      <div
+        ref={feedRef}
+        style={{
+          flex: 1, overflowY: "scroll", scrollSnapType: "y mandatory",
+          WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
+        }}
+      >
+        {videos.map((video, i) => (
+          <div
+            key={video.id}
+            data-index={i}
+            ref={(el) => { reelRefs.current[i] = el; }}
+            style={{ height: "100vh", scrollSnapAlign: "start", flexShrink: 0 }}
+          >
+            <ReelCard
+              video={video}
+              isActive={i === activeIndex}
+              muted={muted}
+              onToggleMute={toggleMute}
+            />
+          </div>
+        ))}
+
+        {loadingMore && (
+          <div style={{
+            height: "30vh", display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 12,
+          }}>
+            <AcSpinner size={28} />
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: 0 }}>
+              Loading more videos…
+            </p>
+          </div>
+        )}
+
+        {!hasMore && videos.length > 0 && (
+          <div style={{
+            height: "40vh", display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 8,
+          }}>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, margin: 0 }}>
+              You've seen all {videos.length} videos! 🎉
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Close button — top-left */}
+      <button
+        onClick={onClose}
+        style={{
+          position: "fixed", top: 14, left: 14, zIndex: 10000,
+          width: 38, height: 38, borderRadius: "50%",
+          background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.2)",
+          color: "#fff", fontSize: 18, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(8px)",
+        }}
+        title="Close (Esc)"
+      >
+        ✕
+      </button>
+
+      {/* Counter — top-right */}
+      <div style={{
+        position: "fixed", top: 18, right: 14, zIndex: 10000,
+        background: "rgba(0,0,0,0.5)", borderRadius: 20,
+        padding: "5px 12px", backdropFilter: "blur(8px)",
+      }}>
+        <span style={{ color: "#fff", fontSize: 12, fontWeight: 600 }}>
+          {activeIndex + 1} / {videos.length}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Thumbnail grid card ────────────────────────────────────────────────────
+
+function ThumbnailCard({ video, onPlay }: { video: Video; onPlay: () => void }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const title = displayName(video.name);
+
+  return (
+    <button
+      onClick={onPlay}
+      style={{
+        all: "unset", cursor: "pointer", borderRadius: 12, overflow: "hidden",
+        background: "#1a1a1a", aspectRatio: "16/9", position: "relative",
+        display: "block", width: "100%",
+        border: "1px solid rgba(255,255,255,0.08)",
+        transition: "transform 0.15s, box-shadow 0.15s",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.02)";
+        (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(0,0,0,0.4)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+        (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+      }}
+    >
+      {/* Thumbnail */}
+      {!imgFailed ? (
+        <img
+          src={driveThumbnail(video.id)}
+          alt={title}
+          onError={() => setImgFailed(true)}
+          style={{
+            position: "absolute", inset: 0, width: "100%", height: "100%",
+            objectFit: "cover",
+          }}
+        />
+      ) : (
+        <div style={{
+          position: "absolute", inset: 0, display: "flex",
+          alignItems: "center", justifyContent: "center", fontSize: 32,
+        }}>🎬</div>
+      )}
+
+      {/* Dark overlay */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 55%, transparent 80%)",
+      }} />
+
+      {/* Play circle */}
+      <div style={{
+        position: "absolute", inset: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%",
+          background: "rgba(0,0,0,0.6)", border: "1.5px solid rgba(255,255,255,0.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <span style={{ color: "#fff", fontSize: 14, marginLeft: 2 }}>▶</span>
+        </div>
+      </div>
+
+      {/* Title */}
+      <p style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        margin: 0, padding: "6px 8px",
+        color: "#fff", fontSize: 11, fontWeight: 600, lineHeight: 1.3,
+        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+        overflow: "hidden",
+        textShadow: "0 1px 4px rgba(0,0,0,0.9)",
+      }}>
+        {title}
+      </p>
+    </button>
+  );
+}
+
+// ─── Main exported component ────────────────────────────────────────────────
+
 export function ArtCraftReels() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [muted, setMuted] = useState(true);
+  const [overlayIndex, setOverlayIndex] = useState<number | null>(null);
 
-  const feedRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const initializedRef = useRef(false);
-  const reelRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const reelObserverRef = useRef<IntersectionObserver | null>(null);
 
-  const loadMore = useCallback(async (currentOffset: number) => {
+  const loadMore = useCallback(async (currentOffset: number, isInitial = false) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
-    setLoading(true);
+    if (isInitial) setLoading(true); else setLoadingMore(true);
     setError(null);
     try {
       const data = await fetchBatch(currentOffset);
       setVideos((prev) => {
-        const existing = new Set(prev.map((v) => v.id));
-        return [...prev, ...data.videos.filter((v) => !existing.has(v.id))];
+        const seen = new Set(prev.map((v) => v.id));
+        return [...prev, ...data.videos.filter((v) => !seen.has(v.id))];
       });
       setHasMore(data.nextOffset !== null);
       setOffset(data.nextOffset ?? currentOffset);
@@ -226,213 +441,123 @@ export function ArtCraftReels() {
     } finally {
       loadingRef.current = false;
       setLoading(false);
+      setLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
-    loadMore(0);
+    loadMore(0, true);
   }, [loadMore]);
 
-  useEffect(() => {
-    if (!hasMore) return;
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !loadingRef.current && hasMore) {
-          loadMore(offset);
-        }
-      },
-      { root: feedRef.current, threshold: 0.1 }
-    );
-    obs.observe(sentinel);
-    return () => obs.disconnect();
+  const handleLoadMore = useCallback(() => {
+    if (hasMore && !loadingRef.current) loadMore(offset);
   }, [hasMore, offset, loadMore]);
 
-  useEffect(() => {
-    const feed = feedRef.current;
-    if (!feed) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const idx = parseInt((entry.target as HTMLElement).dataset["index"] || "0", 10);
-            setActiveIndex(idx);
-          }
-        });
-      },
-      { root: feed, threshold: 0.6 }
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "32px 0" }}>
+        <AcSpinner />
+        <p style={{ color: "var(--muted-foreground, #888)", fontSize: 13, margin: 0 }}>
+          Loading videos…
+        </p>
+      </div>
     );
-    reelObserverRef.current = obs;
-    return () => obs.disconnect();
-  }, []);
+  }
 
-  useEffect(() => {
-    const obs = reelObserverRef.current;
-    if (!obs) return;
-    reelRefs.current.forEach((el) => { if (el) obs.observe(el); });
-    return () => { reelRefs.current.forEach((el) => { if (el) obs.unobserve(el); }); };
-  }, [videos.length]);
+  // Full error (no videos)
+  if (error && videos.length === 0) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "32px 0", textAlign: "center" }}>
+        <span style={{ fontSize: 40 }}>🎬</span>
+        <p style={{ color: "var(--muted-foreground, #888)", fontSize: 13, margin: 0 }}>
+          Couldn't load videos — {error}
+        </p>
+        <button
+          onClick={() => { initializedRef.current = false; loadMore(0, true); }}
+          style={{
+            background: "var(--primary, #7b3ff2)", color: "#fff", border: "none",
+            borderRadius: 24, padding: "8px 24px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
-  const toggleMute = useCallback(() => setMuted((m) => !m), []);
-
-  const advanceFromError = useCallback((idx: number) => {
-    const next = reelRefs.current[idx + 1];
-    if (next) next.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  if (videos.length === 0) {
+    return (
+      <p style={{ color: "var(--muted-foreground, #888)", fontSize: 13, textAlign: "center", padding: "24px 0", margin: 0 }}>
+        No videos available right now.
+      </p>
+    );
+  }
 
   return (
     <>
       <style>{`
         @keyframes ac-spin { to { transform: rotate(360deg); } }
-        @keyframes ac-hint-fade {
-          0%   { opacity: 0; transform: scale(0.8); }
-          20%  { opacity: 1; transform: scale(1); }
-          70%  { opacity: 1; transform: scale(1); }
-          100% { opacity: 0; transform: scale(1.1); }
-        }
       `}</style>
 
+      {/* Overlay player */}
+      {overlayIndex !== null && (
+        <ReelOverlay
+          videos={videos}
+          initialIndex={overlayIndex}
+          onClose={() => setOverlayIndex(null)}
+          onLoadMore={handleLoadMore}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+        />
+      )}
+
+      {/* Grid header */}
+      <p style={{ color: "var(--muted-foreground, #888)", fontSize: 12, margin: "0 0 10px", textAlign: "center" }}>
+        🎨 Tap any video to watch · swipe up/down to browse all
+      </p>
+
+      {/* Thumbnail grid */}
       <div style={{
-        borderRadius: 16, overflow: "hidden", position: "relative",
-        background: "#000", height: "82vh", maxHeight: 680,
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+        gap: 10,
       }}>
-        {/* Top bar */}
-        <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, zIndex: 50,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "10px 14px",
-          background: "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)",
-          pointerEvents: "none",
-        }}>
-          <span style={{ color: "#fff", fontWeight: 700, fontSize: 15, letterSpacing: -0.5 }}>
-            🎨 Art & Craft Videos
-          </span>
-          <button
-            style={{
-              pointerEvents: "auto", background: "rgba(255,255,255,0.15)",
-              border: "none", borderRadius: "50%", width: 34, height: 34,
-              fontSize: 16, cursor: "pointer", display: "flex",
-              alignItems: "center", justifyContent: "center",
-              backdropFilter: "blur(8px)", color: "#fff",
-            }}
-            onClick={toggleMute}
-          >
-            {muted ? "🔇" : "🔊"}
-          </button>
-        </div>
-
-        {/* Feed */}
-        <div
-          ref={feedRef}
-          style={{
-            height: "100%", overflowY: "scroll", overflowX: "hidden",
-            scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch",
-            scrollbarWidth: "none",
-          }}
-        >
-          {videos.map((video, i) => (
-            <div
-              key={video.id}
-              data-index={i}
-              ref={(el) => { reelRefs.current[i] = el; }}
-              style={{ height: "100%", flexShrink: 0 }}
-            >
-              <ReelCard
-                video={video}
-                globalMuted={muted}
-                onToggleMute={toggleMute}
-                isActive={i === activeIndex}
-                onError={() => advanceFromError(i)}
-              />
-            </div>
-          ))}
-
-          {loading && (
-            <div style={{
-              height: "100%", display: "flex", alignItems: "center",
-              justifyContent: "center", scrollSnapAlign: "start", flexShrink: 0,
-            }}>
-              <AcSpinner />
-            </div>
-          )}
-
-          {error && (
-            <div style={{
-              height: "100%", display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center", gap: 12,
-              scrollSnapAlign: "start", flexShrink: 0, padding: 24, textAlign: "center",
-            }}>
-              <p style={{ color: "#fff", opacity: 0.6, fontSize: 14 }}>⚠ {error}</p>
-              <button
-                style={{
-                  background: "#fff", color: "#000", border: "none",
-                  borderRadius: 24, padding: "8px 24px", fontSize: 14,
-                  fontWeight: 600, cursor: "pointer",
-                }}
-                onClick={() => loadMore(offset)}
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {!loading && !hasMore && videos.length > 0 && (
-            <div style={{
-              height: "100%", display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center", gap: 16,
-              scrollSnapAlign: "start", flexShrink: 0, padding: 24, textAlign: "center",
-            }}>
-              <p style={{ color: "#fff", opacity: 0.6, fontSize: 14 }}>
-                You've watched all {videos.length} videos! 🎉
-              </p>
-              <button
-                style={{
-                  background: "#fff", color: "#000", border: "none",
-                  borderRadius: 24, padding: "8px 24px", fontSize: 14,
-                  fontWeight: 600, cursor: "pointer",
-                }}
-                onClick={() => { setVideos([]); setOffset(0); setHasMore(true); initializedRef.current = false; loadMore(0); }}
-              >
-                Watch again
-              </button>
-            </div>
-          )}
-
-          <div ref={sentinelRef} style={{ height: 1 }} />
-        </div>
-
-        {videos.length === 0 && !loading && error && (
-          <div style={{
-            position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: 14,
-            textAlign: "center", padding: 32, background: "#111", zIndex: 100,
-          }}>
-            <span style={{ fontSize: 48 }}>🎬</span>
-            <p style={{ color: "#fff", fontWeight: 700, fontSize: 17 }}>Couldn't load videos</p>
-            <p style={{ color: "#fff", opacity: 0.5, fontSize: 13, maxWidth: 220 }}>{error}</p>
-            <button
-              style={{
-                background: "#fff", color: "#000", border: "none",
-                borderRadius: 24, padding: "8px 24px", fontSize: 14,
-                fontWeight: 600, cursor: "pointer",
-              }}
-              onClick={() => { initializedRef.current = false; loadMore(0); }}
-            >
-              Try again
-            </button>
-          </div>
-        )}
+        {videos.map((v, i) => (
+          <ThumbnailCard key={v.id} video={v} onPlay={() => setOverlayIndex(i)} />
+        ))}
       </div>
 
-      <p style={{
-        fontSize: 12, color: "var(--muted-foreground, #888)",
-        textAlign: "center", marginTop: 8,
-      }}>
-        Swipe up for next video · Tap to mute/unmute
-      </p>
+      {/* Load more / end */}
+      <div style={{ marginTop: 14, textAlign: "center" }}>
+        {hasMore && (
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            style={{
+              background: "rgba(123,63,242,0.15)", color: "var(--foreground, #fff)",
+              border: "1px solid rgba(123,63,242,0.4)", borderRadius: 24,
+              padding: "8px 24px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              opacity: loadingMore ? 0.6 : 1,
+              display: "inline-flex", alignItems: "center", gap: 6,
+            }}
+          >
+            {loadingMore ? <><AcSpinner size={14} /> Loading…</> : "Load more videos"}
+          </button>
+        )}
+        {!hasMore && (
+          <p style={{ color: "var(--muted-foreground, #888)", fontSize: 12, margin: 0 }}>
+            You've seen all {videos.length} videos! 🎉
+          </p>
+        )}
+        {error && videos.length > 0 && (
+          <p style={{ color: "var(--destructive, #ef4444)", fontSize: 12, marginTop: 6 }}>
+            ⚠ {error}
+          </p>
+        )}
+      </div>
     </>
   );
 }
