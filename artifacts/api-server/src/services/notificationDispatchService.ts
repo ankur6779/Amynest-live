@@ -248,8 +248,14 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     .where(eq(pushTokensTable.userId, input.userId));
 
   const expoTokens = tokens.filter((t) => Expo.isExpoPushToken(t.token));
+  // FCM tokens come from two sources, both routed through Firebase Admin:
+  //   - platform "web"     → browser web push via service worker (FCM JS SDK)
+  //   - platform "android" → native FCM token from KidSchedule TWA wrapper
+  //                          (registered via PushBridge.kt → /api/push/register)
   const webTokens = tokens.filter(
-    (t) => !Expo.isExpoPushToken(t.token) && t.platform === "web",
+    (t) =>
+      !Expo.isExpoPushToken(t.token) &&
+      (t.platform === "web" || t.platform === "android"),
   );
 
   if (expoTokens.length === 0 && webTokens.length === 0) {

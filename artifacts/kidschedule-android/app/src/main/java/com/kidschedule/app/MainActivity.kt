@@ -39,11 +39,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var webView: WebView
     private lateinit var swipe: SwipeRefreshLayout
+    private lateinit var pushBridge: PushBridge
 
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
+    // Deep-link queued from a notification tap that arrived before the
+    // WebView finished loading. Drained in onPageFinished.
+    private var pendingDeepLink: String? = null
 
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -84,6 +88,10 @@ class MainActivity : AppCompatActivity() {
 
         webView = binding.webview
         swipe = binding.swipeRefresh
+
+        // Stash any deep-link from the notification tap that launched us so
+        // we can route the WebView to it after the initial page loads.
+        pendingDeepLink = extractDeepLink(intent)
 
         configureWebView()
 
@@ -136,6 +144,13 @@ class MainActivity : AppCompatActivity() {
         // CANNOT call the bridge. The web app probes
         // `window.AmyNestBillingNative` and uses postMessage / onmessage.
         BillingBridge.installOn(this, webView, BuildConfig.WRAPPER_URL)
+
+        // Native FCM bridge — the web app inside the WebView cannot use the
+        // Web Notification / PushManager APIs, so we expose the device's
+        // native FCM token and Android 13+ POST_NOTIFICATIONS permission
+        // helpers on `window.AmyNestPushNative`.
+        pushBridge = PushBridge(this, webView)
+        pushBridge.install()
 
         val s = webView.settings
         s.javaScriptEnabled = true
@@ -206,6 +221,7 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 swipe.isRefreshing = false
+                drainPendingDeepLink()
             }
 
             override fun onReceivedError(
@@ -371,5 +387,67 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         webView.saveState(outState)
+    }
+
+    /**
+     * Notification taps re-enter MainActivity (singleTask) via onNewIntent
+     * rather than onCreate. Pull the deep link out and route the WebView.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val link = extractDeepLink(intent) ?: return
+        if (::webView.isInitialized) {
+            navigateToDeepLink(link)
+        } else {
+            pendingDeepLink = link
+        }
+    }
+
+    /**
+     * Forward Android 13+ POST_NOTIFICATIONS result to the JS bridge so the
+     * web app can update its banner / register the FCM token.
+     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PushBridge.PERMISSION_REQUEST_CODE) {
+            val granted = grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            if (::pushBridge.isInitialized) {
+                pushBridge.emitPermissionResult(granted)
+            }
+        }
+    }
+
+    /**
+     * Pulls the deep-link path out of the launching intent — supports both
+     * the `kidschedule://deepLink?path=/foo` URI form and the explicit
+     * EXTRA_DEEP_LINK extra. Returns null if no deep link present.
+     */
+    private fun extractDeepLink(intent: Intent?): String? {
+        if (intent == null) return null
+        val extra = intent.getStringExtra(KidScheduleFcmService.EXTRA_DEEP_LINK)
+        if (!extra.isNullOrBlank()) return extra
+        val data = intent.data ?: return null
+        if (data.scheme.equals("kidschedule", ignoreCase = true)) {
+            return data.getQueryParameter("path")
+        }
+        return null
+    }
+
+    private fun drainPendingDeepLink() {
+        val link = pendingDeepLink ?: return
+        pendingDeepLink = null
+        navigateToDeepLink(link)
+    }
+
+    private fun navigateToDeepLink(path: String) {
+        val safePath = if (path.startsWith("/")) path else "/$path"
+        val target = BuildConfig.WRAPPER_URL.trimEnd('/') + safePath
+        webView.post { webView.loadUrl(target) }
     }
 }

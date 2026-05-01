@@ -12,6 +12,22 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Apply google-services plugin only if google-services.json is present.
+// This keeps `./gradlew assembleDebug` working in CI / fresh checkouts
+// before the Firebase config has been added. When the file is missing,
+// FCM is silently disabled (PushBridge.getToken() returns null), and the
+// rest of the app works normally.
+val googleServicesJson = file("google-services.json")
+val firebaseEnabled = googleServicesJson.exists()
+if (firebaseEnabled) {
+    apply(plugin = "com.google.gms.google-services")
+} else {
+    logger.warn(
+        "[KidSchedule] google-services.json missing — building WITHOUT FCM. " +
+            "Push notifications will be disabled in this APK. See PUSH_SETUP.md."
+    )
+}
+
 android {
     namespace = "com.kidschedule.app"
     compileSdk = 34
@@ -20,8 +36,13 @@ android {
         applicationId = "com.kidschedule.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
+
+        // Surface the Firebase / FCM availability to runtime code. PushBridge
+        // checks this before attempting to fetch an FCM token, and the WebView
+        // uses it to expose / hide window.AmyNestPushNative.fcmEnabled.
+        buildConfigField("boolean", "FCM_ENABLED", "$firebaseEnabled")
 
         // Override at build time: -PwrapperUrl=https://your-deployed-site.example
         val wrapperUrl: String = (project.findProperty("wrapperUrl") as String?)
@@ -91,4 +112,12 @@ dependencies {
     // Google Play Billing via RevenueCat (handles purchase verification +
     // subscription state through our existing backend RevenueCat webhook).
     implementation("com.revenuecat.purchases:purchases:8.10.4")
+
+    // Firebase Cloud Messaging — receives native push notifications. The web
+    // app inside the WebView cannot use Web Push (Notification API is absent
+    // in Android WebView), so we register the device's native FCM token via
+    // PushBridge.kt instead. The same backend `/api/push/register` endpoint
+    // and FCM Admin SDK send pipeline is reused.
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
 }

@@ -3,6 +3,11 @@ import { Bell, BellOff, X, RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
+import {
+  getNativePushBridge,
+  registerNativePushToken,
+  type NativePushPermission,
+} from "@/lib/native-push-bridge";
 
 const DISMISS_KEY = "notify_nudge_dismissed_until";
 const REGISTERED_KEY = "notify_device_registered_at";
@@ -48,7 +53,21 @@ export function NotificationNudgeBanner() {
 
   const computeState = useCallback((): BannerState => {
     if (!isSignedIn || !userId) return "hidden";
-    if (typeof window === "undefined" || !("Notification" in window)) return "hidden";
+    if (typeof window === "undefined") return "hidden";
+
+    // Native bridge (KidSchedule Android TWA wrapper) takes precedence —
+    // the WebView has no Web Notification API, so we drive everything from
+    // the native FCM permission state.
+    const native = getNativePushBridge();
+    if (native) {
+      const perm: NativePushPermission = native.getPermissionStatus();
+      if (perm === "denied") return "denied";
+      if (perm === "default") return "ask";
+      if (isRecentlyRegistered()) return "hidden";
+      return "reconnect";
+    }
+
+    if (!("Notification" in window)) return "hidden";
     const perm = Notification.permission;
     if (perm === "denied") return "denied";
     if (perm === "default") return "ask";

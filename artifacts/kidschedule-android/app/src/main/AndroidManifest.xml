@@ -7,6 +7,10 @@
     <!-- Required for Google Play Billing (in-app purchases / subscriptions). -->
     <uses-permission android:name="com.android.vending.BILLING" />
 
+    <!-- Required on Android 13 (API 33) and above to display notifications.
+         Requested at runtime in MainActivity once the user is signed in. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Optional permissions (requested at runtime if website asks) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -41,5 +45,33 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Firebase Cloud Messaging service. Receives push messages and
+             displays system notifications even when the app is killed. -->
+        <service
+            android:name=".KidScheduleFcmService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Default notification icon used by FCM when the data payload does
+             not specify one. Must be a white-on-transparent silhouette per
+             Android material guidelines. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+
+        <!-- Default tint color for notification icon background. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/brand_primary" />
+
+        <!-- Default notification channel for FCM messages without explicit
+             channel ID. Channel itself is created in KidScheduleApp.onCreate. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/notification_channel_default_id" />
     </application>
 </manifest>
