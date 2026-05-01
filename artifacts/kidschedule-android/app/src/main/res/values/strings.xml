@@ -4,4 +4,9 @@
     <string name="offline_title">No internet connection</string>
     <string name="offline_message">Please check your network and try again. KidSchedule needs an internet connection to load.</string>
     <string name="offline_retry">Retry</string>
+
+    <!-- Default FCM notification channel. User-visible in Settings → Apps → KidSchedule → Notifications. -->
+    <string name="notification_channel_default_id">kidschedule_default</string>
+    <string name="notification_channel_default_name">KidSchedule reminders</string>
+    <string name="notification_channel_default_description">Routine reminders, AI nudges, and parenting alerts.</string>
 </resources>
