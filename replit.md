@@ -2,7 +2,7 @@
 
 ## Overview
 
-AmyNest is an AI-powered daily routine planner for parents. It aims to simplify parenting tasks by offering personalized guidance and tools to manage children's routines, nutrition, and development. Key capabilities include creating child profiles, generating AI-structured daily schedules, tracking behavior, and providing a comprehensive summary dashboard. The project seeks to enhance family well-being by streamlining daily activities and offering data-driven insights.
+AmyNest is an AI-powered daily routine planner for parents, designed to simplify parenting tasks and enhance family well-being. It provides personalized guidance and tools for managing children's routines, nutrition, and development. Key features include child profile creation, AI-structured daily schedules, behavior tracking, and a comprehensive summary dashboard, offering data-driven insights to streamline daily activities.
 
 ## User Preferences
 
@@ -37,61 +37,34 @@ AmyNest is an AI-powered daily routine planner for parents. It aims to simplify 
 
 ## System Architecture
 
-The system is a monorepo utilizing pnpm workspaces, Node.js 24, and TypeScript 5.9. The frontend uses React, Vite, Tailwind CSS, and shadcn/ui. The API backend is built with Express 5, and PostgreSQL with Drizzle ORM. Authentication is managed by Clerk. Zod is used for validation, and Orval generates API clients from an OpenAPI spec. All AI features route through a unified client, preferring user-provided OpenAI keys or falling back to Replit AI Integration, using `gpt-4o-mini` as the active model.
+The system is a monorepo using pnpm, Node.js 24, and TypeScript 5.9. The frontend is built with React, Vite, Tailwind CSS, and shadcn/ui. The API backend uses Express 5, PostgreSQL, and Drizzle ORM. Authentication is handled by Clerk. Zod is used for validation, and Orval generates API clients from an OpenAPI spec. All AI features utilize a unified client, prioritizing user-provided OpenAI keys or falling back to Replit AI Integration, with `gpt-4o-mini` as the active model.
 
 **UI/UX Decisions:**
-- **Branding:** Features an "Amy AI Brand" with a character (AmyIcon), floating assistant button (AmyFab), and consistent branding.
+- **Branding:** "Amy AI Brand" with a character (AmyIcon), floating assistant button (AmyFab), and consistent branding.
 - **Responsiveness:** Mobile-first design with bottom navigation on mobile and a full sidebar on desktop.
-- **Specific Hubs:** Dedicated Amy Coach with a 4-phase coaching flow and Infant & Toddler Hubs with glass tabs and contextual AI insights. Amy Coach goal categories include behaviour, focus, eating, sleep, parent self-care, special situations, and a research-grounded "Kids Health Concern" section (Childhood Obesity, Nutrition Deficiency, Immunity, Dental Health, Digital Health & Eye Care, Early Development 0–5).
+- **Specific Hubs:** Dedicated Amy Coach with a 4-phase coaching flow, and Infant & Toddler Hubs with glass tabs and contextual AI insights.
 - **Design System:** Indigo/purple theme with specific hex codes and Inter fonts.
 
 **Technical Implementations:**
 - **Authentication:** Clerk-based login with email/Google OAuth and protected routes.
 - **Profiles:** Management of child and parent profiles with smart logic for school, goals, and availability.
-- **Parenting Hub:** A 2-section layout driven by an age-band engine (`lib/age-bands.ts`, 7 bands from 0–2 to 12–15). "For {Child}" shows current-band sections (AI prompts, articles, daily tips, Activities, Story Hub, Smart Olympiad Zone, Life Skills Mode, etc.); "Explore Next Stage for {Child}" previews exclusive next-band sections in a dimmed wrapper, falling back to a stage-milestones card when nothing is exclusive (older kids).
-- **Routine Generation:** Rule-based engine (`routine-templates.ts`) providing age-appropriate templates, handling various conditions like school, mood, and parent availability.
-- **Smart Nutrition:** Offers localized meal options (veg/non-veg) with seeded rotation and regional tailoring. Custom recipes can be saved and integrated.
-- **Routine Management:** Features include task status tracking (Complete/Delay/Skip) with auto-shift, progress bars, browser notifications, inline editing, partial regeneration, and sharing options.
+- **Parenting Hub:** A 2-section layout driven by an age-band engine, showing current-band sections and previewing next-band sections.
+- **Routine Generation:** Rule-based engine providing age-appropriate templates, handling conditions like school, mood, and parent availability.
+- **Smart Nutrition:** Localized meal options (veg/non-veg) with seeded rotation and regional tailoring.
+- **Routine Management:** Features include task status tracking (Complete/Delay/Skip) with auto-shift, progress bars, browser notifications, inline editing, partial regeneration, and sharing.
 - **Behavior Tracking:** Logs positive, negative, or neutral behaviors per child.
-- **Age-Based Features:** Infant Mode provides specific care guidance, lullaby player, and parent tasks. Age-appropriate skill activities and moral stories are also included.
-- **Hybrid AI & Freemium:** Combines free rule-based features with opt-in, rate-limited AI functionalities. A freemium model with trial periods and subscription plans is enforced server-side.
+- **Age-Based Features:** Infant Mode offers specific care guidance, lullaby player, and parent tasks. Age-appropriate skill activities and moral stories are also included.
+- **Hybrid AI & Freemium:** Combines free rule-based features with opt-in, rate-limited AI functionalities, supported by a freemium model with trial periods.
 - **Reels App:** Standalone vertical video player streaming from Google Drive.
 - **Smart Tiffin & Meal Suggestions:** Local-only meal recommender with rule-based ranking and regional datasets.
-- **Nutrition Hub:** Comprehensive, science-backed module with age-group-specific nutrient library, weekly Indian meal plans, and a daily nutrition score checklist.
-- **AmyNest Mobile App:** Expo React Native app mirroring web functionalities for iOS and Android.
-- **TTS / Read Aloud (ElevenLabs "Amy" voice):** Meal recipe Read Aloud uses ElevenLabs Turbo v2.5 with content-hash (SHA256 of model|voice|text) caching. The api-server exposes `POST /api/tts/synthesize` (authed) returning a JSON envelope `{ audioUrl, cacheKey, cached, ... }`, and a public-by-key `GET /api/tts/audio/:key.mp3` (mounted before requireAuth) that streams the cached MP3 with a fixed `audio/mpeg` content type and `X-Content-Type-Options: nosniff`. Single-flight de-dup on the server prevents concurrent identical synth calls. Cached blobs live in `data/tts-cache/` plus a `tts_cache` Drizzle table. Web (`use-amy-voice`) plays via blob URL + `<audio>`; mobile (`useAmyVoice`) plays via `expo-audio`. Both hooks use AbortController + a request-id token so Stop / voice-switch / unmount cancels in-flight fetches and stale responses are ignored. Replaces previous browser SpeechSynthesis (web) and `expo-speech` (mobile) in the meal recipe modal.
-- **Paywall System:** Parent Hub features have a "first-time free" with subsequent access locked behind a paywall. Gated features also use a "one-free-use-then-locked" global paywall enforced by middleware.
-- **Referral System:** Users receive unique referral codes to invite friends, earning bonus premium time.
-- **Firebase Auth Module Boundaries (Vite Fast Refresh safety):** To prevent recurring "Invalid hook call" crashes in `<FirebaseAuthProvider>`, the auth module is split across THREE files with strict export discipline. **Never combine these — doing so reintroduces the cascade-invalidation crash.**
-  - `src/lib/firebase-auth.tsx` — components ONLY (`FirebaseAuthProvider`, `Show`). Uses STATIC imports of `firebase/auth` and `./firebase` (never dynamic `import()` for auth — that causes mid-session dep discovery and `?v=` hash mismatches between two React instances).
-  - `src/lib/firebase-auth-hooks.ts` — hooks ONLY (`useAuth`, `useUser`, `useClerk`).
-  - `src/lib/firebase-auth-context.ts` — `AuthContext`, types only (no JSX, no hooks, no components).
-  - `vite.config.ts` MUST keep `optimizeDeps.include: ["firebase/app", "firebase/auth", "react", "react-dom", "react-dom/client"]`, MUST keep `optimizeDeps.noDiscovery: true` (prevents Vite from re-bundling deps mid-session, which would otherwise change the `?v=` chunk hash and create two ESM React instances), MUST NOT set `optimizeDeps.force: true`, and MUST keep React `dedupe`. Other tsx files in the codebase that mix component + non-component exports (e.g. `contexts/paywall-context.tsx`, `contexts/theme-context.tsx`) are a known latent risk for similar HMR cascades — split them the same way if they ever start triggering Fast Refresh warnings.
-  - `index.html` references `main.tsx` with a versioned cache-bust query (`?v=YYYYMMDD-...`). If you ever modify `main.tsx`, bump this value so the Replit preview proxy / browser fetches the fresh module instead of serving a stale cached copy (a stale bootstrap was the root cause of the most recent crash recurrence even after all other fixes were in place).
-  - `src/components/react-instance-recovery.tsx` is the safety net error boundary (3 hard reloads in 30s, then fatal screen) — keep it.
-- **iOS Safari Memory Crash Fix (iPhone 13 / 4 GB RAM):** The original eager bundle was 762 KB gzipped, which was killed by iOS Jetsam mid-mount on lower-RAM iPhones (iPhone 13 standard has 4 GB vs iPhone 14's 6 GB). Two-stage code split brings the eager bundle down to ~94 KB gzipped (88% reduction):
-  1. Every page route is `React.lazy(() => import(...))` inside `AppCore.tsx` (Suspense boundary at the route level).
-  2. `App.tsx` itself is a tiny 60-line shell — `ReactInstanceRecovery` + `<Suspense fallback={null}>` + `lazy(() => import("./AppCore"))`. **All heavy providers** (`FirebaseAuthProvider`, `QueryClientProvider`, `ThemeProvider`, `TooltipProvider`, `PaywallProvider`), the router, `Layout`, `Toaster`, every page, and Firebase Auth itself live inside the lazy `AppCore` chunk. The lazy import has a one-shot retry with cache-bust on `ChunkLoadError`, then bubbles to `ReactInstanceRecovery`.
-  - `src/main.tsx` polls every 80 ms after the splash's 2× rAF and only dismisses the splash when BOTH `SPLASH_MIN_MS` (3.2 s full / 1.2 s lite) has elapsed AND `window.__amynestAppCoreReady === true` (set by `AppCoreMountMarker`'s first useEffect). A `SPLASH_MAX_MS = 12000` hard cap force-dismisses if AppCore never arrives, so the user can never be stranded on the splash.
-  - Boot phase markers in localStorage (`__amynest_boot_v1`) trace the full sequence: `bundle-loaded` → `react-rendered` → `splash-raf-fired` → `appcore-mounted` → `react-effect-fired` → `splash-timer-fired` → `splash-hide-class-added` → `splash-hidden`. Diagnostic phases `appcore-chunk-retry`, `appcore-chunk-failed`, `splash-max-timeout` indicate failure paths. `?diag=1` shows an on-page panel with the current and previous boot record.
-  - **Do NOT** put any provider, `Layout`, or page import directly into `App.tsx` — keeping `App.tsx` minimal is the whole point of the split.
-  - **iOS auto-lite-splash:** the inline boot script in `index.html` ALWAYS adds the `lite-splash` class on iOS / iPadOS (UA test for `iPhone|iPad|iPod`, plus `Mac + maxTouchPoints > 1` to catch iPadOS-13+ which lies as "Mac"). This is in addition to the post-crash and `?liteSplash=1` triggers. Reason: the crash-then-lite alternating cycle still tripped the "A problem repeatedly occurred" overlay on iPhone 13 — every other boot was running in full splash mode and re-crashing. With UA-based always-lite, every iOS boot uses the minimal-memory CSS path AND the 1200 ms `SPLASH_MIN_MS` (vs 3200 ms desktop), so the splash's GPU layers tear down sooner and free memory for the lazy AppCore mount. Desktop and Android keep the full-quality splash.
-
-## KidSchedule Android wrapper — Native FCM push (v1.1.0+)
-
-The KidSchedule Android app (`com.kidschedule.app`, in `artifacts/kidschedule-android/`) is a **plain WebView wrapper** (not a Bubblewrap TWA, despite the leftover `twa-manifest.json`). The Android WebView does **not** expose the Web Notification, Service Worker push, or PushManager APIs, so push notifications cannot use Web Push from inside the wrapper. v1.1.0 (versionCode 2) ships native FCM behind a JS bridge:
-
-- **Native side:**
-  - `KidScheduleFcmService` (extends `FirebaseMessagingService`) handles `onNewToken` (caches in SharedPreferences, fires `amynest-push-token` on the WebView) and `onMessageReceived` (builds a tray notification, deep-link via `EXTRA_DEEP_LINK` Intent extra).
-  - `PushBridge` is added via `addJavascriptInterface(this, "AmyNestPushNative")` and exposes `getFcmEnabled()`, `getToken()`, `getPermissionStatus()`, `requestPermission()`. FirebaseMessaging is loaded via reflection so the build still succeeds when `google-services.json` is absent (`BuildConfig.FCM_ENABLED = false`).
-  - `MainActivity` installs the bridge, drains pending deep links in `onPageFinished`, handles `onNewIntent` for tray taps, forwards `POST_NOTIFICATIONS` permission results back to the bridge.
-  - Default channel `kidschedule_default` is created in `KidScheduleApp.onCreate()`.
-- **Web side:**
-  - `src/lib/native-push-bridge.ts` — `getNativePushBridge()`, `requestNativePushPermission()`, `getNativePushToken()`, `registerNativePushToken()`. Detects bridge by checking `window.AmyNestPushNative.getFcmEnabled() === true`.
-  - `usePushRegistration` hook prefers the native bridge (`platform: "android"`) over Web Push when available, and re-registers on `amynest-push-token` rotation events.
-  - `NotificationNudgeBanner` uses `requestNativePushPermission` (drives the Android 13+ system dialog) instead of `Notification.requestPermission()` when the bridge is present.
-- **Server side:** `notificationDispatchService.sendFcmWebPush` filter accepts both `platform === "web"` and `platform === "android"` — same FCM Admin SDK pipeline serves both.
-- **Setup:** drop `google-services.json` (Firebase Console → Add Android app → `com.kidschedule.app`) into `artifacts/kidschedule-android/app/`. The file is gitignored. See `artifacts/kidschedule-android/app/PUSH_SETUP.md` for full Firebase + Play Store steps.
+- **Nutrition Hub:** Comprehensive module with age-group-specific nutrient library, weekly Indian meal plans, and a daily nutrition score checklist.
+- **AmyNest Mobile App:** Expo React Native app for iOS and Android, mirroring web functionalities.
+- **TTS / Read Aloud:** Uses ElevenLabs "Amy" voice (Turbo v2.5) with content-hashed caching for meal recipe read-aloud.
+- **Paywall System:** Features in the Parent Hub are gated with a "first-time free" access, then locked behind a paywall.
+- **Referral System:** Users receive unique referral codes for bonus premium time.
+- **Firebase Auth Module Boundaries:** Split into `firebase-auth.tsx` (components), `firebase-auth-hooks.ts` (hooks), and `firebase-auth-context.ts` (context) to prevent Fast Refresh issues.
+- **iOS Safari Memory Crash Fix:** Implements two-stage code splitting and a lite splash screen for iOS to reduce eager bundle size and prevent crashes on lower-RAM devices.
+- **KidSchedule Android wrapper:** A plain WebView wrapper for Android that uses native FCM for push notifications via a JS bridge.
 
 ## External Dependencies
 
@@ -100,8 +73,8 @@ The KidSchedule Android app (`com.kidschedule.app`, in `artifacts/kidschedule-an
 - **OpenAI:** AI-powered features.
 - **RevenueCat:** Subscription management for iOS.
 - **Razorpay:** Payment gateway for web and Android in India.
-- **ElevenLabs:** Text-to-speech for the "Amy" Read Aloud voice (Turbo v2.5), accessed via the Replit ElevenLabs connector.
-- **Google Drive API:** Video streaming for Reels app and the unified Kids Story Hub (catalog auto-synced from two folders, served via the existing `/api/reels/stream/:fileId` proxy on both web and mobile).
+- **ElevenLabs:** Text-to-speech for "Amy" Read Aloud voice.
+- **Google Drive API:** Video streaming for Reels and Kids Story Hub.
 - **Google Fonts:** For `inter` font.
 - **Expo:** React Native framework.
 - **Zod:** Schema validation.

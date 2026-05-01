@@ -59,6 +59,13 @@ export function usePushRegistration(): void {
           lastKeyRef.current = key;
           // Tell the nudge banner the device is registered so it stays hidden.
           markRegistered();
+          // Notify the banner to recompute immediately (otherwise it would
+          // wait until the next permission/token/mount event).
+          try {
+            window.dispatchEvent(new CustomEvent("amynest-push-registered"));
+          } catch {
+            /* ignore */
+          }
         }
       } catch {
         // Best-effort — never crash the app
