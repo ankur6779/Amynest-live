@@ -1,13 +1,26 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
+import { useTranslation } from "react-i18next";
 import ActionButtons, { type ActionResult } from "./ActionButtons";
 import { brand, brandAlpha } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
+
+// ─── ElevenLabs voice IDs (mirror server elevenLabsService.ts) ──────────────
+// Audio is content-addressed cached in GCS server-side, so the first parent
+// to listen to a given win pays the synth cost and EVERY other parent reads
+// from the shared cache forever — no per-user duplication.
+const COACH_VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K (Indian English)
+const COACH_VOICE_HI_FEMALE = "TllHtNijgXBd45uTSCS7"; // Anjura (Calm Hindi)
+const COACH_MODEL_EN = "eleven_turbo_v2_5";
+const COACH_MODEL_HI = "eleven_multilingual_v2";
+
+type CoachLang = "en" | "hi";
 
 const { height: SCREEN_H } = Dimensions.get("window");
 export const CARD_HEIGHT = SCREEN_H;
@@ -49,6 +62,50 @@ export default function CoachCard({ win, total, topInset, bottomInset, onAction 
   const c = useColors();
   const { mode } = useTheme();
   const isDark = mode === "dark";
+  const { i18n } = useTranslation();
+
+  // ─── Read-aloud (ElevenLabs, Hindi + English, GCS-cached) ─────────────────
+  // Default the listen language to the parent's UI language; they can flip
+  // EN ↔ HI per win via the chips next to the Listen button. Audio bytes are
+  // shared across ALL parents via the server's content-addressed cache, so
+  // a freshly tapped win plays instantly once any one parent has listened.
+  const initialLang: CoachLang = i18n.language?.toLowerCase().startsWith("hi") ? "hi" : "en";
+  const [lang, setLang] = useState<CoachLang>(initialLang);
+  const voiceOpts = useMemo(
+    () =>
+      lang === "hi"
+        ? { voiceId: COACH_VOICE_HI_FEMALE, modelId: COACH_MODEL_HI }
+        : { voiceId: COACH_VOICE_EN_FEMALE, modelId: COACH_MODEL_EN },
+    [lang],
+  );
+  const { speak, stop, speaking, loading } = useAmyVoice(voiceOpts);
+
+  const buildSpeechText = useCallback(() => {
+    return [
+      `${win.index}. ${win.title}.`,
+      win.objective,
+      win.explanation,
+      win.actions?.length ? win.actions.join(". ") : "",
+      win.example,
+      win.mistake ? `${win.mistake}.` : "",
+      win.microTask ? `${win.microTask}.` : "",
+    ].filter(Boolean).join(" ");
+  }, [win]);
+
+  const handleListen = useCallback(() => {
+    if (speaking || loading) { stop(); return; }
+    void speak(buildSpeechText());
+  }, [speaking, loading, stop, speak, buildSpeechText]);
+
+  const handleLangChange = useCallback((next: CoachLang) => {
+    if (next === lang) return;
+    // Don't auto-restart in the new voice — a silent voice swap mid-sentence
+    // is jarring. Stop and let the parent tap Listen again to start fresh.
+    if (speaking || loading) stop();
+    setLang(next);
+  }, [lang, speaking, loading, stop]);
+
+  const isPlaying = speaking || loading;
   return (
     <View style={[styles.page, { height: CARD_HEIGHT }]}>
       <Animated.View
@@ -89,6 +146,58 @@ export default function CoachCard({ win, total, topInset, bottomInset, onAction 
             </View>
 
             <Text style={[styles.title, { color: c.textStrong }]}>{win.title}</Text>
+
+            {/* Listen + Lang toggle */}
+            <View style={styles.listenRow} testID="coach-listen-row">
+              <View style={[styles.langChips, { borderColor: brandAlpha.violet600_18, backgroundColor: brandAlpha.violet600_08 }]}>
+                <Pressable
+                  testID="coach-listen-lang-en"
+                  accessibilityRole="button"
+                  accessibilityLabel="Listen in English"
+                  accessibilityState={{ selected: lang === "en" }}
+                  onPress={() => handleLangChange("en")}
+                  style={[styles.langChip, lang === "en" && { backgroundColor: brand.violet600 }]}
+                >
+                  <Text style={[styles.langChipText, { color: lang === "en" ? c.primaryForeground : brand.violet700 }]}>EN</Text>
+                </Pressable>
+                <Pressable
+                  testID="coach-listen-lang-hi"
+                  accessibilityRole="button"
+                  accessibilityLabel="Listen in Hindi"
+                  accessibilityState={{ selected: lang === "hi" }}
+                  onPress={() => handleLangChange("hi")}
+                  style={[styles.langChip, lang === "hi" && { backgroundColor: brand.violet600 }]}
+                >
+                  <Text style={[styles.langChipText, { color: lang === "hi" ? c.primaryForeground : brand.violet700 }]}>HI</Text>
+                </Pressable>
+              </View>
+              <Pressable
+                testID="coach-listen-btn"
+                accessibilityRole="button"
+                accessibilityLabel={isPlaying ? "Stop reading" : `Read this win aloud in ${lang === "hi" ? "Hindi" : "English"}`}
+                onPress={handleListen}
+                style={[
+                  styles.listenBtn,
+                  isPlaying
+                    ? { backgroundColor: c.statusErrorBg, borderColor: c.statusErrorBorder }
+                    : { backgroundColor: c.statusSuccessBg, borderColor: c.statusSuccessBorder },
+                ]}
+              >
+                <Ionicons
+                  name={isPlaying ? "stop-circle" : "volume-high"}
+                  size={14}
+                  color={isPlaying ? c.statusErrorText : c.statusSuccessText}
+                />
+                <Text
+                  style={[
+                    styles.listenBtnText,
+                    { color: isPlaying ? c.statusErrorText : c.statusSuccessText },
+                  ]}
+                >
+                  {speaking ? "Stop" : loading ? "…" : "Listen"}
+                </Text>
+              </Pressable>
+            </View>
 
             {/* Objective */}
             <View style={styles.objectiveBox}>
@@ -207,6 +316,42 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     letterSpacing: -0.5,
     marginBottom: 14,
+  },
+  listenRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 16,
+  },
+  langChips: {
+    flexDirection: "row",
+    gap: 2,
+    padding: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  langChip: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 7,
+  },
+  langChipText: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  listenBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  listenBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
   },
   objectiveBox: {
     flexDirection: "row",
