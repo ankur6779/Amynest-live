@@ -1,0 +1,137 @@
+Goal:
+Achieve full feature parity between web and mobile app for Parent Hub with a mobile-first optimized UI.
+
+Do NOT copy web layout directly.
+Instead:
+- Maintain content parity
+- Adapt UI for mobile usability
+
+--------------------------------------------------
+PHASE 1: DATA & STRUCTURE SYNC (CRITICAL)
+--------------------------------------------------
+
+1. Fetch all web modules:
+   - Zones (Phonics, Story, Puzzle, Sleep, etc.)
+   - Content blocks
+   - Age segmentation
+
+2. Create unified data schema:
+
+{
+  ageGroup: "2-4",
+  zones: [
+    {
+      id: "phonics",
+      title: "",
+      items: []
+    }
+  ]
+}
+
+3. Ensure mobile uses SAME data source as web.
+
+--------------------------------------------------
+PHASE 2: AGE-WISE DYNAMIC RENDERING
+--------------------------------------------------
+
+- Ask user child age
+- Filter all content by age
+
+Logic:
+- Show only relevant tiles
+- Order by importance
+
+--------------------------------------------------
+PHASE 3: TILE-BASED UI SYSTEM
+--------------------------------------------------
+
+Convert all web sections into mobile tiles:
+
+Each tile:
+- Icon
+- Title
+- Short description
+- CTA button
+
+Types:
+- Learning tile
+- Activity tile
+- Audio tile
+
+--------------------------------------------------
+PHASE 4: SCREEN ARCHITECTURE
+--------------------------------------------------
+
+Main Parent Hub Screen:
+
+- Header (Amy AI + greeting)
+- Age selector
+- Scrollable sections:
+
+   1. Today’s Plan
+   2. Recommended Zones
+   3. Learning Modules
+   4. Activities
+
+--------------------------------------------------
+PHASE 5: FEATURE PARITY CHECK
+--------------------------------------------------
+
+For EACH web feature:
+
+- Map to mobile
+- If complex → break into steps
+
+Example:
+- Web long content → mobile cards + expand
+
+--------------------------------------------------
+PHASE 6: INTERACTION DESIGN
+--------------------------------------------------
+
+- Tap → open module
+- Swipe → navigate sections
+- Long press → quick actions
+
+--------------------------------------------------
+PHASE 7: CONTENT TRANSFORMATION
+--------------------------------------------------
+
+Replace:
+- Long text → bullet points
+- Paragraphs → cards
+
+Add:
+- Icons
+- Images
+- Audio
+
+--------------------------------------------------
+PHASE 8: ANIMATION SYSTEM
+--------------------------------------------------
+
+- Tile hover → glow
+- Tap → scale animation
+- Page transition → smooth fade
+
+--------------------------------------------------
+PHASE 9: PERFORMANCE
+--------------------------------------------------
+
+- Lazy load modules
+- Cache content
+- Optimize images
+
+--------------------------------------------------
+PHASE 10: FINAL POLISH
+--------------------------------------------------
+
+- Consistent spacing
+- Same color theme
+- Smooth scrolling
+
+--------------------------------------------------
+DELIVERABLE:
+- Mobile Parent Hub with full web parity
+- Age-based dynamic UI
+- Optimized mobile UX

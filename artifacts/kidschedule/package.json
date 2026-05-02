@@ -93,6 +93,7 @@
     "@workspace/morning-flow": "workspace:*",
     "@workspace/olympiad": "workspace:*",
     "@workspace/ptm-prep": "workspace:*",
+    "@workspace/parenting-articles": "workspace:*",
     "@workspace/study-zone": "workspace:*",
     "@workspace/tiffin-feedback": "workspace:*",
     "firebase": "^12.12.1",
