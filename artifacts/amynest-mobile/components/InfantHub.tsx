@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet, ToastAndroid, Platform, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -14,12 +14,43 @@ import {
 import { brand, brandAlpha, palette } from "@/constants/colors";
 import CryInsight from "@/components/CryInsight";
 import SleepPredict from "@/components/SleepPredict";
+import LockedBlock from "@/components/LockedBlock";
+import TryFreeBadge from "@/components/TryFreeBadge";
+import { useFeatureUsage } from "@/hooks/useFeatureUsage";
+import InfantHealthTab from "@/components/infant/InfantHealthTab";
+import InfantMilestonesTab from "@/components/infant/InfantMilestonesTab";
+import InfantCuesTab from "@/components/infant/InfantCuesTab";
+import InfantSoundsTab from "@/components/infant/InfantSoundsTab";
+import InfantSleepHelpers from "@/components/infant/InfantSleepHelpers";
+import InfantFeedingReference from "@/components/infant/InfantFeedingReference";
 
 type Props = {
   childId: number;
   childName: string;
   ageMonths: number;
 };
+
+// Extra parity tabs added on top of the original 5 INFANT_CATEGORIES.
+type ExtraTab = "health" | "milestones" | "cues" | "sounds";
+type TabKey = InfantCategory | ExtraTab;
+
+const EXTRA_TABS: readonly { key: ExtraTab; emoji: string; labelKey: string }[] = [
+  { key: "health",     emoji: "🩺", labelKey: "infant_hub.tabs.health" },
+  { key: "milestones", emoji: "🌟", labelKey: "infant_hub.tabs.milestones" },
+  { key: "cues",       emoji: "👀", labelKey: "infant_hub.tabs.cues" },
+  { key: "sounds",     emoji: "🎵", labelKey: "infant_hub.tabs.sounds" },
+];
+
+// Map each gated section to its server-side feature-usage id. Mirror of the
+// hub-tile gating pattern (see app/(tabs)/hub.tsx tryFreeFor / LockedBlock).
+const FEATURE_IDS = {
+  health:        "hub_infant_health",
+  milestones:    "hub_infant_milestones",
+  cues:          "hub_infant_cues",
+  sounds:        "hub_infant_sounds",
+  sleepHelpers:  "hub_infant_sleep_helpers",
+  feedingRef:    "hub_infant_feeding_ref",
+} as const;
 
 function langOf(i18nLang: string | undefined): Lang {
   if (i18nLang?.startsWith("hi") && !i18nLang.includes("ng")) return "hi";
@@ -47,16 +78,96 @@ function formatAgeLabel(ageMonths: number): string {
 export default function InfantHub({ childId, childName, ageMonths }: Props) {
   const { t, i18n } = useTranslation();
   const lang = langOf(i18n.language);
-  const [active, setActive] = useState<InfantCategory>("sleep");
+  const [active, setActive] = useState<TabKey>("sleep");
   const [tipIndex, setTipIndex] = useState(0);
 
-  const tips = useMemo(() => getTipsForAge(ageMonths, active), [ageMonths, active]);
-  const insight = useMemo(() => getAmyInsight(ageMonths, active), [ageMonths, active]);
+  // Try-Free gating — same hook used by hub.tsx top-level tiles. Gates the
+  // new parity sections behind one free use each.
+  const usage = useFeatureUsage();
+  const tryFreeFor = (id: string) => !usage.isPremium && !usage.hasUsedFeature(id);
+
+  // The base 5 tabs are tip-card tabs (same as before). For extra tabs we
+  // skip the tip data lookup since the rendered content is fully static.
+  const isBaseTab = (k: TabKey): k is InfantCategory =>
+    (INFANT_CATEGORIES as readonly { key: InfantCategory }[]).some((c) => c.key === k);
+
+  const tips = useMemo(
+    () => (isBaseTab(active) ? getTipsForAge(ageMonths, active) : []),
+    [ageMonths, active],
+  );
+  const insight = useMemo(
+    () => (isBaseTab(active) ? getAmyInsight(ageMonths, active) : null),
+    [ageMonths, active],
+  );
   const currentTip = tips.length > 0 ? tips[tipIndex % tips.length] : null;
 
   const handleNext = () => {
     if (tips.length === 0) return;
     setTipIndex((i) => (i + 1) % tips.length);
+  };
+
+  // When the user opens an extra-parity tab, mark its feature as used so the
+  // server-side first-time-free counter advances. The hook's freshlyOpenedRef
+  // protects the *current* session from blurring under the user.
+  useEffect(() => {
+    const featureId =
+      active === "health"     ? FEATURE_IDS.health     :
+      active === "milestones" ? FEATURE_IDS.milestones :
+      active === "cues"       ? FEATURE_IDS.cues       :
+      active === "sounds"     ? FEATURE_IDS.sounds     :
+                                null;
+    if (featureId) usage.markFeatureUsed(featureId);
+    // Sleep / Feeding helper sections live under the base tabs but are also
+    // gated; mark them as used the moment the parent navigates to that tab.
+    if (active === "sleep")   usage.markFeatureUsed(FEATURE_IDS.sleepHelpers);
+    if (active === "feeding") usage.markFeatureUsed(FEATURE_IDS.feedingRef);
+    // We intentionally only depend on `active` here. `usage.markFeatureUsed`
+    // is stable (useCallback) but listing it would re-fire on every status
+    // refetch — the ref-guard inside the hook already dedupes per session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+
+  const renderExtraTabContent = () => {
+    switch (active) {
+      case "health":
+        return (
+          <LockedBlock
+            locked={usage.isFeatureLocked(FEATURE_IDS.health)}
+            reason="hub_infant_health"
+          >
+            <InfantHealthTab ageMonths={ageMonths} />
+          </LockedBlock>
+        );
+      case "milestones":
+        return (
+          <LockedBlock
+            locked={usage.isFeatureLocked(FEATURE_IDS.milestones)}
+            reason="hub_infant_milestones"
+          >
+            <InfantMilestonesTab ageMonths={ageMonths} />
+          </LockedBlock>
+        );
+      case "cues":
+        return (
+          <LockedBlock
+            locked={usage.isFeatureLocked(FEATURE_IDS.cues)}
+            reason="hub_infant_cues"
+          >
+            <InfantCuesTab ageMonths={ageMonths} />
+          </LockedBlock>
+        );
+      case "sounds":
+        return (
+          <LockedBlock
+            locked={usage.isFeatureLocked(FEATURE_IDS.sounds)}
+            reason="hub_infant_sounds"
+          >
+            <InfantSoundsTab ageMonths={ageMonths} />
+          </LockedBlock>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -75,7 +186,7 @@ export default function InfantHub({ childId, childName, ageMonths }: Props) {
           </Text>
         </View>
 
-        {/* Glass tabs */}
+        {/* Glass tabs (base 5 + 4 parity tabs) */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -101,66 +212,134 @@ export default function InfantHub({ childId, childName, ageMonths }: Props) {
               </Pressable>
             );
           })}
+          {EXTRA_TABS.map((cat) => {
+            const isActive = active === cat.key;
+            const featureId =
+              cat.key === "health"     ? FEATURE_IDS.health     :
+              cat.key === "milestones" ? FEATURE_IDS.milestones :
+              cat.key === "cues"       ? FEATURE_IDS.cues       :
+                                         FEATURE_IDS.sounds;
+            return (
+              <Pressable
+                key={cat.key}
+                onPress={() => setActive(cat.key)}
+                style={[styles.tab, isActive && styles.tabActive]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
+                testID={`infant-tab-${cat.key}`}
+              >
+                <Text style={{ fontSize: 16 }}>{cat.emoji}</Text>
+                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                  {t(cat.labelKey)}
+                </Text>
+                {tryFreeFor(featureId) ? (
+                  <TryFreeBadge style={styles.tabBadge} />
+                ) : null}
+              </Pressable>
+            );
+          })}
         </ScrollView>
 
-        {/* Amy AI insight */}
-        <View style={styles.insightCard}>
-          <View style={styles.insightHead}>
-            <MaterialCommunityIcons name="brain" size={16} color={brand.purple400} />
-            <Text style={styles.insightTitle}>{t("infant_hub.amy_suggests")}</Text>
+        {/* Base-tab content: insight + tip card (unchanged from previous version) */}
+        {isBaseTab(active) && insight && (
+          <View style={styles.insightCard}>
+            <View style={styles.insightHead}>
+              <MaterialCommunityIcons name="brain" size={16} color={brand.purple400} />
+              <Text style={styles.insightTitle}>{t("infant_hub.amy_suggests")}</Text>
+            </View>
+            <Text style={styles.insightBody}>
+              <Text>{insight.emoji}  </Text>
+              {pickLang(insight, lang)}
+            </Text>
           </View>
-          <Text style={styles.insightBody}>
-            <Text>{insight.emoji}  </Text>
-            {pickLang(insight, lang)}
-          </Text>
-        </View>
+        )}
 
-        {/* Tip */}
-        {currentTip ? (
-          <View style={styles.tipCard}>
-            <View style={styles.tipHead}>
-              <Text style={{ fontSize: 28 }}>{currentTip.emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.tipTitle}>{pickLang(currentTip.title, lang)}</Text>
-                <Text style={styles.tipMeta}>{t("infant_hub.based_on")}</Text>
+        {isBaseTab(active) && (
+          currentTip ? (
+            <View style={styles.tipCard}>
+              <View style={styles.tipHead}>
+                <Text style={{ fontSize: 28 }}>{currentTip.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.tipTitle}>{pickLang(currentTip.title, lang)}</Text>
+                  <Text style={styles.tipMeta}>{t("infant_hub.based_on")}</Text>
+                </View>
               </View>
-            </View>
-            <Text style={styles.tipBody}>{pickLang(currentTip.body, lang)}</Text>
+              <Text style={styles.tipBody}>{pickLang(currentTip.body, lang)}</Text>
 
-            <View style={styles.btnRow}>
-              <Pressable
-                onPress={() => flashToast(t("infant_hub.thanks"))}
-                style={[styles.actionBtn, { backgroundColor: "rgba(16,185,129,0.18)", borderColor: "rgba(16,185,129,0.45)" }]}
-              >
-                <Ionicons name="thumbs-up" size={13} color={palette.emerald400} />
-                <Text style={[styles.actionTxt, { color: palette.emerald400 }]}>{t("infant_hub.helpful")}</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleNext}
-                style={[styles.actionBtn, { backgroundColor: `${brand.purple500}18`, borderColor: `${brand.purple500}45` }]}
-              >
-                <Ionicons name="refresh" size={13} color={brand.purple400} />
-                <Text style={[styles.actionTxt, { color: brand.purple400 }]}>{t("infant_hub.next_tip")}</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => flashToast(t("infant_hub.tried_logged"))}
-                style={[styles.actionBtn, { backgroundColor: "rgba(245,158,11,0.18)", borderColor: "rgba(245,158,11,0.45)" }]}
-              >
-                <Ionicons name="checkmark-circle" size={13} color={palette.amber500} />
-                <Text style={[styles.actionTxt, { color: palette.amber500 }]}>{t("infant_hub.tried_this")}</Text>
-              </Pressable>
-            </View>
+              <View style={styles.btnRow}>
+                <Pressable
+                  onPress={() => flashToast(t("infant_hub.thanks"))}
+                  style={[styles.actionBtn, { backgroundColor: "rgba(16,185,129,0.18)", borderColor: "rgba(16,185,129,0.45)" }]}
+                >
+                  <Ionicons name="thumbs-up" size={13} color={palette.emerald400} />
+                  <Text style={[styles.actionTxt, { color: palette.emerald400 }]}>{t("infant_hub.helpful")}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleNext}
+                  style={[styles.actionBtn, { backgroundColor: `${brand.purple500}18`, borderColor: `${brand.purple500}45` }]}
+                >
+                  <Ionicons name="refresh" size={13} color={brand.purple400} />
+                  <Text style={[styles.actionTxt, { color: brand.purple400 }]}>{t("infant_hub.next_tip")}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => flashToast(t("infant_hub.tried_logged"))}
+                  style={[styles.actionBtn, { backgroundColor: "rgba(245,158,11,0.18)", borderColor: "rgba(245,158,11,0.45)" }]}
+                >
+                  <Ionicons name="checkmark-circle" size={13} color={palette.amber500} />
+                  <Text style={[styles.actionTxt, { color: palette.amber500 }]}>{t("infant_hub.tried_this")}</Text>
+                </Pressable>
+              </View>
 
-            {tips.length > 1 && (
-              <Text style={styles.counter}>
-                {tipIndex + 1} / {tips.length}
-              </Text>
-            )}
+              {tips.length > 1 && (
+                <Text style={styles.counter}>
+                  {tipIndex + 1} / {tips.length}
+                </Text>
+              )}
+            </View>
+          ) : (
+            <View style={styles.emptyTip}>
+              <Text style={styles.tipBody}>{t("infant_hub.no_tips")}</Text>
+            </View>
+          )
+        )}
+
+        {/* Sleep tab → Sleep helpers section (gated) */}
+        {active === "sleep" && (
+          <View style={styles.parityWrap}>
+            <View style={styles.parityHead}>
+              <Ionicons name="bed-outline" size={14} color={brand.violet200} />
+              <Text style={styles.parityHeadTxt}>{t("infant_hub.sleep_helpers.title")}</Text>
+              {tryFreeFor(FEATURE_IDS.sleepHelpers) ? <TryFreeBadge /> : null}
+            </View>
+            <LockedBlock
+              locked={usage.isFeatureLocked(FEATURE_IDS.sleepHelpers)}
+              reason="hub_infant_sleep_helpers"
+            >
+              <InfantSleepHelpers ageMonths={ageMonths} />
+            </LockedBlock>
           </View>
-        ) : (
-          <View style={styles.emptyTip}>
-            <Text style={styles.tipBody}>{t("infant_hub.no_tips")}</Text>
+        )}
+
+        {/* Feeding tab → Feeding reference (gated) */}
+        {active === "feeding" && (
+          <View style={styles.parityWrap}>
+            <View style={styles.parityHead}>
+              <MaterialCommunityIcons name="silverware-fork-knife" size={14} color={brand.violet200} />
+              <Text style={styles.parityHeadTxt}>{t("infant_hub.feeding_ref.title")}</Text>
+              {tryFreeFor(FEATURE_IDS.feedingRef) ? <TryFreeBadge /> : null}
+            </View>
+            <LockedBlock
+              locked={usage.isFeatureLocked(FEATURE_IDS.feedingRef)}
+              reason="hub_infant_feeding_ref"
+            >
+              <InfantFeedingReference ageMonths={ageMonths} />
+            </LockedBlock>
           </View>
+        )}
+
+        {/* Extra parity tabs render their own LockedBlock-wrapped content. */}
+        {!isBaseTab(active) && (
+          <View style={styles.parityWrap}>{renderExtraTabContent()}</View>
         )}
 
         {/* ── Sleep Prediction (Beta) — separate sub-card ────────────────────── */}
@@ -236,6 +415,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: { color: "rgba(255,255,255,0.7)", fontWeight: "700", fontSize: 12 },
   tabLabelActive: { color: "#fff" },
+  tabBadge: { marginLeft: 4 },
 
   insightCard: {
     backgroundColor: `${brand.purple500}18`,
@@ -279,6 +459,25 @@ const styles = StyleSheet.create({
   },
   actionTxt: { fontSize: 11, fontWeight: "800" },
   counter: { color: "rgba(255,255,255,0.45)", fontSize: 11, textAlign: "center", marginTop: 8 },
+
+  parityWrap: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.08)",
+    gap: 10,
+  },
+  parityHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  parityHeadTxt: {
+    color: brand.violet200,
+    fontWeight: "800",
+    fontSize: 13,
+    flex: 1,
+  },
 
   disclaimer: {
     flexDirection: "row",

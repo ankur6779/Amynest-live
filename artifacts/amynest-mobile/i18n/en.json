@@ -367,7 +367,11 @@
       "feeding": "Feeding",
       "development": "Development",
       "behavior": "Behavior",
-      "daily_care": "Daily Care"
+      "daily_care": "Daily Care",
+      "health": "Health",
+      "milestones": "Milestones",
+      "cues": "Cues",
+      "sounds": "Sounds"
     },
     "amy_suggests": "Amy AI Suggests",
     "helpful": "Helpful",
@@ -378,7 +382,71 @@
     "no_tips": "No tips for this age window yet.",
     "safe_disclaimer": "Guidance only — not medical advice. Consult your pediatrician for concerns.",
     "based_on": "Based on pediatric guidance",
-    "select_child": "Showing tips for"
+    "select_child": "Showing tips for",
+    "common": {
+      "all": "All",
+      "months_short": "mo"
+    },
+    "health": {
+      "upcoming_title": "Upcoming Vaccinations",
+      "no_upcoming": "None due in the next 2 months — great work!",
+      "completed_one": "{{count}} vaccination milestone reached",
+      "completed_other": "{{count}} vaccination milestones reached",
+      "source_note": "Source: India NIS (UIP) + IAP recommended schedule. Always confirm with your paediatrician.",
+      "common_issues_title": "Common Issues for this Age",
+      "no_issues": "No common issues flagged for this band."
+    },
+    "milestones": {
+      "categories": {
+        "motor": "Motor",
+        "cognitive": "Cognitive",
+        "social": "Social",
+        "language": "Language"
+      },
+      "empty": "No milestones in this category for the current age window.",
+      "why_label": "WHY IT MATTERS",
+      "try_label": "🎯 TRY THIS"
+    },
+    "cues": {
+      "categories": {
+        "hunger": "Hunger",
+        "sleep": "Sleep",
+        "overstim": "Overstim.",
+        "discomfort": "Discomfort"
+      },
+      "empty": "No cues for this age window in this category."
+    },
+    "sounds": {
+      "recommended_label": "RECOMMENDED FOR THIS AGE",
+      "other_label": "OTHER WHITE-NOISE OPTIONS",
+      "lullaby_label": "LULLABY STARTERS",
+      "play": "Play",
+      "pause": "Pause",
+      "stop_all": "Stop all",
+      "sing_along_hint": "Tap play for the tune — sing along with the lyrics"
+    },
+    "sleep_helpers": {
+      "title": "Sleep Helpers",
+      "wake_window_title": "Wake-Window Guide · {{range}}",
+      "stat_wake_window": "Wake window",
+      "stat_naps_per_day": "Naps / day",
+      "stat_avg_nap": "Avg nap",
+      "stat_day_sleep": "Day sleep",
+      "stat_window_value": "{{min}}–{{max}} min",
+      "stat_avg_value": "{{min}} min",
+      "stat_day_value": "{{hrs}}h",
+      "night_target": "Night sleep target: {{hrs}} hrs",
+      "watch_for": "Watch For",
+      "no_issues": "No sleep issues commonly flagged for this band.",
+      "routine_title": "Routine Preview · 7:00 AM start",
+      "routine_intro": "A model day built from the wake-window spec — adapt as your baby tells you."
+    },
+    "feeding_ref": {
+      "title": "Feeding Reference",
+      "type": "Type",
+      "frequency": "Frequency",
+      "tip_label": "👶 TIP"
+    }
   },
   "alerts": {
     "signup": {

@@ -118,6 +118,9 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
       "nutrition", "meal-suggestions",
       // Band-restricted that include band 0
       "story-hub",
+      // Mobile-only AmazingFacts now extends to the InfantHub band (0–2y)
+      // — task #196.
+      "facts",
     ].sort();
     const section1Ids = Object.entries(HUB_CONTENT_AGE_BANDS)
       .filter(([, bands]) => bands.includes(band))

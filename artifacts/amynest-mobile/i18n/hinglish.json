@@ -367,7 +367,11 @@
       "feeding": "Feeding",
       "development": "Development",
       "behavior": "Behavior",
-      "daily_care": "Daily Care"
+      "daily_care": "Daily Care",
+      "health": "Health",
+      "milestones": "Milestones",
+      "cues": "Cues",
+      "sounds": "Sounds"
     },
     "amy_suggests": "Amy AI ki Salah",
     "helpful": "Helpful",
@@ -378,7 +382,71 @@
     "no_tips": "Is age ke liye abhi koi tip nahi hai.",
     "safe_disclaimer": "Sirf guidance — medical advice nahi. Concern ho toh pediatrician se milein.",
     "based_on": "Pediatric guidelines par based",
-    "select_child": "Inke liye tips"
+    "select_child": "Inke liye tips",
+    "common": {
+      "all": "Sab",
+      "months_short": "mo"
+    },
+    "health": {
+      "upcoming_title": "Aane wali Vaccinations",
+      "no_upcoming": "Agle 2 months mein koi nahi — great!",
+      "completed_one": "{{count}} vaccination milestone complete",
+      "completed_other": "{{count}} vaccination milestones complete",
+      "source_note": "Source: India NIS (UIP) + IAP recommended schedule. Apne paediatrician se confirm zaroor karein.",
+      "common_issues_title": "Is umar mein common issues",
+      "no_issues": "Is age band ke liye koi common issue flag nahi hua."
+    },
+    "milestones": {
+      "categories": {
+        "motor": "Motor",
+        "cognitive": "Cognitive",
+        "social": "Social",
+        "language": "Language"
+      },
+      "empty": "Current age window mein is category mein koi milestone nahi.",
+      "why_label": "KYU ZAROORI",
+      "try_label": "🎯 YEH TRY KARO"
+    },
+    "cues": {
+      "categories": {
+        "hunger": "Bhook",
+        "sleep": "Neend",
+        "overstim": "Overstim.",
+        "discomfort": "Takleef"
+      },
+      "empty": "Is age window mein is category ke cues nahi."
+    },
+    "sounds": {
+      "recommended_label": "IS UMAR KE LIYE RECOMMENDED",
+      "other_label": "BAAKI WHITE-NOISE OPTIONS",
+      "lullaby_label": "LORI STARTERS",
+      "play": "Play",
+      "pause": "Pause",
+      "stop_all": "Sab band",
+      "sing_along_hint": "Tune sun-ne ke liye play dabao — lyrics ke saath gaao"
+    },
+    "sleep_helpers": {
+      "title": "Sleep Helpers",
+      "wake_window_title": "Wake-Window Guide · {{range}}",
+      "stat_wake_window": "Wake window",
+      "stat_naps_per_day": "Naps / din",
+      "stat_avg_nap": "Avg nap",
+      "stat_day_sleep": "Din ki neend",
+      "stat_window_value": "{{min}}–{{max}} min",
+      "stat_avg_value": "{{min}} min",
+      "stat_day_value": "{{hrs}}h",
+      "night_target": "Raat ki neend target: {{hrs}} hrs",
+      "watch_for": "Dhyaan do",
+      "no_issues": "Is band ke liye sleep issues commonly flag nahi hote.",
+      "routine_title": "Routine Preview · 7:00 AM start",
+      "routine_intro": "Wake-window spec se model day — apne baby ke hisaab se adapt karo."
+    },
+    "feeding_ref": {
+      "title": "Feeding Reference",
+      "type": "Type",
+      "frequency": "Frequency",
+      "tip_label": "👶 TIP"
+    }
   },
   "alerts": {
     "signup": {

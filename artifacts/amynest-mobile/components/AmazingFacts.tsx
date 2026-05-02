@@ -25,16 +25,17 @@ const FACTS: Fact[] = [
   { id: "i7", emoji: "💧", category: "science", ageGroups: ["infant"], text: "Human babies are made of about 75% water at birth." },
   { id: "i8", emoji: "👁️", category: "science", ageGroups: ["infant"], text: "Babies are born with blue or grey eyes — colour develops over 6–12 months." },
 
-  // Toddler (1–3 years)
-  { id: "t1", emoji: "🦒", category: "animal", ageGroups: ["toddler"], text: "Giraffes have the same number of neck bones as humans — just 7, but much bigger!" },
-  { id: "t2", emoji: "🐸", category: "animal", ageGroups: ["toddler"], text: "Frogs drink water through their skin — they never use their mouth to drink!" },
-  { id: "t3", emoji: "☀️", category: "gk", ageGroups: ["toddler"], text: "The Sun is so big that one million Earths could fit inside it!" },
-  { id: "t4", emoji: "🍎", category: "science", ageGroups: ["toddler"], text: "Apples float in water because they are 25% air!" },
-  { id: "t5", emoji: "🦋", category: "animal", ageGroups: ["toddler"], text: "Butterflies taste with their feet — they have taste sensors on their legs!" },
-  { id: "t6", emoji: "🐢", category: "animal", ageGroups: ["toddler"], text: "Turtles have been on Earth for over 200 million years — older than dinosaurs!" },
-  { id: "t7", emoji: "🐧", category: "animal", ageGroups: ["toddler"], text: "Penguins live only in the Southern Hemisphere — never in the wild at the North Pole!" },
-  { id: "t8", emoji: "❄️", category: "gk", ageGroups: ["toddler"], text: "No two snowflakes are exactly the same shape." },
-  { id: "t9", emoji: "🐝", category: "animal", ageGroups: ["toddler"], text: "Bees can recognise human faces — just like we do!" },
+  // Toddler (1–3 years) — also surfaced to the extended infant band (12–24 m)
+  // so 1-year-olds get a richer pool of facts than just the 8 newborn ones.
+  { id: "t1", emoji: "🦒", category: "animal", ageGroups: ["infant", "toddler"], text: "Giraffes have the same number of neck bones as humans — just 7, but much bigger!" },
+  { id: "t2", emoji: "🐸", category: "animal", ageGroups: ["infant", "toddler"], text: "Frogs drink water through their skin — they never use their mouth to drink!" },
+  { id: "t3", emoji: "☀️", category: "gk", ageGroups: ["infant", "toddler"], text: "The Sun is so big that one million Earths could fit inside it!" },
+  { id: "t4", emoji: "🍎", category: "science", ageGroups: ["infant", "toddler"], text: "Apples float in water because they are 25% air!" },
+  { id: "t5", emoji: "🦋", category: "animal", ageGroups: ["infant", "toddler"], text: "Butterflies taste with their feet — they have taste sensors on their legs!" },
+  { id: "t6", emoji: "🐢", category: "animal", ageGroups: ["infant", "toddler"], text: "Turtles have been on Earth for over 200 million years — older than dinosaurs!" },
+  { id: "t7", emoji: "🐧", category: "animal", ageGroups: ["infant", "toddler"], text: "Penguins live only in the Southern Hemisphere — never in the wild at the North Pole!" },
+  { id: "t8", emoji: "❄️", category: "gk", ageGroups: ["infant", "toddler"], text: "No two snowflakes are exactly the same shape." },
+  { id: "t9", emoji: "🐝", category: "animal", ageGroups: ["infant", "toddler"], text: "Bees can recognise human faces — just like we do!" },
 
   // Preschool (3–5 years)
   { id: "p1", emoji: "🦜", category: "animal", ageGroups: ["preschool"], text: "Parrots can learn hundreds of words and even understand their meaning!" },
@@ -73,7 +74,11 @@ const FACTS: Fact[] = [
 ];
 
 function ageMonthsToGroup(months: number): AgeGroup {
-  if (months < 12) return "infant";
+  // Extended in task #196: "infant" now spans the full Parent Hub infant
+  // band (0–24 m) so the AmazingFacts tile surfaces for the InfantHub age
+  // window. Toddler-tagged facts also light up via the dual ageGroups on
+  // each FACTS entry below to keep coverage rich for 12–24m.
+  if (months < 24) return "infant";
   if (months < 36) return "toddler";
   if (months < 60) return "preschool";
   if (months < 108) return "early_school";

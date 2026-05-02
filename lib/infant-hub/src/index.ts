@@ -683,3 +683,12 @@ export function getAmyInsight(
 export function isInfantHubAge(ageMonths: number): boolean {
   return ageMonths >= 0 && ageMonths < 24;
 }
+
+// ─── Parent-Hub-parity data (vaccinations, milestones, cues, sounds, etc.) ──
+// See `./parentHub.ts` for the full set of accessors and types used by the
+// mobile InfantHub featured card to match the web Parent Hub surface.
+export * from "./parentHub";
+
+// Pure-JS WAV synth used by mobile InfantSoundsTab to play the white-noise
+// catalogue without bundling audio assets.
+export * from "./audioSynth";
