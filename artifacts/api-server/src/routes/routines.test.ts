@@ -821,3 +821,133 @@ for (const region of Object.keys(REGION_LABELS) as Region[]) {
     });
   });
 }
+
+// ─── Region-specific recipe content checks ────────────────────────────────
+// The previous suite proves every meal block gets *some* recipe + nutrition.
+// These tests go further and confirm that for at least one signature dish per
+// region, the recipe returned is the REGION-SPECIFIC one (a unique ingredient
+// or step the generic keyword fallback could never produce). Catches future
+// regressions where someone removes REGIONAL_RECIPES / REGIONAL_NUTRITION
+// entries or accidentally drops the `region` argument from recipeFor.
+
+type SignatureCheck = {
+  region: Region;
+  /** Note string seeded into a Lunch (or Breakfast for snack-class dishes)
+   *  so dedupMealNotes picks the signature dish as `primary`. */
+  note: string;
+  /** Slot to seed it into so the right block carries the dish.
+   *  "lunch" | "breakfast" — both are present in regionalNonSchoolItems. */
+  slot: "breakfast" | "lunch";
+  /** Substring (case-insensitive) that MUST appear in the rendered recipe
+   *  ingredients/steps OR in the nutrition.notes field. Picked to be
+   *  region-specific (e.g. "panch phoron" for Bengali macher jhol — the
+   *  generic curry recipe in KEYWORD_RECIPES has no panch phoron). */
+  recipeMarker: RegExp;
+  /** Substring that MUST appear in the nutrition.notes field. */
+  nutritionMarker: RegExp;
+};
+
+const SIGNATURE_DISHES: SignatureCheck[] = [
+  {
+    region: "bengali",
+    slot: "lunch",
+    note: "Options: Macher jhol with bhaat | Aloo posto with rice",
+    recipeMarker: /panch phoron|mustard oil/i,
+    nutritionMarker: /Bengali|fish/i,
+  },
+  {
+    region: "gujarati",
+    slot: "breakfast",
+    note: "Options: Khaman dhokla with chutney | Thepla with curd",
+    recipeMarker: /eno|besan.*curd|airy sponge/i,
+    nutritionMarker: /Steamed besan|plant protein/i,
+  },
+  {
+    region: "maharashtrian",
+    slot: "breakfast",
+    note: "Options: Misal pav | Sabudana khichdi",
+    recipeMarker: /matki|goda masala|sprouted/i,
+    nutritionMarker: /Sprouted matki|sprouted/i,
+  },
+  {
+    region: "south_indian",
+    slot: "breakfast",
+    note: "Options: Pongal with chutney | Idli with sambar",
+    recipeMarker: /moong dal.*rice|cashew|pepper.*cumin/i,
+    nutritionMarker: /Soft.*easy to digest|easy to digest/i,
+  },
+  {
+    region: "punjabi",
+    slot: "lunch",
+    note: "Options: Sarson da saag with makki roti | Rajma chawal",
+    recipeMarker: /makki|mustard greens|white butter/i,
+    nutritionMarker: /Iron-rich greens|winter superfood/i,
+  },
+  {
+    region: "north_indian",
+    slot: "breakfast",
+    note: "Options: Bedmi puri with aloo sabzi | Chole bhature",
+    recipeMarker: /urad dal|coarsely-ground urad/i,
+    nutritionMarker: /Urad dal.*wheat|protein-fortified/i,
+  },
+];
+
+for (const check of SIGNATURE_DISHES) {
+  describe(`generateAiRoutine — region "${check.region}" returns region-specific recipe for signature dish`, () => {
+    it(`${check.slot}: signature dish recipe + nutrition are the regional bank entry, not generic fallback`, async () => {
+      // Build a non-school-day fixture and overwrite the target slot's notes
+      // with the signature-dish options string.
+      const items = regionalNonSchoolItems(check.region).map((it) => {
+        if (check.slot === "breakfast" && /^breakfast$/i.test(it.activity)) {
+          return { ...it, notes: check.note };
+        }
+        if (check.slot === "lunch" && /^lunch$/i.test(it.activity)) {
+          return { ...it, notes: check.note };
+        }
+        return it;
+      });
+
+      const result = await generateAiRoutine({
+        ...BASE,
+        hasSchool: false,
+        region: check.region,
+        openaiClient: makeMockOpenai({
+          title: `${check.region} signature ${check.slot}`,
+          items,
+        }),
+      });
+
+      // Find the meal block whose `meal` (primary) matches the first
+      // pipe-separated option from our seeded notes.
+      const expectedPrimary = check.note
+        .replace("Options:", "")
+        .split("|")[0]!
+        .trim()
+        .toLowerCase();
+      const block = result.items.find(
+        (i) => (i.meal ?? "").toLowerCase() === expectedPrimary,
+      );
+      assert.ok(
+        block,
+        `[${check.region}] expected a meal block with primary "${expectedPrimary}" — got: ${result.items
+          .map((i) => i.meal ?? i.activity)
+          .join(", ")}`,
+      );
+
+      // The recipe must contain a region-specific marker that the generic
+      // keyword bank could never produce.
+      const recipeBlob = JSON.stringify(block!.recipe ?? {});
+      assert.ok(
+        check.recipeMarker.test(recipeBlob),
+        `[${check.region}] signature recipe for "${expectedPrimary}" missing regional marker ${check.recipeMarker} — got: ${recipeBlob}`,
+      );
+
+      // The nutrition.notes must carry the region-specific tagline.
+      const nutritionNotes = block!.nutrition?.notes ?? "";
+      assert.ok(
+        check.nutritionMarker.test(nutritionNotes),
+        `[${check.region}] signature nutrition for "${expectedPrimary}" missing regional marker ${check.nutritionMarker} — got: "${nutritionNotes}"`,
+      );
+    });
+  });
+}
