@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { AudioPlayButton, preloadAmyVoice } from "@/components/audio-play-button";
 import { PhonicsTest } from "@/components/phonics-test";
+import { SubItemGate } from "@/components/sub-item-gate";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
   usePhonicsData,
@@ -163,37 +164,49 @@ export function PhonicsLearning({
   return (
     <div className="space-y-4">
       <PersonalizationBadge level={level} childName={childName} />
-      <PhonicsTest
-        childId={childId}
-        childName={childName}
-        totalAgeMonths={totalAgeMonths}
-      />
-      <PhonicsDownloadCard childId={childId} />
-      <TodaysActivityCard
-        level={level}
-        dailyItems={dailyItems.length > 0 ? dailyItems : items}
-        progress={progress}
-        recordPlay={recordPlay}
-        toggleMastered={toggleMastered}
-      />
-      <PracticeSoundsCard
-        level={level}
-        items={items}
-        progress={progress}
-        recordPlay={recordPlay}
-      />
-      <ProgressTrackerCard
-        level={level}
-        items={items}
-        progress={progress}
-        sourceLabel={data.source === "api" ? "synced to your account" : "saved on this device"}
-      />
-      <ParentTipsCard
-        level={level}
-        items={items}
-        progress={progress}
-        insights={insights}
-      />
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_test">
+        <PhonicsTest
+          childId={childId}
+          childName={childName}
+          totalAgeMonths={totalAgeMonths}
+        />
+      </SubItemGate>
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_download">
+        <PhonicsDownloadCard childId={childId} />
+      </SubItemGate>
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_todays_activity">
+        <TodaysActivityCard
+          level={level}
+          dailyItems={dailyItems.length > 0 ? dailyItems : items}
+          progress={progress}
+          recordPlay={recordPlay}
+          toggleMastered={toggleMastered}
+        />
+      </SubItemGate>
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_practice_sounds">
+        <PracticeSoundsCard
+          level={level}
+          items={items}
+          progress={progress}
+          recordPlay={recordPlay}
+        />
+      </SubItemGate>
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_progress">
+        <ProgressTrackerCard
+          level={level}
+          items={items}
+          progress={progress}
+          sourceLabel={data.source === "api" ? "synced to your account" : "saved on this device"}
+        />
+      </SubItemGate>
+      <SubItemGate sectionId="hub_phonics" subItemId="phonics_parent_tips">
+        <ParentTipsCard
+          level={level}
+          items={items}
+          progress={progress}
+          insights={insights}
+        />
+      </SubItemGate>
     </div>
   );
 }

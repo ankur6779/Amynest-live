@@ -21,6 +21,7 @@ import {
   type ArticleCategory,
 } from "@/lib/articles-data";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
+import { SubItemGate } from "@/components/sub-item-gate";
 
 // ─── Article Hero Banner ───────────────────────────────────────────────────
 // Gradient + watermark emoji header. Acts as the per-article "image" without
@@ -541,12 +542,17 @@ export function ParentingArticles({ childAgeMonths }: { childAgeMonths: number }
       ) : (
         <div className="space-y-3">
           {visibleArticles.map((article) => (
-            <ArticleCard
+            <SubItemGate
               key={article.id}
-              article={article}
-              saved={savedIds.includes(article.id)}
-              onClick={() => openArticle(article)}
-            />
+              sectionId="hub_articles"
+              subItemId={article.id}
+            >
+              <ArticleCard
+                article={article}
+                saved={savedIds.includes(article.id)}
+                onClick={() => openArticle(article)}
+              />
+            </SubItemGate>
           ))}
           {filtered.length > 4 && (
             <button

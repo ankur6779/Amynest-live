@@ -3,6 +3,7 @@ import { Loader2, Play, RefreshCw, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStoriesData, type StoryDto } from "@/hooks/use-stories-data";
 import { StoryFlowPlayer } from "@/components/story-player";
+import { SubItemGate } from "@/components/sub-item-gate";
 
 // ─── Per-child index persistence ─────────────────────────────────────────────
 
@@ -266,6 +267,7 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
           white text in BOTH themes — they get data-on-dark so the
           safety net leaves them alone. */}
       {currentStory && (
+        <SubItemGate sectionId="hub_story_hub" subItemId={String(currentStory.id)}>
         <div className="overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
           {/* Thumbnail */}
           <div data-on-dark className="relative aspect-video w-full bg-black">
@@ -317,6 +319,7 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
             </Button>
           </div>
         </div>
+        </SubItemGate>
       )}
     </div>
   );

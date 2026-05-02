@@ -1,12 +1,19 @@
-import { usePaywall, type PaywallReason } from "@/contexts/paywall-context";
-import { PremiumBadge } from "@/components/premium-badge";
+import { useLocation } from "wouter";
+import { Lock } from "lucide-react";
+import type { PaywallReason } from "@/contexts/paywall-context";
 
 interface LockedBlockProps {
   /** True after the user has consumed their one free use of this feature. */
   locked: boolean;
-  /** Reason passed to the paywall when tapped. */
+  /**
+   * Legacy prop — kept for backwards compatibility with existing call sites.
+   * The locked overlay no longer opens the paywall modal; it navigates to
+   * the dedicated /pricing page so users see a complete plan comparison.
+   */
   reason?: PaywallReason;
+  /** Legacy — no longer rendered. Kept for prop compatibility. */
   label?: string;
+  /** Legacy — no longer rendered. Kept for prop compatibility. */
   cta?: string;
   rounded?: string;
   children: React.ReactNode;
@@ -17,18 +24,16 @@ interface LockedBlockProps {
  *
  * locked=false  → children rendered fully interactive (free first-use OR premium)
  * locked=true   → children visible but NON-interactive; a transparent overlay
- *                 intercepts every tap and opens the paywall. A "Premium" badge
- *                 floats top-right (above the overlay) as an additional entry point.
- *
- * This prevents free users from expanding a section after their one free use.
+ *                 intercepts every tap and routes to /pricing. A "Premium feature"
+ *                 lock pill floats top-right (above the overlay).
  */
 export function LockedBlock({
   locked,
-  reason = "section_locked",
   rounded = "rounded-3xl",
   children,
 }: LockedBlockProps) {
-  const { openPaywall } = usePaywall();
+  const [, setLocation] = useLocation();
+  const goPricing = () => setLocation("/pricing");
 
   if (!locked) return <>{children}</>;
 
@@ -42,22 +47,32 @@ export function LockedBlock({
         {children}
       </div>
 
-      {/* Transparent full-cover overlay — intercepts every tap, fires paywall */}
+      {/* Transparent full-cover overlay — intercepts every tap, routes to /pricing */}
       <div
         className="absolute inset-0 z-10 cursor-pointer rounded-2xl"
-        onClick={() => openPaywall(reason)}
+        onClick={goPricing}
         role="button"
         tabIndex={0}
-        aria-label="Premium feature — tap to unlock"
+        aria-label="Premium feature — tap to upgrade"
+        data-testid="locked-block-overlay"
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") openPaywall(reason);
+          if (e.key === "Enter" || e.key === " ") goPricing();
         }}
       />
 
-      {/* Premium badge — sits above the overlay so it is always tappable */}
+      {/* Lock pill — sits above the overlay so it is always tappable */}
       <div className="pointer-events-none absolute right-12 top-3.5 z-20">
         <div className="pointer-events-auto">
-          <PremiumBadge onClick={() => openPaywall(reason)} />
+          <button
+            type="button"
+            onClick={goPricing}
+            data-testid="premium-feature-lock"
+            aria-label="Premium feature — tap to upgrade"
+            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500 text-white shadow-md shadow-purple-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide cursor-pointer hover:brightness-110 transition"
+          >
+            <Lock className="h-2.5 w-2.5" />
+            Premium feature
+          </button>
         </div>
       </div>
     </div>

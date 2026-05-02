@@ -41,6 +41,7 @@ import { FuturePredictor } from "@/components/future-predictor";
 import { ParentCommandCenter } from "@/components/parent-command-center";
 import { LockedBlock } from "@/components/locked-block";
 import { TryFreeBadge } from "@/components/try-free-badge";
+import { SubItemGate } from "@/components/sub-item-gate";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import type { AgeGroup } from "@/lib/age-groups";
 import type { AgeBand } from "@/lib/age-bands";
@@ -212,13 +213,19 @@ function EmotionalSupportSection() {
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {EMOTIONAL_CARDS.map(card => (
-          <Link key={card.title} href={`/assistant?q=${encodeURIComponent(card.prompt)}`}>
-            <button className={`w-full text-left rounded-2xl border-2 px-4 py-3 transition-all ${card.bg}`}>
-              <span className="text-2xl block mb-1">{card.emoji}</span>
-              <p className="font-bold text-sm text-foreground leading-tight">{card.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{card.subtitle}</p>
-            </button>
-          </Link>
+          <SubItemGate
+            key={card.title}
+            sectionId="hub_emotional"
+            subItemId={card.title}
+          >
+            <Link href={`/assistant?q=${encodeURIComponent(card.prompt)}`}>
+              <button className={`w-full text-left rounded-2xl border-2 px-4 py-3 transition-all ${card.bg}`}>
+                <span className="text-2xl block mb-1">{card.emoji}</span>
+                <p className="font-bold text-sm text-foreground leading-tight">{card.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{card.subtitle}</p>
+              </button>
+            </Link>
+          </SubItemGate>
         ))}
       </div>
       <div className="bg-gradient-to-r from-pink-50 dark:from-pink-500/15 to-violet-50 dark:to-violet-500/15 border border-pink-200 dark:border-pink-400/30 rounded-2xl p-4 flex gap-3 items-start">
@@ -240,13 +247,27 @@ interface SubSectionProps {
   title: string;
   description: string;
   accentClass: string;
+  /**
+   * Optional gating: when set, wraps the entire SubSection with a
+   * <SubItemGate> using the given sectionId and the SubSection's title
+   * as the sub-item id. This implements the per-section "one free
+   * sub-item" rule for free users.
+   */
+  gateSection?: string;
   children: React.ReactNode;
 }
 
-function SubSection({ icon, title, description, accentClass, children }: SubSectionProps) {
+function SubSection({
+  icon,
+  title,
+  description,
+  accentClass,
+  gateSection,
+  children,
+}: SubSectionProps) {
   const [open, setOpen] = useState(false);
 
-  return (
+  const inner = (
     <div
       className={[
         "relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
@@ -303,6 +324,15 @@ function SubSection({ icon, title, description, accentClass, children }: SubSect
       )}
     </div>
   );
+
+  if (gateSection) {
+    return (
+      <SubItemGate sectionId={gateSection} subItemId={title}>
+        {inner}
+      </SubItemGate>
+    );
+  }
+  return inner;
 }
 
 // ─── Activities Section ───────────────────────────────────────────────────────
@@ -323,7 +353,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
       {/* ── INFANT ─────────────────────────────────────────────────────── */}
       {isInfant && (
         <>
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<Baby className="h-4 w-4 text-pink-500" />}
             title="Baby Activities"
             description="Feeding, bonding, development & milestones"
@@ -337,7 +367,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             />
           </SubSection>
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
             title="Amazing Facts"
             description="Fun facts about your baby's world"
@@ -351,7 +381,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
       {/* ── TODDLER / PRESCHOOL ────────────────────────────────────────── */}
       {isToddlerOrPreschool && (
         <>
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<Star className="h-4 w-4 text-orange-500" />}
             title="Daily Activity"
             description="Today's fun activity picked for your child"
@@ -360,7 +390,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
           </SubSection>
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<Brain className="h-4 w-4 text-violet-600" />}
             title="Skills to Focus"
             description="Age-matched skills to practise this week"
@@ -375,7 +405,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             />
           </SubSection>
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<BookOpen className="h-4 w-4 text-indigo-600" />}
             title="Story Time"
             description="Short story to read together today"
@@ -384,7 +414,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<Gamepad2 className="h-4 w-4 text-emerald-600" />}
             title="Fun & Play"
             description="Games and activities to enjoy together"
@@ -399,7 +429,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             />
           </SubSection>
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<ScrollText className="h-4 w-4 text-rose-600" />}
             title="Parent Tasks"
             description="Quick things to do for your child today"
@@ -415,7 +445,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
           </SubSection>
 
           {ageGroup === "preschool" && (
-            <SubSection
+            <SubSection gateSection="hub_activities"
               icon={<LayoutGrid className="h-4 w-4 text-sky-600" />}
               title="Daily Puzzle"
               description="A brain-teaser to sharpen little minds"
@@ -429,7 +459,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             </SubSection>
           )}
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
             title="Amazing Facts"
             description="Fun things to tell your little one today"
@@ -444,7 +474,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
       {isOlder && (
         <>
           {totalAgeMonths < 96 && (
-            <SubSection
+            <SubSection gateSection="hub_activities"
               icon={<Star className="h-4 w-4 text-orange-500" />}
               title="Daily Activity"
               description="Today's fun activity picked for your child"
@@ -454,7 +484,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             </SubSection>
           )}
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<Brain className="h-4 w-4 text-violet-600" />}
             title="Skills to Focus"
             description="Key skills to develop this stage"
@@ -463,7 +493,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             <SkillFocusSection group={ageGroup} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<BookOpen className="h-4 w-4 text-indigo-600" />}
             title="Story Time"
             description="A short story for your child today"
@@ -472,7 +502,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<LayoutGrid className="h-4 w-4 text-sky-600" />}
             title="Daily Puzzle"
             description="A brain-teaser to sharpen their mind"
@@ -485,7 +515,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             />
           </SubSection>
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<ScrollText className="h-4 w-4 text-rose-600" />}
             title="Parent Tasks"
             description="Quick things to do for your child today"
@@ -494,7 +524,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             <ParentTasksSection group={ageGroup} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection
+          <SubSection gateSection="hub_activities"
             icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
             title="Amazing Facts"
             description="Interesting facts to share with your child"
@@ -506,7 +536,7 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
       )}
 
       {/* ── Printable Worksheets (all age groups) ──────────────────────── */}
-      <SubSection
+      <SubSection gateSection="hub_activities"
         icon={<FileDown className="h-4 w-4 text-teal-600" />}
         title="Printable Worksheets"
         description="Age-matched worksheets to download & print"
