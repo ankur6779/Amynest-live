@@ -1,0 +1,109 @@
+{
+  "2-4": [
+    {
+      "title": "Brush Teeth",
+      "steps": ["Pick toothbrush", "Apply toothpaste", "Brush gently", "Rinse"],
+      "type": "daily",
+      "reward": 5
+    },
+    {
+      "title": "Wash Hands",
+      "steps": ["Turn on tap", "Use soap", "Rub hands", "Rinse"],
+      "type": "daily",
+      "reward": 5
+    },
+    {
+      "title": "Clean Toys",
+      "steps": ["Pick toys", "Put in box"],
+      "type": "habit",
+      "reward": 4
+    },
+    {
+      "title": "Say Thank You",
+      "steps": ["Say thank you politely"],
+      "type": "social",
+      "reward": 3
+    }
+  ],
+
+  "4-6": [
+    {
+      "title": "Dress Yourself",
+      "steps": ["Pick clothes", "Wear shirt", "Wear pants"],
+      "type": "daily",
+      "reward": 6
+    },
+    {
+      "title": "Pack School Bag",
+      "steps": ["Add books", "Add water bottle", "Check bag"],
+      "type": "responsibility",
+      "reward": 6
+    },
+    {
+      "title": "Share Toys",
+      "steps": ["Offer toy", "Wait turn"],
+      "type": "social",
+      "reward": 5
+    },
+    {
+      "title": "Basic Manners",
+      "steps": ["Say please", "Say sorry"],
+      "type": "social",
+      "reward": 5
+    }
+  ],
+
+  "6-10": [
+    {
+      "title": "Time Management",
+      "steps": ["Set time", "Complete task", "Review"],
+      "type": "skill",
+      "reward": 8
+    },
+    {
+      "title": "Help Parents",
+      "steps": ["Ask what help needed", "Complete task"],
+      "type": "responsibility",
+      "reward": 7
+    },
+    {
+      "title": "Control Anger",
+      "steps": ["Take deep breath", "Count to 10"],
+      "type": "emotional",
+      "reward": 8
+    },
+    {
+      "title": "Organize Room",
+      "steps": ["Pick items", "Arrange properly"],
+      "type": "habit",
+      "reward": 7
+    }
+  ],
+
+  "10-15": [
+    {
+      "title": "Decision Making",
+      "steps": ["Think options", "Choose best option"],
+      "type": "skill",
+      "reward": 10
+    },
+    {
+      "title": "Problem Solving",
+      "steps": ["Understand problem", "Find solution"],
+      "type": "skill",
+      "reward": 10
+    },
+    {
+      "title": "Basic Money Skills",
+      "steps": ["Save money", "Track expenses"],
+      "type": "life",
+      "reward": 9
+    },
+    {
+      "title": "Communication Skills",
+      "steps": ["Listen carefully", "Speak clearly"],
+      "type": "social",
+      "reward": 9
+    }
+  ]
+}
