@@ -26,6 +26,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import SwipeableCard from "@/components/SwipeableCard";
 import RoutineItemModal from "@/components/RoutineItemModal";
 import colors, { brand, brandAlpha, ACCENT_PINK, palette } from "@/constants/colors";
+import { CATEGORY_ICON_PAIRS } from "@/constants/categoryIcons";
 import { useColors } from "@/hooks/useColors";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import VoiceSettingsPanel, {
@@ -150,19 +151,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   default: "",
 };
 // audit-block-ignore-end
-const CATEGORY_ICONS: Record<string, React.ComponentProps<typeof Ionicons>["name"]> = {
-  morning: "sunny-outline", morning_routine: "sunny-outline",
-  meal: "restaurant-outline", tiffin: "fast-food-outline",
-  school: "school-outline", travel: "car-outline",
-  homework: "book-outline", study: "book-outline",
-  play: "football-outline", exercise: "fitness-outline",
-  family: "heart-outline", bonding: "people-outline",
-  creative: "color-palette-outline", outdoor: "leaf-outline",
-  self_care: "sparkles-outline", hygiene: "water-outline",
-  rest: "pause-circle-outline", "wind-down": "moon-outline",
-  sleep: "moon-outline", screen: "tv-outline",
-  default: "ellipse-outline",
-};
+const CATEGORY_ICONS: Record<string, React.ComponentProps<typeof Ionicons>["name"]> =
+  Object.fromEntries(
+    Object.entries(CATEGORY_ICON_PAIRS).map(([k, v]) => [k, v.outline]),
+  ) as Record<string, React.ComponentProps<typeof Ionicons>["name"]>;
 
 function hexToRgba(color: string, alpha: number): string {
   if (color.startsWith("rgba(") || color.startsWith("rgb(")) {

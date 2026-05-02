@@ -27,7 +27,6 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import RoutineCarousel from "@/components/RoutineCarousel";
-import type { RoutineTask } from "@/contexts/ProgressContext";
 import {
   getTotalPoints,
   getBadges,
@@ -85,20 +84,6 @@ type BehaviorStat = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const CATEGORY_ICONS: Record<string, string> = {
-  morning: "sunny", morning_routine: "sunny",
-  meal: "restaurant", tiffin: "fast-food",
-  school: "school", travel: "car",
-  homework: "book", study: "book",
-  play: "football", exercise: "fitness",
-  family: "heart", bonding: "people",
-  creative: "color-palette", outdoor: "leaf",
-  self_care: "sparkles", hygiene: "water",
-  rest: "pause-circle", "wind-down": "moon",
-  sleep: "moon", screen: "tv",
-  default: "ellipse-outline",
-};
 
 function getGreetingKey(): string {
   const h = new Date().getHours();
