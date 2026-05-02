@@ -1869,19 +1869,53 @@ function WinCard({
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LISTEN BUTTON — speaks the win aloud using Amy's ElevenLabs voice.
+//
+// Hindi + English read-aloud. The audio is generated server-side via
+// ElevenLabs and content-addressed cached in GCS (SHA256(text|voice|model)),
+// so the FIRST parent to listen pays the synth cost and EVERY subsequent
+// parent worldwide reads from the shared cache for free.
+//
+// Voice IDs mirror artifacts/api-server/src/services/elevenLabsService.ts —
+// keep these in sync if either side changes.
 // ═══════════════════════════════════════════════════════════════════════════
+const COACH_VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K (Indian English)
+const COACH_VOICE_HI_FEMALE = "TllHtNijgXBd45uTSCS7"; // Anjura (Calm Hindi)
+const COACH_MODEL_EN = "eleven_turbo_v2_5";
+const COACH_MODEL_HI = "eleven_multilingual_v2";
+
+type CoachLang = "en" | "hi";
+
 function ListenButton({ win }: { win: Win }) {
-  const { speak, stop, speaking, loading } = useAmyVoice();
+  const { i18n } = useTranslation();
+  // Default the listen language to the parent's UI language. They can
+  // override per-win via the EN | HI chips next to the Listen button.
+  const initialLang: CoachLang = i18n.language?.toLowerCase().startsWith("hi") ? "hi" : "en";
+  const [lang, setLang] = useState<CoachLang>(initialLang);
+
+  const voiceOpts = useMemo(
+    () =>
+      lang === "hi"
+        ? { voiceId: COACH_VOICE_HI_FEMALE, modelId: COACH_MODEL_HI }
+        : { voiceId: COACH_VOICE_EN_FEMALE, modelId: COACH_MODEL_EN },
+    [lang],
+  );
+
+  const { speak, stop, speaking, loading } = useAmyVoice(voiceOpts);
 
   const buildText = useCallback(() => {
+    // The win text itself is whatever language the AI generated it in
+    // (mirrors the parent's profile language). The multilingual model
+    // pronounces both Hindi and English text naturally, so a parent
+    // who flips to HI on an English win still gets a clean Indian-
+    // accented read instead of a broken switch.
     return [
-      `Win ${win.win}. ${win.title}.`,
+      `${win.win}. ${win.title}.`,
       win.objective,
       win.deep_explanation,
-      win.actions?.length ? `Steps to take: ${win.actions.join(". ")}` : "",
-      win.example ? `For example. ${win.example}` : "",
-      win.mistake_to_avoid ? `Mistake to avoid: ${win.mistake_to_avoid}.` : "",
-      win.micro_task ? `Tiny task for today: ${win.micro_task}.` : "",
+      win.actions?.length ? `${win.actions.join(". ")}` : "",
+      win.example ? `${win.example}` : "",
+      win.mistake_to_avoid ? `${win.mistake_to_avoid}.` : "",
+      win.micro_task ? `${win.micro_task}.` : "",
     ].filter(Boolean).join(" ");
   }, [win]);
 
@@ -1890,24 +1924,80 @@ function ListenButton({ win }: { win: Win }) {
     speak(buildText());
   };
 
+  // If the parent flips EN ↔ HI mid-playback, stop the current voice — the
+  // next tap on Listen will start fresh in the new language. We don't auto-
+  // restart because a silent voice switch is jarring and racey when the
+  // first synth is still loading.
+  const handleLangChange = (next: CoachLang) => {
+    if (next === lang) return;
+    if (speaking || loading) stop();
+    setLang(next);
+  };
+
+  const isActive = speaking || loading;
+  const langChipBase: React.CSSProperties = {
+    fontSize: 10, fontWeight: 800, letterSpacing: 0.4,
+    padding: "3px 7px", borderRadius: 6, cursor: "pointer",
+    border: "1px solid transparent", lineHeight: 1,
+  };
+
   return (
-    <button
-      onClick={handleClick}
-      style={{
-        fontSize: 11, padding: "4px 10px", borderRadius: 999,
-        background: (speaking || loading) ? "rgba(236,72,153,0.25)" : "rgba(34,197,94,0.18)",
-        color: (speaking || loading) ? "#fbcfe8" : "#86efac",
-        fontWeight: 700,
-        border: (speaking || loading) ? "1px solid rgba(236,72,153,0.4)" : "1px solid rgba(34,197,94,0.35)",
-        display: "inline-flex", alignItems: "center", gap: 5,
-        cursor: "pointer",
-      }}
-      aria-label={(speaking || loading) ? "Stop listening" : "Listen to this win"}
-      title={(speaking || loading) ? "Stop" : "Amy reads this aloud"}
-    >
-      {(speaking || loading) ? <VolumeX size={12} /> : <Volume2 size={12} />}
-      {speaking ? "Stop" : loading ? "…" : "Listen"}
-    </button>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }} data-testid="coach-listen-row">
+      <span
+        role="group"
+        aria-label="Read-aloud language"
+        style={{
+          display: "inline-flex", gap: 2, padding: 2, borderRadius: 8,
+          background: "rgba(124,58,237,0.10)", border: "1px solid rgba(124,58,237,0.28)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => handleLangChange("en")}
+          aria-pressed={lang === "en"}
+          data-testid="coach-listen-lang-en"
+          style={{
+            ...langChipBase,
+            background: lang === "en" ? "rgba(124,58,237,0.45)" : "transparent",
+            color: lang === "en" ? "#f5f3ff" : "rgba(196,181,253,0.95)",
+          }}
+        >
+          EN
+        </button>
+        <button
+          type="button"
+          onClick={() => handleLangChange("hi")}
+          aria-pressed={lang === "hi"}
+          data-testid="coach-listen-lang-hi"
+          style={{
+            ...langChipBase,
+            background: lang === "hi" ? "rgba(124,58,237,0.45)" : "transparent",
+            color: lang === "hi" ? "#f5f3ff" : "rgba(196,181,253,0.95)",
+          }}
+        >
+          HI
+        </button>
+      </span>
+      <button
+        type="button"
+        onClick={handleClick}
+        data-testid="coach-listen-btn"
+        style={{
+          fontSize: 11, padding: "4px 10px", borderRadius: 999,
+          background: isActive ? "rgba(236,72,153,0.25)" : "rgba(34,197,94,0.18)",
+          color: isActive ? "rgba(251,207,232,1)" : "rgba(134,239,172,1)",
+          fontWeight: 700,
+          border: isActive ? "1px solid rgba(236,72,153,0.4)" : "1px solid rgba(34,197,94,0.35)",
+          display: "inline-flex", alignItems: "center", gap: 5,
+          cursor: "pointer",
+        }}
+        aria-label={isActive ? "Stop listening" : `Listen to this win in ${lang === "hi" ? "Hindi" : "English"}`}
+        title={isActive ? "Stop" : `Amy reads this aloud (${lang.toUpperCase()})`}
+      >
+        {isActive ? <VolumeX size={12} /> : <Volume2 size={12} />}
+        {speaking ? "Stop" : loading ? "…" : "Listen"}
+      </button>
+    </span>
   );
 }
 
