@@ -1,0 +1,192 @@
+Upgrade Phonics module into a full-stage, animated, interactive phonics learning system.
+
+GOAL:
+- Show full phonics journey (basic → advanced)
+- Fix phonics audio accuracy
+- Make learning highly interactive and engaging
+
+--------------------------------------------------
+1. FULL STAGE VISIBILITY (IMPORTANT)
+--------------------------------------------------
+
+Show ALL stages together:
+
+1. Letter Sounds
+2. CVC Words
+3. Blends
+4. Digraphs
+5. Advanced Words
+
+Default:
+- Auto focus on child’s age level
+
+BUT:
+- User can scroll and access all levels
+
+--------------------------------------------------
+2. UI STRUCTURE
+--------------------------------------------------
+
+Top:
+- Stage selector (horizontal scroll)
+
+Below:
+- Animated tiles
+
+Each tile:
+- Letter / word
+- Image
+- Play sound button
+
+--------------------------------------------------
+3. AUDIO FIX (CRITICAL)
+--------------------------------------------------
+
+DO NOT use normal TTS.
+
+Implement phonics-specific audio:
+
+Rules:
+- Only sound (not letter name)
+- Example:
+   A → “a” (apple sound)
+   B → “b” (not “bee”)
+
+Use:
+- ElevenLabs with strict phonics prompts
+OR
+- Pre-recorded phonics dataset (recommended)
+
+--------------------------------------------------
+4. ELEVENLABS PHONICS PROMPT
+--------------------------------------------------
+
+Speak ONLY the phonetic sound.
+
+Rules:
+- No letter name
+- No extra words
+- Very short
+- Crisp pronunciation
+
+Example:
+“/b/ … /b/”
+
+Tone:
+- Neutral teacher voice
+- No emotion
+- Clear articulation
+
+--------------------------------------------------
+5. ANIMATION SYSTEM
+--------------------------------------------------
+
+Each item:
+
+- Image bounce on tap
+- Glow effect on play
+- Sound wave animation
+
+Example:
+- Ball → bounce animation
+- Cat → tail wag animation
+
+--------------------------------------------------
+6. MULTI-EXAMPLES (IMPORTANT)
+--------------------------------------------------
+
+Each phonics item:
+
+Show 3–4 examples:
+
+Example:
+B:
+- Ball
+- Bat
+- Banana
+
+--------------------------------------------------
+7. INTERACTIVE LEARNING FLOW
+--------------------------------------------------
+
+Step 1:
+Hear sound
+
+Step 2:
+See examples
+
+Step 3:
+Tap objects
+
+Step 4:
+Mini test
+
+--------------------------------------------------
+8. PHONICS TEST UPGRADE (MAJOR)
+--------------------------------------------------
+
+Convert test into game:
+
+Modes:
+
+1. Hear & Tap
+- Play sound
+- User selects correct image
+
+2. Missing Letter
+- _at → cat
+
+3. Build Word
+- Drag letters
+
+4. Speed Challenge
+- Timer + score
+
+--------------------------------------------------
+9. FEEDBACK SYSTEM
+--------------------------------------------------
+
+Correct:
+- Green glow + confetti + sound
+
+Wrong:
+- Shake + replay sound
+
+--------------------------------------------------
+10. PROGRESSION SYSTEM
+--------------------------------------------------
+
+- Unlock next level after success
+- Show progress bar
+
+BUT:
+- Allow manual access to all levels
+
+--------------------------------------------------
+11. PERSONALIZATION
+--------------------------------------------------
+
+- Track weak sounds
+- Repeat those more
+
+--------------------------------------------------
+12. UI DESIGN
+--------------------------------------------------
+
+- Bright + playful
+- Animated cards
+- Large tap areas
+
+--------------------------------------------------
+13. PERFORMANCE
+--------------------------------------------------
+
+- Preload audio
+- Cache images
+
+--------------------------------------------------
+DELIVERABLE:
+- Full phonics learning system
+- Accurate sound engine
+- Animated UI
+- Interactive test system

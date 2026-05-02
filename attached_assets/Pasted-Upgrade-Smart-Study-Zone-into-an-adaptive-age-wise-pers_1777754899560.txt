@@ -1,0 +1,146 @@
+Upgrade Smart Study Zone into an adaptive, age-wise personalized learning system.
+
+GOAL:
+Provide structured daily learning for kids (age 2–12) with progression, engagement, and retention.
+
+--------------------------------------------------
+1. AGE SEGMENTATION (CORE)
+--------------------------------------------------
+
+Create age groups:
+
+2–4 years → Early Learning
+4–6 years → Foundation
+6–8 years → Beginner Academic
+8–10 years → Intermediate
+10–12 years → Advanced
+
+--------------------------------------------------
+2. SUBJECT STRUCTURE
+--------------------------------------------------
+
+For each age:
+
+- English
+- Math
+- General Knowledge
+- Logic / Reasoning
+
+--------------------------------------------------
+3. DAILY STUDY PLAN (KEY FEATURE)
+--------------------------------------------------
+
+Generate daily plan:
+
+Example:
+- 10 min phonics
+- 10 min math
+- 5 min activity
+
+Show:
+- Progress bar
+- Completion %
+
+--------------------------------------------------
+4. LEARNING FLOW
+--------------------------------------------------
+
+Each module:
+
+Step 1 → Learn (concept)
+Step 2 → Practice
+Step 3 → Test
+
+--------------------------------------------------
+5. ADAPTIVE LEARNING ENGINE
+--------------------------------------------------
+
+Adjust difficulty based on:
+
+- Accuracy
+- Speed
+- Mistakes
+
+Logic:
+- High performance → harder questions
+- Low performance → easier + repeat
+
+--------------------------------------------------
+6. INTERACTIVE CONTENT
+--------------------------------------------------
+
+- Images
+- Audio
+- Animations
+
+Example:
+- Tap → hear
+- Drag → solve
+- Match → learn
+
+--------------------------------------------------
+7. SMART RECOMMENDATIONS (AI)
+--------------------------------------------------
+
+Show:
+
+"Today focus on Math"
+
+Based on:
+- Weak areas
+- Recent performance
+
+--------------------------------------------------
+8. GAMIFICATION
+--------------------------------------------------
+
+- Stars ⭐
+- Levels
+- Rewards
+
+--------------------------------------------------
+9. MINI GAMES
+--------------------------------------------------
+
+- Math puzzles
+- Word games
+- Memory games
+
+--------------------------------------------------
+10. PROGRESS TRACKING
+--------------------------------------------------
+
+Show:
+
+- Daily progress
+- Weekly improvement
+- Strong vs weak areas
+
+--------------------------------------------------
+11. PARENT DASHBOARD
+--------------------------------------------------
+
+- Performance summary
+- Suggestions
+
+--------------------------------------------------
+12. UI DESIGN
+--------------------------------------------------
+
+- Card-based layout
+- Bright + engaging
+- Age-specific visuals
+
+--------------------------------------------------
+13. PERFORMANCE
+--------------------------------------------------
+
+- Fast loading
+- Cached data
+
+--------------------------------------------------
+DELIVERABLE:
+- Age-wise adaptive learning system
+- Daily study plan
+- Interactive modules
+- Performance tracking

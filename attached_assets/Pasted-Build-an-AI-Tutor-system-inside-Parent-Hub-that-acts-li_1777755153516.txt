@@ -1,0 +1,147 @@
+Build an AI Tutor system inside Parent Hub that acts like a personalized teacher for each child.
+
+GOAL:
+Guide the child step-by-step, explain concepts, and adapt learning based on performance.
+
+--------------------------------------------------
+1. AI TUTOR ENTRY POINT
+--------------------------------------------------
+
+Add floating button:
+"Ask Amy AI"
+
+OR
+
+Inside Smart Study:
+"Start with AI Tutor"
+
+--------------------------------------------------
+2. AI TUTOR MODES
+--------------------------------------------------
+
+1. Explain Mode
+- Explain concept (phonics, math, words)
+
+2. Practice Mode
+- Ask questions
+- Give exercises
+
+3. Test Mode
+- Conduct quiz
+
+4. Doubt Mode
+- Child/parent asks question
+
+--------------------------------------------------
+3. AGE-BASED RESPONSE SYSTEM
+--------------------------------------------------
+
+Adapt tone:
+
+2–4:
+- Very simple
+- Visual explanation
+
+4–6:
+- Basic explanation
+- Examples
+
+6–10+:
+- Detailed explanation
+- Step-by-step logic
+
+--------------------------------------------------
+4. INTERACTIVE FLOW
+--------------------------------------------------
+
+Example:
+
+AI:
+"Let’s learn the sound B"
+
+Step 1 → Play sound
+Step 2 → Show images
+Step 3 → Ask question
+Step 4 → Give feedback
+
+--------------------------------------------------
+5. PERSONALIZATION ENGINE
+--------------------------------------------------
+
+Track:
+
+- Weak topics
+- Mistakes
+- Speed
+
+AI should:
+- Repeat weak areas
+- Increase difficulty
+
+--------------------------------------------------
+6. SMART SUGGESTIONS
+--------------------------------------------------
+
+AI suggests:
+
+- “Let’s practice phonics today”
+- “You need help in spelling”
+
+--------------------------------------------------
+7. VOICE + AUDIO (OPTIONAL)
+--------------------------------------------------
+
+- AI speaks (ElevenLabs)
+- Child listens
+
+--------------------------------------------------
+8. UI EXPERIENCE
+--------------------------------------------------
+
+- Chat-style interface
+- AI avatar (AMY)
+- Animated typing
+
+--------------------------------------------------
+9. CONTEXT AWARENESS
+--------------------------------------------------
+
+AI knows:
+
+- Child age
+- Current module
+- Previous mistakes
+
+--------------------------------------------------
+10. OPENAI INTEGRATION
+--------------------------------------------------
+
+Use OpenAI to:
+
+- Generate explanations
+- Create questions
+- Adapt difficulty
+
+--------------------------------------------------
+11. PROMPT STRUCTURE
+--------------------------------------------------
+
+Send:
+
+- Age
+- Topic
+- Difficulty
+- Learning goal
+
+--------------------------------------------------
+12. SAFETY
+--------------------------------------------------
+
+- Child-safe responses
+- No complex language for young kids
+
+--------------------------------------------------
+DELIVERABLE:
+- AI Tutor system
+- Personalized teaching
+- Interactive chat + learning

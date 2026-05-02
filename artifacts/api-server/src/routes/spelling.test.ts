@@ -29,13 +29,15 @@ import {
   AI_OPPONENTS,
   TOURNAMENT_ROUND_CONFIG,
   type TournamentRoundResult,
+  _advanceTournamentTxForTest,
 } from "./spelling";
 import {
   db,
   spellingSessionsTable,
   spellingCompetitionScoresTable,
+  spellingTournamentsTable,
 } from "@workspace/db";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 describe("normaliseSpellingGuess", () => {
   it("treats trailing whitespace as equal", () => {
@@ -734,6 +736,328 @@ describe("spelling sessions — DB integration (trust + concurrency)", () => {
       await db
         .delete(spellingSessionsTable)
         .where(eq(spellingSessionsTable.userId, userId));
+    }
+  });
+
+  // ─── /advance state-machine integration tests ──────────────────────
+  // These exercise the in-tx state machine (the function the handler
+  // wraps in db.transaction) so we cover every branch of
+  // `advanceTournamentTxImpl`: legacy-recovery, audio-pending,
+  // drift/inconsistent_state, and the prewarm-failure → retry path.
+  //
+  // Helper: insert a tournament + session in a target stuck/pending shape.
+  async function seedTournament(opts: {
+    userId: string;
+    tournamentToken: string;
+    sessionToken: string;
+    rounds: Array<TournamentRoundResult & { passed: boolean }>;
+    currentRound: number;
+    finalizedSession: boolean;
+    audioKeys?: string[];
+  }) {
+    await db.insert(spellingTournamentsTable).values({
+      tournamentToken: opts.tournamentToken,
+      userId: opts.userId,
+      childId: 999_999,
+      ageGroup: "4-6",
+      status: "active",
+      currentRound: opts.currentRound,
+      rounds: opts.rounds,
+      totalScore: opts.rounds.reduce(
+        (acc, r) => acc + (r.passed ? r.score : 0),
+        0,
+      ),
+      eliminatedAtRound: null,
+      finalizedAt: null,
+    });
+    const sessionRow = freshSessionRow({
+      userId: opts.userId,
+      sessionToken: opts.sessionToken,
+      mode: "tournament",
+      finalized: opts.finalizedSession,
+    });
+    await db.insert(spellingSessionsTable).values({
+      ...sessionRow,
+      audioKeys: opts.audioKeys ?? sessionRow.audioKeys,
+      parentTournamentToken: opts.tournamentToken,
+    });
+  }
+
+  async function readTournament(token: string) {
+    const rows = await db
+      .select()
+      .from(spellingTournamentsTable)
+      .where(eq(spellingTournamentsTable.tournamentToken, token))
+      .limit(1);
+    return rows[0]!;
+  }
+
+  async function readLatestSession(token: string, userId: string) {
+    const rows = await db
+      .select()
+      .from(spellingSessionsTable)
+      .where(
+        and(
+          eq(spellingSessionsTable.parentTournamentToken, token),
+          eq(spellingSessionsTable.userId, userId),
+        ),
+      )
+      .orderBy(desc(spellingSessionsTable.startedAt))
+      .limit(1);
+    return rows[0]!;
+  }
+
+  // BRANCH 3 (legacy recovery): tournament stranded by the pre-fix
+  // split-commit code path — outer tx applied the round, but post-tx
+  // createSpellingSession failed, so the next-round session row never
+  // landed. /advance must heal: skip finalize/applyRoundResult
+  // (already done) and INSERT the missing next-round session inside
+  // the SAME tx as the recovery select, so a TTS failure in the
+  // post-tx prewarm leaves a recoverable audio_pending state — NOT
+  // a permanently stuck tournament.
+  it("/advance heals a legacy stuck state without double-applying the round", async () => {
+    const userId = `spelling-test-${randomUUID()}`;
+    const tournamentToken = `tour_${randomUUID()}`;
+    const r1SessionToken = `tok_${randomUUID()}`;
+    try {
+      const r1: TournamentRoundResult & { passed: boolean } = {
+        round: 1,
+        difficulty: "easy",
+        sessionToken: r1SessionToken,
+        score: 100,
+        wordsCorrect: 4,
+        wordsAttempted: 5,
+        durationSec: 60,
+        passed: true,
+      };
+      await seedTournament({
+        userId,
+        tournamentToken,
+        sessionToken: r1SessionToken,
+        rounds: [r1],
+        currentRound: 2,
+        finalizedSession: true,
+      });
+
+      const result = await db.transaction((tx) =>
+        _advanceTournamentTxForTest(tx, { tournamentToken, userId }),
+      );
+
+      assert.equal(result.kind, "ok");
+      if (result.kind !== "ok") return;
+      assert.equal(
+        result.isRecovery,
+        true,
+        "must take recovery branch, NOT normal flow",
+      );
+      assert.equal(
+        result.roundResult.sessionToken,
+        r1SessionToken,
+        "roundResult mirrors the already-applied R1 from rounds[last]",
+      );
+      assert.ok(
+        result.nextSessionData !== null,
+        "must INSERT the missing R2 session inside the recovery tx",
+      );
+
+      // Tournament state must NOT be re-applied: rounds[] unchanged,
+      // currentRound unchanged, totalScore unchanged.
+      const tournamentAfter = await readTournament(tournamentToken);
+      assert.equal(tournamentAfter.status, "active");
+      assert.equal(tournamentAfter.currentRound, 2);
+      assert.equal(tournamentAfter.totalScore, 100);
+      assert.equal(
+        (tournamentAfter.rounds as unknown[]).length,
+        1,
+        "rounds[] must not gain a duplicate R1 entry",
+      );
+
+      // Latest session is now the freshly-INSERTed R2, unfinalized,
+      // audioKeys empty (TTS prewarm runs after the tx commits).
+      const latest = await readLatestSession(tournamentToken, userId);
+      assert.notEqual(latest.sessionToken, r1SessionToken);
+      assert.equal(latest.finalizedAt, null);
+      assert.equal(latest.audioKeys.length, 0);
+    } finally {
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+      await db
+        .delete(spellingTournamentsTable)
+        .where(eq(spellingTournamentsTable.userId, userId));
+    }
+  });
+
+  // BRANCH 2 (audio_pending): a previous /advance committed the
+  // next-round session row in-tx and then post-tx TTS prewarm
+  // failed. The retry of /advance MUST detect this (unfinalized
+  // session + empty audioKeys) and return audio_pending — it must
+  // NOT enter the normal flow and finalize the unplayed session
+  // (which would apply a 0-attempt round and wrongly eliminate).
+  it("/advance returns audio_pending on TTS-prewarm-failed retry, NOT finalize-with-zero", async () => {
+    const userId = `spelling-test-${randomUUID()}`;
+    const tournamentToken = `tour_${randomUUID()}`;
+    const r1SessionToken = `tok_${randomUUID()}`;
+    const r2SessionToken = `tok_${randomUUID()}`;
+    try {
+      const r1: TournamentRoundResult & { passed: boolean } = {
+        round: 1,
+        difficulty: "easy",
+        sessionToken: r1SessionToken,
+        score: 100,
+        wordsCorrect: 4,
+        wordsAttempted: 5,
+        durationSec: 60,
+        passed: true,
+      };
+      // Tournament already advanced past R1 (rounds=[R1],
+      // currentRound=2). The R2 session row exists (pre-fix
+      // would not have, but we now atomically insert it) but
+      // audioKeys is empty — TTS prewarm previously failed.
+      await db.insert(spellingTournamentsTable).values({
+        tournamentToken,
+        userId,
+        childId: 999_999,
+        ageGroup: "4-6",
+        status: "active",
+        currentRound: 2,
+        rounds: [r1],
+        totalScore: 100,
+        eliminatedAtRound: null,
+        finalizedAt: null,
+      });
+      // R1 session (finalized, audio populated).
+      await db.insert(spellingSessionsTable).values({
+        ...freshSessionRow({
+          userId,
+          sessionToken: r1SessionToken,
+          mode: "tournament",
+          finalized: true,
+        }),
+        parentTournamentToken: tournamentToken,
+      });
+      // R2 session (unfinalized, empty audioKeys ⇒ audio_pending).
+      // Insert this one slightly later so it sorts as "latest" by
+      // startedAt.
+      await new Promise((r) => setTimeout(r, 5));
+      const r2Row = freshSessionRow({
+        userId,
+        sessionToken: r2SessionToken,
+        mode: "tournament",
+        finalized: false,
+      });
+      await db.insert(spellingSessionsTable).values({
+        ...r2Row,
+        audioKeys: [],
+        parentTournamentToken: tournamentToken,
+      });
+
+      const result = await db.transaction((tx) =>
+        _advanceTournamentTxForTest(tx, { tournamentToken, userId }),
+      );
+
+      assert.equal(
+        result.kind,
+        "audio_pending",
+        "must return audio_pending — not 'ok' (would have finalized R2 with 0 attempts!)",
+      );
+      if (result.kind !== "audio_pending") return;
+      assert.equal(result.session.sessionToken, r2SessionToken);
+      assert.equal(
+        result.session.finalizedAt,
+        null,
+        "session must remain unfinalized so the kid can still play it",
+      );
+
+      // Tournament state untouched: currentRound still 2, rounds
+      // still [R1], no R2 result applied. The R2 session is still
+      // unfinalized.
+      const tournamentAfter = await readTournament(tournamentToken);
+      assert.equal(tournamentAfter.currentRound, 2);
+      assert.equal(tournamentAfter.totalScore, 100);
+      assert.equal((tournamentAfter.rounds as unknown[]).length, 1);
+      const r2After = await readLatestSession(tournamentToken, userId);
+      assert.equal(r2After.sessionToken, r2SessionToken);
+      assert.equal(
+        r2After.finalizedAt,
+        null,
+        "audio_pending branch must NOT finalize the session",
+      );
+    } finally {
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+      await db
+        .delete(spellingTournamentsTable)
+        .where(eq(spellingTournamentsTable.userId, userId));
+    }
+  });
+
+  // BRANCH 4 (drift): latest session is finalized but its token does
+  // NOT match `tournament.rounds[last].sessionToken` — e.g. session
+  // was finalized via the public /sessions/:token/finalize path
+  // without /advance ever applying it. The tightened recovery
+  // predicate (`lastApplied.sessionToken === activeSession.sessionToken`)
+  // must REFUSE rather than wrongly skip apply + double-allocate
+  // a session for the same round.
+  it("/advance refuses inconsistent_state when a finalized session does not match rounds[last]", async () => {
+    const userId = `spelling-test-${randomUUID()}`;
+    const tournamentToken = `tour_${randomUUID()}`;
+    const r1RecordedToken = `tok_${randomUUID()}`;
+    const r1ActualToken = `tok_${randomUUID()}`;
+    try {
+      // rounds[] thinks R1 was sessionToken=r1RecordedToken, but the
+      // ACTUAL session row in the DB has a different token (drift).
+      const r1: TournamentRoundResult & { passed: boolean } = {
+        round: 1,
+        difficulty: "easy",
+        sessionToken: r1RecordedToken,
+        score: 100,
+        wordsCorrect: 4,
+        wordsAttempted: 5,
+        durationSec: 60,
+        passed: true,
+      };
+      await seedTournament({
+        userId,
+        tournamentToken,
+        sessionToken: r1ActualToken,
+        rounds: [r1],
+        currentRound: 2,
+        finalizedSession: true,
+      });
+
+      const result = await db.transaction((tx) =>
+        _advanceTournamentTxForTest(tx, { tournamentToken, userId }),
+      );
+
+      assert.equal(
+        result.kind,
+        "inconsistent_state",
+        "must refuse with inconsistent_state — must NOT enter recovery and double-allocate",
+      );
+
+      // Tournament state untouched.
+      const tournamentAfter = await readTournament(tournamentToken);
+      assert.equal(tournamentAfter.currentRound, 2);
+      assert.equal((tournamentAfter.rounds as unknown[]).length, 1);
+      // No new session row created.
+      const sessionsAfter = await db
+        .select()
+        .from(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+      assert.equal(
+        sessionsAfter.length,
+        1,
+        "drift branch must NOT insert a new session row",
+      );
+    } finally {
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+      await db
+        .delete(spellingTournamentsTable)
+        .where(eq(spellingTournamentsTable.userId, userId));
     }
   });
 });
