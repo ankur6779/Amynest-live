@@ -77,7 +77,7 @@ export default function RewardsPage() {
         </div>
 
         {/* Points burst */}
-        <Card className="rounded-3xl overflow-hidden bg-gradient-to-br from-violet-600 to-pink-600 border-0">
+        <Card data-on-dark className="rounded-3xl overflow-hidden bg-gradient-to-br from-violet-600 to-pink-600 border-0">
           <CardContent className="p-0">
             <PointsBurst points={points} />
             <div className="text-center pb-5">

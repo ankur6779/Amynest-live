@@ -281,8 +281,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* Mobile Bottom Nav — premium 4-tab with center-raised Amy Coach */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-slate-900/95 backdrop-blur-xl border-t border-white/10 md:hidden pb-safe">
+      {/* Mobile Bottom Nav — premium 4-tab with center-raised Amy Coach.
+          data-on-dark: this nav is intentionally a dark slate surface in
+          BOTH themes (matches native iOS/Android tab bar conventions),
+          so the legacy-color safety net in index.css must NOT rewrite
+          the white text / white borders inside it on light mode. */}
+      <nav data-on-dark className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-slate-900/95 backdrop-blur-xl border-t border-white/10 md:hidden pb-safe">
         <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">
           {BOTTOM_NAV_ITEMS.map((item) => {
             const isActive = location === item.href || location.startsWith(item.href + "/");

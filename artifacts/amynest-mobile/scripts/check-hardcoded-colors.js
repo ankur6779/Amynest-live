@@ -20,6 +20,11 @@
  * Exit codes:
  *   0  – no violations in audited files (deferred warnings do not count)
  *   1  – one or more violations found in audited files
+ *
+ * Audit note (Task #178): DEFERRED_FILES = [] is intentional. Every
+ * runtime screen uses useColors() from ThemeContext, and the static-
+ * dark public flows (welcome, sign-in, sign-up, onboarding, paywall,
+ * tutorial, index) carry explicit `audit-ok` markers on each hex.
  */
 
 const fs   = require("fs");

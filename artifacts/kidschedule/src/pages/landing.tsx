@@ -244,6 +244,7 @@ export default function LandingPage() {
   const { t } = useTranslation();
   return (
     <div
+      data-on-dark
       className="min-h-screen flex flex-col overflow-x-hidden text-white relative"
       style={{
         background: "linear-gradient(160deg,#0f0c29 0%,#302b63 55%,#24243e 100%)",

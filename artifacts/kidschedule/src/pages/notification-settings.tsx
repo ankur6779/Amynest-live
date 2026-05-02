@@ -247,7 +247,7 @@ export default function NotificationSettingsPage() {
 
   if (isLoading || !local) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0D0022] via-[#180040] to-[#0A001E]">
+      <div data-on-dark className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0D0022] via-[#180040] to-[#0A001E]">
         <div className="h-8 w-8 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
       </div>
     );
@@ -260,7 +260,7 @@ export default function NotificationSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0D0022] via-[#180040] to-[#0A001E] py-8 px-4">
+    <div data-on-dark className="min-h-screen bg-gradient-to-br from-[#0D0022] via-[#180040] to-[#0A001E] py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <button
           type="button"
