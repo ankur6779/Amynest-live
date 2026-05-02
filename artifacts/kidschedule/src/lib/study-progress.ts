@@ -8,6 +8,7 @@
 import {
   applyEvent as applyEngagementEvent,
   emptyEngagement,
+  noopApplyResult,
   viewState as freshenEngagement,
   type ApplyResult,
   type EngagementState,
@@ -63,13 +64,22 @@ export function markPlayItem(
   itemId: string,
 ): { progress: StudyProgress; engagement: ApplyResult } {
   const p = loadProgress(childId);
-  const list = new Set(p.play[categoryId] ?? []);
-  list.add(itemId);
-  p.play[categoryId] = Array.from(list);
+  const prevList = new Set(p.play[categoryId] ?? []);
+  // Idempotency: only award engagement the first time this item is tapped.
+  // Re-tapping a completed item still re-plays the audio/animation but does
+  // NOT inflate XP, streak, or daily goal.
+  const wasNew = !prevList.has(itemId);
+  prevList.add(itemId);
+  p.play[categoryId] = Array.from(prevList);
 
-  const event: StudyEvent = { kind: "play-tap", categoryId, itemId };
-  const result = applyEngagementEvent(p.engagement, event);
-  p.engagement = result.next;
+  let result: ApplyResult;
+  if (wasNew) {
+    const event: StudyEvent = { kind: "play-tap", categoryId, itemId };
+    result = applyEngagementEvent(p.engagement, event);
+    p.engagement = result.next;
+  } else {
+    result = noopApplyResult(p.engagement);
+  }
 
   saveProgress(childId, p);
   return { progress: p, engagement: result };
@@ -86,13 +96,28 @@ export function markTopicResult(
   const p = loadProgress(childId);
   const subj = p[mode][subjectId] ?? {};
   const prev = subj[topicId];
+  const wasAlreadyCompleted = prev?.completed === true;
+  const wasAlreadyPerfect = prev?.score === total && total > 0;
   const bestScore = prev ? Math.max(prev.score, score) : score;
-  subj[topicId] = { score: bestScore, total, completed: bestScore >= Math.ceil(total * 0.6) };
+  const willBeCompleted = bestScore >= Math.ceil(total * 0.6);
+  subj[topicId] = { score: bestScore, total, completed: willBeCompleted };
   p[mode][subjectId] = subj;
 
-  const event: StudyEvent = { kind: "topic-result", mode, subjectId, topicId, score, total };
-  const result = applyEngagementEvent(p.engagement, event);
-  p.engagement = result.next;
+  // Idempotency: award engagement only on improvement —
+  //   • first time the topic is completed at all, OR
+  //   • first time the kid hits a perfect score on it.
+  // Re-submitting a previously-cleared topic is silent.
+  const isNewCompletion = !wasAlreadyCompleted && willBeCompleted;
+  const isNewPerfect = !wasAlreadyPerfect && score === total && total > 0;
+
+  let result: ApplyResult;
+  if (isNewCompletion || isNewPerfect) {
+    const event: StudyEvent = { kind: "topic-result", mode, subjectId, topicId, score, total };
+    result = applyEngagementEvent(p.engagement, event);
+    p.engagement = result.next;
+  } else {
+    result = noopApplyResult(p.engagement);
+  }
 
   saveProgress(childId, p);
   return { progress: p, engagement: result };

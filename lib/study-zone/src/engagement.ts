@@ -20,6 +20,22 @@ export interface EngagementState {
   badges: string[];
 }
 
+/**
+ * Returned when a study event happens but should NOT change engagement
+ * (e.g. the kid re-tapped an already-completed play item, or re-submitted a
+ * topic they already cleared). Keeps the call-site shape consistent so the
+ * UI doesn't have to null-check every field.
+ */
+export function noopApplyResult(state: EngagementState): ApplyResult {
+  return {
+    next: state,
+    xpDelta: 0,
+    streakIncreased: false,
+    newBadges: [],
+    goalReached: false,
+  };
+}
+
 export function emptyEngagement(): EngagementState {
   return {
     xp: 0,
