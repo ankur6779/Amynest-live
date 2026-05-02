@@ -171,10 +171,11 @@ export async function buildEngagement(
   const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
 
   // Most recent behavior log = proxy for "last activity".
+  // Behaviors are scoped by child, so filter using the primary child's id.
   const [lastBehavior] = await db
     .select({ createdAt: behaviorsTable.createdAt })
     .from(behaviorsTable)
-    .where(eq(behaviorsTable.userId, userId))
+    .where(eq(behaviorsTable.childId, child.id))
     .orderBy(desc(behaviorsTable.createdAt))
     .limit(1);
 
@@ -244,12 +245,13 @@ export async function buildNutritionInsight(
   const date = todayLocalDateString(timezone);
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  // Routines are scoped by child, so filter using the primary child's id.
   const recentRoutines = await db
     .select({ id: routinesTable.id })
     .from(routinesTable)
     .where(
       and(
-        eq(routinesTable.userId, userId),
+        eq(routinesTable.childId, child.id),
         gte(routinesTable.createdAt, sevenDaysAgo),
       ),
     )

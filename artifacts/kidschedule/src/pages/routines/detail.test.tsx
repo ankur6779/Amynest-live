@@ -124,14 +124,19 @@ describe("RoutineDetail page — school day", () => {
     items = generateRuleBasedRoutine({
       childName: "Aarav",
       ageGroup: "early_school",
+      totalAgeMonths: 84,
       wakeUpTime: "07:00 AM",
       sleepTime: "09:00 PM",
       schoolStartTime: SCHOOL_START,
       schoolEndTime: SCHOOL_END,
+      travelMode: "walk",
       hasSchool: true,
       mood: "balanced",
       foodType: "veg",
       region: "pan_indian",
+      p1Free: true,
+      p2Free: true,
+      bothBusy: false,
       date: "Monday",
     }).items;
 
@@ -197,12 +202,19 @@ describe("RoutineDetail page — non-school day", () => {
     items = generateRuleBasedRoutine({
       childName: "Aarav",
       ageGroup: "early_school",
+      totalAgeMonths: 84,
       wakeUpTime: "07:00 AM",
       sleepTime: "09:00 PM",
+      schoolStartTime: SCHOOL_START,
+      schoolEndTime: SCHOOL_END,
+      travelMode: "walk",
       hasSchool: false,
       mood: "balanced",
       foodType: "veg",
       region: "pan_indian",
+      p1Free: true,
+      p2Free: true,
+      bothBusy: false,
       date: "Saturday",
     }).items;
 

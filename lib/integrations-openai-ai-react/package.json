@@ -13,5 +13,9 @@
   },
   "peerDependenciesMeta": {
     "@types/react": { "optional": true }
+  },
+  "devDependencies": {
+    "react": "catalog:",
+    "@types/react": "catalog:"
   }
 }

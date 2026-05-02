@@ -52,7 +52,7 @@ export default function EventPrepPage() {
       setSpeaking(null);
       return;
     }
-    speak(text, { lang: /[\u0900-\u097F]/.test(text) ? "hi-IN" : "en-IN", rate: 0.92 });
+    speak(text, { lang: /[\u0900-\u097F]/.test(text) ? "hi-IN" : "en-IN" });
     setSpeaking(id);
     // Best-effort timeout — speech ends silently if user navigates away.
     setTimeout(() => setSpeaking((s) => (s === id ? null : s)), 12000);

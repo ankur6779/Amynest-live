@@ -73,7 +73,7 @@ function ChangeChip({ pct, pts }: { pct?: number; pts?: number }) {
   );
 }
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   calendar: Calendar, happy: Smile, heart: Heart, trophy: Trophy,
   flame: Flame, sunny: Sun, moon: Moon, sparkles: Sparkles,
   "color-palette": Sparkles,

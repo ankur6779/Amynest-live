@@ -1212,7 +1212,14 @@ importers:
 
   lib/infant-problems: {}
 
-  lib/integrations-openai-ai-react: {}
+  lib/integrations-openai-ai-react:
+    devDependencies:
+      '@types/react':
+        specifier: 19.1.17
+        version: 19.1.17
+      react:
+        specifier: 'catalog:'
+        version: 19.1.0
 
   lib/integrations-openai-ai-server:
     dependencies:

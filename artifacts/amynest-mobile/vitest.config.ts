@@ -9,12 +9,8 @@ export default defineConfig({
     setupFiles: ["./test-setup.ts"],
     globals: true,
     pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
     fileParallelism: false,
+    maxWorkers: 1,
     typecheck: {
       tsconfig: "./tsconfig.test.json",
     },
