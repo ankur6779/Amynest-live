@@ -102,6 +102,7 @@ export default function DeleteAccountPage() {
               {t("screens.delete_account.help_body")}
             </p>
             <a
+              data-on-dark
               href="mailto:support@amynest.app?subject=Account%20Deletion%20Request"
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
             >
