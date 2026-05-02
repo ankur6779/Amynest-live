@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColors } from "@/hooks/useColors";
 import { palette } from "@/constants/colors";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 import {
   ageMonthsToGroup,
   defaultPuzzleDifficulty,
@@ -11,6 +12,7 @@ import {
   pickPuzzles,
   puzzleDateSeed,
   PUZZLE_PER_SESSION,
+  DAILY_PUZZLES,
   type DailyPuzzle as Puzzle,
   type PuzzleDifficulty,
 } from "@workspace/age-content";
@@ -21,22 +23,100 @@ type Persist = {
   correctStreak: number;
   wrongStreak: number;
   usedIds: string[];
+  /** Puzzle ids picked for the current session, in order. */
+  sessionPuzzleIds: string[];
+  /** Per-question result: true=correct, false=wrong, null=not yet answered. */
+  results: (boolean | null)[];
 };
 
-const lsKey = (childName: string) => `amynest_puzzle_v2_${childName}`;
+const lsKey = (childName: string) => `amynest_puzzle_v3_${childName}`;
 const todayStr = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+const PUZZLE_BY_ID = new Map(DAILY_PUZZLES.map((p) => [p.id, p]));
+
+/** Reconstruct puzzle objects from a saved id list, dropping any unknown ids. */
+function puzzlesFromIds(ids: readonly string[]): Puzzle[] {
+  const out: Puzzle[] = [];
+  for (const id of ids) {
+    const p = PUZZLE_BY_ID.get(id);
+    if (p) out.push(p);
+  }
+  return out;
+}
+
+/**
+ * Build a fresh session for `state.date` + `state.difficulty`. Mutates
+ * `state.sessionPuzzleIds` and `state.results` in place and returns the
+ * picked puzzles so the caller can drop them into component state.
+ */
+function startNewSession(state: Persist, childName: string): Puzzle[] {
+  const seed = puzzleDateSeed(state.date, childName);
+  const ps = pickPuzzles(state.difficulty, seed, state.usedIds, PUZZLE_PER_SESSION);
+  state.sessionPuzzleIds = ps.map((p) => p.id);
+  state.results = Array(ps.length).fill(null);
+  return ps;
+}
+
+/**
+ * Hydrate from a previously-saved snapshot. If `sessionPuzzleIds` is missing
+ * (e.g. an older client wrote it, or a fresh-start row from the server) we
+ * pick a new session deterministically. Returns the puzzles to render.
+ */
+function rehydrateSession(state: Persist, childName: string): Puzzle[] {
+  if (
+    state.sessionPuzzleIds.length > 0 &&
+    state.results.length === state.sessionPuzzleIds.length
+  ) {
+    const ps = puzzlesFromIds(state.sessionPuzzleIds);
+    if (ps.length === state.sessionPuzzleIds.length) return ps;
+    // Some saved id no longer exists in the bank — restart cleanly.
+  }
+  return startNewSession(state, childName);
+}
+
+type ServerProgress = {
+  childId: number;
+  date: string;
+  difficulty: PuzzleDifficulty;
+  correctStreak: number;
+  wrongStreak: number;
+  usedIds: string[];
+  sessionPuzzleIds: string[];
+  results: (boolean | null)[];
+  updatedAt: string;
+};
+
+/** Convert a server row into the local Persist shape. */
+function persistFromServer(row: ServerProgress): Persist {
+  return {
+    date: row.date,
+    difficulty: row.difficulty,
+    correctStreak: row.correctStreak,
+    wrongStreak: row.wrongStreak,
+    usedIds: row.usedIds ?? [],
+    sessionPuzzleIds: row.sessionPuzzleIds ?? [],
+    results: row.results ?? [],
+  };
+}
 
 export function DailyPuzzle({
   ageMonths = 60,
   childName = "default",
+  childId,
 }: {
   ageMonths?: number;
   childName?: string;
+  /**
+   * When provided, today's progress is mirrored to the server so it follows
+   * the child across devices. Falls back to AsyncStorage-only when omitted.
+   */
+  childId?: number;
 }) {
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
   const group = ageMonthsToGroup(ageMonths);
+  const authFetch = useAuthFetch();
 
   const [state, setState] = useState<Persist | null>(null);
   const [puzzles, setPuzzles] = useState<Puzzle[]>([]);
@@ -48,53 +128,108 @@ export function DailyPuzzle({
   const [showResult, setShowResult] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // Hydrate from AsyncStorage on mount / child change.
+  // Latest writer wins — but we still want sequential PUTs per (child, date)
+  // so the server never sees results going backwards mid-flight.
+  const writeChainRef = useRef<Promise<void>>(Promise.resolve());
+
+  // Hydrate on mount / child change. Server wins when reachable so a parent
+  // who answered on the phone can pick up on the tablet at the next
+  // unanswered question. AsyncStorage is the offline / signed-out fallback.
   useEffect(() => {
     let cancelled = false;
     setLoaded(false);
     (async () => {
-      const raw = await AsyncStorage.getItem(lsKey(childName));
       const today = todayStr();
-      let st: Persist;
-      if (raw) {
+      const localRaw = await AsyncStorage.getItem(lsKey(childName));
+      let local: Persist | null = null;
+      if (localRaw) {
         try {
-          const parsed = JSON.parse(raw) as Persist;
-          if (parsed.date === today) {
-            st = parsed;
-          } else {
-            st = {
-              date: today,
-              difficulty: parsed.difficulty ?? defaultPuzzleDifficulty(group),
-              correctStreak: 0,
-              wrongStreak: 0,
-              usedIds: parsed.usedIds ?? [],
+          local = normalizeLocal(JSON.parse(localRaw), group, today);
+        } catch {
+          local = null;
+        }
+      }
+
+      let st: Persist | null = null;
+      if (childId) {
+        try {
+          const res = await authFetch(
+            `/api/daily-puzzle/progress?childId=${childId}&date=${today}`,
+          );
+          if (res.ok) {
+            const json = (await res.json()) as {
+              ok: boolean;
+              progress: ServerProgress | null;
             };
+            if (json.progress && json.progress.date === today) {
+              st = persistFromServer(json.progress);
+            }
           }
         } catch {
-          st = freshState(group);
+          // Network/auth errors are non-fatal — we'll fall back to local.
         }
-      } else {
-        st = freshState(group);
       }
+
+      if (!st) {
+        st = local && local.date === today ? local : freshState(group, today);
+      }
+
       if (cancelled) return;
-      const seed = puzzleDateSeed(st.date, childName);
-      const ps = pickPuzzles(st.difficulty, seed, st.usedIds, PUZZLE_PER_SESSION);
+
+      const ps = rehydrateSession(st, childName);
       setState(st);
       setPuzzles(ps);
-      setResults(Array(PUZZLE_PER_SESSION).fill(null));
-      setIdx(0);
+      setResults(st.results.length === ps.length ? [...st.results] : Array(ps.length).fill(null));
+      // Resume at the first unanswered question (or the end if all answered).
+      const firstUnanswered = st.results.findIndex((r) => r === null);
+      setIdx(firstUnanswered === -1 ? Math.max(0, ps.length - 1) : firstUnanswered);
       setSelected(null);
-      setShowResult(false);
+      setShowResult(firstUnanswered === -1 && ps.length > 0);
       setLoaded(true);
+
+      // If we created a fresh session locally (e.g. no row on server yet,
+      // or local was stale), persist the initial snapshot so other devices
+      // see the same puzzle ordering.
+      void persist(st);
     })();
     return () => {
       cancelled = true;
     };
-  }, [childName, group]);
+    // authFetch is recreated on every render, but its identity changing
+    // shouldn't re-hydrate the session. Only re-run when the actual child
+    // identity (or its age bucket) changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [childName, childId, group]);
 
-  const persist = (next: Persist) => {
+  /** Write `next` to AsyncStorage and (if signed-in) the server. */
+  const persist = (next: Persist): Promise<void> => {
     setState(next);
-    void AsyncStorage.setItem(lsKey(childName), JSON.stringify(next));
+    const writeLocal = AsyncStorage.setItem(
+      lsKey(childName),
+      JSON.stringify(next),
+    ).catch(() => {});
+    let writeServer: Promise<void> = Promise.resolve();
+    if (childId) {
+      const body = JSON.stringify({
+        childId,
+        date: next.date,
+        difficulty: next.difficulty,
+        correctStreak: next.correctStreak,
+        wrongStreak: next.wrongStreak,
+        usedIds: next.usedIds,
+        sessionPuzzleIds: next.sessionPuzzleIds,
+        results: next.results,
+      });
+      writeChainRef.current = writeChainRef.current
+        .catch(() => {})
+        .then(() =>
+          authFetch("/api/daily-puzzle/progress", { method: "PUT", body })
+            .then(() => undefined)
+            .catch(() => undefined),
+        );
+      writeServer = writeChainRef.current;
+    }
+    return Promise.all([writeLocal, writeServer]).then(() => undefined);
   };
 
   const submit = () => {
@@ -103,15 +238,13 @@ export function DailyPuzzle({
     if (!cur) return;
     const correct = selected === cur.correctAnswer;
     setShowResult(true);
-    setResults((rs) => {
-      const next = [...rs];
-      next[idx] = correct;
-      return next;
-    });
+    const nextResults = [...results];
+    nextResults[idx] = correct;
+    setResults(nextResults);
     const correctStreak = correct ? state.correctStreak + 1 : 0;
     const wrongStreak = correct ? 0 : state.wrongStreak + 1;
     const newDiff = adjustPuzzleDifficulty(state.difficulty, correctStreak, wrongStreak);
-    persist({
+    void persist({
       ...state,
       difficulty: newDiff,
       correctStreak,
@@ -119,6 +252,7 @@ export function DailyPuzzle({
       usedIds: state.usedIds.includes(cur.id)
         ? state.usedIds
         : [...state.usedIds, cur.id],
+      results: nextResults,
     });
   };
 
@@ -134,16 +268,16 @@ export function DailyPuzzle({
       ...state,
       correctStreak: 0,
       wrongStreak: 0,
-      usedIds: [],
+      sessionPuzzleIds: [],
+      results: [],
     };
-    const seed = puzzleDateSeed(fresh.date, childName);
-    const ps = pickPuzzles(fresh.difficulty, seed, [], PUZZLE_PER_SESSION);
-    persist(fresh);
+    const ps = startNewSession(fresh, childName);
     setPuzzles(ps);
-    setResults(Array(PUZZLE_PER_SESSION).fill(null));
+    setResults([...fresh.results]);
     setIdx(0);
     setSelected(null);
     setShowResult(false);
+    void persist(fresh);
   };
 
   if (!loaded || !state) {
@@ -250,13 +384,43 @@ export function DailyPuzzle({
   );
 }
 
-function freshState(group: ReturnType<typeof ageMonthsToGroup>): Persist {
+function freshState(
+  group: ReturnType<typeof ageMonthsToGroup>,
+  today = todayStr(),
+): Persist {
   return {
-    date: todayStr(),
+    date: today,
     difficulty: defaultPuzzleDifficulty(group),
     correctStreak: 0,
     wrongStreak: 0,
     usedIds: [],
+    sessionPuzzleIds: [],
+    results: [],
+  };
+}
+
+/**
+ * Coerce a parsed AsyncStorage blob into a valid `Persist` for `today`.
+ * Carries over difficulty + usedIds across days but resets the in-progress
+ * session — matches the v2 behaviour the previous component had.
+ */
+function normalizeLocal(
+  raw: unknown,
+  group: ReturnType<typeof ageMonthsToGroup>,
+  today: string,
+): Persist {
+  const r = (raw ?? {}) as Partial<Persist> & { date?: string };
+  const isToday = r.date === today;
+  return {
+    date: today,
+    difficulty: (r.difficulty as PuzzleDifficulty | undefined) ??
+      defaultPuzzleDifficulty(group),
+    correctStreak: isToday ? r.correctStreak ?? 0 : 0,
+    wrongStreak: isToday ? r.wrongStreak ?? 0 : 0,
+    usedIds: Array.isArray(r.usedIds) ? r.usedIds : [],
+    sessionPuzzleIds:
+      isToday && Array.isArray(r.sessionPuzzleIds) ? r.sessionPuzzleIds : [],
+    results: isToday && Array.isArray(r.results) ? r.results : [],
   };
 }
 

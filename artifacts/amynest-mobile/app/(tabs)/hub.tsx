@@ -1395,6 +1395,7 @@ export default function HubScreen() {
                   <DailyPuzzle
                     ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
                     childName={effective.name}
+                    childId={effective.id}
                   />
                 </Section>
               </View>
