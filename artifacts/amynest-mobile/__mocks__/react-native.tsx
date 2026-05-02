@@ -139,17 +139,23 @@ const StyleSheet = {
   absoluteFill: {},
 };
 
-const TextInput = ({ value, onChangeText, placeholder, testID, ...rest }: any) =>
+const TextInput = ({
+  value,
+  onChangeText,
+  placeholder,
+  testID,
+  ...rest
+}: any) =>
   React.createElement("input", {
     value,
     onChange: (e: any) => onChangeText?.(e.target.value),
     placeholder,
     "data-testid": testID,
-    ...rest,
+    ...stripRnProps(rest),
   });
 
 const KeyboardAvoidingView = ({ children, ...rest }: any) =>
-  React.createElement("div", rest, children);
+  React.createElement("div", stripRnProps(rest), children);
 
 const Platform = { OS: "ios", select: (obj: any) => obj.ios ?? obj.default };
 
