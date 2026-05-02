@@ -25,6 +25,7 @@ import {
   simulateAiOpponent,
   computeAiScore,
   finalizeSpellingSession,
+  _safeWordForTest,
   AI_OPPONENTS,
   TOURNAMENT_ROUND_CONFIG,
   type TournamentRoundResult,
@@ -641,6 +642,66 @@ describe("spelling sessions — DB integration (trust + concurrency)", () => {
         .delete(spellingSessionsTable)
         .where(eq(spellingSessionsTable.userId, userId));
     }
+  });
+
+  it("safeWordFor never leaks the answer (no word/syllables/chunks/hint, opaque id)", () => {
+    // Trip-wire test for the trust boundary: if anyone ever changes
+    // safeWordFor to surface the answer (or an answer-derived id), this
+    // test must fail. The curated catalog uses `id = word.toLowerCase()`
+    // and AI words use `id = "ai-${word}"` — both would directly leak
+    // the answer if surfaced verbatim.
+    const word = {
+      id: "ship", // ← answer-derived id from curated catalog
+      word: "ship",
+      ageGroup: "4-6" as const,
+      difficulty: "easy" as const,
+      syllables: ["ship"],
+      chunks: ["sh", "ip"],
+      hint: "boat that floats",
+    };
+    const safe = _safeWordForTest("session-token-xyz", 0, word);
+    const safeKeys = Object.keys(safe).sort();
+    assert.deepEqual(
+      safeKeys,
+      ["ageGroup", "audioUrl", "difficulty", "id", "letterCount"].sort(),
+      "safeWord shape must be exactly the documented surface — no extra leaky fields",
+    );
+    // None of the answer-bearing strings may appear ANYWHERE in the
+    // serialized payload (defends against future fields that might
+    // accidentally include the word).
+    const blob = JSON.stringify(safe).toLowerCase();
+    assert.ok(!blob.includes("ship"), `safe payload leaks 'ship': ${blob}`);
+    assert.ok(!blob.includes("sh\""), `safe payload contains chunk 'sh': ${blob}`);
+    assert.ok(!blob.includes("ip\""), `safe payload contains chunk 'ip': ${blob}`);
+    assert.ok(!blob.includes("boat"), `safe payload contains hint: ${blob}`);
+    // The opaque id is positional — same word at a different index
+    // gets a different id; same index across words gets the same id.
+    assert.equal(safe.id, "w0");
+    const safe1 = _safeWordForTest("session-token-xyz", 7, word);
+    assert.equal(safe1.id, "w7");
+    // Letter count IS exposed — needed for input box width — but is
+    // not by itself enough to recover the spelling.
+    assert.equal(safe.letterCount, 4);
+  });
+
+  it("safeWordFor never leaks the answer for an AI-generated word", () => {
+    // AI-generated words use `id = "ai-${word.toLowerCase()}"` — same
+    // leakage risk. Verify the projection scrubs that too.
+    const word = {
+      id: "ai-elephant",
+      word: "elephant",
+      ageGroup: "6-8" as const,
+      difficulty: "medium" as const,
+      syllables: ["el", "e", "phant"],
+      chunks: ["el", "e", "ph", "ant"],
+      hint: "big grey animal",
+    };
+    const safe = _safeWordForTest("token", 3, word);
+    const blob = JSON.stringify(safe).toLowerCase();
+    assert.ok(!blob.includes("elephant"), `leaks 'elephant': ${blob}`);
+    assert.ok(!blob.includes("ai-"), `leaks ai- prefix: ${blob}`);
+    assert.equal(safe.id, "w3");
+    assert.equal(safe.letterCount, 8);
   });
 
   it("finalize on a non-competition session does NOT touch the leaderboard", async () => {

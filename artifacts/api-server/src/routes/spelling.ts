@@ -776,6 +776,24 @@ const sessionStartSchema = z
  *    leaks the answer (chunks IS the answer for spelling).
  *  - The `word` field is omitted from the client payload entirely.
  */
+/**
+ * Project a server-stored word into a tamper-safe payload for the
+ * client. CRITICAL: the returned shape MUST NOT contain anything that
+ * would let a tampered client reconstruct the answer:
+ *  - NO `word` (the spelling itself)
+ *  - NO `syllables` / `chunks` / `hint` (give away the answer)
+ *  - NO `id` derived from the word (the curated catalog uses
+ *    `id = word.toLowerCase()`, and AI words use `id = "ai-${word}"`,
+ *    so leaking `word.id` would directly expose the answer)
+ *
+ * The returned `id` is an opaque per-session positional handle
+ * (`w${index}`) — the client uses it as a React key and for nothing
+ * else. Per-word grading is keyed by integer `wordIndex`, not `id`,
+ * so the client never needs the underlying catalog id.
+ *
+ * `letterCount` is the only "shape hint" — needed to render the input
+ * box width sensibly. Length alone doesn't give away the spelling.
+ */
 function safeWordFor(
   sessionToken: string,
   index: number,
@@ -788,15 +806,21 @@ function safeWordFor(
   letterCount: number;
 } {
   return {
-    id: word.id,
+    id: `w${index}`,
     ageGroup: word.ageGroup,
     difficulty: word.difficulty,
     audioUrl: `/api/spelling/sessions/${sessionToken}/audio/${index}.mp3`,
-    // Letter count is the only "shape hint" the client gets — needed to
-    // render the input box width sensibly. Knowing the length doesn't
-    // give away spelling.
     letterCount: word.word.length,
   };
+}
+
+/** Exported for regression tests — see safeWordFor above. */
+export function _safeWordForTest(
+  sessionToken: string,
+  index: number,
+  word: SpellingWord,
+) {
+  return safeWordFor(sessionToken, index, word);
 }
 
 /**
@@ -1543,6 +1567,20 @@ router.post(
         return { kind: "no_session" as const };
       }
 
+      // Round-in-flight guard. If the most recent session for this
+      // tournament is already FINALIZED but the tournament status is
+      // still "active", a previous /advance call has finalized that
+      // session and updated currentRound++ but not yet created the
+      // next-round session (createSpellingSession runs after the outer
+      // tx commits — TTS prewarm is too slow to hold the lock for).
+      // Without this guard a racing /advance would re-finalize the
+      // already-finalized session (no-op, returns already_finalized),
+      // then mistakenly apply that round's score against the NEW
+      // currentRound and corrupt tournament state. Refuse with 409.
+      if (activeSession.finalizedAt !== null) {
+        return { kind: "round_in_flight" as const };
+      }
+
       const finalizeRes = await finalizeSpellingSession(
         userId,
         activeSession.sessionToken,
@@ -1601,6 +1639,10 @@ router.post(
     }
     if (txResult.kind === "no_session") {
       res.status(500).json({ error: "no_active_round_session" });
+      return;
+    }
+    if (txResult.kind === "round_in_flight") {
+      res.status(409).json({ error: "round_in_flight" });
       return;
     }
     if (txResult.kind === "session_not_found") {
