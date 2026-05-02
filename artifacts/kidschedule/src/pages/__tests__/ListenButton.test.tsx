@@ -52,8 +52,9 @@ const sampleWin: Win = {
   example: "Aarav threw his juice; sit beside him and breathe.",
   mistake_to_avoid: "Lecturing while he is still crying.",
   micro_task: "Try the 30-second breath next time he melts down.",
-  science_one_liner: "Co-regulation precedes self-regulation (Siegel, 2012).",
-} as Win;
+  duration: "1 week",
+  science_reference: "Siegel, 2012 — co-regulation precedes self-regulation.",
+};
 
 beforeEach(() => {
   speakMock.mockReset();
