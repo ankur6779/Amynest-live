@@ -1,3 +1,31 @@
+export const brand = {
+  primary: "#7B3FF2",
+  primaryLight: "#9B5FF5",
+  accent: "#FF4ECD",
+  violet50: "#FAF5FF",
+  violet100: "#EDE9FE",
+  violet200: "#E9D5FF",
+  violetMist: "#DDD6FE",
+  violet300: "#C4B5FD",
+  violet400: "#A78BFA",
+  violet500: "#8B5CF6",
+  violet600: "#7C3AED",
+  violet700: "#6D28D9",
+  violet800: "#5B21B6",
+  violet900: "#4C1D95",
+  purple400: "#C084FC",
+  purple500: "#A855F7",
+  purple600: "#9333EA",
+  pink500: "#EC4899",
+  purple900: "#581C87",
+  indigo100: "#E0E7FF",
+  indigo500: "#6366F1",
+  amber400: "#FFD27A",
+  rose400: "#FB7185",
+  sky300: "#4FC3F7",
+  pink400: "#F472B6",
+} as const;
+
 const colors = {
   light: {
     text: "#0F172A",
@@ -115,7 +143,7 @@ const colors = {
     glowAccent: "#FF4ECD",
     surface: "#13102e",
     surfaceElevated: "#1c1240",
-    highlight: "#4FC3F7",
+    highlight: brand.sky300,
     textMuted: "rgba(255,255,255,0.6)",
     textDim: "rgba(255,255,255,0.45)",
     textStrong: "#F9FAFB",
@@ -161,34 +189,6 @@ const colors = {
 };
 
 export default colors;
-
-export const brand = {
-  primary: "#7B3FF2",
-  primaryLight: "#9B5FF5",
-  accent: colors.light.accent,
-  violet50: "#FAF5FF",
-  violet100: "#EDE9FE",
-  violet200: "#E9D5FF",
-  violetMist: "#DDD6FE",
-  violet300: "#C4B5FD",
-  violet400: "#A78BFA",
-  violet500: "#8B5CF6",
-  violet600: "#7C3AED",
-  violet700: "#6D28D9",
-  violet800: "#5B21B6",
-  violet900: "#4C1D95",
-  purple400: "#C084FC",
-  purple500: "#A855F7",
-  purple600: "#9333EA",
-  pink500: "#EC4899",
-  purple900: "#581C87",
-  indigo100: "#E0E7FF",
-  indigo500: "#6366F1",
-  amber400: "#FFD27A",
-  rose400: "#FB7185",
-  sky300: "#4FC3F7",
-  pink400: "#F472B6",
-} as const;
 
 export const brandAlpha = {
   violet600_03: "rgba(124,58,237,0.03)",
