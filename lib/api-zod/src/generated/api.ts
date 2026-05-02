@@ -867,6 +867,56 @@ export const AskAssistantResponse = zod.object({
 });
 
 /**
+ * @summary List Parent Task completions for a child (optionally filtered by date)
+ */
+export const ListParentTaskCompletionsQueryParams = zod.object({
+  childId: zod.coerce.number(),
+  date: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "ISO date (YYYY-MM-DD). When omitted returns all completions for the child.",
+    ),
+});
+
+export const ListParentTaskCompletionsResponseItem = zod.object({
+  id: zod.number(),
+  childId: zod.number(),
+  date: zod.string(),
+  taskKey: zod.string(),
+  createdAt: zod.string(),
+});
+export const ListParentTaskCompletionsResponse = zod.array(
+  ListParentTaskCompletionsResponseItem,
+);
+
+/**
+ * @summary Mark a Parent Task as done for a child on a date (idempotent)
+ */
+export const SetParentTaskCompletionBody = zod.object({
+  childId: zod.number(),
+  date: zod.string(),
+  taskKey: zod.string(),
+});
+
+export const SetParentTaskCompletionResponse = zod.object({
+  id: zod.number(),
+  childId: zod.number(),
+  date: zod.string(),
+  taskKey: zod.string(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Clear a Parent Task completion (uncheck) for a child on a date
+ */
+export const ClearParentTaskCompletionQueryParams = zod.object({
+  childId: zod.coerce.number(),
+  date: zod.coerce.string(),
+  taskKey: zod.coerce.string(),
+});
+
+/**
  * @summary Get behavior stats per child
  */
 export const GetBehaviorStatsResponseItem = zod.object({

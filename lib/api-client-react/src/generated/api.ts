@@ -25,6 +25,7 @@ import type {
   CheckRoutineParams,
   CheckRoutineResponse,
   Child,
+  ClearParentTaskCompletionParams,
   CreateBabysitterBody,
   CreateBehaviorLogBody,
   CreateChildBody,
@@ -38,8 +39,11 @@ import type {
   GetRecipeResponse,
   HealthStatus,
   ListBehaviorsParams,
+  ListParentTaskCompletionsParams,
   ListRoutinesParams,
+  ParentTaskCompletion,
   Routine,
+  SetParentTaskCompletionBody,
   UpdateChildBody,
   UpdateRoutineItemsBody,
   UpdateRoutineUiPrefsBody,
@@ -2322,6 +2326,297 @@ export const useAskAssistant = <
   TContext
 > => {
   return useMutation(getAskAssistantMutationOptions(options));
+};
+
+/**
+ * @summary List Parent Task completions for a child (optionally filtered by date)
+ */
+export const getListParentTaskCompletionsUrl = (
+  params: ListParentTaskCompletionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/parent-tasks?${stringifiedParams}`
+    : `/api/parent-tasks`;
+};
+
+export const listParentTaskCompletions = async (
+  params: ListParentTaskCompletionsParams,
+  options?: RequestInit,
+): Promise<ParentTaskCompletion[]> => {
+  return customFetch<ParentTaskCompletion[]>(
+    getListParentTaskCompletionsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListParentTaskCompletionsQueryKey = (
+  params?: ListParentTaskCompletionsParams,
+) => {
+  return [`/api/parent-tasks`, ...(params ? [params] : [])] as const;
+};
+
+export const getListParentTaskCompletionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listParentTaskCompletions>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListParentTaskCompletionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listParentTaskCompletions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListParentTaskCompletionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listParentTaskCompletions>>
+  > = ({ signal }) =>
+    listParentTaskCompletions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listParentTaskCompletions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListParentTaskCompletionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listParentTaskCompletions>>
+>;
+export type ListParentTaskCompletionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List Parent Task completions for a child (optionally filtered by date)
+ */
+
+export function useListParentTaskCompletions<
+  TData = Awaited<ReturnType<typeof listParentTaskCompletions>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListParentTaskCompletionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listParentTaskCompletions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListParentTaskCompletionsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Mark a Parent Task as done for a child on a date (idempotent)
+ */
+export const getSetParentTaskCompletionUrl = () => {
+  return `/api/parent-tasks`;
+};
+
+export const setParentTaskCompletion = async (
+  setParentTaskCompletionBody: SetParentTaskCompletionBody,
+  options?: RequestInit,
+): Promise<ParentTaskCompletion> => {
+  return customFetch<ParentTaskCompletion>(getSetParentTaskCompletionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setParentTaskCompletionBody),
+  });
+};
+
+export const getSetParentTaskCompletionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setParentTaskCompletion>>,
+    TError,
+    { data: BodyType<SetParentTaskCompletionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setParentTaskCompletion>>,
+  TError,
+  { data: BodyType<SetParentTaskCompletionBody> },
+  TContext
+> => {
+  const mutationKey = ["setParentTaskCompletion"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setParentTaskCompletion>>,
+    { data: BodyType<SetParentTaskCompletionBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return setParentTaskCompletion(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetParentTaskCompletionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setParentTaskCompletion>>
+>;
+export type SetParentTaskCompletionMutationBody =
+  BodyType<SetParentTaskCompletionBody>;
+export type SetParentTaskCompletionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark a Parent Task as done for a child on a date (idempotent)
+ */
+export const useSetParentTaskCompletion = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setParentTaskCompletion>>,
+    TError,
+    { data: BodyType<SetParentTaskCompletionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setParentTaskCompletion>>,
+  TError,
+  { data: BodyType<SetParentTaskCompletionBody> },
+  TContext
+> => {
+  return useMutation(getSetParentTaskCompletionMutationOptions(options));
+};
+
+/**
+ * @summary Clear a Parent Task completion (uncheck) for a child on a date
+ */
+export const getClearParentTaskCompletionUrl = (
+  params: ClearParentTaskCompletionParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/parent-tasks?${stringifiedParams}`
+    : `/api/parent-tasks`;
+};
+
+export const clearParentTaskCompletion = async (
+  params: ClearParentTaskCompletionParams,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getClearParentTaskCompletionUrl(params), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getClearParentTaskCompletionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearParentTaskCompletion>>,
+    TError,
+    { params: ClearParentTaskCompletionParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clearParentTaskCompletion>>,
+  TError,
+  { params: ClearParentTaskCompletionParams },
+  TContext
+> => {
+  const mutationKey = ["clearParentTaskCompletion"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clearParentTaskCompletion>>,
+    { params: ClearParentTaskCompletionParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return clearParentTaskCompletion(params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClearParentTaskCompletionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clearParentTaskCompletion>>
+>;
+
+export type ClearParentTaskCompletionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Clear a Parent Task completion (uncheck) for a child on a date
+ */
+export const useClearParentTaskCompletion = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearParentTaskCompletion>>,
+    TError,
+    { params: ClearParentTaskCompletionParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clearParentTaskCompletion>>,
+  TError,
+  { params: ClearParentTaskCompletionParams },
+  TContext
+> => {
+  return useMutation(getClearParentTaskCompletionMutationOptions(options));
 };
 
 /**

@@ -54,3 +54,4 @@ export * from "./spelling_competition_scores";
 export * from "./spelling_sessions";
 export * from "./spelling_tournaments";
 export * from "./vaccination_logs";
+export * from "./parent_task_completions";
