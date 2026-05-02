@@ -61,6 +61,12 @@ const synthesizeSchema = z.object({
   text: z.string().min(1).max(TTS_MAX_INPUT_CHARS),
   voiceId: z.string().min(1).max(64).optional(),
   modelId: z.string().min(1).max(64).optional(),
+  /**
+   * `phonics` swaps to tighter ElevenLabs voice settings tuned for teaching
+   * phoneme sounds. The resulting cache key is namespaced so phonics audio
+   * is stored separately from the default warm Amy voice.
+   */
+  mode: z.enum(["default", "phonics"]).optional(),
 });
 
 /**
@@ -90,6 +96,7 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
     const result = await synthesize(parsed.data.text, {
       voiceId: parsed.data.voiceId,
       modelId: parsed.data.modelId,
+      mode: parsed.data.mode,
     });
 
     logger.info(
@@ -99,6 +106,7 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
         cached: result.cached,
         charCount: result.charCount,
         voiceId: parsed.data.voiceId ?? AMY_VOICE_ID_DEFAULT,
+        mode: parsed.data.mode ?? "default",
       },
       result.cached ? "tts cached response" : "tts new generation",
     );

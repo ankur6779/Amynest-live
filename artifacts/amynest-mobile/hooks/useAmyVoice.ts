@@ -10,6 +10,15 @@ export interface UseAmyVoiceOptions {
   onFinished?: () => void;
 }
 
+export interface SpeakOptions {
+  /**
+   * `phonics` swaps to crisp ElevenLabs voice settings tuned for teaching
+   * phoneme sounds. Use only for bare phonemes ("buh", "ah"), never full
+   * sentences. Caches separately from default mode on the server.
+   */
+  mode?: "default" | "phonics";
+}
+
 export interface UseAmyVoiceState {
   speaking: boolean;
   loading: boolean;
@@ -23,8 +32,10 @@ export interface UseAmyVoiceState {
    * synth/playback is in-flight cancels it and starts fresh — consumers that
    * want toggle (tap-to-stop) UX should check `speaking || loading` first
    * and call `stop()` themselves.
+   *
+   * Pass `{ mode: "phonics" }` for crisp letter-sound playback.
    */
-  speak: (text: string) => Promise<void>;
+  speak: (text: string, opts?: SpeakOptions) => Promise<void>;
   stop: () => void;
   /** Seek to an absolute position in seconds. No-op if nothing is loaded. */
   seekTo: (seconds: number) => void;
@@ -119,9 +130,10 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   );
 
   const speak = useCallback(
-    async (rawText: string) => {
+    async (rawText: string, opts?: SpeakOptions) => {
       const text = (rawText ?? "").trim();
       if (!text) return;
+      const mode = opts?.mode;
 
       // Always start fresh: cancel any in-flight fetch and pause current
       // playback. Consumers wanting toggle behaviour gate the call on
@@ -141,7 +153,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         const synthRes = await authFetch("/api/tts/synthesize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, voiceId, modelId }),
+          body: JSON.stringify({ text, voiceId, modelId, mode }),
           signal: controller.signal,
         });
         if (myId !== reqIdRef.current || !isMountedRef.current) return;

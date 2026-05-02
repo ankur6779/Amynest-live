@@ -82,9 +82,24 @@ async function gcsDownload(cacheKey: string): Promise<Buffer | null> {
 // ─── In-flight single-flight map ────────────────────────────────────────────
 const inFlight = new Map<string, Promise<SynthesizeResult>>();
 
+/**
+ * `default` = the warm conversational Amy voice used for stories, coaching,
+ *             reels, etc. Stability=0.5, similarity=0.75, style=0.
+ * `phonics` = TIGHT pronunciation tuned for teaching phonemes to children:
+ *             higher stability so the same letter sound never drifts, max
+ *             similarity_boost to keep the voice timbre crisp on very short
+ *             inputs ("buh", "ah", "shhh"), and zero style so the model
+ *             does not embellish a 2-letter input with extra emoting that
+ *             would distort the phoneme. The cache key is namespaced so a
+ *             given text rendered in `phonics` mode never collides with the
+ *             same text rendered in `default` mode.
+ */
+export type SynthesizeMode = "default" | "phonics";
+
 export interface SynthesizeOptions {
   voiceId?: string;
   modelId?: string;
+  mode?: SynthesizeMode;
 }
 
 export interface SynthesizeResult {
@@ -95,11 +110,31 @@ export interface SynthesizeResult {
   cached: boolean;
 }
 
-function computeCacheKey(text: string, voiceId: string, modelId: string): string {
+function computeCacheKey(
+  text: string,
+  voiceId: string,
+  modelId: string,
+  mode: SynthesizeMode,
+): string {
+  // Backwards compatible: `default` mode keeps the original key format so
+  // every existing GCS object + ttsCache row is still hit. Only non-default
+  // modes get a prefix, isolating them in a fresh namespace.
+  const prefix = mode === "default" ? "" : `${mode}|`;
   return createHash("sha256")
-    .update(`${modelId}|${voiceId}|${text}`)
+    .update(`${prefix}${modelId}|${voiceId}|${text}`)
     .digest("hex");
 }
+
+/** Per-mode ElevenLabs voice settings. See SynthesizeMode docstring for rationale. */
+const VOICE_SETTINGS: Record<SynthesizeMode, {
+  stability: number;
+  similarity_boost: number;
+  style: number;
+  use_speaker_boost: boolean;
+}> = {
+  default: { stability: 0.5,  similarity_boost: 0.75, style: 0.0, use_speaker_boost: true },
+  phonics: { stability: 0.85, similarity_boost: 0.85, style: 0.0, use_speaker_boost: true },
+};
 
 /**
  * Synthesize text → MP3 using ElevenLabs.
@@ -118,7 +153,8 @@ export async function synthesize(
 
   const voiceId = options.voiceId?.trim() || AMY_VOICE_ID_DEFAULT;
   const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
-  const cacheKey = computeCacheKey(text, voiceId, modelId);
+  const mode: SynthesizeMode = options.mode ?? "default";
+  const cacheKey = computeCacheKey(text, voiceId, modelId, mode);
   const audioPath = gcsObjectName(cacheKey);
 
   // DB + GCS cache check.
@@ -153,7 +189,7 @@ export async function synthesize(
     return { ...result, cached: true };
   }
 
-  const generation = generateAndStore({ text, voiceId, modelId, cacheKey, audioPath });
+  const generation = generateAndStore({ text, voiceId, modelId, mode, cacheKey, audioPath });
   inFlight.set(cacheKey, generation);
   try {
     return await generation;
@@ -166,12 +202,13 @@ interface GenerateArgs {
   text: string;
   voiceId: string;
   modelId: string;
+  mode: SynthesizeMode;
   cacheKey: string;
   audioPath: string;
 }
 
 async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
-  const { text, voiceId, modelId, cacheKey, audioPath } = args;
+  const { text, voiceId, modelId, mode, cacheKey, audioPath } = args;
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("tts_missing_api_key");
@@ -188,12 +225,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
       body: JSON.stringify({
         text,
         model_id: modelId,
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0.0,
-          use_speaker_boost: true,
-        },
+        voice_settings: VOICE_SETTINGS[mode],
       }),
     },
   );
@@ -223,7 +255,7 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
     });
 
   logger.info(
-    { evt: "tts.cache_miss", cacheKey, charCount: text.length, bytes: buffer.byteLength, voiceId, modelId },
+    { evt: "tts.cache_miss", cacheKey, charCount: text.length, bytes: buffer.byteLength, voiceId, modelId, mode },
     "tts generated and cached to GCS",
   );
 

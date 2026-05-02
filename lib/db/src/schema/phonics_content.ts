@@ -33,6 +33,14 @@ export const phonicsContentTable = pgTable(
     sound: text("sound").notNull(),
     /** Optional caption: example word, blend hint, or comprehension prompt. */
     example: text("example"),
+    /**
+     * Bare phonics-only TTS text — just the phoneme ("buh", "ah", "shhh"),
+     * no letter name, no example word. Populated for `letter` rows so the
+     * Phonics learning UI can teach the actual SOUND a letter makes instead
+     * of the letter name. NULL for non-letter rows (sounds, words, sentences,
+     * stories) — those keep using `sound` verbatim.
+     */
+    phoneme: text("phoneme"),
     /** Optional emoji used as a visual aid in tiles. */
     emoji: text("emoji"),
     /** Short caption shown under the tile ("Cow says…", "Sight word"). */

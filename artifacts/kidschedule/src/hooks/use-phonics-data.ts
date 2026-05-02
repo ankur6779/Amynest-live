@@ -16,6 +16,8 @@ export interface PhonicsApiItem {
   type: PhonicsType;
   symbol: string;
   sound: string;
+  /** Bare phoneme (e.g. "buh") used by phonics-mode TTS. NULL for non-letter rows. */
+  phoneme: string | null;
   example: string | null;
   emoji: string | null;
   hint: string | null;
@@ -44,7 +46,13 @@ export interface DisplayPhonicsItem {
   id: string;
   contentId?: number;
   symbol: string;
+  /** Verbose TTS line ("B says buh, B for Ball"). Always present. */
   sound: string;
+  /**
+   * Bare phoneme ("buh") used by the Phonics learning UI in `mode: "phonics"`.
+   * Present for `letter` type rows; absent for sounds/words/sentences/stories.
+   */
+  phoneme?: string;
   example?: string;
   emoji?: string;
   hint?: string;
@@ -249,6 +257,7 @@ export function usePhonicsData(
           contentId: it.id,
           symbol: it.symbol,
           sound: it.sound,
+          phoneme: it.phoneme ?? undefined,
           example: it.example ?? undefined,
           emoji: it.emoji ?? undefined,
           hint: it.hint ?? undefined,
@@ -308,6 +317,7 @@ export function usePhonicsData(
       id: it.id,
       symbol: it.symbol,
       sound: it.sound,
+      phoneme: it.phoneme,
       example: it.example,
       emoji: it.emoji,
       hint: it.hint,

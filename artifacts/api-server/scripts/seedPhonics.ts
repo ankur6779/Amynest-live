@@ -11,8 +11,14 @@ import { db, phonicsContentTable } from "@workspace/db";
 import type { InsertPhonicsContent } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
-type SeedItem = Omit<InsertPhonicsContent, "active" | "audioUrl"> & {
+type SeedItem = Omit<InsertPhonicsContent, "active" | "audioUrl" | "phoneme"> & {
   audioUrl?: string | null;
+  /**
+   * Phonics-only TTS text — the bare phoneme ("buh", "ah", "shhh") with no
+   * letter name. Populated for `letter` rows so the learning UI teaches the
+   * SOUND not the LETTER NAME. NULL for sounds/words/sentences/stories.
+   */
+  phoneme?: string | null;
 };
 
 // ─── 12–24 months: animal + environment sounds ───────────────────────────────
@@ -49,6 +55,9 @@ const TIER_2_3Y: SeedItem[] = ALPHABET.map(([letter, phon, word, emoji], i) => (
   type: "letter",
   symbol: letter,
   sound: `${letter} says ${phon}. ${letter} for ${word}.`,
+  // Bare phoneme — used by the Phonics learning UI in `mode: "phonics"` so
+  // the child hears just /buh/ instead of "B says buh, B for Ball".
+  phoneme: phon,
   example: word,
   emoji,
   hint: `${letter} is for ${word}`,
@@ -140,6 +149,8 @@ const TIER_5_6Y: SeedItem[] = [
     type: "letter", // rendered as a card with an example word
     symbol: dig,
     sound: `${dig} says ${phon}, like in ${word}.`,
+    // Bare phoneme so digraph tiles in phonics mode play just the blended sound.
+    phoneme: phon,
     example: word,
     emoji,
     hint: "Two letters, one sound",
@@ -185,6 +196,7 @@ async function main() {
         set: {
           type: item.type,
           sound: item.sound,
+          phoneme: item.phoneme ?? null,
           example: item.example ?? null,
           emoji: item.emoji ?? null,
           hint: item.hint ?? null,
