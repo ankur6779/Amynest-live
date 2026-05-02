@@ -109,12 +109,13 @@ export default function InfantHub({ childId, childName, ageMonths }: Props) {
   // When the user opens an extra-parity tab, mark its feature as used so the
   // server-side first-time-free counter advances. The hook's freshlyOpenedRef
   // protects the *current* session from blurring under the user.
+  // NOTE: Sounds is intentionally excluded — it's gated per-play inside
+  // `InfantSoundsTab` so that browsing the catalogue doesn't burn the freebie.
   useEffect(() => {
     const featureId =
       active === "health"     ? FEATURE_IDS.health     :
       active === "milestones" ? FEATURE_IDS.milestones :
       active === "cues"       ? FEATURE_IDS.cues       :
-      active === "sounds"     ? FEATURE_IDS.sounds     :
                                 null;
     if (featureId) usage.markFeatureUsed(featureId);
     // Sleep / Feeding helper sections live under the base tabs but are also
@@ -157,14 +158,10 @@ export default function InfantHub({ childId, childName, ageMonths }: Props) {
           </LockedBlock>
         );
       case "sounds":
-        return (
-          <LockedBlock
-            locked={usage.isFeatureLocked(FEATURE_IDS.sounds)}
-            reason="hub_infant_sounds"
-          >
-            <InfantSoundsTab ageMonths={ageMonths} />
-          </LockedBlock>
-        );
+        // Sounds is gated per-play inside the tab via useFeatureUsage, so we
+        // intentionally do NOT wrap it in a tab-level LockedBlock — that
+        // would block free users from even browsing the catalogue.
+        return <InfantSoundsTab ageMonths={ageMonths} />;
       default:
         return null;
     }

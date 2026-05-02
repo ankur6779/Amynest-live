@@ -18,6 +18,8 @@ export type WavSource =
       amplitude?: number;
     };
 
+export type DownloadResult = { uri: string; fileName: string };
+
 interface NoisePlayerState {
   /** id of the source currently playing, or null when idle. */
   activeId: string | null;
@@ -27,6 +29,19 @@ interface NoisePlayerState {
   toggle: (id: string, source: WavSource) => Promise<void>;
   /** Hard stop — releases the active loop. */
   stop: () => void;
+  /** Current playback volume in [0, 1]. */
+  volume: number;
+  /** Set the player volume; clamped into [0, 1]. */
+  setVolume: (v: number) => void;
+  /**
+   * Persist a synthesised WAV to the app's document directory and return
+   * the saved URI + a friendly filename. Same id reuses the cached bytes.
+   */
+  download: (
+    id: string,
+    source: WavSource,
+    label: string,
+  ) => Promise<DownloadResult>;
 }
 
 function buildWavFor(source: WavSource): Uint8Array {
@@ -39,6 +54,24 @@ function buildWavFor(source: WavSource): Uint8Array {
   return buildNoiseWav(source.kind);
 }
 
+function clampVolume(v: number): number {
+  if (Number.isNaN(v)) return 0;
+  if (v < 0) return 0;
+  if (v > 1) return 1;
+  return v;
+}
+
+function safeFileName(label: string): string {
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "sound";
+}
+
+const DEFAULT_VOLUME = 0.8;
+
 /**
  * One audio player per host component, looping a synthesised WAV file.
  * The WAV bytes are generated lazily per source, written to the cache
@@ -49,6 +82,7 @@ export function useNoisePlayer(): NoisePlayerState {
   const player = useAudioPlayer(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [volume, setVolumeState] = useState<number>(DEFAULT_VOLUME);
   const filesRef = useRef<Record<string, string>>({});
   const inFlightRef = useRef<Set<string>>(new Set());
   const reqIdRef = useRef(0);
@@ -61,6 +95,17 @@ export function useNoisePlayer(): NoisePlayerState {
       try { player.pause(); } catch {}
     };
   }, [player]);
+
+  // Apply the desired volume to the underlying expo-audio player whenever
+  // it changes. Wrapped in try/catch so a missing player surface in tests
+  // never throws.
+  useEffect(() => {
+    try {
+      (player as { volume: number }).volume = volume;
+    } catch {
+      /* noop in jsdom / non-native test envs */
+    }
+  }, [player, volume]);
 
   const ensureFile = useCallback(
     async (id: string, source: WavSource): Promise<string | null> => {
@@ -106,6 +151,7 @@ export function useNoisePlayer(): NoisePlayerState {
         try { player.pause(); } catch {}
         player.replace({ uri });
         try { (player as { loop: boolean }).loop = true; } catch {}
+        try { (player as { volume: number }).volume = volume; } catch {}
         player.play();
         if (mountedRef.current) setActiveId(id);
       } catch (e) {
@@ -115,8 +161,52 @@ export function useNoisePlayer(): NoisePlayerState {
         }
       }
     },
-    [activeId, ensureFile, player, stop],
+    [activeId, ensureFile, player, stop, volume],
   );
 
-  return { activeId, toggle, stop, error };
+  const setVolume = useCallback((v: number) => {
+    const next = clampVolume(v);
+    if (mountedRef.current) setVolumeState(next);
+    try {
+      (player as { volume: number }).volume = next;
+    } catch {
+      /* noop */
+    }
+  }, [player]);
+
+  const download = useCallback(
+    async (
+      id: string,
+      source: WavSource,
+      label: string,
+    ): Promise<DownloadResult> => {
+      const cachedUri = await ensureFile(id, source);
+      const docDir = FileSystem.documentDirectory;
+      if (!docDir) throw new Error("no_document_dir");
+      const fileName = `amynest-${safeFileName(label)}.wav`;
+      const targetUri = `${docDir}${fileName}`;
+      // Best-effort: replace any prior copy at that path so re-downloading
+      // the same id doesn't fail with EEXIST on iOS.
+      try {
+        await FileSystem.deleteAsync(targetUri, { idempotent: true });
+      } catch {
+        /* noop */
+      }
+      if (cachedUri) {
+        await FileSystem.copyAsync({ from: cachedUri, to: targetUri });
+      } else {
+        // No cached file (in-flight collision) — synthesise inline as a
+        // last-resort fallback so the user still gets a saved file.
+        const wav = buildWavFor(source);
+        const base64 = bytesToBase64(wav);
+        await FileSystem.writeAsStringAsync(targetUri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+      }
+      return { uri: targetUri, fileName };
+    },
+    [ensureFile],
+  );
+
+  return { activeId, toggle, stop, error, volume, setVolume, download };
 }

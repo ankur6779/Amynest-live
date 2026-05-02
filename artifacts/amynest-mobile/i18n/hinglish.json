@@ -423,7 +423,15 @@
       "play": "Play",
       "pause": "Pause",
       "stop_all": "Sab band",
-      "sing_along_hint": "Tune sun-ne ke liye play dabao — lyrics ke saath gaao"
+      "sing_along_hint": "Tune sun-ne ke liye play dabao — lyrics ke saath gaao",
+      "volume_label": "VOLUME",
+      "volume_down": "Volume kam karo",
+      "volume_up": "Volume badhao",
+      "download": "Download",
+      "download_a11y": "{{name}} download karo",
+      "download_saved": "Saved",
+      "download_saved_msg": "{{name}} aapke device mein save ho gaya.",
+      "download_failed": "File save nahi ho saki. Please dobara try karo."
     },
     "sleep_helpers": {
       "title": "Sleep Helpers",
