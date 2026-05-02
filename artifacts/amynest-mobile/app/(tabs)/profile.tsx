@@ -360,6 +360,10 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
+            <View style={styles.eyebrowRow}>
+              <Ionicons name="person-circle" size={12} color={brand.purple500} />
+              <Text style={styles.eyebrow}>YOUR PARENT PROFILE</Text>
+            </View>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>My Parent Profile</Text>
             <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
               Helps Amy AI build smarter routines for your child.
@@ -826,7 +830,15 @@ const styles = StyleSheet.create({
   center: { alignItems: "center", justifyContent: "center" },
 
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-  headerTitle: { fontSize: 24, fontFamily: "Inter_700Bold" },
+  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 4 },
+  eyebrow: {
+    fontSize: 10.5,
+    fontFamily: "Inter_700Bold",
+    fontWeight: "800",
+    letterSpacing: 1.4,
+    color: brand.purple500,
+  },
+  headerTitle: { fontSize: 26, fontFamily: "Inter_700Bold", fontWeight: "800", letterSpacing: -0.4 },
   headerSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
 
   avatarSection: {
