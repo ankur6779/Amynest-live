@@ -1194,5 +1194,81 @@
       "status_expired": "EXPIRED",
       "status_used": "USED"
     }
+  },
+  "routines_generate": {
+    "mode_single": "Ek bachha",
+    "mode_family": "Poora family",
+    "date_label": "Kaun sa din?",
+    "region_label": "Cuisine region (optional)",
+    "region_hint": "Amy isse khane ki suggestions deti hai. Aapki profile ka region fallback hai.",
+    "region_north_indian": "North Indian",
+    "region_south_indian": "South Indian",
+    "region_bengali": "Bengali",
+    "region_gujarati": "Gujarati",
+    "region_maharashtrian": "Maharashtrian",
+    "region_punjabi": "Punjabi",
+    "region_pan_indian": "Pan Indian",
+    "region_global": "Global / Mixed",
+    "choose_child": "Bachha select karein",
+    "generating": "Amy plan kar rahi hai…",
+    "generate_btn": "Amy se generate karein",
+    "family_select_kids": "Jin bachhon ke liye plan karna hai",
+    "family_special_plans": "Aaj kuch special?",
+    "family_fridge": "Ghar par khane ka saamaan",
+    "family_generate_btn": "{{count}} bachhe ke liye generate karein",
+    "family_generate_btn_plural": "{{count}} bachhon ke liye generate karein",
+    "family_generating": "Amy plan kar rahi hai…",
+    "family_footer": "Har selected bachhe ke liye ek routine banegi.",
+    "family_preview_title": "Preview · {{count}} routine",
+    "family_preview_title_plural": "Preview · {{count}} routines",
+    "family_save_all": "Sab routines save karein",
+    "family_saving": "Save ho raha hai…"
+  },
+  "parent_avail": {
+    "title": "Aaj kaun available hai?",
+    "hint": "Isse Amy free parent ko tasks assign kar sakti hai.",
+    "p1_label": "Parent 1",
+    "p2_label": "Parent 2",
+    "add_p2": "Doosra parent add karein",
+    "remove_p2": "Doosra parent hatayein",
+    "role_label": "Role",
+    "work_type_label": "Work type",
+    "work_from_home": "WFH",
+    "work_from_office": "Office",
+    "homemaker": "Homemaker",
+    "is_working_today": "Aaj kaam par?",
+    "yes_working": "Haan, kaam hai",
+    "holiday": "Chhutti / off",
+    "work_hours_label": "Work hours (optional)"
+  },
+  "tiffin_summary": {
+    "title": "Tiffin Box Suggestions",
+    "subtitle": "School-going bachhon ke liye — har bachhe ke liye ek choose karein",
+    "pack_by": "{{time}} tak pack karein"
+  },
+  "combined_timeline": {
+    "title": "Poori Family ki Timeline",
+    "subtitle": "Sab bachhon ka din ek view mein, time ke according."
+  },
+  "toasts": {
+    "routines_generate": {
+      "routine_replaced": "🔄 Routine replace ho gaya!",
+      "routine_generated": "✨ Routine generate ho gaya!",
+      "save_failed_title": "Routine generate nahi ho saka",
+      "save_failed_body": "Amy ko issue aaya — kripya ek pal mein phir try karein.",
+      "generate_failed": "Routine generate nahi ho saka",
+      "select_child_school": "Kripya kam se kam ek bachha select karein aur unki school status set karein.",
+      "family_generate_failed": "{{name}} ke liye routine generate nahi ho saka",
+      "family_save_failed": "{{name}} ke liye routine save nahi ho saka",
+      "family_saved": "✨ {{count}} routine save hua!",
+      "family_saved_plural": "✨ {{count}} routines save hue!"
+    },
+    "routines_detail": {
+      "notifications_enabled": "🔔 Reminders on — har task se 5 min pehle ping milega.",
+      "notifications_disabled": "🔕 Is routine ke liye reminders off.",
+      "notifications_unavailable": "Reminders ke liye development build chahiye (Expo Go mein nahi chalega).",
+      "permission_denied_title": "Notifications blocked hain",
+      "permission_denied_body": "Task reminders ke liye Settings se notifications enable karein."
+    }
   }
 }

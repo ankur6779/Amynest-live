@@ -1194,5 +1194,81 @@
       "status_expired": "EXPIRED",
       "status_used": "USED"
     }
+  },
+  "routines_generate": {
+    "mode_single": "Single child",
+    "mode_family": "Whole family",
+    "date_label": "Which day?",
+    "region_label": "Cuisine region (optional)",
+    "region_hint": "Amy uses this to suggest meals. Falls back to your profile region.",
+    "region_north_indian": "North Indian",
+    "region_south_indian": "South Indian",
+    "region_bengali": "Bengali",
+    "region_gujarati": "Gujarati",
+    "region_maharashtrian": "Maharashtrian",
+    "region_punjabi": "Punjabi",
+    "region_pan_indian": "Pan Indian",
+    "region_global": "Global / Mixed",
+    "choose_child": "Choose a child",
+    "generating": "Amy is planning…",
+    "generate_btn": "Generate with Amy",
+    "family_select_kids": "Pick the kids to plan for",
+    "family_special_plans": "Anything special today?",
+    "family_fridge": "Food items at home",
+    "family_generate_btn": "Generate for {{count}} kid",
+    "family_generate_btn_plural": "Generate for {{count}} kids",
+    "family_generating": "Amy is planning…",
+    "family_footer": "Amy will plan one routine per selected child.",
+    "family_preview_title": "Preview · {{count}} routine",
+    "family_preview_title_plural": "Preview · {{count}} routines",
+    "family_save_all": "Save all routines",
+    "family_saving": "Saving…"
+  },
+  "parent_avail": {
+    "title": "Who's around today?",
+    "hint": "Helps Amy assign tasks to the parent who's free.",
+    "p1_label": "Parent 1",
+    "p2_label": "Parent 2",
+    "add_p2": "Add second parent",
+    "remove_p2": "Remove second parent",
+    "role_label": "Role",
+    "work_type_label": "Work type",
+    "work_from_home": "WFH",
+    "work_from_office": "Office",
+    "homemaker": "Homemaker",
+    "is_working_today": "Working today?",
+    "yes_working": "Yes, working",
+    "holiday": "Holiday / off",
+    "work_hours_label": "Work hours (optional)"
+  },
+  "tiffin_summary": {
+    "title": "Tiffin Box Suggestions",
+    "subtitle": "For school-going kids — choose one per child",
+    "pack_by": "Pack by {{time}}"
+  },
+  "combined_timeline": {
+    "title": "Combined Family Timeline",
+    "subtitle": "All your kids' day in one view, sorted by time."
+  },
+  "toasts": {
+    "routines_generate": {
+      "routine_replaced": "🔄 Routine replaced!",
+      "routine_generated": "✨ Routine generated!",
+      "save_failed_title": "Couldn't generate routine",
+      "save_failed_body": "Amy ran into an issue. Please try again in a moment.",
+      "generate_failed": "Failed to generate routine",
+      "select_child_school": "Please select at least one child and set their school status.",
+      "family_generate_failed": "Failed to generate routine for {{name}}",
+      "family_save_failed": "Failed to save routine for {{name}}",
+      "family_saved": "✨ Saved {{count}} routine!",
+      "family_saved_plural": "✨ Saved {{count}} routines!"
+    },
+    "routines_detail": {
+      "notifications_enabled": "🔔 Reminders on — you'll be pinged 5 min before each task.",
+      "notifications_disabled": "🔕 Reminders off for this routine.",
+      "notifications_unavailable": "Reminders need a development build (not available in Expo Go).",
+      "permission_denied_title": "Notifications blocked",
+      "permission_denied_body": "Enable notifications in Settings to get reminders before each task."
+    }
   }
 }
