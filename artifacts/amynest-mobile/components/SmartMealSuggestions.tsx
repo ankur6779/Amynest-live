@@ -138,15 +138,19 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
     }
 
     if (manualSearch > 0) params.set("_t", String(Date.now()));
-    authFetch(`/api/meals/suggest?${params.toString()}`)
-      .then(r => r.ok ? r.json() : null)
-      .then((r: SuggestionResult | null) => {
-        if (!cancelled) {
-          setData(r);
-          setLoading(false);
-        }
-      })
-      .catch(() => { if (!cancelled) setLoading(false); });
+    void (async () => {
+      const { default: i18nInstance } = await import("@/i18n");
+      params.set("language", i18nInstance.language || "en");
+      try {
+        const r = await authFetch(`/api/meals/suggest?${params.toString()}`);
+        const json = r.ok ? ((await r.json()) as SuggestionResult | null) : null;
+        if (!cancelled) setData(json);
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region, audience, fridge, childAge, isVeg, learning.liked.join(","), learning.disliked.join(","), manualSearch]);

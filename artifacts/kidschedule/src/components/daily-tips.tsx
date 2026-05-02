@@ -109,6 +109,7 @@ export function DailyTips({
     if (aiUsed >= AI_DAILY_LIMIT) return;
     setBusyId(tip.id);
     try {
+      const { default: i18nInstance } = await import("@/i18n");
       const res = await authFetch(getApiUrl("/api/ai/rewrite-tip"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },

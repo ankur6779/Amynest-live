@@ -17,6 +17,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
 import { paletteFor } from "@/lib/theme";
@@ -199,6 +200,7 @@ function hapticSuccess() { if (Platform.OS !== "web") Haptics.notificationAsync(
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════
 export default function RoutineDetailScreen() {
+  const { t } = useTranslation();
   const { id, highlight } = useLocalSearchParams<{ id: string; highlight?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -506,7 +508,7 @@ export default function RoutineDetailScreen() {
   const confirmDelete = () => {
     setMoreMenu(false);
     if (Platform.OS === "web") setShowDelete(true);
-    else Alert.alert("Delete routine?", "This will permanently remove this routine.", [
+    else Alert.alert(t("alerts.routines.delete_title"), t("alerts.routines.delete_msg"), [
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: () => deleteMut.mutate() },
     ]);

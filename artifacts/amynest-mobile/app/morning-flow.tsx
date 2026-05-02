@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/contexts/ThemeContext";
 import { router, Stack } from "expo-router";
+import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   AMY_ENCOURAGEMENT, AMY_NUDGE_BODY, AMY_NUDGE_TITLE,
@@ -37,6 +38,7 @@ async function save(s: MorningFlowDayState) {
 
 export default function MorningFlowScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [state, setState] = useState<MorningFlowDayState>(() => emptyDayState());
   const [tick, setTick] = useState(0);
 
@@ -87,13 +89,13 @@ export default function MorningFlowScreen() {
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={S.title}>🌅 School Morning Flow</Text>
+          <Text style={S.title}>{t("screens.morning_flow.title")}</Text>
           <Text style={S.subtitle}>❤️ {AMY_ENCOURAGEMENT}</Text>
         </View>
         {state.startedAt && (
           <Pressable onPress={resetDay} style={S.resetBtn} hitSlop={10}>
             <Ionicons name="refresh" size={14} color="#fff" />
-            <Text style={S.resetText}>Reset</Text>
+            <Text style={S.resetText}>{t("screens.morning_flow.reset")}</Text>
           </Pressable>
         )}
       </LinearGradient>
@@ -109,11 +111,11 @@ export default function MorningFlowScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={S.nudgeTitle}>{AMY_NUDGE_TITLE}</Text>
                 <Text style={S.nudgeBody}>
-                  {AMY_NUDGE_BODY} <Text style={{ color: palette.amber700, fontWeight: "800" }}>({delay.delayMinutes} min behind)</Text>
+                  {AMY_NUDGE_BODY} <Text style={{ color: palette.amber700, fontWeight: "800" }}>{t("screens.morning_flow.minutes_behind", { n: delay.delayMinutes })}</Text>
                 </Text>
                 <Pressable onPress={acceptSimplify} style={S.nudgeBtn}>
                   <Ionicons name="sparkles" size={12} color="#fff" />
-                  <Text style={S.nudgeBtnText}>Simplify the rest</Text>
+                  <Text style={S.nudgeBtnText}>{t("screens.morning_flow.simplify_rest")}</Text>
                 </Pressable>
               </View>
             </View>
@@ -124,22 +126,22 @@ export default function MorningFlowScreen() {
         <View style={S.card}>
           <View style={S.cardHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={S.cardTitle}>🌅  Morning Flow</Text>
-              <Text style={S.cardDesc}>{STEPS.length} steps · about {planned} min total</Text>
+              <Text style={S.cardTitle}>{t("screens.morning_flow.morning_card_title")}</Text>
+              <Text style={S.cardDesc}>{t("screens.morning_flow.steps_summary", { count: STEPS.length, minutes: planned })}</Text>
             </View>
             {!state.startedAt && (
               <Pressable onPress={startMorning} style={S.primaryBtn}>
                 <Ionicons name="play" size={12} color="#fff" />
-                <Text style={S.primaryBtnText}>Start morning</Text>
+                <Text style={S.primaryBtnText}>{t("screens.morning_flow.start_morning")}</Text>
               </Pressable>
             )}
           </View>
 
           <View style={{ marginVertical: 8, gap: 6 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={S.metaText}>{summary.doneCount}/{summary.totalCount} done · {summary.skippedCount} skipped</Text>
+              <Text style={S.metaText}>{t("screens.morning_flow.progress_meta", { done: summary.doneCount, total: summary.totalCount, skipped: summary.skippedCount })}</Text>
               {state.startedAt && (
-                <Text style={S.metaText}>⏱ {delay.actualMinutes} / {planned} min</Text>
+                <Text style={S.metaText}>{t("screens.morning_flow.time_meta", { actual: delay.actualMinutes, planned })}</Text>
               )}
             </View>
             <View style={S.barTrack}><View style={[S.barFill, { width: `${summary.percent}%` }]} /></View>
@@ -165,8 +167,8 @@ export default function MorningFlowScreen() {
           {summary.doneCount + summary.skippedCount === STEPS.length && (
             <View style={S.doneBanner}>
               <Text style={S.doneText}>
-                <Text style={{ fontWeight: "800" }}>All done! 🎉  </Text>
-                {summary.skippedCount > 0 ? `Skipped ${summary.skippedCount} — that's okay.` : "Smooth morning!"} Have a great day at school.
+                <Text style={{ fontWeight: "800" }}>{t("screens.morning_flow.all_done")}  </Text>
+                {summary.skippedCount > 0 ? t("screens.morning_flow.skipped_note", { n: summary.skippedCount }) : t("screens.morning_flow.smooth_morning")} {t("screens.morning_flow.have_great_day")}
               </Text>
             </View>
           )}
@@ -176,8 +178,8 @@ export default function MorningFlowScreen() {
         <View style={S.card}>
           <View style={S.cardHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={S.cardTitle}>🌙  Prepare for Tomorrow</Text>
-              <Text style={S.cardDesc}>{night.done}/{night.total} ready · do this the previous evening</Text>
+              <Text style={S.cardTitle}>{t("screens.morning_flow.night_card_title")}</Text>
+              <Text style={S.cardDesc}>{t("screens.morning_flow.night_summary", { done: night.done, total: night.total })}</Text>
             </View>
           </View>
           <View style={{ gap: 8, marginTop: 4 }}>
@@ -201,7 +203,7 @@ export default function MorningFlowScreen() {
         </View>
 
         <Pressable onPress={() => router.push("/routines" as never)} style={{ alignSelf: "center", marginTop: 4 }}>
-          <Text style={{ color: palette.orange500, fontSize: 12, fontWeight: "700" }}>Need a detailed routine? Open Routines →</Text>
+          <Text style={{ color: palette.orange500, fontSize: 12, fontWeight: "700" }}>{t("screens.morning_flow.open_routines")}</Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -218,6 +220,7 @@ function StepRow({
   onSkip: () => void;
   onUndo: () => void;
 }) {
+  const { t } = useTranslation();
   const done = status === "done";
   const skipped = status === "skipped";
   const borderColor = done ? palette.emerald400 : skipped ? palette.slate300 : palette.gray200;
@@ -228,22 +231,22 @@ function StepRow({
       <Text style={{ fontSize: 22 }}>{step.emoji}</Text>
       <View style={{ flex: 1 }}>
         <Text style={[S.stepTitle, skipped && { textDecorationLine: "line-through", color: palette.slate400 }]}>{step.title}</Text>
-        <Text style={S.stepMeta}>⏱ ~{step.defaultMinutes} min{!step.essential ? "  · optional" : ""}</Text>
+        <Text style={S.stepMeta}>{t("screens.morning_flow.step_meta", { minutes: step.defaultMinutes })}{!step.essential ? t("screens.morning_flow.step_optional") : ""}</Text>
       </View>
       {status === "pending" ? (
         <View style={{ flexDirection: "row", gap: 6 }}>
           <Pressable onPress={onSkip} style={S.outlineBtn}>
-            <Text style={S.outlineBtnText}>Skip</Text>
+            <Text style={S.outlineBtnText}>{t("screens.morning_flow.skip")}</Text>
           </Pressable>
           <Pressable onPress={onDone} style={S.doneBtn}>
             <Ionicons name="checkmark" size={14} color="#fff" />
-            <Text style={S.doneBtnText}>Done</Text>
+            <Text style={S.doneBtnText}>{t("screens.morning_flow.done")}</Text>
           </Pressable>
         </View>
       ) : (
         <Pressable onPress={onUndo} style={S.undoBtn}>
           <Ionicons name="refresh" size={12} color={palette.slate500} />
-          <Text style={S.undoBtnText}>Undo</Text>
+          <Text style={S.undoBtnText}>{t("screens.morning_flow.undo")}</Text>
         </Pressable>
       )}
     </View>

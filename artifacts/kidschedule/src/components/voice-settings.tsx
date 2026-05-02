@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX } from "lucide-react";
 import {
@@ -21,6 +22,7 @@ const ELEVENLABS_VOICES: Record<VoiceLang, Record<VoiceGender, string>> = {
 
 export function VoiceSettingsPanel({ onToggle }: VoiceSettingsPanelProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [settings, setSettings] = useState(() => getVoiceSettings());
   const [open, setOpen] = useState(false);
 
@@ -37,7 +39,7 @@ export function VoiceSettingsPanel({ onToggle }: VoiceSettingsPanelProps) {
     const next = !settings.enabled;
     update({ enabled: next });
     setVoiceEnabled(next);
-    toast({ title: next ? "🔊 Voice reminders on!" : "🔇 Voice reminders off" });
+    toast({ title: next ? t("toasts.voice_settings.voice_on") : t("toasts.voice_settings.voice_off") });
     if (!next) setOpen(false);
   };
 

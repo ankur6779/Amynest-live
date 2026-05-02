@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -26,11 +27,6 @@ function childEmoji(age: number) {
   return "👦";
 }
 
-function ageLabel(age: number, months = 0) {
-  if (age === 0) return `${months} months`;
-  return `${age} yr${age !== 1 ? "s" : ""}${months > 0 ? `, ${months}mo` : ""}`;
-}
-
 export default function ChildrenScreen() {
   const colors = useColors();
   const { theme } = useTheme();
@@ -38,6 +34,13 @@ export default function ChildrenScreen() {
   const router = useRouter();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
+  const { t } = useTranslation();
+
+  const ageLabel = (age: number, months = 0) => {
+    if (age === 0) return t("screens.children_tab.age_months", { n: months });
+    return t(age === 1 ? "screens.children_tab.age_year" : "screens.children_tab.age_years", { n: age })
+      + (months > 0 ? t("screens.children_tab.age_months_extra", { n: months }) : "");
+  };
 
   const { data: children = [], isLoading, isError, refetch } = useQuery<Child[]>({
     queryKey: ["children"],
@@ -67,7 +70,7 @@ export default function ChildrenScreen() {
     <View style={styles.container}>
       <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <View style={[styles.header, { paddingTop: topPad + 16 }]}>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Children</Text>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t("screens.children_tab.title")}</Text>
         <TouchableOpacity
           style={[styles.addBtn, { backgroundColor: colors.primary }]}
           onPress={handleAddChild}
@@ -84,23 +87,23 @@ export default function ChildrenScreen() {
       ) : isError ? (
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={40} color={colors.mutedForeground} />
-          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>Failed to load children</Text>
+          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>{t("screens.children_tab.error_load")}</Text>
           <TouchableOpacity onPress={() => refetch()} style={[styles.retryBtn, { borderColor: colors.primary }]}>
-            <Text style={[styles.retryText, { color: colors.primary }]}>Retry</Text>
+            <Text style={[styles.retryText, { color: colors.primary }]}>{t("screens.children_tab.retry")}</Text>
           </TouchableOpacity>
         </View>
       ) : children.length === 0 ? (
         <View style={styles.center}>
           <Ionicons name="people-outline" size={56} color={colors.mutedForeground} />
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No children yet</Text>
-          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>Add your child's profile to get started</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t("screens.children_tab.empty_title")}</Text>
+          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>{t("screens.children_tab.empty_body")}</Text>
           <TouchableOpacity
             style={[styles.emptyBtn, { backgroundColor: colors.primary }]}
             onPress={handleAddChild}
             testID="empty-add-child-btn"
           >
             <Ionicons name="person-add" size={18} color="#fff" />
-            <Text style={styles.emptyBtnText}>Add First Child</Text>
+            <Text style={styles.emptyBtnText}>{t("screens.children_tab.add_first")}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -123,7 +126,7 @@ export default function ChildrenScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.childName, { color: colors.foreground }]}>{c.name}</Text>
                 <Text style={[styles.childMeta, { color: colors.mutedForeground }]}>
-                  {ageLabel(c.age, c.ageMonths)} · {c.isSchoolGoing ? "School going" : "Not in school"}
+                  {ageLabel(c.age, c.ageMonths)} · {c.isSchoolGoing ? t("screens.children_tab.school_going") : t("screens.children_tab.not_school")}
                 </Text>
                 <View style={styles.tagRow}>
                   <View style={[styles.tag, { backgroundColor: colors.muted }]}>

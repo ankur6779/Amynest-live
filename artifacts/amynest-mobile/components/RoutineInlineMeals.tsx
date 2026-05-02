@@ -68,22 +68,27 @@ export default function RoutineInlineMeals({
     if (childAge != null) p.set("childAge", String(childAge));
     if (isVeg === true) p.set("isVeg", "true");
 
-    // /api/meals/suggest is a public endpoint — plain fetch, no auth needed
-    fetch(`${API_BASE_URL}/api/meals/suggest?${p.toString()}`)
-      .then(r => r.ok ? r.json() : null)
-      .then((r: SuggestionResult | null) => {
+    void (async () => {
+      const { default: i18nInstance } = await import("@/i18n");
+      p.set("language", i18nInstance.language || "en");
+
+      // /api/meals/suggest is a public endpoint — plain fetch, no auth needed
+      try {
+        const r = await fetch(`${API_BASE_URL}/api/meals/suggest?${p.toString()}`);
+        const json = r.ok ? ((await r.json()) as SuggestionResult | null) : null;
         if (cancelled) return;
-        if (r && r.meals?.length > 0) {
+        if (json && json.meals?.length > 0) {
           const start = instanceIndex * 4;
           const end = start + 4;
-          const slice = r.meals.slice(start, end);
-          setMeals(slice.length > 0 ? slice : r.meals.slice(0, 4));
+          const slice = json.meals.slice(start, end);
+          setMeals(slice.length > 0 ? slice : json.meals.slice(0, 4));
         }
-        setLoading(false); // always release loading state
-      })
-      .catch(() => {
+      } catch {
+        // ignore
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
     return () => { cancelled = true; };
   }, [region, audience, childAge, isVeg, instanceIndex]);
 

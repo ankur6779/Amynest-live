@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useListChildren, getListChildrenQueryKey,
   useListBehaviors, getListBehaviorsQueryKey,
@@ -99,6 +100,7 @@ function LangToggle({ lang, setLang }: { lang: LangKey; setLang: (l: LangKey) =>
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function BehaviorTracker() {
+  const { t } = useTranslation();
   const [lang, setLang] = useState<LangKey>("en");
   const [selectedChild, setSelectedChild] = useState<number | null>(null);
   const [pendingTrigger, setPendingTrigger] = useState<TriggerKey | null>(null);
@@ -137,7 +139,7 @@ export default function BehaviorTracker() {
 
   function quickLog(key: QuickBehaviorKey) {
     if (!selectedChild) {
-      toast({ title: "Select a child first", variant: "destructive" });
+      toast({ title: t("toasts.behavior.select_child"), variant: "destructive" });
       return;
     }
     const def = QUICK_BEHAVIORS[key];
@@ -178,7 +180,7 @@ export default function BehaviorTracker() {
               return;
             }
           }
-          toast({ title: "Failed to log", variant: "destructive" });
+          toast({ title: t("toasts.behavior.log_failed"), variant: "destructive" });
         },
       }
     );
@@ -202,7 +204,7 @@ export default function BehaviorTracker() {
             );
             return;
           }
-          toast({ title: "Failed to delete", variant: "destructive" });
+          toast({ title: t("toasts.behavior.delete_failed"), variant: "destructive" });
         },
       }
     );

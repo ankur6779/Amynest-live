@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { useColors } from "@/hooks/useColors";
 import { brand, ACCENT_PINK } from "@/constants/colors";
 import { DrawerProvider, useDrawer } from "@/contexts/DrawerContext";
@@ -249,6 +250,7 @@ function HamburgerButton() {
 
 export default function TabLayout() {
   const colors = useColors();
+  const { t } = useTranslation();
 
   return (
     <DrawerProvider>
@@ -259,13 +261,13 @@ export default function TabLayout() {
           sceneStyle: { backgroundColor: colors.background },
         }}
       >
-        <Tabs.Screen name="index"    options={{ title: "Dashboard" }} />
-        <Tabs.Screen name="routines" options={{ title: "Routine" }} />
-        <Tabs.Screen name="coach"    options={{ title: "Coach" }} />
-        <Tabs.Screen name="hub"      options={{ title: "Hub" }} />
+        <Tabs.Screen name="index"    options={{ title: t("screens.tabs.dashboard") }} />
+        <Tabs.Screen name="routines" options={{ title: t("screens.tabs.routine") }} />
+        <Tabs.Screen name="coach"    options={{ title: t("screens.tabs.coach") }} />
+        <Tabs.Screen name="hub"      options={{ title: t("screens.tabs.hub") }} />
         {/* Hidden from tab bar — accessible via drawer */}
-        <Tabs.Screen name="children"  options={{ title: "Kids", href: null }} />
-        <Tabs.Screen name="profile"   options={{ title: "Profile", href: null }} />
+        <Tabs.Screen name="children"  options={{ title: t("screens.tabs.kids"), href: null }} />
+        <Tabs.Screen name="profile"   options={{ title: t("screens.tabs.profile"), href: null }} />
         {/* Utility module — suppress Expo Router route warning */}
         <Tabs.Screen name="hub-bands" options={{ href: null }} />
       </Tabs>

@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 const sections = [
   {
@@ -76,6 +77,7 @@ const sections = [
 ];
 
 export default function TermsOfServicePage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-rose-50">
       <header className="border-b border-slate-200 bg-white/70 backdrop-blur">
@@ -96,21 +98,21 @@ export default function TermsOfServicePage() {
             </span>
           </Link>
           <Link href="/">
-            <span className="text-sm text-slate-500 hover:text-slate-800 cursor-pointer">← Home</span>
+            <span className="text-sm text-slate-500 hover:text-slate-800 cursor-pointer">{t("screens.common.home_link")}</span>
           </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-5 py-10">
-        <h1 className="mb-2 text-3xl font-black text-slate-900">Terms of Service</h1>
-        <p className="mb-8 text-sm text-slate-400">Last updated: April 27, 2026</p>
+        <h1 className="mb-2 text-3xl font-black text-slate-900">{t("screens.terms.heading")}</h1>
+        <p className="mb-8 text-sm text-slate-400">{t("screens.terms.last_updated")}</p>
 
         <p className="my-3 leading-relaxed text-slate-700">
-          Please read these Terms of Service carefully before using <strong>AmyNest AI</strong> at{" "}
+          {t("screens.terms.intro_before")} <strong>AmyNest AI</strong> {t("screens.terms.intro_at")}{" "}
           <a href="https://amynest.in" className="text-indigo-600 underline hover:text-indigo-800">
             amynest.in
           </a>
-          . These Terms form a legally binding agreement between you and AmyNest AI, Inc.
+          {t("screens.terms.intro_after")}
         </p>
 
         {sections.map((s) => (
@@ -122,7 +124,7 @@ export default function TermsOfServicePage() {
       </main>
 
       <footer className="border-t border-slate-200 bg-white/60 py-6">
-        <p className="text-center text-xs text-slate-400">© 2026 AmyNest AI. All rights reserved.</p>
+        <p className="text-center text-xs text-slate-400">{t("screens.common.copyright")}</p>
       </footer>
     </div>
   );

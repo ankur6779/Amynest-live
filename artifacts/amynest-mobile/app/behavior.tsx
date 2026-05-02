@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
 import colors, { brand, ACCENT_PINK, palette } from "@/constants/colors";
@@ -104,6 +105,7 @@ function LangToggle({ lang, setLang }: { lang: LangKey; setLang: (l: LangKey) =>
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function BehaviorScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const authFetch = useAuthFetch();
@@ -184,7 +186,7 @@ export default function BehaviorScreen() {
 
   async function quickLog(key: QuickBehaviorKey) {
     if (!selectedChild) {
-      Alert.alert("Select a child first");
+      Alert.alert(t("alerts.behavior.select_child_first"));
       return;
     }
     const def = QUICK_BEHAVIORS[key];
@@ -214,14 +216,14 @@ export default function BehaviorScreen() {
       await qc.invalidateQueries({ queryKey: ["behaviors"] });
       setPendingTrigger(null);
     } catch {
-      Alert.alert("Error", "Could not log behavior.");
+      Alert.alert(t("alerts.behavior.log_error_title"), t("alerts.behavior.log_error_msg"));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(id: number) {
-    Alert.alert("Delete", "Remove this entry?", [
+    Alert.alert(t("alerts.behavior.delete_title"), t("alerts.behavior.delete_msg"), [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete", style: "destructive", onPress: async () => {
@@ -238,7 +240,7 @@ export default function BehaviorScreen() {
             }
             if (!r.ok) throw new Error();
             await qc.invalidateQueries({ queryKey: ["behaviors"] });
-          } catch { Alert.alert("Error", "Could not delete."); }
+          } catch { Alert.alert(t("alerts.behavior.delete_error_title"), t("alerts.behavior.delete_error_msg")); }
         }
       },
     ]);

@@ -1,43 +1,14 @@
 import { Link } from "wouter";
 import { Shield, Trash2, AlertTriangle, CheckCircle2, Smartphone, Settings, UserX, ChevronRight } from "lucide-react";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-
-const DATA_ITEMS = [
-  "Profile & account information",
-  "All children's profiles and ages",
-  "Daily routines and schedules",
-  "Behavior tracking records",
-  "Phonics test history and progress",
-  "AI conversation history",
-  "Subscription and payment records",
-  "Referral history",
-  "All usage data and analytics",
-];
-
-const IN_APP_STEPS = [
-  {
-    icon: Smartphone,
-    title: "Open AmyNest App",
-    description: "Launch the AmyNest app on your Android or iOS device.",
-  },
-  {
-    icon: Settings,
-    title: "Go to Settings",
-    description: 'Tap on your profile picture or the menu icon, then select "Settings".',
-  },
-  {
-    icon: UserX,
-    title: 'Tap "Delete Account"',
-    description: 'Scroll to the bottom and tap "Delete Account". Confirm when prompted.',
-  },
-  {
-    icon: CheckCircle2,
-    title: "Account Deleted",
-    description: "Your account and all associated data will be permanently deleted within 30 days.",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 export default function DeleteAccountPage() {
+  const { t } = useTranslation();
+  const DATA_ITEMS = t("screens.delete_account.data_items", { returnObjects: true }) as string[];
+  const IN_APP_STEPS = (t("screens.delete_account.steps", { returnObjects: true }) as Array<{ title: string; description: string }>).map(
+    (s, i) => ({ ...s, icon: [Smartphone, Settings, UserX, CheckCircle2][i] })
+  );
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Header */}
@@ -56,10 +27,9 @@ export default function DeleteAccountPage() {
           <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100">
             <Trash2 className="h-8 w-8 text-red-500" />
           </div>
-          <h1 className="mb-3 text-3xl font-bold text-slate-900">Delete Your Account</h1>
+          <h1 className="mb-3 text-3xl font-bold text-slate-900">{t("screens.delete_account.title")}</h1>
           <p className="max-w-xl text-base text-slate-500">
-            We're sorry to see you go. You can permanently delete your AmyNest account and all
-            associated data by following the steps below.
+            {t("screens.delete_account.subtitle")}
           </p>
         </div>
 
@@ -67,8 +37,7 @@ export default function DeleteAccountPage() {
         <div className="mb-8 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
           <p className="text-sm text-amber-800">
-            <strong>This action is permanent.</strong> Once deleted, your account and all data
-            cannot be recovered. Please make sure you want to proceed before continuing.
+            <strong>{t("screens.delete_account.warning_strong")}</strong> {t("screens.delete_account.warning_body")}
           </p>
         </div>
 
@@ -76,7 +45,7 @@ export default function DeleteAccountPage() {
         <section className="mb-10">
           <div className="mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-slate-500" />
-            <h2 className="text-lg font-semibold text-slate-800">What data will be deleted</h2>
+            <h2 className="text-lg font-semibold text-slate-800">{t("screens.delete_account.data_heading")}</h2>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5">
             <ul className="space-y-2.5">
@@ -88,8 +57,7 @@ export default function DeleteAccountPage() {
               ))}
             </ul>
             <p className="mt-4 text-xs text-slate-400">
-              Data is permanently deleted within <strong>30 days</strong> of the request.
-              Anonymised, aggregated analytics (not linked to your account) may be retained.
+              {t("screens.delete_account.retention_before")} <strong>{t("screens.delete_account.retention_days")}</strong> {t("screens.delete_account.retention_after")}
             </p>
           </div>
         </section>
@@ -97,7 +65,7 @@ export default function DeleteAccountPage() {
         {/* In-app steps */}
         <section className="mb-10">
           <h2 className="mb-4 text-lg font-semibold text-slate-800">
-            How to delete from the app
+            {t("screens.delete_account.steps_heading")}
           </h2>
           <div className="space-y-3">
             {IN_APP_STEPS.map((step, i) => {
@@ -112,7 +80,7 @@ export default function DeleteAccountPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-slate-400">Step {i + 1}</span>
+                      <span className="text-xs font-medium text-slate-400">{t("screens.delete_account.step_label", { n: i + 1 })}</span>
                     </div>
                     <p className="text-sm font-semibold text-slate-800">{step.title}</p>
                     <p className="mt-0.5 text-sm text-slate-500">{step.description}</p>
@@ -129,20 +97,18 @@ export default function DeleteAccountPage() {
         {/* Contact section */}
         <section className="mb-10">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-5">
-            <h2 className="mb-1 text-base font-semibold text-slate-800">Need help?</h2>
+            <h2 className="mb-1 text-base font-semibold text-slate-800">{t("screens.delete_account.help_heading")}</h2>
             <p className="mb-3 text-sm text-slate-500">
-              If you're unable to access the app or need assistance with account deletion, contact
-              our support team and we'll process your request manually within 7 business days.
+              {t("screens.delete_account.help_body")}
             </p>
             <a
               href="mailto:support@amynest.app?subject=Account%20Deletion%20Request"
               className="inline-flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700"
             >
-              Email Support
+              {t("screens.delete_account.email_support")}
             </a>
             <p className="mt-3 text-xs text-slate-400">
-              Please include the email or phone number linked to your AmyNest account in your
-              message.
+              {t("screens.delete_account.help_footnote")}
             </p>
           </div>
         </section>
@@ -150,15 +116,15 @@ export default function DeleteAccountPage() {
         {/* Footer links */}
         <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
           <Link href="/privacy" className="hover:text-slate-600 hover:underline">
-            Privacy Policy
+            {t("screens.delete_account.privacy_link")}
           </Link>
           <span>·</span>
           <Link href="/terms" className="hover:text-slate-600 hover:underline">
-            Terms of Service
+            {t("screens.delete_account.terms_link")}
           </Link>
           <span>·</span>
           <Link href="/" className="hover:text-slate-600 hover:underline">
-            Back to Home
+            {t("screens.delete_account.back_home")}
           </Link>
         </div>
       </main>

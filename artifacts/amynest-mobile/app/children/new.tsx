@@ -11,6 +11,7 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 
@@ -39,6 +40,7 @@ function dobToAge(dob: string): { years: number; months: number } {
 }
 
 export default function NewChildScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -75,7 +77,7 @@ export default function NewChildScreen() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (perm.status !== "granted") {
-        Alert.alert("Permission needed", "Allow photo access to add a picture.");
+        Alert.alert(t("alerts.children.permission_title"), t("alerts.children.permission_msg_new"));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -92,14 +94,14 @@ export default function NewChildScreen() {
       setPhotoUrl(dataUri);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {
-      Alert.alert("Error", "Could not load photo.");
+      Alert.alert(t("alerts.children.photo_error_title"), t("alerts.children.photo_error_msg"));
     } finally {
       setPickingPhoto(false);
     }
   };
 
   const handleSave = async () => {
-    if (!name.trim()) { Alert.alert("Error", "Child name is required."); return; }
+    if (!name.trim()) { Alert.alert(t("alerts.children.name_required_title"), t("alerts.children.name_required_msg")); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSaving(true);
     try {
@@ -123,7 +125,7 @@ export default function NewChildScreen() {
       qc.invalidateQueries({ queryKey: ["children"] });
       router.back();
     } catch {
-      Alert.alert("Error", "Failed to add child. Please try again.");
+      Alert.alert(t("alerts.children.add_failed_title"), t("alerts.children.add_failed_msg"));
     } finally {
       setSaving(false);
     }

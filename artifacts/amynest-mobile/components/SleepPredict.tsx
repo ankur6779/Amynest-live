@@ -8,6 +8,8 @@
  * Engine + auth come from the API server; this file is presentational.
  */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18nInstance from "@/i18n";
 import {
   View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator,
   Platform, ToastAndroid, Alert,
@@ -80,7 +82,7 @@ const WINDDOWN_TIPS = [
 
 function flashToast(msg: string) {
   if (Platform.OS === "android") ToastAndroid.show(msg, ToastAndroid.SHORT);
-  else Alert.alert("Sleep Predict", msg);
+  else Alert.alert(i18nInstance.t("alerts.sleep.title"), msg);
 }
 
 function formatTime(iso: string): string {
@@ -114,6 +116,7 @@ function formatRelative(iso: string, now: number): string {
 }
 
 export default function SleepPredict({ childId, childName, ageMonths }: Props) {
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
 
   const [data, setData] = useState<PredictResponse | null>(null);

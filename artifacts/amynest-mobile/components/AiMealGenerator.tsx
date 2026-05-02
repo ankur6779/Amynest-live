@@ -92,10 +92,12 @@ export default function AiMealGenerator({
     setHasGenerated(true);
 
     try {
+      const { default: i18nInstance } = await import("@/i18n");
       const body: Record<string, unknown> = {
         query: q.length > 0 ? q : "quick healthy tiffin for kids",
         region,
         audience: "kids_tiffin",
+        language: i18nInstance.language || "en",
       };
       if (childAge != null) body.childAge = childAge;
       if (isVeg != null) body.isVeg = isVeg;

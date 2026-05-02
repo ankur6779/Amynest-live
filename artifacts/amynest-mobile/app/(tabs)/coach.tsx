@@ -530,6 +530,7 @@ export default function CoachScreen() {
     setExtending(true);
     try {
       const startWinNumber = plan.wins.length + 1;
+      const { default: i18nInstance } = await import("@/i18n");
       const res = await authFetch("/api/ai-coach/extend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -537,6 +538,7 @@ export default function CoachScreen() {
           ...lastPayloadRef.current,
           failedWinTitle: failedWin.title, failedWinNumber, startWinNumber,
           existingWinTitles: plan.wins.map((w) => w.title),
+          language: i18nInstance.language || "en",
         }),
       });
       if (res.status === 402) {

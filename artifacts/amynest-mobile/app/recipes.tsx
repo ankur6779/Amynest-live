@@ -8,6 +8,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { palette } from "@/constants/colors";
@@ -71,6 +72,7 @@ function formToPayload(f: FormState) {
 type Screen = "list" | "form";
 
 export default function RecipesScreen() {
+  const { t } = useTranslation();
   const c = useColors();
   const { theme } = useTheme();
   const s = makeStyles(c);
@@ -143,12 +145,12 @@ export default function RecipesScreen() {
 
   function confirmDelete(r: Recipe) {
     Alert.alert(
-      "Delete Recipe",
-      `Delete "${r.name}"? This can't be undone.`,
+      t("alerts.recipes.delete_title"),
+      t("alerts.recipes.delete_msg", { name: r.name }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("alerts.buttons.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("alerts.buttons.delete"),
           style: "destructive",
           onPress: () => deleteMutation.mutate(r.id),
         },

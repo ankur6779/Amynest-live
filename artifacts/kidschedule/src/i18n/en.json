@@ -388,5 +388,264 @@
     "safe_disclaimer": "Guidance only — not medical advice. Consult your pediatrician for concerns.",
     "based_on": "Based on pediatric guidance",
     "select_child": "Showing tips for"
+  },
+  "toasts": {
+    "ai_coach": {
+      "load_session_failed_title": "Could not load session",
+      "load_session_failed_body": "Opening Amy Coach fresh.",
+      "error_title": "Something went wrong",
+      "error_body_with_msg": "Please try again. ({{msg}})",
+      "error_body": "Please try again in a moment.",
+      "win_locked_title": "Win locked in 🎉",
+      "win_locked_body": "Marked as complete. Moving to next step.",
+      "progress_noted_title": "Progress noted 💜",
+      "progress_noted_body": "Partial progress counted. Keep going.",
+      "extras_added_title": "3 new strategies added 💛",
+      "extras_added_body": "Scroll to the end of your deck to see them.",
+      "extras_failed_title": "Couldn't load extras",
+      "extras_failed_body": "Please tap 'Not worked for me' again in a moment.",
+      "copied_title": "Copied!",
+      "copied_body": "Plan copied to clipboard."
+    },
+    "parent_profile": {
+      "pic_updated": "Profile picture updated!",
+      "pic_failed": "Failed to update picture",
+      "profile_saved_title": "Profile saved!",
+      "profile_saved_body": "Your schedule will now inform Amy AI's routine generation.",
+      "save_error_title": "Error",
+      "save_error_body": "Could not save profile."
+    },
+    "notification_settings": {
+      "save_failed_title": "Could not save",
+      "test_sent_title": "Test sent",
+      "test_sent_body": "Check your device in a moment.",
+      "no_device_title": "No device registered",
+      "no_device_body": "Enable browser notifications above, or open AmyNest on your phone first.",
+      "not_sent_title": "Not sent",
+      "not_sent_body_with_reason": "{{status}} — {{reason}}",
+      "not_sent_body": "{{status}}",
+      "test_failed_title": "Test failed"
+    },
+    "recipes": {
+      "saved_title": "Recipe saved",
+      "saved_body": "Your custom recipe has been saved.",
+      "updated_title": "Recipe updated",
+      "updated_body": "Your recipe has been updated.",
+      "deleted_title": "Recipe deleted",
+      "deleted_body": "The recipe has been removed.",
+      "delete_error_title": "Error",
+      "delete_error_body": "Failed to delete recipe."
+    },
+    "use_web_push": {
+      "blocked_title": "Notifications blocked",
+      "blocked_body": "Allow notifications in your browser settings and try again.",
+      "enabled": "Browser notifications enabled!",
+      "enable_failed_title": "Could not enable notifications",
+      "enable_failed_body_default": "Try again later.",
+      "disabled": "Browser notifications disabled"
+    },
+    "babysitters": {
+      "name_required": "Name is required",
+      "added_title": "Babysitter added!",
+      "added_body": "{{name}} has been added.",
+      "add_error_title": "Error",
+      "add_error_body": "Could not add babysitter.",
+      "removed_title": "Removed",
+      "removed_body": "{{name}} has been removed.",
+      "remove_error_title": "Error",
+      "remove_error_body": "Could not remove babysitter."
+    },
+    "behavior": {
+      "select_child": "Select a child first",
+      "logged": "{{emoji}} {{label}} logged!",
+      "log_failed": "Failed to log",
+      "delete_failed": "Failed to delete"
+    },
+    "children": {
+      "photo_too_large_title": "Photo too large",
+      "photo_too_large_body": "Please choose an image under 5MB.",
+      "profile_updated": "Profile updated successfully",
+      "profile_update_failed": "Failed to update profile",
+      "profile_added": "Child added successfully — taking you to your dashboard",
+      "profile_add_failed": "Failed to add child",
+      "profile_deleted": "Profile deleted",
+      "profile_delete_failed": "Failed to delete profile"
+    },
+    "routines_detail": {
+      "undone": "↩️ Action undone",
+      "copied_title": "Copied!",
+      "copied_body": "Routine copied. Paste it into WhatsApp or SMS.",
+      "recipe_load_failed": "Could not load recipe",
+      "auto_skipped_title": "⏭️ {{count}} task auto-skipped",
+      "auto_skipped_title_plural": "⏭️ {{count}} tasks auto-skipped",
+      "auto_skipped_body": "Low-priority activities cleared to protect bedtime.",
+      "shifted_later_title": "⏩ Shifted +{{min}} min",
+      "shifted_later_body": "Upcoming tasks adjusted.",
+      "shifted_earlier_title": "⏪ Shifted {{min}} min earlier",
+      "shifted_earlier_body": "Upcoming tasks moved forward.",
+      "day_regenerated_title": "🔄 Day regenerated!",
+      "day_regenerated_body": "Remaining tasks have been updated by AI.",
+      "regenerate_failed": "Could not regenerate",
+      "activity_added_title": "✅ Activity added!",
+      "activity_added_body": "\"{{name}}\" has been fit into your schedule.",
+      "activity_add_failed": "Could not add activity",
+      "tomorrow_ready_title": "🌅 Tomorrow's routine ready!",
+      "tomorrow_ready_body_weekend": "Weekend routine generated for {{name}}.",
+      "tomorrow_ready_body_school": "School day routine generated for {{name}}.",
+      "tomorrow_failed": "Could not generate tomorrow's routine",
+      "deleted": "Routine deleted",
+      "delete_failed": "Failed to delete routine",
+      "delayed_skipped_title": "⏱ Delayed · {{count}} task auto-skipped",
+      "delayed_skipped_title_plural": "⏱ Delayed · {{count}} tasks auto-skipped",
+      "delayed_skipped_body": "Low-priority activities removed to protect bedtime.",
+      "schedule_shifted_title": "⏱ Schedule shifted +15 min",
+      "schedule_shifted_body": "Remaining tasks adjusted.",
+      "points_earned_title": "+{{points}} points earned 🎉",
+      "badge_earned_title": "🏆 Badge earned: {{emoji}} {{label}}!",
+      "notifications_disabled": "Notifications disabled",
+      "notifications_enabled_title": "🔔 Notifications enabled!",
+      "notifications_enabled_body": "You'll be notified before each task.",
+      "permission_denied_title": "Permission denied",
+      "permission_denied_body": "Enable notifications in your browser settings.",
+      "simplified_title": "⚡ Amy AI simplified your day",
+      "simplified_body": "{{count}} low-priority task cleared so you can focus on essentials.",
+      "simplified_body_plural": "{{count}} low-priority tasks cleared so you can focus on essentials."
+    },
+    "routines_generate": {
+      "routine_replaced": "🔄 Routine replaced!",
+      "routine_generated": "✨ Routine generated!",
+      "save_failed_title": "Could not save routine",
+      "save_failed_body": "Please try again in a moment.",
+      "generate_failed": "Failed to generate routine",
+      "ai_unavailable": "Amy couldn't generate right now — try the standard routine instead.",
+      "select_child_school": "Please select at least one child and set their school status.",
+      "family_generate_failed": "Failed to generate routine for {{name}}",
+      "family_save_failed": "Failed to save routine for {{name}}",
+      "family_saved": "✨ Saved {{count}} routine!",
+      "family_saved_plural": "✨ Saved {{count}} routines!"
+    },
+    "cry_insight": {
+      "analyse_failed_title": "Couldn't analyse",
+      "analyse_failed_body": "Server returned {{status}}. Please try again.",
+      "mic_unavailable_title": "Mic not available",
+      "mic_unavailable_body": "Your browser doesn't support audio recording. Try the context-only analyse below.",
+      "mic_denied_title": "Mic access denied",
+      "mic_denied_body": "Allow microphone access to record, or use the Analyse without audio button below."
+    },
+    "sleep_predict": {
+      "load_failed_title": "Couldn't load sleep prediction",
+      "network_error": "Network error",
+      "bedtime_logged": "Bedtime logged",
+      "nap_started": "Nap started",
+      "log_sleep_failed_title": "Couldn't log sleep",
+      "wake_logged_title": "Wake-up logged",
+      "wake_logged_body": "Window updated for next sleep.",
+      "log_wake_failed_title": "Couldn't log wake-up"
+    },
+    "infant_sleep": {
+      "wake_logged": "Wake-up logged ☀️",
+      "down_logged": "Down for sleep logged 🌙",
+      "routine_regenerated": "Routine regenerated for {{name}} 🌟",
+      "saved": "Saved ✓"
+    },
+    "infant_baby_cues": {
+      "helpful": "Glad it helped 💜",
+      "not_helpful": "Got it — try the next cue or check Sleep Module.",
+      "tried": "Logged — keep it up 🌟"
+    },
+    "voice_settings": {
+      "voice_on": "🔊 Voice reminders on!",
+      "voice_off": "🔇 Voice reminders off"
+    },
+    "infant_milestones": {
+      "achieved_1": "Amazing! You unlocked this together 🏆",
+      "achieved_2": "Look at that growth! Celebrate this win.",
+      "achieved_3": "Beautifully done — this is real progress.",
+      "in_progress_1": "Great progress! Keep going 🌟",
+      "in_progress_2": "Almost there — consistency wins.",
+      "in_progress_3": "You're doing wonderfully. Try again today."
+    }
+  },
+  "screens": {
+    "common": {
+      "home_link": "← Home",
+      "copyright": "© 2026 AmyNest AI. All rights reserved."
+    },
+    "not_found": {
+      "title": "404 Page Not Found",
+      "message": "Did you forget to add the page to the router?"
+    },
+    "terms": {
+      "heading": "Terms of Service",
+      "last_updated": "Last updated: April 27, 2026",
+      "intro_before": "Please read these Terms of Service carefully before using",
+      "intro_at": "at",
+      "intro_after": ". These Terms form a legally binding agreement between you and AmyNest AI, Inc."
+    },
+    "delete_account": {
+      "title": "Delete Your Account",
+      "subtitle": "We're sorry to see you go. You can permanently delete your AmyNest account and all associated data by following the steps below.",
+      "warning_strong": "This action is permanent.",
+      "warning_body": "Once deleted, your account and all data cannot be recovered. Please make sure you want to proceed before continuing.",
+      "data_heading": "What data will be deleted",
+      "data_items": [
+        "Profile & account information",
+        "All children's profiles and ages",
+        "Daily routines and schedules",
+        "Behavior tracking records",
+        "Phonics test history and progress",
+        "AI conversation history",
+        "Subscription and payment records",
+        "Referral history",
+        "All usage data and analytics"
+      ],
+      "retention_before": "Data is permanently deleted within",
+      "retention_days": "30 days",
+      "retention_after": "of the request. Anonymised, aggregated analytics (not linked to your account) may be retained.",
+      "steps_heading": "How to delete from the app",
+      "steps": [
+        {
+          "title": "Open AmyNest App",
+          "description": "Launch the AmyNest app on your Android or iOS device."
+        },
+        {
+          "title": "Go to Settings",
+          "description": "Tap on your profile picture or the menu icon, then select \"Settings\"."
+        },
+        {
+          "title": "Tap \"Delete Account\"",
+          "description": "Scroll to the bottom and tap \"Delete Account\". Confirm when prompted."
+        },
+        {
+          "title": "Account Deleted",
+          "description": "Your account and all associated data will be permanently deleted within 30 days."
+        }
+      ],
+      "step_label": "Step {{n}}",
+      "help_heading": "Need help?",
+      "help_body": "If you're unable to access the app or need assistance with account deletion, contact our support team and we'll process your request manually within 7 business days.",
+      "email_support": "Email Support",
+      "help_footnote": "Please include the email or phone number linked to your AmyNest account in your message.",
+      "privacy_link": "Privacy Policy",
+      "terms_link": "Terms of Service",
+      "back_home": "Back to Home"
+    },
+    "ai_coach_progress": {
+      "back_to_coach": "Back to AI Coach",
+      "title": "My Progress",
+      "subtitle": "Track the wins you've worked through and keep building momentum.",
+      "loading": "Loading your progress…",
+      "empty_title": "No plans yet",
+      "empty_body": "Pick a goal and complete your first plan — your wins will show up here.",
+      "start_plan": "Start a plan",
+      "wins_count": "{{done}} of {{total}} wins",
+      "win_done_title": "Win {{n}}: {{label}}",
+      "win_pending_title": "Win {{n}}: not done",
+      "last_updated": "Last updated {{date}}",
+      "continue_plan": "Continue plan",
+      "feedback_yes": "Worked",
+      "feedback_somewhat": "Some progress",
+      "feedback_no": "Keep trying"
+    }
   }
 }

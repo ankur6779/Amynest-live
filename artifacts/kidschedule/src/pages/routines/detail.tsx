@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, Link, useParams } from "wouter";
 import { useGetRoutine, getGetRoutineQueryKey, useDeleteRoutine, getListRoutinesQueryKey, useGetChild, getGetChildQueryKey } from "@workspace/api-client-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -447,6 +448,7 @@ function RoutineItemModal({
 }
 
 export default function RoutineDetail() {
+  const { t } = useTranslation();
   const [_, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const routineId = parseInt(params.id || "0");
@@ -517,7 +519,7 @@ export default function RoutineDetail() {
     setLocalItems(undoSnapshot);
     saveItemsMutation.mutate(undoSnapshot);
     clearUndo();
-    toast({ title: "↩️ Action undone" });
+    toast({ title: t("toasts.routines_detail.undone") });
   };
 
   const { data: routine, isLoading } = useGetRoutine(routineId, {
@@ -660,7 +662,7 @@ export default function RoutineDetail() {
   const copyShareMessage = () => {
     const msg = buildShareMessage();
     navigator.clipboard.writeText(msg).then(() => {
-      toast({ title: "Copied!", description: "Routine copied. Paste it into WhatsApp or SMS." });
+      toast({ title: t("toasts.routines_detail.copied_title"), description: t("toasts.routines_detail.copied_body") });
     });
   };
 
@@ -679,7 +681,7 @@ export default function RoutineDetail() {
       const data = await res.json();
       setRecipeData(data);
     } catch {
-      toast({ title: "Could not load recipe", variant: "destructive" });
+      toast({ title: t("toasts.routines_detail.recipe_load_failed"), variant: "destructive" });
       setRecipeOpen(false);
     } finally {
       setRecipeLoading(false);
@@ -748,10 +750,10 @@ export default function RoutineDetail() {
       const data = await res.json();
       if (data.items) {
         setLocalItems(data.items);
-        toast({ title: "🔄 Day regenerated!", description: "Remaining tasks have been updated by AI." });
+        toast({ title: t("toasts.routines_detail.day_regenerated_title"), description: t("toasts.routines_detail.day_regenerated_body") });
       }
     } catch {
-      toast({ title: "Could not regenerate", variant: "destructive" });
+      toast({ title: t("toasts.routines_detail.regenerate_failed"), variant: "destructive" });
     } finally {
       setPartialRegenLoading(false);
     }
@@ -771,10 +773,10 @@ export default function RoutineDetail() {
       const data = await res.json();
       if (data.items) {
         setLocalItems(data.items);
-        toast({ title: "✅ Activity added!", description: `"${addActivityForm.name}" has been fit into your schedule.` });
+        toast({ title: t("toasts.routines_detail.activity_added_title"), description: t("toasts.routines_detail.activity_added_body", { name: addActivityForm.name }) });
       }
     } catch {
-      toast({ title: "Could not add activity", variant: "destructive" });
+      toast({ title: t("toasts.routines_detail.activity_add_failed"), variant: "destructive" });
     } finally {
       setAddActivityLoading(false);
       setAddActivityOpen(false);
@@ -805,7 +807,7 @@ export default function RoutineDetail() {
       });
       queryClient.invalidateQueries({ queryKey: getListRoutinesQueryKey() });
     } catch {
-      toast({ title: "Could not generate tomorrow's routine", variant: "destructive" });
+      toast({ title: t("toasts.routines_detail.tomorrow_failed"), variant: "destructive" });
     } finally {
       setNextDayLoading(false);
       setNextDayDialogOpen(false);
@@ -835,11 +837,11 @@ export default function RoutineDetail() {
       { id: routineId },
       {
         onSuccess: () => {
-          toast({ title: "Routine deleted" });
+          toast({ title: t("toasts.routines_detail.deleted") });
           queryClient.invalidateQueries({ queryKey: getListRoutinesQueryKey() });
           setLocation("/routines");
         },
-        onError: () => toast({ title: "Failed to delete routine", variant: "destructive" }),
+        onError: () => toast({ title: t("toasts.routines_detail.delete_failed"), variant: "destructive" }),
       }
     );
   };
@@ -862,7 +864,7 @@ export default function RoutineDetail() {
             description: "Low-priority activities removed to protect bedtime.",
           });
         } else {
-          toast({ title: "⏱ Schedule shifted +15 min", description: "Remaining tasks adjusted." });
+          toast({ title: t("toasts.routines_detail.schedule_shifted_title"), description: t("toasts.routines_detail.schedule_shifted_body") });
         }
       }
 
@@ -930,7 +932,7 @@ export default function RoutineDetail() {
       notifTimersRef.current.forEach(clearTimeout);
       notifTimersRef.current = [];
       setNotificationsEnabled(false);
-      toast({ title: "Notifications disabled" });
+      toast({ title: t("toasts.routines_detail.notifications_disabled") });
       return;
     }
     const perm = await Notification.requestPermission();
@@ -938,9 +940,9 @@ export default function RoutineDetail() {
       const items = localItems ?? (routine?.items as RoutineItem[]) ?? [];
       scheduleNotifications(items);
       setNotificationsEnabled(true);
-      toast({ title: "🔔 Notifications enabled!", description: "You'll be notified before each task." });
+      toast({ title: t("toasts.routines_detail.notifications_enabled_title"), description: t("toasts.routines_detail.notifications_enabled_body") });
     } else {
-      toast({ title: "Permission denied", description: "Enable notifications in your browser settings.", variant: "destructive" });
+      toast({ title: t("toasts.routines_detail.permission_denied_title"), description: t("toasts.routines_detail.permission_denied_body"), variant: "destructive" });
     }
   };
 

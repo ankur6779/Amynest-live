@@ -28,16 +28,16 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     if (firstName.trim().length < 2) {
-      Alert.alert("Invalid Name", "Please enter your first name (at least 2 characters).");
+      Alert.alert(t("alerts.signup.invalid_name_title"), t("alerts.signup.invalid_name_msg"));
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      Alert.alert(t("alerts.signup.invalid_email_title"), t("alerts.signup.invalid_email_msg"));
       return;
     }
     if (password.length < 8) {
-      Alert.alert("Weak Password", "Password must be at least 8 characters long.");
+      Alert.alert(t("alerts.signup.weak_password_title"), t("alerts.signup.weak_password_msg"));
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -48,7 +48,7 @@ export default function SignUpScreen() {
         await updateProfile(cred.user, { displayName: firstName.trim() });
       } catch { /* non-fatal */ }
     } catch (err: unknown) {
-      Alert.alert("Sign Up Failed", humanizeError(err, "Please try again."));
+      Alert.alert(t("alerts.signup.failed_title"), humanizeError(err, t("alerts.signup.failed_default")));
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ export default function SignUpScreen() {
 
             {/* Phone OTP — fastest signup */}
             <PhoneAuthFlow
-              onError={(msg) => Alert.alert("Sign Up Failed", msg)}
+              onError={(msg) => Alert.alert(t("alerts.signup.failed_title"), msg)}
             />
 
             {/* Divider */}

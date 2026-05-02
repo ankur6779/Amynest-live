@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import {
   Sparkles, Trophy, Target, Heart, ChevronDown, ChevronUp,
@@ -423,6 +424,7 @@ const PARENT_TIPS = [
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function BuddyMilestonePlanner({ childName, ageMonths }: { childName: string; ageMonths: number }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [progress, setProgress] = useState<Stored>(() => loadProgress(childName));
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -462,11 +464,11 @@ export function BuddyMilestonePlanner({ childName, ageMonths }: { childName: str
       return next;
     });
     if (state === "achieved") {
-      const msg = ENCOURAGE_ACHIEVED[Math.floor(Math.random() * ENCOURAGE_ACHIEVED.length)];
-      toast({ description: msg });
+      const idx = Math.floor(Math.random() * 3) + 1;
+      toast({ description: t(`toasts.infant_milestones.achieved_${idx}`) });
     } else if (state === "in_progress") {
-      const msg = ENCOURAGE_IN_PROGRESS[Math.floor(Math.random() * ENCOURAGE_IN_PROGRESS.length)];
-      toast({ description: msg });
+      const idx = Math.floor(Math.random() * 3) + 1;
+      toast({ description: t(`toasts.infant_milestones.in_progress_${idx}`) });
     }
   }, [childName, toast]);
 

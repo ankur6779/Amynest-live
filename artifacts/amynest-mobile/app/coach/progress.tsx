@@ -8,6 +8,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -26,9 +27,6 @@ interface Session {
 }
 
 const FEEDBACK_EMOJI: Record<string, string> = { yes: "🎉", somewhat: "👍", no: "💪" };
-const FEEDBACK_LABEL: Record<string, string> = {
-  yes: "Worked", somewhat: "Some progress", no: "Keep trying",
-};
 
 export default function CoachProgressScreen() {
   const insets = useSafeAreaInsets();
@@ -36,6 +34,12 @@ export default function CoachProgressScreen() {
   const authFetch = useAuthFetch();
   const c = useColors();
   const { theme } = useTheme();
+  const { t } = useTranslation();
+  const FEEDBACK_LABEL: Record<string, string> = {
+    yes: t("screens.coach_progress.feedback_yes"),
+    somewhat: t("screens.coach_progress.feedback_somewhat"),
+    no: t("screens.coach_progress.feedback_no"),
+  };
 
   const { data, isLoading } = useQuery<{ sessions: Session[] }>({
     queryKey: ["ai-coach-progress"],
@@ -62,8 +66,8 @@ export default function CoachProgressScreen() {
           <Ionicons name="bar-chart" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: c.text }]}>My Progress</Text>
-          <Text style={[styles.headerSubtitle, { color: c.textMuted }]}>Track your coaching wins</Text>
+          <Text style={[styles.headerTitle, { color: c.text }]}>{t("screens.coach_progress.title")}</Text>
+          <Text style={[styles.headerSubtitle, { color: c.textMuted }]}>{t("screens.coach_progress.subtitle")}</Text>
         </View>
       </View>
 
@@ -71,16 +75,16 @@ export default function CoachProgressScreen() {
         {isLoading && (
           <View style={{ paddingVertical: 60, alignItems: "center", gap: 10 }}>
             <ActivityIndicator color={brand.primary} />
-            <Text style={{ color: c.textMuted, fontSize: 13 }}>Loading your progress…</Text>
+            <Text style={{ color: c.textMuted, fontSize: 13 }}>{t("screens.coach_progress.loading")}</Text>
           </View>
         )}
 
         {!isLoading && sessions.length === 0 && (
           <View style={[styles.emptyCard, { backgroundColor: c.surface, borderColor: c.border }]}>
             <Ionicons name="sparkles" size={48} color={brand.primary} />
-            <Text style={[styles.emptyTitle, { color: c.text }]}>No plans yet</Text>
+            <Text style={[styles.emptyTitle, { color: c.text }]}>{t("screens.coach_progress.empty_title")}</Text>
             <Text style={[styles.emptyDesc, { color: c.textMuted }]}>
-              Pick a goal and complete your first plan — your wins will show up here.
+              {t("screens.coach_progress.empty_body")}
             </Text>
             <Pressable
               onPress={() => {
@@ -90,7 +94,7 @@ export default function CoachProgressScreen() {
               style={styles.primaryBtn}
             >
               <LinearGradient colors={[brand.primary, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtnGrad}>
-                <Text style={styles.primaryBtnText}>Start a plan</Text>
+                <Text style={styles.primaryBtnText}>{t("screens.coach_progress.start_plan")}</Text>
               </LinearGradient>
             </Pressable>
           </View>
@@ -116,7 +120,7 @@ export default function CoachProgressScreen() {
               <View style={{ marginTop: 10 }}>
                 <View style={styles.progressRow}>
                   <Text style={[styles.progressText, { color: c.textMuted }]}>
-                    {s.completed} of {s.totalWins} wins
+                    {t("screens.coach_progress.wins_count", { done: s.completed, total: s.totalWins })}
                   </Text>
                   <Text style={[styles.progressPct, { color: brand.primary }]}>{pct}%</Text>
                 </View>
@@ -142,7 +146,7 @@ export default function CoachProgressScreen() {
                           backgroundColor: fb ? "rgba(168,85,247,0.18)" : c.border,
                         },
                       ]}
-                      accessibilityLabel={fb ? `Win ${wn}: ${FEEDBACK_LABEL[fb.feedback]}` : `Win ${wn}: not done`}
+                      accessibilityLabel={fb ? t("screens.coach_progress.win_done_a11y", { n: wn, label: FEEDBACK_LABEL[fb.feedback] }) : t("screens.coach_progress.win_pending_a11y", { n: wn })}
                     >
                       <Text style={{ fontSize: 12, fontWeight: "700", color: fb ? brand.primary : c.textMuted }}>
                         {fb ? FEEDBACK_EMOJI[fb.feedback] : wn}
@@ -154,10 +158,10 @@ export default function CoachProgressScreen() {
 
               <View style={styles.cardBottom}>
                 <Text style={[styles.dateText, { color: c.textDim }]}>
-                  Last updated {new Date(s.lastUpdated).toLocaleDateString()}
+                  {t("screens.coach_progress.last_updated", { date: new Date(s.lastUpdated).toLocaleDateString() })}
                 </Text>
                 <Pressable onPress={() => handleResume(s.sessionId)} hitSlop={8} style={styles.continueBtn}>
-                  <Text style={[styles.continueText, { color: brand.primary }]}>Continue plan</Text>
+                  <Text style={[styles.continueText, { color: brand.primary }]}>{t("screens.coach_progress.continue_plan")}</Text>
                   <Ionicons name="arrow-forward" size={13} color={brand.primary} />
                 </Pressable>
               </View>

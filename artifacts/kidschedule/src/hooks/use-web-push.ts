@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "./use-auth-fetch";
 import { useToast } from "./use-toast";
 
@@ -22,6 +23,7 @@ function getInitialStatus(): WebPushStatus {
 export function useWebPush() {
   const authFetch = useAuthFetch();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [status, setStatus] = useState<WebPushStatus>(getInitialStatus);
 
   // Keep status in sync if the user changes browser permission externally.
@@ -47,9 +49,8 @@ export function useWebPush() {
       if (permission !== "granted") {
         setStatus("denied");
         toast({
-          title: "Notifications blocked",
-          description:
-            "Allow notifications in your browser settings and try again.",
+          title: t("toasts.use_web_push.blocked_title"),
+          description: t("toasts.use_web_push.blocked_body"),
           variant: "destructive",
         });
         return;
@@ -75,18 +76,18 @@ export function useWebPush() {
       if (!r.ok) throw new Error("Failed to register token with server");
 
       setStatus("granted");
-      toast({ title: "Browser notifications enabled!" });
+      toast({ title: t("toasts.use_web_push.enabled") });
     } catch (err) {
       console.error("[useWebPush] enable failed:", err);
       setStatus("error");
       toast({
-        title: "Could not enable notifications",
+        title: t("toasts.use_web_push.enable_failed_title"),
         description:
-          err instanceof Error ? err.message : "Try again later.",
+          err instanceof Error ? err.message : t("toasts.use_web_push.enable_failed_body_default"),
         variant: "destructive",
       });
     }
-  }, [authFetch, toast]);
+  }, [authFetch, toast, t]);
 
   const disable = useCallback(async () => {
     try {
@@ -99,8 +100,8 @@ export function useWebPush() {
     } catch {
     }
     setStatus("idle");
-    toast({ title: "Browser notifications disabled" });
-  }, [toast]);
+    toast({ title: t("toasts.use_web_push.disabled") });
+  }, [toast, t]);
 
   return { status, enable, disable };
 }

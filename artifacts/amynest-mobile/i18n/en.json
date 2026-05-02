@@ -379,5 +379,231 @@
     "safe_disclaimer": "Guidance only — not medical advice. Consult your pediatrician for concerns.",
     "based_on": "Based on pediatric guidance",
     "select_child": "Showing tips for"
+  },
+  "alerts": {
+    "signup": {
+      "invalid_name_title": "Invalid Name",
+      "invalid_name_msg": "Please enter your first name (at least 2 characters).",
+      "invalid_email_title": "Invalid Email",
+      "invalid_email_msg": "Please enter a valid email address.",
+      "weak_password_title": "Weak Password",
+      "weak_password_msg": "Password must be at least 8 characters long.",
+      "failed_title": "Sign Up Failed",
+      "failed_default": "Please try again."
+    },
+    "signin": {
+      "failed_title": "Sign In Failed",
+      "failed_default": "Please check your details and try again."
+    },
+    "rewards": {
+      "not_enough_title": "Not enough points",
+      "not_enough_msg": "{{label}} costs {{cost}} pts. You have {{points}} pts. Earn more by completing routines and games!",
+      "balance_changed_msg": "Your balance changed. Try again.",
+      "redeem_title": "Redeem {{label}}?",
+      "redeem_msg": "This will spend {{cost}} pts from your balance.",
+      "redeem_button": "Redeem"
+    },
+    "recipes": {
+      "delete_title": "Delete Recipe",
+      "delete_msg": "Delete \"{{name}}\"? This can't be undone."
+    },
+    "ptm": {
+      "discard_title": "Discard draft?",
+      "discard_msg": "This will clear your current PTM prep.",
+      "discard_button": "Discard",
+      "delete_past_title": "Delete this past PTM?"
+    },
+    "behavior": {
+      "select_child_first": "Select a child first",
+      "log_error_title": "Error",
+      "log_error_msg": "Could not log behavior.",
+      "delete_title": "Delete",
+      "delete_msg": "Remove this entry?",
+      "delete_error_title": "Error",
+      "delete_error_msg": "Could not delete."
+    },
+    "behavior_history": {
+      "delete_title": "Delete entry?",
+      "delete_msg": "Remove this {{type}} log?",
+      "delete_error_title": "Error",
+      "delete_error_msg": "Could not delete entry."
+    },
+    "cry": {
+      "title": "Cry Insight"
+    },
+    "sleep": {
+      "title": "Sleep Predict"
+    },
+    "babysitters": {
+      "name_required": "Name required",
+      "add_error_title": "Error",
+      "add_error_msg": "Could not add babysitter.",
+      "remove_title": "Remove babysitter",
+      "remove_msg": "Remove {{name}}?",
+      "remove_button": "Remove",
+      "remove_error_title": "Error",
+      "remove_error_msg": "Could not remove."
+    },
+    "notifications": {
+      "save_failed_title": "Could not save",
+      "sent_title": "Sent",
+      "sent_msg": "Check your notification tray in a moment.",
+      "no_device_title": "No device registered",
+      "no_device_msg": "Open the app on a real device with notifications enabled.",
+      "not_sent_title": "Not sent",
+      "not_sent_status": "Status: {{status}}{{reason}}",
+      "test_failed_title": "Test failed"
+    },
+    "routines": {
+      "generate_failed_title": "Couldn't generate routine",
+      "generate_failed_msg": "Amy ran into an issue. Please try again in a moment.",
+      "delete_title": "Delete routine?",
+      "delete_msg": "This will permanently remove this routine."
+    },
+    "children": {
+      "permission_title": "Permission needed",
+      "permission_msg_new": "Allow photo access to add a picture.",
+      "permission_msg_edit": "Allow photo access to update the picture.",
+      "photo_error_title": "Error",
+      "photo_error_msg": "Could not load photo.",
+      "name_required_title": "Error",
+      "name_required_msg": "Child name is required.",
+      "add_failed_title": "Error",
+      "add_failed_msg": "Failed to add child. Please try again.",
+      "save_failed_title": "Error",
+      "save_failed_msg": "Failed to save. Please try again.",
+      "delete_title": "Delete Child",
+      "delete_msg": "Are you sure you want to remove {{name}}?",
+      "delete_failed_title": "Error",
+      "delete_failed_msg": "Failed to delete child."
+    },
+    "profile": {
+      "pref_save_failed_title": "Couldn't save",
+      "pref_save_failed_msg": "We couldn't update your email preference. Please try again.",
+      "recap_sent_title": "On its way",
+      "recap_sent_msg": "We just sent a fresh recap to your email.",
+      "recap_not_sent_title": "Recap not sent",
+      "recap_no_provider": "Email isn't configured yet. Please try again later.",
+      "recap_no_email": "We couldn't find an email address on your account.",
+      "recap_send_failed": "The email service had a hiccup. Please try again in a minute.",
+      "recap_default": "Couldn't send right now. Please try again later.",
+      "recap_unreachable_msg": "Couldn't reach the server. Please try again.",
+      "permission_title": "Permission needed",
+      "permission_msg": "Please allow photo access to update your picture.",
+      "upload_failed_title": "Upload failed",
+      "upload_failed_msg": "Could not update profile picture.",
+      "saved_title": "Saved",
+      "saved_msg": "Your profile is up to date.",
+      "save_failed_title": "Error",
+      "save_failed_msg": "Could not save profile. Please try again.",
+      "signout_title": "Sign Out",
+      "signout_msg": "Are you sure you want to sign out?",
+      "signout_button": "Sign Out",
+      "delete_title": "Delete Account?",
+      "delete_msg": "This permanently deletes your account, children, routines, behaviors and all AmyNest data. This cannot be undone.",
+      "delete_button": "Delete Forever",
+      "delete_final_title": "Final confirmation",
+      "delete_final_msg": "Tap 'Yes, delete everything' to permanently erase your AmyNest account.",
+      "delete_final_button": "Yes, delete everything",
+      "delete_failed_title": "Could not delete account",
+      "delete_failed_msg": "Please try again, or email Support@amynest.in for help.",
+      "email_unavailable_title": "Email app not available",
+      "email_unavailable_msg": "Please email Support@amynest.in"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "delete": "Delete"
+    }
+  },
+  "screens": {
+    "not_found": {
+      "oops": "Oops!",
+      "message": "This screen doesn't exist.",
+      "go_home": "Go to home screen!"
+    },
+    "meals": {
+      "title": "🍱 Tiffin & Meals"
+    },
+    "coach_progress": {
+      "title": "My Progress",
+      "subtitle": "Track your coaching wins",
+      "loading": "Loading your progress…",
+      "empty_title": "No plans yet",
+      "empty_body": "Pick a goal and complete your first plan — your wins will show up here.",
+      "start_plan": "Start a plan",
+      "wins_count": "{{done}} of {{total}} wins",
+      "win_done_a11y": "Win {{n}}: {{label}}",
+      "win_pending_a11y": "Win {{n}}: not done",
+      "last_updated": "Last updated {{date}}",
+      "continue_plan": "Continue plan",
+      "feedback_yes": "Worked",
+      "feedback_somewhat": "Some progress",
+      "feedback_no": "Keep trying"
+    },
+    "children_tab": {
+      "title": "Children",
+      "error_load": "Failed to load children",
+      "retry": "Retry",
+      "empty_title": "No children yet",
+      "empty_body": "Add your child's profile to get started",
+      "add_first": "Add First Child",
+      "school_going": "School going",
+      "not_school": "Not in school",
+      "age_months": "{{n}} months",
+      "age_year": "{{n}} yr",
+      "age_years": "{{n}} yrs",
+      "age_months_extra": ", {{n}}mo"
+    },
+    "tabs": {
+      "dashboard": "Dashboard",
+      "routine": "Routine",
+      "coach": "Coach",
+      "hub": "Hub",
+      "kids": "Kids",
+      "profile": "Profile"
+    },
+    "morning_flow": {
+      "title": "🌅 School Morning Flow",
+      "reset": "Reset",
+      "minutes_behind": "({{n}} min behind)",
+      "simplify_rest": "Simplify the rest",
+      "morning_card_title": "🌅  Morning Flow",
+      "steps_summary": "{{count}} steps · about {{minutes}} min total",
+      "start_morning": "Start morning",
+      "progress_meta": "{{done}}/{{total}} done · {{skipped}} skipped",
+      "time_meta": "⏱ {{actual}} / {{planned}} min",
+      "all_done": "All done! 🎉",
+      "skipped_note": "Skipped {{n}} — that's okay.",
+      "smooth_morning": "Smooth morning!",
+      "have_great_day": "Have a great day at school.",
+      "night_card_title": "🌙  Prepare for Tomorrow",
+      "night_summary": "{{done}}/{{total}} ready · do this the previous evening",
+      "open_routines": "Need a detailed routine? Open Routines →",
+      "step_meta": "⏱ ~{{minutes}} min",
+      "step_optional": "  · optional",
+      "skip": "Skip",
+      "done": "Done",
+      "undo": "Undo"
+    },
+    "notif_settings": {
+      "title": "Notifications",
+      "subtitle": "Choose which notifications you want from AmyNest. Maximum {{cap}} per day, never during quiet hours.",
+      "sending": "Sending…",
+      "send_test": "Send test",
+      "quiet_hours": "Quiet hours",
+      "quiet_help": "We never send notifications during this window.",
+      "cat_routine_title": "Routine reminders",
+      "cat_routine_desc": "Morning, evening and bedtime nudges to stay on track.",
+      "cat_nutrition_title": "Nutrition suggestions",
+      "cat_nutrition_desc": "Snack ideas, dinner inspiration and meal tips.",
+      "cat_insights_title": "Amy AI insights",
+      "cat_insights_desc": "Daily parenting tips tailored to your child's age.",
+      "cat_weekly_title": "Weekly report",
+      "cat_weekly_desc": "Sunday recap of your child's week.",
+      "cat_engagement_title": "Friendly nudges",
+      "cat_engagement_desc": "Re-engagement messages and streak rewards.",
+      "cat_goodnight_title": "Good night message",
+      "cat_goodnight_desc": "Wind-down reminder at bedtime."
+    }
   }
 }

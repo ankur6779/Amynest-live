@@ -16,6 +16,7 @@
  * notes inside `analyseRecording` below.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Mic, Square, Activity, Baby, AlertTriangle, ShieldAlert,
   Loader2, RefreshCw, Sparkles, History,
@@ -139,6 +140,7 @@ function relTime(iso: string): string {
 }
 
 export function CryInsight({ childId, childName, ageMonths }: CryInsightProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   // Context form state
@@ -203,6 +205,7 @@ export function CryInsight({ childId, childName, ageMonths }: CryInsightProps) {
   // ─── Submit context + (optional) audio stats ────────────────────────────────
   const submit = useCallback(
     async (audioStats: AudioStats, durationMs: number) => {
+      const { default: i18nInstance } = await import("@/i18n");
       const body = {
         childId,
         durationMs,
@@ -214,6 +217,7 @@ export function CryInsight({ childId, childName, ageMonths }: CryInsightProps) {
           fever,
           ageMonths,
         },
+        language: i18nInstance.language || "en",
       };
       const r = await fetch(getApiUrl("/api/cry-insight/analyze"), {
         method: "POST",
@@ -223,8 +227,8 @@ export function CryInsight({ childId, childName, ageMonths }: CryInsightProps) {
       });
       if (!r.ok) {
         toast({
-          title: "Couldn't analyse",
-          description: `Server returned ${r.status}. Please try again.`,
+          title: t("toasts.cry_insight.analyse_failed_title"),
+          description: t("toasts.cry_insight.analyse_failed_body", { status: r.status }),
           variant: "destructive",
         });
         return;
@@ -241,8 +245,8 @@ export function CryInsight({ childId, childName, ageMonths }: CryInsightProps) {
     if (recording || analysing) return;
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       toast({
-        title: "Mic not available",
-        description: "Your browser doesn't support audio recording. Try the context-only analyse below.",
+        title: t("toasts.cry_insight.mic_unavailable_title"),
+        description: t("toasts.cry_insight.mic_unavailable_body"),
         variant: "destructive",
       });
       return;
@@ -287,8 +291,8 @@ export function CryInsight({ childId, childName, ageMonths }: CryInsightProps) {
       }, 100);
     } catch (err) {
       toast({
-        title: "Mic access denied",
-        description: "Allow microphone access to record, or use the Analyse without audio button below.",
+        title: t("toasts.cry_insight.mic_denied_title"),
+        description: t("toasts.cry_insight.mic_denied_body"),
         variant: "destructive",
       });
       stopStreamAndTimer();

@@ -408,7 +408,7 @@ export default function AICoachPage() {
         setPhase("result");
       } catch (err) {
         if (cancelled) return;
-        toast({ title: "Could not load session", description: "Opening Amy Coach fresh.", variant: "destructive" });
+        toast({ title: t("toasts.ai_coach.load_session_failed_title"), description: t("toasts.ai_coach.load_session_failed_body"), variant: "destructive" });
         setPhase("goals");
       }
     })();
@@ -547,6 +547,7 @@ export default function AICoachPage() {
 
     // Non-streaming fallback (existing endpoint).
     const buildViaJson = async (body: string): Promise<void> => {
+      const { default: i18nInstance0 } = await import("@/i18n");
       const res = await authFetch("/api/ai-coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -821,6 +822,7 @@ export default function AICoachPage() {
     setExtending(true);
     try {
       const startWinNumber = plan.wins.length + 1;
+      const { default: i18nInstanceX } = await import("@/i18n");
       const res = await authFetch("/api/ai-coach/extend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -830,6 +832,7 @@ export default function AICoachPage() {
           failedWinNumber,
           startWinNumber,
           existingWinTitles: plan.wins.map((w) => w.title),
+          language: i18nInstanceX.language || "en",
         }),
       });
       if (res.status === 402) {
@@ -869,7 +872,7 @@ export default function AICoachPage() {
     } else {
       try {
         await navigator.clipboard.writeText(text);
-        toast({ title: "Copied!", description: "Plan copied to clipboard." });
+        toast({ title: t("toasts.ai_coach.copied_title"), description: t("toasts.ai_coach.copied_body") });
       } catch {}
     }
   };
