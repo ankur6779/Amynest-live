@@ -1,12 +1,11 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
-// React Native exposes `__DEV__` as a global. jsdom doesn't, so any module
-// that references it (expo-localization, ErrorFallback, HubDebugOverlay,
-// react-native libs, etc.) throws "ReferenceError: __DEV__ is not defined"
-// the moment it's imported in a test. Define it here so all suites can
-// safely import RN-aware code.
-(globalThis as unknown as { __DEV__: boolean }).__DEV__ = true;
+// React Native ships a global `__DEV__` flag (set by Metro at bundle time)
+// that the hub uses to gate dev-only debug overlays. Define it as `false`
+// in the jsdom test environment so production-like rendering is exercised
+// and the dev-only `HubDebugOverlay` stays out of the tree.
+(globalThis as { __DEV__?: boolean }).__DEV__ = false;
 
 vi.mock("@/i18n", () => ({
   default: {
