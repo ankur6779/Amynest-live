@@ -1,0 +1,435 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Parent Hub tile snapshots > ColoringBooks renders a stable empty-state tree when total === 0 1`] = `
+<div>
+  <div>
+    <span
+      data-icon="palette"
+      style="font-size: 14px; color: rgb(134, 239, 172);"
+    />
+    <span>
+      4 of 5 downloads left today
+    </span>
+  </div>
+  <div>
+    <span
+      data-icon="checkmark-circle"
+      style="font-size: 36px; color: rgb(16, 185, 129);"
+    />
+    <span>
+      All caught up!
+    </span>
+    <span>
+      Aarav
+       has downloaded every coloring book in the library. We add new ones regularly — check back soon!
+    </span>
+  </div>
+</div>
+`;
+
+exports[`Parent Hub tile snapshots > ColoringBooks renders a stable tree once the file list resolves 1`] = `
+<div>
+  <div>
+    <span
+      data-icon="palette"
+      style="font-size: 14px; color: rgb(134, 239, 172);"
+    />
+    <span>
+      4 of 5 downloads left today
+    </span>
+  </div>
+  <div>
+    <div>
+      <button>
+        <img
+          accessibilitylabel="Jungle Animals"
+          resizemode="contain"
+          src="https://example.com/cb1.jpg"
+        />
+      </button>
+      <span>
+        Jungle Animals
+      </span>
+      <div>
+        <button>
+          <span
+            data-icon="eye"
+            style="font-size: 11px; color: rgb(255, 255, 255);"
+          />
+          <span>
+            Preview
+          </span>
+        </button>
+        <button>
+          <span
+            data-icon="download"
+            style="font-size: 11px; color: rgb(255, 255, 255);"
+          />
+          <span>
+            Download
+          </span>
+        </button>
+      </div>
+    </div>
+    <div>
+      <button>
+        <img
+          accessibilitylabel="Ocean Adventure"
+          resizemode="contain"
+          src="https://example.com/cb2.jpg"
+        />
+      </button>
+      <span>
+        Ocean Adventure
+      </span>
+      <div>
+        <button>
+          <span
+            data-icon="eye"
+            style="font-size: 11px; color: rgb(255, 255, 255);"
+          />
+          <span>
+            Preview
+          </span>
+        </button>
+        <button>
+          <span
+            data-icon="download"
+            style="font-size: 11px; color: rgb(255, 255, 255);"
+          />
+          <span>
+            Download
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Parent Hub tile snapshots > FunSheets renders a stable empty-state tree when total === 0 1`] = `
+<div>
+  <div>
+    <span
+      data-icon="file-download-outline"
+      style="font-size: 14px; color: rgb(134, 239, 172);"
+    />
+    <span>
+      4 of 5 downloads left today
+    </span>
+  </div>
+  <div>
+    <span
+      data-icon="checkmark-circle"
+      style="font-size: 36px; color: rgb(16, 185, 129);"
+    />
+    <span>
+      All caught up!
+    </span>
+    <span>
+      Aarav
+       has downloaded every Fun Sheet in the library. We add new ones regularly — check back soon!
+    </span>
+  </div>
+</div>
+`;
+
+exports[`Parent Hub tile snapshots > FunSheets renders a stable tree once the file list resolves 1`] = `
+<div>
+  <div>
+    <span
+      data-icon="file-download-outline"
+      style="font-size: 14px; color: rgb(134, 239, 172);"
+    />
+    <span>
+      4 of 5 downloads left today
+    </span>
+  </div>
+  <div>
+    <div>
+      <button>
+        <img
+          accessibilitylabel="Counting Practice"
+          resizemode="contain"
+          src="https://example.com/fs1.jpg"
+        />
+      </button>
+      <span>
+        Counting Practice
+      </span>
+      <div>
+        <button>
+          <span
+            data-icon="eye"
+            style="font-size: 11px; color: rgb(255, 255, 255);"
+          />
+          <span>
+            View
+          </span>
+        </button>
+        <button>
+          <span
+            data-icon="download"
+            style="font-size: 11px; color: rgb(255, 255, 255);"
+          />
+          <span>
+            Get
+          </span>
+        </button>
+      </div>
+    </div>
+    <div>
+      <button>
+        <img
+          accessibilitylabel="Letter Tracing"
+          resizemode="contain"
+          src="https://example.com/fs2.jpg"
+        />
+        <div>
+          <span
+            data-icon="checkmark-circle"
+            style="font-size: 28px; color: rgb(255, 255, 255);"
+          />
+        </div>
+      </button>
+      <span>
+        Letter Tracing
+      </span>
+      <div>
+        <button>
+          <span
+            data-icon="eye"
+            style="font-size: 11px; color: rgb(255, 255, 255);"
+          />
+          <span>
+            View
+          </span>
+        </button>
+        <button>
+          <span
+            data-icon="download"
+            style="font-size: 11px; color: rgb(13, 148, 136);"
+          />
+          <span>
+            Again
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Parent Hub tile snapshots > SmartMathTricks renders a stable tree for a 5-year-old (4-6 trick set) 1`] = `
+<div>
+  <div>
+    <button>
+      <span>
+        ✨
+         
+        Today
+      </span>
+    </button>
+    <button>
+      <span>
+        📚
+         
+        Learn All
+      </span>
+    </button>
+    <button>
+      <span>
+        🎯
+         
+        Practice
+      </span>
+    </button>
+  </div>
+  <div>
+    <span>
+      2 new tricks every day ✨
+    </span>
+    <div>
+      <button>
+        <span>
+          🌟
+        </span>
+        <div>
+          <span>
+            Near Double
+          </span>
+          <span>
+            Double the smaller, then add 1!
+          </span>
+        </div>
+        <span>
+          ▲
+        </span>
+      </button>
+      <div>
+        <div>
+          <span>
+            HOW IT WORKS
+          </span>
+          <span>
+            Double the smaller, then add 1!
+          </span>
+        </div>
+        <div>
+          <span>
+            EXAMPLE
+          </span>
+          <span>
+            6 + 7 → 6+6 = 12, then +1 = 13
+          </span>
+        </div>
+        <div>
+          <button>
+            <span>
+              🔈 Hear Trick
+            </span>
+          </button>
+          <button>
+            <span>
+              ✏️ Try It
+            </span>
+          </button>
+          <button>
+            <span>
+              ☆
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <button>
+        <span>
+          5️⃣
+        </span>
+        <div>
+          <span>
+            Add 5 Trick
+          </span>
+          <span>
+            Add 10, then subtract 5!
+          </span>
+        </div>
+        <span>
+          ▼
+        </span>
+      </button>
+    </div>
+    <span>
+      New tricks unlock tomorrow! 🌅
+    </span>
+  </div>
+</div>
+`;
+
+exports[`Parent Hub tile snapshots > SmartMathTricks renders a stable tree for an 8-year-old (6-8 trick set) 1`] = `
+<div>
+  <div>
+    <button>
+      <span>
+        ✨
+         
+        Today
+      </span>
+    </button>
+    <button>
+      <span>
+        📚
+         
+        Learn All
+      </span>
+    </button>
+    <button>
+      <span>
+        🎯
+         
+        Practice
+      </span>
+    </button>
+  </div>
+  <div>
+    <span>
+      2 new tricks every day ✨
+    </span>
+    <div>
+      <button>
+        <span>
+          ➗
+        </span>
+        <div>
+          <span>
+            Divide by 2
+          </span>
+          <span>
+            Just halve the number!
+          </span>
+        </div>
+        <span>
+          ▲
+        </span>
+      </button>
+      <div>
+        <div>
+          <span>
+            HOW IT WORKS
+          </span>
+          <span>
+            Just halve the number!
+          </span>
+        </div>
+        <div>
+          <span>
+            EXAMPLE
+          </span>
+          <span>
+            20 ÷ 2 = 10  →  half of 20
+          </span>
+        </div>
+        <div>
+          <button>
+            <span>
+              🔈 Hear Trick
+            </span>
+          </button>
+          <button>
+            <span>
+              ✏️ Try It
+            </span>
+          </button>
+          <button>
+            <span>
+              ☆
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <button>
+        <span>
+          ✖️
+        </span>
+        <div>
+          <span>
+            Multiply by 2
+          </span>
+          <span>
+            Just double the number!
+          </span>
+        </div>
+        <span>
+          ▼
+        </span>
+      </button>
+    </div>
+    <span>
+      New tricks unlock tomorrow! 🌅
+    </span>
+  </div>
+</div>
+`;
