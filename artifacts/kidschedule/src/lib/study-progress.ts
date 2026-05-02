@@ -1,5 +1,18 @@
 // Per-child Smart Study Zone progress, stored in localStorage so we don't
 // need a new DB table for v1. Shape is intentionally flat and forward-compatible.
+//
+// Now also tracks an `engagement` slice (streak, XP, daily goal, badges)
+// powered by `@workspace/study-zone`'s pure helpers so the same rules
+// run on web and mobile.
+
+import {
+  applyEvent as applyEngagementEvent,
+  emptyEngagement,
+  viewState as freshenEngagement,
+  type ApplyResult,
+  type EngagementState,
+  type StudyEvent,
+} from "@workspace/study-zone";
 
 const KEY = (childId: number | string) => `amynest:study-progress:${childId}`;
 
@@ -9,10 +22,13 @@ export interface StudyProgress {
   // basic / advanced: best score per topic (0..N) plus completion flag
   basic: Record<string, Record<string, { score: number; total: number; completed: boolean }>>;
   advanced: Record<string, Record<string, { score: number; total: number; completed: boolean }>>;
+  // streak / XP / daily goal / badges (forward-compatible: missing on
+  // legacy stored payloads → seeded by `loadProgress`)
+  engagement: EngagementState;
 }
 
 function empty(): StudyProgress {
-  return { play: {}, basic: {}, advanced: {} };
+  return { play: {}, basic: {}, advanced: {}, engagement: emptyEngagement() };
 }
 
 export function loadProgress(childId: number | string): StudyProgress {
@@ -21,7 +37,14 @@ export function loadProgress(childId: number | string): StudyProgress {
     const raw = window.localStorage.getItem(KEY(childId));
     if (!raw) return empty();
     const parsed = JSON.parse(raw);
-    return { ...empty(), ...parsed };
+    const merged: StudyProgress = {
+      ...empty(),
+      ...parsed,
+      engagement: { ...emptyEngagement(), ...(parsed.engagement ?? {}) },
+    };
+    // Freshen the streak view (drops to 0 if a day was skipped).
+    merged.engagement = freshenEngagement(merged.engagement);
+    return merged;
   } catch {
     return empty();
   }
@@ -34,13 +57,22 @@ export function saveProgress(childId: number | string, p: StudyProgress) {
   } catch { /* ignore quota errors */ }
 }
 
-export function markPlayItem(childId: number | string, categoryId: string, itemId: string): StudyProgress {
+export function markPlayItem(
+  childId: number | string,
+  categoryId: string,
+  itemId: string,
+): { progress: StudyProgress; engagement: ApplyResult } {
   const p = loadProgress(childId);
   const list = new Set(p.play[categoryId] ?? []);
   list.add(itemId);
   p.play[categoryId] = Array.from(list);
+
+  const event: StudyEvent = { kind: "play-tap", categoryId, itemId };
+  const result = applyEngagementEvent(p.engagement, event);
+  p.engagement = result.next;
+
   saveProgress(childId, p);
-  return p;
+  return { progress: p, engagement: result };
 }
 
 export function markTopicResult(
@@ -50,15 +82,20 @@ export function markTopicResult(
   topicId: string,
   score: number,
   total: number,
-): StudyProgress {
+): { progress: StudyProgress; engagement: ApplyResult } {
   const p = loadProgress(childId);
   const subj = p[mode][subjectId] ?? {};
   const prev = subj[topicId];
   const bestScore = prev ? Math.max(prev.score, score) : score;
   subj[topicId] = { score: bestScore, total, completed: bestScore >= Math.ceil(total * 0.6) };
   p[mode][subjectId] = subj;
+
+  const event: StudyEvent = { kind: "topic-result", mode, subjectId, topicId, score, total };
+  const result = applyEngagementEvent(p.engagement, event);
+  p.engagement = result.next;
+
   saveProgress(childId, p);
-  return p;
+  return { progress: p, engagement: result };
 }
 
 export function categoryPercent(p: StudyProgress, categoryId: string, total: number): number {
