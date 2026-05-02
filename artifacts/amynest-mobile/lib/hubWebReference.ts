@@ -5,7 +5,7 @@
 // ever shipping web code into the mobile bundle.
 //
 // IMPORTANT: keep this file in sync whenever the web hub's `sections`
-// array (around line 513 of parenting-hub.tsx) changes. The web file is
+// array (around line 725 of parenting-hub.tsx) changes. The web file is
 // the source of truth; this is a hand-maintained mirror used purely for
 // dev-time diff diagnostics.
 
@@ -31,12 +31,16 @@ export const WEB_HUB_TILES: readonly WebHubTile[] = [
   { id: "infant-hub",        title: "Infant Hub",                    bands: ["0-2"], featured: true, ageMonthsMax: 24 },
   { id: "tomorrow-forecast", title: "Amy AI — Tomorrow's Forecast",  bands: "all", featured: true },
 
+  // Smart Math Tricks — top of grid for ages 4–8
+  { id: "smart-math-tricks", title: "Smart Math Tricks",  bands: ["4-6", "6-8"] },
+
   // Always-current grid
   { id: "amy",       title: "Ask Amy AI",          bands: "all" },
   { id: "articles",  title: "Parenting Articles",  bands: "all" },
   { id: "tips",      title: "Daily Tips",          bands: "all" },
   { id: "emotional", title: "Emotional Support",   bands: "all" },
   { id: "activities",title: "Activities & Learning", bands: "all" },
+  { id: "art-craft", title: "Art & Craft Videos", bands: "all" },
 
   // Band-based grid
   { id: "story-hub",      title: "Kids Story Hub",          bands: ["0-2", "2-4", "4-6", "6-8"] },
@@ -47,10 +51,11 @@ export const WEB_HUB_TILES: readonly WebHubTile[] = [
   { id: "olympiad",       title: "Smart Olympiad Zone",     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"], ageMonthsMin: 36, ageMonthsMax: 192 },
   { id: "life-skills",    title: "Life Skills Mode",        bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"], ageMonthsMin: 24, ageMonthsMax: 192 },
   { id: "coloring-books", title: "Coloring Books",          bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"], ageMonthsMin: 24 },
+  { id: "fun-sheets",     title: "Fun Sheets",              bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"], ageMonthsMin: 24 },
 ];
 
 // Section 2 — fixed preview tiles the web renders ONLY for 0-24 month children.
-// Source: SECTION_2_PREVIEW_TILES in parenting-hub.tsx.
+// Source: SECTION_2_PREVIEW_TILES in parenting-hub.tsx (8 tiles, in order).
 export const WEB_SECTION_2_TILES: readonly { id: string; title: string }[] = [
   { id: "life-skills",    title: "🧭 Life Skills Mode" },
   { id: "olympiad",       title: "🏆 Smart Olympiad Zone" },
@@ -59,7 +64,39 @@ export const WEB_SECTION_2_TILES: readonly { id: string; title: string }[] = [
   { id: "ptm-prep",       title: "🧾 PTM Prep Assistance" },
   { id: "phonics",        title: "🔤 Phonics Learning" },
   { id: "coloring-books", title: "🎨 Coloring Books" },
+  { id: "fun-sheets",     title: "📄 Fun Sheets" },
 ];
+
+/**
+ * Tile ids that exist on mobile but intentionally have no web counterpart.
+ * The dev-only HubDebugOverlay treats these as "documented mobile extras"
+ * and excludes them from the `extraOnMobile` diff so we don't get false
+ * positives every time the overlay opens.
+ *
+ * Add a new id here only when the product team has decided to keep a
+ * mobile-only feature instead of porting/removing it. Otherwise, prefer
+ * to either port the tile to web or remove it from mobile.
+ */
+export const MOBILE_ONLY_EXTRAS: ReadonlySet<string> = new Set([
+  // Mobile-only routine flow (separate from web's "Activities" tile).
+  "morning-flow",
+  // Placeholder "SOON" tile for the upcoming Kids Control Center feature.
+  "kids-control-center",
+  // Standalone Tiffin & Meals route on mobile (web nests this inside the
+  // Activities/meal generator surface).
+  "meals",
+  // PrintableWorksheets — distinct mobile experience kept alongside the
+  // newly-ported "fun-sheets" web tile to preserve existing user flows.
+  "worksheets",
+  // Amazing Facts mini-card.
+  "facts",
+  // AI Meal Suggestions mini-card (web exposes this through the Activities
+  // and meal generator surfaces instead).
+  "meal-suggestions",
+  // Mobile keeps a standalone always-current Nutrition tile (web wraps
+  // nutrition into the Activities tile).
+  "nutrition",
+]);
 
 const WEB_BAND_LABELS: readonly WebTileBand[] = [
   "0-2", "2-4", "4-6", "6-8", "8-10", "10-12", "12-15",
@@ -102,11 +139,21 @@ export interface HubDiff {
   shared: string[];
   /** Order mismatches: tiles present in both but in different positions. */
   orderMismatches: { id: string; webIndex: number; mobileIndex: number }[];
+  /** Mobile-only extras filtered out of `extraOnMobile` (documented in
+   *  MOBILE_ONLY_EXTRAS) — surfaced separately so the overlay can show
+   *  them as informational rather than as diffs. */
+  mobileOnlyExtras: string[];
 }
 
 /**
  * Compute a side-by-side diff between mobile-rendered tile ids and the
  * web reference for the same child/band.
+ *
+ * Tile ids in `MOBILE_ONLY_EXTRAS` are treated as intentional mobile
+ * additions — they appear in `mobileOnlyExtras` but are excluded from
+ * `extraOnMobile` so the overlay's issue count stays focused on real
+ * parity gaps. Order indices are computed against the *visible* mobile
+ * list (extras included) so the side-by-side view stays accurate.
  */
 export function diffTiles(
   mobileTileIds: readonly string[],
@@ -115,18 +162,28 @@ export function diffTiles(
   const mobileSet = new Set(mobileTileIds);
   const webSet = new Set(webTileIds);
 
-  const extraOnMobile = mobileTileIds.filter((id) => !webSet.has(id));
+  // Mobile ids that web doesn't render, partitioned into documented
+  // extras vs unexpected ones.
+  const allExtra = mobileTileIds.filter((id) => !webSet.has(id));
+  const mobileOnlyExtras = allExtra.filter((id) => MOBILE_ONLY_EXTRAS.has(id));
+  const extraOnMobile = allExtra.filter((id) => !MOBILE_ONLY_EXTRAS.has(id));
+
   const missingOnMobile = webTileIds.filter((id) => !mobileSet.has(id));
   const shared = mobileTileIds.filter((id) => webSet.has(id));
 
+  // Build a "mobile order index" that ignores documented extras so order
+  // mismatches reflect the canonical (web-comparable) positions only.
+  const mobileCanonicalOrder = mobileTileIds.filter(
+    (id) => !MOBILE_ONLY_EXTRAS.has(id),
+  );
   const orderMismatches: HubDiff["orderMismatches"] = [];
   for (const id of shared) {
     const webIndex = webTileIds.indexOf(id);
-    const mobileIndex = mobileTileIds.indexOf(id);
+    const mobileIndex = mobileCanonicalOrder.indexOf(id);
     if (webIndex !== mobileIndex) {
       orderMismatches.push({ id, webIndex, mobileIndex });
     }
   }
 
-  return { extraOnMobile, missingOnMobile, shared, orderMismatches };
+  return { extraOnMobile, missingOnMobile, shared, orderMismatches, mobileOnlyExtras };
 }
