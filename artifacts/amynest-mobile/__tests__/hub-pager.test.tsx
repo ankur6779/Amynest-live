@@ -194,6 +194,18 @@ vi.mock("@/components/FunSheets", () => ({
 vi.mock("@/components/HubDebugOverlay", () => ({
   HubDebugOverlay: makeStub("hub-debug-overlay"),
 }));
+vi.mock("@/components/SkillsFocus", () => ({
+  SkillsFocus: makeStub("skills-focus"),
+}));
+vi.mock("@/components/DailyStory", () => ({
+  DailyStory: makeStub("daily-story"),
+}));
+vi.mock("@/components/ParentTasks", () => ({
+  ParentTasks: makeStub("parent-tasks"),
+}));
+vi.mock("@/components/DailyPuzzle", () => ({
+  DailyPuzzle: makeStub("daily-puzzle"),
+}));
 vi.mock("@/components/HubTile", () => ({
   HubTile: ({ children }: { children?: React.ReactNode }) =>
     React.createElement("div", { "data-stub": "hub-tile" }, children),

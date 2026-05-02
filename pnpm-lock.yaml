@@ -178,6 +178,9 @@ importers:
       '@react-native-community/netinfo':
         specifier: ^11.4.1
         version: 11.4.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))
+      '@workspace/age-content':
+        specifier: workspace:*
+        version: link:../../lib/age-content
       '@workspace/audio-lessons':
         specifier: workspace:*
         version: link:../../lib/audio-lessons
@@ -519,6 +522,9 @@ importers:
 
   artifacts/kidschedule:
     dependencies:
+      '@workspace/age-content':
+        specifier: workspace:*
+        version: link:../../lib/age-content
       '@workspace/audio-lessons':
         specifier: workspace:*
         version: link:../../lib/audio-lessons
@@ -1156,6 +1162,8 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.76
+
+  lib/age-content: {}
 
   lib/api-client-react:
     dependencies:

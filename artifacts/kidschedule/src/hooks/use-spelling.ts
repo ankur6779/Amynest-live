@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
@@ -6,21 +6,6 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 export type SpellingAgeGroup = "2-4" | "4-6" | "6-8" | "8-10+";
 export type SpellingDifficulty = "easy" | "medium" | "hard";
 export type SpellingSource = "curated" | "ai";
-
-/**
- * Trust source for POST /spelling/progress. Narrowed to "parent" only
- * — the parent literally taps ✓/✗ in Parent Mode, so the assertion is
- * out-of-band of the tampered-client surface.
- *
- * Learn + Practice used to write here too, but those are client-graded
- * games where a scripted client could trivially post `correct: true`
- * and inflate stars / level / badges. They're now UI-only flows and
- * don't accumulate progress; star accumulation happens via Parent
- * Mode and the server-graded session flow (Dictation / Competition /
- * Tournament / Battle, via `useSpellingSession` / `useSpellingTournament`
- * below).
- */
-export type LegacyProgressSource = "parent";
 
 export interface SpellingWord {
   id: string;
@@ -57,15 +42,12 @@ export interface LeaderboardRow {
   createdAt: string;
 }
 
-// Map ageMonths -> spelling age group. MUST stay in sync with the server's
-// `spellingAgeGroupFor` (artifacts/api-server/src/data/spelling-words.ts) so
-// the default age band shown in the UI matches the band used for progress
-// partitioning on the server.
+// Map ageMonths -> spelling age group (mirrors server `spellingAgeGroupFor`).
 export function spellingAgeGroupFor(ageMonths: number): SpellingAgeGroup {
-  if (ageMonths < 48) return "2-4";
   if (ageMonths < 72) return "4-6";
   if (ageMonths < 96) return "6-8";
-  return "8-10+";
+  if (ageMonths >= 120) return "8-10+";
+  return ageMonths < 48 ? "2-4" : "4-6";
 }
 
 // ─── useSpellingTTS — speaks one word via /api/tts/synthesize ───────────────
@@ -91,14 +73,8 @@ export interface UseSpellingTTSState {
   speaking: boolean;
   loading: boolean;
   error: string | null;
-  /** Speak the given text via /api/tts/synthesize (legacy reveals-the-word path). */
+  /** Speak the given text. If already playing, stops and starts fresh. */
   speak: (text: string, opts?: { slow?: boolean }) => Promise<void>;
-  /**
-   * Play a pre-prepared audio URL directly (e.g. session-scoped audio for
-   * Competition / Dictation where the server hides the answer). Skips the
-   * synthesize step — the URL is the authoritative source.
-   */
-  playUrl: (url: string, opts?: { slow?: boolean }) => Promise<void>;
   stop: () => void;
 }
 
@@ -138,40 +114,23 @@ export function useSpellingTTS(): UseSpellingTTSState {
     };
   }, [cleanup]);
 
-  const playSrc = useCallback(
-    async (src: string, slow: boolean, reqId: number) => {
-      const audio = new Audio(src);
-      audio.preload = "auto";
-      audio.playbackRate = slow ? 0.65 : 1;
-      audio.onended = () => {
-        if (reqId !== reqIdRef.current) return;
-        setSpeaking(false);
-      };
-      audio.onerror = () => {
-        if (reqId !== reqIdRef.current) return;
-        setError("audio_error");
-        setSpeaking(false);
-      };
-      audioRef.current = audio;
-      setLoading(false);
-      setSpeaking(true);
-      await audio.play();
-    },
-    [],
-  );
-
   const speak = useCallback(
     async (text: string, opts: { slow?: boolean } = {}) => {
       const trimmed = text.trim();
       if (!trimmed) return;
+
+      // Cancel anything in-flight + bump the request id so any older
+      // resolve no longer mutates state.
       abortRef.current?.abort();
       cleanup();
       const reqId = ++reqIdRef.current;
       const ac = new AbortController();
       abortRef.current = ac;
+
       setLoading(true);
       setError(null);
       setSpeaking(false);
+
       try {
         const res = await authFetch("/api/tts/synthesize", {
           method: "POST",
@@ -181,8 +140,24 @@ export function useSpellingTTS(): UseSpellingTTSState {
         });
         if (!res.ok) throw new Error(`tts_synth_${res.status}`);
         const data = (await res.json()) as SynthesizeResponse;
-        if (reqId !== reqIdRef.current) return;
-        await playSrc(data.audioUrl, !!opts.slow, reqId);
+        if (reqId !== reqIdRef.current) return; // stale
+
+        const audio = new Audio(data.audioUrl);
+        audio.preload = "auto";
+        audio.playbackRate = opts.slow ? 0.65 : 1;
+        audio.onended = () => {
+          if (reqId !== reqIdRef.current) return;
+          setSpeaking(false);
+        };
+        audio.onerror = () => {
+          if (reqId !== reqIdRef.current) return;
+          setError("audio_error");
+          setSpeaking(false);
+        };
+        audioRef.current = audio;
+        setLoading(false);
+        setSpeaking(true);
+        await audio.play();
       } catch (err) {
         if ((err as DOMException)?.name === "AbortError") return;
         if (reqId !== reqIdRef.current) return;
@@ -191,31 +166,10 @@ export function useSpellingTTS(): UseSpellingTTSState {
         setSpeaking(false);
       }
     },
-    [authFetch, cleanup, playSrc],
+    [authFetch, cleanup],
   );
 
-  const playUrl = useCallback(
-    async (url: string, opts: { slow?: boolean } = {}) => {
-      if (!url) return;
-      abortRef.current?.abort();
-      cleanup();
-      const reqId = ++reqIdRef.current;
-      setError(null);
-      setLoading(true);
-      setSpeaking(false);
-      try {
-        await playSrc(url, !!opts.slow, reqId);
-      } catch (err) {
-        if (reqId !== reqIdRef.current) return;
-        setError(err instanceof Error ? err.message : "audio_error");
-        setLoading(false);
-        setSpeaking(false);
-      }
-    },
-    [cleanup, playSrc],
-  );
-
-  return { speaking, loading, error, speak, playUrl, stop };
+  return { speaking, loading, error, speak, stop };
 }
 
 // ─── useSpellingWords — fetches a fresh batch of words ──────────────────────
@@ -294,19 +248,8 @@ export interface UseSpellingProgressState {
   progress: SpellingProgress | null;
   loading: boolean;
   error: string | null;
-  /**
-   * Records a client-asserted attempt outcome via the LEGACY endpoint.
-   *
-   * Caller MUST tag the source ("parent" | "learn" | "practice"). The
-   * server rejects the request without it. Competition + Dictation use
-   * `useSpellingSession` instead — they get server-side grading.
-   */
-  recordAttempt: (
-    correct: boolean,
-    source: LegacyProgressSource,
-  ) => Promise<SpellingProgress | null>;
-  /** Locally apply a server-graded progress row from a session attempt. */
-  setProgress: (p: SpellingProgress) => void;
+  /** Records an attempt and returns the new server-authoritative progress. */
+  recordAttempt: (correct: boolean) => Promise<SpellingProgress | null>;
   refresh: () => Promise<void>;
 }
 
@@ -338,16 +281,13 @@ export function useSpellingProgress(
   }, [authFetch, childId, ageGroup]);
 
   const recordAttempt = useCallback(
-    async (
-      correct: boolean,
-      source: LegacyProgressSource,
-    ): Promise<SpellingProgress | null> => {
+    async (correct: boolean): Promise<SpellingProgress | null> => {
       if (!childId) return null;
       try {
         const res = await authFetch("/api/spelling/progress", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ childId, ageGroup, correct, source }),
+          body: JSON.stringify({ childId, ageGroup, correct }),
         });
         if (!res.ok) throw new Error(`record_${res.status}`);
         const data = (await res.json()) as { ok: true; progress: SpellingProgress };
@@ -365,19 +305,22 @@ export function useSpellingProgress(
     void refresh();
   }, [refresh]);
 
-  return { progress, loading, error, recordAttempt, setProgress, refresh };
+  return { progress, loading, error, recordAttempt, refresh };
 }
 
-// ─── useSpellingLeaderboard — read-only family leaderboard ──────────────────
-//
-// In v2 the leaderboard is written exclusively by the server-side finalize
-// endpoint inside `useSpellingSession`. This hook only reads.
+// ─── useSpellingLeaderboard ─────────────────────────────────────────────────
 
 export interface UseSpellingLeaderboardState {
   rows: LeaderboardRow[];
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+  recordScore: (input: {
+    childId: number;
+    wordsAttempted: number;
+    wordsCorrect: number;
+    durationSec: number;
+  }) => Promise<LeaderboardRow | null>;
 }
 
 export function useSpellingLeaderboard(
@@ -405,503 +348,37 @@ export function useSpellingLeaderboard(
     }
   }, [authFetch, ageGroup]);
 
+  const recordScore = useCallback(
+    async (input: {
+      childId: number;
+      wordsAttempted: number;
+      wordsCorrect: number;
+      durationSec: number;
+    }): Promise<LeaderboardRow | null> => {
+      try {
+        const res = await authFetch("/api/spelling/competition/score", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...input, ageGroup }),
+        });
+        if (!res.ok) throw new Error(`record_${res.status}`);
+        const data = (await res.json()) as { ok: true; score: LeaderboardRow };
+        // Refresh leaderboard so the UI reflects the new entry immediately.
+        void refresh();
+        return data.score;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "score_failed");
+        return null;
+      }
+    },
+    [authFetch, ageGroup, refresh],
+  );
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  return { rows, loading, error, refresh };
-}
-
-// ─── useSpellingSession — server-graded Competition / Dictation / Battle ────
-
-export type SessionMode = "competition" | "dictation" | "battle";
-
-/** AI opponent strength for Battle Mode. */
-export type SpellingAiOpponent = "ai_easy" | "ai_medium" | "ai_hard";
-
-export const AI_OPPONENT_LABELS: Record<SpellingAiOpponent, string> = {
-  ai_easy:   "Beginner Bot",
-  ai_medium: "Smart Bot",
-  ai_hard:   "Master Bot",
-};
-
-/**
- * Per-word payload returned by the server. Deliberately omits the actual
- * word, syllables, chunks, and hint — those are server-only state. The
- * client only ever knows: there's a word with this many letters, here's
- * the audio URL to play it.
- */
-export interface SafeSessionWord {
-  id: string;
-  ageGroup: SpellingAgeGroup;
-  difficulty: SpellingDifficulty;
-  audioUrl: string;
-  letterCount: number;
-}
-
-export interface SessionAttemptResult {
-  correct: boolean;
-  /**
-   * Canonical spelling — Dictation surfaces this on a wrong answer so the
-   * child can see the right word. Competition UI hides it until finalize.
-   */
-  correctAnswer: string;
-  progress: SpellingProgress;
-  /**
-   * Battle Mode only: the AI opponent's pre-computed result for THIS
-   * word (deterministic, server-seeded). Null for other modes.
-   */
-  aiResult: { correct: boolean; ms: number } | null;
-}
-
-export interface SessionFinalizeSummary {
-  mode: string;
-  wordsAttempted: number;
-  wordsCorrect: number;
-  durationSec: number;
-  accuracyPct: number;
-  /** Null for Dictation. Set for Competition / Tournament / Battle. */
-  score: number | null;
-  /** Battle Mode only: AI's final score using same formula. Null otherwise. */
-  aiScore: number | null;
-  /** Battle Mode only: who won. Null otherwise. */
-  winner: "you" | "ai" | "tie" | null;
-}
-
-export interface UseSpellingSessionState {
-  sessionToken: string | null;
-  words: SafeSessionWord[];
-  startedAt: string | null;
-  loading: boolean;
-  error: string | null;
-  finalSummary: SessionFinalizeSummary | null;
-  /** Already-graded word indices — drives the "next" pointer in the UI. */
-  gradedIndices: Set<number>;
-  start: (opts: {
-    mode: SessionMode;
-    difficulty: SpellingDifficulty;
-    count?: number;
-    source?: SpellingSource;
-    /** Required iff mode === "battle". */
-    opponent?: SpellingAiOpponent;
-  }) => Promise<boolean>;
-  /** Submit a typed guess. Server returns correctness + updated progress. */
-  attempt: (wordIndex: number, guess: string) => Promise<SessionAttemptResult | null>;
-  /** Close the session — writes leaderboard row for Competition. Idempotent. */
-  finalize: () => Promise<SessionFinalizeSummary | null>;
-  /** Drop local state — does NOT abandon the server session (it just lingers). */
-  reset: () => void;
-}
-
-export function useSpellingSession(
-  childId: number | null,
-  ageGroup: SpellingAgeGroup,
-  onProgressUpdate?: (p: SpellingProgress) => void,
-): UseSpellingSessionState {
-  const authFetch = useAuthFetch();
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [words, setWords] = useState<SafeSessionWord[]>([]);
-  const [startedAt, setStartedAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [finalSummary, setFinalSummary] =
-    useState<SessionFinalizeSummary | null>(null);
-  const [gradedIndices, setGradedIndices] = useState<Set<number>>(
-    () => new Set(),
-  );
-
-  const reset = useCallback(() => {
-    setSessionToken(null);
-    setWords([]);
-    setStartedAt(null);
-    setError(null);
-    setFinalSummary(null);
-    setGradedIndices(new Set());
-  }, []);
-
-  const start = useCallback(
-    async (opts: {
-      mode: SessionMode;
-      difficulty: SpellingDifficulty;
-      count?: number;
-      source?: SpellingSource;
-      opponent?: SpellingAiOpponent;
-    }): Promise<boolean> => {
-      if (!childId) return false;
-      setLoading(true);
-      setError(null);
-      setFinalSummary(null);
-      setGradedIndices(new Set());
-      try {
-        const res = await authFetch("/api/spelling/sessions/start", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            childId,
-            ageGroup,
-            mode: opts.mode,
-            difficulty: opts.difficulty,
-            count: opts.count ?? 10,
-            source: opts.source ?? "curated",
-            // Only include opponent for Battle Mode — server's refine()
-            // will reject a stray opponent on competition/dictation.
-            ...(opts.mode === "battle" && opts.opponent
-              ? { opponent: opts.opponent }
-              : {}),
-          }),
-        });
-        if (!res.ok) throw new Error(`session_start_${res.status}`);
-        const data = (await res.json()) as {
-          ok: true;
-          sessionToken: string;
-          mode: SessionMode;
-          ageGroup: SpellingAgeGroup;
-          difficulty: SpellingDifficulty;
-          startedAt: string;
-          words: SafeSessionWord[];
-        };
-        setSessionToken(data.sessionToken);
-        setWords(data.words);
-        setStartedAt(data.startedAt);
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "session_start_failed");
-        return false;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [authFetch, childId, ageGroup],
-  );
-
-  const attempt = useCallback(
-    async (
-      wordIndex: number,
-      guess: string,
-    ): Promise<SessionAttemptResult | null> => {
-      if (!sessionToken) return null;
-      try {
-        const res = await authFetch(
-          `/api/spelling/sessions/${sessionToken}/attempt`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ wordIndex, guess }),
-          },
-        );
-        // Replay / already-graded responses come back as 409 with the
-        // previous verdict — surface them as a soft failure rather than
-        // throwing, so the UI can advance to the next word.
-        if (res.status === 409) {
-          setError("already_graded");
-          return null;
-        }
-        if (!res.ok) throw new Error(`session_attempt_${res.status}`);
-        const data = (await res.json()) as {
-          ok: true;
-          correct: boolean;
-          correctAnswer: string;
-          progress: SpellingProgress;
-          aiResult: { correct: boolean; ms: number } | null;
-        };
-        setGradedIndices((prev) => {
-          const next = new Set(prev);
-          next.add(wordIndex);
-          return next;
-        });
-        onProgressUpdate?.(data.progress);
-        return {
-          correct: data.correct,
-          correctAnswer: data.correctAnswer,
-          progress: data.progress,
-          aiResult: data.aiResult,
-        };
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "session_attempt_failed");
-        return null;
-      }
-    },
-    [authFetch, sessionToken, onProgressUpdate],
-  );
-
-  const finalize = useCallback(async (): Promise<SessionFinalizeSummary | null> => {
-    if (!sessionToken) return null;
-    try {
-      const res = await authFetch(
-        `/api/spelling/sessions/${sessionToken}/finalize`,
-        { method: "POST", headers: { "Content-Type": "application/json" } },
-      );
-      if (!res.ok) throw new Error(`session_finalize_${res.status}`);
-      const data = (await res.json()) as {
-        ok: true;
-        summary: SessionFinalizeSummary;
-        competitionScoreId: number | null;
-        alreadyFinalized: boolean;
-      };
-      setFinalSummary(data.summary);
-      return data.summary;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "session_finalize_failed");
-      return null;
-    }
-  }, [authFetch, sessionToken]);
-
-  // Memoised state for stable identity in dependent hooks.
-  return useMemo(
-    () => ({
-      sessionToken,
-      words,
-      startedAt,
-      loading,
-      error,
-      finalSummary,
-      gradedIndices,
-      start,
-      attempt,
-      finalize,
-      reset,
-    }),
-    [
-      sessionToken,
-      words,
-      startedAt,
-      loading,
-      error,
-      finalSummary,
-      gradedIndices,
-      start,
-      attempt,
-      finalize,
-      reset,
-    ],
-  );
-}
-
-// ─── useSpellingTournament — 3-round elimination orchestrator ───────────────
-//
-// The server owns the round progression: each round is its own
-// server-graded session (mode "tournament"), and the tournament row
-// stores the rolling state. This hook is a thin client driver that:
-//   1. POST /spelling/tournaments/start  → tournament + round 1 session
-//   2. attempt(idx, guess) hits the standard /sessions/:token/attempt
-//      using the active round's session token (re-using the v2 trust model)
-//   3. advance() finalizes the active round via the tournament endpoint
-//      and either receives the next round's session OR a terminal status.
-
-/** Per-round result as the server-side state machine returns it. */
-export interface TournamentRoundSnapshot {
-  round: number;
-  difficulty: SpellingDifficulty;
-  sessionToken: string;
-  score: number;
-  wordsCorrect: number;
-  wordsAttempted: number;
-  durationSec: number;
-  passed: boolean;
-}
-
-export interface TournamentSummary {
-  tournamentToken: string;
-  childId: number;
-  ageGroup: SpellingAgeGroup;
-  status: "active" | "eliminated" | "completed";
-  currentRound: number;
-  rounds: TournamentRoundSnapshot[];
-  totalScore: number;
-  eliminatedAtRound: number | null;
-  startedAt: string;
-  finalizedAt: string | null;
-}
-
-/** Active round's session — same shape the public start endpoint returns. */
-export interface TournamentActiveSession {
-  sessionToken: string;
-  mode: "tournament";
-  ageGroup: SpellingAgeGroup;
-  difficulty: SpellingDifficulty;
-  round: number;
-  passThreshold: number;
-  startedAt: string;
-  words: SafeSessionWord[];
-}
-
-export interface UseSpellingTournamentState {
-  tournament: TournamentSummary | null;
-  activeSession: TournamentActiveSession | null;
-  /** Indices of the active round's session that have been graded. */
-  gradedIndices: Set<number>;
-  /** Result of the most recently finalized round (for inter-round banner). */
-  lastRound: TournamentRoundSnapshot | null;
-  loading: boolean;
-  error: string | null;
-  start: () => Promise<boolean>;
-  /** Submit a typed guess for the active round's word. */
-  attempt: (wordIndex: number, guess: string) => Promise<SessionAttemptResult | null>;
-  /** Finalize the active round and (if active) load the next one. */
-  advance: () => Promise<TournamentSummary | null>;
-  /** Drop local state — does NOT delete the server-side tournament. */
-  reset: () => void;
-}
-
-export function useSpellingTournament(
-  childId: number | null,
-  ageGroup: SpellingAgeGroup,
-  onProgressUpdate?: (p: SpellingProgress) => void,
-): UseSpellingTournamentState {
-  const authFetch = useAuthFetch();
-  const [tournament, setTournament] = useState<TournamentSummary | null>(null);
-  const [activeSession, setActiveSession] =
-    useState<TournamentActiveSession | null>(null);
-  const [gradedIndices, setGradedIndices] = useState<Set<number>>(
-    () => new Set(),
-  );
-  const [lastRound, setLastRound] = useState<TournamentRoundSnapshot | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const reset = useCallback(() => {
-    setTournament(null);
-    setActiveSession(null);
-    setGradedIndices(new Set());
-    setLastRound(null);
-    setError(null);
-  }, []);
-
-  const start = useCallback(async (): Promise<boolean> => {
-    if (!childId) return false;
-    setLoading(true);
-    setError(null);
-    setLastRound(null);
-    setGradedIndices(new Set());
-    try {
-      const res = await authFetch("/api/spelling/tournaments/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childId, ageGroup }),
-      });
-      if (!res.ok) throw new Error(`tournament_start_${res.status}`);
-      const data = (await res.json()) as {
-        ok: true;
-        tournament: TournamentSummary;
-        session: TournamentActiveSession;
-      };
-      setTournament(data.tournament);
-      setActiveSession(data.session);
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "tournament_start_failed");
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [authFetch, childId, ageGroup]);
-
-  const attempt = useCallback(
-    async (
-      wordIndex: number,
-      guess: string,
-    ): Promise<SessionAttemptResult | null> => {
-      if (!activeSession) return null;
-      try {
-        const res = await authFetch(
-          `/api/spelling/sessions/${activeSession.sessionToken}/attempt`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ wordIndex, guess }),
-          },
-        );
-        if (res.status === 409) {
-          setError("already_graded");
-          return null;
-        }
-        if (!res.ok) throw new Error(`tournament_attempt_${res.status}`);
-        const data = (await res.json()) as {
-          ok: true;
-          correct: boolean;
-          correctAnswer: string;
-          progress: SpellingProgress;
-          aiResult: { correct: boolean; ms: number } | null;
-        };
-        setGradedIndices((prev) => {
-          const next = new Set(prev);
-          next.add(wordIndex);
-          return next;
-        });
-        onProgressUpdate?.(data.progress);
-        return {
-          correct: data.correct,
-          correctAnswer: data.correctAnswer,
-          progress: data.progress,
-          aiResult: data.aiResult,
-        };
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "tournament_attempt_failed",
-        );
-        return null;
-      }
-    },
-    [authFetch, activeSession, onProgressUpdate],
-  );
-
-  const advance = useCallback(async (): Promise<TournamentSummary | null> => {
-    if (!tournament) return null;
-    setLoading(true);
-    try {
-      const res = await authFetch(
-        `/api/spelling/tournaments/${tournament.tournamentToken}/advance`,
-        { method: "POST", headers: { "Content-Type": "application/json" } },
-      );
-      if (!res.ok) throw new Error(`tournament_advance_${res.status}`);
-      const data = (await res.json()) as {
-        ok: true;
-        tournament: TournamentSummary;
-        lastRound: TournamentRoundSnapshot;
-        nextSession: TournamentActiveSession | null;
-      };
-      setTournament(data.tournament);
-      setLastRound(data.lastRound);
-      setActiveSession(data.nextSession);
-      // Reset graded indices for the new round (or clear when terminal).
-      setGradedIndices(new Set());
-      return data.tournament;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "tournament_advance_failed");
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [authFetch, tournament]);
-
-  return useMemo(
-    () => ({
-      tournament,
-      activeSession,
-      gradedIndices,
-      lastRound,
-      loading,
-      error,
-      start,
-      attempt,
-      advance,
-      reset,
-    }),
-    [
-      tournament,
-      activeSession,
-      gradedIndices,
-      lastRound,
-      loading,
-      error,
-      start,
-      attempt,
-      advance,
-      reset,
-    ],
-  );
+  return { rows, loading, error, refresh, recordScore };
 }
 
 // ─── Badge metadata (UI labels) ─────────────────────────────────────────────
