@@ -750,7 +750,7 @@ export default function ParentingHub() {
       featured: true,
       render: () => {
         if (!isInfantHubAge(totalAgeMonths)) return null;
-        return <InfantHub childName={effectiveChild.name} ageMonths={totalAgeMonths} />;
+        return <InfantHub childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />;
       },
     },
 

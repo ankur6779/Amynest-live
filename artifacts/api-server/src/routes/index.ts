@@ -32,6 +32,7 @@ import phonicsRouter from "./phonics";
 import coloringRouter from "./coloring";
 import funsheetsRouter from "./funsheets";
 import storiesRouter from "./stories";
+import cryInsightRouter from "./cryInsight";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -82,5 +83,6 @@ router.use(phonicsRouter);
 router.use(coloringRouter);
 router.use(funsheetsRouter);
 router.use("/stories", storiesRouter);
+router.use(cryInsightRouter);
 
 export default router;

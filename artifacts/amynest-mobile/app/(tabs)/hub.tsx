@@ -294,7 +294,7 @@ export default function HubScreen() {
                 .sort((a, b) => a.months - b.months)[0]?.child;
           if (!target) return null;
           const m = target.age * 12 + (target.ageMonths ?? 0);
-          return <InfantHub childName={target.name} ageMonths={m} />;
+          return <InfantHub childId={target.id} childName={target.name} ageMonths={m} />;
         })()}
 
         {effective && grp && (
