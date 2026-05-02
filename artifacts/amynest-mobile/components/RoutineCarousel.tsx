@@ -155,7 +155,7 @@ function TaskCard({
           </LinearGradient>
         </AnimatedPressable>
 
-        {/* Quick-jump link (Task #191): only rendered for completed items
+        {/* Quick-jump link (Task #191): only rendered for completed items // audit-ok: task ref, not a hex color
             that carry a related-tile mapping AND when the parent supplied
             an `onContinue` handler. Items without a mapping simply omit
             the link, keeping the card compact. */}

@@ -20,15 +20,17 @@ import { useColors } from "@/hooks/useColors";
 import { brand, palette, ACCENT_PINK, BRAND_GRADIENT } from "@/constants/colors";
 import {
   computeCommandCenter,
+  pickPlayIdeas,
   type AdaptiveItem,
   type AdaptiveMood,
   type AdaptiveSleepQuality,
   type CommandActionId,
   type CommandSuggestion,
   type CommandCenterResult,
+  type PlayIdea,
 } from "@workspace/family-routine";
 
-type Child = { id: number; name: string };
+type Child = { id: number; name: string; age?: number };
 
 type Routine = { id: number; date: string; items: AdaptiveItem[] };
 type Summary = {
@@ -295,7 +297,7 @@ function CommandCenterDashboard(props: DashboardProps) {
   const { overview, insights, actions, parentStatus, timeline, suggestions } = result;
 
   const [activePanel, setActivePanel] = useState<
-    null | "calm" | "sleep" | "play" | "phonics" | "lullaby" | "puzzle"
+    null | "calm" | "sleep" | "play" | "phonics" | "lullaby" | "puzzle" | "play-picker"
   >(null);
   const [toast, setToast] = useState<{ msg: string; undo?: () => void } | null>(null);
   const [confettiKey, setConfettiKey] = useState(0);
@@ -446,8 +448,34 @@ function CommandCenterDashboard(props: DashboardProps) {
   }
 
   function onSuggestion(s: CommandSuggestion) {
-    if (s.id === "start-play") return addActivity();
+    if (s.id === "start-play") {
+      // Open the in-place 10-min play picker (3 age-appropriate ideas).
+      // Mirrors the web component — separate from the generic timer that
+      // `addActivity` opens, so the engine's "Try a 10-min play" chip
+      // closes the loop with concrete, tap-to-start ideas.
+      setActivePanel((p) => (p === "play-picker" ? null : "play-picker"));
+      return;
+    }
     if (s.actionId) onAction(s.actionId);
+  }
+
+  // Age-appropriate ideas, computed once per child.age. The engine's
+  // `pickPlayIdeas` is deterministic per age so the same age always yields
+  // the same trio — re-renders never reshuffle the list under the parent.
+  const playIdeas = useMemo<PlayIdea[]>(
+    () => pickPlayIdeas(child.age ?? 4, 3),
+    [child.age],
+  );
+
+  // Selecting an idea logs a positive moment so today's positive count
+  // bumps and the engine stops re-suggesting the chip (see
+  // `buildSuggestions` — start-play is suppressed when
+  // `positiveBehaviorsToday >= 1`).
+  async function pickPlayIdea(idea: PlayIdea) {
+    setActivePanel(null);
+    burst();
+    await onLogBehavior(`10-min play: ${idea.title}`, "positive").catch(() => {});
+    showToast(`${idea.emoji} Started ${idea.title}`);
   }
 
   return (
@@ -673,6 +701,16 @@ function CommandCenterDashboard(props: DashboardProps) {
           );
         })}
 
+        {/* In-place 10-min play picker — closes the loop on the engine's
+            "Try a 10-min play" suggestion chip with 3 tap-to-start ideas. */}
+        {activePanel === "play-picker" && (
+          <PlayPickerPanel
+            ideas={playIdeas}
+            onPick={pickPlayIdea}
+            onClose={() => setActivePanel(null)}
+          />
+        )}
+
         {/* Insights footer */}
         {insights.length > 0 && (
           <View style={{ gap: 8 }}>
@@ -817,6 +855,82 @@ function ActionPanel({
     </View>
   );
 }
+
+function PlayPickerPanel({
+  ideas,
+  onPick,
+  onClose,
+}: {
+  ideas: PlayIdea[];
+  onPick: (idea: PlayIdea) => void;
+  onClose: () => void;
+}) {
+  return (
+    <View
+      testID="play-picker-panel"
+      style={[d.panel, { borderColor: "rgba(52,211,153,0.45)", backgroundColor: "rgba(52,211,153,0.10)" }]}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View style={d.panelIcon}>
+            <Ionicons name="dice" size={14} color="#fff" />
+          </View>
+          <Text style={d.panelTitle}>Pick a 10-min play — tap to start</Text>
+        </View>
+        <Pressable onPress={onClose} testID="play-picker-close" accessibilityLabel="Close play picker">
+          <Text style={{ fontSize: 11, fontWeight: "800", color: "rgba(255,255,255,0.7)" }}>Close</Text>
+        </Pressable>
+      </View>
+      <View style={{ gap: 8, marginTop: 8 }}>
+        {ideas.map((idea) => (
+          <Pressable
+            key={idea.id}
+            testID={`play-idea-${idea.id}`}
+            onPress={() => onPick(idea)}
+            accessibilityLabel={`Start ${idea.title}`}
+            style={({ pressed }) => [pp.row, pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }]}
+          >
+            <Text style={pp.emoji} accessibilityElementsHidden>{idea.emoji}</Text>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={pp.title} numberOfLines={1}>{idea.title}</Text>
+              <Text style={pp.desc} numberOfLines={2}>{idea.description}</Text>
+            </View>
+            <View style={pp.startPill}>
+              <Text style={pp.startPillText}>Start</Text>
+              <Ionicons name="arrow-forward" size={11} color="#0a0820" /* audit-ok: dark neon dashboard backdrop */ />
+            </View>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const pp = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(52,211,153,0.30)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  emoji: { fontSize: 22 },
+  title: { fontSize: 13, fontWeight: "900", color: "#fff" },
+  desc: { fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2 },
+  startPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#fff",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  startPillText: { fontSize: 10.5, fontWeight: "900", color: "#0a0820" /* audit-ok: dark neon dashboard backdrop */ },
+});
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (

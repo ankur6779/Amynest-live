@@ -117,7 +117,7 @@ describe("RoutineCarousel", () => {
   });
 });
 
-describe("RoutineCarousel — Continue quick-jump link (Task #191)", () => {
+describe("RoutineCarousel — Continue quick-jump link (Task #191)", () => { // audit-ok: task ref, not a hex color
   // Completed task with both a `relatedTileId` and a `continueLabel` —
   // the only shape that should render the Continue link.
   const completedWithLink: RoutineTask = {

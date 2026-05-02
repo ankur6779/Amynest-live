@@ -327,8 +327,14 @@ export function buildSuggestions(args: {
   delayedCount: number;
   /** Hour-of-day in local time (0–23). Optional — defaults to neutral. */
   hour?: number;
+  /**
+   * Positive behaviors already logged today. Used to suppress the
+   * "Try a 10-min play" chip once the parent has acted on it (the play
+   * picker logs a positive moment, so re-suggesting it would feel naggy).
+   */
+  positiveBehaviorsToday?: number;
 }): CommandSuggestion[] {
-  const { qualityMinutes, sleepQuality, mood, routinePct, totalItems, delayedCount, hour } = args;
+  const { qualityMinutes, sleepQuality, mood, routinePct, totalItems, delayedCount, hour, positiveBehaviorsToday } = args;
   const out: CommandSuggestion[] = [];
 
   // Behind on the day → simplify wins decisively.
@@ -351,9 +357,12 @@ export function buildSuggestions(args: {
   if (mood === "low") {
     out.push({ id: "calm-tools", label: "Open calming tools", emoji: "🫶", urgency: 75, actionId: "calm-child" });
   }
-  // Light quality time → 10-min play (chip wires to no specific action; the
-  // UI maps it to the quick-action bar's "10-min play" card).
-  if (qualityMinutes < 15) {
+  // Light quality time → 10-min play picker. The chip wires to no specific
+  // action because the UI opens an in-place play picker (3 age-appropriate
+  // ideas) instead of running a generic action. We suppress the chip once
+  // the parent has logged ANY positive moment today so the suggestion stops
+  // re-appearing after they act on it.
+  if (qualityMinutes < 15 && (positiveBehaviorsToday ?? 0) === 0) {
     out.push({ id: "start-play", label: "Try a 10-min play", emoji: "🎲", urgency: 60, actionId: null });
   }
 
@@ -364,6 +373,72 @@ export function buildSuggestions(args: {
     if (!prev || s.urgency > prev.urgency) byId.set(s.id, s);
   }
   return [...byId.values()].sort((a, b) => b.urgency - a.urgency);
+}
+
+/**
+ * A short, parent-friendly play idea served by the in-place 10-min play
+ * picker. Each entry has a self-contained title + description so the UI
+ * doesn't need to look anything up.
+ */
+export type PlayIdea = {
+  id: string;
+  emoji: string;
+  title: string;
+  description: string;
+  /** Inclusive lower bound (years). 0 means works from babies up. */
+  ageMin: number;
+  /** Inclusive upper bound (years). */
+  ageMax: number;
+};
+
+const PLAY_IDEAS: PlayIdea[] = [
+  // Baby (0–2)
+  { id: "peekaboo",       emoji: "👀", title: "Peek-a-boo round",     description: "Hide your face with a soft cloth, then reveal — watch the giggles.", ageMin: 0, ageMax: 2 },
+  { id: "mirror-faces",   emoji: "🪞", title: "Mirror faces",          description: "Sit in front of a mirror and copy each other's expressions.",       ageMin: 0, ageMax: 3 },
+  { id: "sing-sway",      emoji: "🎵", title: "Sing & sway",           description: "Pick a soft song and gently sway together for a minute.",          ageMin: 0, ageMax: 3 },
+  // Toddler (1–4)
+  { id: "bubble-chase",   emoji: "🫧", title: "Bubble chase",          description: "Blow a few bubbles and let them pop each one before it lands.",    ageMin: 1, ageMax: 5 },
+  { id: "stack-topple",   emoji: "🧱", title: "Stack & topple",        description: "Build a tower with cups or blocks, then knock it down together.",  ageMin: 1, ageMax: 5 },
+  { id: "animal-sounds",  emoji: "🐮", title: "Animal sound guess",    description: "Take turns making animal sounds — the other guesses the animal.",  ageMin: 2, ageMax: 6 },
+  // Preschool (3–6)
+  { id: "treasure-hunt",  emoji: "🗺️", title: "Mini treasure hunt",   description: "Hide 3 small toys around the room and give warm/cold hints.",      ageMin: 3, ageMax: 8 },
+  { id: "doodle-duel",    emoji: "🎨", title: "Doodle duel",           description: "Pick a theme and both draw — share what you made after 5 min.",   ageMin: 3, ageMax: 10 },
+  { id: "simon-says",     emoji: "🙆", title: "Simon says",            description: "Quick rounds of silly actions — let them be Simon for a turn too.", ageMin: 3, ageMax: 9 },
+  // Early elementary (4–9)
+  { id: "story-chain",    emoji: "📖", title: "Story chain",           description: "Take turns adding one sentence to build a silly story together.",  ageMin: 4, ageMax: 12 },
+  { id: "memory-match",   emoji: "🧠", title: "Memory match",          description: "Lay 8 cards face-down and take turns finding matching pairs.",     ageMin: 4, ageMax: 12 },
+  { id: "charades",       emoji: "🎭", title: "Charades",              description: "Act out animals or jobs without words — 1-minute round each.",    ageMin: 5, ageMax: 14 },
+  // Older (7+)
+  { id: "twenty-q",       emoji: "❓", title: "20 questions",          description: "Pick anything — they get 20 yes/no questions to guess it.",        ageMin: 7, ageMax: 14 },
+  { id: "speed-sketch",   emoji: "✏️", title: "Speed sketch",          description: "Set a 60-sec timer and both sketch the same prompt.",             ageMin: 7, ageMax: 14 },
+  { id: "would-you",      emoji: "🤔", title: "Would-you-rather",      description: "Trade silly 'would you rather' questions for 5 minutes.",         ageMin: 8, ageMax: 14 },
+];
+
+/**
+ * Picks `count` age-appropriate quick play ideas for the in-place picker.
+ *
+ * - Filters the catalog by `ageYears` (clamped to [0, 15]) and falls back
+ *   to the full catalog when the filter is too narrow to fill `count`.
+ * - Output order is deterministic per age so the same age always sees the
+ *   same trio; this keeps the dashboard stable across re-renders without
+ *   the parent feeling like the list is reshuffling on them.
+ */
+export function pickPlayIdeas(ageYears: number, count = 3): PlayIdea[] {
+  const safeAge = Number.isFinite(ageYears)
+    ? Math.max(0, Math.min(15, Math.floor(ageYears)))
+    : 4;
+  const matching = PLAY_IDEAS.filter((p) => p.ageMin <= safeAge && p.ageMax >= safeAge);
+  const pool = matching.length >= count ? matching : PLAY_IDEAS;
+  // Stable per-age "shuffle" — ranks each idea by (charCode + age*7) mod 11
+  // so the same age always sees the same first N ideas, but different ages
+  // see meaningfully different lists.
+  const ranked = [...pool].sort((a, b) => {
+    const ka = (a.id.charCodeAt(0) + safeAge * 7) % 11;
+    const kb = (b.id.charCodeAt(0) + safeAge * 7) % 11;
+    if (ka !== kb) return ka - kb;
+    return a.id.localeCompare(b.id);
+  });
+  return ranked.slice(0, count);
 }
 
 export function computeCommandCenter(
@@ -542,6 +617,7 @@ export function computeCommandCenter(
     totalItems: total,
     delayedCount: delayed,
     hour,
+    positiveBehaviorsToday,
   });
 
   return { overview, insights, actions, week, parentStatus, timeline, suggestions };

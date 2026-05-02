@@ -264,6 +264,69 @@ describe("ParentCommandCenter — fullscreen dashboard", () => {
     expect(updateItemsMutateAsync).not.toHaveBeenCalled();
   });
 
+  it("Try a 10-min play chip is suppressed when a positive moment has already been logged today", () => {
+    // The default summary mock returns positiveBehaviorsToday=2, which
+    // satisfies the engine's "stop re-suggesting" gate even when there's
+    // zero quality time in the routine.
+    setRoutine([
+      { time: "07:00 AM", activity: "Wake", duration: 15, category: "wake", status: "completed" },
+    ]);
+    render(<ParentCommandCenter child={{ id: 1, name: "Aarav", age: 4 }} />);
+    fireEvent.click(screen.getByTestId("command-center-tile"));
+    // No start-play chip → no picker can be opened. This is the
+    // "stops re-appearing" half of the loop the picker closes.
+    expect(screen.queryByTestId("suggestion-start-play")).toBeNull();
+    expect(screen.queryByTestId("play-picker-panel")).toBeNull();
+  });
+
+  it("Picker logs a positive behavior and closes when an idea is selected", async () => {
+    // Re-mock the dashboard summary inside this test so the engine's
+    // suggestion gate (positiveBehaviorsToday === 0) is satisfied and the
+    // start-play chip is rendered.
+    const mod = await import("@workspace/api-client-react");
+    const spy = vi.spyOn(mod, "useGetDashboardSummary").mockReturnValue({
+      data: {
+        positiveBehaviorsToday: 0,
+        negativeBehaviorsToday: 0,
+        routinesGeneratedThisWeek: 0,
+        totalChildren: 1,
+        totalRoutines: 1,
+      },
+      isLoading: false,
+    } as ReturnType<typeof mod.useGetDashboardSummary>);
+
+    try {
+      // A routine with no bond/play/read completed → qualityMinutes < 15.
+      setRoutine([
+        { time: "07:00 AM", activity: "Wake", duration: 15, category: "wake", status: "completed" },
+      ]);
+      render(<ParentCommandCenter child={{ id: 1, name: "Aarav", age: 4 }} />);
+      fireEvent.click(screen.getByTestId("command-center-tile"));
+
+      // The chip is now present — clicking it opens the in-place picker.
+      const chip = screen.getByTestId("suggestion-start-play");
+      fireEvent.click(chip);
+      const panel = screen.getByTestId("play-picker-panel");
+      expect(panel).toBeInTheDocument();
+
+      // Exactly 3 age-appropriate ideas, each tappable.
+      const ideaButtons = within(panel).getAllByRole("button").filter((b) =>
+        (b.getAttribute("data-testid") ?? "").startsWith("play-idea-"),
+      );
+      expect(ideaButtons.length).toBe(3);
+
+      // Selecting one logs a positive behavior + closes the panel.
+      fireEvent.click(ideaButtons[0]);
+      await waitFor(() => expect(createBehaviorMutateAsync).toHaveBeenCalledTimes(1));
+      const call = createBehaviorMutateAsync.mock.calls[0][0];
+      expect(call.data.type).toBe("positive");
+      expect(call.data.behavior).toMatch(/^10-min play: /);
+      await waitFor(() => expect(screen.queryByTestId("play-picker-panel")).toBeNull());
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("mood/sleep cycle chips advance through the engine's enum values", () => {
     openDashboard();
     const moodBtn = screen.getByTestId("cycle-mood");

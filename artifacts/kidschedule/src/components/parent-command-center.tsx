@@ -11,11 +11,13 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import {
   computeCommandCenter,
+  pickPlayIdeas,
   type AdaptiveItem,
   type AdaptiveMood,
   type AdaptiveSleepQuality,
   type CommandActionId,
   type CommandSuggestion,
+  type PlayIdea,
 } from "@workspace/family-routine";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
@@ -32,13 +34,14 @@ import {
   Music,
   Puzzle,
   Gamepad2,
+  Dices,
 } from "lucide-react";
 
 // CSS-in-JS shape that allows custom properties (CSS variables) without the
 // "any" hatch — React's CSSProperties type doesn't include `--*` keys.
 type CSSPropertiesWithVars = CSSProperties & Record<`--${string}`, string | number>;
 
-type Child = { id: number; name: string };
+type Child = { id: number; name: string; age?: number };
 
 const MOOD_LABEL: Record<AdaptiveMood, string> = {
   low: "😔 Low",
@@ -253,7 +256,7 @@ function CommandCenterDashboard(props: DashboardProps) {
   const [shakeKey, setShakeKey] = useState(0);            // shake on empty/error
   const [flashAction, setFlashAction] = useState<CommandActionId | null>(null);
   const [activePanel, setActivePanel] = useState<
-    null | "calm" | "sleep" | "play" | "phonics" | "lullaby" | "puzzle"
+    null | "calm" | "sleep" | "play" | "phonics" | "lullaby" | "puzzle" | "play-picker"
   >(null);
   const [toast, setToast] = useState<{ msg: string; undo?: () => void } | null>(null);
   const toastTimer = useRef<number | null>(null);
@@ -398,10 +401,45 @@ function CommandCenterDashboard(props: DashboardProps) {
 
   function onSuggestion(s: CommandSuggestion) {
     if (s.id === "start-play") {
-      addActivity();
+      // Open the in-place 10-min play picker (3 age-appropriate ideas).
+      // This is intentionally separate from the `addActivity` flow above
+      // — that one starts a generic timer; this one closes the loop on
+      // the engine's "Try a 10-min play" suggestion by giving the parent
+      // 3 specific things to do in one tap.
+      setActivePanel((p) => (p === "play-picker" ? null : "play-picker"));
       return;
     }
     if (s.actionId) onAction(s.actionId);
+  }
+
+  // Pre-compute the 3 ideas once per (open) dashboard render so re-renders
+  // (mood/sleep cycling, timeline ticks) don't reshuffle the list under
+  // the parent's finger. The engine's `pickPlayIdeas` is deterministic per
+  // age so the same age always yields the same trio.
+  const playIdeas = useMemo<PlayIdea[]>(
+    () => pickPlayIdeas(child.age ?? 4, 3),
+    [child.age],
+  );
+
+  // Selecting an idea: log a positive moment so today's quality time tally
+  // bumps and the engine stops re-suggesting the chip (see
+  // `buildSuggestions` — start-play is suppressed when
+  // `positiveBehaviorsToday >= 1`).
+  async function pickPlayIdea(idea: PlayIdea) {
+    setActivePanel(null);
+    burst();
+    await createBehavior
+      .mutateAsync({
+        data: {
+          childId: child.id,
+          date: new Date().toISOString().slice(0, 10),
+          behavior: `10-min play: ${idea.title}`,
+          type: "positive",
+        },
+      })
+      .catch(() => {});
+    queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    showToast(`${idea.emoji} Started ${idea.title}`);
   }
 
   // Mark a timeline step "done" without leaving the dashboard.
@@ -724,6 +762,16 @@ function CommandCenterDashboard(props: DashboardProps) {
         ) : null,
       )}
 
+      {/* In-place 10-min play picker — closes the loop on the engine's
+          "Try a 10-min play" suggestion chip with 3 tap-to-start ideas. */}
+      {activePanel === "play-picker" && (
+        <PlayPickerPanel
+          ideas={playIdeas}
+          onPick={pickPlayIdea}
+          onClose={() => setActivePanel(null)}
+        />
+      )}
+
       {/* Insights summary footer */}
       {insights.length > 0 && (
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -908,6 +956,60 @@ function ActionPanel({
           <PartyPopper className="h-3.5 w-3.5" /> Done
         </button>
       </div>
+    </section>
+  );
+}
+
+function PlayPickerPanel({
+  ideas,
+  onPick,
+  onClose,
+}: {
+  ideas: PlayIdea[];
+  onPick: (idea: PlayIdea) => void;
+  onClose: () => void;
+}) {
+  return (
+    <section
+      data-testid="play-picker-panel"
+      className="rounded-3xl border border-emerald-400/35 bg-emerald-500/10 p-4 sm:p-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-white">
+          <span className="rounded-full bg-white/10 p-1.5"><Dices className="h-4 w-4" /></span>
+          <h4 className="font-black text-sm">Pick a 10-min play — tap to start</h4>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          data-testid="play-picker-close"
+          className="text-[11px] font-bold text-white/70 hover:text-white underline-offset-2 hover:underline"
+        >
+          Close
+        </button>
+      </div>
+      <ul className="grid grid-cols-1 gap-2">
+        {ideas.map((idea) => (
+          <li key={idea.id}>
+            <button
+              type="button"
+              data-testid={`play-idea-${idea.id}`}
+              onClick={() => onPick(idea)}
+              className="w-full text-left flex items-start gap-3 rounded-2xl border border-emerald-400/25 bg-white/5 hover:bg-emerald-500/15 hover:border-emerald-300/60 hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)] p-3 transition-all active:scale-[0.99]"
+            >
+              <span className="text-2xl shrink-0" aria-hidden>{idea.emoji}</span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[13px] font-black text-white leading-tight">{idea.title}</span>
+                <span className="block text-[11.5px] text-white/70 mt-0.5 leading-snug">{idea.description}</span>
+              </span>
+              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white text-slate-900 px-2.5 py-1 text-[10.5px] font-black">
+                Start
+                <ArrowRight className="h-3 w-3" />
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
