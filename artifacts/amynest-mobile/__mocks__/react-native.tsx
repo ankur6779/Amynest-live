@@ -423,10 +423,18 @@ const UIManager = {
   measureLayout: (_node: number, _rel: number, _err: any, _cb: any) => {},
 };
 
+// Alert.alert is a no-op in jsdom; tests asserting on the dialog can spy on
+// `Alert.alert` directly via `vi.spyOn(Alert, "alert")`.
+const Alert = {
+  alert: (_title: string, _message?: string, _buttons?: unknown) => {},
+  prompt: (_title: string, _message?: string, _cb?: unknown) => {},
+};
+
 export {
   View, Text, Pressable, TouchableOpacity, ScrollView,
   Modal, ActivityIndicator, Image, Dimensions, StyleSheet,
   TextInput, KeyboardAvoidingView, Platform,
   FlatList, useWindowDimensions,
   PanResponder, Animated, LayoutAnimation, UIManager,
+  Alert,
 };

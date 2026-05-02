@@ -423,7 +423,15 @@
       "play": "चलाएँ",
       "pause": "रोकें",
       "stop_all": "सब बंद",
-      "sing_along_hint": "धुन सुनने के लिए प्ले दबाएँ — बोल साथ गाएँ"
+      "sing_along_hint": "धुन सुनने के लिए प्ले दबाएँ — बोल साथ गाएँ",
+      "volume_label": "आवाज़",
+      "volume_down": "आवाज़ कम करें",
+      "volume_up": "आवाज़ बढ़ाएँ",
+      "download": "डाउनलोड",
+      "download_a11y": "{{name}} डाउनलोड करें",
+      "download_saved": "सेव हो गया",
+      "download_saved_msg": "{{name}} आपके डिवाइस में सेव हो गया।",
+      "download_failed": "फ़ाइल सेव नहीं हो सकी। दोबारा कोशिश करें।"
     },
     "sleep_helpers": {
       "title": "नींद के सहायक",

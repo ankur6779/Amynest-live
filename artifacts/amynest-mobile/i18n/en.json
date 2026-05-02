@@ -423,7 +423,15 @@
       "play": "Play",
       "pause": "Pause",
       "stop_all": "Stop all",
-      "sing_along_hint": "Tap play for the tune — sing along with the lyrics"
+      "sing_along_hint": "Tap play for the tune — sing along with the lyrics",
+      "volume_label": "VOLUME",
+      "volume_down": "Lower volume",
+      "volume_up": "Raise volume",
+      "download": "Download",
+      "download_a11y": "Download {{name}}",
+      "download_saved": "Saved",
+      "download_saved_msg": "Saved {{name}} to your device.",
+      "download_failed": "Couldn't save the file. Please try again."
     },
     "sleep_helpers": {
       "title": "Sleep Helpers",
