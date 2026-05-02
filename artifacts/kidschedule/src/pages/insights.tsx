@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { Layout } from "@/components/layout";
@@ -55,6 +56,7 @@ interface InsightsResponse {
 }
 
 function ChangeChip({ pct, pts }: { pct?: number; pts?: number }) {
+  const { t } = useTranslation();
   const val = pts ?? pct ?? 0;
   if (val > 0) return (
     <span className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-400 px-2 py-0.5 rounded-full">
@@ -68,7 +70,7 @@ function ChangeChip({ pct, pts }: { pct?: number; pts?: number }) {
   );
   return (
     <span className="inline-flex items-center gap-0.5 text-xs font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-      <Minus className="h-3 w-3" />No change
+      <Minus className="h-3 w-3" />{t("screens.insights.no_change")}
     </span>
   );
 }
@@ -80,6 +82,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?:
 };
 
 export default function InsightsPage() {
+  const { t } = useTranslation();
   const [range, setRange] = useState<Range>("week");
   const authFetch = useAuthFetch();
 
@@ -99,8 +102,8 @@ export default function InsightsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-quicksand font-extrabold text-foreground">Insights</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Activity trends & highlights</p>
+            <h1 className="text-2xl font-quicksand font-extrabold text-foreground">{t("screens.insights.title")}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{t("screens.insights.subtitle")}</p>
           </div>
           <div className="flex bg-muted rounded-xl p-1 gap-1">
             {(["week", "month"] as Range[]).map((r) => (
@@ -113,7 +116,7 @@ export default function InsightsPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {r === "week" ? "This Week" : "This Month"}
+                {r === "week" ? t("screens.insights.range_week") : t("screens.insights.range_month")}
               </button>
             ))}
           </div>
@@ -129,10 +132,10 @@ export default function InsightsPage() {
           <Card className="rounded-3xl">
             <CardContent className="p-10 flex flex-col items-center gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-3xl">👶</div>
-              <h2 className="font-bold text-lg">Add a child to see insights</h2>
-              <p className="text-sm text-muted-foreground">Insights are personalised per child once you add their profile.</p>
+              <h2 className="font-bold text-lg">{t("screens.insights.no_children_title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("screens.insights.no_children_text")}</p>
               <Link href="/children/new">
-                <button className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm">Add Child</button>
+                <button className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm">{t("screens.insights.add_child")}</button>
               </Link>
             </CardContent>
           </Card>
@@ -142,10 +145,10 @@ export default function InsightsPage() {
           <Card className="rounded-3xl">
             <CardContent className="p-10 flex flex-col items-center gap-4 text-center">
               <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-3xl">📊</div>
-              <h2 className="font-bold text-lg">No activity yet this {range}</h2>
-              <p className="text-sm text-muted-foreground">Complete routines or log behaviors to unlock your {range}ly insights.</p>
+              <h2 className="font-bold text-lg">{range === "week" ? t("screens.insights.no_activity_week") : t("screens.insights.no_activity_month")}</h2>
+              <p className="text-sm text-muted-foreground">{range === "week" ? t("screens.insights.no_activity_text_week") : t("screens.insights.no_activity_text_month")}</p>
               <Link href="/routines">
-                <button className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm">Go to Routines</button>
+                <button className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm">{t("screens.insights.go_to_routines")}</button>
               </Link>
             </CardContent>
           </Card>
@@ -157,22 +160,22 @@ export default function InsightsPage() {
             <div className="grid grid-cols-2 gap-3">
               <Card className="rounded-2xl">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Routines</p>
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{t("screens.insights.stat_routines")}</p>
                   <p className="text-3xl font-extrabold text-foreground mt-1">{data.summary.routinesThisPeriod}</p>
                   <div className="mt-2">
                     <ChangeChip pct={data.summary.routinesChangePct} />
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-1">vs {data.summary.routinesPreviousPeriod} last {range}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{t(range === "week" ? "screens.insights.vs_last_week" : "screens.insights.vs_last_month", { value: data.summary.routinesPreviousPeriod })}</p>
                 </CardContent>
               </Card>
               <Card className="rounded-2xl">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Positive Rate</p>
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{t("screens.insights.stat_positive_rate")}</p>
                   <p className="text-3xl font-extrabold text-foreground mt-1">{data.summary.positiveRateThisPeriod.toFixed(0)}%</p>
                   <div className="mt-2">
                     <ChangeChip pts={data.summary.positiveRateChangePts} />
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-1">vs {data.summary.positiveRatePreviousPeriod.toFixed(0)}% last {range}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{t(range === "week" ? "screens.insights.vs_last_week" : "screens.insights.vs_last_month", { value: `${data.summary.positiveRatePreviousPeriod.toFixed(0)}%` })}</p>
                 </CardContent>
               </Card>
             </div>
@@ -180,22 +183,22 @@ export default function InsightsPage() {
             {/* Per Child */}
             {data.perChild.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-quicksand font-bold text-base text-foreground">Per Child</h2>
+                <h2 className="font-quicksand font-bold text-base text-foreground">{t("screens.insights.section_per_child")}</h2>
                 {data.perChild.map((child) => (
                   <Card key={child.childId} className="rounded-2xl">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <p className="font-bold text-foreground">{child.childName}</p>
-                        <span className="text-xs text-muted-foreground">{child.activeDays} active day{child.activeDays !== 1 ? "s" : ""}</span>
+                        <span className="text-xs text-muted-foreground">{t("screens.insights.active_days", { count: child.activeDays })}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         {[
-                          { label: "Routines", value: child.routinesCount },
-                          { label: "Behaviors", value: child.behaviorsCount },
-                          { label: "Positive", value: `${child.positiveRate.toFixed(0)}%` },
-                          { label: "Milestones", value: child.milestoneCount },
-                          { label: "Morning", value: child.morningCount },
-                          { label: "Evening", value: child.eveningCount },
+                          { label: t("screens.insights.stat_routines"), value: child.routinesCount },
+                          { label: t("screens.insights.stat_behaviors"), value: child.behaviorsCount },
+                          { label: t("screens.insights.stat_positive"), value: `${child.positiveRate.toFixed(0)}%` },
+                          { label: t("screens.insights.stat_milestones"), value: child.milestoneCount },
+                          { label: t("screens.insights.stat_morning"), value: child.morningCount },
+                          { label: t("screens.insights.stat_evening"), value: child.eveningCount },
                         ].map((stat) => (
                           <div key={stat.label} className="flex justify-between bg-muted/50 rounded-lg px-3 py-1.5">
                             <span className="text-muted-foreground text-xs">{stat.label}</span>
@@ -204,12 +207,12 @@ export default function InsightsPage() {
                         ))}
                       </div>
                       {child.topCategory && (
-                        <p className="text-xs text-muted-foreground">Top category: <span className="font-semibold text-foreground">{child.topCategory}</span></p>
+                        <p className="text-xs text-muted-foreground">{t("screens.insights.top_category")} <span className="font-semibold text-foreground">{child.topCategory}</span></p>
                       )}
                       {/* Completion bar */}
                       <div>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-muted-foreground">Completion rate</span>
+                          <span className="text-muted-foreground">{t("screens.insights.completion_rate")}</span>
                           <span className="font-bold text-foreground">{child.routineCompletionRate.toFixed(0)}%</span>
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -228,7 +231,7 @@ export default function InsightsPage() {
             {/* Sibling Highlights */}
             {data.siblingHighlights.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-quicksand font-bold text-base text-foreground">Highlights</h2>
+                <h2 className="font-quicksand font-bold text-base text-foreground">{t("screens.insights.section_highlights")}</h2>
                 <div className="space-y-2">
                   {data.siblingHighlights.map((h, i) => {
                     const IconComp = ICON_MAP[h.icon] ?? Sparkles;
@@ -256,8 +259,8 @@ export default function InsightsPage() {
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="font-bold text-sm text-foreground">Ask Amy about these insights</p>
-                  <p className="text-xs text-muted-foreground">Get personalised parenting advice based on your data</p>
+                  <p className="font-bold text-sm text-foreground">{t("screens.insights.ask_amy_title")}</p>
+                  <p className="text-xs text-muted-foreground">{t("screens.insights.ask_amy_sub")}</p>
                 </div>
               </div>
             </Link>

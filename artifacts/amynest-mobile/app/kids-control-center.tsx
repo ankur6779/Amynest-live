@@ -10,31 +10,33 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 const FEATURE_KEY = "kids_control_center";
 
 type FeedbackKind = "interested" | "not_interested";
 
-const HIGHLIGHTS = [
-  { icon: "🛡️", text: "Safe child-friendly UI" },
-  { icon: "🔄", text: "Sync with parent routines" },
-  { icon: "🎁", text: "Reward-based engagement" },
-  { icon: "🚫", text: "No distractions" },
-];
+const HIGHLIGHT_KEYS = [
+  { icon: "🛡️", key: "highlight_safe_ui" },
+  { icon: "🔄", key: "highlight_sync" },
+  { icon: "🎁", key: "highlight_reward" },
+  { icon: "🚫", key: "highlight_no_distractions" },
+] as const;
 
-const FEATURES = [
-  { icon: "⏱", title: "Screen Time Guidance", desc: "Healthy limits, gentle nudges" },
-  { icon: "📋", title: "Routine Control",      desc: "Daily flow, on autopilot" },
-  { icon: "🎯", title: "Focus Mode",           desc: "Quiet time for study & sleep" },
-  { icon: "📊", title: "Activity Tracking",    desc: "See what your child enjoys" },
-  { icon: "🔒", title: "Parent Lock",          desc: "PIN-protected controls" },
-];
+const FEATURE_KEYS = [
+  { icon: "⏱", titleKey: "feature_screen_time_title", descKey: "feature_screen_time_desc", id: "screen-time" },
+  { icon: "📋", titleKey: "feature_routine_title",     descKey: "feature_routine_desc", id: "routine" },
+  { icon: "🎯", titleKey: "feature_focus_title",       descKey: "feature_focus_desc", id: "focus" },
+  { icon: "📊", titleKey: "feature_activity_title",    descKey: "feature_activity_desc", id: "activity" },
+  { icon: "🔒", titleKey: "feature_lock_title",        descKey: "feature_lock_desc", id: "lock" },
+] as const;
 
 export default function KidsControlCenterScreen() {
   const router = useRouter();
   const authFetch = useAuthFetch();
   const c = useColors();
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -117,7 +119,7 @@ export default function KidsControlCenterScreen() {
             testID="link-back"
           >
             <Ionicons name="chevron-back" size={18} color={c.textMuted} />
-            <Text style={{ color: c.textMuted, fontSize: 13, fontWeight: "600" }}>Back</Text>
+            <Text style={{ color: c.textMuted, fontSize: 13, fontWeight: "600" }}>{t("screens.kids_control_center.back")}</Text>
           </Pressable>
 
           {/* Header */}
@@ -135,10 +137,10 @@ export default function KidsControlCenterScreen() {
               borderWidth: 1, borderColor: accent + "40", marginBottom: 10,
             }}>
               <Ionicons name="sparkles" size={11} color={accent} />
-              <Text style={{ color: accent, fontSize: 11, fontWeight: "800" }}>Coming Soon 🚀</Text>
+              <Text style={{ color: accent, fontSize: 11, fontWeight: "800" }}>{t("screens.kids_control_center.coming_soon_badge")}</Text>
             </View>
             <Text style={{ fontSize: 28, fontWeight: "800", color: c.foreground, textAlign: "center", lineHeight: 34 }}>
-              👶 Kids Control Center
+              {t("screens.kids_control_center.title")}
             </Text>
           </View>
 
@@ -148,10 +150,10 @@ export default function KidsControlCenterScreen() {
             backgroundColor: c.glass, borderWidth: 1, borderColor: c.glassBorder,
           }}>
             <Text style={{ fontSize: 18, fontWeight: "800", color: c.foreground, lineHeight: 24 }}>
-              Smart Control for Parents, Safe Experience for Kids
+              {t("screens.kids_control_center.hero_title")}
             </Text>
             <Text style={{ fontSize: 14, color: c.textMuted, marginTop: 8, lineHeight: 20 }}>
-              Guide your child's routine, learning, and screen time with ease.
+              {t("screens.kids_control_center.hero_sub")}
             </Text>
           </View>
 
@@ -162,17 +164,16 @@ export default function KidsControlCenterScreen() {
             style={{ borderRadius: 22, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: accent + "33" }}
           >
             <Text style={{ fontSize: 17, fontWeight: "800", color: c.foreground, marginBottom: 4 }}>
-              👶 AmyNest Kids{" "}
-              <Text style={{ fontSize: 12, fontWeight: "600", color: c.textMuted }}>(Child Experience)</Text>
+              {t("screens.kids_control_center.kids_section_title")}{" "}
+              <Text style={{ fontSize: 12, fontWeight: "600", color: c.textMuted }}>{t("screens.kids_control_center.kids_section_subtitle")}</Text>
             </Text>
             <Text style={{ fontSize: 13.5, color: c.textBody, lineHeight: 20, marginBottom: 12 }}>
-              AmyNest Kids is a safe and guided environment for children that syncs with the parent app.
-              Kids see only their routines, activities, and rewards, while parents manage everything in the background.
+              {t("screens.kids_control_center.kids_section_body")}
             </Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {HIGHLIGHTS.map((h) => (
+              {HIGHLIGHT_KEYS.map((h) => (
                 <View
-                  key={h.text}
+                  key={h.key}
                   style={{
                     flexDirection: "row", alignItems: "center", gap: 6,
                     paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12,
@@ -182,7 +183,7 @@ export default function KidsControlCenterScreen() {
                 >
                   <Text style={{ fontSize: 16 }}>{h.icon}</Text>
                   <Text style={{ fontSize: 12, fontWeight: "700", color: c.foreground, flex: 1 }} numberOfLines={2}>
-                    {h.text}
+                    {t(`screens.kids_control_center.${h.key}`)}
                   </Text>
                 </View>
               ))}
@@ -192,24 +193,24 @@ export default function KidsControlCenterScreen() {
           {/* Feature Preview */}
           <View style={{ marginBottom: 14 }}>
             <Text style={{ fontSize: 11, fontWeight: "800", color: c.textMuted, letterSpacing: 1, marginBottom: 10, paddingHorizontal: 4 }}>
-              FEATURE PREVIEW
+              {t("screens.kids_control_center.feature_preview_label")}
             </Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              {FEATURES.map((f) => (
+              {FEATURE_KEYS.map((f) => (
                 <View
-                  key={f.title}
+                  key={f.id}
                   style={{
                     flexBasis: "48%", flexGrow: 1, padding: 14, borderRadius: 18,
                     backgroundColor: c.card, borderWidth: 1, borderColor: c.border,
                   }}
-                  testID={`feature-${f.title.toLowerCase().replace(/\s+/g, "-")}`}
+                  testID={`feature-${f.id}`}
                 >
                   <Text style={{ fontSize: 22, marginBottom: 6 }}>{f.icon}</Text>
                   <Text style={{ fontSize: 14, fontWeight: "800", color: c.foreground, lineHeight: 18 }}>
-                    {f.title}
+                    {t(`screens.kids_control_center.${f.titleKey}`)}
                   </Text>
                   <Text style={{ fontSize: 11.5, color: c.textMuted, marginTop: 3, lineHeight: 15 }}>
-                    {f.desc}
+                    {t(`screens.kids_control_center.${f.descKey}`)}
                   </Text>
                 </View>
               ))}
@@ -223,9 +224,9 @@ export default function KidsControlCenterScreen() {
             borderWidth: 1, borderColor: c.border,
           }}>
             <Text style={{ fontSize: 13.5, color: c.textBody, textAlign: "center", lineHeight: 20 }}>
-              Kids Control Center helps parents guide children in a balanced way by focusing on{" "}
-              <Text style={{ fontWeight: "800", color: accent }}>habits, routines, and learning</Text>
-              {" "}instead of strict restrictions.
+              {t("screens.kids_control_center.description_part1")}
+              <Text style={{ fontWeight: "800", color: accent }}>{t("screens.kids_control_center.description_emphasis")}</Text>
+              {t("screens.kids_control_center.description_part2")}
             </Text>
           </View>
 
@@ -235,10 +236,10 @@ export default function KidsControlCenterScreen() {
             backgroundColor: c.glass, borderWidth: 1, borderColor: c.glassBorder,
           }}>
             <Text style={{ fontSize: 18, fontWeight: "800", color: c.foreground, textAlign: "center" }}>
-              Would you like this feature?
+              {t("screens.kids_control_center.feedback_question")}
             </Text>
             <Text style={{ fontSize: 12, color: c.textMuted, textAlign: "center", marginTop: 4, marginBottom: 18 }}>
-              Select an option, add your thoughts, then hit Submit.
+              {t("screens.kids_control_center.feedback_help")}
             </Text>
 
             {loading ? (
@@ -252,14 +253,14 @@ export default function KidsControlCenterScreen() {
                   <SelectionButton
                     c={c}
                     kind="interested"
-                    label="👍 Interested"
+                    label={t("screens.kids_control_center.interested")}
                     selected={pendingFeedback === "interested"}
                     onPress={() => setPendingFeedback("interested")}
                   />
                   <SelectionButton
                     c={c}
                     kind="not_interested"
-                    label="👎 Not Interested"
+                    label={t("screens.kids_control_center.not_interested")}
                     selected={pendingFeedback === "not_interested"}
                     onPress={() => setPendingFeedback("not_interested")}
                   />
@@ -268,12 +269,12 @@ export default function KidsControlCenterScreen() {
                 {/* Comment box */}
                 <View>
                   <Text style={{ fontSize: 11, fontWeight: "700", color: c.textMuted, marginBottom: 6, paddingHorizontal: 4 }}>
-                    Tell us what you want (optional)
+                    {t("screens.kids_control_center.comment_label")}
                   </Text>
                   <TextInput
                     value={comment}
-                    onChangeText={(t) => setComment(t.slice(0, 1000))}
-                    placeholder="e.g. daily reading streak, reward points, kid-friendly themes…"
+                    onChangeText={(v) => setComment(v.slice(0, 1000))}
+                    placeholder={t("screens.kids_control_center.comment_placeholder")}
                     placeholderTextColor={c.textFaint}
                     multiline
                     numberOfLines={3}
@@ -314,7 +315,7 @@ export default function KidsControlCenterScreen() {
                           color: canSubmit ? "#fff" : c.textMuted,
                           fontWeight: "800", fontSize: 15,
                         }}>
-                          Submit Feedback
+                          {t("screens.kids_control_center.submit")}
                         </Text>
                       </>
                     )}
@@ -334,8 +335,8 @@ export default function KidsControlCenterScreen() {
                     <Ionicons name="checkmark-circle" size={18} color={accent} />
                     <Text style={{ color: accent, fontWeight: "700", fontSize: 13, flex: 1 }}>
                       {savedFeedback === "interested"
-                        ? "🎉 Thanks! We'll keep you posted when this launches."
-                        : "💛 Got it — we appreciate the honest feedback!"}
+                        ? t("screens.kids_control_center.thanks_interested")
+                        : t("screens.kids_control_center.thanks_not_interested")}
                     </Text>
                   </View>
                 )}
@@ -343,7 +344,7 @@ export default function KidsControlCenterScreen() {
                 {/* Already saved */}
                 {savedFeedback && !submitted && pendingFeedback === savedFeedback && comment.trim() === savedComment.trim() && (
                   <Text style={{ textAlign: "center", fontSize: 11, color: c.textMuted }}>
-                    ✓ Your feedback has been saved
+                    {t("screens.kids_control_center.saved")}
                   </Text>
                 )}
               </View>
@@ -351,7 +352,7 @@ export default function KidsControlCenterScreen() {
           </View>
 
           <Text style={{ textAlign: "center", fontSize: 11, color: c.textFaint, marginTop: 20 }}>
-            Built with care by the AmyNest team · Coming soon
+            {t("screens.kids_control_center.footer")}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

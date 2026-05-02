@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { brand, palette } from "@/constants/colors";
 import { markTutorialSeen } from "@/utils/tutorialState";
+import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -30,32 +31,33 @@ type Slide = {
   gradient: [string, string];
 };
 
-const SLIDES: Slide[] = [
-  {
-    icon: "sparkles",
-    title: "Meet Amy",
-    body: "Your AI co-parent for stress-free mornings, smoother evenings, and routines that actually stick.",
-    gradient: [brand.purple500, brand.pink500],
-  },
-  {
-    icon: "calendar-outline",
-    title: "Routines that adapt",
-    body: "Tell Amy about your child once. She builds the right schedule each day — and shifts it when life happens.",
-    gradient: [palette.indigo500, brand.violet500],
-  },
-  {
-    icon: "notifications-outline",
-    title: "Gentle reminders",
-    body: "Optional nudges keep your family on track without feeling pushy. You stay in control.",
-    gradient: [palette.amber500, palette.red500],
-  },
-];
-
 export default function TutorialScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const scrollRef = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
+
+  const SLIDES: Slide[] = [
+    {
+      icon: "sparkles",
+      title: t("screens.tutorial.slide1_title"),
+      body: t("screens.tutorial.slide1_body"),
+      gradient: [brand.purple500, brand.pink500],
+    },
+    {
+      icon: "calendar-outline",
+      title: t("screens.tutorial.slide2_title"),
+      body: t("screens.tutorial.slide2_body"),
+      gradient: [palette.indigo500, brand.violet500],
+    },
+    {
+      icon: "notifications-outline",
+      title: t("screens.tutorial.slide3_title"),
+      body: t("screens.tutorial.slide3_body"),
+      gradient: [palette.amber500, palette.red500],
+    },
+  ];
 
   const finish = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -98,7 +100,7 @@ export default function TutorialScreen() {
         style={[styles.skip, { top: insets.top + 12 }]}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={styles.skipText}>Skip</Text>
+        <Text style={styles.skipText}>{t("screens.tutorial.skip")}</Text>
       </TouchableOpacity>
 
       <ScrollView
@@ -150,7 +152,7 @@ export default function TutorialScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.ctaInner}
           >
-            <Text style={styles.ctaText}>{isLast ? "Get Started" : "Next"}</Text>
+            <Text style={styles.ctaText}>{isLast ? t("screens.tutorial.get_started") : t("screens.tutorial.next")}</Text>
             <Ionicons name="arrow-forward" size={18} color="#fff" />
           </LinearGradient>
         </TouchableOpacity>

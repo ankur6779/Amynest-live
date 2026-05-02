@@ -14,6 +14,7 @@ import { SvgXml } from "react-native-svg";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { brand, brandAlpha, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 import {
   PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
   resolveStudyMode, MODE_LABELS,
@@ -58,11 +59,11 @@ async function saveProgress(id: number, p: StudyProgress) {
   try { await AsyncStorage.setItem(PROG_KEY(id), JSON.stringify(p)); } catch { /* noop */ }
 }
 
-function flashToast(msg: string) {
+function flashToast(msg: string, title: string) {
   if (Platform.OS === "android") {
     ToastAndroid.show(msg, ToastAndroid.SHORT);
   } else if (Platform.OS === "ios") {
-    Alert.alert("Smart Study Zone", msg);
+    Alert.alert(title, msg);
   }
 }
 
@@ -86,6 +87,7 @@ type View0 =
 
 export default function StudyScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
   const { data: children = [], isLoading } = useQuery<Child[]>({
     queryKey: ["children"],
@@ -166,9 +168,9 @@ export default function StudyScreen() {
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>📚 Smart Study Zone</Text>
+          <Text style={styles.title}>{t("screens.study.title")}</Text>
           <Text style={styles.subtitle} numberOfLines={1}>
-            {child ? `${child.name} · ${mode ? MODE_LABELS[mode].title : ""}` : "Pick a child to begin"}
+            {child ? `${child.name} · ${mode ? MODE_LABELS[mode].title : ""}` : t("screens.study.pick_child_subtitle")}
           </Text>
         </View>
       </LinearGradient>
@@ -287,18 +289,20 @@ export default function StudyScreen() {
 // ─── Sub-views ───────────────────────────────────────────────────────────────
 
 function EmptyChildren() {
+  const { t } = useTranslation();
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>No children added yet</Text>
-      <Text style={styles.cardDesc}>Add a child profile to start using the Smart Study Zone.</Text>
+      <Text style={styles.cardTitle}>{t("screens.study.no_children_title")}</Text>
+      <Text style={styles.cardDesc}>{t("screens.study.no_children_desc")}</Text>
       <Pressable style={styles.primaryBtn} onPress={() => router.push("/children/new" as never)}>
-        <Text style={styles.primaryBtnText}>Add a child</Text>
+        <Text style={styles.primaryBtnText}>{t("screens.study.add_child_btn")}</Text>
       </Pressable>
     </View>
   );
 }
 
 function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Child) => void }) {
+  const { t } = useTranslation();
   return (
     <View style={{ gap: 10 }}>
       {children.map((c) => {
@@ -310,7 +314,9 @@ function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Chil
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>{c.name}</Text>
               <Text style={styles.rowDesc}>
-                {c.age} yr{c.childClass ? ` · Class ${c.childClass}` : ""} · {label.title}
+                {c.childClass
+                  ? t("screens.study.child_meta_class", { age: c.age, cls: c.childClass, title: label.title })
+                  : t("screens.study.child_meta", { age: c.age, title: label.title })}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={palette.slate400} />
@@ -322,6 +328,7 @@ function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Chil
 }
 
 function PlayHome({ progress, onOpen }: { progress: StudyProgress; onOpen: (id: string) => void }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.grid2}>
       {PLAY_CATEGORIES.map((cat) => {
@@ -331,7 +338,7 @@ function PlayHome({ progress, onOpen }: { progress: StudyProgress; onOpen: (id: 
           <Pressable key={cat.id} style={styles.tile} onPress={() => onOpen(cat.id)}>
             <Text style={{ fontSize: 28 }}>{cat.emoji}</Text>
             <Text style={styles.tileTitle}>{cat.title}</Text>
-            <Text style={styles.tileMeta}>{done}/{cat.items.length} done</Text>
+            <Text style={styles.tileMeta}>{t("screens.study.done_count", { done, total: cat.items.length })}</Text>
             <View style={styles.barTrack}><View style={[styles.barFill, { width: `${pct}%` }]} /></View>
           </Pressable>
         );
@@ -347,11 +354,12 @@ function PlayCategoryView({
   progress: StudyProgress;
   onItemTap: (item: PlayItem, categoryId: string) => ApplyResult | null;
 }) {
+  const { t } = useTranslation();
   const cat = PLAY_CATEGORIES.find((c) => c.id === (categoryId as any));
   const [xpAmount, setXpAmount] = useState(0);
   const [xpKey, setXpKey] = useState(0);
   const [poppedId, setPoppedId] = useState<string | null>(null);
-  if (!cat) return <Text>Category not found.</Text>;
+  if (!cat) return <Text>{t("screens.study.category_not_found")}</Text>;
   const done = new Set(progress.play[cat.id] ?? []);
   const isRhyme = cat.id === "rhymes";
   const handleTap = (item: PlayItem) => {
@@ -363,9 +371,9 @@ function PlayCategoryView({
       setXpKey((k) => k + 1);
     }
     if (res?.streakIncreased && res.next.streak > 1) {
-      flashToast(`🔥 ${res.next.streak}-day streak!`);
+      flashToast(t("screens.study.toast_streak", { n: res.next.streak }), t("screens.study.alert_title"));
     } else if (res && res.newBadges.length > 0) {
-      flashToast("🏆 New badge unlocked!");
+      flashToast(t("screens.study.toast_badge"), t("screens.study.alert_title"));
     }
   };
   return (
@@ -400,6 +408,7 @@ function PlayItemCard({
   isRhyme: boolean;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const scale = useRef(new Animated.Value(1)).current;
   const emojiScale = useRef(new Animated.Value(1)).current;
   useEffect(() => {
@@ -433,7 +442,7 @@ function PlayItemCard({
         </Text>
         <View style={styles.tapHint}>
           <Ionicons name="volume-high" size={11} color={palette.indigo500} />
-          <Text style={styles.tapHintText}>Tap to hear</Text>
+          <Text style={styles.tapHintText}>{t("screens.study.tap_to_hear")}</Text>
         </View>
       </Pressable>
     </Animated.View>
@@ -443,18 +452,19 @@ function PlayItemCard({
 function StudyHome({
   mode, progress, onOpen,
 }: { mode: "basic" | "advanced"; progress: StudyProgress; onOpen: (sid: string) => void }) {
+  const { t } = useTranslation();
   const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
   return (
     <View style={{ gap: 10 }}>
       {subjects.map((s) => {
-        const completed = Object.values(progress[mode][s.id] ?? {}).filter((t) => t.completed).length;
+        const completed = Object.values(progress[mode][s.id] ?? {}).filter((tp) => tp.completed).length;
         const pct = s.topics.length === 0 ? 0 : Math.round((completed / s.topics.length) * 100);
         return (
           <Pressable key={s.id} style={styles.row} onPress={() => onOpen(s.id)}>
             <Text style={{ fontSize: 28 }}>{s.emoji}</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>{s.title}</Text>
-              <Text style={styles.rowDesc}>{completed}/{s.topics.length} topics</Text>
+              <Text style={styles.rowDesc}>{t("screens.study.topics_count", { done: completed, total: s.topics.length })}</Text>
               <View style={styles.barTrack}><View style={[styles.barFill, { width: `${pct}%` }]} /></View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={palette.slate400} />
@@ -473,22 +483,23 @@ function SubjectTopicList({
   progress: StudyProgress;
   onOpen: (tid: string) => void;
 }) {
+  const { t } = useTranslation();
   const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
   const subj = subjects.find((s) => s.id === subjectId);
-  if (!subj) return <Text>Subject not found.</Text>;
+  if (!subj) return <Text>{t("screens.study.subject_not_found")}</Text>;
   return (
     <View style={{ gap: 10 }}>
       <Text style={styles.h2}>{subj.emoji}  {subj.title}</Text>
-      {subj.topics.map((t) => {
-        const stat = progress[mode][subj.id]?.[t.id];
+      {subj.topics.map((tp) => {
+        const stat = progress[mode][subj.id]?.[tp.id];
         return (
-          <Pressable key={t.id} style={styles.row} onPress={() => onOpen(t.id)}>
+          <Pressable key={tp.id} style={styles.row} onPress={() => onOpen(tp.id)}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>{t.title}</Text>
-              <Text style={styles.rowDesc} numberOfLines={1}>{t.notes.split("\n")[0]}</Text>
+              <Text style={styles.rowTitle}>{tp.title}</Text>
+              <Text style={styles.rowDesc} numberOfLines={1}>{tp.notes.split("\n")[0]}</Text>
               {stat && (
                 <Text style={[styles.rowDesc, { color: palette.indigo500, marginTop: 2 }]}>
-                  🏆 Best: {stat.score}/{stat.total}
+                  {t("screens.study.best_score", { score: stat.score, total: stat.total })}
                 </Text>
               )}
             </View>
@@ -508,9 +519,10 @@ function TopicDetail({
   topicId: string;
   onScored: (score: number, total: number) => ApplyResult | null;
 }) {
+  const { t } = useTranslation();
   const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
   const subj = subjects.find((s) => s.id === subjectId);
-  const topic: StudyTopic | undefined = subj?.topics.find((t) => t.id === topicId);
+  const topic: StudyTopic | undefined = subj?.topics.find((tp) => tp.id === topicId);
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [picks, setPicks] = useState<number[]>(() => topic ? Array(topic.questions.length).fill(-1) : []);
   const [submitted, setSubmitted] = useState(false);
@@ -520,7 +532,7 @@ function TopicDetail({
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const { speak: amySpeak, stop: amyStop } = useAmyVoice();
   useEffect(() => () => { amyStop(); }, [amyStop]);
-  if (!subj || !topic) return <Text>Topic not found.</Text>;
+  if (!subj || !topic) return <Text>{t("screens.study.topic_not_found")}</Text>;
 
   const total = topic.questions.length;
   const score = topic.questions.reduce((acc, q, i) => acc + (picks[i] === q.answer ? 1 : 0), 0);
@@ -550,11 +562,11 @@ function TopicDetail({
       setXpKey((k) => k + 1);
     }
     if (res?.streakIncreased && res.next.streak > 1) {
-      flashToast(`🔥 ${res.next.streak}-day streak!`);
+      flashToast(t("screens.study.toast_streak", { n: res.next.streak }), t("screens.study.alert_title"));
     } else if (res?.goalReached) {
-      flashToast("🎯 Daily goal complete!");
+      flashToast(t("screens.study.toast_goal"), t("screens.study.alert_title"));
     } else if (res && res.newBadges.some((b) => b.startsWith("perfect-"))) {
-      flashToast("🏆 Perfect score!");
+      flashToast(t("screens.study.toast_perfect"), t("screens.study.alert_title"));
     }
   };
   const reset = () => { setPicks(Array(total).fill(-1)); setSubmitted(false); };
@@ -576,13 +588,13 @@ function TopicDetail({
 
       <View style={styles.card}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <Text style={styles.cardTitle}>✨ Notes from Amy</Text>
+          <Text style={styles.cardTitle}>{t("screens.study.notes_title")}</Text>
           <Pressable
             style={styles.outlineBtn}
             onPress={() => void amySpeak(topic.notes.replace(/\n/g, ". "))}
           >
             <Ionicons name="volume-high" size={14} color={palette.indigo500} />
-            <Text style={styles.outlineBtnText}>Read aloud</Text>
+            <Text style={styles.outlineBtnText}>{t("screens.study.read_aloud")}</Text>
           </Pressable>
         </View>
         <Text style={styles.notes}>{topic.notes}</Text>
@@ -591,20 +603,20 @@ function TopicDetail({
             style={styles.secondaryBtn}
             onPress={() => void amySpeak(topic.amyPrompt)}
           >
-            <Text style={styles.secondaryBtnText}>Hear Amy's prompt</Text>
+            <Text style={styles.secondaryBtnText}>{t("screens.study.hear_amy_prompt")}</Text>
           </Pressable>
           <Pressable style={styles.ghostBtn} onPress={() => router.push("/amy-ai" as never)}>
-            <Text style={styles.ghostBtnText}>Ask Amy more →</Text>
+            <Text style={styles.ghostBtnText}>{t("screens.study.ask_amy_more")}</Text>
           </Pressable>
         </View>
       </View>
 
       <View style={styles.card}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <Text style={styles.cardTitle}>Practice ({total} questions)</Text>
+          <Text style={styles.cardTitle}>{t("screens.study.practice_title", { total })}</Text>
           {!practiceOpen && (
             <Pressable style={styles.primaryBtn} onPress={() => setPracticeOpen(true)}>
-              <Text style={styles.primaryBtnText}>Try Now</Text>
+              <Text style={styles.primaryBtnText}>{t("screens.study.try_now")}</Text>
             </Pressable>
           )}
         </View>
@@ -644,16 +656,20 @@ function TopicDetail({
                 disabled={picks.some((p) => p === -1)}
                 onPress={submit}
               >
-                <Text style={styles.primaryBtnText}>Submit</Text>
+                <Text style={styles.primaryBtnText}>{t("screens.study.submit")}</Text>
               </Pressable>
             ) : (
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                 <Text style={[styles.cardTitle, isPerfect && { color: palette.amber600 }]}>
-                  You got {score} / {total} {score === total ? "🎉" : score >= Math.ceil(total * 0.6) ? "👍" : "💪"}
+                  {t("screens.study.you_got", {
+                    score,
+                    total,
+                    emoji: score === total ? "🎉" : score >= Math.ceil(total * 0.6) ? "👍" : "💪",
+                  })}
                 </Text>
                 <Pressable style={styles.outlineBtn} onPress={reset}>
                   <Ionicons name="refresh" size={14} color={palette.indigo500} />
-                  <Text style={styles.outlineBtnText}>Try again</Text>
+                  <Text style={styles.outlineBtnText}>{t("screens.study.try_again")}</Text>
                 </Pressable>
               </View>
             )}
@@ -667,6 +683,7 @@ function TopicDetail({
 // ─── Engagement components ───────────────────────────────────────────────────
 
 function EngagementStrip({ engagement }: { engagement: EngagementState }) {
+  const { t } = useTranslation();
   const goalPct = Math.min(100, Math.round((engagement.goalProgress / DAILY_GOAL_TARGET) * 100));
   const recentBadges = engagement.badges.slice(-6).reverse();
   return (
@@ -674,16 +691,16 @@ function EngagementStrip({ engagement }: { engagement: EngagementState }) {
       <View style={styles.engRow}>
         <View style={styles.engStat}>
           <Text style={{ fontSize: 16 }}>🔥</Text>
-          <Text style={styles.engStatLabel}>STREAK</Text>
+          <Text style={styles.engStatLabel}>{t("screens.study.label_streak")}</Text>
           <View style={[styles.engPill, { backgroundColor: palette.orange100 }]}>
             <Text style={[styles.engPillText, { color: palette.orange700 }]}>
-              {engagement.streak} d
+              {t("screens.study.streak_unit_d", { n: engagement.streak })}
             </Text>
           </View>
         </View>
         <View style={styles.engStat}>
           <Text style={{ fontSize: 16 }}>⭐</Text>
-          <Text style={styles.engStatLabel}>XP</Text>
+          <Text style={styles.engStatLabel}>{t("screens.study.label_xp")}</Text>
           <View style={[styles.engPill, { backgroundColor: palette.amber100 }]}>
             <Text style={[styles.engPillText, { color: palette.amber700 }]}>
               {engagement.xp}
@@ -730,6 +747,7 @@ function GoalRing({ pct, done, target }: { pct: number; done: number; target: nu
 }
 
 function XpPopup({ amount, triggerKey }: { amount: number; triggerKey: number }) {
+  const { t } = useTranslation();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -749,7 +767,7 @@ function XpPopup({ amount, triggerKey }: { amount: number; triggerKey: number })
   return (
     <View pointerEvents="none" style={styles.xpPopupWrap}>
       <Animated.View style={[styles.xpPopup, { opacity, transform: [{ translateY }] }]}>
-        <Text style={styles.xpPopupText}>+{amount} XP ⭐</Text>
+        <Text style={styles.xpPopupText}>{t("screens.study.xp_popup", { amount })}</Text>
       </Animated.View>
     </View>
   );

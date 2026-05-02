@@ -14,6 +14,7 @@ import {
   AGE_GROUPS, NUTRIENTS, MEAL_PLANS, FAMILY_PORTIONS,
   MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient,
 } from "@/lib/nutrition-data";
+import { useTranslation } from "react-i18next";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -27,11 +28,11 @@ function scoreColor(s: number, c: ReturnType<typeof useColors>) {
   if (s >= 50) return palette.amber500;
   return palette.red500;
 }
-function scoreLabel(s: number) {
-  if (s >= 80) return "Excellent · Shandar 🌟";
-  if (s >= 60) return "Good · Achha 👍";
-  if (s >= 40) return "Needs attention · Dhyan do ⚠️";
-  return "Critical · Zaruri hai 🚨";
+function scoreLabelKey(s: number) {
+  if (s >= 80) return "screens.nutrition.score_excellent";
+  if (s >= 60) return "screens.nutrition.score_good";
+  if (s >= 40) return "screens.nutrition.score_attention";
+  return "screens.nutrition.score_critical";
 }
 
 // ─── Age Group colors (simple mapping) ───────────────────────────────────────
@@ -68,6 +69,7 @@ function NutrientCard({
   onPress: () => void;
 }) {
   const c = useColors();
+  const { t } = useTranslation();
   const nc = NUTRIENT_COLORS[nutrient.id] ?? { bg: palette.gray50, text: palette.gray700, border: palette.gray200 };
   const need = nutrient.dailyNeeds[ageGroupId];
   return (
@@ -87,7 +89,7 @@ function NutrientCard({
       <Text style={[styles.tagline, { color: palette.slate500 }]}>{nutrient.tagline}</Text>
       <View style={[styles.needBadge, { backgroundColor: "#ffffff88" }]}>
         <Text style={[{ color: nc.text, fontSize: 11, fontWeight: "700" }]}>
-          {need.amount} {need.unit} / day
+          {t("screens.nutrition.per_day", { amount: need.amount, unit: need.unit })}
         </Text>
       </View>
     </Pressable>
@@ -102,6 +104,7 @@ function NutrientDetail({
   ageGroupId: AgeGroupId;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const nc = NUTRIENT_COLORS[nutrient.id] ?? { bg: palette.gray50, text: palette.gray700, border: palette.gray200 };
   const need = nutrient.dailyNeeds[ageGroupId];
   const ag = AGE_GROUPS.find(a => a.id === ageGroupId)!;
@@ -123,7 +126,7 @@ function NutrientDetail({
           {/* Daily need */}
           <View style={[styles.needCard, { backgroundColor: nc.bg, borderColor: nc.border }]}>
             <Text style={{ fontSize: 11, color: palette.slate500, fontWeight: "600", marginBottom: 4 }}>
-              DAILY NEED FOR {ag.label.toUpperCase()} · {ag.labelHi.toUpperCase()}
+              {t("screens.nutrition.daily_need_for", { label: ag.label.toUpperCase(), labelHi: ag.labelHi.toUpperCase() })}
             </Text>
             <Text style={[{ fontSize: 28, fontWeight: "900", color: nc.text }]}>
               {need.amount} <Text style={{ fontSize: 16 }}>{need.unit}</Text>
@@ -133,7 +136,7 @@ function NutrientDetail({
 
           {/* Benefits */}
           <View>
-            <Text style={styles.sectionTitle}>✅ Benefits · फायदे</Text>
+            <Text style={styles.sectionTitle}>{t("screens.nutrition.benefits_title")}</Text>
             {nutrient.benefits.map((b, i) => (
               <View key={i} style={styles.listItem}>
                 <Text style={{ color: palette.green500, marginRight: 6 }}>✓</Text>
@@ -149,7 +152,7 @@ function NutrientDetail({
 
           {/* Food Sources */}
           <View>
-            <Text style={styles.sectionTitle}>🥗 Indian Food Sources · भारतीय स्रोत</Text>
+            <Text style={styles.sectionTitle}>{t("screens.nutrition.sources_title")}</Text>
             <View style={{ gap: 8 }}>
               {nutrient.sources.map((src, i) => (
                 <View key={i} style={styles.sourceRow}>
@@ -159,11 +162,11 @@ function NutrientDetail({
                       <Text style={{ fontWeight: "600", color: palette.slate800, fontSize: 13 }}>{src.name}</Text>
                       {src.type === "veg" ? (
                         <View style={[styles.typeBadge, { backgroundColor: palette.green100 }]}>
-                          <Text style={{ fontSize: 9, color: palette.green700, fontWeight: "700" }}>VEG</Text>
+                          <Text style={{ fontSize: 9, color: palette.green700, fontWeight: "700" }}>{t("screens.nutrition.veg_badge")}</Text>
                         </View>
                       ) : (
                         <View style={[styles.typeBadge, { backgroundColor: palette.orange200 }]}>
-                          <Text style={{ fontSize: 9, color: palette.orange700, fontWeight: "700" }}>NON-VEG</Text>
+                          <Text style={{ fontSize: 9, color: palette.orange700, fontWeight: "700" }}>{t("screens.nutrition.nonveg_badge")}</Text>
                         </View>
                       )}
                     </View>
@@ -177,14 +180,14 @@ function NutrientDetail({
 
           {/* Deficiency */}
           <View>
-            <Text style={styles.sectionTitle}>⚠️ Deficiency Signs · कमी के लक्षण</Text>
+            <Text style={styles.sectionTitle}>{t("screens.nutrition.deficiency_title")}</Text>
             <View style={[styles.deficiencyBox, { borderColor: palette.rose200 }]}>
               {nutrient.deficiencySymptoms.map((d, i) => (
                 <Text key={i} style={{ color: palette.rose700, fontSize: 12, marginBottom: 4 }}>⚠ {d}</Text>
               ))}
             </View>
             <View style={[styles.hindiBox, { backgroundColor: palette.amber50, borderColor: palette.yellow200 }]}>
-              <Text style={{ fontSize: 11, fontWeight: "700", color: palette.amber800, marginBottom: 4 }}>हिंदी में लक्षण:</Text>
+              <Text style={{ fontSize: 11, fontWeight: "700", color: palette.amber800, marginBottom: 4 }}>{t("screens.nutrition.deficiency_hi_label")}</Text>
               {nutrient.deficiencyHi.map((d, i) => (
                 <Text key={i} style={{ fontSize: 12, color: palette.yellow700 }}>• {d}</Text>
               ))}
@@ -193,7 +196,7 @@ function NutrientDetail({
 
           {/* Source */}
           <Text style={{ fontSize: 10, color: palette.slate400, textAlign: "center" }}>
-            📚 Source: ICMR-NIN Nutrient Requirements for Indians (2020) & WHO Guidelines
+            {t("screens.nutrition.source_footer")}
           </Text>
         </View>
       </ScrollView>
@@ -203,6 +206,7 @@ function NutrientDetail({
 
 // ─── Meal Plan Tab ─────────────────────────────────────────────────────────────
 function MealPlanTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
+  const { t } = useTranslation();
   const plan = MEAL_PLANS.find(p => p.applies.includes(ageGroupId));
   const [dayIdx, setDayIdx] = useState(0);
   const [isVeg, setIsVeg] = useState(true);
@@ -212,14 +216,14 @@ function MealPlanTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
       <View style={{ padding: 24, alignItems: "center" }}>
         <Text style={{ fontSize: 48, marginBottom: 12 }}>🍼</Text>
         <Text style={{ fontSize: 16, fontWeight: "700", color: palette.slate800, textAlign: "center", marginBottom: 8 }}>
-          Exclusive Breastfeeding (0–6 Months)
+          {t("screens.nutrition.ebf_title")}
         </Text>
         <Text style={{ fontSize: 13, color: palette.slate600, textAlign: "center", lineHeight: 20 }}>
-          WHO recommends only breast milk for the first 6 months. No other food or water is needed.
+          {t("screens.nutrition.ebf_desc")}
         </Text>
         <View style={{ marginTop: 12, backgroundColor: palette.violet50, borderRadius: 12, padding: 12 }}>
           <Text style={{ fontSize: 12, color: brand.violet600, textAlign: "center" }}>
-            विश्व स्वास्थ्य संगठन 6 महीने तक केवल माँ के दूध की सलाह देता है।
+            {t("screens.nutrition.ebf_hi")}
           </Text>
         </View>
       </View>
@@ -256,13 +260,13 @@ function MealPlanTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
           onPress={() => setIsVeg(true)}
           style={[styles.toggleBtn, isVeg && { backgroundColor: palette.green500 }]}
         >
-          <Text style={{ fontSize: 12, fontWeight: "700", color: isVeg ? "#fff" : palette.slate500 }}>🌿 Veg</Text>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: isVeg ? "#fff" : palette.slate500 }}>{t("screens.nutrition.veg")}</Text>
         </Pressable>
         <Pressable
           onPress={() => setIsVeg(false)}
           style={[styles.toggleBtn, !isVeg && { backgroundColor: palette.orange500 }]}
         >
-          <Text style={{ fontSize: 12, fontWeight: "700", color: !isVeg ? "#fff" : palette.slate500 }}>🍗 Non-Veg</Text>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: !isVeg ? "#fff" : palette.slate500 }}>{t("screens.nutrition.nonveg")}</Text>
         </Pressable>
       </View>
 
@@ -301,15 +305,16 @@ function MealPlanTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
 
 // ─── Family Mode Tab ───────────────────────────────────────────────────────────
 function FamilyModeTab() {
+  const { t } = useTranslation();
   return (
     <View style={{ gap: 12 }}>
       {/* Info */}
       <View style={{ backgroundColor: palette.violet50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.violet200 }}>
         <Text style={{ fontSize: 13, fontWeight: "700", color: brand.violet600, marginBottom: 4 }}>
-          👨‍👩‍👧 एक खाना, अलग-अलग हिस्से
+          {t("screens.nutrition.family_title_hi")}
         </Text>
         <Text style={{ fontSize: 12, color: brand.violet800 }}>
-          Cook one meal for the whole family and serve age-appropriate portions. No separate cooking needed!
+          {t("screens.nutrition.family_desc")}
         </Text>
       </View>
 
@@ -317,7 +322,7 @@ function FamilyModeTab() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View>
           <View style={[styles.tableRow, { backgroundColor: palette.slate100 }]}>
-            <Text style={[styles.tableCell, styles.tableCellFirst, styles.tableHeader]}>Food Item</Text>
+            <Text style={[styles.tableCell, styles.tableCellFirst, styles.tableHeader]}>{t("screens.nutrition.table_food")}</Text>
             {["🍼\n6–12m", "🧒\n1–3y", "📚\n6–10y", "🌱\n10–15y", "👨‍👩\nAdult", "🤰\nPregnant"].map((h, i) => (
               <Text key={i} style={[styles.tableCell, styles.tableHeader]}>{h}</Text>
             ))}
@@ -339,7 +344,7 @@ function FamilyModeTab() {
         </View>
       </ScrollView>
       <Text style={{ fontSize: 10, color: palette.slate400, textAlign: "center" }}>
-        * 1 katori ≈ 150ml cup. Adjust to child's appetite.
+        {t("screens.nutrition.katori_note")}
       </Text>
     </View>
   );
@@ -347,6 +352,7 @@ function FamilyModeTab() {
 
 // ─── Score Tab ─────────────────────────────────────────────────────────────────
 function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
+  const { t } = useTranslation();
   const ag = AGE_GROUPS.find(a => a.id === ageGroupId)!;
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => {
@@ -354,14 +360,14 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
     setChecked(prev => ({ ...prev, [id]: !prev[id] }));
   };
   const items = [
-    { id: "breakfast", label: "Wholesome breakfast today", labelHi: "आज पौष्टिक नाश्ता किया" },
-    { id: "protein", label: "Protein source (dal / egg / paneer / meat)", labelHi: "प्रोटीन लिया" },
-    { id: "dairy", label: "Dairy or calcium source", labelHi: "डेयरी या कैल्शियम स्रोत" },
-    { id: "greens", label: "Green leafy vegetables (palak/methi)", labelHi: "हरी पत्तेदार सब्जी खाई" },
-    { id: "fruit", label: "At least 1 fruit today", labelHi: "आज कम से कम 1 फल खाया" },
-    { id: "water", label: "Adequate water / fluids", labelHi: "पर्याप्त पानी पिया" },
-    { id: "noJunk", label: "No junk food / packaged snacks", labelHi: "जंक फूड से बचे" },
-    { id: "wholegrains", label: "Whole grains (atta roti vs maida)", labelHi: "साबुत अनाज चुना" },
+    { id: "breakfast", label: t("screens.nutrition.item_breakfast"), labelHi: "आज पौष्टिक नाश्ता किया" },
+    { id: "protein", label: t("screens.nutrition.item_protein"), labelHi: "प्रोटीन लिया" },
+    { id: "dairy", label: t("screens.nutrition.item_dairy"), labelHi: "डेयरी या कैल्शियम स्रोत" },
+    { id: "greens", label: t("screens.nutrition.item_greens"), labelHi: "हरी पत्तेदार सब्जी खाई" },
+    { id: "fruit", label: t("screens.nutrition.item_fruit"), labelHi: "आज कम से कम 1 फल खाया" },
+    { id: "water", label: t("screens.nutrition.item_water"), labelHi: "पर्याप्त पानी पिया" },
+    { id: "noJunk", label: t("screens.nutrition.item_noJunk"), labelHi: "जंक फूड से बचे" },
+    { id: "wholegrains", label: t("screens.nutrition.item_wholegrains"), labelHi: "साबुत अनाज चुना" },
   ];
   const checkedCount = Object.values(checked).filter(Boolean).length;
   const score = Math.round((checkedCount / items.length) * 100);
@@ -372,10 +378,10 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
       {/* Info */}
       <View style={{ backgroundColor: palette.emerald50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.green200 }}>
         <Text style={{ fontSize: 13, fontWeight: "700", color: palette.green700, marginBottom: 2 }}>
-          🏆 Daily Nutrition Score · दैनिक पोषण स्कोर
+          {t("screens.nutrition.score_tab_title")}
         </Text>
         <Text style={{ fontSize: 12, color: palette.green800 }}>
-          Track for {ag.label} · आज क्या खाया वो चेक करें
+          {t("screens.nutrition.score_tab_sub", { label: ag.label })}
         </Text>
       </View>
 
@@ -385,9 +391,9 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
         <View style={styles.scoreBarBg}>
           <View style={[styles.scoreBarFill, { width: `${score}%` as any, backgroundColor: sc }]} />
         </View>
-        <Text style={[{ fontSize: 14, fontWeight: "700", color: sc, marginTop: 8 }]}>{scoreLabel(score)}</Text>
+        <Text style={[{ fontSize: 14, fontWeight: "700", color: sc, marginTop: 8 }]}>{t(scoreLabelKey(score))}</Text>
         <Text style={{ fontSize: 12, color: palette.slate500, marginTop: 2 }}>
-          {checkedCount} of {items.length} daily goals met
+          {t("screens.nutrition.goals_met", { done: checkedCount, total: items.length })}
         </Text>
       </View>
 
@@ -421,21 +427,21 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
       {/* Tip */}
       {score < 80 ? (
         <View style={{ backgroundColor: palette.violet50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.violet200 }}>
-          <Text style={{ fontSize: 12, fontWeight: "700", color: brand.violet600, marginBottom: 4 }}>🧠 Amy AI Tip</Text>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: brand.violet600, marginBottom: 4 }}>{t("screens.nutrition.tip_label")}</Text>
           <Text style={{ fontSize: 12, color: brand.violet800, lineHeight: 18 }}>
             {score < 40
-              ? "Boost your nutrition — add dal, a fruit, and a glass of milk. · दाल, फल और दूध जरूर लें।"
+              ? t("screens.nutrition.tip_low")
               : score < 60
-              ? "Include green vegetables like palak or methi. · पालक/मेथी जरूर खाएं।"
-              : "Almost there! Replace a packaged snack with roasted chana. · भुने चने खाएं।"}
+              ? t("screens.nutrition.tip_med")
+              : t("screens.nutrition.tip_high")}
           </Text>
         </View>
       ) : (
         <View style={{ backgroundColor: palette.emerald50, borderRadius: 12, padding: 16, alignItems: "center", borderWidth: 1, borderColor: palette.green300 }}>
           <Text style={{ fontSize: 28, marginBottom: 4 }}>🌟</Text>
-          <Text style={{ fontSize: 15, fontWeight: "800", color: palette.green700 }}>Outstanding! · Shandar!</Text>
+          <Text style={{ fontSize: 15, fontWeight: "800", color: palette.green700 }}>{t("screens.nutrition.outstanding_title")}</Text>
           <Text style={{ fontSize: 12, color: palette.green800, textAlign: "center", marginTop: 4 }}>
-            Consistency is the key to health. Keep it up tomorrow too! · हर दिन यही करें!
+            {t("screens.nutrition.outstanding_sub")}
           </Text>
         </View>
       )}
@@ -449,6 +455,7 @@ export default function NutritionScreen() {
   const router = useRouter();
   const c = useColors();
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const [activeAgeId, setActiveAgeId] = useState<AgeGroupId>("toddler_1_3");
   const [activeTab, setActiveTab] = useState<Tab>("nutrients");
@@ -460,16 +467,16 @@ export default function NutritionScreen() {
   const ac = AGE_COLORS[activeAgeId];
 
   const TABS: { id: Tab; label: string; icon: string }[] = [
-    { id: "nutrients", label: "Nutrients", icon: "nutrition" },
-    { id: "meals", label: "Meal Plan", icon: "restaurant" },
-    { id: "family", label: "Family", icon: "people" },
-    { id: "score", label: "Score", icon: "trophy" },
+    { id: "nutrients", label: t("screens.nutrition.tab_nutrients"), icon: "nutrition" },
+    { id: "meals", label: t("screens.nutrition.tab_meals"), icon: "restaurant" },
+    { id: "family", label: t("screens.nutrition.tab_family"), icon: "people" },
+    { id: "score", label: t("screens.nutrition.tab_score"), icon: "trophy" },
   ];
 
   if (selectedNutrient) {
     return (
       <View style={{ flex: 1, backgroundColor: "#fff" }}>
-        <Stack.Screen options={{ title: "Nutrient Detail", headerShown: false }} />
+        <Stack.Screen options={{ title: t("screens.nutrition.screen_title"), headerShown: false }} />
         <NutrientDetail
           nutrient={selectedNutrient}
           ageGroupId={activeAgeId}
@@ -494,10 +501,10 @@ export default function NutritionScreen() {
         </Pressable>
         <View style={{ flex: 1, alignItems: "center" }}>
           <Text style={{ fontSize: 32, marginBottom: 4 }}>🥗</Text>
-          <Text style={styles.heroTitle}>Nutrition Hub</Text>
-          <Text style={styles.heroSubtitle}>न्यूट्रिशन हब · Poshan Ka Ghar</Text>
+          <Text style={styles.heroTitle}>{t("screens.nutrition.hero_title")}</Text>
+          <Text style={styles.heroSubtitle}>{t("screens.nutrition.hero_subtitle")}</Text>
           <View style={styles.heroBadge}>
-            <Text style={{ fontSize: 10, color: brand.violet400, fontWeight: "600" }}>WHO · ICMR-NIN · Science-backed</Text>
+            <Text style={{ fontSize: 10, color: brand.violet400, fontWeight: "600" }}>{t("screens.nutrition.hero_badge")}</Text>
           </View>
         </View>
       </LinearGradient>
@@ -582,9 +589,9 @@ export default function NutritionScreen() {
           {/* Nutrients */}
           {activeTab === "nutrients" && (
             <View>
-              <Text style={styles.sectionHeader}>Nutrient Library · पोषक तत्व पुस्तकालय</Text>
+              <Text style={styles.sectionHeader}>{t("screens.nutrition.section_nutrient_lib")}</Text>
               <Text style={{ fontSize: 12, color: palette.slate500, marginBottom: 12 }}>
-                Tap a nutrient to see benefits, Indian food sources & daily needs for {activeAg.label}.
+                {t("screens.nutrition.section_nutrient_desc", { label: activeAg.label })}
               </Text>
               <View style={styles.nutrientGrid}>
                 {NUTRIENTS.map(n => (
@@ -602,9 +609,9 @@ export default function NutritionScreen() {
           {/* Meals */}
           {activeTab === "meals" && (
             <View>
-              <Text style={styles.sectionHeader}>Weekly Meal Plan · साप्ताहिक भोजन योजना</Text>
+              <Text style={styles.sectionHeader}>{t("screens.nutrition.section_meal_plan")}</Text>
               <Text style={{ fontSize: 12, color: palette.slate500, marginBottom: 12 }}>
-                Age-appropriate Indian meals for every day of the week.
+                {t("screens.nutrition.section_meal_desc")}
               </Text>
               <MealPlanTab ageGroupId={activeAgeId} />
             </View>
@@ -613,9 +620,9 @@ export default function NutritionScreen() {
           {/* Family */}
           {activeTab === "family" && (
             <View>
-              <Text style={styles.sectionHeader}>Family Mode · परिवार मोड</Text>
+              <Text style={styles.sectionHeader}>{t("screens.nutrition.section_family")}</Text>
               <Text style={{ fontSize: 12, color: palette.slate500, marginBottom: 12 }}>
-                Same meal — different portions for each family member. Cook once, serve smart!
+                {t("screens.nutrition.section_family_desc")}
               </Text>
               <FamilyModeTab />
             </View>
@@ -636,7 +643,7 @@ export default function NutritionScreen() {
           >
             <Ionicons name="warning-outline" size={16} color={palette.amber600} />
             <Text style={{ fontSize: 12, fontWeight: "700", color: palette.amber600, flex: 1 }}>
-              Medical Disclaimer · चिकित्सा अस्वीकरण
+              {t("screens.nutrition.med_disclaimer")}
             </Text>
             <Ionicons name={showDisclaimer ? "chevron-up" : "chevron-down"} size={14} color={palette.amber600} />
           </Pressable>
@@ -650,7 +657,7 @@ export default function NutritionScreen() {
               </Text>
               <Pressable onPress={() => setShowRefs(!showRefs)} style={{ marginTop: 10 }}>
                 <Text style={{ fontSize: 10, color: palette.amber700, textDecorationLine: "underline" }}>
-                  {showRefs ? "Hide" : "Show"} References / स्रोत
+                  {showRefs ? t("screens.nutrition.hide_refs") : t("screens.nutrition.show_refs")}
                 </Text>
               </Pressable>
               {showRefs && REFERENCES.map((ref, i) => (
@@ -668,8 +675,8 @@ export default function NutritionScreen() {
           >
             <Text style={{ fontSize: 24 }}>📈</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: palette.slate800 }}>Track Growth Progress</Text>
-              <Text style={{ fontSize: 11, color: palette.slate500 }}>बच्चे की वृद्धि ट्रैक करें</Text>
+              <Text style={{ fontSize: 13, fontWeight: "700", color: palette.slate800 }}>{t("screens.nutrition.growth_title")}</Text>
+              <Text style={{ fontSize: 11, color: palette.slate500 }}>{t("screens.nutrition.growth_sub")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={palette.slate400} />
           </Pressable>

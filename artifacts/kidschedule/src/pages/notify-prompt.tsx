@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useSearch } from "wouter";
+import { useTranslation } from "react-i18next";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useWebPush } from "@/hooks/use-web-push";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -8,6 +9,7 @@ const GRAD = "linear-gradient(135deg,#6366F1,#A855F7)";
 const BG   = "linear-gradient(160deg,#EEF2FF 0%,#F5F3FF 55%,#FDF2F8 100%)";
 
 export default function NotifyPromptPage() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const search          = useSearch();
   const next            = new URLSearchParams(search).get("next") ?? "/";
@@ -51,14 +53,14 @@ export default function NotifyPromptPage() {
         className="text-2xl font-extrabold text-center mb-3"
         style={{ color: "#1e1b4b" }}
       >
-        Stay on Track with Reminders
+        {t("screens.notify_prompt.title")}
       </h1>
 
       <p
         className="text-sm text-center mb-8 leading-relaxed"
         style={{ color: "#6366F1", maxWidth: 300 }}
       >
-        Amy will remind you about routines, bedtime, meals and more — right on time, every day.
+        {t("screens.notify_prompt.subtitle")}
       </p>
 
       <div className="flex flex-col gap-3 w-full" style={{ maxWidth: 320 }}>
@@ -67,9 +69,9 @@ export default function NotifyPromptPage() {
           style={{ background: "rgba(255,255,255,0.9)", border: "1px solid rgba(99,102,241,0.15)" }}
         >
           {[
-            { emoji: "⏰", text: "Routine reminders so nothing gets missed" },
-            { emoji: "🌙", text: "Bedtime alerts for a calm night routine" },
-            { emoji: "🍎", text: "Meal time nudges to keep feeding on schedule" },
+            { emoji: "⏰", text: t("screens.notify_prompt.benefit_routines") },
+            { emoji: "🌙", text: t("screens.notify_prompt.benefit_bedtime") },
+            { emoji: "🍎", text: t("screens.notify_prompt.benefit_meals") },
           ].map(({ emoji, text }) => (
             <div key={text} className="flex items-center gap-3 py-2">
               <span style={{ fontSize: 20 }}>{emoji}</span>
@@ -88,7 +90,7 @@ export default function NotifyPromptPage() {
             opacity: loading ? 0.7 : 1,
           }}
         >
-          {loading ? "Enabling…" : "Allow Notifications 🔔"}
+          {loading ? t("screens.notify_prompt.enabling") : t("screens.notify_prompt.allow_button")}
         </button>
 
         <button
@@ -96,7 +98,7 @@ export default function NotifyPromptPage() {
           className="w-full py-3 text-sm font-semibold"
           style={{ color: "#6366F1", background: "none", border: "none", cursor: "pointer" }}
         >
-          Maybe later
+          {t("screens.notify_prompt.maybe_later")}
         </button>
       </div>
     </div>

@@ -13,6 +13,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 import { brand, palette, brandExtended } from "@/constants/colors";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 
 type ChatRole = "amy" | "user";
 type ChatMsg = { id: string; role: ChatRole; text: string };
@@ -58,23 +59,28 @@ const SLEEP_OPTS = ["8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:
 const SCHOOL_START = ["7:30 AM", "8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM"];
 const SCHOOL_END = ["12:00 PM", "1:00 PM", "2:00 PM", "2:30 PM", "3:00 PM", "4:00 PM"];
 const CLASSES = ["Nursery", "LKG / KG", "UKG", "1st", "2nd", "3rd", "4th", "5th", "6th+"];
-const ROLES = ["Mother", "Father", "Both", "Grandparent"];
-const WORK_TYPES: { label: string; value: string }[] = [
-  { label: "Work from Home", value: "work_from_home" },
-  { label: "Office Job", value: "office" },
-  { label: "Not Working", value: "not_working" },
-  { label: "Homemaker", value: "homemaker" },
+const ROLE_KEYS: { key: string; value: string }[] = [
+  { key: "role_mother", value: "Mother" },
+  { key: "role_father", value: "Father" },
+  { key: "role_both", value: "Both" },
+  { key: "role_grandparent", value: "Grandparent" },
+];
+const WORK_TYPE_KEYS: { key: string; value: string }[] = [
+  { key: "work_wfh", value: "work_from_home" },
+  { key: "work_office", value: "office" },
+  { key: "work_not_working", value: "not_working" },
+  { key: "work_homemaker", value: "homemaker" },
 ];
 
-const REGION_OPTS: { label: string; value: string }[] = [
-  { label: "Pan-Indian (Mixed)", value: "pan_indian" },
-  { label: "North Indian", value: "north_indian" },
-  { label: "South Indian", value: "south_indian" },
-  { label: "Bengali", value: "bengali" },
-  { label: "Gujarati", value: "gujarati" },
-  { label: "Maharashtrian", value: "maharashtrian" },
-  { label: "Punjabi", value: "punjabi" },
-  { label: "Global / Continental", value: "global" },
+const REGION_KEYS: { key: string; value: string }[] = [
+  { key: "region_pan", value: "pan_indian" },
+  { key: "region_north", value: "north_indian" },
+  { key: "region_south", value: "south_indian" },
+  { key: "region_bengali", value: "bengali" },
+  { key: "region_gujarati", value: "gujarati" },
+  { key: "region_maharashtrian", value: "maharashtrian" },
+  { key: "region_punjabi", value: "punjabi" },
+  { key: "region_global", value: "global" },
 ];
 
 const PRIMARY = brand.purple500;
@@ -89,6 +95,7 @@ export default function OnboardingScreen() {
   const { user } = useUser();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
+  const { t } = useTranslation();
 
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [typing, setTyping] = useState(false);
@@ -131,10 +138,10 @@ export default function OnboardingScreen() {
   }, [addMsg, amySays]);
 
   useEffect(() => {
-    const firstName = user?.firstName || "there";
+    const firstName = user?.firstName || t("screens.onboarding_chat.amy_intro_default_name");
     setTimeout(() => {
-      addMsg("amy", `Hi ${firstName}! I'm Amy, your parenting coach. Let me set up your profile — it'll take about 2 minutes!`);
-      setTimeout(() => amySays("Let's start — what's your child's name?", 800), 1200);
+      addMsg("amy", t("screens.onboarding_chat.amy_intro", { name: firstName }));
+      setTimeout(() => amySays(t("screens.onboarding_chat.amy_first_q"), 800), 1200);
       setTimeout(() => { stepRef.current = "child-name"; setStep("child-name"); }, 2200);
     }, 600);
   }, []);
@@ -142,7 +149,7 @@ export default function OnboardingScreen() {
   const saveEverything = async (finalParent: ParentData, finalChildren: ChildData[]) => {
     stepRef.current = "saving";
     setStep("saving");
-    addMsg("amy", "Saving your profile now...");
+    addMsg("amy", t("screens.onboarding_chat.amy_saving"));
 
     try {
       for (const child of finalChildren) {
@@ -201,7 +208,7 @@ export default function OnboardingScreen() {
       setSaveError(message);
       stepRef.current = "save-error";
       setStep("save-error");
-      addMsg("amy", "Something went wrong saving your profile. Please try again.");
+      addMsg("amy", t("screens.onboarding_chat.amy_save_error"));
     }
   };
 
@@ -221,7 +228,7 @@ export default function OnboardingScreen() {
           style={styles.amyBigBubble}
           resizeMode="cover"
         />
-        <Text style={styles.doneTitle}>Amy is setting up your profile...</Text>
+        <Text style={styles.doneTitle}>{t("screens.onboarding_chat.saving_title")}</Text>
         <ActivityIndicator color={PRIMARY} style={{ marginTop: 16 }} />
       </LinearGradient>
     );
@@ -238,8 +245,8 @@ export default function OnboardingScreen() {
         <View style={[styles.amyBigBubble, { backgroundColor: palette.emerald500 }]}>
           <Ionicons name="checkmark" size={36} color="#fff" />
         </View>
-        <Text style={styles.doneTitle}>Profile ready!</Text>
-        <Text style={styles.doneSub}>All set for {children[0]?.name ?? "your child"}</Text>
+        <Text style={styles.doneTitle}>{t("screens.onboarding_chat.done_title")}</Text>
+        <Text style={styles.doneSub}>{t("screens.onboarding_chat.done_sub", { name: children[0]?.name ?? t("screens.onboarding_chat.done_default_name") })}</Text>
         <TouchableOpacity
           onPress={() => {
             qc.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
@@ -255,7 +262,7 @@ export default function OnboardingScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.doneBtn}
           >
-            <Text style={styles.doneBtnText}>Go to Dashboard</Text>
+            <Text style={styles.doneBtnText}>{t("screens.onboarding_chat.go_dashboard")}</Text>
             <Ionicons name="arrow-forward" size={18} color="#fff" />
           </LinearGradient>
         </TouchableOpacity>
@@ -274,9 +281,9 @@ export default function OnboardingScreen() {
         <View style={[styles.amyBigBubble, { backgroundColor: palette.red500 }]}>
           <Ionicons name="alert-circle" size={36} color="#fff" />
         </View>
-        <Text style={styles.doneTitle}>Something went wrong</Text>
+        <Text style={styles.doneTitle}>{t("screens.onboarding_chat.error_title")}</Text>
         <Text style={styles.doneSub}>
-          We couldn't save your profile. Check your connection and try again.
+          {t("screens.onboarding_chat.error_sub")}
         </Text>
         {saveError ? (
           <Text style={[styles.doneSub, { color: brandExtended.errorSoft, fontSize: 12, marginTop: -8 }]}>{saveError}</Text>
@@ -297,7 +304,7 @@ export default function OnboardingScreen() {
             style={styles.doneBtn}
           >
             <Ionicons name="refresh" size={18} color="#fff" />
-            <Text style={styles.doneBtnText}>Try Again</Text>
+            <Text style={styles.doneBtnText}>{t("screens.onboarding_chat.try_again")}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </LinearGradient>
@@ -316,7 +323,7 @@ export default function OnboardingScreen() {
               style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
               value={textInput}
               onChangeText={setTextInput}
-              placeholder="Child's name"
+              placeholder={t("screens.onboarding_chat.ph_child_name")}
               placeholderTextColor={TEXT_MUTED}
               autoFocus
               returnKeyType="send"
@@ -324,7 +331,7 @@ export default function OnboardingScreen() {
                 if (!textInput.trim()) return;
                 const name = textInput.trim();
                 setCurr(c => ({ ...c, name }));
-                userReplies(name, "child-dob", `Nice! When is ${name}'s date of birth?`);
+                userReplies(name, "child-dob", t("screens.onboarding_chat.amy_dob_q", { name }));
               }}
             />
             <TouchableOpacity
@@ -333,7 +340,7 @@ export default function OnboardingScreen() {
                 if (!textInput.trim()) return;
                 const name = textInput.trim();
                 setCurr(c => ({ ...c, name }));
-                userReplies(name, "child-dob", `Nice! When is ${name}'s date of birth?`);
+                userReplies(name, "child-dob", t("screens.onboarding_chat.amy_dob_q", { name }));
               }}
             >
               <Ionicons name="arrow-forward" size={20} color="#fff" />
@@ -369,7 +376,7 @@ export default function OnboardingScreen() {
                     <View style={{ backgroundColor: GLASS_BG, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, borderWidth: 1, borderColor: GLASS_BORDER }}>
                       <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 8 }}>
                         <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                          <Text style={{ color: PRIMARY, fontSize: 16, fontFamily: "Inter_600SemiBold" }}>Done</Text>
+                          <Text style={{ color: PRIMARY, fontSize: 16, fontFamily: "Inter_600SemiBold" }}>{t("screens.onboarding_chat.btn_done")}</Text>
                         </TouchableOpacity>
                       </View>
                       <DateTimePicker
@@ -401,38 +408,42 @@ export default function OnboardingScreen() {
                 const dob = formatDob(dobDate);
                 const { years, months } = dobToAge(dob);
                 setCurr(c => ({ ...c, dob, age: years, ageMonths: months }));
-                userReplies(dob, "child-school", `Is ${curr.name} going to school?`);
+                userReplies(dob, "child-school", t("screens.onboarding_chat.amy_school_q", { name: curr.name }));
               }}
             >
-              <Text style={styles.confirmBtnText}>Confirm</Text>
+              <Text style={styles.confirmBtnText}>{t("screens.onboarding_chat.btn_confirm")}</Text>
             </TouchableOpacity>
           </View>
         );
       }
 
-      case "child-school":
+      case "child-school": {
+        const schoolOpts: { label: string; isSchool: boolean }[] = [
+          { label: t("screens.onboarding_chat.yes_school"), isSchool: true },
+          { label: t("screens.onboarding_chat.no_school"), isSchool: false },
+        ];
         return (
           <View style={styles.rowBtns}>
-            {["Yes, school going", "No, not yet"].map(opt => (
+            {schoolOpts.map(opt => (
               <TouchableOpacity
-                key={opt}
+                key={opt.label}
                 style={[styles.optionBtn, { backgroundColor: GLASS_BG, borderColor: GLASS_BORDER }]}
                 onPress={() => {
-                  const isSchool = opt.startsWith("Yes");
-                  setCurr(c => ({ ...c, isSchoolGoing: isSchool }));
-                  if (isSchool) {
-                    userReplies(opt, "child-class", `Which class is ${curr.name} in?`);
+                  setCurr(c => ({ ...c, isSchoolGoing: opt.isSchool }));
+                  if (opt.isSchool) {
+                    userReplies(opt.label, "child-class", t("screens.onboarding_chat.amy_class_q", { name: curr.name }));
                   } else {
                     setCurr(c => ({ ...c, childClass: "", schoolStartTime: "09:00", schoolEndTime: "15:00" }));
-                    userReplies(opt, "child-wake", `What time does ${curr.name} wake up?`);
+                    userReplies(opt.label, "child-wake", t("screens.onboarding_chat.amy_wake_q", { name: curr.name }));
                   }
                 }}
               >
-                <Text style={[styles.optionBtnText, { color: TEXT_ON_DARK }]}>{opt}</Text>
+                <Text style={[styles.optionBtnText, { color: TEXT_ON_DARK }]}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         );
+      }
 
       case "child-class":
         return (
@@ -445,7 +456,7 @@ export default function OnboardingScreen() {
                   setSelected(c);
                   Haptics.selectionAsync();
                   setCurr(ch => ({ ...ch, childClass: c }));
-                  userReplies(c, "child-school-start", "What time does school start?");
+                  userReplies(c, "child-school-start", t("screens.onboarding_chat.amy_school_start_q"));
                 }}
               >
                 <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{c}</Text>
@@ -457,15 +468,15 @@ export default function OnboardingScreen() {
       case "child-school-start":
         return (
           <View style={styles.chipGrid}>
-            {SCHOOL_START.map(t => (
-              <TouchableOpacity key={t}
-                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : GLASS_BG, borderColor: selected === t ? PRIMARY : GLASS_BORDER }]}
+            {SCHOOL_START.map(time => (
+              <TouchableOpacity key={time}
+                style={[styles.chip, { backgroundColor: selected === time ? PRIMARY : GLASS_BG, borderColor: selected === time ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
-                  setSelected(t); Haptics.selectionAsync();
-                  setCurr(c => ({ ...c, schoolStartTime: to24h(t) }));
-                  userReplies(t, "child-school-end", "And school ends at?");
+                  setSelected(time); Haptics.selectionAsync();
+                  setCurr(c => ({ ...c, schoolStartTime: to24h(time) }));
+                  userReplies(time, "child-school-end", t("screens.onboarding_chat.amy_school_end_q"));
                 }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{t}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{time}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -474,15 +485,15 @@ export default function OnboardingScreen() {
       case "child-school-end":
         return (
           <View style={styles.chipGrid}>
-            {SCHOOL_END.map(t => (
-              <TouchableOpacity key={t}
-                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : GLASS_BG, borderColor: selected === t ? PRIMARY : GLASS_BORDER }]}
+            {SCHOOL_END.map(time => (
+              <TouchableOpacity key={time}
+                style={[styles.chip, { backgroundColor: selected === time ? PRIMARY : GLASS_BG, borderColor: selected === time ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
-                  setSelected(t); Haptics.selectionAsync();
-                  setCurr(c => ({ ...c, schoolEndTime: to24h(t), schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
-                  userReplies(t, "child-school-days", `Which days does ${curr.name} have school?`);
+                  setSelected(time); Haptics.selectionAsync();
+                  setCurr(c => ({ ...c, schoolEndTime: to24h(time), schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
+                  userReplies(time, "child-school-days", t("screens.onboarding_chat.amy_school_days_q", { name: curr.name }));
                 }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{t}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{time}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -500,8 +511,8 @@ export default function OnboardingScreen() {
           });
         };
         const summarize = (days: number[]): string => {
-          if (days.length === 5 && days.every(d => d <= 5)) return "Mon–Fri";
-          if (days.length === 0) return "No school days";
+          if (days.length === 5 && days.every(d => d <= 5)) return t("screens.onboarding_chat.summary_mon_fri");
+          if (days.length === 0) return t("screens.onboarding_chat.summary_no_days");
           return days.map(d => labels[d - 1]).join(", ");
         };
         return (
@@ -524,9 +535,9 @@ export default function OnboardingScreen() {
               style={[styles.chip, { backgroundColor: PRIMARY, borderColor: PRIMARY, marginTop: 12, alignSelf: "stretch", alignItems: "center" }]}
               onPress={() => {
                 const days = curr.schoolDays ?? [1, 2, 3, 4, 5];
-                userReplies(summarize(days), "child-wake", `What time does ${curr.name} wake up?`);
+                userReplies(summarize(days), "child-wake", t("screens.onboarding_chat.amy_wake_q", { name: curr.name }));
               }}>
-              <Text style={[styles.chipText, { color: "#fff", fontWeight: "600" }]}>Continue</Text>
+              <Text style={[styles.chipText, { color: "#fff", fontWeight: "600" }]}>{t("screens.onboarding_chat.btn_continue")}</Text>
             </TouchableOpacity>
           </View>
         );
@@ -536,15 +547,15 @@ export default function OnboardingScreen() {
       case "child-wake":
         return (
           <View style={styles.chipGrid}>
-            {WAKE_OPTS.map(t => (
-              <TouchableOpacity key={t}
-                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : GLASS_BG, borderColor: selected === t ? PRIMARY : GLASS_BORDER }]}
+            {WAKE_OPTS.map(time => (
+              <TouchableOpacity key={time}
+                style={[styles.chip, { backgroundColor: selected === time ? PRIMARY : GLASS_BG, borderColor: selected === time ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
-                  setSelected(t); Haptics.selectionAsync();
-                  setCurr(c => ({ ...c, wakeUpTime: to24h(t) }));
-                  userReplies(t, "child-sleep", `And bedtime for ${curr.name}?`);
+                  setSelected(time); Haptics.selectionAsync();
+                  setCurr(c => ({ ...c, wakeUpTime: to24h(time) }));
+                  userReplies(time, "child-sleep", t("screens.onboarding_chat.amy_sleep_q", { name: curr.name }));
                 }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{t}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{time}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -553,15 +564,15 @@ export default function OnboardingScreen() {
       case "child-sleep":
         return (
           <View style={styles.chipGrid}>
-            {SLEEP_OPTS.map(t => (
-              <TouchableOpacity key={t}
-                style={[styles.chip, { backgroundColor: selected === t ? PRIMARY : GLASS_BG, borderColor: selected === t ? PRIMARY : GLASS_BORDER }]}
+            {SLEEP_OPTS.map(time => (
+              <TouchableOpacity key={time}
+                style={[styles.chip, { backgroundColor: selected === time ? PRIMARY : GLASS_BG, borderColor: selected === time ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
-                  setSelected(t); Haptics.selectionAsync();
-                  setCurr(c => ({ ...c, sleepTime: to24h(t) }));
-                  userReplies(t, "child-food", `What does ${curr.name} eat?`);
+                  setSelected(time); Haptics.selectionAsync();
+                  setCurr(c => ({ ...c, sleepTime: to24h(time) }));
+                  userReplies(time, "child-food", t("screens.onboarding_chat.amy_food_q", { name: curr.name }));
                 }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{t}</Text>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{time}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -569,9 +580,9 @@ export default function OnboardingScreen() {
 
       case "child-food": {
         const foodOpts: { label: string; value: "veg" | "nonveg" | "egg" }[] = [
-          { label: "Vegetarian", value: "veg" },
-          { label: "Non-Vegetarian", value: "nonveg" },
-          { label: "Eggetarian", value: "egg" },
+          { label: t("screens.onboarding_chat.food_veg"), value: "veg" },
+          { label: t("screens.onboarding_chat.food_nonveg"), value: "nonveg" },
+          { label: t("screens.onboarding_chat.food_egg"), value: "egg" },
         ];
         return (
           <View style={styles.chipGrid}>
@@ -583,7 +594,7 @@ export default function OnboardingScreen() {
                   const finishedChild = { ...curr, foodType: opt.value } as ChildData;
                   setChildren(cs => [...cs, finishedChild]);
                   setCurr({});
-                  userReplies(opt.label, "add-more", "Got it! Do you have another child to add?");
+                  userReplies(opt.label, "add-more", t("screens.onboarding_chat.amy_more_q"));
                 }}>
                 <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{opt.label}</Text>
               </TouchableOpacity>
@@ -592,24 +603,29 @@ export default function OnboardingScreen() {
         );
       }
 
-      case "add-more":
+      case "add-more": {
+        const addMoreOpts: { label: string; isYes: boolean }[] = [
+          { label: t("screens.onboarding_chat.yes_add"), isYes: true },
+          { label: t("screens.onboarding_chat.no_continue"), isYes: false },
+        ];
         return (
           <View style={styles.rowBtns}>
-            {["Yes, add another", "No, continue"].map(opt => (
-              <TouchableOpacity key={opt}
+            {addMoreOpts.map(opt => (
+              <TouchableOpacity key={opt.label}
                 style={[styles.optionBtn, { backgroundColor: GLASS_BG, borderColor: GLASS_BORDER }]}
                 onPress={() => {
-                  if (opt.startsWith("Yes")) {
-                    userReplies(opt, "child-name", "Great! What's the next child's name?");
+                  if (opt.isYes) {
+                    userReplies(opt.label, "child-name", t("screens.onboarding_chat.amy_next_child_q"));
                   } else {
-                    userReplies(opt, "parent-name", "Almost done! What's your name?");
+                    userReplies(opt.label, "parent-name", t("screens.onboarding_chat.amy_parent_name_q"));
                   }
                 }}>
-                <Text style={[styles.optionBtnText, { color: TEXT_ON_DARK }]}>{opt}</Text>
+                <Text style={[styles.optionBtnText, { color: TEXT_ON_DARK }]}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         );
+      }
 
       case "parent-name":
         return (
@@ -618,7 +634,7 @@ export default function OnboardingScreen() {
               style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
               value={textInput}
               onChangeText={setTextInput}
-              placeholder="Your name"
+              placeholder={t("screens.onboarding_chat.ph_your_name")}
               placeholderTextColor={TEXT_MUTED}
               autoFocus
               returnKeyType="send"
@@ -626,7 +642,7 @@ export default function OnboardingScreen() {
                 if (!textInput.trim()) return;
                 const name = textInput.trim();
                 setParent(p => ({ ...p, name }));
-                userReplies(name, "parent-role", `Nice to meet you, ${name}! What's your role?`);
+                userReplies(name, "parent-role", t("screens.onboarding_chat.amy_role_q", { name }));
               }}
             />
             <TouchableOpacity
@@ -635,7 +651,7 @@ export default function OnboardingScreen() {
                 if (!textInput.trim()) return;
                 const name = textInput.trim();
                 setParent(p => ({ ...p, name }));
-                userReplies(name, "parent-role", `Nice to meet you, ${name}! What's your role?`);
+                userReplies(name, "parent-role", t("screens.onboarding_chat.amy_role_q", { name }));
               }}
             >
               <Ionicons name="arrow-forward" size={20} color="#fff" />
@@ -646,51 +662,60 @@ export default function OnboardingScreen() {
       case "parent-role":
         return (
           <View style={styles.chipGrid}>
-            {ROLES.map(r => (
-              <TouchableOpacity key={r}
-                style={[styles.chip, { backgroundColor: selected === r ? PRIMARY : GLASS_BG, borderColor: selected === r ? PRIMARY : GLASS_BORDER }]}
-                onPress={() => {
-                  setSelected(r); Haptics.selectionAsync();
-                  setParent(p => ({ ...p, role: r }));
-                  userReplies(r, "parent-work", "And your work situation?");
-                }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{r}</Text>
-              </TouchableOpacity>
-            ))}
+            {ROLE_KEYS.map(r => {
+              const label = t(`screens.onboarding_chat.${r.key}`);
+              return (
+                <TouchableOpacity key={r.value}
+                  style={[styles.chip, { backgroundColor: selected === r.value ? PRIMARY : GLASS_BG, borderColor: selected === r.value ? PRIMARY : GLASS_BORDER }]}
+                  onPress={() => {
+                    setSelected(r.value); Haptics.selectionAsync();
+                    setParent(p => ({ ...p, role: r.value }));
+                    userReplies(label, "parent-work", t("screens.onboarding_chat.amy_work_q"));
+                  }}>
+                  <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         );
 
       case "parent-work":
         return (
           <View style={styles.chipGrid}>
-            {WORK_TYPES.map(wt => (
-              <TouchableOpacity key={wt.value}
-                style={[styles.chip, { backgroundColor: selected === wt.value ? PRIMARY : GLASS_BG, borderColor: selected === wt.value ? PRIMARY : GLASS_BORDER }]}
-                onPress={() => {
-                  setSelected(wt.value); Haptics.selectionAsync();
-                  setParent(p => ({ ...p, workType: wt.value }));
-                  userReplies(wt.label, "parent-region", "Which regional cuisine should Amy plan meals from? 🍛");
-                }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{wt.label}</Text>
-              </TouchableOpacity>
-            ))}
+            {WORK_TYPE_KEYS.map(wt => {
+              const label = t(`screens.onboarding_chat.${wt.key}`);
+              return (
+                <TouchableOpacity key={wt.value}
+                  style={[styles.chip, { backgroundColor: selected === wt.value ? PRIMARY : GLASS_BG, borderColor: selected === wt.value ? PRIMARY : GLASS_BORDER }]}
+                  onPress={() => {
+                    setSelected(wt.value); Haptics.selectionAsync();
+                    setParent(p => ({ ...p, workType: wt.value }));
+                    userReplies(label, "parent-region", t("screens.onboarding_chat.amy_region_q"));
+                  }}>
+                  <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         );
 
       case "parent-region":
         return (
           <View style={styles.chipGrid}>
-            {REGION_OPTS.map(opt => (
-              <TouchableOpacity key={opt.value}
-                style={[styles.chip, { backgroundColor: selected === opt.value ? PRIMARY : GLASS_BG, borderColor: selected === opt.value ? PRIMARY : GLASS_BORDER }]}
-                onPress={() => {
-                  setSelected(opt.value); Haptics.selectionAsync();
-                  setParent(p => ({ ...p, region: opt.value }));
-                  userReplies(opt.label, "parent-mobile", "📱 What's your mobile number for reminders? (You can skip this.)");
-                }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
+            {REGION_KEYS.map(opt => {
+              const label = t(`screens.onboarding_chat.${opt.key}`);
+              return (
+                <TouchableOpacity key={opt.value}
+                  style={[styles.chip, { backgroundColor: selected === opt.value ? PRIMARY : GLASS_BG, borderColor: selected === opt.value ? PRIMARY : GLASS_BORDER }]}
+                  onPress={() => {
+                    setSelected(opt.value); Haptics.selectionAsync();
+                    setParent(p => ({ ...p, region: opt.value }));
+                    userReplies(label, "parent-mobile", t("screens.onboarding_chat.amy_mobile_q"));
+                  }}>
+                  <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         );
 
@@ -702,7 +727,7 @@ export default function OnboardingScreen() {
                 style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
                 value={textInput}
                 onChangeText={setTextInput}
-                placeholder="+91 98765 43210"
+                placeholder={t("screens.onboarding_chat.ph_mobile")}
                 placeholderTextColor={TEXT_MUTED}
                 keyboardType="phone-pad"
                 autoFocus
@@ -711,7 +736,7 @@ export default function OnboardingScreen() {
                   const m = textInput.trim();
                   if (!m) return;
                   setParent(p => ({ ...p, mobileNumber: m }));
-                  userReplies(m, "parent-allergies", "🌾 Any food allergies to avoid in meal plans? (Skip if none.)");
+                  userReplies(m, "parent-allergies", t("screens.onboarding_chat.amy_allergies_q"));
                 }}
               />
               <TouchableOpacity
@@ -720,15 +745,15 @@ export default function OnboardingScreen() {
                   const m = textInput.trim();
                   if (!m) return;
                   setParent(p => ({ ...p, mobileNumber: m }));
-                  userReplies(m, "parent-allergies", "🌾 Any food allergies to avoid in meal plans? (Skip if none.)");
+                  userReplies(m, "parent-allergies", t("screens.onboarding_chat.amy_allergies_q"));
                 }}>
                 <Ionicons name="arrow-forward" size={18} color="#fff" />
               </TouchableOpacity>
             </View>
             <TouchableOpacity
-              onPress={() => userReplies("Skip — I'll add it later", "parent-allergies", "🌾 Any food allergies to avoid in meal plans? (Skip if none.)")}
+              onPress={() => userReplies(t("screens.onboarding_chat.skip_mobile"), "parent-allergies", t("screens.onboarding_chat.amy_allergies_q"))}
               style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12 }}>
-              <Text style={{ fontSize: 13, color: TEXT_MUTED }}>Skip — I'll add it later</Text>
+              <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{t("screens.onboarding_chat.skip_mobile")}</Text>
             </TouchableOpacity>
           </View>
         );
@@ -741,7 +766,7 @@ export default function OnboardingScreen() {
                 style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
                 value={textInput}
                 onChangeText={setTextInput}
-                placeholder="e.g. peanuts, dairy, shellfish..."
+                placeholder={t("screens.onboarding_chat.ph_allergies")}
                 placeholderTextColor={TEXT_MUTED}
                 autoFocus
                 returnKeyType="send"
@@ -770,11 +795,11 @@ export default function OnboardingScreen() {
             <TouchableOpacity
               onPress={() => {
                 const updatedParent = { ...parent } as ParentData;
-                userReplies("Skip — no allergies", "saving");
+                userReplies(t("screens.onboarding_chat.skip_allergies"), "saving");
                 setTimeout(() => saveEverything(updatedParent, children), 800);
               }}
               style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12 }}>
-              <Text style={{ fontSize: 13, color: TEXT_MUTED }}>Skip — no allergies</Text>
+              <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{t("screens.onboarding_chat.skip_allergies")}</Text>
             </TouchableOpacity>
           </View>
         );
@@ -808,7 +833,7 @@ export default function OnboardingScreen() {
           />
           <View>
             <Text style={styles.amyName}>Amy</Text>
-            <Text style={styles.amyStatus}>Parenting Coach</Text>
+            <Text style={styles.amyStatus}>{t("screens.onboarding_chat.amy_status")}</Text>
           </View>
         </View>
       </View>

@@ -21,6 +21,7 @@ import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, palette } from "@/constants/colors";
 import { useReferrals, type GiftToken } from "@/hooks/useReferrals";
+import { useTranslation } from "react-i18next";
 
 const SHARE_BASE = "https://amynest.ai";
 
@@ -39,18 +40,19 @@ function daysLeft(iso: string | null): number | null {
 
 function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy: (code: string) => void; copiedCode: string | null }) {
   const colors = useColors();
+  const { t } = useTranslation();
   const isAvailable = token.status === "available";
   const expDays = daysLeft(token.expiresAt);
 
   const shareGift = async () => {
-    const message = `I'm gifting you ${token.bonusDays} days of Amy AI premium! Use code: ${token.giftCode}`;
+    const message = t("screens.referrals.share_msg_premium", { days: token.bonusDays, code: token.giftCode });
     try {
-      await Share.share({ message, title: "Amy AI Gift" });
+      await Share.share({ message, title: t("screens.referrals.share_title_gift") });
     } catch { /* ignore */ }
   };
 
   const whatsappGift = async () => {
-    const text = `I'm gifting you ${token.bonusDays} days of Amy AI premium! Use code: ${token.giftCode}`;
+    const text = t("screens.referrals.share_msg_premium", { days: token.bonusDays, code: token.giftCode });
     const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
     try {
       const can = await Linking.canOpenURL(url);
@@ -74,7 +76,7 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Ionicons name="ticket" size={15} color={isAvailable ? brand.violet600 : colors.textMuted} />
           <Text style={[styles.giftItemTitle, { color: colors.text }]}>
-            {token.bonusDays} days free premium
+            {t("screens.referrals.gift_days_free", { days: token.bonusDays })}
           </Text>
         </View>
         <View
@@ -98,7 +100,13 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
               },
             ]}
           >
-            {token.status.toUpperCase()}
+            {token.status === "available"
+              ? t("screens.referrals.status_available")
+              : token.status === "redeemed"
+              ? t("screens.referrals.status_redeemed")
+              : token.status === "expired"
+              ? t("screens.referrals.status_expired")
+              : t("screens.referrals.status_used")}
           </Text>
         </View>
       </View>
@@ -121,7 +129,7 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
               color={copiedCode === token.giftCode ? palette.green500 : colors.text}
             />
             <Text style={[styles.smallBtnText, { color: colors.text }]}>
-              {copiedCode === token.giftCode ? "Copied" : "Copy"}
+              {copiedCode === token.giftCode ? t("screens.referrals.copied") : t("screens.referrals.copy")}
             </Text>
           </TouchableOpacity>
         )}
@@ -134,26 +142,26 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
             style={[styles.shareBtn, { backgroundColor: "rgba(124,58,237,0.1)", borderColor: "rgba(124,58,237,0.3)" }]}
           >
             <Ionicons name="share-social" size={15} color={brand.violet600} />
-            <Text style={[styles.shareBtnText, { color: brand.violet600 }]}>Share gift</Text>
+            <Text style={[styles.shareBtnText, { color: brand.violet600 }]}>{t("screens.referrals.share_gift")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={whatsappGift}
             style={[styles.shareBtn, { backgroundColor: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.3)" }]}
           >
             <Ionicons name="logo-whatsapp" size={15} color={palette.green600} />
-            <Text style={[styles.shareBtnText, { color: palette.green600 }]}>WhatsApp</Text>
+            <Text style={[styles.shareBtnText, { color: palette.green600 }]}>{t("screens.referrals.whatsapp")}</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {isAvailable && expDays !== null && (
         <Text style={[styles.fineprint, { color: colors.textMuted, marginTop: 4 }]}>
-          Expires in {expDays} day{expDays === 1 ? "" : "s"}
+          {t(expDays === 1 ? "screens.referrals.expires_in_one" : "screens.referrals.expires_in_other", { n: expDays })}
         </Text>
       )}
       {token.status === "redeemed" && token.redeemedAt && (
         <Text style={[styles.fineprint, { color: colors.textMuted, marginTop: 4 }]}>
-          Redeemed on {new Date(token.redeemedAt).toLocaleDateString()}
+          {t("screens.referrals.redeemed_on", { date: new Date(token.redeemedAt).toLocaleDateString() })}
         </Text>
       )}
     </View>
@@ -164,6 +172,7 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
 
 function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bonusDays: number }> }) {
   const colors = useColors();
+  const { t } = useTranslation();
   const [code, setCode] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -182,13 +191,13 @@ function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bo
     } catch (err: any) {
       const reason = err?.message ?? "unknown_error";
       const messages: Record<string, string> = {
-        not_found: "Gift code not found. Check and try again.",
-        already_redeemed: "This gift has already been claimed.",
-        expired: "This gift code has expired.",
-        self_redeem: "You can't redeem your own gift code!",
-        server_error: "Something went wrong. Please try again.",
+        not_found: t("screens.referrals.err_not_found"),
+        already_redeemed: t("screens.referrals.err_already_redeemed"),
+        expired: t("screens.referrals.err_expired"),
+        self_redeem: t("screens.referrals.err_self_redeem"),
+        server_error: t("screens.referrals.err_server"),
       };
-      setErrorMsg(messages[reason] ?? "Invalid gift code.");
+      setErrorMsg(messages[reason] ?? t("screens.referrals.err_invalid"));
       setState("error");
     }
   };
@@ -197,17 +206,19 @@ function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bo
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
         <Ionicons name="gift" size={18} color={palette.amber500} />
-        <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 0 }]}>Redeem a Gift Code</Text>
+        <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 0 }]}>{t("screens.referrals.redeem_card_title")}</Text>
       </View>
       <Text style={[styles.fineprint, { color: colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 }]}>
-        Received a gift code from a friend? Enter it here to claim free premium days.
+        {t("screens.referrals.redeem_card_desc")}
       </Text>
 
       {state === "success" ? (
         <View style={[styles.notice, { backgroundColor: "rgba(16,185,129,0.12)", borderColor: "rgba(16,185,129,0.4)" }]}>
           <Ionicons name="checkmark-circle" size={18} color={palette.emerald700} />
           <Text style={{ color: palette.emerald700, fontSize: 13, flex: 1, fontWeight: "700" }}>
-            🎉 Gift redeemed! {bonusDays > 0 ? `+${bonusDays} days of premium added.` : "Premium days added!"}
+            {bonusDays > 0
+              ? t("screens.referrals.redeem_success", { days: bonusDays })
+              : t("screens.referrals.redeem_success_no_days")}
           </Text>
         </View>
       ) : (
@@ -218,7 +229,7 @@ function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bo
               setCode(v.toUpperCase());
               if (state === "error") setState("idle");
             }}
-            placeholder="GIFT-XXXXXXX"
+            placeholder={t("screens.referrals.redeem_ph")}
             placeholderTextColor={colors.textMuted}
             style={[
               styles.redeemInput,
@@ -261,6 +272,7 @@ function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bo
 export default function ReferralsScreen() {
   const colors = useColors();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { payload, isLoading, redeemGift } = useReferrals();
   const [copiedKind, setCopiedKind] = useState<string | null>(null);
@@ -280,15 +292,15 @@ export default function ReferralsScreen() {
 
   const onShare = async () => {
     if (!stats) return;
-    const message = `I'm using Amy AI for parenting — try it with my code ${stats.code} and we both get premium! ${link}`;
+    const message = t("screens.referrals.share_invite_msg", { code: stats.code, link });
     try {
-      await Share.share({ message, url: link, title: "Try Amy AI" });
+      await Share.share({ message, url: link, title: t("screens.referrals.share_invite_title") });
     } catch { /* ignore */ }
   };
 
   const onWhatsApp = async () => {
     if (!stats) return;
-    const text = `Try Amy AI with my code ${stats.code} — we both get premium! ${link}`;
+    const text = t("screens.referrals.share_invite_msg_short", { code: stats.code, link });
     const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
     try {
       const can = await Linking.canOpenURL(url);
@@ -308,7 +320,7 @@ export default function ReferralsScreen() {
       <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       <Stack.Screen
         options={{
-          title: "Invite & Earn",
+          title: t("screens.referrals.screen_title"),
           headerStyle: { backgroundColor: "#0f0c29" }, // audit-ok: intentional dark bg / custom color
           headerTintColor: colors.foreground,
         }}
@@ -327,7 +339,7 @@ export default function ReferralsScreen() {
           <View style={styles.loading}>
             <ActivityIndicator color={colors.primary} />
             <Text style={{ color: colors.textMuted, marginTop: 8 }}>
-              Loading your referrals…
+              {t("screens.referrals.loading")}
             </Text>
           </View>
         ) : (
@@ -336,7 +348,7 @@ export default function ReferralsScreen() {
 
             {/* Referral code card */}
             <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Your referral code</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>{t("screens.referrals.your_code_title")}</Text>
               <View
                 style={[
                   styles.codeBox,
@@ -354,14 +366,14 @@ export default function ReferralsScreen() {
                     color={copiedKind === stats!.code ? palette.green500 : colors.text}
                   />
                   <Text style={[styles.smallBtnText, { color: colors.text }]}>
-                    {copiedKind === stats!.code ? "Copied" : "Copy"}
+                    {copiedKind === stats!.code ? t("screens.referrals.copied") : t("screens.referrals.copy")}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <TouchableOpacity onPress={onShare} style={[styles.primaryBtn, { backgroundColor: colors.primary }]}>
                 <Ionicons name="share-social" size={18} color="#fff" />
-                <Text style={styles.primaryBtnText}>Share invite</Text>
+                <Text style={styles.primaryBtnText}>{t("screens.referrals.share_invite")}</Text>
               </TouchableOpacity>
 
               <View style={styles.shareRow}>
@@ -370,7 +382,7 @@ export default function ReferralsScreen() {
                   style={[styles.shareBtn, { backgroundColor: "#22C55E15", borderColor: "#22C55E55" }]}
                 >
                   <Ionicons name="logo-whatsapp" size={18} color={palette.green600} />
-                  <Text style={[styles.shareBtnText, { color: palette.green600 }]}>WhatsApp</Text>
+                  <Text style={[styles.shareBtnText, { color: palette.green600 }]}>{t("screens.referrals.whatsapp")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => onCopy(link)}
@@ -378,7 +390,7 @@ export default function ReferralsScreen() {
                 >
                   <Ionicons name="link" size={18} color={colors.text} />
                   <Text style={[styles.shareBtnText, { color: colors.text }]}>
-                    {copiedKind === link ? "Copied!" : "Copy link"}
+                    {copiedKind === link ? t("screens.referrals.copied_link") : t("screens.referrals.copy_link")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -395,7 +407,7 @@ export default function ReferralsScreen() {
                 <View style={styles.cardHeader}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <Ionicons name="ticket" size={18} color={brand.violet600} />
-                    <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 0 }]}>Your Gift Tokens</Text>
+                    <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 0 }]}>{t("screens.referrals.gift_tokens_title")}</Text>
                   </View>
                   <View
                     style={[
@@ -404,16 +416,16 @@ export default function ReferralsScreen() {
                     ]}
                   >
                     <Text style={[styles.countPillText, { color: brand.violet600 }]}>
-                      {availableGifts.length} available
+                      {t("screens.referrals.available_count", { count: availableGifts.length })}
                     </Text>
                   </View>
                 </View>
                 <Text style={[styles.fineprint, { color: colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 12 }]}>
-                  You're premium — so your referral rewards are gift tokens to share with friends!
+                  {t("screens.referrals.premium_gift_intro")}
                 </Text>
-                {giftTokens.map((t) => (
-                  <View key={t.id} style={{ marginBottom: t.id !== giftTokens[giftTokens.length - 1].id ? 10 : 0 }}>
-                    <GiftTokenItem token={t} onCopy={onCopy} copiedCode={copiedKind} />
+                {giftTokens.map((gt) => (
+                  <View key={gt.id} style={{ marginBottom: gt.id !== giftTokens[giftTokens.length - 1].id ? 10 : 0 }}>
+                    <GiftTokenItem token={gt} onCopy={onCopy} copiedCode={copiedKind} />
                   </View>
                 ))}
               </View>
@@ -426,12 +438,12 @@ export default function ReferralsScreen() {
 
             {/* Referral rows */}
             <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Your referrals</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>{t("screens.referrals.your_referrals_title")}</Text>
               {referrals.length === 0 ? (
                 <View style={[styles.empty, { borderColor: colors.border }]}>
                   <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
                   <Text style={{ color: colors.textMuted, marginTop: 6, textAlign: "center" }}>
-                    No referrals yet. Share your code to get started!
+                    {t("screens.referrals.no_referrals")}
                   </Text>
                 </View>
               ) : (
@@ -450,7 +462,7 @@ export default function ReferralsScreen() {
                           },
                         ]}
                       />
-                      <Text style={[styles.referralName, { color: colors.text }]}>Friend #{r.id}</Text>
+                      <Text style={[styles.referralName, { color: colors.text }]}>{t("screens.referrals.friend_n", { id: r.id })}</Text>
                     </View>
                     <View
                       style={[
@@ -472,7 +484,11 @@ export default function ReferralsScreen() {
                           },
                         ]}
                       >
-                        {r.status === "paid" ? "PAID" : r.status === "valid" ? "ACTIVE" : "PENDING"}
+                        {r.status === "paid"
+                          ? t("screens.referrals.status_paid")
+                          : r.status === "valid"
+                          ? t("screens.referrals.status_active")
+                          : t("screens.referrals.status_pending")}
                       </Text>
                     </View>
                   </View>
@@ -482,13 +498,21 @@ export default function ReferralsScreen() {
 
             <View style={{ paddingHorizontal: 4, gap: 6 }}>
               <Text style={[styles.fineprint, { color: colors.textMuted }]}>
-                <Text style={{ fontWeight: "700" }}>How it works:</Text>{" "}
+                <Text style={{ fontWeight: "700" }}>{t("screens.referrals.how_it_works")}</Text>{" "}
                 {stats!.isPremium
-                  ? `As a premium member, earn a gift token (worth ${stats!.rewardDays} days of free premium for a friend) when ${stats!.validThreshold} friends sign up with your code AND at least ${stats!.paidThreshold} of them buys a paid plan.`
-                  : `Earn ${stats!.rewardDays} days of free premium when ${stats!.validThreshold} friends sign up using your code AND at least ${stats!.paidThreshold} of them buys any paid plan.`}
+                  ? t("screens.referrals.how_it_works_premium", {
+                      rewardDays: stats!.rewardDays,
+                      validThreshold: stats!.validThreshold,
+                      paidThreshold: stats!.paidThreshold,
+                    })
+                  : t("screens.referrals.how_it_works_free", {
+                      rewardDays: stats!.rewardDays,
+                      validThreshold: stats!.validThreshold,
+                      paidThreshold: stats!.paidThreshold,
+                    })}
               </Text>
               <Text style={[styles.fineprint, { color: colors.textMuted }]}>
-                Rewards are capped at {stats!.rewardCap} milestones lifetime.
+                {t("screens.referrals.rewards_capped", { cap: stats!.rewardCap })}
               </Text>
             </View>
           </>
@@ -507,22 +531,57 @@ function HeroCard({
   stats: NonNullable<ReturnType<typeof useReferrals>["payload"]>["stats"];
   availableGifts: number;
 }) {
+  const { t } = useTranslation();
   const validShort = Math.max(0, stats.validThreshold - stats.validReferrals);
   const paidShort = Math.max(0, stats.paidThreshold - stats.paidReferrals);
   const capReached = stats.rewardsGranted >= stats.rewardCap;
   const bonusDays = daysLeft(stats.bonusExpiresAt);
 
-  const message = capReached
-    ? "Maxed out — you've earned the lifetime referral cap. Thank you for spreading Amy! 🎉"
-    : stats.rewardsAvailable > 0
-    ? stats.isPremium
-      ? `🎁 You have ${availableGifts} gift token${availableGifts === 1 ? "" : "s"} to share!`
-      : `🎉 You unlocked ${stats.rewardsAvailable * stats.rewardDays} days of premium!`
-    : validShort === 0 && paidShort === 0
-    ? "Almost there — your reward is being processed."
-    : `Invite ${validShort > 0 ? `${validShort} more friend${validShort > 1 ? "s" : ""}` : ""}${
-        validShort > 0 && paidShort > 0 ? " + " : ""
-      }${paidShort > 0 ? `${paidShort} paid user` : ""} to unlock ${stats.rewardDays} ${stats.isPremium ? "gift tokens" : "days free"}.`;
+  let message: string;
+  if (capReached) {
+    message = t("screens.referrals.msg_maxed");
+  } else if (stats.rewardsAvailable > 0) {
+    if (stats.isPremium) {
+      message = t(
+        availableGifts === 1
+          ? "screens.referrals.msg_premium_unlocked_one"
+          : "screens.referrals.msg_premium_unlocked_other",
+        { count: availableGifts },
+      );
+    } else {
+      message = t("screens.referrals.msg_unlocked", { days: stats.rewardsAvailable * stats.rewardDays });
+    }
+  } else if (validShort === 0 && paidShort === 0) {
+    message = t("screens.referrals.msg_processing");
+  } else {
+    const friends = validShort > 0
+      ? t(
+          validShort === 1
+            ? "screens.referrals.msg_invite_friends_one"
+            : "screens.referrals.msg_invite_friends_other",
+          { n: validShort },
+        )
+      : "";
+    const paid = paidShort > 0
+      ? t(
+          paidShort === 1
+            ? "screens.referrals.msg_invite_paid_one"
+            : "screens.referrals.msg_invite_paid_other",
+          { n: paidShort },
+        )
+      : "";
+    const plus = validShort > 0 && paidShort > 0 ? " + " : "";
+    const kind = stats.isPremium
+      ? t("screens.referrals.kind_gift_tokens")
+      : t("screens.referrals.kind_days_free");
+    message = t("screens.referrals.msg_invite_combined", {
+      friends,
+      plus,
+      paid,
+      days: stats.rewardDays,
+      kind,
+    });
+  }
 
   return (
     <LinearGradient
@@ -533,19 +592,24 @@ function HeroCard({
     >
       <View style={styles.heroBadge}>
         <Ionicons name="gift" size={12} color="#fff" />
-        <Text style={styles.heroBadgeText}>INVITE & EARN</Text>
+        <Text style={styles.heroBadgeText}>{t("screens.referrals.hero_badge")}</Text>
       </View>
       <Text style={styles.heroTitle}>
         {stats.isPremium
-          ? `Gift ${stats.rewardDays} days premium to friends 🎁`
-          : `Get ${stats.rewardDays} days free for every ${stats.validThreshold} friends 🎁`}
+          ? t("screens.referrals.hero_title_premium", { days: stats.rewardDays })
+          : t("screens.referrals.hero_title_free", { days: stats.rewardDays, friends: stats.validThreshold })}
       </Text>
       <Text style={styles.heroSubtitle}>{message}</Text>
       {!stats.isPremium && bonusDays !== null && bonusDays > 0 && (
         <View style={styles.bonusPill}>
           <Ionicons name="calendar" size={12} color="#fff" />
           <Text style={styles.bonusPillText}>
-            {bonusDays} bonus day{bonusDays === 1 ? "" : "s"} active
+            {t(
+              bonusDays === 1
+                ? "screens.referrals.bonus_days_one"
+                : "screens.referrals.bonus_days_other",
+              { n: bonusDays },
+            )}
           </Text>
         </View>
       )}
@@ -553,7 +617,12 @@ function HeroCard({
         <View style={styles.bonusPill}>
           <Ionicons name="ticket" size={12} color="#fff" />
           <Text style={styles.bonusPillText}>
-            {availableGifts} gift{availableGifts === 1 ? "" : "s"} ready to share
+            {t(
+              availableGifts === 1
+                ? "screens.referrals.gifts_ready_one"
+                : "screens.referrals.gifts_ready_other",
+              { n: availableGifts },
+            )}
           </Text>
         </View>
       )}
@@ -563,6 +632,7 @@ function HeroCard({
 
 function ProgressCard({ stats }: { stats: NonNullable<ReturnType<typeof useReferrals>["payload"]>["stats"] }) {
   const colors = useColors();
+  const { t } = useTranslation();
   const validPct = Math.min(100, (stats.validReferrals / stats.validThreshold) * 100);
   const paidPct = Math.min(100, (stats.paidReferrals / stats.paidThreshold) * 100);
   const rewardsLeft = Math.max(0, stats.rewardCap - stats.rewardsGranted);
@@ -573,26 +643,26 @@ function ProgressCard({ stats }: { stats: NonNullable<ReturnType<typeof useRefer
       <View style={styles.cardHeader}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Ionicons name="trophy" size={18} color={palette.amber500} />
-          <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 0 }]}>Progress</Text>
+          <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 0 }]}>{t("screens.referrals.progress_title")}</Text>
         </View>
         <View style={[styles.countPill, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
           <Text style={[styles.countPillText, { color: colors.text }]}>
-            {stats.rewardsGranted} / {stats.rewardCap} rewards
+            {t("screens.referrals.rewards_count", { granted: stats.rewardsGranted, cap: stats.rewardCap })}
           </Text>
         </View>
       </View>
 
       <ProgressBar
-        label="Friends invited"
-        sub="Friends who signed up & used Amy AI"
+        label={t("screens.referrals.friends_invited")}
+        sub={t("screens.referrals.friends_sub")}
         value={`${stats.validReferrals} / ${stats.validThreshold}`}
         pct={validPct}
         color={brand.violet600}
       />
       <View style={{ height: 14 }} />
       <ProgressBar
-        label="Paid sign-ups"
-        sub="At least 1 must purchase a paid plan"
+        label={t("screens.referrals.paid_signups")}
+        sub={t("screens.referrals.paid_sub")}
         value={`${stats.paidReferrals} / ${stats.paidThreshold}`}
         pct={paidPct}
         color={palette.green500}
@@ -602,17 +672,22 @@ function ProgressCard({ stats }: { stats: NonNullable<ReturnType<typeof useRefer
         <View style={[styles.notice, { backgroundColor: "#F59E0B15", borderColor: "#F59E0B55" }]}>
           <Ionicons name="sparkles" size={16} color={palette.amber700} />
           <Text style={{ color: palette.amber700, fontSize: 13, flex: 1 }}>
-            You've earned the maximum {stats.rewardCap} referral rewards. Thank you!
+            {t("screens.referrals.max_rewards", { cap: stats.rewardCap })}
           </Text>
         </View>
       ) : (
         <View style={[styles.notice, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
           <Text style={{ color: colors.text, fontSize: 13 }}>
-            <Text style={{ fontWeight: "700" }}>{rewardsLeft}</Text> more reward
-            {rewardsLeft === 1 ? "" : "s"} available —{" "}
             {stats.isPremium
-              ? `earn ${rewardsLeft} more gift token${rewardsLeft === 1 ? "" : "s"} to share.`
-              : `up to ${rewardsLeft * stats.rewardDays} days of free premium.`}
+              ? t("screens.referrals.more_rewards_premium", {
+                  n: rewardsLeft,
+                  plural: rewardsLeft === 1 ? "" : "s",
+                })
+              : t("screens.referrals.more_rewards_free", {
+                  n: rewardsLeft,
+                  days: rewardsLeft * stats.rewardDays,
+                  plural: rewardsLeft === 1 ? "" : "s",
+                })}
           </Text>
         </View>
       )}

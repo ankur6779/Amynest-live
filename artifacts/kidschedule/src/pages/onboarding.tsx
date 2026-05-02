@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useUser } from "@/lib/firebase-auth-hooks";
@@ -76,7 +77,8 @@ const WAKE_OPTS = ["5:30 AM", "6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 
 const SLEEP_OPTS = ["8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM"];
 const SCHOOL_START_OPTS = ["7:00 AM", "7:30 AM", "8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM"];
 const SCHOOL_END_OPTS = ["12:00 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "4:00 PM"];
-const CLASSES = ["Nursery", "LKG / KG", "UKG", "1st", "2nd", "3rd", "4th", "5th", "6th+"];
+const CLASS_KEYS = ["class_nursery", "class_lkg", "class_ukg", "class_1", "class_2", "class_3", "class_4", "class_5", "class_6plus"];
+const CLASS_VALUES = ["Nursery", "LKG / KG", "UKG", "1st", "2nd", "3rd", "4th", "5th", "6th+"];
 const ROLES = ["Mother", "Father", "Both", "Grandparent"];
 const WORK_TYPES = [
   { label: "Work from Home", value: "work_from_home" },
@@ -212,6 +214,7 @@ function GridChips({ options, selected, onSelect }: { options: string[]; selecte
 }
 
 function ProgressBar({ step }: { step: Step }) {
+  const { t } = useTranslation();
   // Infant path is short; standard path is longer. Both share the parent section.
   const infantOrder: Step[] = [
     "child-name", "child-dob", "infant-feeding", "infant-sleep",
@@ -232,7 +235,7 @@ function ProgressBar({ step }: { step: Step }) {
   return (
     <div className="px-4 pt-4 pb-2">
       <div className="flex justify-between text-xs mb-1.5">
-        <span className="font-semibold text-indigo-500">Amy Setup</span>
+        <span className="font-semibold text-indigo-500">{t("screens.onboarding.amy_setup")}</span>
         <span className="text-indigo-300">{Math.min(pct, 100)}%</span>
       </div>
       <div className="w-full h-1.5 rounded-full" style={{ background: "rgba(99,102,241,0.12)" }}>
@@ -244,6 +247,7 @@ function ProgressBar({ step }: { step: Step }) {
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function OnboardingPage() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { user } = useUser();
   const authFetch = useAuthFetch();
@@ -293,13 +297,13 @@ export default function OnboardingPage() {
   // Boot: Amy intro
   useEffect(() => {
     if (step === "intro") {
-      const firstName = user?.firstName || "there";
+      const firstName = user?.firstName || t("screens.onboarding.intro_default_name");
       setTimeout(() => {
         setMessages([{
           role: "amy",
-          text: `Hi ${firstName}! 👋 I'm Amy, your parenting coach. Let me quickly set up your profile — it'll take about 2 minutes!`,
+          text: t("screens.onboarding.intro_greeting", { name: firstName }),
         }]);
-        setTimeout(() => amySays("Let's start with your child. What's your child's name?", 800), 900);
+        setTimeout(() => amySays(t("screens.onboarding.intro_start"), 800), 900);
         setTimeout(() => setStep("child-name"), 2400);
       }, 600);
     }
@@ -308,7 +312,7 @@ export default function OnboardingPage() {
   // ─── Save & finish ──────────────────────────────────────────────────────────
   async function saveEverything() {
     setStep("saving");
-    setMessages((m) => [...m, { role: "amy", text: "Perfect! Saving your profile now... 💾" }]);
+    setMessages((m) => [...m, { role: "amy", text: t("screens.onboarding.saving_message") }]);
 
     try {
       // Save all children sequentially. isOnboarding=true bypasses the
@@ -400,10 +404,10 @@ export default function OnboardingPage() {
 
         <div className="text-center">
           <h2 className="text-xl font-extrabold text-indigo-900 mb-2">
-            Stay on Track with Reminders
+            {t("screens.onboarding.notif_title")}
           </h2>
           <p className="text-sm text-indigo-500 leading-relaxed max-w-xs mx-auto">
-            Amy can remind you about routines, bedtime, and meals — right on time, every day.
+            {t("screens.onboarding.notif_subtitle")}
           </p>
         </div>
 
@@ -412,9 +416,9 @@ export default function OnboardingPage() {
           style={{ background: "rgba(255,255,255,0.9)", border: "1px solid rgba(99,102,241,0.15)" }}
         >
           {[
-            { emoji: "⏰", text: "Routine reminders so nothing gets missed" },
-            { emoji: "🌙", text: "Bedtime alerts for a calm night routine" },
-            { emoji: "🍎", text: "Meal time nudges for your child" },
+            { emoji: "⏰", text: t("screens.onboarding.notif_benefit_routines") },
+            { emoji: "🌙", text: t("screens.onboarding.notif_benefit_bedtime") },
+            { emoji: "🍎", text: t("screens.onboarding.notif_benefit_meals") },
           ].map(({ emoji, text }) => (
             <div key={text} className="flex items-center gap-3 py-2">
               <span style={{ fontSize: 18 }}>{emoji}</span>
@@ -438,7 +442,7 @@ export default function OnboardingPage() {
               opacity: notifLoading ? 0.7 : 1,
             }}
           >
-            {notifLoading ? "Enabling…" : "Allow Notifications 🔔"}
+            {notifLoading ? t("screens.onboarding.notif_enabling") : t("screens.onboarding.notif_allow")}
           </button>
 
           <button
@@ -446,7 +450,7 @@ export default function OnboardingPage() {
             className="w-full py-3 text-sm font-semibold"
             style={{ color: "#6366F1", background: "none", border: "none", cursor: "pointer" }}
           >
-            Maybe later — Go to Dashboard
+            {t("screens.onboarding.notif_skip")}
           </button>
         </div>
       </div>
@@ -455,7 +459,7 @@ export default function OnboardingPage() {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   if (step === "saving" || step === "done") {
-    const childName = children[0]?.name || "your child";
+    const childName = children[0]?.name || t("screens.onboarding.default_child_name");
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-6 px-5" style={{ background: BG }}>
         {step === "saving" ? (
@@ -467,8 +471,8 @@ export default function OnboardingPage() {
               <span className="text-4xl">🧠</span>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-indigo-900">Amy is setting up</p>
-              <p className="text-indigo-600 font-bold text-2xl mt-1">your profile...</p>
+              <p className="text-xl font-bold text-indigo-900">{t("screens.onboarding.saving_title")}</p>
+              <p className="text-indigo-600 font-bold text-2xl mt-1">{t("screens.onboarding.saving_subtitle")}</p>
             </div>
             <div className="flex gap-2">
               {[0, 1, 2].map((i) => (
@@ -480,8 +484,8 @@ export default function OnboardingPage() {
           <div className="flex flex-col items-center gap-5 w-full max-w-sm" style={{ animation: "splash-in 0.5s ease-out" }}>
             <div className="text-6xl">🎉</div>
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-indigo-900">Profile ready!</h2>
-              <p className="text-indigo-400 mt-1">All set for {childName}</p>
+              <h2 className="text-2xl font-bold text-indigo-900">{t("screens.onboarding.done_title")}</h2>
+              <p className="text-indigo-400 mt-1">{t("screens.onboarding.done_subtitle", { name: childName })}</p>
             </div>
             <div
               className="w-full rounded-3xl p-5 shadow-xl"
@@ -490,9 +494,9 @@ export default function OnboardingPage() {
               <div className="flex items-start gap-3">
                 <span className="text-2xl mt-0.5">✏️</span>
                 <div>
-                  <p className="font-bold text-indigo-900 text-sm">You can edit these details anytime</p>
+                  <p className="font-bold text-indigo-900 text-sm">{t("screens.onboarding.edit_anytime_title")}</p>
                   <p className="text-indigo-400 text-xs mt-1 leading-relaxed">
-                    Go to <strong>Profile</strong> or <strong>Children</strong> section from the menu to update your child's info, timings, food preferences, and more.
+                    {t("screens.onboarding.edit_anytime_body_before")}<strong>{t("screens.onboarding.edit_profile")}</strong>{t("screens.onboarding.edit_anytime_or")}<strong>{t("screens.onboarding.edit_children")}</strong>{t("screens.onboarding.edit_anytime_body_after")}
                   </p>
                 </div>
               </div>
@@ -512,7 +516,7 @@ export default function OnboardingPage() {
               className="w-full py-4 rounded-2xl text-white font-bold text-base active:scale-95 transition-all"
               style={{ background: GRAD, boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
             >
-              Go to Dashboard 🚀
+              {t("screens.onboarding.go_dashboard")}
             </button>
           </div>
         )}
@@ -532,14 +536,14 @@ export default function OnboardingPage() {
             <input
               className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-indigo-100 focus:border-indigo-400 transition-colors"
               style={{ background: "rgba(255,255,255,0.95)", color: "#1e1b4b" }}
-              placeholder="Child's name..."
+              placeholder={t("screens.onboarding.child_name_placeholder")}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && textInput.trim()) {
                   const name = textInput.trim();
                   setCurr((c) => ({ ...c, name }));
-                  userReplies(name, "child-dob", `Nice name! 😊 When is ${name}'s date of birth?`);
+                  userReplies(name, "child-dob", t("screens.onboarding.child_name_reply", { name }));
                 }
               }}
               autoFocus
@@ -549,7 +553,7 @@ export default function OnboardingPage() {
                 if (!textInput.trim()) return;
                 const name = textInput.trim();
                 setCurr((c) => ({ ...c, name }));
-                userReplies(name, "child-dob", `Nice name! 😊 When is ${name}'s date of birth?`);
+                userReplies(name, "child-dob", t("screens.onboarding.child_name_reply", { name }));
               }}
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0"
               style={{ background: GRAD }}
@@ -574,38 +578,44 @@ export default function OnboardingPage() {
                 const { years, months } = dobToAge(dobInput);
                 const ageGroup = getAgeGroup(years);
                 setCurr((c) => ({ ...c, dob: dobInput, age: years, ageMonths: months, ageGroup }));
-                const name = curr.name || "your child";
+                const name = curr.name || t("screens.onboarding.default_child_name");
                 if (ageGroup === "infant") {
                   userReplies(
                     dobInput,
                     "infant-feeding",
-                    `${name} is still a baby — how sweet! 🍼\n\nEvery child is different at this age — we'll adapt learning based on flexible routines.\n\nHow is ${name} being fed right now? (optional, you can skip)`,
+                    t("screens.onboarding.infant_dob_reply", { name }),
                     900,
                   );
                 } else {
-                  userReplies(dobInput, "child-school", `Is ${name} currently going to school? 🏫`, 900);
+                  userReplies(dobInput, "child-school", t("screens.onboarding.school_question", { name }), 900);
                 }
                 setDobInput("");
               }}
               className="w-full py-3.5 rounded-2xl text-white font-semibold active:scale-95 transition-all disabled:opacity-40"
               style={{ background: GRAD }}
             >
-              Confirm Date of Birth
+              {t("screens.onboarding.confirm_dob")}
             </button>
           </div>
         );
 
       // ── Infant path (age < 2) ──────────────────────────────────────────────
-      case "infant-feeding":
+      case "infant-feeding": {
+        const feedingOpts = [
+          t("screens.onboarding.feeding_breast"),
+          t("screens.onboarding.feeding_formula"),
+          t("screens.onboarding.feeding_both"),
+        ];
+        const babyName = curr.name || t("screens.onboarding.default_baby_name");
         return (
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap gap-2">
-              {FEEDING_OPTS.map((opt) => (
+              {feedingOpts.map((opt) => (
                 <button
                   key={opt}
                   onClick={() => {
                     setCurr((c) => ({ ...c, feedingType: opt }));
-                    userReplies(opt, "infant-sleep", `Got it! 😊 How would you describe ${curr.name || "your baby"}'s sleep pattern?`);
+                    userReplies(opt, "infant-sleep", t("screens.onboarding.feeding_reply", { name: babyName }));
                   }}
                   className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                   style={{ background: "rgba(255,255,255,0.9)", color: "#1e1b4b", border: "1px solid #c7d2fe" }}
@@ -615,22 +625,28 @@ export default function OnboardingPage() {
               ))}
             </div>
             <button
-              onClick={() => userReplies("Skip for now", "infant-sleep", `No problem! How would you describe ${curr.name || "your baby"}'s sleep pattern?`)}
+              onClick={() => userReplies(t("screens.onboarding.skip_for_now"), "infant-sleep", t("screens.onboarding.skip_sleep_reply", { name: babyName }))}
               className="text-xs text-indigo-400 hover:text-indigo-600 self-center mt-1"
             >
-              Skip — I'll add it later
+              {t("screens.onboarding.skip_later")}
             </button>
           </div>
         );
+      }
 
-      case "infant-sleep":
+      case "infant-sleep": {
+        const sleepOpts = [
+          t("screens.onboarding.sleep_flexible"),
+          t("screens.onboarding.sleep_irregular"),
+          t("screens.onboarding.sleep_short"),
+        ];
         return (
           <div className="flex flex-col gap-2">
-            {SLEEP_PATTERN_OPTS.map((opt) => (
+            {sleepOpts.map((opt) => (
               <button
                 key={opt}
                 onClick={() => {
-                  const name = curr.name || "your baby";
+                  const name = curr.name || t("screens.onboarding.default_baby_name");
                   const finalChild: ChildData = {
                     name: curr.name || "",
                     dob: curr.dob || "",
@@ -656,8 +672,8 @@ export default function OnboardingPage() {
                     opt,
                     "add-more",
                     childCount === 1
-                      ? `Perfect! ${name}'s profile is ready. 🎉 Do you have another child to add?`
-                      : "Do you have one more child to add?",
+                      ? t("screens.onboarding.child_added_first", { name })
+                      : t("screens.onboarding.child_added_more"),
                   );
                 }}
                 className="w-full py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left px-4"
@@ -668,45 +684,59 @@ export default function OnboardingPage() {
             ))}
           </div>
         );
+      }
 
       // ── Standard path (age >= 2) ───────────────────────────────────────────
-      case "child-school":
+      case "child-school": {
+        const schoolOpts = [
+          { label: t("screens.onboarding.yes_school"), isYes: true },
+          { label: t("screens.onboarding.no_school"), isYes: false },
+        ];
         return (
           <div className="flex gap-3">
-            {["Yes, school going", "No, not yet"].map((opt) => (
+            {schoolOpts.map((opt) => (
               <button
-                key={opt}
+                key={opt.label}
                 onClick={() => {
-                  const isSchool = opt.startsWith("Yes");
+                  const isSchool = opt.isYes;
                   setCurr((c) => ({ ...c, isSchoolGoing: isSchool }));
+                  const name = curr.name || t("screens.onboarding.default_child_name");
                   if (isSchool) {
-                    userReplies(opt, "child-class", `Which class is ${curr.name || "your child"} in?`);
+                    userReplies(opt.label, "child-class", t("screens.onboarding.class_question", { name }));
                   } else {
                     setCurr((c) => ({ ...c, childClass: "", schoolStartTime: "09:00", schoolEndTime: "15:00", schoolDays: null }));
-                    userReplies(opt, "child-wake", `What time does ${curr.name || "your child"} usually wake up? ☀️`);
+                    userReplies(opt.label, "child-wake", t("screens.onboarding.wake_question", { name }));
                   }
                 }}
                 className="flex-1 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                 style={{ background: "rgba(255,255,255,0.9)", color: "#1e1b4b", border: "1px solid #c7d2fe" }}
               >
-                {opt}
+                {opt.label}
               </button>
             ))}
           </div>
         );
+      }
 
-      case "child-class":
+      case "child-class": {
+        const classLabels = CLASS_KEYS.map((k) => t(`screens.onboarding.${k}`));
+        const selectedIdx = CLASS_VALUES.indexOf(selected);
+        const selectedLabel = selectedIdx >= 0 ? classLabels[selectedIdx] : selected;
         return (
           <GridChips
-            options={CLASSES}
-            selected={selected}
-            onSelect={(v) => {
-              setSelected(v);
-              setCurr((c) => ({ ...c, childClass: v }));
-              userReplies(v, "child-school-start", `What time does school start for ${curr.name || "your child"}?`);
+            options={classLabels}
+            selected={selectedLabel}
+            onSelect={(label) => {
+              const idx = classLabels.indexOf(label);
+              const canonical = idx >= 0 ? CLASS_VALUES[idx] : label;
+              setSelected(canonical);
+              setCurr((c) => ({ ...c, childClass: canonical }));
+              const name = curr.name || t("screens.onboarding.default_child_name");
+              userReplies(canonical, "child-school-start", t("screens.onboarding.school_start_question", { name }));
             }}
           />
         );
+      }
 
       case "child-school-start":
         return (
@@ -716,7 +746,7 @@ export default function OnboardingPage() {
             onSelect={(v) => {
               setSelected(v);
               setCurr((c) => ({ ...c, schoolStartTime: to24h(v) }));
-              userReplies(v, "child-school-end", "And what time does school end?");
+              userReplies(v, "child-school-end", t("screens.onboarding.school_end_question"));
             }}
           />
         );
@@ -729,13 +759,22 @@ export default function OnboardingPage() {
             onSelect={(v) => {
               setSelected(v);
               setCurr((c) => ({ ...c, schoolEndTime: to24h(v), schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
-              userReplies(v, "child-school-days", `Which days does ${curr.name || "your child"} have school?`);
+              const name = curr.name || t("screens.onboarding.default_child_name");
+              userReplies(v, "child-school-days", t("screens.onboarding.school_days_question", { name }));
             }}
           />
         );
 
       case "child-school-days": {
-        const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const labels = [
+          t("screens.onboarding.day_mon"),
+          t("screens.onboarding.day_tue"),
+          t("screens.onboarding.day_wed"),
+          t("screens.onboarding.day_thu"),
+          t("screens.onboarding.day_fri"),
+          t("screens.onboarding.day_sat"),
+          t("screens.onboarding.day_sun"),
+        ];
         const current = curr.schoolDays ?? [1, 2, 3, 4, 5];
         const toggle = (d: number) => {
           setCurr((c) => {
@@ -769,15 +808,16 @@ export default function OnboardingPage() {
             <button
               onClick={() => {
                 const days = curr.schoolDays ?? [1, 2, 3, 4, 5];
-                const summary = days.length === 5 && days.every((d) => d <= 5) ? "Mon–Fri"
-                  : days.length === 0 ? "No school days"
+                const summary = days.length === 5 && days.every((d) => d <= 5) ? t("screens.onboarding.all_school_days")
+                  : days.length === 0 ? t("screens.onboarding.no_school_days")
                   : days.map((d) => labels[d - 1]).join(", ");
-                userReplies(summary, "child-wake", `What time does ${curr.name || "your child"} wake up in the morning? ☀️`);
+                const name = curr.name || t("screens.onboarding.default_child_name");
+                userReplies(summary, "child-wake", t("screens.onboarding.wake_morning_question", { name }));
               }}
               className="w-full py-3 rounded-2xl text-white font-semibold active:scale-95 transition-all"
               style={{ background: GRAD }}
             >
-              Continue
+              {t("screens.onboarding.continue")}
             </button>
           </div>
         );
@@ -792,7 +832,8 @@ export default function OnboardingPage() {
             onSelect={(v) => {
               setSelected(v);
               setCurr((c) => ({ ...c, wakeUpTime: to24h(v) }));
-              userReplies(v, "child-sleep", `And what time does ${curr.name || "your child"} go to sleep? 🌙`);
+              const name = curr.name || t("screens.onboarding.default_child_name");
+              userReplies(v, "child-sleep", t("screens.onboarding.sleep_question", { name }));
             }}
           />
         );
@@ -816,37 +857,42 @@ export default function OnboardingPage() {
               const childCount = children.length + 1;
               userReplies(v, "add-more",
                 childCount === 1
-                  ? "Got it! Do you have another child to add as well? 👨‍👩‍👧‍👦"
-                  : "Do you have one more child to add?",
+                  ? t("screens.onboarding.child_added_first_school")
+                  : t("screens.onboarding.child_added_more"),
               );
             }}
           />
         );
 
-      case "add-more":
+      case "add-more": {
+        const addMoreOpts = [
+          { label: t("screens.onboarding.yes_add_another"), isYes: true },
+          { label: t("screens.onboarding.no_continue"), isYes: false },
+        ];
         return (
           <div className="flex gap-3">
-            {["Yes, add another", "No, continue"].map((opt) => (
+            {addMoreOpts.map((opt) => (
               <button
-                key={opt}
+                key={opt.label}
                 onClick={() => {
-                  if (opt.startsWith("Yes")) {
-                    userReplies(opt, "child-name", "What's the next child's name?");
+                  if (opt.isYes) {
+                    userReplies(opt.label, "child-name", t("screens.onboarding.next_child_name"));
                   } else {
-                    userReplies(opt, "parent-name", `Great! Now let me know a bit about you. What's your name? 😊`);
+                    userReplies(opt.label, "parent-name", t("screens.onboarding.parent_intro"));
                   }
                 }}
                 className="flex-1 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={opt.startsWith("No")
+                style={!opt.isYes
                   ? { background: GRAD, color: "#fff", border: "transparent" }
                   : { background: "rgba(255,255,255,0.9)", color: "#1e1b4b", border: "1px solid #c7d2fe" }
                 }
               >
-                {opt}
+                {opt.label}
               </button>
             ))}
           </div>
         );
+      }
 
       case "parent-name":
         return (
@@ -854,14 +900,14 @@ export default function OnboardingPage() {
             <input
               className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-indigo-100 focus:border-indigo-400 transition-colors"
               style={{ background: "rgba(255,255,255,0.95)", color: "#1e1b4b" }}
-              placeholder="Your name..."
+              placeholder={t("screens.onboarding.parent_name_placeholder")}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && textInput.trim()) {
                   const name = textInput.trim();
                   setParent((p) => ({ ...p, name }));
-                  userReplies(name, "parent-role", `Nice to meet you, ${name}! 🙏 What is your role with the child?`);
+                  userReplies(name, "parent-role", t("screens.onboarding.parent_name_reply", { name }));
                 }
               }}
               autoFocus
@@ -871,7 +917,7 @@ export default function OnboardingPage() {
                 if (!textInput.trim()) return;
                 const name = textInput.trim();
                 setParent((p) => ({ ...p, name }));
-                userReplies(name, "parent-role", `Nice to meet you, ${name}! 🙏 What is your role with the child?`);
+                userReplies(name, "parent-role", t("screens.onboarding.parent_name_reply", { name }));
               }}
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0"
               style={{ background: GRAD }}
@@ -879,34 +925,46 @@ export default function OnboardingPage() {
           </div>
         );
 
-      case "parent-role":
+      case "parent-role": {
+        const roleOpts = [
+          { label: t("screens.onboarding.role_mother"), value: "Mother" },
+          { label: t("screens.onboarding.role_father"), value: "Father" },
+          { label: t("screens.onboarding.role_both"), value: "Both" },
+          { label: t("screens.onboarding.role_grandparent"), value: "Grandparent" },
+        ];
         return (
           <div className="grid grid-cols-2 gap-2">
-            {ROLES.map((r) => (
+            {roleOpts.map((r) => (
               <button
-                key={r}
+                key={r.value}
                 onClick={() => {
-                  setParent((p) => ({ ...p, role: r }));
-                  userReplies(r, "parent-work", "What kind of work do you do?");
+                  setParent((p) => ({ ...p, role: r.value }));
+                  userReplies(r.label, "parent-work", t("screens.onboarding.work_question"));
                 }}
                 className="py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                 style={{ background: "rgba(255,255,255,0.9)", color: "#1e1b4b", border: "1px solid #c7d2fe" }}
               >
-                {r}
+                {r.label}
               </button>
             ))}
           </div>
         );
+      }
 
-      case "parent-work":
+      case "parent-work": {
+        const workOpts = [
+          { label: t("screens.onboarding.work_home"), value: "work_from_home" },
+          { label: t("screens.onboarding.work_office"), value: "office" },
+          { label: t("screens.onboarding.work_not_working"), value: "not_working" },
+        ];
         return (
           <div className="flex flex-col gap-2">
-            {WORK_TYPES.map(({ label, value }) => (
+            {workOpts.map(({ label, value }) => (
               <button
                 key={value}
                 onClick={() => {
                   setParent((p) => ({ ...p, workType: value }));
-                  userReplies(label, "parent-region", "Last few quick things to make Amy AI smarter for your family. Which regional cuisine should I plan meals from? 🍛");
+                  userReplies(label, "parent-region", t("screens.onboarding.region_question"));
                 }}
                 className="w-full py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                 style={{ background: "rgba(255,255,255,0.9)", color: "#1e1b4b", border: "1px solid #c7d2fe" }}
@@ -916,16 +974,27 @@ export default function OnboardingPage() {
             ))}
           </div>
         );
+      }
 
-      case "parent-region":
+      case "parent-region": {
+        const regionOpts = [
+          { label: t("screens.onboarding.region_pan_indian"), value: "pan_indian" },
+          { label: t("screens.onboarding.region_north"), value: "north_indian" },
+          { label: t("screens.onboarding.region_south"), value: "south_indian" },
+          { label: t("screens.onboarding.region_bengali"), value: "bengali" },
+          { label: t("screens.onboarding.region_gujarati"), value: "gujarati" },
+          { label: t("screens.onboarding.region_maharashtrian"), value: "maharashtrian" },
+          { label: t("screens.onboarding.region_punjabi"), value: "punjabi" },
+          { label: t("screens.onboarding.region_global"), value: "global" },
+        ];
         return (
           <div className="grid grid-cols-2 gap-2">
-            {REGION_OPTS.map((opt) => (
+            {regionOpts.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => {
                   setParent((p) => ({ ...p, region: opt.value }));
-                  userReplies(opt.label, "parent-mobile", "Got it! 📱 What's a mobile number where Amy can send reminders? (You can skip this for now.)");
+                  userReplies(opt.label, "parent-mobile", t("screens.onboarding.mobile_question"));
                 }}
                 className="py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                 style={{ background: "rgba(255,255,255,0.9)", color: "#1e1b4b", border: "1px solid #c7d2fe" }}
@@ -935,6 +1004,7 @@ export default function OnboardingPage() {
             ))}
           </div>
         );
+      }
 
       case "parent-mobile":
         return (
@@ -945,14 +1015,14 @@ export default function OnboardingPage() {
                 inputMode="tel"
                 className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-indigo-100 focus:border-indigo-400 transition-colors"
                 style={{ background: "rgba(255,255,255,0.95)", color: "#1e1b4b" }}
-                placeholder="+91 98765 43210"
+                placeholder={t("screens.onboarding.mobile_placeholder")}
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && textInput.trim()) {
                     const m = textInput.trim();
                     setParent((p) => ({ ...p, mobileNumber: m }));
-                    userReplies(m, "parent-allergies", "Great! 🌾 Any food allergies or things to avoid in meals? (Type them or skip if none.)");
+                    userReplies(m, "parent-allergies", t("screens.onboarding.allergies_question"));
                   }
                 }}
                 autoFocus
@@ -962,17 +1032,17 @@ export default function OnboardingPage() {
                   if (!textInput.trim()) return;
                   const m = textInput.trim();
                   setParent((p) => ({ ...p, mobileNumber: m }));
-                  userReplies(m, "parent-allergies", "Great! 🌾 Any food allergies or things to avoid in meals? (Type them or skip if none.)");
+                  userReplies(m, "parent-allergies", t("screens.onboarding.allergies_question"));
                 }}
                 className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0"
                 style={{ background: GRAD }}
               >→</button>
             </div>
             <button
-              onClick={() => userReplies("Skip for now", "parent-allergies", "No problem! 🌾 Any food allergies or things to avoid in meals? (Type them or skip if none.)")}
+              onClick={() => userReplies(t("screens.onboarding.skip_for_now"), "parent-allergies", t("screens.onboarding.allergies_skip"))}
               className="text-xs text-indigo-400 hover:text-indigo-600 self-center mt-1"
             >
-              Skip — I'll add it later
+              {t("screens.onboarding.skip_later")}
             </button>
           </div>
         );
@@ -984,7 +1054,7 @@ export default function OnboardingPage() {
               <input
                 className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-indigo-100 focus:border-indigo-400 transition-colors"
                 style={{ background: "rgba(255,255,255,0.95)", color: "#1e1b4b" }}
-                placeholder="e.g. peanuts, shellfish, dairy..."
+                placeholder={t("screens.onboarding.allergies_placeholder")}
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -1011,12 +1081,12 @@ export default function OnboardingPage() {
             </div>
             <button
               onClick={() => {
-                userReplies("No allergies", "saving");
+                userReplies(t("screens.onboarding.no_allergies_reply"), "saving");
                 setTimeout(() => saveEverything(), 800);
               }}
               className="text-xs text-indigo-400 hover:text-indigo-600 self-center mt-1"
             >
-              No allergies — finish setup
+              {t("screens.onboarding.no_allergies_button")}
             </button>
           </div>
         );
@@ -1036,12 +1106,12 @@ export default function OnboardingPage() {
           <div className="flex items-center gap-2.5">
             <AmyAvatar size={8} />
             <div>
-              <p className="text-xs font-bold text-indigo-700">Amy Coach</p>
-              <p className="text-xs text-indigo-400">Setting up your profile</p>
+              <p className="text-xs font-bold text-indigo-700">{t("screens.onboarding.amy_coach")}</p>
+              <p className="text-xs text-indigo-400">{t("screens.onboarding.setting_up")}</p>
             </div>
           </div>
           <span className="text-[11px] font-semibold text-indigo-400 px-3 py-1.5">
-            Setup required ✨
+            {t("screens.onboarding.setup_required")}
           </span>
         </div>
         <ProgressBar step={step} />
