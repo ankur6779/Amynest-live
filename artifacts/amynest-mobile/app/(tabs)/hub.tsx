@@ -1636,8 +1636,11 @@ function TodayPlanPage({
   const meta = SECTION_META.today;
   return (
     <ScrollView
+      style={styles.pageScroll}
       contentContainerStyle={styles.pageContent}
       showsVerticalScrollIndicator={false}
+      nestedScrollEnabled
+      keyboardShouldPersistTaps="handled"
     >
       <View style={styles.bandSectionHeader}>
         <Text style={styles.bandSectionTitle}>{meta.heading}</Text>
@@ -1695,8 +1698,11 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
   const meta = SECTION_META[sectionKey];
   return (
     <ScrollView
+      style={styles.pageScroll}
       contentContainerStyle={styles.pageContent}
       showsVerticalScrollIndicator={false}
+      nestedScrollEnabled
+      keyboardShouldPersistTaps="handled"
     >
       <View style={styles.bandSectionHeader}>
         <Text style={styles.bandSectionTitle}>{meta.heading}</Text>
