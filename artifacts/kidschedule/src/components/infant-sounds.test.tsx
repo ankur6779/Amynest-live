@@ -9,9 +9,16 @@
  *     add-sound chips, sleep timer pills, and a stop-everything button
  *   - The mini player appears whenever something is playing and can stop all
  *
- * jsdom has no WebAudio, so we install a minimal mock AudioContext that
- * exposes only the methods the engine actually calls — enough to prove the
- * UI wiring is correct without trying to verify real audio output.
+ * Plus the Spec 3 Poems tab contract:
+ *   - Tab toggle exposes a "Poems" tab (replacing "Songs & Lullabies")
+ *   - Tapping a poem tile opens the immersive fullscreen player
+ *   - Age sub-tabs switch the visible poems
+ *   - "Load More Poems" reveals additional poems in the same group
+ *   - Loop is ON by default in the poem player
+ *
+ * jsdom has no WebAudio and no SpeechSynthesis, so we install minimal mocks
+ * for both that expose only the methods the engine + player actually call —
+ * enough to prove the UI wiring is correct without verifying real audio.
  */
 import React from "react";
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
@@ -79,11 +86,49 @@ class MockAudioContext {
   close() { return Promise.resolve(); }
 }
 
+// ─── SpeechSynthesis mock (Spec 3 — Poems player) ─────────────────────────────
+// jsdom has no SpeechSynthesis API. The poem player only touches `speak`,
+// `cancel`, `pause`, `resume`, and `getVoices`, so we mock just those — the
+// utterance constructor stores its event handlers so we can resolve them
+// synchronously in tests if we need to.
+class MockSpeechSynthesisUtterance {
+  text: string;
+  rate = 1;
+  pitch = 1;
+  volume = 1;
+  lang = "";
+  voice: SpeechSynthesisVoice | null = null;
+  onend: ((ev: Event) => void) | null = null;
+  onerror: ((ev: Event) => void) | null = null;
+  onstart: ((ev: Event) => void) | null = null;
+  constructor(text: string) { this.text = text; }
+}
+class MockSpeechSynthesis {
+  speaking = false;
+  paused = false;
+  pending = false;
+  speak(_u: SpeechSynthesisUtterance) { this.speaking = true; }
+  cancel() { this.speaking = false; this.paused = false; }
+  pause() { this.paused = true; }
+  resume() { this.paused = false; }
+  getVoices(): SpeechSynthesisVoice[] { return []; }
+  addEventListener() { /* no-op */ }
+  removeEventListener() { /* no-op */ }
+}
+
 beforeAll(() => {
   // Install before any test imports the engine (the hook only touches it on
   // first play, so installing in beforeAll is fine).
   (globalThis as unknown as { AudioContext: typeof AudioContext }).AudioContext =
     MockAudioContext as unknown as typeof AudioContext;
+  // SpeechSynthesis mock — used by the poems tab player.
+  Object.defineProperty(window, "speechSynthesis", {
+    configurable: true,
+    value: new MockSpeechSynthesis(),
+  });
+  (globalThis as unknown as { SpeechSynthesisUtterance: typeof SpeechSynthesisUtterance })
+    .SpeechSynthesisUtterance =
+    MockSpeechSynthesisUtterance as unknown as typeof SpeechSynthesisUtterance;
   // jsdom doesn't implement requestAnimationFrame consistently across versions
   // and we don't want it firing during assertions — replace with no-op.
   globalThis.requestAnimationFrame = (() => 0) as typeof requestAnimationFrame;
@@ -195,14 +240,106 @@ describe("WhiteNoiseLullaby — immersive module", () => {
     expect(screen.getByTestId("tile-fan")).toHaveAttribute("data-active", "false");
   });
 
-  it("songs tab still renders the existing static lullaby cards", () => {
-    render(<WhiteNoiseLullaby ageMonths={2} />);
+  // ─── Spec 3 — Poems tab ─────────────────────────────────────────────────
+  describe("Poems tab", () => {
+    function openPoemsTab() {
+      // The "Poems" tab now replaces "Songs & Lullabies" in the top toggle.
+      fireEvent.click(screen.getByRole("button", { name: /^poems$/i }));
+    }
 
-    // Switch tab
-    fireEvent.click(screen.getByRole("button", { name: /songs & lullabies/i }));
+    it("switches to the poems module and shows the age sub-tabs", () => {
+      render(<WhiteNoiseLullaby ageMonths={2} />);
+      openPoemsTab();
 
-    expect(screen.getByText(/songs for this age/i)).toBeInTheDocument();
-    expect(screen.getByText(/twinkle twinkle little star/i)).toBeInTheDocument();
-    expect(screen.getByText(/your voice is the instrument/i)).toBeInTheDocument();
+      expect(screen.getByTestId("infant-poems-section")).toBeInTheDocument();
+      expect(screen.getByText(/poems for your baby/i)).toBeInTheDocument();
+      // 3 age sub-tabs are rendered
+      ["0-6m", "6-12m", "12-24m"].forEach((id) => {
+        expect(screen.getByTestId(`poem-age-tab-${id}`)).toBeInTheDocument();
+      });
+    });
+
+    it("defaults to the age group matching the child's age in months", () => {
+      render(<WhiteNoiseLullaby ageMonths={2} />);
+      openPoemsTab();
+
+      // 2 months → 0–6m group is selected
+      expect(screen.getByTestId("poem-age-tab-0-6m"))
+        .toHaveAttribute("aria-selected", "true");
+      // The 0–6m bucket includes the spec-provided "Sleep, Baby, Sleep" poem.
+      expect(screen.getByTestId("poem-tile-sleep-baby-sleep")).toBeInTheDocument();
+    });
+
+    it("changes visible poems when a different age sub-tab is selected", () => {
+      render(<WhiteNoiseLullaby ageMonths={2} />);
+      openPoemsTab();
+
+      // Pre-condition: a 0–6m poem is visible, a 12–24m poem is not.
+      expect(screen.getByTestId("poem-tile-sleep-baby-sleep")).toBeInTheDocument();
+      expect(screen.queryByTestId("poem-tile-one-little-star")).toBeNull();
+
+      fireEvent.click(screen.getByTestId("poem-age-tab-12-24m"));
+
+      // After: 12–24m content is visible, the 0–6m poem is gone.
+      expect(screen.getByTestId("poem-tile-one-little-star")).toBeInTheDocument();
+      expect(screen.queryByTestId("poem-tile-sleep-baby-sleep")).toBeNull();
+    });
+
+    it("paginates further poems via the Load More button", () => {
+      render(<WhiteNoiseLullaby ageMonths={8} />);
+      openPoemsTab();
+
+      // 6–12m group has 5 poems but only 3 are shown initially → Load More
+      // button is present.
+      const loadMore = screen.getByTestId("poem-load-more");
+      expect(loadMore).toBeInTheDocument();
+
+      fireEvent.click(loadMore);
+
+      // After Load More, all 5 poems in the 6–12m group are visible.
+      ["clap-clap-little-hands", "round-and-round", "soft-little-bird",
+       "pat-pat-pat", "humming-bumblebee"].forEach((id) => {
+        expect(screen.getByTestId(`poem-tile-${id}`)).toBeInTheDocument();
+      });
+      // No more poems left → button is now hidden.
+      expect(screen.queryByTestId("poem-load-more")).toBeNull();
+    });
+
+    it("opens the immersive fullscreen player when a tile is tapped, with loop ON by default", () => {
+      render(<WhiteNoiseLullaby ageMonths={2} />);
+      openPoemsTab();
+
+      fireEvent.click(screen.getByTestId("poem-tile-sleep-baby-sleep"));
+
+      const player = screen.getByTestId("poem-fullscreen-player");
+      expect(player).toBeInTheDocument();
+      // Loop toggle is pressed by default (Spec 3 — "Loop ON by default").
+      expect(within(player).getByTestId("poem-loop-toggle"))
+        .toHaveAttribute("aria-pressed", "true");
+      // The 4 sleep-timer pills are rendered.
+      ["off", "15m", "30m", "1h"].forEach((label) => {
+        expect(within(player).getByTestId(`poem-timer-${label}`)).toBeInTheDocument();
+      });
+    });
+
+    it("close button stops playback (clears the playing-pulse on the tile)", () => {
+      render(<WhiteNoiseLullaby ageMonths={2} />);
+      openPoemsTab();
+
+      const tile = screen.getByTestId("poem-tile-sleep-baby-sleep");
+      fireEvent.click(tile);
+      // Tile flips to data-active="true" while playing.
+      expect(tile).toHaveAttribute("data-active", "true");
+
+      fireEvent.click(screen.getByTestId("poem-fullscreen-close"));
+
+      // Engine state is the source of truth: the tile flips back to inactive
+      // synchronously. We don't assert on the player's DOM presence here
+      // because <AnimatePresence> keeps its children mounted during the exit
+      // animation, and framer-motion's animations don't complete cleanly
+      // under jsdom + fake timers (same caveat as the white-noise stop-all
+      // test above).
+      expect(tile).toHaveAttribute("data-active", "false");
+    });
   });
 });

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Music2, Wind, ChevronDown, ChevronUp, Volume2, VolumeX, Info, Heart,
+  Wind, ChevronDown, Volume2, VolumeX, Info,
   Play, Pause, X, Clock, Sparkles, Plus,
 } from "lucide-react";
 import {
@@ -10,6 +10,7 @@ import {
   type SoundId,
   type SoundEngine,
 } from "@/hooks/use-sound-engine";
+import { InfantPoems } from "./infant-poems";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type NoiseType = {
@@ -24,16 +25,6 @@ type NoiseType = {
   tint: string;
   /** Animation type for the tile icon while playing. */
   iconAnim: "spin" | "pulse" | "float" | "bounce" | "wave";
-};
-
-type Song = {
-  emoji: string;
-  title: string;
-  howTo: string;
-  whyItHelps: string;
-  duration: string;
-  fromMonths: number;
-  toMonths: number;
 };
 
 // ─── White Noise Data ───────────────────────────────────────────────────────
@@ -152,88 +143,10 @@ const AGE_TIPS: AgeTip[] = [
   },
 ];
 
-// ─── Songs & Lullabies Data ─────────────────────────────────────────────────
-const SONGS: Song[] = [
-  // 0-3 months
-  {
-    emoji: "🌙", title: "Gentle Humming", fromMonths: 0, toMonths: 4,
-    howTo: "Hold baby close and hum a single long note — no melody needed. Let them feel the vibration through your chest.",
-    whyItHelps: "The vibration + warmth + heartbeat combo is the closest thing to the womb. More soothing than any recording.",
-    duration: "As long as needed",
-  },
-  {
-    emoji: "⭐", title: "Twinkle Twinkle Little Star", fromMonths: 0, toMonths: 8,
-    howTo: "Sing slowly — much slower than you think. Pause after each line. Eye contact throughout. Slow blink when they blink.",
-    whyItHelps: "Simple melody, repeated vowel sounds ('twin-kle'), and your face + voice together is the most stimulating thing a newborn can experience.",
-    duration: "2–3 min · anytime",
-  },
-  {
-    emoji: "🌊", title: "Laa Laa Lullaby (hummed)", fromMonths: 0, toMonths: 4,
-    howTo: "Just hum 'laa laa laa' to any melody you know. The 'laa' vowel is especially soothing to babies.",
-    whyItHelps: "Open vowel sounds vibrate in your chest. Baby hears AND feels the sound — a multisensory experience.",
-    duration: "3–5 min · at sleep time",
-  },
-
-  // 3-6 months
-  {
-    emoji: "🐑", title: "Baa Baa Black Sheep", fromMonths: 3, toMonths: 8,
-    howTo: "Hold baby upright and gently bounce on your knee in rhythm. One bounce per beat. Exaggerate the last word of each line.",
-    whyItHelps: "The bouncing stimulates the vestibular (balance) system while the rhythmic syllables map language patterns into the developing brain.",
-    duration: "5 min · 2–3× daily",
-  },
-  {
-    emoji: "🤸", title: "Row Row Row Your Boat", fromMonths: 3, toMonths: 10,
-    howTo: "Sit baby on your lap facing you. Hold their hands and gently rock forward and backward with each word. Rock faster on 'merrily merrily merrily merrily'.",
-    whyItHelps: "Gentle whole-body movement synced to language rhythm. Babies who experience this type of rhythmic motion + song show earlier language development.",
-    duration: "3 min · anytime",
-  },
-  {
-    emoji: "🌟", title: "Johny Johny Yes Papa", fromMonths: 3, toMonths: 12,
-    howTo: "Tap baby's hands gently on each syllable. Make eye contact. Pause before 'Ha ha ha!' and make a surprised face.",
-    whyItHelps: "The surprise pause before the punchline teaches prediction and cause-and-effect — two major cognitive leaps at this age.",
-    duration: "2–3 min · 2× daily",
-  },
-
-  // 6-12 months
-  {
-    emoji: "👏", title: "If You're Happy and You Know It", fromMonths: 6, toMonths: 14,
-    howTo: "Clap baby's hands together for 'clap your hands'. Stomp feet for 'stomp your feet'. Do it slowly enough that they can anticipate the action.",
-    whyItHelps: "Anticipatory music play teaches sequencing — a cognitive skill that underlies maths, reading, and planning.",
-    duration: "3–5 min · playfully",
-  },
-  {
-    emoji: "👐", title: "Pat-a-Cake", fromMonths: 6, toMonths: 14,
-    howTo: "Take baby's hands and clap them together, then roll them, then poke their tummy gently on 'prick it and pat it'. Build speed over repeat plays.",
-    whyItHelps: "Cross-body hand movements in rhythm help integrate left-right brain communication — directly supports later reading and coordination.",
-    duration: "2 min · 3–4× daily",
-  },
-  {
-    emoji: "🏠", title: "Wheels on the Bus", fromMonths: 7, toMonths: 15,
-    howTo: "Add a new action each verse — swipe hands for wipers, bounce for bumpy ride, shush for 'babies go waa'. Invent new verses about your own life.",
-    whyItHelps: "Each action is a gesture-symbol pair. Baby starts connecting physical movements to meanings — precursor to sign language and word association.",
-    duration: "5 min · works anywhere",
-  },
-
-  // 12-24 months
-  {
-    emoji: "💃", title: "Dance Party", fromMonths: 12, toMonths: 24,
-    howTo: "Put on any upbeat music and go wild. Jump, spin, clap, fall down, get up. Let toddler lead — follow their moves and mirror them.",
-    whyItHelps: "Free dance builds gross motor confidence, rhythm internalisation, and joyful connection. The joy itself is the development — shared positive emotion is deeply bonding.",
-    duration: "10–15 min · daily",
-  },
-  {
-    emoji: "🦵", title: "Heads, Shoulders, Knees & Toes", fromMonths: 13, toMonths: 24,
-    howTo: "Touch each body part as you name it. Sing slowly at first, then speed up each repeat — the speeding up is what makes it funny and challenging.",
-    whyItHelps: "Body part vocabulary + proprioception (knowing where your body is). This single song builds both spatial awareness and receptive language simultaneously.",
-    duration: "2–3 min · 3–4× daily",
-  },
-  {
-    emoji: "🌈", title: "Old MacDonald Had a Farm", fromMonths: 14, toMonths: 24,
-    howTo: "Ask 'what does the cow say?' before doing the sound yourself. Pause and wait — even if they just smile. Celebrate any attempt at the animal sound.",
-    whyItHelps: "The question-before-answer structure directly teaches conversational turn-taking. Animal sound attempts are early words — celebrate every one.",
-    duration: "5 min · story + song combo",
-  },
-];
+// NOTE: The old `SONGS` catalogue + `getSongs()` helper were removed when the
+// "Songs & Lullabies" tab was replaced by the new age-wise Poems module
+// (Spec 3). The poem catalogue lives in `@/data/infant-poems` and is rendered
+// by `InfantPoems` from `./infant-poems`.
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function getAgeTip(months: number): AgeTip {
@@ -241,10 +154,6 @@ function getAgeTip(months: number): AgeTip {
     AGE_TIPS.find((t) => months >= t.fromMonths && months < t.toMonths) ??
     AGE_TIPS[AGE_TIPS.length - 1]
   );
-}
-
-function getSongs(months: number): Song[] {
-  return SONGS.filter((s) => months >= s.fromMonths && months < s.toMonths);
 }
 
 /** Pick the single "best for sleep RIGHT NOW" recommendation for the strip
@@ -282,13 +191,13 @@ const TIMER_OPTIONS: { label: string; ms: number | null }[] = [
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export function WhiteNoiseLullaby({ ageMonths }: { ageMonths: number }) {
-  const [tab, setTab] = useState<"noise" | "songs">("noise");
-  const [expandedSong, setExpandedSong] = useState<string | null>(null);
+  // Tab state: "noise" → immersive WebAudio engine; "poems" → age-wise
+  // local-only poems module (Spec 3, replaces the old singing-guide list).
+  const [tab, setTab] = useState<"noise" | "poems">("noise");
   const [openFullscreen, setOpenFullscreen] = useState(false);
   const [infoTileId, setInfoTileId] = useState<SoundId | null>(null);
 
   const ageTip = useMemo(() => getAgeTip(ageMonths), [ageMonths]);
-  const songs = useMemo(() => getSongs(ageMonths), [ageMonths]);
   const engine = useSoundEngine();
 
   // Smart suggestion is recomputed when the active hour ticks over (every
@@ -317,11 +226,11 @@ export function WhiteNoiseLullaby({ ageMonths }: { ageMonths: number }) {
           activeClass="bg-indigo-500 text-white shadow-[0_4px_12px_-2px_rgba(99,102,241,0.5)]"
         />
         <TabBtn
-          active={tab === "songs"}
-          onClick={() => setTab("songs")}
-          icon={<Music2 className="h-3.5 w-3.5" />}
-          label="Songs & Lullabies"
-          activeClass="bg-fuchsia-500 text-white shadow-[0_4px_12px_-2px_rgba(217,70,239,0.5)]"
+          active={tab === "poems"}
+          onClick={() => setTab("poems")}
+          icon={<Sparkles className="h-3.5 w-3.5" />}
+          label="Poems"
+          activeClass="bg-violet-500 text-white shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]"
         />
       </div>
 
@@ -442,82 +351,10 @@ export function WhiteNoiseLullaby({ ageMonths }: { ageMonths: number }) {
         </div>
       )}
 
-      {/* ── Songs & Lullabies tab ────────────────────────────────────── */}
-      {tab === "songs" && (
-        <div className="space-y-2.5 animate-in fade-in duration-200">
-          <div className="rounded-2xl bg-gradient-to-br from-fuchsia-100/80 via-pink-100/60 to-rose-100/80 dark:from-fuchsia-900/30 dark:via-pink-900/20 dark:to-rose-900/30 border border-fuchsia-200/60 dark:border-fuchsia-400/20 p-3 backdrop-blur-md">
-            <div className="flex items-center gap-2 mb-1">
-              <Music2 className="h-4 w-4 text-fuchsia-600 dark:text-fuchsia-300" />
-              <p className="text-xs font-bold text-fuchsia-900 dark:text-fuchsia-100">Songs for this age</p>
-            </div>
-            <p className="text-[12px] text-fuchsia-800/80 dark:text-fuchsia-100/70 leading-snug">
-              Singing to your baby is one of the highest-impact things you can do — it builds language, emotion regulation, and connection simultaneously. Your voice — even imperfect — is always better than a recording.
-            </p>
-          </div>
-
-          {songs.length === 0 && (
-            <div className="rounded-xl border-2 border-dashed border-border/60 px-3 py-6 text-center">
-              <Music2 className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
-              <p className="text-[12px] text-muted-foreground">Song suggestions for this age coming soon.</p>
-            </div>
-          )}
-
-          {songs.map((s) => {
-            const isOpen = expandedSong === s.title;
-            return (
-              <div
-                key={s.title}
-                className="rounded-2xl border-2 border-border bg-white/60 dark:bg-white/[0.04] backdrop-blur-md overflow-hidden transition-all"
-              >
-                <button
-                  onClick={() => setExpandedSong(isOpen ? null : s.title)}
-                  className="w-full flex items-start gap-3 p-3 text-left"
-                >
-                  <span className="text-2xl leading-none shrink-0 mt-0.5">{s.emoji}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm text-foreground leading-tight mb-0.5">{s.title}</p>
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                        <Music2 className="h-2.5 w-2.5" />
-                        {s.duration}
-                      </span>
-                    </div>
-                  </div>
-                  {isOpen
-                    ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
-                    : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />}
-                </button>
-
-                {isOpen && (
-                  <div className="px-3 pb-3 space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
-                    {/* How to */}
-                    <div className="rounded-lg bg-fuchsia-50/80 dark:bg-fuchsia-500/10 border border-fuchsia-200 dark:border-fuchsia-400/20 p-2.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-fuchsia-700 dark:text-fuchsia-300 mb-1">How to do it</p>
-                      <p className="text-[12px] text-fuchsia-900/90 dark:text-fuchsia-100/90 leading-snug">{s.howTo}</p>
-                    </div>
-                    {/* Why */}
-                    <div className="rounded-lg bg-violet-50/80 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-400/20 p-2.5">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <Heart className="h-3 w-3 text-violet-600 dark:text-violet-400" />
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">Why it helps</p>
-                      </div>
-                      <p className="text-[12px] text-violet-900/90 dark:text-violet-100/90 leading-snug">{s.whyItHelps}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Bottom reminder */}
-          <div className="rounded-xl bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border border-amber-200/60 dark:border-amber-400/20 p-3">
-            <div className="flex items-start gap-2">
-              <span className="text-lg shrink-0">🎤</span>
-              <p className="text-[12px] text-amber-900/90 dark:text-amber-100/80 leading-relaxed">
-                <span className="font-bold">Your voice is the instrument.</span> Pitch-perfect doesn't matter — familiar does. A song baby hears from you 100 times becomes a lifelong comfort anchor.
-              </p>
-            </div>
-          </div>
+      {/* ── Poems tab (Spec 3 — local poems, no external API) ──────────── */}
+      {tab === "poems" && (
+        <div className="animate-in fade-in duration-200">
+          <InfantPoems ageMonths={ageMonths} />
         </div>
       )}
 
