@@ -100,6 +100,11 @@ export default function NeonRingHero() {
     outputRange: ["0deg", "360deg"],
   });
 
+  const amyScale = amyGlowAnim.interpolate({
+    inputRange: [0.72, 1],
+    outputRange: [1, 1.05],
+  });
+
   return (
     <View style={styles.wrapper}>
       {/* Atmospheric outer glow */}
@@ -133,8 +138,8 @@ export default function NeonRingHero() {
         <View style={styles.innerCircle}>
           <Text style={styles.meetText}>Meet</Text>
 
-          {/* Gradient "AMY" using SVG — opacity-glow pulse on ~3.2s loop */}
-          <Animated.View style={{ opacity: amyGlowAnim }}>
+          {/* Gradient "AMY" using SVG — opacity + subtle scale pulse on ~3.2s loop */}
+          <Animated.View style={{ opacity: amyGlowAnim, transform: [{ scale: amyScale }] }}>
             <Svg width={90} height={40}>
               <Defs>
                 <SvgLinearGradient id="amyGrad" x1="0" y1="0" x2="1" y2="0">
