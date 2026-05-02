@@ -34,13 +34,10 @@ vi.mock("@/hooks/useAmyVoice", () => ({
   }),
 }));
 
-// AiMealGenerator does `await import("@/i18n")` inside handleGenerate. The
-// real i18n module pulls in expo-localization, which fails to load in jsdom
-// (no native bridge). Stub it so the dynamic import resolves with just the
-// shape the component reads from it (`default.language`).
-vi.mock("@/i18n", () => ({
-  default: { language: "en" },
-}));
+// Note: `@/i18n` is mocked globally in test-setup.ts (it pulls in
+// expo-localization, which crashes in jsdom). AiMealGenerator does
+// `await import("@/i18n")` inside handleGenerate and only reads
+// `default.language`; the global stub provides that.
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
