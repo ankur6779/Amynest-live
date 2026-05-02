@@ -4,6 +4,7 @@ import { db, parentProfilesTable, type ParentProfile } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { sendEmail, isEmailConfigured } from "../lib/email";
 import { buildInsights, type InsightsResponse } from "./insightsService";
+import { getParentTaskCompletionCounts } from "../routes/parent-tasks";
 
 const SIX_DAYS_MS = 6 * 24 * 60 * 60 * 1000;
 const APP_URL =
@@ -16,6 +17,45 @@ export type ComposedRecap = {
   text: string;
   preheader: string;
 };
+
+export type ParentTaskRecapStats = {
+  total: number;
+  perChild: Array<{ childId: number; childName: string; count: number }>;
+};
+
+const EMPTY_PARENT_TASK_STATS: ParentTaskRecapStats = {
+  total: 0,
+  perChild: [],
+};
+
+function buildParentTaskBlock(stats: ParentTaskRecapStats): {
+  html: string;
+  text: string;
+} {
+  if (stats.total === 0) {
+    return { html: "", text: "" };
+  }
+  const perChildHtml = stats.perChild
+    .map(
+      (c) =>
+        `<li style="margin:0;padding:2px 0;">${escapeHtml(c.childName)}: ${c.count}</li>`,
+    )
+    .join("");
+  const perChildList = perChildHtml
+    ? `<ul style="margin:8px 0 0;padding-left:18px;color:#0f172a;font-size:14px;">${perChildHtml}</ul>`
+    : "";
+  const html = `
+    <div style="background:#ecfeff;border-left:4px solid #0891b2;padding:14px 16px;border-radius:8px;margin:16px 0;">
+      <div style="font-size:12px;color:#0891b2;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Parent Tasks completed</div>
+      <div style="font-size:15px;color:#0f172a;margin-top:4px;">You checked off <strong>${stats.total}</strong> Parent Task${stats.total === 1 ? "" : "s"} this week.</div>
+      ${perChildList}
+    </div>`;
+  const textLines = [
+    `Parent Tasks completed: ${stats.total}`,
+    ...stats.perChild.map((c) => `  - ${c.childName}: ${c.count}`),
+  ];
+  return { html, text: textLines.join("\n") };
+}
 
 function escapeHtml(s: string): string {
   return s
@@ -67,11 +107,13 @@ function pickFocusArea(insights: InsightsResponse): string {
 export function composeWeeklyRecap(
   profile: ParentProfile,
   insights: InsightsResponse,
+  parentTaskStats: ParentTaskRecapStats = EMPTY_PARENT_TASK_STATS,
 ): ComposedRecap {
   const greeting = profile.name ? `Hi ${escapeHtml(profile.name)},` : "Hi there,";
   const win = pickTopWin(insights);
   const focus = pickFocusArea(insights);
   const s = insights.summary;
+  const parentTaskBlock = buildParentTaskBlock(parentTaskStats);
   const preheader = insights.hasActivity
     ? `${s.routinesThisPeriod} routines · ${s.behaviorsThisPeriod} moments · ${s.positiveRateThisPeriod}% positive`
     : "Your weekly snapshot from AmyNest";
@@ -206,6 +248,7 @@ export function composeWeeklyRecap(
                 <div style="font-size:12px;color:#d97706;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">One thing to try</div>
                 <div style="font-size:15px;color:#0f172a;margin-top:4px;">${escapeHtml(focus)}</div>
               </div>
+              ${parentTaskBlock.html}
               ${childrenBlock}
               ${familyBlock}
               ${dayBlock}
@@ -246,6 +289,7 @@ export function composeWeeklyRecap(
     `This week's win: ${win}`,
     `One thing to try: ${focus}`,
     "",
+    ...(parentTaskBlock.text ? [parentTaskBlock.text, ""] : []),
     ...(insights.siblingHighlights && insights.siblingHighlights.length >= 2
       ? [
           "Family strengths:",
@@ -383,7 +427,17 @@ export async function sendRecapForUser(args: {
   }
 
   const insights = await buildInsights({ userId, range: "week" });
-  const composed = composeWeeklyRecap(profile, insights);
+  // Recap covers the trailing 7 days (matching buildInsights "week" range).
+  const today = new Date();
+  const fromDateObj = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
+  const toDate = today.toISOString().split("T")[0]!;
+  const fromDate = fromDateObj.toISOString().split("T")[0]!;
+  const parentTaskStats = await getParentTaskCompletionCounts({
+    userId,
+    fromDate,
+    toDate,
+  });
+  const composed = composeWeeklyRecap(profile, insights, parentTaskStats);
 
   const result = await sendEmail({
     to: email,

@@ -1471,6 +1471,7 @@ export default function HubScreen() {
               if (sectionKey === "today") {
                 return (
                   <TodayPlanPage
+                    childId={effective.id}
                     childName={childName}
                     ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
                     styles={styles}
@@ -1736,12 +1737,16 @@ function SectionTabBar({
 }
 
 function TodayPlanPage({
+  childId,
   childName,
   ageMonths,
   styles,
   onGenerate,
   onContinue,
 }: {
+  /** Active child id — passed through to ParentTasks so its checkbox state
+   *  persists per-child per-day on the server. */
+  childId: number;
   childName: string;
   /** Total age in months — used by the inline ParentTasks companion to
    *  pick age-appropriate "things you can do today" suggestions. */
@@ -1829,7 +1834,7 @@ function TodayPlanPage({
           the routine carousel showing age-matched "things YOU can do today".
           Lives inline on the Today's Plan page (not as a hub tile) so
           parents see it immediately with their child's routine. */}
-      <ParentTasks ageMonths={ageMonths} childName={childName} />
+      <ParentTasks childId={childId} ageMonths={ageMonths} childName={childName} />
 
       {tasks.length > 0 && (
         <Pressable onPress={onGenerate} style={styles.bottomCta}>

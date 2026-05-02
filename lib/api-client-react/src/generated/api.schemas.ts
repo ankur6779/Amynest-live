@@ -326,6 +326,20 @@ export interface DashboardSummary {
   routinesGeneratedThisWeek: number;
 }
 
+export interface ParentTaskCompletion {
+  id: number;
+  childId: number;
+  date: string;
+  taskKey: string;
+  createdAt: string;
+}
+
+export interface SetParentTaskCompletionBody {
+  childId: number;
+  date: string;
+  taskKey: string;
+}
+
 export interface BehaviorStat {
   childId: number;
   childName: string;
@@ -346,4 +360,18 @@ export type ListBehaviorsParams = {
 export type CheckRoutineParams = {
   childId: number;
   date: string;
+};
+
+export type ListParentTaskCompletionsParams = {
+  childId: number;
+  /**
+   * ISO date (YYYY-MM-DD). When omitted returns all completions for the child.
+   */
+  date?: string;
+};
+
+export type ClearParentTaskCompletionParams = {
+  childId: number;
+  date: string;
+  taskKey: string;
 };

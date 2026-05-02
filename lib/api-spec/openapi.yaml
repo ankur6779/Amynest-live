@@ -20,6 +20,8 @@ tags:
     description: Dashboard and summary operations
   - name: ai
     description: AI routine generation
+  - name: parent-tasks
+    description: Per-day, per-child Parent Task completions
 paths:
   /healthz:
     get:
@@ -507,6 +509,73 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AskAssistantResponse"
+
+  /parent-tasks:
+    get:
+      operationId: listParentTaskCompletions
+      tags: [parent-tasks]
+      summary: List Parent Task completions for a child (optionally filtered by date)
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: false
+          description: ISO date (YYYY-MM-DD). When omitted returns all completions for the child.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of completions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParentTaskCompletion"
+    post:
+      operationId: setParentTaskCompletion
+      tags: [parent-tasks]
+      summary: Mark a Parent Task as done for a child on a date (idempotent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetParentTaskCompletionBody"
+      responses:
+        "200":
+          description: Completion record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParentTaskCompletion"
+    delete:
+      operationId: clearParentTaskCompletion
+      tags: [parent-tasks]
+      summary: Clear a Parent Task completion (uncheck) for a child on a date
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: taskKey
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Cleared (or already absent)
 
   /dashboard/behavior-stats:
     get:
@@ -1221,6 +1290,40 @@ components:
         - positiveBehaviorsToday
         - negativeBehaviorsToday
         - routinesGeneratedThisWeek
+
+    ParentTaskCompletion:
+      type: object
+      properties:
+        id:
+          type: integer
+        childId:
+          type: integer
+        date:
+          type: string
+        taskKey:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - childId
+        - date
+        - taskKey
+        - createdAt
+
+    SetParentTaskCompletionBody:
+      type: object
+      properties:
+        childId:
+          type: integer
+        date:
+          type: string
+        taskKey:
+          type: string
+      required:
+        - childId
+        - date
+        - taskKey
 
     BehaviorStat:
       type: object
