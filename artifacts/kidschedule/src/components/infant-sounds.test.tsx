@@ -16,13 +16,41 @@
  *   - "Load More Poems" reveals additional poems in the same group
  *   - Loop is ON by default in the poem player
  *
- * jsdom has no WebAudio and no SpeechSynthesis, so we install minimal mocks
- * for both that expose only the methods the engine + player actually call —
- * enough to prove the UI wiring is correct without verifying real audio.
+ * jsdom has no WebAudio and only a stub HTMLAudioElement, so we install
+ * minimal mocks: the WebAudio context for the white-noise engine, and the
+ * `Audio` constructor + `useAuthFetch` for the ElevenLabs-backed poem
+ * player. The mocked authFetch returns a canned /api/tts/synthesize
+ * envelope so play() resolves without real network IO.
  */
 import React from "react";
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
 import { render, screen, within, fireEvent, cleanup } from "@testing-library/react";
+
+// ─── Module mocks (must come before the component import) ────────────────────
+//
+// The Poems player uses `useAuthFetch` to call /api/tts/synthesize. Mock it
+// here so tests don't need a real Firebase auth context and so the synth
+// call resolves instantly with a fake audio URL the mocked Audio constructor
+// will happily accept as a `src`.
+vi.mock("@/hooks/use-auth-fetch", () => ({
+  useAuthFetch: () => async (input: RequestInfo | URL) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url.includes("/api/tts/synthesize")) {
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          cacheKey: "deadbeef",
+          audioUrl: "/api/tts/audio/deadbeef.mp3",
+          cached: true,
+          charCount: 50,
+          contentType: "audio/mpeg",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    return new Response(null, { status: 404 });
+  },
+}));
 
 import { WhiteNoiseLullaby } from "./infant-sounds";
 
@@ -86,34 +114,34 @@ class MockAudioContext {
   close() { return Promise.resolve(); }
 }
 
-// ─── SpeechSynthesis mock (Spec 3 — Poems player) ─────────────────────────────
-// jsdom has no SpeechSynthesis API. The poem player only touches `speak`,
-// `cancel`, `pause`, `resume`, and `getVoices`, so we mock just those — the
-// utterance constructor stores its event handlers so we can resolve them
-// synchronously in tests if we need to.
-class MockSpeechSynthesisUtterance {
-  text: string;
-  rate = 1;
-  pitch = 1;
+// ─── HTMLAudioElement mock (Spec 3 — Poems player) ────────────────────────────
+// jsdom's <audio> implementation is a stub that doesn't actually play; we
+// replace `Audio` globally with a minimal class that records the calls our
+// player makes (play / pause / load / removeAttribute) and resolves play()
+// synchronously so isPlaying flips on the next React tick.
+class MockAudioElement {
+  src = "";
+  loop = false;
   volume = 1;
-  lang = "";
-  voice: SpeechSynthesisVoice | null = null;
-  onend: ((ev: Event) => void) | null = null;
+  preload: "auto" | "metadata" | "none" = "auto";
+  paused = true;
+  currentTime = 0;
+  onended: ((ev: Event) => void) | null = null;
   onerror: ((ev: Event) => void) | null = null;
-  onstart: ((ev: Event) => void) | null = null;
-  constructor(text: string) { this.text = text; }
-}
-class MockSpeechSynthesis {
-  speaking = false;
-  paused = false;
-  pending = false;
-  speak(_u: SpeechSynthesisUtterance) { this.speaking = true; }
-  cancel() { this.speaking = false; this.paused = false; }
-  pause() { this.paused = true; }
-  resume() { this.paused = false; }
-  getVoices(): SpeechSynthesisVoice[] { return []; }
-  addEventListener() { /* no-op */ }
-  removeEventListener() { /* no-op */ }
+  constructor(srcArg?: string) {
+    if (srcArg) this.src = srcArg;
+  }
+  play(): Promise<void> {
+    this.paused = false;
+    return Promise.resolve();
+  }
+  pause(): void { this.paused = true; }
+  load(): void { /* no-op */ }
+  removeAttribute(name: string): void {
+    if (name === "src") this.src = "";
+  }
+  addEventListener(): void { /* no-op */ }
+  removeEventListener(): void { /* no-op */ }
 }
 
 beforeAll(() => {
@@ -121,14 +149,9 @@ beforeAll(() => {
   // first play, so installing in beforeAll is fine).
   (globalThis as unknown as { AudioContext: typeof AudioContext }).AudioContext =
     MockAudioContext as unknown as typeof AudioContext;
-  // SpeechSynthesis mock — used by the poems tab player.
-  Object.defineProperty(window, "speechSynthesis", {
-    configurable: true,
-    value: new MockSpeechSynthesis(),
-  });
-  (globalThis as unknown as { SpeechSynthesisUtterance: typeof SpeechSynthesisUtterance })
-    .SpeechSynthesisUtterance =
-    MockSpeechSynthesisUtterance as unknown as typeof SpeechSynthesisUtterance;
+  // HTMLAudioElement mock — used by the ElevenLabs-backed poem player.
+  (globalThis as unknown as { Audio: typeof Audio }).Audio =
+    MockAudioElement as unknown as typeof Audio;
   // jsdom doesn't implement requestAnimationFrame consistently across versions
   // and we don't want it firing during assertions — replace with no-op.
   globalThis.requestAnimationFrame = (() => 0) as typeof requestAnimationFrame;
@@ -322,20 +345,23 @@ describe("WhiteNoiseLullaby — immersive module", () => {
       });
     });
 
-    it("close button stops playback (clears the playing-pulse on the tile)", () => {
+    it("close button stops playback (clears the active marker on the tile)", () => {
       render(<WhiteNoiseLullaby ageMonths={2} />);
       openPoemsTab();
 
       const tile = screen.getByTestId("poem-tile-sleep-baby-sleep");
       fireEvent.click(tile);
-      // Tile flips to data-active="true" while playing.
+      // Tile flips to data-active="true" the moment the fullscreen player
+      // opens for it (covers loading, playing, and paused states). We bind
+      // to `openPoem` rather than to the async `isPlaying` flag so the
+      // marker doesn't blink while the synth fetch is in flight.
       expect(tile).toHaveAttribute("data-active", "true");
 
       fireEvent.click(screen.getByTestId("poem-fullscreen-close"));
 
-      // Engine state is the source of truth: the tile flips back to inactive
-      // synchronously. We don't assert on the player's DOM presence here
-      // because <AnimatePresence> keeps its children mounted during the exit
+      // openPoem is cleared synchronously on close → tile flips back. We
+      // don't assert on the player's DOM presence here because
+      // <AnimatePresence> keeps its children mounted during the exit
       // animation, and framer-motion's animations don't complete cleanly
       // under jsdom + fake timers (same caveat as the white-noise stop-all
       // test above).
