@@ -29,7 +29,7 @@ import recipesRouter from "./recipes";
 import ttsRouter, { ttsPublicRouter } from "./tts";
 import audioLessonsRouter from "./audio-lessons";
 import phonicsRouter from "./phonics";
-import spellingRouter from "./spelling";
+import spellingRouter, { spellingPublicRouter } from "./spelling";
 import coloringRouter from "./coloring";
 import funsheetsRouter from "./funsheets";
 import storiesRouter from "./stories";
@@ -59,6 +59,11 @@ router.use(mealsRouter);
 // serve unauthenticated because keys can only originate from an authed
 // /api/tts/synthesize call. Lets <audio>/expo-audio load it without headers.
 router.use(ttsPublicRouter);
+// /api/spelling/sessions/:token/audio/:idx.mp3 — content-addressed MP3 stream
+// scoped by an unguessable session token. Mounted BEFORE requireAuth so
+// <audio> tags can fetch without juggling bearer tokens; the session token
+// itself authenticates (only the parent who owns the child receives it).
+router.use(spellingPublicRouter);
 router.use(requireAuth);
 router.use(onboardingRouter);
 router.use(childrenRouter);

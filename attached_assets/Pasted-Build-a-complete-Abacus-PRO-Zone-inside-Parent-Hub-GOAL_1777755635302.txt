@@ -1,0 +1,175 @@
+Build a complete "Abacus PRO Zone" inside Parent Hub.
+
+GOAL:
+Create a full abacus learning system from beginner to mental math with interactive UI, animations, and gamified learning.
+
+--------------------------------------------------
+1. CORE STRUCTURE
+--------------------------------------------------
+
+Create modules:
+
+1. Learn Abacus
+2. Practice Mode
+3. Challenge Mode
+4. Mental Math Mode
+5. AI Tutor Mode
+
+--------------------------------------------------
+2. INTERACTIVE ABACUS (MAIN COMPONENT)
+--------------------------------------------------
+
+Build a digital abacus with:
+
+- Multiple rods (1–5 digits)
+- Upper bead (value 5)
+- Lower beads (value 1)
+
+Features:
+
+- Tap or drag beads
+- Smooth animation
+- Glow effect when active
+- Real-time number calculation
+
+--------------------------------------------------
+3. VISUAL LEARNING MODE
+--------------------------------------------------
+
+For each concept:
+
+- Show number
+- Show abacus representation
+- Animate bead movement
+
+Example:
+7 → move 5 bead + 2 beads
+
+--------------------------------------------------
+4. STEP-BY-STEP TEACHING
+--------------------------------------------------
+
+For each problem:
+
+Step 1 → Show number
+Step 2 → Highlight rod
+Step 3 → Animate beads
+Step 4 → Show result
+
+--------------------------------------------------
+5. PRACTICE MODE
+--------------------------------------------------
+
+- User solves using abacus
+- Questions:
+   • 2 + 3
+   • 5 + 4
+
+Check answer using abacus value
+
+--------------------------------------------------
+6. QUIZ MODE (GAMIFIED)
+--------------------------------------------------
+
+- Timer-based
+- Score system
+
+Rules:
+- Correct → +10
+- Fast → +5 bonus
+
+--------------------------------------------------
+7. MENTAL ABACUS MODE
+--------------------------------------------------
+
+- Hide abacus
+- Ask questions
+- User answers mentally
+
+--------------------------------------------------
+8. LEVEL PROGRESSION
+--------------------------------------------------
+
+Level 1 → Numbers
+Level 2 → Addition
+Level 3 → Subtraction
+Level 4 → Multi-digit
+Level 5 → Mental math
+
+Unlock system:
+- Complete level → unlock next
+
+--------------------------------------------------
+9. ANIMATION SYSTEM
+--------------------------------------------------
+
+- Beads slide smoothly
+- Glow on movement
+- Confetti on correct answer
+
+--------------------------------------------------
+10. SOUND SYSTEM
+--------------------------------------------------
+
+- Click sound on tap
+- Slide sound on movement
+- Voice guidance:
+   “Add 2 beads”
+
+--------------------------------------------------
+11. AI TUTOR INTEGRATION
+--------------------------------------------------
+
+Add Amy AI:
+
+- Explains steps
+- Guides user
+
+Example:
+“To add 3, move 3 beads”
+
+--------------------------------------------------
+12. UI DESIGN
+--------------------------------------------------
+
+- Bright kid-friendly colors
+- Large beads
+- Clean layout
+
+Screens:
+
+- Dashboard
+- Learning screen
+- Practice screen
+- Quiz screen
+
+--------------------------------------------------
+13. GAME FEATURES
+--------------------------------------------------
+
+- Speed challenge
+- Daily practice
+- Leaderboard
+
+--------------------------------------------------
+14. PERFORMANCE
+--------------------------------------------------
+
+- Smooth animation
+- Fast response
+
+--------------------------------------------------
+15. DATA STRUCTURE
+--------------------------------------------------
+
+Store:
+
+- User progress
+- Level
+- Accuracy
+
+--------------------------------------------------
+DELIVERABLE:
+- Full abacus learning system
+- Interactive UI
+- Game + AI tutor integration
