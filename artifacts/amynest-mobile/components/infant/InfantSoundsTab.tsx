@@ -6,11 +6,14 @@ import {
   NOISE_TYPES,
   LULLABIES,
   getNoiseAgeTip,
+  pickLang,
+  type Lang,
   type NoiseType,
   type Lullaby,
 } from "@workspace/infant-hub";
 import { useNoisePlayer, type WavSource } from "@/hooks/useNoisePlayer";
 import { brand, palette } from "@/constants/colors";
+import { langOf } from "@/utils/lang";
 
 type Props = { ageMonths: number };
 
@@ -20,7 +23,8 @@ type Props = { ageMonths: number };
  * (see lib/infant-hub/src/audioSynth.ts) — no audio assets bundled.
  */
 export default function InfantSoundsTab({ ageMonths }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = langOf(i18n.language);
   const ageTip = getNoiseAgeTip(ageMonths);
   const recommended = NOISE_TYPES.filter((n) => ageTip.recommended.includes(n.id));
   const others = NOISE_TYPES.filter((n) => !ageTip.recommended.includes(n.id));
@@ -47,11 +51,11 @@ export default function InfantSoundsTab({ ageMonths }: Props) {
             </Pressable>
           )}
         </View>
-        <Text style={styles.ageTipHeadline}>{ageTip.headline}</Text>
-        <Text style={styles.ageTipBody}>{ageTip.tip}</Text>
+        <Text style={styles.ageTipHeadline}>{pickLang(ageTip.headline, lang)}</Text>
+        <Text style={styles.ageTipBody}>{pickLang(ageTip.tip, lang)}</Text>
         <View style={styles.volumeRow}>
           <Ionicons name="volume-medium" size={12} color={palette.emerald400} />
-          <Text style={styles.volumeText}>{ageTip.volume}</Text>
+          <Text style={styles.volumeText}>{pickLang(ageTip.volume, lang)}</Text>
         </View>
       </View>
 
@@ -65,6 +69,7 @@ export default function InfantSoundsTab({ ageMonths }: Props) {
               <NoiseRow
                 key={n.id}
                 noise={n}
+                lang={lang}
                 highlight
                 playing={activeId === n.id}
                 onToggle={() => toggle(n.id, { type: "noise", kind: n.synthKind })}
@@ -83,6 +88,7 @@ export default function InfantSoundsTab({ ageMonths }: Props) {
             <NoiseRow
               key={n.id}
               noise={n}
+              lang={lang}
               highlight={false}
               playing={activeId === n.id}
               onToggle={() => toggle(n.id, { type: "noise", kind: n.synthKind })}
@@ -125,6 +131,7 @@ export default function InfantSoundsTab({ ageMonths }: Props) {
 
 function NoiseRow({
   noise,
+  lang,
   highlight,
   playing,
   onToggle,
@@ -132,6 +139,7 @@ function NoiseRow({
   pauseLabel,
 }: {
   noise: NoiseType;
+  lang: Lang;
   highlight: boolean;
   playing: boolean;
   onToggle: () => void;
@@ -155,8 +163,8 @@ function NoiseRow({
       <Text style={styles.noiseEmoji}>{noise.emoji}</Text>
       <View style={{ flex: 1 }}>
         <Text style={styles.noiseLabel}>{noise.label}</Text>
-        <Text style={styles.noiseDesc}>{noise.desc}</Text>
-        <Text style={styles.noiseBest}>👶 {noise.bestFor}</Text>
+        <Text style={styles.noiseDesc}>{pickLang(noise.desc, lang)}</Text>
+        <Text style={styles.noiseBest}>👶 {pickLang(noise.bestFor, lang)}</Text>
       </View>
       <Pressable
         onPress={onToggle}

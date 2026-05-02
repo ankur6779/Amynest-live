@@ -4,9 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import {
   getMilestonesForAge,
+  pickLang,
   type MilestoneCategory,
 } from "@workspace/infant-hub";
 import { brand, palette } from "@/constants/colors";
+import { langOf } from "@/utils/lang";
 
 type Props = { ageMonths: number };
 
@@ -21,7 +23,8 @@ const CAT_EMOJI: Record<MilestoneCategory, string> = {
  *  category pills + a card per milestone with explanation, why-it-matters,
  *  and a parent-driven activity. */
 export default function InfantMilestonesTab({ ageMonths }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = langOf(i18n.language);
   const all = useMemo(() => getMilestonesForAge(ageMonths), [ageMonths]);
   const [filter, setFilter] = useState<MilestoneCategory | "all">("all");
   const visible = filter === "all" ? all : all.filter((m) => m.category === filter);
@@ -65,18 +68,18 @@ export default function InfantMilestonesTab({ ageMonths }: Props) {
                 </Text>
               </View>
             </View>
-            <Text style={styles.cardBody}>{m.explanation}</Text>
+            <Text style={styles.cardBody}>{pickLang(m.explanation, lang)}</Text>
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>
                 {t("infant_hub.milestones.why_label")}
               </Text>
-              <Text style={styles.sectionBody}>{m.whyItMatters}</Text>
+              <Text style={styles.sectionBody}>{pickLang(m.whyItMatters, lang)}</Text>
             </View>
             <View style={styles.activityBlock}>
               <Text style={styles.activityLabel}>
                 {t("infant_hub.milestones.try_label")}
               </Text>
-              <Text style={styles.activityBody}>{m.activity}</Text>
+              <Text style={styles.activityBody}>{pickLang(m.activity, lang)}</Text>
             </View>
           </View>
         ))

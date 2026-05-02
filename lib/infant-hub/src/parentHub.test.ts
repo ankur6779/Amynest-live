@@ -221,11 +221,48 @@ describe("getSleepIssuePreviews + getRoutinePreview", () => {
 describe("getFeedingGuide", () => {
   it("returns the milk-only guide for a 2-month-old", () => {
     const g = getFeedingGuide(2);
-    assert.match(g.type, /breast/i);
+    // Localised: each field is { en, hi, hin } now.
+    assert.match(g.type.en, /breast/i);
+    assert.ok(g.type.hi.length > 0);
+    assert.ok(g.type.hin.length > 0);
   });
   it("returns family-meal guidance for a toddler", () => {
     const g = getFeedingGuide(20);
-    assert.match(g.freq, /meals/i);
+    assert.match(g.freq.en, /meals/i);
+    assert.ok(g.freq.hi.length > 0);
+    assert.ok(g.freq.hin.length > 0);
+  });
+});
+
+describe("Localised long-form copy", () => {
+  it("each COMMON_ISSUES content has en/hi/hin variants", () => {
+    for (const i of COMMON_ISSUES) {
+      assert.ok(i.content.en.length > 0, `${i.id} missing en`);
+      assert.ok(i.content.hi.length > 0, `${i.id} missing hi`);
+      assert.ok(i.content.hin.length > 0, `${i.id} missing hin`);
+    }
+  });
+
+  it("each MILESTONE has en/hi/hin variants for explanation/whyItMatters/activity", () => {
+    for (const m of MILESTONES) {
+      for (const field of ["explanation", "whyItMatters", "activity"] as const) {
+        const v = m[field];
+        assert.ok(v.en.length > 0, `${m.id}.${field} missing en`);
+        assert.ok(v.hi.length > 0, `${m.id}.${field} missing hi`);
+        assert.ok(v.hin.length > 0, `${m.id}.${field} missing hin`);
+      }
+    }
+  });
+
+  it("each CUE has en/hi/hin variants for insight/action", () => {
+    for (const c of CUES) {
+      for (const field of ["insight", "action"] as const) {
+        const v = c[field];
+        assert.ok(v.en.length > 0, `${c.id}.${field} missing en`);
+        assert.ok(v.hi.length > 0, `${c.id}.${field} missing hi`);
+        assert.ok(v.hin.length > 0, `${c.id}.${field} missing hin`);
+      }
+    }
   });
 });
 

@@ -2,8 +2,9 @@ import React, { useMemo, useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { getCuesForAge, type CueCategory } from "@workspace/infant-hub";
+import { getCuesForAge, pickLang, type CueCategory } from "@workspace/infant-hub";
 import { brand, palette } from "@/constants/colors";
+import { langOf } from "@/utils/lang";
 
 type Props = { ageMonths: number };
 
@@ -17,7 +18,8 @@ const CAT_TINT: Record<CueCategory, { emoji: string; tint: string; border: strin
 /** Mobile twin of the web Baby Cues sub-card: read-the-cue insights filterable
  *  by category, each with an action recommendation. */
 export default function InfantCuesTab({ ageMonths }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = langOf(i18n.language);
   const all = useMemo(() => getCuesForAge(ageMonths), [ageMonths]);
   const [filter, setFilter] = useState<CueCategory | "all">("all");
   const visible = filter === "all" ? all : all.filter((c) => c.category === filter);
@@ -70,10 +72,10 @@ export default function InfantCuesTab({ ageMonths }: Props) {
                   </Text>
                 </View>
               </View>
-              <Text style={styles.insight}>{cue.insight}</Text>
+              <Text style={styles.insight}>{pickLang(cue.insight, lang)}</Text>
               <View style={styles.actionRow}>
                 <Ionicons name="arrow-forward-circle" size={14} color={palette.emerald400} />
-                <Text style={styles.action}>{cue.action}</Text>
+                <Text style={styles.action}>{pickLang(cue.action, lang)}</Text>
               </View>
             </View>
           );
