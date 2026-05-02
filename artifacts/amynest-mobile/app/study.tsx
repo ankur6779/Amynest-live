@@ -1,7 +1,9 @@
-import React, {  useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator,
+  Animated, Easing, Platform, ToastAndroid, Alert,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -11,11 +13,18 @@ import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { SvgXml } from "react-native-svg";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
-import { brand, palette } from "@/constants/colors";
+import { brand, brandAlpha, palette } from "@/constants/colors";
 import {
   PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
   resolveStudyMode, MODE_LABELS,
+  applyEvent as applyEngagementEvent,
+  emptyEngagement,
+  noopApplyResult,
+  viewState as freshenEngagement,
+  badgeLabel,
+  DAILY_GOAL_TARGET,
   type StudyMode, type SubjectPack, type StudyTopic, type PlayItem,
+  type EngagementState, type ApplyResult,
 } from "@workspace/study-zone";
 
 type Child = { id: number; name: string; age: number; ageMonths?: number; childClass?: string | null };
@@ -24,19 +33,47 @@ interface StudyProgress {
   play: Record<string, string[]>;
   basic: Record<string, Record<string, { score: number; total: number; completed: boolean }>>;
   advanced: Record<string, Record<string, { score: number; total: number; completed: boolean }>>;
+  engagement: EngagementState;
 }
-const emptyProgress = (): StudyProgress => ({ play: {}, basic: {}, advanced: {} });
+const emptyProgress = (): StudyProgress => ({
+  play: {}, basic: {}, advanced: {}, engagement: emptyEngagement(),
+});
 const PROG_KEY = (id: number) => `amynest:study-progress:${id}`;
 
 async function loadProgress(id: number): Promise<StudyProgress> {
   try {
     const raw = await AsyncStorage.getItem(PROG_KEY(id));
     if (!raw) return emptyProgress();
-    return { ...emptyProgress(), ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    const merged: StudyProgress = {
+      ...emptyProgress(),
+      ...parsed,
+      engagement: { ...emptyEngagement(), ...(parsed.engagement ?? {}) },
+    };
+    merged.engagement = freshenEngagement(merged.engagement);
+    return merged;
   } catch { return emptyProgress(); }
 }
 async function saveProgress(id: number, p: StudyProgress) {
   try { await AsyncStorage.setItem(PROG_KEY(id), JSON.stringify(p)); } catch { /* noop */ }
+}
+
+function flashToast(msg: string) {
+  if (Platform.OS === "android") {
+    ToastAndroid.show(msg, ToastAndroid.SHORT);
+  } else if (Platform.OS === "ios") {
+    Alert.alert("Smart Study Zone", msg);
+  }
+}
+
+function lightTap() {
+  if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+}
+function successTap() {
+  if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+}
+function warningTap() {
+  if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 }
 
 type View0 =
@@ -149,27 +186,48 @@ export default function StudyScreen() {
               : { kind: "study-home", childId: c.id, mode: m });
           }} />
         ) : view.kind === "play-home" ? (
-          <PlayHome
-            progress={progress}
-            onOpen={(catId) => setView({ kind: "play-cat", childId: view.childId, categoryId: catId })}
-          />
+          <>
+            <EngagementStrip engagement={progress.engagement} />
+            <PlayHome
+              progress={progress}
+              onOpen={(catId) => setView({ kind: "play-cat", childId: view.childId, categoryId: catId })}
+            />
+          </>
         ) : view.kind === "play-cat" ? (
           <PlayCategoryView
             categoryId={view.categoryId}
             progress={progress}
             onItemTap={(item, catId) => {
               void amySpeak(item.speak);
+              lightTap();
+              let result: ApplyResult | null = null;
               updateProgress((prev) => {
                 const set = new Set(prev.play[catId] ?? []);
+                // Idempotent: only award engagement on the first tap of an item.
+                const wasNew = !set.has(item.id);
                 set.add(item.id);
-                return { ...prev, play: { ...prev.play, [catId]: Array.from(set) } };
+                const eventResult = wasNew
+                  ? applyEngagementEvent(prev.engagement, {
+                      kind: "play-tap", categoryId: catId, itemId: item.id,
+                    })
+                  : noopApplyResult(prev.engagement);
+                result = eventResult;
+                return {
+                  ...prev,
+                  play: { ...prev.play, [catId]: Array.from(set) },
+                  engagement: eventResult.next,
+                };
               });
+              return result;
             }}
           />
         ) : view.kind === "study-home" ? (
-          <StudyHome mode={view.mode} progress={progress} onOpen={(sid) =>
-            setView({ kind: "study-subject", childId: view.childId, mode: view.mode, subjectId: sid })
-          } />
+          <>
+            <EngagementStrip engagement={progress.engagement} />
+            <StudyHome mode={view.mode} progress={progress} onOpen={(sid) =>
+              setView({ kind: "study-subject", childId: view.childId, mode: view.mode, subjectId: sid })
+            } />
+          </>
         ) : view.kind === "study-subject" ? (
           <SubjectTopicList
             mode={view.mode}
@@ -188,13 +246,36 @@ export default function StudyScreen() {
               const m = view.mode;
               const sid = view.subjectId;
               const tid = view.topicId;
+              let result: ApplyResult | null = null;
               updateProgress((prev) => {
                 const subj = { ...(prev[m][sid] ?? {}) };
                 const existing = subj[tid];
+                const wasCompleted = existing?.completed === true;
+                const wasPerfect = existing?.score === total && total > 0;
                 const best = existing ? Math.max(existing.score, score) : score;
-                subj[tid] = { score: best, total, completed: best >= Math.ceil(total * 0.6) };
-                return { ...prev, [m]: { ...prev[m], [sid]: subj } };
+                const willBeCompleted = best >= Math.ceil(total * 0.6);
+                subj[tid] = { score: best, total, completed: willBeCompleted };
+                // Idempotent: only award engagement when the topic newly clears
+                // the pass bar OR newly hits a perfect score. Re-runs are silent.
+                const isNewCompletion = !wasCompleted && willBeCompleted;
+                const isNewPerfect = !wasPerfect && score === total && total > 0;
+                const eventResult = (isNewCompletion || isNewPerfect)
+                  ? applyEngagementEvent(prev.engagement, {
+                      kind: "topic-result",
+                      mode: m,
+                      subjectId: sid,
+                      topicId: tid,
+                      score, total,
+                    })
+                  : noopApplyResult(prev.engagement);
+                result = eventResult;
+                return {
+                  ...prev,
+                  [m]: { ...prev[m], [sid]: subj },
+                  engagement: eventResult.next,
+                };
               });
+              return result;
             }}
           />
         )}
@@ -264,41 +345,98 @@ function PlayCategoryView({
 }: {
   categoryId: string;
   progress: StudyProgress;
-  onItemTap: (item: PlayItem, categoryId: string) => void;
+  onItemTap: (item: PlayItem, categoryId: string) => ApplyResult | null;
 }) {
   const cat = PLAY_CATEGORIES.find((c) => c.id === (categoryId as any));
+  const [xpAmount, setXpAmount] = useState(0);
+  const [xpKey, setXpKey] = useState(0);
+  const [poppedId, setPoppedId] = useState<string | null>(null);
   if (!cat) return <Text>Category not found.</Text>;
   const done = new Set(progress.play[cat.id] ?? []);
   const isRhyme = cat.id === "rhymes";
+  const handleTap = (item: PlayItem) => {
+    setPoppedId(item.id);
+    setTimeout(() => setPoppedId((v) => (v === item.id ? null : v)), 400);
+    const res = onItemTap(item, cat.id);
+    if (res && res.xpDelta > 0) {
+      setXpAmount(res.xpDelta);
+      setXpKey((k) => k + 1);
+    }
+    if (res?.streakIncreased && res.next.streak > 1) {
+      flashToast(`🔥 ${res.next.streak}-day streak!`);
+    } else if (res && res.newBadges.length > 0) {
+      flashToast("🏆 New badge unlocked!");
+    }
+  };
   return (
     <View>
+      <XpPopup amount={xpAmount} triggerKey={xpKey} />
       <Text style={styles.h2}>{cat.emoji}  {cat.title}</Text>
       <View style={styles.grid2}>
         {cat.items.map((item) => {
           const isDone = done.has(item.id);
           return (
-            <Pressable
+            <PlayItemCard
               key={item.id}
-              style={[styles.playCard, { borderColor: isDone ? palette.emerald400 : palette.indigo200 }]}
-              onPress={() => onItemTap(item, cat.id)}
-            >
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ fontSize: 32 }}>{item.emoji ?? ""}</Text>
-                {isDone && <Ionicons name="checkmark-circle" size={18} color={palette.green600} />}
-              </View>
-              <Text style={styles.playLabel}>{item.label}</Text>
-              <Text style={styles.playSub} numberOfLines={isRhyme ? 3 : 2}>
-                {isRhyme && item.body ? item.body : item.speak}
-              </Text>
-              <View style={styles.tapHint}>
-                <Ionicons name="volume-high" size={11} color={palette.indigo500} />
-                <Text style={styles.tapHintText}>Tap to hear</Text>
-              </View>
-            </Pressable>
+              item={item}
+              isDone={isDone}
+              isPopping={poppedId === item.id}
+              isRhyme={isRhyme}
+              onPress={() => handleTap(item)}
+            />
           );
         })}
       </View>
     </View>
+  );
+}
+
+function PlayItemCard({
+  item, isDone, isPopping, isRhyme, onPress,
+}: {
+  item: PlayItem;
+  isDone: boolean;
+  isPopping: boolean;
+  isRhyme: boolean;
+  onPress: () => void;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const emojiScale = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!isPopping) return;
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.06, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: 200, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.timing(emojiScale, { toValue: 1.4, duration: 140, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(emojiScale, { toValue: 1, duration: 220, easing: Easing.elastic(1.5), useNativeDriver: true }),
+      ]),
+    ]).start();
+  }, [isPopping, scale, emojiScale]);
+  return (
+    <Animated.View style={{ width: "47.5%", transform: [{ scale }] }}>
+      <Pressable
+        style={[styles.playCard, { width: "100%", borderColor: isDone ? palette.emerald400 : palette.indigo200 }]}
+        onPress={onPress}
+      >
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <Animated.Text style={{ fontSize: 32, transform: [{ scale: emojiScale }] }}>
+            {item.emoji ?? ""}
+          </Animated.Text>
+          {isDone && <Ionicons name="checkmark-circle" size={18} color={palette.green600} />}
+        </View>
+        <Text style={styles.playLabel}>{item.label}</Text>
+        <Text style={styles.playSub} numberOfLines={isRhyme ? 3 : 2}>
+          {isRhyme && item.body ? item.body : item.speak}
+        </Text>
+        <View style={styles.tapHint}>
+          <Ionicons name="volume-high" size={11} color={palette.indigo500} />
+          <Text style={styles.tapHintText}>Tap to hear</Text>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -368,7 +506,7 @@ function TopicDetail({
   mode: "basic" | "advanced";
   subjectId: string;
   topicId: string;
-  onScored: (score: number, total: number) => void;
+  onScored: (score: number, total: number) => ApplyResult | null;
 }) {
   const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
   const subj = subjects.find((s) => s.id === subjectId);
@@ -376,17 +514,55 @@ function TopicDetail({
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [picks, setPicks] = useState<number[]>(() => topic ? Array(topic.questions.length).fill(-1) : []);
   const [submitted, setSubmitted] = useState(false);
+  const [xpAmount, setXpAmount] = useState(0);
+  const [xpKey, setXpKey] = useState(0);
+  const [confettiKey, setConfettiKey] = useState(0);
+  const shakeAnim = useRef(new Animated.Value(0)).current;
   const { speak: amySpeak, stop: amyStop } = useAmyVoice();
   useEffect(() => () => { amyStop(); }, [amyStop]);
   if (!subj || !topic) return <Text>Topic not found.</Text>;
 
   const total = topic.questions.length;
   const score = topic.questions.reduce((acc, q, i) => acc + (picks[i] === q.answer ? 1 : 0), 0);
-  const submit = () => { setSubmitted(true); onScored(score, total); };
+  const isPerfect = submitted && score === total && total > 0;
+  const submit = () => {
+    setSubmitted(true);
+    const res = onScored(score, total);
+    const perfect = score === total && total > 0;
+    const passed = score >= Math.ceil(total * 0.6);
+    if (perfect) {
+      successTap();
+      setConfettiKey((k) => k + 1);
+    } else if (passed) {
+      successTap();
+    } else {
+      warningTap();
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+      ]).start();
+    }
+    if (res && res.xpDelta > 0) {
+      setXpAmount(res.xpDelta);
+      setXpKey((k) => k + 1);
+    }
+    if (res?.streakIncreased && res.next.streak > 1) {
+      flashToast(`🔥 ${res.next.streak}-day streak!`);
+    } else if (res?.goalReached) {
+      flashToast("🎯 Daily goal complete!");
+    } else if (res && res.newBadges.some((b) => b.startsWith("perfect-"))) {
+      flashToast("🏆 Perfect score!");
+    }
+  };
   const reset = () => { setPicks(Array(total).fill(-1)); setSubmitted(false); };
 
   return (
     <View style={{ gap: 12 }}>
+      <XpPopup amount={xpAmount} triggerKey={xpKey} />
+      <ConfettiBurst triggerKey={confettiKey} />
       <View>
         <Text style={styles.h1}>{topic.title}</Text>
         <Text style={styles.rowDesc}>{subj.emoji} {subj.title}</Text>
@@ -433,7 +609,7 @@ function TopicDetail({
           )}
         </View>
         {practiceOpen && (
-          <View style={{ gap: 12 }}>
+          <Animated.View style={{ gap: 12, transform: [{ translateX: shakeAnim }] }}>
             {topic.questions.map((q, qi) => (
               <View key={qi} style={styles.qBox}>
                 <Text style={styles.qText}>{qi + 1}. {q.q}</Text>
@@ -472,7 +648,7 @@ function TopicDetail({
               </Pressable>
             ) : (
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                <Text style={styles.cardTitle}>
+                <Text style={[styles.cardTitle, isPerfect && { color: palette.amber600 }]}>
                   You got {score} / {total} {score === total ? "🎉" : score >= Math.ceil(total * 0.6) ? "👍" : "💪"}
                 </Text>
                 <Pressable style={styles.outlineBtn} onPress={reset}>
@@ -481,9 +657,155 @@ function TopicDetail({
                 </Pressable>
               </View>
             )}
-          </View>
+          </Animated.View>
         )}
       </View>
+    </View>
+  );
+}
+
+// ─── Engagement components ───────────────────────────────────────────────────
+
+function EngagementStrip({ engagement }: { engagement: EngagementState }) {
+  const goalPct = Math.min(100, Math.round((engagement.goalProgress / DAILY_GOAL_TARGET) * 100));
+  const recentBadges = engagement.badges.slice(-6).reverse();
+  return (
+    <View style={styles.engStrip}>
+      <View style={styles.engRow}>
+        <View style={styles.engStat}>
+          <Text style={{ fontSize: 16 }}>🔥</Text>
+          <Text style={styles.engStatLabel}>STREAK</Text>
+          <View style={[styles.engPill, { backgroundColor: palette.orange100 }]}>
+            <Text style={[styles.engPillText, { color: palette.orange700 }]}>
+              {engagement.streak} d
+            </Text>
+          </View>
+        </View>
+        <View style={styles.engStat}>
+          <Text style={{ fontSize: 16 }}>⭐</Text>
+          <Text style={styles.engStatLabel}>XP</Text>
+          <View style={[styles.engPill, { backgroundColor: palette.amber100 }]}>
+            <Text style={[styles.engPillText, { color: palette.amber700 }]}>
+              {engagement.xp}
+            </Text>
+          </View>
+        </View>
+        <GoalRing pct={goalPct} done={engagement.goalProgress} target={DAILY_GOAL_TARGET} />
+      </View>
+      {recentBadges.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 6, paddingTop: 8 }}
+        >
+          <Text style={{ fontSize: 12, alignSelf: "center", marginRight: 2 }}>🏆</Text>
+          {recentBadges.map((id) => {
+            const b = badgeLabel(id);
+            if (!b) return null;
+            return (
+              <View key={id} style={styles.engBadge}>
+                <Text style={styles.engBadgeEmoji}>{b.emoji}</Text>
+                <Text style={styles.engBadgeText}>{b.label}</Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+function GoalRing({ pct, done, target }: { pct: number; done: number; target: number }) {
+  // Simple ring effect: outer circle fills proportionally with a coloured arc
+  // approximated by rotating an inner overlay. Lightweight (no SVG).
+  return (
+    <View style={styles.goalRing}>
+      <View style={[styles.goalRingFill, { borderTopColor: palette.indigo500, borderRightColor: pct > 25 ? palette.indigo500 : palette.indigo200, borderBottomColor: pct > 50 ? palette.indigo500 : palette.indigo200, borderLeftColor: pct > 75 ? palette.indigo500 : palette.indigo200 }]} />
+      <View style={styles.goalRingInner}>
+        <Text style={styles.goalRingText}>🎯</Text>
+        <Text style={styles.goalRingNum}>{done}/{target}</Text>
+      </View>
+    </View>
+  );
+}
+
+function XpPopup({ amount, triggerKey }: { amount: number; triggerKey: number }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (triggerKey === 0 || amount <= 0) return;
+    opacity.setValue(0);
+    translateY.setValue(0);
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+        Animated.delay(450),
+        Animated.timing(opacity, { toValue: 0, duration: 350, useNativeDriver: true }),
+      ]),
+      Animated.timing(translateY, { toValue: -38, duration: 980, useNativeDriver: true }),
+    ]).start();
+  }, [triggerKey, amount, opacity, translateY]);
+  if (triggerKey === 0 || amount <= 0) return null;
+  return (
+    <View pointerEvents="none" style={styles.xpPopupWrap}>
+      <Animated.View style={[styles.xpPopup, { opacity, transform: [{ translateY }] }]}>
+        <Text style={styles.xpPopupText}>+{amount} XP ⭐</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+function ConfettiBurst({ triggerKey }: { triggerKey: number }) {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 16 }, (_, i) => {
+        const angle = (i / 16) * Math.PI * 2;
+        const dist = 90 + Math.random() * 60;
+        return {
+          x: Math.cos(angle) * dist,
+          y: Math.sin(angle) * dist,
+          rot: Math.random() * 360,
+          emoji: ["🎉", "✨", "⭐", "🎊", "💫", "🌟"][i % 6],
+          delay: Math.random() * 80,
+        };
+      }),
+    [],
+  );
+  const animValues = useRef(pieces.map(() => new Animated.Value(0))).current;
+  useEffect(() => {
+    if (triggerKey === 0) return;
+    animValues.forEach((v) => v.setValue(0));
+    Animated.stagger(
+      30,
+      animValues.map((v, i) =>
+        Animated.timing(v, { toValue: 1, duration: 1100, delay: pieces[i].delay, useNativeDriver: true }),
+      ),
+    ).start();
+  }, [triggerKey, animValues, pieces]);
+  if (triggerKey === 0) return null;
+  return (
+    <View pointerEvents="none" style={styles.confettiWrap}>
+      {pieces.map((p, i) => {
+        const v = animValues[i];
+        return (
+          <Animated.Text
+            key={`${triggerKey}-${i}`}
+            style={[
+              styles.confettiPiece,
+              {
+                opacity: v.interpolate({ inputRange: [0, 0.15, 0.85, 1], outputRange: [0, 1, 1, 0] }),
+                transform: [
+                  { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [0, p.x] }) },
+                  { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, p.y] }) },
+                  { rotate: v.interpolate({ inputRange: [0, 1], outputRange: ["0deg", `${p.rot}deg`] }) },
+                ],
+              },
+            ]}
+          >
+            {p.emoji}
+          </Animated.Text>
+        );
+      })}
     </View>
   );
 }
@@ -540,4 +862,84 @@ const styles = StyleSheet.create({
   emptyDesc: { fontSize: 13, color: palette.slate500, marginTop: 4 },
 
   imageWrap: { backgroundColor: "#fff", borderRadius: 16, padding: 8, borderWidth: 1, borderColor: palette.gray200, overflow: "hidden" },
+
+  // Engagement strip
+  engStrip: {
+    backgroundColor: brandAlpha.indigo500_08,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: brandAlpha.indigo500_20,
+    padding: 12,
+    marginBottom: 4,
+  },
+  engRow: { flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" },
+  engStat: { flexDirection: "row", alignItems: "center", gap: 5 },
+  engStatLabel: { fontSize: 10, fontWeight: "700", color: palette.slate500, letterSpacing: 0.6 },
+  engPill: { paddingVertical: 2, paddingHorizontal: 8, borderRadius: 999 },
+  engPillText: { fontSize: 11, fontWeight: "800" },
+  engBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "#fff",
+    borderColor: brandAlpha.indigo500_20,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+  },
+  engBadgeEmoji: { fontSize: 11 },
+  engBadgeText: { fontSize: 10, fontWeight: "700", color: palette.indigo700 },
+
+  // Goal ring (lightweight)
+  goalRing: {
+    marginLeft: "auto",
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  goalRingFill: {
+    position: "absolute",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 4,
+    borderColor: palette.indigo200,
+    transform: [{ rotate: "-90deg" }],
+  },
+  goalRingInner: { alignItems: "center", justifyContent: "center" },
+  goalRingText: { fontSize: 12 },
+  goalRingNum: { fontSize: 9, fontWeight: "800", color: palette.indigo700, marginTop: -1 },
+
+  // XP popup
+  xpPopupWrap: {
+    position: "absolute",
+    top: -10,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 50,
+  },
+  xpPopup: {
+    backgroundColor: palette.amber400,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+  },
+  xpPopupText: { color: palette.amber800, fontWeight: "800", fontSize: 13 },
+
+  // Confetti burst
+  confettiWrap: {
+    position: "absolute",
+    top: "30%",
+    left: 0,
+    right: 0,
+    height: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 40,
+  },
+  confettiPiece: { position: "absolute", fontSize: 22 },
 });

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   applyEvent,
   emptyEngagement,
+  noopApplyResult,
   viewState,
   todayIso,
   DAILY_GOAL_TARGET,
@@ -138,6 +139,20 @@ describe("engagement.badgeLabel", () => {
 
   it("returns null for unknown badges", () => {
     assert.equal(badgeLabel("nope"), null);
+  });
+});
+
+describe("engagement.noopApplyResult", () => {
+  it("returns a zero-delta result that callers can use for replays", () => {
+    const state = { ...emptyEngagement(), xp: 42, streak: 3, lastActiveDate: "2025-01-09" };
+    const r = noopApplyResult(state);
+    assert.equal(r.xpDelta, 0);
+    assert.equal(r.streakIncreased, false);
+    assert.equal(r.goalReached, false);
+    assert.deepEqual(r.newBadges, []);
+    // Caller should be safe to set state ← r.next (it's the same state).
+    assert.equal(r.next, state);
+    assert.equal(r.next.xp, 42);
   });
 });
 
