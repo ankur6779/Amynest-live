@@ -8,14 +8,19 @@ export type SpellingDifficulty = "easy" | "medium" | "hard";
 export type SpellingSource = "curated" | "ai";
 
 /**
- * Trust source for legacy `POST /spelling/progress`.
+ * Trust source for POST /spelling/progress. Narrowed to "parent" only
+ * — the parent literally taps ✓/✗ in Parent Mode, so the assertion is
+ * out-of-band of the tampered-client surface.
  *
- * Competition + Dictation use the server-graded session flow
- * (`useSpellingSession` below). All other modes still post per-attempt
- * outcomes from the client and MUST tag the source so the server can
- * reason about leaderboard integrity.
+ * Learn + Practice used to write here too, but those are client-graded
+ * games where a scripted client could trivially post `correct: true`
+ * and inflate stars / level / badges. They're now UI-only flows and
+ * don't accumulate progress; star accumulation happens via Parent
+ * Mode and the server-graded session flow (Dictation / Competition /
+ * Tournament / Battle, via `useSpellingSession` / `useSpellingTournament`
+ * below).
  */
-export type LegacyProgressSource = "parent" | "learn" | "practice";
+export type LegacyProgressSource = "parent";
 
 export interface SpellingWord {
   id: string;
