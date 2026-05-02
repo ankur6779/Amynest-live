@@ -1681,6 +1681,21 @@ function WinCard({
           {win.objective}
         </p>
 
+        {/* DURATION + LISTEN (Amy reads this win aloud) — placed near the
+            top so parents can hit play and follow along while reading.
+            Mirrors mobile CoachCard.tsx, which renders the listen row
+            immediately under the title. */}
+        <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+          <span style={{
+            fontSize: 11, padding: "4px 10px", borderRadius: 999,
+            background: "rgba(139,92,246,0.2)", color: "#c4b5fd", fontWeight: 700,
+            border: "1px solid rgba(139,92,246,0.3)",
+          }}>
+            ⏱ {win.duration}
+          </span>
+          <ListenButton win={win} />
+        </div>
+
         {/* WHY THIS WORKS */}
         {win.deep_explanation && (
           <div style={{
@@ -1768,18 +1783,6 @@ function WinCard({
             </p>
           </div>
         )}
-
-        {/* DURATION + LISTEN (Amy reads this win aloud) */}
-        <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
-          <span style={{
-            fontSize: 11, padding: "4px 10px", borderRadius: 999,
-            background: "rgba(139,92,246,0.2)", color: "#c4b5fd", fontWeight: 700,
-            border: "1px solid rgba(139,92,246,0.3)",
-          }}>
-            ⏱ {win.duration}
-          </span>
-          <ListenButton win={win} />
-        </div>
 
         {win.science_reference && (
           <p style={{
