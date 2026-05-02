@@ -1463,7 +1463,11 @@ export default function HubScreen() {
                   });
                   return (
                     <Animated.View
-                      style={{ width: pageWidth, flex: 1, opacity }}
+                      style={{
+                        width: pageWidth,
+                        height: "100%",
+                        opacity,
+                      }}
                     >
                       {mountedSections.has(sectionKey) ? (
                         renderSectionPage(sectionKey)
@@ -2179,11 +2183,16 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     },
     tabPillTextActive: { color: "#fff" },
 
+    pageScroll: {
+      flex: 1,
+      width: "100%",
+    },
     pageContent: {
       paddingHorizontal: 16,
       paddingTop: 12,
       paddingBottom: 140,
       gap: 12,
+      flexGrow: 1,
     },
   });
 }
