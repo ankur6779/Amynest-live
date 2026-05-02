@@ -2,13 +2,14 @@ import React, { useMemo, useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+import { brand, palette } from "@/constants/colors";
 import { getDailyStoryPool, type DailyStory as Story } from "@workspace/age-content";
 
 const CAT_COLOR: Record<Story["category"], string> = {
-  moral: "#a855f7",
-  fun: "#f59e0b",
-  animal: "#10b981",
-  learning: "#3b82f6",
+  moral: brand.purple500,
+  fun: palette.amber500,
+  animal: palette.emerald500,
+  learning: palette.blue500,
 };
 const CAT_LABEL: Record<Story["category"], string> = {
   moral: "Moral",
