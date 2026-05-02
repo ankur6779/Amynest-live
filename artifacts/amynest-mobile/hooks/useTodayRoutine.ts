@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import type { RoutineTask } from "@/contexts/ProgressContext";
+import { categoryIcon } from "@/constants/categoryIcons";
 
 /**
  * Shared "today's routine" hook used by both the dashboard and the Parent
@@ -33,20 +34,6 @@ export type Routine = {
   title: string;
   items: RoutineItem[];
   createdAt?: string;
-};
-
-const CATEGORY_ICONS: Record<string, string> = {
-  morning: "sunny", morning_routine: "sunny",
-  meal: "restaurant", tiffin: "fast-food",
-  school: "school", travel: "car",
-  homework: "book", study: "book",
-  play: "football", exercise: "fitness",
-  family: "heart", bonding: "people",
-  creative: "color-palette", outdoor: "leaf",
-  self_care: "sparkles", hygiene: "water",
-  rest: "pause-circle", "wind-down": "moon",
-  sleep: "moon", screen: "tv",
-  default: "ellipse-outline",
 };
 
 function formatYMD(d: Date): string {
@@ -112,7 +99,7 @@ export function useTodayRoutine(
       title: it.activity,
       time: it.time,
       minutes: it.duration ?? 30,
-      icon: CATEGORY_ICONS[(it.category ?? "").toLowerCase()] ?? CATEGORY_ICONS.default,
+      icon: categoryIcon(it.category),
       done: it.status === "completed",
       ageBand: it.ageBand,
     }));
