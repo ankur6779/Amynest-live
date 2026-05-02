@@ -117,7 +117,7 @@ export default function HubScreen() {
   // shown in full opacity (un-dimmed) and we scroll to it. Tapping the current
   // band chip clears it and returns to the default 2-section view.
   const [previewBand, setPreviewBand] = useState<number | null>(null);
-  // Tile id to highlight after a Today's Plan quick-jump (Task #191).
+  // Tile id to highlight after a Today's Plan quick-jump (Task #191). // audit-ok: task ref, not a hex color
   // Cleared by `triggerHighlight` after ~2.4s, or cancelled if the parent
   // jumps to a different tile in the meantime.
   const [highlightedTileId, setHighlightedTileId] = useState<string | null>(null);
@@ -191,7 +191,7 @@ export default function HubScreen() {
     };
   }, []);
 
-  // Today's Plan → quick-jump handler (Task #191): resolve a related tile
+  // Today's Plan → quick-jump handler (Task #191): resolve a related tile // audit-ok: task ref, not a hex color
   // id to its hub section, switch the pager to that page, and flag the
   // tile for highlight so SectionPage scrolls to it and HubTile pulses.
   const onContinueFromTodayPlan = useCallback(
@@ -1424,7 +1424,7 @@ export default function HubScreen() {
                             with the `featured` variant for a slightly
                             larger press target + corner radius. */}
                         <HubTile featured testID="hub-tile-command-center">
-                          <ParentCommandCenter child={{ id: effective.id, name: effective.name }} />
+                          <ParentCommandCenter child={{ id: effective.id, name: effective.name, age: effective.age }} />
                         </HubTile>
                         <HubTile featured testID="hub-tile-infant-hub">
                           {renderInfantHub()}
@@ -1672,7 +1672,7 @@ function TodayPlanPage({
   onGenerate: () => void;
   /**
    * Called with the related tile id when a parent taps "Continue" on a
-   * completed routine task (Task #191). Resolved via the task's
+   * completed routine task (Task #191). Resolved via the task's // audit-ok: task ref, not a hex color
    * `relatedTileId`; tasks without a mapping never render the link.
    */
   onContinue?: (tileId: string) => void;
@@ -1843,7 +1843,7 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
             // Pressable / accordion (Section) inside, so HubTile itself
             // is non-pressable here — it just provides the shared chrome.
             // Wrapped in a measuring View so the page can scroll a
-            // highlighted tile into view (Task #191).
+            // highlighted tile into view (Task #191). // audit-ok: task ref, not a hex color
             <View
               key={t.id}
               style={styles.tileMeasureWrap}
@@ -2061,7 +2061,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     sectionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, alignItems: "flex-start" },
     // Wrapper around each tile so we can capture its y-offset via onLayout
-    // for the Today's Plan quick-jump scroll-into-view (Task #191). Width
+    // for the Today's Plan quick-jump scroll-into-view (Task #191). Width // audit-ok: task ref, not a hex color
     // mirrors the single-column 100% layout used by the bucket tiles.
     tileMeasureWrap: { width: "100%" },
     logo: { width: 40, height: 40, borderRadius: 10 },

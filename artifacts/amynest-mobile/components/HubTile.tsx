@@ -29,7 +29,7 @@ export interface HubTileProps {
   style?: StyleProp<ViewStyle>;
   /**
    * When true, briefly draws an animated accent-pink ring around the tile
-   * that fades over ~2.2s. Used by the Today's Plan quick-jump (Task #191)
+   * that fades over ~2.2s. Used by the Today's Plan quick-jump (Task #191) // audit-ok: task ref, not a hex color
    * to draw the parent's eye to the matching tile after jumping the pager.
    * Setting it back to false (or another tile becoming highlighted) cancels
    * the active animation and removes the ring.

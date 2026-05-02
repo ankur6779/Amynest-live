@@ -5,6 +5,7 @@ import {
   buildSuggestions,
   computeCommandCenter,
   parseClockTimeMins,
+  pickPlayIdeas,
 } from "./commandCenter";
 import type { AdaptiveItem } from "./adaptive";
 
@@ -141,6 +142,14 @@ describe("buildSuggestions", () => {
     assert.ok(play, "should include play chip");
   });
 
+  it("suppresses the 10-min play chip once a positive moment has been logged today", () => {
+    // The play picker logs a positive behavior when the parent picks an
+    // idea — that should close the loop on the suggestion so the chip
+    // stops re-appearing on the next render.
+    const out = buildSuggestions({ ...base, qualityMinutes: 0, positiveBehaviorsToday: 1 });
+    assert.equal(out.find((s) => s.id === "start-play"), undefined);
+  });
+
   it("returns no chips when everything looks fine", () => {
     const out = buildSuggestions(base);
     assert.deepEqual(out, []);
@@ -161,6 +170,44 @@ describe("buildSuggestions", () => {
     });
     // simplify (95) > wind-down (85) > calm-tools (75) > plan-nap (70) > start-play (60)
     assert.deepEqual(out.map((s) => s.id), ["simplify-today", "wind-down", "calm-tools", "plan-nap", "start-play"]);
+  });
+});
+
+describe("pickPlayIdeas", () => {
+  it("returns exactly the requested number of age-appropriate ideas", () => {
+    const out = pickPlayIdeas(4, 3);
+    assert.equal(out.length, 3);
+    for (const idea of out) {
+      assert.ok(idea.ageMin <= 4 && idea.ageMax >= 4, `${idea.id} is not age-appropriate for a 4-year-old`);
+      assert.ok(idea.title.length > 0);
+      assert.ok(idea.description.length > 0);
+    }
+  });
+
+  it("is deterministic per age — same age always yields the same trio", () => {
+    const a = pickPlayIdeas(3, 3);
+    const b = pickPlayIdeas(3, 3);
+    assert.deepEqual(a.map((i) => i.id), b.map((i) => i.id));
+  });
+
+  it("handles babies (0y) and older kids (12y) without crashing", () => {
+    const baby = pickPlayIdeas(0, 3);
+    const tween = pickPlayIdeas(12, 3);
+    assert.equal(baby.length, 3);
+    assert.equal(tween.length, 3);
+    // Different age bands should yield meaningfully different ideas.
+    const overlap = baby.filter((b) => tween.some((t) => t.id === b.id));
+    assert.ok(overlap.length < 3, "baby and tween shouldn't see an identical trio");
+  });
+
+  it("falls back to the full catalog if the age filter would be too narrow", () => {
+    // Out-of-range / NaN inputs should still return 3 entries, never throw.
+    const negative = pickPlayIdeas(-2, 3);
+    const huge = pickPlayIdeas(99, 3);
+    const nan = pickPlayIdeas(Number.NaN, 3);
+    assert.equal(negative.length, 3);
+    assert.equal(huge.length, 3);
+    assert.equal(nan.length, 3);
   });
 });
 

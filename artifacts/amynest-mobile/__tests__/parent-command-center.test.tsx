@@ -253,6 +253,51 @@ describe("Mobile ParentCommandCenter — fullscreen dashboard", () => {
     expect(screen.getByTestId("timed-clock-phonics")).toHaveTextContent("05:00");
   });
 
+  it("Try a 10-min play chip opens the in-place picker and logs a positive behavior", async () => {
+    // The engine only emits the chip when there's no quality time logged
+    // AND no positive behaviors today. Override both: a single Wake-only
+    // routine + a zeroed summary.
+    authFetchMock.mockReset();
+    authFetchMock.mockImplementation((url: string) => {
+      if (url.startsWith("/api/routines")) {
+        return fakeOk([{
+          id: 42,
+          date: today,
+          items: [{ time: "07:00 AM", activity: "Wake", duration: 15, category: "wake", status: "completed" }],
+        }]);
+      }
+      if (url.startsWith("/api/dashboard/summary")) {
+        return fakeOk({ positiveBehaviorsToday: 0, negativeBehaviorsToday: 0, routinesGeneratedThisWeek: 0 });
+      }
+      return fakeOk({});
+    });
+
+    render(<ParentCommandCenter child={{ id: 1, name: "Aarav", age: 4 }} />);
+    await screen.findByTestId("command-center-tile");
+    await act(async () => { await Promise.resolve(); });
+    fireEvent.click(screen.getByTestId("command-center-tile"));
+    await screen.findByTestId("command-center-dashboard");
+
+    // Chip is rendered → tap it.
+    const chip = await screen.findByTestId("suggestion-start-play");
+    fireEvent.click(chip);
+
+    // Picker mounts with exactly 3 ideas.
+    const panel = await screen.findByTestId("play-picker-panel");
+    const ideaButtons = within(panel).getAllByRole("button").filter((b) =>
+      (b.getAttribute("data-testid") ?? "").startsWith("play-idea-"),
+    );
+    expect(ideaButtons.length).toBe(3);
+
+    // Selecting an idea logs a positive moment + closes the panel.
+    fireEvent.click(ideaButtons[0]);
+    await waitFor(() => expect(createBehaviorMutateAsync).toHaveBeenCalledTimes(1));
+    const logged = createBehaviorMutateAsync.mock.calls[0][0];
+    expect(logged.type).toBe("positive");
+    expect(logged.behavior).toMatch(/^10-min play: /);
+    await waitFor(() => expect(screen.queryByTestId("play-picker-panel")).toBeNull());
+  });
+
   it("Empty state hides timeline + quick-strip + strategic grid", async () => {
     setupRoutine([]);
     render(<ParentCommandCenter child={{ id: 1, name: "Aarav" }} />);

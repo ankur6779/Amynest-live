@@ -767,7 +767,7 @@ export default function ParentingHub() {
           accentClass="bg-sky-100 dark:bg-sky-500/20"
           defaultOpen={false}
         >
-          <ParentCommandCenter child={{ id: effectiveChild.id, name: effectiveChild.name }} />
+          <ParentCommandCenter child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
         </HubSection>
       ),
     },
