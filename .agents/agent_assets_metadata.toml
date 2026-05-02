@@ -126,6 +126,12 @@ uri = "file://artifacts/amynest-mobile/assets/images/icon.png"
 type = "image"
 title = "amynest app icon"
 
+[[generated]]
+id = "z3StgvuFfipxzcBBuzSO-"
+uri = "file://attached_assets/generated_images/phonics_apple.png"
+type = "image"
+title = "phonics apple"
+
 [[outputs]]
 id = "6ZC-wVpVG0DweJvlh22r3"
 uri = "file://screenshots/playstore/web-05-landing-mobile.jpg"
@@ -167,3 +173,9 @@ id = "mfYfI5m-Jj5GZLC43_7pN"
 uri = "file://screenshots/playstore/web-s5-section4.jpg"
 type = "image"
 title = "7. 14+ Science-Backed Tools"
+
+[[outputs]]
+id = "nwwj6SfFcly6N6zo65wUE"
+uri = "file://attached_assets/generated_images/phonics_apple.png"
+type = "image"
+title = "Phonics Apple (A) — kid-friendly illustration"
