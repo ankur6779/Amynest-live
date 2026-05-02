@@ -16,7 +16,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTodayRoutine } from "@/hooks/useTodayRoutine";
 import { useTranslation } from "react-i18next";
 
 import { useColors } from "@/hooks/useColors";
@@ -890,20 +891,19 @@ export default function DashboardScreen() {
 
   const todayStr = formatYMD(new Date());
 
-  // ── Today's routines (existing) ───────────────────────────────────────────
+  // ── Today's routines (shared cache with Parent Hub) ───────────────────────
+  // Both surfaces use the same `["routines"]` queryKey via this hook so a
+  // Done/Undo toggle on either one updates the other instantly.
   const {
-    data: routines = [],
+    routines,
+    todaysRoutine,
+    tasks,
     isLoading: loadingRoutines,
-    refetch: refetchRoutines,
     isRefetching,
-  } = useQuery<Routine[]>({
-    queryKey: ["routines"],
-    queryFn: () =>
-      authFetch("/api/routines").then((r) =>
-        r.ok ? (r.json() as Promise<Routine[]>) : ([] as Routine[]),
-      ),
-    enabled: !!profileComplete,
-  });
+    refetch: refetchRoutines,
+    onToggle,
+    taskIdToItemIndex,
+  } = useTodayRoutine({ enabled: !!profileComplete });
 
   // ── Children ──────────────────────────────────────────────────────────────
   const { data: children = [], isLoading: loadingChildren } = useQuery<Child[]>({
@@ -947,74 +947,17 @@ export default function DashboardScreen() {
     ]);
   }, [refetchRoutines, qc]);
 
-  const todaysRoutine = useMemo<Routine | null>(() => {
-    return routines.find((r) => (r.date ?? "").slice(0, 10) === todayStr) ?? null;
-  }, [routines, todayStr]);
-
-  const tasks = useMemo<RoutineTask[]>(() => {
-    if (!todaysRoutine) return [];
-    return todaysRoutine.items.map((it, idx) => ({
-      id: `t-${todaysRoutine.id}-${idx}`,
-      title: it.activity,
-      time: it.time,
-      minutes: it.duration ?? 30,
-      icon: CATEGORY_ICONS[(it.category ?? "").toLowerCase()] ?? CATEGORY_ICONS.default,
-      done: it.status === "completed",
-      ageBand: it.ageBand,
-    }));
-  }, [todaysRoutine]);
-
   const streak = useMemo(() => computeStreak(routines), [routines]);
-
-  const saveMut = useMutation({
-    mutationFn: ({ routineId, items }: { routineId: number; items: RoutineItem[] }) =>
-      authFetch(`/api/routines/${routineId}/items`, {
-        method: "PATCH",
-        body: JSON.stringify({ items }),
-      }),
-    onSuccess: (_data, variables) => {
-      qc.invalidateQueries({ queryKey: ["routine", String(variables.routineId)] });
-      qc.invalidateQueries({ queryKey: ["routines"] });
-    },
-  });
 
   const onPressCard = useCallback(
     (taskId: string) => {
       if (!todaysRoutine) return;
-      const idx = parseInt(taskId.split("-")[2] ?? "-1", 10);
+      const idx = taskIdToItemIndex(taskId);
       const params: Record<string, string> = {};
-      if (!Number.isNaN(idx) && idx >= 0 && idx < todaysRoutine.items.length) {
-        params.highlight = String(idx);
-      }
+      if (idx != null) params.highlight = String(idx);
       router.push({ pathname: "/routines/[id]", params: { id: String(todaysRoutine.id), ...params } });
     },
-    [todaysRoutine, router],
-  );
-
-  const onToggle = useCallback(
-    (taskId: string) => {
-      if (!todaysRoutine) return;
-      const idx = parseInt(taskId.split("-")[2] ?? "-1", 10);
-      if (Number.isNaN(idx) || idx < 0 || idx >= todaysRoutine.items.length) return;
-      const cur = todaysRoutine.items[idx];
-      const nextStatus: ItemStatus = cur.status === "completed" ? "pending" : "completed";
-      const nextItems = todaysRoutine.items.map((it, i) => i === idx ? { ...it, status: nextStatus } : it);
-      const prevSnapshot = qc.getQueryData<Routine[]>(["routines"]);
-      qc.setQueryData<Routine[]>(["routines"], (prev) => {
-        if (!prev) return prev;
-        return prev.map((r) => r.id === todaysRoutine.id ? { ...r, items: nextItems } : r);
-      });
-      saveMut.mutate(
-        { routineId: todaysRoutine.id, items: nextItems },
-        {
-          onError: () => {
-            if (prevSnapshot) qc.setQueryData<Routine[]>(["routines"], prevSnapshot);
-            else qc.invalidateQueries({ queryKey: ["routines"] });
-          },
-        },
-      );
-    },
-    [todaysRoutine, qc, saveMut],
+    [todaysRoutine, router, taskIdToItemIndex],
   );
 
   // ── Guards ────────────────────────────────────────────────────────────────

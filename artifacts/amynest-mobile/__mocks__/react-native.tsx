@@ -101,6 +101,39 @@ const Image = ({ source, style, ...rest }: any) =>
 
 const Dimensions = { get: () => ({ width: 375, height: 812 }) };
 
+const useWindowDimensions = () => ({ width: 375, height: 812, scale: 2, fontScale: 1 });
+
+const FlatList = ({ data, renderItem, keyExtractor, ListHeaderComponent, ListFooterComponent, testID, ...props }: any) => {
+  const items = Array.isArray(data) ? data : [];
+  return React.createElement(
+    "div",
+    { "data-testid": testID, ...stripRnProps(props) },
+    [
+      ListHeaderComponent && React.createElement(
+        "div",
+        { key: "__header" },
+        typeof ListHeaderComponent === "function"
+          ? React.createElement(ListHeaderComponent)
+          : ListHeaderComponent,
+      ),
+      ...items.map((item: any, index: number) =>
+        React.createElement(
+          "div",
+          { key: keyExtractor ? keyExtractor(item, index) : String(index) },
+          renderItem ? renderItem({ item, index }) : null,
+        ),
+      ),
+      ListFooterComponent && React.createElement(
+        "div",
+        { key: "__footer" },
+        typeof ListFooterComponent === "function"
+          ? React.createElement(ListFooterComponent)
+          : ListFooterComponent,
+      ),
+    ].filter(Boolean),
+  );
+};
+
 const StyleSheet = {
   create: (styles: Record<string, any>) => styles,
   absoluteFill: {},
@@ -124,4 +157,5 @@ export {
   View, Text, Pressable, TouchableOpacity, ScrollView,
   Modal, ActivityIndicator, Image, Dimensions, StyleSheet,
   TextInput, KeyboardAvoidingView, Platform,
+  FlatList, useWindowDimensions,
 };

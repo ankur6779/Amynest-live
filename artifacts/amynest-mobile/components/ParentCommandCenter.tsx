@@ -66,6 +66,9 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
   };
 
   // ── Data ──
+  // Hub tile queries: 5-min freshness window + 30-min retention so
+  // swiping between hub sections (or tab-switching to/from the
+  // dashboard) doesn't re-hit the network on every visit.
   const { data: routines = [] } = useQuery<Routine[]>({
     queryKey: ["routines", child.id],
     queryFn: async () => {
@@ -73,7 +76,8 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
       if (!r.ok) return [];
       return r.json();
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
   const { data: summary } = useQuery<Summary>({
     queryKey: ["dashboard-summary"],
@@ -82,7 +86,8 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
       if (!r.ok) return { positiveBehaviorsToday: 0, negativeBehaviorsToday: 0, routinesGeneratedThisWeek: 0 };
       return r.json();
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const todayRoutine = useMemo(

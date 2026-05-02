@@ -25,6 +25,14 @@ import {
   bandIndexToWebLabel,
   MOBILE_ONLY_EXTRAS,
 } from "../lib/hubWebReference";
+import {
+  SECTION_KEYS,
+  TILE_SECTION_MAP,
+  FEATURED_TILE_IDS,
+  bucketTilesBySection,
+  isFeaturedTile,
+  assertTileSectionMapCoversAllBandTiles,
+} from "../app/(tabs)/hub-sections";
 
 describe("getAgeBand", () => {
   it("maps representative ages to the correct band index", () => {
@@ -391,4 +399,132 @@ describe("Mobile vs web parity (per-band tile inventory)", () => {
       expect(mobileIds).toEqual(webIds);
     });
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4-section taxonomy (task #187): every tile in HUB_CONTENT_AGE_BANDS must
+// belong to exactly one of the 4 hub sections (today / zones / modules /
+// activities). The "today" section never appears in TILE_SECTION_MAP because
+// it's built from the routine cache, not from band tiles.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("hub-sections taxonomy", () => {
+  it("declares the 4 expected section keys in pager order", () => {
+    expect(SECTION_KEYS).toEqual(["today", "zones", "modules", "activities"]);
+  });
+
+  it("covers every tile id in HUB_CONTENT_AGE_BANDS", () => {
+    expect(() => assertTileSectionMapCoversAllBandTiles()).not.toThrow();
+  });
+
+  it("maps every band-tile id to exactly one section (zones/modules/activities)", () => {
+    const bandIds = Object.keys(HUB_CONTENT_AGE_BANDS);
+    for (const id of bandIds) {
+      const section = TILE_SECTION_MAP[id];
+      expect(section, `missing section for tile ${id}`).toBeDefined();
+      expect(["zones", "modules", "activities"]).toContain(section);
+    }
+  });
+
+  it("flags featured tile ids correctly", () => {
+    for (const id of FEATURED_TILE_IDS) {
+      expect(isFeaturedTile(id)).toBe(true);
+    }
+    expect(isFeaturedTile("amy")).toBe(false);
+    expect(isFeaturedTile("activities")).toBe(false);
+  });
+
+  it("buckets a sample tile list into the correct sections in order", () => {
+    const tiles = [
+      { id: "amy" },
+      { id: "phonics" },
+      { id: "art-craft" },
+      { id: "articles" },
+      { id: "olympiad" },
+      { id: "morning-flow" },
+    ];
+    const buckets = bucketTilesBySection(tiles);
+    expect(buckets.zones.map((t) => t.id)).toEqual(["amy", "articles"]);
+    expect(buckets.modules.map((t) => t.id)).toEqual(["phonics", "olympiad"]);
+    expect(buckets.activities.map((t) => t.id)).toEqual(["art-craft", "morning-flow"]);
+    expect(buckets.unmapped).toEqual([]);
+  });
+
+  it("collects unknown tile ids into `unmapped`", () => {
+    const buckets = bucketTilesBySection([{ id: "amy" }, { id: "totally-fake-id" }]);
+    expect(buckets.unmapped.map((t) => t.id)).toEqual(["totally-fake-id"]);
+    expect(buckets.zones.map((t) => t.id)).toEqual(["amy"]);
+  });
+
+  it("for every age band, union of zones+modules+activities equals partitionTilesByBand's section1 minus featured", () => {
+    // The strict per-band invariant: feed a synthetic tile inventory
+    // (one tile per HUB_CONTENT_AGE_BANDS id) into partitionTilesByBand,
+    // then bucket the section1 result by section. The combined set of
+    // bucket ids — minus featured — must exactly equal section1's
+    // non-featured tile ids. If a tile is mapped to NO section, it would
+    // silently disappear from the new pager UI; this test catches that.
+    type SyntheticTile = {
+      id: string;
+      ageBands: readonly number[];
+      node: null;
+    };
+    const inventory: SyntheticTile[] = Object.entries(HUB_CONTENT_AGE_BANDS).map(
+      ([id, ageBands]) => ({ id, ageBands, node: null }),
+    );
+
+    for (let band = 0; band < HUB_AGE_BANDS.length; band++) {
+      const ageMonths = HUB_AGE_BANDS[band].minMonths + 1;
+      const { section1 } = partitionTilesByBand(inventory, band, ageMonths);
+
+      const buckets = bucketTilesBySection(section1);
+      // `unmapped` MUST be empty — every tile reachable in the band must
+      // have a section.
+      expect(
+        buckets.unmapped.map((t) => t.id),
+        `band ${band} (${HUB_AGE_BANDS[band].label}) has tiles with no section assignment`,
+      ).toEqual([]);
+
+      const unionIds = [
+        ...buckets.zones.map((t) => t.id),
+        ...buckets.modules.map((t) => t.id),
+        ...buckets.activities.map((t) => t.id),
+      ].sort();
+      const sectionIds = section1.map((t) => t.id).sort();
+      expect(
+        unionIds,
+        `band ${band} (${HUB_AGE_BANDS[band].label}) union of buckets must equal section1`,
+      ).toEqual(sectionIds);
+    }
+  });
+
+  it("union of all band tiles + featured tiles equals every section-1 web tile id", () => {
+    // Sanity: every web Section-1 tile id (across all bands) must either be
+    // a featured tile OR appear in TILE_SECTION_MAP, otherwise we'd silently
+    // drop it from the mobile pager.
+    const allWebIds = new Set<string>();
+    for (let band = 0; band < HUB_AGE_BANDS.length; band++) {
+      const ageMonths = HUB_AGE_BANDS[band].minMonths + 1;
+      const webBand = bandIndexToWebLabel(band);
+      for (const tile of computeWebSection1Tiles(webBand, ageMonths)) {
+        allWebIds.add(tile.id);
+      }
+    }
+    const knownIds = new Set<string>([
+      ...Object.keys(TILE_SECTION_MAP),
+      ...FEATURED_TILE_IDS,
+      // Mobile-only extras and web-only extras are tolerated; we only need
+      // the intersection (web ids that are also rendered on mobile) to be
+      // covered.
+    ]);
+    const missing = Array.from(allWebIds).filter(
+      (id) => !knownIds.has(id) && !MOBILE_ONLY_EXTRAS.has(id),
+    );
+    // It's OK to have web-only ids missing on mobile — those are tracked
+    // by the existing parity test above. We just want to flag any web id
+    // that *would* render on mobile (via HUB_CONTENT_AGE_BANDS) but lacks
+    // a section mapping.
+    const renderableButUnmapped = missing.filter(
+      (id) => id in HUB_CONTENT_AGE_BANDS,
+    );
+    expect(renderableButUnmapped).toEqual([]);
+  });
 });
