@@ -10,7 +10,7 @@ import Animated, {
   FadeIn,
 } from "react-native-reanimated";
 import type { RoutineTask } from "@/contexts/ProgressContext";
-import { brand, gradients, palette } from "@/constants/colors";
+import { ACCENT_PINK, brand, gradients, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -19,17 +19,27 @@ type Props = {
   tasks: RoutineTask[];
   onToggle: (id: string) => void;
   onPressCard?: (id: string) => void;
+  /**
+   * Optional quick-jump handler (Task #191). When provided, completed tasks // audit-ok: task ref not hex
+   * with both a `relatedTileId` and a `continueLabel` render a small link
+   * under the action button that calls back with the task id. The parent
+   * (TodayPlanPage) is responsible for resolving the tile id to a hub
+   * section and jumping the pager.
+   */
+  onContinue?: (id: string) => void;
 };
 
 function TaskCard({
   task,
   onToggle,
   onPressCard,
+  onContinue,
   index,
 }: {
   task: RoutineTask;
   onToggle: () => void;
   onPressCard?: () => void;
+  onContinue?: () => void;
   index: number;
 }) {
   const scale = useSharedValue(1);
@@ -144,12 +154,39 @@ function TaskCard({
             />
           </LinearGradient>
         </AnimatedPressable>
+
+        {/* Quick-jump link (Task #191): only rendered for completed items
+            that carry a related-tile mapping AND when the parent supplied
+            an `onContinue` handler. Items without a mapping simply omit
+            the link, keeping the card compact. */}
+        {isDone && task.relatedTileId && task.continueLabel && onContinue && (
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== "web") Haptics.selectionAsync();
+              onContinue();
+            }}
+            accessibilityRole="link"
+            accessibilityLabel={`${task.continueLabel} for ${task.title}`}
+            style={({ pressed }) => [
+              styles.continueLink,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Text style={styles.continueText}>{task.continueLabel}</Text>
+            <Ionicons name="arrow-forward" size={12} color={ACCENT_PINK} />
+          </Pressable>
+        )}
       </View>
     </Animated.View>
   );
 }
 
-export default function RoutineCarousel({ tasks, onToggle, onPressCard }: Props) {
+export default function RoutineCarousel({
+  tasks,
+  onToggle,
+  onPressCard,
+  onContinue,
+}: Props) {
   return (
     <ScrollView
       horizontal
@@ -166,6 +203,7 @@ export default function RoutineCarousel({ tasks, onToggle, onPressCard }: Props)
           index={i}
           onToggle={() => onToggle(t.id)}
           onPressCard={onPressCard ? () => onPressCard(t.id) : undefined}
+          onContinue={onContinue ? () => onContinue(t.id) : undefined}
         />
       ))}
     </ScrollView>
@@ -270,5 +308,22 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "700",
     color: "#0ea5e9" /* audit-ok: sky-500 age badge */,
+  },
+  continueLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: "rgba(255,78,205,0.10)" /* audit-ok: ACCENT_PINK 10% */,
+  },
+  continueText: {
+    color: ACCENT_PINK,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.2,
   },
 });

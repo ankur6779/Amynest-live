@@ -47,6 +47,7 @@ import {
   SECTION_META,
   bucketTilesBySection,
   isFeaturedTile,
+  tileIdToSection,
   type SectionKey,
 } from "./hub-sections";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
@@ -116,6 +117,11 @@ export default function HubScreen() {
   // shown in full opacity (un-dimmed) and we scroll to it. Tapping the current
   // band chip clears it and returns to the default 2-section view.
   const [previewBand, setPreviewBand] = useState<number | null>(null);
+  // Tile id to highlight after a Today's Plan quick-jump (Task #191).
+  // Cleared by `triggerHighlight` after ~2.4s, or cancelled if the parent
+  // jumps to a different tile in the meantime.
+  const [highlightedTileId, setHighlightedTileId] = useState<string | null>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const groupRefs = useRef<Record<number, View | null>>({});
 
   // Horizontal section pager (Today / Zones / Modules / Activities) ----------
@@ -155,6 +161,47 @@ export default function HubScreen() {
       });
     },
     [pageWidth],
+  );
+
+  // Briefly mark a tile as highlighted so the SectionPage can scroll to it
+  // and HubTile draws a fading accent ring. Re-triggering with a new tile
+  // cancels the previous timer so the ring follows the latest jump.
+  const triggerHighlight = useCallback((tileId: string | null) => {
+    if (highlightTimerRef.current) {
+      clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = null;
+    }
+    setHighlightedTileId(tileId);
+    if (tileId) {
+      highlightTimerRef.current = setTimeout(() => {
+        setHighlightedTileId((cur) => (cur === tileId ? null : cur));
+        highlightTimerRef.current = null;
+      }, 2400);
+    }
+  }, []);
+
+  // Clear any pending highlight timer on unmount so we don't `setState`
+  // on an unmounted screen if the user navigates away mid-fade.
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+        highlightTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Today's Plan → quick-jump handler (Task #191): resolve a related tile
+  // id to its hub section, switch the pager to that page, and flag the
+  // tile for highlight so SectionPage scrolls to it and HubTile pulses.
+  const onContinueFromTodayPlan = useCallback(
+    (tileId: string) => {
+      const section = tileIdToSection(tileId);
+      if (!section) return;
+      goToSection(section, true);
+      triggerHighlight(tileId);
+    },
+    [goToSection, triggerHighlight],
   );
 
   const onPagerScrollEnd = useCallback(
@@ -1359,6 +1406,7 @@ export default function HubScreen() {
                     // dashboard "Generate today's routine" buttons go
                     // to the same screen.
                     onGenerate={() => router.push("/routines/generate" as never)}
+                    onContinue={onContinueFromTodayPlan}
                   />
                 );
               }
@@ -1369,6 +1417,7 @@ export default function HubScreen() {
                     childName={childName}
                     bandLabel={HUB_AGE_BANDS[currentBand].label}
                     styles={styles}
+                    highlightedTileId={highlightedTileId}
                     leadingNodes={
                       <>
                         {/* Featured tiles share the same HubTile chrome
@@ -1396,6 +1445,7 @@ export default function HubScreen() {
                     childName={childName}
                     bandLabel={HUB_AGE_BANDS[currentBand].label}
                     styles={styles}
+                    highlightedTileId={highlightedTileId}
                     tiles={buckets.modules}
                   />
                 );
@@ -1407,6 +1457,7 @@ export default function HubScreen() {
                   childName={childName}
                   bandLabel={HUB_AGE_BANDS[currentBand].label}
                   styles={styles}
+                  highlightedTileId={highlightedTileId}
                   tiles={buckets.activities}
                   trailingNodes={
                     showExploreNext ? (
@@ -1614,10 +1665,17 @@ function TodayPlanPage({
   childName,
   styles,
   onGenerate,
+  onContinue,
 }: {
   childName: string;
   styles: HubStyles;
   onGenerate: () => void;
+  /**
+   * Called with the related tile id when a parent taps "Continue" on a
+   * completed routine task (Task #191). Resolved via the task's
+   * `relatedTileId`; tasks without a mapping never render the link.
+   */
+  onContinue?: (tileId: string) => void;
 }) {
   const router = useRouter();
   const { tasks, todaysRoutine, isLoading, onToggle, taskIdToItemIndex } =
@@ -1635,6 +1693,18 @@ function TodayPlanPage({
       });
     },
     [todaysRoutine, taskIdToItemIndex, router],
+  );
+
+  // Resolve the tapped task id back to its `relatedTileId`, then hand the
+  // tile id to the hub-screen-level handler. Tasks without a mapping never
+  // render the link, so this is a no-op for non-mapped categories.
+  const onContinueTask = useCallback(
+    (taskId: string) => {
+      if (!onContinue) return;
+      const task = tasks.find((t) => t.id === taskId);
+      if (task?.relatedTileId) onContinue(task.relatedTileId);
+    },
+    [tasks, onContinue],
   );
 
   const meta = SECTION_META.today;
@@ -1658,7 +1728,12 @@ function TodayPlanPage({
           <ActivityIndicator color={ACCENT_PINK} />
         </View>
       ) : tasks.length > 0 ? (
-        <RoutineCarousel tasks={tasks} onToggle={onToggle} onPressCard={onPressCard} />
+        <RoutineCarousel
+          tasks={tasks}
+          onToggle={onToggle}
+          onPressCard={onPressCard}
+          onContinue={onContinue ? onContinueTask : undefined}
+        />
       ) : (
         <View style={styles.emptyCard}>
           <MaterialCommunityIcons name="calendar-outline" size={40} color={ACCENT_PINK} />
@@ -1690,6 +1765,7 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
   leadingNodes,
   trailingNodes,
   styles,
+  highlightedTileId,
 }: {
   sectionKey: Exclude<SectionKey, "today">;
   childName: string;
@@ -1698,10 +1774,44 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
   leadingNodes?: React.ReactNode;
   trailingNodes?: React.ReactNode;
   styles: HubStyles;
+  /**
+   * When set to a tile id that lives on this page, scroll the matching
+   * tile into view and pass `highlighted` to the corresponding HubTile.
+   * Mismatched ids (the tile lives on another page) are ignored.
+   */
+  highlightedTileId?: string | null;
 }) {
   const meta = SECTION_META[sectionKey];
+  const scrollRef = useRef<ScrollView>(null);
+  // y-position of each tile within the ScrollView, captured by onLayout.
+  // Used to scroll the highlighted tile into view; missing entries (tile
+  // hasn't laid out yet) just mean we fall back to the onLayout callback
+  // doing the scroll once measurement arrives.
+  const tileYRef = useRef<Record<string, number>>({});
+
+  const maybeScrollToHighlight = useCallback(
+    (id: string) => {
+      if (!highlightedTileId || id !== highlightedTileId) return;
+      const y = tileYRef.current[id];
+      if (y == null) return;
+      // Slight bias above the tile so the highlight ring isn't flush with
+      // the page top after the scroll.
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+    },
+    [highlightedTileId],
+  );
+
+  // When the highlight target changes, attempt the scroll immediately. If
+  // the target tile hasn't been measured yet, the onLayout handler below
+  // will catch it on first paint.
+  useEffect(() => {
+    if (!highlightedTileId) return;
+    maybeScrollToHighlight(highlightedTileId);
+  }, [highlightedTileId, maybeScrollToHighlight]);
+
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.pageScroll}
       contentContainerStyle={styles.pageContent}
       showsVerticalScrollIndicator={false}
@@ -1732,13 +1842,24 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
             // are defined in one place. Tiles render their own internal
             // Pressable / accordion (Section) inside, so HubTile itself
             // is non-pressable here — it just provides the shared chrome.
-            <HubTile
+            // Wrapped in a measuring View so the page can scroll a
+            // highlighted tile into view (Task #191).
+            <View
               key={t.id}
-              featured={isFeaturedTile(t.id)}
-              testID={`hub-tile-${t.id}`}
+              style={styles.tileMeasureWrap}
+              onLayout={(e) => {
+                tileYRef.current[t.id] = e.nativeEvent.layout.y;
+                maybeScrollToHighlight(t.id);
+              }}
             >
-              {t.node}
-            </HubTile>
+              <HubTile
+                featured={isFeaturedTile(t.id)}
+                testID={`hub-tile-${t.id}`}
+                highlighted={highlightedTileId === t.id}
+              >
+                {t.node}
+              </HubTile>
+            </View>
           ))}
         </View>
       )}
@@ -1939,6 +2060,10 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
   return StyleSheet.create({
     headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     sectionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, alignItems: "flex-start" },
+    // Wrapper around each tile so we can capture its y-offset via onLayout
+    // for the Today's Plan quick-jump scroll-into-view (Task #191). Width
+    // mirrors the single-column 100% layout used by the bucket tiles.
+    tileMeasureWrap: { width: "100%" },
     logo: { width: 40, height: 40, borderRadius: 10 },
     eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 4 },
     eyebrow: {

@@ -32,6 +32,10 @@ import {
   bucketTilesBySection,
   isFeaturedTile,
   assertTileSectionMapCoversAllBandTiles,
+  ROUTINE_CATEGORY_TO_TILE_ID,
+  routineCategoryToTileId,
+  tileIdToSection,
+  sectionCtaLabel,
 } from "../app/(tabs)/hub-sections";
 
 describe("getAgeBand", () => {
@@ -559,5 +563,95 @@ describe("FEATURED_TILE_IDS — command-center sibling assertions", () => {
     // it would render twice (once featured, once in zones).
     expect("command-center" in TILE_SECTION_MAP).toBe(false);
     expect(isFeaturedTile("command-center")).toBe(true);
+  });
+});
+
+describe("ROUTINE_CATEGORY_TO_TILE_ID + routineCategoryToTileId", () => {
+  it("maps the documented categories to known tile ids", () => {
+    expect(routineCategoryToTileId("homework")).toBe("smart-study");
+    expect(routineCategoryToTileId("study")).toBe("smart-study");
+    expect(routineCategoryToTileId("reading")).toBe("story-hub");
+    expect(routineCategoryToTileId("creative")).toBe("art-craft");
+    expect(routineCategoryToTileId("play")).toBe("activities");
+    expect(routineCategoryToTileId("outdoor")).toBe("activities");
+    expect(routineCategoryToTileId("meal")).toBe("meals");
+    expect(routineCategoryToTileId("tiffin")).toBe("meals");
+    expect(routineCategoryToTileId("snack")).toBe("meals");
+    expect(routineCategoryToTileId("exercise")).toBe("life-skills");
+    expect(routineCategoryToTileId("morning")).toBe("morning-flow");
+    expect(routineCategoryToTileId("morning_routine")).toBe("morning-flow");
+    expect(routineCategoryToTileId("bonding")).toBe("tips");
+    expect(routineCategoryToTileId("family")).toBe("tips");
+  });
+
+  it("is case-insensitive", () => {
+    expect(routineCategoryToTileId("HOMEWORK")).toBe("smart-study");
+    expect(routineCategoryToTileId("Reading")).toBe("story-hub");
+    expect(routineCategoryToTileId("MEAL")).toBe("meals");
+  });
+
+  it("returns null for unmapped, missing, or unmappable categories", () => {
+    // Categories intentionally omitted from the map (no sensible tile target)
+    expect(routineCategoryToTileId("school")).toBeNull();
+    expect(routineCategoryToTileId("sleep")).toBeNull();
+    expect(routineCategoryToTileId("hygiene")).toBeNull();
+    expect(routineCategoryToTileId("rest")).toBeNull();
+    expect(routineCategoryToTileId("travel")).toBeNull();
+    expect(routineCategoryToTileId("screen")).toBeNull();
+    // Falsy / unknown
+    expect(routineCategoryToTileId(null)).toBeNull();
+    expect(routineCategoryToTileId(undefined)).toBeNull();
+    expect(routineCategoryToTileId("")).toBeNull();
+    expect(routineCategoryToTileId("totally-unknown-cat")).toBeNull();
+  });
+
+  it("every tile id in the routine→tile map is a real tile in TILE_SECTION_MAP", () => {
+    // If a value here ever points to a tile that doesn't exist in the
+    // section map, the quick-jump would resolve to a dead section. The
+    // SectionPage scroll target would also fail silently. Lock that down.
+    for (const [category, tileId] of Object.entries(ROUTINE_CATEGORY_TO_TILE_ID)) {
+      expect(
+        TILE_SECTION_MAP[tileId],
+        `${category} → ${tileId} must resolve to a section`,
+      ).toBeDefined();
+    }
+  });
+});
+
+describe("tileIdToSection", () => {
+  it("returns the correct section for tiles in each bucket", () => {
+    expect(tileIdToSection("amy")).toBe("zones");
+    expect(tileIdToSection("tips")).toBe("zones");
+    expect(tileIdToSection("phonics")).toBe("modules");
+    expect(tileIdToSection("smart-study")).toBe("modules");
+    expect(tileIdToSection("story-hub")).toBe("modules");
+    expect(tileIdToSection("activities")).toBe("activities");
+    expect(tileIdToSection("art-craft")).toBe("activities");
+    expect(tileIdToSection("meals")).toBe("activities");
+    expect(tileIdToSection("morning-flow")).toBe("activities");
+  });
+
+  it("returns null for featured tiles (not part of the partitioned grid)", () => {
+    // Featured tiles render above the grid as standalone cards and do
+    // not belong to any bucket — quick-jumps should treat them as
+    // unmappable so the link doesn't render.
+    expect(tileIdToSection("command-center")).toBeNull();
+    expect(tileIdToSection("infant-hub")).toBeNull();
+    expect(tileIdToSection("tomorrow-forecast")).toBeNull();
+  });
+
+  it("returns null for unknown / falsy ids", () => {
+    expect(tileIdToSection(null)).toBeNull();
+    expect(tileIdToSection(undefined)).toBeNull();
+    expect(tileIdToSection("")).toBeNull();
+    expect(tileIdToSection("does-not-exist")).toBeNull();
+  });
+});
+
+describe("sectionCtaLabel", () => {
+  it("returns user-facing labels for each grid section", () => {
+    expect(sectionCtaLabel("modules")).toBe("Open in Modules");
+    expect(sectionCtaLabel("activities")).toBe("Open in Activities");
+    expect(sectionCtaLabel("zones")).toBe("Open in Zones");
   });
 });
