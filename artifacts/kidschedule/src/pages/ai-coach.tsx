@@ -251,7 +251,7 @@ const QUESTIONS: Question[] = [
 ];
 
 // ─── Types ─────────────────────────────────────────────────────────────────
-interface Win {
+export interface Win {
   win: number;
   title: string;
   objective: string;
@@ -1885,7 +1885,7 @@ const COACH_MODEL_HI = "eleven_multilingual_v2";
 
 type CoachLang = "en" | "hi";
 
-function ListenButton({ win }: { win: Win }) {
+export function ListenButton({ win }: { win: Win }) {
   const { i18n } = useTranslation();
   // Default the listen language to the parent's UI language. They can
   // override per-win via the EN | HI chips next to the Listen button.
