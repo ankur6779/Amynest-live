@@ -49,10 +49,12 @@ export const phonicsTestResultsTable = pgTable(
     /**
      * One-time-use session id (UUID) carried by the encrypted session token
      * issued at /tests/start. Recorded here on submit so the same token can
-     * never be replayed to insert duplicate results. Nullable because legacy
-     * rows pre-dating this column may not have it.
+     * never be replayed to insert duplicate results. NOT NULL by design —
+     * Postgres treats multiple NULLs as distinct in a unique index, so a
+     * nullable column here would silently defeat replay protection. Any
+     * legacy NULL rows must be backfilled or deleted before this migration.
      */
-    sessionJti: text("session_jti"),
+    sessionJti: text("session_jti").notNull(),
     completedAt: timestamp("completed_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

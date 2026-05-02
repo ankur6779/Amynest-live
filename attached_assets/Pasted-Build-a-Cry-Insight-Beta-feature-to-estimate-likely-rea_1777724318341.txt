@@ -1,0 +1,85 @@
+Build a "Cry Insight (Beta)" feature to estimate likely reasons for infant crying using audio features + recent activity context.
+
+GOAL:
+Provide probabilistic insights (not diagnosis) and suggest next actions.
+
+--------------------------------------------------
+1. USER FLOW
+--------------------------------------------------
+- Screen: "Why is my baby crying?"
+- Buttons:
+  • Record (10–15 sec)
+  • Upload audio (optional)
+- Ask quick context:
+  • Last feed time (mins)
+  • Last sleep time (mins)
+  • Diaper changed? (yes/no, time)
+  • Temperature/fever (yes/no)
+  • Age (months)
+
+--------------------------------------------------
+2. AUDIO PROCESSING (LIGHTWEIGHT)
+--------------------------------------------------
+- Extract features (on-device or server):
+  • pitch (fundamental frequency)
+  • intensity (RMS energy)
+  • tempo / cry bursts per second
+  • spectral centroid (rough timbre)
+- Normalize audio, trim silence.
+
+--------------------------------------------------
+3. SIMPLE CLASSIFIER (PHASE 1)
+--------------------------------------------------
+Use rule-based + scoring (no heavy ML initially):
+
+Signals:
+- Hunger:
+  • rhythmic, repetitive, escalating
+  • medium pitch, regular bursts
+- Pain:
+  • sudden, high pitch, intense, sharp onset
+- Discomfort (diaper/gas):
+  • irregular, fussy, intermittent
+- Sleepy:
+  • whiny, lower energy, yawning context (recent wake time high)
+
+Combine:
+- audio_score + context_score → weighted sum
+- Output top 2 probable causes with confidence %
+
+--------------------------------------------------
+4. OUTPUT UI
+--------------------------------------------------
+Show:
+- "Most likely: Hunger (65%)"
+- "Also possible: Sleepy (25%)"
+
+Actions:
+- Hunger → "Try feeding"
+- Sleepy → "Soothing + nap"
+- Discomfort → "Check diaper / burp"
+
+--------------------------------------------------
+5. SAFETY & DISCLAIMER
+--------------------------------------------------
+- Show banner:
+  "This is an estimate, not medical advice."
+- If high pitch + persistent → suggest medical check.
+
+--------------------------------------------------
+6. DATA STORAGE
+--------------------------------------------------
+- Store last 10 cry sessions (time + result)
+- Learn patterns (optional phase 2)
+
+--------------------------------------------------
+7. OPTIONAL (ADVANCED)
+--------------------------------------------------
+- Train ML model later (TensorFlow Lite)
+- Personalization per baby
+
+--------------------------------------------------
+DELIVERABLE:
+- Working MVP cry analyzer
+- Audio + context hybrid logic
+- Parent-friendly suggestions
