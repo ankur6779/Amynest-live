@@ -1,0 +1,649 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ParentCommandCenter — JSX snapshots > compact tile (closed) renders a stable tree 1`] = `
+<button
+  aria-label="Aarav's Command Center"
+  data-testid="command-center-tile"
+  role="button"
+>
+  <div
+    data-colors="["rgba(168,85,247,0.22)","rgba(236,72,153,0.10)","rgba(16,185,129,0.18)"]"
+  />
+  <div>
+    <div />
+    <div />
+    <div>
+      <span>
+        43
+        %
+      </span>
+    </div>
+  </div>
+  <div>
+    <div>
+      <span
+        data-icon="sparkles"
+        style="font-size: 12px; color: rgb(168, 85, 247);"
+      />
+      <span>
+        Aarav
+        's Command Center
+      </span>
+    </div>
+    <span>
+      <span>
+        🙂
+         
+        On track
+      </span>
+        ·  ✨ Simplify today
+    </span>
+    <span>
+      3
+      /
+      7
+       done · 
+      🙂 Neutral
+       · 
+      ✨ Good
+    </span>
+  </div>
+  <div>
+    <div
+      data-colors="["#a855f7","#ec4899"]"
+    />
+    <span>
+      Open
+    </span>
+    <span
+      data-icon="arrow-forward"
+      style="font-size: 11px; color: rgb(255, 255, 255);"
+    />
+  </div>
+</button>
+`;
+
+exports[`ParentCommandCenter — JSX snapshots > fullscreen dashboard (open) renders a stable tree 1`] = `
+<div>
+  <button
+    aria-label="Aarav's Command Center"
+    data-testid="command-center-tile"
+    role="button"
+  >
+    <div
+      data-colors="["rgba(168,85,247,0.22)","rgba(236,72,153,0.10)","rgba(16,185,129,0.18)"]"
+    />
+    <div>
+      <div />
+      <div />
+      <div>
+        <span>
+          43
+          %
+        </span>
+      </div>
+    </div>
+    <div>
+      <div>
+        <span
+          data-icon="sparkles"
+          style="font-size: 12px; color: rgb(168, 85, 247);"
+        />
+        <span>
+          Aarav
+          's Command Center
+        </span>
+      </div>
+      <span>
+        <span>
+          🙂
+           
+          On track
+        </span>
+          ·  ✨ Simplify today
+      </span>
+      <span>
+        3
+        /
+        7
+         done · 
+        🙂 Neutral
+         · 
+        ✨ Good
+      </span>
+    </div>
+    <div>
+      <div
+        data-colors="["#a855f7","#ec4899"]"
+      />
+      <span>
+        Open
+      </span>
+      <span
+        data-icon="arrow-forward"
+        style="font-size: 11px; color: rgb(255, 255, 255);"
+      />
+    </div>
+  </button>
+  <div>
+    <div
+      data-testid="command-center-dashboard"
+    >
+      <div
+        data-colors="["#0a0820","#1a1040","#0a0820"]"
+      />
+      <div>
+        <div>
+          <div>
+            <div>
+              <div
+                data-colors="["#a855f7","#ec4899"]"
+              />
+              <span
+                data-icon="sparkles"
+                style="font-size: 16px; color: rgb(255, 255, 255);"
+              />
+            </div>
+            <div>
+              <span>
+                Aarav
+                's Command Center
+              </span>
+              <span>
+                🙂
+                 
+                On track
+                 · 
+                30 min connected with your child today
+              </span>
+            </div>
+          </div>
+          <div>
+            <button
+              aria-label="Open today's routine"
+            >
+              <span>
+                Open routine
+              </span>
+              <span
+                data-icon="arrow-forward"
+                style="font-size: 11px; color: rgb(221, 214, 254);"
+              />
+            </button>
+            <button
+              aria-label="Close"
+              data-testid="command-center-close"
+            >
+              <span
+                data-icon="close"
+                style="font-size: 18px; color: rgb(255, 255, 255);"
+              />
+            </button>
+          </div>
+        </div>
+        <div>
+          <div>
+            <div />
+            <div />
+            <div>
+              <span>
+                43
+                %
+              </span>
+            </div>
+          </div>
+          <div>
+            <div>
+              <span>
+                43
+                <span>
+                  %
+                </span>
+              </span>
+              <span>
+                3
+                /
+                7
+                 done
+              </span>
+            </div>
+            <span>
+              Steady
+            </span>
+            <div>
+              <button
+                aria-label="Mood — tap to cycle: 🙂 Neutral"
+                data-testid="cycle-mood"
+              >
+                <span>
+                  🙂 Neutral
+                </span>
+                <span>
+                  Mood — tap to cycle
+                </span>
+              </button>
+              <button
+                aria-label="Sleep — tap to cycle: ✨ Good"
+                data-testid="cycle-sleep"
+              >
+                <span>
+                  ✨ Good
+                </span>
+                <span>
+                  Sleep — tap to cycle
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
+          data-testid="suggestion-row"
+        >
+          <span>
+            TRY NEXT
+          </span>
+          <button
+            data-testid="suggestion-simplify-today"
+          >
+            <span>
+              ✨
+            </span>
+            <span>
+              Simplify today
+            </span>
+          </button>
+        </div>
+        <div
+          data-testid="timeline-section"
+        >
+          <div>
+            <span>
+              TODAY'S TIMELINE
+            </span>
+            <span>
+              3
+              /
+              7
+               complete
+            </span>
+          </div>
+          <div>
+            <div>
+              <div>
+                <span>
+                  07:00 AM
+                </span>
+                <span>
+                  15
+                  m
+                </span>
+              </div>
+              <div>
+                <span>
+                  Wake
+                </span>
+                <span>
+                  wake
+                </span>
+              </div>
+              <div>
+                <span>
+                  DONE
+                </span>
+              </div>
+            </div>
+            <div>
+              <div>
+                <span>
+                  07:30 AM
+                </span>
+                <span>
+                  30
+                  m
+                </span>
+              </div>
+              <div>
+                <span>
+                  Breakfast
+                </span>
+                <span>
+                  meal
+                </span>
+              </div>
+              <div>
+                <span>
+                  DONE
+                </span>
+              </div>
+            </div>
+            <div>
+              <div>
+                <span>
+                  09:00 AM
+                </span>
+                <span>
+                  30
+                  m
+                </span>
+              </div>
+              <div>
+                <span>
+                  Morning Play
+                </span>
+                <span>
+                  play
+                </span>
+              </div>
+              <div>
+                <span>
+                  DONE
+                </span>
+              </div>
+            </div>
+            <div>
+              <div>
+                <span>
+                  11:00 AM
+                </span>
+                <span>
+                  20
+                  m
+                </span>
+              </div>
+              <div>
+                <span>
+                  Reading
+                </span>
+                <span>
+                  learning
+                </span>
+              </div>
+              <div>
+                <button
+                  aria-label="Skip Reading"
+                  data-testid="skip-step-3"
+                >
+                  <span>
+                    Skip
+                  </span>
+                </button>
+                <button
+                  aria-label="Mark Reading done"
+                  data-testid="complete-step-3"
+                >
+                  <span
+                    data-icon="checkmark"
+                    style="font-size: 11px; color: rgb(52, 211, 153);"
+                  />
+                  <span>
+                    Done
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div>
+              <div>
+                <span>
+                  11:30 AM
+                </span>
+                <span>
+                  15
+                  m
+                </span>
+              </div>
+              <div>
+                <span>
+                  Snack
+                </span>
+                <span>
+                  meal
+                </span>
+              </div>
+              <div>
+                <button
+                  aria-label="Skip Snack"
+                  data-testid="skip-step-4"
+                >
+                  <span>
+                    Skip
+                  </span>
+                </button>
+                <button
+                  aria-label="Mark Snack done"
+                  data-testid="complete-step-4"
+                >
+                  <span
+                    data-icon="checkmark"
+                    style="font-size: 11px; color: rgb(52, 211, 153);"
+                  />
+                  <span>
+                    Done
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div
+              data-testid="timeline-current"
+            >
+              <div>
+                <span>
+                  02:00 PM
+                </span>
+                <span>
+                  30
+                  m
+                </span>
+              </div>
+              <div>
+                <span>
+                  Screen Time
+                </span>
+                <span>
+                  Now
+                </span>
+              </div>
+              <div>
+                <button
+                  aria-label="Skip Screen Time"
+                  data-testid="skip-step-5"
+                >
+                  <span>
+                    Skip
+                  </span>
+                </button>
+                <button
+                  aria-label="Mark Screen Time done"
+                  data-testid="complete-step-5"
+                >
+                  <span
+                    data-icon="checkmark"
+                    style="font-size: 11px; color: rgb(52, 211, 153);"
+                  />
+                  <span>
+                    Done
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div
+              data-testid="timeline-next"
+            >
+              <div>
+                <span>
+                  04:00 PM
+                </span>
+                <span>
+                  30
+                  m
+                </span>
+              </div>
+              <div>
+                <span>
+                  Free Play
+                </span>
+                <span>
+                  Up next
+                </span>
+              </div>
+              <div>
+                <button
+                  aria-label="Skip Free Play"
+                  data-testid="skip-step-6"
+                >
+                  <span>
+                    Skip
+                  </span>
+                </button>
+                <button
+                  aria-label="Mark Free Play done"
+                  data-testid="complete-step-6"
+                >
+                  <span
+                    data-icon="checkmark"
+                    style="font-size: 11px; color: rgb(52, 211, 153);"
+                  />
+                  <span>
+                    Done
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          data-testid="quick-activity-strip"
+        >
+          <div>
+            <span>
+              QUICK CONNECTION IDEAS
+            </span>
+            <span>
+              Tap to start a timer
+            </span>
+          </div>
+          <div>
+            <button
+              aria-label="10-min play"
+              data-testid="quick-play"
+            >
+              <span>
+                🎮
+              </span>
+              <span>
+                10-min play
+              </span>
+            </button>
+            <button
+              aria-label="5-min phonics"
+              data-testid="quick-phonics"
+            >
+              <span>
+                📖
+              </span>
+              <span>
+                5-min phonics
+              </span>
+            </button>
+            <button
+              aria-label="5-min lullaby"
+              data-testid="quick-lullaby"
+            >
+              <span>
+                🎶
+              </span>
+              <span>
+                5-min lullaby
+              </span>
+            </button>
+            <button
+              aria-label="5-min puzzle"
+              data-testid="quick-puzzle"
+            >
+              <span>
+                🧩
+              </span>
+              <span>
+                5-min puzzle
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          data-testid="quick-action-bar"
+        >
+          <button
+            aria-label="Simplify Today"
+            data-testid="action-simplify-today"
+          >
+            <div
+              data-colors="["#a855f7","#ec4899"]"
+            />
+            <span>
+              ✨
+            </span>
+            <span>
+              Simplify Today
+            </span>
+            <span>
+              TOP
+            </span>
+          </button>
+          <button
+            aria-label="Fix Routine"
+            data-testid="action-fix-routine"
+          >
+            <span>
+              🛠️
+            </span>
+            <span>
+              Fix Routine
+            </span>
+          </button>
+          <button
+            aria-label="Calm Child"
+            data-testid="action-calm-child"
+          >
+            <span>
+              🫂
+            </span>
+            <span>
+              Calm Child
+            </span>
+          </button>
+          <button
+            aria-label="Improve Sleep"
+            data-testid="action-improve-sleep"
+          >
+            <span>
+              😴
+            </span>
+            <span>
+              Improve Sleep
+            </span>
+          </button>
+        </div>
+        <div>
+          <div>
+            <span>
+              ✨ AMY AI INSIGHT
+            </span>
+            <span>
+              2 tasks slipped behind.
+            </span>
+            <span>
+              Trying to catch up usually adds more stress, not less.
+            </span>
+            <span>
+              <span>
+                → 
+              </span>
+              Tap Simplify Today and let Amy clear low-priority tasks.
+            </span>
+          </div>
+        </div>
+        <div />
+      </div>
+    </div>
+  </div>
+</div>
+`;
