@@ -61,6 +61,75 @@ export function getCompletedVaccinations(months: number): VaxEntry[] {
   return VACCINATIONS.filter((v) => v.ageMonths < months);
 }
 
+// ─── Per-child vaccination tracking ────────────────────────────────────────
+//
+// The child's status for a given schedule entry comes from the server-side
+// `vaccination_logs` table (see `lib/db/src/schema/vaccination_logs.ts`).
+// Status is keyed by the `ageLabel` string so the UI can pass a simple
+// `Record<ageLabel, status>` map into the helpers below.
+
+export type VaxStatus = "done" | "missed";
+export type VaxLogMap = Readonly<Record<string, VaxStatus>>;
+
+const EMPTY_LOG: VaxLogMap = {};
+
+/** Vaccinations due now or in the next 2 months — excluding any marked "done". */
+export function getUpcomingVaccinationsWithLog(
+  months: number,
+  log: VaxLogMap = EMPTY_LOG,
+): VaxEntry[] {
+  return getUpcomingVaccinations(months).filter(
+    (v) => log[v.ageLabel] !== "done",
+  );
+}
+
+/** Doses whose target age has already passed but the parent has not marked
+ *  as "done" — these are the ones at risk of being forgotten. */
+export function getPendingVaccinations(
+  months: number,
+  log: VaxLogMap = EMPTY_LOG,
+): VaxEntry[] {
+  return VACCINATIONS.filter(
+    (v) => v.ageMonths < months && log[v.ageLabel] !== "done",
+  );
+}
+
+export type VaccinationSummary = {
+  /** Total entries in the schedule (constant). */
+  total: number;
+  /** Entries the parent has explicitly marked done. */
+  done: number;
+  /** Entries the parent has explicitly marked missed. */
+  missed: number;
+  /**
+   * Entries whose target age has passed AND the parent has not marked them
+   * "done". Includes entries explicitly marked "missed" so the parent sees
+   * the gap they self-flagged.
+   */
+  pending: number;
+};
+
+/** Quick per-child rollup — drives the summary banner in the Health tab. */
+export function getVaccinationSummary(
+  months: number,
+  log: VaxLogMap = EMPTY_LOG,
+): VaccinationSummary {
+  let done = 0;
+  let missed = 0;
+  let pending = 0;
+  for (const v of VACCINATIONS) {
+    const status = log[v.ageLabel];
+    if (status === "done") done++;
+    else if (status === "missed") {
+      missed++;
+      if (v.ageMonths < months) pending++;
+    } else if (v.ageMonths < months) {
+      pending++;
+    }
+  }
+  return { total: VACCINATIONS.length, done, missed, pending };
+}
+
 // ─── Common issues ─────────────────────────────────────────────────────────
 export type CommonIssue = {
   id: string;

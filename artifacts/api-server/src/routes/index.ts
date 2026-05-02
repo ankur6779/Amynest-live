@@ -35,6 +35,7 @@ import funsheetsRouter from "./funsheets";
 import storiesRouter from "./stories";
 import cryInsightRouter from "./cryInsight";
 import sleepPredictRouter from "./sleepPredict";
+import vaccinationsRouter from "./vaccinations";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -88,5 +89,6 @@ router.use(funsheetsRouter);
 router.use("/stories", storiesRouter);
 router.use(cryInsightRouter);
 router.use(sleepPredictRouter);
+router.use(vaccinationsRouter);
 
 export default router;

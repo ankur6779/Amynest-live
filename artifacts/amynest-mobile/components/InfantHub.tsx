@@ -135,7 +135,7 @@ export default function InfantHub({ childId, childName, ageMonths }: Props) {
             locked={usage.isFeatureLocked(FEATURE_IDS.health)}
             reason="hub_infant_health"
           >
-            <InfantHealthTab ageMonths={ageMonths} />
+            <InfantHealthTab ageMonths={ageMonths} childId={childId} />
           </LockedBlock>
         );
       case "milestones":

@@ -15,6 +15,9 @@ import {
   VACCINATIONS,
   getUpcomingVaccinations,
   getCompletedVaccinations,
+  getUpcomingVaccinationsWithLog,
+  getPendingVaccinations,
+  getVaccinationSummary,
   COMMON_ISSUES,
   getCommonIssuesForAge,
   MILESTONES,
@@ -68,6 +71,68 @@ describe("VACCINATIONS", () => {
     for (const v of completed) {
       assert.ok(v.ageMonths < 12);
     }
+  });
+});
+
+describe("per-child vaccination tracking", () => {
+  it("getUpcomingVaccinationsWithLog excludes entries marked done", () => {
+    const upcoming = getUpcomingVaccinations(6);
+    assert.ok(upcoming.length > 0);
+    const firstLabel = upcoming[0].ageLabel;
+    const filtered = getUpcomingVaccinationsWithLog(6, { [firstLabel]: "done" });
+    assert.equal(filtered.length, upcoming.length - 1);
+    assert.ok(!filtered.some((v) => v.ageLabel === firstLabel));
+  });
+
+  it("getUpcomingVaccinationsWithLog keeps entries marked missed", () => {
+    const upcoming = getUpcomingVaccinations(6);
+    const firstLabel = upcoming[0].ageLabel;
+    const filtered = getUpcomingVaccinationsWithLog(6, {
+      [firstLabel]: "missed",
+    });
+    assert.equal(filtered.length, upcoming.length);
+  });
+
+  it("getPendingVaccinations returns past-age entries that are not done", () => {
+    // For a 12-month-old with no log, every entry under 12mo is pending.
+    const pendingAll = getPendingVaccinations(12, {});
+    const past = VACCINATIONS.filter((v) => v.ageMonths < 12);
+    assert.equal(pendingAll.length, past.length);
+
+    // Marking one as done should drop it from pending.
+    const done = past[0].ageLabel;
+    const pendingAfter = getPendingVaccinations(12, { [done]: "done" });
+    assert.equal(pendingAfter.length, past.length - 1);
+    assert.ok(!pendingAfter.some((v) => v.ageLabel === done));
+
+    // Marking one as missed should keep it in pending.
+    const missed = past[1].ageLabel;
+    const pendingMissed = getPendingVaccinations(12, { [missed]: "missed" });
+    assert.equal(pendingMissed.length, past.length);
+  });
+
+  it("getVaccinationSummary counts done / missed / pending correctly", () => {
+    const past = VACCINATIONS.filter((v) => v.ageMonths < 12);
+    assert.ok(past.length >= 2);
+    const log = {
+      [past[0].ageLabel]: "done" as const,
+      [past[1].ageLabel]: "missed" as const,
+    };
+    const sum = getVaccinationSummary(12, log);
+    assert.equal(sum.total, VACCINATIONS.length);
+    assert.equal(sum.done, 1);
+    assert.equal(sum.missed, 1);
+    // Pending = past entries that aren't "done". The "missed" one still
+    // counts as pending, plus all the other past ones with no log entry.
+    assert.equal(sum.pending, past.length - 1);
+  });
+
+  it("getVaccinationSummary defaults to empty log", () => {
+    const sum = getVaccinationSummary(0);
+    assert.equal(sum.done, 0);
+    assert.equal(sum.missed, 0);
+    assert.equal(sum.pending, 0);
+    assert.equal(sum.total, VACCINATIONS.length);
   });
 });
 
