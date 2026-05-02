@@ -228,6 +228,10 @@ export default function HubScreen() {
         <View style={styles.headerRow}>
           <Image source={LOGO} style={styles.logo} resizeMode="contain" />
           <View style={{ flex: 1 }}>
+            <View style={styles.eyebrowRow}>
+              <Ionicons name="sparkles" size={11} color={brand.purple500} />
+              <Text style={styles.eyebrow}>EXPERT-CURATED</Text>
+            </View>
             <Text style={styles.title}>Parenting Hub</Text>
             <Text style={styles.subtitle}>Articles, tips, activities & support</Text>
           </View>
@@ -1430,7 +1434,14 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     sectionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, alignItems: "flex-start" },
     logo: { width: 40, height: 40, borderRadius: 10 },
-    title: { color: c.foreground, fontSize: 22, fontWeight: "800", fontFamily: Platform.select({ default: undefined }) },
+    eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 4 },
+    eyebrow: {
+      fontSize: 10.5,
+      fontWeight: "800",
+      letterSpacing: 1.4,
+      color: brand.purple500,
+    },
+    title: { color: c.foreground, fontSize: 24, fontWeight: "800", letterSpacing: -0.4 },
     subtitle: { color: c.textMuted, fontSize: 12, marginTop: 2 },
     askAmyBtn: { borderRadius: 999, overflow: "hidden" },
     askAmyGrad: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 8 },
