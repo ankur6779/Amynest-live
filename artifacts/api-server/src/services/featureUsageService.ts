@@ -19,6 +19,7 @@ export const PARENT_HUB_FEATURES = [
   "hub_event_prep",
   "hub_ai_meal_generator",
   "hub_meals_tile",
+  "hub_spelling",
 ] as const;
 
 export type ParentHubFeatureId = (typeof PARENT_HUB_FEATURES)[number];
