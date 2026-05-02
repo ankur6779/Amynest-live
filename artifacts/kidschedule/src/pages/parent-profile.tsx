@@ -118,9 +118,9 @@ export default function ParentProfilePage() {
     setUploadingPic(true);
     try {
       await user.setProfileImage({ file });
-      toast({ title: "Profile picture updated!" });
+      toast({ title: t("toasts.parent_profile.pic_updated") });
     } catch {
-      toast({ title: "Failed to update picture", variant: "destructive" });
+      toast({ title: t("toasts.parent_profile.pic_failed"), variant: "destructive" });
     } finally {
       setUploadingPic(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -154,9 +154,9 @@ export default function ParentProfilePage() {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Failed to save");
-      toast({ title: "Profile saved!", description: "Your schedule will now inform Amy AI's routine generation." });
+      toast({ title: t("toasts.parent_profile.profile_saved_title"), description: t("toasts.parent_profile.profile_saved_body") });
     } catch {
-      toast({ title: "Error", description: "Could not save profile.", variant: "destructive" });
+      toast({ title: t("toasts.parent_profile.save_error_title"), description: t("toasts.parent_profile.save_error_body"), variant: "destructive" });
     } finally {
       setSaving(false);
     }

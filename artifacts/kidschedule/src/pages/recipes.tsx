@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,7 @@ function formToPayload(f: RecipeFormData) {
 }
 
 export default function RecipesPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
@@ -136,10 +138,10 @@ export default function RecipesPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["custom-recipes"] });
-      toast({ title: "Recipe deleted", description: "The recipe has been removed." });
+      toast({ title: t("toasts.recipes.deleted_title"), description: t("toasts.recipes.deleted_body") });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to delete recipe.", variant: "destructive" });
+      toast({ title: t("toasts.recipes.delete_error_title"), description: t("toasts.recipes.delete_error_body"), variant: "destructive" });
     },
   });
 

@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import privacyMarkdown from "../../../kidschedule-android/store-assets/privacy-policy.md?raw";
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
@@ -135,6 +136,7 @@ function renderMarkdown(md: string): React.ReactNode[] {
 }
 
 export default function PrivacyPolicyPage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-rose-50">
       <header className="border-b border-slate-200 bg-white/70 backdrop-blur">
@@ -155,7 +157,7 @@ export default function PrivacyPolicyPage() {
             </span>
           </Link>
           <Link href="/">
-            <span className="text-sm text-slate-500 hover:text-slate-800 cursor-pointer">← Home</span>
+            <span className="text-sm text-slate-500 hover:text-slate-800 cursor-pointer">{t("screens.common.home_link")}</span>
           </Link>
         </div>
       </header>
@@ -163,7 +165,7 @@ export default function PrivacyPolicyPage() {
         <article data-testid="privacy-policy-content">{renderMarkdown(privacyMarkdown)}</article>
       </main>
       <footer className="border-t border-slate-200 bg-white/60 py-6">
-        <p className="text-center text-xs text-slate-400">© 2026 AmyNest AI. All rights reserved.</p>
+        <p className="text-center text-xs text-slate-400">{t("screens.common.copyright")}</p>
       </footer>
     </div>
   );

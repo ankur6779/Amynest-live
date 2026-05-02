@@ -16,6 +16,8 @@
  * cleans the cache directory.
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18nInstance from "@/i18n";
 import {
   View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator,
   Platform, ToastAndroid, Alert,
@@ -62,7 +64,7 @@ const RECORD_MIN_MS = 1_500;
 
 function flashToast(msg: string) {
   if (Platform.OS === "android") ToastAndroid.show(msg, ToastAndroid.SHORT);
-  else Alert.alert("Cry Insight", msg);
+  else Alert.alert(i18nInstance.t("alerts.cry.title"), msg);
 }
 
 /**
@@ -145,6 +147,7 @@ function relTime(iso: string): string {
 }
 
 export default function CryInsight({ childId, childName, ageMonths }: Props) {
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
 
   // Context form state
@@ -212,6 +215,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
   // ─── Submit ─────────────────────────────────────────────────────────────────
   const submit = useCallback(
     async (audioStats: Record<string, number>, durationMs: number) => {
+      const { default: i18nInstance } = await import("@/i18n");
       const body = {
         childId,
         durationMs,
@@ -223,6 +227,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
           fever,
           ageMonths,
         },
+        language: i18nInstance.language || "en",
       };
       const r = await authFetch("/api/cry-insight/analyze", {
         method: "POST",

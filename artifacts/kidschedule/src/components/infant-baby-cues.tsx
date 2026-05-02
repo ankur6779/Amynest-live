@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import {
   Sparkles, ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown,
@@ -295,6 +296,7 @@ function getMicroActions(months: number): MicroAction[] {
 
 // ─── Baby Cues Engine ─────────────────────────────────────────────────────────
 export function BabyCuesEngine({ childName, ageMonths }: { childName: string; ageMonths: number }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const cues = useMemo(() => getCuesForAge(ageMonths), [ageMonths]);
   const [activeCueId, setActiveCueId] = useState<string | null>(null);
@@ -446,14 +448,14 @@ export function BabyCuesEngine({ childName, ageMonths }: { childName: string; ag
             <div className="flex items-center gap-1.5">
               <p className="text-[10px] text-muted-foreground mr-1">Helpful?</p>
               <button
-                onClick={() => toast({ description: "Glad it helped 💜" })}
+                onClick={() => toast({ description: t("toasts.infant_baby_cues.helpful") })}
                 className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:scale-110 transition-transform"
                 aria-label="Helpful"
               >
                 <ThumbsUp className="h-3.5 w-3.5" />
               </button>
               <button
-                onClick={() => toast({ description: "Got it — try the next cue or check Sleep Module." })}
+                onClick={() => toast({ description: t("toasts.infant_baby_cues.not_helpful") })}
                 className="p-1.5 rounded-full bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:scale-110 transition-transform"
                 aria-label="Not helpful"
               >
@@ -484,6 +486,7 @@ export function BabyCuesEngine({ childName, ageMonths }: { childName: string; ag
 
 // ─── Communication Coaching — "Try This Now" rotating micro-actions ──────────
 export function CommunicationCoaching({ ageMonths }: { ageMonths: number }) {
+  const { t } = useTranslation();
   const actions = useMemo(() => getMicroActions(ageMonths), [ageMonths]);
 
   // Pick action contextually: time-of-day + age band rotate
@@ -532,7 +535,7 @@ export function CommunicationCoaching({ ageMonths }: { ageMonths: number }) {
 
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-fuchsia-300/40 dark:border-fuchsia-400/20">
           <button
-            onClick={() => toast({ description: "Logged — keep it up 🌟" })}
+            onClick={() => toast({ description: t("toasts.infant_baby_cues.tried") })}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-fuchsia-500 text-white text-[11px] font-bold hover:bg-fuchsia-600 transition-colors"
           >
             <Heart className="h-3 w-3" />

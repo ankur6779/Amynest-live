@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -46,51 +47,6 @@ type Category = {
     | "good_night";
 };
 
-const CATEGORIES: Category[] = [
-  {
-    key: "routineEnabled",
-    title: "Routine reminders",
-    description: "Morning, evening and bedtime nudges to stay on track.",
-    icon: "calendar-outline",
-    testCategory: "routine",
-  },
-  {
-    key: "nutritionEnabled",
-    title: "Nutrition suggestions",
-    description: "Snack ideas, dinner inspiration and meal tips.",
-    icon: "nutrition-outline",
-    testCategory: "nutrition",
-  },
-  {
-    key: "insightsEnabled",
-    title: "Amy AI insights",
-    description: "Daily parenting tips tailored to your child's age.",
-    icon: "bulb-outline",
-    testCategory: "insights",
-  },
-  {
-    key: "weeklyEnabled",
-    title: "Weekly report",
-    description: "Sunday recap of your child's week.",
-    icon: "stats-chart-outline",
-    testCategory: "weekly",
-  },
-  {
-    key: "engagementEnabled",
-    title: "Friendly nudges",
-    description: "Re-engagement messages and streak rewards.",
-    icon: "heart-outline",
-    testCategory: "engagement",
-  },
-  {
-    key: "goodNightEnabled",
-    title: "Good night message",
-    description: "Wind-down reminder at bedtime.",
-    icon: "moon-outline",
-    testCategory: "good_night",
-  },
-];
-
 export default function NotificationSettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -98,7 +54,17 @@ export default function NotificationSettingsScreen() {
   const qc = useQueryClient();
   const c = useColors();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = React.useMemo(() => makeStyles(c), [c]);
+
+  const CATEGORIES: Category[] = [
+    { key: "routineEnabled", title: t("screens.notif_settings.cat_routine_title"), description: t("screens.notif_settings.cat_routine_desc"), icon: "calendar-outline", testCategory: "routine" },
+    { key: "nutritionEnabled", title: t("screens.notif_settings.cat_nutrition_title"), description: t("screens.notif_settings.cat_nutrition_desc"), icon: "nutrition-outline", testCategory: "nutrition" },
+    { key: "insightsEnabled", title: t("screens.notif_settings.cat_insights_title"), description: t("screens.notif_settings.cat_insights_desc"), icon: "bulb-outline", testCategory: "insights" },
+    { key: "weeklyEnabled", title: t("screens.notif_settings.cat_weekly_title"), description: t("screens.notif_settings.cat_weekly_desc"), icon: "stats-chart-outline", testCategory: "weekly" },
+    { key: "engagementEnabled", title: t("screens.notif_settings.cat_engagement_title"), description: t("screens.notif_settings.cat_engagement_desc"), icon: "heart-outline", testCategory: "engagement" },
+    { key: "goodNightEnabled", title: t("screens.notif_settings.cat_goodnight_title"), description: t("screens.notif_settings.cat_goodnight_desc"), icon: "moon-outline", testCategory: "good_night" },
+  ];
 
   const { data, isLoading } = useQuery<Prefs>({
     queryKey: ["notification-prefs"],
@@ -128,7 +94,7 @@ export default function NotificationSettingsScreen() {
       qc.setQueryData(["notification-prefs"], saved);
     },
     onError: (err: Error) => {
-      Alert.alert("Could not save", err.message);
+      Alert.alert(t("alerts.notifications.save_failed_title"), err.message);
     },
   });
 
@@ -144,14 +110,20 @@ export default function NotificationSettingsScreen() {
     onSuccess: (result) => {
       const status = result.status ?? "unknown";
       if (status === "sent") {
-        Alert.alert("Sent", "Check your notification tray in a moment.");
+        Alert.alert(t("alerts.notifications.sent_title"), t("alerts.notifications.sent_msg"));
       } else if (status === "no_tokens") {
-        Alert.alert("No device registered", "Open the app on a real device with notifications enabled.");
+        Alert.alert(t("alerts.notifications.no_device_title"), t("alerts.notifications.no_device_msg"));
       } else {
-        Alert.alert("Not sent", `Status: ${status}${result.reason ? ` (${result.reason})` : ""}`);
+        Alert.alert(
+          t("alerts.notifications.not_sent_title"),
+          t("alerts.notifications.not_sent_status", {
+            status,
+            reason: result.reason ? ` (${result.reason})` : "",
+          })
+        );
       }
     },
-    onError: (err: Error) => Alert.alert("Test failed", err.message),
+    onError: (err: Error) => Alert.alert(t("alerts.notifications.test_failed_title"), err.message),
   });
 
   if (isLoading || !local) {
@@ -180,12 +152,11 @@ export default function NotificationSettingsScreen() {
         <Pressable onPress={() => router.back()} style={styles.back} hitSlop={8}>
           <Ionicons name="chevron-back" size={26} color={c.text} />
         </Pressable>
-        <Text style={styles.title}>Notifications</Text>
+        <Text style={styles.title}>{t("screens.notif_settings.title")}</Text>
       </View>
 
       <Text style={styles.subtitle}>
-        Choose which notifications you want from AmyNest. Maximum {local.dailyCap} per
-        day, never during quiet hours.
+        {t("screens.notif_settings.subtitle", { cap: local.dailyCap })}
       </Text>
 
       {CATEGORIES.map((cat) => {
@@ -205,7 +176,7 @@ export default function NotificationSettingsScreen() {
                   style={styles.testBtn}
                 >
                   <Text style={styles.testBtnText}>
-                    {test.isPending ? "Sending…" : "Send test"}
+                    {test.isPending ? t("screens.notif_settings.sending") : t("screens.notif_settings.send_test")}
                   </Text>
                 </Pressable>
               ) : null}
@@ -221,12 +192,12 @@ export default function NotificationSettingsScreen() {
       })}
 
       <View style={styles.quiet}>
-        <Text style={styles.quietTitle}>Quiet hours</Text>
+        <Text style={styles.quietTitle}>{t("screens.notif_settings.quiet_hours")}</Text>
         <Text style={styles.quietValue}>
           {local.quietHoursStart} → {local.quietHoursEnd} ({local.timezone})
         </Text>
         <Text style={styles.quietHelp}>
-          We never send notifications during this window.
+          {t("screens.notif_settings.quiet_help")}
         </Text>
       </View>
       </ScrollView>

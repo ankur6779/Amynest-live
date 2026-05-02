@@ -114,6 +114,7 @@ export function SmartMealSuggestions() {
     setAmyMessage("");
 
     try {
+      const { default: i18nInstance } = await import("@/i18n");
       const res = await authFetch("/api/meals/ai-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,6 +124,7 @@ export function SmartMealSuggestions() {
           audience,
           childAge: audience === "kids_tiffin" ? childAge : undefined,
           isVeg,
+          language: i18nInstance.language || "en",
         }),
       });
 

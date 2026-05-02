@@ -15,6 +15,7 @@ import {
   setQuestionResponse, setStage, suggestActions, toggleAction, toggleQuestion,
   type PtmCategory, type PtmSession, type PtmStage,
 } from "@workspace/ptm-prep";
+import { useTranslation } from "react-i18next";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, palette } from "@/constants/colors";
@@ -37,6 +38,7 @@ async function saveHistory(h: PtmSession[]) {
 }
 
 export default function PtmPrepScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -110,7 +112,7 @@ export default function PtmPrepScreen() {
             <View style={styles.card}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <Text style={styles.metaLabel}>PTM · {session.date}</Text>
-                <Pressable onPress={() => Alert.alert("Discard draft?", "This will clear your current PTM prep.", [
+                <Pressable onPress={() => Alert.alert(t("alerts.ptm.discard_title"), t("alerts.ptm.discard_msg"), [
                   { text: "Cancel" }, { text: "Discard", style: "destructive", onPress: () => setSession(null) },
                 ])}>
                   <Text style={{ fontSize: 11, color: palette.gray400 }}>🗑 Discard</Text>
@@ -378,6 +380,7 @@ function ActStage({ session, setSession, amyHint, onComplete, colors }: any) {
 }
 
 function HistoryBlock({ history, colors, onDelete }: { history: PtmSession[]; colors: any; onDelete: (id: string) => void }) {
+  const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -412,7 +415,7 @@ function HistoryBlock({ history, colors, onDelete }: { history: PtmSession[]; co
                     ))}
                   </View>
                 )}
-                <Pressable onPress={() => Alert.alert("Delete this past PTM?", "", [
+                <Pressable onPress={() => Alert.alert(t("alerts.ptm.delete_past_title"), "", [
                   { text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => onDelete(s.id) },
                 ])}>
                   <Text style={{ fontSize: 11, color: palette.rose500 }}>🗑 Delete</Text>

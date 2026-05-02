@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,6 +81,7 @@ const todayStr = new Date().toISOString().slice(0, 10);
 const inputClass = "rounded-xl h-12 bg-muted/50 border-transparent focus-visible:bg-background";
 
 export default function ChildForm() {
+  const { t } = useTranslation();
   const [_, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const { toast } = useToast();
@@ -172,7 +174,7 @@ export default function ChildForm() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "Photo too large", description: "Please choose an image under 5MB.", variant: "destructive" });
+      toast({ title: t("toasts.children.photo_too_large_title"), description: t("toasts.children.photo_too_large_body"), variant: "destructive" });
       return;
     }
     const reader = new FileReader();
@@ -225,12 +227,12 @@ export default function ChildForm() {
         { id: childId, data: payload },
         {
           onSuccess: () => {
-            toast({ title: "Profile updated successfully" });
+            toast({ title: t("toasts.children.profile_updated") });
             queryClient.invalidateQueries({ queryKey: getGetChildQueryKey(childId) });
             queryClient.invalidateQueries({ queryKey: getListChildrenQueryKey() });
             setLocation("/children");
           },
-          onError: () => toast({ title: "Failed to update profile", variant: "destructive" }),
+          onError: () => toast({ title: t("toasts.children.profile_update_failed"), variant: "destructive" }),
         }
       );
     } else {
@@ -238,7 +240,7 @@ export default function ChildForm() {
         { data: payload },
         {
           onSuccess: () => {
-            toast({ title: "Child added successfully — taking you to your dashboard" });
+            toast({ title: t("toasts.children.profile_added") });
             // Hard refresh so subscription/entitlements/onboarding-gate all reload
             // and the user can immediately use everything.
             window.location.href = "/dashboard";
@@ -247,7 +249,7 @@ export default function ChildForm() {
             if (err?.status === 402 && err?.data?.error === "child_limit_reached") {
               setShowUpgradePrompt(true);
             } else {
-              toast({ title: "Failed to add child", variant: "destructive" });
+              toast({ title: t("toasts.children.profile_add_failed"), variant: "destructive" });
             }
           },
         }
@@ -260,11 +262,11 @@ export default function ChildForm() {
       { id: childId },
       {
         onSuccess: () => {
-          toast({ title: "Profile deleted" });
+          toast({ title: t("toasts.children.profile_deleted") });
           queryClient.invalidateQueries({ queryKey: getListChildrenQueryKey() });
           setLocation("/children");
         },
-        onError: () => toast({ title: "Failed to delete profile", variant: "destructive" }),
+        onError: () => toast({ title: t("toasts.children.profile_delete_failed"), variant: "destructive" }),
       }
     );
   };

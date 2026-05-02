@@ -40,7 +40,7 @@
     "amy_ai": "Amy AI",
     "babysitters": "Babysitters",
     "games": "Gaming Reward",
-    "my_recipes": "My Recipes",
+    "my_recipes": "Meri Recipes",
     "nutrition_hub": "Nutrition Hub",
     "profile": "Meri Profile",
     "kids_control_center": "Kids Control",
@@ -116,7 +116,7 @@
     "title": "Parenting Hub",
     "subtitle": "Science-backed articles aur quick tips",
     "explore": "Explore karein",
-    "amy_suggestions": "Amy AI Suggestions",
+    "amy_suggestions": "Amy AI ke Sujhav",
     "amy_suggestions_sub": "Turant guidance ke liye topic pe tap karein",
     "daily_tips": "Rozaana Parenting Tips",
     "daily_tips_sub": "Har din nayi samjhdaari",
@@ -124,9 +124,9 @@
     "articles_sub": "Child psychologists se gehre articles",
     "activities": "Activities aur Crafts",
     "activities_sub": "Bachhon ke saath karne ke liye fun cheezein",
-    "worksheets": "Printable Worksheets",
+    "worksheets": "Print karne yogya Worksheets",
     "worksheets_sub": "Ghar pe print karne yogya learning sheets",
-    "facts": "Amazing Facts",
+    "facts": "Mazedaar Facts",
     "facts_sub": "Aapke bachhe ke dimaag ke baare mein hairaan karne wali baatein"
   },
   "ai": {
@@ -149,7 +149,7 @@
     "clear_chat": "Clear Karein",
     "empty_heading": "Hi 😊 Main Amy hoon, aapki parenting co-pilot",
     "empty_body": "Chinta mat karein, main yahaan help ke liye hoon ❤️ Neend, khaana, behavior, school anxiety, screen time — kuch bhi poochein.",
-    "popular_questions": "Popular Questions",
+    "popular_questions": "Popular Sawaal",
     "suggested_q1": "Mera bachha sabziyan nahi khata — main kya karoon?",
     "suggested_q2": "Behtar sone ka routine kaise banayein?",
     "suggested_q3": "Mere 7 saal ke bachhe ko gussa aata hai — kya yeh normal hai?",
@@ -193,13 +193,13 @@
     "stay_at_home": "Ghar pe Rahein",
     "work_start": "Kaam Start Time",
     "work_end": "Kaam End Time",
-    "free_slots": "Free Time Slots",
+    "free_slots": "Khaali Time Slots",
     "add_slot": "Slot Add Karein",
     "food_type": "Food ka Type",
     "veg": "Vegetarian",
     "non_veg": "Non-Vegetarian",
     "vegan": "Vegan",
-    "allergies": "Allergies / Dietary Restrictions",
+    "allergies": "Allergies / Khaane ki Paband",
     "profile_picture": "Profile Picture",
     "change_picture": "Picture Change Karein",
     "uploading": "Upload ho raha hai…"
@@ -214,7 +214,7 @@
     "all_time": "All time",
     "completed_routines": "Complete Hue Routines",
     "active_plans": "Active Plans",
-    "milestones_hit": "Milestones Hit"
+    "milestones_hit": "Milestones Pure"
   },
   "children": {
     "title": "Mere Bachhe",
@@ -259,7 +259,7 @@
     "possible_today": "aaj possible",
     "earns_pts": "~{{pts}} pts kamayega",
     "family_bonus": "🎉 Family Bonus (sab complete karein)",
-    "shared_activities": "Shared Family Activities",
+    "shared_activities": "Saath karne wali Family Activities",
     "shared_subtitle": "Ek saath karne ke liye choose karein — sibling bonding badhti hai.",
     "minutes_short": "{{n}} min"
   },
@@ -307,9 +307,9 @@
     "restore": "Restore Karein",
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",
-    "feature_unlimited_ai": "Unlimited Amy AI conversations",
-    "feature_plans": "Personalized 12-step plans",
-    "feature_tracking": "Advanced progress tracking",
+    "feature_unlimited_ai": "Unlimited Amy AI baat-cheet",
+    "feature_plans": "12-step plans aapke liye personalized",
+    "feature_tracking": "Behtareen progress tracking",
     "feature_priority": "Priority support"
   },
   "landing": {
@@ -369,7 +369,7 @@
     "footer_tagline": "Jahaan Smart Parenting Shuru Hoti Hai"
   },
   "infant_hub": {
-    "title": "Infant & Toddler Hub",
+    "title": "Nanhe Bachhon ka Hub",
     "subtitle": "{{name}} ({{age}}) ke liye research-based guidance",
     "tabs": {
       "sleep": "Sleep",
@@ -388,5 +388,264 @@
     "safe_disclaimer": "Sirf guidance — medical advice nahi. Concern ho toh pediatrician se milein.",
     "based_on": "Pediatric guidelines par based",
     "select_child": "Inke liye tips"
+  },
+  "toasts": {
+    "ai_coach": {
+      "load_session_failed_title": "Session load nahi ho saka",
+      "load_session_failed_body": "Amy Coach phir se shuru kar rahe hain.",
+      "error_title": "Kuch galat ho gaya",
+      "error_body_with_msg": "Phir try karein. ({{msg}})",
+      "error_body": "Ek pal mein phir try karein.",
+      "win_locked_title": "Win lock ho gayi 🎉",
+      "win_locked_body": "Complete mark kiya. Agle step pe ja rahe hain.",
+      "progress_noted_title": "Progress note ki gayi 💜",
+      "progress_noted_body": "Partial progress count hui. Aage badhte rahein.",
+      "extras_added_title": "3 nayi strategies add hui 💛",
+      "extras_added_body": "Inhe dekhne ke liye apne deck ke end tak scroll karein.",
+      "extras_failed_title": "Extras load nahi ho sake",
+      "extras_failed_body": "Kripya thodi der baad phir 'Mere liye kaam nahi kiya' tap karein.",
+      "copied_title": "Copy ho gaya!",
+      "copied_body": "Plan clipboard pe copy ho gaya."
+    },
+    "parent_profile": {
+      "pic_updated": "Profile picture update ho gayi!",
+      "pic_failed": "Picture update nahi ho saki",
+      "profile_saved_title": "Profile save ho gayi!",
+      "profile_saved_body": "Aapka schedule ab Amy AI ke routine generation ko behtar banayega.",
+      "save_error_title": "Error",
+      "save_error_body": "Profile save nahi ho saki."
+    },
+    "notification_settings": {
+      "save_failed_title": "Save nahi ho saka",
+      "test_sent_title": "Test bheja gaya",
+      "test_sent_body": "Thodi der mein apne device pe check karein.",
+      "no_device_title": "Koi device register nahi",
+      "no_device_body": "Upar browser notifications enable karein, ya pehle apne phone pe AmyNest kholein.",
+      "not_sent_title": "Nahi bheja gaya",
+      "not_sent_body_with_reason": "{{status}} — {{reason}}",
+      "not_sent_body": "{{status}}",
+      "test_failed_title": "Test fail ho gaya"
+    },
+    "recipes": {
+      "saved_title": "Recipe save hui",
+      "saved_body": "Aapki custom recipe save ho gayi hai.",
+      "updated_title": "Recipe update hui",
+      "updated_body": "Aapki recipe update ho gayi hai.",
+      "deleted_title": "Recipe delete hui",
+      "deleted_body": "Recipe hata di gayi hai.",
+      "delete_error_title": "Error",
+      "delete_error_body": "Recipe delete nahi ho saki."
+    },
+    "use_web_push": {
+      "blocked_title": "Notifications block hain",
+      "blocked_body": "Apni browser settings mein notifications allow karein aur phir try karein.",
+      "enabled": "Browser notifications enable ho gaye!",
+      "enable_failed_title": "Notifications enable nahi ho sake",
+      "enable_failed_body_default": "Thodi der baad phir try karein.",
+      "disabled": "Browser notifications disable kar diye gaye"
+    },
+    "babysitters": {
+      "name_required": "Naam zaruri hai",
+      "added_title": "Babysitter add ho gayi!",
+      "added_body": "{{name}} ko add kar diya gaya hai.",
+      "add_error_title": "Error",
+      "add_error_body": "Babysitter add nahi ho saki.",
+      "removed_title": "Hata diya",
+      "removed_body": "{{name}} ko hata diya gaya hai.",
+      "remove_error_title": "Error",
+      "remove_error_body": "Babysitter hata nahi paaye."
+    },
+    "behavior": {
+      "select_child": "Pehle ek bachha select karein",
+      "logged": "{{emoji}} {{label}} log ho gaya!",
+      "log_failed": "Log nahi ho saka",
+      "delete_failed": "Delete nahi ho saka"
+    },
+    "children": {
+      "photo_too_large_title": "Photo bahut badi hai",
+      "photo_too_large_body": "Kripya 5MB se chhoti image choose karein.",
+      "profile_updated": "Profile successfully update ho gayi",
+      "profile_update_failed": "Profile update nahi ho saki",
+      "profile_added": "Bachha add ho gaya — aapko dashboard pe le ja rahe hain",
+      "profile_add_failed": "Bachha add nahi ho saka",
+      "profile_deleted": "Profile delete ho gayi",
+      "profile_delete_failed": "Profile delete nahi ho saki"
+    },
+    "routines_detail": {
+      "undone": "↩️ Action undo kiya",
+      "copied_title": "Copy ho gaya!",
+      "copied_body": "Routine copy ho gaya. Ise WhatsApp ya SMS mein paste karein.",
+      "recipe_load_failed": "Recipe load nahi ho saki",
+      "auto_skipped_title": "⏭️ {{count}} task auto-skip",
+      "auto_skipped_title_plural": "⏭️ {{count}} tasks auto-skip",
+      "auto_skipped_body": "Bedtime bachane ke liye low-priority activities hata di gayin.",
+      "shifted_later_title": "⏩ +{{min}} min shift",
+      "shifted_later_body": "Aage ke tasks update ho gaye.",
+      "shifted_earlier_title": "⏪ {{min}} min pehle shift",
+      "shifted_earlier_body": "Aage ke tasks pehle kar diye gaye.",
+      "day_regenerated_title": "🔄 Din phir se ban gaya!",
+      "day_regenerated_body": "Baki tasks AI ne update kar diye hain.",
+      "regenerate_failed": "Phir se generate nahi ho saka",
+      "activity_added_title": "✅ Activity add ho gayi!",
+      "activity_added_body": "\"{{name}}\" aapke schedule mein fit ho gayi hai.",
+      "activity_add_failed": "Activity add nahi ho saki",
+      "tomorrow_ready_title": "🌅 Kal ka routine ready!",
+      "tomorrow_ready_body_weekend": "{{name}} ke liye weekend routine ready hai.",
+      "tomorrow_ready_body_school": "{{name}} ke liye school day routine ready hai.",
+      "tomorrow_failed": "Kal ka routine nahi ban saka",
+      "deleted": "Routine delete ho gaya",
+      "delete_failed": "Routine delete nahi ho saka",
+      "delayed_skipped_title": "⏱ Delay · {{count}} task auto-skip",
+      "delayed_skipped_title_plural": "⏱ Delay · {{count}} tasks auto-skip",
+      "delayed_skipped_body": "Bedtime bachane ke liye low-priority activities hata di gayin.",
+      "schedule_shifted_title": "⏱ Schedule +15 min shift",
+      "schedule_shifted_body": "Baki tasks update ho gaye.",
+      "points_earned_title": "+{{points}} points mile 🎉",
+      "badge_earned_title": "🏆 Badge mila: {{emoji}} {{label}}!",
+      "notifications_disabled": "Notifications band",
+      "notifications_enabled_title": "🔔 Notifications chalu!",
+      "notifications_enabled_body": "Har task se pehle aapko notify kiya jayega.",
+      "permission_denied_title": "Permission deny ki",
+      "permission_denied_body": "Apni browser settings mein notifications enable karein.",
+      "simplified_title": "⚡ Amy AI ne aapka din simplify kiya",
+      "simplified_body": "{{count}} low-priority task hata diya gaya taaki aap zaruri cheezon pe focus karein.",
+      "simplified_body_plural": "{{count}} low-priority tasks hata diye gaye taaki aap zaruri cheezon pe focus karein."
+    },
+    "routines_generate": {
+      "routine_replaced": "🔄 Routine replace ho gaya!",
+      "routine_generated": "✨ Routine generate ho gaya!",
+      "save_failed_title": "Routine save nahi ho saka",
+      "save_failed_body": "Kripya ek pal mein phir try karein.",
+      "generate_failed": "Routine generate nahi ho saka",
+      "ai_unavailable": "Amy abhi generate nahi kar saki — standard routine try karein.",
+      "select_child_school": "Kripya kam se kam ek bachha select karein aur unki school status set karein.",
+      "family_generate_failed": "{{name}} ke liye routine generate nahi ho saka",
+      "family_save_failed": "{{name}} ke liye routine save nahi ho saka",
+      "family_saved": "✨ {{count}} routine save hua!",
+      "family_saved_plural": "✨ {{count}} routines save hue!"
+    },
+    "cry_insight": {
+      "analyse_failed_title": "Analyse nahi ho saka",
+      "analyse_failed_body": "Server ne {{status}} return kiya. Phir try karein.",
+      "mic_unavailable_title": "Mic available nahi",
+      "mic_unavailable_body": "Aapka browser audio recording support nahi karta. Niche context-only analyse try karein.",
+      "mic_denied_title": "Mic access deny kiya",
+      "mic_denied_body": "Record karne ke liye microphone access dein, ya niche Analyse without audio button use karein."
+    },
+    "sleep_predict": {
+      "load_failed_title": "Sleep prediction load nahi ho saki",
+      "network_error": "Network error",
+      "bedtime_logged": "Bedtime log hua",
+      "nap_started": "Nap shuru",
+      "log_sleep_failed_title": "Sleep log nahi ho saki",
+      "wake_logged_title": "Wake-up log hua",
+      "wake_logged_body": "Agli sleep ke liye window update ho gayi.",
+      "log_wake_failed_title": "Wake-up log nahi ho saka"
+    },
+    "infant_sleep": {
+      "wake_logged": "Wake-up log hua ☀️",
+      "down_logged": "Sone ke liye lete log hua 🌙",
+      "routine_regenerated": "{{name}} ke liye routine regenerate ho gaya 🌟",
+      "saved": "Save ✓"
+    },
+    "infant_baby_cues": {
+      "helpful": "Khushi hui ki madad mili 💜",
+      "not_helpful": "Ok — agla cue try karein ya Sleep Module check karein.",
+      "tried": "Log ho gaya — aise hi karte rahein 🌟"
+    },
+    "voice_settings": {
+      "voice_on": "🔊 Voice reminders chalu!",
+      "voice_off": "🔇 Voice reminders band"
+    },
+    "infant_milestones": {
+      "achieved_1": "Shaandar! Aapne ye saath milkar achieve kiya 🏆",
+      "achieved_2": "Dekho ye growth! Is win ko celebrate karein.",
+      "achieved_3": "Bahut khoob — ye real progress hai.",
+      "in_progress_1": "Achi progress! Aage badhte rahein 🌟",
+      "in_progress_2": "Lagbhag pahunch gaye — consistency hi jeet hai.",
+      "in_progress_3": "Aap bahut achha kar rahe hain. Aaj phir try karein."
+    }
+  },
+  "screens": {
+    "common": {
+      "home_link": "← Home",
+      "copyright": "© 2026 AmyNest AI. Sabhi adhikar surakshit."
+    },
+    "not_found": {
+      "title": "404 Page nahi mila",
+      "message": "Kya aap router mein page add karna bhool gaye?"
+    },
+    "terms": {
+      "heading": "Service ki Shartein",
+      "last_updated": "Last updated: April 27, 2026",
+      "intro_before": "Use karne se pehle in Terms of Service ko dhyan se padhein",
+      "intro_at": "par",
+      "intro_after": ". Yeh Terms aapke aur AmyNest AI, Inc. ke beech ek legal agreement banati hain."
+    },
+    "delete_account": {
+      "title": "Apna Account Delete Karein",
+      "subtitle": "Aapko jaate dekh dukh hua. Neeche diye gaye steps follow karke aap apna AmyNest account aur saara data permanently delete kar sakte hain.",
+      "warning_strong": "Yeh action permanent hai.",
+      "warning_body": "Ek baar delete hone ke baad, aapka account aur saara data wapas nahi mil sakta. Aage badhne se pehle confirm zaroor karein.",
+      "data_heading": "Kaunsa data delete hoga",
+      "data_items": [
+        "Profile aur account information",
+        "Sabhi bachhon ki profiles aur umr",
+        "Daily routines aur schedules",
+        "Behavior tracking records",
+        "Phonics test history aur progress",
+        "AI baatcheet ka history",
+        "Subscription aur payment records",
+        "Referral history",
+        "Saara usage data aur analytics"
+      ],
+      "retention_before": "Request ke",
+      "retention_days": "30 din",
+      "retention_after": "ke andar data permanently delete ho jata hai. Anonymous, combined analytics (jo aapke account se linked nahi hain) rakhe ja sakte hain.",
+      "steps_heading": "App se kaise delete karein",
+      "steps": [
+        {
+          "title": "AmyNest App kholein",
+          "description": "Apne Android ya iOS device par AmyNest app launch karein."
+        },
+        {
+          "title": "Settings mein jaayein",
+          "description": "Apni profile picture ya menu icon par tap karein, fir \"Settings\" chunein."
+        },
+        {
+          "title": "\"Delete Account\" par tap karein",
+          "description": "Neeche scroll karein aur \"Delete Account\" par tap karein. Pooche jaane par confirm karein."
+        },
+        {
+          "title": "Account Delete Ho Gaya",
+          "description": "Aapka account aur saara related data 30 din ke andar permanently delete ho jayega."
+        }
+      ],
+      "step_label": "Step {{n}}",
+      "help_heading": "Madad chahiye?",
+      "help_body": "Agar aap app tak nahi pahunch pa rahe ya account delete karne mein madad chahiye, to humari support team se contact karein — hum 7 working days ke andar aapka request manually process karenge.",
+      "email_support": "Support ko Email karein",
+      "help_footnote": "Kripya apne message mein apne AmyNest account se juda email ya phone number zaroor likhein.",
+      "privacy_link": "Privacy Policy",
+      "terms_link": "Service ki Shartein",
+      "back_home": "Home par wapas"
+    },
+    "ai_coach_progress": {
+      "back_to_coach": "AI Coach par wapas",
+      "title": "Meri Progress",
+      "subtitle": "Apni jeeton ko track karein aur momentum banaye rakhein.",
+      "loading": "Aapki progress load ho rahi hai…",
+      "empty_title": "Abhi koi plan nahi",
+      "empty_body": "Ek goal chunein aur apna pehla plan poora karein — aapki jeetein yahan dikhayi dengi.",
+      "start_plan": "Plan shuru karein",
+      "wins_count": "{{total}} mein se {{done}} jeetein",
+      "win_done_title": "Jeet {{n}}: {{label}}",
+      "win_pending_title": "Jeet {{n}}: abhi nahi ki",
+      "last_updated": "Last updated {{date}}",
+      "continue_plan": "Plan jaari rakhein",
+      "feedback_yes": "Kaam kiya",
+      "feedback_somewhat": "Kuch progress",
+      "feedback_no": "Koshish jaari rakhein"
+    }
   }
 }

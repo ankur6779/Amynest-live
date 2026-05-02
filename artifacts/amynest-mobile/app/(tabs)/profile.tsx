@@ -70,6 +70,7 @@ const REGIONS: { label: string; value: string }[] = [
 ];
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const colors = useColors();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -138,7 +139,7 @@ export default function ProfileScreen() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["notification-preferences"], ctx.prev);
-      Alert.alert("Couldn't save", "We couldn't update your email preference. Please try again.");
+      Alert.alert(t("alerts.profile.pref_save_failed_title"), t("alerts.profile.pref_save_failed_msg"));
     },
     onSuccess: () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -154,7 +155,7 @@ export default function ProfileScreen() {
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.sent) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert("On its way", "We just sent a fresh recap to your email.");
+        Alert.alert(t("alerts.profile.recap_sent_title"), t("alerts.profile.recap_sent_msg"));
         qc.invalidateQueries({ queryKey: ["notification-preferences"] });
       } else {
         const reason = data.reason as string | undefined;
@@ -166,10 +167,10 @@ export default function ProfileScreen() {
               : reason === "send_failed"
                 ? "The email service had a hiccup. Please try again in a minute."
                 : "Couldn't send right now. Please try again later.";
-        Alert.alert("Recap not sent", msg);
+        Alert.alert(t("alerts.profile.recap_not_sent_title"), msg);
       }
     } catch {
-      Alert.alert("Recap not sent", "Couldn't reach the server. Please try again.");
+      Alert.alert(t("alerts.profile.recap_not_sent_title"), t("alerts.profile.recap_unreachable_msg"));
     } finally {
       setSendingRecap(false);
     }
@@ -212,7 +213,7 @@ export default function ProfileScreen() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert("Permission needed", "Please allow photo access to update your picture.");
+        Alert.alert(t("alerts.profile.permission_title"), t("alerts.profile.permission_msg"));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -230,7 +231,7 @@ export default function ProfileScreen() {
       await user.setProfileImage({ file: dataUri });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
-      Alert.alert("Upload failed", "Could not update profile picture.");
+      Alert.alert(t("alerts.profile.upload_failed_title"), t("alerts.profile.upload_failed_msg"));
     } finally {
       setUploadingPic(false);
     }
@@ -257,16 +258,16 @@ export default function ProfileScreen() {
       if (!res.ok) throw new Error("Save failed");
       qc.invalidateQueries({ queryKey: ["parent-profile"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Saved", "Your profile is up to date.");
+      Alert.alert(t("alerts.profile.saved_title"), t("alerts.profile.saved_msg"));
     } catch {
-      Alert.alert("Error", "Could not save profile. Please try again.");
+      Alert.alert(t("alerts.profile.save_failed_title"), t("alerts.profile.save_failed_msg"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+    Alert.alert(t("alerts.profile.signout_title"), t("alerts.profile.signout_msg"), [
       { text: "Cancel", style: "cancel" },
       {
         text: "Sign Out", style: "destructive",
@@ -330,7 +331,7 @@ export default function ProfileScreen() {
     const url = `mailto:Support@amynest.in?subject=${subject}&body=${body}`;
     const canOpen = await Linking.canOpenURL(url);
     if (!canOpen) {
-      Alert.alert("Email app not available", "Please email Support@amynest.in");
+      Alert.alert(t("alerts.profile.email_unavailable_title"), t("alerts.profile.email_unavailable_msg"));
       return;
     }
     await Linking.openURL(url);

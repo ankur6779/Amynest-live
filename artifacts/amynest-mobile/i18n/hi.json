@@ -379,5 +379,231 @@
     "safe_disclaimer": "केवल मार्गदर्शन — चिकित्सा सलाह नहीं। चिंता हो तो शिशु डॉक्टर से मिलें।",
     "based_on": "पीडियाट्रिक दिशानिर्देशों पर आधारित",
     "select_child": "इनके लिए सलाह"
+  },
+  "alerts": {
+    "signup": {
+      "invalid_name_title": "अमान्य नाम",
+      "invalid_name_msg": "कृपया अपना पहला नाम दर्ज करें (कम से कम 2 अक्षर)।",
+      "invalid_email_title": "अमान्य ईमेल",
+      "invalid_email_msg": "कृपया एक वैध ईमेल पता दर्ज करें।",
+      "weak_password_title": "कमज़ोर पासवर्ड",
+      "weak_password_msg": "पासवर्ड कम से कम 8 अक्षर का होना चाहिए।",
+      "failed_title": "साइन अप विफल",
+      "failed_default": "कृपया फिर से कोशिश करें।"
+    },
+    "signin": {
+      "failed_title": "साइन इन विफल",
+      "failed_default": "कृपया अपनी जानकारी जाँचें और फिर से कोशिश करें।"
+    },
+    "rewards": {
+      "not_enough_title": "पॉइंट्स कम हैं",
+      "not_enough_msg": "{{label}} की कीमत {{cost}} पॉइंट्स है। आपके पास {{points}} पॉइंट्स हैं। रूटीन और गेम पूरे करके और कमाएँ!",
+      "balance_changed_msg": "आपका बैलेंस बदल गया। फिर से कोशिश करें।",
+      "redeem_title": "{{label}} रिडीम करें?",
+      "redeem_msg": "इससे आपके बैलेंस से {{cost}} पॉइंट्स खर्च होंगे।",
+      "redeem_button": "रिडीम करें"
+    },
+    "recipes": {
+      "delete_title": "रेसिपी डिलीट करें",
+      "delete_msg": "\"{{name}}\" डिलीट करें? यह वापस नहीं किया जा सकता।"
+    },
+    "ptm": {
+      "discard_title": "ड्राफ्ट हटाएँ?",
+      "discard_msg": "इससे आपकी मौजूदा PTM तैयारी हट जाएगी।",
+      "discard_button": "हटाएँ",
+      "delete_past_title": "क्या यह पुरानी PTM डिलीट करें?"
+    },
+    "behavior": {
+      "select_child_first": "पहले एक बच्चा चुनें",
+      "log_error_title": "त्रुटि",
+      "log_error_msg": "व्यवहार लॉग नहीं हो सका।",
+      "delete_title": "डिलीट करें",
+      "delete_msg": "क्या यह एंट्री हटा दें?",
+      "delete_error_title": "त्रुटि",
+      "delete_error_msg": "डिलीट नहीं हो सका।"
+    },
+    "behavior_history": {
+      "delete_title": "एंट्री डिलीट करें?",
+      "delete_msg": "क्या यह {{type}} लॉग हटा दें?",
+      "delete_error_title": "त्रुटि",
+      "delete_error_msg": "एंट्री डिलीट नहीं हो सकी।"
+    },
+    "cry": {
+      "title": "क्राय इनसाइट"
+    },
+    "sleep": {
+      "title": "स्लीप प्रिडिक्ट"
+    },
+    "babysitters": {
+      "name_required": "नाम ज़रूरी है",
+      "add_error_title": "त्रुटि",
+      "add_error_msg": "बेबीसिटर जोड़ नहीं सके।",
+      "remove_title": "बेबीसिटर हटाएँ",
+      "remove_msg": "{{name}} को हटाएँ?",
+      "remove_button": "हटाएँ",
+      "remove_error_title": "त्रुटि",
+      "remove_error_msg": "हटा नहीं सके।"
+    },
+    "notifications": {
+      "save_failed_title": "सेव नहीं हो सका",
+      "sent_title": "भेज दिया",
+      "sent_msg": "एक पल में अपनी नोटिफिकेशन ट्रे देखें।",
+      "no_device_title": "कोई डिवाइस रजिस्टर्ड नहीं",
+      "no_device_msg": "ऐप को एक असली डिवाइस पर खोलें जिसमें नोटिफिकेशन चालू हों।",
+      "not_sent_title": "नहीं भेजा गया",
+      "not_sent_status": "स्थिति: {{status}}{{reason}}",
+      "test_failed_title": "टेस्ट विफल"
+    },
+    "routines": {
+      "generate_failed_title": "रूटीन नहीं बना सके",
+      "generate_failed_msg": "ऐमी को थोड़ी समस्या हुई। कृपया एक पल में फिर से कोशिश करें।",
+      "delete_title": "रूटीन डिलीट करें?",
+      "delete_msg": "इससे यह रूटीन हमेशा के लिए हट जाएगा।"
+    },
+    "children": {
+      "permission_title": "अनुमति चाहिए",
+      "permission_msg_new": "फोटो जोड़ने के लिए फोटो एक्सेस की अनुमति दें।",
+      "permission_msg_edit": "फोटो अपडेट करने के लिए फोटो एक्सेस की अनुमति दें।",
+      "photo_error_title": "त्रुटि",
+      "photo_error_msg": "फोटो लोड नहीं हो सकी।",
+      "name_required_title": "त्रुटि",
+      "name_required_msg": "बच्चे का नाम ज़रूरी है।",
+      "add_failed_title": "त्रुटि",
+      "add_failed_msg": "बच्चा जोड़ नहीं सके। कृपया फिर से कोशिश करें।",
+      "save_failed_title": "त्रुटि",
+      "save_failed_msg": "सेव नहीं हो सका। कृपया फिर से कोशिश करें।",
+      "delete_title": "बच्चा हटाएँ",
+      "delete_msg": "क्या आप वाकई {{name}} को हटाना चाहते हैं?",
+      "delete_failed_title": "त्रुटि",
+      "delete_failed_msg": "बच्चा डिलीट नहीं हो सका।"
+    },
+    "profile": {
+      "pref_save_failed_title": "सेव नहीं हो सका",
+      "pref_save_failed_msg": "हम आपकी ईमेल प्राथमिकता अपडेट नहीं कर सके। कृपया फिर से कोशिश करें।",
+      "recap_sent_title": "रास्ते में है",
+      "recap_sent_msg": "हमने अभी आपकी ईमेल पर एक नया रीकैप भेज दिया।",
+      "recap_not_sent_title": "रीकैप नहीं भेजा गया",
+      "recap_no_provider": "ईमेल अभी सेट नहीं है। कृपया बाद में फिर कोशिश करें।",
+      "recap_no_email": "हमें आपके अकाउंट पर कोई ईमेल पता नहीं मिला।",
+      "recap_send_failed": "ईमेल सेवा में थोड़ी दिक्कत आई। कृपया एक मिनट में फिर कोशिश करें।",
+      "recap_default": "अभी नहीं भेज सके। कृपया बाद में फिर कोशिश करें।",
+      "recap_unreachable_msg": "सर्वर तक नहीं पहुँच सके। कृपया फिर से कोशिश करें।",
+      "permission_title": "अनुमति चाहिए",
+      "permission_msg": "कृपया अपनी फोटो अपडेट करने के लिए फोटो एक्सेस की अनुमति दें।",
+      "upload_failed_title": "अपलोड विफल",
+      "upload_failed_msg": "प्रोफ़ाइल फोटो अपडेट नहीं हो सकी।",
+      "saved_title": "सेव हो गया",
+      "saved_msg": "आपकी प्रोफ़ाइल अपडेटेड है।",
+      "save_failed_title": "त्रुटि",
+      "save_failed_msg": "प्रोफ़ाइल सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
+      "signout_title": "साइन आउट",
+      "signout_msg": "क्या आप वाकई साइन आउट करना चाहते हैं?",
+      "signout_button": "साइन आउट",
+      "delete_title": "अकाउंट डिलीट करें?",
+      "delete_msg": "इससे आपका अकाउंट, बच्चे, रूटीन, व्यवहार और सभी AmyNest डेटा हमेशा के लिए हट जाएगा। यह वापस नहीं किया जा सकता।",
+      "delete_button": "हमेशा के लिए डिलीट करें",
+      "delete_final_title": "अंतिम पुष्टि",
+      "delete_final_msg": "अपना AmyNest अकाउंट हमेशा के लिए मिटाने के लिए 'हाँ, सब डिलीट करें' पर टैप करें।",
+      "delete_final_button": "हाँ, सब डिलीट करें",
+      "delete_failed_title": "अकाउंट डिलीट नहीं हो सका",
+      "delete_failed_msg": "कृपया फिर से कोशिश करें, या मदद के लिए Support@amynest.in पर ईमेल करें।",
+      "email_unavailable_title": "ईमेल ऐप उपलब्ध नहीं",
+      "email_unavailable_msg": "कृपया Support@amynest.in पर ईमेल करें"
+    },
+    "buttons": {
+      "cancel": "रद्द करें",
+      "delete": "डिलीट करें"
+    }
+  },
+  "screens": {
+    "not_found": {
+      "oops": "ओह!",
+      "message": "यह स्क्रीन मौजूद नहीं है।",
+      "go_home": "होम स्क्रीन पर जाएं!"
+    },
+    "meals": {
+      "title": "🍱 टिफिन और भोजन"
+    },
+    "coach_progress": {
+      "title": "मेरी प्रगति",
+      "subtitle": "अपनी कोचिंग जीतें ट्रैक करें",
+      "loading": "आपकी प्रगति लोड हो रही है…",
+      "empty_title": "अभी कोई योजना नहीं",
+      "empty_body": "एक लक्ष्य चुनें और अपनी पहली योजना पूरी करें — आपकी जीतें यहां दिखाई देंगी।",
+      "start_plan": "योजना शुरू करें",
+      "wins_count": "{{total}} में से {{done}} जीतें",
+      "win_done_a11y": "जीत {{n}}: {{label}}",
+      "win_pending_a11y": "जीत {{n}}: अभी नहीं की",
+      "last_updated": "अंतिम अपडेट {{date}}",
+      "continue_plan": "योजना जारी रखें",
+      "feedback_yes": "काम किया",
+      "feedback_somewhat": "कुछ प्रगति",
+      "feedback_no": "कोशिश करते रहें"
+    },
+    "children_tab": {
+      "title": "बच्चे",
+      "error_load": "बच्चे लोड नहीं हो सके",
+      "retry": "पुनः प्रयास",
+      "empty_title": "अभी कोई बच्चा नहीं",
+      "empty_body": "शुरू करने के लिए अपने बच्चे की प्रोफ़ाइल जोड़ें",
+      "add_first": "पहला बच्चा जोड़ें",
+      "school_going": "स्कूल जाता है",
+      "not_school": "स्कूल में नहीं",
+      "age_months": "{{n}} महीने",
+      "age_year": "{{n}} साल",
+      "age_years": "{{n}} साल",
+      "age_months_extra": ", {{n}} मा"
+    },
+    "tabs": {
+      "dashboard": "डैशबोर्ड",
+      "routine": "रूटीन",
+      "coach": "कोच",
+      "hub": "हब",
+      "kids": "बच्चे",
+      "profile": "प्रोफ़ाइल"
+    },
+    "morning_flow": {
+      "title": "🌅 स्कूल सुबह का फ्लो",
+      "reset": "रीसेट",
+      "minutes_behind": "({{n}} मिनट पीछे)",
+      "simplify_rest": "बाकी को सरल बनाएं",
+      "morning_card_title": "🌅  सुबह का फ्लो",
+      "steps_summary": "{{count}} चरण · कुल लगभग {{minutes}} मिनट",
+      "start_morning": "सुबह शुरू करें",
+      "progress_meta": "{{done}}/{{total}} पूर्ण · {{skipped}} छोड़े",
+      "time_meta": "⏱ {{actual}} / {{planned}} मिनट",
+      "all_done": "सब हो गया! 🎉",
+      "skipped_note": "{{n}} छोड़े — कोई बात नहीं।",
+      "smooth_morning": "सुचारू सुबह!",
+      "have_great_day": "स्कूल में दिन शुभ हो।",
+      "night_card_title": "🌙  कल की तैयारी करें",
+      "night_summary": "{{done}}/{{total}} तैयार · यह पिछली शाम को करें",
+      "open_routines": "विस्तृत रूटीन चाहिए? रूटीन खोलें →",
+      "step_meta": "⏱ ~{{minutes}} मिनट",
+      "step_optional": "  · वैकल्पिक",
+      "skip": "छोड़ें",
+      "done": "हो गया",
+      "undo": "वापस"
+    },
+    "notif_settings": {
+      "title": "सूचनाएं",
+      "subtitle": "चुनें कि आप AmyNest से कौन सी सूचनाएं चाहते हैं। एक दिन में अधिकतम {{cap}}, शांत घंटों में कभी नहीं।",
+      "sending": "भेजा जा रहा…",
+      "send_test": "टेस्ट भेजें",
+      "quiet_hours": "शांत घंटे",
+      "quiet_help": "हम इस समय के दौरान कभी सूचनाएं नहीं भेजते।",
+      "cat_routine_title": "रूटीन रिमाइंडर",
+      "cat_routine_desc": "ट्रैक पर रहने के लिए सुबह, शाम और सोने के समय की नज़र।",
+      "cat_nutrition_title": "पोषण सुझाव",
+      "cat_nutrition_desc": "स्नैक आइडिया, डिनर प्रेरणा और भोजन टिप्स।",
+      "cat_insights_title": "Amy AI जानकारी",
+      "cat_insights_desc": "आपके बच्चे की उम्र के अनुसार दैनिक पेरेंटिंग टिप्स।",
+      "cat_weekly_title": "साप्ताहिक रिपोर्ट",
+      "cat_weekly_desc": "आपके बच्चे के सप्ताह की रविवारी समीक्षा।",
+      "cat_engagement_title": "दोस्ताना नज़र",
+      "cat_engagement_desc": "पुनः जुड़ाव संदेश और स्ट्रीक पुरस्कार।",
+      "cat_goodnight_title": "शुभ रात्रि संदेश",
+      "cat_goodnight_desc": "सोने के समय आराम का अनुस्मारक।"
+    }
   }
 }

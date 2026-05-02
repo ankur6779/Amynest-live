@@ -9,6 +9,7 @@
  * surface calm-down tips.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Moon, Sun, BedDouble, Sparkles, AlarmClock, ShieldAlert,
   Loader2, RefreshCw, History, Lightbulb, CloudMoon,
@@ -128,6 +129,7 @@ function formatRelative(iso: string, now: number): string {
 export function SleepPredict({
   childId, childName, ageMonths,
 }: SleepPredictProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [data, setData] = useState<PredictResponse | null>(null);
   const [history, setHistory] = useState<NapSession[]>([]);
@@ -179,8 +181,8 @@ export function SleepPredict({
       }
     } catch (e) {
       toast({
-        title: "Couldn't load sleep prediction",
-        description: e instanceof Error ? e.message : "Network error",
+        title: t("toasts.sleep_predict.load_failed_title"),
+        description: e instanceof Error ? e.message : t("toasts.sleep_predict.network_error"),
         variant: "destructive",
       });
     } finally {
@@ -206,12 +208,12 @@ export function SleepPredict({
         });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         setActiveStartIso(startedAt);
-        toast({ title: kind === "night" ? "Bedtime logged" : "Nap started" });
+        toast({ title: kind === "night" ? t("toasts.sleep_predict.bedtime_logged") : t("toasts.sleep_predict.nap_started") });
         await refresh();
       } catch (e) {
         toast({
-          title: "Couldn't log sleep",
-          description: e instanceof Error ? e.message : "Network error",
+          title: t("toasts.sleep_predict.log_sleep_failed_title"),
+          description: e instanceof Error ? e.message : t("toasts.sleep_predict.network_error"),
           variant: "destructive",
         });
       } finally {
@@ -238,12 +240,12 @@ export function SleepPredict({
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       setActiveStartIso(null);
-      toast({ title: "Wake-up logged", description: "Window updated for next sleep." });
+      toast({ title: t("toasts.sleep_predict.wake_logged_title"), description: t("toasts.sleep_predict.wake_logged_body") });
       await refresh();
     } catch (e) {
       toast({
-        title: "Couldn't log wake-up",
-        description: e instanceof Error ? e.message : "Network error",
+        title: t("toasts.sleep_predict.log_wake_failed_title"),
+        description: e instanceof Error ? e.message : t("toasts.sleep_predict.network_error"),
         variant: "destructive",
       });
     } finally {

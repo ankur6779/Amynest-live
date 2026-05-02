@@ -388,5 +388,264 @@
     "safe_disclaimer": "केवल मार्गदर्शन — चिकित्सा सलाह नहीं। चिंता हो तो शिशु डॉक्टर से मिलें।",
     "based_on": "पीडियाट्रिक दिशानिर्देशों पर आधारित",
     "select_child": "इनके लिए सलाह"
+  },
+  "toasts": {
+    "ai_coach": {
+      "load_session_failed_title": "सेशन लोड नहीं हो सका",
+      "load_session_failed_body": "ऐमी कोच फिर से शुरू कर रहे हैं।",
+      "error_title": "कुछ गलत हो गया",
+      "error_body_with_msg": "कृपया फिर से कोशिश करें। ({{msg}})",
+      "error_body": "कृपया एक पल में फिर से कोशिश करें।",
+      "win_locked_title": "विन पक्की हो गई 🎉",
+      "win_locked_body": "पूरा हो गया चिह्नित। अगले कदम पर बढ़ रहे हैं।",
+      "progress_noted_title": "प्रगति दर्ज 💜",
+      "progress_noted_body": "आंशिक प्रगति गिनी गई। आगे बढ़ते रहें।",
+      "extras_added_title": "3 नई रणनीतियां जोड़ी गईं 💛",
+      "extras_added_body": "उन्हें देखने के लिए अपने डेक के अंत तक स्क्रॉल करें।",
+      "extras_failed_title": "एक्स्ट्राज़ लोड नहीं हो सके",
+      "extras_failed_body": "कृपया कुछ देर बाद फिर से 'मेरे लिए काम नहीं किया' पर टैप करें।",
+      "copied_title": "कॉपी हो गया!",
+      "copied_body": "प्लान क्लिपबोर्ड पर कॉपी हो गया।"
+    },
+    "parent_profile": {
+      "pic_updated": "प्रोफ़ाइल फोटो अपडेट हो गई!",
+      "pic_failed": "फोटो अपडेट नहीं हो सकी",
+      "profile_saved_title": "प्रोफ़ाइल सेव हो गई!",
+      "profile_saved_body": "आपका शेड्यूल अब ऐमी AI के रूटीन जनरेशन को बेहतर बनाएगा।",
+      "save_error_title": "त्रुटि",
+      "save_error_body": "प्रोफ़ाइल सेव नहीं हो सकी।"
+    },
+    "notification_settings": {
+      "save_failed_title": "सेव नहीं हो सका",
+      "test_sent_title": "टेस्ट भेजा गया",
+      "test_sent_body": "थोड़ी देर में अपने डिवाइस की जांच करें।",
+      "no_device_title": "कोई डिवाइस रजिस्टर नहीं",
+      "no_device_body": "ऊपर ब्राउज़र नोटिफिकेशन चालू करें, या पहले अपने फोन में AmyNest खोलें।",
+      "not_sent_title": "नहीं भेजा गया",
+      "not_sent_body_with_reason": "{{status}} — {{reason}}",
+      "not_sent_body": "{{status}}",
+      "test_failed_title": "टेस्ट विफल"
+    },
+    "recipes": {
+      "saved_title": "रेसिपी सेव हुई",
+      "saved_body": "आपकी कस्टम रेसिपी सेव हो गई है।",
+      "updated_title": "रेसिपी अपडेट हुई",
+      "updated_body": "आपकी रेसिपी अपडेट हो गई है।",
+      "deleted_title": "रेसिपी डिलीट हुई",
+      "deleted_body": "रेसिपी हटा दी गई है।",
+      "delete_error_title": "त्रुटि",
+      "delete_error_body": "रेसिपी डिलीट नहीं हो सकी।"
+    },
+    "use_web_push": {
+      "blocked_title": "नोटिफिकेशन ब्लॉक हैं",
+      "blocked_body": "अपनी ब्राउज़र सेटिंग्स में नोटिफिकेशन की अनुमति दें और फिर कोशिश करें।",
+      "enabled": "ब्राउज़र नोटिफिकेशन चालू हो गए!",
+      "enable_failed_title": "नोटिफिकेशन चालू नहीं हो सके",
+      "enable_failed_body_default": "कुछ देर बाद फिर कोशिश करें।",
+      "disabled": "ब्राउज़र नोटिफिकेशन बंद कर दिए गए"
+    },
+    "babysitters": {
+      "name_required": "नाम ज़रूरी है",
+      "added_title": "बेबीसिटर जोड़ी गई!",
+      "added_body": "{{name}} को जोड़ दिया गया है।",
+      "add_error_title": "त्रुटि",
+      "add_error_body": "बेबीसिटर नहीं जोड़ी जा सकी।",
+      "removed_title": "हटाया गया",
+      "removed_body": "{{name}} को हटा दिया गया है।",
+      "remove_error_title": "त्रुटि",
+      "remove_error_body": "बेबीसिटर हटाई नहीं जा सकी।"
+    },
+    "behavior": {
+      "select_child": "पहले एक बच्चा चुनें",
+      "logged": "{{emoji}} {{label}} दर्ज हुआ!",
+      "log_failed": "लॉग नहीं हो सका",
+      "delete_failed": "डिलीट नहीं हो सका"
+    },
+    "children": {
+      "photo_too_large_title": "फोटो बहुत बड़ी है",
+      "photo_too_large_body": "कृपया 5MB से छोटी इमेज चुनें।",
+      "profile_updated": "प्रोफ़ाइल सफलतापूर्वक अपडेट हुई",
+      "profile_update_failed": "प्रोफ़ाइल अपडेट नहीं हो सकी",
+      "profile_added": "बच्चा जोड़ा गया — आपको डैशबोर्ड पर ले जा रहे हैं",
+      "profile_add_failed": "बच्चा जोड़ा नहीं जा सका",
+      "profile_deleted": "प्रोफ़ाइल डिलीट हुई",
+      "profile_delete_failed": "प्रोफ़ाइल डिलीट नहीं हो सकी"
+    },
+    "routines_detail": {
+      "undone": "↩️ कार्रवाई रद्द",
+      "copied_title": "कॉपी हो गया!",
+      "copied_body": "रूटीन कॉपी हो गया। इसे WhatsApp या SMS में पेस्ट करें।",
+      "recipe_load_failed": "रेसिपी लोड नहीं हो सकी",
+      "auto_skipped_title": "⏭️ {{count}} कार्य ऑटो-स्किप",
+      "auto_skipped_title_plural": "⏭️ {{count}} कार्य ऑटो-स्किप",
+      "auto_skipped_body": "बेडटाइम बचाने के लिए कम-प्राथमिकता वाली गतिविधियां हटाई गईं।",
+      "shifted_later_title": "⏩ +{{min}} मिनट शिफ्ट",
+      "shifted_later_body": "आगे के कार्य अपडेट किए गए।",
+      "shifted_earlier_title": "⏪ {{min}} मिनट पहले शिफ्ट",
+      "shifted_earlier_body": "आगे के कार्य पहले कर दिए गए।",
+      "day_regenerated_title": "🔄 दिन फिर से बना!",
+      "day_regenerated_body": "बाकी कार्य AI द्वारा अपडेट किए गए हैं।",
+      "regenerate_failed": "फिर से जनरेट नहीं हो सका",
+      "activity_added_title": "✅ गतिविधि जोड़ी गई!",
+      "activity_added_body": "\"{{name}}\" आपके शेड्यूल में जोड़ी गई है।",
+      "activity_add_failed": "गतिविधि नहीं जोड़ी जा सकी",
+      "tomorrow_ready_title": "🌅 कल का रूटीन तैयार!",
+      "tomorrow_ready_body_weekend": "{{name}} के लिए वीकेंड रूटीन तैयार है।",
+      "tomorrow_ready_body_school": "{{name}} के लिए स्कूल दिन का रूटीन तैयार है।",
+      "tomorrow_failed": "कल का रूटीन नहीं बन सका",
+      "deleted": "रूटीन डिलीट हुआ",
+      "delete_failed": "रूटीन डिलीट नहीं हो सका",
+      "delayed_skipped_title": "⏱ देरी · {{count}} कार्य ऑटो-स्किप",
+      "delayed_skipped_title_plural": "⏱ देरी · {{count}} कार्य ऑटो-स्किप",
+      "delayed_skipped_body": "बेडटाइम बचाने के लिए कम-प्राथमिकता वाली गतिविधियां हटाई गईं।",
+      "schedule_shifted_title": "⏱ शेड्यूल +15 मिनट शिफ्ट",
+      "schedule_shifted_body": "बाकी कार्य अपडेट किए गए।",
+      "points_earned_title": "+{{points}} पॉइंट्स मिले 🎉",
+      "badge_earned_title": "🏆 बैज मिला: {{emoji}} {{label}}!",
+      "notifications_disabled": "नोटिफिकेशन बंद",
+      "notifications_enabled_title": "🔔 नोटिफिकेशन चालू!",
+      "notifications_enabled_body": "हर कार्य से पहले आपको सूचित किया जाएगा।",
+      "permission_denied_title": "अनुमति अस्वीकार",
+      "permission_denied_body": "अपनी ब्राउज़र सेटिंग्स में नोटिफिकेशन चालू करें।",
+      "simplified_title": "⚡ ऐमी AI ने आपका दिन सरल किया",
+      "simplified_body": "{{count}} कम-प्राथमिकता वाला कार्य हटाया गया ताकि आप ज़रूरी चीज़ों पर ध्यान दे सकें।",
+      "simplified_body_plural": "{{count}} कम-प्राथमिकता वाले कार्य हटाए गए ताकि आप ज़रूरी चीज़ों पर ध्यान दे सकें।"
+    },
+    "routines_generate": {
+      "routine_replaced": "🔄 रूटीन बदल दिया!",
+      "routine_generated": "✨ रूटीन तैयार!",
+      "save_failed_title": "रूटीन सेव नहीं हो सका",
+      "save_failed_body": "कृपया एक पल में फिर कोशिश करें।",
+      "generate_failed": "रूटीन जनरेट नहीं हो सका",
+      "ai_unavailable": "ऐमी अभी जनरेट नहीं कर सकीं — स्टैंडर्ड रूटीन आज़माएं।",
+      "select_child_school": "कृपया कम से कम एक बच्चा चुनें और उनकी स्कूल स्थिति सेट करें।",
+      "family_generate_failed": "{{name}} के लिए रूटीन जनरेट नहीं हो सका",
+      "family_save_failed": "{{name}} के लिए रूटीन सेव नहीं हो सका",
+      "family_saved": "✨ {{count}} रूटीन सेव हुआ!",
+      "family_saved_plural": "✨ {{count}} रूटीन सेव हुए!"
+    },
+    "cry_insight": {
+      "analyse_failed_title": "विश्लेषण नहीं हो सका",
+      "analyse_failed_body": "सर्वर ने {{status}} लौटाया। कृपया फिर से कोशिश करें।",
+      "mic_unavailable_title": "माइक उपलब्ध नहीं",
+      "mic_unavailable_body": "आपका ब्राउज़र ऑडियो रिकॉर्डिंग सपोर्ट नहीं करता। नीचे केवल कॉन्टेक्स्ट से विश्लेषण करें।",
+      "mic_denied_title": "माइक अनुमति अस्वीकार",
+      "mic_denied_body": "रिकॉर्ड करने के लिए माइक्रोफोन अनुमति दें, या नीचे ऑडियो के बिना विश्लेषण बटन का उपयोग करें।"
+    },
+    "sleep_predict": {
+      "load_failed_title": "नींद की भविष्यवाणी लोड नहीं हो सकी",
+      "network_error": "नेटवर्क त्रुटि",
+      "bedtime_logged": "बेडटाइम दर्ज",
+      "nap_started": "नैप शुरू",
+      "log_sleep_failed_title": "नींद दर्ज नहीं हो सकी",
+      "wake_logged_title": "वेक-अप दर्ज",
+      "wake_logged_body": "अगली नींद के लिए विंडो अपडेट हो गई।",
+      "log_wake_failed_title": "वेक-अप दर्ज नहीं हो सका"
+    },
+    "infant_sleep": {
+      "wake_logged": "वेक-अप दर्ज ☀️",
+      "down_logged": "सोने के लिए लेटा दर्ज 🌙",
+      "routine_regenerated": "{{name}} के लिए रूटीन फिर से बना 🌟",
+      "saved": "सेव ✓"
+    },
+    "infant_baby_cues": {
+      "helpful": "खुशी हुई कि मदद हुई 💜",
+      "not_helpful": "ठीक है — अगला संकेत आज़माएं या स्लीप मॉड्यूल देखें।",
+      "tried": "लॉग हुआ — ऐसे ही चलते रहें 🌟"
+    },
+    "voice_settings": {
+      "voice_on": "🔊 वॉयस रिमाइंडर चालू!",
+      "voice_off": "🔇 वॉयस रिमाइंडर बंद"
+    },
+    "infant_milestones": {
+      "achieved_1": "शानदार! आपने यह साथ मिलकर पूरा किया 🏆",
+      "achieved_2": "देखिए ये विकास! इस उपलब्धि का जश्न मनाइए।",
+      "achieved_3": "बहुत बढ़िया — यह असली प्रगति है।",
+      "in_progress_1": "अच्छी प्रगति! आगे बढ़ते रहें 🌟",
+      "in_progress_2": "लगभग पहुंच गए — निरंतरता ही जीत है।",
+      "in_progress_3": "आप बहुत अच्छा कर रहे हैं। आज फिर कोशिश करें।"
+    }
+  },
+  "screens": {
+    "common": {
+      "home_link": "← होम",
+      "copyright": "© 2026 AmyNest AI. सर्वाधिकार सुरक्षित।"
+    },
+    "not_found": {
+      "title": "404 पेज नहीं मिला",
+      "message": "क्या आप राउटर में पेज जोड़ना भूल गए?"
+    },
+    "terms": {
+      "heading": "सेवा की शर्तें",
+      "last_updated": "अंतिम अपडेट: 27 अप्रैल, 2026",
+      "intro_before": "उपयोग करने से पहले कृपया इन सेवा की शर्तों को ध्यान से पढ़ें",
+      "intro_at": "पर",
+      "intro_after": ". ये शर्तें आपके और AmyNest AI, Inc. के बीच एक कानूनी रूप से बाध्यकारी समझौता बनाती हैं।"
+    },
+    "delete_account": {
+      "title": "अपना खाता हटाएं",
+      "subtitle": "आपको जाते देखकर हमें खेद है। आप नीचे दिए गए चरणों का पालन करके अपना AmyNest खाता और सभी संबंधित डेटा स्थायी रूप से हटा सकते हैं।",
+      "warning_strong": "यह कार्रवाई स्थायी है।",
+      "warning_body": "एक बार हटाए जाने के बाद, आपका खाता और सारा डेटा वापस नहीं पाया जा सकता। आगे बढ़ने से पहले कृपया सुनिश्चित करें।",
+      "data_heading": "कौन सा डेटा हटाया जाएगा",
+      "data_items": [
+        "प्रोफ़ाइल और खाता जानकारी",
+        "सभी बच्चों की प्रोफ़ाइल और उम्र",
+        "दैनिक रूटीन और शेड्यूल",
+        "व्यवहार ट्रैकिंग रिकॉर्ड",
+        "फोनिक्स टेस्ट इतिहास और प्रगति",
+        "AI बातचीत का इतिहास",
+        "सब्सक्रिप्शन और भुगतान रिकॉर्ड",
+        "रेफरल इतिहास",
+        "सभी उपयोग डेटा और विश्लेषण"
+      ],
+      "retention_before": "अनुरोध के",
+      "retention_days": "30 दिनों",
+      "retention_after": "के भीतर डेटा स्थायी रूप से हटा दिया जाता है। अनाम, समेकित विश्लेषण (जो आपके खाते से जुड़े नहीं हैं) रखे जा सकते हैं।",
+      "steps_heading": "ऐप से कैसे हटाएं",
+      "steps": [
+        {
+          "title": "AmyNest ऐप खोलें",
+          "description": "अपने Android या iOS डिवाइस पर AmyNest ऐप लॉन्च करें।"
+        },
+        {
+          "title": "सेटिंग्स पर जाएं",
+          "description": "अपनी प्रोफ़ाइल पिक्चर या मेनू आइकन पर टैप करें, फिर \"सेटिंग्स\" चुनें।"
+        },
+        {
+          "title": "\"खाता हटाएं\" पर टैप करें",
+          "description": "नीचे स्क्रॉल करें और \"खाता हटाएं\" पर टैप करें। पूछे जाने पर पुष्टि करें।"
+        },
+        {
+          "title": "खाता हटा दिया गया",
+          "description": "आपका खाता और सभी संबंधित डेटा 30 दिनों के भीतर स्थायी रूप से हटा दिया जाएगा।"
+        }
+      ],
+      "step_label": "चरण {{n}}",
+      "help_heading": "मदद चाहिए?",
+      "help_body": "यदि आप ऐप तक नहीं पहुंच पा रहे हैं या खाता हटाने में सहायता चाहिए, तो हमारी सपोर्ट टीम से संपर्क करें — हम 7 कार्य दिवसों के भीतर आपका अनुरोध मैन्युअल रूप से संसाधित करेंगे।",
+      "email_support": "सपोर्ट को ईमेल करें",
+      "help_footnote": "कृपया अपने संदेश में अपने AmyNest खाते से जुड़ा ईमेल या फ़ोन नंबर शामिल करें।",
+      "privacy_link": "गोपनीयता नीति",
+      "terms_link": "सेवा की शर्तें",
+      "back_home": "होम पर वापस"
+    },
+    "ai_coach_progress": {
+      "back_to_coach": "AI कोच पर वापस",
+      "title": "मेरी प्रगति",
+      "subtitle": "अपनी जीतों को ट्रैक करें और गति बनाते रहें।",
+      "loading": "आपकी प्रगति लोड हो रही है…",
+      "empty_title": "अभी कोई योजना नहीं",
+      "empty_body": "एक लक्ष्य चुनें और अपनी पहली योजना पूरी करें — आपकी जीतें यहां दिखाई देंगी।",
+      "start_plan": "योजना शुरू करें",
+      "wins_count": "{{total}} में से {{done}} जीतें",
+      "win_done_title": "जीत {{n}}: {{label}}",
+      "win_pending_title": "जीत {{n}}: अभी नहीं की",
+      "last_updated": "अंतिम अपडेट {{date}}",
+      "continue_plan": "योजना जारी रखें",
+      "feedback_yes": "काम किया",
+      "feedback_somewhat": "कुछ प्रगति",
+      "feedback_no": "कोशिश करते रहें"
+    }
   }
 }

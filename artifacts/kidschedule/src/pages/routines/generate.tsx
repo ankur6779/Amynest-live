@@ -847,7 +847,7 @@ export default function RoutineGenerate() {
             );
             return;
           }
-          toast({ title: "Failed to generate routine", variant: "destructive" });
+          toast({ title: t("toasts.routines_generate.generate_failed"), variant: "destructive" });
         },
       }
     );
@@ -893,7 +893,7 @@ export default function RoutineGenerate() {
       const simplified = simplifyForHandler(generatedData.items as any, handlerType) as RoutineItem[];
       handlePostGenerate({ ...generatedData, items: simplified }, shouldOverride, wakeTime);
     } catch {
-      toast({ title: "Amy couldn't generate right now — try the standard routine instead.", variant: "destructive" });
+      toast({ title: t("toasts.routines_generate.ai_unavailable"), variant: "destructive" });
     } finally {
       setIsAiGenerating(false);
     }
@@ -986,7 +986,7 @@ export default function RoutineGenerate() {
     ) as ChildType[];
 
     if (selectedChildren.length === 0) {
-      toast({ title: "Please select at least one child and set their school status.", variant: "destructive" });
+      toast({ title: t("toasts.routines_generate.select_child_school"), variant: "destructive" });
       return;
     }
 

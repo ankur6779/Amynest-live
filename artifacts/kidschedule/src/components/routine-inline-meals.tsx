@@ -76,23 +76,26 @@ export function RoutineInlineMeals({
 
     const query = buildDefaultQuery(audience, mealType, childAge);
 
-    authFetch("/api/meals/ai-generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, region, audience, childAge, isVeg }),
-    })
-      .then(r => r.ok ? r.json() : null)
-      .then((r: AiGenerateResult | null) => {
+    void (async () => {
+      const { default: i18nInstance } = await import("@/i18n");
+      try {
+        const r = await authFetch("/api/meals/ai-generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, region, audience, childAge, isVeg, language: i18nInstance.language || "en" }),
+        });
+        const data = r.ok ? ((await r.json()) as AiGenerateResult | null) : null;
         if (cancelled) return;
-        if (r && r.meals?.length > 0) {
-          setMeals(r.meals.slice(0, 4));
-          setAmyMsg(r.amyMessage ?? "");
+        if (data && data.meals?.length > 0) {
+          setMeals(data.meals.slice(0, 4));
+          setAmyMsg(data.amyMessage ?? "");
         }
-        setLoading(false);
-      })
-      .catch(() => {
+      } catch {
+        // ignore
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { ChevronLeft, BarChart3, Sparkles, Trophy, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Session {
   sessionId: string;
@@ -16,9 +17,14 @@ interface Session {
 }
 
 const FEEDBACK_EMOJI: Record<string, string> = { yes: "🎉", somewhat: "👍", no: "💪" };
-const FEEDBACK_LABEL: Record<string, string> = { yes: "Worked", somewhat: "Some progress", no: "Keep trying" };
 
 export default function AICoachProgressPage() {
+  const { t } = useTranslation();
+  const FEEDBACK_LABEL: Record<string, string> = {
+    yes: t("screens.ai_coach_progress.feedback_yes"),
+    somewhat: t("screens.ai_coach_progress.feedback_somewhat"),
+    no: t("screens.ai_coach_progress.feedback_no"),
+  };
   const authFetch = useAuthFetch();
   const [, setLocation] = useLocation();
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -41,37 +47,37 @@ export default function AICoachProgressPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       <Link href="/amy-coach" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ChevronLeft className="h-4 w-4" /> Back to AI Coach
+        <ChevronLeft className="h-4 w-4" /> {t("screens.ai_coach_progress.back_to_coach")}
       </Link>
 
       <div>
         <h1 className="font-quicksand text-2xl font-bold flex items-center gap-2">
           <BarChart3 className="h-6 w-6 text-violet-500" />
-          My Progress
+          {t("screens.ai_coach_progress.title")}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Track the wins you've worked through and keep building momentum.
+          {t("screens.ai_coach_progress.subtitle")}
         </p>
       </div>
 
       {loading && (
         <div className="text-center py-12 text-sm text-muted-foreground animate-pulse">
-          Loading your progress…
+          {t("screens.ai_coach_progress.loading")}
         </div>
       )}
 
       {!loading && sessions.length === 0 && (
         <div className="rounded-2xl border-2 border-dashed border-border p-10 text-center space-y-3">
           <Sparkles className="h-10 w-10 text-violet-400 mx-auto" />
-          <h3 className="font-bold">No plans yet</h3>
+          <h3 className="font-bold">{t("screens.ai_coach_progress.empty_title")}</h3>
           <p className="text-sm text-muted-foreground">
-            Pick a goal and complete your first plan — your wins will show up here.
+            {t("screens.ai_coach_progress.empty_body")}
           </p>
           <button
             onClick={() => setLocation("/amy-coach")}
             className="mt-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-white font-bold text-sm"
           >
-            Start a plan
+            {t("screens.ai_coach_progress.start_plan")}
           </button>
         </div>
       )}
@@ -96,7 +102,7 @@ export default function AICoachProgressPage() {
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
                       <span className="font-semibold text-muted-foreground">
-                        {s.completed} of {s.totalWins} wins
+                        {t("screens.ai_coach_progress.wins_count", { done: s.completed, total: s.totalWins })}
                       </span>
                       <span className="font-bold text-violet-700">{pct}%</span>
                     </div>
@@ -116,7 +122,7 @@ export default function AICoachProgressPage() {
                       return (
                         <div
                           key={wn}
-                          title={fb ? `Win ${wn}: ${FEEDBACK_LABEL[fb.feedback]}` : `Win ${wn}: not done`}
+                          title={fb ? t("screens.ai_coach_progress.win_done_title", { n: wn, label: FEEDBACK_LABEL[fb.feedback] }) : t("screens.ai_coach_progress.win_pending_title", { n: wn })}
                           className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                             fb
                               ? "bg-violet-100 text-violet-700"
@@ -131,13 +137,13 @@ export default function AICoachProgressPage() {
 
                   <div className="flex items-center justify-between pt-1">
                     <p className="text-[11px] text-muted-foreground">
-                      Last updated {new Date(s.lastUpdated).toLocaleDateString()}
+                      {t("screens.ai_coach_progress.last_updated", { date: new Date(s.lastUpdated).toLocaleDateString() })}
                     </p>
                     <button
                       onClick={() => setLocation(`/amy-coach?resume=${s.sessionId}`)}
                       className="flex items-center gap-1 text-xs font-bold text-violet-700 hover:text-violet-900"
                     >
-                      Continue plan <ArrowRight className="h-3 w-3" />
+                      {t("screens.ai_coach_progress.continue_plan")} <ArrowRight className="h-3 w-3" />
                     </button>
                   </div>
                 </div>

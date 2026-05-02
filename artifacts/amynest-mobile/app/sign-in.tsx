@@ -41,7 +41,7 @@ export default function SignInScreen() {
     try {
       await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
     } catch (err: unknown) {
-      Alert.alert("Sign In Failed", humanizeError(err, "Please check your details and try again."));
+      Alert.alert(t("alerts.signin.failed_title"), humanizeError(err, t("alerts.signin.failed_default")));
     } finally {
       setLoading(false);
     }
@@ -224,7 +224,7 @@ export default function SignInScreen() {
 
             {/* Phone OTP */}
             <PhoneAuthFlow
-              onError={(msg) => Alert.alert("Sign In Failed", msg)}
+              onError={(msg) => Alert.alert(t("alerts.signin.failed_title"), msg)}
             />
 
             {/* Divider */}

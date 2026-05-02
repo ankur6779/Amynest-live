@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -180,6 +181,7 @@ function WebPushCard() {
 }
 
 export default function NotificationSettingsPage() {
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -213,7 +215,7 @@ export default function NotificationSettingsPage() {
       qc.setQueryData(["notification-prefs"], saved);
     },
     onError: (err: Error) =>
-      toast({ title: "Could not save", description: err.message, variant: "destructive" }),
+      toast({ title: t("toasts.notification_settings.save_failed_title"), description: err.message, variant: "destructive" }),
   });
 
   const test = useMutation({
@@ -227,7 +229,7 @@ export default function NotificationSettingsPage() {
     onSuccess: (result) => {
       const status = result.status ?? "unknown";
       if (status === "sent") {
-        toast({ title: "Test sent", description: "Check your device in a moment." });
+        toast({ title: t("toasts.notification_settings.test_sent_title"), description: t("toasts.notification_settings.test_sent_body") });
       } else if (status === "no_tokens") {
         toast({
           title: "No device registered",
@@ -242,7 +244,7 @@ export default function NotificationSettingsPage() {
       }
     },
     onError: (err: Error) =>
-      toast({ title: "Test failed", description: err.message, variant: "destructive" }),
+      toast({ title: t("toasts.notification_settings.test_failed_title"), description: err.message, variant: "destructive" }),
   });
 
   if (isLoading || !local) {

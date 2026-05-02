@@ -91,7 +91,24 @@ const REGION_LABEL: Record<string, string> = {
 
 const ALLOWED_TYPES = new Set(["breakfast", "lunch", "snack", "tiffin"]);
 
-function buildMealPrompt(count: number, region: string, type: string, isVeg?: boolean): string {
+type Lang = "en" | "hi" | "hinglish";
+
+function normalizeLanguage(raw: unknown): Lang {
+  const s = typeof raw === "string" ? raw.toLowerCase().split("-")[0] : "en";
+  return s === "hi" ? "hi" : s === "hinglish" ? "hinglish" : "en";
+}
+
+function langDirective(language: Lang, fields: string[] = []): string {
+  if (language === "hi") {
+    return `\nLANGUAGE: Output ALL human-readable text in Hindi (Devanagari script). Specifically the fields: ${fields.join(", ")}. Keep JSON keys, enum values (region/type/tags/category/audience), emojis, units (min, kcal), and numbers exactly as specified — do NOT translate them. Use natural, warm Hindi.`;
+  }
+  if (language === "hinglish") {
+    return `\nLANGUAGE: Output ALL human-readable text in Hinglish — Roman-script Hindi mixed naturally with common English food/cooking words (e.g. "Aloo paratha banane ke liye 2 medium aloo lo"). Specifically the fields: ${fields.join(", ")}. Keep JSON keys, enum values, emojis, units and numbers as specified.`;
+  }
+  return "";
+}
+
+function buildMealPrompt(count: number, region: string, type: string, isVeg?: boolean, language: Lang = "en"): string {
   const vegLine = isVeg === true
     ? "\n- All meals must be strictly vegetarian (no egg, no meat)."
     : isVeg === false
@@ -105,7 +122,7 @@ IMPORTANT:
 - No extra text, no markdown, no code fences
 - Keep recipes simple and practical
 - Use Indian meals (region-based)
-- Ingredients should be common household items${vegLine}
+- Ingredients should be common household items${vegLine}${langDirective(language, ["title", "ingredients", "steps"])}
 
 INPUT:
 Meal Count: ${count}
@@ -156,7 +173,9 @@ router.get("/meals/generate", requireAuth, async (req, res): Promise<void> => {
   const isVegParam = req.query.isVeg;
   const isVeg = isVegParam === "true" ? true : isVegParam === "false" ? false : undefined;
 
-  const cacheKey = `${region}:${type}:${count}:${String(isVeg)}`;
+  const language = normalizeLanguage(req.query.language ?? req.body?.language);
+
+  const cacheKey = `${region}:${type}:${count}:${String(isVeg)}:${language}`;
   const cached = GENERATE_CACHE.get(cacheKey);
   if (cached && Date.now() - cached.ts < GENERATE_CACHE_TTL_MS) {
     res.set("Cache-Control", "private, max-age=1800");
@@ -167,7 +186,7 @@ router.get("/meals/generate", requireAuth, async (req, res): Promise<void> => {
 
   try {
     const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const prompt = buildMealPrompt(count, region, type, isVeg);
+    const prompt = buildMealPrompt(count, region, type, isVeg, language);
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
@@ -259,7 +278,7 @@ function parsePrepMinutes(time: string): number {
   return Math.min(120, Math.max(5, n));
 }
 
-function buildAiGeneratePrompt(query: string, region: string, audience: string, childAge?: number, isVeg?: boolean): string {
+function buildAiGeneratePrompt(query: string, region: string, audience: string, childAge?: number, isVeg?: boolean, language: Lang = "en"): string {
   const audience_line = audience === "parent_healthy"
     ? "The meal is for an adult parent (healthy, nutritious, low-calorie)."
     : childAge != null
@@ -311,7 +330,7 @@ RULES:
 - calories: realistic integer per serving (80-700)
 - tags: 1-4 lowercase tags from: healthy, quick, veg, non-veg, protein, sweet, spicy, light, heavy, kids, tiffin
 - isVeg: boolean
-- amyMessage: 1 sentence of encouragement or tip, max 120 chars`;
+- amyMessage: 1 sentence of encouragement or tip, max 120 chars${langDirective(language, ["title", "ingredients", "steps", "amyMessage"])}`;
 }
 
 router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> => {
@@ -341,10 +360,12 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
     : isVegParam === false || isVegParam === "false" ? false
     : undefined;
 
+  const language = normalizeLanguage(req.body?.language);
+
   try {
     const { openai } = await import("@workspace/integrations-openai-ai-server");
 
-    const prompt = buildAiGeneratePrompt(query, region, audience, childAge, isVeg);
+    const prompt = buildAiGeneratePrompt(query, region, audience, childAge, isVeg, language);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -372,7 +393,11 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
     }
 
     let rawMeals: unknown[] = [];
-    let amyMessage = "Amy has suggested these meals just for you!";
+    let amyMessage = language === "hi"
+      ? "Amy ने आपके लिए ये भोजन सुझाए हैं!"
+      : language === "hinglish"
+      ? "Amy ne aapke liye ye meals suggest kiye hain!"
+      : "Amy has suggested these meals just for you!";
 
     if (parsed && typeof parsed === "object") {
       const obj = parsed as Record<string, unknown>;

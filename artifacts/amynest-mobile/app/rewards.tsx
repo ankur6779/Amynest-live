@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import { brand, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -17,6 +18,7 @@ import {
 } from "@/utils/rewardsStorage";
 
 export default function RewardsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const c = useColors();
   const { theme } = useTheme();
@@ -98,7 +100,7 @@ export default function RewardsScreen() {
               } else {
                 // Balance changed underneath us — re-sync from storage.
                 setPoints(result.pointsAfter);
-                Alert.alert("Not enough points", "Your balance changed. Try again.");
+                Alert.alert(t("alerts.rewards.not_enough_title"), t("alerts.rewards.balance_changed_msg"));
               }
             } finally {
               redeemingRef.current.delete(reward.id);

@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -52,6 +53,7 @@ function formatTime(iso?: string): string {
 }
 
 export default function BehaviorHistoryScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();
@@ -108,7 +110,7 @@ export default function BehaviorHistoryScreen() {
 
   function confirmDelete(b: Behavior) {
     Haptics.selectionAsync();
-    Alert.alert("Delete entry?", `Remove this ${b.type} log?`, [
+    Alert.alert(t("alerts.behavior_history.delete_title"), t("alerts.behavior_history.delete_msg", { type: b.type }), [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete", style: "destructive", onPress: async () => {
@@ -118,7 +120,7 @@ export default function BehaviorHistoryScreen() {
             await qc.invalidateQueries({ queryKey: ["behaviors"] });
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch {
-            Alert.alert("Error", "Could not delete entry.");
+            Alert.alert(t("alerts.behavior_history.delete_error_title"), t("alerts.behavior_history.delete_error_msg"));
           }
         },
       },

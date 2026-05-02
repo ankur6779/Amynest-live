@@ -50,6 +50,7 @@ const analyzeBodySchema = z.object({
   durationMs: z.number().int().min(0).max(60_000).default(0),
   audioStats: audioStatsSchema.default({}),
   context: contextSchema.default({}),
+  language: z.string().optional(),
 });
 
 const historyParamsSchema = z.object({
@@ -134,7 +135,11 @@ router.post("/cry-insight/analyze", async (req, res): Promise<void> => {
     if (typeof v === "number" && Number.isFinite(v)) safeStats[k] = v;
   }
 
-  const result = analyseCry(safeStats, ctx);
+  const langRaw = typeof body.language === "string" ? body.language.toLowerCase().split("-")[0] : "en";
+  const language: "en" | "hi" | "hinglish" =
+    langRaw === "hi" ? "hi" : langRaw === "hinglish" ? "hinglish" : "en";
+
+  const result = analyseCry(safeStats, ctx, language);
 
   // Defensive: every cause we surface must be a known one (the engine
   // guarantees this, but we still gate before writing it to a text column).

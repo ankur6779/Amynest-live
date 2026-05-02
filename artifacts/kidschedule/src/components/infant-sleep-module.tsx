@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import {
   Moon, Sun, Clock, Play, Pause, Plus, Trash2, Edit3, Check, X,
@@ -65,6 +66,7 @@ function fmtDuration(min: number): string {
 
 // ─── Wake Window System ───────────────────────────────────────────────────────
 export function WakeWindowSystem({ childName, ageMonths }: { childName: string; ageMonths: number }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const spec = useMemo(() => getWakeSpec(ageMonths), [ageMonths]);
   const [log, setLog] = useState<SleepEvent[]>(() => loadSleepLog(childName));
@@ -88,7 +90,7 @@ export function WakeWindowSystem({ childName, ageMonths }: { childName: string; 
     setLog(next);
     saveSleepLog(childName, next);
     toast({
-      description: type === "wake_up" ? "Wake-up logged ☀️" : "Down for sleep logged 🌙",
+      description: type === "wake_up" ? t("toasts.infant_sleep.wake_logged") : t("toasts.infant_sleep.down_logged"),
     });
   }, [log, childName, toast]);
 
@@ -477,6 +479,7 @@ function generateRoutine(months: number, wakeUpTime = "7:00 AM"): RoutineItem[] 
 }
 
 export function RoutineBuilder({ childName, ageMonths }: { childName: string; ageMonths: number }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const storageKey = `amynest:routine:${childName}`;
   const [items, setItems] = useState<RoutineItem[]>(() => {
@@ -498,7 +501,7 @@ export function RoutineBuilder({ childName, ageMonths }: { childName: string; ag
   const regenerate = () => {
     const fresh = generateRoutine(ageMonths);
     persist(fresh);
-    toast({ description: "Routine regenerated for " + childName + " 🌟" });
+    toast({ description: t("toasts.infant_sleep.routine_regenerated", { name: childName }) });
   };
 
   const startEdit = (item: RoutineItem) => {
@@ -509,7 +512,7 @@ export function RoutineBuilder({ childName, ageMonths }: { childName: string; ag
   const saveEdit = (id: string) => {
     persist(items.map((i) => i.id === id ? { ...i, time: editTime, activity: editActivity } : i));
     setEditing(null);
-    toast({ description: "Saved ✓" });
+    toast({ description: t("toasts.infant_sleep.saved") });
   };
   const removeItem = (id: string) => {
     persist(items.filter((i) => i.id !== id));

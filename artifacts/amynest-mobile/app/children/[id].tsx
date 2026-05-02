@@ -11,6 +11,7 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { palette } from "@/constants/colors";
 import * as Haptics from "expo-haptics";
@@ -47,6 +48,7 @@ const TRAVEL_MODES: { label: string; value: string }[] = [
 ];
 
 export default function ChildDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
   const { theme } = useTheme();
@@ -114,7 +116,7 @@ export default function ChildDetailScreen() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (perm.status !== "granted") {
-        Alert.alert("Permission needed", "Allow photo access to update the picture.");
+        Alert.alert(t("alerts.children.permission_title"), t("alerts.children.permission_msg_edit"));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -127,7 +129,7 @@ export default function ChildDetailScreen() {
       setPhotoUrl(`data:${a.mimeType ?? "image/jpeg"};base64,${a.base64}`);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {
-      Alert.alert("Error", "Could not load photo.");
+      Alert.alert(t("alerts.children.photo_error_title"), t("alerts.children.photo_error_msg"));
     } finally {
       setPickingPhoto(false);
     }
@@ -157,14 +159,14 @@ export default function ChildDetailScreen() {
       qc.invalidateQueries({ queryKey: ["child", id] });
       setEditing(false);
     } catch {
-      Alert.alert("Error", "Failed to save. Please try again.");
+      Alert.alert(t("alerts.children.save_failed_title"), t("alerts.children.save_failed_msg"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = () => {
-    Alert.alert("Delete Child", `Are you sure you want to remove ${name}?`, [
+    Alert.alert(t("alerts.children.delete_title"), t("alerts.children.delete_msg", { name }), [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete", style: "destructive",
@@ -175,7 +177,7 @@ export default function ChildDetailScreen() {
             qc.invalidateQueries({ queryKey: ["children"] });
             router.back();
           } catch {
-            Alert.alert("Error", "Failed to delete child.");
+            Alert.alert(t("alerts.children.delete_failed_title"), t("alerts.children.delete_failed_msg"));
           }
         },
       },

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ interface Babysitter {
 }
 
 export default function BabysittersPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const authFetch = useAuthFetch();
   const [sitters, setSitters] = useState<Babysitter[]>([]);
@@ -45,7 +47,7 @@ export default function BabysittersPage() {
 
   const handleAdd = async () => {
     if (!form.name.trim()) {
-      toast({ title: "Name is required", variant: "destructive" });
+      toast({ title: t("toasts.babysitters.name_required"), variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -64,9 +66,9 @@ export default function BabysittersPage() {
       setSitters((prev) => [...prev, newSitter]);
       setForm({ name: "", mobileNumber: "", notes: "" });
       setOpen(false);
-      toast({ title: "Babysitter added!", description: `${newSitter.name} has been added.` });
+      toast({ title: t("toasts.babysitters.added_title"), description: t("toasts.babysitters.added_body", { name: newSitter.name }) });
     } catch {
-      toast({ title: "Error", description: "Could not add babysitter.", variant: "destructive" });
+      toast({ title: t("toasts.babysitters.add_error_title"), description: t("toasts.babysitters.add_error_body"), variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -77,9 +79,9 @@ export default function BabysittersPage() {
       const res = await authFetch(`/api/babysitters/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed");
       setSitters((prev) => prev.filter((s) => s.id !== id));
-      toast({ title: "Removed", description: `${name} has been removed.` });
+      toast({ title: t("toasts.babysitters.removed_title"), description: t("toasts.babysitters.removed_body", { name }) });
     } catch {
-      toast({ title: "Error", description: "Could not remove babysitter.", variant: "destructive" });
+      toast({ title: t("toasts.babysitters.remove_error_title"), description: t("toasts.babysitters.remove_error_body"), variant: "destructive" });
     }
   };
 

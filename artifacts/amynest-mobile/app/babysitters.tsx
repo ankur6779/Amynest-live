@@ -39,7 +39,7 @@ export default function BabysittersScreen() {
   });
 
   const handleAdd = async () => {
-    if (!form.name.trim()) { Alert.alert("Name required"); return; }
+    if (!form.name.trim()) { Alert.alert(t("alerts.babysitters.name_required")); return; }
     setSaving(true);
     try {
       const body: any = { name: form.name.trim() };
@@ -54,21 +54,21 @@ export default function BabysittersScreen() {
       setForm({ name: "", mobileNumber: "", notes: "" });
       setOpen(false);
     } catch {
-      Alert.alert("Error", "Could not add babysitter.");
+      Alert.alert(t("alerts.babysitters.add_error_title"), t("alerts.babysitters.add_error_msg"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = (id: number, name: string) => {
-    Alert.alert("Remove babysitter", `Remove ${name}?`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: async () => {
+    Alert.alert(t("alerts.babysitters.remove_title"), t("alerts.babysitters.remove_msg", { name }), [
+      { text: t("alerts.buttons.cancel"), style: "cancel" },
+      { text: t("alerts.babysitters.remove_button"), style: "destructive", onPress: async () => {
         try {
           const r = await authFetch(`/api/babysitters/${id}`, { method: "DELETE" });
           if (!r.ok) throw new Error();
           await qc.invalidateQueries({ queryKey: ["babysitters"] });
-        } catch { Alert.alert("Error", "Could not remove."); }
+        } catch { Alert.alert(t("alerts.babysitters.remove_error_title"), t("alerts.babysitters.remove_error_msg")); }
       }},
     ]);
   };
