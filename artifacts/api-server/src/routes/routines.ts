@@ -24,7 +24,7 @@ import {
   GenerateRoutineResponse,
   GenerateInsightsResponse,
 } from "@workspace/api-zod";
-import { generateRuleBasedRoutine, generateRuleBasedInsights, generatePartialRoutine, timeToMins, minsToTime, applyRoutineV2, type AgeGroup, type ScheduleItem } from "../lib/routine-templates.js";
+import { generateRuleBasedRoutine, generateRuleBasedInsights, generatePartialRoutine, timeToMins, minsToTime, applyRoutineV2, type AgeGroup, type Region, type ScheduleItem } from "../lib/routine-templates.js";
 import { enforceSchoolBlock as enforceSchoolBlockUtil, reAnchorToWakeTime as reAnchorToWakeTimeUtil, type AiRoutineItem } from "../lib/ai-routine-utils.js";
 
 // ─── School-day detection helper ───────────────────────────────────────────
@@ -315,6 +315,7 @@ NO-SCHOOL RULES — today is a school-free day:
     ageGroup: params.ageGroup,
     fridgeItems: params.fridgeItems,
     customRecipes: params.customRecipes,
+    region: params.region as Region | undefined,
   });
 
   return {

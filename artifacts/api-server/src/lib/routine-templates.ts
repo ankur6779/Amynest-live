@@ -1165,6 +1165,7 @@ type AnchorOpts = {
   ageGroup: AgeGroup;
   fridgeItems?: string;
   customRecipes?: CustomRecipeEntry[];
+  region?: Region;
 };
 
 // Light/quick options good for a 15-min "before school" meal — used both as a
@@ -1325,6 +1326,7 @@ function attachMealMetadata(
   ageGroup: AgeGroup,
   fridgeItems?: string,
   customRecipes?: CustomRecipeEntry[],
+  region?: Region,
 ): ScheduleItem[] {
   const used = new Set<string>();
   const fridge = parseFridgeItems(fridgeItems);
@@ -1340,8 +1342,8 @@ function attachMealMetadata(
       ...it,
       notes,
       meal: primary,
-      recipe: customRecipe ?? recipeFor(primary),
-      nutrition: nutritionFor(primary),
+      recipe: customRecipe ?? recipeFor(primary, region),
+      nutrition: nutritionFor(primary, region),
     };
   });
 
@@ -1373,7 +1375,7 @@ function attachMealMetadata(
 // Public entry: run the v2 post-processing on a generated routine.
 export function applyRoutineV2(items: ScheduleItem[], opts: AnchorOpts): ScheduleItem[] {
   const anchored = anchorMealWindows(items, opts);
-  const tagged = attachMealMetadata(anchored, opts.ageGroup, opts.fridgeItems, opts.customRecipes);
+  const tagged = attachMealMetadata(anchored, opts.ageGroup, opts.fridgeItems, opts.customRecipes, opts.region);
   // Sort by time so any anchored insertions land in the right place.
   return [...tagged].sort((a, b) => timeToMins(a.time) - timeToMins(b.time));
 }
@@ -1645,6 +1647,7 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     ageGroup,
     fridgeItems,
     customRecipes,
+    region,
   });
   return { title, items: withRewardPoints(v2Items) };
 }
