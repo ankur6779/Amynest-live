@@ -62,7 +62,11 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
       if (!r.ok) throw new Error(`Failed: ${r.status}`);
       return r.json();
     },
-    staleTime: 1000 * 60 * 60,
+    // Predictions are slow to compute server-side; keep the result fresh
+    // for an hour and retain it in the cache for a day so swipes back to
+    // the Zones page are network-free.
+    staleTime: 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
   });
 
   if (isLoading) {

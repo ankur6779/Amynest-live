@@ -1,12 +1,20 @@
-import React, {  useEffect, useMemo, useRef, useState } from "react";
+import React, {  useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator,
-  Image, Platform, LayoutAnimation, UIManager, findNodeHandle,
+  Image, Platform, LayoutAnimation, UIManager, FlatList, useWindowDimensions,
+  Animated,
+  type NativeSyntheticEvent, type NativeScrollEvent,
 } from "react-native";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
+
+// `findNodeHandle` was used by the previous (single ScrollView) layout to
+// scroll the Explore Next Stage group into view; the swipe-pager layout
+// gives each section its own ScrollView so the helper is no longer
+// needed. The import is intentionally dropped along with `scrollToBand`.
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -28,9 +36,19 @@ import { SmartMathTricks } from "@/components/SmartMathTricks";
 import { ColoringBooks } from "@/components/ColoringBooks";
 import { FunSheets } from "@/components/FunSheets";
 import { HubDebugOverlay } from "@/components/HubDebugOverlay";
+import { HubTile } from "@/components/HubTile";
+import RoutineCarousel from "@/components/RoutineCarousel";
+import { useTodayRoutine } from "@/hooks/useTodayRoutine";
 import { isInfantHubAge } from "@workspace/infant-hub";
 import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, HUB_TILE_AGE_MONTHS, partitionTilesByBand } from "./hub-bands";
 export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, HUB_TILE_AGE_MONTHS, partitionTilesByBand };
+import {
+  SECTION_KEYS,
+  SECTION_META,
+  bucketTilesBySection,
+  isFeaturedTile,
+  type SectionKey,
+} from "./hub-sections";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
@@ -38,6 +56,8 @@ import TryFreeBadge from "@/components/TryFreeBadge";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import colors, { brand, ACCENT_PINK, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+
+const SECTION_STORAGE_PREFIX = "hub.lastSection.v1";
 
 const LOGO = require("../../assets/images/amynest-logo.png");
 
@@ -72,6 +92,13 @@ function ageGroup(age: number, months = 0): { label: string; emoji: string } {
 // HUB_CONTENT_AGE_BANDS are defined in ./hub-bands so they can be unit-tested
 // without loading this whole component file. Re-exported above for callers.
 
+// Animated FlatList lets us pipe `onScroll` straight into an Animated.Value
+// using `useNativeDriver` so the tab indicator and per-page fade follow the
+// finger in real time without bouncing through the JS thread on each frame.
+const AnimatedFlatList = Animated.createAnimatedComponent(
+  FlatList as React.ComponentType<React.ComponentProps<typeof FlatList<SectionKey>>>,
+);
+
 export default function HubScreen() {
   const { profileComplete, isLoading: profileLoading } = useProfileComplete();
   const insets = useSafeAreaInsets();
@@ -89,8 +116,67 @@ export default function HubScreen() {
   // shown in full opacity (un-dimmed) and we scroll to it. Tapping the current
   // band chip clears it and returns to the default 2-section view.
   const [previewBand, setPreviewBand] = useState<number | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
   const groupRefs = useRef<Record<number, View | null>>({});
+
+  // Horizontal section pager (Today / Zones / Modules / Activities) ----------
+  const { width: windowWidth } = useWindowDimensions();
+  // FlatList page width — defaults to window width minus the surrounding
+  // gradient padding (16px each side). We never read this until the FlatList
+  // mounts, so the default is fine for the first frame.
+  const pageWidth = Math.max(0, windowWidth);
+  const pagerRef = useRef<FlatList<SectionKey>>(null);
+  const [activeSection, setActiveSection] = useState<SectionKey>("today");
+  // Live horizontal scroll offset (Animated.Value) — drives both the
+  // tab-bar indicator translateX and the per-page opacity fade so the
+  // tab UI tracks the swipe in real time, not just on momentum end.
+  const scrollX = useRef(new Animated.Value(0)).current;
+
+  // Mount only the sections within 1 page of the active page, so heavy
+  // modules (LocationModule, ColoringBooks, etc.) unmount when swiped
+  // far away. Today's Plan is special-cased to always stay mounted so
+  // the routine cache is warm whenever we swipe back.
+  const mountedSections = useMemo<Set<SectionKey>>(() => {
+    const idx = SECTION_KEYS.indexOf(activeSection);
+    const set = new Set<SectionKey>(["today"]);
+    set.add(activeSection);
+    if (idx > 0) set.add(SECTION_KEYS[idx - 1]);
+    if (idx < SECTION_KEYS.length - 1) set.add(SECTION_KEYS[idx + 1]);
+    return set;
+  }, [activeSection]);
+
+  const goToSection = useCallback(
+    (key: SectionKey, animated = true) => {
+      const idx = SECTION_KEYS.indexOf(key);
+      if (idx < 0) return;
+      setActiveSection(key);
+      pagerRef.current?.scrollToOffset({
+        offset: idx * pageWidth,
+        animated,
+      });
+    },
+    [pageWidth],
+  );
+
+  const onPagerScrollEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (pageWidth === 0) return;
+      const idx = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
+      const next = SECTION_KEYS[Math.max(0, Math.min(SECTION_KEYS.length - 1, idx))];
+      if (next && next !== activeSection) setActiveSection(next);
+    },
+    [pageWidth, activeSection],
+  );
+
+  // Animated.event needs a stable handler — wrap once and reuse.
+  const onPagerScroll = useMemo(
+    () =>
+      Animated.event(
+        [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+        { useNativeDriver: true },
+      ),
+    [scrollX],
+  );
+
   // First-Time Free + Preview Lock — every Parent Hub feature is usable ONCE
   // for free (server-tracked). After that, free users see a locked overlay;
   // premium users always get full access.
@@ -125,21 +211,43 @@ export default function HubScreen() {
     return () => clearTimeout(t);
   }, [effective?.id, currentBand]);
 
-  // Scroll the ScrollView so the preview band's group is near the top.
-  const scrollToBand = (band: number) => {
-    const groupView = groupRefs.current[band];
-    const scrollNode = scrollRef.current;
-    if (!groupView || !scrollNode) return;
-    const handle = findNodeHandle(scrollNode);
-    if (handle == null) return;
-    groupView.measureLayout(
-      handle,
-      (_x, y) => {
-        scrollRef.current?.scrollTo({ y: Math.max(y - 16, 0), animated: true });
-      },
-      () => {},
-    );
-  };
+  // Hydrate the active section from AsyncStorage when the active child
+  // changes. Each child gets its own remembered tab so switching kids
+  // doesn't clobber the parent's place in another child's hub.
+  useEffect(() => {
+    if (!effective) return;
+    const key = `${SECTION_STORAGE_PREFIX}.${effective.id}`;
+    let cancelled = false;
+    AsyncStorage.getItem(key)
+      .then((stored) => {
+        if (cancelled || !stored) return;
+        if (!(SECTION_KEYS as readonly string[]).includes(stored)) return;
+        const sk = stored as SectionKey;
+        setActiveSection(sk);
+        const idx = SECTION_KEYS.indexOf(sk);
+        requestAnimationFrame(() => {
+          pagerRef.current?.scrollToOffset({
+            offset: idx * pageWidth,
+            animated: false,
+          });
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effective?.id]);
+
+  // Persist the active section per-child so a user returning to the hub
+  // lands on the same page. Fire-and-forget; we don't block render.
+  useEffect(() => {
+    if (!effective) return;
+    AsyncStorage.setItem(
+      `${SECTION_STORAGE_PREFIX}.${effective.id}`,
+      activeSection,
+    ).catch(() => {});
+  }, [activeSection, effective?.id]);
 
   const handleBandChipPress = (band: number) => {
     LayoutAnimation.configureNext({
@@ -153,8 +261,6 @@ export default function HubScreen() {
       return;
     }
     setPreviewBand(band);
-    // Defer scroll so layout has time to settle if anything just changed.
-    setTimeout(() => scrollToBand(band), 50);
   };
 
   const askAmy = (q: string) => {
@@ -213,18 +319,34 @@ export default function HubScreen() {
     debugFeaturedIds.push("tomorrow-forecast");
   }
 
+  // Build the featured-tile nodes (rendered inside the Recommended Zones
+  // page). They are NOT part of the partitioned grid because they are
+  // singletons (one Command Center, one InfantHub, one FuturePredictor)
+  // and live above the grid in the same page.
+  const renderInfantHub = (): React.ReactNode => {
+    const selMonths = effective ? effective.age * 12 + (effective.ageMonths ?? 0) : -1;
+    const target = isInfantHubAge(selMonths)
+      ? effective
+      : children
+          .map(c => ({ child: c, months: c.age * 12 + (c.ageMonths ?? 0) }))
+          .filter(x => isInfantHubAge(x.months))
+          .sort((a, b) => a.months - b.months)[0]?.child;
+    if (!target) return null;
+    const m = target.age * 12 + (target.ageMonths ?? 0);
+    return <InfantHub childId={target.id} childName={target.name} ageMonths={m} />;
+  };
+
   return (
     <LinearGradient colors={theme.gradient} style={{ flex: 1 }}>
-      <ScrollView
-        ref={scrollRef}
-        contentContainerStyle={{
+      {/* Sticky header above the swipeable pager */}
+      <View
+        style={{
           paddingTop: insets.top + 16,
-          paddingBottom: 140,
           paddingHorizontal: 16,
-          gap: 16,
+          paddingBottom: 8,
+          gap: 12,
         }}
       >
-        {/* Header */}
         <View style={styles.headerRow}>
           <Image source={LOGO} style={styles.logo} resizeMode="contain" />
           <View style={{ flex: 1 }}>
@@ -233,7 +355,7 @@ export default function HubScreen() {
               <Text style={styles.eyebrow}>EXPERT-CURATED</Text>
             </View>
             <Text style={styles.title}>Parenting Hub</Text>
-            <Text style={styles.subtitle}>Articles, tips, activities & support</Text>
+            <Text style={styles.subtitle}>Swipe between sections</Text>
           </View>
           <Pressable
             onPress={() => router.push("/amy-ai")}
@@ -286,25 +408,6 @@ export default function HubScreen() {
           </ScrollView>
         )}
 
-        {/* 🧠 Parent Command Center — overview · insights · quick actions */}
-        {effective && (
-          <ParentCommandCenter child={{ id: effective.id, name: effective.name }} />
-        )}
-
-        {/* Infant & Toddler Hub — only when any child is ≤ 24 months */}
-        {(() => {
-          const selMonths = effective ? effective.age * 12 + (effective.ageMonths ?? 0) : -1;
-          const target = isInfantHubAge(selMonths)
-            ? effective
-            : children
-                .map(c => ({ child: c, months: c.age * 12 + (c.ageMonths ?? 0) }))
-                .filter(x => isInfantHubAge(x.months))
-                .sort((a, b) => a.months - b.months)[0]?.child;
-          if (!target) return null;
-          const m = target.age * 12 + (target.ageMonths ?? 0);
-          return <InfantHub childId={target.id} childName={target.name} ageMonths={m} />;
-        })()}
-
         {effective && grp && (
           <View style={styles.agePillRow}>
             <View style={styles.agePill}>
@@ -314,10 +417,18 @@ export default function HubScreen() {
           </View>
         )}
 
-        {/* 🔮 Future Predictor — top placement */}
+        {/* Section tab bar — taps and swipe stay in sync */}
         {effective && (
-          <FuturePredictor childId={effective.id} />
+          <SectionTabBar
+            sections={SECTION_KEYS}
+            active={activeSection}
+            onSelect={(key) => goToSection(key, true)}
+            styles={styles}
+            scrollX={scrollX}
+            pageWidth={pageWidth}
+          />
         )}
+      </View>
 
         {/* === 2-section age-band content system ===================
             Only rendered when an active child is selected — the no-child
@@ -1210,135 +1321,163 @@ export default function HubScreen() {
             debugSnapshot.showsSection2 =
               currentBand === 0 && showExplore && !isLatestStage;
 
+            // Bucket the current-band tiles by section. The new layout
+            // moves each tile into one of three grid sections; the 4th
+            // section (Today's Plan) is built from the routine cache and
+            // doesn't draw from this list.
+            const buckets = bucketTilesBySection(section1);
+
+            // The "Explore Next Stage" group (Section 2) lives at the
+            // bottom of the Activities page, since "what's coming next" is
+            // structurally a future-content preview that fits with the
+            // hands-on Activities pillar.
+            const showExploreNext =
+              currentBand === 0 && showExplore && !isLatestStage;
+
+            // Capture the FULL set of section-1 tile ids (zones + modules
+            // + activities buckets) for the debug overlay so the diff
+            // matches what's reachable on screen, not what's in the active
+            // pager page.
+            debugSnapshot.section1Ids = [
+              ...debugFeaturedIds,
+              ...buckets.zones.map(t => t.id),
+              ...buckets.modules.map(t => t.id),
+              ...buckets.activities.map(t => t.id),
+            ];
+            debugSnapshot.section2Ids = section2.map(t => t.id);
+            debugSnapshot.showsSection2 = showExploreNext;
+
+            const renderSectionPage = (sectionKey: SectionKey): React.ReactNode => {
+              if (sectionKey === "today") {
+                return (
+                  <TodayPlanPage
+                    childName={childName}
+                    styles={styles}
+                    // Empty-state CTA must open the routine generator
+                    // directly — same target the dashboard's
+                    // `goToGenerate` callback uses, so the hub and
+                    // dashboard "Generate today's routine" buttons go
+                    // to the same screen.
+                    onGenerate={() => router.push("/routines/generate" as never)}
+                  />
+                );
+              }
+              if (sectionKey === "zones") {
+                return (
+                  <SectionPage
+                    sectionKey="zones"
+                    childName={childName}
+                    bandLabel={HUB_AGE_BANDS[currentBand].label}
+                    styles={styles}
+                    leadingNodes={
+                      <>
+                        {/* Featured tiles share the same HubTile chrome
+                            with the `featured` variant for a slightly
+                            larger press target + corner radius. */}
+                        <HubTile featured testID="hub-tile-command-center">
+                          <ParentCommandCenter child={{ id: effective.id, name: effective.name }} />
+                        </HubTile>
+                        <HubTile featured testID="hub-tile-infant-hub">
+                          {renderInfantHub()}
+                        </HubTile>
+                        <HubTile featured testID="hub-tile-tomorrow-forecast">
+                          <FuturePredictor childId={effective.id} />
+                        </HubTile>
+                      </>
+                    }
+                    tiles={buckets.zones}
+                  />
+                );
+              }
+              if (sectionKey === "modules") {
+                return (
+                  <SectionPage
+                    sectionKey="modules"
+                    childName={childName}
+                    bandLabel={HUB_AGE_BANDS[currentBand].label}
+                    styles={styles}
+                    tiles={buckets.modules}
+                  />
+                );
+              }
+              // activities — also hosts the Explore Next Stage block.
+              return (
+                <SectionPage
+                  sectionKey="activities"
+                  childName={childName}
+                  bandLabel={HUB_AGE_BANDS[currentBand].label}
+                  styles={styles}
+                  tiles={buckets.activities}
+                  trailingNodes={
+                    showExploreNext ? (
+                      <ExploreNextStageBlock
+                        childName={childName}
+                        currentBand={currentBand}
+                        previewBand={previewBand}
+                        orderedBands={orderedBands}
+                        groupsMap={groupsMap}
+                        nearestFutureBand={nearestFutureBand}
+                        onChipPress={handleBandChipPress}
+                        groupRefs={groupRefs}
+                        styles={styles}
+                      />
+                    ) : null
+                  }
+                />
+              );
+            };
+
             return (
-              <>
-                {/* SECTION 1 — primary content for the child's current band */}
-                <View style={styles.bandSectionHeader}>
-                  <Text style={styles.bandSectionTitle}>For {childName}</Text>
-                  <Text style={styles.bandSectionSub}>
-                    Age {HUB_AGE_BANDS[currentBand].label} · matched to {childName}
-                  </Text>
-                </View>
-                <View style={styles.sectionsGrid}>
-                  {section1.map(t => (
-                    <React.Fragment key={t.id}>{t.node}</React.Fragment>
-                  ))}
-                </View>
-
-                {/* SECTION 2 — Explore Next Stage, lazy-mounted, dimmed.
-                    Only shown when the active child is in the 0–24 month band
-                    (currentBand === 0), matching the website's behaviour where
-                    Section 2 is exclusively a forward-looking infant preview.
-                    Older children only ever see Section 1. Also hidden on the
-                    last band (isLatestStage) — defensive but redundant for
-                    band 0. */}
-                {currentBand === 0 && showExplore && !isLatestStage && (
-                  <View style={styles.exploreSection}>
-                    <View style={styles.bandSectionHeader}>
-                      <Text style={styles.bandSectionTitle}>
-                        Explore Next Stage for {childName}
-                      </Text>
-                      <Text style={styles.bandSectionSub}>
-                        {previewBand !== null
-                          ? `Previewing age ${HUB_AGE_BANDS[previewBand].label} · tap "Now" to reset`
-                          : `Preview what's coming up as ${childName} grows`}
-                      </Text>
-                    </View>
-
-                    {/* Quick band switcher (Task #108 audit-ok: task ref): chips for the current
-                        band + each future band that has tiles. Tapping a future
-                        chip un-dims that group and scrolls to it; tapping the
-                        current "Now" chip clears the preview. */}
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.bandPillRow}
+              <AnimatedFlatList
+                ref={pagerRef}
+                data={SECTION_KEYS as readonly SectionKey[]}
+                keyExtractor={(k: SectionKey) => k}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                style={{ flex: 1 }}
+                onScroll={onPagerScroll}
+                scrollEventThrottle={16}
+                onMomentumScrollEnd={onPagerScrollEnd}
+                getItemLayout={(_d: unknown, index: number) => ({
+                  length: pageWidth,
+                  offset: pageWidth * index,
+                  index,
+                })}
+                initialNumToRender={2}
+                windowSize={3}
+                renderItem={({ item: sectionKey }: { item: SectionKey }) => {
+                  const idx = SECTION_KEYS.indexOf(sectionKey);
+                  // Cross-fade each page based on its distance from the
+                  // current scroll offset. Active page sits at 1.0; the
+                  // page being swiped away dips toward 0.6 so the user
+                  // perceives a soft transition into the next page.
+                  const opacity = scrollX.interpolate({
+                    inputRange: [
+                      pageWidth * (idx - 1),
+                      pageWidth * idx,
+                      pageWidth * (idx + 1),
+                    ],
+                    outputRange: [0.6, 1, 0.6],
+                    extrapolate: "clamp",
+                  });
+                  return (
+                    <Animated.View
+                      style={{ width: pageWidth, flex: 1, opacity }}
                     >
-                      {[currentBand, ...orderedBands].map(band => {
-                        const isCurrent = band === currentBand;
-                        const isPreviewing = previewBand === band;
-                        const isDefault = previewBand === null && isCurrent;
-                        return (
-                          <Pressable
-                            key={`band-pill-${band}`}
-                            onPress={() => handleBandChipPress(band)}
-                            style={[
-                              styles.bandPill,
-                              isCurrent && styles.bandPillCurrent,
-                              isPreviewing && !isCurrent && styles.bandPillPreview,
-                              isDefault && styles.bandPillCurrentActive,
-                            ]}
-                            accessibilityRole="button"
-                            accessibilityLabel={
-                              isCurrent
-                                ? `Current age band ${HUB_AGE_BANDS[band].label}, tap to reset preview`
-                                : `Preview age ${HUB_AGE_BANDS[band].label} content`
-                            }
-                            accessibilityState={{ selected: isPreviewing || isDefault }}
-                          >
-                            <Text
-                              style={[
-                                styles.bandPillText,
-                                isCurrent && styles.bandPillTextCurrent,
-                                isPreviewing && !isCurrent && styles.bandPillTextPreview,
-                              ]}
-                            >
-                              {HUB_AGE_BANDS[band].label}
-                              {isCurrent ? " · Now" : ""}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </ScrollView>
-
-                    {orderedBands.map(band => {
-                      const isPreviewed = previewBand === band;
-                      return (
-                        <View
-                          key={band}
-                          ref={(node) => { groupRefs.current[band] = node; }}
-                          style={styles.exploreGroup}
-                        >
-                          <View style={styles.exploreGroupHeader}>
-                            <Text style={styles.exploreGroupTitle}>
-                              For Age {HUB_AGE_BANDS[band].label}
-                            </Text>
-                            {isPreviewed && (
-                              <View style={styles.previewingPill}>
-                                <Text style={styles.previewingText}>Previewing</Text>
-                              </View>
-                            )}
-                            {!isPreviewed && band === nearestFutureBand && (
-                              <View style={styles.comingNextPill}>
-                                <Text style={styles.comingNextText}>Coming Up Next</Text>
-                              </View>
-                            )}
-                          </View>
-                          <View style={styles.exploreGroupBody}>
-                            <View style={[styles.sectionsGrid, !isPreviewed && styles.exploreDimmed]}>
-                              {(groupsMap.get(band) ?? []).map(t => (
-                                <React.Fragment key={t.id}>{t.node}</React.Fragment>
-                              ))}
-                            </View>
-                            {!isPreviewed && (
-                              <View pointerEvents="none" style={styles.exploreOverlay} />
-                            )}
-                          </View>
+                      {mountedSections.has(sectionKey) ? (
+                        renderSectionPage(sectionKey)
+                      ) : (
+                        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+                          <ActivityIndicator color={ACCENT_PINK} />
                         </View>
-                      );
-                    })}
-                  </View>
-                )}
-              </>
+                      )}
+                    </Animated.View>
+                  );
+                }}
+              />
             );
           })()}
-
-        {/* Bottom CTA */}
-        <Pressable onPress={() => router.push("/(tabs)/routines")} style={styles.bottomCta}>
-          <Ionicons name="calendar" size={16} color={ACCENT_PINK} />
-          <Text style={styles.bottomCtaText}>Generate today's routine</Text>
-        </Pressable>
-      </ScrollView>
 
       {/* Dev-only floating debug overlay — shows mobile-vs-web tile diff
           for the active child. Mounted as ScrollView sibling so it floats
@@ -1355,6 +1494,363 @@ export default function HubScreen() {
         />
       )}
     </LinearGradient>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pager helper components
+// ─────────────────────────────────────────────────────────────────────────────
+
+type HubStyles = ReturnType<typeof makeStyles>;
+
+function SectionTabBar({
+  sections,
+  active,
+  onSelect,
+  styles,
+  scrollX,
+  pageWidth,
+}: {
+  sections: readonly SectionKey[];
+  active: SectionKey;
+  onSelect: (key: SectionKey) => void;
+  styles: HubStyles;
+  scrollX: Animated.Value;
+  pageWidth: number;
+}) {
+  // Width allocated to each tab pill (used to position the underline).
+  // Layout is measured at runtime so the indicator follows whatever the
+  // ScrollView contentSize ends up being.
+  const [tabLayouts, setTabLayouts] = useState<Record<SectionKey, { x: number; width: number }>>(
+    () => ({} as Record<SectionKey, { x: number; width: number }>),
+  );
+  const allMeasured = sections.every((k) => tabLayouts[k]);
+
+  // Map scrollX (0..pageWidth*(N-1)) onto the measured tab x positions so
+  // the underline glides under the active tab in real time during a swipe,
+  // not just on momentum end. The interpolations are typed as
+  // `Animated.AnimatedInterpolation<number>` so they slot into transform
+  // / width style props without any `as any` escapes.
+  const indicatorTransform = useMemo<{
+    translateX: Animated.AnimatedInterpolation<number> | number;
+    width: Animated.AnimatedInterpolation<number> | number;
+  }>(() => {
+    if (!allMeasured || pageWidth === 0) {
+      return { translateX: 0, width: 0 };
+    }
+    const inputRange = sections.map((_, i) => i * pageWidth);
+    const xRange = sections.map((k) => tabLayouts[k].x);
+    const wRange = sections.map((k) => tabLayouts[k].width);
+    return {
+      translateX: scrollX.interpolate({
+        inputRange,
+        outputRange: xRange,
+        extrapolate: "clamp",
+      }),
+      width: scrollX.interpolate({
+        inputRange,
+        outputRange: wRange,
+        extrapolate: "clamp",
+      }),
+    };
+  }, [sections, tabLayouts, pageWidth, scrollX, allMeasured]);
+
+  return (
+    <View style={styles.tabBarRow}>
+      {sections.map((key) => {
+        const meta = SECTION_META[key];
+        const isActive = key === active;
+        return (
+          <Pressable
+            key={key}
+            onPress={() => onSelect(key)}
+            onLayout={(e) => {
+              const { x, width } = e.nativeEvent.layout;
+              setTabLayouts((prev) =>
+                prev[key]?.x === x && prev[key]?.width === width
+                  ? prev
+                  : { ...prev, [key]: { x, width } },
+              );
+            }}
+            style={[styles.tabPill, isActive && styles.tabPillActive]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            accessibilityLabel={`${meta.heading} tab`}
+            testID={`hub-tab-${key}`}
+          >
+            <Ionicons
+              name={meta.icon}
+              size={14}
+              color={isActive ? "#fff" : "rgba(255,255,255,0.75)"}
+            />
+            <Text style={[styles.tabPillText, isActive && styles.tabPillTextActive]}>
+              {meta.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+      {allMeasured && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.tabIndicator,
+            {
+              transform: [{ translateX: indicatorTransform.translateX }],
+              width: indicatorTransform.width,
+            },
+          ]}
+          testID="hub-tab-indicator"
+        />
+      )}
+    </View>
+  );
+}
+
+function TodayPlanPage({
+  childName,
+  styles,
+  onGenerate,
+}: {
+  childName: string;
+  styles: HubStyles;
+  onGenerate: () => void;
+}) {
+  const router = useRouter();
+  const { tasks, todaysRoutine, isLoading, onToggle, taskIdToItemIndex } =
+    useTodayRoutine();
+
+  const onPressCard = useCallback(
+    (taskId: string) => {
+      if (!todaysRoutine) return;
+      const idx = taskIdToItemIndex(taskId);
+      const params: Record<string, string> = {};
+      if (idx != null) params.highlight = String(idx);
+      router.push({
+        pathname: "/routines/[id]",
+        params: { id: String(todaysRoutine.id), ...params },
+      });
+    },
+    [todaysRoutine, taskIdToItemIndex, router],
+  );
+
+  const meta = SECTION_META.today;
+  return (
+    <ScrollView
+      contentContainerStyle={styles.pageContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.bandSectionHeader}>
+        <Text style={styles.bandSectionTitle}>{meta.heading}</Text>
+        <Text style={styles.bandSectionSub}>
+          {childName ? `${childName} · ${meta.description}` : meta.description}
+        </Text>
+      </View>
+
+      {isLoading ? (
+        <View style={{ paddingVertical: 32, alignItems: "center" }}>
+          <ActivityIndicator color={ACCENT_PINK} />
+        </View>
+      ) : tasks.length > 0 ? (
+        <RoutineCarousel tasks={tasks} onToggle={onToggle} onPressCard={onPressCard} />
+      ) : (
+        <View style={styles.emptyCard}>
+          <MaterialCommunityIcons name="calendar-outline" size={40} color={ACCENT_PINK} />
+          <Text style={styles.emptyTitle}>No routine for today</Text>
+          <Text style={styles.emptyDesc}>
+            Generate a personalised plan and Amy will keep this list in sync.
+          </Text>
+          <Pressable onPress={onGenerate} style={styles.primaryBtn}>
+            <Text style={styles.primaryBtnText}>Generate today's routine</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {tasks.length > 0 && (
+        <Pressable onPress={onGenerate} style={styles.bottomCta}>
+          <Ionicons name="calendar" size={16} color={ACCENT_PINK} />
+          <Text style={styles.bottomCtaText}>Generate a new routine</Text>
+        </Pressable>
+      )}
+    </ScrollView>
+  );
+}
+
+function SectionPage<T extends { id: string; node: React.ReactNode }>({
+  sectionKey,
+  childName,
+  bandLabel,
+  tiles,
+  leadingNodes,
+  trailingNodes,
+  styles,
+}: {
+  sectionKey: Exclude<SectionKey, "today">;
+  childName: string;
+  bandLabel: string;
+  tiles: readonly T[];
+  leadingNodes?: React.ReactNode;
+  trailingNodes?: React.ReactNode;
+  styles: HubStyles;
+}) {
+  const meta = SECTION_META[sectionKey];
+  return (
+    <ScrollView
+      contentContainerStyle={styles.pageContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.bandSectionHeader}>
+        <Text style={styles.bandSectionTitle}>{meta.heading}</Text>
+        <Text style={styles.bandSectionSub}>
+          {childName ? `For ${childName} · age ${bandLabel}` : meta.description}
+        </Text>
+      </View>
+
+      {leadingNodes}
+
+      {tiles.length === 0 && !leadingNodes && !trailingNodes ? (
+        <View style={styles.emptyCard}>
+          <MaterialCommunityIcons name="creation" size={32} color={ACCENT_PINK} />
+          <Text style={styles.emptyDesc}>
+            Nothing in this section for {childName} just yet — keep checking back!
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.sectionsGrid}>
+          {tiles.map((t) => (
+            // Every tile flows through the shared `HubTile` chrome so the
+            // press-to-scale feedback, drop shadow, and featured variant
+            // are defined in one place. Tiles render their own internal
+            // Pressable / accordion (Section) inside, so HubTile itself
+            // is non-pressable here — it just provides the shared chrome.
+            <HubTile
+              key={t.id}
+              featured={isFeaturedTile(t.id)}
+              testID={`hub-tile-${t.id}`}
+            >
+              {t.node}
+            </HubTile>
+          ))}
+        </View>
+      )}
+
+      {trailingNodes}
+    </ScrollView>
+  );
+}
+
+function ExploreNextStageBlock({
+  childName,
+  currentBand,
+  previewBand,
+  orderedBands,
+  groupsMap,
+  nearestFutureBand,
+  onChipPress,
+  groupRefs,
+  styles,
+}: {
+  childName: string;
+  currentBand: number;
+  previewBand: number | null;
+  orderedBands: readonly number[];
+  groupsMap: Map<number, { id: string; node: React.ReactNode }[]>;
+  nearestFutureBand: number | null;
+  onChipPress: (band: number) => void;
+  groupRefs: React.MutableRefObject<Record<number, View | null>>;
+  styles: HubStyles;
+}) {
+  return (
+    <View style={styles.exploreSection}>
+      <View style={styles.bandSectionHeader}>
+        <Text style={styles.bandSectionTitle}>Explore Next Stage for {childName}</Text>
+        <Text style={styles.bandSectionSub}>
+          {previewBand !== null
+            ? `Previewing age ${HUB_AGE_BANDS[previewBand].label} · tap "Now" to reset`
+            : `Preview what's coming up as ${childName} grows`}
+        </Text>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.bandPillRow}
+      >
+        {[currentBand, ...orderedBands].map((band) => {
+          const isCurrent = band === currentBand;
+          const isPreviewing = previewBand === band;
+          const isDefault = previewBand === null && isCurrent;
+          return (
+            <Pressable
+              key={`band-pill-${band}`}
+              onPress={() => onChipPress(band)}
+              style={[
+                styles.bandPill,
+                isCurrent && styles.bandPillCurrent,
+                isPreviewing && !isCurrent && styles.bandPillPreview,
+                isDefault && styles.bandPillCurrentActive,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                isCurrent
+                  ? `Current age band ${HUB_AGE_BANDS[band].label}, tap to reset preview`
+                  : `Preview age ${HUB_AGE_BANDS[band].label} content`
+              }
+              accessibilityState={{ selected: isPreviewing || isDefault }}
+            >
+              <Text
+                style={[
+                  styles.bandPillText,
+                  isCurrent && styles.bandPillTextCurrent,
+                  isPreviewing && !isCurrent && styles.bandPillTextPreview,
+                ]}
+              >
+                {HUB_AGE_BANDS[band].label}
+                {isCurrent ? " · Now" : ""}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {orderedBands.map((band) => {
+        const isPreviewed = previewBand === band;
+        return (
+          <View
+            key={band}
+            ref={(node) => {
+              groupRefs.current[band] = node;
+            }}
+            style={styles.exploreGroup}
+          >
+            <View style={styles.exploreGroupHeader}>
+              <Text style={styles.exploreGroupTitle}>
+                For Age {HUB_AGE_BANDS[band].label}
+              </Text>
+              {isPreviewed && (
+                <View style={styles.previewingPill}>
+                  <Text style={styles.previewingText}>Previewing</Text>
+                </View>
+              )}
+              {!isPreviewed && band === nearestFutureBand && (
+                <View style={styles.comingNextPill}>
+                  <Text style={styles.comingNextText}>Coming Up Next</Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.exploreGroupBody}>
+              <View style={[styles.sectionsGrid, !isPreviewed && styles.exploreDimmed]}>
+                {(groupsMap.get(band) ?? []).map((t) => (
+                  <React.Fragment key={t.id}>{t.node}</React.Fragment>
+                ))}
+              </View>
+              {!isPreviewed && (
+                <View pointerEvents="none" style={styles.exploreOverlay} />
+              )}
+            </View>
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
@@ -1627,6 +2123,61 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: isLight ? "rgba(15,23,42,0.04)" : "rgba(0,0,0,0.18)",
       borderRadius: 16,
+    },
+
+    // 4-section horizontal pager — tab bar + per-page padding.
+    tabBarRow: {
+      flexDirection: "row",
+      gap: 8,
+      paddingVertical: 4,
+      paddingHorizontal: 2,
+      position: "relative",
+    },
+    tabIndicator: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      height: 3,
+      borderRadius: 2,
+      backgroundColor: ACCENT_PINK,
+      shadowColor: ACCENT_PINK,
+      shadowOpacity: 0.4,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    tabPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 999,
+      backgroundColor: glassBg,
+      borderWidth: 1,
+      borderColor: glassBorder,
+    },
+    tabPillActive: {
+      backgroundColor: ACCENT_PINK,
+      borderColor: ACCENT_PINK,
+      shadowColor: ACCENT_PINK,
+      shadowOpacity: 0.4,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    tabPillText: {
+      color: c.foreground,
+      fontSize: 12,
+      fontWeight: "700",
+      letterSpacing: 0.2,
+    },
+    tabPillTextActive: { color: "#fff" },
+
+    pageContent: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 140,
+      gap: 12,
     },
   });
 }
