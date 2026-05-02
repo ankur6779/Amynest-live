@@ -54,7 +54,7 @@ import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
 import TryFreeBadge from "@/components/TryFreeBadge";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
-import colors, { brand, ACCENT_PINK, palette } from "@/constants/colors";
+import colors, { brand, brandAlpha, ACCENT_PINK, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 
 const SECTION_STORAGE_PREFIX = "hub.lastSection.v1";
@@ -1963,9 +1963,9 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
 
     agePillRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
     agePill: {
-      backgroundColor: isLight ? "rgba(217,119,6,0.10)" : "rgba(255,210,122,0.12)",
+      backgroundColor: isLight ? "rgba(217,119,6,0.10)" : brandAlpha.amber400_12,
       borderWidth: 1,
-      borderColor: isLight ? "rgba(217,119,6,0.30)" : "rgba(255,210,122,0.4)",
+      borderColor: isLight ? "rgba(217,119,6,0.30)" : brandAlpha.amber400_40,
       paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999,
     },
     personalised: { color: c.textMuted, fontSize: 12 },
@@ -2055,7 +2055,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     activityRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     activityCard: {
       paddingHorizontal: 18, paddingVertical: 14, borderRadius: 12,
-      backgroundColor: "rgba(251,113,133,0.18)", borderWidth: 1, borderColor: "rgba(251,113,133,0.3)",
+      backgroundColor: brandAlpha.rose400_18, borderWidth: 1, borderColor: brandAlpha.rose400_30,
     },
 
     bottomCta: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12 },
@@ -2084,9 +2084,9 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     },
     previewingPill: {
       paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999,
-      backgroundColor: isLight ? "rgba(217,119,6,0.12)" : "rgba(255,210,122,0.18)",
+      backgroundColor: isLight ? "rgba(217,119,6,0.12)" : brandAlpha.amber400_18,
       borderWidth: 1,
-      borderColor: isLight ? "rgba(217,119,6,0.45)" : "rgba(255,210,122,0.55)",
+      borderColor: isLight ? "rgba(217,119,6,0.45)" : brandAlpha.amber400_55,
     },
     previewingText: {
       color: isLight ? palette.amber700 : brand.amber400,
@@ -2102,12 +2102,12 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       borderWidth: 1, borderColor: glassBorder,
     },
     bandPillCurrent: {
-      backgroundColor: isLight ? "rgba(217,119,6,0.10)" : "rgba(255,210,122,0.14)",
-      borderColor: isLight ? "rgba(217,119,6,0.40)" : "rgba(255,210,122,0.55)",
+      backgroundColor: isLight ? "rgba(217,119,6,0.10)" : brandAlpha.amber400_14,
+      borderColor: isLight ? "rgba(217,119,6,0.40)" : brandAlpha.amber400_55,
     },
     bandPillCurrentActive: {
-      backgroundColor: isLight ? "rgba(217,119,6,0.18)" : "rgba(255,210,122,0.22)",
-      borderColor: isLight ? "rgba(217,119,6,0.65)" : "rgba(255,210,122,0.85)",
+      backgroundColor: isLight ? "rgba(217,119,6,0.18)" : brandAlpha.amber400_22,
+      borderColor: isLight ? "rgba(217,119,6,0.65)" : brandAlpha.amber400_85,
     },
     bandPillPreview: {
       backgroundColor: "rgba(255,78,205,0.18)",

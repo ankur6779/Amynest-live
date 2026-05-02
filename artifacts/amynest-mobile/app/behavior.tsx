@@ -11,7 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
-import colors, { brand, ACCENT_PINK, palette } from "@/constants/colors";
+import colors, { brand, brandAlpha, ACCENT_PINK, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import {
   QUICK_BEHAVIORS, QUICK_BEHAVIOR_KEYS, TRIGGERS, TRIGGER_KEYS,
@@ -400,7 +400,7 @@ export default function BehaviorScreen() {
                       {b.notes ? <Text style={styles.logNotes}>{b.notes.replace(/\[trigger:\w+\]\s?/, "")}</Text> : null}
                     </View>
                     <Pressable onPress={() => handleDelete(b.id)} hitSlop={10}>
-                      <Ionicons name="trash-outline" size={15} color="rgba(251,113,133,0.7)" />
+                      <Ionicons name="trash-outline" size={15} color={brandAlpha.rose400_70} />
                     </Pressable>
                   </View>
                 );
@@ -619,7 +619,7 @@ const makeStyles = (c: ReturnType<typeof useColors>) => StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 6,
     alignSelf: "flex-start",
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
-    backgroundColor: "rgba(251,113,133,0.12)", borderWidth: 1, borderColor: "rgba(251,113,133,0.3)",
+    backgroundColor: brandAlpha.rose400_12, borderWidth: 1, borderColor: brandAlpha.rose400_30,
   },
   quickHelpText: { color: brand.rose400, fontWeight: "700", fontSize: 13 },
 
