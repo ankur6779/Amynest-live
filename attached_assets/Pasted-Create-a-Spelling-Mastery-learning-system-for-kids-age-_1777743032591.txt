@@ -1,0 +1,183 @@
+Create a "Spelling Mastery" learning system for kids (age 2–10+) focused on spelling mastery and competition readiness.
+
+GOAL:
+Teach spelling from phonics to advanced dictation using progressive difficulty and interactive learning.
+
+--------------------------------------------------
+1. AGE-BASED LEVEL STRUCTURE
+--------------------------------------------------
+
+Age 2–4 (Foundation):
+- Letter sounds
+- Simple 2–3 letter words
+- Visual + audio learning
+- Tap-based interaction
+
+Age 4–6 (Beginner):
+- CVC words (cat, bat, dog)
+- Phonics blending (c-a-t)
+- Missing letter games
+
+Age 6–8 (Intermediate):
+- Longer words (5–6 letters)
+- Digraphs (sh, ch, th)
+- Word breakdown (syllables)
+
+Age 8–10+ (Advanced):
+- Complex words
+- Silent letters
+- Difficult spellings
+- Dictation sentences
+
+--------------------------------------------------
+2. LEARNING FLOW (VERY IMPORTANT)
+--------------------------------------------------
+
+Each session:
+
+Step 1: Learn word
+- Show word
+- Break into sounds (c-a-t)
+- Play audio
+
+Step 2: Understand structure
+- Highlight syllables / sounds
+- Example:
+   “pho-to-graph”
+
+Step 3: Practice
+- Fill missing letters
+- Drag letters to form word
+
+Step 4: Dictation mode
+- Play word audio
+- Child types or selects letters
+
+--------------------------------------------------
+3. DICTATION MODE (CORE FEATURE)
+--------------------------------------------------
+
+- Play audio: “Spell the word: CAT”
+- No visual hint (competition mode)
+- Timer optional
+- Input:
+   • Typing
+   • Letter selection (younger kids)
+
+--------------------------------------------------
+4. DIFFICULTY PROGRESSION
+--------------------------------------------------
+
+- Easy → Medium → Hard
+- Increase difficulty after each session
+
+Logic:
+- Correct answers → harder words
+- Mistakes → repeat with variation
+
+--------------------------------------------------
+5. WORD BREAKDOWN SYSTEM
+--------------------------------------------------
+
+- Split into:
+   • Sounds
+   • Syllables
+
+Example:
+“elephant” → el-e-phant
+
+--------------------------------------------------
+6. AUDIO SYSTEM
+--------------------------------------------------
+
+- Clear pronunciation
+- Repeat button
+- Slow mode for beginners
+
+--------------------------------------------------
+7. INTERACTIVE GAMES
+--------------------------------------------------
+
+- Missing letter (_at → cat)
+- Jumbled letters
+- Sound match
+
+--------------------------------------------------
+8. COMPETITION MODE (UNIQUE)
+--------------------------------------------------
+
+- No hints
+- Timer enabled
+- Score system
+
+Show:
+- Accuracy %
+- Speed
+
+--------------------------------------------------
+9. REWARD SYSTEM
+--------------------------------------------------
+
+- Stars ⭐
+- Level unlock
+- “Spelling Master” badge
+
+--------------------------------------------------
+10. PARENT MODE
+--------------------------------------------------
+
+- “Ask your child” feature
+- Show list of words
+- Parent reads → child answers
+
+--------------------------------------------------
+11. AI WORD GENERATION (OPTIONAL)
+--------------------------------------------------
+
+Use OpenAI to:
+- Generate age-based words
+- Increase difficulty dynamically
+
+--------------------------------------------------
+12. UX REQUIREMENTS
+--------------------------------------------------
+
+- Clean UI
+- Large buttons
+- Minimal text for young kids
+
+Level 1 → 3 letter words
+Level 2 → 4 letter words
+Level 3 → blends
+Level 4 → sentences
+
+Starter Dataset
+{
+  "2-4": ["cat", "bat", "sun", "dog"],
+  "4-6": ["hat", "cup", "pen", "bed"],
+  "6-8": ["ship", "chair", "train", "black"],
+  "8-10+": ["elephant", "school", "because", "beautiful"]
+}
+
+Generate spelling words for children.
+
+Requirements:
+- Age: [AGE GROUP]
+- Difficulty: [easy/medium/hard]
+- Include phonics-friendly words
+- Avoid complex silent letters for beginners
+
+Output:
+- List of 10 words
+- Include syllable breakdown
+
+Example:
+cat → c-a-t
+elephant → el-e-phant
+
+--------------------------------------------------
+DELIVERABLE:
+- Full dictation learning system
+- Progressive difficulty
+- Competition-ready mode
+- Parent-child interaction
