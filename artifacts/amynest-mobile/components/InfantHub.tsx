@@ -13,6 +13,7 @@ import {
 } from "@workspace/infant-hub";
 import { brand, brandAlpha, palette } from "@/constants/colors";
 import CryInsight from "@/components/CryInsight";
+import SleepPredict from "@/components/SleepPredict";
 
 type Props = {
   childId: number;
@@ -161,6 +162,18 @@ export default function InfantHub({ childId, childName, ageMonths }: Props) {
             <Text style={styles.tipBody}>{t("infant_hub.no_tips")}</Text>
           </View>
         )}
+
+        {/* ── Sleep Prediction (Beta) — separate sub-card ────────────────────── */}
+        <View style={styles.cryWrap}>
+          <View style={styles.cryHead}>
+            <Ionicons name="alarm-outline" size={16} color={brand.purple400} />
+            <Text style={styles.cryTitle}>Sleep Prediction</Text>
+            <View style={styles.cryBadge}>
+              <Text style={styles.cryBadgeTxt}>BETA</Text>
+            </View>
+          </View>
+          <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
+        </View>
 
         {/* ── Cry Insight (Beta) — separate sub-card ─────────────────────────── */}
         <View style={styles.cryWrap}>

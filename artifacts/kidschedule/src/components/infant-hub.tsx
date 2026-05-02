@@ -6,9 +6,11 @@ import {
   ChevronDown, ChevronUp, Syringe, Zap, BookOpen,
   Activity, Star, AlertTriangle, Lightbulb, Baby,
   Flame, MessageCircle, BedDouble, ListChecks, Music2,
+  AlarmClock,
 } from "lucide-react";
 import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-cues";
 import { CryInsight } from "@/components/cry-insight";
+import { SleepPredict } from "@/components/sleep-predict";
 import {
   WakeWindowSystem, SleepIssueDetector, RoutineBuilder, SleepWeeklyInsights,
 } from "@/components/infant-sleep-module";
@@ -579,6 +581,11 @@ export function InfantHub({ childId, childName, ageMonths }: InfantHubProps) {
                 {/* ── 4b. Cry Insight (Beta) ─────────────────────────────────────────── */}
                 <IHSection icon={<MessageCircle className="h-4 w-4" />} title="Cry Insight" badge="Beta">
                   <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />
+                </IHSection>
+
+                {/* ── 4c. Sleep Prediction (Beta) ────────────────────────────────────── */}
+                <IHSection icon={<AlarmClock className="h-4 w-4" />} title="Sleep Prediction" badge="Beta">
+                  <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 5. Feeding Reference ─────────────────────────────────────────────── */}
