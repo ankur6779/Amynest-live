@@ -585,7 +585,7 @@ function OnboardingScreen({ displayName }: { displayName: string }) {
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-start animate-in fade-in duration-500">
-      <div className="w-full rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-violet-700 p-8 mb-8 text-white text-center relative overflow-hidden shadow-xl">
+      <div data-on-dark className="w-full rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-violet-700 p-8 mb-8 text-white text-center relative overflow-hidden shadow-xl">
         <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/10 -translate-y-12 translate-x-12 blur-sm" />
         <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-white/10 translate-y-10 -translate-x-10 blur-sm" />
         <div className="relative z-10 flex justify-center mb-5">

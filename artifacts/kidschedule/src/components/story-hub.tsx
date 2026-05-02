@@ -258,11 +258,17 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
         {stories.length} stories • personalised for {data?.child.name ?? childName}
       </p>
 
-      {/* Now-playing card */}
+      {/* Now-playing card.
+          Card surface uses bg-white/5 / text-white tokens which the
+          kidschedule legacy-color safety net (index.css) remaps to
+          themed values in light mode. The thumbnail well and the violet
+          Watch button, however, are intentionally dark surfaces with
+          white text in BOTH themes — they get data-on-dark so the
+          safety net leaves them alone. */}
       {currentStory && (
         <div className="overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
           {/* Thumbnail */}
-          <div className="relative aspect-video w-full bg-black">
+          <div data-on-dark className="relative aspect-video w-full bg-black">
             {currentStory.thumbnailUrl ? (
               <img
                 src={currentStory.thumbnailUrl}
@@ -302,6 +308,7 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
               </p>
             </div>
             <Button
+              data-on-dark
               onClick={() => setIsPlaying(true)}
               className="shrink-0 gap-2 bg-violet-600 text-white hover:bg-violet-500"
             >

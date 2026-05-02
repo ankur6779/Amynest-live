@@ -479,6 +479,7 @@ function ActStage({
             data-testid="ptm-action-input"
           />
           <button
+            data-on-dark
             onClick={addManual}
             className="h-9 px-3 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-[12.5px] font-bold inline-flex items-center gap-1"
             data-testid="ptm-action-add"

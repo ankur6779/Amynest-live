@@ -335,8 +335,11 @@ function RoutineItemModal({
         className="routine-modal-enter bg-card w-full sm:max-w-md max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Hero image */}
-        <div className="relative h-52 overflow-hidden rounded-t-3xl sm:rounded-t-3xl bg-muted shrink-0">
+        {/* Hero image — intentionally dark in both themes (image + dark
+            gradient overlay). data-on-dark keeps the white title /
+            chips / close button readable in light mode by exempting
+            this region from the safety net rewrite. */}
+        <div data-on-dark className="relative h-52 overflow-hidden rounded-t-3xl sm:rounded-t-3xl bg-muted shrink-0">
           <img src={img.src} alt={item.activity} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           <button
@@ -1706,7 +1709,7 @@ export default function RoutineDetail() {
 
       {/* ── Global floating undo chip ───────────────────────────────── */}
       {undoSnapshot && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-4 py-2.5 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+        <div data-on-dark className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-4 py-2.5 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
           <span className="text-sm font-medium">{undoLabel}</span>
           <button
             onClick={handleUndo}

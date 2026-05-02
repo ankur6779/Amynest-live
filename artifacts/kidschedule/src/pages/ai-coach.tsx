@@ -208,7 +208,7 @@ function GoalBadge({ access }: { access: GoalAccess }) {
     );
   }
   return (
-    <span className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold bg-black/30 text-white/90 px-1.5 py-0.5 rounded-full border border-white/25 backdrop-blur-sm pointer-events-none select-none">
+    <span data-on-dark className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold bg-black/30 text-white/90 px-1.5 py-0.5 rounded-full border border-white/25 backdrop-blur-sm pointer-events-none select-none">
       <Lock className="h-2.5 w-2.5" /> Premium
     </span>
   );

@@ -618,7 +618,7 @@ export default function NutritionHubPage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 text-white px-4 pt-8 pb-10">
+      <div data-on-dark className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 text-white px-4 pt-8 pb-10">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
         <div className="relative max-w-4xl mx-auto">
           <div className="flex items-center gap-2 mb-1">

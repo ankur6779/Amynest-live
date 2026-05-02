@@ -373,6 +373,7 @@ function CharacterCard({ ch, onOpen }: { ch: EventCharacter; onOpen: () => void 
       className="cursor-pointer overflow-hidden hover:shadow-lg transition border-2 border-transparent hover:border-pink-300"
     >
       <div
+        data-on-dark
         className="p-6 relative h-32 flex items-center justify-center text-white"
         style={{ background: `linear-gradient(135deg, ${ch.accent[0]}, ${ch.accent[1]})` }}
       >

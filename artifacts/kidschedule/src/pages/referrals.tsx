@@ -286,7 +286,7 @@ export default function ReferralsPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* Hero card */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-amber-500 p-6 sm:p-8 text-white shadow-xl">
+      <div data-on-dark className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-amber-500 p-6 sm:p-8 text-white shadow-xl">
         <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
         <div className="relative space-y-3">
