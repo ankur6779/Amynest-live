@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-nati
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColors } from "@/hooks/useColors";
+import { palette } from "@/constants/colors";
 import {
   ageMonthsToGroup,
   defaultPuzzleDifficulty,
@@ -296,8 +297,8 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       borderColor: c.glassBorder,
     },
     optionSel: { borderColor: "rgba(123,63,242,0.8)", backgroundColor: "rgba(123,63,242,0.15)" },
-    optionCorrect: { backgroundColor: "#22c55e", borderColor: "#22c55e" },
-    optionWrong: { backgroundColor: "#ef4444", borderColor: "#ef4444" },
+    optionCorrect: { backgroundColor: palette.green500, borderColor: palette.green500 },
+    optionWrong: { backgroundColor: palette.red500, borderColor: palette.red500 },
     optionText: { color: c.foreground, fontSize: 14, fontWeight: "700" },
     primary: {
       flexDirection: "row",
