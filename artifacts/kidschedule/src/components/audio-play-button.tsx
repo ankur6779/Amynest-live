@@ -12,7 +12,12 @@ import { cn } from "@/lib/utils";
 export async function preloadAmyVoice(
   authFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
   text: string,
-  opts: { voiceId?: string; modelId?: string; signal?: AbortSignal } = {},
+  opts: {
+    voiceId?: string;
+    modelId?: string;
+    mode?: "default" | "phonics";
+    signal?: AbortSignal;
+  } = {},
 ): Promise<void> {
   const t = (text ?? "").trim();
   if (!t) return;
@@ -20,7 +25,12 @@ export async function preloadAmyVoice(
     await authFetch("/api/tts/synthesize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: t, voiceId: opts.voiceId, modelId: opts.modelId }),
+      body: JSON.stringify({
+        text: t,
+        voiceId: opts.voiceId,
+        modelId: opts.modelId,
+        mode: opts.mode,
+      }),
       signal: opts.signal,
     });
   } catch {
@@ -41,6 +51,12 @@ interface AudioPlayButtonProps {
   onFinished?: () => void;
   /** Optional callback when the user taps Play (used for progress tracking). */
   onPlay?: () => void;
+  /**
+   * `phonics` uses crisp ElevenLabs voice settings tuned for teaching
+   * letter sounds. Caches separately from default. Use ONLY for the bare
+   * phoneme ("buh"), never for full sentences.
+   */
+  mode?: "default" | "phonics";
   className?: string;
 }
 
@@ -76,6 +92,7 @@ export function AudioPlayButton({
   ariaLabel,
   onFinished,
   onPlay,
+  mode,
   className,
 }: AudioPlayButtonProps) {
   const { speak, stop, speaking, loading } = useAmyVoice({ onFinished });
@@ -87,7 +104,7 @@ export function AudioPlayButton({
       return;
     }
     onPlay?.();
-    void speak(text);
+    void speak(text, { mode });
   };
 
   return (

@@ -253,12 +253,17 @@ function TodaysActivityCard({
   );
 
   // Warm the TTS cache for today's sound — first tap then plays instantly.
+  // For letter tiles we warm the bare phoneme in phonics mode (matches what
+  // the Play button will actually request); for everything else we warm the
+  // verbose `sound` line in default mode.
   useEffect(() => {
     if (!todaysItem) return;
     const ctrl = new AbortController();
-    void preloadAmyVoice(authFetch, todaysItem.sound, { signal: ctrl.signal });
+    const useTts = todaysItem.phoneme ?? todaysItem.sound;
+    const useMode: "phonics" | undefined = todaysItem.phoneme ? "phonics" : undefined;
+    void preloadAmyVoice(authFetch, useTts, { mode: useMode, signal: ctrl.signal });
     return () => ctrl.abort();
-  }, [authFetch, todaysItem?.sound]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [authFetch, todaysItem?.sound, todaysItem?.phoneme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!todaysItem) return null;
 
@@ -329,7 +334,8 @@ function TodaysActivityCard({
             )}
           </div>
           <AudioPlayButton
-            text={todaysItem.sound}
+            text={todaysItem.phoneme ?? todaysItem.sound}
+            mode={todaysItem.phoneme ? "phonics" : undefined}
             size="lg"
             variant="violet"
             ariaLabel={`Play sound ${todaysItem.symbol}`}
@@ -383,13 +389,17 @@ function PracticeSoundsCard({
   const authFetch = useAuthFetch();
   const [blendItem, setBlendItem] = useState<DisplayPhonicsItem | null>(null);
 
-  // Preload the first batch of sounds so the first taps are instant.
+  // Preload the first batch of sounds so the first taps are instant. Letter
+  // tiles warm the phoneme-mode cache; non-letter tiles warm default mode —
+  // matches exactly what the Play button will request on tap.
   useEffect(() => {
     const ctrl = new AbortController();
     (async () => {
       for (const it of items.slice(0, 6)) {
         if (ctrl.signal.aborted) return;
-        await preloadAmyVoice(authFetch, it.sound, { signal: ctrl.signal });
+        const text = it.phoneme ?? it.sound;
+        const mode: "phonics" | undefined = it.phoneme ? "phonics" : undefined;
+        await preloadAmyVoice(authFetch, text, { mode, signal: ctrl.signal });
       }
     })();
     return () => ctrl.abort();
@@ -453,7 +463,8 @@ function PracticeSoundsCard({
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <AudioPlayButton
-                      text={it.sound}
+                      text={it.phoneme ?? it.sound}
+                      mode={it.phoneme ? "phonics" : undefined}
                       size="sm"
                       variant="violet"
                       ariaLabel={`Play sound ${it.symbol}`}
@@ -514,7 +525,8 @@ function PracticeSoundsCard({
                   </div>
                   {mastered && <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-1" />}
                   <AudioPlayButton
-                    text={it.sound}
+                    text={it.phoneme ?? it.sound}
+                    mode={it.phoneme ? "phonics" : undefined}
                     size="sm"
                     variant="violet"
                     ariaLabel={`Read aloud: ${it.symbol}`}
@@ -579,7 +591,9 @@ function BlendPanel({
           <div key={i} className="flex items-center gap-2">
             <div className="rounded-xl bg-white dark:bg-white/[0.08] border border-violet-200 dark:border-violet-400/30 px-3 py-2 flex items-center gap-2">
               <span className="font-quicksand text-xl font-bold text-violet-700 dark:text-violet-200">{s}</span>
-              <AudioPlayButton text={`${s}.`} size="sm" variant="violet" ariaLabel={`Play ${s}`} />
+              {/* BlendPanel sounds are individual phonemes ("c", "a", "t") — */}
+              {/* always use phonics mode for crisp single-sound pronunciation. */}
+              <AudioPlayButton text={s} mode="phonics" size="sm" variant="violet" ariaLabel={`Play ${s}`} />
             </div>
             {i < sounds.length - 1 && <span className="text-violet-400 text-xl">+</span>}
           </div>
