@@ -1061,3 +1061,99 @@ describe("spelling sessions — DB integration (trust + concurrency)", () => {
     }
   });
 });
+
+// ─── Public audio route mount integration test ──────────────────────────────
+//
+// Regression guard: spellingPublicRouter MUST be mounted on the top-level
+// app router BEFORE requireAuth — otherwise <audio> tags can't fetch
+// session-scoped MP3s and Dictation/Competition/Tournament/Battle playback
+// silently breaks. Hits the route through the actual express app to prove:
+//   1. The route is reachable (not 404)
+//   2. It is NOT behind requireAuth (we'd see 401/403 if it were)
+//   3. The handler's own validation runs (invalid_token, not_found)
+//
+// We deliberately DON'T test the success path here — that requires a
+// matching ttsCache row + GCS object, which the test rig can't produce.
+// The handler-internal logic is covered by the route's branch tests above.
+describe("spellingPublicRouter mount (integration)", () => {
+  it("serves /api/spelling/sessions/:token/audio/:idx.mp3 publicly through the app", async () => {
+    const http = await import("node:http");
+    const { default: app } = await import("../app");
+
+    const server = http.createServer(app);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const addr = server.address();
+    if (!addr || typeof addr === "string") {
+      server.close();
+      throw new Error("test server failed to bind");
+    }
+    const base = `http://127.0.0.1:${addr.port}`;
+
+    const userId = `spelling-pub-test-${randomUUID()}`;
+    const token = `tok${randomUUID().replace(/-/g, "")}`;
+    try {
+      // 1. Invalid token format → handler-side 400 (proves we're past auth).
+      const badTok = await fetch(`${base}/api/spelling/sessions/!!!/audio/0.mp3`);
+      assert.notEqual(
+        badTok.status,
+        401,
+        "invalid-token request must NOT be auth-gated",
+      );
+      assert.notEqual(
+        badTok.status,
+        403,
+        "invalid-token request must NOT be auth-gated",
+      );
+      assert.notEqual(badTok.status, 404, "route must be mounted (not 404)");
+      assert.equal(badTok.status, 400, "invalid token must hit handler 400");
+      const badTokBody = (await badTok.json()) as { error?: string };
+      assert.equal(badTokBody.error, "invalid_token");
+
+      // 2. Invalid idx → handler-side 400 (also proves past-auth + handler).
+      const badIdx = await fetch(
+        `${base}/api/spelling/sessions/${token}/audio/abc.mp3`,
+      );
+      assert.equal(badIdx.status, 400);
+      const badIdxBody = (await badIdx.json()) as { error?: string };
+      assert.equal(badIdxBody.error, "invalid_idx");
+
+      // 3. Valid token format but no DB row → handler-side 404 not_found.
+      // (This is the handler's own 404, distinct from a "route not mounted"
+      // 404 — the body's `error` field proves we reached the handler.)
+      await db.insert(spellingSessionsTable).values({
+        sessionToken: token,
+        childId: 999_998,
+        userId,
+        ageGroup: "4-6",
+        mode: "dictation",
+        difficulty: "easy",
+        words: [
+          {
+            id: "w0",
+            word: "ship",
+            ageGroup: "4-6",
+            difficulty: "easy",
+            syllables: ["ship"],
+            chunks: ["sh", "ip"],
+            hint: "boat that floats",
+          },
+        ],
+        audioKeys: [], // empty — index 0 must 404 with handler's not_found
+      });
+      const valid = await fetch(`${base}/api/spelling/sessions/${token}/audio/0.mp3`);
+      assert.equal(valid.status, 404);
+      const validBody = (await valid.json()) as { error?: string };
+      // Handler returns one of: not_found (no key) or audio_not_found (no GCS).
+      // Both prove we reached the handler, not Express's default 404.
+      assert.ok(
+        validBody.error === "not_found" || validBody.error === "audio_not_found",
+        `expected handler 404 body, got: ${JSON.stringify(validBody)}`,
+      );
+    } finally {
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+});
