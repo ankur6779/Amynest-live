@@ -1,0 +1,123 @@
+{
+  "version": "1.0",
+  "age_groups": ["2-4", "4-6", "6-8"],
+
+  "levels": {
+    "2-4": {
+      "type": "sound_recognition",
+      "items": [
+        { "letter": "A", "word": "Apple", "image": "apple.png", "audio": "a_sound.mp3" },
+        { "letter": "B", "word": "Ball", "image": "ball.png", "audio": "b_sound.mp3" },
+        { "letter": "C", "word": "Cat", "image": "cat.png", "audio": "c_sound.mp3" },
+        { "letter": "D", "word": "Dog", "image": "dog.png", "audio": "d_sound.mp3" },
+        { "letter": "E", "word": "Elephant", "image": "elephant.png", "audio": "e_sound.mp3" },
+        { "letter": "F", "word": "Fish", "image": "fish.png", "audio": "f_sound.mp3" },
+        { "letter": "G", "word": "Grapes", "image": "grapes.png", "audio": "g_sound.mp3" },
+        { "letter": "H", "word": "Hat", "image": "hat.png", "audio": "h_sound.mp3" },
+        { "letter": "I", "word": "Ice cream", "image": "icecream.png", "audio": "i_sound.mp3" },
+        { "letter": "J", "word": "Jug", "image": "jug.png", "audio": "j_sound.mp3" },
+        { "letter": "K", "word": "Kite", "image": "kite.png", "audio": "k_sound.mp3" },
+        { "letter": "L", "word": "Lion", "image": "lion.png", "audio": "l_sound.mp3" },
+        { "letter": "M", "word": "Mango", "image": "mango.png", "audio": "m_sound.mp3" },
+        { "letter": "N", "word": "Nest", "image": "nest.png", "audio": "n_sound.mp3" },
+        { "letter": "O", "word": "Orange", "image": "orange.png", "audio": "o_sound.mp3" },
+        { "letter": "P", "word": "Parrot", "image": "parrot.png", "audio": "p_sound.mp3" },
+        { "letter": "Q", "word": "Queen", "image": "queen.png", "audio": "q_sound.mp3" },
+        { "letter": "R", "word": "Rabbit", "image": "rabbit.png", "audio": "r_sound.mp3" },
+        { "letter": "S", "word": "Sun", "image": "sun.png", "audio": "s_sound.mp3" },
+        { "letter": "T", "word": "Tiger", "image": "tiger.png", "audio": "t_sound.mp3" },
+        { "letter": "U", "word": "Umbrella", "image": "umbrella.png", "audio": "u_sound.mp3" },
+        { "letter": "V", "word": "Van", "image": "van.png", "audio": "v_sound.mp3" },
+        { "letter": "W", "word": "Watch", "image": "watch.png", "audio": "w_sound.mp3" },
+        { "letter": "X", "word": "Xylophone", "image": "xylophone.png", "audio": "x_sound.mp3" },
+        { "letter": "Y", "word": "Yak", "image": "yak.png", "audio": "y_sound.mp3" },
+        { "letter": "Z", "word": "Zebra", "image": "zebra.png", "audio": "z_sound.mp3" }
+      ]
+    },
+
+    "4-6": {
+      "type": "phonics_words",
+      "items": [
+        { "letter": "A", "words": ["Ant", "Apple"], "audio": "a_words.mp3" },
+        { "letter": "B", "words": ["Bat", "Ball"], "audio": "b_words.mp3" },
+        { "letter": "C", "words": ["Cat", "Cup"], "audio": "c_words.mp3" },
+        { "letter": "D", "words": ["Dog", "Duck"], "audio": "d_words.mp3" },
+        { "letter": "E", "words": ["Egg", "Elephant"], "audio": "e_words.mp3" },
+        { "letter": "F", "words": ["Fan", "Fish"], "audio": "f_words.mp3" },
+        { "letter": "G", "words": ["Goat", "Grapes"], "audio": "g_words.mp3" },
+        { "letter": "H", "words": ["Hat", "Hen"], "audio": "h_words.mp3" },
+        { "letter": "I", "words": ["Ink", "Ice"], "audio": "i_words.mp3" },
+        { "letter": "J", "words": ["Jam", "Jug"], "audio": "j_words.mp3" },
+        { "letter": "K", "words": ["Kid", "Kite"], "audio": "k_words.mp3" },
+        { "letter": "L", "words": ["Lion", "Leaf"], "audio": "l_words.mp3" },
+        { "letter": "M", "words": ["Man", "Mango"], "audio": "m_words.mp3" },
+        { "letter": "N", "words": ["Net", "Nest"], "audio": "n_words.mp3" },
+        { "letter": "O", "words": ["Ox", "Orange"], "audio": "o_words.mp3" },
+        { "letter": "P", "words": ["Pen", "Parrot"], "audio": "p_words.mp3" },
+        { "letter": "Q", "words": ["Queen"], "audio": "q_words.mp3" },
+        { "letter": "R", "words": ["Rat", "Rabbit"], "audio": "r_words.mp3" },
+        { "letter": "S", "words": ["Sun", "Ship"], "audio": "s_words.mp3" },
+        { "letter": "T", "words": ["Tap", "Tiger"], "audio": "t_words.mp3" },
+        { "letter": "U", "words": ["Umbrella"], "audio": "u_words.mp3" },
+        { "letter": "V", "words": ["Van"], "audio": "v_words.mp3" },
+        { "letter": "W", "words": ["Watch"], "audio": "w_words.mp3" },
+        { "letter": "X", "words": ["Box"], "audio": "x_words.mp3" },
+        { "letter": "Y", "words": ["Yak"], "audio": "y_words.mp3" },
+        { "letter": "Z", "words": ["Zoo"], "audio": "z_words.mp3" }
+      ]
+    },
+
+    "6-8": {
+      "type": "advanced_phonics",
+      "digraphs": [
+        { "sound": "sh", "words": ["ship", "shop"], "audio": "sh.mp3" },
+        { "sound": "ch", "words": ["chair", "chocolate"], "audio": "ch.mp3" },
+        { "sound": "th", "words": ["thumb", "this"], "audio": "th.mp3" },
+        { "sound": "ph", "words": ["phone"], "audio": "ph.mp3" }
+      ],
+      "blends": [
+        { "blend": "bl", "words": ["blue", "black"] },
+        { "blend": "st", "words": ["star", "stop"] },
+        { "blend": "cr", "words": ["crab", "cry"] }
+      ]
+    }
+  },
+
+  "games": [
+    {
+      "type": "sound_match",
+      "instruction": "Listen and choose the correct image",
+      "example": {
+        "audio": "b_sound.mp3",
+        "options": ["ball.png", "cat.png", "dog.png"],
+        "correct": "ball.png"
+      }
+    },
+    {
+      "type": "tap_letter",
+      "instruction": "Tap the correct letter",
+      "example": {
+        "audio": "c_sound.mp3",
+        "options": ["A", "B", "C"],
+        "correct": "C"
+      }
+    },
+    {
+      "type": "missing_letter",
+      "instruction": "Fill the missing letter",
+      "example": {
+        "word": "_at",
+        "options": ["c", "b", "d"],
+        "correct": "c"
+      }
+    },
+    {
+      "type": "word_builder",
+      "instruction": "Arrange letters to form word",
+      "example": {
+        "letters": ["c", "a", "t"],
+        "correct": "cat"
+      }
+    }
+  ]
+}

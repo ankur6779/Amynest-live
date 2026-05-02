@@ -1,0 +1,127 @@
+Build an Infant Sleep Prediction system for babies aged 0–24 months.
+
+GOAL:
+Provide accurate nap and bedtime windows using wake windows, nap history, and daily patterns.
+
+--------------------------------------------------
+1. INPUT DATA (PER CHILD)
+--------------------------------------------------
+- Age (in months)
+- Last wake time
+- Last sleep duration
+- Nap count (today)
+- Feed time (optional but recommended)
+- Wake-up time (morning)
+- Previous 3–5 days sleep history
+
+--------------------------------------------------
+2. AGE-BASED WAKE WINDOWS (CORE LOGIC)
+--------------------------------------------------
+Use these ranges:
+
+0–2 months → 45–60 mins
+2–4 months → 60–90 mins
+4–6 months → 1.5–2 hrs
+6–9 months → 2–3 hrs
+9–12 months → 2.5–3.5 hrs
+12–18 months → 3–4.5 hrs
+18–24 months → 4–5.5 hrs
+
+--------------------------------------------------
+3. NAP STRUCTURE
+--------------------------------------------------
+0–4 months → 4–5 naps/day
+4–6 months → 3–4 naps/day
+6–12 months → 2–3 naps/day
+12–18 months → 2 naps/day
+18–24 months → 1 nap/day
+
+--------------------------------------------------
+4. NEXT SLEEP PREDICTION
+--------------------------------------------------
+Calculate:
+
+idealWakeWindow = age-based value (adjusted)
+nextNapTime = lastWakeTime + idealWakeWindow
+
+Window:
+- Start = predicted - 10 mins
+- End = predicted + 20 mins
+
+--------------------------------------------------
+5. DYNAMIC ADJUSTMENTS
+--------------------------------------------------
+Adjust wake window based on:
+
+- Short nap (<30 min) → reduce next wake window by 10–20%
+- Long nap (>1.5 hr) → extend next wake window by 10–15%
+- Late bedtime → slightly reduce next day wake window
+- Missed nap → bring bedtime earlier
+
+--------------------------------------------------
+6. SLEEP PRESSURE SCORE
+--------------------------------------------------
+Calculate:
+
+sleepPressure = (currentAwakeTime / idealWakeWindow) × 100
+
+Display:
+- 60–80 → Ideal (green)
+- 80–100 → Getting tired (orange)
+- 100+ → Overtired (red)
+
+--------------------------------------------------
+7. OUTPUT UI
+--------------------------------------------------
+Show:
+
+- “Next Nap Window: 2:10 – 2:30 PM”
+- Sleep Pressure (with color)
+- “Start wind-down now” suggestion
+
+--------------------------------------------------
+8. WIND-DOWN MODE (IMPORTANT)
+--------------------------------------------------
+At 80% sleep pressure:
+
+Show:
+- Dim UI
+- Suggest:
+   • Reduce light
+   • Calm environment
+   • Story or lullaby
+
+--------------------------------------------------
+9. SMART ALERTS
+--------------------------------------------------
+Push notifications:
+
+- “Nap window starting in 10 minutes”
+- “Baby is getting overtired”
+
+--------------------------------------------------
+10. PERSONALIZATION (PHASE 2)
+--------------------------------------------------
+- Track actual sleep vs predicted
+- Adjust wake windows per baby
+- Learn baby pattern (early/late sleeper)
+
+--------------------------------------------------
+11. EDGE CASES
+--------------------------------------------------
+- No data → use default age schedule
+- Irregular day → show flexible range
+- Growth spurts → allow wider windows
+
+--------------------------------------------------
+12. DISCLAIMER
+--------------------------------------------------
+Show:
+“This is a guidance system based on sleep patterns, not medical advice.”
+
+--------------------------------------------------
+DELIVERABLE:
+- Infant-only sleep prediction engine
+- Age-based nap system
+- Real-time suggestions
+- Parent-friendly UI
