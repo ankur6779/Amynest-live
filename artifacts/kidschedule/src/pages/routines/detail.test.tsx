@@ -31,6 +31,7 @@ vi.mock("@workspace/api-client-react", () => ({
   }),
   useGetChild: (_id: number, _opts: unknown) => ({ data: null, isLoading: false }),
   useDeleteRoutine: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateRoutineUiPrefs: () => ({ mutate: vi.fn(), isPending: false }),
   getGetRoutineQueryKey: () => [],
   getListRoutinesQueryKey: () => [],
   getGetChildQueryKey: () => [],

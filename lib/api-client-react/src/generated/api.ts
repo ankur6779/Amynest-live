@@ -42,6 +42,7 @@ import type {
   Routine,
   UpdateChildBody,
   UpdateRoutineItemsBody,
+  UpdateRoutineUiPrefsBody,
   UpsertParentProfileBody,
 } from "./api.schemas";
 
@@ -1574,6 +1575,94 @@ export const useUpdateRoutineItems = <
   TContext
 > => {
   return useMutation(getUpdateRoutineItemsMutationOptions(options));
+};
+
+/**
+ * @summary Update per-routine UI preferences (e.g. ageBandFilter) shared across devices
+ */
+export const getUpdateRoutineUiPrefsUrl = (id: number) => {
+  return `/api/routines/${id}/ui-prefs`;
+};
+
+export const updateRoutineUiPrefs = async (
+  id: number,
+  updateRoutineUiPrefsBody: UpdateRoutineUiPrefsBody,
+  options?: RequestInit,
+): Promise<Routine> => {
+  return customFetch<Routine>(getUpdateRoutineUiPrefsUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateRoutineUiPrefsBody),
+  });
+};
+
+export const getUpdateRoutineUiPrefsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateRoutineUiPrefs>>,
+    TError,
+    { id: number; data: BodyType<UpdateRoutineUiPrefsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateRoutineUiPrefs>>,
+  TError,
+  { id: number; data: BodyType<UpdateRoutineUiPrefsBody> },
+  TContext
+> => {
+  const mutationKey = ["updateRoutineUiPrefs"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateRoutineUiPrefs>>,
+    { id: number; data: BodyType<UpdateRoutineUiPrefsBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateRoutineUiPrefs(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateRoutineUiPrefsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateRoutineUiPrefs>>
+>;
+export type UpdateRoutineUiPrefsMutationBody =
+  BodyType<UpdateRoutineUiPrefsBody>;
+export type UpdateRoutineUiPrefsMutationError = ErrorType<void>;
+
+/**
+ * @summary Update per-routine UI preferences (e.g. ageBandFilter) shared across devices
+ */
+export const useUpdateRoutineUiPrefs = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateRoutineUiPrefs>>,
+    TError,
+    { id: number; data: BodyType<UpdateRoutineUiPrefsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateRoutineUiPrefs>>,
+  TError,
+  { id: number; data: BodyType<UpdateRoutineUiPrefsBody> },
+  TContext
+> => {
+  return useMutation(getUpdateRoutineUiPrefsMutationOptions(options));
 };
 
 /**

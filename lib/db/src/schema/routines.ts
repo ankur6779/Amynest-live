@@ -8,6 +8,9 @@ export const routinesTable = pgTable("routines", {
   date: text("date").notNull(),
   title: text("title").notNull(),
   items: jsonb("items").notNull().default([]),
+  // Per-routine UI preferences shared across web + mobile (e.g. ageBandFilter).
+  // Defaults to an empty object so older routines deserialize cleanly.
+  uiPrefs: jsonb("ui_prefs").notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -351,6 +351,33 @@ paths:
               schema:
                 $ref: "#/components/schemas/Routine"
 
+  /routines/{id}/ui-prefs:
+    patch:
+      operationId: updateRoutineUiPrefs
+      tags: [routines]
+      summary: Update per-routine UI preferences (e.g. ageBandFilter) shared across devices
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoutineUiPrefsBody"
+      responses:
+        "200":
+          description: Updated routine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Routine"
+        "404":
+          description: Not found
+
   /insights:
     post:
       operationId: generateInsights
@@ -752,6 +779,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RoutineItem"
+        uiPrefs:
+          $ref: "#/components/schemas/RoutineUiPrefs"
         createdAt:
           type: string
       required:
@@ -761,7 +790,26 @@ components:
         - date
         - title
         - items
+        - uiPrefs
         - createdAt
+
+    RoutineUiPrefs:
+      type: object
+      description: Per-routine UI preferences synced across web + mobile.
+      properties:
+        ageBandFilter:
+          type: string
+          nullable: true
+          description: Currently selected age-band filter chip, or null for "All".
+
+    UpdateRoutineUiPrefsBody:
+      type: object
+      description: Patch payload for routine UI preferences. Only the fields included are updated.
+      properties:
+        ageBandFilter:
+          type: string
+          nullable: true
+          description: Selected age-band filter chip, or null to clear.
 
     CreateRoutineBody:
       type: object

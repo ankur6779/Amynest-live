@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { RoutineItem } from "./routineItem";
+import type { RoutineUiPrefs } from "./routineUiPrefs";
 
 export interface Routine {
   id: number;
@@ -14,5 +15,6 @@ export interface Routine {
   date: string;
   title: string;
   items: RoutineItem[];
+  uiPrefs: RoutineUiPrefs;
   createdAt: string;
 }

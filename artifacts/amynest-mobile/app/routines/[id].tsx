@@ -51,9 +51,11 @@ type RoutineItem = {
   adjusted?: boolean;
   ageBand?: "2-5" | "6-10" | "10+";
 };
+type RoutineUiPrefs = { ageBandFilter?: string | null };
 type Routine = {
   id: number; childId: number; childName: string;
   date: string; title: string; items: RoutineItem[];
+  uiPrefs?: RoutineUiPrefs;
 };
 
 // ─── Time helpers ──────────────────────────────────────────────────────────
@@ -204,12 +206,14 @@ export default function RoutineDetailScreen() {
 
   const [mealPrefs, setMealPrefs] = useState<{ region: string; isVeg?: boolean; childAge?: number }>({ region: "pan_indian" });
 
-  // Age-band filter — persisted per routine in AsyncStorage. The stored value
-  // is paired with a signature of the routine's activities so that when the
-  // routine items change (e.g. after AI regeneration) the filter resets to
-  // "All" instead of pointing at a stale band.
+  // Age-band filter — synced per routine across web + mobile via the
+  // `routines/:id/ui-prefs` endpoint. AsyncStorage acts as a fast-path cache
+  // (so the chips render with the last known value before the network
+  // round-trip resolves), but `routine.uiPrefs.ageBandFilter` is the source of
+  // truth and overrides any cached value once it arrives.
   const [ageBandFilter, setAgeBandFilterState] = useState<string | null>(null);
   const ageFilterHydratedRef = useRef<{ id: string; signature: string } | null>(null);
+  const serverAgeFilterAppliedRef = useRef<string | null>(null);
 
   const [actionItem, setActionItem] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
@@ -542,9 +546,10 @@ export default function RoutineDetailScreen() {
     [items],
   );
 
-  // Hydrate from / reset against AsyncStorage when the routine or its activity
-  // signature changes. Keyed per routine id so each routine remembers its own
-  // last filter selection.
+  // Hydrate from AsyncStorage when the routine or its activity signature
+  // changes. Keyed per routine id so each routine remembers its own last
+  // filter selection. This runs immediately so the chips render with the last
+  // known value before the network round-trip resolves.
   useEffect(() => {
     if (!id || items.length === 0) return;
     const storageKey = `amynest:ageBandFilter:${id}`;
@@ -572,16 +577,63 @@ export default function RoutineDetailScreen() {
     return () => { cancelled = true; };
   }, [id, itemsSignature, items.length]);
 
-  // Wrapper that updates state and persists the user's selection.
+  // Server-side preference is the source of truth — once the routine query
+  // returns, reconcile the cached value with `routine.uiPrefs.ageBandFilter`
+  // and update the local cache to match. Runs once per routine load (the ref
+  // gates re-runs when the user later toggles the filter, which would
+  // otherwise feed our own write back into state).
+  const serverAgeBandFilter = routine?.uiPrefs?.ageBandFilter ?? null;
+  useEffect(() => {
+    if (!id || !routine) return;
+    if (serverAgeFilterAppliedRef.current === id) return;
+    serverAgeFilterAppliedRef.current = id;
+    const next: string | null = typeof serverAgeBandFilter === "string" ? serverAgeBandFilter : null;
+    setAgeBandFilterState(next);
+    const hydrated = ageFilterHydratedRef.current;
+    if (hydrated && hydrated.id === id) {
+      AsyncStorage.setItem(
+        `amynest:ageBandFilter:${id}`,
+        JSON.stringify({ signature: hydrated.signature, filter: next }),
+      ).catch(() => {});
+    }
+  }, [id, routine, serverAgeBandFilter]);
+
+  // Mutation that persists the user's selection to the server so the same
+  // value follows the parent to every other device they sign into.
+  const updateUiPrefsMutation = useMutation({
+    mutationFn: async (next: string | null) => {
+      if (!id) throw new Error("Routine id missing");
+      const res = await authFetch(`/api/routines/${id}/ui-prefs`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ageBandFilter: next }),
+      });
+      if (!res.ok) throw new Error(`Failed to save filter (${res.status})`);
+      return (await res.json()) as Routine;
+    },
+    onSuccess: () => {
+      // Mark this routine as already reconciled with the server so the
+      // hydration effect doesn't clobber the user's just-applied choice
+      // when the routine query auto-refetches.
+      serverAgeFilterAppliedRef.current = id ?? null;
+      qc.invalidateQueries({ queryKey: ["routine", id] });
+    },
+  });
+
+  // Wrapper that updates state, refreshes the local cache, and persists the
+  // user's selection to the server.
   const setAgeBandFilter = useCallback((next: string | null) => {
     setAgeBandFilterState(next);
     const hydrated = ageFilterHydratedRef.current;
-    if (!hydrated || hydrated.id !== id) return;
-    AsyncStorage.setItem(
-      `amynest:ageBandFilter:${id}`,
-      JSON.stringify({ signature: hydrated.signature, filter: next }),
-    ).catch(() => {});
-  }, [id]);
+    if (hydrated && hydrated.id === id) {
+      AsyncStorage.setItem(
+        `amynest:ageBandFilter:${id}`,
+        JSON.stringify({ signature: hydrated.signature, filter: next }),
+      ).catch(() => {});
+    }
+    if (!id) return;
+    updateUiPrefsMutation.mutate(next);
+  }, [id, updateUiPrefsMutation]);
 
   // Items paired with their original index so actions still reference the correct position
   const displayItems = useMemo(

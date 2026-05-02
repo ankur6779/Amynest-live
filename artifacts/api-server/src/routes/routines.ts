@@ -17,6 +17,8 @@ import {
   DeleteRoutineParams,
   UpdateRoutineItemsParams,
   UpdateRoutineItemsBody,
+  UpdateRoutineUiPrefsParams,
+  UpdateRoutineUiPrefsBody,
   ListRoutinesQueryParams,
   ListRoutinesResponse,
   GetRoutineResponse,
@@ -340,6 +342,20 @@ type RoutineItem = {
   parentHubTopic?: string;
 };
 
+// Per-routine UI prefs that sync across web + mobile. The DB column defaults
+// to {} on legacy rows, so we normalise here before parsing the API response.
+type RoutineUiPrefs = { ageBandFilter?: string | null };
+function normaliseUiPrefs(raw: unknown): RoutineUiPrefs {
+  if (!raw || typeof raw !== "object") return {};
+  const obj = raw as Record<string, unknown>;
+  const out: RoutineUiPrefs = {};
+  if ("ageBandFilter" in obj) {
+    const v = obj.ageBandFilter;
+    out.ageBandFilter = typeof v === "string" ? v : null;
+  }
+  return out;
+}
+
 const router: IRouter = Router();
 
 // Returns true if the request should be blocked by the free-tier routinesMax cap.
@@ -634,6 +650,7 @@ router.get("/routines", async (req, res): Promise<void> => {
         ...r,
         childName: childMap.get(r.childId) ?? "Unknown",
         items: r.items as RoutineItem[],
+        uiPrefs: normaliseUiPrefs((r as { uiPrefs?: unknown }).uiPrefs),
         createdAt: r.createdAt.toISOString(),
       })),
     ),
@@ -751,6 +768,7 @@ router.post("/routines", async (req, res): Promise<void> => {
       ...routine,
       childName: child?.name ?? "Unknown",
       items: routine.items as RoutineItem[],
+      uiPrefs: normaliseUiPrefs((routine as { uiPrefs?: unknown }).uiPrefs),
       createdAt: routine.createdAt.toISOString(),
     }),
   );
@@ -782,6 +800,7 @@ router.get("/routines/:id", async (req, res): Promise<void> => {
       ...row.routine,
       childName: row.child.name,
       items: row.routine.items as RoutineItem[],
+      uiPrefs: normaliseUiPrefs((row.routine as { uiPrefs?: unknown }).uiPrefs),
       createdAt: row.routine.createdAt.toISOString(),
     }),
   );
@@ -829,6 +848,72 @@ router.patch("/routines/:id/items", async (req, res): Promise<void> => {
       ...routine,
       childName: owned.childName,
       items: routine.items as RoutineItem[],
+      uiPrefs: normaliseUiPrefs((routine as { uiPrefs?: unknown }).uiPrefs),
+      createdAt: routine.createdAt.toISOString(),
+    }),
+  );
+});
+
+// Update per-routine UI prefs (e.g. ageBandFilter) so the same selection
+// follows the parent across web + mobile devices. The PATCH semantics merge
+// the incoming fields into the stored uiPrefs object — fields omitted from the
+// body are left untouched, while explicit `null` values clear them.
+router.patch("/routines/:id/ui-prefs", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const params = UpdateRoutineUiPrefsParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const parsed = UpdateRoutineUiPrefsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  // Verify ownership and load the existing prefs in one query.
+  const [owned] = await db
+    .select({
+      id: routinesTable.id,
+      uiPrefs: routinesTable.uiPrefs,
+      childName: childrenTable.name,
+    })
+    .from(routinesTable)
+    .innerJoin(childrenTable, eq(childrenTable.id, routinesTable.childId))
+    .where(and(eq(routinesTable.id, params.data.id), eq(childrenTable.userId, userId)));
+  if (!owned) {
+    res.status(404).json({ error: "Routine not found" });
+    return;
+  }
+
+  const existing = normaliseUiPrefs(owned.uiPrefs);
+  const next: RoutineUiPrefs = { ...existing };
+  // Only overwrite fields explicitly provided in the request body.
+  if ("ageBandFilter" in (req.body ?? {})) {
+    next.ageBandFilter = parsed.data.ageBandFilter ?? null;
+  }
+
+  const [routine] = await db
+    .update(routinesTable)
+    .set({ uiPrefs: next })
+    .where(eq(routinesTable.id, params.data.id))
+    .returning();
+
+  if (!routine) {
+    res.status(404).json({ error: "Routine not found" });
+    return;
+  }
+
+  res.json(
+    GetRoutineResponse.parse({
+      ...routine,
+      childName: owned.childName,
+      items: routine.items as RoutineItem[],
+      uiPrefs: normaliseUiPrefs((routine as { uiPrefs?: unknown }).uiPrefs),
       createdAt: routine.createdAt.toISOString(),
     }),
   );

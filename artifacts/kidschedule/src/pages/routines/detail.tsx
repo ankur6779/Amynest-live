@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, Link, useParams } from "wouter";
-import { useGetRoutine, getGetRoutineQueryKey, useDeleteRoutine, getListRoutinesQueryKey, useGetChild, getGetChildQueryKey } from "@workspace/api-client-react";
+import { useGetRoutine, getGetRoutineQueryKey, useDeleteRoutine, getListRoutinesQueryKey, useGetChild, getGetChildQueryKey, useUpdateRoutineUiPrefs } from "@workspace/api-client-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { getActivityImage } from "@/lib/activity-images";
 import { Button } from "@/components/ui/button";
@@ -489,12 +489,17 @@ export default function RoutineDetail() {
   // Expanded item modal
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  // Age-band filter — persisted per routine in localStorage. The stored value
-  // is paired with a signature of the routine's activities so that when the
-  // routine items change (e.g. after AI regeneration) the filter resets to
-  // "All" instead of pointing at a stale band.
+  // Age-band filter — synced per routine across web + mobile via the
+  // `routines/:id/ui-prefs` endpoint, with localStorage acting as a fast-path
+  // cache. The stored cache value is paired with a signature of the routine's
+  // activities so that when the routine items change (e.g. after AI
+  // regeneration) the filter resets to "All" instead of pointing at a stale
+  // band. Once the routine query returns, its `uiPrefs.ageBandFilter` becomes
+  // the source of truth and overrides any cached value.
   const [ageBandFilter, setAgeBandFilterState] = useState<string | null>(null);
   const ageFilterHydratedRef = useRef<{ routineId: number; signature: string } | null>(null);
+  const serverAgeFilterAppliedRef = useRef<number | null>(null);
+  const updateUiPrefsMutation = useUpdateRoutineUiPrefs();
 
   // Parent prefs for inline meal suggestions
   const [mealPrefs, setMealPrefs] = useState<{ region: string; isVeg?: boolean; childAge?: number }>({ region: "pan_indian" });
@@ -979,9 +984,10 @@ export default function RoutineDetail() {
     [items],
   );
 
-  // Hydrate from / reset against localStorage when the routine or its activity
-  // signature changes. Keyed per routine id so each routine remembers its own
-  // last filter selection.
+  // Hydrate from localStorage when the routine or its activity signature
+  // changes. Keyed per routine id so each routine remembers its own last
+  // filter selection. This runs immediately so the chips render with the last
+  // known value before the network round-trip resolves.
   useEffect(() => {
     if (!routineId || items.length === 0) return;
     const storageKey = `kidschedule:ageBandFilter:${routineId}`;
@@ -1007,18 +1013,57 @@ export default function RoutineDetail() {
     ageFilterHydratedRef.current = { routineId, signature: itemsSignature };
   }, [routineId, itemsSignature, items.length]);
 
-  // Wrapper that updates state and persists the user's selection.
+  // Server-side preference is the source of truth — once the routine query
+  // returns, reconcile the cached value with `routine.uiPrefs.ageBandFilter`
+  // and update the local cache to match. Runs once per routine load (the ref
+  // gates re-runs when the user later toggles the filter, which would
+  // otherwise feed our own write back into state).
+  const serverAgeBandFilter = routine?.uiPrefs?.ageBandFilter ?? null;
+  useEffect(() => {
+    if (!routineId || !routine) return;
+    if (serverAgeFilterAppliedRef.current === routineId) return;
+    serverAgeFilterAppliedRef.current = routineId;
+    const next: string | null = typeof serverAgeBandFilter === "string" ? serverAgeBandFilter : null;
+    setAgeBandFilterState(next);
+    const hydrated = ageFilterHydratedRef.current;
+    if (hydrated && hydrated.routineId === routineId) {
+      try {
+        window.localStorage.setItem(
+          `kidschedule:ageBandFilter:${routineId}`,
+          JSON.stringify({ signature: hydrated.signature, filter: next }),
+        );
+      } catch { /* storage full / unavailable */ }
+    }
+  }, [routineId, routine, serverAgeBandFilter]);
+
+  // Wrapper that updates state, refreshes the local cache, and persists the
+  // user's selection to the server so the same value follows the parent to
+  // every other device they sign into.
   const setAgeBandFilter = useCallback((next: string | null) => {
     setAgeBandFilterState(next);
     const hydrated = ageFilterHydratedRef.current;
-    if (!hydrated || hydrated.routineId !== routineId) return;
-    try {
-      window.localStorage.setItem(
-        `kidschedule:ageBandFilter:${routineId}`,
-        JSON.stringify({ signature: hydrated.signature, filter: next }),
-      );
-    } catch { /* storage full / unavailable */ }
-  }, [routineId]);
+    if (hydrated && hydrated.routineId === routineId) {
+      try {
+        window.localStorage.setItem(
+          `kidschedule:ageBandFilter:${routineId}`,
+          JSON.stringify({ signature: hydrated.signature, filter: next }),
+        );
+      } catch { /* storage full / unavailable */ }
+    }
+    if (!routineId) return;
+    updateUiPrefsMutation.mutate(
+      { id: routineId, data: { ageBandFilter: next } },
+      {
+        onSuccess: () => {
+          // Mark this routine as already reconciled with the server so the
+          // hydration effect doesn't clobber the user's just-applied choice
+          // when the routine query auto-refetches.
+          serverAgeFilterAppliedRef.current = routineId;
+          queryClient.invalidateQueries({ queryKey: getGetRoutineQueryKey(routineId) });
+        },
+      },
+    );
+  }, [routineId, updateUiPrefsMutation, queryClient]);
 
   // Items paired with their original index so all actions still use the correct index
   const displayItems = useMemo(

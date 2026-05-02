@@ -72,6 +72,12 @@ router.get("/dashboard/recent-routines", async (req, res): Promise<void> => {
         ...r,
         childName: childMap.get(r.childId) ?? "Unknown",
         items: r.items as RoutineItem[],
+        // Normalise nullable jsonb so the response always matches the
+        // (now-required) `uiPrefs` field on the Routine schema.
+        uiPrefs:
+          r.uiPrefs && typeof r.uiPrefs === "object" && !Array.isArray(r.uiPrefs)
+            ? (r.uiPrefs as Record<string, unknown>)
+            : {},
         createdAt: r.createdAt.toISOString(),
       })),
     ),
