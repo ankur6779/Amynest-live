@@ -49,3 +49,5 @@ export * from "./story_content";
 export * from "./story_watch_progress";
 export * from "./cry_sessions";
 export * from "./nap_sessions";
+export * from "./spelling_progress";
+export * from "./spelling_competition_scores";
