@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -6,8 +6,9 @@ import {
   ChevronDown, ChevronUp, Syringe, Zap, BookOpen,
   Activity, Star, AlertTriangle, Lightbulb, Baby,
   Flame, MessageCircle, BedDouble, ListChecks, Music2,
-  AlarmClock,
+  AlarmClock, X, Loader2,
 } from "lucide-react";
+import { getApiUrl } from "@/lib/api";
 import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-cues";
 import { CryInsight } from "@/components/cry-insight";
 import { SleepPredict } from "@/components/sleep-predict";
@@ -23,6 +24,11 @@ import {
   getTipsForAge,
   getAmyInsight,
   pickLang,
+  VACCINATIONS,
+  getUpcomingVaccinationsWithLog,
+  getVaccinationSummary,
+  type VaxStatus,
+  type VaxLogMap,
 } from "@workspace/infant-hub";
 import { formatAge } from "@/lib/age-groups";
 import { useToast } from "@/hooks/use-toast";
@@ -98,22 +104,6 @@ const ACTIVITIES: Record<string, Activity[]> = {
   ],
   "18-24": [],
 };
-
-// ─── Vaccination Schedule (India NIS + IAP) ───────────────────────────────────
-type VaxEntry = { ageLabel: string; ageMonths: number; vaccines: string[]; done?: boolean };
-
-const VACCINATIONS: VaxEntry[] = [
-  { ageLabel: "Birth", ageMonths: 0, vaccines: ["BCG", "OPV-0", "Hep B-1"] },
-  { ageLabel: "6 weeks", ageMonths: 1.5, vaccines: ["DTwP/DTaP-1", "IPV-1", "Hep B-2", "Hib-1", "Rotavirus-1", "PCV-1"] },
-  { ageLabel: "10 weeks", ageMonths: 2.5, vaccines: ["DTwP/DTaP-2", "IPV-2", "Hib-2", "Rotavirus-2", "PCV-2"] },
-  { ageLabel: "14 weeks", ageMonths: 3.5, vaccines: ["DTwP/DTaP-3", "IPV-3", "Hib-3", "Rotavirus-3", "PCV-3"] },
-  { ageLabel: "6 months", ageMonths: 6, vaccines: ["OPV-1", "Hep B-3"] },
-  { ageLabel: "9 months", ageMonths: 9, vaccines: ["OPV-2", "MMR-1", "Vitamin A-1"] },
-  { ageLabel: "12 months", ageMonths: 12, vaccines: ["PCV Booster", "Hep A-1", "Varicella-1"] },
-  { ageLabel: "15 months", ageMonths: 15, vaccines: ["MMR-2", "Varicella-2"] },
-  { ageLabel: "18 months", ageMonths: 18, vaccines: ["DTwP Booster-1", "IPV Booster-1", "Hib Booster", "Hep A-2"] },
-  { ageLabel: "24 months", ageMonths: 24, vaccines: ["Typhoid (TCV)"] },
-];
 
 // ─── Common Issues ─────────────────────────────────────────────────────────────
 const COMMON_ISSUES = [
@@ -261,47 +251,247 @@ function DailyActivities({ ageMonths }: { ageMonths: number }) {
 }
 
 // ─── Health & Care ────────────────────────────────────────────────────────────
-function HealthCare({ ageMonths }: { ageMonths: number }) {
+
+type VaxRowProps = {
+  v: { ageLabel: string; vaccines: readonly string[] };
+  status: VaxStatus | undefined;
+  busy: boolean;
+  onSet: (ageLabel: string, status: VaxStatus | null) => void;
+  tone: "amber" | "rose";
+};
+
+function VaxRow({ v, status, busy, onSet, tone }: VaxRowProps) {
+  const containerCls =
+    tone === "amber"
+      ? "rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-400/20 px-2 py-1.5"
+      : "rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-400/20 px-2 py-1.5";
+  const labelCls =
+    tone === "amber"
+      ? "text-[11px] font-bold text-amber-800 dark:text-amber-300"
+      : "text-[11px] font-bold text-rose-800 dark:text-rose-300";
+  const subCls =
+    tone === "amber"
+      ? "text-[11px] text-amber-700/80 dark:text-amber-400/80"
+      : "text-[11px] text-rose-700/80 dark:text-rose-400/80";
+  return (
+    <div className={`${containerCls} mb-1`} data-testid={`vax-row-${v.ageLabel}`}>
+      <div className="flex items-start gap-2">
+        {tone === "amber" ? (
+          <AlertTriangle className="h-3 w-3 text-amber-600 shrink-0 mt-0.5" />
+        ) : (
+          <X className="h-3 w-3 text-rose-600 shrink-0 mt-0.5" />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className={labelCls}>
+            {v.ageLabel}
+            {status === "missed" && (
+              <span className="ml-2 inline-block px-1 py-px rounded text-[9px] font-bold uppercase tracking-wider bg-rose-200 text-rose-900 dark:bg-rose-500/30 dark:text-rose-200">
+                missed
+              </span>
+            )}
+          </p>
+          <p className={subCls}>{v.vaccines.join(", ")}</p>
+        </div>
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-1.5 pl-5">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onSet(v.ageLabel, status === "done" ? null : "done")}
+          aria-pressed={status === "done"}
+          data-testid={`vax-done-${v.ageLabel}`}
+          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${
+            status === "done"
+              ? "bg-emerald-500 border-emerald-500 text-white"
+              : "bg-white/60 dark:bg-white/5 border-emerald-300/70 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+          }`}
+        >
+          {busy ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <CheckCircle2 className="h-2.5 w-2.5" />}
+          Done
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onSet(v.ageLabel, status === "missed" ? null : "missed")}
+          aria-pressed={status === "missed"}
+          data-testid={`vax-missed-${v.ageLabel}`}
+          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${
+            status === "missed"
+              ? "bg-rose-500 border-rose-500 text-white"
+              : "bg-white/60 dark:bg-white/5 border-rose-300/70 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+          }`}
+        >
+          {busy ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <X className="h-2.5 w-2.5" />}
+          Missed
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HealthCare({ childId, ageMonths }: { childId: number; ageMonths: number }) {
   const band = getBand(ageMonths);
   const [openIssue, setOpenIssue] = useState<string | null>(null);
+  const [logMap, setLogMap] = useState<VaxLogMap>({});
+  const [pendingLabel, setPendingLabel] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const upcoming = VACCINATIONS.filter((v) => v.ageMonths >= ageMonths && v.ageMonths <= ageMonths + 2);
-  const done = VACCINATIONS.filter((v) => v.ageMonths < ageMonths);
+  // Load logs once per child
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(getApiUrl(`/api/vaccinations/${childId}`), {
+          credentials: "include",
+        });
+        if (!r.ok) return;
+        const j = (await r.json()) as {
+          ok: boolean;
+          logs: { ageLabel: string; status: VaxStatus }[];
+        };
+        if (cancelled || !j.ok) return;
+        const next: Record<string, VaxStatus> = {};
+        for (const l of j.logs) next[l.ageLabel] = l.status;
+        setLogMap(next);
+      } catch {
+        // Soft-fail; UI still works as read-only schedule
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [childId]);
+
+  const setStatus = useCallback(
+    async (ageLabel: string, status: VaxStatus | null) => {
+      const previous = logMap[ageLabel];
+      setLogMap((prev) => {
+        const next = { ...prev };
+        if (status === null) delete next[ageLabel];
+        else next[ageLabel] = status;
+        return next;
+      });
+      setPendingLabel(ageLabel);
+      try {
+        const path = `/api/vaccinations/${childId}/${encodeURIComponent(ageLabel)}`;
+        const r =
+          status === null
+            ? await fetch(getApiUrl(path), { method: "DELETE", credentials: "include" })
+            : await fetch(getApiUrl(path), {
+                method: "PUT",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status }),
+              });
+        if (!r.ok) throw new Error(`status ${r.status}`);
+      } catch {
+        // Roll back
+        setLogMap((prev) => {
+          const next = { ...prev };
+          if (previous) next[ageLabel] = previous;
+          else delete next[ageLabel];
+          return next;
+        });
+        toast({
+          title: "Couldn't save",
+          description: "Please try again in a moment.",
+          variant: "destructive",
+        });
+      } finally {
+        setPendingLabel(null);
+      }
+    },
+    [childId, logMap, toast],
+  );
+
+  const upcoming = useMemo(
+    () => getUpcomingVaccinationsWithLog(ageMonths, logMap),
+    [ageMonths, logMap],
+  );
+  const overdue = useMemo(
+    () =>
+      VACCINATIONS.filter(
+        (v) => v.ageMonths < ageMonths && logMap[v.ageLabel] !== "done",
+      ),
+    [ageMonths, logMap],
+  );
+  const summary = useMemo(
+    () => getVaccinationSummary(ageMonths, logMap),
+    [ageMonths, logMap],
+  );
   const relevantIssues = COMMON_ISSUES.filter((i) => i.bands.includes(band));
+
+  const completedPct = Math.round(
+    (summary.done / Math.max(1, summary.total)) * 100,
+  );
 
   return (
     <div className="space-y-3">
       {/* Vaccination status */}
-      <div className="rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200/60 dark:border-teal-400/20 p-3">
+      <div
+        className="rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200/60 dark:border-teal-400/20 p-3"
+        data-testid="vax-summary"
+      >
         <div className="flex items-center gap-2 mb-2">
           <Syringe className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-          <p className="text-xs font-bold text-teal-900 dark:text-teal-200">Vaccination Schedule</p>
+          <p className="text-xs font-bold text-teal-900 dark:text-teal-200">
+            Vaccination Tracker
+          </p>
+        </div>
+
+        <p className="text-[11px] text-teal-900/85 dark:text-teal-200/85 mb-1">
+          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+            {summary.done}
+          </span>{" "}
+          completed ·{" "}
+          <span className="font-bold text-amber-600 dark:text-amber-400">
+            {summary.pending}
+          </span>{" "}
+          pending of {summary.total} total
+        </p>
+        <div className="h-1.5 rounded-full bg-teal-100 dark:bg-teal-900/40 overflow-hidden mb-2">
+          <div
+            className="h-full rounded-full bg-emerald-500 transition-all"
+            style={{ width: `${completedPct}%` }}
+          />
         </div>
 
         {upcoming.length > 0 && (
           <div className="mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 mb-1">Upcoming / Due Now</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 mb-1">
+              Upcoming / Due Now
+            </p>
             {upcoming.map((v) => (
-              <div key={v.ageLabel} className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 px-2 py-1.5 mb-1">
-                <AlertTriangle className="h-3 w-3 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">{v.ageLabel}</p>
-                  <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80">{v.vaccines.join(", ")}</p>
-                </div>
-              </div>
+              <VaxRow
+                key={v.ageLabel}
+                v={v}
+                status={logMap[v.ageLabel]}
+                busy={pendingLabel === v.ageLabel}
+                onSet={setStatus}
+                tone="amber"
+              />
             ))}
           </div>
         )}
 
-        <p className="text-[10px] font-bold uppercase tracking-wide text-teal-600 dark:text-teal-400 mb-1">
-          Completed ({done.length}/{VACCINATIONS.length})
-        </p>
-        <div className="h-1.5 rounded-full bg-teal-100 dark:bg-teal-900/40 overflow-hidden mb-2">
-          <div
-            className="h-full rounded-full bg-teal-500 transition-all"
-            style={{ width: `${Math.round((done.length / VACCINATIONS.length) * 100)}%` }}
-          />
-        </div>
+        {overdue.length > 0 && (
+          <div className="mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400 mb-1">
+              Pending — past doses to confirm
+            </p>
+            {overdue.map((v) => (
+              <VaxRow
+                key={v.ageLabel}
+                v={v}
+                status={logMap[v.ageLabel]}
+                busy={pendingLabel === v.ageLabel}
+                onSet={setStatus}
+                tone="rose"
+              />
+            ))}
+          </div>
+        )}
+
         <p className="text-[10px] text-teal-700/70 dark:text-teal-400/70 leading-snug">
           Always confirm schedule with your paediatrician — some states or doctors use slightly different timings.
         </p>
@@ -606,7 +796,7 @@ export function InfantHub({ childId, childName, ageMonths }: InfantHubProps) {
 
                 {/* ── 6. Health & Care ─────────────────────────────────────────────────── */}
                 <IHSection icon={<Syringe className="h-4 w-4" />} title="Health & Care">
-                  <HealthCare ageMonths={ageMonths} />
+                  <HealthCare childId={childId} ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 7. Parent Coaching — Baby Cues + Communication ─────────── */}
