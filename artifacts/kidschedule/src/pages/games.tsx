@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft, Lock, Sparkles, Gamepad2, Trophy, X, Coins, Gift, Plus, Trash2, Check,
 } from "lucide-react";
@@ -34,6 +35,7 @@ type ActiveGame =
   | null;
 
 export default function GamesPage() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [points, setPoints] = useState<number>(getTotalPoints());
   const [unlockedTick, setUnlockedTick] = useState(0);
@@ -52,19 +54,19 @@ export default function GamesPage() {
   const devGrantPoints = () => {
     addPoints("DEV", "DEV: test grant", 1000);
     setPoints(getTotalPoints());
-    setUnlockedTick((t) => t + 1);
+    setUnlockedTick((tick) => tick + 1);
   };
 
   const onUnlock = (g: GameDef) => {
     setError(null);
     const r = unlockGame(g.id);
-    if (!r.ok) setError(r.reason ?? "Could not unlock.");
-    setUnlockedTick((t) => t + 1);
+    if (!r.ok) setError(r.reason ?? t("screens.games.could_not_unlock"));
+    setUnlockedTick((tick) => tick + 1);
   };
 
   const onPlay = (g: GameDef) => {
     if (limitHit) {
-      setError(`Daily limit reached (${limit} games per day). Come back tomorrow!`);
+      setError(t("screens.games.limit_reached_msg", { count: limit }));
       return;
     }
     setError(null);
@@ -115,13 +117,13 @@ export default function GamesPage() {
           <button
             onClick={() => setLocation("/dashboard")}
             style={{ color: "#c4b5fd", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
-            aria-label="Back"
+            aria-label={t("screens.games.back")}
           >
             <ArrowLeft size={18} />
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Gamepad2 size={20} color="#c4b5fd" />
-            <h1 style={{ fontFamily: "Quicksand, sans-serif", fontSize: 18, fontWeight: 800, margin: 0 }}>Gaming Reward</h1>
+            <h1 style={{ fontFamily: "Quicksand, sans-serif", fontSize: 18, fontWeight: 800, margin: 0 }}>{t("screens.games.title")}</h1>
           </div>
         </div>
 
@@ -129,14 +131,14 @@ export default function GamesPage() {
           {import.meta.env.DEV && (
             <button
               onClick={devGrantPoints}
-              title="DEV only — grant 1000 test points"
+              title={t("screens.games.dev_grant_title")}
               style={{
                 color: "#fff", background: "rgba(16,185,129,0.25)", border: "1px solid rgba(16,185,129,0.5)",
                 padding: "5px 10px", borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer",
                 display: "flex", alignItems: "center", gap: 4,
               }}
             >
-              <Plus size={11} /> 1000 pts <span style={{ opacity: 0.7, fontWeight: 400 }}>(DEV)</span>
+              <Plus size={11} /> {t("screens.games.dev_grant_label")} <span style={{ opacity: 0.7, fontWeight: 400 }}>{t("screens.games.dev_label")}</span>
             </button>
           )}
           <div style={{
@@ -150,7 +152,7 @@ export default function GamesPage() {
           <button
             onClick={() => setShowRedeem(true)}
             style={{ color: "#fff", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(139,92,246,0.3)", padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
-          ><Gift size={13} /> Redeem</button>
+          ><Gift size={13} /> {t("screens.games.redeem_button")}</button>
         </div>
       </div>
 
@@ -170,8 +172,8 @@ export default function GamesPage() {
           display: "flex", justifyContent: "space-between", alignItems: "center",
           fontSize: 12, color: "#a99fd9",
         }}>
-          <span>Played today: <strong style={{ color: limitHit ? "#fca5a5" : "#fff" }}>{playedToday} / {limit}</strong></span>
-          <span>Earn 50 points to unlock a game.</span>
+          <span>{t("screens.games.played_today_label")} <strong style={{ color: limitHit ? "#fca5a5" : "#fff" }}>{playedToday} / {limit}</strong></span>
+          <span>{t("screens.games.earn_to_unlock")}</span>
         </div>
       </div>
 
@@ -195,8 +197,8 @@ export default function GamesPage() {
           borderRadius: 14, padding: "12px 14px",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "#c4b5fd", textTransform: "uppercase", letterSpacing: 0.6 }}>Skill Progress</span>
-            <span style={{ fontSize: 11, color: "#7c6fb8" }}>Accuracy across all plays</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#c4b5fd", textTransform: "uppercase", letterSpacing: 0.6 }}>{t("screens.games.skill_progress")}</span>
+            <span style={{ fontSize: 11, color: "#7c6fb8" }}>{t("screens.games.skill_subtitle")}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10 }}>
             {skills.map(({ cat, pct }) => (
@@ -231,7 +233,7 @@ export default function GamesPage() {
               <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#e6e1f5", fontFamily: "Quicksand, sans-serif", textTransform: "uppercase", letterSpacing: 0.5 }}>
                 {CATEGORY_LABEL[cat]}
               </h3>
-              <span style={{ fontSize: 11, color: "#7c6fb8", marginLeft: "auto" }}>{list.length} game{list.length === 1 ? "" : "s"}</span>
+              <span style={{ fontSize: 11, color: "#7c6fb8", marginLeft: "auto" }}>{t("screens.games.games_count", { count: list.length })}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
               {list.map((g) => {
@@ -271,7 +273,7 @@ export default function GamesPage() {
                     )}
 
                     {soon ? (
-                      <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "#fbbf24" }}>Coming soon</div>
+                      <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "#fbbf24" }}>{t("screens.games.coming_soon")}</div>
                     ) : unlocked ? (
                       <button
                         onClick={() => onPlay(g)}
@@ -285,7 +287,7 @@ export default function GamesPage() {
                           boxShadow: limitHit ? "none" : "0 4px 12px rgba(139,92,246,0.35)",
                           opacity: limitHit ? 0.5 : 1,
                         }}
-                      >Play</button>
+                      >{t("screens.games.play")}</button>
                     ) : (
                       <button
                         onClick={() => onUnlock(g)}
@@ -297,7 +299,7 @@ export default function GamesPage() {
                           display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                         }}
                       >
-                        <Lock size={11} /> {g.unlockCost} pts
+                        <Lock size={11} /> {t("screens.games.points_short", { cost: g.unlockCost })}
                       </button>
                     )}
                   </div>
@@ -325,6 +327,7 @@ export default function GamesPage() {
 function GameModal({
   state, onClose, onFinish,
 }: { state: NonNullable<ActiveGame>; onClose: () => void; onFinish: (score: number, total: number) => void }) {
+  const { t } = useTranslation();
   const game = state.game;
   return (
     <div style={{
@@ -350,7 +353,7 @@ function GameModal({
               <div style={{ fontSize: 11, color: "#a99fd9" }}>{game.blurb}</div>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close"
+          <button onClick={onClose} aria-label={t("screens.games.close")}
             style={{ color: "#c4b5fd", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
             <X size={16} />
           </button>
@@ -380,10 +383,10 @@ function GameModal({
           <div style={{ textAlign: "center", padding: "8px 4px 0" }}>
             <Trophy size={48} color={state.perfect ? "#fbbf24" : "#c4b5fd"} style={{ margin: "12px auto" }} />
             <h3 style={{ margin: "0 0 6px", fontSize: 20, fontFamily: "Quicksand, sans-serif", fontWeight: 800 }}>
-              {state.perfect ? "Perfect Score!" : "Nice work!"}
+              {state.perfect ? t("screens.games.perfect_score") : t("screens.games.nice_work")}
             </h3>
             <p style={{ color: "#c7c0e8", fontSize: 14, margin: "0 0 14px" }}>
-              You scored <strong>{state.score} / {state.total}</strong>.
+              {t("screens.games.you_scored")} <strong>{state.score} / {state.total}</strong>.
             </p>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8,
@@ -393,8 +396,8 @@ function GameModal({
               boxShadow: "0 4px 14px rgba(245,158,11,0.4)",
               marginBottom: 16,
             }}>
-              <Coins size={16} /> +{state.pointsEarned} points
-              {state.perfect && <span style={{ fontSize: 11, opacity: 0.85 }}>(perfect bonus)</span>}
+              <Coins size={16} /> {t("screens.games.points_earned", { count: state.pointsEarned })}
+              {state.perfect && <span style={{ fontSize: 11, opacity: 0.85 }}>{t("screens.games.perfect_bonus")}</span>}
             </div>
             <div>
               <button
@@ -404,7 +407,7 @@ function GameModal({
                   color: "#fff", border: "none", borderRadius: 999,
                   padding: "10px 22px", fontSize: 14, fontWeight: 700, cursor: "pointer",
                 }}
-              >Done</button>
+              >{t("screens.games.done")}</button>
             </div>
           </div>
         )}
@@ -415,6 +418,7 @@ function GameModal({
 
 // ─── Redeem modal (parent-defined rewards) ───────────────────────────
 function RedeemModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const [points, setPoints] = useState(getTotalPoints());
   const [rewards, setRewards] = useState<Reward[]>(getRewards());
   const [redemptions, setRedemptions] = useState(getRedemptions());
@@ -433,10 +437,10 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
 
   const onRedeem = (r: Reward) => {
     setMsg(null);
-    if (!child.trim()) { setMsg("Type the child's name first."); return; }
+    if (!child.trim()) { setMsg(t("screens.games.type_child_name")); return; }
     const ok = redeemReward(r, child.trim());
-    if (!ok) setMsg(`Not enough points for ${r.label} (need ${r.cost}).`);
-    else setMsg(`✨ ${r.label} redeemed for ${child.trim()}!`);
+    if (!ok) setMsg(t("screens.games.not_enough_points", { label: r.label, cost: r.cost }));
+    else setMsg(t("screens.games.redeemed_msg", { label: r.label, name: child.trim() }));
     refresh();
   };
 
@@ -477,9 +481,9 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Gift size={22} color="#fbbf24" />
-            <h3 style={{ margin: 0, fontSize: 17, fontFamily: "Quicksand, sans-serif", fontWeight: 800 }}>Reward Redemption</h3>
+            <h3 style={{ margin: 0, fontSize: 17, fontFamily: "Quicksand, sans-serif", fontWeight: 800 }}>{t("screens.games.reward_redemption")}</h3>
           </div>
-          <button onClick={onClose} aria-label="Close"
+          <button onClick={onClose} aria-label={t("screens.games.close")}
             style={{ color: "#c4b5fd", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
             <X size={16} />
           </button>
@@ -489,7 +493,7 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
           display: "flex", justifyContent: "space-between", alignItems: "center",
           background: "rgba(255,255,255,0.06)", borderRadius: 12, padding: "10px 12px", marginBottom: 12,
         }}>
-          <span style={{ fontSize: 13, color: "#c7c0e8" }}>Available points</span>
+          <span style={{ fontSize: 13, color: "#c7c0e8" }}>{t("screens.games.available_points")}</span>
           <span style={{ fontSize: 18, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Coins size={16} color="#fbbf24" /> {points}
           </span>
@@ -498,7 +502,7 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
         <input
           value={child}
           onChange={(e) => setChild(e.target.value)}
-          placeholder="Child's name (for record)"
+          placeholder={t("screens.games.child_name_placeholder")}
           style={{
             width: "100%", padding: "9px 12px", borderRadius: 10,
             background: "rgba(255,255,255,0.06)", color: "#fff",
@@ -528,7 +532,7 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
                 <div style={{ fontSize: 24 }}>{r.emoji}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700 }}>{r.label}</div>
-                  <div style={{ fontSize: 11.5, color: "#a99fd9" }}>{r.cost} points</div>
+                  <div style={{ fontSize: 11.5, color: "#a99fd9" }}>{t("screens.games.points_unit", { count: r.cost })}</div>
                 </div>
                 <button
                   onClick={() => onRedeem(r)}
@@ -539,9 +543,9 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
                     padding: "6px 14px", fontSize: 12, fontWeight: 700,
                     cursor: can ? "pointer" : "default", opacity: can ? 1 : 0.5,
                   }}
-                >Redeem</button>
+                >{t("screens.games.redeem_button")}</button>
                 {r.id.startsWith("custom-") && (
-                  <button onClick={() => onDelete(r.id)} aria-label="Delete reward"
+                  <button onClick={() => onDelete(r.id)} aria-label={t("screens.games.delete_reward")}
                     style={{ background: "transparent", color: "#fca5a5", border: "none", cursor: "pointer" }}>
                     <Trash2 size={14} />
                   </button>
@@ -560,14 +564,14 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
               fontSize: 13, fontWeight: 700, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             }}>
-            <Plus size={14} /> Add a parent-defined reward
+            <Plus size={14} /> {t("screens.games.add_parent_reward")}
           </button>
         ) : (
           <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 12, padding: 12 }}>
             <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
               <input value={newEmoji} onChange={(e) => setNewEmoji(e.target.value)} placeholder="🎁"
                 style={{ width: 50, padding: "8px", textAlign: "center", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.3)", color: "#fff", fontSize: 20 }} />
-              <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="e.g. Ice cream after dinner"
+              <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder={t("screens.games.label_placeholder")}
                 style={{ flex: 1, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.3)", color: "#fff", fontSize: 13 }} />
               <input type="number" value={newCost} min={1}
                 onChange={(e) => setNewCost(parseInt(e.target.value || "0", 10))}
@@ -575,9 +579,9 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
                 style={{ width: 70, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.3)", color: "#fff", fontSize: 13 }} />
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: "transparent", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.3)", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>Cancel</button>
+              <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: "transparent", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.3)", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>{t("screens.games.cancel")}</button>
               <button onClick={onAdd} style={{ flex: 1, background: "linear-gradient(135deg, #8b5cf6, #ec4899)", color: "#fff", border: "none", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <Check size={14} /> Save
+                <Check size={14} /> {t("screens.games.save")}
               </button>
             </div>
           </div>
@@ -585,12 +589,12 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
 
         {redemptions.length > 0 && (
           <details style={{ marginTop: 16, color: "#c7c0e8" }}>
-            <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#c4b5fd" }}>Recent redemptions ({redemptions.length})</summary>
+            <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#c4b5fd" }}>{t("screens.games.recent_redemptions", { count: redemptions.length })}</summary>
             <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
               {redemptions.slice(0, 8).map((r, i) => (
                 <div key={i} style={{ fontSize: 12, color: "#a99fd9", display: "flex", justifyContent: "space-between" }}>
                   <span>{r.rewardLabel} — {r.childName}</span>
-                  <span>−{r.cost} pts</span>
+                  <span>{t("screens.games.redemption_minus_pts", { cost: r.cost })}</span>
                 </div>
               ))}
             </div>

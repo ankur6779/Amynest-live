@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -8,17 +9,19 @@ import {
 import { Gift, Star, Trophy, Clock } from "lucide-react";
 
 function PointsBurst({ points }: { points: number }) {
+  const { t } = useTranslation();
   return (
     <div className="relative flex flex-col items-center justify-center py-8">
       <div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.4)]">
         <span className="text-3xl font-extrabold text-white leading-none">{points}</span>
-        <span className="text-xs font-bold text-white/80 uppercase tracking-wider mt-0.5">Stars</span>
+        <span className="text-xs font-bold text-white/80 uppercase tracking-wider mt-0.5">{t("screens.rewards.stars_label")}</span>
       </div>
     </div>
   );
 }
 
 export default function RewardsPage() {
+  const { t } = useTranslation();
   const [points, setPoints] = useState(0);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
@@ -46,16 +49,16 @@ export default function RewardsPage() {
   const handleRedeem = (reward: Reward) => {
     if (redeemingId) return;
     if (points < reward.cost) {
-      showToast(`Need ${reward.cost - points} more stars!`);
+      showToast(t("screens.rewards.need_more_stars", { count: reward.cost - points }));
       return;
     }
     setRedeemingId(reward.id);
     const ok = redeemReward(reward, "Child");
     if (ok) {
       load();
-      showToast(`🎉 Redeemed: ${reward.label}!`);
+      showToast(t("screens.rewards.redeemed_toast", { label: reward.label }));
     } else {
-      showToast("Not enough stars.");
+      showToast(t("screens.rewards.not_enough_stars"));
     }
     setTimeout(() => setRedeemingId(null), 800);
   };
@@ -72,8 +75,8 @@ export default function RewardsPage() {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-quicksand font-extrabold text-foreground">Rewards</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Earn stars, collect badges, redeem rewards</p>
+          <h1 className="text-2xl font-quicksand font-extrabold text-foreground">{t("screens.rewards.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("screens.rewards.subtitle")}</p>
         </div>
 
         {/* Points burst */}
@@ -81,7 +84,7 @@ export default function RewardsPage() {
           <CardContent className="p-0">
             <PointsBurst points={points} />
             <div className="text-center pb-5">
-              <p className="text-white/80 text-sm font-semibold">Complete routines & log behaviors to earn stars</p>
+              <p className="text-white/80 text-sm font-semibold">{t("screens.rewards.earn_caption")}</p>
             </div>
           </CardContent>
         </Card>
@@ -89,9 +92,9 @@ export default function RewardsPage() {
         {/* Tabs */}
         <div className="flex bg-muted rounded-xl p-1 gap-1">
           {[
-            { id: "rewards", label: "Rewards", icon: Gift },
-            { id: "badges",  label: `Badges (${badges.length})`, icon: Trophy },
-            { id: "history", label: "History", icon: Clock },
+            { id: "rewards", label: t("screens.rewards.tab_rewards"), icon: Gift },
+            { id: "badges",  label: t("screens.rewards.tab_badges", { count: badges.length }), icon: Trophy },
+            { id: "history", label: t("screens.rewards.tab_history"), icon: Clock },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -122,7 +125,7 @@ export default function RewardsPage() {
                       <p className="font-bold text-sm text-foreground truncate">{reward.label}</p>
                       <div className="flex items-center gap-1 mt-0.5">
                         <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400">{reward.cost} stars</span>
+                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400">{t("screens.rewards.cost_stars", { count: reward.cost })}</span>
                       </div>
                     </div>
                     <button
@@ -134,7 +137,7 @@ export default function RewardsPage() {
                           : "bg-muted text-muted-foreground cursor-not-allowed"
                       }`}
                     >
-                      {redeemingId === reward.id ? "✓" : canAfford ? "Redeem" : `Need ${reward.cost - points}`}
+                      {redeemingId === reward.id ? "✓" : canAfford ? t("screens.rewards.redeem") : t("screens.rewards.need_short", { count: reward.cost - points })}
                     </button>
                   </CardContent>
                 </Card>
@@ -150,8 +153,8 @@ export default function RewardsPage() {
               <Card className="rounded-2xl">
                 <CardContent className="p-8 flex flex-col items-center gap-3 text-center">
                   <div className="text-4xl">🏆</div>
-                  <p className="font-bold text-foreground">No badges yet</p>
-                  <p className="text-sm text-muted-foreground">Complete routines consistently to earn your first badge!</p>
+                  <p className="font-bold text-foreground">{t("screens.rewards.empty_badges_title")}</p>
+                  <p className="text-sm text-muted-foreground">{t("screens.rewards.empty_badges_body")}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -176,7 +179,7 @@ export default function RewardsPage() {
             {/* Redemption history */}
             {redemptions.length > 0 && (
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Redeemed</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">{t("screens.rewards.redeemed_heading")}</p>
                 {redemptions.map((r, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border mb-1">
                     <span className="text-lg">🎁</span>
@@ -192,7 +195,7 @@ export default function RewardsPage() {
             {/* Earned ledger */}
             {ledger.length > 0 && (
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2 mt-3">Earned</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2 mt-3">{t("screens.rewards.earned_heading")}</p>
                 {ledger.map((entry, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border mb-1">
                     <span className="text-lg">⭐</span>
@@ -209,8 +212,8 @@ export default function RewardsPage() {
               <Card className="rounded-2xl">
                 <CardContent className="p-8 flex flex-col items-center gap-3 text-center">
                   <div className="text-4xl">📋</div>
-                  <p className="font-bold text-foreground">No history yet</p>
-                  <p className="text-sm text-muted-foreground">Complete routines to start earning stars.</p>
+                  <p className="font-bold text-foreground">{t("screens.rewards.empty_history_title")}</p>
+                  <p className="text-sm text-muted-foreground">{t("screens.rewards.empty_history_body")}</p>
                 </CardContent>
               </Card>
             )}

@@ -27,6 +27,7 @@ import { useStoriesData } from "@/hooks/useStoriesData";
 import { StoryPlayer } from "@/components/StoryPlayer";
 import type { StoryDto } from "@/services/storiesApi";
 import { brand } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
@@ -65,6 +66,7 @@ export default function StoriesScreen() {
   const c = useColors();
   const { mode, theme } = useTheme();
   const authFetch = useAuthFetch();
+  const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(c, mode), [c, mode]);
 
   const { data: children = [], isLoading: childrenLoading } = useQuery<Child[]>(
@@ -239,10 +241,10 @@ export default function StoriesScreen() {
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: c.textStrong }]}>
-              🎬 Kids Story Hub
+              {t("screens.stories.title")}
             </Text>
             <Text style={[styles.subtitle, { color: c.textMuted ?? "#888" }]}> // audit-ok: intentional dark bg / custom color
-              Bedtime, moral &amp; fun stories for ages 0–8
+              {t("screens.stories.subtitle")}
             </Text>
           </View>
         </View>
@@ -284,43 +286,43 @@ export default function StoriesScreen() {
         ) : !effectiveChild ? (
           <View style={styles.emptyCard}>
             <Text style={[styles.emptyTitle, { color: c.textStrong }]}>
-              Add a child first
+              {t("screens.stories.add_child_title")}
             </Text>
             <Text style={[styles.emptyDesc, { color: c.textMuted ?? "#888" }]}> // audit-ok: intentional dark bg / custom color
-              Stories are personalised per child.
+              {t("screens.stories.add_child_desc")}
             </Text>
           </View>
         ) : loading && !data ? (
           <View style={styles.center}>
             <ActivityIndicator color={brand.primary} />
             <Text style={[styles.dim, { color: c.textMuted ?? "#888" }]}> // audit-ok: intentional dark bg / custom color
-              Loading {effectiveChild.name}'s stories…
+              {t("screens.stories.loading_for", { name: effectiveChild.name })}
             </Text>
           </View>
         ) : error && !data ? (
           <View style={styles.emptyCard}>
             <Text style={[styles.emptyTitle, { color: c.textStrong }]}>
-              Couldn't load stories
+              {t("screens.stories.load_error")}
             </Text>
             <Pressable onPress={refresh} style={styles.retryBtn}>
               <Ionicons name="refresh" size={14} color="#fff" />
-              <Text style={styles.retryText}>Retry</Text>
+              <Text style={styles.retryText}>{t("screens.stories.retry")}</Text>
             </Pressable>
           </View>
         ) : !stories.length ? (
           <View style={styles.emptyCard}>
             <Text style={[styles.emptyTitle, { color: c.textStrong }]}>
-              No stories yet
+              {t("screens.stories.no_stories_title")}
             </Text>
             <Text style={[styles.emptyDesc, { color: c.textMuted ?? "#888" }]}> // audit-ok: intentional dark bg / custom color
-              New content is added regularly — check back soon!
+              {t("screens.stories.no_stories_desc")}
             </Text>
           </View>
         ) : currentStory ? (
           <View style={styles.body}>
             {/* Catalog meta */}
             <Text style={[styles.metaLine, { color: c.textMuted ?? "#888" }]}> // audit-ok: intentional dark bg / custom color
-              ✨ {stories.length} stories • for {data?.child.name ?? effectiveChild.name}
+              {t("screens.stories.meta_count", { count: stories.length, name: data?.child.name ?? effectiveChild.name })}
             </Text>
 
             {/* Now-playing hero card */}
@@ -347,7 +349,7 @@ export default function StoriesScreen() {
                 {/* Story counter badge */}
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>
-                    Story {flowIndex + 1} of {stories.length}
+                    {t("screens.stories.story_counter", { index: flowIndex + 1, total: stories.length })}
                   </Text>
                 </View>
 
@@ -393,7 +395,7 @@ export default function StoriesScreen() {
                   ]}
                 >
                   <Ionicons name="play" size={14} color="#fff" />
-                  <Text style={styles.watchBtnText}>Watch</Text>
+                  <Text style={styles.watchBtnText}>{t("screens.stories.watch")}</Text>
                 </Pressable>
               </View>
             </View>
@@ -402,7 +404,7 @@ export default function StoriesScreen() {
             {stories.length > 1 && (
               <View style={styles.upNextSection}>
                 <Text style={[styles.upNextLabel, { color: c.textMuted ?? "#888" }]}> // audit-ok: intentional dark bg / custom color
-                  Up Next
+                  {t("screens.stories.up_next")}
                 </Text>
                 {stories
                   .slice(flowIndex + 1, flowIndex + 4)

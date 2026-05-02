@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -87,6 +88,7 @@ const CARD: React.CSSProperties = {
 
 // ── Neon ring hero — 140 px, "Meet" + "AMY" inside glass ─────────────────────
 function NeonRingHero() {
+  const { t } = useTranslation();
   const R = 140;
   const INNER = 112;
   const OFF = (R - INNER) / 2;
@@ -169,7 +171,7 @@ function NeonRingHero() {
             fontSize: 10, fontWeight: 300, letterSpacing: "3.5px",
             textTransform: "uppercase", color: "rgba(255,255,255,0.78)",
             lineHeight: 1.3, userSelect: "none",
-          }}>Meet</span>
+          }}>{t("screens.sign_up.meet")}</span>
           <span style={{
             display: "block",
             fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
@@ -189,6 +191,7 @@ function NeonRingHero() {
 
 // ── Full-page shell ───────────────────────────────────────────────────────────
 function AuthShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div style={{
       minHeight: "100vh",
@@ -239,7 +242,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <p style={{ marginTop: "20px", textAlign: "center", fontSize: "12px", color: "rgba(255,255,255,0.22)" }}>
-          Where Smart Parenting Begins
+          {t("screens.sign_up.tagline")}
         </p>
       </div>
     </div>
@@ -261,6 +264,7 @@ function ErrorBanner({ children }: { children: React.ReactNode }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function SignUpPage() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { isLoaded, isSignedIn } = useAuth();
   const [name, setName] = useState("");
@@ -300,10 +304,10 @@ export default function SignUpPage() {
   return (
     <AuthShell>
       <h1 style={{ margin: "0 0 5px", fontSize: "26px", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.4px" }}>
-        Start Parenting Smart
+        {t("screens.sign_up.title")}
       </h1>
       <p style={{ margin: "0 0 26px", fontSize: "14px", color: "rgba(200,180,255,0.65)" }}>
-        Your AI-powered parenting coach, personalized for your family
+        {t("screens.sign_up.subtitle")}
       </p>
 
       {/* Phone OTP */}
@@ -314,20 +318,20 @@ export default function SignUpPage() {
       {/* Divider */}
       <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "20px 0" }}>
         <div style={{ flex: 1, height: "1px", background: "rgba(168,85,247,0.15)" }} />
-        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.30)" }}>or</span>
+        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.30)" }}>{t("screens.sign_up.divider_or")}</span>
         <div style={{ flex: 1, height: "1px", background: "rgba(168,85,247,0.15)" }} />
       </div>
 
       <form onSubmit={onEmail} style={{ display: "flex", flexDirection: "column", gap: "14px", textAlign: "left" }}>
         <div>
           <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)", marginBottom: "7px" }}>
-            Your name
+            {t("screens.sign_up.name_label")}
           </label>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder="First name"
+            placeholder={t("screens.sign_up.name_placeholder")}
             style={INPUT_STYLE}
             onFocus={glowFocus}
             onBlur={glowBlur}
@@ -336,13 +340,13 @@ export default function SignUpPage() {
 
         <div>
           <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)", marginBottom: "7px" }}>
-            Email
+            {t("screens.sign_up.email_label")}
           </label>
           <input
             type="email" required
             value={email}
             onChange={e => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder={t("screens.sign_up.email_placeholder")}
             style={INPUT_STYLE}
             onFocus={glowFocus}
             onBlur={glowBlur}
@@ -351,14 +355,14 @@ export default function SignUpPage() {
 
         <div>
           <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)", marginBottom: "7px" }}>
-            Password
+            {t("screens.sign_up.password_label")}
           </label>
           <div style={{ position: "relative" }}>
             <input
               type={showPass ? "text" : "password"} required minLength={6}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Min. 6 characters"
+              placeholder={t("screens.sign_up.password_placeholder")}
               style={{ ...INPUT_STYLE, paddingRight: "44px" }}
               onFocus={glowFocus}
               onBlur={glowBlur}
@@ -372,7 +376,7 @@ export default function SignUpPage() {
                 color: "rgba(200,180,255,0.50)", fontSize: "13px", padding: 0,
               }}
             >
-              {showPass ? "Hide" : "Show"}
+              {showPass ? t("screens.sign_up.hide") : t("screens.sign_up.show")}
             </button>
           </div>
         </div>
@@ -392,14 +396,14 @@ export default function SignUpPage() {
             fontFamily: "inherit", marginTop: "4px",
           }}
         >
-          {busy ? "Creating account…" : "Create account"}
+          {busy ? t("screens.sign_up.creating") : t("screens.sign_up.create_button")}
         </button>
       </form>
 
       <p style={{ marginTop: "20px", fontSize: "14px", color: "rgba(200,180,255,0.50)", textAlign: "center" }}>
-        Already have an account?{" "}
+        {t("screens.sign_up.have_account")}{" "}
         <Link href="/sign-in" style={{ color: "#a855f7", fontWeight: 600, textDecoration: "none" }}>
-          Sign in
+          {t("screens.sign_up.sign_in_link")}
         </Link>
       </p>
     </AuthShell>

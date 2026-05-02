@@ -7,42 +7,7 @@ import { useRouter } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { brand, palette } from "@/constants/colors";
 import { useTheme } from "@/contexts/ThemeContext";
-
-const PRIVACY_MD = `# Privacy Policy — AmyNest AI
-
-_Last updated: April 21, 2026_
-
-AmyNest ("the App") is operated by **AmyNest AI, Inc.** ("we", "us"). This policy explains what information we collect when you use the App and how we handle it.
-
-## 1. Information we collect
-- **Account information** you provide when you sign up: name, email address, and authentication identifiers from your sign-in provider.
-- **Child profile information** you voluntarily enter (first name or nickname, age, interests, routine preferences). We never ask for a child's last name, address, or contact details.
-- **Routine and task activity** you create or generate inside the App, used to display your dashboard and reward history.
-- **Technical data** such as device type, OS version, app version, and crash diagnostics, used to keep the App stable.
-
-## 2. How we use information
-- To provide the core features of the App (generating routines, tracking tasks and rewards, syncing across your devices).
-- To respond to support requests you send us.
-- To improve the App's reliability and performance.
-
-We do **not** sell your personal information. We do **not** show third-party advertising to children inside the App.
-
-## 3. Children's privacy
-AmyNest is designed to be used by parents and guardians. Child profiles inside the App are managed by a parent account. We collect only the minimum information needed to display a child's routine. Parents may delete a child profile at any time from the App.
-
-## 4. Data sharing
-We share data with service providers who help us operate the App (hosting, authentication, analytics, AI generation). These providers are bound by contracts to use your data only on our behalf. We may also disclose information if required by law.
-
-## 5. Data retention and deletion
-You can delete your account and all associated data at any time from inside the App, or by emailing **support@amynest.ai**. Backups are removed within 30 days.
-
-## 6. Permissions used by the mobile app
-- **Internet / Network state** — required to load the App.
-- **Camera, Microphone, Photos** — only requested at the moment you use a feature that needs them (e.g. uploading a child's profile picture). Always optional.
-
-## 7. Contact
-Questions or requests: **support@amynest.ai**
-`;
+import { useTranslation } from "react-i18next";
 
 type Block =
   | { kind: "h1"; text: string }
@@ -105,7 +70,45 @@ export default function PrivacyScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const blocks = React.useMemo(() => parseMarkdown(PRIVACY_MD), []);
+  const { t } = useTranslation();
+  const blocks = React.useMemo(() => {
+    const md = `# ${t("screens.privacy.md_title")}
+
+_${t("screens.privacy.md_updated")}_
+
+${t("screens.privacy.md_intro")}
+
+## ${t("screens.privacy.md_h2_1")}
+- ${t("screens.privacy.md_li_1_1")}
+- ${t("screens.privacy.md_li_1_2")}
+- ${t("screens.privacy.md_li_1_3")}
+- ${t("screens.privacy.md_li_1_4")}
+
+## ${t("screens.privacy.md_h2_2")}
+- ${t("screens.privacy.md_li_2_1")}
+- ${t("screens.privacy.md_li_2_2")}
+- ${t("screens.privacy.md_li_2_3")}
+
+${t("screens.privacy.md_p_2")}
+
+## ${t("screens.privacy.md_h2_3")}
+${t("screens.privacy.md_p_3")}
+
+## ${t("screens.privacy.md_h2_4")}
+${t("screens.privacy.md_p_4")}
+
+## ${t("screens.privacy.md_h2_5")}
+${t("screens.privacy.md_p_5")}
+
+## ${t("screens.privacy.md_h2_6")}
+- ${t("screens.privacy.md_li_6_1")}
+- ${t("screens.privacy.md_li_6_2")}
+
+## ${t("screens.privacy.md_h2_7")}
+${t("screens.privacy.md_p_7")}
+`;
+    return parseMarkdown(md);
+  }, [t]);
 
   return (
     <LinearGradient colors={theme.gradient} style={{ flex: 1 }}>
@@ -117,8 +120,8 @@ export default function PrivacyScreen() {
           <Ionicons name="shield-checkmark-outline" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: c.text }]}>Privacy Policy</Text>
-          <Text style={[styles.headerSubtitle, { color: c.textMuted }]}>How we handle your data</Text>
+          <Text style={[styles.headerTitle, { color: c.text }]}>{t("screens.privacy.header_title")}</Text>
+          <Text style={[styles.headerSubtitle, { color: c.textMuted }]}>{t("screens.privacy.header_subtitle")}</Text>
         </View>
       </View>
 
@@ -157,10 +160,10 @@ export default function PrivacyScreen() {
           style={({ pressed }) => [styles.contactBtn, { borderColor: c.border, opacity: pressed ? 0.7 : 1 }]}
         >
           <Ionicons name="mail-outline" size={16} color={c.text} />
-          <Text style={[styles.contactBtnText, { color: c.text }]}>Email support@amynest.ai</Text>
+          <Text style={[styles.contactBtnText, { color: c.text }]}>{t("screens.privacy.contact_btn")}</Text>
         </Pressable>
 
-        <Text style={[styles.footer, { color: c.textDim }]}>© 2026 AmyNest AI. All rights reserved.</Text>
+        <Text style={[styles.footer, { color: c.textDim }]}>{t("screens.privacy.footer")}</Text>
       </ScrollView>
     </LinearGradient>
   );

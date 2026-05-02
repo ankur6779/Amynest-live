@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import {
   EVENT_CATEGORIES, EVENT_CHARACTERS,
@@ -24,6 +25,7 @@ type View =
   | { kind: "detail"; childId: number; characterId: string };
 
 export default function EventPrepPage() {
+  const { t } = useTranslation();
   const { data: children, isLoading } = useListChildren({
     query: { queryKey: getListChildrenQueryKey() },
   });
@@ -72,9 +74,9 @@ export default function EventPrepPage() {
     return (
       <div className="container mx-auto p-6">
         <Card><CardContent className="p-6 text-center">
-          <h2 className="text-xl font-bold mb-2">Add a child to start</h2>
+          <h2 className="text-xl font-bold mb-2">{t("screens.event_prep.no_child_title")}</h2>
           <p className="text-muted-foreground">
-            Event Prep needs to know your child's age to suggest the best ideas.
+            {t("screens.event_prep.no_child_desc")}
           </p>
         </CardContent></Card>
       </div>
@@ -85,7 +87,7 @@ export default function EventPrepPage() {
   if (view.kind === "child-pick") {
     return (
       <div className="container mx-auto p-6 max-w-3xl">
-        <Header title="🎉 Event Prep" subtitle="Pick a child to begin" />
+        <Header title={t("screens.event_prep.header_title")} subtitle={t("screens.event_prep.pick_child")} />
         <div className="grid sm:grid-cols-2 gap-3 mt-4">
           {list.map((c) => (
             <Card
@@ -97,7 +99,7 @@ export default function EventPrepPage() {
                 <div className="h-12 w-12 rounded-full bg-pink-100 flex items-center justify-center text-2xl">👧</div>
                 <div>
                   <div className="font-bold">{c.name}</div>
-                  <div className="text-xs text-muted-foreground">Age {c.age}</div>
+                  <div className="text-xs text-muted-foreground">{t("screens.event_prep.age_label", { age: c.age })}</div>
                 </div>
                 <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
               </CardContent>
@@ -114,8 +116,8 @@ export default function EventPrepPage() {
       <div className="container mx-auto p-6 max-w-5xl">
         <BackBar onBack={() => list.length > 1 && setView({ kind: "child-pick" })} canBack={list.length > 1}>
           <Header
-            title="🎉 Event Prep — School Ready"
-            subtitle={`Quick fancy dress, DIY guide & speeches for ${child.name}`}
+            title={t("screens.event_prep.home_title")}
+            subtitle={t("screens.event_prep.home_subtitle", { name: child.name })}
           />
         </BackBar>
 
@@ -129,9 +131,9 @@ export default function EventPrepPage() {
               <Wand2 className="h-7 w-7" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-lg">✨ Amy AI Event Generator</h3>
+              <h3 className="font-bold text-lg">{t("screens.event_prep.amy_generator_title")}</h3>
               <p className="text-sm text-muted-foreground">
-                Tell Amy your event, time & budget — get a perfect idea in seconds
+                {t("screens.event_prep.amy_generator_sub")}
               </p>
             </div>
             <ChevronRight className="h-6 w-6 text-purple-700" />
@@ -151,9 +153,9 @@ export default function EventPrepPage() {
               <Zap className="h-7 w-7" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-lg">⏱ Last-Minute Mode</h3>
+              <h3 className="font-bold text-lg">{t("screens.event_prep.last_minute_title")}</h3>
               <p className="text-sm text-muted-foreground">
-                30 min or less · easy ideas · stuff already at home
+                {t("screens.event_prep.last_minute_sub")}
               </p>
             </div>
             <ChevronRight className="h-6 w-6 text-amber-700" />
@@ -162,12 +164,12 @@ export default function EventPrepPage() {
 
         {/* Amy AI quick picks */}
         <h2 className="font-bold mt-6 mb-3 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-pink-600" /> Amy AI picks for {child.name}
+          <Sparkles className="h-4 w-4 text-pink-600" /> {t("screens.event_prep.amy_picks", { name: child.name })}
         </h2>
         <AmyRecommendations child={child} onOpen={(id) => setView({ kind: "detail", childId: child.id, characterId: id })} />
 
         {/* Browse by event */}
-        <h2 className="font-bold mt-8 mb-3">Browse by event</h2>
+        <h2 className="font-bold mt-8 mb-3">{t("screens.event_prep.browse_by_event")}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {EVENT_CATEGORIES.map((cat) => (
             <CategoryCard
@@ -188,8 +190,8 @@ export default function EventPrepPage() {
       <div className="container mx-auto p-6 max-w-2xl">
         <BackBar onBack={() => setView({ kind: "home", childId: child.id })} canBack>
           <Header
-            title="✨ Amy AI Event Generator"
-            subtitle={`Personalised ideas for ${child.name}`}
+            title={t("screens.event_prep.generator_screen_title")}
+            subtitle={t("screens.event_prep.generator_screen_sub", { name: child.name })}
           />
         </BackBar>
         <div className="mt-4">
@@ -213,8 +215,8 @@ export default function EventPrepPage() {
       <div className="container mx-auto p-6 max-w-5xl">
         <BackBar onBack={() => setView({ kind: "home", childId: child.id })} canBack>
           <Header
-            title={filter.lastMinute ? "⏱ Last-Minute Picks" : `${cat.emoji} ${cat.title}`}
-            subtitle={filter.lastMinute ? "Easy · low-cost · 30 min or less" : cat.blurb}
+            title={filter.lastMinute ? t("screens.event_prep.last_minute_picks_title") : `${cat.emoji} ${cat.title}`}
+            subtitle={filter.lastMinute ? t("screens.event_prep.last_minute_picks_sub") : cat.blurb}
           />
         </BackBar>
 
@@ -222,7 +224,7 @@ export default function EventPrepPage() {
 
         {filtered.length === 0 ? (
           <Card className="mt-4"><CardContent className="p-8 text-center text-muted-foreground">
-            No ideas match these filters. Try removing a filter or another category.
+            {t("screens.event_prep.no_matches")}
           </CardContent></Card>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
@@ -245,7 +247,7 @@ export default function EventPrepPage() {
     if (!ch) {
       return (
         <div className="container mx-auto p-6">
-          <Card><CardContent className="p-6">Character not found.</CardContent></Card>
+          <Card><CardContent className="p-6">{t("screens.event_prep.character_not_found")}</CardContent></Card>
         </div>
       );
     }
@@ -263,16 +265,16 @@ export default function EventPrepPage() {
         >
           <div className="text-7xl text-center mb-3">{ch.emoji}</div>
           <div className="flex flex-wrap gap-2 justify-center text-xs">
-            <Pill><Clock className="h-3 w-3" /> {ch.timeMinutes} min</Pill>
+            <Pill><Clock className="h-3 w-3" /> {ch.timeMinutes} {t("screens.event_prep.minutes_short")}</Pill>
             <Pill>{ch.difficulty}</Pill>
-            {ch.lowCost && <Pill>💸 Low cost</Pill>}
+            {ch.lowCost && <Pill>{t("screens.event_prep.low_cost_pill")}</Pill>}
           </div>
         </div>
 
         {/* Materials */}
         <Card className="mt-4">
           <CardContent className="p-5">
-            <h3 className="font-bold mb-2">🧰 Materials Needed</h3>
+            <h3 className="font-bold mb-2">{t("screens.event_prep.materials")}</h3>
             <ul className="list-disc pl-5 space-y-1 text-sm">
               {ch.materials.map((m, i) => <li key={i}>{m}</li>)}
             </ul>
@@ -282,7 +284,7 @@ export default function EventPrepPage() {
         {/* Steps */}
         <Card className="mt-3">
           <CardContent className="p-5">
-            <h3 className="font-bold mb-2">📋 Step-by-step</h3>
+            <h3 className="font-bold mb-2">{t("screens.event_prep.steps")}</h3>
             <ol className="list-decimal pl-5 space-y-2 text-sm leading-relaxed">
               {ch.steps.map((s, i) => <li key={i}>{s}</li>)}
             </ol>
@@ -293,7 +295,7 @@ export default function EventPrepPage() {
         <Card className="mt-3 border-pink-200 bg-pink-50/50 dark:bg-pink-950/20">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold">🎤 Your Speech</h3>
+              <h3 className="font-bold">{t("screens.event_prep.your_speech")}</h3>
               {ttsAvailable() && (
                 <Button
                   size="sm"
@@ -302,14 +304,14 @@ export default function EventPrepPage() {
                   className="rounded-full"
                 >
                   {speaking === ch.id ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
-                  {speaking === ch.id ? "Stop" : "Read aloud"}
+                  {speaking === ch.id ? t("screens.event_prep.stop") : t("screens.event_prep.read_aloud")}
                 </Button>
               )}
             </div>
             <p className="text-base italic leading-relaxed">"{speech}"</p>
             {ch.speechShort && ch.speechShort !== speech && (
               <p className="text-xs text-muted-foreground mt-3">
-                Tip: a shorter version is also available — Amy auto-picks based on age.
+                {t("screens.event_prep.speech_short_tip")}
               </p>
             )}
           </CardContent>
@@ -346,6 +348,7 @@ function BackBar({ onBack, canBack, children }: { onBack: () => void; canBack: b
 }
 
 function CategoryCard({ category, count, onOpen }: { category: EventCategory; count: number; onOpen: () => void }) {
+  const { t } = useTranslation();
   return (
     <Card
       onClick={onOpen}
@@ -360,13 +363,14 @@ function CategoryCard({ category, count, onOpen }: { category: EventCategory; co
       </div>
       <CardContent className="p-3 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{category.blurb}</span>
-        <span className="text-xs font-semibold text-pink-600">{count} ideas</span>
+        <span className="text-xs font-semibold text-pink-600">{t("screens.event_prep.ideas_count", { count })}</span>
       </CardContent>
     </Card>
   );
 }
 
 function CharacterCard({ ch, onOpen }: { ch: EventCharacter; onOpen: () => void }) {
+  const { t } = useTranslation();
   return (
     <Card
       onClick={onOpen}
@@ -379,7 +383,7 @@ function CharacterCard({ ch, onOpen }: { ch: EventCharacter; onOpen: () => void 
       >
         <div className="text-6xl">{ch.emoji}</div>
         <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/30 text-[10px] font-bold flex items-center gap-1">
-          <Clock className="h-3 w-3" /> {ch.timeMinutes} min
+          <Clock className="h-3 w-3" /> {ch.timeMinutes} {t("screens.event_prep.minutes_short")}
         </div>
         <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/30 text-[10px] font-bold">
           {ch.difficulty}
@@ -399,19 +403,20 @@ function CharacterCard({ ch, onOpen }: { ch: EventCharacter; onOpen: () => void 
 }
 
 function FilterBar({ filter, setFilter }: { filter: EventFilter; setFilter: (f: EventFilter) => void }) {
+  const { t } = useTranslation();
   const toggle = (key: keyof EventFilter) =>
     setFilter({ ...filter, [key]: !filter[key], lastMinute: false });
   const clearLM = () => setFilter({});
   return (
     <div className="flex flex-wrap gap-2 mt-4 items-center">
       <span className="text-xs text-muted-foreground flex items-center gap-1">
-        <Filter className="h-3 w-3" /> Filters:
+        <Filter className="h-3 w-3" /> {t("screens.event_prep.filters_label")}
       </span>
-      <FilterChip active={!!filter.easyOnly} onClick={() => toggle("easyOnly")}>Easy</FilterChip>
-      <FilterChip active={!!filter.lowCostOnly} onClick={() => toggle("lowCostOnly")}>💸 Low cost</FilterChip>
-      <FilterChip active={!!filter.quickOnly} onClick={() => toggle("quickOnly")}>⚡ ≤ 30 min</FilterChip>
+      <FilterChip active={!!filter.easyOnly} onClick={() => toggle("easyOnly")}>{t("screens.event_prep.chip_easy")}</FilterChip>
+      <FilterChip active={!!filter.lowCostOnly} onClick={() => toggle("lowCostOnly")}>{t("screens.event_prep.chip_low_cost")}</FilterChip>
+      <FilterChip active={!!filter.quickOnly} onClick={() => toggle("quickOnly")}>{t("screens.event_prep.chip_quick")}</FilterChip>
       {filter.lastMinute && (
-        <FilterChip active onClick={clearLM}>⏱ Last-Minute (clear)</FilterChip>
+        <FilterChip active onClick={clearLM}>{t("screens.event_prep.chip_clear_last_minute")}</FilterChip>
       )}
     </div>
   );
@@ -441,6 +446,7 @@ function Pill({ children }: { children: React.ReactNode }) {
 }
 
 function AmyRecommendations({ child, onOpen }: { child: Child; onOpen: (id: string) => void }) {
+  const { t } = useTranslation();
   // Pick the most relevant category for "today" — defaults to fancy-dress
   // unless we're within ~3 weeks of a national event.
   const category: EventCategoryId = pickTimelyCategory();
@@ -451,7 +457,7 @@ function AmyRecommendations({ child, onOpen }: { child: Child; onOpen: (id: stri
     <Card className="border-pink-200 bg-gradient-to-br from-pink-50/50 to-purple-50/50 dark:from-pink-950/20 dark:to-purple-950/20">
       <CardContent className="p-4">
         <div className="text-xs text-muted-foreground mb-3">
-          Best matches for <strong>{cat.title}</strong> based on {child.name}'s age ({child.age} yrs).
+          {t("screens.event_prep.best_matches_prefix")}<strong>{cat.title}</strong>{t("screens.event_prep.best_matches_suffix", { name: child.name, age: child.age })}
         </div>
         <div className="grid sm:grid-cols-3 gap-3">
           {recs.map((ch) => (
@@ -463,7 +469,7 @@ function AmyRecommendations({ child, onOpen }: { child: Child; onOpen: (id: stri
               <div className="text-3xl">{ch.emoji}</div>
               <div className="font-bold text-sm mt-1">{ch.character}</div>
               <div className="text-[11px] text-muted-foreground mt-0.5">
-                {ch.timeMinutes} min · {ch.difficulty}
+                {ch.timeMinutes} {t("screens.event_prep.minutes_short")} · {ch.difficulty}
               </div>
             </button>
           ))}

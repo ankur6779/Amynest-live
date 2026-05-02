@@ -16,6 +16,7 @@ import {
 } from "@workspace/event-prep";
 import { EventPrepGeneratorSheet } from "@/components/event-prep-generator-sheet";
 import { brand, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
@@ -27,6 +28,7 @@ type View0 =
 
 export default function EventPrepScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
   const { data: children = [], isLoading } = useQuery<Child[]>({
     queryKey: ["children"],
@@ -81,11 +83,11 @@ export default function EventPrepScreen() {
   if (children.length === 0) {
     return (
       <LinearGradient colors={theme.gradient} style={S.center} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
-        <Stack.Screen options={{ title: "Event Prep" }} />
-        <Text style={S.emptyTitle}>Add a child first</Text>
-        <Text style={S.emptyDesc}>Event Prep needs your child's age to suggest the best ideas.</Text>
+        <Stack.Screen options={{ title: t("screens.event_prep.screen_title") }} />
+        <Text style={S.emptyTitle}>{t("screens.event_prep.no_child_title")}</Text>
+        <Text style={S.emptyDesc}>{t("screens.event_prep.no_child_desc")}</Text>
         <Pressable onPress={() => router.push("/children/new" as never)} style={S.primaryBtn}>
-          <Text style={S.primaryBtnText}>Add Child</Text>
+          <Text style={S.primaryBtnText}>{t("screens.event_prep.add_child_cta")}</Text>
         </Pressable>
       </LinearGradient>
     );
@@ -95,10 +97,10 @@ export default function EventPrepScreen() {
   if (view.kind === "child-pick") {
     return (
       <LinearGradient colors={theme.gradient} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
-        <Stack.Screen options={{ title: "🎉 Event Prep" }} />
+        <Stack.Screen options={{ title: t("screens.event_prep.screen_title") }} />
         <ScrollView contentContainerStyle={S.scroll}>
-          <Text style={S.h1}>🎉 Event Prep</Text>
-          <Text style={S.sub}>Pick a child to begin</Text>
+          <Text style={S.h1}>{t("screens.event_prep.header_title")}</Text>
+          <Text style={S.sub}>{t("screens.event_prep.pick_child")}</Text>
           {children.map((c) => (
             <Pressable
               key={c.id}
@@ -108,7 +110,7 @@ export default function EventPrepScreen() {
               <View style={S.childAvatar}><Text style={{ fontSize: 24 }}>👧</Text></View>
               <View style={{ flex: 1 }}>
                 <Text style={S.childName}>{c.name}</Text>
-                <Text style={S.childAge}>Age {c.age}</Text>
+                <Text style={S.childAge}>{t("screens.event_prep.age_label", { age: c.age })}</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={palette.gray400} />
             </Pressable>
@@ -122,10 +124,10 @@ export default function EventPrepScreen() {
   if (view.kind === "home" && child) {
     return (
       <LinearGradient colors={theme.gradient} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
-        <Stack.Screen options={{ title: "🎉 Event Prep" }} />
+        <Stack.Screen options={{ title: t("screens.event_prep.screen_title") }} />
         <ScrollView contentContainerStyle={S.scroll}>
-          <Text style={S.h1}>🎉 Event Prep</Text>
-          <Text style={S.sub}>Quick fancy dress, DIY guide & speeches for {child.name}</Text>
+          <Text style={S.h1}>{t("screens.event_prep.header_title")}</Text>
+          <Text style={S.sub}>{t("screens.event_prep.home_subtitle", { name: child.name })}</Text>
 
           {/* Amy AI Generator entry */}
           <Pressable onPress={() => setGenOpen(true)} style={S.lastMinHero}>
@@ -136,8 +138,8 @@ export default function EventPrepScreen() {
             >
               <View style={S.heroIcon}><Ionicons name="sparkles" size={26} color="#fff" /></View>
               <View style={{ flex: 1 }}>
-                <Text style={S.heroTitle}>✨ Amy AI Generator</Text>
-                <Text style={S.heroSub}>Tell Amy your event, time & budget</Text>
+                <Text style={S.heroTitle}>{t("screens.event_prep.amy_generator_title")}</Text>
+                <Text style={S.heroSub}>{t("screens.event_prep.amy_generator_sub")}</Text>
               </View>
               <Ionicons name="chevron-forward" size={22} color="#fff" />
             </LinearGradient>
@@ -158,19 +160,19 @@ export default function EventPrepScreen() {
             >
               <View style={S.heroIcon}><Ionicons name="flash" size={28} color="#fff" /></View>
               <View style={{ flex: 1 }}>
-                <Text style={S.heroTitle}>⏱ Last-Minute Mode</Text>
-                <Text style={S.heroSub}>30 min · easy · stuff already at home</Text>
+                <Text style={S.heroTitle}>{t("screens.event_prep.last_minute_title")}</Text>
+                <Text style={S.heroSub}>{t("screens.event_prep.last_minute_sub")}</Text>
               </View>
               <Ionicons name="chevron-forward" size={22} color="#fff" />
             </LinearGradient>
           </Pressable>
 
           {/* Amy AI picks */}
-          <Text style={S.h2}>✨ Amy AI picks for {child.name}</Text>
+          <Text style={S.h2}>{t("screens.event_prep.amy_picks", { name: child.name })}</Text>
           <AmyRecsRow child={child} onOpen={(id) => setView({ kind: "detail", childId: child.id, characterId: id })} />
 
           {/* Categories */}
-          <Text style={S.h2}>Browse by event</Text>
+          <Text style={S.h2}>{t("screens.event_prep.browse_by_event")}</Text>
           {EVENT_CATEGORIES.map((cat) => (
             <Pressable
               key={cat.id}
@@ -214,26 +216,26 @@ export default function EventPrepScreen() {
 
     return (
       <LinearGradient colors={theme.gradient} style={{ flex: 1 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
-        <Stack.Screen options={{ title: filter.lastMinute ? "Last-Minute Picks" : cat.title }} />
+        <Stack.Screen options={{ title: filter.lastMinute ? t("screens.event_prep.last_minute_picks_screen") : cat.title }} />
         <ScrollView contentContainerStyle={S.scroll}>
           <Pressable onPress={() => setView({ kind: "home", childId: child.id })} style={S.backRow}>
             <Ionicons name="arrow-back" size={20} color={palette.gray700} />
-            <Text style={S.backText}>Back</Text>
+            <Text style={S.backText}>{t("screens.event_prep.back")}</Text>
           </Pressable>
-          <Text style={S.h1}>{filter.lastMinute ? "⏱ Last-Minute Picks" : `${cat.emoji} ${cat.title}`}</Text>
-          <Text style={S.sub}>{filter.lastMinute ? "Easy · low-cost · 30 min or less" : cat.blurb}</Text>
+          <Text style={S.h1}>{filter.lastMinute ? t("screens.event_prep.last_minute_picks_heading") : `${cat.emoji} ${cat.title}`}</Text>
+          <Text style={S.sub}>{filter.lastMinute ? t("screens.event_prep.last_minute_picks_sub") : cat.blurb}</Text>
 
           {/* Filter chips */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.chipRow}>
-            <Chip active={!!filter.easyOnly}    onPress={() => setFilter({ ...filter, easyOnly: !filter.easyOnly,    lastMinute: false })}>Easy</Chip>
-            <Chip active={!!filter.lowCostOnly} onPress={() => setFilter({ ...filter, lowCostOnly: !filter.lowCostOnly, lastMinute: false })}>💸 Low cost</Chip>
-            <Chip active={!!filter.quickOnly}   onPress={() => setFilter({ ...filter, quickOnly: !filter.quickOnly,   lastMinute: false })}>⚡ ≤ 30 min</Chip>
-            {filter.lastMinute && <Chip active onPress={() => setFilter({})}>⏱ Last-Minute (clear)</Chip>}
+            <Chip active={!!filter.easyOnly}    onPress={() => setFilter({ ...filter, easyOnly: !filter.easyOnly,    lastMinute: false })}>{t("screens.event_prep.chip_easy")}</Chip>
+            <Chip active={!!filter.lowCostOnly} onPress={() => setFilter({ ...filter, lowCostOnly: !filter.lowCostOnly, lastMinute: false })}>{t("screens.event_prep.chip_low_cost")}</Chip>
+            <Chip active={!!filter.quickOnly}   onPress={() => setFilter({ ...filter, quickOnly: !filter.quickOnly,   lastMinute: false })}>{t("screens.event_prep.chip_quick")}</Chip>
+            {filter.lastMinute && <Chip active onPress={() => setFilter({})}>{t("screens.event_prep.chip_clear_last_minute")}</Chip>}
           </ScrollView>
 
           {filtered.length === 0 ? (
             <View style={S.emptyBox}>
-              <Text style={S.emptyDesc}>No ideas match these filters. Try removing a filter.</Text>
+              <Text style={S.emptyDesc}>{t("screens.event_prep.no_matches")}</Text>
             </View>
           ) : (
             filtered.map((ch) => (
@@ -246,7 +248,7 @@ export default function EventPrepScreen() {
                   <Text style={S.charEmoji}>{ch.emoji}</Text>
                   <View style={S.timeBadge}>
                     <Ionicons name="time-outline" size={10} color="#fff" />
-                    <Text style={S.timeBadgeText}>{ch.timeMinutes} min</Text>
+                    <Text style={S.timeBadgeText}>{ch.timeMinutes} {t("screens.event_prep.minutes_short")}</Text>
                   </View>
                   <View style={S.diffBadge}><Text style={S.diffBadgeText}>{ch.difficulty}</Text></View>
                   {ch.lowCost && <View style={S.lowCostBadge}><Text style={S.diffBadgeText}>💸</Text></View>}
@@ -277,7 +279,7 @@ export default function EventPrepScreen() {
         <ScrollView contentContainerStyle={S.scroll}>
           <Pressable onPress={() => setView({ kind: "home", childId: child.id })} style={S.backRow}>
             <Ionicons name="arrow-back" size={20} color={palette.gray700} />
-            <Text style={S.backText}>Back</Text>
+            <Text style={S.backText}>{t("screens.event_prep.back")}</Text>
           </Pressable>
 
           {/* Hero */}
@@ -286,15 +288,15 @@ export default function EventPrepScreen() {
             <Text style={S.detailTitle}>{ch.character}</Text>
             <Text style={S.detailTag}>{ch.tagline}</Text>
             <View style={S.pillRow}>
-              <View style={S.pill}><Ionicons name="time-outline" size={12} color="#fff" /><Text style={S.pillText}>{ch.timeMinutes} min</Text></View>
+              <View style={S.pill}><Ionicons name="time-outline" size={12} color="#fff" /><Text style={S.pillText}>{ch.timeMinutes} {t("screens.event_prep.minutes_short")}</Text></View>
               <View style={S.pill}><Text style={S.pillText}>{ch.difficulty}</Text></View>
-              {ch.lowCost && <View style={S.pill}><Text style={S.pillText}>💸 Low cost</Text></View>}
+              {ch.lowCost && <View style={S.pill}><Text style={S.pillText}>{t("screens.event_prep.low_cost_pill")}</Text></View>}
             </View>
           </LinearGradient>
 
           {/* Materials */}
           <View style={S.detailCard}>
-            <Text style={S.detailHead}>🧰 Materials Needed</Text>
+            <Text style={S.detailHead}>{t("screens.event_prep.materials")}</Text>
             {ch.materials.map((m, i) => (
               <View key={i} style={S.bulletRow}>
                 <Text style={S.bullet}>•</Text>
@@ -305,7 +307,7 @@ export default function EventPrepScreen() {
 
           {/* Steps */}
           <View style={S.detailCard}>
-            <Text style={S.detailHead}>📋 Step-by-step</Text>
+            <Text style={S.detailHead}>{t("screens.event_prep.steps")}</Text>
             {ch.steps.map((s, i) => (
               <View key={i} style={S.bulletRow}>
                 <View style={S.stepNum}><Text style={S.stepNumText}>{i + 1}</Text></View>
@@ -317,14 +319,14 @@ export default function EventPrepScreen() {
           {/* Speech */}
           <View style={[S.detailCard, { backgroundColor: palette.pink50, borderColor: palette.pink200 }]}>
             <View style={S.speechHead}>
-              <Text style={S.detailHead}>🎤 Your Speech</Text>
+              <Text style={S.detailHead}>{t("screens.event_prep.your_speech")}</Text>
               <Pressable onPress={() => handleSpeak(ch.id, speech)} style={S.speechBtn}>
                 <Ionicons
                   name={speakingId === ch.id ? "volume-mute" : "volume-high"}
                   size={14}
                   color="#fff"
                 />
-                <Text style={S.speechBtnText}>{speakingId === ch.id ? "Stop" : "Read aloud"}</Text>
+                <Text style={S.speechBtnText}>{speakingId === ch.id ? t("screens.event_prep.stop") : t("screens.event_prep.read_aloud")}</Text>
               </Pressable>
             </View>
             <Text style={S.speechText}>"{speech}"</Text>
@@ -346,6 +348,7 @@ function Chip({ active, onPress, children }: { active: boolean; onPress: () => v
 }
 
 function AmyRecsRow({ child, onOpen }: { child: Child; onOpen: (id: string) => void }) {
+  const { t } = useTranslation();
   const m = new Date().getMonth();
   const cat: EventCategoryId =
     m === 0 ? "republic-day" :
@@ -359,7 +362,7 @@ function AmyRecsRow({ child, onOpen }: { child: Child; onOpen: (id: string) => v
         <Pressable key={ch.id} onPress={() => onOpen(ch.id)} style={S.recCard}>
           <Text style={{ fontSize: 32 }}>{ch.emoji}</Text>
           <Text style={S.recName}>{ch.character}</Text>
-          <Text style={S.recMeta}>{ch.timeMinutes} min · {ch.difficulty}</Text>
+          <Text style={S.recMeta}>{ch.timeMinutes} {t("screens.event_prep.minutes_short")} · {ch.difficulty}</Text>
         </Pressable>
       ))}
     </ScrollView>

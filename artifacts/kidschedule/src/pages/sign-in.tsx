@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -87,6 +88,7 @@ const CARD: React.CSSProperties = {
 
 // ── Neon ring hero (sits above the card) ─────────────────────────────────────
 function NeonRingHero() {
+  const { t } = useTranslation();
   const R = 170;                         // outer ring diameter
   const INNER = 136;                     // inner glass diameter
   const OFF = (R - INNER) / 2;          // offset to centre inner inside ring
@@ -169,7 +171,7 @@ function NeonRingHero() {
             fontSize: 12, fontWeight: 300, letterSpacing: "4px",
             textTransform: "uppercase", color: "rgba(255,255,255,0.80)",
             lineHeight: 1.3, userSelect: "none",
-          }}>Meet</span>
+          }}>{t("screens.sign_in.meet")}</span>
           <span style={{
             display: "block",
             fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
@@ -189,6 +191,7 @@ function NeonRingHero() {
 
 // ── Full-page shell ────────────────────────────────────────────────────────────
 function AuthShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div style={{
       minHeight: "100vh",
@@ -240,7 +243,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <p style={{ marginTop: "20px", textAlign: "center", fontSize: "12px", color: "rgba(255,255,255,0.22)" }}>
-          Where Smart Parenting Begins
+          {t("screens.sign_in.tagline")}
         </p>
       </div>
     </div>
@@ -251,6 +254,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
 type ViewMode = "signin" | "reset" | "reset-sent";
 
 export default function SignInPage() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { isLoaded, isSignedIn } = useAuth();
   const [mode, setMode] = useState<ViewMode>("signin");
@@ -320,12 +324,12 @@ export default function SignInPage() {
       <AuthShell>
         <div style={{ fontSize: "40px", marginBottom: "12px" }}>📬</div>
         <h1 style={{ margin: "0 0 8px", fontSize: "22px", fontWeight: 800, color: "#FFFFFF" }}>
-          Check your inbox
+          {t("screens.sign_in.inbox_title")}
         </h1>
         <p style={{ margin: "0 0 24px", fontSize: "14px", color: "rgba(200,180,255,0.70)", lineHeight: 1.5 }}>
-          We've sent a password reset link to{" "}
-          <span style={{ color: "#C084FC", fontWeight: 600 }}>{resetEmail}</span>.
-          Check your spam folder if you don't see it.
+          {t("screens.sign_in.inbox_body_before")}{" "}
+          <span style={{ color: "#C084FC", fontWeight: 600 }}>{resetEmail}</span>
+          {t("screens.sign_in.inbox_body_after")}
         </p>
         <button
           type="button"
@@ -340,7 +344,7 @@ export default function SignInPage() {
             fontFamily: "inherit",
           }}
         >
-          Back to Sign in
+          {t("screens.sign_in.back_to_sign_in_button")}
         </button>
       </AuthShell>
     );
@@ -351,22 +355,22 @@ export default function SignInPage() {
     return (
       <AuthShell>
         <h1 style={{ margin: "0 0 6px", fontSize: "24px", fontWeight: 800, color: "#FFFFFF" }}>
-          Reset password
+          {t("screens.sign_in.reset_title")}
         </h1>
         <p style={{ margin: "0 0 24px", fontSize: "14px", color: "rgba(200,180,255,0.65)" }}>
-          Enter your email and we'll send you a reset link.
+          {t("screens.sign_in.reset_subtitle")}
         </p>
 
         <form onSubmit={onSendReset} style={{ display: "flex", flexDirection: "column", gap: "14px", textAlign: "left" }}>
           <div>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)", marginBottom: "7px" }}>
-              Email
+              {t("screens.sign_in.email_label")}
             </label>
             <input
               type="email" required
               value={resetEmail}
               onChange={e => setResetEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t("screens.sign_in.email_placeholder")}
               style={{ ...INPUT_STYLE }}
               onFocus={glowFocus} onBlur={glowBlur}
               autoFocus
@@ -387,7 +391,7 @@ export default function SignInPage() {
               fontFamily: "inherit", marginTop: "4px",
             }}
           >
-            {resetBusy ? "Sending…" : "Send reset link"}
+            {resetBusy ? t("screens.sign_in.sending") : t("screens.sign_in.send_reset")}
           </button>
         </form>
 
@@ -400,7 +404,7 @@ export default function SignInPage() {
             cursor: "pointer", fontFamily: "inherit", width: "100%",
           }}
         >
-          ← Back to Sign in
+          {t("screens.sign_in.back_to_sign_in_link")}
         </button>
       </AuthShell>
     );
@@ -410,10 +414,10 @@ export default function SignInPage() {
   return (
     <AuthShell>
       <h1 style={{ margin: "0 0 5px", fontSize: "26px", fontWeight: 800, color: "#FFFFFF", letterSpacing: "-0.4px" }}>
-        Welcome back
+        {t("screens.sign_in.title")}
       </h1>
       <p style={{ margin: "0 0 26px", fontSize: "14px", color: "rgba(200,180,255,0.65)" }}>
-        Sign in to your personal parenting coach
+        {t("screens.sign_in.subtitle")}
       </p>
 
       {/* Phone OTP (wrapped so button picks up si-phone-btn hover class) */}
@@ -424,7 +428,7 @@ export default function SignInPage() {
       {/* Divider */}
       <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "20px 0" }}>
         <div style={{ flex: 1, height: "1px", background: "rgba(168,85,247,0.15)" }} />
-        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.30)" }}>or</span>
+        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.30)" }}>{t("screens.sign_in.divider_or")}</span>
         <div style={{ flex: 1, height: "1px", background: "rgba(168,85,247,0.15)" }} />
       </div>
 
@@ -432,13 +436,13 @@ export default function SignInPage() {
       <form onSubmit={onEmail} style={{ display: "flex", flexDirection: "column", gap: "14px", textAlign: "left" }}>
         <div>
           <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)", marginBottom: "7px" }}>
-            Email
+            {t("screens.sign_in.email_label")}
           </label>
           <input
             type="email" required
             value={email}
             onChange={e => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder={t("screens.sign_in.email_placeholder")}
             style={{ ...INPUT_STYLE }}
             onFocus={glowFocus} onBlur={glowBlur}
           />
@@ -446,7 +450,7 @@ export default function SignInPage() {
 
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "7px" }}>
-            <label style={{ fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)" }}>Password</label>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "rgba(200,180,255,0.80)" }}>{t("screens.sign_in.password_label")}</label>
             <button
               type="button" onClick={onForgotOpen}
               style={{
@@ -455,7 +459,7 @@ export default function SignInPage() {
                 cursor: "pointer", fontFamily: "inherit",
               }}
             >
-              Forgot password?
+              {t("screens.sign_in.forgot")}
             </button>
           </div>
           <div style={{ position: "relative" }}>
@@ -463,7 +467,7 @@ export default function SignInPage() {
               type={showPass ? "text" : "password"} required minLength={6}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder={t("screens.sign_in.password_placeholder")}
               style={{ ...INPUT_STYLE, paddingRight: "44px" }}
               onFocus={glowFocus} onBlur={glowBlur}
             />
@@ -475,7 +479,7 @@ export default function SignInPage() {
                 color: "rgba(200,180,255,0.50)", fontSize: "13px", padding: 0,
               }}
             >
-              {showPass ? "Hide" : "Show"}
+              {showPass ? t("screens.sign_in.hide") : t("screens.sign_in.show")}
             </button>
           </div>
         </div>
@@ -494,14 +498,14 @@ export default function SignInPage() {
             fontFamily: "inherit", marginTop: "4px",
           }}
         >
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? t("screens.sign_in.signing_in") : t("screens.sign_in.sign_in_button")}
         </button>
       </form>
 
       <p style={{ marginTop: "20px", fontSize: "14px", color: "rgba(200,180,255,0.50)", textAlign: "center" }}>
-        Don't have an account?{" "}
+        {t("screens.sign_in.no_account")}{" "}
         <Link href="/sign-up" style={{ color: "#a855f7", fontWeight: 600, textDecoration: "none" }}>
-          Sign up
+          {t("screens.sign_in.sign_up_link")}
         </Link>
       </p>
     </AuthShell>

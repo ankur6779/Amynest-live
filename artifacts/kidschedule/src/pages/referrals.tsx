@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Gift, Copy, Check, Share2, Mail, MessageCircle,
   Trophy, Sparkles, Lock, Calendar, Ticket, Send,
@@ -36,14 +37,19 @@ function GiftTokenCard({
   onCopy: (code: string) => void;
   copied: string | null;
 }) {
+  const { t } = useTranslation();
   const expDays = daysLeft(token.expiresAt);
   const isAvailable = token.status === "available";
 
   const shareGift = async () => {
-    const text = `I'm gifting you ${token.bonusDays} days of Amy AI premium! Use code: ${token.giftCode} at ${window.location.origin}/?gift=${token.giftCode}`;
+    const text = t("screens.referrals.gift_share_text", {
+      days: token.bonusDays,
+      code: token.giftCode,
+      url: `${window.location.origin}/?gift=${token.giftCode}`,
+    });
     if ((navigator as any).share) {
       try {
-        await (navigator as any).share({ title: "Amy AI Gift", text });
+        await (navigator as any).share({ title: t("screens.referrals.gift_share_title"), text });
         return;
       } catch { /* fall through */ }
     }
@@ -63,7 +69,7 @@ function GiftTokenCard({
         <div className="flex items-center gap-2">
           <Ticket className={`h-4 w-4 ${isAvailable ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"}`} />
           <span className="font-quicksand font-bold text-sm">
-            {token.bonusDays} days free premium
+            {t("screens.referrals.gift_card_days", { count: token.bonusDays })}
           </span>
         </div>
         <Badge
@@ -76,7 +82,13 @@ function GiftTokenCard({
               : "text-muted-foreground"
           }`}
         >
-          {token.status}
+          {token.status === "available"
+            ? t("screens.referrals.status_available")
+            : token.status === "redeemed"
+            ? t("screens.referrals.status_redeemed")
+            : token.status === "expired"
+            ? t("screens.referrals.status_expired")
+            : t("screens.referrals.status_used")}
         </Badge>
       </div>
 
@@ -96,7 +108,7 @@ function GiftTokenCard({
             ) : (
               <Copy className="h-3.5 w-3.5" />
             )}
-            {copied === token.giftCode ? "Copied" : "Copy"}
+            {copied === token.giftCode ? t("screens.referrals.copied") : t("screens.referrals.copy")}
           </Button>
         )}
       </div>
@@ -109,16 +121,16 @@ function GiftTokenCard({
             onClick={shareGift}
           >
             <Send className="h-3.5 w-3.5" />
-            Share gift
+            {t("screens.referrals.share_gift")}
           </Button>
           <a
-            href={`https://wa.me/?text=${encodeURIComponent(`I'm gifting you ${token.bonusDays} days of Amy AI premium! Use this code: ${token.giftCode}`)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(t("screens.referrals.whatsapp_gift_text", { days: token.bonusDays, code: token.giftCode }))}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-1.5 rounded-md border border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition"
           >
             <MessageCircle className="h-3.5 w-3.5" />
-            WhatsApp
+            {t("screens.referrals.whatsapp")}
           </a>
         </div>
       )}
@@ -126,12 +138,12 @@ function GiftTokenCard({
       {isAvailable && expDays !== null && (
         <p className="text-[10px] text-muted-foreground flex items-center gap-1">
           <Calendar className="h-3 w-3" />
-          Expires in {expDays} day{expDays === 1 ? "" : "s"}
+          {t("screens.referrals.expires", { count: expDays })}
         </p>
       )}
       {token.status === "redeemed" && token.redeemedAt && (
         <p className="text-[10px] text-muted-foreground">
-          Redeemed on {new Date(token.redeemedAt).toLocaleDateString()}
+          {t("screens.referrals.redeemed_on", { date: new Date(token.redeemedAt).toLocaleDateString() })}
         </p>
       )}
     </div>
@@ -141,10 +153,11 @@ function GiftTokenCard({
 // ─── Redeem Gift Input ────────────────────────────────────────────────────────
 
 function RedeemGiftSection({ onRedeem }: { onRedeem: (code: string) => Promise<void> }) {
+  const { t } = useTranslation();
   const [code, setCode] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [bonusDays, setBonusDays] = useState(0);
+  const [bonusDays] = useState(0);
 
   const handle = async () => {
     if (!code.trim()) return;
@@ -157,13 +170,13 @@ function RedeemGiftSection({ onRedeem }: { onRedeem: (code: string) => Promise<v
     } catch (err: any) {
       const reason = err?.message ?? "unknown_error";
       const messages: Record<string, string> = {
-        not_found: "Gift code not found. Check and try again.",
-        already_redeemed: "This gift has already been claimed.",
-        expired: "This gift code has expired.",
-        self_redeem: "You can't redeem your own gift code!",
-        server_error: "Something went wrong. Please try again.",
+        not_found: t("screens.referrals.err_not_found"),
+        already_redeemed: t("screens.referrals.err_already_redeemed"),
+        expired: t("screens.referrals.err_expired"),
+        self_redeem: t("screens.referrals.err_self_redeem"),
+        server_error: t("screens.referrals.err_server"),
       };
-      setErrorMsg(messages[reason] ?? "Invalid gift code.");
+      setErrorMsg(messages[reason] ?? t("screens.referrals.err_invalid"));
       setState("error");
     }
   };
@@ -172,10 +185,10 @@ function RedeemGiftSection({ onRedeem }: { onRedeem: (code: string) => Promise<v
     <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-4">
       <div className="flex items-center gap-2">
         <Gift className="h-5 w-5 text-amber-500" />
-        <h2 className="font-quicksand text-lg font-bold">Redeem a Gift Code</h2>
+        <h2 className="font-quicksand text-lg font-bold">{t("screens.referrals.redeem_heading")}</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        Received a gift code from a friend? Enter it below to claim your free premium days.
+        {t("screens.referrals.redeem_subtitle")}
       </p>
 
       {state === "success" ? (
@@ -183,14 +196,16 @@ function RedeemGiftSection({ onRedeem }: { onRedeem: (code: string) => Promise<v
           <Check className="h-5 w-5 text-emerald-600 shrink-0" />
           <div>
             <p className="font-semibold text-emerald-800 dark:text-emerald-200">
-              🎉 Gift redeemed! {bonusDays > 0 ? `+${bonusDays} days of premium added.` : "Premium days added to your account!"}
+              {bonusDays > 0
+                ? t("screens.referrals.gift_redeemed_with_days", { days: bonusDays })
+                : t("screens.referrals.gift_redeemed_added")}
             </p>
           </div>
         </div>
       ) : (
         <div className="flex gap-2">
           <Input
-            placeholder="GIFT-XXXXXXX"
+            placeholder={t("screens.referrals.code_input_placeholder")}
             value={code}
             onChange={(e) => {
               setCode(e.target.value.toUpperCase());
@@ -206,7 +221,7 @@ function RedeemGiftSection({ onRedeem }: { onRedeem: (code: string) => Promise<v
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
-            Redeem
+            {t("screens.referrals.redeem_button")}
           </Button>
         </div>
       )}
@@ -220,6 +235,7 @@ function RedeemGiftSection({ onRedeem }: { onRedeem: (code: string) => Promise<v
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ReferralsPage() {
+  const { t } = useTranslation();
   const { payload, isLoading, redeemGift } = useReferrals();
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -233,7 +249,7 @@ export default function ReferralsPage() {
   if (isLoading || !stats) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="text-sm text-muted-foreground animate-pulse">Loading your referral dashboard…</div>
+        <div className="text-sm text-muted-foreground animate-pulse">{t("screens.referrals.loading")}</div>
       </div>
     );
   }
@@ -247,18 +263,25 @@ export default function ReferralsPage() {
   const validShort = Math.max(0, stats.validThreshold - stats.validReferrals);
   const paidShort = Math.max(0, stats.paidThreshold - stats.paidReferrals);
 
-  const rewardKind = stats.isPremium ? "gift tokens" : "days free";
+  const rewardKind = stats.isPremium
+    ? t("screens.referrals.kind_gift_tokens")
+    : t("screens.referrals.kind_days_free");
+
+  const inviteParts = [
+    validShort > 0 ? t("screens.referrals.friends_more", { count: validShort }) : "",
+    validShort > 0 && paidShort > 0 ? " + " : "",
+    paidShort > 0 ? t("screens.referrals.paid_users", { count: paidShort }) : "",
+  ].join("");
+
   const message = capReached
-    ? "Maxed out — you've earned the lifetime referral cap. Thank you for spreading Amy! 🎉"
+    ? t("screens.referrals.msg_maxed")
     : stats.rewardsAvailable > 0
     ? stats.isPremium
-      ? `🎁 You have ${availableGifts.length} gift token${availableGifts.length === 1 ? "" : "s"} to share with friends!`
-      : `🎉 You unlocked ${stats.rewardsAvailable * stats.rewardDays} days of premium via referrals!`
+      ? t("screens.referrals.msg_gifts", { count: availableGifts.length })
+      : t("screens.referrals.msg_unlocked", { days: stats.rewardsAvailable * stats.rewardDays })
     : validShort === 0 && paidShort === 0
-    ? "Almost there — your reward is being processed."
-    : `Invite ${validShort > 0 ? `${validShort} more friend${validShort > 1 ? "s" : ""}` : ""}${
-        validShort > 0 && paidShort > 0 ? " + " : ""
-      }${paidShort > 0 ? `${paidShort} paid user` : ""} to unlock ${stats.rewardDays} ${rewardKind}.`;
+    ? t("screens.referrals.msg_almost")
+    : t("screens.referrals.msg_invite_combo", { parts: inviteParts, days: stats.rewardDays, kind: rewardKind });
 
   const copy = async (value: string) => {
     try {
@@ -269,10 +292,10 @@ export default function ReferralsPage() {
   };
 
   const share = async () => {
-    const text = `I'm using Amy AI for parenting — try it with my code ${stats.code} and we both get premium! ${link}`;
+    const text = t("screens.referrals.share_text", { code: stats.code, link });
     if ((navigator as any).share) {
       try {
-        await (navigator as any).share({ title: "Try Amy AI", text, url: link });
+        await (navigator as any).share({ title: t("screens.referrals.share_title"), text, url: link });
         return;
       } catch { /* fall through */ }
     }
@@ -291,24 +314,24 @@ export default function ReferralsPage() {
         <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
         <div className="relative space-y-3">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wider">
-            <Gift className="h-3.5 w-3.5" /> Invite & Earn
+            <Gift className="h-3.5 w-3.5" /> {t("screens.referrals.invite_earn")}
           </div>
           <h1 className="font-quicksand text-2xl sm:text-3xl font-extrabold leading-tight">
             {stats.isPremium
-              ? `Gift ${stats.rewardDays} days premium to friends 🎁`
-              : `Get ${stats.rewardDays} days free for every ${stats.validThreshold} friends 🎁`}
+              ? t("screens.referrals.gift_title_premium", { days: stats.rewardDays })
+              : t("screens.referrals.gift_title_free", { days: stats.rewardDays, count: stats.validThreshold })}
           </h1>
           <p className="text-sm sm:text-base text-white/90 max-w-xl">{message}</p>
           {!stats.isPremium && bonusDays !== null && bonusDays > 0 && (
             <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold">
               <Calendar className="h-3.5 w-3.5" />
-              {bonusDays} bonus day{bonusDays === 1 ? "" : "s"} active
+              {t("screens.referrals.bonus_days", { count: bonusDays })}
             </div>
           )}
           {stats.isPremium && availableGifts.length > 0 && (
             <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold">
               <Ticket className="h-3.5 w-3.5" />
-              {availableGifts.length} gift{availableGifts.length === 1 ? "" : "s"} ready to share
+              {t("screens.referrals.gifts_ready", { count: availableGifts.length })}
             </div>
           )}
         </div>
@@ -318,7 +341,7 @@ export default function ReferralsPage() {
       <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-4">
         <div className="flex items-center gap-2">
           <AmyIcon size={22} bounce />
-          <h2 className="font-quicksand text-lg font-bold">Your referral code</h2>
+          <h2 className="font-quicksand text-lg font-bold">{t("screens.referrals.code_heading")}</h2>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 flex items-center justify-between gap-3 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3">
@@ -332,12 +355,12 @@ export default function ReferralsPage() {
               onClick={() => copy(stats.code)}
             >
               {copied === stats.code ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-              {copied === stats.code ? "Copied" : "Copy"}
+              {copied === stats.code ? t("screens.referrals.copied") : t("screens.referrals.copy")}
             </Button>
           </div>
           <Button onClick={share} className="gap-2 sm:w-auto">
             <Share2 className="h-4 w-4" />
-            Share invite
+            {t("screens.referrals.share_invite")}
           </Button>
         </div>
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/30 px-4 py-2.5">
@@ -347,23 +370,23 @@ export default function ReferralsPage() {
             onClick={() => copy(link)}
             className="text-xs font-semibold text-primary hover:underline shrink-0"
           >
-            {copied === link ? "Copied!" : "Copy link"}
+            {copied === link ? t("screens.referrals.copied_excl") : t("screens.referrals.copy_link")}
           </button>
         </div>
         <div className="grid grid-cols-2 gap-2 pt-1">
           <a
-            href={`https://wa.me/?text=${encodeURIComponent(`Try Amy AI with my code ${stats.code} — we both get premium! ${link}`)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(t("screens.referrals.whatsapp_share_text", { code: stats.code, link }))}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition"
           >
-            <MessageCircle className="h-4 w-4" /> WhatsApp
+            <MessageCircle className="h-4 w-4" /> {t("screens.referrals.whatsapp")}
           </a>
           <a
-            href={`mailto:?subject=${encodeURIComponent("Try Amy AI")}&body=${encodeURIComponent(`Hey! Try Amy AI with my code ${stats.code} — we both get premium. ${link}`)}`}
+            href={`mailto:?subject=${encodeURIComponent(t("screens.referrals.email_subject"))}&body=${encodeURIComponent(t("screens.referrals.email_body", { code: stats.code, link }))}`}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition"
           >
-            <Mail className="h-4 w-4" /> Email
+            <Mail className="h-4 w-4" /> {t("screens.referrals.email")}
           </a>
         </div>
       </div>
@@ -373,26 +396,26 @@ export default function ReferralsPage() {
         <div className="rounded-3xl border border-violet-400/40 bg-card p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-quicksand text-lg font-bold flex items-center gap-2">
-              <Ticket className="h-5 w-5 text-violet-500" /> Your Gift Tokens
+              <Ticket className="h-5 w-5 text-violet-500" /> {t("screens.referrals.your_gift_tokens")}
             </h2>
             <Badge variant="secondary" className="font-bold bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">
-              {availableGifts.length} available
+              {t("screens.referrals.available_label", { count: availableGifts.length })}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            You're a premium member — so your referral rewards are gift tokens you can share with friends instead of bonus days for yourself.
+            {t("screens.referrals.premium_explain")}
           </p>
           <div className="space-y-3">
-            {availableGifts.map((t) => (
-              <GiftTokenCard key={t.id} token={t} onCopy={copy} copied={copied} />
+            {availableGifts.map((tok) => (
+              <GiftTokenCard key={tok.id} token={tok} onCopy={copy} copied={copied} />
             ))}
             {redeemedGifts.length > 0 && (
               <>
                 <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide pt-1">
-                  Already sent
+                  {t("screens.referrals.already_sent")}
                 </p>
-                {redeemedGifts.map((t) => (
-                  <GiftTokenCard key={t.id} token={t} onCopy={copy} copied={copied} />
+                {redeemedGifts.map((tok) => (
+                  <GiftTokenCard key={tok.id} token={tok} onCopy={copy} copied={copied} />
                 ))}
               </>
             )}
@@ -407,61 +430,60 @@ export default function ReferralsPage() {
       <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="font-quicksand text-lg font-bold flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-amber-500" /> Progress
+            <Trophy className="h-5 w-5 text-amber-500" /> {t("screens.referrals.progress")}
           </h2>
           <Badge variant="secondary" className="font-bold">
-            {stats.rewardsGranted} / {stats.rewardCap} rewards
+            {t("screens.referrals.rewards_count", { granted: stats.rewardsGranted, cap: stats.rewardCap })}
           </Badge>
         </div>
 
         <div>
           <div className="flex justify-between text-sm mb-1.5">
-            <span className="font-semibold">Friends invited</span>
+            <span className="font-semibold">{t("screens.referrals.friends_invited")}</span>
             <span className="text-muted-foreground tabular-nums">
               {stats.validReferrals} / {stats.validThreshold}
             </span>
           </div>
           <Progress value={validProgress} className="h-2" />
           <p className="text-xs text-muted-foreground mt-1.5">
-            Friends who signed up & used Amy AI
+            {t("screens.referrals.friends_helper")}
           </p>
         </div>
 
         <div>
           <div className="flex justify-between text-sm mb-1.5">
-            <span className="font-semibold">Paid sign-ups</span>
+            <span className="font-semibold">{t("screens.referrals.paid_signups")}</span>
             <span className="text-muted-foreground tabular-nums">
               {stats.paidReferrals} / {stats.paidThreshold}
             </span>
           </div>
           <Progress value={paidProgress} className="h-2 [&>div]:bg-emerald-500" />
           <p className="text-xs text-muted-foreground mt-1.5">
-            At least 1 must purchase a paid plan
+            {t("screens.referrals.paid_helper")}
           </p>
         </div>
 
         {capReached ? (
           <div className="rounded-2xl border border-amber-400/40 bg-amber-50 dark:bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200 inline-flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
-            You've earned the maximum {stats.rewardCap} referral rewards. Thank you!
+            {t("screens.referrals.max_reached", { count: stats.rewardCap })}
           </div>
         ) : (
           <div className="rounded-2xl border border-border bg-muted/30 p-3 text-sm">
-            <span className="font-semibold">{rewardsLeft}</span> more reward{rewardsLeft === 1 ? "" : "s"} available — earn{" "}
             {stats.isPremium
-              ? `${rewardsLeft} more gift token${rewardsLeft === 1 ? "" : "s"} to share`
-              : `up to ${rewardsLeft * stats.rewardDays} days of free premium`}.
+              ? t("screens.referrals.more_rewards_premium", { count: rewardsLeft })
+              : t("screens.referrals.more_rewards_free", { count: rewardsLeft, days: rewardsLeft * stats.rewardDays })}
           </div>
         )}
       </div>
 
       {/* Recent referrals */}
       <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-sm">
-        <h2 className="font-quicksand text-lg font-bold mb-3">Your referrals</h2>
+        <h2 className="font-quicksand text-lg font-bold mb-3">{t("screens.referrals.your_referrals")}</h2>
         {referrals.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             <Lock className="h-5 w-5 mx-auto mb-2 opacity-50" />
-            No referrals yet. Share your code to get started!
+            {t("screens.referrals.no_referrals")}
           </div>
         ) : (
           <div className="space-y-2">
@@ -480,7 +502,7 @@ export default function ReferralsPage() {
                         : "bg-amber-400"
                     }`}
                   />
-                  <span className="text-sm font-semibold truncate">Friend #{r.id}</span>
+                  <span className="text-sm font-semibold truncate">{t("screens.referrals.friend_label", { id: r.id })}</span>
                 </div>
                 <Badge
                   variant={r.status === "paid" ? "default" : "secondary"}
@@ -492,7 +514,11 @@ export default function ReferralsPage() {
                       : ""
                   }`}
                 >
-                  {r.status === "paid" ? "Paid" : r.status === "valid" ? "Active" : "Pending"}
+                  {r.status === "paid"
+                    ? t("screens.referrals.status_paid")
+                    : r.status === "valid"
+                    ? t("screens.referrals.status_active")
+                    : t("screens.referrals.status_pending")}
                 </Badge>
               </div>
             ))}
@@ -503,13 +529,13 @@ export default function ReferralsPage() {
       {/* Rules */}
       <div className="text-xs text-muted-foreground space-y-1.5 px-2">
         <p>
-          <strong>How it works:</strong>{" "}
+          <strong>{t("screens.referrals.rules_heading")}</strong>{" "}
           {stats.isPremium
-            ? `As a premium member, earn a shareable gift token (worth ${stats.rewardDays} days of free premium for a friend) when ${stats.validThreshold} friends sign up using your code AND at least ${stats.paidThreshold} of them buys any paid plan.`
-            : `Earn ${stats.rewardDays} days of free premium when ${stats.validThreshold} friends sign up using your code AND at least ${stats.paidThreshold} of them buys any paid plan.`}
+            ? t("screens.referrals.rules_premium", { days: stats.rewardDays, valid: stats.validThreshold, paid: stats.paidThreshold })
+            : t("screens.referrals.rules_free", { days: stats.rewardDays, valid: stats.validThreshold, paid: stats.paidThreshold })}
         </p>
         <p>
-          Rewards are capped at {stats.rewardCap} milestones lifetime.
+          {t("screens.referrals.rules_cap", { cap: stats.rewardCap })}
         </p>
       </div>
     </div>

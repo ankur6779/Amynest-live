@@ -16,6 +16,7 @@ import {
   dailyLimitReached, gamesPlayedToday, amySuggestion, getSkillPercents,
   DAILY_LIMIT_N, type GameDef, type GameCategory,
 } from "@/utils/gamesStorage";
+import { useTranslation } from "react-i18next";
 
 const { width: SW } = Dimensions.get("window");
 
@@ -36,6 +37,7 @@ function buildMathRound() {
   return { q: `${a} ${op} ${b}`, correct, choices: [correct, ...Array.from(wrongs)].sort(() => Math.random() - 0.5) };
 }
 function SpeedMathGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
   const TOTAL = 6, PER_Q = 8;
   const rounds = useMemo(() => Array.from({ length: TOTAL }, buildMathRound), []);
   const [idx, setIdx] = useState(0), [score, setScore] = useState(0);
@@ -77,7 +79,7 @@ function SpeedMathGame({ onFinish }: { onFinish: (s: number, t: number) => void 
                 </TouchableOpacity>
               ))}
             </View></>)}
-      <Text style={gs.scoreLabel}>Score: {score}</Text>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score })}</Text>
     </View>
   );
 }
@@ -90,6 +92,7 @@ function buildNMRound() {
   return { count, choices: [count, ...Array.from(wrongs)].sort(() => Math.random() - 0.5) };
 }
 function NumberMatchGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
   const TOTAL = 6;
   const rounds = useMemo(() => Array.from({ length: TOTAL }, buildNMRound), []);
   const [idx, setIdx] = useState(0), [score, setScore] = useState(0), [picked, setPicked] = useState<number | null>(null);
@@ -105,7 +108,7 @@ function NumberMatchGame({ onFinish }: { onFinish: (s: number, t: number) => voi
   const dots = Array.from({ length: r.count });
   return (
     <View style={gs.gameWrap}>
-      <Text style={gs.gameMeta}>{idx + 1}/{TOTAL} — How many dots?</Text>
+      <Text style={gs.gameMeta}>{t("screens.games.dots_q", { idx: idx + 1, total: TOTAL })}</Text>
       <View style={gs.dotsWrap}>{dots.map((_, i) => <View key={i} style={gs.dot} />)}</View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 8 }}>
         {r.choices.map(c => {
@@ -115,7 +118,7 @@ function NumberMatchGame({ onFinish }: { onFinish: (s: number, t: number) => voi
             <Text style={gs.choiceText}>{c}</Text></TouchableOpacity>);
         })}
       </View>
-      <Text style={gs.scoreLabel}>Score: {score}</Text>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score })}</Text>
     </View>
   );
 }
@@ -134,6 +137,7 @@ function buildFMRound() {
   return { tiles, mistakeIdx: idx };
 }
 function FindMistakeGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
   const TOTAL = 5;
   const rounds = useMemo(() => Array.from({ length: TOTAL }, buildFMRound), []);
   const [idx, setIdx] = useState(0), [score, setScore] = useState(0), [picked, setPicked] = useState<number | null>(null);
@@ -148,7 +152,7 @@ function FindMistakeGame({ onFinish }: { onFinish: (s: number, t: number) => voi
   };
   return (
     <View style={gs.gameWrap}>
-      <Text style={gs.gameMeta}>{idx + 1}/{TOTAL} — Tap the different one</Text>
+      <Text style={gs.gameMeta}>{t("screens.games.find_diff_q", { idx: idx + 1, total: TOTAL })}</Text>
       <View style={gs.gridWrap}>
         {r.tiles.map((c, i) => {
           const isM = i === r.mistakeIdx, isP = picked === i;
@@ -157,18 +161,19 @@ function FindMistakeGame({ onFinish }: { onFinish: (s: number, t: number) => voi
             <Text style={gs.gridText}>{c}</Text></TouchableOpacity>);
         })}
       </View>
-      <Text style={gs.scoreLabel}>Score: {score}</Text>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score })}</Text>
     </View>
   );
 }
 
 // ─── Color Memory ──────────────────────────────────────────────────
 const CMCOLORS = [
-  { id: "r", name: "Red",    color: palette.red500 }, { id: "b", name: "Blue",  color: palette.blue500 },
-  { id: "g", name: "Green",  color: palette.green500 }, { id: "y", name: "Yellow",color: palette.yellow400 },
-  { id: "p", name: "Purple", color: brand.purple500 }, { id: "o", name: "Orange",color: palette.orange400 },
+  { id: "r", nameKey: "color_red",    color: palette.red500 }, { id: "b", nameKey: "color_blue",  color: palette.blue500 },
+  { id: "g", nameKey: "color_green",  color: palette.green500 }, { id: "y", nameKey: "color_yellow",color: palette.yellow400 },
+  { id: "p", nameKey: "color_purple", color: brand.purple500 }, { id: "o", nameKey: "color_orange",color: palette.orange400 },
 ];
 function ColorMemoryGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
   const seqLens = [3, 4, 5, 5];
   const sequences = useMemo(() => seqLens.map(l => Array.from({ length: l }, () => CMCOLORS[Math.floor(Math.random() * CMCOLORS.length)].id)), []);
   const [round, setRound] = useState(0), [phase, setPhase] = useState<"show"|"input"|"fb">("show");
@@ -202,20 +207,20 @@ function ColorMemoryGame({ onFinish }: { onFinish: (s: number, t: number) => voi
 
   return (
     <View style={gs.gameWrap}>
-      <Text style={gs.gameMeta}>Round {round + 1}/{sequences.length} · Length {seq.length}</Text>
+      <Text style={gs.gameMeta}>{t("screens.games.round_meta", { round: round + 1, total: sequences.length, length: seq.length })}</Text>
       <View style={gs.cmDisplay}>
         {phase === "show" && <View style={[gs.cmSwatch, { backgroundColor: CMCOLORS.find(c => c.id === seq[showIdx])?.color }]} />}
-        {phase === "input" && <Text style={gs.cmHint}>Tap the colours in order ({input.length}/{seq.length})</Text>}
+        {phase === "input" && <Text style={gs.cmHint}>{t("screens.games.color_input_hint", { done: input.length, total: seq.length })}</Text>}
         {phase === "fb" && <Text style={[gs.fbText, { color: okRound ? palette.green400 : palette.red500 }]}>{okRound ? "✓" : "✗"}</Text>}
       </View>
       <View style={gs.gridWrap}>
         {CMCOLORS.map(c => (
           <TouchableOpacity key={c.id} disabled={phase !== "input"} onPress={() => onPick(c.id)} style={[gs.gridCell, { backgroundColor: c.color, opacity: phase === "input" ? 1 : 0.4 }]} activeOpacity={0.8}>
-            <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>{c.name}</Text>
+            <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>{t(`screens.games.${c.nameKey}`)}</Text>
           </TouchableOpacity>
         ))}
       </View>
-      <Text style={gs.scoreLabel}>Score: {score}</Text>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score })}</Text>
     </View>
   );
 }
@@ -223,6 +228,7 @@ function ColorMemoryGame({ onFinish }: { onFinish: (s: number, t: number) => voi
 // ─── Target Tap ────────────────────────────────────────────────────
 interface Target { id: number; x: number; y: number; born: number }
 function TargetTapGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
   const DURATION = 25000, SPAWN_MS = 900, LIFE_MS = 1400;
   const [targets, setTargets] = useState<Target[]>([]);
   const [timeLeft, setTimeLeft] = useState(Math.round(DURATION / 1000));
@@ -256,30 +262,31 @@ function TargetTapGame({ onFinish }: { onFinish: (s: number, t: number) => void 
 
   return (
     <View style={gs.gameWrap}>
-      <View style={gs.gameTopRow}><Text style={gs.gameMeta}>Hits: {score}/{total}</Text><Text style={[gs.gameMeta, { color: timeLeft <= 5 ? palette.red300 : brandExtended.violetMuted, fontWeight: "700" }]}>⏱ {timeLeft}s</Text></View>
+      <View style={gs.gameTopRow}><Text style={gs.gameMeta}>{t("screens.games.hits_label", { score, total })}</Text><Text style={[gs.gameMeta, { color: timeLeft <= 5 ? palette.red300 : brandExtended.violetMuted, fontWeight: "700" }]}>⏱ {timeLeft}s</Text></View>
       <View style={gs.tapArena}>
-        {targets.map(t => {
-          const age = Date.now() - t.born; const scale = 1 - Math.min(0.35, age / LIFE_MS * 0.35);
+        {targets.map(tg => {
+          const age = Date.now() - tg.born; const scale = 1 - Math.min(0.35, age / LIFE_MS * 0.35);
           return (
-            <TouchableOpacity key={t.id} onPress={() => onTap(t.id)} style={[gs.target, { left: `${t.x}%` as any, top: `${t.y}%` as any, transform: [{ scale }] }]} activeOpacity={0.8} />
+            <TouchableOpacity key={tg.id} onPress={() => onTap(tg.id)} style={[gs.target, { left: `${tg.x}%` as any, top: `${tg.y}%` as any, transform: [{ scale }] }]} activeOpacity={0.8} />
           );
         })}
-        {targets.length === 0 && timeLeft > 0 && <Text style={gs.cmHint}>Targets coming…</Text>}
+        {targets.length === 0 && timeLeft > 0 && <Text style={gs.cmHint}>{t("screens.games.targets_coming")}</Text>}
       </View>
-      <Text style={[gs.gameMeta, { marginTop: 8 }]}>Tap each target before it fades! 25 seconds.</Text>
+      <Text style={[gs.gameMeta, { marginTop: 8 }]}>{t("screens.games.target_hint")}</Text>
     </View>
   );
 }
 
 // ─── Behavior Choice ───────────────────────────────────────────────
 const BC_SITUATIONS = [
-  { q: "Your friend is upset. What do you do?", choices: ["Make fun of them","Ask if they're okay","Walk away","Start a fight"], correct: 1 },
-  { q: "You broke something by accident. What do you do?", choices: ["Blame someone else","Hide it","Tell an adult","Pretend it was like that"], correct: 2 },
-  { q: "Someone is left out at playtime. What do you do?", choices: ["Ignore it","Invite them to join","Laugh at them","Tell them to go away"], correct: 1 },
-  { q: "You get a present you don't like. What do you do?", choices: ["Throw it","Say nothing","Say thank you kindly","Cry loudly"], correct: 2 },
-  { q: "A younger child is struggling. What do you do?", choices: ["Ignore them","Tease them","Offer to help","Tell them they're silly"], correct: 2 },
+  { qKey: "bc_q1", aKeys: ["bc_q1_a1","bc_q1_a2","bc_q1_a3","bc_q1_a4"], correct: 1 },
+  { qKey: "bc_q2", aKeys: ["bc_q2_a1","bc_q2_a2","bc_q2_a3","bc_q2_a4"], correct: 2 },
+  { qKey: "bc_q3", aKeys: ["bc_q3_a1","bc_q3_a2","bc_q3_a3","bc_q3_a4"], correct: 1 },
+  { qKey: "bc_q4", aKeys: ["bc_q4_a1","bc_q4_a2","bc_q4_a3","bc_q4_a4"], correct: 2 },
+  { qKey: "bc_q5", aKeys: ["bc_q5_a1","bc_q5_a2","bc_q5_a3","bc_q5_a4"], correct: 2 },
 ];
 function BehaviorChoiceGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
   const TOTAL = 5;
   const rounds = useMemo(() => BC_SITUATIONS.sort(() => Math.random() - 0.5).slice(0, TOTAL), []);
   const [idx, setIdx] = useState(0), [score, setScore] = useState(0), [picked, setPicked] = useState<number | null>(null);
@@ -294,18 +301,18 @@ function BehaviorChoiceGame({ onFinish }: { onFinish: (s: number, t: number) => 
   };
   return (
     <View style={gs.gameWrap}>
-      <Text style={gs.gameMeta}>{idx + 1}/{TOTAL}</Text>
-      <Text style={gs.bcQ}>{r.q}</Text>
+      <Text style={gs.gameMeta}>{t("screens.games.round_idx", { idx: idx + 1, total: TOTAL })}</Text>
+      <Text style={gs.bcQ}>{t(`screens.games.${r.qKey}`)}</Text>
       <View style={{ gap: 10, width: "100%" }}>
-        {r.choices.map((c, i) => {
+        {r.aKeys.map((aKey, i) => {
           const isC = i === r.correct, isP = picked === i;
           const bg = picked !== null ? (isC ? palette.green500 : isP ? palette.red500 : "rgba(255,255,255,0.06)") : "rgba(255,255,255,0.08)";
           const border = picked !== null && isC ? palette.green400 : "rgba(139,92,246,0.35)";
           return (<TouchableOpacity key={i} disabled={picked !== null} onPress={() => onPick(i)} style={[gs.bcChoice, { backgroundColor: bg, borderColor: border }]} activeOpacity={0.8}>
-            <Text style={gs.bcChoiceText}>{c}</Text></TouchableOpacity>);
+            <Text style={gs.bcChoiceText}>{t(`screens.games.${aKey}`)}</Text></TouchableOpacity>);
         })}
       </View>
-      <Text style={gs.scoreLabel}>Score: {score}</Text>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score })}</Text>
     </View>
   );
 }
@@ -320,6 +327,7 @@ function buildPMRound() {
   return { seq, correct, choices: [correct, ...Array.from(wrongs)].sort(() => Math.random() - 0.5) };
 }
 function PatternMatchGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
   const TOTAL = 5;
   const rounds = useMemo(() => Array.from({ length: TOTAL }, buildPMRound), []);
   const [idx, setIdx] = useState(0), [score, setScore] = useState(0), [picked, setPicked] = useState<string | null>(null);
@@ -334,7 +342,7 @@ function PatternMatchGame({ onFinish }: { onFinish: (s: number, t: number) => vo
   };
   return (
     <View style={gs.gameWrap}>
-      <Text style={gs.gameMeta}>{idx + 1}/{TOTAL} — What comes from this set?</Text>
+      <Text style={gs.gameMeta}>{t("screens.games.pattern_q", { idx: idx + 1, total: TOTAL })}</Text>
       <View style={{ flexDirection: "row", gap: 14, justifyContent: "center", marginVertical: 12 }}>
         {r.seq.map((s, i) => <View key={i} style={gs.seqBox}><Text style={gs.seqText}>{s}</Text></View>)}
         <View style={[gs.seqBox, { borderColor: palette.amber400, borderStyle: "dashed" }]}><Text style={gs.seqText}>?</Text></View>
@@ -347,7 +355,7 @@ function PatternMatchGame({ onFinish }: { onFinish: (s: number, t: number) => vo
             <Text style={[gs.choiceText, { fontSize: 24 }]}>{c}</Text></TouchableOpacity>);
         })}
       </View>
-      <Text style={gs.scoreLabel}>Score: {score}</Text>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score })}</Text>
     </View>
   );
 }
@@ -360,6 +368,7 @@ function buildOOORound() {
   return { items, oddItem: odd };
 }
 function OddOneOutGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
   const TOTAL = 5;
   const rounds = useMemo(() => Array.from({ length: TOTAL }, buildOOORound), []);
   const [idx, setIdx] = useState(0), [score, setScore] = useState(0), [picked, setPicked] = useState<string | null>(null);
@@ -374,7 +383,7 @@ function OddOneOutGame({ onFinish }: { onFinish: (s: number, t: number) => void 
   };
   return (
     <View style={gs.gameWrap}>
-      <Text style={gs.gameMeta}>{idx + 1}/{TOTAL} — Tap the odd one out</Text>
+      <Text style={gs.gameMeta}>{t("screens.games.odd_q", { idx: idx + 1, total: TOTAL })}</Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginVertical: 12 }}>
         {r.items.map((c, i) => {
           const isO = c === r.oddItem, isP = picked === c;
@@ -383,7 +392,7 @@ function OddOneOutGame({ onFinish }: { onFinish: (s: number, t: number) => void 
             <Text style={[gs.seqText, { fontSize: 28 }]}>{c}</Text></TouchableOpacity>);
         })}
       </View>
-      <Text style={gs.scoreLabel}>Score: {score}</Text>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score })}</Text>
     </View>
   );
 }
@@ -394,6 +403,7 @@ function OddOneOutGame({ onFinish }: { onFinish: (s: number, t: number) => void 
 type GameResult = { game: GameDef; score: number; total: number; earned: number; perfect: boolean };
 
 function GameModal({ game, onClose, onResult }: { game: GameDef; onClose: () => void; onResult: (r: GameResult) => void }) {
+  const { t } = useTranslation();
   const [done, setDone] = useState<GameResult | null>(null);
 
   const finish = async (score: number, total: number) => {
@@ -434,11 +444,11 @@ function GameModal({ game, onClose, onResult }: { game: GameDef; onClose: () => 
             ) : (
               <View style={gs.gameWrap}>
                 <Ionicons name="trophy" size={52} color={done.perfect ? palette.amber400 : brand.violet300} style={{ alignSelf: "center", marginVertical: 12 }} />
-                <Text style={[ms.sheetTitle, { textAlign: "center", fontSize: 20 }]}>{done.perfect ? "Perfect Score!" : "Nice work!"}</Text>
-                <Text style={[ms.sheetBlurb, { textAlign: "center", marginBottom: 16 }]}>You scored {done.score}/{done.total}</Text>
-                <View style={ms.earnedBadge}><Ionicons name="star" size={16} color="#fff" /><Text style={ms.earnedText}>+{done.earned} points</Text></View>
+                <Text style={[ms.sheetTitle, { textAlign: "center", fontSize: 20 }]}>{done.perfect ? t("screens.games.perfect_score") : t("screens.games.nice_work")}</Text>
+                <Text style={[ms.sheetBlurb, { textAlign: "center", marginBottom: 16 }]}>{t("screens.games.you_scored", { score: done.score, total: done.total })}</Text>
+                <View style={ms.earnedBadge}><Ionicons name="star" size={16} color="#fff" /><Text style={ms.earnedText}>{t("screens.games.earned_pts", { earned: done.earned })}</Text></View>
                 <TouchableOpacity onPress={() => { onResult(done!); onClose(); }} style={ms.doneBtn} activeOpacity={0.85}>
-                  <LinearGradient colors={[brand.primary, brand.pink500]} style={ms.doneBtnGrad}><Text style={ms.doneBtnText}>Done</Text></LinearGradient>
+                  <LinearGradient colors={[brand.primary, brand.pink500]} style={ms.doneBtnGrad}><Text style={ms.doneBtnText}>{t("screens.games.done_btn")}</Text></LinearGradient>
                 </TouchableOpacity>
               </View>
             )}
@@ -456,6 +466,7 @@ const ORDERED_CATS: GameCategory[] = ["brain","memory","math","focus","creativit
 const SKILL_CATS: GameCategory[] = ["brain","memory","math","focus","behavior","action"];
 
 export default function GamesScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { theme } = useTheme();
@@ -483,13 +494,13 @@ export default function GamesScreen() {
   const onUnlock = async (g: GameDef) => {
     setError(null);
     const r = await unlockGame(g.id);
-    if (!r.ok) setError(r.reason ?? "Could not unlock.");
-    setTick(t => t + 1);
+    if (!r.ok) setError(r.reason ?? t("screens.games.unlock_error"));
+    setTick(n => n + 1);
     if (Platform.OS !== "web") Haptics.impactAsync();
   };
 
   const onPlay = (g: GameDef) => {
-    if (limitHit) { setError(`Daily limit reached (${DAILY_LIMIT_N} games). Come back tomorrow!`); return; }
+    if (limitHit) { setError(t("screens.games.limit_error", { limit: DAILY_LIMIT_N })); return; }
     setError(null); setActiveGame(g);
   };
 
@@ -507,7 +518,7 @@ export default function GamesScreen() {
           <Ionicons name="chevron-back" size={20} color={brand.violet300} />
         </TouchableOpacity>
         <MaterialCommunityIcons name="gamepad-variant" size={20} color={brand.violet300} style={{ marginRight: 6 }} />
-        <Text style={scr.headerTitle}>Gaming Reward</Text>
+        <Text style={scr.headerTitle}>{t("screens.games.header_title")}</Text>
         <View style={{ flex: 1 }} />
         {/* Points pill */}
         <LinearGradient colors={[palette.amber500,palette.orange500]} style={scr.ptsPill}>
@@ -526,8 +537,8 @@ export default function GamesScreen() {
           <Text style={scr.bannerText} numberOfLines={3}>{suggestion}</Text>
         </View>
         <View style={scr.limitRow}>
-          <Text style={scr.limitText}>Played today: <Text style={{ color: limitHit ? palette.red300 : "#fff", fontWeight: "700" }}>{playedToday}/{DAILY_LIMIT_N}</Text></Text>
-          <Text style={scr.limitText}>50 pts to unlock a game</Text>
+          <Text style={scr.limitText}>{t("screens.games.played_today")} <Text style={{ color: limitHit ? palette.red300 : "#fff", fontWeight: "700" }}>{playedToday}/{DAILY_LIMIT_N}</Text></Text>
+          <Text style={scr.limitText}>{t("screens.games.unlock_hint")}</Text>
         </View>
 
         {/* Error banner */}
@@ -540,7 +551,7 @@ export default function GamesScreen() {
 
         {/* Skill Progress */}
         <View style={scr.skillCard}>
-          <Text style={scr.skillTitle}>Skill Progress</Text>
+          <Text style={scr.skillTitle}>{t("screens.games.skill_progress")}</Text>
           {SKILL_CATS.map(cat => {
             const pct = skills[cat] ?? 0;
             const barColor = pct >= 75 ? [palette.green500,palette.green400] : pct >= 40 ? [palette.amber500,palette.amber400] : [brand.primary, brand.violet400] as any;
@@ -564,7 +575,7 @@ export default function GamesScreen() {
             <View style={scr.catHeader}>
               <Text style={{ fontSize: 18 }}>{CATEGORY_EMOJI[cat]}</Text>
               <Text style={scr.catLabel}>{CATEGORY_LABEL[cat]}</Text>
-              <Text style={scr.catCount}>{list.length} game{list.length !== 1 ? "s" : ""}</Text>
+              <Text style={scr.catCount}>{t(list.length === 1 ? "screens.games.games_count_one" : "screens.games.games_count_other", { count: list.length })}</Text>
             </View>
             <View style={scr.gamesRow}>
               {list.map(g => {
@@ -579,15 +590,15 @@ export default function GamesScreen() {
                     <Text style={scr.gameTitle} numberOfLines={2}>{g.title}</Text>
                     {g.ageHint && <Text style={scr.gameAge}>{g.ageHint}</Text>}
                     {soon ? (
-                      <Text style={scr.soonTag}>Coming soon</Text>
+                      <Text style={scr.soonTag}>{t("screens.games.coming_soon")}</Text>
                     ) : unlocked ? (
                       <TouchableOpacity onPress={() => onPlay(g)} disabled={limitHit} style={[scr.playBtn, limitHit && { opacity: 0.4 }]} activeOpacity={0.85}>
-                        <LinearGradient colors={[brand.primary,brand.pink500]} style={scr.playBtnGrad}><Text style={scr.playBtnText}>Play</Text></LinearGradient>
+                        <LinearGradient colors={[brand.primary,brand.pink500]} style={scr.playBtnGrad}><Text style={scr.playBtnText}>{t("screens.games.play")}</Text></LinearGradient>
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity onPress={() => onUnlock(g)} style={scr.unlockBtn} activeOpacity={0.85}>
                         <Ionicons name="lock-closed" size={10} color={palette.amber400} />
-                        <Text style={scr.unlockBtnText}>{g.unlockCost} pts</Text>
+                        <Text style={scr.unlockBtnText}>{t("screens.games.pts_cost", { cost: g.unlockCost })}</Text>
                       </TouchableOpacity>
                     )}
                   </View>

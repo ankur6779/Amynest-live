@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Layout } from "@/components/layout";
 import { Loader2, Check, Sparkles, SendHorizonal } from "lucide-react";
@@ -12,22 +13,23 @@ type ServerFeedback = {
   comment: string | null;
 };
 
-const HIGHLIGHTS = [
-  { icon: "🛡️", text: "Safe child-friendly UI" },
-  { icon: "🔄", text: "Sync with parent routines" },
-  { icon: "🎁", text: "Reward-based engagement" },
-  { icon: "🚫", text: "No distractions" },
-];
+const HIGHLIGHT_KEYS = [
+  { icon: "🛡️", key: "highlight_safe_ui" },
+  { icon: "🔄", key: "highlight_sync" },
+  { icon: "🎁", key: "highlight_reward" },
+  { icon: "🚫", key: "highlight_no_distractions" },
+] as const;
 
-const FEATURES = [
-  { icon: "⏱", title: "Screen Time Guidance", desc: "Healthy limits, gentle nudges" },
-  { icon: "📋", title: "Routine Control",      desc: "Daily flow, on autopilot" },
-  { icon: "🎯", title: "Focus Mode",           desc: "Quiet time for study & sleep" },
-  { icon: "📊", title: "Activity Tracking",    desc: "See what your child enjoys" },
-  { icon: "🔒", title: "Parent Lock",          desc: "PIN-protected controls" },
-];
+const FEATURE_KEYS = [
+  { icon: "⏱", titleKey: "feature_screen_time_title", descKey: "feature_screen_time_desc" },
+  { icon: "📋", titleKey: "feature_routine_title",     descKey: "feature_routine_desc" },
+  { icon: "🎯", titleKey: "feature_focus_title",       descKey: "feature_focus_desc" },
+  { icon: "📊", titleKey: "feature_activity_title",    descKey: "feature_activity_desc" },
+  { icon: "🔒", titleKey: "feature_lock_title",        descKey: "feature_lock_desc" },
+] as const;
 
 export default function KidsControlCenterPage() {
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
 
   const [loading, setLoading] = useState(true);
@@ -109,41 +111,40 @@ export default function KidsControlCenterPage() {
           {/* HEADER */}
           <header className="text-center mb-6 sm:mb-8">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-violet-500/15 to-pink-500/15 border border-violet-300/40 dark:border-violet-500/30 text-xs font-bold text-violet-700 dark:text-violet-300 mb-3">
-              <Sparkles className="h-3 w-3" /> Coming Soon 🚀
+              <Sparkles className="h-3 w-3" /> {t("screens.kids_control_center.coming_soon_badge")}
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-br from-violet-600 via-pink-500 to-amber-500 bg-clip-text text-transparent">
-              👶 Kids Control Center
+              {t("screens.kids_control_center.title")}
             </h1>
           </header>
 
           {/* HERO */}
           <section className="rounded-3xl p-5 sm:p-7 mb-5 backdrop-blur-xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 shadow-[0_8px_40px_-12px_rgba(124,58,237,0.35)]">
             <h2 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight">
-              Smart Control for Parents, Safe Experience for Kids
+              {t("screens.kids_control_center.hero_title")}
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
-              Guide your child's routine, learning, and screen time with ease.
+              {t("screens.kids_control_center.hero_sub")}
             </p>
           </section>
 
           {/* AMYNEST KIDS */}
           <section className="rounded-3xl p-5 sm:p-7 mb-5 backdrop-blur-xl bg-gradient-to-br from-violet-500/10 via-white/60 to-pink-500/10 dark:from-violet-500/15 dark:via-white/5 dark:to-pink-500/15 border border-violet-200/60 dark:border-violet-500/20 shadow-[0_8px_40px_-12px_rgba(236,72,153,0.25)]">
             <h3 className="text-lg sm:text-xl font-extrabold text-foreground mb-2">
-              👶 AmyNest Kids{" "}
-              <span className="text-sm font-semibold text-muted-foreground">(Child Experience)</span>
+              {t("screens.kids_control_center.kids_section_title")}{" "}
+              <span className="text-sm font-semibold text-muted-foreground">{t("screens.kids_control_center.kids_section_subtitle")}</span>
             </h3>
             <p className="text-sm sm:text-[15px] text-foreground/80 leading-relaxed mb-4">
-              AmyNest Kids is a safe and guided environment for children that syncs with the parent app.
-              Kids see only their routines, activities, and rewards, while parents manage everything in the background.
+              {t("screens.kids_control_center.kids_section_body")}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {HIGHLIGHTS.map((h) => (
+              {HIGHLIGHT_KEYS.map((h) => (
                 <div
-                  key={h.text}
+                  key={h.key}
                   className="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-white/70 dark:bg-white/8 border border-white/60 dark:border-white/10"
                 >
                   <span className="text-lg">{h.icon}</span>
-                  <span className="text-xs sm:text-sm font-semibold text-foreground/90">{h.text}</span>
+                  <span className="text-xs sm:text-sm font-semibold text-foreground/90">{t(`screens.kids_control_center.${h.key}`)}</span>
                 </div>
               ))}
             </div>
@@ -152,20 +153,20 @@ export default function KidsControlCenterPage() {
           {/* FEATURE PREVIEW */}
           <section className="mb-5">
             <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 px-1">
-              Feature Preview
+              {t("screens.kids_control_center.feature_preview_label")}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {FEATURES.map((f) => (
+              {FEATURE_KEYS.map((f) => (
                 <div
-                  key={f.title}
+                  key={f.titleKey}
                   className="group rounded-2xl p-4 backdrop-blur-xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 hover:border-violet-300/60 dark:hover:border-violet-500/40 hover:shadow-[0_8px_30px_-10px_rgba(124,58,237,0.4)] transition-all"
-                  data-testid={`feature-${f.title.toLowerCase().replace(/\s+/g, "-")}`}
+                  data-testid={`feature-${f.titleKey}`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="text-2xl shrink-0 group-hover:scale-110 transition-transform">{f.icon}</div>
                     <div className="min-w-0">
-                      <div className="font-bold text-foreground text-[15px] leading-tight">{f.title}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{f.desc}</div>
+                      <div className="font-bold text-foreground text-[15px] leading-tight">{t(`screens.kids_control_center.${f.titleKey}`)}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{t(`screens.kids_control_center.${f.descKey}`)}</div>
                     </div>
                   </div>
                 </div>
@@ -176,19 +177,19 @@ export default function KidsControlCenterPage() {
           {/* DESCRIPTION */}
           <section className="rounded-3xl p-5 sm:p-6 mb-5 backdrop-blur-xl bg-gradient-to-br from-amber-100/50 to-rose-100/50 dark:from-amber-500/10 dark:to-rose-500/10 border border-amber-200/60 dark:border-amber-500/20">
             <p className="text-sm sm:text-[15px] text-foreground/85 leading-relaxed text-center">
-              Kids Control Center helps parents guide children in a balanced way by focusing on
-              <span className="font-bold text-violet-700 dark:text-violet-300"> habits, routines, and learning </span>
-              instead of strict restrictions.
+              {t("screens.kids_control_center.description_part1")}
+              <span className="font-bold text-violet-700 dark:text-violet-300"> {t("screens.kids_control_center.description_emphasis")} </span>
+              {t("screens.kids_control_center.description_part2")}
             </p>
           </section>
 
           {/* FEEDBACK */}
           <section className="rounded-3xl p-5 sm:p-7 backdrop-blur-xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 shadow-[0_8px_40px_-12px_rgba(124,58,237,0.30)]">
             <h3 className="text-lg sm:text-xl font-extrabold text-foreground text-center mb-1">
-              Would you like this feature?
+              {t("screens.kids_control_center.feedback_question")}
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground text-center mb-5">
-              Select an option, add your thoughts, then hit Submit.
+              {t("screens.kids_control_center.feedback_help")}
             </p>
 
             {loading ? (
@@ -201,13 +202,13 @@ export default function KidsControlCenterPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <SelectionButton
                     kind="interested"
-                    label="👍 Interested"
+                    label={t("screens.kids_control_center.interested")}
                     selected={pendingFeedback === "interested"}
                     onClick={() => setPendingFeedback("interested")}
                   />
                   <SelectionButton
                     kind="not_interested"
-                    label="👎 Not Interested"
+                    label={t("screens.kids_control_center.not_interested")}
                     selected={pendingFeedback === "not_interested"}
                     onClick={() => setPendingFeedback("not_interested")}
                   />
@@ -216,12 +217,12 @@ export default function KidsControlCenterPage() {
                 {/* Comment box */}
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground mb-2 px-1">
-                    Tell us what you want in this feature (optional)
+                    {t("screens.kids_control_center.comment_label")}
                   </label>
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value.slice(0, 1000))}
-                    placeholder="e.g. I'd love a daily reading streak, kid-friendly themes, reward points…"
+                    placeholder={t("screens.kids_control_center.comment_placeholder")}
                     rows={3}
                     className="w-full rounded-2xl px-4 py-3 text-sm bg-white/80 dark:bg-white/5 border border-border focus:border-violet-400 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-400/30 transition-all text-foreground placeholder:text-muted-foreground/70 resize-none"
                     data-testid="input-feedback-comment"
@@ -246,12 +247,12 @@ export default function KidsControlCenterPage() {
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Submitting…
+                      {t("screens.kids_control_center.submitting")}
                     </>
                   ) : (
                     <>
                       <SendHorizonal className="h-4 w-4" />
-                      Submit Feedback
+                      {t("screens.kids_control_center.submit")}
                     </>
                   )}
                 </button>
@@ -265,8 +266,8 @@ export default function KidsControlCenterPage() {
                     <Check className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
                     <span className="text-sm font-bold text-violet-700 dark:text-violet-300">
                       {savedFeedback === "interested"
-                        ? "🎉 Thanks! We'll keep you posted when this launches."
-                        : "💛 Got it — we appreciate the honest feedback!"}
+                        ? t("screens.kids_control_center.thanks_interested")
+                        : t("screens.kids_control_center.thanks_not_interested")}
                     </span>
                   </div>
                 )}
@@ -274,13 +275,13 @@ export default function KidsControlCenterPage() {
                 {/* Already submitted indicator */}
                 {savedFeedback && !submitted && !isDirty && (
                   <p className="text-center text-xs text-muted-foreground">
-                    ✓ Your feedback has been saved.{" "}
+                    {t("screens.kids_control_center.saved_prefix")}{" "}
                     <button
                       type="button"
                       className="underline hover:text-foreground transition-colors"
                       onClick={() => setPendingFeedback(pendingFeedback === "interested" ? "not_interested" : "interested")}
                     >
-                      Change it
+                      {t("screens.kids_control_center.change_it")}
                     </button>
                   </p>
                 )}
@@ -289,7 +290,7 @@ export default function KidsControlCenterPage() {
           </section>
 
           <p className="text-center text-xs text-muted-foreground mt-6 pb-4">
-            Built with care by the AmyNest team · Coming soon
+            {t("screens.kids_control_center.footer")}
           </p>
         </div>
       </div>

@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, ACCENT_PINK, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 type Range = "week" | "month";
 
@@ -78,6 +79,7 @@ export default function InsightsScreen() {
   const router = useRouter();
   const authFetch = useAuthFetch();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [range, setRange] = useState<Range>("week");
 
   const { data, isLoading, refetch, isRefetching } = useQuery<InsightsResponse>({
@@ -89,8 +91,8 @@ export default function InsightsScreen() {
     },
   });
 
-  const periodLabel = range === "week" ? "this week" : "this month";
-  const previousLabel = range === "week" ? "last week" : "last month";
+  const periodLabel = range === "week" ? t("screens.insights.this_week") : t("screens.insights.this_month");
+  const previousLabel = range === "week" ? t("screens.insights.last_week") : t("screens.insights.last_month");
 
   return (
     <LinearGradient colors={theme.gradient} style={{ flex: 1 }}>
@@ -109,8 +111,8 @@ export default function InsightsScreen() {
           <Ionicons name="analytics" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Parent Insights</Text>
-          <Text style={styles.headerSubtitle}>How your family is doing</Text>
+          <Text style={styles.headerTitle}>{t("screens.insights.title")}</Text>
+          <Text style={styles.headerSubtitle}>{t("screens.insights.subtitle")}</Text>
         </View>
       </View>
 
@@ -124,7 +126,7 @@ export default function InsightsScreen() {
             <Text
               style={[styles.toggleText, range === r && styles.toggleTextActive]}
             >
-              {r === "week" ? "Last 7 days" : "Last 30 days"}
+              {r === "week" ? t("screens.insights.range_week") : t("screens.insights.range_month")}
             </Text>
           </Pressable>
         ))}
@@ -146,18 +148,18 @@ export default function InsightsScreen() {
 
         {data && !data.hasChildren && (
           <EmptyState
-            title="Insights are warming up"
-            text="Add your first child and log a few routines or moments — Amy needs a little data before she can spot patterns."
-            ctaLabel="Add a child"
+            title={t("screens.insights.no_children_title")}
+            text={t("screens.insights.no_children_text")}
+            ctaLabel={t("screens.insights.no_children_cta")}
             onCta={() => router.push("/(tabs)/children")}
           />
         )}
 
         {data && data.hasChildren && !data.hasActivity && (
           <EmptyState
-            title="Nothing to show yet for this period"
-            text="Try the longer range, or log a routine or behaviour moment so Amy has fresh data to work with."
-            ctaLabel="Plan a routine"
+            title={t("screens.insights.no_activity_title")}
+            text={t("screens.insights.no_activity_text")}
+            ctaLabel={t("screens.insights.no_activity_cta")}
             onCta={() => router.push("/(tabs)/routines")}
           />
         )}
@@ -167,37 +169,39 @@ export default function InsightsScreen() {
             <DeltaCard
               icon="calendar-outline"
               color={palette.emerald400}
-              label={`Routines ${periodLabel}`}
+              label={t("screens.insights.routines_label", { period: periodLabel })}
               value={data.summary.routinesThisPeriod}
               previousValue={data.summary.routinesPreviousPeriod}
               previousLabel={previousLabel}
               changePct={data.summary.routinesChangePct}
+              vsTemplate={(prev, val) => t("screens.insights.vs_previous", { previous: prev, value: val })}
             />
             <DeltaCard
               icon="happy-outline"
               color={palette.amber400}
-              label={`Moments logged ${periodLabel}`}
+              label={t("screens.insights.moments_label", { period: periodLabel })}
               value={data.summary.behaviorsThisPeriod}
               previousValue={data.summary.behaviorsPreviousPeriod}
               previousLabel={previousLabel}
               changePct={null}
+              vsTemplate={(prev, val) => t("screens.insights.vs_previous", { previous: prev, value: val })}
             />
             <DeltaCard
               icon="heart-outline"
               color={ACCENT_PINK}
-              label="Positive moments rate"
+              label={t("screens.insights.positive_rate_label")}
               value={`${data.summary.positiveRateThisPeriod}%`}
               previousValue={`${data.summary.positiveRatePreviousPeriod}%`}
               previousLabel={previousLabel}
               changePct={null}
               changePts={data.summary.positiveRateChangePts}
+              vsTemplate={(prev, val) => t("screens.insights.vs_previous", { previous: prev, value: val })}
             />
 
             {data.siblingHighlights.length >= 2 && (
-              <Section title="Family strengths">
+              <Section title={t("screens.insights.section_family_strengths")}>
                 <Text style={styles.familyIntro}>
-                  Each child shines somewhere different. Here's what stood out
-                  this period.
+                  {t("screens.insights.family_intro")}
                 </Text>
                 {data.siblingHighlights.map((h) => (
                   <View
@@ -229,18 +233,23 @@ export default function InsightsScreen() {
             )}
 
             {data.perChild.length > 0 && (
-              <Section title="Per child">
+              <Section title={t("screens.insights.section_per_child")}>
                 {data.perChild.map((c) => {
                   const subline: string[] = [];
                   if (c.routineCompletionRate > 0) {
-                    subline.push(`${c.routineCompletionRate}% routine done`);
+                    subline.push(t("screens.insights.completion_rate", { n: c.routineCompletionRate }));
                   }
                   if (c.topCategory) {
-                    subline.push(`Top: ${c.topCategory}`);
+                    subline.push(t("screens.insights.top_category", { category: c.topCategory }));
                   }
                   if (c.milestoneCount > 0) {
                     subline.push(
-                      `${c.milestoneCount} milestone${c.milestoneCount === 1 ? "" : "s"}`,
+                      t(
+                        c.milestoneCount === 1
+                          ? "screens.insights.milestone_count_one"
+                          : "screens.insights.milestone_count_other",
+                        { count: c.milestoneCount },
+                      ),
                     );
                   }
                   return (
@@ -248,8 +257,18 @@ export default function InsightsScreen() {
                       <View style={{ flex: 1 }}>
                         <Text style={styles.childName}>{c.childName}</Text>
                         <Text style={styles.childMeta}>
-                          {c.routinesCount} routine{c.routinesCount === 1 ? "" : "s"} ·{" "}
-                          {c.behaviorsCount} moment{c.behaviorsCount === 1 ? "" : "s"}
+                          {t(
+                            c.routinesCount === 1
+                              ? "screens.insights.routines_count_one"
+                              : "screens.insights.routines_count_other",
+                            { count: c.routinesCount },
+                          )}{" · "}
+                          {t(
+                            c.behaviorsCount === 1
+                              ? "screens.insights.moments_count_one"
+                              : "screens.insights.moments_count_other",
+                            { count: c.behaviorsCount },
+                          )}
                         </Text>
                         {subline.length > 0 && (
                           <Text style={styles.childSubline}>{subline.join(" · ")}</Text>
@@ -257,7 +276,7 @@ export default function InsightsScreen() {
                       </View>
                       <View style={styles.childBadge}>
                         <Text style={styles.childBadgeValue}>{c.positiveRate}%</Text>
-                        <Text style={styles.childBadgeLabel}>positive</Text>
+                        <Text style={styles.childBadgeLabel}>{t("screens.insights.positive_badge")}</Text>
                       </View>
                     </View>
                   );
@@ -265,21 +284,21 @@ export default function InsightsScreen() {
               </Section>
             )}
 
-            <Section title="When activities happen">
+            <Section title={t("screens.insights.section_when")}>
               <BarRow
-                label="Morning"
+                label={t("screens.insights.morning")}
                 value={data.timeOfDay.morning}
                 max={timeOfDayMax(data.timeOfDay)}
                 color={palette.amber400}
               />
               <BarRow
-                label="Afternoon"
+                label={t("screens.insights.afternoon")}
                 value={data.timeOfDay.afternoon}
                 max={timeOfDayMax(data.timeOfDay)}
                 color={palette.emerald400}
               />
               <BarRow
-                label="Evening"
+                label={t("screens.insights.evening")}
                 value={data.timeOfDay.evening}
                 max={timeOfDayMax(data.timeOfDay)}
                 color={brand.violet500}
@@ -287,7 +306,7 @@ export default function InsightsScreen() {
             </Section>
 
             {data.activityMix.length > 0 && (
-              <Section title="Most-planned activities">
+              <Section title={t("screens.insights.section_most_planned")}>
                 {data.activityMix.map((a) => (
                   <BarRow
                     key={a.category}
@@ -301,7 +320,7 @@ export default function InsightsScreen() {
             )}
 
             {data.dayOfWeek.some((d) => d.count > 0) && (
-              <Section title="Day-of-week activity">
+              <Section title={t("screens.insights.section_day_of_week")}>
                 <View style={styles.dayRow}>
                   {data.dayOfWeek.map((d) => {
                     const max = Math.max(...data.dayOfWeek.map((x) => x.count), 1);
@@ -327,10 +346,10 @@ export default function InsightsScreen() {
                 <Ionicons name="sparkles" size={18} color="#fff" />
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>
-                    Ask Amy what to focus on
+                    {t("screens.insights.ask_amy_title")}
                   </Text>
                   <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, marginTop: 2 }}>
-                    Get a personalised read-out from your data
+                    {t("screens.insights.ask_amy_sub")}
                   </Text>
                 </View>
                 <Ionicons name="arrow-forward" size={18} color="#fff" />
@@ -356,6 +375,7 @@ function DeltaCard({
   previousLabel,
   changePct,
   changePts,
+  vsTemplate,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
@@ -365,6 +385,7 @@ function DeltaCard({
   previousLabel: string;
   changePct: number | null;
   changePts?: number;
+  vsTemplate: (previous: string, value: string | number) => string;
 }) {
   const change = changePct ?? changePts ?? 0;
   const isUp = change > 0;
@@ -386,7 +407,7 @@ function DeltaCard({
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
           <Ionicons name={arrow} size={12} color={arrowColor} />
           <Text style={[styles.deltaChange, { color: arrowColor }]}>{formatted}</Text>
-          <Text style={styles.deltaSub}>vs {previousLabel} ({previousValue})</Text>
+          <Text style={styles.deltaSub}>{vsTemplate(previousLabel, previousValue)}</Text>
         </View>
       </View>
     </View>

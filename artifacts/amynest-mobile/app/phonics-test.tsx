@@ -12,6 +12,7 @@ import { palette } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { API_BASE_URL } from "@/constants/api";
 import { PhonicsTestRunner, type TestType } from "@/components/PhonicsTestRunner";
+import { useTranslation } from "react-i18next";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ export default function PhonicsTestScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const authFetch = useAuthFetch();
+  const { t } = useTranslation();
 
   const [children, setChildren] = useState<Child[] | null>(null);
   const [activeChildId, setActiveChildId] = useState<number | null>(null);
@@ -68,7 +70,7 @@ export default function PhonicsTestScreen() {
         if (cancelled) return;
         setChildren(list);
         if (list.length === 0) {
-          setError("Add a child profile first to take the Phonics Test.");
+          setError(t("screens.phonics_test.no_children"));
           setLoading(false);
           return;
         }
@@ -78,7 +80,7 @@ export default function PhonicsTestScreen() {
         setActiveChildId(Number.isFinite(initial) ? initial : list[0].id);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load children");
+          setError(err instanceof Error ? err.message : t("screens.phonics_test.load_failed"));
           setLoading(false);
         }
       }
@@ -97,7 +99,7 @@ export default function PhonicsTestScreen() {
       const data = (await res.json()) as AvailabilityState;
       setAvailability(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load availability");
+      setError(err instanceof Error ? err.message : t("screens.phonics_test.avail_failed"));
     } finally {
       setLoading(false);
     }
@@ -149,19 +151,19 @@ export default function PhonicsTestScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="chevron-back" size={26} color={theme.text.primary} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.text.primary }]}>Phonics Test</Text>
+        <Text style={[styles.headerTitle, { color: theme.text.primary }]}>{t("screens.phonics_test.title")}</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
         <Text style={[styles.subtitle, { color: theme.text.secondary }]}>
-          A quick check-in on your child's phonics. Daily is 5 questions, Weekly is 20.
+          {t("screens.phonics_test.subtitle")}
         </Text>
 
         {/* Child switcher */}
         {children && children.length > 1 && (
           <View style={{ marginTop: 16 }}>
-            <Text style={[styles.sectionLabel, { color: theme.text.muted }]}>Child</Text>
+            <Text style={[styles.sectionLabel, { color: theme.text.muted }]}>{t("screens.phonics_test.child_label")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
               {children.map((c) => {
                 const sel = c.id === activeChildId;
@@ -204,7 +206,7 @@ export default function PhonicsTestScreen() {
           <View style={[styles.infoBox, { backgroundColor: theme.card.bg, borderColor: theme.card.border }]}>
             <Ionicons name="information-circle-outline" size={22} color={theme.brand.primary} />
             <Text style={[styles.infoText, { color: theme.text.primary }]}>
-              {activeChild?.name ?? "This child"} is outside the phonics age range (1–6 years).
+              {t("screens.phonics_test.out_of_range", { name: activeChild?.name ?? t("screens.phonics_test.this_child") })}
             </Text>
           </View>
         )}
@@ -214,8 +216,8 @@ export default function PhonicsTestScreen() {
             {(["daily", "weekly"] as const).map((tt) => {
               const info = availability[tt];
               const cd = formatCountdown(info.nextAvailableAt);
-              const label = tt === "daily" ? "Daily Test" : "Weekly Test";
-              const sub = tt === "daily" ? "5 questions • once a day" : "20 questions • once a week";
+              const label = tt === "daily" ? t("screens.phonics_test.daily_test") : t("screens.phonics_test.weekly_test");
+              const sub = tt === "daily" ? t("screens.phonics_test.daily_sub") : t("screens.phonics_test.weekly_sub");
               const disabled = !info.available;
               return (
                 <TouchableOpacity
@@ -241,12 +243,12 @@ export default function PhonicsTestScreen() {
                       {disabled && cd && (
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 }}>
                           <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.95)" />
-                          <Text style={styles.startBtnMeta}>Available in {cd}</Text>
+                          <Text style={styles.startBtnMeta}>{t("screens.phonics_test.available_in", { cd })}</Text>
                         </View>
                       )}
                       {info.lastScore && (
                         <Text style={styles.startBtnMeta}>
-                          Last: {info.lastScore.accuracyPct}% • {info.lastScore.label}
+                          {t("screens.phonics_test.last_score", { pct: info.lastScore.accuracyPct, label: info.lastScore.label })}
                         </Text>
                       )}
                     </View>

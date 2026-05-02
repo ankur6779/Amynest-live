@@ -23,6 +23,7 @@ import {
   pickPracticeQuestions,
 } from "@workspace/olympiad";
 import { brand, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 type Child = { id: number; name: string; age: number };
 
@@ -96,6 +97,7 @@ export default function OlympiadScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ childId?: string }>();
   const authFetch = useAuthFetch();
+  const { t } = useTranslation();
 
   const childrenQ = useQuery<{ children: Child[] }>({
     queryKey: ["olympiad-children"],
@@ -125,14 +127,14 @@ export default function OlympiadScreen() {
   if (!child) {
     return (
       <View style={[styles.center, { paddingTop: insets.top + 40, padding: 20 }]}>
-        <Stack.Screen options={{ title: "Olympiad Zone" }} />
+        <Stack.Screen options={{ title: t("screens.olympiad.screen_title") }} />
         <Ionicons name="trophy-outline" size={48} color={palette.gray400} />
-        <Text style={{ marginTop: 12, fontWeight: "700", fontSize: 16 }}>Add a child first</Text>
+        <Text style={{ marginTop: 12, fontWeight: "700", fontSize: 16 }}>{t("screens.olympiad.add_child_title")}</Text>
         <Text style={{ marginTop: 4, color: palette.gray500, textAlign: "center" }}>
-          Olympiad practice is personalised to your child's age band.
+          {t("screens.olympiad.add_child_desc")}
         </Text>
         <Pressable onPress={() => router.back()} style={[styles.btn, { marginTop: 16 }]}>
-          <Text style={styles.btnText}>Go back</Text>
+          <Text style={styles.btnText}>{t("screens.olympiad.go_back")}</Text>
         </Pressable>
       </View>
     );
@@ -147,6 +149,7 @@ function OlympiadInner({
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [stats, setStats] = useState<ChildOlympiadStats | null>(null);
   const [mode, setMode] = useState<Mode>("home");
 
@@ -227,7 +230,7 @@ function OlympiadInner({
   if (!stats) {
     return (
       <View style={[styles.center, { paddingTop: insets.top + 40 }]}>
-        <Stack.Screen options={{ title: "Olympiad Zone" }} />
+        <Stack.Screen options={{ title: t("screens.olympiad.screen_title") }} />
         <ActivityIndicator color={brand.primary} />
       </View>
     );
@@ -241,7 +244,7 @@ function OlympiadInner({
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
       />
-      <Stack.Screen options={{ title: "🏆 Olympiad Zone" }} />
+      <Stack.Screen options={{ title: t("screens.olympiad.screen_title_emoji") }} />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 14 }}>
         {/* Header */}
         <LinearGradient
@@ -249,22 +252,22 @@ function OlympiadInner({
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.headerCard}
         >
-          <Text style={styles.headerTitle}>🏆 Olympiad Zone</Text>
+          <Text style={styles.headerTitle}>{t("screens.olympiad.screen_title_emoji")}</Text>
           <Text style={styles.headerSub}>
             {child.name} · {ageBandLabel(ageBand)} · {DIFFICULTY_LABELS[stats.difficulty]}
           </Text>
           <View style={styles.headerStats}>
             <View style={styles.statCell}>
               <Text style={styles.statNum}>{stats.totalPoints}</Text>
-              <Text style={styles.statLbl}>⭐ Points</Text>
+              <Text style={styles.statLbl}>{t("screens.olympiad.stat_points")}</Text>
             </View>
             <View style={styles.statCell}>
               <Text style={styles.statNum}>{stats.streak}</Text>
-              <Text style={styles.statLbl}>🔥 Streak</Text>
+              <Text style={styles.statLbl}>{t("screens.olympiad.stat_streak")}</Text>
             </View>
             <View style={styles.statCell}>
               <Text style={styles.statNum}>{stats.perfectDays}</Text>
-              <Text style={styles.statLbl}>🏆 Perfect</Text>
+              <Text style={styles.statLbl}>{t("screens.olympiad.stat_perfect")}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -293,7 +296,7 @@ function OlympiadInner({
               style={[styles.tab, mode === m && styles.tabActive]}
             >
               <Text style={[styles.tabText, mode === m && styles.tabTextActive]}>
-                {m === "home" ? "Overview" : m === "daily" ? "Daily 5" : "Practice"}
+                {m === "home" ? t("screens.olympiad.tab_overview") : m === "daily" ? t("screens.olympiad.tab_daily") : t("screens.olympiad.tab_practice")}
               </Text>
             </Pressable>
           ))}
@@ -302,8 +305,8 @@ function OlympiadInner({
         {mode === "home" && (
           <View style={{ gap: 12 }}>
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Difficulty</Text>
-              <Text style={styles.cardSub}>Tap to change difficulty for daily quiz.</Text>
+              <Text style={styles.cardTitle}>{t("screens.olympiad.card_difficulty")}</Text>
+              <Text style={styles.cardSub}>{t("screens.olympiad.card_difficulty_sub")}</Text>
               <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
                 {(["easy", "medium", "hard"] as OlympiadDifficulty[]).map((d) => (
                   <Pressable
@@ -320,16 +323,16 @@ function OlympiadInner({
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Today's Daily 5</Text>
+              <Text style={styles.cardTitle}>{t("screens.olympiad.card_today_title")}</Text>
               {todayRun?.submitted ? (
                 <Text style={styles.cardSub}>
-                  ✅ Done! You scored {todayRun.score} / {todayQuestions.length}. Come back tomorrow.
+                  {t("screens.olympiad.card_today_done", { score: todayRun.score, total: todayQuestions.length })}
                 </Text>
               ) : (
                 <>
-                  <Text style={styles.cardSub}>5 fresh questions across math, science, reasoning, GK.</Text>
+                  <Text style={styles.cardSub}>{t("screens.olympiad.card_today_sub")}</Text>
                   <Pressable onPress={() => setMode("daily")} style={[styles.btn, { marginTop: 10 }]}>
-                    <Text style={styles.btnText}>Start daily quiz</Text>
+                    <Text style={styles.btnText}>{t("screens.olympiad.btn_start_daily")}</Text>
                     <Ionicons name="chevron-forward" size={16} color="#fff" />
                   </Pressable>
                 </>
@@ -337,7 +340,7 @@ function OlympiadInner({
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Subject progress</Text>
+              <Text style={styles.cardTitle}>{t("screens.olympiad.card_subjects")}</Text>
               <View style={{ marginTop: 6, gap: 8 }}>
                 {(["math", "science", "reasoning", "gk"] as OlympiadSubject[]).map((s) => {
                   const e = stats.bySubject[s];
@@ -402,13 +405,14 @@ function QuizRunner({
   disabled?: boolean;
   onCancel?: () => void;
 }) {
+  const { t } = useTranslation();
   const [idx, setIdx] = useState(initialAnswers.length);
   const [answers, setAnswers] = useState<number[]>(initialAnswers);
   const [picked, setPicked] = useState<number | null>(null);
   const [done, setDone] = useState(initialAnswers.length >= questions.length);
 
   if (questions.length === 0) {
-    return <Text style={{ color: palette.gray500 }}>No questions available yet.</Text>;
+    return <Text style={{ color: palette.gray500 }}>{t("screens.olympiad.no_questions")}</Text>;
   }
 
   if (done) {
@@ -423,7 +427,9 @@ function QuizRunner({
           <Text style={{ fontSize: 48 }}>{perfect ? "🏆" : score >= questions.length / 2 ? "🎉" : "💪"}</Text>
           <Text style={{ fontSize: 22, fontWeight: "800" }}>{score} / {questions.length}</Text>
           <Text style={{ color: palette.gray500, marginTop: 4 }}>
-            +{pts} points{perfect && perfectBonus > 0 ? ` (incl. ${perfectBonus} bonus)` : ""}
+            {perfect && perfectBonus > 0
+              ? t("screens.olympiad.points_earned_bonus", { pts, bonus: perfectBonus })
+              : t("screens.olympiad.points_earned", { pts })}
           </Text>
         </View>
         {questions.map((q, i) => {
@@ -439,7 +445,7 @@ function QuizRunner({
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontWeight: "600", fontSize: 13 }}>{q.question}</Text>
                   <Text style={{ fontSize: 12, marginTop: 4, color: palette.gray500 }}>
-                    Correct: <Text style={{ fontWeight: "700", color: "#111" /* audit-ok: near-black answer text */ }}>{q.options[q.correct]}</Text>
+                    {t("screens.olympiad.correct_label")} <Text style={{ fontWeight: "700", color: "#111" /* audit-ok: near-black answer text */ }}>{q.options[q.correct]}</Text>
                   </Text>
                   <Text style={{ fontSize: 12, marginTop: 4, color: palette.gray500, fontStyle: "italic" }}>
                     {q.explanation}
@@ -451,12 +457,12 @@ function QuizRunner({
         })}
         {!disabled && (
           <Pressable style={styles.btn} onPress={() => onComplete(answers)}>
-            <Text style={styles.btnText}>Save & finish</Text>
+            <Text style={styles.btnText}>{t("screens.olympiad.save_finish")}</Text>
           </Pressable>
         )}
         {disabled && onCancel && (
           <Pressable style={styles.btnSecondary} onPress={onCancel}>
-            <Text style={styles.btnSecondaryText}>Back</Text>
+            <Text style={styles.btnSecondaryText}>{t("screens.olympiad.back")}</Text>
           </Pressable>
         )}
       </View>
@@ -469,7 +475,7 @@ function QuizRunner({
   return (
     <View style={{ gap: 12 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ fontSize: 12, color: palette.gray500 }}>Question {idx + 1} of {questions.length}</Text>
+        <Text style={{ fontSize: 12, color: palette.gray500 }}>{t("screens.olympiad.question_n_of_m", { idx: idx + 1, total: questions.length })}</Text>
         <Text style={{ fontSize: 12, color: palette.gray500 }}>
           {SUBJECT_EMOJI[q.subject]} {SUBJECT_LABELS[q.subject]} · {DIFFICULTY_LABELS[q.difficulty]}
         </Text>
@@ -523,13 +529,13 @@ function QuizRunner({
         style={[styles.btn, !isAnswered && { opacity: 0.5 }]}
       >
         <Text style={styles.btnText}>
-          {idx + 1 >= questions.length ? "See result" : "Next question"}
+          {idx + 1 >= questions.length ? t("screens.olympiad.see_result") : t("screens.olympiad.next_question")}
         </Text>
         <Ionicons name="chevron-forward" size={16} color="#fff" />
       </Pressable>
       {onCancel && (
         <Pressable style={styles.btnSecondary} onPress={onCancel}>
-          <Text style={styles.btnSecondaryText}>Cancel</Text>
+          <Text style={styles.btnSecondaryText}>{t("screens.olympiad.cancel")}</Text>
         </Pressable>
       )}
     </View>
@@ -545,6 +551,7 @@ function PracticeRunner({
   onComplete: (questions: OlympiadQuestion[], answers: number[]) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [subject, setSubject] = useState<OlympiadSubject | null>(null);
   const [questions, setQuestions] = useState<OlympiadQuestion[] | null>(null);
 
@@ -568,7 +575,7 @@ function PracticeRunner({
   return (
     <View style={{ gap: 12 }}>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Pick a subject</Text>
+        <Text style={styles.cardTitle}>{t("screens.olympiad.pick_subject")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
           {(["math", "science", "reasoning", "gk"] as OlympiadSubject[]).map((s) => (
             <Pressable
@@ -592,11 +599,11 @@ function PracticeRunner({
         disabled={!subject}
         style={[styles.btn, !subject && { opacity: 0.5 }]}
       >
-        <Text style={styles.btnText}>Start practice (10 Qs)</Text>
+        <Text style={styles.btnText}>{t("screens.olympiad.start_practice")}</Text>
         <Ionicons name="chevron-forward" size={16} color="#fff" />
       </Pressable>
       <Pressable style={styles.btnSecondary} onPress={onCancel}>
-        <Text style={styles.btnSecondaryText}>Back</Text>
+        <Text style={styles.btnSecondaryText}>{t("screens.olympiad.back")}</Text>
       </Pressable>
     </View>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "wouter";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import {
@@ -43,6 +44,7 @@ type View =
   | { kind: "study-topic"; childId: number; mode: "basic" | "advanced"; subjectId: string; topicId: string };
 
 export default function StudyPage() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const { data: children, isLoading } = useListChildren({
     query: { queryKey: getListChildrenQueryKey() },
@@ -99,17 +101,17 @@ export default function StudyPage() {
             size="icon"
             className="rounded-full shrink-0"
             onClick={goBack}
-            aria-label="Back"
+            aria-label={t("screens.study.back")}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="min-w-0">
             <h1 className="font-quicksand text-2xl font-bold text-foreground flex items-center gap-2">
               <GraduationCap className="h-6 w-6 text-indigo-600" />
-              Smart Study Zone
+              {t("screens.study.header_title")}
             </h1>
             <p className="text-sm text-muted-foreground truncate">
-              {child ? `${child.name} · ${mode ? MODE_LABELS[mode].title : ""}` : "Pick a child to begin"}
+              {child ? `${child.name} · ${mode ? MODE_LABELS[mode].title : ""}` : t("screens.study.pick_child")}
             </p>
           </div>
         </div>
@@ -175,13 +177,14 @@ export default function StudyPage() {
 // ─── Sub-views ───────────────────────────────────────────────────────────────
 
 function EmptyChildren() {
+  const { t } = useTranslation();
   return (
     <Card className="rounded-2xl border-dashed">
       <CardContent className="p-10 text-center">
-        <h3 className="font-quicksand text-xl font-bold text-foreground mb-2">No children added yet</h3>
-        <p className="text-sm text-muted-foreground mb-4">Add a child profile to start using the Smart Study Zone.</p>
+        <h3 className="font-quicksand text-xl font-bold text-foreground mb-2">{t("screens.study.no_children_title")}</h3>
+        <p className="text-sm text-muted-foreground mb-4">{t("screens.study.no_children_body")}</p>
         <Button asChild className="rounded-full">
-          <Link href="/children/new">Add a child</Link>
+          <Link href="/children/new">{t("screens.study.add_child")}</Link>
         </Button>
       </CardContent>
     </Card>
@@ -189,6 +192,7 @@ function EmptyChildren() {
 }
 
 function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Child) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="grid sm:grid-cols-2 gap-3">
       {children.map((c) => {
@@ -203,7 +207,7 @@ function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Chil
               <div className="flex-1 min-w-0">
                 <div className="font-quicksand font-bold text-foreground">{c.name}</div>
                 <div className="text-xs text-muted-foreground">
-                  {c.age} yr{c.childClass ? ` · Class ${c.childClass}` : ""} · {label.title}
+                  {c.age} {t("screens.study.year_short")}{c.childClass ? ` · ${t("screens.study.class_label", { class: c.childClass })}` : ""} · {label.title}
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -216,6 +220,7 @@ function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Chil
 }
 
 function PlayHome({ progress, onOpen }: { progress: StudyProgress | null; onOpen: (catId: string) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {PLAY_CATEGORIES.map((cat) => {
@@ -225,7 +230,7 @@ function PlayHome({ progress, onOpen }: { progress: StudyProgress | null; onOpen
             <CardContent className="p-4 flex flex-col items-start gap-2 min-h-[124px]">
               <div className="text-3xl">{cat.emoji}</div>
               <div className="font-quicksand font-bold text-foreground">{cat.title}</div>
-              <div className="text-xs text-muted-foreground">{progress?.play[cat.id]?.length ?? 0}/{cat.items.length} done</div>
+              <div className="text-xs text-muted-foreground">{t("screens.study.items_done", { done: progress?.play[cat.id]?.length ?? 0, total: cat.items.length })}</div>
               <Progress value={pct} className="h-1.5 w-full" />
             </CardContent>
           </Card>
@@ -243,6 +248,7 @@ function PlayCategoryView({
   progress: StudyProgress | null;
   onItemDone: (p: StudyProgress) => void;
 }) {
+  const { t } = useTranslation();
   const cat = PLAY_CATEGORIES.find((c) => c.id === (categoryId as PlayCategory["id"]));
   const { speak } = useAmyVoice();
   const fx = useStudyFx();
@@ -250,7 +256,7 @@ function PlayCategoryView({
   const [poppedId, setPoppedId] = useState<string | null>(null);
   const [xpTrigger, setXpTrigger] = useState(0);
   const [xpAmount, setXpAmount] = useState(0);
-  if (!cat) return <p className="text-sm text-muted-foreground">Category not found.</p>;
+  if (!cat) return <p className="text-sm text-muted-foreground">{t("screens.study.category_not_found")}</p>;
   const completed = new Set(progress?.play[cat.id] ?? []);
   const handleTap = (item: PlayItem) => {
     speak(item.speak);
@@ -264,10 +270,10 @@ function PlayCategoryView({
       setXpTrigger((t) => t + 1);
     }
     if (result.streakIncreased && result.next.streak > 1) {
-      toast({ title: `🔥 ${result.next.streak}-day streak!`, description: "Keep it going tomorrow." });
+      toast({ title: t("screens.study.streak_toast_title", { count: result.next.streak }), description: t("screens.study.streak_toast_play") });
     }
     if (result.newBadges.length > 0) {
-      toast({ title: "🏆 New badge unlocked!", description: `+${result.newBadges.length} reward${result.newBadges.length > 1 ? "s" : ""}.` });
+      toast({ title: t("screens.study.badge_toast_title"), description: t("screens.study.badge_toast_body", { count: result.newBadges.length }) });
     }
   };
   return (
@@ -315,7 +321,7 @@ function PlayCategoryView({
                 <div className="text-[11px] text-muted-foreground mt-1">{item.speak}</div>
               )}
               <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-300 font-medium">
-                <Volume2 className="h-3 w-3" /> Tap to hear
+                <Volume2 className="h-3 w-3" /> {t("screens.study.tap_to_hear")}
               </div>
             </motion.button>
           );
@@ -332,6 +338,7 @@ function StudyHome({
   progress: StudyProgress | null;
   onOpen: (subjectId: string) => void;
 }) {
+  const { t } = useTranslation();
   const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
   return (
     <div className="grid sm:grid-cols-2 gap-3">
@@ -347,7 +354,7 @@ function StudyHome({
                 <div className="text-3xl">{s.emoji}</div>
                 <div>
                   <div className="font-quicksand text-lg font-bold text-foreground">{s.title}</div>
-                  <div className="text-xs text-muted-foreground">{completed}/{s.topics.length} topics</div>
+                  <div className="text-xs text-muted-foreground">{t("screens.study.topics_count", { done: completed, total: s.topics.length })}</div>
                 </div>
               </div>
               <Progress value={pct} className="h-1.5" />
@@ -367,9 +374,10 @@ function SubjectTopicList({
   progress: StudyProgress | null;
   onOpen: (topicId: string) => void;
 }) {
+  const { t: tr } = useTranslation();
   const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
   const subj = subjects.find((s) => s.id === subjectId);
-  if (!subj) return <p className="text-sm text-muted-foreground">Subject not found.</p>;
+  if (!subj) return <p className="text-sm text-muted-foreground">{tr("screens.study.subject_not_found")}</p>;
   return (
     <div className="grid gap-3">
       <h2 className="font-quicksand text-xl font-bold text-foreground flex items-center gap-2">
@@ -385,7 +393,7 @@ function SubjectTopicList({
                 <div className="text-xs text-muted-foreground line-clamp-1">{t.notes.split("\n")[0]}</div>
                 {stat && (
                   <div className="text-[11px] mt-1 inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-300 font-medium">
-                    <Trophy className="h-3 w-3" /> Best: {stat.score}/{stat.total}
+                    <Trophy className="h-3 w-3" /> {tr("screens.study.best_score", { score: stat.score, total: stat.total })}
                   </div>
                 )}
               </div>
@@ -419,8 +427,9 @@ function TopicDetail({
   const [shakeWrong, setShakeWrong] = useState(0);
   const fx = useStudyFx();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { speak: amySpeak, stop: amyStop, speaking: amySpeaking, loading: amyLoading } = useAmyVoice();
-  if (!subj || !topic) return <p className="text-sm text-muted-foreground">Topic not found.</p>;
+  if (!subj || !topic) return <p className="text-sm text-muted-foreground">{t("screens.study.topic_not_found")}</p>;
 
   const score = topic.questions.reduce((acc, q, i) => acc + (picks[i] === q.answer ? 1 : 0), 0);
   const total = topic.questions.length;
@@ -449,13 +458,13 @@ function TopicDetail({
       setXpTrigger((t) => t + 1);
     }
     if (result.streakIncreased && result.next.streak > 1) {
-      toast({ title: `🔥 ${result.next.streak}-day streak!`, description: "Awesome consistency." });
+      toast({ title: t("screens.study.streak_toast_title", { count: result.next.streak }), description: t("screens.study.streak_toast_study") });
     }
     if (result.goalReached) {
-      toast({ title: "🎯 Daily goal complete!", description: "You crushed today's study target." });
+      toast({ title: t("screens.study.goal_toast_title"), description: t("screens.study.goal_toast_body") });
     }
     if (result.newBadges.some((b) => b.startsWith("perfect-"))) {
-      toast({ title: "🏆 Perfect score!", description: `${topic.title} cleared with no mistakes.` });
+      toast({ title: t("screens.study.perfect_toast_title"), description: t("screens.study.perfect_toast_body", { topic: topic.title }) });
     }
   };
   const reset = () => { setPicks(Array(total).fill(-1)); setSubmitted(false); };
@@ -483,7 +492,7 @@ function TopicDetail({
           )}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="font-quicksand font-bold text-foreground inline-flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-indigo-600" /> Notes from Amy
+              <Sparkles className="h-4 w-4 text-indigo-600" /> {t("screens.study.notes_from_amy")}
             </div>
             <Button
               size="sm"
@@ -495,7 +504,7 @@ function TopicDetail({
               }}
             >
               {(amySpeaking || amyLoading) ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
-              {amySpeaking ? "Stop" : amyLoading ? "…" : "Read aloud"}
+              {amySpeaking ? t("screens.study.stop") : amyLoading ? "…" : t("screens.study.read_aloud")}
             </Button>
           </div>
           <div className="text-sm text-foreground whitespace-pre-line leading-relaxed">{topic.notes}</div>
@@ -508,10 +517,10 @@ function TopicDetail({
                 amySpeak(topic.amyPrompt);
               }}
             >
-              Hear Amy's prompt
+              {t("screens.study.hear_amy_prompt")}
             </Button>
             <Button asChild variant="ghost" className="rounded-full">
-              <Link href="/assistant">Ask Amy more →</Link>
+              <Link href="/assistant">{t("screens.study.ask_amy_more")}</Link>
             </Button>
           </div>
         </CardContent>
@@ -520,10 +529,10 @@ function TopicDetail({
       <Card className="rounded-2xl">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="font-quicksand font-bold text-foreground">Practice ({total} questions)</div>
+            <div className="font-quicksand font-bold text-foreground">{t("screens.study.practice_label", { count: total })}</div>
             {!practiceOpen && (
               <Button className="rounded-full bg-indigo-600 hover:bg-indigo-700" onClick={() => setPracticeOpen(true)}>
-                Try Now
+                {t("screens.study.try_now")}
               </Button>
             )}
           </div>
@@ -575,7 +584,7 @@ function TopicDetail({
                     onClick={submit}
                     disabled={picks.some((p) => p === -1)}
                   >
-                    Submit
+                    {t("screens.study.submit")}
                   </Button>
                 ) : (
                   <>
@@ -586,10 +595,10 @@ function TopicDetail({
                       transition={{ duration: 0.5 }}
                       className={`font-quicksand font-extrabold text-lg ${isPerfect ? "text-amber-500 dark:text-amber-300" : "text-foreground"}`}
                     >
-                      You got {score} / {total} {score === total ? "🎉" : score >= Math.ceil(total * 0.6) ? "👍" : "💪"}
+                      {t("screens.study.you_got", { score, total, emoji: score === total ? "🎉" : score >= Math.ceil(total * 0.6) ? "👍" : "💪" })}
                     </motion.div>
                     <Button variant="outline" className="rounded-full" onClick={reset}>
-                      <RotateCcw className="h-4 w-4 mr-1" /> Try again
+                      <RotateCcw className="h-4 w-4 mr-1" /> {t("screens.study.try_again")}
                     </Button>
                   </>
                 )}
