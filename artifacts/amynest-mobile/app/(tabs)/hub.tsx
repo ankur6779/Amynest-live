@@ -24,10 +24,13 @@ import FuturePredictor from "@/components/FuturePredictor";
 import AiMealGenerator from "@/components/AiMealGenerator";
 import ParentCommandCenter from "@/components/ParentCommandCenter";
 import { PhonicsTestCard } from "@/components/PhonicsTestCard";
+import { SmartMathTricks } from "@/components/SmartMathTricks";
+import { ColoringBooks } from "@/components/ColoringBooks";
+import { FunSheets } from "@/components/FunSheets";
 import { HubDebugOverlay } from "@/components/HubDebugOverlay";
 import { isInfantHubAge } from "@workspace/infant-hub";
-import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand } from "./hub-bands";
-export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, partitionTilesByBand };
+import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, HUB_TILE_AGE_MONTHS, partitionTilesByBand } from "./hub-bands";
+export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, HUB_TILE_AGE_MONTHS, partitionTilesByBand };
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
@@ -316,7 +319,13 @@ export default function HubScreen() {
             Only rendered when an active child is selected — the no-child
             case is already covered upstream by the add-child empty state. */}
           {effective && (() => {
-            type Tile = { id: string; ageBands: readonly number[]; node: React.ReactNode };
+            type Tile = {
+              id: string;
+              ageBands: readonly number[];
+              node: React.ReactNode;
+              ageMonthsMin?: number;
+              ageMonthsMax?: number;
+            };
             const allTiles: Tile[] = [];
 
             allTiles.push({
@@ -643,10 +652,10 @@ export default function HubScreen() {
             ),
           });
           allTiles.push({
-            id: "phonics-test",
-            ageBands: HUB_CONTENT_AGE_BANDS["phonics-test"],
+            id: "phonics",
+            ageBands: HUB_CONTENT_AGE_BANDS.phonics,
             node: (
-              <View style={tileW("phonics-test")}>
+              <View style={tileW("phonics")}>
                 <PhonicsTestCard childId={effective?.id} />
               </View>
             ),
@@ -1060,6 +1069,112 @@ export default function HubScreen() {
               </View>
             ),
           });
+          allTiles.push({
+            id: "smart-math-tricks",
+            ageBands: HUB_CONTENT_AGE_BANDS["smart-math-tricks"],
+            node: (
+              <View style={tileW("smart-math-tricks")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_smart_math_tricks")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+              >
+              <Section
+                id="smart-math-tricks"
+                icon={<MaterialCommunityIcons name="calculator-variant" size={20} color="#fff" />}
+                accent={[brand.violet600, palette.amber500]}
+                title="🧮 Smart Math Tricks"
+                desc="Mental math shortcuts kids actually love"
+                open={openSection === "smart-math-tricks"}
+                onToggle={() => setOpenSection(s => s === "smart-math-tricks" ? null : "smart-math-tricks")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_smart_math_tricks")}
+                tryFree={tryFreeFor("hub_smart_math_tricks")}
+              >
+                {effective ? (
+                  <SmartMathTricks childName={effective.name} childAgeYears={effective.age} />
+                ) : (
+                  <Text style={styles.sectionLead}>Add a child to unlock smart math tricks.</Text>
+                )}
+              </Section>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "coloring-books",
+            ageBands: HUB_CONTENT_AGE_BANDS["coloring-books"],
+            node: (
+              <View style={tileW("coloring-books")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_coloring_books")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+              >
+              <Section
+                id="coloring-books"
+                icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
+                accent={[brand.pink500, palette.amber500]}
+                title="🎨 Coloring Books"
+                desc="Print-ready coloring pages, refreshed daily"
+                open={openSection === "coloring-books"}
+                onToggle={() => setOpenSection(s => s === "coloring-books" ? null : "coloring-books")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}
+                tryFree={tryFreeFor("hub_coloring_books")}
+              >
+                {effective ? (
+                  <ColoringBooks childId={effective.id} childName={effective.name} />
+                ) : (
+                  <Text style={styles.sectionLead}>Add a child to unlock coloring books.</Text>
+                )}
+              </Section>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "fun-sheets",
+            ageBands: HUB_CONTENT_AGE_BANDS["fun-sheets"],
+            node: (
+              <View style={tileW("fun-sheets")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_fun_sheets")}
+                label="Unlock to continue"
+                cta="Unlock Premium"
+              >
+              <Section
+                id="fun-sheets"
+                icon={<MaterialCommunityIcons name="file-document-edit" size={20} color="#fff" />}
+                accent={[palette.teal600, palette.emerald500]}
+                title="📄 Fun Sheets"
+                desc="Activity sheets, mazes & puzzles"
+                open={openSection === "fun-sheets"}
+                onToggle={() => setOpenSection(s => s === "fun-sheets" ? null : "fun-sheets")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}
+                tryFree={tryFreeFor("hub_fun_sheets")}
+              >
+                {effective ? (
+                  <FunSheets childId={effective.id} childName={effective.name} />
+                ) : (
+                  <Text style={styles.sectionLead}>Add a child to unlock fun sheets.</Text>
+                )}
+              </Section>
+              </LockedBlock>
+              </View>
+            ),
+          });
+
+            // Enrich tiles with age-month bounds from the central HUB_TILE_AGE_MONTHS
+            // map so the partition helper can apply the same per-tile gating that
+            // the website does (e.g. phonics min=12mo / max=72mo). Tiles without
+            // a bound entry stay unrestricted and rely solely on band membership.
+            const enrichedTiles: Tile[] = allTiles.map(t => {
+              const meta = HUB_TILE_AGE_MONTHS[t.id];
+              return meta ? { ...t, ageMonthsMin: meta.min, ageMonthsMax: meta.max } : t;
+            });
+            const childAgeMonths = effective.age * 12 + (effective.ageMonths ?? 0);
 
             // Partition tiles into the two age-band sections via the pure
             // helper in ./hub-bands so the rule lives in one tested place.
@@ -1076,7 +1191,7 @@ export default function HubScreen() {
               orderedFutureBands: orderedBands,
               nearestFutureBand,
               isLatestStage,
-            } = partitionTilesByBand(allTiles, currentBand);
+            } = partitionTilesByBand(enrichedTiles, currentBand, childAgeMonths);
 
             // Capture render snapshot for HubDebugOverlay (dev-only diff aid).
             // Same render pass — read by the overlay sibling further down.

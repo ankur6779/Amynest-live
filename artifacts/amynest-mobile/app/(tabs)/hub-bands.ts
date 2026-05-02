@@ -25,33 +25,69 @@ export function getAgeBand(ageYears: number, ageMonths = 0): number {
 
 // Standalone metadata: which bands each tile is intended for. Lives outside
 // the JSX so it's easy to tweak/scale without touching the render code.
+//
+// Source of truth: artifacts/kidschedule/src/pages/parenting-hub.tsx
+// `sections` array. Mobile mirrors web for shared tiles; entries flagged
+// with "mobile-only" below have no web counterpart and are intentional
+// mobile additions documented in lib/hubWebReference.ts (MOBILE_ONLY_EXTRAS).
 export const HUB_CONTENT_AGE_BANDS: Record<string, readonly number[]> = {
+  // Always-current (web `alwaysCurrent: true`).
   amy:                   [0, 1, 2, 3, 4, 5, 6],
   articles:              [0, 1, 2, 3, 4, 5, 6],
   tips:                  [0, 1, 2, 3, 4, 5, 6],
   emotional:             [0, 1, 2, 3, 4, 5, 6],
-  "ptm-prep":            [2, 3, 4, 5, 6],
-  "smart-study":         [1, 2, 3, 4, 5, 6],
+  activities:            [0, 1, 2, 3, 4, 5, 6],
+  "art-craft":           [0, 1, 2, 3, 4, 5, 6],
+  nutrition:             [0, 1, 2, 3, 4, 5, 6], // mobile-only
+  "meal-suggestions":    [0, 1, 2, 3, 4, 5, 6], // mobile-only
+
+  // Band-restricted (web tiles with explicit `bands: [...]`).
+  "story-hub":           [0, 1, 2, 3],          // web: 0-2, 2-4, 4-6, 6-8
+  phonics:               [1, 2],                // web: 2-4, 4-6 + 12-72m
+  "smart-math-tricks":   [2, 3],                // web: 4-6, 6-8
+  "ptm-prep":            [2, 3, 4, 5, 6],       // web: 4-6..12-15 + 36-216m
+  "smart-study":         [2, 3, 4, 5, 6],       // web: 4-6..12-15 + 36-204m
+  "event-prep":          [2, 3, 4, 5, 6],       // web: 4-6..12-15 + 36-180m
+  olympiad:              [2, 3, 4, 5, 6],       // web: 4-6..12-15 + 36-192m
+  "life-skills":         [1, 2, 3, 4, 5, 6],    // web: 2-4..12-15 + 24-192m
+  "coloring-books":      [1, 2, 3, 4, 5, 6],    // web: 2-4..12-15 + ≥24m
+  "fun-sheets":          [1, 2, 3, 4, 5, 6],    // web: 2-4..12-15 + ≥24m
+
+  // Mobile-only extras (no web counterpart). Documented in
+  // lib/hubWebReference.ts so the dev overlay doesn't flag them.
   "morning-flow":        [2, 3, 4, 5, 6],
-  olympiad:              [3, 4, 5, 6],
   "kids-control-center": [3, 4, 5, 6],
   meals:                 [1, 2, 3, 4, 5, 6],
-  nutrition:             [0, 1, 2, 3, 4, 5, 6],
-  "event-prep":          [1, 2, 3, 4, 5],
-  activities:            [0, 1, 2, 3, 4, 5],
-  "story-hub":           [1, 2, 3, 4, 5],
-  "art-craft":           [1, 2, 3, 4],
   worksheets:            [1, 2, 3, 4, 5],
   facts:                 [2, 3, 4, 5, 6],
-  "life-skills":         [1, 2, 3, 4, 5, 6],
-  "meal-suggestions":    [0, 1, 2, 3, 4, 5, 6],
-  "phonics-test":        [0, 1, 2],
+};
+
+// Per-tile age-month bounds, mirroring the totalAgeMonths gates in the web
+// `sections` array (e.g. `totalAgeMonths >= 36 && totalAgeMonths < 216`).
+// Tiles absent from this map have no month-level gating beyond their bands.
+// Bounds are *inclusive min, exclusive max* (i.e. `[min, max)`).
+export const HUB_TILE_AGE_MONTHS: Record<string, { min?: number; max?: number }> = {
+  phonics:          { min: 12, max: 72 },
+  "ptm-prep":       { min: 36, max: 216 },
+  "smart-study":    { min: 36, max: 204 },
+  "event-prep":     { min: 36, max: 180 },
+  olympiad:         { min: 36, max: 192 },
+  "life-skills":    { min: 24, max: 192 },
+  "coloring-books": { min: 24 },
+  "fun-sheets":     { min: 24 },
 };
 
 // Minimal shape required by `partitionTilesByBand`. The function is generic
 // over the rest of the tile so callers (e.g. hub.tsx) can keep their own
 // extra fields like the rendered React node attached.
-export type HubBandTile = { id: string; ageBands: readonly number[] };
+export type HubBandTile = {
+  id: string;
+  ageBands: readonly number[];
+  /** Optional inclusive minimum totalAgeMonths gate. */
+  ageMonthsMin?: number;
+  /** Optional exclusive maximum totalAgeMonths gate. */
+  ageMonthsMax?: number;
+};
 
 export interface HubBandPartition<T extends HubBandTile> {
   /** Tiles whose ageBands include the child's current band. */
@@ -81,16 +117,21 @@ export interface HubBandPartition<T extends HubBandTile> {
  * independently of the React tree.
  *
  * Rules:
- *  - Section 1 = tiles whose `ageBands` include `currentBand`.
- *  - Section 2 = tiles that do NOT include `currentBand` but include at
- *    least one band strictly greater than `currentBand` (forward-looking
- *    only — past-only tiles are hidden, not surfaced as "catch-up").
+ *  - A tile is *eligible* when its optional ageMonths bounds (if any) are
+ *    satisfied by `ageMonths`. Ineligible tiles are dropped to `hidden`
+ *    even if their bands cover the current band — this matches web's
+ *    behaviour where a tile with `totalAgeMonths < 36` doesn't render even
+ *    if its band is current.
+ *  - Section 1 = eligible tiles whose `ageBands` include `currentBand`.
+ *  - Section 2 = eligible tiles that do NOT include `currentBand` but
+ *    include at least one band strictly greater than `currentBand`.
  *  - Section 2 tiles are grouped by their *nearest* future band so each
  *    tile renders in exactly one Explore group.
  */
 export function partitionTilesByBand<T extends HubBandTile>(
   tiles: readonly T[],
   currentBand: number,
+  ageMonths?: number,
 ): HubBandPartition<T> {
   const section1: T[] = [];
   const section2: T[] = [];
@@ -98,6 +139,19 @@ export function partitionTilesByBand<T extends HubBandTile>(
   const groupsByFutureBand = new Map<number, T[]>();
 
   for (const tile of tiles) {
+    // Apply age-month gating first. A tile that fails its bounds is hidden
+    // regardless of band membership (matches web's per-section guards like
+    // `totalAgeMonths >= 36 && totalAgeMonths < 216`).
+    const monthsOk =
+      ageMonths == null ||
+      ((tile.ageMonthsMin == null || ageMonths >= tile.ageMonthsMin) &&
+       (tile.ageMonthsMax == null || ageMonths < tile.ageMonthsMax));
+
+    if (!monthsOk) {
+      hidden.push(tile);
+      continue;
+    }
+
     if (tile.ageBands.includes(currentBand)) {
       section1.push(tile);
       continue;
