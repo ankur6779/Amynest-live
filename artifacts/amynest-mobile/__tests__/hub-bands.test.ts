@@ -90,7 +90,9 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
   // tile from HUB_CONTENT_AGE_BANDS is caught instead of silently shipping.
   // Inventory updated for #176: removed `phonics-test`; added `phonics`,
   // `smart-math-tricks`, `coloring-books`, `fun-sheets`.
-  it("contains the expected 23 tiles", () => {
+  // Inventory updated for #197: added `skills-focus`, `daily-story`,
+  // `daily-puzzle` (web-parity tiles ported from kidschedule's dashboard).
+  it("contains the expected 26 tiles", () => {
     const expectedIds = [
       // Always-current
       "amy", "articles", "tips", "emotional", "activities", "art-craft",
@@ -100,10 +102,12 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
       "event-prep", "olympiad", "life-skills", "coloring-books", "fun-sheets",
       // Mobile-only extras
       "morning-flow", "kids-control-center", "meals", "worksheets", "facts",
+      // Task #197 web-parity additions
+      "skills-focus", "daily-story", "daily-puzzle",
     ].sort();
     const actualIds = Object.keys(HUB_CONTENT_AGE_BANDS).sort();
     expect(actualIds).toEqual(expectedIds);
-    expect(actualIds.length).toBe(23);
+    expect(actualIds.length).toBe(26);
   });
 
   // Locks expected tile membership for two representative bands. This catches
@@ -140,6 +144,8 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
       "coloring-books", "fun-sheets",
       // Mobile-only extras that include band 4
       "morning-flow", "kids-control-center", "meals", "worksheets", "facts",
+      // Task #197 web-parity additions that include band 4
+      "skills-focus", "daily-story", "daily-puzzle",
     ].sort();
     const section1Ids = Object.entries(HUB_CONTENT_AGE_BANDS)
       .filter(([, bands]) => bands.includes(band))
@@ -172,6 +178,9 @@ describe("HUB_TILE_AGE_MONTHS", () => {
     expect(HUB_TILE_AGE_MONTHS["life-skills"]).toEqual({ min: 24, max: 192 });
     expect(HUB_TILE_AGE_MONTHS["coloring-books"]).toEqual({ min: 24 });
     expect(HUB_TILE_AGE_MONTHS["fun-sheets"]).toEqual({ min: 24 });
+    // Task #197 — Daily Puzzle is gated to ages 3+ (preschool difficulty
+    // is the lowest tier in the question bank).
+    expect(HUB_TILE_AGE_MONTHS["daily-puzzle"]).toEqual({ min: 36 });
   });
 });
 

@@ -62,6 +62,15 @@ export const HUB_CONTENT_AGE_BANDS: Record<string, readonly number[]> = {
   // facts now also surfaces to the InfantHub band (0–2y) so the AmazingFacts
   // tile is reachable for the 0–24m window — see task #196 parity work.
   facts:                 [0, 1, 2, 3, 4, 5, 6],
+  // Web-parity surfaces ported from kidschedule's dashboard (Task #197):
+  // — `skills-focus` and `daily-story` have content for the toddler+ groups
+  //   so we keep them out of band 0 to leave the infant hub flow untouched.
+  // — `daily-puzzle` is gated by both bands (1+) and ageMonthsMin: 36 so a
+  //   24m old in band 1 still doesn't see it (matches Task #197's
+  //   "ageMonthsMin: 36" requirement).
+  "skills-focus":        [1, 2, 3, 4, 5, 6],
+  "daily-story":         [1, 2, 3, 4, 5, 6],
+  "daily-puzzle":        [1, 2, 3, 4, 5, 6],
 };
 
 // Per-tile age-month bounds, mirroring the totalAgeMonths gates in the web
@@ -77,6 +86,10 @@ export const HUB_TILE_AGE_MONTHS: Record<string, { min?: number; max?: number }>
   "life-skills":    { min: 24, max: 192 },
   "coloring-books": { min: 24 },
   "fun-sheets":     { min: 24 },
+  // Daily Puzzle is restricted to ages 3+ per Task #197 (the question bank
+  // starts at preschool difficulty). Bands gate band 0 already, but the
+  // explicit ageMonthsMin gate keeps a 25-month-old in band 1 out too.
+  "daily-puzzle":   { min: 36 },
 };
 
 // Minimal shape required by `partitionTilesByBand`. The function is generic

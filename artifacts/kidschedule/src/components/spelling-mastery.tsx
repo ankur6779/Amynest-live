@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   GraduationCap, BookOpen, Gamepad2, Headphones, Trophy,
   UserCheck, Sparkles, Volume2, VolumeX, RefreshCw, Star,
-  CheckCircle2, XCircle, Loader2, Crown, Swords, Bot, User as UserIcon,
+  CheckCircle2, XCircle, Loader2, ListOrdered,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,18 +12,11 @@ import {
   type SpellingAgeGroup,
   type SpellingDifficulty,
   type SpellingWord,
-  type SafeSessionWord,
-  type SessionFinalizeSummary,
-  type SpellingProgress,
-  type SpellingAiOpponent,
   spellingAgeGroupFor,
   useSpellingTTS,
   useSpellingWords,
   useSpellingProgress,
   useSpellingLeaderboard,
-  useSpellingSession,
-  useSpellingTournament,
-  AI_OPPONENT_LABELS,
   BADGE_LABELS,
 } from "@/hooks/use-spelling";
 
@@ -33,22 +26,13 @@ interface SpellingMasteryProps {
   ageMonths: number;
 }
 
-type Mode =
-  | "learn"
-  | "practice"
-  | "dictation"
-  | "competition"
-  | "tournament"
-  | "battle"
-  | "parent";
+type Mode = "learn" | "practice" | "dictation" | "competition" | "parent";
 
 const MODES: { id: Mode; label: string; icon: React.ComponentType<{ className?: string }>; tint: string }[] = [
   { id: "learn",       label: "Learn",       icon: BookOpen,    tint: "from-indigo-500 to-blue-500" },
   { id: "practice",    label: "Practice",    icon: Gamepad2,    tint: "from-emerald-500 to-teal-500" },
   { id: "dictation",   label: "Dictation",   icon: Headphones,  tint: "from-violet-500 to-purple-500" },
   { id: "competition", label: "Competition", icon: Trophy,      tint: "from-amber-500 to-orange-500" },
-  { id: "tournament",  label: "Tournament",  icon: Crown,       tint: "from-yellow-500 to-amber-600" },
-  { id: "battle",      label: "Battle",      icon: Swords,      tint: "from-rose-500 to-red-600" },
   { id: "parent",      label: "Parent Mode", icon: UserCheck,   tint: "from-pink-500 to-rose-500" },
 ];
 
@@ -194,10 +178,7 @@ export function SpellingMastery({ childId, childName, ageMonths }: SpellingMaste
             words={wordsState.words}
             loading={wordsState.loading}
             tts={tts}
-            // Learn mode no longer writes to progress — the client-side
-            // "I learned it" tap is trivially scriptable. Stars / level
-            // come from server-graded modes + Parent Mode only.
-            onCorrect={() => {}}
+            onCorrect={() => void progressState.recordAttempt(true)}
           />
         )}
         {mode === "practice" && (
@@ -205,50 +186,26 @@ export function SpellingMastery({ childId, childName, ageMonths }: SpellingMaste
             words={wordsState.words}
             loading={wordsState.loading}
             tts={tts}
-            // Practice mode no longer writes to progress — the
-            // Missing-Letter / Jumbled-Letter games are client-graded
-            // and were the easiest inflation surface. Practice is now
-            // UI-only; star accumulation happens via server-graded
-            // modes + Parent Mode.
-            onAttempt={() => {}}
+            onAttempt={(c) => void progressState.recordAttempt(c)}
           />
         )}
         {mode === "dictation" && (
           <DictationView
-            childId={childId}
-            ageGroup={ageGroup}
-            difficulty={difficulty}
-            wordsSource={wordsState.source}
+            words={wordsState.words}
+            loading={wordsState.loading}
             tts={tts}
-            onProgressUpdate={progressState.setProgress}
+            onAttempt={(c) => void progressState.recordAttempt(c)}
           />
         )}
         {mode === "competition" && (
           <CompetitionView
+            words={wordsState.words}
+            loading={wordsState.loading}
+            tts={tts}
             childId={childId}
             ageGroup={ageGroup}
-            difficulty={difficulty}
-            wordsSource={wordsState.source}
-            tts={tts}
-            onProgressUpdate={progressState.setProgress}
-          />
-        )}
-        {mode === "tournament" && (
-          <TournamentView
-            childId={childId}
-            ageGroup={ageGroup}
-            tts={tts}
-            onProgressUpdate={progressState.setProgress}
-          />
-        )}
-        {mode === "battle" && (
-          <BattleView
-            childId={childId}
-            ageGroup={ageGroup}
-            difficulty={difficulty}
-            wordsSource={wordsState.source}
-            tts={tts}
-            onProgressUpdate={progressState.setProgress}
+            onAttempt={(c) => void progressState.recordAttempt(c)}
+            onRequestRefresh={() => void wordsState.refresh()}
           />
         )}
         {mode === "parent" && (
@@ -256,7 +213,7 @@ export function SpellingMastery({ childId, childName, ageMonths }: SpellingMaste
             words={wordsState.words}
             loading={wordsState.loading}
             tts={tts}
-            onAttempt={(c) => void progressState.recordAttempt(c, "parent")}
+            onAttempt={(c) => void progressState.recordAttempt(c)}
           />
         )}
       </div>
@@ -282,6 +239,7 @@ function SpellingHero({
   const streak = progress?.currentStreak ?? 0;
   const badges = progress?.badges ?? [];
   // 10 stars per level — show progress to next.
+  const nextLevelAt = level * 10;
   const progressPct = Math.min(100, Math.round(((stars % 10) / 10) * 100));
 
   return (
@@ -338,6 +296,7 @@ function SpellingHero({
             )}
           </div>
         </div>
+        {nextLevelAt > 0 && null /* nextLevelAt referenced for future tooltip */}
       </CardContent>
     </Card>
   );
@@ -377,46 +336,6 @@ function PlayButtons({
         variant="outline"
         onClick={() => void tts.speak(text, { slow: true })}
         disabled={tts.loading}
-      >
-        🐢 Slow
-      </Button>
-    </div>
-  );
-}
-
-/**
- * Like PlayButtons but plays a pre-prepared audio URL (session-scoped).
- * Used by Competition / Dictation where the server hides the answer text.
- */
-function PlayButtonsForUrl({
-  url,
-  tts,
-}: {
-  url: string;
-  tts: ReturnType<typeof useSpellingTTS>;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <Button
-        size="sm"
-        onClick={() => void tts.playUrl(url)}
-        disabled={tts.loading || !url}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white"
-      >
-        {tts.loading ? (
-          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-        ) : tts.speaking ? (
-          <VolumeX className="h-4 w-4 mr-1" />
-        ) : (
-          <Volume2 className="h-4 w-4 mr-1" />
-        )}
-        {tts.speaking ? "Stop" : "Play"}
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => void tts.playUrl(url, { slow: true })}
-        disabled={tts.loading || !url}
       >
         🐢 Slow
       </Button>
@@ -819,80 +738,48 @@ function JumbledLetterGame({
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Dictation — server-graded session flow
+// Dictation — audio plays, child types the word
 // ────────────────────────────────────────────────────────────────────────────
-//
-// v2: the server picks the words, plays them via session-scoped audio
-// URLs, and grades each typed guess. The client never sees the answer
-// until the server reveals it in the attempt response.
 function DictationView({
-  childId, ageGroup, difficulty, wordsSource, tts, onProgressUpdate,
+  words, loading, tts, onAttempt,
 }: {
-  childId: number;
-  ageGroup: SpellingAgeGroup;
-  difficulty: SpellingDifficulty;
-  wordsSource: "curated" | "ai";
+  words: SpellingWord[];
+  loading: boolean;
   tts: ReturnType<typeof useSpellingTTS>;
-  onProgressUpdate: (p: SpellingProgress) => void;
+  onAttempt: (correct: boolean) => void;
 }) {
-  const session = useSpellingSession(childId, ageGroup, onProgressUpdate);
   const [idx, setIdx] = useState(0);
   const [guess, setGuess] = useState("");
-  const [verdict, setVerdict] = useState<{ correct: boolean; correctAnswer: string } | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [committed, setCommitted] = useState<"ok" | "bad" | null>(null);
+  const empty = !loading && words.length === 0;
 
-  // Auto-start the first session on mount + restart whenever the
-  // configuration (age/difficulty/source) changes underneath us.
+  useEffect(() => { setIdx(0); setGuess(""); setCommitted(null); }, [words]);
+
+  const word = words[idx];
+
+  // Auto-play when the word changes (mounting effect on idx).
   useEffect(() => {
-    setIdx(0);
-    setGuess("");
-    setVerdict(null);
-    void session.start({ mode: "dictation", difficulty, count: 10, source: wordsSource });
-    // We deliberately ignore session in deps — calling start again on
-    // every render would loop forever.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [childId, ageGroup, difficulty, wordsSource]);
+    if (word) {
+      const t = setTimeout(() => void tts.speak(word.word), 200);
+      return () => clearTimeout(t);
+    }
+  }, [idx, word, tts]);
 
-  const word = session.words[idx];
-
-  // Auto-play each new word (200ms delay so the user sees the UI first).
-  useEffect(() => {
-    if (!word?.audioUrl) return;
-    const t = setTimeout(() => void tts.playUrl(word.audioUrl), 200);
-    return () => clearTimeout(t);
-  }, [idx, word?.audioUrl, tts]);
-
-  if (session.loading && session.words.length === 0) {
-    return <EmptyOrLoading loading empty={false} />;
-  }
-  if (!word) {
-    return <EmptyOrLoading loading={false} empty emptyMsg="No words loaded for this run." />;
+  if (loading || empty || !word) {
+    return <EmptyOrLoading loading={loading} empty={empty} />;
   }
 
-  const submit = async () => {
-    if (verdict || submitting) return;
-    const trimmed = guess.trim();
-    if (!trimmed) return;
-    setSubmitting(true);
-    const result = await session.attempt(idx, trimmed);
-    setSubmitting(false);
-    if (result) setVerdict(result);
+  const submit = () => {
+    if (committed) return;
+    const ok = guess.trim().toLowerCase() === word.word;
+    setCommitted(ok ? "ok" : "bad");
+    onAttempt(ok);
   };
 
-  const next = async () => {
-    if (idx + 1 >= session.words.length) {
-      // End of run — finalize quietly so the session is closed out.
-      await session.finalize();
-      // Restart with a fresh batch of words.
-      setIdx(0);
-      setGuess("");
-      setVerdict(null);
-      void session.start({ mode: "dictation", difficulty, count: 10, source: wordsSource });
-      return;
-    }
-    setIdx((i) => i + 1);
+  const next = () => {
+    setIdx((i) => (i + 1) % words.length);
     setGuess("");
-    setVerdict(null);
+    setCommitted(null);
   };
 
   return (
@@ -900,7 +787,7 @@ function DictationView({
       <CardContent className="p-4 space-y-4">
         <div className="text-center">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-bold">
-            Dictation — {idx + 1} / {session.words.length}
+            Dictation — {idx + 1} / {words.length}
           </p>
           <p className="mt-2 text-base text-violet-700 dark:text-violet-300 font-bold">
             🎧 Listen and spell the word
@@ -908,50 +795,41 @@ function DictationView({
         </div>
 
         <div className="flex justify-center">
-          <PlayButtonsForUrl url={word.audioUrl} tts={tts} />
+          <PlayButtons text={word.word} tts={tts} />
         </div>
 
         <Input
           value={guess}
-          onChange={(e) => !verdict && setGuess(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
-          placeholder={`Type the word… (${word.letterCount} letters)`}
+          onChange={(e) => !committed && setGuess(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          placeholder="Type the word…"
           autoFocus
-          disabled={!!verdict || submitting}
+          disabled={!!committed}
           className={[
             "text-center text-xl font-quicksand font-bold tracking-wider h-12",
-            verdict?.correct === true ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" : "",
-            verdict?.correct === false ? "border-red-500 bg-red-50 dark:bg-red-500/10" : "",
+            committed === "ok" ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" : "",
+            committed === "bad" ? "border-red-500 bg-red-50 dark:bg-red-500/10" : "",
           ].join(" ")}
         />
 
-        {!verdict ? (
+        {committed === null ? (
           <Button
-            onClick={() => void submit()}
-            disabled={!guess.trim() || submitting}
+            onClick={submit}
+            disabled={!guess.trim()}
             className="w-full bg-violet-600 hover:bg-violet-700 text-white"
           >
-            {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
             Check
           </Button>
         ) : (
           <div className="space-y-2">
-            <div className={["flex items-center justify-center gap-2 text-sm font-bold", verdict.correct ? "text-emerald-600" : "text-red-600"].join(" ")}>
-              {verdict.correct ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-              {verdict.correct ? `Spot on — "${verdict.correctAnswer}"` : `It's "${verdict.correctAnswer}"`}
+            <div className={["flex items-center justify-center gap-2 text-sm font-bold", committed === "ok" ? "text-emerald-600" : "text-red-600"].join(" ")}>
+              {committed === "ok" ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+              {committed === "ok" ? `Spot on — "${word.word}"` : `It's "${word.word}"`}
             </div>
-            <Button onClick={() => void next()} className="w-full bg-violet-600 hover:bg-violet-700 text-white">
-              {idx + 1 >= session.words.length ? "Start a new round →" : "Next word →"}
+            <Button onClick={next} className="w-full bg-violet-600 hover:bg-violet-700 text-white">
+              Next word →
             </Button>
           </div>
-        )}
-
-        {session.error && (
-          <p className="text-[11px] text-red-600 dark:text-red-400 text-center">
-            {session.error === "already_graded"
-              ? "Already graded — moving on."
-              : `Couldn't grade (${session.error}).`}
-          </p>
         )}
       </CardContent>
     </Card>
@@ -959,81 +837,81 @@ function DictationView({
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Competition — server-graded, server-timed, server-scored
+// Competition — timed, no hints, score reveal at end
 // ────────────────────────────────────────────────────────────────────────────
 function CompetitionView({
-  childId, ageGroup, difficulty, wordsSource, tts, onProgressUpdate,
+  words, loading, tts, childId, ageGroup, onAttempt, onRequestRefresh,
 }: {
+  words: SpellingWord[];
+  loading: boolean;
+  tts: ReturnType<typeof useSpellingTTS>;
   childId: number;
   ageGroup: SpellingAgeGroup;
-  difficulty: SpellingDifficulty;
-  wordsSource: "curated" | "ai";
-  tts: ReturnType<typeof useSpellingTTS>;
-  onProgressUpdate: (p: SpellingProgress) => void;
+  onAttempt: (correct: boolean) => void;
+  onRequestRefresh: () => void;
 }) {
-  const session = useSpellingSession(childId, ageGroup, onProgressUpdate);
+  const lb = useSpellingLeaderboard(ageGroup);
   type Phase = "idle" | "running" | "done";
   const [phase, setPhase] = useState<Phase>("idle");
   const [idx, setIdx] = useState(0);
   const [guess, setGuess] = useState("");
-  const [correctCount, setCorrectCount] = useState(0);
+  const [correct, setCorrect] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-  const [summary, setSummary] = useState<SessionFinalizeSummary | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [savedScore, setSavedScore] = useState<number | null>(null);
+  const [savedAccuracy, setSavedAccuracy] = useState<number | null>(null);
+  const startedAtRef = useRef<number>(0);
 
-  // 1Hz timer based on the server-issued startedAt — so a tab that
-  // sleeps and wakes still shows the right elapsed time.
+  // 1Hz timer while running
   useEffect(() => {
-    if (phase !== "running" || !session.startedAt) return;
-    const startMs = new Date(session.startedAt).getTime();
-    const tick = () => setElapsed(Math.max(0, Math.round((Date.now() - startMs) / 1000)));
-    tick();
-    const t = setInterval(tick, 1000);
+    if (phase !== "running") return;
+    const t = setInterval(() => {
+      setElapsed(Math.round((Date.now() - startedAtRef.current) / 1000));
+    }, 1000);
     return () => clearInterval(t);
-  }, [phase, session.startedAt]);
+  }, [phase]);
 
-  const start = async () => {
-    setIdx(0);
-    setGuess("");
-    setCorrectCount(0);
-    setElapsed(0);
-    setSummary(null);
-    const ok = await session.start({
-      mode: "competition",
-      difficulty,
-      count: 10,
-      source: wordsSource,
-    });
-    if (ok) setPhase("running");
+  // Reset & refresh words whenever we leave a finished run.
+  const start = () => {
+    onRequestRefresh();
+    setIdx(0); setGuess(""); setCorrect(0); setElapsed(0);
+    setSavedScore(null); setSavedAccuracy(null);
+    startedAtRef.current = Date.now();
+    setPhase("running");
   };
 
-  const word = session.words[idx];
+  const word = words[idx];
 
-  // Auto-play each new word during the run.
+  // Auto-speak each new word during the run.
   useEffect(() => {
-    if (phase !== "running" || !word?.audioUrl) return;
-    const t = setTimeout(() => void tts.playUrl(word.audioUrl), 250);
-    return () => clearTimeout(t);
-  }, [phase, idx, word?.audioUrl, tts]);
+    if (phase === "running" && word) {
+      const t = setTimeout(() => void tts.speak(word.word), 250);
+      return () => clearTimeout(t);
+    }
+  }, [phase, idx, word, tts]);
 
   const submit = async () => {
-    if (phase !== "running" || !word || submitting) return;
-    const trimmed = guess.trim();
-    if (!trimmed) return;
-    setSubmitting(true);
-    const result = await session.attempt(idx, trimmed);
-    setSubmitting(false);
-    if (!result) return;
-    if (result.correct) setCorrectCount((c) => c + 1);
+    if (phase !== "running" || !word) return;
+    const ok = guess.trim().toLowerCase() === word.word;
+    if (ok) setCorrect((c) => c + 1);
+    onAttempt(ok);
     setGuess("");
 
     const nextIdx = idx + 1;
-    if (nextIdx >= session.words.length) {
-      // End of run — server computes the final score from its own
-      // attempt log and stamps duration from its own start timestamp.
+    if (nextIdx >= words.length) {
+      // End of run: stamp duration, persist score.
+      const finalElapsed = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+      setElapsed(finalElapsed);
       setPhase("done");
-      const final = await session.finalize();
-      if (final) setSummary(final);
+      const finalCorrect = correct + (ok ? 1 : 0);
+      const acc = Math.round((finalCorrect / words.length) * 100);
+      setSavedAccuracy(acc);
+      const saved = await lb.recordScore({
+        childId,
+        wordsAttempted: words.length,
+        wordsCorrect: finalCorrect,
+        durationSec: finalElapsed,
+      });
+      setSavedScore(saved?.score ?? null);
     } else {
       setIdx(nextIdx);
     }
@@ -1048,22 +926,17 @@ function CompetitionView({
             Spelling Competition
           </p>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            10 words. Server-timed and server-scored. No hints. Listen
-            carefully and type your answer. Faster + accurate = higher score.
+            10 words. Timer is on. No hints. Listen carefully and type your answer.
+            Faster + accurate = higher score.
           </p>
           <Button
-            onClick={() => void start()}
-            disabled={session.loading}
+            onClick={start}
+            disabled={loading || words.length === 0}
             className="bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:from-amber-600 hover:to-orange-700"
           >
-            {session.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trophy className="h-4 w-4 mr-1" />}
+            {loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trophy className="h-4 w-4 mr-1" />}
             Start Competition
           </Button>
-          {session.error && (
-            <p className="text-[11px] text-red-600 dark:text-red-400">
-              Couldn't start: {session.error}
-            </p>
-          )}
         </CardContent>
       </Card>
     );
@@ -1078,19 +951,19 @@ function CompetitionView({
             All done!
           </p>
           <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
-            <Stat label="Correct" value={`${summary?.wordsCorrect ?? correctCount}/${summary?.wordsAttempted ?? session.words.length}`} />
-            <Stat label="Accuracy" value={`${summary?.accuracyPct ?? 0}%`} />
-            <Stat label="Time" value={`${summary?.durationSec ?? elapsed}s`} />
+            <Stat label="Correct" value={`${correct}/${words.length}`} />
+            <Stat label="Accuracy" value={`${savedAccuracy ?? 0}%`} />
+            <Stat label="Time" value={`${elapsed}s`} />
           </div>
-          {summary?.score !== null && summary?.score !== undefined && (
+          {savedScore !== null && (
             <div className="text-sm">
               <span className="text-muted-foreground">Score:</span>{" "}
               <span className="font-quicksand font-extrabold text-2xl text-amber-700 dark:text-amber-300">
-                {summary.score}
+                {savedScore}
               </span>
             </div>
           )}
-          <Button onClick={() => void start()} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
+          <Button onClick={start} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
             Play again
           </Button>
         </CardContent>
@@ -1105,583 +978,32 @@ function CompetitionView({
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-amber-700 dark:text-amber-300">
-            Word {idx + 1} of {session.words.length}
+            Word {idx + 1} of {words.length}
           </span>
           <span className="font-mono">⏱ {elapsed}s</span>
-          <span className="font-bold text-emerald-600">✓ {correctCount}</span>
+          <span className="font-bold text-emerald-600">✓ {correct}</span>
         </div>
         <p className="text-center text-sm text-muted-foreground">
           🎧 Listen and type the word — no hints!
         </p>
         <div className="flex justify-center">
-          <PlayButtonsForUrl url={word.audioUrl} tts={tts} />
+          <PlayButtons text={word.word} tts={tts} />
         </div>
         <Input
           value={guess}
           onChange={(e) => setGuess(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
-          placeholder={`Spell the word… (${word.letterCount} letters)`}
+          placeholder="Spell the word…"
           autoFocus
-          disabled={submitting}
           className="text-center text-xl font-quicksand font-bold tracking-wider h-12"
         />
         <Button
           onClick={() => void submit()}
-          disabled={!guess.trim() || submitting}
+          disabled={!guess.trim()}
           className="w-full bg-amber-600 hover:bg-amber-700 text-white"
         >
-          {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
           Submit
         </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// TournamentView — 3-round elimination ladder (Easy → Medium → Hard)
-// ────────────────────────────────────────────────────────────────────────────
-//
-// Phases:
-//   idle      → not started; show overview + Start button
-//   playing   → grading the active round's words (auto-played + typed)
-//   between   → just finalized a round; show pass/fail banner + Continue
-//   done      → terminal status (eliminated or completed)
-//
-// Round progression is server-owned (POST /tournaments/:t/advance). The
-// difficulty + word count + pass thresholds are baked into
-// TOURNAMENT_ROUND_CONFIG on the server — the client just plays whatever
-// session it's handed.
-function TournamentView({
-  childId, ageGroup, tts, onProgressUpdate,
-}: {
-  childId: number;
-  ageGroup: SpellingAgeGroup;
-  tts: ReturnType<typeof useSpellingTTS>;
-  onProgressUpdate: (p: SpellingProgress) => void;
-}) {
-  const t = useSpellingTournament(childId, ageGroup, onProgressUpdate);
-  type Phase = "idle" | "playing" | "between" | "done";
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [idx, setIdx] = useState(0);
-  const [guess, setGuess] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [advancing, setAdvancing] = useState(false);
-
-  const start = async () => {
-    setIdx(0);
-    setGuess("");
-    const ok = await t.start();
-    if (ok) setPhase("playing");
-  };
-
-  // Auto-play each new word during the round.
-  const word = t.activeSession?.words[idx];
-  useEffect(() => {
-    if (phase !== "playing" || !word?.audioUrl) return;
-    const handle = setTimeout(() => void tts.playUrl(word.audioUrl), 250);
-    return () => clearTimeout(handle);
-  }, [phase, idx, word?.audioUrl, tts]);
-
-  const submit = async () => {
-    if (phase !== "playing" || !word || submitting) return;
-    const trimmed = guess.trim();
-    if (!trimmed) return;
-    setSubmitting(true);
-    const result = await t.attempt(idx, trimmed);
-    setSubmitting(false);
-    if (!result || !t.activeSession) return;
-    setGuess("");
-
-    const nextIdx = idx + 1;
-    if (nextIdx >= t.activeSession.words.length) {
-      // Round done — flip to "between" while we await the server's
-      // verdict. The advance() call decides eliminated vs. next round.
-      setPhase("between");
-      setAdvancing(true);
-      const updated = await t.advance();
-      setAdvancing(false);
-      setIdx(0);
-      if (!updated || updated.status !== "active") {
-        setPhase("done");
-      }
-    } else {
-      setIdx(nextIdx);
-    }
-  };
-
-  const continueAfterRound = () => {
-    // After the inter-round banner, return to playing the next round.
-    if (t.activeSession && t.tournament?.status === "active") {
-      setPhase("playing");
-    }
-  };
-
-  if (phase === "idle") {
-    return (
-      <Card className="border-yellow-200/40 dark:border-yellow-500/20 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-500/[0.06] dark:to-amber-500/[0.06]">
-        <CardContent className="p-5 space-y-3 text-center">
-          <Crown className="h-10 w-10 mx-auto text-yellow-500" />
-          <p className="font-quicksand font-bold text-base text-foreground">
-            Spelling Tournament
-          </p>
-          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            3 rounds: <b>Easy → Medium → Hard</b>. Get at least 3 of 5 in each
-            round to advance. Survive all 3 to win the trophy!
-          </p>
-          <div className="flex justify-center gap-1.5 text-[11px]">
-            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">R1 · Easy</span>
-            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">R2 · Medium</span>
-            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">R3 · Hard</span>
-          </div>
-          <Button
-            onClick={() => void start()}
-            disabled={t.loading}
-            className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white hover:from-yellow-600 hover:to-amber-700"
-          >
-            {t.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Crown className="h-4 w-4 mr-1" />}
-            Enter Tournament
-          </Button>
-          {t.error && (
-            <p className="text-[11px] text-red-600 dark:text-red-400">
-              Couldn't start: {t.error}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (phase === "between") {
-    const last = t.lastRound;
-    return (
-      <Card className="border-yellow-200/40 dark:border-yellow-500/20 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-500/[0.06] dark:to-amber-500/[0.06]">
-        <CardContent className="p-5 space-y-3 text-center">
-          {advancing || !last ? (
-            <>
-              <Loader2 className="h-8 w-8 mx-auto animate-spin text-amber-500" />
-              <p className="text-sm text-muted-foreground">Tallying round…</p>
-            </>
-          ) : last.passed ? (
-            <>
-              <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-500" />
-              <p className="font-quicksand font-extrabold text-lg text-foreground">
-                Round {last.round} cleared!
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {last.wordsCorrect} of {last.wordsAttempted} correct ·
-                +{last.score} points
-              </p>
-              {t.tournament?.status === "active" && (
-                <Button
-                  onClick={continueAfterRound}
-                  className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white"
-                >
-                  Continue to Round {t.tournament.currentRound} →
-                </Button>
-              )}
-            </>
-          ) : (
-            <>
-              <XCircle className="h-12 w-12 mx-auto text-rose-500" />
-              <p className="font-quicksand font-extrabold text-lg text-foreground">
-                Knocked out at Round {last.round}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Needed 3 correct, got {last.wordsCorrect}. Better luck next time!
-              </p>
-              <Button
-                onClick={() => { setPhase("idle"); t.reset(); }}
-                variant="outline"
-              >
-                Try again
-              </Button>
-            </>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (phase === "done") {
-    const tournament = t.tournament;
-    const completed = tournament?.status === "completed";
-    return (
-      <Card className="border-yellow-200/40 dark:border-yellow-500/20 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-500/[0.06] dark:to-amber-500/[0.06]">
-        <CardContent className="p-5 space-y-3 text-center">
-          {completed ? (
-            <>
-              <Trophy className="h-14 w-14 mx-auto text-amber-500" />
-              <p className="font-quicksand font-extrabold text-xl text-foreground">
-                Tournament Champion!
-              </p>
-              <p className="text-xs text-muted-foreground">
-                All 3 rounds cleared. Total score:
-              </p>
-              <p className="font-quicksand font-extrabold text-3xl text-amber-700 dark:text-amber-300">
-                {tournament?.totalScore ?? 0}
-              </p>
-            </>
-          ) : (
-            <>
-              <XCircle className="h-12 w-12 mx-auto text-rose-500" />
-              <p className="font-quicksand font-extrabold text-lg text-foreground">
-                Eliminated at Round {tournament?.eliminatedAtRound ?? "—"}
-              </p>
-            </>
-          )}
-          {tournament?.rounds && tournament.rounds.length > 0 && (
-            <div className="space-y-1 max-w-sm mx-auto">
-              {tournament.rounds.map((r) => (
-                <div
-                  key={r.round}
-                  className="flex items-center justify-between text-xs rounded-md px-2 py-1 bg-white/70 dark:bg-white/[0.06]"
-                >
-                  <span className="font-bold capitalize">
-                    R{r.round} · {r.difficulty}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {r.wordsCorrect}/{r.wordsAttempted}
-                  </span>
-                  {r.passed ? (
-                    <span className="text-emerald-600 font-bold">+{r.score}</span>
-                  ) : (
-                    <span className="text-rose-600 font-bold">eliminated</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          <Button
-            onClick={() => { setPhase("idle"); t.reset(); }}
-            className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white"
-          >
-            Play again
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // playing
-  const session = t.activeSession;
-  if (!session || !word) return null;
-  return (
-    <Card className="border-yellow-200/40 dark:border-yellow-500/20">
-      <CardContent className="p-4 space-y-4">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-amber-700 dark:text-amber-300 capitalize">
-            Round {session.round} of 3 · {session.difficulty}
-          </span>
-          <span className="font-mono">
-            {idx + 1}/{session.words.length}
-          </span>
-          <span className="font-bold text-emerald-600">
-            ✓ {t.gradedIndices.size}
-          </span>
-        </div>
-        <p className="text-center text-sm text-muted-foreground">
-          🎧 Listen and type — pass {session.passThreshold > 0
-            ? `${session.passThreshold} of ${session.words.length}`
-            : "everything you can"} to {session.round < 3 ? "advance" : "win"}.
-        </p>
-        <div className="flex justify-center">
-          <PlayButtonsForUrl url={word.audioUrl} tts={tts} />
-        </div>
-        <Input
-          value={guess}
-          onChange={(e) => setGuess(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
-          placeholder={`Spell the word… (${word.letterCount} letters)`}
-          autoFocus
-          disabled={submitting}
-          className="text-center text-xl font-quicksand font-bold tracking-wider h-12"
-        />
-        <Button
-          onClick={() => void submit()}
-          disabled={!guess.trim() || submitting}
-          className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-white"
-        >
-          {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-          Submit
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// BattleView — turn-based You vs AI
-// ────────────────────────────────────────────────────────────────────────────
-//
-// Each word, the server returns BOTH the child's verdict AND the AI's
-// pre-simulated result for that same index — so we can show a side-by-
-// side scoreboard that updates word-by-word. Final score uses the same
-// computeCompetitionScore formula on both sides; winner is whoever has
-// the higher score (or "tie").
-function BattleView({
-  childId, ageGroup, difficulty, wordsSource, tts, onProgressUpdate,
-}: {
-  childId: number;
-  ageGroup: SpellingAgeGroup;
-  difficulty: SpellingDifficulty;
-  wordsSource: "curated" | "ai";
-  tts: ReturnType<typeof useSpellingTTS>;
-  onProgressUpdate: (p: SpellingProgress) => void;
-}) {
-  const session = useSpellingSession(childId, ageGroup, onProgressUpdate);
-  type Phase = "idle" | "running" | "done";
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [opponent, setOpponent] = useState<SpellingAiOpponent>("ai_medium");
-  const [idx, setIdx] = useState(0);
-  const [guess, setGuess] = useState("");
-  const [youCorrect, setYouCorrect] = useState(0);
-  const [aiCorrect, setAiCorrect] = useState(0);
-  /** Per-word reveal: child + AI verdicts after submit, for the running tally. */
-  const [reveals, setReveals] = useState<
-    Array<{ you: boolean; ai: { correct: boolean; ms: number } | null }>
-  >([]);
-  const [summary, setSummary] = useState<SessionFinalizeSummary | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const start = async () => {
-    setIdx(0);
-    setGuess("");
-    setYouCorrect(0);
-    setAiCorrect(0);
-    setReveals([]);
-    setSummary(null);
-    const ok = await session.start({
-      mode: "battle",
-      difficulty,
-      count: 5,
-      source: wordsSource,
-      opponent,
-    });
-    if (ok) setPhase("running");
-  };
-
-  const word = session.words[idx];
-
-  useEffect(() => {
-    if (phase !== "running" || !word?.audioUrl) return;
-    const handle = setTimeout(() => void tts.playUrl(word.audioUrl), 250);
-    return () => clearTimeout(handle);
-  }, [phase, idx, word?.audioUrl, tts]);
-
-  const submit = async () => {
-    if (phase !== "running" || !word || submitting) return;
-    const trimmed = guess.trim();
-    if (!trimmed) return;
-    setSubmitting(true);
-    const result = await session.attempt(idx, trimmed);
-    setSubmitting(false);
-    if (!result) return;
-    setReveals((prev) => [...prev, { you: result.correct, ai: result.aiResult }]);
-    if (result.correct) setYouCorrect((c) => c + 1);
-    if (result.aiResult?.correct) setAiCorrect((c) => c + 1);
-    setGuess("");
-
-    const nextIdx = idx + 1;
-    if (nextIdx >= session.words.length) {
-      setPhase("done");
-      const final = await session.finalize();
-      if (final) setSummary(final);
-    } else {
-      setIdx(nextIdx);
-    }
-  };
-
-  if (phase === "idle") {
-    return (
-      <Card className="border-rose-200/40 dark:border-rose-500/20 bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-500/[0.06] dark:to-red-500/[0.06]">
-        <CardContent className="p-5 space-y-4 text-center">
-          <Swords className="h-10 w-10 mx-auto text-rose-500" />
-          <div>
-            <p className="font-quicksand font-bold text-base text-foreground">
-              Battle vs AI
-            </p>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
-              5 words, head-to-head with a bot. Same words, same timer —
-              highest score wins.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">
-              Pick your opponent
-            </p>
-            <div className="flex justify-center gap-1.5 flex-wrap">
-              {(["ai_easy", "ai_medium", "ai_hard"] as const).map((op) => (
-                <button
-                  key={op}
-                  onClick={() => setOpponent(op)}
-                  className={[
-                    "px-3 py-1.5 rounded-full text-xs font-quicksand font-bold transition-all",
-                    opponent === op
-                      ? "bg-rose-600 text-white shadow-md"
-                      : "bg-white/70 dark:bg-white/[0.06] text-foreground hover:bg-white",
-                  ].join(" ")}
-                >
-                  {AI_OPPONENT_LABELS[op]}
-                </button>
-              ))}
-            </div>
-          </div>
-          <Button
-            onClick={() => void start()}
-            disabled={session.loading}
-            className="bg-gradient-to-r from-rose-500 to-red-600 text-white hover:from-rose-600 hover:to-red-700"
-          >
-            {session.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Swords className="h-4 w-4 mr-1" />}
-            Start Battle
-          </Button>
-          {session.error && (
-            <p className="text-[11px] text-red-600 dark:text-red-400">
-              Couldn't start: {session.error}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (phase === "done") {
-    const winner = summary?.winner ?? null;
-    const winnerLabel =
-      winner === "you" ? "You won!"
-      : winner === "ai" ? `${AI_OPPONENT_LABELS[opponent]} won`
-      : winner === "tie" ? "It's a tie!"
-      : "All done";
-    const winnerTint =
-      winner === "you" ? "text-emerald-600 dark:text-emerald-400"
-      : winner === "ai" ? "text-rose-600 dark:text-rose-400"
-      : "text-amber-700 dark:text-amber-300";
-    return (
-      <Card className="border-rose-200/40 dark:border-rose-500/20 bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-500/[0.06] dark:to-red-500/[0.06]">
-        <CardContent className="p-5 space-y-3 text-center">
-          {winner === "you" ? <Trophy className="h-12 w-12 mx-auto text-amber-500" />
-            : <Swords className="h-12 w-12 mx-auto text-rose-500" />}
-          <p className={`font-quicksand font-extrabold text-xl ${winnerTint}`}>
-            {winnerLabel}
-          </p>
-          <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
-            <div className="rounded-lg bg-white/70 dark:bg-white/[0.06] p-3">
-              <div className="flex items-center justify-center gap-1.5 mb-1">
-                <UserIcon className="h-4 w-4 text-emerald-600" />
-                <span className="text-xs font-bold">You</span>
-              </div>
-              <div className="font-quicksand font-extrabold text-2xl text-emerald-700 dark:text-emerald-300">
-                {summary?.score ?? 0}
-              </div>
-              <div className="text-[10px] text-muted-foreground">
-                {summary?.wordsCorrect ?? youCorrect}/{summary?.wordsAttempted ?? session.words.length} · {summary?.durationSec ?? 0}s
-              </div>
-            </div>
-            <div className="rounded-lg bg-white/70 dark:bg-white/[0.06] p-3">
-              <div className="flex items-center justify-center gap-1.5 mb-1">
-                <Bot className="h-4 w-4 text-rose-600" />
-                <span className="text-xs font-bold">{AI_OPPONENT_LABELS[opponent]}</span>
-              </div>
-              <div className="font-quicksand font-extrabold text-2xl text-rose-700 dark:text-rose-300">
-                {summary?.aiScore ?? 0}
-              </div>
-              <div className="text-[10px] text-muted-foreground">
-                {aiCorrect}/{session.words.length}
-              </div>
-            </div>
-          </div>
-          <Button
-            onClick={() => void start()}
-            className="bg-gradient-to-r from-rose-500 to-red-600 text-white"
-          >
-            Rematch
-          </Button>
-          <Button
-            onClick={() => { setPhase("idle"); session.reset(); }}
-            variant="outline"
-            className="ml-2"
-          >
-            Change opponent
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // running
-  if (!word) return null;
-  return (
-    <Card className="border-rose-200/40 dark:border-rose-500/20">
-      <CardContent className="p-4 space-y-4">
-        {/* Live scoreboard */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 p-2 text-center">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-              <UserIcon className="h-3 w-3" /> You
-            </div>
-            <div className="font-quicksand font-extrabold text-xl text-emerald-700 dark:text-emerald-300">
-              {youCorrect}
-            </div>
-          </div>
-          <div className="rounded-lg bg-rose-50 dark:bg-rose-500/10 p-2 text-center">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-rose-700 dark:text-rose-300">
-              <Bot className="h-3 w-3" /> {AI_OPPONENT_LABELS[opponent]}
-            </div>
-            <div className="font-quicksand font-extrabold text-xl text-rose-700 dark:text-rose-300">
-              {aiCorrect}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold">Word {idx + 1} of {session.words.length}</span>
-          <span className="text-muted-foreground capitalize">{difficulty}</span>
-        </div>
-        <p className="text-center text-sm text-muted-foreground">
-          🎧 Listen and type — beat the bot!
-        </p>
-        <div className="flex justify-center">
-          <PlayButtonsForUrl url={word.audioUrl} tts={tts} />
-        </div>
-        <Input
-          value={guess}
-          onChange={(e) => setGuess(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
-          placeholder={`Spell the word… (${word.letterCount} letters)`}
-          autoFocus
-          disabled={submitting}
-          className="text-center text-xl font-quicksand font-bold tracking-wider h-12"
-        />
-        <Button
-          onClick={() => void submit()}
-          disabled={!guess.trim() || submitting}
-          className="w-full bg-gradient-to-r from-rose-500 to-red-600 text-white"
-        >
-          {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-          Submit
-        </Button>
-        {/* Last-word reveal: small running list of who got what. */}
-        {reveals.length > 0 && (
-          <div className="flex flex-wrap gap-1 justify-center pt-1">
-            {reveals.map((r, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md bg-white/60 dark:bg-white/[0.06]"
-              >
-                <span className="text-muted-foreground">#{i + 1}</span>
-                <span className={r.you ? "text-emerald-600" : "text-rose-600"}>
-                  {r.you ? "✓" : "✗"}
-                </span>
-                <span className="text-muted-foreground">·</span>
-                <span className={r.ai?.correct ? "text-emerald-600" : "text-rose-600"}>
-                  {r.ai?.correct ? "✓" : "✗"}
-                </span>
-                {r.ai?.ms !== undefined && (
-                  <span className="text-muted-foreground">{(r.ai.ms / 1000).toFixed(1)}s</span>
-                )}
-              </span>
-            ))}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -1783,45 +1105,44 @@ function ParentRow({
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Always-visible family leaderboard for the active age group
+// Leaderboard panel
 // ────────────────────────────────────────────────────────────────────────────
 function LeaderboardPanel({ ageGroup }: { ageGroup: SpellingAgeGroup }) {
   const lb = useSpellingLeaderboard(ageGroup);
-  if (lb.rows.length === 0 && !lb.loading) return null;
 
   return (
-    <Card className="border-amber-200/40 dark:border-amber-500/20">
-      <CardContent className="p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <Trophy className="h-4 w-4 text-amber-500" />
+    <Card className="border-yellow-200/40 dark:border-yellow-500/20">
+      <CardContent className="p-3.5 space-y-2">
+        <div className="flex items-center gap-2">
+          <ListOrdered className="h-4 w-4 text-amber-500" />
           <p className="font-quicksand font-bold text-sm text-foreground">
-            Family Leaderboard — {ageGroup}
+            Family Leaderboard ({ageGroup})
           </p>
         </div>
         {lb.loading ? (
-          <p className="text-xs text-muted-foreground text-center py-2">
-            <Loader2 className="h-3.5 w-3.5 mx-auto animate-spin" />
+          <p className="text-xs text-muted-foreground">Loading…</p>
+        ) : lb.rows.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No scores yet — finish a Competition run to land on the board!
           </p>
         ) : (
           <ol className="space-y-1">
-            {lb.rows.map((r, i) => (
+            {lb.rows.map((row, i) => (
               <li
-                key={r.id}
+                key={row.id}
                 className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg bg-amber-50/60 dark:bg-amber-500/[0.06]"
               >
-                <span className="w-5 text-amber-700 dark:text-amber-300 font-bold">
-                  {i + 1}.
+                <span className="w-5 text-center font-bold text-amber-700 dark:text-amber-300">
+                  {i + 1}
                 </span>
                 <span className="flex-1 truncate font-bold text-foreground">
-                  {r.childName ?? "—"}
+                  {row.childName ?? "—"}
                 </span>
                 <span className="text-muted-foreground">
-                  {r.wordsCorrect}/{r.wordsAttempted}
+                  {row.wordsCorrect}/{row.wordsAttempted} • {row.accuracyPct}% • {row.durationSec}s
                 </span>
-                <span className="text-muted-foreground">{r.accuracyPct}%</span>
-                <span className="text-muted-foreground">{r.durationSec}s</span>
                 <span className="font-quicksand font-extrabold text-amber-700 dark:text-amber-300">
-                  {r.score}
+                  {row.score}
                 </span>
               </li>
             ))}

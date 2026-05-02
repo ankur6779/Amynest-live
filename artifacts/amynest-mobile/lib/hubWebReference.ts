@@ -99,6 +99,14 @@ export const MOBILE_ONLY_EXTRAS: ReadonlySet<string> = new Set([
   // Mobile keeps a standalone always-current Nutrition tile (web wraps
   // nutrition into the Activities tile).
   "nutrition",
+  // Task #197 — these surfaces exist on web inside the kidschedule
+  // dashboard (age-based-sections / daily-story-section / daily-puzzle),
+  // not as parenting-hub tiles. We host them as hub tiles on mobile to
+  // bring the Parent Hub to feature parity, so the parity check treats
+  // them as documented mobile extras.
+  "skills-focus",
+  "daily-story",
+  "daily-puzzle",
 ]);
 
 /**

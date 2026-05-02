@@ -87,6 +87,7 @@
     "@workspace/event-prep": "workspace:*",
     "@workspace/audio-lessons": "workspace:*",
     "@workspace/family-routine": "workspace:*",
+    "@workspace/age-content": "workspace:*",
     "@workspace/infant-hub": "workspace:*",
     "@workspace/infant-problems": "workspace:*",
     "@workspace/life-skills": "workspace:*",

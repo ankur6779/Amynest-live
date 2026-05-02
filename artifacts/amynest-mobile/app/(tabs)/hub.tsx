@@ -35,6 +35,10 @@ import { PhonicsTestCard } from "@/components/PhonicsTestCard";
 import { SmartMathTricks } from "@/components/SmartMathTricks";
 import { ColoringBooks } from "@/components/ColoringBooks";
 import { FunSheets } from "@/components/FunSheets";
+import { SkillsFocus } from "@/components/SkillsFocus";
+import { DailyStory } from "@/components/DailyStory";
+import { ParentTasks } from "@/components/ParentTasks";
+import { DailyPuzzle } from "@/components/DailyPuzzle";
 import { HubDebugOverlay } from "@/components/HubDebugOverlay";
 import { HubTile } from "@/components/HubTile";
 import RoutineCarousel from "@/components/RoutineCarousel";
@@ -1327,6 +1331,75 @@ export default function HubScreen() {
               </View>
             ),
           });
+          // ── Task #197 web-parity tiles ─────────────────────────────────
+          // These three surfaces exist on web inside the kidschedule
+          // dashboard (age-based-sections / daily-story-section /
+          // daily-puzzle). On mobile we host them as Parent Hub tiles so
+          // parents get the same content alongside their other modules.
+          allTiles.push({
+            id: "skills-focus",
+            ageBands: HUB_CONTENT_AGE_BANDS["skills-focus"],
+            node: (
+              <View style={tileW("skills-focus")}>
+                <Section
+                  id="skills-focus"
+                  icon={<Ionicons name="bulb" size={20} color="#fff" />}
+                  accent={[brand.purple500, brand.pink500]}
+                  title="🎯 Skills to Focus This Week"
+                  desc="Age-matched developmental priorities"
+                  open={openSection === "skills-focus"}
+                  onToggle={() => setOpenSection(s => s === "skills-focus" ? null : "skills-focus")}
+                >
+                  <SkillsFocus
+                    ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
+                  />
+                </Section>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "daily-story",
+            ageBands: HUB_CONTENT_AGE_BANDS["daily-story"],
+            node: (
+              <View style={tileW("daily-story")}>
+                <Section
+                  id="daily-story"
+                  icon={<Ionicons name="book" size={20} color="#fff" />}
+                  accent={[palette.amber500, brand.pink400]}
+                  title="📖 Daily Story"
+                  desc="A fresh story to read together every day"
+                  open={openSection === "daily-story"}
+                  onToggle={() => setOpenSection(s => s === "daily-story" ? null : "daily-story")}
+                >
+                  <DailyStory
+                    ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
+                  />
+                </Section>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "daily-puzzle",
+            ageBands: HUB_CONTENT_AGE_BANDS["daily-puzzle"],
+            node: (
+              <View style={tileW("daily-puzzle")}>
+                <Section
+                  id="daily-puzzle"
+                  icon={<Ionicons name="extension-puzzle" size={20} color="#fff" />}
+                  accent={[palette.indigo500, brand.purple500]}
+                  title="🧩 Daily Puzzle"
+                  desc="5 adaptive brain puzzles a day"
+                  open={openSection === "daily-puzzle"}
+                  onToggle={() => setOpenSection(s => s === "daily-puzzle" ? null : "daily-puzzle")}
+                >
+                  <DailyPuzzle
+                    ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
+                    childName={effective.name}
+                  />
+                </Section>
+              </View>
+            ),
+          });
 
             // Enrich tiles with age-month bounds from the central HUB_TILE_AGE_MONTHS
             // map so the partition helper can apply the same per-tile gating that
@@ -1399,6 +1472,7 @@ export default function HubScreen() {
                 return (
                   <TodayPlanPage
                     childName={childName}
+                    ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
                     styles={styles}
                     // Empty-state CTA must open the routine generator
                     // directly — same target the dashboard's
@@ -1663,11 +1737,15 @@ function SectionTabBar({
 
 function TodayPlanPage({
   childName,
+  ageMonths,
   styles,
   onGenerate,
   onContinue,
 }: {
   childName: string;
+  /** Total age in months — used by the inline ParentTasks companion to
+   *  pick age-appropriate "things you can do today" suggestions. */
+  ageMonths: number;
   styles: HubStyles;
   onGenerate: () => void;
   /**
@@ -1746,6 +1824,12 @@ function TodayPlanPage({
           </Pressable>
         </View>
       )}
+
+      {/* Task #197 — Parent Tasks for Today: a lightweight companion to
+          the routine carousel showing age-matched "things YOU can do today".
+          Lives inline on the Today's Plan page (not as a hub tile) so
+          parents see it immediately with their child's routine. */}
+      <ParentTasks ageMonths={ageMonths} childName={childName} />
 
       {tasks.length > 0 && (
         <Pressable onPress={onGenerate} style={styles.bottomCta}>

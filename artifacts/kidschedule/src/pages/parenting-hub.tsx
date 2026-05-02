@@ -468,6 +468,19 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
           >
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
+
+          <SubSection gateSection="hub_activities"
+            icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
+            title="Spelling Mastery"
+            description="Learn → Practice → Dictate → Compete with Amy's voice"
+            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20"
+          >
+            <SpellingMastery
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+              ageMonths={totalAgeMonths}
+            />
+          </SubSection>
         </>
       )}
 
@@ -534,6 +547,18 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
 
+          <SubSection gateSection="hub_activities"
+            icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
+            title="Spelling Mastery"
+            description="Learn → Practice → Dictate → Compete with Amy's voice"
+            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20"
+          >
+            <SpellingMastery
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+              ageMonths={totalAgeMonths}
+            />
+          </SubSection>
         </>
       )}
 
@@ -1017,35 +1042,6 @@ export default function ParentingHub() {
               childId={effectiveChild.id}
               childName={effectiveChild.name}
               totalAgeMonths={totalAgeMonths}
-            />
-          </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    {
-      id: "spelling-mastery",
-      bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 12 && totalAgeMonths < 180) ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_spelling")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
-        >
-          <HubSection
-            id="spelling-mastery"
-            icon={<GraduationCap className="h-5 w-5 text-violet-600" />}
-            title="✏️ Spelling Mastery"
-            description="Learn → Practice → Dictate → Compete with Amy's voice"
-            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20"
-            tryFree={tryFreeFor("hub_spelling")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_spelling")}
-          >
-            <SpellingMastery
-              childId={effectiveChild.id}
-              childName={effectiveChild.name}
-              ageMonths={totalAgeMonths}
             />
           </HubSection>
         </LockedBlock>

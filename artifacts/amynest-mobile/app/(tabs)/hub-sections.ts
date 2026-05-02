@@ -91,6 +91,7 @@ export const TILE_SECTION_MAP: Readonly<Record<string, Exclude<SectionKey, "toda
   "fun-sheets": "modules",
   worksheets: "modules",
   facts: "modules",
+  "skills-focus": "modules",
 
   // Activities — hands-on play, life skills, food.
   activities: "activities",
@@ -100,6 +101,8 @@ export const TILE_SECTION_MAP: Readonly<Record<string, Exclude<SectionKey, "toda
   meals: "activities",
   "meal-suggestions": "activities",
   nutrition: "activities",
+  "daily-story": "activities",
+  "daily-puzzle": "activities",
 };
 
 /**

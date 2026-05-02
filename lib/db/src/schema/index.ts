@@ -51,5 +51,3 @@ export * from "./cry_sessions";
 export * from "./nap_sessions";
 export * from "./spelling_progress";
 export * from "./spelling_competition_scores";
-export * from "./spelling_sessions";
-export * from "./spelling_tournaments";
