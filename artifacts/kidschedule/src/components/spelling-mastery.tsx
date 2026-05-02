@@ -194,7 +194,10 @@ export function SpellingMastery({ childId, childName, ageMonths }: SpellingMaste
             words={wordsState.words}
             loading={wordsState.loading}
             tts={tts}
-            onCorrect={() => void progressState.recordAttempt(true, "learn")}
+            // Learn mode no longer writes to progress — the client-side
+            // "I learned it" tap is trivially scriptable. Stars / level
+            // come from server-graded modes + Parent Mode only.
+            onCorrect={() => {}}
           />
         )}
         {mode === "practice" && (
@@ -202,7 +205,12 @@ export function SpellingMastery({ childId, childName, ageMonths }: SpellingMaste
             words={wordsState.words}
             loading={wordsState.loading}
             tts={tts}
-            onAttempt={(c) => void progressState.recordAttempt(c, "practice")}
+            // Practice mode no longer writes to progress — the
+            // Missing-Letter / Jumbled-Letter games are client-graded
+            // and were the easiest inflation surface. Practice is now
+            // UI-only; star accumulation happens via server-graded
+            // modes + Parent Mode.
+            onAttempt={() => {}}
           />
         )}
         {mode === "dictation" && (

@@ -15,6 +15,7 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import {
   normaliseSpellingGuess,
   computeCompetitionScore,
@@ -23,10 +24,17 @@ import {
   applyRoundResult,
   simulateAiOpponent,
   computeAiScore,
+  finalizeSpellingSession,
   AI_OPPONENTS,
   TOURNAMENT_ROUND_CONFIG,
   type TournamentRoundResult,
 } from "./spelling";
+import {
+  db,
+  spellingSessionsTable,
+  spellingCompetitionScoresTable,
+} from "@workspace/db";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 describe("normaliseSpellingGuess", () => {
   it("treats trailing whitespace as equal", () => {
@@ -384,5 +392,287 @@ describe("computeAiScore", () => {
     ]);
     assert.equal(r.correct, 0);
     assert.equal(r.score, computeCompetitionScore(0, r.durationSec));
+  });
+});
+
+// ─── Integration tests against the live DB ──────────────────────────────────
+//
+// These exercise the actual SQL guards that the trust model depends on:
+//
+//   1. Replay protection — a tampered client retrying the SAME wordIndex
+//      with a different guess must not be able to overwrite a stored
+//      verdict. Tested by running the same WHERE-clause-guarded UPDATE
+//      twice and asserting the second run affects 0 rows.
+//   2. Concurrent same-word attempts — two requests arriving at the same
+//      moment for the same wordIndex must serialize to exactly one
+//      winner. Tested with Promise.all on the same UPDATE.
+//   3. Attempt-after-finalize — once the session is finalized, no
+//      subsequent attempt may be persisted (or its score would not be
+//      reflected in the leaderboard row written at finalize). Tested by
+//      stamping finalizedAt and re-running the attempt UPDATE.
+//   4. Finalize replay idempotency — finalizeSpellingSession() called
+//      twice for the same competition session must NOT insert a second
+//      leaderboard row. Tested by direct insert + double-finalize +
+//      counting leaderboard rows for the test userId.
+//
+// All tests use a randomly generated userId per test and clean up after
+// themselves to avoid polluting the dev DB.
+describe("spelling sessions — DB integration (trust + concurrency)", () => {
+  // Helper: build a minimally-valid session row for inserts. Uses a
+  // throwaway userId per test so cleanup is easy.
+  function freshSessionRow(opts: {
+    userId: string;
+    sessionToken: string;
+    mode: "competition" | "dictation" | "tournament" | "battle";
+    finalized?: boolean;
+  }) {
+    const words = [
+      {
+        id: "w0",
+        word: "ship",
+        ageGroup: "4-6",
+        difficulty: "easy",
+        syllables: ["ship"],
+        chunks: ["sh", "ip"],
+        hint: "boat that floats",
+      },
+      {
+        id: "w1",
+        word: "cat",
+        ageGroup: "4-6",
+        difficulty: "easy",
+        syllables: ["cat"],
+        chunks: ["c", "at"],
+        hint: "meow animal",
+      },
+    ];
+    return {
+      sessionToken: opts.sessionToken,
+      childId: 999_999,
+      userId: opts.userId,
+      ageGroup: "4-6",
+      mode: opts.mode,
+      difficulty: "easy",
+      words,
+      audioKeys: ["k0", "k1"],
+      attempts: {} as Record<
+        string,
+        { guess: string; correct: boolean; ts: string }
+      >,
+      finalizedAt: opts.finalized ? new Date() : null,
+    };
+  }
+
+  // Mirror the WHERE-clause-guarded UPDATE the route runs. Returns the
+  // number of rows affected so tests can assert on it. Keeping this
+  // inline rather than exporting from spelling.ts so the test exercises
+  // the guards exactly as the route composes them.
+  async function attemptUpdate(
+    token: string,
+    wordIndex: number,
+    guess: string,
+    correct: boolean,
+  ): Promise<number> {
+    const ts = new Date().toISOString();
+    const updated = await db
+      .update(spellingSessionsTable)
+      .set({
+        attempts: sql`jsonb_set(${spellingSessionsTable.attempts}, ${`{${wordIndex}}`}::text[], ${JSON.stringify({ guess, correct, ts })}::jsonb, true)`,
+      })
+      .where(
+        and(
+          eq(spellingSessionsTable.sessionToken, token),
+          sql`NOT (${spellingSessionsTable.attempts} ? ${String(wordIndex)})`,
+          isNull(spellingSessionsTable.finalizedAt),
+        ),
+      )
+      .returning({ id: spellingSessionsTable.id });
+    return updated.length;
+  }
+
+  it("rejects a replayed attempt for the same wordIndex (replay protection)", async () => {
+    const userId = `spelling-test-${randomUUID()}`;
+    const token = `tok_${randomUUID()}`;
+    try {
+      await db
+        .insert(spellingSessionsTable)
+        .values(freshSessionRow({ userId, sessionToken: token, mode: "competition" }));
+
+      // First attempt at index 0 → wins.
+      const first = await attemptUpdate(token, 0, "ship", true);
+      assert.equal(first, 1, "first attempt must succeed");
+
+      // Tampered replay — same index, different guess. Must NOT overwrite.
+      const second = await attemptUpdate(token, 0, "wrong", false);
+      assert.equal(second, 0, "replayed attempt must be rejected");
+
+      // Verify the stored attempt is still the FIRST verdict.
+      const rows = await db
+        .select()
+        .from(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.sessionToken, token))
+        .limit(1);
+      assert.equal(rows[0]?.attempts["0"]?.guess, "ship");
+      assert.equal(rows[0]?.attempts["0"]?.correct, true);
+    } finally {
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+    }
+  });
+
+  it("serializes concurrent attempts on the same wordIndex to exactly one winner", async () => {
+    const userId = `spelling-test-${randomUUID()}`;
+    const token = `tok_${randomUUID()}`;
+    try {
+      await db
+        .insert(spellingSessionsTable)
+        .values(freshSessionRow({ userId, sessionToken: token, mode: "competition" }));
+
+      // Race two attempts for the same index.
+      const [a, b] = await Promise.all([
+        attemptUpdate(token, 0, "ship", true),
+        attemptUpdate(token, 0, "boat", false),
+      ]);
+
+      // Exactly one wins — Postgres guarantees one of the UPDATEs sees
+      // the slot empty and the other sees it populated.
+      assert.equal(a + b, 1, `expected exactly one winner, got a=${a} b=${b}`);
+
+      // The DB has exactly one verdict for index 0.
+      const rows = await db
+        .select()
+        .from(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.sessionToken, token))
+        .limit(1);
+      const stored = rows[0]?.attempts["0"];
+      assert.ok(stored, "exactly one attempt must be persisted");
+      assert.ok(
+        stored.guess === "ship" || stored.guess === "boat",
+        `unexpected guess persisted: ${stored.guess}`,
+      );
+    } finally {
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+    }
+  });
+
+  it("rejects an attempt that races in after finalize (finalized_at guard)", async () => {
+    const userId = `spelling-test-${randomUUID()}`;
+    const token = `tok_${randomUUID()}`;
+    try {
+      // Insert ALREADY-finalized session — simulates a finalize that
+      // committed between the route's read and the attempt UPDATE.
+      await db
+        .insert(spellingSessionsTable)
+        .values(
+          freshSessionRow({
+            userId,
+            sessionToken: token,
+            mode: "competition",
+            finalized: true,
+          }),
+        );
+
+      const affected = await attemptUpdate(token, 0, "ship", true);
+      assert.equal(
+        affected,
+        0,
+        "attempt UPDATE must not write after finalize",
+      );
+
+      // Confirm attempts is still empty — no slot was written.
+      const rows = await db
+        .select()
+        .from(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.sessionToken, token))
+        .limit(1);
+      assert.deepEqual(rows[0]?.attempts, {});
+    } finally {
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+    }
+  });
+
+  it("finalize is idempotent — second call inserts no extra leaderboard row", async () => {
+    const userId = `spelling-test-${randomUUID()}`;
+    const token = `tok_${randomUUID()}`;
+    try {
+      // Insert competition session with one CORRECT attempt pre-baked.
+      const row = freshSessionRow({ userId, sessionToken: token, mode: "competition" });
+      row.attempts = {
+        "0": { guess: "ship", correct: true, ts: new Date().toISOString() },
+      };
+      await db.insert(spellingSessionsTable).values(row);
+
+      const r1 = await finalizeSpellingSession(userId, token);
+      assert.equal(r1.kind, "finalized", "first call must finalize");
+
+      const r2 = await finalizeSpellingSession(userId, token);
+      assert.equal(
+        r2.kind,
+        "already_finalized",
+        "second call must short-circuit",
+      );
+
+      // The leaderboard table must hold EXACTLY one row for this userId.
+      const lbRows = await db
+        .select({ id: spellingCompetitionScoresTable.id })
+        .from(spellingCompetitionScoresTable)
+        .where(eq(spellingCompetitionScoresTable.userId, userId));
+      assert.equal(
+        lbRows.length,
+        1,
+        `expected exactly one leaderboard row, got ${lbRows.length}`,
+      );
+
+      // And the response from both calls reports the same competitionScoreId.
+      if (r1.kind === "finalized" && r2.kind === "already_finalized") {
+        assert.equal(r1.competitionScoreId, r2.competitionScoreId);
+        assert.equal(r1.competitionScoreId, lbRows[0]!.id);
+      }
+    } finally {
+      await db
+        .delete(spellingCompetitionScoresTable)
+        .where(eq(spellingCompetitionScoresTable.userId, userId));
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+    }
+  });
+
+  it("finalize on a non-competition session does NOT touch the leaderboard", async () => {
+    const userId = `spelling-test-${randomUUID()}`;
+    const token = `tok_${randomUUID()}`;
+    try {
+      // Tournament round session — must not write to leaderboard.
+      const row = freshSessionRow({ userId, sessionToken: token, mode: "tournament" });
+      row.attempts = {
+        "0": { guess: "ship", correct: true, ts: new Date().toISOString() },
+      };
+      await db.insert(spellingSessionsTable).values(row);
+
+      const r = await finalizeSpellingSession(userId, token);
+      assert.equal(r.kind, "finalized");
+
+      const lbRows = await db
+        .select({ id: spellingCompetitionScoresTable.id })
+        .from(spellingCompetitionScoresTable)
+        .where(eq(spellingCompetitionScoresTable.userId, userId));
+      assert.equal(
+        lbRows.length,
+        0,
+        "tournament-round finalize must NOT write a leaderboard row",
+      );
+    } finally {
+      await db
+        .delete(spellingCompetitionScoresTable)
+        .where(eq(spellingCompetitionScoresTable.userId, userId));
+      await db
+        .delete(spellingSessionsTable)
+        .where(eq(spellingSessionsTable.userId, userId));
+    }
   });
 });

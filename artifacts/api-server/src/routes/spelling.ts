@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import crypto from "node:crypto";
 import {
   db,
@@ -28,19 +28,18 @@ const router: IRouter = Router();
 const ageGroupSchema = z.enum(["2-4", "4-6", "6-8", "8-10+"]);
 const difficultySchema = z.enum(["easy", "medium", "hard"]);
 /**
- * Trust source for legacy POST /spelling/progress. Each value is a mode
- * where the per-attempt correctness is asserted by someone other than the
- * tampered-client surface:
- *  - "parent":   parent literally taps ✓/✗ in Parent Mode
- *  - "learn":    "I learned it" navigation in Learn mode (no real grading)
- *  - "practice": Missing-Letter / Jumbled-Letter games — client-graded but
- *                the puzzle structure makes inflation per-word effort
+ * Trust source for POST /spelling/progress. Restricted to "parent" only
+ * — the parent literally taps ✓/✗ in Parent Mode, so the assertion is
+ * out-of-band of the tampered-client surface.
  *
- * Competition + Dictation now go through the server-graded session flow
- * (POST /spelling/sessions/...). Any caller posting to the legacy endpoint
- * MUST tag the source so we can reason about leaderboard integrity.
+ * Previously this endpoint also accepted "learn" and "practice", but
+ * those are client-graded games where a scripted client could just post
+ * `correct: true` repeatedly and inflate stars / level / badges. Learn
+ * + Practice are now UI-only flows that do NOT write to progress; star
+ * accumulation happens exclusively via Parent Mode and the server-graded
+ * session flow (Dictation / Competition / Tournament / Battle).
  */
-const legacySourceSchema = z.enum(["parent", "learn", "practice"]);
+const legacySourceSchema = z.literal("parent");
 
 // ─── Badges ─────────────────────────────────────────────────────────────────
 //
@@ -1070,17 +1069,33 @@ router.post(
           // belt-and-braces alongside the check above for the
           // concurrent-submission case.
           sql`NOT (${spellingSessionsTable.attempts} ? ${String(wordIndex)})`,
+          // Refuse to write if a finalize raced ahead of us. Without
+          // this guard, a finalize that started after the !finalizedAt
+          // check above could commit between the read and this UPDATE,
+          // letting an attempt slip in AFTER the session was finalized
+          // — that attempt would not be reflected in the finalized
+          // score / leaderboard row.
+          isNull(spellingSessionsTable.finalizedAt),
         ),
       )
       .returning({ id: spellingSessionsTable.id });
 
     if (updated.length === 0) {
-      // Lost the race — re-read and return the winning attempt.
+      // Lost the race — could be (a) another attempt for this index
+      // landed first, or (b) a finalize raced ahead of us. Re-read and
+      // disambiguate so the client gets a clear error.
       const reread = await db
-        .select({ attempts: spellingSessionsTable.attempts })
+        .select({
+          attempts: spellingSessionsTable.attempts,
+          finalizedAt: spellingSessionsTable.finalizedAt,
+        })
         .from(spellingSessionsTable)
         .where(eq(spellingSessionsTable.sessionToken, token))
         .limit(1);
+      if (reread[0]?.finalizedAt) {
+        res.status(409).json({ error: "session_finalized" });
+        return;
+      }
       const winner = reread[0]?.attempts?.[String(wordIndex)];
       res
         .status(409)
@@ -1142,7 +1157,7 @@ type FinalizeOutcome =
  * with row-locking so concurrent calls don't double-insert leaderboard
  * rows.
  */
-async function finalizeSpellingSession(
+export async function finalizeSpellingSession(
   userId: string,
   token: string,
 ): Promise<FinalizeOutcome> {
