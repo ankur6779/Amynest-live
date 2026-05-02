@@ -1194,5 +1194,81 @@
       "status_expired": "समाप्त",
       "status_used": "उपयोग किया"
     }
+  },
+  "routines_generate": {
+    "mode_single": "एक बच्चा",
+    "mode_family": "पूरा परिवार",
+    "date_label": "कौन सा दिन?",
+    "region_label": "खाने का क्षेत्र (वैकल्पिक)",
+    "region_hint": "ऐमी इससे खाने की सलाह देती है। आपकी प्रोफ़ाइल का क्षेत्र फ़ॉलबैक है।",
+    "region_north_indian": "उत्तर भारतीय",
+    "region_south_indian": "दक्षिण भारतीय",
+    "region_bengali": "बंगाली",
+    "region_gujarati": "गुजराती",
+    "region_maharashtrian": "महाराष्ट्रीयन",
+    "region_punjabi": "पंजाबी",
+    "region_pan_indian": "पैन इंडियन",
+    "region_global": "ग्लोबल / मिक्स्ड",
+    "choose_child": "बच्चा चुनें",
+    "generating": "ऐमी रूटीन बना रही हैं…",
+    "generate_btn": "ऐमी से बनवाएं",
+    "family_select_kids": "जिन बच्चों के लिए प्लान करना है",
+    "family_special_plans": "आज कुछ ख़ास?",
+    "family_fridge": "घर पर खाने का सामान",
+    "family_generate_btn": "{{count}} बच्चे के लिए बनाएं",
+    "family_generate_btn_plural": "{{count}} बच्चों के लिए बनाएं",
+    "family_generating": "ऐमी रूटीन बना रही हैं…",
+    "family_footer": "हर चुने गए बच्चे के लिए एक रूटीन बनाया जाएगा।",
+    "family_preview_title": "प्रीव्यू · {{count}} रूटीन",
+    "family_preview_title_plural": "प्रीव्यू · {{count}} रूटीन",
+    "family_save_all": "सब रूटीन सेव करें",
+    "family_saving": "सेव हो रहा है…"
+  },
+  "parent_avail": {
+    "title": "आज कौन-कौन उपलब्ध है?",
+    "hint": "इससे ऐमी फ्री parent को टास्क सौंप पाएगी।",
+    "p1_label": "Parent 1",
+    "p2_label": "Parent 2",
+    "add_p2": "दूसरा parent जोड़ें",
+    "remove_p2": "दूसरा parent हटाएँ",
+    "role_label": "भूमिका",
+    "work_type_label": "काम का तरीका",
+    "work_from_home": "WFH",
+    "work_from_office": "ऑफ़िस",
+    "homemaker": "गृहिणी",
+    "is_working_today": "आज काम पर?",
+    "yes_working": "हाँ, काम है",
+    "holiday": "छुट्टी / फ्री",
+    "work_hours_label": "काम के घंटे (वैकल्पिक)"
+  },
+  "tiffin_summary": {
+    "title": "टिफ़िन के सुझाव",
+    "subtitle": "स्कूल जाने वाले बच्चों के लिए — हर बच्चे के लिए एक चुनें",
+    "pack_by": "{{time}} तक पैक करें"
+  },
+  "combined_timeline": {
+    "title": "पूरे परिवार की टाइमलाइन",
+    "subtitle": "सब बच्चों का दिन एक साथ, समय के अनुसार।"
+  },
+  "toasts": {
+    "routines_generate": {
+      "routine_replaced": "🔄 रूटीन बदल दिया!",
+      "routine_generated": "✨ रूटीन तैयार!",
+      "save_failed_title": "रूटीन जनरेट नहीं हो सका",
+      "save_failed_body": "ऐमी को समस्या आई — कृपया एक पल में फिर कोशिश करें।",
+      "generate_failed": "रूटीन जनरेट नहीं हो सका",
+      "select_child_school": "कृपया कम से कम एक बच्चा चुनें और उनकी स्कूल स्थिति सेट करें।",
+      "family_generate_failed": "{{name}} के लिए रूटीन जनरेट नहीं हो सका",
+      "family_save_failed": "{{name}} के लिए रूटीन सेव नहीं हो सका",
+      "family_saved": "✨ {{count}} रूटीन सेव हुआ!",
+      "family_saved_plural": "✨ {{count}} रूटीन सेव हुए!"
+    },
+    "routines_detail": {
+      "notifications_enabled": "🔔 रिमाइंडर चालू — हर टास्क से 5 मिनट पहले अलर्ट मिलेगा।",
+      "notifications_disabled": "🔕 इस रूटीन के लिए रिमाइंडर बंद।",
+      "notifications_unavailable": "रिमाइंडर के लिए development build चाहिए (Expo Go में नहीं चलेगा)।",
+      "permission_denied_title": "नोटिफ़िकेशन बंद हैं",
+      "permission_denied_body": "टास्क रिमाइंडर के लिए Settings से नोटिफ़िकेशन चालू करें।"
+    }
   }
 }

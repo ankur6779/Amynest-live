@@ -34,6 +34,13 @@ import VoiceSettingsPanel, {
   saveVoiceSettings,
   type VoiceSettings,
 } from "@/components/VoiceSettingsPanel";
+import {
+  notificationsAvailable,
+  ensureNotificationPermission,
+  scheduleRoutineReminders,
+  cancelRoutineReminders,
+  isNotificationsEnabled,
+} from "@/lib/routineNotifications";
 
 // ElevenLabs voice ids — kept inline; same constants used in SmartMealSuggestions.
 const VOICE_AMY_FEMALE = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K — Indian English Female
@@ -224,6 +231,8 @@ export default function RoutineDetailScreen() {
   const [regenLoading, setRegenLoading] = useState(false);
   const [moreMenu, setMoreMenu] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifBusy, setNotifBusy] = useState(false);
   const [toast, setToast] = useState<{ msg: string; tone?: "info" | "success" | "warn" } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -449,6 +458,82 @@ export default function RoutineDetailScreen() {
       setAddLoading(false);
       setAddOpen(false);
       setAddForm({ name: "", duration: "30" });
+    }
+  };
+
+  // ── Notification toggle (per-routine local reminders) ────────────────────
+  // Hydrate enabled state on mount / when the routine id changes.
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    isNotificationsEnabled(id).then((on) => { if (!cancelled) setNotifEnabled(on); });
+    return () => { cancelled = true; };
+  }, [id]);
+
+  // Re-schedule whenever items mutate (edit, delay, complete, AI regen) so
+  // the local notification queue stays in sync with what's on screen.
+  useEffect(() => {
+    if (!id || !notifEnabled || !routine?.date || items.length === 0) return;
+    const dateISO = String(routine.date).slice(0, 10);
+    void scheduleRoutineReminders(
+      id,
+      dateISO,
+      items.map((i) => ({ time: i.time, activity: i.activity, status: i.status })),
+    );
+  }, [id, notifEnabled, routine?.date, items]);
+
+  const toggleNotifications = async () => {
+    if (!id || notifBusy) return;
+    setMoreMenu(false);
+    if (!notificationsAvailable()) {
+      showToast(
+        t("toasts.routines_detail.notifications_unavailable", {
+          defaultValue: "Reminders need a development build (not available in Expo Go).",
+        }),
+        "warn",
+      );
+      return;
+    }
+    setNotifBusy(true);
+    try {
+      if (notifEnabled) {
+        await cancelRoutineReminders(id);
+        setNotifEnabled(false);
+        hapticTap();
+        showToast(
+          t("toasts.routines_detail.notifications_disabled", {
+            defaultValue: "🔕 Reminders off for this routine.",
+          }),
+          "info",
+        );
+      } else {
+        const granted = await ensureNotificationPermission();
+        if (!granted) {
+          Alert.alert(
+            t("toasts.routines_detail.permission_denied_title", { defaultValue: "Notifications blocked" }),
+            t("toasts.routines_detail.permission_denied_body", {
+              defaultValue: "Enable notifications in Settings to get reminders before each task.",
+            }),
+          );
+          return;
+        }
+        const dateISO = (routine?.date ?? "").slice(0, 10);
+        await scheduleRoutineReminders(
+          id,
+          dateISO,
+          items.map((i) => ({ time: i.time, activity: i.activity, status: i.status })),
+        );
+        setNotifEnabled(true);
+        hapticSuccess();
+        showToast(
+          t("toasts.routines_detail.notifications_enabled", {
+            defaultValue: "🔔 Reminders on — you'll be pinged 5 min before each task.",
+          }),
+          "success",
+        );
+      }
+    } finally {
+      setNotifBusy(false);
     }
   };
 
@@ -1352,6 +1437,13 @@ export default function RoutineDetailScreen() {
             <Text style={[styles.actionTitle, { color: c.foreground }]}>Routine actions</Text>
             <ActionRow icon="sparkles" iconColor={brand.primary} label={regenLoading ? "Regenerating…" : "Regenerate day with AI"}
               onPress={partialRegen} />
+            <ActionRow
+              icon={notifEnabled ? "notifications" : "notifications-outline"}
+              iconColor={notifEnabled ? brand.primary : palette.amber600}
+              label={notifEnabled ? "Reminders on (5 min before)" : "Turn on task reminders"}
+              onPress={toggleNotifications}
+              active={notifEnabled}
+            />
             {/* audit-ok: semantic success-green "Share" action icon */}
             <ActionRow icon="share-outline" iconColor={palette.emerald500} label="Share routine" onPress={shareRoutine} />
             <ActionRow icon="trash-outline" iconColor={c.accent} label="Delete routine" onPress={confirmDelete} />
