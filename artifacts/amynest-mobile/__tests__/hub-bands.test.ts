@@ -528,3 +528,36 @@ describe("hub-sections taxonomy", () => {
     expect(renderableButUnmapped).toEqual([]);
   });
 });
+
+/**
+ * Sibling assertions for the Interactive Command Center (task #188).
+ *
+ * The Parent Hub mounts the Command Center as a *featured* tile
+ * (HubTile testID="hub-tile-command-center") above the partitioned grid,
+ * sitting next to `infant-hub` and `tomorrow-forecast`. These checks lock
+ * that arrangement so a refactor can't accidentally drop the CC tile or
+ * push it back into the regular grid (which would silently break the
+ * fullscreen-modal entry point on the Hub).
+ */
+describe("FEATURED_TILE_IDS — command-center sibling assertions", () => {
+  it("includes 'command-center' as a featured tile", () => {
+    expect((FEATURED_TILE_IDS as readonly string[]).includes("command-center")).toBe(true);
+  });
+
+  it("places 'command-center' alongside 'infant-hub' and 'tomorrow-forecast'", () => {
+    // Locking the exact featured set keeps the Recommended Zones header
+    // free of surprise additions; a new featured tile must update both
+    // this constant and this assertion together.
+    expect([...FEATURED_TILE_IDS].sort()).toEqual(
+      ["command-center", "infant-hub", "tomorrow-forecast"].sort(),
+    );
+  });
+
+  it("flags 'command-center' as featured (not in the partitioned grid)", () => {
+    // Featured tiles must NOT appear in TILE_SECTION_MAP — that map is
+    // only for grid tiles. If someone moves CC into the grid by mistake,
+    // it would render twice (once featured, once in zones).
+    expect("command-center" in TILE_SECTION_MAP).toBe(false);
+    expect(isFeaturedTile("command-center")).toBe(true);
+  });
+});

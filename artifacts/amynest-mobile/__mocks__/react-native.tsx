@@ -256,12 +256,26 @@ const KeyboardAvoidingView = ({ children, ...rest }: any) =>
 
 const Platform = { OS: "ios", select: (obj: any) => obj.ios ?? obj.default };
 
+// PanResponder is gesture-only on RN; in jsdom we never trigger pan
+// gestures, so a no-op stub is sufficient for any component that builds
+// a responder during render (e.g. the Command Center's swipeable
+// timeline rows).
+const PanResponder = {
+  create: (_config: any) => ({
+    panHandlers: {},
+  }),
+};
+
 // ─── Animated ───────────────────────────────────────────────────────────────
 //
 // Minimal Animated surface so components like the Hub's section pager can
 // `new Animated.Value(0)`, wire `Animated.event`, and render `Animated.View`
 // in the jsdom test environment. `interpolate` returns another AnimatedValue
-// rather than throwing so transform style props don't blow up render.
+// rather than throwing so transform style props don't blow up render. The
+// `timing` / `spring` / `parallel` / `sequence` / `loop` helpers are no-op
+// shims that snap the target to its `toValue` and immediately invoke the
+// completion callback so animation chains in tests don't dangle (used by
+// the Command Center's swipe-to-skip row).
 
 class AnimatedValue {
   _value: number;
@@ -283,6 +297,9 @@ class AnimatedValue {
   removeAllListeners(): void {
     this._listeners = [];
   }
+  stopAnimation(_cb?: (v: number) => void): void {
+    // no-op for tests
+  }
   interpolate(_config: unknown): AnimatedValue {
     return new AnimatedValue(0);
   }
@@ -303,6 +320,17 @@ function applyAnimatedEvent(mapping: any, src: any): void {
     }
   }
 }
+
+const animationLike = (target: any, toValue: number) => ({
+  start: (cb?: (ev: { finished: boolean }) => void) => {
+    if (target && typeof target.setValue === "function" && typeof toValue === "number") {
+      target.setValue(toValue);
+    }
+    cb?.({ finished: true });
+  },
+  stop: () => {},
+  reset: () => {},
+});
 
 const Animated = {
   Value: AnimatedValue,
@@ -334,6 +362,31 @@ const Animated = {
   // returned component. Returning the component unchanged preserves the
   // forwarded ref so tests can still capture `scrollToOffset` calls.
   createAnimatedComponent: (Component: any) => Component,
+  // No-op animation drivers for the Command Center's swipe row.
+  timing: (target: any, { toValue }: { toValue: number }) => animationLike(target, toValue),
+  spring: (target: any, { toValue }: { toValue: number }) => animationLike(target, toValue),
+  decay: (target: any, _cfg: unknown) => animationLike(target, target?._value ?? 0),
+  parallel: (anims: Array<{ start: (cb?: () => void) => void }>) => ({
+    start: (cb?: () => void) => {
+      anims.forEach((a) => a.start());
+      cb?.();
+    },
+    stop: () => {},
+  }),
+  sequence: (anims: Array<{ start: (cb?: () => void) => void }>) => ({
+    start: (cb?: () => void) => {
+      anims.forEach((a) => a.start());
+      cb?.();
+    },
+    stop: () => {},
+  }),
+  loop: (anim: { start: (cb?: () => void) => void }) => ({
+    start: (cb?: () => void) => {
+      anim.start();
+      cb?.();
+    },
+    stop: () => {},
+  }),
 };
 
 // LayoutAnimation / UIManager are touched at module load time by hub.tsx's
@@ -375,5 +428,5 @@ export {
   Modal, ActivityIndicator, Image, Dimensions, StyleSheet,
   TextInput, KeyboardAvoidingView, Platform,
   FlatList, useWindowDimensions,
-  Animated, LayoutAnimation, UIManager,
+  PanResponder, Animated, LayoutAnimation, UIManager,
 };

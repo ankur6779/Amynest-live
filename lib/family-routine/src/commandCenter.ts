@@ -10,7 +10,12 @@
 // Pure / platform-free — runs on web + mobile + node.
 // ─────────────────────────────────────────────────────────────────────────
 
-import type { AdaptiveItem, AdaptiveMood, AdaptiveSleepQuality } from "./adaptive";
+import type {
+  AdaptiveItem,
+  AdaptiveItemStatus,
+  AdaptiveMood,
+  AdaptiveSleepQuality,
+} from "./adaptive";
 
 export type CommandActionId =
   | "simplify-today"
@@ -82,6 +87,53 @@ export type CommandCenterInput = {
   weeklyRoutinesGenerated?: number;
   /** Previous 7 days, used for trend deltas. Optional. */
   previousWeeklyPositive?: number;
+  /**
+   * Minutes since midnight in local time. Used to flag the current and next
+   * routine step in the timeline. Optional — when omitted, the engine falls
+   * back to picking the first pending item as "current".
+   */
+  nowMins?: number;
+};
+
+/**
+ * Compact rendering of a single routine item along the today timeline.
+ * The dashboard renders this row of icons + labels with `current` and
+ * `next` flags driving the "NOW" / "NEXT" pills.
+ */
+export type CommandTimelineEntry = {
+  /** Original index in the input items array — lets the UI mutate the right item. */
+  index: number;
+  time: string;
+  activity: string;
+  category: string;
+  duration: number;
+  status: AdaptiveItemStatus;
+  /** Minutes-since-midnight start of this item (or -1 if unparsable). */
+  startMins: number;
+  current: boolean;
+  next: boolean;
+};
+
+export type CommandSuggestionId =
+  | "start-play"
+  | "plan-nap"
+  | "calm-tools"
+  | "simplify-today"
+  | "wind-down";
+
+/**
+ * A short, chip-sized auto-suggestion derived from today's data. The UI
+ * renders these as one-tap chips above the action grid; tapping a chip
+ * runs the action in `actionId` (or, when null, just opens the dashboard).
+ */
+export type CommandSuggestion = {
+  id: CommandSuggestionId;
+  label: string;
+  emoji: string;
+  /** Higher = more urgent. The list is pre-sorted descending by this value. */
+  urgency: number;
+  /** Which CommandActionId / quick-action this chip should run. */
+  actionId: CommandActionId | null;
 };
 
 export type CommandCenterResult = {
@@ -90,6 +142,10 @@ export type CommandCenterResult = {
   actions: CommandAction[];
   week: CommandWeek;
   parentStatus: CommandParentStatus;
+  /** Today's items in chronological order with current/next flags. */
+  timeline: CommandTimelineEntry[];
+  /** Auto-suggestions ranked by urgency (most urgent first). */
+  suggestions: CommandSuggestion[];
 };
 
 const ESSENTIAL = /(meal|tiffin|hygiene|bath|brush|toilet|shower|sleep|bedtime|school|wind-down)/i;
@@ -149,6 +205,165 @@ function effortSummary(qualityMins: number, completed: number): string {
   if (qualityMins >= 20) return `${qualityMins} min connected with your child today`;
   if (completed >= 3) return `You guided ${completed} routine moments today`;
   return `Every small moment counts — you showed up today`;
+}
+
+// Parses a "h:mm AM/PM" or "HH:mm" time string into minutes-since-midnight.
+// Returns -1 on parse failure so callers can preserve item order without a
+// silent default that would re-order items past midnight (00:00).
+export function parseClockTimeMins(t: string): number {
+  if (!t) return -1;
+  const m12 = t.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (m12) {
+    let h = parseInt(m12[1], 10);
+    const mn = parseInt(m12[2], 10);
+    const ap = m12[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    return h * 60 + mn;
+  }
+  const m24 = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (m24) {
+    const h = parseInt(m24[1], 10);
+    const mn = parseInt(m24[2], 10);
+    if (h >= 0 && h < 24 && mn >= 0 && mn < 60) return h * 60 + mn;
+  }
+  return -1;
+}
+
+/**
+ * Picks the current + next steps from today's items.
+ *
+ * Rules:
+ *   - "current" = the latest pending/in-progress item whose start time has
+ *     already begun (now >= start, now < start + duration). Falls back to
+ *     the earliest pending item that hasn't started yet.
+ *   - "next" = the first pending item strictly after the current one.
+ *   - Items already completed/skipped/delayed never count as current/next.
+ *   - When `nowMins` is omitted, the engine picks the earliest pending item
+ *     as current and the next pending item as next.
+ *
+ * Always returns the timeline in chronological order (by start time, with
+ * unparsable times falling back to original index order).
+ */
+export function buildTimeline(
+  items: AdaptiveItem[],
+  nowMins: number | undefined,
+): CommandTimelineEntry[] {
+  const enriched = items.map((it, index) => {
+    const startMins = parseClockTimeMins(it.time);
+    const status = (it.status ?? "pending") as AdaptiveItemStatus;
+    return {
+      index,
+      time: it.time,
+      activity: it.activity,
+      category: it.category ?? "",
+      duration: it.duration ?? 0,
+      status,
+      startMins,
+      // Filled in below.
+      current: false,
+      next: false,
+    } as CommandTimelineEntry;
+  });
+
+  // Stable chronological sort: items with parseable times come first in
+  // ascending order; unparsable times keep their input order at the end.
+  enriched.sort((a, b) => {
+    if (a.startMins < 0 && b.startMins < 0) return a.index - b.index;
+    if (a.startMins < 0) return 1;
+    if (b.startMins < 0) return -1;
+    if (a.startMins !== b.startMins) return a.startMins - b.startMins;
+    return a.index - b.index;
+  });
+
+  const pending = enriched.filter((e) => e.status === "pending");
+  if (pending.length === 0) return enriched;
+
+  let currentIdx = -1;
+  if (typeof nowMins === "number") {
+    // Latest pending item that has started (in-progress window).
+    for (let i = pending.length - 1; i >= 0; i--) {
+      const e = pending[i];
+      if (e.startMins < 0) continue;
+      const end = e.startMins + (e.duration || 0);
+      if (nowMins >= e.startMins && nowMins < end) {
+        currentIdx = i;
+        break;
+      }
+    }
+    // No in-progress item — first pending item that hasn't started yet.
+    if (currentIdx < 0) {
+      for (let i = 0; i < pending.length; i++) {
+        const e = pending[i];
+        if (e.startMins < 0 || e.startMins > nowMins) {
+          currentIdx = i;
+          break;
+        }
+      }
+    }
+  }
+  // Fallback: first pending item.
+  if (currentIdx < 0) currentIdx = 0;
+
+  pending[currentIdx].current = true;
+  if (currentIdx + 1 < pending.length) {
+    pending[currentIdx + 1].next = true;
+  }
+  return enriched;
+}
+
+/**
+ * Pure ranking of one-tap chip suggestions. Higher urgency = louder chip.
+ *
+ * Inputs are the already-computed signals so the dashboard and tests can
+ * exercise this independently of the rest of the engine.
+ */
+export function buildSuggestions(args: {
+  qualityMinutes: number;
+  sleepQuality: AdaptiveSleepQuality;
+  mood: AdaptiveMood;
+  routinePct: number;
+  totalItems: number;
+  delayedCount: number;
+  /** Hour-of-day in local time (0–23). Optional — defaults to neutral. */
+  hour?: number;
+}): CommandSuggestion[] {
+  const { qualityMinutes, sleepQuality, mood, routinePct, totalItems, delayedCount, hour } = args;
+  const out: CommandSuggestion[] = [];
+
+  // Behind on the day → simplify wins decisively.
+  if (delayedCount >= 2) {
+    out.push({ id: "simplify-today", label: "Simplify today", emoji: "✨", urgency: 95, actionId: "simplify-today" });
+  }
+  // Evening + weak completion → simplify (lighter weight than the delayed
+  // case so it doesn't outrank a real "behind" signal).
+  if (typeof hour === "number" && hour >= 17 && totalItems > 0 && routinePct < 50 && delayedCount < 2) {
+    out.push({ id: "simplify-today", label: "Wrap up the day", emoji: "🌙", urgency: 80, actionId: "simplify-today" });
+  }
+  // Poor sleep → wind-down (mapped to Improve Sleep panel) + nap when low mood.
+  if (sleepQuality === "poor") {
+    out.push({ id: "wind-down", label: "Plan tonight's wind-down", emoji: "😴", urgency: 85, actionId: "improve-sleep" });
+  }
+  if (sleepQuality === "poor" && mood !== "active") {
+    out.push({ id: "plan-nap", label: "Plan a nap", emoji: "💤", urgency: 70, actionId: "improve-sleep" });
+  }
+  // Low mood → calming tools.
+  if (mood === "low") {
+    out.push({ id: "calm-tools", label: "Open calming tools", emoji: "🫶", urgency: 75, actionId: "calm-child" });
+  }
+  // Light quality time → 10-min play (chip wires to no specific action; the
+  // UI maps it to the quick-action bar's "10-min play" card).
+  if (qualityMinutes < 15) {
+    out.push({ id: "start-play", label: "Try a 10-min play", emoji: "🎲", urgency: 60, actionId: null });
+  }
+
+  // Stable de-dupe by id, keeping the highest-urgency entry per id.
+  const byId = new Map<CommandSuggestionId, CommandSuggestion>();
+  for (const s of out) {
+    const prev = byId.get(s.id);
+    if (!prev || s.urgency > prev.urgency) byId.set(s.id, s);
+  }
+  return [...byId.values()].sort((a, b) => b.urgency - a.urgency);
 }
 
 export function computeCommandCenter(
@@ -313,7 +528,23 @@ export function computeCommandCenter(
     effortSummary: effortSummary(qualityMinutes, completed),
   };
 
-  return { overview, insights, actions, week, parentStatus };
+  // ── Timeline + auto-suggestions ─────────────────────────────────
+  const timeline = buildTimeline(items, input.nowMins);
+  const hour =
+    typeof input.nowMins === "number"
+      ? Math.floor(input.nowMins / 60)
+      : undefined;
+  const suggestions = buildSuggestions({
+    qualityMinutes,
+    sleepQuality,
+    mood,
+    routinePct,
+    totalItems: total,
+    delayedCount: delayed,
+    hour,
+  });
+
+  return { overview, insights, actions, week, parentStatus, timeline, suggestions };
 }
 
 // Re-export so consumers can `import { ... } from "@workspace/family-routine"`.

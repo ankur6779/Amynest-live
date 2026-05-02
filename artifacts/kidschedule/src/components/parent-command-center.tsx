@@ -1,25 +1,44 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useLocation } from "wouter";
 import {
   useListRoutines,
   useGetDashboardSummary,
+  useUpdateRoutineItems,
+  useCreateBehaviorLog,
+  getListRoutinesQueryKey,
+  type RoutineItem,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   computeCommandCenter,
   type AdaptiveItem,
   type AdaptiveMood,
   type AdaptiveSleepQuality,
   type CommandActionId,
+  type CommandSuggestion,
 } from "@workspace/family-routine";
-import { Sparkles, ArrowRight, TrendingUp, TrendingDown, Minus, Heart } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Sparkles,
+  X,
+  Check,
+  ArrowRight,
+  Heart,
+  Moon,
+  Wind,
+  Wand2,
+  PartyPopper,
+  BookOpen,
+  Music,
+  Puzzle,
+  Gamepad2,
+} from "lucide-react";
+
+// CSS-in-JS shape that allows custom properties (CSS variables) without the
+// "any" hatch — React's CSSProperties type doesn't include `--*` keys.
+type CSSPropertiesWithVars = CSSProperties & Record<`--${string}`, string | number>;
 
 type Child = { id: number; name: string };
-
-const TONE_STYLES: Record<"good" | "warn" | "info", string> = {
-  good: "from-emerald-500/15 to-teal-500/10 border-emerald-300/40 dark:border-emerald-400/30",
-  warn: "from-amber-500/15 to-orange-500/10 border-amber-300/40 dark:border-amber-400/30",
-  info: "from-violet-500/15 to-fuchsia-500/10 border-violet-300/40 dark:border-violet-400/30",
-};
 
 const MOOD_LABEL: Record<AdaptiveMood, string> = {
   low: "😔 Low",
@@ -32,12 +51,25 @@ const SLEEP_LABEL: Record<AdaptiveSleepQuality, string> = {
   good: "✨ Good",
 };
 
-export function ParentCommandCenter({ child }: { child: Child }) {
-  const [, navigate] = useLocation();
-  const todayStr = new Date().toISOString().slice(0, 10);
+// Cycles to advance the small "tap to cycle" mood/sleep selectors in the
+// fullscreen dashboard — order matches the engine's enum so the next click
+// is always predictable.
+const MOOD_CYCLE: AdaptiveMood[] = ["low", "neutral", "active"];
+const SLEEP_CYCLE: AdaptiveSleepQuality[] = ["poor", "ok", "good"];
 
-  // ── Mood / sleep — read from the same per-child/day localStorage that the
-  //    adaptive engine on routines/[id] writes to, so it stays in sync. ──
+/**
+ * Compact tile (the only thing that lives in the Hub). Shows a small
+ * progress ring, a status pill, and an "Open" affordance that launches
+ * the fullscreen Interactive Command Center modal. All real interaction
+ * happens inside the modal; the tile is read-only.
+ */
+export function ParentCommandCenter({ child }: { child: Child }) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [open, setOpen] = useState(false);
+
+  // Mood / sleep — read from the same per-child/day localStorage that the
+  // adaptive engine on routines/[id] writes to so the dashboard, the tile
+  // and the daily routine view stay in sync.
   const moodKey = `amynest:adaptive:mood:${child.id}:${todayStr}`;
   const sleepKey = `amynest:adaptive:sleep:${child.id}:${todayStr}`;
   const [mood, setMood] = useState<AdaptiveMood>("neutral");
@@ -49,6 +81,7 @@ export function ParentCommandCenter({ child }: { child: Child }) {
     if (m === "low" || m === "neutral" || m === "active") setMood(m);
     if (s === "poor" || s === "ok" || s === "good") setSleep(s);
   }, [moodKey, sleepKey]);
+
   const persistMood = (m: AdaptiveMood) => {
     setMood(m);
     if (typeof window !== "undefined") window.localStorage.setItem(moodKey, m);
@@ -63,10 +96,31 @@ export function ParentCommandCenter({ child }: { child: Child }) {
   const { data: summary } = useGetDashboardSummary();
 
   const todayRoutine = useMemo(
-    () => (allRoutines as any[]).find((r) => (r.date ?? "").slice(0, 10) === todayStr),
+    () => allRoutines.find((r) => (r.date ?? "").slice(0, 10) === todayStr),
     [allRoutines, todayStr],
   );
-  const items: AdaptiveItem[] = (todayRoutine?.items as AdaptiveItem[]) ?? [];
+  // RoutineItem and AdaptiveItem share the same `status`/`category` shape
+  // (the engine was designed against this contract); cast through `unknown`
+  // since the extra optional fields on RoutineItem (recipe, nutrition, …)
+  // are simply ignored by the dashboard.
+  const items: AdaptiveItem[] = (todayRoutine?.items ?? []) as unknown as AdaptiveItem[];
+
+  // Re-tick once a minute so the engine's "current step" advances live
+  // while the dashboard is open. Only effective when the modal is open
+  // — the tile itself doesn't depend on the second hand.
+  const [nowMins, setNowMins] = useState<number>(() => {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  });
+  useEffect(() => {
+    if (!open) return;
+    const tick = () => {
+      const d = new Date();
+      setNowMins(d.getHours() * 60 + d.getMinutes());
+    };
+    const id = window.setInterval(tick, 60_000);
+    return () => window.clearInterval(id);
+  }, [open]);
 
   const result = useMemo(
     () =>
@@ -80,248 +134,1069 @@ export function ParentCommandCenter({ child }: { child: Child }) {
         weeklyPositive: summary?.positiveBehaviorsToday ?? 0,
         weeklyNegative: summary?.negativeBehaviorsToday ?? 0,
         weeklyRoutinesGenerated: summary?.routinesGeneratedThisWeek ?? 0,
+        nowMins,
       }),
-    [items, summary, mood, sleep, child.name],
+    [items, summary, mood, sleep, child.name, nowMins],
   );
 
-  const { overview, insights, actions, week, parentStatus } = result;
-
-  // ── Action wiring ────────────────────────────────────────────────
-  const todayRoutineId: number | undefined = todayRoutine?.id;
-  const onAction = (id: CommandActionId) => {
-    switch (id) {
-      case "simplify-today":
-        // Only nudge mood to "low" (which triggers the adaptive engine to
-        // simplify on the next routine open) if the parent hasn't already
-        // explicitly set today's mood — never overwrite real input.
-        if (typeof window !== "undefined" && window.localStorage.getItem(moodKey) === null) {
-          persistMood("low");
-        }
-        if (todayRoutineId) navigate(`/routines/${todayRoutineId}?simplify=1`);
-        else navigate(`/routines`);
-        return;
-      case "fix-routine":
-      case "add-activity":
-        if (todayRoutineId) navigate(`/routines/${todayRoutineId}`);
-        else navigate(`/routines`);
-        return;
-      case "calm-child":
-        navigate(
-          `/assistant?q=${encodeURIComponent("My child needs calming. Give me 3 quick things I can try right now in under 5 minutes.")}`,
-        );
-        return;
-      case "improve-sleep":
-        navigate(
-          `/assistant?q=${encodeURIComponent("My child slept poorly last night. Suggest a 30-min wind-down routine and 3 fixes for tonight.")}`,
-        );
-        return;
-    }
-  };
+  const { overview, suggestions } = result;
 
   return (
-    <section
-      data-section-id="command-center"
-      className={[
-        "relative rounded-2xl overflow-hidden",
-        "bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-emerald-500/10",
-        "dark:from-violet-500/15 dark:via-fuchsia-500/10 dark:to-emerald-500/15",
-        "backdrop-blur-xl border border-white/60 dark:border-white/10",
-        "shadow-[0_0_0_1px_rgba(168,85,247,0.18),0_18px_50px_-18px_rgba(168,85,247,0.45)]",
-        "p-3 sm:p-4 space-y-3.5",
-      ].join(" ")}
-    >
-      {/* Header — status pill */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white flex items-center justify-center shadow-md shrink-0">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-quicksand font-bold text-[15px] leading-tight text-foreground truncate">
-              {child.name}'s Command Center
-            </p>
-            <p className="text-[11px] text-muted-foreground truncate">
-              What's happening · why · what to do
-            </p>
-          </div>
-        </div>
-        <div
-          className="shrink-0 px-2.5 py-1 rounded-full bg-white/70 dark:bg-white/10 border border-white/60 dark:border-white/15 text-xs font-bold text-foreground flex items-center gap-1"
-          title={overview.statusLabel}
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger asChild>
+        <button
+          type="button"
+          data-section-id="command-center"
+          data-testid="command-center-tile"
+          className={[
+            "group w-full text-left rounded-2xl overflow-hidden",
+            "bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-emerald-500/15",
+            "border border-white/60 dark:border-violet-400/30",
+            "shadow-[0_0_0_1px_rgba(168,85,247,0.18),0_18px_50px_-18px_rgba(168,85,247,0.45)]",
+            "hover:shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_22px_60px_-18px_rgba(168,85,247,0.7)]",
+            "hover:border-violet-400/60 transition-all duration-300",
+            "p-3 sm:p-4 flex items-center gap-3",
+          ].join(" ")}
         >
-          <span>{overview.statusEmoji}</span>
-          <span>{overview.routineCompletionPct}% · {overview.statusLabel}</span>
-        </div>
-      </div>
-
-      {/* (A) TODAY OVERVIEW — horizontal scrolling metric strip */}
-      <div className="-mx-3 px-3 sm:-mx-4 sm:px-4 overflow-x-auto no-scrollbar">
-        <div className="flex gap-2 min-w-max pb-1">
-          <Metric label="Routine"  value={`${overview.routineCompletionPct}%`} sub={`${overview.routineCompletedTasks}/${overview.routineTotalTasks} done`} accent="violet" />
-          <Metric label="Behavior" value={`${overview.behaviorScore}`}        sub={overview.behaviorLabel}                                                  accent="emerald" />
-          <Metric label="Mood"     value={MOOD_LABEL[overview.mood].split(" ")[0]} sub={MOOD_LABEL[overview.mood].split(" ").slice(1).join(" ")}            accent="amber" />
-          <Metric label="Sleep"    value={SLEEP_LABEL[overview.sleepQuality].split(" ")[0]} sub={SLEEP_LABEL[overview.sleepQuality].split(" ").slice(1).join(" ")} accent="sky" />
-          <Metric label="Screen"   value={`${overview.screenMinutes}m`}        sub={overview.screenMinutes >= 90 ? "High today" : "Within range"}             accent="rose" />
-          <Metric label="Quality"  value={`${overview.qualityMinutes}m`}       sub={overview.qualityMinutes >= 30 ? "Connected" : "Add 15 min"}             accent="pink" />
-        </div>
-      </div>
-
-      {/* Mood + Sleep selectors — drive the engine + insights */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/50 backdrop-blur px-3 py-2">
-        <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Today:</span>
-        <div className="flex items-center gap-1">
-          {(["low", "neutral", "active"] as AdaptiveMood[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => persistMood(m)}
-              className={`text-[11px] font-bold px-2 py-0.5 rounded-full border transition-colors ${
-                mood === m ? "bg-primary text-primary-foreground border-primary" : "bg-muted/40 text-foreground border-border hover:bg-muted"
-              }`}
-            >
-              {MOOD_LABEL[m]}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1">
-          {(["poor", "ok", "good"] as AdaptiveSleepQuality[]).map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => persistSleep(s)}
-              className={`text-[11px] font-bold px-2 py-0.5 rounded-full border transition-colors ${
-                sleep === s ? "bg-primary text-primary-foreground border-primary" : "bg-muted/40 text-foreground border-border hover:bg-muted"
-              }`}
-            >
-              {SLEEP_LABEL[s]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* (B) AMY AI INSIGHTS — what + why + what to do */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {insights.map((ins, i) => (
-          <div
-            key={i}
-            className={[
-              "rounded-2xl border bg-gradient-to-br p-3 sm:p-3.5 backdrop-blur",
-              TONE_STYLES[ins.tone],
-            ].join(" ")}
-          >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-foreground/70 flex items-center gap-1">
-              <Sparkles className="h-3 w-3" /> Amy AI Insight
-            </p>
-            <p className="text-sm font-bold text-foreground mt-1 leading-snug">{ins.what}</p>
-            <p className="text-xs text-muted-foreground mt-1 leading-snug">{ins.why}</p>
-            <p className="text-xs text-foreground mt-1.5 leading-snug">
-              <span className="font-bold">→ </span>{ins.action}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* (C) ACTION CENTER — quick action grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        {actions.map((a) => (
-          <button
-            key={a.id}
-            type="button"
-            onClick={() => onAction(a.id)}
-            className={[
-              "group flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl",
-              "border backdrop-blur transition-all duration-200",
-              "active:scale-95",
-              a.severity === "primary"
-                ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white border-transparent shadow-[0_8px_24px_-8px_rgba(168,85,247,0.6)] hover:shadow-[0_12px_30px_-8px_rgba(168,85,247,0.7)]"
-                : "bg-white/60 dark:bg-white/[0.04] text-foreground border-white/60 dark:border-white/10 hover:border-primary/40 hover:bg-white/80 dark:hover:bg-white/[0.08]",
-            ].join(" ")}
-          >
-            <span className="text-base">{a.emoji}</span>
-            <span className="text-[11.5px] font-bold leading-tight text-center">{a.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Weekly snapshot + Parent status */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/50 dark:bg-white/[0.04] backdrop-blur p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">📊 Weekly Snapshot</p>
-            <TrendIcon trend={week.behaviorTrend} />
-          </div>
-          <p className="text-sm font-bold text-foreground leading-snug">{week.behaviorTrendLabel}</p>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-violet-500 to-emerald-500"
-                style={{ width: `${week.routineConsistencyPct}%` }}
-              />
+          <ProgressRing pct={overview.routineCompletionPct} size={56} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+              <p className="font-quicksand font-bold text-[14px] leading-tight text-foreground truncate">
+                {child.name}'s Command Center
+              </p>
             </div>
-            <span className="text-[10px] font-bold text-muted-foreground tabular-nums">
-              {week.routineConsistencyPct}% consistent
-            </span>
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+              <span className="font-bold text-foreground/90">{overview.statusEmoji} {overview.statusLabel}</span>
+              {suggestions.length > 0 && (
+                <> · {suggestions[0].emoji} {suggestions[0].label}</>
+              )}
+            </p>
+            <p className="text-[10.5px] text-muted-foreground mt-0.5 truncate">
+              {overview.routineCompletedTasks}/{overview.routineTotalTasks} done · {MOOD_LABEL[overview.mood]} · {SLEEP_LABEL[overview.sleepQuality]}
+            </p>
           </div>
-        </div>
-        <div className="rounded-2xl border border-pink-300/30 dark:border-pink-400/20 bg-gradient-to-br from-pink-500/10 to-rose-500/5 backdrop-blur p-3 space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-            <Heart className="h-3 w-3 text-pink-500" /> Parent Status
-          </p>
-          <p className="text-sm font-bold text-foreground leading-snug">{parentStatus.stressLabel}</p>
-          <p className="text-xs text-muted-foreground leading-snug">{parentStatus.effortSummary}</p>
-        </div>
-      </div>
+          <span
+            className={[
+              "shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5",
+              "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white",
+              "text-[11px] font-bold shadow-[0_8px_24px_-8px_rgba(168,85,247,0.7)]",
+              "group-hover:scale-[1.04] transition-transform",
+            ].join(" ")}
+          >
+            Open
+            <ArrowRight className="h-3 w-3" />
+          </span>
+        </button>
+      </Dialog.Trigger>
 
-      {/* Today's routine link footer */}
-      {todayRoutineId && (
-        <Link
-          href={`/routines/${todayRoutineId}`}
-          className="flex items-center justify-between rounded-xl border border-border/60 bg-card/40 backdrop-blur px-3 py-2 text-sm font-bold text-foreground hover:border-primary/40 hover:bg-card/60 transition-colors"
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Content
+          data-testid="command-center-dialog"
+          className={[
+            "fixed inset-0 z-[61] overflow-y-auto",
+            "bg-gradient-to-br from-[#0a0820] via-[#1a1040] to-[#0a0820]",
+            "text-white",
+            "data-[state=open]:animate-in data-[state=closed]:animate-out",
+            "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
+            "data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
+          ].join(" ")}
         >
-          <span>Open today's routine</span>
-          <ArrowRight className="h-4 w-4 text-primary" />
-        </Link>
-      )}
-    </section>
+          <Dialog.Title className="sr-only">{child.name}'s Command Center</Dialog.Title>
+          <Dialog.Description className="sr-only">
+            Interactive dashboard with quick actions, today's timeline and AI suggestions.
+          </Dialog.Description>
+          <CommandCenterDashboard
+            child={child}
+            todayRoutine={todayRoutine}
+            items={items}
+            mood={mood}
+            sleep={sleep}
+            persistMood={persistMood}
+            persistSleep={persistSleep}
+            result={result}
+            onClose={() => setOpen(false)}
+          />
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
-function Metric({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  accent: "violet" | "emerald" | "amber" | "sky" | "rose" | "pink";
-}) {
-  const accents: Record<string, string> = {
-    violet: "from-violet-500/15 to-fuchsia-500/5",
-    emerald: "from-emerald-500/15 to-teal-500/5",
-    amber: "from-amber-500/15 to-orange-500/5",
-    sky: "from-sky-500/15 to-blue-500/5",
-    rose: "from-rose-500/15 to-red-500/5",
-    pink: "from-pink-500/15 to-fuchsia-500/5",
+// ─────────────────────────────────────────────────────────────────────────
+// Fullscreen Interactive Command Center
+// ─────────────────────────────────────────────────────────────────────────
+
+type DashboardProps = {
+  child: Child;
+  todayRoutine: { id?: number } | undefined;
+  items: AdaptiveItem[];
+  mood: AdaptiveMood;
+  sleep: AdaptiveSleepQuality;
+  persistMood: (m: AdaptiveMood) => void;
+  persistSleep: (s: AdaptiveSleepQuality) => void;
+  result: ReturnType<typeof computeCommandCenter>;
+  onClose: () => void;
+};
+
+function CommandCenterDashboard(props: DashboardProps) {
+  const { child, todayRoutine, items, mood, sleep, persistMood, persistSleep, result, onClose } = props;
+  const { overview, insights, actions, parentStatus, timeline, suggestions } = result;
+  const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
+  const updateItems = useUpdateRoutineItems();
+  const createBehavior = useCreateBehaviorLog();
+
+  // ── Micro-interaction state ────────────────────────────────────────
+  const [confettiKey, setConfettiKey] = useState(0);     // confetti burst
+  const [shakeKey, setShakeKey] = useState(0);            // shake on empty/error
+  const [flashAction, setFlashAction] = useState<CommandActionId | null>(null);
+  const [activePanel, setActivePanel] = useState<
+    null | "calm" | "sleep" | "play" | "phonics" | "lullaby" | "puzzle"
+  >(null);
+  const [toast, setToast] = useState<{ msg: string; undo?: () => void } | null>(null);
+  const toastTimer = useRef<number | null>(null);
+
+  const showToast = (msg: string, undo?: () => void) => {
+    setToast({ msg, undo });
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), undo ? 4500 : 2400);
   };
+  const burst = () => setConfettiKey((k) => k + 1);
+  const shake = () => setShakeKey((k) => k + 1);
+
+  const todayRoutineId = todayRoutine?.id;
+  const empty = items.length === 0;
+
+  // Adaptive items are structurally compatible with the API's RoutineItem
+  // shape (RoutineItem only adds optional fields like recipe/nutrition).
+  // Cast through `unknown` once at the boundary so the engine logic above
+  // stays free of any-casts.
+  const toApiItems = (next: AdaptiveItem[]): RoutineItem[] =>
+    next as unknown as RoutineItem[];
+
+  // ── In-place actions (no navigation; mutate the routine + log behavior) ──
+  // Returns a promise so action handlers can `await` for tests/UI feedback.
+  async function simplifyToday() {
+    if (!todayRoutineId || empty) {
+      shake();
+      showToast("No routine to simplify yet");
+      return;
+    }
+    const lowPriorityCategories = new Set(["screen", "play", "creative"]);
+    // Skip pending non-essential items past the current moment so the rest
+    // of the day feels lighter without losing meals/sleep/learning anchors.
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const next: AdaptiveItem[] = items.map((it) => {
+      const t = parseClockMins(it.time);
+      const eligible =
+        it.status === "pending" &&
+        lowPriorityCategories.has(it.category ?? "") &&
+        (t < 0 || t >= nowMins);
+      return eligible ? { ...it, status: "skipped" } : it;
+    });
+    const skippedCount = next.filter((it, i) => it.status !== items[i].status).length;
+    if (skippedCount === 0) {
+      showToast("Nothing to simplify — your day already looks light");
+      return;
+    }
+    persistMood("low"); // tell the adaptive engine to keep things gentle
+    await updateItems.mutateAsync({ id: todayRoutineId, data: { items: toApiItems(next) } });
+    queryClient.invalidateQueries({ queryKey: getListRoutinesQueryKey({ childId: child.id }) });
+    burst();
+    showToast(`Simplified — ${skippedCount} optional task${skippedCount === 1 ? "" : "s"} skipped`);
+  }
+
+  async function fixRoutine() {
+    if (!todayRoutineId || empty) {
+      shake();
+      showToast("No routine to fix yet");
+      return;
+    }
+    // Re-anchor any "delayed" items to "pending" so the timeline picks them
+    // up again — equivalent to a soft reset.
+    const next: AdaptiveItem[] = items.map((it) =>
+      it.status === "delayed" ? { ...it, status: "pending" } : it,
+    );
+    const reset = next.filter((it, i) => it.status !== items[i].status).length;
+    if (reset === 0) {
+      showToast("Routine already on track");
+      return;
+    }
+    await updateItems.mutateAsync({ id: todayRoutineId, data: { items: toApiItems(next) } });
+    queryClient.invalidateQueries({ queryKey: getListRoutinesQueryKey({ childId: child.id }) });
+    burst();
+    showToast(`Reset — ${reset} step${reset === 1 ? "" : "s"} back on track`);
+  }
+
+  async function calmChild() {
+    setActivePanel((p) => (p === "calm" ? null : "calm"));
+    // Log a "needed calming" neutral entry so the dashboard reflects the
+    // moment in the behavior trend; the panel below provides the script.
+    await createBehavior.mutateAsync({
+      data: {
+        childId: child.id,
+        date: new Date().toISOString().slice(0, 10),
+        behavior: "Used calming tools",
+        type: "neutral",
+      },
+    }).catch(() => {});
+    burst();
+  }
+
+  async function improveSleep() {
+    setActivePanel((p) => (p === "sleep" ? null : "sleep"));
+    persistSleep(sleep === "good" ? "good" : "ok"); // bump sleep one notch toward better
+    burst();
+  }
+
+  async function addActivity() {
+    setActivePanel((p) => (p === "play" ? null : "play"));
+    burst();
+  }
+
+  async function logQuickWin() {
+    await createBehavior.mutateAsync({
+      data: {
+        childId: child.id,
+        date: new Date().toISOString().slice(0, 10),
+        behavior: "Quality time win",
+        type: "positive",
+      },
+    });
+    burst();
+    showToast("Logged a positive moment ✨");
+  }
+
+  function flash(id: CommandActionId) {
+    setFlashAction(id);
+    window.setTimeout(() => setFlashAction(null), 400);
+  }
+
+  async function onAction(id: CommandActionId) {
+    flash(id);
+    switch (id) {
+      case "simplify-today":
+        await simplifyToday();
+        return;
+      case "fix-routine":
+        await fixRoutine();
+        return;
+      case "add-activity":
+        await addActivity();
+        return;
+      case "calm-child":
+        await calmChild();
+        return;
+      case "improve-sleep":
+        await improveSleep();
+        return;
+    }
+  }
+
+  function onSuggestion(s: CommandSuggestion) {
+    if (s.id === "start-play") {
+      addActivity();
+      return;
+    }
+    if (s.actionId) onAction(s.actionId);
+  }
+
+  // Mark a timeline step "done" without leaving the dashboard.
+  async function completeStep(itemIndex: number) {
+    if (!todayRoutineId) return;
+    const next = items.map((it, i) => (i === itemIndex ? { ...it, status: "completed" as const } : it));
+    await updateItems.mutateAsync({ id: todayRoutineId, data: { items: toApiItems(next) } });
+    queryClient.invalidateQueries({ queryKey: getListRoutinesQueryKey({ childId: child.id }) });
+    burst();
+    showToast("Step completed ✓");
+  }
+
+  // Swipe-to-skip with undo. Optimistically marks the item as "skipped"
+  // and offers a 4.5s window to revert via the toast.
+  async function skipStep(itemIndex: number) {
+    if (!todayRoutineId) return;
+    const prevStatus = items[itemIndex]?.status;
+    const next = items.map((it, i) => (i === itemIndex ? { ...it, status: "skipped" as const } : it));
+    await updateItems
+      .mutateAsync({ id: todayRoutineId, data: { items: toApiItems(next) } })
+      .catch(() => {});
+    queryClient.invalidateQueries({ queryKey: getListRoutinesQueryKey({ childId: child.id }) });
+    showToast("Skipped — tap Undo to bring it back", async () => {
+      if (!todayRoutineId) return;
+      const restored = items.map((it, i) =>
+        i === itemIndex ? { ...it, status: (prevStatus ?? "pending") as AdaptiveItem["status"] } : it,
+      );
+      await updateItems
+        .mutateAsync({ id: todayRoutineId, data: { items: toApiItems(restored) } })
+        .catch(() => {});
+      queryClient.invalidateQueries({ queryKey: getListRoutinesQueryKey({ childId: child.id }) });
+      showToast("Restored");
+    });
+  }
+
+  // ── Quick activity strip — separate from the strategic action grid.
+  // Each opens a timed inline panel; on completion logs a positive moment.
+  type QuickActivity = {
+    id: "play" | "phonics" | "lullaby" | "puzzle";
+    label: string;
+    minutes: number;
+    emoji: string;
+    icon: React.ReactNode;
+  };
+  const quickActivities: QuickActivity[] = [
+    { id: "play",    label: "10-min play",    minutes: 10, emoji: "🎮", icon: <Gamepad2 className="h-4 w-4" /> },
+    { id: "phonics", label: "5-min phonics",  minutes: 5,  emoji: "📖", icon: <BookOpen className="h-4 w-4" /> },
+    { id: "lullaby", label: "5-min lullaby",  minutes: 5,  emoji: "🎶", icon: <Music className="h-4 w-4" /> },
+    { id: "puzzle",  label: "5-min puzzle",   minutes: 5,  emoji: "🧩", icon: <Puzzle className="h-4 w-4" /> },
+  ];
+
+  function startQuickActivity(id: QuickActivity["id"]) {
+    setActivePanel((p) => (p === id ? null : id));
+  }
+
+  async function logQuickActivity(activity: QuickActivity) {
+    setActivePanel(null);
+    burst();
+    await createBehavior
+      .mutateAsync({
+        data: {
+          childId: child.id,
+          date: new Date().toISOString().slice(0, 10),
+          behavior: `${activity.label} together`,
+          type: "positive",
+        },
+      })
+      .catch(() => {});
+    queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    showToast(`${activity.emoji} Logged ${activity.label}`);
+  }
+
   return (
     <div
+      key={shakeKey}
+      data-testid="command-center-dashboard"
       className={[
-        "min-w-[100px] sm:min-w-[112px] rounded-2xl px-3 py-2.5",
-        "bg-gradient-to-br backdrop-blur border border-white/60 dark:border-white/10",
-        accents[accent],
+        "min-h-full p-4 sm:p-8 max-w-5xl mx-auto space-y-6",
+        // Apply shake to the outer container by re-keying it (re-enters
+        // the animation). The keyframes live in the global stylesheet
+        // shipped with this artifact (animate-in plugin).
+        "animate-in fade-in duration-300",
       ].join(" ")}
     >
-      <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="text-base font-black text-foreground leading-tight mt-0.5">{value}</p>
-      <p className="text-[10.5px] text-muted-foreground mt-0.5 leading-tight truncate">{sub}</p>
+      {/* Top bar */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-[0_10px_30px_-8px_rgba(168,85,247,0.7)]">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-quicksand font-black text-xl sm:text-2xl truncate text-white">
+              {child.name}'s Command Center
+            </h2>
+            <p className="text-[12px] text-violet-200/80">
+              {overview.statusEmoji} {overview.statusLabel} · {parentStatus.effortSummary}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {todayRoutineId && (
+            <button
+              type="button"
+              onClick={() => { onClose(); navigate(`/routines/${todayRoutineId}`); }}
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-violet-400/40 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-violet-100 hover:bg-white/10"
+            >
+              Open routine <ArrowRight className="h-3 w-3" />
+            </button>
+          )}
+          <Dialog.Close asChild>
+            <button
+              type="button"
+              data-testid="command-center-close"
+              className="rounded-full p-2 bg-white/5 border border-white/10 text-white hover:bg-white/10"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Dialog.Close>
+        </div>
+      </div>
+
+      {/* Hero: animated progress ring + cyclable mood/sleep */}
+      <section className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-5 sm:gap-7 items-center rounded-3xl border border-violet-400/25 bg-white/[0.03] backdrop-blur-xl p-5 sm:p-7 shadow-[0_0_0_1px_rgba(168,85,247,0.15),0_30px_70px_-20px_rgba(168,85,247,0.45)]">
+        <ProgressRing pct={overview.routineCompletionPct} size={140} />
+        <div className="space-y-3">
+          <div className="flex items-baseline gap-2">
+            <p className="text-4xl sm:text-5xl font-black text-white">
+              {overview.routineCompletionPct}<span className="text-2xl text-violet-200/70">%</span>
+            </p>
+            <p className="text-sm text-violet-200/80 font-bold">
+              {overview.routineCompletedTasks}/{overview.routineTotalTasks} done
+            </p>
+          </div>
+          <p className="text-sm text-violet-100/90 leading-snug">{parentStatus.stressLabel}</p>
+          <div className="flex flex-wrap gap-2">
+            <CycleChip
+              label={MOOD_LABEL[mood]}
+              caption="Mood — tap to cycle"
+              onClick={() => persistMood(MOOD_CYCLE[(MOOD_CYCLE.indexOf(mood) + 1) % MOOD_CYCLE.length])}
+              testId="cycle-mood"
+            />
+            <CycleChip
+              label={SLEEP_LABEL[sleep]}
+              caption="Sleep — tap to cycle"
+              onClick={() => persistSleep(SLEEP_CYCLE[(SLEEP_CYCLE.indexOf(sleep) + 1) % SLEEP_CYCLE.length])}
+              testId="cycle-sleep"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Auto-suggestion chips */}
+      {suggestions.length > 0 && (
+        <section data-testid="suggestion-row" className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-violet-300/80">
+            Try next
+          </span>
+          {suggestions.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              data-testid={`suggestion-${s.id}`}
+              onClick={() => onSuggestion(s)}
+              className={[
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold",
+                "border border-violet-400/40 bg-violet-500/15 text-white",
+                "hover:bg-violet-500/30 hover:border-violet-300 hover:shadow-[0_0_24px_-4px_rgba(168,85,247,0.7)]",
+                "transition-all",
+              ].join(" ")}
+            >
+              <span className="text-base">{s.emoji}</span> {s.label}
+            </button>
+          ))}
+        </section>
+      )}
+
+      {/* Empty state — when there's no routine, hide everything below the
+          hero and just present a single CTA so the parent isn't faced with
+          a wall of disabled buttons. */}
+      {empty ? (
+        <EmptyState
+          onCreate={() => { onClose(); navigate("/routines"); }}
+        />
+      ) : (
+        <>
+          {/* Today timeline (with swipe-to-skip + undo) */}
+          <section
+            data-testid="timeline-section"
+            className="rounded-3xl border border-violet-400/20 bg-white/[0.03] backdrop-blur-xl p-4 sm:p-5"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-black uppercase tracking-wider text-violet-200">
+                Today's Timeline
+              </h3>
+              <span className="text-[11px] text-violet-300/70 font-bold">
+                {timeline.filter((t) => t.status === "completed").length}/{timeline.length} complete
+              </span>
+            </div>
+            <ul className="space-y-2">
+              {timeline.slice(0, 8).map((t) => (
+                <SwipeableTimelineRow
+                  key={`${t.index}-${t.time}-${t.activity}`}
+                  step={t}
+                  onComplete={() => completeStep(t.index)}
+                  onSkip={() => skipStep(t.index)}
+                />
+              ))}
+            </ul>
+          </section>
+
+          {/* Quick activity strip — separate from the strategic action grid.
+              Each chip opens an inline timed activity that logs a positive
+              moment when finished. */}
+          <section
+            data-testid="quick-activity-strip"
+            className="rounded-3xl border border-emerald-400/20 bg-emerald-500/[0.04] p-4 sm:p-5"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-black uppercase tracking-wider text-emerald-200">
+                Quick connection ideas
+              </h3>
+              <span className="text-[11px] text-emerald-200/70 font-bold">Tap to start a timer</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {quickActivities.map((q) => (
+                <button
+                  key={q.id}
+                  type="button"
+                  data-testid={`quick-${q.id}`}
+                  onClick={() => startQuickActivity(q.id)}
+                  className={[
+                    "relative flex flex-col items-center justify-center gap-1.5 px-3 py-3.5 rounded-2xl",
+                    "border border-emerald-400/25 bg-white/5 text-white",
+                    "hover:bg-emerald-500/15 hover:border-emerald-300/60 hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)]",
+                    "transition-all duration-200 active:scale-95",
+                    activePanel === q.id ? "border-emerald-300 bg-emerald-500/15" : "",
+                  ].join(" ")}
+                >
+                  <span className="text-2xl" aria-hidden>{q.emoji}</span>
+                  <span className="text-[11.5px] font-black text-center leading-tight">{q.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Strategic action grid — the 4 in-place actions. We deliberately
+              filter out "add-activity" since that lives on the Quick activity
+              strip above; this grid is for whole-routine moves. */}
+          <section data-testid="quick-action-bar" className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {actions.filter((a) => a.id !== "add-activity").map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                data-testid={`action-${a.id}`}
+                onClick={() => onAction(a.id)}
+                disabled={updateItems.isPending && (a.id === "simplify-today" || a.id === "fix-routine")}
+                className={[
+                  "relative flex flex-col items-center justify-center gap-1.5 px-3 py-3.5 rounded-2xl",
+                  "border transition-all duration-200 active:scale-95 overflow-hidden",
+                  a.severity === "primary"
+                    ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white border-transparent shadow-[0_18px_36px_-12px_rgba(168,85,247,0.8)]"
+                    : "bg-white/5 text-white border-white/15 hover:border-violet-300/60 hover:bg-white/10 hover:shadow-[0_0_24px_-6px_rgba(168,85,247,0.6)]",
+                  flashAction === a.id ? "scale-[1.04]" : "",
+                ].join(" ")}
+              >
+                <span className="text-2xl" aria-hidden>
+                  {a.emoji}
+                </span>
+                <span className="text-[11.5px] font-black text-center leading-tight">{a.label}</span>
+                {a.severity === "primary" && (
+                  <span className="absolute top-1 right-1 text-[8px] font-black uppercase tracking-wider opacity-90">
+                    Top
+                  </span>
+                )}
+              </button>
+            ))}
+          </section>
+        </>
+      )}
+
+      {/* In-place panels — strategic actions */}
+      {activePanel === "calm" && (
+        <ActionPanel
+          tone="rose"
+          icon={<Heart className="h-4 w-4" />}
+          title="Calming tools — try these in order"
+          steps={[
+            "Breathe slowly 4-4-6 with them for 60 seconds.",
+            "Offer a tight hug + soft voice (no questions).",
+            "Switch to a low-stim activity: water bottle, soft toy, dim light.",
+          ]}
+          onDone={() => { setActivePanel(null); logQuickWin(); }}
+        />
+      )}
+      {activePanel === "sleep" && (
+        <ActionPanel
+          tone="indigo"
+          icon={<Moon className="h-4 w-4" />}
+          title="Wind-down plan for tonight"
+          steps={[
+            "Dim lights 30 min before bedtime; no screens after.",
+            "Warm bath or face wash + same lullaby every night.",
+            "Lights out at the same time — set a calm alarm cue.",
+          ]}
+          onDone={() => setActivePanel(null)}
+        />
+      )}
+
+      {/* Timed quick activity panels — count down then log a positive
+          moment when the parent taps "Done with my child". */}
+      {(["play", "phonics", "lullaby", "puzzle"] as const).map((id) =>
+        activePanel === id ? (
+          <TimedActivityPanel
+            key={id}
+            activity={quickActivities.find((q) => q.id === id)!}
+            onCancel={() => setActivePanel(null)}
+            onDone={() => logQuickActivity(quickActivities.find((q) => q.id === id)!)}
+          />
+        ) : null,
+      )}
+
+      {/* Insights summary footer */}
+      {insights.length > 0 && (
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {insights.map((ins, i) => (
+            <div
+              key={i}
+              className={[
+                "rounded-2xl border p-3.5",
+                ins.tone === "good"
+                  ? "border-emerald-400/30 bg-emerald-500/10"
+                  : ins.tone === "warn"
+                  ? "border-amber-400/30 bg-amber-500/10"
+                  : "border-violet-400/30 bg-violet-500/10",
+              ].join(" ")}
+            >
+              <p className="text-[10px] font-black uppercase tracking-wide text-white/70 flex items-center gap-1">
+                <Sparkles className="h-3 w-3" /> Amy AI Insight
+              </p>
+              <p className="text-sm font-black text-white mt-1 leading-snug">{ins.what}</p>
+              <p className="text-[12px] text-white/70 mt-1 leading-snug">{ins.why}</p>
+              <p className="text-[12px] text-white mt-1.5 leading-snug">
+                <span className="font-black">→ </span>{ins.action}
+              </p>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* Toast — supports an optional Undo affordance for swipe-to-skip. */}
+      {toast && (
+        <div
+          data-testid="command-center-toast"
+          className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[70] flex items-center gap-3 rounded-full px-4 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-[13px] font-bold shadow-[0_18px_50px_-10px_rgba(168,85,247,0.7)] animate-in fade-in slide-in-from-bottom-2"
+        >
+          <span>{toast.msg}</span>
+          {toast.undo && (
+            <button
+              type="button"
+              data-testid="command-center-toast-undo"
+              onClick={() => {
+                const fn = toast.undo;
+                setToast(null);
+                fn?.();
+              }}
+              className="rounded-full bg-white/20 hover:bg-white/30 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider"
+            >
+              Undo
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Confetti burst */}
+      {confettiKey > 0 && <Confetti key={confettiKey} />}
+
+      {/* Re-trigger keyframes when shakeKey changes by mounting + auto-removing */}
+      {shakeKey > 0 && <ShakeOverlay key={shakeKey} />}
     </div>
   );
 }
 
-function TrendIcon({ trend }: { trend: "up" | "flat" | "down" }) {
-  if (trend === "up") return <TrendingUp className="h-3.5 w-3.5 text-emerald-500" aria-label="up" />;
-  if (trend === "down") return <TrendingDown className="h-3.5 w-3.5 text-rose-500" aria-label="down" />;
-  return <Minus className="h-3.5 w-3.5 text-muted-foreground" aria-label="flat" />;
+// ─── Subcomponents ───────────────────────────────────────────────────────
+
+function ProgressRing({ pct, size = 80 }: { pct: number; size?: number }) {
+  // Use stroke-dashoffset for the animation; the "to 100" stroke at start
+  // gives the satisfying "fill in" effect on first render.
+  const stroke = Math.max(4, Math.round(size * 0.075));
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const safe = Math.max(0, Math.min(100, pct));
+  const offset = c * (1 - safe / 100);
+  return (
+    <div className="relative" style={{ width: size, height: size }} aria-label={`${safe}% complete`}>
+      <svg width={size} height={size} className="-rotate-90">
+        <defs>
+          <linearGradient id={`ring-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#a855f7" />
+            <stop offset="50%" stopColor="#ec4899" />
+            <stop offset="100%" stopColor="#10b981" />
+          </linearGradient>
+        </defs>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke="rgba(255,255,255,0.12)"
+          strokeWidth={stroke}
+          fill="none"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke={`url(#ring-${size})`}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          fill="none"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 800ms cubic-bezier(.2,.8,.2,1)" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span
+          className="font-black tabular-nums text-white"
+          style={{ fontSize: Math.max(12, Math.round(size * 0.28)) }}
+        >
+          {safe}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CycleChip({
+  label,
+  caption,
+  onClick,
+  testId,
+}: {
+  label: string;
+  caption: string;
+  onClick: () => void;
+  testId?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid={testId}
+      className="group inline-flex flex-col items-start rounded-2xl border border-violet-400/40 bg-violet-500/10 px-3 py-1.5 text-left hover:bg-violet-500/20 hover:border-violet-300/70 transition-all"
+    >
+      <span className="text-[12px] font-black text-white">{label}</span>
+      <span className="text-[10px] text-violet-300/70 font-bold uppercase tracking-wide">{caption}</span>
+    </button>
+  );
+}
+
+function ActionPanel({
+  tone,
+  icon,
+  title,
+  steps,
+  onDone,
+}: {
+  tone: "rose" | "indigo" | "emerald";
+  icon: React.ReactNode;
+  title: string;
+  steps: string[];
+  onDone: () => void;
+}) {
+  const palette: Record<string, string> = {
+    rose: "border-rose-400/35 bg-rose-500/10",
+    indigo: "border-indigo-400/35 bg-indigo-500/10",
+    emerald: "border-emerald-400/35 bg-emerald-500/10",
+  };
+  return (
+    <section
+      data-testid="command-center-panel"
+      className={["rounded-3xl border p-4 sm:p-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200", palette[tone]].join(" ")}
+    >
+      <div className="flex items-center gap-2 text-white">
+        <span className="rounded-full bg-white/10 p-1.5">{icon}</span>
+        <h4 className="font-black text-sm">{title}</h4>
+      </div>
+      <ol className="space-y-2 list-none">
+        {steps.map((s, i) => (
+          <li key={i} className="flex items-start gap-2 text-[13px] text-white/90">
+            <span className="rounded-full bg-white/15 text-white text-[10px] font-black h-5 w-5 flex items-center justify-center shrink-0 mt-0.5">
+              {i + 1}
+            </span>
+            <span className="leading-snug">{s}</span>
+          </li>
+        ))}
+      </ol>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onDone}
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-black bg-white text-slate-900 hover:bg-white/90"
+        >
+          <PartyPopper className="h-3.5 w-3.5" /> Done
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function EmptyState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <div
+      data-testid="command-center-empty"
+      className="rounded-2xl border border-dashed border-violet-400/40 bg-white/[0.02] p-6 text-center space-y-3"
+    >
+      <p className="text-3xl">🪄</p>
+      <p className="text-sm font-bold text-white">No routine for today yet</p>
+      <p className="text-[12px] text-violet-200/70">
+        Generate one to unlock the timeline + smart suggestions.
+      </p>
+      <button
+        type="button"
+        onClick={onCreate}
+        className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-4 py-2 text-[12px] font-black"
+      >
+        <Wand2 className="h-3.5 w-3.5" /> Create today's routine
+      </button>
+    </div>
+  );
+}
+
+function Confetti() {
+  // Lightweight pure-CSS confetti so we don't pull a new dep. Each piece is
+  // an absolutely-positioned dot with a randomised translate + spin keyframe.
+  const PIECES = 22;
+  const pieces = Array.from({ length: PIECES }).map((_, i) => {
+    const left = Math.random() * 100;
+    const delay = Math.random() * 120;
+    const duration = 700 + Math.random() * 700;
+    const rot = Math.round(Math.random() * 720 - 360);
+    const dx = Math.round(Math.random() * 200 - 100);
+    const dy = 280 + Math.random() * 140;
+    const colors = ["#a855f7", "#ec4899", "#10b981", "#f59e0b", "#38bdf8"];
+    const color = colors[i % colors.length];
+    // Build the style as our extended type, then widen to CSSProperties when
+    // handing it to React (custom CSS vars aren't part of CSSProperties).
+    const pieceStyle: CSSPropertiesWithVars = {
+      position: "absolute",
+      top: 0,
+      left: `${left}%`,
+      width: 8,
+      height: 12,
+      background: color,
+      borderRadius: 2,
+      animation: `cc-confetti ${duration}ms ease-out ${delay}ms forwards`,
+      transform: `translate(0,0) rotate(0deg)`,
+      "--cc-dx": `${dx}px`,
+      "--cc-dy": `${dy}px`,
+      "--cc-rot": `${rot}deg`,
+    };
+    return <span key={i} style={pieceStyle as CSSProperties} />;
+  });
+  return (
+    <div data-testid="command-center-confetti" className="pointer-events-none fixed inset-0 z-[80] overflow-hidden">
+      <style>{`@keyframes cc-confetti { to { transform: translate(var(--cc-dx), var(--cc-dy)) rotate(var(--cc-rot)); opacity: 0; } }`}</style>
+      {pieces}
+    </div>
+  );
+}
+
+function ShakeOverlay() {
+  // Briefly shakes the dashboard container by toggling a transient class on
+  // the document body. Keeping it overlay-only avoids a re-render cascade
+  // through the live regions.
+  useEffect(() => {
+    const root = document.querySelector('[data-testid="command-center-dashboard"]') as HTMLElement | null;
+    if (!root) return;
+    root.style.animation = "cc-shake 0.45s cubic-bezier(.36,.07,.19,.97) both";
+    const id = window.setTimeout(() => { root.style.animation = ""; }, 500);
+    return () => window.clearTimeout(id);
+  }, []);
+  return (
+    <style>{`@keyframes cc-shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
+    }`}</style>
+  );
+}
+
+// ─── Local helpers ───────────────────────────────────────────────────────
+
+function parseClockMins(t: string): number {
+  if (!t) return -1;
+  const m12 = t.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (m12) {
+    let h = parseInt(m12[1], 10);
+    const mn = parseInt(m12[2], 10);
+    const ap = m12[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    return h * 60 + mn;
+  }
+  const m24 = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (m24) return parseInt(m24[1], 10) * 60 + parseInt(m24[2], 10);
+  return -1;
+}
+
+// ─── Swipe-to-skip timeline row ─────────────────────────────────────────
+// Pointer/touch-driven horizontal swipe. Past a 60px threshold the row
+// commits "skip" — the parent can recover via the toast's Undo button.
+function SwipeableTimelineRow({
+  step,
+  onComplete,
+  onSkip,
+}: {
+  step: ReturnType<typeof computeCommandCenter>["timeline"][number];
+  onComplete: () => void;
+  onSkip: () => void;
+}) {
+  const [dx, setDx] = useState(0);
+  const startX = useRef<number | null>(null);
+  const SKIP_THRESHOLD = 60;
+  const t = step;
+
+  function onPointerDown(e: React.PointerEvent<HTMLLIElement>) {
+    if (t.status === "completed" || t.status === "skipped") return;
+    startX.current = e.clientX;
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+  }
+  function onPointerMove(e: React.PointerEvent<HTMLLIElement>) {
+    if (startX.current == null) return;
+    const delta = e.clientX - startX.current;
+    // Only allow leftward swipes for skip; cap at -120px so it feels bounded.
+    setDx(Math.max(-120, Math.min(0, delta)));
+  }
+  function onPointerEnd() {
+    if (startX.current == null) return;
+    const delta = dx;
+    startX.current = null;
+    setDx(0);
+    if (delta <= -SKIP_THRESHOLD) onSkip();
+  }
+
+  return (
+    <li
+      data-testid={t.current ? "timeline-current" : t.next ? "timeline-next" : undefined}
+      className={[
+        "relative flex items-center gap-3 rounded-2xl border p-3 transition-all touch-pan-y select-none",
+        t.current
+          ? "border-fuchsia-400/60 bg-gradient-to-r from-fuchsia-500/15 to-violet-500/15 shadow-[0_0_30px_-6px_rgba(217,70,239,0.55)]"
+          : t.next
+          ? "border-violet-400/40 bg-violet-500/10"
+          : "border-white/10 bg-white/[0.02]",
+        t.status === "completed" ? "opacity-60" : "",
+        t.status === "skipped" ? "opacity-40 line-through" : "",
+      ].join(" ")}
+      style={{ transform: dx ? `translateX(${dx}px)` : undefined }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerEnd}
+      onPointerCancel={onPointerEnd}
+    >
+      <div className="w-14 shrink-0">
+        <p className="text-[11px] font-black tracking-wide text-violet-200">{t.time}</p>
+        <p className="text-[10px] text-violet-300/70 uppercase">{t.duration}m</p>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-white truncate">{t.activity}</p>
+        <p className="text-[11px] text-violet-300/70 truncate">
+          {t.current ? "Now" : t.next ? "Up next" : t.category || ""}
+        </p>
+      </div>
+      {t.status === "completed" ? (
+        <span className="rounded-full px-2 py-0.5 text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+          DONE
+        </span>
+      ) : t.status === "skipped" ? (
+        <span className="rounded-full px-2 py-0.5 text-[10px] font-black bg-white/10 text-white/70 border border-white/20">
+          SKIPPED
+        </span>
+      ) : (
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onSkip}
+            data-testid={`skip-step-${t.index}`}
+            aria-label={`Skip ${t.activity}`}
+            className="hidden sm:inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold bg-white/5 text-white/70 border border-white/15 hover:bg-white/10 hover:text-white"
+          >
+            Skip
+          </button>
+          <button
+            type="button"
+            onClick={onComplete}
+            data-testid={`complete-step-${t.index}`}
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold bg-emerald-500/15 text-emerald-200 border border-emerald-400/30 hover:bg-emerald-500/25 hover:border-emerald-300"
+          >
+            <Check className="h-3 w-3" /> Done
+          </button>
+        </div>
+      )}
+    </li>
+  );
+}
+
+// ─── Timed inline activity panel ────────────────────────────────────────
+// Counts down the activity's minutes (rounded to seconds for visibility),
+// then offers a "Done with my child" CTA that fires `onDone`.
+function TimedActivityPanel({
+  activity,
+  onCancel,
+  onDone,
+}: {
+  activity: { id: string; label: string; minutes: number; emoji: string; icon: React.ReactNode };
+  onCancel: () => void;
+  onDone: () => void;
+}) {
+  const totalSeconds = activity.minutes * 60;
+  const [remaining, setRemaining] = useState(totalSeconds);
+  const [running, setRunning] = useState(true);
+
+  useEffect(() => {
+    if (!running) return;
+    const id = window.setInterval(() => {
+      setRemaining((r) => {
+        if (r <= 1) {
+          window.clearInterval(id);
+          return 0;
+        }
+        return r - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [running]);
+
+  const mm = Math.floor(remaining / 60).toString().padStart(2, "0");
+  const ss = (remaining % 60).toString().padStart(2, "0");
+  const pct = Math.round(((totalSeconds - remaining) / totalSeconds) * 100);
+
+  return (
+    <section
+      data-testid={`timed-activity-${activity.id}`}
+      className="rounded-3xl border border-emerald-400/35 bg-emerald-500/10 p-4 sm:p-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-white">
+          <span className="rounded-full bg-white/10 p-1.5">{activity.icon}</span>
+          <h4 className="font-black text-sm">
+            {activity.emoji} {activity.label}
+          </h4>
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          data-testid={`timed-cancel-${activity.id}`}
+          className="text-[11px] font-bold text-white/70 hover:text-white underline-offset-2 hover:underline"
+        >
+          Close
+        </button>
+      </div>
+      <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
+        <p
+          data-testid={`timed-clock-${activity.id}`}
+          className="text-3xl font-black tabular-nums text-white text-center"
+        >
+          {mm}:{ss}
+        </p>
+        <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-emerald-400 to-violet-400 transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => setRunning((r) => !r)}
+          data-testid={`timed-toggle-${activity.id}`}
+          className="rounded-full bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 text-[12px] font-black"
+        >
+          {running ? "Pause" : "Resume"}
+        </button>
+        <button
+          type="button"
+          onClick={onDone}
+          data-testid={`timed-done-${activity.id}`}
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-black bg-white text-slate-900 hover:bg-white/90"
+        >
+          <PartyPopper className="h-3.5 w-3.5" /> Done with my child
+        </button>
+      </div>
+    </section>
+  );
 }
