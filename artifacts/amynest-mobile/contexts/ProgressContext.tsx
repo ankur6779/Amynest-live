@@ -8,6 +8,19 @@ export type RoutineTask = {
   icon: string;
   done: boolean;
   ageBand?: "2-5" | "6-10" | "10+";
+  /**
+   * Optional tile id (from `TILE_SECTION_MAP`) the task is related to.
+   * When set on a completed task, RoutineCarousel can render a quick-jump
+   * link that takes the parent straight to the matching Zone / Module /
+   * Activity tile (Task #191).
+   */
+  relatedTileId?: string;
+  /**
+   * Friendly label for the quick-jump CTA, e.g. "Open in Modules".
+   * RoutineCarousel only renders the link when both `relatedTileId` and
+   * `continueLabel` are set.
+   */
+  continueLabel?: string;
 };
 
 export type CoachStep = {

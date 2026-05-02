@@ -141,6 +141,66 @@ export function isFeaturedTile(id: string): id is FeaturedTileId {
 }
 
 /**
+ * Map a routine item's `category` to the hub tile that best continues the
+ * activity (Task #191). Used by Today's Plan to render an "Open in // audit-ok: task ref not hex
+ * Modules / Activities / Zones" quick-jump on completed routine items so
+ * a parent who just finished e.g. "20 min phonics practice" can step
+ * straight into the matching tile without swiping back through pages.
+ *
+ * Categories with no sensible target intentionally omit an entry — the
+ * link simply doesn't render for those items (school / sleep / hygiene
+ * etc.).
+ */
+export const ROUTINE_CATEGORY_TO_TILE_ID: Readonly<Record<string, string>> = {
+  homework: "smart-study",
+  study: "smart-study",
+  reading: "story-hub",
+  creative: "art-craft",
+  play: "activities",
+  outdoor: "activities",
+  meal: "meals",
+  tiffin: "meals",
+  snack: "meals",
+  exercise: "life-skills",
+  morning: "morning-flow",
+  morning_routine: "morning-flow",
+  bonding: "tips",
+  family: "tips",
+};
+
+/**
+ * Resolve a routine category string to a tile id, or `null` if no
+ * mapping exists. Case-insensitive.
+ */
+export function routineCategoryToTileId(
+  category: string | null | undefined,
+): string | null {
+  if (!category) return null;
+  return ROUTINE_CATEGORY_TO_TILE_ID[category.toLowerCase()] ?? null;
+}
+
+/**
+ * Resolve a tile id to its hub section, or `null` if the id isn't part
+ * of the partitioned grid (e.g. featured tiles). Used by Today's Plan
+ * to know which pager page to jump to for a given quick-jump target.
+ */
+export function tileIdToSection(
+  tileId: string | null | undefined,
+): Exclude<SectionKey, "today"> | null {
+  if (!tileId) return null;
+  return TILE_SECTION_MAP[tileId] ?? null;
+}
+
+/** Friendly label for a section's quick-jump CTA ("Open in Modules" etc.). */
+export function sectionCtaLabel(
+  section: Exclude<SectionKey, "today">,
+): string {
+  if (section === "modules") return "Open in Modules";
+  if (section === "activities") return "Open in Activities";
+  return "Open in Zones";
+}
+
+/**
  * Internal sanity check: throws (in dev) when HUB_CONTENT_AGE_BANDS contains
  * a tile id that has no entry in TILE_SECTION_MAP. Called from the unit
  * test so the partition stays exhaustive.

@@ -3,6 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import type { RoutineTask } from "@/contexts/ProgressContext";
 import { categoryIcon } from "@/constants/categoryIcons";
+import {
+  routineCategoryToTileId,
+  sectionCtaLabel,
+  tileIdToSection,
+} from "@/app/(tabs)/hub-sections";
 
 /**
  * Shared "today's routine" hook used by both the dashboard and the Parent
@@ -24,6 +29,13 @@ export type RoutineItem = {
   status?: ItemStatus;
   notes?: string;
   ageBand?: "2-5" | "6-10" | "10+";
+  /**
+   * Optional hub tile id the item is related to. The backend may set this
+   * directly; otherwise the hook derives it from `category` via
+   * `routineCategoryToTileId`. Used to render the Today's Plan
+   * "Open in Modules / Activities / Zones" quick-jump (Task #191).
+   */
+  relatedTileId?: string;
 };
 
 export type Routine = {
@@ -94,15 +106,30 @@ export function useTodayRoutine(
 
   const tasks = useMemo<RoutineTask[]>(() => {
     if (!todaysRoutine) return [];
-    return todaysRoutine.items.map((it, idx) => ({
-      id: `t-${todaysRoutine.id}-${idx}`,
-      title: it.activity,
-      time: it.time,
-      minutes: it.duration ?? 30,
-      icon: categoryIcon(it.category),
-      done: it.status === "completed",
-      ageBand: it.ageBand,
-    }));
+    return todaysRoutine.items.map((it, idx) => {
+      // Quick-jump target (Task #191): prefer an explicit `relatedTileId`
+      // from the backend, otherwise derive one from the category. Tiles
+      // outside the partitioned grid (featured / unmapped) yield a null
+      // section, in which case we leave the CTA undefined so the carousel
+      // simply doesn't render the link.
+      const relatedTileId =
+        it.relatedTileId ?? routineCategoryToTileId(it.category) ?? undefined;
+      const section = relatedTileId ? tileIdToSection(relatedTileId) : null;
+      const continueLabel = section ? sectionCtaLabel(section) : undefined;
+      return {
+        id: `t-${todaysRoutine.id}-${idx}`,
+        title: it.activity,
+        time: it.time,
+        minutes: it.duration ?? 30,
+        // Icon resolution moved to a shared `categoryIcon()` helper on
+        // main; keep using it so the dashboard and hub stay in sync.
+        icon: categoryIcon(it.category),
+        done: it.status === "completed",
+        ageBand: it.ageBand,
+        relatedTileId,
+        continueLabel,
+      };
+    });
   }, [todaysRoutine]);
 
   const saveMut = useMutation({

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   Pressable,
   View,
@@ -10,6 +10,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import { ACCENT_PINK } from "@/constants/colors";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -26,6 +27,14 @@ export interface HubTileProps {
   testID?: string;
   /** Custom style merged after the tile defaults. */
   style?: StyleProp<ViewStyle>;
+  /**
+   * When true, briefly draws an animated accent-pink ring around the tile
+   * that fades over ~2.2s. Used by the Today's Plan quick-jump (Task #191)
+   * to draw the parent's eye to the matching tile after jumping the pager.
+   * Setting it back to false (or another tile becoming highlighted) cancels
+   * the active animation and removes the ring.
+   */
+  highlighted?: boolean;
   children: React.ReactNode;
 }
 
@@ -54,12 +63,17 @@ export function HubTile({
   accessibilityLabel,
   testID,
   style,
+  highlighted = false,
   children,
 }: HubTileProps) {
   // Use the standard RN Animated API so we can type the interpolated
   // transform without `as any` at the call site. The `useNativeDriver`
   // flag below keeps the animation off the JS thread.
   const scale = useRef(new Animated.Value(1)).current;
+  // Highlight ring opacity — animated on the JS thread (false) because it
+  // drives a borderColor-style ring; brief and one-shot so the cost is
+  // negligible. Fades from 1 → 0 over ~2.2s when `highlighted` flips true.
+  const glow = useRef(new Animated.Value(0)).current;
 
   const animateIn = useCallback(() => {
     Animated.timing(scale, {
@@ -77,12 +91,40 @@ export function HubTile({
     }).start();
   }, [scale]);
 
+  useEffect(() => {
+    if (highlighted) {
+      // Snap to fully visible, then fade out. The brief delay lets the
+      // user notice the ring appearing before it starts fading.
+      glow.stopAnimation();
+      glow.setValue(1);
+      Animated.timing(glow, {
+        toValue: 0,
+        duration: 2000,
+        delay: 200,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      glow.stopAnimation();
+      glow.setValue(0);
+    }
+  }, [highlighted, glow]);
+
   const wrapperStyle: StyleProp<ViewStyle> = [
     styles.tile,
     featured && styles.featured,
     style,
     { transform: [{ scale }] },
   ];
+
+  // Sibling absolute-fill ring layered over the tile content. `pointerEvents`
+  // is `none` so it never intercepts taps that should reach inner Pressables.
+  const highlightRing = (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.highlightRing, { opacity: glow }]}
+      testID={testID ? `${testID}-highlight` : undefined}
+    />
+  );
 
   if (!onPress) {
     // Bubble-phase touch handlers: View doesn't capture the gesture, so
@@ -101,6 +143,7 @@ export function HubTile({
         onTouchCancel={animateOut}
       >
         {children}
+        {highlightRing}
       </Animated.View>
     );
   }
@@ -121,6 +164,7 @@ export function HubTile({
       style={wrapperStyle}
     >
       {children}
+      {highlightRing}
     </AnimatedPressable>
   );
 }
@@ -132,6 +176,13 @@ const styles = StyleSheet.create({
   featured: {
     // Featured tiles are always full width; the drop shadow lives on the
     // child gradient/View so the press wrapper stays a clean transform target.
+  },
+  highlightRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: ACCENT_PINK,
+    backgroundColor: "rgba(255,78,205,0.10)" /* audit-ok: ACCENT_PINK 10% */,
   },
 });
 

@@ -116,3 +116,116 @@ describe("RoutineCarousel", () => {
     ).toBeNull();
   });
 });
+
+describe("RoutineCarousel — Continue quick-jump link (Task #191)", () => {
+  // Completed task with both a `relatedTileId` and a `continueLabel` —
+  // the only shape that should render the Continue link.
+  const completedWithLink: RoutineTask = {
+    id: "t-link-1",
+    title: "Phonics practice",
+    time: "5:00 PM",
+    minutes: 20,
+    icon: "book",
+    done: true,
+    relatedTileId: "phonics",
+    continueLabel: "Open in Modules",
+  };
+
+  // Completed task with no quick-jump mapping — must NOT render a link.
+  const completedNoLink: RoutineTask = {
+    id: "t-link-2",
+    title: "Bedtime",
+    time: "9:00 PM",
+    minutes: 15,
+    icon: "moon",
+    done: true,
+  };
+
+  // In-progress task that *would* have a link if it were done — the link
+  // is only meant to appear once the parent has actually finished the step.
+  const incompleteWithMapping: RoutineTask = {
+    id: "t-link-3",
+    title: "Story time",
+    time: "7:30 PM",
+    minutes: 20,
+    icon: "book",
+    done: false,
+    relatedTileId: "story-hub",
+    continueLabel: "Open in Modules",
+  };
+
+  it("renders a Continue link on completed tasks that have a related tile", () => {
+    const onContinue = vi.fn();
+
+    render(
+      <RoutineCarousel
+        tasks={[completedWithLink]}
+        onToggle={vi.fn()}
+        onContinue={onContinue}
+      />,
+    );
+
+    // The link uses accessibilityRole="link" + the continueLabel as its
+    // accessible name, so getByRole('link') is the cleanest assertion.
+    const link = screen.getByRole("link", { name: /Open in Modules/i });
+    expect(link).toBeInTheDocument();
+  });
+
+  it("invokes onContinue with the task id when the link is tapped", () => {
+    const onContinue = vi.fn();
+    const onToggle = vi.fn();
+
+    render(
+      <RoutineCarousel
+        tasks={[completedWithLink]}
+        onToggle={onToggle}
+        onContinue={onContinue}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("link", { name: /Open in Modules/i }));
+
+    expect(onContinue).toHaveBeenCalledTimes(1);
+    expect(onContinue).toHaveBeenCalledWith("t-link-1");
+    // Tapping the Continue link must not also toggle done state.
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it("does not render a link when the task is completed but has no mapping", () => {
+    render(
+      <RoutineCarousel
+        tasks={[completedNoLink]}
+        onToggle={vi.fn()}
+        onContinue={vi.fn()}
+      />,
+    );
+
+    // Neither the label nor a generic link role should be present.
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("does not render a link on incomplete tasks even when mapped", () => {
+    render(
+      <RoutineCarousel
+        tasks={[incompleteWithMapping]}
+        onToggle={vi.fn()}
+        onContinue={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("does not render a link when onContinue is omitted", () => {
+    // Defensive: if the parent didn't wire up onContinue we shouldn't show
+    // a dangling link that does nothing.
+    render(
+      <RoutineCarousel
+        tasks={[completedWithLink]}
+        onToggle={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+});
