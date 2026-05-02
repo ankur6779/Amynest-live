@@ -80,6 +80,11 @@ function scanFile(filePath) {
     while ((match = HEX_RE.exec(line)) !== null) {
       const hex = match[0];
       if (GLOBAL_ALLOWLIST.has(hex)) continue;
+      // Ignore task references like "Task #191" — these are GitHub-style
+      // issue/task IDs commonly used in code comments, not hex colors. Match
+      // a preceding "Task " (case-insensitive) immediately before the `#`.
+      const before = line.slice(0, match.index);
+      if (/(?:^|\W)[Tt]ask\s+$/.test(before)) continue;
       findings.push({ lineNum: i + 1, hex, snippet: line.trimEnd().slice(0, 100) });
     }
   }
