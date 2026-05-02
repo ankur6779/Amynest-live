@@ -19,6 +19,13 @@ import {
   normaliseSpellingGuess,
   computeCompetitionScore,
   applyAttempt,
+  getRoundConfig,
+  applyRoundResult,
+  simulateAiOpponent,
+  computeAiScore,
+  AI_OPPONENTS,
+  TOURNAMENT_ROUND_CONFIG,
+  type TournamentRoundResult,
 } from "./spelling";
 
 describe("normaliseSpellingGuess", () => {
@@ -149,5 +156,233 @@ describe("applyAttempt — stars/level/streak progression", () => {
     let t: Attempt = zero;
     for (let i = 0; i < 5; i++) t = applyAttempt(t, true);
     assert.ok(t.badges.includes("spelling_star"), "streak 5 -> spelling_star");
+  });
+});
+
+// ─── Tournament: getRoundConfig ─────────────────────────────────────────────
+
+describe("getRoundConfig", () => {
+  it("returns easy/5/3 for round 1", () => {
+    const r = getRoundConfig(1);
+    assert.equal(r.difficulty, "easy");
+    assert.equal(r.wordCount, 5);
+    assert.equal(r.passThreshold, 3);
+  });
+
+  it("returns medium/5/3 for round 2", () => {
+    const r = getRoundConfig(2);
+    assert.equal(r.difficulty, "medium");
+    assert.equal(r.wordCount, 5);
+    assert.equal(r.passThreshold, 3);
+  });
+
+  it("returns hard/5/0 for round 3 (final round always counts)", () => {
+    const r = getRoundConfig(3);
+    assert.equal(r.difficulty, "hard");
+    assert.equal(r.wordCount, 5);
+    assert.equal(r.passThreshold, 0);
+  });
+
+  it("throws for round 0 / negative / past R3", () => {
+    assert.throws(() => getRoundConfig(0));
+    assert.throws(() => getRoundConfig(-1));
+    assert.throws(() => getRoundConfig(4));
+  });
+
+  it("config is exactly 3 rounds", () => {
+    assert.equal(TOURNAMENT_ROUND_CONFIG.length, 3);
+  });
+});
+
+// ─── Tournament: applyRoundResult state machine ─────────────────────────────
+
+describe("applyRoundResult", () => {
+  const empty = { rounds: [], totalScore: 0 };
+
+  function roundResult(
+    round: 1 | 2 | 3,
+    wordsCorrect: number,
+    score = 100,
+  ): TournamentRoundResult {
+    return {
+      round,
+      difficulty: getRoundConfig(round).difficulty,
+      sessionToken: `session-r${round}`,
+      score,
+      wordsCorrect,
+      wordsAttempted: 5,
+      durationSec: 30,
+    };
+  }
+
+  it("R1 pass (>=3 correct) → status active, currentRound=2, totalScore added", () => {
+    const next = applyRoundResult(empty, roundResult(1, 4, 120));
+    assert.equal(next.status, "active");
+    assert.equal(next.currentRound, 2);
+    assert.equal(next.totalScore, 120);
+    assert.equal(next.eliminatedAtRound, null);
+    assert.equal(next.passed, true);
+    assert.equal(next.rounds.length, 1);
+    assert.equal(next.rounds[0]!.passed, true);
+  });
+
+  it("R1 fail (<3 correct) → status eliminated, NO totalScore added", () => {
+    const next = applyRoundResult(empty, roundResult(1, 2, 90));
+    assert.equal(next.status, "eliminated");
+    assert.equal(next.currentRound, 1);
+    assert.equal(next.totalScore, 0, "failed round score is NOT added to total");
+    assert.equal(next.eliminatedAtRound, 1);
+    assert.equal(next.passed, false);
+    assert.equal(next.rounds[0]!.passed, false);
+  });
+
+  it("R2 pass → status active, currentRound=3, total accumulates", () => {
+    const afterR1 = applyRoundResult(empty, roundResult(1, 5, 150));
+    const afterR2 = applyRoundResult(
+      { rounds: afterR1.rounds, totalScore: afterR1.totalScore },
+      roundResult(2, 3, 100),
+    );
+    assert.equal(afterR2.status, "active");
+    assert.equal(afterR2.currentRound, 3);
+    assert.equal(afterR2.totalScore, 250);
+    assert.equal(afterR2.rounds.length, 2);
+  });
+
+  it("R2 fail → eliminated, R1 score preserved, R2 score discarded", () => {
+    const afterR1 = applyRoundResult(empty, roundResult(1, 5, 150));
+    const afterR2 = applyRoundResult(
+      { rounds: afterR1.rounds, totalScore: afterR1.totalScore },
+      roundResult(2, 1, 80),
+    );
+    assert.equal(afterR2.status, "eliminated");
+    assert.equal(afterR2.eliminatedAtRound, 2);
+    assert.equal(afterR2.totalScore, 150, "only R1 contributed");
+    assert.equal(afterR2.passed, false);
+  });
+
+  it("R3 always passes (threshold=0) → status completed even with 0 correct", () => {
+    const afterR1 = applyRoundResult(empty, roundResult(1, 5, 150));
+    const afterR2 = applyRoundResult(
+      { rounds: afterR1.rounds, totalScore: afterR1.totalScore },
+      roundResult(2, 4, 110),
+    );
+    const afterR3 = applyRoundResult(
+      { rounds: afterR2.rounds, totalScore: afterR2.totalScore },
+      roundResult(3, 0, 50),
+    );
+    assert.equal(afterR3.status, "completed");
+    assert.equal(afterR3.passed, true, "R3 threshold is 0");
+    assert.equal(afterR3.totalScore, 310);
+    assert.equal(afterR3.eliminatedAtRound, null);
+  });
+
+  it("R3 with full score → completed, totalScore = sum of all", () => {
+    const afterR1 = applyRoundResult(empty, roundResult(1, 5, 150));
+    const afterR2 = applyRoundResult(
+      { rounds: afterR1.rounds, totalScore: afterR1.totalScore },
+      roundResult(2, 5, 130),
+    );
+    const afterR3 = applyRoundResult(
+      { rounds: afterR2.rounds, totalScore: afterR2.totalScore },
+      roundResult(3, 5, 200),
+    );
+    assert.equal(afterR3.status, "completed");
+    assert.equal(afterR3.totalScore, 480);
+    assert.equal(afterR3.rounds.length, 3);
+  });
+});
+
+// ─── Battle: simulateAiOpponent determinism + difficulty curve ──────────────
+
+describe("simulateAiOpponent", () => {
+  it("is deterministic given the same (count, opponent, seed) triple", () => {
+    const a = simulateAiOpponent(10, "ai_medium", "seed-abc-123");
+    const b = simulateAiOpponent(10, "ai_medium", "seed-abc-123");
+    assert.deepEqual(a, b);
+  });
+
+  it("produces the requested word count", () => {
+    const r = simulateAiOpponent(7, "ai_easy", "seed-xyz");
+    assert.equal(r.length, 7);
+  });
+
+  it("returns plausible per-word ms within profile range", () => {
+    const profile = AI_OPPONENTS.ai_hard;
+    const r = simulateAiOpponent(50, "ai_hard", "seed-range-check");
+    for (const item of r) {
+      assert.ok(
+        item.ms >= profile.msMin && item.ms <= profile.msMax,
+        `ms ${item.ms} out of range`,
+      );
+      assert.equal(typeof item.correct, "boolean");
+    }
+  });
+
+  it("different seeds produce different result sequences", () => {
+    const a = simulateAiOpponent(20, "ai_medium", "seed-A");
+    const b = simulateAiOpponent(20, "ai_medium", "seed-B");
+    assert.notDeepEqual(a, b);
+  });
+
+  it("harder difficulty → higher average accuracy (over many runs)", () => {
+    // Average accuracy across many seeds should track the configured
+    // profile probability. 200 runs × 10 words per opponent gives
+    // tight enough convergence to assert ordering.
+    const accuracyOf = (op: keyof typeof AI_OPPONENTS): number => {
+      let total = 0;
+      let correct = 0;
+      for (let s = 0; s < 200; s++) {
+        const r = simulateAiOpponent(10, op, `seed-${s}`);
+        total += r.length;
+        correct += r.filter((x) => x.correct).length;
+      }
+      return correct / total;
+    };
+    const easy = accuracyOf("ai_easy");
+    const medium = accuracyOf("ai_medium");
+    const hard = accuracyOf("ai_hard");
+    assert.ok(easy < medium, `easy ${easy} should be < medium ${medium}`);
+    assert.ok(medium < hard, `medium ${medium} should be < hard ${hard}`);
+    // Sanity: each within ~0.1 of its configured profile.
+    assert.ok(Math.abs(easy - AI_OPPONENTS.ai_easy.accuracy) < 0.1);
+    assert.ok(Math.abs(medium - AI_OPPONENTS.ai_medium.accuracy) < 0.1);
+    assert.ok(Math.abs(hard - AI_OPPONENTS.ai_hard.accuracy) < 0.1);
+  });
+});
+
+// ─── Battle: computeAiScore is pure + matches competition formula ───────────
+
+describe("computeAiScore", () => {
+  it("computes score using the same formula as the human side", () => {
+    const aiResults = [
+      { correct: true, ms: 2000 },
+      { correct: true, ms: 3000 },
+      { correct: false, ms: 4000 },
+      { correct: true, ms: 1500 },
+      { correct: true, ms: 2500 },
+    ];
+    const r = computeAiScore(aiResults);
+    assert.equal(r.correct, 4);
+    assert.equal(r.durationSec, Math.ceil(13000 / 1000));
+    assert.equal(
+      r.score,
+      computeCompetitionScore(r.correct, r.durationSec),
+      "AI score must use the SAME formula as the human side",
+    );
+  });
+
+  it("clamps duration to >= 1s so an instantaneous run doesn't divide by zero", () => {
+    const r = computeAiScore([{ correct: true, ms: 0 }]);
+    assert.ok(r.durationSec >= 1);
+    assert.ok(Number.isFinite(r.score));
+  });
+
+  it("0 correct → score reflects formula (no special-case)", () => {
+    const r = computeAiScore([
+      { correct: false, ms: 5000 },
+      { correct: false, ms: 5000 },
+    ]);
+    assert.equal(r.correct, 0);
+    assert.equal(r.score, computeCompetitionScore(0, r.durationSec));
   });
 });
