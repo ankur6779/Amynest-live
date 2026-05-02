@@ -1502,6 +1502,264 @@ router.post(
   },
 );
 
+// Discriminated result of the in-tx portion of /advance. Extracted so
+// integration tests can drive the transactional state machine
+// (normal-advance vs legacy-recovery vs audio-pending vs drift)
+// directly via `db.transaction((tx) => _advanceTournamentTxForTest(tx, …))`.
+type AdvanceTxResult =
+  | { kind: "not_found" }
+  | { kind: "not_active"; tournament: SpellingTournamentRow }
+  | { kind: "no_session" }
+  | {
+      kind: "audio_pending";
+      tournament: SpellingTournamentRow;
+      session: typeof spellingSessionsTable.$inferSelect;
+    }
+  | { kind: "inconsistent_state" }
+  | { kind: "no_words_available" }
+  | { kind: "session_not_found" }
+  | {
+      kind: "ok";
+      tournament: SpellingTournamentRow;
+      currentRound: number;
+      roundResult: TournamentRoundResult;
+      next: ReturnType<typeof applyRoundResult>;
+      nextSessionData: {
+        sessionToken: string;
+        startedAt: Date;
+        words: SpellingWord[];
+        cfg: ReturnType<typeof getRoundConfig>;
+      } | null;
+      isRecovery: boolean;
+    };
+
+// In-tx state machine for /spelling/tournaments/:token/advance.
+//
+// Race-safety + atomicity. SELECT … FOR UPDATE on the tournament row
+// serializes concurrent /advance calls; the next-round session row
+// INSERT happens INSIDE the same tx so tournament state (currentRound++)
+// and the row backing it are committed atomically.
+//
+// Branches:
+//
+//   1. Normal flow — latest session is unfinalized AND has audioKeys:
+//      finalize, applyRoundResult, update tournament, INSERT next
+//      session row (empty audioKeys; TTS prewarm runs after the tx
+//      commits and writes audioKeys back via a separate UPDATE).
+//
+//   2. Audio-pending — latest session is unfinalized AND audioKeys is
+//      empty: a previous /advance committed the session row but the
+//      post-tx TTS prewarm failed. DO NOT finalize/apply (the session
+//      has no playable audio so no attempts could have happened, and
+//      finalizing it would erroneously apply a 0-attempt round and
+//      eliminate the kid). Return the existing session for re-prewarm.
+//
+//   3. Legacy recovery — latest session is finalized AND
+//      `tournament.rounds[last].sessionToken` matches it: pre-fix
+//      stuck state, the previous /advance applied the round + bumped
+//      currentRound but its post-tx createSpellingSession never landed.
+//      Skip finalize/applyRoundResult (already done) and INSERT the
+//      missing next-round session below. The tighter
+//      `sessionToken == lastApplied.sessionToken` check prevents
+//      recovery from triggering on a tournament whose session was
+//      finalized via the public /sessions/:token/finalize path
+//      without /advance ever applying it (would otherwise skip apply
+//      and double-allocate a session for the same round).
+//
+//   4. Drift — latest session is finalized but doesn't match
+//      `lastApplied.sessionToken`: tournament state is inconsistent
+//      with session state. Refuse with 500 rather than guess.
+//
+// finalizeSpellingSession opens its own top-level transaction on a
+// separate pooled connection (different row, no lock conflict).
+export async function _advanceTournamentTxForTest(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  args: { tournamentToken: string; userId: string },
+): Promise<AdvanceTxResult> {
+  const { tournamentToken, userId } = args;
+  return advanceTournamentTxImpl(tx, { tournamentToken, userId });
+}
+
+async function advanceTournamentTxImpl(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  args: { tournamentToken: string; userId: string },
+): Promise<AdvanceTxResult> {
+  const { tournamentToken, userId } = args;
+  const tRows = await tx
+    .select()
+    .from(spellingTournamentsTable)
+    .where(eq(spellingTournamentsTable.tournamentToken, tournamentToken))
+    .for("update")
+    .limit(1);
+  const tournament = tRows[0];
+  if (!tournament || tournament.userId !== userId) {
+    return { kind: "not_found" };
+  }
+  if (tournament.status !== "active") {
+    return { kind: "not_active", tournament };
+  }
+
+  // Find the most recent session linked to this tournament — that's
+  // the active round to finalize.
+  const sessionRows = await tx
+    .select()
+    .from(spellingSessionsTable)
+    .where(
+      and(
+        eq(spellingSessionsTable.parentTournamentToken, tournamentToken),
+        eq(spellingSessionsTable.userId, userId),
+      ),
+    )
+    .orderBy(desc(spellingSessionsTable.startedAt))
+    .limit(1);
+  const activeSession = sessionRows[0];
+  if (!activeSession) {
+    return { kind: "no_session" };
+  }
+
+  let currentRound: number;
+  let roundResult: TournamentRoundResult;
+  let next: ReturnType<typeof applyRoundResult>;
+  let isRecovery = false;
+
+  if (activeSession.finalizedAt !== null) {
+    // Branches 3 + 4: session is finalized.
+    const lastApplied =
+      tournament.rounds[tournament.rounds.length - 1];
+    const matchesLastApplied =
+      lastApplied !== undefined &&
+      lastApplied.sessionToken === activeSession.sessionToken;
+    if (!matchesLastApplied) {
+      // Drift — session was finalized via some other path and the
+      // tournament's rounds[] doesn't account for it. Refuse rather
+      // than guess and corrupt state.
+      return { kind: "inconsistent_state" };
+    }
+    // Legacy recovery — synthesize a "no-op next" so the response
+    // shape matches the normal-flow path.
+    isRecovery = true;
+    currentRound = tournament.currentRound;
+    roundResult = lastApplied;
+    next = {
+      status: tournament.status,
+      currentRound: tournament.currentRound,
+      rounds: tournament.rounds,
+      totalScore: tournament.totalScore,
+      eliminatedAtRound: tournament.eliminatedAtRound,
+      passed: true,
+    };
+  } else if (activeSession.audioKeys.length === 0) {
+    // Branch 2: audio_pending. Don't finalize — just hand the session
+    // back so the post-tx layer can re-prewarm and return it.
+    return { kind: "audio_pending", tournament, session: activeSession };
+  } else {
+    // Branch 1: normal flow — finalize the just-played round, apply
+    // the result, update tournament state.
+    const finalizeRes = await finalizeSpellingSession(
+      userId,
+      activeSession.sessionToken,
+    );
+    if (finalizeRes.kind === "not_found") {
+      return { kind: "session_not_found" };
+    }
+
+    currentRound = tournament.currentRound;
+    roundResult = {
+      round: currentRound,
+      difficulty: getRoundConfig(currentRound).difficulty,
+      sessionToken: activeSession.sessionToken,
+      score: finalizeRes.score ?? 0,
+      wordsCorrect: finalizeRes.wordsCorrect,
+      wordsAttempted: finalizeRes.wordsAttempted,
+      durationSec: finalizeRes.durationSec,
+    };
+
+    next = applyRoundResult(
+      { rounds: tournament.rounds, totalScore: tournament.totalScore },
+      roundResult,
+    );
+
+    await tx
+      .update(spellingTournamentsTable)
+      .set({
+        status: next.status,
+        currentRound: next.currentRound,
+        rounds: next.rounds,
+        totalScore: next.totalScore,
+        eliminatedAtRound: next.eliminatedAtRound,
+        finalizedAt: next.status === "active" ? null : sql`now()`,
+      })
+      .where(
+        eq(spellingTournamentsTable.tournamentToken, tournamentToken),
+      );
+  }
+
+  // ATOMIC NEXT-SESSION INSERT (DB-only). audioKeys left empty — TTS
+  // prewarm runs after the tx commits and writes audioKeys back via
+  // a separate UPDATE. If TTS fails, the session row exists with
+  // empty audio; a future /advance retry hits the audio_pending
+  // branch above and re-prewarms against the same row.
+  let nextSessionData: AdvanceTxResult & { kind: "ok" } extends {
+    nextSessionData: infer D;
+  }
+    ? D
+    : never = null;
+  if (next.status === "active") {
+    const cfg = getRoundConfig(next.currentRound);
+    const pool = SPELLING_WORDS.filter(
+      (w) =>
+        w.ageGroup === (tournament.ageGroup as SpellingAgeGroup) &&
+        w.difficulty === cfg.difficulty,
+    );
+    const words = sample(pool, cfg.wordCount);
+    if (words.length === 0) {
+      return { kind: "no_words_available" };
+    }
+    const sessionToken = crypto.randomUUID();
+    const inserted = await tx
+      .insert(spellingSessionsTable)
+      .values({
+        sessionToken,
+        childId: tournament.childId,
+        userId,
+        ageGroup: tournament.ageGroup as SpellingAgeGroup,
+        mode: "tournament",
+        difficulty: cfg.difficulty,
+        words: words.map((w) => ({
+          id: w.id,
+          word: w.word,
+          ageGroup: w.ageGroup,
+          difficulty: w.difficulty,
+          syllables: w.syllables,
+          chunks: w.chunks,
+          hint: w.hint,
+        })),
+        audioKeys: [],
+        attempts: {},
+        parentTournamentToken: tournamentToken,
+        aiOpponent: null,
+        aiResults: null,
+      })
+      .returning({ startedAt: spellingSessionsTable.startedAt });
+    nextSessionData = {
+      sessionToken,
+      startedAt: inserted[0]?.startedAt ?? new Date(),
+      words,
+      cfg,
+    };
+  }
+
+  return {
+    kind: "ok",
+    tournament,
+    currentRound,
+    roundResult,
+    next,
+    nextSessionData,
+    isRecovery,
+  };
+}
+
 router.post(
   "/spelling/tournaments/:tournamentToken/advance",
   async (req, res): Promise<void> => {
@@ -1518,113 +1776,9 @@ router.post(
     }
     const { tournamentToken } = parsed.data;
 
-    // Race-safety: a double-tap on "Continue" can fire two /advance
-    // requests in flight. Without serialization both could pass the
-    // status === "active" check, both call finalize (fine — finalize is
-    // idempotent), but then both proceed to createSpellingSession for
-    // the next round — leaving an orphan round-session row. Wrap the
-    // whole handler in a transaction and SELECT … FOR UPDATE on the
-    // tournament row so the second caller blocks until the first
-    // commits, then re-reads the now-non-active status and 409s.
-    //
-    // finalizeSpellingSession + createSpellingSession open their own
-    // top-level transactions on a separate pooled connection — they
-    // touch the spelling_sessions row (different row, no lock conflict),
-    // not the tournament row, so they don't deadlock with our outer tx.
-    const txResult = await db.transaction(async (tx) => {
-      const tRows = await tx
-        .select()
-        .from(spellingTournamentsTable)
-        .where(eq(spellingTournamentsTable.tournamentToken, tournamentToken))
-        .for("update")
-        .limit(1);
-      const tournament = tRows[0];
-      if (!tournament || tournament.userId !== userId) {
-        return { kind: "not_found" as const };
-      }
-      if (tournament.status !== "active") {
-        return {
-          kind: "not_active" as const,
-          tournament,
-        };
-      }
-
-      // Find the most recent session linked to this tournament — that's
-      // the active round to finalize.
-      const sessionRows = await tx
-        .select()
-        .from(spellingSessionsTable)
-        .where(
-          and(
-            eq(spellingSessionsTable.parentTournamentToken, tournamentToken),
-            eq(spellingSessionsTable.userId, userId),
-          ),
-        )
-        .orderBy(desc(spellingSessionsTable.startedAt))
-        .limit(1);
-      const activeSession = sessionRows[0];
-      if (!activeSession) {
-        return { kind: "no_session" as const };
-      }
-
-      // Round-in-flight guard. If the most recent session for this
-      // tournament is already FINALIZED but the tournament status is
-      // still "active", a previous /advance call has finalized that
-      // session and updated currentRound++ but not yet created the
-      // next-round session (createSpellingSession runs after the outer
-      // tx commits — TTS prewarm is too slow to hold the lock for).
-      // Without this guard a racing /advance would re-finalize the
-      // already-finalized session (no-op, returns already_finalized),
-      // then mistakenly apply that round's score against the NEW
-      // currentRound and corrupt tournament state. Refuse with 409.
-      if (activeSession.finalizedAt !== null) {
-        return { kind: "round_in_flight" as const };
-      }
-
-      const finalizeRes = await finalizeSpellingSession(
-        userId,
-        activeSession.sessionToken,
-      );
-      if (finalizeRes.kind === "not_found") {
-        return { kind: "session_not_found" as const };
-      }
-
-      const currentRound = tournament.currentRound;
-      const roundResult: TournamentRoundResult = {
-        round: currentRound,
-        difficulty: getRoundConfig(currentRound).difficulty,
-        sessionToken: activeSession.sessionToken,
-        score: finalizeRes.score ?? 0,
-        wordsCorrect: finalizeRes.wordsCorrect,
-        wordsAttempted: finalizeRes.wordsAttempted,
-        durationSec: finalizeRes.durationSec,
-      };
-
-      const next = applyRoundResult(
-        { rounds: tournament.rounds, totalScore: tournament.totalScore },
-        roundResult,
-      );
-
-      await tx
-        .update(spellingTournamentsTable)
-        .set({
-          status: next.status,
-          currentRound: next.currentRound,
-          rounds: next.rounds,
-          totalScore: next.totalScore,
-          eliminatedAtRound: next.eliminatedAtRound,
-          finalizedAt: next.status === "active" ? null : sql`now()`,
-        })
-        .where(eq(spellingTournamentsTable.tournamentToken, tournamentToken));
-
-      return {
-        kind: "ok" as const,
-        tournament,
-        currentRound,
-        roundResult,
-        next,
-      };
-    });
+    const txResult = await db.transaction((tx) =>
+      advanceTournamentTxImpl(tx, { tournamentToken, userId }),
+    );
 
     if (txResult.kind === "not_found") {
       res.status(404).json({ error: "tournament_not_found" });
@@ -1641,17 +1795,125 @@ router.post(
       res.status(500).json({ error: "no_active_round_session" });
       return;
     }
-    if (txResult.kind === "round_in_flight") {
-      res.status(409).json({ error: "round_in_flight" });
+    if (txResult.kind === "inconsistent_state") {
+      // Latest session is finalized but doesn't match
+      // tournament.rounds[last].sessionToken — drift between
+      // session state and tournament state. Refuse rather than guess.
+      logger.error(
+        {
+          evt: "spelling.tournament_inconsistent_state",
+          userId,
+          tournamentToken,
+        },
+        "tournament/advance: latest session finalized but does not match rounds[last]",
+      );
+      res.status(500).json({ error: "inconsistent_state" });
+      return;
+    }
+    if (txResult.kind === "no_words_available") {
+      res.status(502).json({ error: "no_words_available" });
       return;
     }
     if (txResult.kind === "session_not_found") {
       res.status(404).json({ error: "session_not_found" });
       return;
     }
-    const { tournament, currentRound, roundResult, next } = txResult;
 
-    // Start the next round's session if we advanced.
+    // Audio-pending recovery. The latest session for this tournament
+    // is unfinalized with empty audioKeys — a previous /advance
+    // committed the row but post-tx TTS prewarm failed. Re-prewarm
+    // the SAME session and return it. Crucially, do NOT finalize the
+    // session here — it has no playable audio so no real attempts
+    // could have happened, and finalizing would erroneously apply a
+    // 0-attempt round and eliminate the kid.
+    if (txResult.kind === "audio_pending") {
+      const session = txResult.session;
+      const audioKeys: string[] = [];
+      try {
+        for (const w of session.words) {
+          const r = await synthesize(w.word, {});
+          audioKeys.push(r.cacheKey);
+        }
+        await db
+          .update(spellingSessionsTable)
+          .set({ audioKeys })
+          .where(
+            eq(
+              spellingSessionsTable.sessionToken,
+              session.sessionToken,
+            ),
+          );
+      } catch (err) {
+        const code = err instanceof Error ? err.message : "tts_failed";
+        logger.error(
+          {
+            evt: "spelling.tournament_audio_pending_reprewarm_failed",
+            userId,
+            tournamentToken,
+            sessionToken: session.sessionToken,
+            code,
+          },
+          "tournament audio-pending re-prewarm failed; client may retry",
+        );
+        res.status(502).json({ error: "audio_unavailable" });
+        return;
+      }
+
+      const cfg = getRoundConfig(txResult.tournament.currentRound);
+      const lastRound =
+        txResult.tournament.rounds[
+          txResult.tournament.rounds.length - 1
+        ] ?? null;
+      const refreshed = await db
+        .select()
+        .from(spellingTournamentsTable)
+        .where(eq(spellingTournamentsTable.tournamentToken, tournamentToken))
+        .limit(1);
+
+      logger.info(
+        {
+          evt: "spelling.tournament_advance_audio_recovery",
+          userId,
+          tournamentToken,
+          sessionToken: session.sessionToken,
+          round: txResult.tournament.currentRound,
+        },
+        "tournament audio-pending recovery: re-prewarmed existing session",
+      );
+
+      res.json({
+        ok: true,
+        tournament: refreshed[0]
+          ? serializeTournament(refreshed[0])
+          : serializeTournament(txResult.tournament),
+        lastRound: lastRound ? { ...lastRound, passed: lastRound.passed } : null,
+        nextSession: {
+          sessionToken: session.sessionToken,
+          mode: "tournament" as const,
+          ageGroup: txResult.tournament.ageGroup,
+          difficulty: cfg.difficulty,
+          round: txResult.tournament.currentRound,
+          passThreshold: cfg.passThreshold,
+          startedAt: session.startedAt,
+          words: session.words.map((w, i) =>
+            safeWordFor(session.sessionToken, i, w as SpellingWord),
+          ),
+        },
+      });
+      return;
+    }
+
+    // kind === "ok" — normal flow OR legacy recovery (both produce a
+    // nextSessionData when tournament is still active and need
+    // post-commit TTS prewarm).
+    const { tournament, currentRound, roundResult, next, nextSessionData, isRecovery } =
+      txResult;
+
+    // TTS prewarm (POST-COMMIT, best-effort). The session row is
+    // already committed inside the tx; if prewarm fails we return 502
+    // but the tournament is consistent — a retry of /advance hits the
+    // audio_pending branch above and re-attempts prewarm against the
+    // same session row.
     let nextSession: {
       sessionToken: string;
       mode: "tournament";
@@ -1662,31 +1924,48 @@ router.post(
       startedAt: Date;
       words: ReturnType<typeof safeWordFor>[];
     } | null = null;
-    if (next.status === "active") {
-      const cfg = getRoundConfig(next.currentRound);
-      const sessRes = await createSpellingSession({
-        userId,
-        childId: tournament.childId,
-        ageGroup: tournament.ageGroup as SpellingAgeGroup,
-        mode: "tournament",
-        difficulty: cfg.difficulty,
-        count: cfg.wordCount,
-        source: "curated",
-        parentTournamentToken: tournamentToken,
-      });
-      if (!sessRes.ok) {
-        res.status(502).json({ error: sessRes.error });
+    if (nextSessionData) {
+      const audioKeys: string[] = [];
+      try {
+        for (const w of nextSessionData.words) {
+          const r = await synthesize(w.word, {});
+          audioKeys.push(r.cacheKey);
+        }
+        await db
+          .update(spellingSessionsTable)
+          .set({ audioKeys })
+          .where(
+            eq(
+              spellingSessionsTable.sessionToken,
+              nextSessionData.sessionToken,
+            ),
+          );
+      } catch (err) {
+        const code = err instanceof Error ? err.message : "tts_failed";
+        logger.error(
+          {
+            evt: "spelling.tournament_prewarm_failed",
+            userId,
+            tournamentToken,
+            sessionToken: nextSessionData.sessionToken,
+            code,
+          },
+          "tournament next-round TTS prewarm failed; session row exists, retry will re-prewarm",
+        );
+        res.status(502).json({ error: "audio_unavailable" });
         return;
       }
       nextSession = {
-        sessionToken: sessRes.sessionToken,
+        sessionToken: nextSessionData.sessionToken,
         mode: "tournament",
         ageGroup: tournament.ageGroup,
-        difficulty: cfg.difficulty,
+        difficulty: nextSessionData.cfg.difficulty,
         round: next.currentRound,
-        passThreshold: cfg.passThreshold,
-        startedAt: sessRes.startedAt,
-        words: sessRes.safeWords,
+        passThreshold: nextSessionData.cfg.passThreshold,
+        startedAt: nextSessionData.startedAt,
+        words: nextSessionData.words.map((w, i) =>
+          safeWordFor(nextSessionData.sessionToken, i, w),
+        ),
       };
     }
 
@@ -1706,6 +1985,7 @@ router.post(
         passed: next.passed,
         roundScore: roundResult.score,
         totalScore: next.totalScore,
+        recovery: isRecovery,
       },
       "tournament round advanced",
     );

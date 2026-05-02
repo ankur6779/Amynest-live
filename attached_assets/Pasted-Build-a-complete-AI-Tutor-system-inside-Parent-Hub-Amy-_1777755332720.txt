@@ -1,0 +1,121 @@
+Build a complete AI Tutor system inside Parent Hub (Amy AI).
+
+GOAL:
+Create a personalized AI teacher that teaches, quizzes, and adapts for kids (age 2–10+).
+
+--------------------------------------------------
+1. SYSTEM ARCHITECTURE
+--------------------------------------------------
+
+Frontend (Mobile / WebView)
+Backend (Node.js / Replit)
+OpenAI (brain)
+ElevenLabs (voice optional)
+
+Flow:
+User → UI → Backend → OpenAI → Response → UI
+
+--------------------------------------------------
+2. CORE FEATURES
+--------------------------------------------------
+
+- Chat-based AI tutor
+- Explain concepts
+- Generate quizzes
+- Give feedback
+- Track progress
+
+--------------------------------------------------
+3. UI SCREENS
+--------------------------------------------------
+
+A. AI Tutor Home
+- Avatar (Amy AI)
+- Start Learning button
+- Suggested topics
+
+B. Chat Screen
+- Chat bubbles
+- Voice button
+- Quick actions
+
+C. Learning Mode
+- Step-by-step teaching
+- Images + audio
+
+D. Quiz Mode
+- MCQ / Tap / Drag
+
+E. Result Screen
+- Score + feedback
+
+--------------------------------------------------
+4. USER CONTEXT (VERY IMPORTANT)
+--------------------------------------------------
+
+Store:
+
+- Age
+- Current subject
+- Weak topics
+- Performance
+
+Send this to AI in every request.
+
+--------------------------------------------------
+5. AI MODES
+--------------------------------------------------
+
+1. Teach Mode
+2. Practice Mode
+3. Quiz Mode
+4. Doubt Mode
+
+--------------------------------------------------
+6. PERSONALIZATION LOGIC
+--------------------------------------------------
+
+If accuracy < 60:
+→ easier content
+
+If accuracy > 80:
+→ harder content
+
+--------------------------------------------------
+7. PROMPT ENGINE
+--------------------------------------------------
+
+Always send structured prompt:
+
+- Age
+- Topic
+- Level
+- Mode
+
+--------------------------------------------------
+8. RESPONSE FORMAT (STRICT)
+--------------------------------------------------
+
+AI must return JSON:
+
+{
+  "type": "teach",
+  "content": "explanation",
+  "examples": [],
+  "question": "",
+  "options": [],
+  "answer": ""
+}
+
+--------------------------------------------------
+9. SAFETY
+--------------------------------------------------
+
+- Child-friendly language
+- No complex terms for small kids
+
+--------------------------------------------------
+DELIVERABLE:
+- Full AI Tutor system
+- Interactive learning
+- Adaptive behavior
