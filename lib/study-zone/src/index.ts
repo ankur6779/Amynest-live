@@ -1,4 +1,5 @@
 export * from "./types";
+export * from "./engagement";
 export { PLAY_CATEGORIES } from "./content/play";
 export { BASIC_SUBJECTS } from "./content/basic";
 export { ADVANCED_SUBJECTS } from "./content/advanced";

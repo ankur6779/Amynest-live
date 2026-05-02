@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import {
@@ -11,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 import {
   GraduationCap, ArrowLeft, Volume2, VolumeX, CheckCircle2, XCircle,
   Sparkles, RotateCcw, ChevronRight, Trophy,
@@ -20,6 +22,9 @@ import {
   loadProgress, markPlayItem, markTopicResult,
   categoryPercent, subjectPercent, type StudyProgress,
 } from "@/lib/study-progress";
+import {
+  EngagementStrip, XpPopup, ConfettiBurst, useStudyFx,
+} from "@/components/study-engagement";
 
 type Child = {
   id: number;
@@ -122,10 +127,13 @@ export default function StudyPage() {
             : { kind: "study-home", childId: c.id, mode: m });
         }} />
       ) : view.kind === "play-home" ? (
-        <PlayHome
-          progress={progress}
-          onOpen={(catId) => setView({ kind: "play-cat", childId: view.childId, categoryId: catId })}
-        />
+        <>
+          {progress && <EngagementStrip engagement={progress.engagement} />}
+          <PlayHome
+            progress={progress}
+            onOpen={(catId) => setView({ kind: "play-cat", childId: view.childId, categoryId: catId })}
+          />
+        </>
       ) : view.kind === "play-cat" ? (
         <PlayCategoryView
           childId={view.childId}
@@ -134,11 +142,14 @@ export default function StudyPage() {
           onItemDone={(p) => setProgress(p)}
         />
       ) : view.kind === "study-home" ? (
-        <StudyHome
-          mode={view.mode}
-          progress={progress}
-          onOpen={(subjId) => setView({ kind: "study-subject", childId: view.childId, mode: view.mode, subjectId: subjId })}
-        />
+        <>
+          {progress && <EngagementStrip engagement={progress.engagement} />}
+          <StudyHome
+            mode={view.mode}
+            progress={progress}
+            onOpen={(subjId) => setView({ kind: "study-subject", childId: view.childId, mode: view.mode, subjectId: subjId })}
+          />
+        </>
       ) : view.kind === "study-subject" ? (
         <SubjectTopicList
           mode={view.mode}
@@ -233,15 +244,35 @@ function PlayCategoryView({
   onItemDone: (p: StudyProgress) => void;
 }) {
   const cat = PLAY_CATEGORIES.find((c) => c.id === (categoryId as PlayCategory["id"]));
+  const { speak } = useAmyVoice();
+  const fx = useStudyFx();
+  const { toast } = useToast();
+  const [poppedId, setPoppedId] = useState<string | null>(null);
+  const [xpTrigger, setXpTrigger] = useState(0);
+  const [xpAmount, setXpAmount] = useState(0);
   if (!cat) return <p className="text-sm text-muted-foreground">Category not found.</p>;
   const completed = new Set(progress?.play[cat.id] ?? []);
-  const { speak } = useAmyVoice();
   const handleTap = (item: PlayItem) => {
     speak(item.speak);
-    onItemDone(markPlayItem(childId, cat.id, item.id));
+    fx.play("tap");
+    setPoppedId(item.id);
+    window.setTimeout(() => setPoppedId((v) => (v === item.id ? null : v)), 350);
+    const { progress: nextP, engagement: result } = markPlayItem(childId, cat.id, item.id);
+    onItemDone(nextP);
+    if (result.xpDelta > 0) {
+      setXpAmount(result.xpDelta);
+      setXpTrigger((t) => t + 1);
+    }
+    if (result.streakIncreased && result.next.streak > 1) {
+      toast({ title: `🔥 ${result.next.streak}-day streak!`, description: "Keep it going tomorrow." });
+    }
+    if (result.newBadges.length > 0) {
+      toast({ title: "🏆 New badge unlocked!", description: `+${result.newBadges.length} reward${result.newBadges.length > 1 ? "s" : ""}.` });
+    }
   };
   return (
-    <div>
+    <div className="relative">
+      <XpPopup amount={xpAmount} trigger={xpTrigger} />
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-quicksand text-xl font-bold text-foreground flex items-center gap-2">
           <span className="text-2xl">{cat.emoji}</span> {cat.title}
@@ -251,19 +282,28 @@ function PlayCategoryView({
         {cat.items.map((item) => {
           const done = completed.has(item.id);
           const isRhyme = cat.id === "rhymes";
+          const popping = poppedId === item.id;
           return (
-            <button
+            <motion.button
               key={item.id}
               onClick={() => handleTap(item)}
+              animate={popping ? { scale: [1, 1.08, 1], boxShadow: ["0 0 0 0 rgba(99,102,241,0)", "0 0 0 10px rgba(99,102,241,0.18)", "0 0 0 0 rgba(99,102,241,0)"] } : { scale: 1 }}
+              transition={{ duration: 0.4 }}
               className={[
-                "group relative rounded-2xl border-2 p-4 text-left transition-all",
+                "group relative rounded-2xl border-2 p-4 text-left transition-colors",
                 "bg-white dark:bg-zinc-900",
                 done ? "border-green-400 dark:border-green-500/60" : "border-indigo-200 dark:border-indigo-500/30",
-                "hover:scale-[1.02] active:scale-[0.98] hover:shadow-md",
+                "hover:shadow-md active:shadow-inner",
               ].join(" ")}
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="text-4xl leading-none">{item.emoji ?? "·"}</div>
+                <motion.div
+                  animate={popping ? { scale: [1, 1.4, 1], rotate: [0, -8, 8, 0] } : { scale: 1, rotate: 0 }}
+                  transition={{ duration: 0.45 }}
+                  className="text-4xl leading-none"
+                >
+                  {item.emoji ?? "·"}
+                </motion.div>
                 {done && <CheckCircle2 className="h-4 w-4 text-green-600" />}
               </div>
               <div className="mt-2 font-quicksand font-bold text-foreground text-lg">{item.label}</div>
@@ -277,7 +317,7 @@ function PlayCategoryView({
               <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-300 font-medium">
                 <Volume2 className="h-3 w-3" /> Tap to hear
               </div>
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -373,20 +413,57 @@ function TopicDetail({
   const [practiceOpen, setPracticeOpen] = useState(false);
   const [picks, setPicks] = useState<number[]>(() => topic ? Array(topic.questions.length).fill(-1) : []);
   const [submitted, setSubmitted] = useState(false);
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const [xpTrigger, setXpTrigger] = useState(0);
+  const [xpAmount, setXpAmount] = useState(0);
+  const [shakeWrong, setShakeWrong] = useState(0);
+  const fx = useStudyFx();
+  const { toast } = useToast();
   const { speak: amySpeak, stop: amyStop, speaking: amySpeaking, loading: amyLoading } = useAmyVoice();
   if (!subj || !topic) return <p className="text-sm text-muted-foreground">Topic not found.</p>;
 
   const score = topic.questions.reduce((acc, q, i) => acc + (picks[i] === q.answer ? 1 : 0), 0);
   const total = topic.questions.length;
+  const isPerfect = submitted && score === total && total > 0;
 
   const submit = () => {
     setSubmitted(true);
-    onScored(markTopicResult(childId, mode, subj.id, topic.id, score, total));
+    const { progress: nextP, engagement: result } = markTopicResult(
+      childId, mode, subj.id, topic.id, score, total,
+    );
+    onScored(nextP);
+
+    const perfect = score === total && total > 0;
+    const passed = score >= Math.ceil(total * 0.6);
+    if (perfect) {
+      fx.play("perfect");
+      setConfettiTrigger((t) => t + 1);
+    } else if (passed) {
+      fx.play("correct");
+    } else {
+      fx.play("wrong");
+      setShakeWrong((s) => s + 1);
+    }
+    if (result.xpDelta > 0) {
+      setXpAmount(result.xpDelta);
+      setXpTrigger((t) => t + 1);
+    }
+    if (result.streakIncreased && result.next.streak > 1) {
+      toast({ title: `🔥 ${result.next.streak}-day streak!`, description: "Awesome consistency." });
+    }
+    if (result.goalReached) {
+      toast({ title: "🎯 Daily goal complete!", description: "You crushed today's study target." });
+    }
+    if (result.newBadges.some((b) => b.startsWith("perfect-"))) {
+      toast({ title: "🏆 Perfect score!", description: `${topic.title} cleared with no mistakes.` });
+    }
   };
   const reset = () => { setPicks(Array(total).fill(-1)); setSubmitted(false); };
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4 relative">
+      <XpPopup amount={xpAmount} trigger={xpTrigger} />
+      <ConfettiBurst trigger={confettiTrigger} />
       <div>
         <h2 className="font-quicksand text-2xl font-bold text-foreground">{topic.title}</h2>
         <p className="text-xs text-muted-foreground">{subj.emoji} {subj.title}</p>
@@ -451,7 +528,12 @@ function TopicDetail({
             )}
           </div>
           {practiceOpen && (
-            <div className="grid gap-4">
+            <motion.div
+              key={shakeWrong}
+              animate={shakeWrong > 0 ? { x: [0, -8, 8, -6, 6, 0] } : { x: 0 }}
+              transition={{ duration: 0.4 }}
+              className="grid gap-4"
+            >
               {topic.questions.map((q, qi) => (
                 <div key={qi} className="rounded-xl border border-border/50 p-3">
                   <div className="font-medium text-foreground mb-2">{qi + 1}. {q.q}</div>
@@ -497,16 +579,22 @@ function TopicDetail({
                   </Button>
                 ) : (
                   <>
-                    <div className="font-quicksand font-bold text-foreground">
+                    <motion.div
+                      key={`score-${score}`}
+                      initial={{ scale: 0.6, opacity: 0 }}
+                      animate={{ scale: [0.6, 1.15, 1], opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className={`font-quicksand font-extrabold text-lg ${isPerfect ? "text-amber-500 dark:text-amber-300" : "text-foreground"}`}
+                    >
                       You got {score} / {total} {score === total ? "🎉" : score >= Math.ceil(total * 0.6) ? "👍" : "💪"}
-                    </div>
+                    </motion.div>
                     <Button variant="outline" className="rounded-full" onClick={reset}>
                       <RotateCcw className="h-4 w-4 mr-1" /> Try again
                     </Button>
                   </>
                 )}
               </div>
-            </div>
+            </motion.div>
           )}
         </CardContent>
       </Card>
