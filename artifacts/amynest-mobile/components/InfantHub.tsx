@@ -12,8 +12,10 @@ import {
   pickLang,
 } from "@workspace/infant-hub";
 import { brand, brandAlpha, palette } from "@/constants/colors";
+import CryInsight from "@/components/CryInsight";
 
 type Props = {
+  childId: number;
   childName: string;
   ageMonths: number;
 };
@@ -41,7 +43,7 @@ function formatAgeLabel(ageMonths: number): string {
   return `${years}y ${months}m`;
 }
 
-export default function InfantHub({ childName, ageMonths }: Props) {
+export default function InfantHub({ childId, childName, ageMonths }: Props) {
   const { t, i18n } = useTranslation();
   const lang = langOf(i18n.language);
   const [active, setActive] = useState<InfantCategory>("sleep");
@@ -160,6 +162,18 @@ export default function InfantHub({ childName, ageMonths }: Props) {
           </View>
         )}
 
+        {/* ── Cry Insight (Beta) — separate sub-card ─────────────────────────── */}
+        <View style={styles.cryWrap}>
+          <View style={styles.cryHead}>
+            <MaterialCommunityIcons name="ear-hearing" size={16} color={brand.purple400} />
+            <Text style={styles.cryTitle}>Cry Insight</Text>
+            <View style={styles.cryBadge}>
+              <Text style={styles.cryBadgeTxt}>BETA</Text>
+            </View>
+          </View>
+          <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />
+        </View>
+
         {/* Safety footer */}
         <View style={styles.disclaimer}>
           <Ionicons name="shield-checkmark-outline" size={12} color="rgba(255,255,255,0.5)" />
@@ -263,4 +277,22 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(255,255,255,0.08)",
   },
   disclaimerTxt: { color: "rgba(255,255,255,0.5)", fontSize: 10.5, lineHeight: 14, flex: 1 },
+
+  cryWrap: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.08)",
+  },
+  cryHead: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
+  cryTitle: { color: brand.violet200, fontWeight: "800", fontSize: 13 },
+  cryBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(251,191,36,0.20)",
+    borderWidth: 1,
+    borderColor: "rgba(251,191,36,0.45)",
+  },
+  cryBadgeTxt: { color: "#fde68a", fontSize: 9, fontWeight: "800", letterSpacing: 0.6 }, // audit-ok: amber-200 beta badge
 });

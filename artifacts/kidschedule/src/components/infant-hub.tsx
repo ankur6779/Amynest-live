@@ -8,6 +8,7 @@ import {
   Flame, MessageCircle, BedDouble, ListChecks, Music2,
 } from "lucide-react";
 import { BabyCuesEngine, CommunicationCoaching } from "@/components/infant-baby-cues";
+import { CryInsight } from "@/components/cry-insight";
 import {
   WakeWindowSystem, SleepIssueDetector, RoutineBuilder, SleepWeeklyInsights,
 } from "@/components/infant-sleep-module";
@@ -25,6 +26,7 @@ import { formatAge } from "@/lib/age-groups";
 import { useToast } from "@/hooks/use-toast";
 
 interface InfantHubProps {
+  childId: number;
   childName: string;
   ageMonths: number;
 }
@@ -362,7 +364,7 @@ function WeeklyInsight({ childName, ageMonths }: { childName: string; ageMonths:
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export function InfantHub({ childName, ageMonths }: InfantHubProps) {
+export function InfantHub({ childId, childName, ageMonths }: InfantHubProps) {
   const { t, i18n } = useTranslation();
   const lang = langOf(i18n.language);
   const { toast } = useToast();
@@ -572,6 +574,11 @@ export function InfantHub({ childName, ageMonths }: InfantHubProps) {
                 {/* ── 4. White Noise & Lullabies ───────────────────────────────────────── */}
                 <IHSection icon={<Music2 className="h-4 w-4" />} title="White Noise & Lullabies">
                   <WhiteNoiseLullaby ageMonths={ageMonths} />
+                </IHSection>
+
+                {/* ── 4b. Cry Insight (Beta) ─────────────────────────────────────────── */}
+                <IHSection icon={<MessageCircle className="h-4 w-4" />} title="Cry Insight" badge="Beta">
+                  <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 5. Feeding Reference ─────────────────────────────────────────────── */}
