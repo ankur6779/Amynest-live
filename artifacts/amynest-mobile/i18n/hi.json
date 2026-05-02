@@ -367,7 +367,11 @@
       "feeding": "आहार",
       "development": "विकास",
       "behavior": "व्यवहार",
-      "daily_care": "रोज़ाना देखभाल"
+      "daily_care": "रोज़ाना देखभाल",
+      "health": "स्वास्थ्य",
+      "milestones": "विकास के मील",
+      "cues": "संकेत",
+      "sounds": "ध्वनि"
     },
     "amy_suggests": "Amy AI की सलाह",
     "helpful": "मददगार",
@@ -378,7 +382,71 @@
     "no_tips": "इस उम्र के लिए अभी कोई सलाह नहीं।",
     "safe_disclaimer": "केवल मार्गदर्शन — चिकित्सा सलाह नहीं। चिंता हो तो शिशु डॉक्टर से मिलें।",
     "based_on": "पीडियाट्रिक दिशानिर्देशों पर आधारित",
-    "select_child": "इनके लिए सलाह"
+    "select_child": "इनके लिए सलाह",
+    "common": {
+      "all": "सभी",
+      "months_short": "माह"
+    },
+    "health": {
+      "upcoming_title": "आने वाले टीके",
+      "no_upcoming": "अगले 2 महीनों में कोई नहीं — बहुत बढ़िया!",
+      "completed_one": "{{count}} टीका मील का पत्थर पूरा",
+      "completed_other": "{{count}} टीके के मील के पत्थर पूरे",
+      "source_note": "स्रोत: भारत NIS (UIP) + IAP अनुशंसित अनुसूची। कृपया अपने बाल रोग विशेषज्ञ से पुष्टि करें।",
+      "common_issues_title": "इस उम्र में आम समस्याएँ",
+      "no_issues": "इस आयु बैंड के लिए कोई आम समस्या चिह्नित नहीं।"
+    },
+    "milestones": {
+      "categories": {
+        "motor": "गति",
+        "cognitive": "बौद्धिक",
+        "social": "सामाजिक",
+        "language": "भाषा"
+      },
+      "empty": "वर्तमान आयु विंडो में इस श्रेणी में कोई मील का पत्थर नहीं।",
+      "why_label": "क्यों ज़रूरी",
+      "try_label": "🎯 यह आज़माएँ"
+    },
+    "cues": {
+      "categories": {
+        "hunger": "भूख",
+        "sleep": "नींद",
+        "overstim": "अधिक उत्तेजना",
+        "discomfort": "तकलीफ़"
+      },
+      "empty": "इस आयु विंडो में इस श्रेणी के संकेत नहीं।"
+    },
+    "sounds": {
+      "recommended_label": "इस उम्र के लिए सुझाव",
+      "other_label": "अन्य व्हाइट-नॉइज़ विकल्प",
+      "lullaby_label": "लोरी की शुरुआत",
+      "play": "चलाएँ",
+      "pause": "रोकें",
+      "stop_all": "सब बंद",
+      "sing_along_hint": "धुन सुनने के लिए प्ले दबाएँ — बोल साथ गाएँ"
+    },
+    "sleep_helpers": {
+      "title": "नींद के सहायक",
+      "wake_window_title": "जागने की विंडो · {{range}}",
+      "stat_wake_window": "जागने की विंडो",
+      "stat_naps_per_day": "रोज़ झपकियाँ",
+      "stat_avg_nap": "औसत झपकी",
+      "stat_day_sleep": "दिन की नींद",
+      "stat_window_value": "{{min}}–{{max}} मिनट",
+      "stat_avg_value": "{{min}} मिनट",
+      "stat_day_value": "{{hrs}}घ",
+      "night_target": "रात की नींद लक्ष्य: {{hrs}} घंटे",
+      "watch_for": "ध्यान दें",
+      "no_issues": "इस बैंड के लिए नींद की कोई आम समस्या चिह्नित नहीं।",
+      "routine_title": "रूटीन प्रीव्यू · सुबह 7:00 शुरू",
+      "routine_intro": "जागने की विंडो के अनुसार बना मॉडल दिन — बच्चे की ज़रूरत से ढालें।"
+    },
+    "feeding_ref": {
+      "title": "आहार संदर्भ",
+      "type": "प्रकार",
+      "frequency": "आवृत्ति",
+      "tip_label": "👶 टिप"
+    }
   },
   "alerts": {
     "signup": {

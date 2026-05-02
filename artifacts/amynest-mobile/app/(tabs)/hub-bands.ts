@@ -59,7 +59,9 @@ export const HUB_CONTENT_AGE_BANDS: Record<string, readonly number[]> = {
   "kids-control-center": [3, 4, 5, 6],
   meals:                 [1, 2, 3, 4, 5, 6],
   worksheets:            [1, 2, 3, 4, 5],
-  facts:                 [2, 3, 4, 5, 6],
+  // facts now also surfaces to the InfantHub band (0–2y) so the AmazingFacts
+  // tile is reachable for the 0–24m window — see task #196 parity work.
+  facts:                 [0, 1, 2, 3, 4, 5, 6],
 };
 
 // Per-tile age-month bounds, mirroring the totalAgeMonths gates in the web

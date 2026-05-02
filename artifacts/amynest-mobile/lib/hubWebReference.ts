@@ -88,7 +88,10 @@ export const MOBILE_ONLY_EXTRAS: ReadonlySet<string> = new Set([
   // PrintableWorksheets — distinct mobile experience kept alongside the
   // newly-ported "fun-sheets" web tile to preserve existing user flows.
   "worksheets",
-  // Amazing Facts mini-card.
+  // Amazing Facts mini-card — mobile-only standalone hub tile. Task #196
+  // extended the band coverage in `hub-bands.ts` so 0–24m children also see
+  // it, but it remains its own tile rather than being nested inside
+  // InfantHub.
   "facts",
   // AI Meal Suggestions mini-card (web exposes this through the Activities
   // and meal generator surfaces instead).
@@ -97,6 +100,34 @@ export const MOBILE_ONLY_EXTRAS: ReadonlySet<string> = new Set([
   // nutrition into the Activities tile).
   "nutrition",
 ]);
+
+/**
+ * Sub-content surfaces rendered INSIDE the mobile InfantHub featured card
+ * (task #196). These are not standalone tiles, so they have no entry in
+ * `WEB_HUB_TILES` / `MOBILE_ONLY_EXTRAS`. The mapping below documents the
+ * web component each mobile section mirrors so the dev overlay can show a
+ * "what's inside InfantHub" parity readout without false positives.
+ */
+export const INFANT_HUB_PARITY_SECTIONS: readonly {
+  id: string;
+  mobileComponent: string;
+  webSource: string;
+}[] = [
+  { id: "infant-health",        mobileComponent: "components/infant/InfantHealthTab.tsx",
+    webSource: "src/components/infant-hub.tsx → VACCINATIONS + COMMON_ISSUES" },
+  { id: "infant-milestones",    mobileComponent: "components/infant/InfantMilestonesTab.tsx",
+    webSource: "src/components/infant-milestones.tsx → MILESTONES" },
+  { id: "infant-cues",          mobileComponent: "components/infant/InfantCuesTab.tsx",
+    webSource: "src/components/infant-baby-cues.tsx → CUES" },
+  { id: "infant-sounds",        mobileComponent: "components/infant/InfantSoundsTab.tsx",
+    webSource: "src/components/infant-sounds.tsx → NOISE_TYPES + AGE_TIPS" },
+  { id: "infant-sleep-helpers", mobileComponent: "components/infant/InfantSleepHelpers.tsx",
+    webSource: "src/components/infant-sleep-module.tsx → getWakeSpec + detectIssues + generateRoutine" },
+  { id: "infant-feeding-ref",   mobileComponent: "components/infant/InfantFeedingReference.tsx",
+    webSource: "src/components/infant-hub.tsx → getFeedingGuide" },
+  { id: "infant-facts",         mobileComponent: "components/AmazingFacts.tsx",
+    webSource: "src/pages/parenting-hub.tsx (always-current) — extended infant group ≤24m" },
+];
 
 const WEB_BAND_LABELS: readonly WebTileBand[] = [
   "0-2", "2-4", "4-6", "6-8", "8-10", "10-12", "12-15",
