@@ -1,0 +1,249 @@
+Create Spelling Mastery tournament inside Spelling Mastery tiles
+
+GOAL:
+Prepare kids for real spelling competitions using speed, accuracy, pressure, and progression.
+
+--------------------------------------------------
+1. CORE MODES (ADD TABS)
+--------------------------------------------------
+1. Practice Mode
+2. Challenge Mode
+3. Battle Mode (1v1 or AI)
+4. Tournament Mode
+5. Parent Quiz Mode
+
+--------------------------------------------------
+2. PRACTICE MODE (SMART LEARNING)
+--------------------------------------------------
+- Phonics breakdown (c-a-t)
+- Syllable highlight
+- Guided learning
+
+--------------------------------------------------
+3. CHALLENGE MODE (COMPETITION SIMULATION)
+--------------------------------------------------
+- Timer per word (5–10 sec)
+- No hints
+- Audio only
+- Instant scoring
+
+--------------------------------------------------
+4. BATTLE MODE (🔥 GAME CHANGER)
+--------------------------------------------------
+- Child vs AI / another player
+- Turn-based spelling
+- Winner = higher score
+
+--------------------------------------------------
+5. TOURNAMENT MODE
+--------------------------------------------------
+- Levels:
+   Round 1 → Easy
+   Round 2 → Medium
+   Round 3 → Hard
+- Elimination system
+
+--------------------------------------------------
+6. WORD PRESENTATION UI
+--------------------------------------------------
+- Dark premium background
+- Neon ring glow (match your theme)
+- Center text:
+   “Spell this word”
+- Audio plays automatically
+
+--------------------------------------------------
+7. INPUT SYSTEM
+--------------------------------------------------
+Options:
+- Keyboard typing
+- Drag letter tiles (for younger kids)
+
+--------------------------------------------------
+8. SCORING SYSTEM (IMPORTANT)
+--------------------------------------------------
+
+Score = Accuracy + Speed Bonus
+
+Example:
+- Correct = +10
+- Fast (<3 sec) = +5 bonus
+- Wrong = 0
+
+Streak bonus:
+- 3 correct → +5
+- 5 correct → +10
+
+--------------------------------------------------
+9. FEEDBACK SYSTEM
+--------------------------------------------------
+- Correct → green flash + confetti
+- Wrong → shake + show correct spelling
+
+--------------------------------------------------
+10. LEADERBOARD (ADVANCED)
+--------------------------------------------------
+- Daily leaderboard
+- Weekly ranking
+- Parent dashboard view
+
+--------------------------------------------------
+11. AI WORD GENERATION
+--------------------------------------------------
+- Increase difficulty dynamically
+- Avoid repetition
+- Add competition-level words
+
+--------------------------------------------------
+12. PERFORMANCE TRACKING
+--------------------------------------------------
+Show:
+- Accuracy %
+- Avg response time
+- Weak words
+
+--------------------------------------------------
+13. SOUND DESIGN
+--------------------------------------------------
+- Countdown beep
+- Success sound
+- Fail sound
+
+--------------------------------------------------
+14. UI STYLE (VERY IMPORTANT)
+--------------------------------------------------
+- Dark theme
+- Neon ring glow
+- Minimal UI
+- Focus on center
+
+--------------------------------------------------
+15. REWARD SYSTEM
+--------------------------------------------------
+- Badges:
+   “Speed Master”
+   “Spelling Champion”
+- Unlock next level
+
+--------------------------------------------------
+DELIVERABLE:
+- Competitive spelling system
+- Game-like experience
+- Tournament-ready feature
+
+
+Logic:
+- Correct answers → harder words
+- Mistakes → repeat with variation
+
+--------------------------------------------------
+5. WORD BREAKDOWN SYSTEM
+--------------------------------------------------
+
+- Split into:
+   • Sounds
+   • Syllables
+
+Example:
+“elephant” → el-e-phant
+
+--------------------------------------------------
+6. AUDIO SYSTEM
+--------------------------------------------------
+
+- Clear pronunciation
+- Repeat button
+- Slow mode for beginners
+
+--------------------------------------------------
+7. INTERACTIVE GAMES
+--------------------------------------------------
+
+- Missing letter (_at → cat)
+- Jumbled letters
+- Sound match
+
+--------------------------------------------------
+8. COMPETITION MODE (UNIQUE)
+--------------------------------------------------
+
+- No hints
+- Timer enabled
+- Score system
+
+Show:
+- Accuracy %
+- Speed
+
+--------------------------------------------------
+9. REWARD SYSTEM
+--------------------------------------------------
+
+- Stars ⭐
+- Level unlock
+- “Spelling Master” badge
+
+--------------------------------------------------
+10. PARENT MODE
+--------------------------------------------------
+
+- “Ask your child” feature
+- Show list of words
+- Parent reads → child answers
+
+--------------------------------------------------
+11. AI WORD GENERATION (OPTIONAL)
+--------------------------------------------------
+
+Use OpenAI to:
+- Generate age-based words
+- Increase difficulty dynamically
+
+--------------------------------------------------
+12. UX REQUIREMENTS
+--------------------------------------------------
+
+- Clean UI
+- Large buttons
+- Minimal text for young kids
+
+Core System Logic
+Level 1 → 3 letter words
+Level 2 → 4 letter words
+Level 3 → blends
+Level 4 → sentences
+
+
+Starter Dataset
+{
+  "2-4": ["cat", "bat", "sun", "dog"],
+  "4-6": ["hat", "cup", "pen", "bed"],
+  "6-8": ["ship", "chair", "train", "black"],
+  "8-10+": ["elephant", "school", "because", "beautiful"]
+}
+
+
+Generate spelling words for children.
+
+Requirements:
+- Age: [AGE GROUP]
+- Difficulty: [easy/medium/hard]
+- Include phonics-friendly words
+- Avoid complex silent letters for beginners
+
+Output:
+- List of 10 words
+- Include syllable breakdown
+
+Example:
+cat → c-a-t
+elephant → el-e-phant
+
+
+
+--------------------------------------------------
+DELIVERABLE:
+- Full dictation learning system
+- Progressive difficulty
+- Competition-ready mode
+- Parent-child interaction
