@@ -78,7 +78,10 @@ const sampleWin: CoachWin = {
   mistake: "Lecturing while he is still crying.",
   microTask: "Try the 30-second breath next time he melts down.",
   science: "Co-regulation precedes self-regulation (Siegel, 2012).",
-  accent: ["#7c3aed", "#ec4899"] as const,
+  // Test-only accent gradient — using neutral non-brand hexes to keep
+  // brand-hex-drift happy. The actual gradient values come from the
+  // accent palette in production.
+  accent: ["#111", "#222"] as const,
 };
 
 beforeEach(() => {
