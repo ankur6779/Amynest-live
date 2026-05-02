@@ -1,0 +1,360 @@
+Upgrade "Event Prep — School Ready" into a country-aware, interactive preparation system.
+
+GOAL:
+Help parents prepare for real school events with step-by-step guidance, visuals, and AI assistance.
+
+--------------------------------------------------
+1) COUNTRY DETECTION (CORE)
+--------------------------------------------------
+
+Detect user country using:
+
+- Device locale
+- Timezone (fallback)
+- Manual selection (override)
+
+Store:
+countryCode (IN, US, UK, AU, NZ etc.)
+
+--------------------------------------------------
+2) EVENT DATABASE (COUNTRY-WISE)
+--------------------------------------------------
+
+Create structured dataset:
+
+{
+  country: "IN",
+  events: [
+    {
+      id: "independence_day",
+      name: "Independence Day",
+      date: "15 Aug",
+      category: "School Event",
+      ageGroups: ["3-5", "6-8"],
+      prepItems: []
+    }
+  ]
+}
+
+Examples:
+
+IN:
+- Independence Day
+- Republic Day
+- Diwali
+- Annual Day
+- Fancy Dress
+
+US:
+- Halloween
+- Thanksgiving
+- Christmas
+- Back to School
+
+UK:
+- Bonfire Night
+- Christmas
+- Easter
+
+--------------------------------------------------
+3) SMART EVENT FEED
+--------------------------------------------------
+
+Show:
+
+“Upcoming Events Near You”
+
+- Sorted by date
+- Highlight next event
+- Countdown timer
+
+--------------------------------------------------
+4) EVENT DETAIL PAGE (IMPORTANT)
+--------------------------------------------------
+
+Each event opens:
+
+Sections:
+
+1. Overview
+2. What to Prepare
+3. Costume Ideas
+4. Speech / Lines
+5. Activities
+6. Checklist
+
+--------------------------------------------------
+5) VISUAL EXPERIENCE (UPGRADE)
+--------------------------------------------------
+
+Add:
+
+- Real images (costumes, crafts)
+- Step-by-step visuals
+- Animated cards
+
+Example:
+- Fancy dress → actual child images
+- Craft → step images
+
+--------------------------------------------------
+6) TIMELINE PREPARATION (GAME CHANGER)
+--------------------------------------------------
+
+Show timeline:
+
+T-7 days → choose theme  
+T-3 days → prepare costume  
+T-1 day → practice  
+
+--------------------------------------------------
+7) AMY AI GENERATOR (SMART)
+--------------------------------------------------
+
+Default behavior:
+
+- Auto select country
+- Auto select upcoming event
+
+User input:
+- Child age
+- Event type
+
+Generate:
+- Speech
+- Costume idea
+- Activity plan
+
+--------------------------------------------------
+8) SEARCH FEATURE (IMPORTANT)
+--------------------------------------------------
+
+Add search bar:
+
+User can search:
+- “Diwali”
+- “Halloween costume”
+
+Show:
+- Relevant events + prep guides
+
+--------------------------------------------------
+9) QUICK ACTIONS
+--------------------------------------------------
+
+Buttons:
+
+- Generate speech
+- Generate costume idea
+- Generate checklist
+
+--------------------------------------------------
+10) UI STRUCTURE
+--------------------------------------------------
+
+Main screen:
+
+- Header (country flag + name)
+- Upcoming event card
+- Event list
+- Search bar
+
+--------------------------------------------------
+11) ANIMATIONS
+--------------------------------------------------
+
+- Card hover glow
+- Countdown animation
+- Smooth transitions
+
+--------------------------------------------------
+12) PERFORMANCE
+--------------------------------------------------
+
+- Cache event data
+- Lazy load images
+- Fast scroll
+
+
+dataset 
+Create a complete country-wise event dataset (India + USA) with images, preparation steps, and AI-ready structure.
+
+GOAL:
+Provide real, actionable event preparation with visuals and structured data.
+
+--------------------------------------------------
+1) DATA STRUCTURE (STANDARD SCHEMA)
+--------------------------------------------------
+
+Create JSON:
+
+{
+  country: "IN",
+  events: [
+    {
+      id: "diwali",
+      name: "Diwali",
+      date: "variable",
+      month: "October/November",
+      category: "Festival",
+      ageGroups: ["3-5", "6-8", "8-12"],
+      tags: ["festival", "school", "activity"],
+      images: {
+        banner: "",
+        costumes: [],
+        activities: []
+      },
+      prepTimeline: [],
+      checklist: [],
+      speechIdeas: [],
+      activities: []
+    }
+  ]
+}
+
+--------------------------------------------------
+2) INDIA EVENTS (ADD FULL DATA)
+--------------------------------------------------
+
+Add:
+
+1. Independence Day (15 Aug)
+2. Republic Day (26 Jan)
+3. Diwali
+4. Holi
+5. Gandhi Jayanti
+6. Children’s Day
+7. Annual Day
+8. Fancy Dress Competition
+9. Sports Day
+10. Teacher’s Day
+
+Each event must include:
+
+- 3 costume ideas
+- 2 short speech lines
+- 3 activities
+- timeline steps
+
+--------------------------------------------------
+3) USA EVENTS
+--------------------------------------------------
+
+Add:
+
+1. Halloween
+2. Thanksgiving
+3. Christmas
+4. Easter
+5. Back to School
+6. Independence Day (4 July)
+7. Spring Festival
+8. School Talent Show
+9. Field Day
+10. Graduation Day
+
+--------------------------------------------------
+4) IMAGE PACK (IMPORTANT)
+--------------------------------------------------
+
+Use image URLs (Unsplash / Pexels style):
+
+Each event:
+
+images:
+{
+  banner: "search: Diwali celebration kids",
+  costumes: [
+    "search: kids diwali dress",
+    "search: kids traditional costume india"
+  ],
+  activities: [
+    "search: diwali diy craft kids",
+    "search: diya making kids"
+  ]
+}
+
+--------------------------------------------------
+5) PREP TIMELINE (ALL EVENTS)
+--------------------------------------------------
+
+Example:
+
+prepTimeline:
+[
+  "7 days before: choose theme",
+  "3 days before: prepare costume",
+  "1 day before: practice",
+  "event day: final prep"
+]
+
+--------------------------------------------------
+6) CHECKLIST
+--------------------------------------------------
+
+Example:
+
+checklist:
+[
+  "Costume ready",
+  "Speech memorized",
+  "Accessories packed"
+]
+
+--------------------------------------------------
+7) SEARCH FUNCTION DATA
+--------------------------------------------------
+
+Add searchable fields:
+
+- name
+- tags
+- category
+
+--------------------------------------------------
+8) COUNTRY FILTER LOGIC
+--------------------------------------------------
+
+function getEvents(countryCode) {
+  return dataset.filter(e => e.country === countryCode);
+}
+
+--------------------------------------------------
+9) IMAGE RENDERING
+--------------------------------------------------
+
+Frontend should:
+
+- Convert "search:" into real image API calls
+- Lazy load images
+- Show grid (3 images)
+
+--------------------------------------------------
+10) AI GENERATOR READY
+--------------------------------------------------
+
+Each event should pass:
+
+- name
+- ageGroup
+- category
+
+to AI for:
+
+- speech
+- costume
+- activity
+
+--------------------------------------------------
+DELIVERABLE:
+- JSON dataset (India + US)
+- Image search mapping
+- Timeline + checklist
+- Ready for UI integration
+
+--------------------------------------------------
+DELIVERABLE:
+- Country-aware event system
+- Interactive prep guides
+- AI-powered generator
+- Search-enabled experience
