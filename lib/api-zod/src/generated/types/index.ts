@@ -38,6 +38,8 @@ export * from "./routineItemAgeBand";
 export * from "./routineItemNutrition";
 export * from "./routineItemRecipe";
 export * from "./routineItemStatus";
+export * from "./routineUiPrefs";
 export * from "./updateChildBody";
 export * from "./updateRoutineItemsBody";
+export * from "./updateRoutineUiPrefsBody";
 export * from "./upsertParentProfileBody";

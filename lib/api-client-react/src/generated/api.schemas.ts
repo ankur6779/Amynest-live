@@ -124,6 +124,14 @@ export interface RoutineItem {
   parentHubTopic?: string | null;
 }
 
+/**
+ * Per-routine UI preferences synced across web + mobile.
+ */
+export interface RoutineUiPrefs {
+  /** Currently selected age-band filter chip, or null for "All". */
+  ageBandFilter?: string | null;
+}
+
 export interface Routine {
   id: number;
   childId: number;
@@ -131,7 +139,16 @@ export interface Routine {
   date: string;
   title: string;
   items: RoutineItem[];
+  uiPrefs: RoutineUiPrefs;
   createdAt: string;
+}
+
+/**
+ * Patch payload for routine UI preferences. Only the fields included are updated.
+ */
+export interface UpdateRoutineUiPrefsBody {
+  /** Selected age-band filter chip, or null to clear. */
+  ageBandFilter?: string | null;
 }
 
 export interface CreateRoutineBody {
