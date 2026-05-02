@@ -1,0 +1,139 @@
+Upgrade the "Songs & Lullabies" section into an age-wise POEMS module for infants (0–24 months).
+
+IMPORTANT:
+- NO ElevenLabs / NO external API calls
+- Use ONLY prebuilt poems + pre-recorded audio files
+
+GOAL:
+Provide calming, age-appropriate poems with smooth audio experience.
+
+--------------------------------------------------
+1) AGE GROUP SEGMENTATION
+--------------------------------------------------
+
+Create 3 groups:
+
+- 0–6 months → Ultra calm sounds + very short poems
+- 6–12 months → rhythmic repetition
+- 12–24 months → simple learning poems
+
+--------------------------------------------------
+2) UI STRUCTURE
+--------------------------------------------------
+
+Top section:
+“Poems for your baby”
+
+Tabs:
+- 0–6m
+- 6–12m
+- 12–24m
+
+Each tab shows relevant poems
+
+--------------------------------------------------
+3) TILE DESIGN (INFANT FRIENDLY)
+--------------------------------------------------
+
+Each poem tile:
+
+- Large rounded card
+- Soft gradient background
+- Big icon (moon/star/cloud)
+- Title
+- Small subtitle (e.g., “Sleep”, “Calm”, “Learning”)
+
+On tap:
+→ Open full screen player
+
+--------------------------------------------------
+4) FULL SCREEN PLAYER
+--------------------------------------------------
+
+- Dark background
+- Floating stars animation
+- Center glowing orb
+
+Controls:
+- Play / Pause
+- Loop (ON by default)
+- Timer (15m / 30m / 1h)
+- Volume
+
+--------------------------------------------------
+5) AUDIO SYSTEM (NO COST)
+--------------------------------------------------
+
+- Pre-record all poems (MP3 files)
+- Store locally or CDN
+- Use loop playback
+
+Audio rules:
+- Soft voice
+- Slow pace
+- No loud peaks
+
+--------------------------------------------------
+6) SAMPLE POEMS (ADD DIRECTLY)
+--------------------------------------------------
+
+0–6 months:
+
+"Sleep baby sleep,
+Stars are shining deep,
+Moon is watching you,
+Dreams will come true."
+
+---
+
+6–12 months:
+
+"Clap clap little hands,
+Smile as the music stands,
+Tap tap tiny feet,
+Life is soft and sweet."
+
+---
+
+12–24 months:
+
+"One little star in the sky,
+Two birds flying high,
+Three clouds drifting slow,
+Four winds softly blow."
+
+(Add 8–10 poems total)
+
+--------------------------------------------------
+7) LOAD MORE FEATURE
+--------------------------------------------------
+
+Add button:
+“Load More Poems”
+
+Logic:
+- Load from local dataset (NOT API)
+- Pagination (5 per load)
+
+--------------------------------------------------
+8) UX OPTIMIZATION
+--------------------------------------------------
+
+- Auto play on open
+- Fade in audio (2 sec)
+- Smooth transitions
+
+--------------------------------------------------
+9) REMOVE COMPLETELY
+--------------------------------------------------
+
+- Parent voice ❌
+- AI generation ❌
+- Heavy text ❌
+
+--------------------------------------------------
+DELIVERABLE:
+- Age-wise poem module
+- Zero API cost system
+- Infant-friendly UI
+- Smooth audio experience
