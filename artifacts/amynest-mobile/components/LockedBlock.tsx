@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Pressable, StyleSheet, type ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import PremiumBadge from "@/components/PremiumBadge";
 
 type Props = {
@@ -34,6 +35,7 @@ export default function LockedBlock({
   children,
 }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   if (!locked) return <>{children}</>;
 
@@ -54,7 +56,7 @@ export default function LockedBlock({
       <Pressable
         onPress={goPaywall}
         style={styles.overlay}
-        accessibilityLabel="Premium feature — tap to unlock"
+        accessibilityLabel={t("parent_hub.badges.premium_feature_aria")}
         accessibilityRole="button"
       />
 

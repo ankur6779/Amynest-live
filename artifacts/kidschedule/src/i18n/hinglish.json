@@ -1129,5 +1129,623 @@
       "class_5": "5th",
       "class_6plus": "6th+"
     }
+  },
+  "parent_hub": {
+    "shell": {
+      "title": "Parenting Hub",
+      "subtitle_web": "Science-backed articles aur quick tips",
+      "subtitle_mobile": "Sections ke beech swipe karein",
+      "eyebrow": "EXPERT-CURATED",
+      "no_child_title": "Shuru karne ke liye bachcha add karein",
+      "no_child_desc": "Personalized tips, articles aur activities tab unlock hote hain jab Amy aapke bachche ko jaan jaati hai.",
+      "add_child": "Bachcha Add karein",
+      "personalised_for": "Inke liye taiyaar",
+      "ask_amy": "Amy se poochein",
+      "tab_aria": "{{heading}} tab",
+      "today_empty": {
+        "title": "Aaj ka routine nahi hai",
+        "desc": "Ek personalised plan banaye aur Amy is list ko sync rakhegi.",
+        "cta": "Aaj ka routine banaye"
+      },
+      "today_regen": "Naya routine banaye",
+      "section_for_child": "{{name}} ke liye · age {{age}}",
+      "section_empty": "{{name}} ke liye is section me abhi kuch nahi hai — phir se check karte rahein!"
+    },
+    "badges": {
+      "try_free": "Free Try karein",
+      "premium": "Premium",
+      "premium_feature": "Premium feature",
+      "premium_feature_aria": "Premium feature — upgrade ke liye tap karein",
+      "new": "Naya"
+    },
+    "age_groups": {
+      "infant": "Shishu",
+      "toddler": "Toddler",
+      "preschool": "Preschool",
+      "school_age": "School age",
+      "teen": "Teen"
+    },
+    "sections_meta": {
+      "today": {
+        "label": "Aaj",
+        "heading": "Aaj ka Plan",
+        "description": "Har step pura karte hi 'Done' tap karein"
+      },
+      "zones": {
+        "label": "Zones",
+        "heading": "Recommended Zones",
+        "description": "Curated parent tools aur quick actions"
+      },
+      "modules": {
+        "label": "Sikhein",
+        "heading": "Learning Modules",
+        "description": "Aapke bachche ki age ke liye practice + content"
+      },
+      "activities": {
+        "label": "Karein",
+        "heading": "Activities",
+        "description": "Hands-on khel, life skills aur khaana"
+      },
+      "cta_zones": "Zones mein kholein",
+      "cta_modules": "Modules mein kholein",
+      "cta_activities": "Activities mein kholein"
+    },
+    "amy": {
+      "title": "Amy AI se Poochein",
+      "desc": "Warm, practical parenting advice — turant",
+      "lead": "Topic par tap karein aur Amy aapko warm, practical parenting advice turant degi.",
+      "lead_short": "Topic chunein — Amy reply karegi.",
+      "ask_anything": "Amy se kuch bhi poochein",
+      "prompts": {
+        "sleep": {
+          "label": "Neend ki problem",
+          "prompt": "Mere bachche ko sone mein dikkat ho rahi hai. Mujhe kya karna chahiye?"
+        },
+        "tantrums": {
+          "label": "Tantrums",
+          "prompt": "Mera bachcha baar-baar tantrum karta hai. Main kaise handle karoon?"
+        },
+        "picky_eating": {
+          "label": "Khaane mein nakhre",
+          "prompt": "Mera bachcha picky eater hai. Kaun si strategies madad kar sakti hain?"
+        },
+        "school_anxiety": {
+          "label": "School ka dar",
+          "prompt": "Mera bachcha school jaane se anxious hota hai. Main kaise help karoon?"
+        },
+        "screen_time": {
+          "label": "Screen time",
+          "prompt": "Mere bachche ki age ke liye kitna screen time sahi hai?"
+        },
+        "language": {
+          "label": "Language development",
+          "prompt": "Main apne bachche ki language aur speech development ko kaise support karoon?"
+        },
+        "picky": {
+          "label": "Picky eating",
+          "prompt": "Mera bachcha picky eater hai. Kaunsi strategies help karengi?"
+        },
+        "school": {
+          "label": "School anxiety",
+          "prompt": "Mere bachhe ko school jaane ki chinta hai. Main kaise help karoon?"
+        },
+        "screen": {
+          "label": "Screen time",
+          "prompt": "Mere bachhe ki age ke liye kitna screen time sahi hai?"
+        }
+      },
+      "cta": "Amy se kuch bhi poochein"
+    },
+    "emotional": {
+      "title": "Emotional Support",
+      "desc": "Parenting easy nahi hai. Amy yahan aapki sunne aur help karne ke liye hai — bina judgment ke.",
+      "cards": {
+        "overwhelmed": {
+          "title": "Main overwhelmed feel kar raha/rahi hoon",
+          "subtitle": "Theek hai. Aap akele nahi hain.",
+          "prompt": "Main parent ke roop mein bilkul overwhelmed feel kar raha/rahi hoon. Main behtar feel karne ke liye kya karoon?"
+        },
+        "child_anxious": {
+          "title": "Mera bachcha anxious lagta hai",
+          "subtitle": "Hum milkar iska solution nikaalte hain.",
+          "prompt": "Mera bachcha bahut baar anxious aur worried lagta hai. Main uski help kaise karoon?"
+        },
+        "struggling_connect": {
+          "title": "Hume connect karne mein dikkat ho rahi hai",
+          "subtitle": "Chote steps bada farak la sakte hain.",
+          "prompt": "Mujhe lagta hai mera bachcha aur main theek se connect nahi ho pa rahe. Hum stronger bond kaise banaayein?"
+        },
+        "need_break": {
+          "title": "Mujhe parenting se thoda break chahiye",
+          "subtitle": "Apna khayal rakhna bhi achchi parenting hai.",
+          "prompt": "Main ek parent hoon jise apne liye thoda time chahiye. Main apni wellbeing ka kaise khayal rakhoon?"
+        }
+      }
+    },
+    "predictor": {
+      "loading": "Amy kal ke baare mein soch rahi hai…",
+      "title": "Amy AI · Kal ka Forecast",
+      "family_forecast": "Family forecast",
+      "for_child": "{{name}} ke liye",
+      "refresh_aria": "Prediction refresh karein",
+      "indicators": {
+        "mood": "Mood",
+        "energy": "Energy",
+        "sleep": "Neend",
+        "risk": "Risk"
+      },
+      "confidence": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "suffix": " confidence"
+      },
+      "suggestions_title": "Aap kya kar sakte hain",
+      "footer": "Pichle {{days}} din · {{logs}} logs · {{routines}} routines ke base par",
+      "footer_short": "{{days}}d · {{logs}} logs · {{routines}} routines"
+    },
+    "event_prep": {
+      "title": "🎉 Event Prep (School Ready)",
+      "desc": "Last-minute fancy dress, DIY costume guides, ready speeches aur audio read-aloud — sab ek jagah.",
+      "cta": "Event Prep kholein",
+      "badges": {
+        "independence": "🇮🇳 Independence Day",
+        "republic": "🎖️ Republic Day",
+        "gandhi": "🕊️ Gandhi Jayanti",
+        "last_minute": "⏱ Last-Minute"
+      }
+    },
+    "smart_study": {
+      "title": "Smart Study Zone",
+      "desc_html": "<strong>Nursery se Class 10</strong> tak adaptive learning. Chote bachchon ke liye tap-and-listen, bade bachchon ke liye short notes aur practice — Amy aasaan bhasha mein samjhati hai.",
+      "desc_plain": "Nursery se Class 10 tak adaptive learning. Chote bachchon ke liye tap-and-listen, bade bachchon ke liye short notes aur practice — Amy aasaan bhasha mein samjhati hai.",
+      "cta": "Smart Study Zone kholein",
+      "badges": {
+        "play": "👶 Khel & Sikh",
+        "junior": "📘 Class 1–5",
+        "senior": "📊 Class 6–10"
+      }
+    },
+    "stage_milestones": {
+      "title": "{{band}} par {{name}} ko kya pasand aayega",
+      "description": "{{range}} par aane wale development moments ki ek jhalak — hum aapke bachche ke saath badhte hain.",
+      "cta": "Amy se poochein {{name}} ko dheere-dheere kaise prepare karein"
+    },
+    "graduation": {
+      "title": "{{name}} ne pura Parent Hub unlock kar liya hai",
+      "desc": "Har feature ab unke stage ke liye taiyaar hai — bas consistent rahein, baaki sab hisse mein hai."
+    },
+    "age_sections": {
+      "skill_focus": {
+        "title": "{{name}} ke liye aaj ke main skills",
+        "desc": "Aaj ke liye age-appropriate development activities",
+        "footer": "✨ AI {{name}} ka routine banate samay in focus areas ko shaamil karegi"
+      },
+      "story": {
+        "title": "{{name}} ke liye Story Time",
+        "desc": "Age-appropriate moral stories",
+        "read_aloud": "Zor se padhein",
+        "stop": "Rokein",
+        "moral_label": "💡 Kahaani ka saar",
+        "footer": "📚 Aaj raat {{name}} ko ye kahaani sunaayein — ek pyaara bedtime moment"
+      },
+      "parent_tasks": {
+        "title": "Aapke Parent Tasks",
+        "desc": "Aaj {{name}} ke liye aap jo kar sakte hain",
+        "done_counter": "{{done}}/{{total}} done",
+        "celebration": "🌟 Shaandaar! Aaj aap star parent hain!"
+      }
+    },
+    "tiles": {
+      "articles": {
+        "title": "Parenting Articles",
+        "desc": "Research-based, age ke hisab se reading",
+        "empty": "Matched articles dekhne ke liye bachcha add karein."
+      },
+      "tips": {
+        "title": "Daily Tips",
+        "desc": "Amy AI aaj ke best tips choose karti hai",
+        "empty": "Daily tips unlock karne ke liye bachcha add karein."
+      },
+      "ptm-prep": {
+        "title": "🧾 PTM Prep Assistant",
+        "sublabel": "Prepare · Attend · Act — parent-teacher meetings ke liye"
+      },
+      "smart-study": {
+        "title": "📚 Smart Study Zone",
+        "sublabel": "Nursery → Class 10 · audio + practice"
+      },
+      "morning-flow": {
+        "title": "🌅 School Morning Flow",
+        "sublabel": "Night prep · steps · smart delay"
+      },
+      "olympiad": {
+        "title": "🏆 Olympiad Zone",
+        "sublabel": "Daily 5 · practice · math, science, reasoning, GK"
+      },
+      "kids-control-center": {
+        "title": "Kids Control Center",
+        "sublabel": "Smart control · safe child experience",
+        "soon": "SOON 🚀"
+      },
+      "meals": {
+        "title": "🍱 Tiffin & Meals",
+        "sublabel": "Aapke bachhe ke taste ke hisaab se smart suggestions"
+      },
+      "nutrition": {
+        "title": "🥗 Nutrition Hub",
+        "sublabel": "Nutrition Hub · age-wise nutrition science"
+      },
+      "event-prep": {
+        "title": "🎉 Event Prep",
+        "sublabel": "Fancy dress · DIY guide · speeches"
+      },
+      "activities": {
+        "title": "Activities & Learning",
+        "desc": "Games, audio lessons aur bahut kuch",
+        "lead": "Aapke bachhe ki age group ke liye Amy ki educational activities."
+      },
+      "story-hub": {
+        "title": "🎬 Kids Story Hub",
+        "sublabel": "Bedtime, moral aur fun stories — Netflix-style"
+      },
+      "art-craft": {
+        "title": "🎨 Art & Craft Videos",
+        "desc": "Aapke bachhe ko inspire karne wali short creative videos"
+      },
+      "worksheets": {
+        "title": "📄 Printable Worksheets",
+        "desc": "Coloring, math, tracing aur more · 5 free per day"
+      },
+      "facts": {
+        "title": "✨ Amazing Facts",
+        "desc": "Curious kids ke liye mind-blowing facts",
+        "empty": "Age-matched facts unlock karne ke liye bachcha add karein."
+      },
+      "life-skills": {
+        "title": "🧭 Life Skills Mode",
+        "desc": "Daily real-life skills, ages 2–15"
+      },
+      "meal-suggestions": {
+        "title": "🍱 Amy AI Meal Suggestions",
+        "desc": "Aapke bachhe ke liye AI-generated tiffin aur meal ideas"
+      },
+      "smart-math-tricks": {
+        "title": "🧮 Smart Math Tricks",
+        "desc": "Mental math shortcuts jo bachhon ko sach mein pasand aate hain",
+        "empty": "Smart math tricks unlock karne ke liye bachcha add karein."
+      },
+      "coloring-books": {
+        "title": "🎨 Coloring Books",
+        "desc": "Print-ready coloring pages, daily refresh hoti hain",
+        "empty": "Coloring books unlock karne ke liye bachcha add karein."
+      },
+      "fun-sheets": {
+        "title": "📄 Fun Sheets",
+        "desc": "Activity sheets, mazes aur puzzles",
+        "empty": "Fun sheets unlock karne ke liye bachcha add karein."
+      },
+      "skills-focus": {
+        "title": "🎯 Skills to Focus This Week",
+        "desc": "Age-matched developmental priorities"
+      },
+      "daily-story": {
+        "title": "📖 Daily Story",
+        "desc": "Har din saath padhne ke liye nayi story"
+      },
+      "daily-puzzle": {
+        "title": "🧩 Daily Puzzle",
+        "desc": "Roz 5 adaptive brain puzzles"
+      }
+    },
+    "tiles_activity": {
+      "gaming_reward": {
+        "title": "Gaming Reward",
+        "desc": "10 educational mini-games · points kamayein"
+      },
+      "rewards_shop": {
+        "title": "Rewards Shop",
+        "desc": "Points ko real-world treats par spend karein"
+      },
+      "audio_lessons": {
+        "title": "Amy Audio Lessons",
+        "desc": "3–5 min parenting lessons · hands-free"
+      }
+    },
+    "tips_fallbacks": [
+      "Catch them being good — behavior ko zor se naam dein.",
+      "Power struggles kam karne ke liye do acceptable choices dein.",
+      "Routine pakka karne ke liye sone se pehle 10 min saath padhein."
+    ],
+    "nutrition_tags": [
+      "WHO",
+      "ICMR",
+      "Indian meals",
+      "Family mode"
+    ],
+    "locked": {
+      "label": "Continue karne ke liye unlock karein",
+      "cta": "Premium Unlock karein"
+    },
+    "emotional_cards": {
+      "overwhelmed": {
+        "title": "Main overwhelmed feel kar raha/rahi hoon",
+        "subtitle": "It's okay. Aap akele nahi hain.",
+        "prompt": "Main parent ke roop mein completely overwhelmed feel kar raha/rahi hoon. Better feel karne ke liye kya karoon?"
+      },
+      "anxious": {
+        "title": "Mera bachcha anxious lagta hai",
+        "subtitle": "Chaliye milkar isse solve karein.",
+        "prompt": "Mera bachcha bahut anxious aur worried lagta hai. Main uski kaise help karoon?"
+      },
+      "connect": {
+        "title": "Hum connect karne mein struggle kar rahe hain",
+        "subtitle": "Chote kadam bada farak la sakte hain.",
+        "prompt": "Mujhe lagta hai mera bachcha aur main acche se connect nahi ho rahe. Hum stronger bond kaise banayein?"
+      },
+      "break": {
+        "title": "Mujhe parenting break chahiye",
+        "subtitle": "Self-care good parenting ka hissa hai.",
+        "prompt": "Main ek parent hoon jise apne liye time chahiye. Apni wellbeing ka khayal kaise rakhoon?"
+      }
+    },
+    "emotional_footer": {
+      "lead": "Parenting mushkil hai. Amy yahan hai sunne aur help karne ke liye — bina judgment ke.",
+      "reassure_title": "Aap jitna sochte ho usse better kar rahe ho 💜",
+      "reassure_body": "Research dikhata hai ki aap information aur support dhoondh rahe ho — yeh fact aapko average se better parent banata hai. Worry khud love ka proof hai."
+    },
+    "web_tiles": {
+      "command-center": {
+        "title": "Command Center",
+        "description": "Aaj ka overview, mood, sleep aur quick actions"
+      },
+      "tomorrow-forecast": {
+        "title": "Amy AI — Tomorrow's Forecast",
+        "description": "Kal ke liye mood, energy aur sleep prediction"
+      },
+      "smart-math-tricks": {
+        "title": "🧮 Smart Math Tricks",
+        "description": "Fun mental math shortcuts — Vedic style!"
+      },
+      "amy-ai": {
+        "title": "Ask Amy AI",
+        "description": "Warm, practical parenting advice paayein"
+      },
+      "articles": {
+        "title": "Parenting Articles",
+        "description": "Research-based, age ke hisaab se reading"
+      },
+      "daily-tips": {
+        "title": "Daily Tips",
+        "description": "Amy AI aaj ke best tips aapke liye choose karti hai"
+      },
+      "emotional": {
+        "title": "Emotional Support",
+        "description": "Mushkil parenting days ke liye"
+      },
+      "activities": {
+        "title": "Activities & Learning",
+        "description": "Age-based games, stories aur skills"
+      },
+      "art-craft": {
+        "title": "🎨 Art & Craft Videos",
+        "description": "Creative video tutorials — tap karke dekhein, swipe karke browse"
+      },
+      "story-hub": {
+        "title": "🎬 Kids Story Hub",
+        "description": "Bedtime, moral aur fun stories ki poori library — ages 0–8 ke liye"
+      },
+      "phonics": {
+        "title": "🔤 Phonics Learning",
+        "description": "Sound awareness → blending → reading, aapke bachhe ki age ke hisaab se"
+      },
+      "ptm-prep": {
+        "title": "🧾 PTM Prep Assistant",
+        "description": "Questions prepare karein, notes lein aur unhe action steps mein badlein"
+      },
+      "smart-study": {
+        "title": "📚 Smart Study Zone",
+        "description": "Adaptive learning Nursery → Class 10, audio + practice ke saath"
+      },
+      "event-prep": {
+        "title": "🎉 Event Prep (School Ready)",
+        "description": "School events ke liye fancy dress, DIY guide aur speeches"
+      },
+      "olympiad": {
+        "title": "Smart Olympiad Zone",
+        "description": "Daily 5 MCQs, weekly tests, badges aur insights"
+      },
+      "life-skills": {
+        "title": "🧭 Life Skills Mode",
+        "description": "Aapke bachhe ki age ke hisaab se daily real-life skills"
+      },
+      "coloring-books": {
+        "title": "🎨 Coloring Books",
+        "description": "Printable coloring sheets — preview, fir download (2/day)"
+      },
+      "fun-sheets": {
+        "title": "📄 Fun Sheets",
+        "description": "Printable activity aur learning PDFs — preview, fir download (2/day)"
+      },
+      "olympiad-preview": {
+        "title": "🏆 Smart Olympiad Zone",
+        "description": "Daily 5 MCQs, weekly tests, badges aur insights"
+      },
+      "ptm-prep-preview": {
+        "title": "🧾 PTM Prep Assistance",
+        "description": "Questions prepare karein, notes lein aur unhe action steps mein badlein"
+      },
+      "coloring-books-preview": {
+        "title": "🎨 Coloring Books",
+        "description": "Preview aur one-tap download ke saath printable coloring sheets"
+      },
+      "fun-sheets-preview": {
+        "title": "📄 Fun Sheets",
+        "description": "Printable activity aur learning PDFs — har bachhe ke liye 2 downloads/day"
+      }
+    },
+    "subsections": {
+      "baby-activities": {
+        "title": "Baby Activities",
+        "description": "Feeding, bonding, development aur milestones"
+      },
+      "amazing-facts-baby": {
+        "title": "Amazing Facts",
+        "description": "Aapke bachhe ki duniya ke fun facts"
+      },
+      "daily-activity": {
+        "title": "Daily Activity",
+        "description": "Aaj ki fun activity, aapke bachhe ke liye chuni gayi"
+      },
+      "skills-to-focus-toddler": {
+        "title": "Skills to Focus",
+        "description": "Is week practise karne ke liye age-matched skills"
+      },
+      "story-time": {
+        "title": "Story Time",
+        "description": "Aaj saath padhne ke liye chhoti kahani"
+      },
+      "fun-and-play": {
+        "title": "Fun & Play",
+        "description": "Saath enjoy karne ke liye games aur activities"
+      },
+      "parent-tasks-toddler": {
+        "title": "Parent Tasks",
+        "description": "Aaj apne bachhe ke liye quick cheezein"
+      },
+      "daily-puzzle-pre": {
+        "title": "Daily Puzzle",
+        "description": "Chhote dimaagon ko sharp karne wali puzzle"
+      },
+      "amazing-facts-toddler": {
+        "title": "Amazing Facts",
+        "description": "Aaj apne chhote bachhe ko batane ke liye fun cheezein"
+      },
+      "spelling-mastery": {
+        "title": "Spelling Mastery",
+        "description": "Learn → Practice → Dictate → Amy ki voice ke saath compete karein"
+      },
+      "daily-activity-older": {
+        "title": "Daily Activity",
+        "description": "Aaj ki fun activity, aapke bachhe ke liye chuni gayi"
+      },
+      "skills-to-focus-older": {
+        "title": "Skills to Focus",
+        "description": "Is stage mein develop karne ke key skills"
+      },
+      "story-time-older": {
+        "title": "Story Time",
+        "description": "Aaj aapke bachhe ke liye chhoti kahani"
+      },
+      "daily-puzzle-older": {
+        "title": "Daily Puzzle",
+        "description": "Unke dimaag ko sharp karne wali puzzle"
+      },
+      "parent-tasks-older": {
+        "title": "Parent Tasks",
+        "description": "Aaj apne bachhe ke liye quick cheezein"
+      },
+      "amazing-facts-older": {
+        "title": "Amazing Facts",
+        "description": "Apne bachhe ke saath share karne ke liye interesting facts"
+      },
+      "spelling-mastery-older": {
+        "title": "Spelling Mastery",
+        "description": "Learn → Practice → Dictate → Amy ki voice ke saath compete karein"
+      },
+      "printable-worksheets-all": {
+        "title": "Printable Worksheets",
+        "description": "Download aur print karne ke liye age-matched worksheets"
+      }
+    },
+    "headers": {
+      "section1_for": "Section 1 · For you",
+      "section2_next": "Section 2 · Coming next",
+      "for_child": "{{name}} ke liye",
+      "personalised": "{{name}} abhi jahan hai, uske liye taiyar kiya gaya personalised content.",
+      "explore_next": "{{name}} ke liye next stage explore karein",
+      "explore_blurb": "Hum {{name}} ke saath badhte hain — yahan ek jhalak hai ki aage kya unlock hoga taaki aap plan kar sakein.",
+      "current_child": "Current Child",
+      "select_child": "Select Child",
+      "add_child": "Bachcha add karein",
+      "viewing": "Viewing",
+      "bottom_cta": "Aaj ki routine generate karein",
+      "previewing": "Previewing",
+      "coming_next": "Coming Up Next"
+    },
+    "empty": {
+      "heading": "Shuru karne ke liye bachcha add karein",
+      "body": "Age-personalised tips, articles aur activities unlock karne ke liye apne bachhe ki profile add karein.",
+      "cta": "Bachcha Add karein"
+    },
+    "preview_tiles": {
+      "life-skills": {
+        "title": "🧭 Life Skills Mode",
+        "description": "Aapke bacche ki age ke hisaab se roz ke real-life skills"
+      },
+      "olympiad": {
+        "title": "🏆 Smart Olympiad Zone",
+        "description": "Roz 5 MCQs, weekly tests, badges aur insights"
+      },
+      "event-prep": {
+        "title": "🎉 Event Prep (School Ready)",
+        "description": "Fancy dress, DIY guide aur school events ke liye speeches"
+      },
+      "smart-study": {
+        "title": "📚 Smart Study Zone",
+        "description": "Nursery → Class 10 tak adaptive learning, audio + practice ke saath"
+      },
+      "ptm-prep": {
+        "title": "🧾 PTM Prep Assistance",
+        "description": "Questions prepare karein, notes lein aur unhe action steps mein badlein"
+      },
+      "phonics": {
+        "title": "🔤 Phonics Learning",
+        "description": "Sound awareness → blending → reading, bacche ki age ke hisaab se"
+      },
+      "coloring-books": {
+        "title": "🎨 Coloring Books",
+        "description": "Printable coloring sheets preview aur one-tap download ke saath"
+      },
+      "fun-sheets": {
+        "title": "📄 Fun Sheets",
+        "description": "Printable activity aur learning PDFs — har bacche ke liye 2 downloads/day"
+      }
+    },
+    "command_center": {
+      "quick": {
+        "play": {
+          "label": "10-min play"
+        },
+        "phonics": {
+          "label": "5-min phonics"
+        },
+        "lullaby": {
+          "label": "5-min lullaby"
+        },
+        "puzzle": {
+          "label": "5-min puzzle"
+        }
+      },
+      "quick_ideas_title": "Quick connection ideas",
+      "tap_timer": "Timer start karne ke liye tap karein",
+      "calming_title": "Calming tools — yeh order mein try karein",
+      "calming_steps": [
+        "Unke saath 60 seconds tak slowly 4-4-6 saans lein.",
+        "Tight hug + soft voice (no questions) dein.",
+        "Low-stim activity par switch karein: paani ki bottle, soft toy, dim light."
+      ],
+      "winddown_title": "Aaj raat ke liye wind-down plan",
+      "winddown_steps": [
+        "Bedtime se 30 min pehle lights dim karein; uske baad koi screen nahi.",
+        "Warm bath ya face wash + har raat wahi lullaby.",
+        "Roz same time lights out — ek calm alarm cue set karein."
+      ],
+      "pick_play": "10-min play chunein — start karne ke liye tap karein",
+      "close": "Band karein",
+      "start": "Start",
+      "no_routine": "Aaj ke liye abhi koi routine nahi",
+      "no_routine_help": "Timeline aur smart suggestions unlock karne ke liye ek banayein."
+    }
   }
 }

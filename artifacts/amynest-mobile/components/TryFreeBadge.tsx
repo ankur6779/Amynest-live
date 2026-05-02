@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { palette } from "@/constants/colors";
 
 /**
@@ -8,10 +9,11 @@ import { palette } from "@/constants/colors";
  * yet (and isn't premium). Mirror of the web TryFreeBadge.
  */
 export default function TryFreeBadge({ style }: { style?: any }) {
+  const { t } = useTranslation();
   return (
     <View style={[styles.pill, style]} testID="try-free-badge">
       <Ionicons name="sparkles" size={9} color={palette.emerald700} />
-      <Text style={styles.text}>Try Free</Text>
+      <Text style={styles.text}>{t("parent_hub.badges.try_free")}</Text>
     </View>
   );
 }

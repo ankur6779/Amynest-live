@@ -38,6 +38,7 @@ import { PrintableWorksheets } from "@/components/printable-worksheets";
 import { DailyTips } from "@/components/daily-tips";
 import { ParentingArticles } from "@/components/parenting-articles";
 import { AmyIcon } from "@/components/amy-icon";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { FuturePredictor } from "@/components/future-predictor";
 import { ParentCommandCenter } from "@/components/parent-command-center";
 import { LockedBlock } from "@/components/locked-block";
@@ -138,35 +139,41 @@ function HubSection({ id, icon, title, description, accentClass, defaultOpen = f
 }
 
 // ─── Amy AI Suggestions Section ───────────────────────────────────────────────
-const AMY_PROMPTS = [
-  { emoji: "😴", label: "Sleep problems", prompt: "My child is having trouble sleeping. What should I do?" },
-  { emoji: "😤", label: "Tantrums",       prompt: "My child is having frequent tantrums. How should I handle this?" },
-  { emoji: "🥦", label: "Picky eating",   prompt: "My child is a picky eater. What strategies can help?" },
-  { emoji: "📚", label: "School anxiety", prompt: "My child is anxious about going to school. How can I help?" },
-  { emoji: "📱", label: "Screen time",    prompt: "How much screen time is appropriate for my child's age?" },
-  { emoji: "💬", label: "Language",       prompt: "How can I support my child's language and speech development?" },
-];
+const AMY_PROMPT_IDS = ["sleep", "tantrums", "picky", "school", "screen", "language"] as const;
+const AMY_PROMPT_EMOJI: Record<typeof AMY_PROMPT_IDS[number], string> = {
+  sleep: "😴",
+  tantrums: "😤",
+  picky: "🥦",
+  school: "📚",
+  screen: "📱",
+  language: "💬",
+};
 
 function AmyAISuggestionsSection() {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Tap a topic and Amy will give you warm, practical parenting advice — instantly.
+        {t("parent_hub.amy.lead")}
       </p>
       <div className="grid grid-cols-2 gap-2">
-        {AMY_PROMPTS.map(p => (
-          <Link key={p.label} href={`/assistant?q=${encodeURIComponent(p.prompt)}`}>
-            <button className="w-full text-left flex items-center gap-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 px-3 py-2.5 transition-all">
-              <span className="text-xl shrink-0">{p.emoji}</span>
-              <span className="text-sm font-semibold text-foreground">{p.label}</span>
-            </button>
-          </Link>
-        ))}
+        {AMY_PROMPT_IDS.map(id => {
+          const label = t(`parent_hub.amy.prompts.${id}.label`);
+          const prompt = t(`parent_hub.amy.prompts.${id}.prompt`);
+          return (
+            <Link key={id} href={`/assistant?q=${encodeURIComponent(prompt)}`}>
+              <button className="w-full text-left flex items-center gap-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 px-3 py-2.5 transition-all">
+                <span className="text-xl shrink-0">{AMY_PROMPT_EMOJI[id]}</span>
+                <span className="text-sm font-semibold text-foreground">{label}</span>
+              </button>
+            </Link>
+          );
+        })}
       </div>
       <Link href="/assistant">
         <Button variant="outline" className="w-full rounded-xl gap-2 text-sm font-semibold">
           <AmyIcon size={20} bounce />
-          Ask Amy anything
+          {t("parent_hub.amy.cta")}
           <ArrowRight className="h-4 w-4 ml-auto" />
         </Button>
       </Link>
@@ -175,66 +182,51 @@ function AmyAISuggestionsSection() {
 }
 
 // ─── Emotional Support Section ────────────────────────────────────────────────
-const EMOTIONAL_CARDS = [
-  {
-    emoji: "🫂",
-    title: "I'm feeling overwhelmed",
-    subtitle: "It's okay. You're not alone.",
-    prompt: "I'm feeling completely overwhelmed as a parent. What can I do to feel better?",
-    bg: "bg-rose-50 dark:bg-rose-500/15 border-rose-200 dark:border-rose-400/30 hover:border-rose-400",
-  },
-  {
-    emoji: "😰",
-    title: "My child seems anxious",
-    subtitle: "Let's figure this out together.",
-    prompt: "My child seems anxious and worried a lot. How can I help them?",
-    bg: "bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-400/30 hover:border-amber-400",
-  },
-  {
-    emoji: "😔",
-    title: "We're struggling to connect",
-    subtitle: "Small steps can make a big difference.",
-    prompt: "I feel like my child and I aren't connecting well. How can we build a stronger bond?",
-    bg: "bg-violet-50 dark:bg-violet-500/15 border-violet-200 dark:border-violet-400/30 hover:border-violet-400",
-  },
-  {
-    emoji: "😮‍💨",
-    title: "I need a parenting break",
-    subtitle: "Self-care is part of good parenting.",
-    prompt: "I'm a parent who needs some time for myself. How can I take care of my own wellbeing?",
-    bg: "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-400/30 hover:border-emerald-400",
-  },
-];
+const EMOTIONAL_CARD_IDS = ["overwhelmed", "anxious", "connect", "break"] as const;
+const EMOTIONAL_CARD_EMOJI: Record<typeof EMOTIONAL_CARD_IDS[number], string> = {
+  overwhelmed: "🫂",
+  anxious: "😰",
+  connect: "😔",
+  break: "😮‍💨",
+};
+const EMOTIONAL_CARD_BG: Record<typeof EMOTIONAL_CARD_IDS[number], string> = {
+  overwhelmed: "bg-rose-50 dark:bg-rose-500/15 border-rose-200 dark:border-rose-400/30 hover:border-rose-400",
+  anxious: "bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-400/30 hover:border-amber-400",
+  connect: "bg-violet-50 dark:bg-violet-500/15 border-violet-200 dark:border-violet-400/30 hover:border-violet-400",
+  break: "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-400/30 hover:border-emerald-400",
+};
 
 function EmotionalSupportSection() {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Parenting is hard. Amy is here to listen and help — no judgment.
+        {t("parent_hub.emotional_footer.lead")}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {EMOTIONAL_CARDS.map(card => (
-          <SubItemGate
-            key={card.title}
-            sectionId="hub_emotional"
-            subItemId={card.title}
-          >
-            <Link href={`/assistant?q=${encodeURIComponent(card.prompt)}`}>
-              <button className={`w-full text-left rounded-2xl border-2 px-4 py-3 transition-all ${card.bg}`}>
-                <span className="text-2xl block mb-1">{card.emoji}</span>
-                <p className="font-bold text-sm text-foreground leading-tight">{card.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{card.subtitle}</p>
-              </button>
-            </Link>
-          </SubItemGate>
-        ))}
+        {EMOTIONAL_CARD_IDS.map(id => {
+          const title = t(`parent_hub.emotional_cards.${id}.title`);
+          const subtitle = t(`parent_hub.emotional_cards.${id}.subtitle`);
+          const prompt = t(`parent_hub.emotional_cards.${id}.prompt`);
+          return (
+            <SubItemGate key={id} sectionId="hub_emotional" subItemId={id}>
+              <Link href={`/assistant?q=${encodeURIComponent(prompt)}`}>
+                <button className={`w-full text-left rounded-2xl border-2 px-4 py-3 transition-all ${EMOTIONAL_CARD_BG[id]}`}>
+                  <span className="text-2xl block mb-1">{EMOTIONAL_CARD_EMOJI[id]}</span>
+                  <p className="font-bold text-sm text-foreground leading-tight">{title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+                </button>
+              </Link>
+            </SubItemGate>
+          );
+        })}
       </div>
       <div className="bg-gradient-to-r from-pink-50 dark:from-pink-500/15 to-violet-50 dark:to-violet-500/15 border border-pink-200 dark:border-pink-400/30 rounded-2xl p-4 flex gap-3 items-start">
         <AmyIcon size={36} />
         <div>
-          <p className="font-bold text-sm text-foreground">You're doing better than you think 💜</p>
+          <p className="font-bold text-sm text-foreground">{t("parent_hub.emotional_footer.reassure_title")}</p>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            Research shows that the fact you're seeking information and support makes you an above-average parent. The worry itself is evidence of love.
+            {t("parent_hub.emotional_footer.reassure_body")}
           </p>
         </div>
       </div>
@@ -344,6 +336,7 @@ interface ActivitiesSectionProps {
 }
 
 function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: ActivitiesSectionProps) {
+  const { t } = useTranslation();
   const isInfant = ageGroup === "infant";
   const isToddlerOrPreschool = ageGroup === "toddler" || ageGroup === "preschool";
   const isOlder = !isInfant && !isToddlerOrPreschool;
@@ -356,8 +349,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
         <>
           <SubSection gateSection="hub_activities"
             icon={<Baby className="h-4 w-4 text-pink-500" />}
-            title="Baby Activities"
-            description="Feeding, bonding, development & milestones"
+            title={t("parent_hub.subsections.baby-activities.title")}
+            description={t("parent_hub.subsections.baby-activities.description")}
             accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-rose-100 dark:to-rose-500/20"
           >
             <InfantMode
@@ -370,8 +363,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
-            title="Amazing Facts"
-            description="Fun facts about your baby's world"
+            title={t("parent_hub.subsections.amazing-facts-baby.title")}
+            description={t("parent_hub.subsections.amazing-facts-baby.description")}
             accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
           >
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
@@ -384,8 +377,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
         <>
           <SubSection gateSection="hub_activities"
             icon={<Star className="h-4 w-4 text-orange-500" />}
-            title="Daily Activity"
-            description="Today's fun activity picked for your child"
+            title={t("parent_hub.subsections.daily-activity.title")}
+            description={t("parent_hub.subsections.daily-activity.description")}
             accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-amber-100 dark:to-amber-500/20"
           >
             <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
@@ -393,8 +386,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<Brain className="h-4 w-4 text-violet-600" />}
-            title="Skills to Focus"
-            description="Age-matched skills to practise this week"
+            title={t("parent_hub.subsections.skills-to-focus-toddler.title")}
+            description={t("parent_hub.subsections.skills-to-focus-toddler.description")}
             accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-purple-100 dark:to-purple-500/20"
           >
             <ToddlerPreschoolMode
@@ -408,8 +401,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<BookOpen className="h-4 w-4 text-indigo-600" />}
-            title="Story Time"
-            description="Short story to read together today"
+            title={t("parent_hub.subsections.story-time.title")}
+            description={t("parent_hub.subsections.story-time.description")}
             accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20"
           >
             <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
@@ -417,8 +410,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<Gamepad2 className="h-4 w-4 text-emerald-600" />}
-            title="Fun & Play"
-            description="Games and activities to enjoy together"
+            title={t("parent_hub.subsections.fun-and-play.title")}
+            description={t("parent_hub.subsections.fun-and-play.description")}
             accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20"
           >
             <ToddlerPreschoolMode
@@ -432,8 +425,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<ScrollText className="h-4 w-4 text-rose-600" />}
-            title="Parent Tasks"
-            description="Quick things to do for your child today"
+            title={t("parent_hub.subsections.parent-tasks-toddler.title")}
+            description={t("parent_hub.subsections.parent-tasks-toddler.description")}
             accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
           >
             <ToddlerPreschoolMode
@@ -448,8 +441,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
           {ageGroup === "preschool" && (
             <SubSection gateSection="hub_activities"
               icon={<LayoutGrid className="h-4 w-4 text-sky-600" />}
-              title="Daily Puzzle"
-              description="A brain-teaser to sharpen little minds"
+              title={t("parent_hub.subsections.daily-puzzle-pre.title")}
+              description={t("parent_hub.subsections.daily-puzzle-pre.description")}
               accentClass="bg-gradient-to-br from-sky-100 dark:from-sky-500/20 to-cyan-100 dark:to-cyan-500/20"
             >
               <DailyPuzzle
@@ -462,8 +455,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
-            title="Amazing Facts"
-            description="Fun things to tell your little one today"
+            title={t("parent_hub.subsections.amazing-facts-toddler.title")}
+            description={t("parent_hub.subsections.amazing-facts-toddler.description")}
             accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
           >
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
@@ -471,8 +464,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
-            title="Spelling Mastery"
-            description="Learn → Practice → Dictate → Compete with Amy's voice"
+            title={t("parent_hub.subsections.spelling-mastery.title")}
+            description={t("parent_hub.subsections.spelling-mastery.description")}
             accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20"
           >
             <SpellingMastery
@@ -490,8 +483,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
           {totalAgeMonths < 96 && (
             <SubSection gateSection="hub_activities"
               icon={<Star className="h-4 w-4 text-orange-500" />}
-              title="Daily Activity"
-              description="Today's fun activity picked for your child"
+              title={t("parent_hub.subsections.daily-activity-older.title")}
+              description={t("parent_hub.subsections.daily-activity-older.description")}
               accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-amber-100 dark:to-amber-500/20"
             >
               <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
@@ -500,8 +493,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<Brain className="h-4 w-4 text-violet-600" />}
-            title="Skills to Focus"
-            description="Key skills to develop this stage"
+            title={t("parent_hub.subsections.skills-to-focus-older.title")}
+            description={t("parent_hub.subsections.skills-to-focus-older.description")}
             accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-purple-100 dark:to-purple-500/20"
           >
             <SkillFocusSection group={ageGroup} childName={effectiveChild.name} />
@@ -509,8 +502,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<BookOpen className="h-4 w-4 text-indigo-600" />}
-            title="Story Time"
-            description="A short story for your child today"
+            title={t("parent_hub.subsections.story-time-older.title")}
+            description={t("parent_hub.subsections.story-time-older.description")}
             accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20"
           >
             <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
@@ -518,8 +511,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<LayoutGrid className="h-4 w-4 text-sky-600" />}
-            title="Daily Puzzle"
-            description="A brain-teaser to sharpen their mind"
+            title={t("parent_hub.subsections.daily-puzzle-older.title")}
+            description={t("parent_hub.subsections.daily-puzzle-older.description")}
             accentClass="bg-gradient-to-br from-sky-100 dark:from-sky-500/20 to-cyan-100 dark:to-cyan-500/20"
           >
             <DailyPuzzle
@@ -531,8 +524,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<ScrollText className="h-4 w-4 text-rose-600" />}
-            title="Parent Tasks"
-            description="Quick things to do for your child today"
+            title={t("parent_hub.subsections.parent-tasks-older.title")}
+            description={t("parent_hub.subsections.parent-tasks-older.description")}
             accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
           >
             <ParentTasksSection group={ageGroup} childName={effectiveChild.name} />
@@ -540,8 +533,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
-            title="Amazing Facts"
-            description="Interesting facts to share with your child"
+            title={t("parent_hub.subsections.amazing-facts-older.title")}
+            description={t("parent_hub.subsections.amazing-facts-older.description")}
             accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
           >
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
@@ -549,8 +542,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
 
           <SubSection gateSection="hub_activities"
             icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
-            title="Spelling Mastery"
-            description="Learn → Practice → Dictate → Compete with Amy's voice"
+            title={t("parent_hub.subsections.spelling-mastery-older.title")}
+            description={t("parent_hub.subsections.spelling-mastery-older.description")}
             accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20"
           >
             <SpellingMastery
@@ -565,8 +558,8 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
       {/* ── Printable Worksheets (all age groups) ──────────────────────── */}
       <SubSection gateSection="hub_activities"
         icon={<FileDown className="h-4 w-4 text-teal-600" />}
-        title="Printable Worksheets"
-        description="Age-matched worksheets to download & print"
+        title={t("parent_hub.subsections.printable-worksheets-all.title")}
+        description={t("parent_hub.subsections.printable-worksheets-all.description")}
         accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20"
       >
         <PrintableWorksheets childAgeMonths={totalAgeMonths} />
@@ -593,6 +586,7 @@ function ChildSelectorPanel({
   effectiveChild: any;
   onSelect: (id: number) => void;
 }) {
+  const { t } = useTranslation();
   if (childList.length === 0) return null;
 
   const getInitials = (name: string) =>
@@ -612,13 +606,13 @@ function ChildSelectorPanel({
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" />
           <span className="text-xs font-bold text-foreground uppercase tracking-wide">
-            {childList.length === 1 ? "Current Child" : "Select Child"}
+            {childList.length === 1 ? t("parent_hub.headers.current_child") : t("parent_hub.headers.select_child")}
           </span>
         </div>
         <Link href="/children/new">
           <button className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
             <UserPlus className="h-3.5 w-3.5" />
-            Add child
+            {t("parent_hub.headers.add_child")}
           </button>
         </Link>
       </div>
@@ -747,13 +741,13 @@ export default function ParentingHub() {
         <Card className="rounded-3xl border-2 border-dashed">
           <CardContent className="p-10 text-center space-y-4">
             <AmyIcon size={56} bounce />
-            <h3 className="font-bold text-lg">Add a child to get started</h3>
+            <h3 className="font-bold text-lg">{t("parent_hub.empty.heading")}</h3>
             <p className="text-sm text-muted-foreground">
-              Add your child's profile to unlock age-personalised tips, articles, and activities.
+              {t("parent_hub.empty.body")}
             </p>
             <Link href="/children/new">
               <button className="mt-2 px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold text-sm">
-                Add Child
+                {t("parent_hub.empty.cta")}
               </button>
             </Link>
           </CardContent>
@@ -789,8 +783,8 @@ export default function ParentingHub() {
         <HubSection
           id="command-center"
           icon={<Zap className="h-5 w-5 text-sky-600" />}
-          title="Command Center"
-          description="Today's overview, mood, sleep & quick actions"
+          title={t("parent_hub.web_tiles.command-center.title")}
+          description={t("parent_hub.web_tiles.command-center.description")}
           accentClass="bg-sky-100 dark:bg-sky-500/20"
           defaultOpen={false}
         >
@@ -819,8 +813,8 @@ export default function ParentingHub() {
         <HubSection
           id="tomorrow-forecast"
           icon={<Sparkles className="h-5 w-5 text-violet-600" />}
-          title="Amy AI — Tomorrow's Forecast"
-          description="Mood, energy & sleep prediction for tomorrow"
+          title={t("parent_hub.web_tiles.tomorrow-forecast.title")}
+          description={t("parent_hub.web_tiles.tomorrow-forecast.description")}
           accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20"
           defaultOpen={false}
         >
@@ -837,8 +831,8 @@ export default function ParentingHub() {
         <HubSection
           id="smart-math-tricks"
           icon={<Sparkles className="h-5 w-5 text-amber-500" />}
-          title="🧮 Smart Math Tricks"
-          description="Fun mental math shortcuts — Vedic style!"
+          title={t("parent_hub.web_tiles.smart-math-tricks.title")}
+          description={t("parent_hub.web_tiles.smart-math-tricks.description")}
           accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100 dark:to-orange-500/20"
         >
           <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
@@ -854,8 +848,8 @@ export default function ParentingHub() {
         <HubSection
           id="amy-ai"
           icon={<AmyIcon size={22} bounce />}
-          title="Ask Amy AI"
-          description="Get warm, practical parenting advice"
+          title={t("parent_hub.web_tiles.amy-ai.title")}
+          description={t("parent_hub.web_tiles.amy-ai.description")}
           accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-rose-100 dark:to-rose-500/20"
         >
           <AmyAISuggestionsSection />
@@ -870,14 +864,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_articles")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="articles"
             icon={<BookOpen className="h-5 w-5 text-emerald-600" />}
-            title="Parenting Articles"
-            description="Research-based, age-matched reading"
+            title={t("parent_hub.web_tiles.articles.title")}
+            description={t("parent_hub.web_tiles.articles.description")}
             accentClass="bg-emerald-100 dark:bg-emerald-500/20"
             tryFree={tryFreeFor("hub_articles")}
             onOpen={() => hubUsage.markFeatureUsed("hub_articles")}
@@ -895,14 +887,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_tips")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="daily-tips"
             icon={<Sparkles className="h-5 w-5 text-violet-600" />}
-            title="Daily Tips"
-            description="Amy AI picks today's best tips for you"
+            title={t("parent_hub.web_tiles.daily-tips.title")}
+            description={t("parent_hub.web_tiles.daily-tips.description")}
             accentClass="bg-violet-100 dark:bg-violet-500/20"
             tryFree={tryFreeFor("hub_tips")}
             onOpen={() => hubUsage.markFeatureUsed("hub_tips")}
@@ -920,14 +910,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_emotional")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="emotional"
             icon={<Heart className="h-5 w-5 text-rose-500" />}
-            title="Emotional Support"
-            description="For the tough parenting days"
+            title={t("parent_hub.web_tiles.emotional.title")}
+            description={t("parent_hub.web_tiles.emotional.description")}
             accentClass="bg-rose-100 dark:bg-rose-500/20"
             tryFree={tryFreeFor("hub_emotional")}
             onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}
@@ -945,14 +933,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_activities")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="activities"
             icon={<Palette className="h-5 w-5 text-fuchsia-600" />}
-            title="Activities & Learning"
-            description="Age-based games, stories & skills"
+            title={t("parent_hub.web_tiles.activities.title")}
+            description={t("parent_hub.web_tiles.activities.description")}
             accentClass="bg-fuchsia-100 dark:bg-fuchsia-500/20"
             tryFree={tryFreeFor("hub_activities")}
             onOpen={() => hubUsage.markFeatureUsed("hub_activities")}
@@ -975,14 +961,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_art_craft")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="art-craft"
             icon={<Palette className="h-5 w-5 text-orange-500" />}
-            title="🎨 Art & Craft Videos"
-            description="Creative video tutorials — tap to watch, swipe to browse"
+            title={t("parent_hub.web_tiles.art-craft.title")}
+            description={t("parent_hub.web_tiles.art-craft.description")}
             accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-yellow-100 dark:to-yellow-500/20"
             tryFree={tryFreeFor("hub_art_craft")}
             onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}
@@ -1001,14 +985,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_story_hub")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="story-hub"
             icon={<Film className="h-5 w-5 text-rose-600" />}
-            title="🎬 Kids Story Hub"
-            description="A whole library of bedtime, moral & fun stories — for ages 0–8"
+            title={t("parent_hub.web_tiles.story-hub.title")}
+            description={t("parent_hub.web_tiles.story-hub.description")}
             accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-purple-100 dark:to-purple-500/20"
             tryFree={tryFreeFor("hub_story_hub")}
             onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}
@@ -1026,14 +1008,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_phonics")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="phonics"
             icon={<AudioLines className="h-5 w-5 text-violet-600" />}
-            title="🔤 Phonics Learning"
-            description="Sound awareness → blending → reading, paced for your child's age"
+            title={t("parent_hub.web_tiles.phonics.title")}
+            description={t("parent_hub.web_tiles.phonics.description")}
             accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20"
             tryFree={tryFreeFor("hub_phonics")}
             onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}
@@ -1055,14 +1035,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="ptm-prep"
             icon={<ClipboardList className="h-5 w-5 text-violet-600" />}
-            title="🧾 PTM Prep Assistant"
-            description="Prepare questions, take notes & turn them into action steps"
+            title={t("parent_hub.web_tiles.ptm-prep.title")}
+            description={t("parent_hub.web_tiles.ptm-prep.description")}
             accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20"
             tryFree={tryFreeFor("hub_ptm_prep")}
             onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}
@@ -1080,14 +1058,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_smart_study")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="smart-study"
             icon={<GraduationCap className="h-5 w-5 text-indigo-600" />}
-            title="📚 Smart Study Zone"
-            description="Adaptive learning Nursery → Class 10, with audio + practice"
+            title={t("parent_hub.web_tiles.smart-study.title")}
+            description={t("parent_hub.web_tiles.smart-study.description")}
             accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20"
             tryFree={tryFreeFor("hub_smart_study")}
             onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}
@@ -1105,14 +1081,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_event_prep")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="event-prep"
             icon={<Sparkles className="h-5 w-5 text-pink-600" />}
-            title="🎉 Event Prep (School Ready)"
-            description="Fancy dress, DIY guide & speeches for school events"
+            title={t("parent_hub.web_tiles.event-prep.title")}
+            description={t("parent_hub.web_tiles.event-prep.description")}
             accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20"
             tryFree={tryFreeFor("hub_event_prep")}
             onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}
@@ -1130,14 +1104,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_olympiad")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="olympiad"
             icon={<Trophy className="h-5 w-5 text-amber-600" />}
-            title="Smart Olympiad Zone"
-            description="Daily 5 MCQs, weekly tests, badges & insights"
+            title={t("parent_hub.web_tiles.olympiad.title")}
+            description={t("parent_hub.web_tiles.olympiad.description")}
             accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
             tryFree={tryFreeFor("hub_olympiad")}
             onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}
@@ -1155,14 +1127,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_life_skills")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="life-skills"
             icon={<Compass className="h-5 w-5 text-emerald-600" />}
-            title="🧭 Life Skills Mode"
-            description="Daily real-life skills tailored to your child's age"
+            title={t("parent_hub.web_tiles.life-skills.title")}
+            description={t("parent_hub.web_tiles.life-skills.description")}
             accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20"
             tryFree={tryFreeFor("hub_life_skills")}
             onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
@@ -1184,14 +1154,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_coloring_books")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="coloring-books"
             icon={<Palette className="h-5 w-5 text-rose-600" />}
-            title="🎨 Coloring Books"
-            description="Printable coloring sheets — preview, then download (2/day)"
+            title={t("parent_hub.web_tiles.coloring-books.title")}
+            description={t("parent_hub.web_tiles.coloring-books.description")}
             accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
             tryFree={tryFreeFor("hub_coloring_books")}
             onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}
@@ -1216,14 +1184,12 @@ export default function ParentingHub() {
         <LockedBlock
           reason="hub_locked"
           locked={hubUsage.isFeatureLocked("hub_fun_sheets")}
-          label="Unlock to continue"
-          cta="Unlock Premium"
         >
           <HubSection
             id="fun-sheets"
             icon={<FileDown className="h-5 w-5 text-teal-600" />}
-            title="📄 Fun Sheets"
-            description="Printable activity & learning PDFs — preview, then download (2/day)"
+            title={t("parent_hub.web_tiles.fun-sheets.title")}
+            description={t("parent_hub.web_tiles.fun-sheets.description")}
             accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20"
             tryFree={tryFreeFor("hub_fun_sheets")}
             onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}
@@ -1303,14 +1269,14 @@ export default function ParentingHub() {
                 data-testid="section-2-previews"
                 className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2"
               >
-                {SECTION_2_PREVIEW_TILES.map((t) => (
-                  <ComingNextWrapper key={t.id} band={nextBand}>
+                {SECTION_2_PREVIEW_TILES.map((tile) => (
+                  <ComingNextWrapper key={tile.id} band={nextBand}>
                     <PreviewHubCard
-                      id={t.id}
-                      icon={t.icon}
-                      title={t.title}
-                      description={t.description}
-                      accentClass={t.accentClass}
+                      id={tile.id}
+                      icon={tile.icon}
+                      title={t(`parent_hub.preview_tiles.${tile.id}.title`)}
+                      description={t(`parent_hub.preview_tiles.${tile.id}.description`)}
+                      accentClass={tile.accentClass}
                     />
                   </ComingNextWrapper>
                 ))}
@@ -1325,7 +1291,7 @@ export default function ParentingHub() {
         <Link href="/routines/generate">
           <button className="inline-flex items-center gap-2 text-sm text-primary font-semibold hover:underline">
             <Calendar className="h-4 w-4" />
-            Generate today's routine
+            {t("parent_hub.headers.bottom_cta")}
           </button>
         </Link>
       </div>
@@ -1343,19 +1309,18 @@ function ForYouHeader({
   band: AgeBand;
   ageGroup: AgeGroup | null;
 }) {
+  const { t } = useTranslation();
   const groupInfo = ageGroup ? getAgeGroupInfo(ageGroup) : null;
   return (
     <div className="pt-1">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80">
-          Section 1 · For you
-        </span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80">{t("parent_hub.headers.section1_for")}</span>
         <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1">
           {bandLabel(band)}
         </Badge>
       </div>
       <h2 className="font-quicksand text-xl font-bold text-foreground mt-1.5 flex items-center gap-2 flex-wrap">
-        <span>For {childName}</span>
+        <span>{t("parent_hub.headers.for_child", { name: childName })}</span>
         {groupInfo && (
           <span className="text-base font-medium text-muted-foreground">
             {groupInfo.emoji} {groupInfo.label}
@@ -1363,77 +1328,59 @@ function ForYouHeader({
         )}
       </h2>
       <p className="text-xs text-muted-foreground mt-0.5">
-        Personalised content tuned to where {childName} is right now.
+        {t("parent_hub.headers.personalised", { name: childName })}
       </p>
     </div>
   );
 }
 
 // ─── Section 2 preview tiles ────────────────────────────────────────────────
-// Fixed list shown ONLY for 0–24 month children. These mirror the metadata of
-// the corresponding interactive sections (life-skills, olympiad, event-prep,
-// smart-study, ptm-prep, phonics) so parents can preview what's coming.
+// Fixed list shown ONLY for 0–24 month children. Title & description are
+// looked up at render time via `t("parent_hub.preview_tiles.<id>.title")`
+// so each tile re-renders when the active language changes.
 const SECTION_2_PREVIEW_TILES: Array<{
   id: string;
   icon: React.ReactNode;
-  title: string;
-  description: string;
   accentClass: string;
 }> = [
   {
     id: "life-skills",
     icon: <Compass className="h-5 w-5 text-emerald-600" />,
-    title: "🧭 Life Skills Mode",
-    description: "Daily real-life skills tailored to your child's age",
     accentClass: "bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20",
   },
   {
     id: "olympiad",
     icon: <Trophy className="h-5 w-5 text-amber-600" />,
-    title: "🏆 Smart Olympiad Zone",
-    description: "Daily 5 MCQs, weekly tests, badges & insights",
     accentClass: "bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20",
   },
   {
     id: "event-prep",
     icon: <Sparkles className="h-5 w-5 text-pink-600" />,
-    title: "🎉 Event Prep (School Ready)",
-    description: "Fancy dress, DIY guide & speeches for school events",
     accentClass: "bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20",
   },
   {
     id: "smart-study",
     icon: <GraduationCap className="h-5 w-5 text-indigo-600" />,
-    title: "📚 Smart Study Zone",
-    description: "Adaptive learning Nursery → Class 10, with audio + practice",
     accentClass: "bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20",
   },
   {
     id: "ptm-prep",
     icon: <ClipboardList className="h-5 w-5 text-violet-600" />,
-    title: "🧾 PTM Prep Assistance",
-    description: "Prepare questions, take notes & turn them into action steps",
     accentClass: "bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20",
   },
   {
     id: "phonics",
     icon: <AudioLines className="h-5 w-5 text-violet-600" />,
-    title: "🔤 Phonics Learning",
-    description: "Sound awareness → blending → reading, paced for your child's age",
     accentClass: "bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20",
   },
   {
     id: "coloring-books",
     icon: <Palette className="h-5 w-5 text-rose-600" />,
-    title: "🎨 Coloring Books",
-    description: "Printable coloring sheets with preview & one-tap download",
     accentClass: "bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20",
   },
   {
     id: "fun-sheets",
     icon: <FileDown className="h-5 w-5 text-teal-600" />,
-    title: "📄 Fun Sheets",
-    description: "Printable activity & learning PDFs — 2 downloads/day per child",
     accentClass: "bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20",
   },
 ];
@@ -1493,12 +1440,11 @@ function ExploreNextHeader({
   childName: string;
   band: AgeBand;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="pt-6">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
-          Section 2 · Coming next
-        </span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">{t("parent_hub.headers.section2_next")}</span>
         <Badge
           variant="outline"
           className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1 border-amber-300/60 dark:border-amber-400/30 text-amber-800 dark:text-amber-200"
@@ -1507,11 +1453,10 @@ function ExploreNextHeader({
         </Badge>
       </div>
       <h2 className="font-quicksand text-xl font-bold text-foreground mt-1.5">
-        Explore the next stage for {childName}
+        {t("parent_hub.headers.explore_next", { name: childName })}
       </h2>
       <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
-        We grow as {childName} grows — here's a peek at what unlocks next so you
-        can plan ahead and stay one step in front.
+        {t("parent_hub.headers.explore_blurb", { name: childName })}
       </p>
     </div>
   );
@@ -1531,6 +1476,10 @@ function PageHeader() {
           {t("hub.subtitle")}
         </p>
       </div>
+      {/* Inline language toggle so caregivers can switch English / Hindi /
+          Hinglish without leaving the Parent Hub. Mirrors the mobile
+          `LanguageRow` placement in artifacts/amynest-mobile/app/(tabs)/hub.tsx. */}
+      <LanguageSwitcher compact />
       <Link href="/assistant">
         <button className="shrink-0 flex items-center gap-2 bg-gradient-to-br from-amber-100 dark:from-amber-500/20 via-rose-100 dark:via-rose-500/20 to-violet-200 dark:to-violet-500/25 rounded-2xl px-3 py-2 border border-border hover:border-primary/40 transition-all">
           <AmyIcon size={24} bounce />

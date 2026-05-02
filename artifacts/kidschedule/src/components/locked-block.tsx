@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Lock } from "lucide-react";
 import type { PaywallReason } from "@/contexts/paywall-context";
 
@@ -33,9 +34,12 @@ export function LockedBlock({
   children,
 }: LockedBlockProps) {
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
   const goPricing = () => setLocation("/pricing");
 
   if (!locked) return <>{children}</>;
+
+  const ariaLabel = t("parent_hub.badges.premium_feature_aria");
 
   return (
     <div
@@ -53,7 +57,7 @@ export function LockedBlock({
         onClick={goPricing}
         role="button"
         tabIndex={0}
-        aria-label="Premium feature — tap to upgrade"
+        aria-label={ariaLabel}
         data-testid="locked-block-overlay"
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") goPricing();
@@ -67,11 +71,11 @@ export function LockedBlock({
             type="button"
             onClick={goPricing}
             data-testid="premium-feature-lock"
-            aria-label="Premium feature — tap to upgrade"
+            aria-label={ariaLabel}
             className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500 text-white shadow-md shadow-purple-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide cursor-pointer hover:brightness-110 transition"
           >
             <Lock className="h-2.5 w-2.5" />
-            Premium feature
+            {t("parent_hub.badges.premium_feature")}
           </button>
         </div>
       </div>

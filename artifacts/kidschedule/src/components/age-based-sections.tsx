@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX } from "lucide-react";
@@ -14,6 +15,7 @@ interface SkillFocusSectionProps {
 }
 
 export function SkillFocusSection({ group, childName }: SkillFocusSectionProps) {
+  const { t } = useTranslation();
   const skills = SKILL_FOCUS_BY_GROUP[group];
   const colors = ["bg-blue-50 dark:bg-blue-500/15 border-blue-200 dark:border-blue-400/30", "bg-purple-50 dark:bg-purple-500/15 border-purple-200 dark:border-purple-400/30", "bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-400/30", "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-400/30"];
 
@@ -24,9 +26,9 @@ export function SkillFocusSection({ group, childName }: SkillFocusSectionProps) 
           <span className="text-2xl">🧠</span>
           <div>
             <h3 className="font-quicksand text-base font-bold text-violet-900 dark:text-violet-100">
-              Skills to Focus on for {childName}
+              {t("parent_hub.age_sections.skill_focus.title", { name: childName })}
             </h3>
-            <p className="text-xs text-violet-700 dark:text-violet-200">Age-appropriate development activities for today</p>
+            <p className="text-xs text-violet-700 dark:text-violet-200">{t("parent_hub.age_sections.skill_focus.desc")}</p>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -41,7 +43,7 @@ export function SkillFocusSection({ group, childName }: SkillFocusSectionProps) 
           ))}
         </div>
         <p className="text-[10px] text-muted-foreground mt-3 text-center">
-          ✨ The AI will incorporate these focus areas when generating {childName}'s routine
+          {t("parent_hub.age_sections.skill_focus.footer", { name: childName })}
         </p>
       </CardContent>
     </Card>
@@ -58,6 +60,7 @@ interface StorySectionProps {
 
 
 export function StorySection({ group, childName }: StorySectionProps) {
+  const { t } = useTranslation();
   const stories = STORIES_BY_GROUP[group];
   const [activeIdx, setActiveIdx] = useState(0);
   const { speak, stop, speaking, loading } = useAmyVoice();
@@ -79,9 +82,9 @@ export function StorySection({ group, childName }: StorySectionProps) {
           <span className="text-2xl">📖</span>
           <div>
             <h3 className="font-quicksand text-base font-bold text-amber-900 dark:text-amber-100">
-              Story Time for {childName}
+              {t("parent_hub.age_sections.story.title", { name: childName })}
             </h3>
-            <p className="text-xs text-amber-700 dark:text-amber-200">Age-appropriate moral stories</p>
+            <p className="text-xs text-amber-700 dark:text-amber-200">{t("parent_hub.age_sections.story.desc")}</p>
           </div>
         </div>
 
@@ -117,9 +120,9 @@ export function StorySection({ group, childName }: StorySectionProps) {
               onClick={handleSpeak}
             >
               {(speaking || loading) ? (
-                <><VolumeX className="h-3.5 w-3.5 mr-1" />{loading ? "…" : "Stop"}</>
+                <><VolumeX className="h-3.5 w-3.5 mr-1" />{loading ? "…" : t("parent_hub.age_sections.story.stop")}</>
               ) : (
-                <><Volume2 className="h-3.5 w-3.5 mr-1" /> Read Aloud</>
+                <><Volume2 className="h-3.5 w-3.5 mr-1" /> {t("parent_hub.age_sections.story.read_aloud")}</>
               )}
             </Button>
           </div>
@@ -127,13 +130,13 @@ export function StorySection({ group, childName }: StorySectionProps) {
             "{story.story}"
           </p>
           <div className="bg-amber-50 dark:bg-amber-500/15 rounded-xl p-3 border border-amber-200 dark:border-amber-400/30">
-            <p className="text-xs font-bold text-amber-800 dark:text-amber-200 mb-1">💡 Moral of the Story</p>
+            <p className="text-xs font-bold text-amber-800 dark:text-amber-200 mb-1">{t("parent_hub.age_sections.story.moral_label")}</p>
             <p className="text-sm text-amber-900 dark:text-amber-100 font-medium">{story.moral}</p>
           </div>
         </div>
 
         <p className="text-[10px] text-muted-foreground mt-3 text-center">
-          📚 Read this story to {childName} tonight for a meaningful bedtime moment
+          {t("parent_hub.age_sections.story.footer", { name: childName })}
         </p>
       </CardContent>
     </Card>
@@ -149,6 +152,7 @@ interface ParentTasksSectionProps {
 }
 
 export function ParentTasksSection({ group, childName }: ParentTasksSectionProps) {
+  const { t } = useTranslation();
   const tasks = PARENT_TASKS_BY_GROUP[group];
   const [checked, setChecked] = useState<Record<number, boolean>>({});
 
@@ -163,13 +167,13 @@ export function ParentTasksSection({ group, childName }: ParentTasksSectionProps
             <span className="text-2xl">💝</span>
             <div>
               <h3 className="font-quicksand text-base font-bold text-rose-900 dark:text-rose-100">
-                Your Parent Tasks
+                {t("parent_hub.age_sections.parent_tasks.title")}
               </h3>
-              <p className="text-xs text-rose-700 dark:text-rose-200">Things you can do for {childName} today</p>
+              <p className="text-xs text-rose-700 dark:text-rose-200">{t("parent_hub.age_sections.parent_tasks.desc", { name: childName })}</p>
             </div>
           </div>
           <div className="text-xs font-bold text-rose-800 dark:text-rose-200 bg-white dark:bg-rose-500/10 rounded-full px-3 py-1 border border-rose-200 dark:border-rose-400/30">
-            {doneCount}/{tasks.length} done
+            {t("parent_hub.age_sections.parent_tasks.done_counter", { done: doneCount, total: tasks.length })}
           </div>
         </div>
         <div className="space-y-2">
@@ -196,7 +200,7 @@ export function ParentTasksSection({ group, childName }: ParentTasksSectionProps
         </div>
         {doneCount === tasks.length && doneCount > 0 && (
           <div className="mt-4 text-center">
-            <p className="text-sm font-bold text-rose-700 dark:text-rose-200">🌟 Amazing! You're a star parent today!</p>
+            <p className="text-sm font-bold text-rose-700 dark:text-rose-200">{t("parent_hub.age_sections.parent_tasks.celebration")}</p>
           </div>
         )}
       </CardContent>

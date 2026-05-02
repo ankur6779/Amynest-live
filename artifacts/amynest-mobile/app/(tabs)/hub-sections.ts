@@ -9,6 +9,7 @@
 
 import type { ComponentProps } from "react";
 import type { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { HUB_CONTENT_AGE_BANDS } from "./hub-bands";
 
 export const SECTION_KEYS = ["today", "zones", "modules", "activities"] as const;
@@ -194,13 +195,73 @@ export function tileIdToSection(
   return TILE_SECTION_MAP[tileId] ?? null;
 }
 
-/** Friendly label for a section's quick-jump CTA ("Open in Modules" etc.). */
+/** Friendly label for a section's quick-jump CTA ("Open in Modules" etc.).
+ *  ⚠ English-only fallback — prefer `useSectionCtaLabel` inside React.
+ *  Kept as a pure function so non-React callers (tests, helpers) still work. */
 export function sectionCtaLabel(
   section: Exclude<SectionKey, "today">,
 ): string {
   if (section === "modules") return "Open in Modules";
   if (section === "activities") return "Open in Activities";
   return "Open in Zones";
+}
+
+/**
+ * React hook returning a localised section CTA label resolver. The returned
+ * function reads from the `parent_hub.sections_meta.cta_*` keys so the label
+ * follows the active language without requiring callers to thread `t()`
+ * around. Use inside any component rendering quick-jump buttons.
+ */
+export function useSectionCtaLabel(): (
+  section: Exclude<SectionKey, "today">,
+) => string {
+  const { t } = useTranslation();
+  return (section) => {
+    if (section === "modules") return t("parent_hub.sections_meta.cta_modules");
+    if (section === "activities") return t("parent_hub.sections_meta.cta_activities");
+    return t("parent_hub.sections_meta.cta_zones");
+  };
+}
+
+/**
+ * React hook returning a fully localised SECTION_META map. The structure
+ * matches the static `SECTION_META` (same keys, same icon glyphs) but the
+ * `label`, `heading`, and `description` strings are pulled from the active
+ * i18n bundle. Use inside the Parent Hub shell so the tab bar, page
+ * headings, and aria labels follow the chosen language.
+ */
+export function useSectionMeta(): Readonly<Record<SectionKey, SectionMeta>> {
+  const { t } = useTranslation();
+  return {
+    today: {
+      key: "today",
+      label: t("parent_hub.sections_meta.today.label"),
+      heading: t("parent_hub.sections_meta.today.heading"),
+      description: t("parent_hub.sections_meta.today.description"),
+      icon: "today",
+    },
+    zones: {
+      key: "zones",
+      label: t("parent_hub.sections_meta.zones.label"),
+      heading: t("parent_hub.sections_meta.zones.heading"),
+      description: t("parent_hub.sections_meta.zones.description"),
+      icon: "compass",
+    },
+    modules: {
+      key: "modules",
+      label: t("parent_hub.sections_meta.modules.label"),
+      heading: t("parent_hub.sections_meta.modules.heading"),
+      description: t("parent_hub.sections_meta.modules.description"),
+      icon: "school",
+    },
+    activities: {
+      key: "activities",
+      label: t("parent_hub.sections_meta.activities.label"),
+      heading: t("parent_hub.sections_meta.activities.heading"),
+      description: t("parent_hub.sections_meta.activities.description"),
+      icon: "color-palette",
+    },
+  };
 }
 
 /**
