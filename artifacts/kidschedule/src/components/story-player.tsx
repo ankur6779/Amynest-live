@@ -117,6 +117,7 @@ export function StoryFlowPlayer({
 
   return (
     <div
+      data-on-dark
       className="relative overflow-hidden rounded-2xl bg-black shadow-2xl shadow-purple-900/40"
       data-testid={`story-flow-player-${story.id}`}
     >
@@ -154,13 +155,14 @@ export function StoryFlowPlayer({
 
       {/* Video element or error state */}
       {errored ? (
-        <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-black p-8 text-center">
+        <div data-on-dark className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-black p-8 text-center">
           <AlertCircle className="h-10 w-10 text-red-400" />
           <p className="text-sm font-semibold text-white">Couldn't load this story</p>
           <p className="text-xs text-white/50">Skipping to next…</p>
         </div>
       ) : (
         <video
+          data-on-dark
           key={story.id}
           ref={videoRef}
           src={story.streamUrl}

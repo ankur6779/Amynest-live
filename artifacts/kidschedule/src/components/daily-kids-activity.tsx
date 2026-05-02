@@ -332,6 +332,7 @@ function DrivePreviewModal({ item, onClose, isSaved, onSave }: {
 
         {/* ── Embedded iframe ───────────────────────────────── */}
         <div
+          data-on-dark
           className="relative flex-shrink-0 bg-black overflow-hidden"
           style={{ height: "52vw", maxHeight: 320, minHeight: 220 }}
         >

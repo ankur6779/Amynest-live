@@ -40,6 +40,10 @@ args = "brand-hex-drift"
 task = "workflow.run"
 args = "mobile-color-audit"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "kidschedule-on-dark-marker"
+
 [[workflows.workflow]]
 name = "test-routine-meals"
 author = "agent"
@@ -102,6 +106,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node artifacts/amynest-mobile/scripts/check-hardcoded-colors.js"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "kidschedule-on-dark-marker"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node artifacts/kidschedule/scripts/check-on-dark-marker.js"
 
 [workflows.workflow.metadata]
 isValidation = true
