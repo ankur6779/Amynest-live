@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import {
   useListRoutines,
@@ -244,6 +245,7 @@ type DashboardProps = {
 };
 
 function CommandCenterDashboard(props: DashboardProps) {
+  const { t } = useTranslation();
   const { child, todayRoutine, items, mood, sleep, persistMood, persistSleep, result, onClose } = props;
   const { overview, insights, actions, parentStatus, timeline, suggestions } = result;
   const [, navigate] = useLocation();
@@ -485,10 +487,10 @@ function CommandCenterDashboard(props: DashboardProps) {
     icon: React.ReactNode;
   };
   const quickActivities: QuickActivity[] = [
-    { id: "play",    label: "10-min play",    minutes: 10, emoji: "🎮", icon: <Gamepad2 className="h-4 w-4" /> },
-    { id: "phonics", label: "5-min phonics",  minutes: 5,  emoji: "📖", icon: <BookOpen className="h-4 w-4" /> },
-    { id: "lullaby", label: "5-min lullaby",  minutes: 5,  emoji: "🎶", icon: <Music className="h-4 w-4" /> },
-    { id: "puzzle",  label: "5-min puzzle",   minutes: 5,  emoji: "🧩", icon: <Puzzle className="h-4 w-4" /> },
+    { id: "play",    label: t("parent_hub.command_center.quick.play.label"),    minutes: 10, emoji: "🎮", icon: <Gamepad2 className="h-4 w-4" /> },
+    { id: "phonics", label: t("parent_hub.command_center.quick.phonics.label"), minutes: 5,  emoji: "📖", icon: <BookOpen className="h-4 w-4" /> },
+    { id: "lullaby", label: t("parent_hub.command_center.quick.lullaby.label"), minutes: 5,  emoji: "🎶", icon: <Music className="h-4 w-4" /> },
+    { id: "puzzle",  label: t("parent_hub.command_center.quick.puzzle.label"),  minutes: 5,  emoji: "🧩", icon: <Puzzle className="h-4 w-4" /> },
   ];
 
   function startQuickActivity(id: QuickActivity["id"]) {
@@ -660,9 +662,9 @@ function CommandCenterDashboard(props: DashboardProps) {
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-black uppercase tracking-wider text-emerald-200">
-                Quick connection ideas
+                {t("parent_hub.command_center.quick_ideas_title")}
               </h3>
-              <span className="text-[11px] text-emerald-200/70 font-bold">Tap to start a timer</span>
+              <span className="text-[11px] text-emerald-200/70 font-bold">{t("parent_hub.command_center.tap_timer")}</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {quickActivities.map((q) => (
@@ -726,12 +728,14 @@ function CommandCenterDashboard(props: DashboardProps) {
         <ActionPanel
           tone="rose"
           icon={<Heart className="h-4 w-4" />}
-          title="Calming tools — try these in order"
-          steps={[
-            "Breathe slowly 4-4-6 with them for 60 seconds.",
-            "Offer a tight hug + soft voice (no questions).",
-            "Switch to a low-stim activity: water bottle, soft toy, dim light.",
-          ]}
+          title={t("parent_hub.command_center.calming_title")}
+          steps={(() => {
+            // Defensive: in test mocks `t(..., {returnObjects:true})` may
+            // return the key string instead of an array, which would crash
+            // the `<ActionPanel steps={...}>` mapping in the renderer.
+            const raw = t("parent_hub.command_center.calming_steps", { returnObjects: true });
+            return Array.isArray(raw) ? (raw as string[]) : [];
+          })()}
           onDone={() => { setActivePanel(null); logQuickWin(); }}
         />
       )}
@@ -739,12 +743,11 @@ function CommandCenterDashboard(props: DashboardProps) {
         <ActionPanel
           tone="indigo"
           icon={<Moon className="h-4 w-4" />}
-          title="Wind-down plan for tonight"
-          steps={[
-            "Dim lights 30 min before bedtime; no screens after.",
-            "Warm bath or face wash + same lullaby every night.",
-            "Lights out at the same time — set a calm alarm cue.",
-          ]}
+          title={t("parent_hub.command_center.winddown_title")}
+          steps={(() => {
+            const raw = t("parent_hub.command_center.winddown_steps", { returnObjects: true });
+            return Array.isArray(raw) ? (raw as string[]) : [];
+          })()}
           onDone={() => setActivePanel(null)}
         />
       )}
@@ -969,6 +972,7 @@ function PlayPickerPanel({
   onPick: (idea: PlayIdea) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <section
       data-testid="play-picker-panel"
@@ -977,7 +981,7 @@ function PlayPickerPanel({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-white">
           <span className="rounded-full bg-white/10 p-1.5"><Dices className="h-4 w-4" /></span>
-          <h4 className="font-black text-sm">Pick a 10-min play — tap to start</h4>
+          <h4 className="font-black text-sm">{t("parent_hub.command_center.pick_play")}</h4>
         </div>
         <button
           type="button"
@@ -985,7 +989,7 @@ function PlayPickerPanel({
           data-testid="play-picker-close"
           className="text-[11px] font-bold text-white/70 hover:text-white underline-offset-2 hover:underline"
         >
-          Close
+          {t("parent_hub.command_center.close")}
         </button>
       </div>
       <ul className="grid grid-cols-1 gap-2">
@@ -1003,7 +1007,7 @@ function PlayPickerPanel({
                 <span className="block text-[11.5px] text-white/70 mt-0.5 leading-snug">{idea.description}</span>
               </span>
               <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white text-slate-900 px-2.5 py-1 text-[10.5px] font-black">
-                Start
+                {t("parent_hub.command_center.start")}
                 <ArrowRight className="h-3 w-3" />
               </span>
             </button>
@@ -1015,15 +1019,16 @@ function PlayPickerPanel({
 }
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
+  const { t } = useTranslation();
   return (
     <div
       data-testid="command-center-empty"
       className="rounded-2xl border border-dashed border-violet-400/40 bg-white/[0.02] p-6 text-center space-y-3"
     >
       <p className="text-3xl">🪄</p>
-      <p className="text-sm font-bold text-white">No routine for today yet</p>
+      <p className="text-sm font-bold text-white">{t("parent_hub.command_center.no_routine")}</p>
       <p className="text-[12px] text-violet-200/70">
-        Generate one to unlock the timeline + smart suggestions.
+        {t("parent_hub.command_center.no_routine_help")}
       </p>
       <button
         type="button"

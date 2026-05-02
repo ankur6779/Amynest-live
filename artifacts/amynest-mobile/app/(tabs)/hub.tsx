@@ -49,11 +49,14 @@ export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, HUB_TILE_AGE_MONTHS, 
 import {
   SECTION_KEYS,
   SECTION_META,
+  useSectionMeta,
   bucketTilesBySection,
   isFeaturedTile,
   tileIdToSection,
   type SectionKey,
 } from "./hub-sections";
+import { useTranslation } from "react-i18next";
+import { LanguageRow } from "@/components/LanguageRow";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
@@ -68,29 +71,62 @@ const LOGO = require("../../assets/images/amynest-logo.png");
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
-const AMY_PROMPTS = [
-  { emoji: "😴", label: "Sleep problems", prompt: "My child is having trouble sleeping. What should I do?" },
-  { emoji: "😤", label: "Tantrums",       prompt: "My child is having frequent tantrums. How should I handle this?" },
-  { emoji: "🥦", label: "Picky eating",   prompt: "My child is a picky eater. What strategies can help?" },
-  { emoji: "📚", label: "School anxiety", prompt: "My child is anxious about going to school. How can I help?" },
-  { emoji: "📱", label: "Screen time",    prompt: "How much screen time is appropriate?" },
-  { emoji: "💬", label: "Language",       prompt: "How can I support my child's language development?" },
-];
+// Stable identifiers used for i18n key lookup. Emojis stay co-located with
+// the data while the user-visible label / prompt text is resolved at render
+// time via `useAmyPrompts()` / `useEmotionalCards()` so a language switch
+// re-renders these chips immediately.
+const AMY_PROMPT_KEYS = [
+  { key: "sleep",          emoji: "😴" },
+  { key: "tantrums",       emoji: "😤" },
+  { key: "picky_eating",   emoji: "🥦" },
+  { key: "school_anxiety", emoji: "📚" },
+  { key: "screen_time",    emoji: "📱" },
+  { key: "language",       emoji: "💬" },
+] as const;
 
-const EMOTIONAL = [
-  { emoji: "🫂", title: "I'm feeling overwhelmed",    prompt: "I'm feeling completely overwhelmed as a parent. What can I do?" },
-  { emoji: "😰", title: "My child seems anxious",     prompt: "My child seems anxious and worried a lot. How can I help?" },
-  { emoji: "😔", title: "We're struggling to connect", prompt: "I feel like my child and I aren't connecting. How can we build a stronger bond?" },
-  { emoji: "😮‍💨", title: "I need a parenting break", prompt: "I'm a parent who needs time for myself. How do I take care of my wellbeing?" },
-];
+const EMOTIONAL_KEYS = [
+  { key: "overwhelmed",        emoji: "🫂"   },
+  { key: "child_anxious",      emoji: "😰"   },
+  { key: "struggling_connect", emoji: "😔"   },
+  { key: "need_break",         emoji: "😮‍💨" },
+] as const;
 
-function ageGroup(age: number, months = 0): { label: string; emoji: string } {
+function useAmyPrompts() {
+  const { t } = useTranslation();
+  return AMY_PROMPT_KEYS.map((p) => ({
+    emoji: p.emoji,
+    label: t(`parent_hub.amy.prompts.${p.key}.label`),
+    prompt: t(`parent_hub.amy.prompts.${p.key}.prompt`),
+  }));
+}
+
+function useEmotionalCards() {
+  const { t } = useTranslation();
+  return EMOTIONAL_KEYS.map((e) => ({
+    emoji: e.emoji,
+    title: t(`parent_hub.emotional.cards.${e.key}.title`),
+    prompt: t(`parent_hub.emotional.cards.${e.key}.prompt`),
+  }));
+}
+
+// Returns the emoji + i18n key for an age band. The label is resolved at
+// render time via `useAgeGroupLabel()` so a language switch updates the
+// chip without remounting.
+function ageGroupKey(age: number, months = 0): { key: "infant" | "toddler" | "preschool" | "school_age" | "teen"; emoji: string } {
   const total = age * 12 + months;
-  if (total < 12) return { label: "Infant", emoji: "👶" };
-  if (total < 36) return { label: "Toddler", emoji: "🧒" };
-  if (total < 60) return { label: "Preschool", emoji: "🎨" };
-  if (total < 144) return { label: "School age", emoji: "📚" };
-  return { label: "Teen", emoji: "🎒" };
+  if (total < 12) return { key: "infant", emoji: "👶" };
+  if (total < 36) return { key: "toddler", emoji: "🧒" };
+  if (total < 60) return { key: "preschool", emoji: "🎨" };
+  if (total < 144) return { key: "school_age", emoji: "📚" };
+  return { key: "teen", emoji: "🎒" };
+}
+
+function useAgeGroupLabel() {
+  const { t } = useTranslation();
+  return (age: number, months = 0) => {
+    const g = ageGroupKey(age, months);
+    return { emoji: g.emoji, label: t(`parent_hub.age_groups.${g.key}`) };
+  };
 }
 
 // 2-section Parent Hub age band system: HUB_AGE_BANDS / getAgeBand /
@@ -112,6 +148,11 @@ export default function HubScreen() {
   const { theme, mode } = useTheme();
   const c = useColors();
   const styles = useMemo(() => makeStyles(c, mode), [c, mode]);
+  const { t } = useTranslation();
+  const sectionMeta = useSectionMeta();
+  const amyPrompts = useAmyPrompts();
+  const emotionalCards = useEmotionalCards();
+  const resolveAgeGroup = useAgeGroupLabel();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [openSection, setOpenSection] = useState<string | null>("amy");
   // Lazy-load Section 2 ("Explore") so the primary band content paints first.
@@ -249,7 +290,7 @@ export default function HubScreen() {
     return selectedId ? children.find(c => c.id === selectedId) ?? children[0] : children[0];
   }, [children, selectedId]);
 
-  const grp = effective ? ageGroup(effective.age, effective.ageMonths ?? 0) : null;
+  const grp = effective ? resolveAgeGroup(effective.age, effective.ageMonths ?? 0) : null;
   const currentBand = effective ? getAgeBand(effective.age, effective.ageMonths ?? 0) : 0;
   const childName = effective?.name ?? "your child";
 
@@ -403,10 +444,10 @@ export default function HubScreen() {
           <View style={{ flex: 1 }}>
             <View style={styles.eyebrowRow}>
               <Ionicons name="sparkles" size={11} color={brand.purple500} />
-              <Text style={styles.eyebrow}>EXPERT-CURATED</Text>
+              <Text style={styles.eyebrow}>{t("parent_hub.shell.eyebrow")}</Text>
             </View>
-            <Text style={styles.title}>Parenting Hub</Text>
-            <Text style={styles.subtitle}>Swipe between sections</Text>
+            <Text style={styles.title}>{t("parent_hub.shell.title")}</Text>
+            <Text style={styles.subtitle}>{t("parent_hub.shell.subtitle_mobile")}</Text>
           </View>
           <Pressable
             onPress={() => router.push("/amy-ai")}
@@ -414,10 +455,15 @@ export default function HubScreen() {
           >
             <LinearGradient colors={[brand.amber400, ACCENT_PINK, brand.primary]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyGrad}>
               <Ionicons name="chatbubbles" size={14} color="#fff" />
-              <Text style={styles.askAmyText}>Ask Amy</Text>
+              <Text style={styles.askAmyText}>{t("parent_hub.shell.ask_amy")}</Text>
             </LinearGradient>
           </Pressable>
         </View>
+
+        {/* Inline language switcher so caregivers can toggle English / Hindi /
+            Hinglish without leaving the Parent Hub. Reuses the shared
+            `LanguageRow` modal already used in onboarding & settings. */}
+        <LanguageRow />
 
         {isLoading && (
           <View style={{ paddingVertical: 40, alignItems: "center" }}>
@@ -428,10 +474,10 @@ export default function HubScreen() {
         {!isLoading && children.length === 0 && (
           <View style={styles.emptyCard}>
             <MaterialCommunityIcons name="baby-face-outline" size={48} color={ACCENT_PINK} />
-            <Text style={styles.emptyTitle}>Add a child to get started</Text>
-            <Text style={styles.emptyDesc}>Personalized tips, articles, and activities unlock once Amy knows your child.</Text>
+            <Text style={styles.emptyTitle}>{t("parent_hub.shell.no_child_title")}</Text>
+            <Text style={styles.emptyDesc}>{t("parent_hub.shell.no_child_desc")}</Text>
             <Pressable onPress={() => router.push("/children/new")} style={styles.primaryBtn}>
-              <Text style={styles.primaryBtnText}>Add Child</Text>
+              <Text style={styles.primaryBtnText}>{t("parent_hub.shell.add_child")}</Text>
             </Pressable>
           </View>
         )}
@@ -440,7 +486,7 @@ export default function HubScreen() {
         {children.length > 1 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {children.map(c => {
-              const g = ageGroup(c.age, c.ageMonths ?? 0);
+              const g = resolveAgeGroup(c.age, c.ageMonths ?? 0);
               const isSel = effective?.id === c.id;
               return (
                 <Pressable
@@ -464,7 +510,10 @@ export default function HubScreen() {
             <View style={styles.agePill}>
               <Text style={{ color: brand.amber400, fontWeight: "700" }}>{grp.emoji} {grp.label}</Text>
             </View>
-            <Text style={styles.personalised}>Personalised for <Text style={{ color: "#fff", fontWeight: "700" }}>{effective.name}</Text></Text>
+            <Text style={styles.personalised}>
+              {t("parent_hub.shell.personalised_for")}{" "}
+              <Text style={{ color: "#fff", fontWeight: "700" }}>{effective.name}</Text>
+            </Text>
           </View>
         )}
 
@@ -503,14 +552,14 @@ export default function HubScreen() {
                 id="amy"
                 icon={<MaterialCommunityIcons name="brain" size={20} color="#fff" />}
                 accent={[brand.primary, ACCENT_PINK]}
-                title="Ask Amy AI"
-                desc="Warm, practical parenting advice — instantly"
+                title={t("parent_hub.amy.title")}
+                desc={t("parent_hub.amy.desc")}
                 open={openSection === "amy"}
                 onToggle={() => setOpenSection(s => s === "amy" ? null : "amy")}
               >
-                <Text style={styles.sectionLead}>Tap a topic and Amy will reply.</Text>
+                <Text style={styles.sectionLead}>{t("parent_hub.amy.lead_short")}</Text>
                 <View style={styles.promptsGrid}>
-                  {AMY_PROMPTS.map(p => (
+                  {amyPrompts.map(p => (
                     <Pressable key={p.label} onPress={() => askAmy(p.prompt)} style={styles.promptChip}>
                       <Text style={{ fontSize: 18 }}>{p.emoji}</Text>
                       <Text style={styles.promptLabel}>{p.label}</Text>
@@ -519,7 +568,7 @@ export default function HubScreen() {
                 </View>
                 <Pressable onPress={() => router.push("/amy-ai")} style={styles.askAmyFull}>
                   <Ionicons name="chatbubbles" size={16} color="#fff" />
-                  <Text style={styles.askAmyFullText}>Ask Amy anything</Text>
+                  <Text style={styles.askAmyFullText}>{t("parent_hub.amy.ask_anything")}</Text>
                   <Ionicons name="arrow-forward" size={16} color="#fff" />
                 </Pressable>
               </Section>
@@ -534,15 +583,13 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_articles")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
               >
               <Section
                 id="articles"
                 icon={<Ionicons name="book" size={20} color="#fff" />}
                 accent={[palette.emerald500, palette.emerald400]}
-                title="Parenting Articles"
-                desc="Research-based, age-matched reading"
+                title={t("parent_hub.tiles.articles.title")}
+                desc={t("parent_hub.tiles.articles.desc")}
                 open={openSection === "articles"}
                 onToggle={() => setOpenSection(s => s === "articles" ? null : "articles")}
                 onOpen={() => hubUsage.markFeatureUsed("hub_articles")}
@@ -571,15 +618,13 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_tips")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
               >
               <Section
                 id="tips"
                 icon={<Ionicons name="sparkles" size={20} color="#fff" />}
                 accent={[brand.violet400, colors.light.primary]}
-                title="Daily Tips"
-                desc="Amy AI picks today's best tips"
+                title={t("parent_hub.tiles.tips.title")}
+                desc={t("parent_hub.tiles.tips.desc")}
                 open={openSection === "tips"}
                 onToggle={() => setOpenSection(s => s === "tips" ? null : "tips")}
                 onOpen={() => hubUsage.markFeatureUsed("hub_tips")}
@@ -587,19 +632,23 @@ export default function HubScreen() {
               >
                 {effective ? (
                   <View style={styles.tipsList}>
-                    {[
-                      "Catch them being good — name the behavior aloud.",
-                      "Offer two acceptable choices to defuse power struggles.",
-                      "Read together for 10 min before bed to anchor the routine.",
-                    ].map((t, i) => (
-                      <View key={i} style={styles.tipCard}>
-                        <Text style={styles.tipNum}>{i + 1}</Text>
-                        <Text style={styles.tipText}>{t}</Text>
-                      </View>
-                    ))}
+                    {(() => {
+                      // Defensive: in test environments without a real
+                      // i18n instance, `t(..., {returnObjects:true})` may
+                      // return the key string instead of an array, which
+                      // would crash `.map`. Coerce to [] in that case.
+                      const raw = t("parent_hub.tips_fallbacks", { returnObjects: true });
+                      const list = Array.isArray(raw) ? (raw as string[]) : [];
+                      return list.map((tip, i) => (
+                        <View key={i} style={styles.tipCard}>
+                          <Text style={styles.tipNum}>{i + 1}</Text>
+                          <Text style={styles.tipText}>{tip}</Text>
+                        </View>
+                      ));
+                    })()}
                   </View>
                 ) : (
-                  <Text style={styles.sectionLead}>Add a child to unlock daily tips.</Text>
+                  <Text style={styles.sectionLead}>{t("parent_hub.tiles.tips.empty")}</Text>
                 )}
               </Section>
               </LockedBlock>
@@ -614,23 +663,21 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_emotional")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
               >
               <Section
                 id="emotional"
                 icon={<Ionicons name="heart" size={20} color="#fff" />}
                 accent={[brand.pink400, ACCENT_PINK]}
-                title="Emotional Support"
-                desc="For the tough parenting days"
+                title={t("parent_hub.emotional.title")}
+                desc={t("parent_hub.emotional.desc")}
                 open={openSection === "emotional"}
                 onToggle={() => setOpenSection(s => s === "emotional" ? null : "emotional")}
                 onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}
                 tryFree={tryFreeFor("hub_emotional")}
               >
-                <Text style={styles.sectionLead}>Parenting is hard. Amy will listen — no judgment.</Text>
+                <Text style={styles.sectionLead}>{t("parent_hub.emotional.desc")}</Text>
                 <View style={styles.emotionalGrid}>
-                  {EMOTIONAL.map(e => (
+                  {emotionalCards.map(e => (
                     <Pressable key={e.title} onPress={() => askAmy(e.prompt)} style={styles.emoCard}>
                       <Text style={{ fontSize: 22 }}>{e.emoji}</Text>
                       <Text style={styles.emoTitle}>{e.title}</Text>
@@ -650,8 +697,6 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
                 radius={18}
               >
                 <Pressable
@@ -675,10 +720,10 @@ export default function HubScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🧾 PTM Prep Assistant</Text>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.ptm-prep.title")}</Text>
                           {tryFreeFor("hub_ptm_prep") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Prepare · Attend · Act — for parent-teacher meetings</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.ptm-prep.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
                     </View>
@@ -696,8 +741,6 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_smart_study")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
                 radius={18}
               >
                 <Pressable
@@ -718,10 +761,10 @@ export default function HubScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>📚 Smart Study Zone</Text>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.smart-study.title")}</Text>
                           {tryFreeFor("hub_smart_study") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>Nursery → Class 10 · audio + practice</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.smart-study.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
                     </View>
@@ -739,8 +782,6 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_morning_flow")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
                 radius={18}
               >
                 <Pressable
@@ -761,10 +802,10 @@ export default function HubScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🌅 School Morning Flow</Text>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.morning-flow.title")}</Text>
                           {tryFreeFor("hub_morning_flow") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Night prep · steps · smart delay</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.morning-flow.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
                     </View>
@@ -782,8 +823,6 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_olympiad")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
                 radius={18}
               >
                 <Pressable
@@ -804,10 +843,10 @@ export default function HubScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🏆 Olympiad Zone</Text>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.olympiad.title")}</Text>
                           {tryFreeFor("hub_olympiad") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Daily 5 · practice · math, science, reasoning, GK</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.olympiad.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
                     </View>
@@ -847,12 +886,12 @@ export default function HubScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>Kids Control Center</Text>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.kids-control-center.title")}</Text>
                           <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.25)" }}>
-                            <Text style={{ color: "#fff", fontSize: 9.5, fontWeight: "800" }}>SOON 🚀</Text>
+                            <Text style={{ color: "#fff", fontSize: 9.5, fontWeight: "800" }}>{t("parent_hub.tiles.kids-control-center.soon")}</Text>
                           </View>
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Smart control · Safe child experience</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.kids-control-center.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.85)" />
                     </View>
@@ -869,8 +908,6 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_meals_tile")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
                 radius={18}
               >
                 <Pressable
@@ -891,10 +928,10 @@ export default function HubScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🍱 Tiffin & Meals</Text>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.meals.title")}</Text>
                           {tryFreeFor("hub_meals_tile") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Smart suggestions tuned to your child's taste</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.meals.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
                     </View>
@@ -923,17 +960,21 @@ export default function HubScreen() {
                         <MaterialCommunityIcons name="food-apple-outline" size={22} color="#fff" />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🥗 Nutrition Hub</Text>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>न्यूट्रिशन हब · Age-wise nutrition science</Text>
+                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.nutrition.title")}</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.nutrition.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
                     </View>
                     <View style={{ flexDirection: "row", gap: 6 }}>
-                      {["WHO", "ICMR", "Indian meals", "Family mode"].map(tag => (
-                        <View key={tag} style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
-                          <Text style={{ color: "#fff", fontSize: 9, fontWeight: "600" }}>{tag}</Text>
-                        </View>
-                      ))}
+                      {(() => {
+                        const raw = t("parent_hub.nutrition_tags", { returnObjects: true });
+                        const list = Array.isArray(raw) ? (raw as string[]) : [];
+                        return list.map(tag => (
+                          <View key={tag} style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
+                            <Text style={{ color: "#fff", fontSize: 9, fontWeight: "600" }}>{tag}</Text>
+                          </View>
+                        ));
+                      })()}
                     </View>
                   </LinearGradient>
                 </Pressable>
@@ -948,8 +989,6 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_event_prep")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
                 radius={18}
               >
                 <Pressable
@@ -970,10 +1009,10 @@ export default function HubScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🎉 Event Prep</Text>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.event-prep.title")}</Text>
                           {tryFreeFor("hub_event_prep") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>Fancy dress · DIY guide · speeches</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.event-prep.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
                     </View>
@@ -990,22 +1029,20 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_activities")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
                 style={tileW("activities")}
               >
               <Section
                 id="activities"
                 icon={<Ionicons name="color-palette" size={20} color="#fff" />}
                 accent={[brand.rose400, palette.amber500]}
-                title="Activities & Learning"
-                desc="Games, audio lessons & more"
+                title={t("parent_hub.tiles.activities.title")}
+                desc={t("parent_hub.tiles.activities.desc")}
                 open={openSection === "activities"}
                 onToggle={() => setOpenSection(s => s === "activities" ? null : "activities")}
                 onOpen={() => hubUsage.markFeatureUsed("hub_activities")}
                 tryFree={tryFreeFor("hub_activities")}
               >
-                <Text style={styles.sectionLead}>Educational activities curated by Amy for your child's age group.</Text>
+                <Text style={styles.sectionLead}>{t("parent_hub.tiles.activities.lead")}</Text>
 
                 {/* Gaming Reward entry */}
                 <Pressable
@@ -1021,8 +1058,8 @@ export default function HubScreen() {
                       <Ionicons name="game-controller" size={20} color="#fff" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Gaming Reward</Text>
-                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>10 educational mini-games · earn points</Text>
+                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.gaming_reward.title")}</Text>
+                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.gaming_reward.desc")}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
                   </LinearGradient>
@@ -1042,8 +1079,8 @@ export default function HubScreen() {
                       <Ionicons name="gift" size={20} color="#fff" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Rewards Shop</Text>
-                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>Spend points on real-world treats</Text>
+                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.rewards_shop.title")}</Text>
+                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.rewards_shop.desc")}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
                   </LinearGradient>
@@ -1063,8 +1100,8 @@ export default function HubScreen() {
                       <Ionicons name="headset" size={20} color="#fff" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Amy Audio Lessons</Text>
-                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>3–5 min parenting lessons · hands-free</Text>
+                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.audio_lessons.title")}</Text>
+                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.audio_lessons.desc")}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
                   </LinearGradient>
@@ -1082,8 +1119,6 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_story_hub")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
                 radius={18}
               >
                 <Pressable
@@ -1104,10 +1139,10 @@ export default function HubScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🎬 Kids Story Hub</Text>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.story-hub.title")}</Text>
                           {tryFreeFor("hub_story_hub") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>Bedtime, moral & fun stories — Netflix-style</Text>
+                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.story-hub.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
                     </View>
@@ -1126,8 +1161,8 @@ export default function HubScreen() {
                 id="art-craft"
                 icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
                 accent={[brand.pink400, brand.purple500]}
-                title="🎨 Art & Craft Videos"
-                desc="Short creative videos to inspire your child"
+                title={t("parent_hub.tiles.art-craft.title")}
+                desc={t("parent_hub.tiles.art-craft.desc")}
                 open={openSection === "art-craft"}
                 onToggle={() => setOpenSection(s => s === "art-craft" ? null : "art-craft")}
               >
@@ -1145,8 +1180,8 @@ export default function HubScreen() {
                 id="worksheets"
                 icon={<MaterialCommunityIcons name="file-document-outline" size={20} color="#fff" />}
                 accent={[palette.sky500, palette.indigo500]}
-                title="📄 Printable Worksheets"
-                desc="Coloring, math, tracing & more · 5 free / day"
+                title={t("parent_hub.tiles.worksheets.title")}
+                desc={t("parent_hub.tiles.worksheets.desc")}
                 open={openSection === "worksheets"}
                 onToggle={() => setOpenSection(s => s === "worksheets" ? null : "worksheets")}
               >
@@ -1164,15 +1199,15 @@ export default function HubScreen() {
                 id="facts"
                 icon={<Ionicons name="sparkles" size={20} color="#fff" />}
                 accent={[palette.amber500, brand.rose400]}
-                title="✨ Amazing Facts"
-                desc="Mind-blowing facts for curious kids"
+                title={t("parent_hub.tiles.facts.title")}
+                desc={t("parent_hub.tiles.facts.desc")}
                 open={openSection === "facts"}
                 onToggle={() => setOpenSection(s => s === "facts" ? null : "facts")}
               >
                 {effective ? (
                   <AmazingFacts ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)} />
                 ) : (
-                  <Text style={styles.sectionLead}>Add a child to unlock age-matched facts.</Text>
+                  <Text style={styles.sectionLead}>{t("parent_hub.tiles.facts.empty")}</Text>
                 )}
               </Section>
               </View>
@@ -1186,16 +1221,14 @@ export default function HubScreen() {
                 <LockedBlock
                   reason="hub_locked"
                   locked={hubUsage.isFeatureLocked("hub_life_skills")}
-                  label="Unlock to continue"
-                  cta="Unlock Premium"
                   style={tileW("life-skills")}
                 >
                   <Section
                     id="life-skills"
                     icon={<Ionicons name="compass" size={20} color="#fff" />}
                     accent={[palette.emerald500, palette.emerald400]}
-                    title="🧭 Life Skills Mode"
-                    desc="Daily real-life skills, ages 2–15"
+                    title={t("parent_hub.tiles.life-skills.title")}
+                    desc={t("parent_hub.tiles.life-skills.desc")}
                     open={openSection === "life-skills"}
                     onToggle={() => setOpenSection(s => s === "life-skills" ? null : "life-skills")}
                     onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
@@ -1215,15 +1248,13 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_ai_meal_generator")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
               >
               <Section
                 id="meal-suggestions"
                 icon={<MaterialCommunityIcons name="food" size={20} color="#fff" />}
                 accent={[palette.emerald500, palette.lime500]}
-                title="🍱 Amy AI Meal Suggestions"
-                desc="AI-generated tiffin & meal ideas for your child"
+                title={t("parent_hub.tiles.meal-suggestions.title")}
+                desc={t("parent_hub.tiles.meal-suggestions.desc")}
                 open={openSection === "meal-suggestions"}
                 onToggle={() => setOpenSection(s => s === "meal-suggestions" ? null : "meal-suggestions")}
                 onOpen={() => hubUsage.markFeatureUsed("hub_ai_meal_generator")}
@@ -1243,15 +1274,13 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_smart_math_tricks")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
               >
               <Section
                 id="smart-math-tricks"
                 icon={<MaterialCommunityIcons name="calculator-variant" size={20} color="#fff" />}
                 accent={[brand.violet600, palette.amber500]}
-                title="🧮 Smart Math Tricks"
-                desc="Mental math shortcuts kids actually love"
+                title={t("parent_hub.tiles.smart-math-tricks.title")}
+                desc={t("parent_hub.tiles.smart-math-tricks.desc")}
                 open={openSection === "smart-math-tricks"}
                 onToggle={() => setOpenSection(s => s === "smart-math-tricks" ? null : "smart-math-tricks")}
                 onOpen={() => hubUsage.markFeatureUsed("hub_smart_math_tricks")}
@@ -1260,7 +1289,7 @@ export default function HubScreen() {
                 {effective ? (
                   <SmartMathTricks childName={effective.name} childAgeYears={effective.age} />
                 ) : (
-                  <Text style={styles.sectionLead}>Add a child to unlock smart math tricks.</Text>
+                  <Text style={styles.sectionLead}>{t("parent_hub.tiles.smart-math-tricks.empty")}</Text>
                 )}
               </Section>
               </LockedBlock>
@@ -1275,15 +1304,13 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_coloring_books")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
               >
               <Section
                 id="coloring-books"
                 icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
                 accent={[brand.pink500, palette.amber500]}
-                title="🎨 Coloring Books"
-                desc="Print-ready coloring pages, refreshed daily"
+                title={t("parent_hub.tiles.coloring-books.title")}
+                desc={t("parent_hub.tiles.coloring-books.desc")}
                 open={openSection === "coloring-books"}
                 onToggle={() => setOpenSection(s => s === "coloring-books" ? null : "coloring-books")}
                 onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}
@@ -1292,7 +1319,7 @@ export default function HubScreen() {
                 {effective ? (
                   <ColoringBooks childId={effective.id} childName={effective.name} />
                 ) : (
-                  <Text style={styles.sectionLead}>Add a child to unlock coloring books.</Text>
+                  <Text style={styles.sectionLead}>{t("parent_hub.tiles.coloring-books.empty")}</Text>
                 )}
               </Section>
               </LockedBlock>
@@ -1307,15 +1334,13 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_fun_sheets")}
-                label="Unlock to continue"
-                cta="Unlock Premium"
               >
               <Section
                 id="fun-sheets"
                 icon={<MaterialCommunityIcons name="file-document-edit" size={20} color="#fff" />}
                 accent={[palette.teal600, palette.emerald500]}
-                title="📄 Fun Sheets"
-                desc="Activity sheets, mazes & puzzles"
+                title={t("parent_hub.tiles.fun-sheets.title")}
+                desc={t("parent_hub.tiles.fun-sheets.desc")}
                 open={openSection === "fun-sheets"}
                 onToggle={() => setOpenSection(s => s === "fun-sheets" ? null : "fun-sheets")}
                 onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}
@@ -1324,7 +1349,7 @@ export default function HubScreen() {
                 {effective ? (
                   <FunSheets childId={effective.id} childName={effective.name} />
                 ) : (
-                  <Text style={styles.sectionLead}>Add a child to unlock fun sheets.</Text>
+                  <Text style={styles.sectionLead}>{t("parent_hub.tiles.fun-sheets.empty")}</Text>
                 )}
               </Section>
               </LockedBlock>
@@ -1345,8 +1370,8 @@ export default function HubScreen() {
                   id="skills-focus"
                   icon={<Ionicons name="bulb" size={20} color="#fff" />}
                   accent={[brand.purple500, brand.pink500]}
-                  title="🎯 Skills to Focus This Week"
-                  desc="Age-matched developmental priorities"
+                  title={t("parent_hub.tiles.skills-focus.title")}
+                  desc={t("parent_hub.tiles.skills-focus.desc")}
                   open={openSection === "skills-focus"}
                   onToggle={() => setOpenSection(s => s === "skills-focus" ? null : "skills-focus")}
                 >
@@ -1366,8 +1391,8 @@ export default function HubScreen() {
                   id="daily-story"
                   icon={<Ionicons name="book" size={20} color="#fff" />}
                   accent={[palette.amber500, brand.pink400]}
-                  title="📖 Daily Story"
-                  desc="A fresh story to read together every day"
+                  title={t("parent_hub.tiles.daily-story.title")}
+                  desc={t("parent_hub.tiles.daily-story.desc")}
                   open={openSection === "daily-story"}
                   onToggle={() => setOpenSection(s => s === "daily-story" ? null : "daily-story")}
                 >
@@ -1387,8 +1412,8 @@ export default function HubScreen() {
                   id="daily-puzzle"
                   icon={<Ionicons name="extension-puzzle" size={20} color="#fff" />}
                   accent={[palette.indigo500, brand.purple500]}
-                  title="🧩 Daily Puzzle"
-                  desc="5 adaptive brain puzzles a day"
+                  title={t("parent_hub.tiles.daily-puzzle.title")}
+                  desc={t("parent_hub.tiles.daily-puzzle.desc")}
                   open={openSection === "daily-puzzle"}
                   onToggle={() => setOpenSection(s => s === "daily-puzzle" ? null : "daily-puzzle")}
                 >
@@ -1649,6 +1674,12 @@ function SectionTabBar({
   scrollX: Animated.Value;
   pageWidth: number;
 }) {
+  const { t } = useTranslation();
+  const SECTION_META = useSectionMeta();
+  // Re-bound here so the inner Pressable below can call it without prop
+  // drilling. Resolves to "<Heading> tab" in en, उपयुक्त अनुवाद in hi/hinglish.
+  const tabAriaLabel = (heading: string) =>
+    t("parent_hub.shell.tab_aria", { heading });
   // Width allocated to each tab pill (used to position the underline).
   // Layout is measured at runtime so the indicator follows whatever the
   // ScrollView contentSize ends up being.
@@ -1706,7 +1737,7 @@ function SectionTabBar({
             style={[styles.tabPill, isActive && styles.tabPillActive]}
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
-            accessibilityLabel={`${meta.heading} tab`}
+            accessibilityLabel={tabAriaLabel(meta.heading)}
             testID={`hub-tab-${key}`}
           >
             <Ionicons
@@ -1762,6 +1793,7 @@ function TodayPlanPage({
   onContinue?: (tileId: string) => void;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { tasks, todaysRoutine, isLoading, onToggle, taskIdToItemIndex } =
     useTodayRoutine();
 
@@ -1821,12 +1853,10 @@ function TodayPlanPage({
       ) : (
         <View style={styles.emptyCard}>
           <MaterialCommunityIcons name="calendar-outline" size={40} color={ACCENT_PINK} />
-          <Text style={styles.emptyTitle}>No routine for today</Text>
-          <Text style={styles.emptyDesc}>
-            Generate a personalised plan and Amy will keep this list in sync.
-          </Text>
+          <Text style={styles.emptyTitle}>{t("parent_hub.shell.today_empty.title")}</Text>
+          <Text style={styles.emptyDesc}>{t("parent_hub.shell.today_empty.desc")}</Text>
           <Pressable onPress={onGenerate} style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnText}>Generate today's routine</Text>
+            <Text style={styles.primaryBtnText}>{t("parent_hub.shell.today_empty.cta")}</Text>
           </Pressable>
         </View>
       )}
@@ -1840,7 +1870,7 @@ function TodayPlanPage({
       {tasks.length > 0 && (
         <Pressable onPress={onGenerate} style={styles.bottomCta}>
           <Ionicons name="calendar" size={16} color={ACCENT_PINK} />
-          <Text style={styles.bottomCtaText}>Generate a new routine</Text>
+          <Text style={styles.bottomCtaText}>{t("parent_hub.shell.today_regen")}</Text>
         </Pressable>
       )}
     </ScrollView>
@@ -1871,7 +1901,9 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
    */
   highlightedTileId?: string | null;
 }) {
-  const meta = SECTION_META[sectionKey];
+  const { t } = useTranslation();
+  const sectionMeta = useSectionMeta();
+  const meta = sectionMeta[sectionKey];
   const scrollRef = useRef<ScrollView>(null);
   // y-position of each tile within the ScrollView, captured by onLayout.
   // Used to scroll the highlighted tile into view; missing entries (tile
@@ -1911,7 +1943,9 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
       <View style={styles.bandSectionHeader}>
         <Text style={styles.bandSectionTitle}>{meta.heading}</Text>
         <Text style={styles.bandSectionSub}>
-          {childName ? `For ${childName} · age ${bandLabel}` : meta.description}
+          {childName
+            ? t("parent_hub.shell.section_for_child", { name: childName, age: bandLabel })
+            : meta.description}
         </Text>
       </View>
 
@@ -1921,7 +1955,7 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
         <View style={styles.emptyCard}>
           <MaterialCommunityIcons name="creation" size={32} color={ACCENT_PINK} />
           <Text style={styles.emptyDesc}>
-            Nothing in this section for {childName} just yet — keep checking back!
+            {t("parent_hub.shell.section_empty", { name: childName })}
           </Text>
         </View>
       ) : (
@@ -1980,14 +2014,15 @@ function ExploreNextStageBlock({
   groupRefs: React.MutableRefObject<Record<number, View | null>>;
   styles: HubStyles;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.exploreSection}>
       <View style={styles.bandSectionHeader}>
-        <Text style={styles.bandSectionTitle}>Explore Next Stage for {childName}</Text>
+        <Text style={styles.bandSectionTitle}>{t("parent_hub.headers.explore_next", { name: childName })}</Text>
         <Text style={styles.bandSectionSub}>
           {previewBand !== null
-            ? `Previewing age ${HUB_AGE_BANDS[previewBand].label} · tap "Now" to reset`
-            : `Preview what's coming up as ${childName} grows`}
+            ? t("parent_hub.headers.previewing_age", { label: HUB_AGE_BANDS[previewBand].label })
+            : t("parent_hub.headers.preview_intro", { name: childName })}
         </Text>
       </View>
 
@@ -2013,8 +2048,8 @@ function ExploreNextStageBlock({
               accessibilityRole="button"
               accessibilityLabel={
                 isCurrent
-                  ? `Current age band ${HUB_AGE_BANDS[band].label}, tap to reset preview`
-                  : `Preview age ${HUB_AGE_BANDS[band].label} content`
+                  ? t("parent_hub.headers.aria_current_band", { label: HUB_AGE_BANDS[band].label })
+                  : t("parent_hub.headers.aria_preview_band", { label: HUB_AGE_BANDS[band].label })
               }
               accessibilityState={{ selected: isPreviewing || isDefault }}
             >
@@ -2026,7 +2061,7 @@ function ExploreNextStageBlock({
                 ]}
               >
                 {HUB_AGE_BANDS[band].label}
-                {isCurrent ? " · Now" : ""}
+                {isCurrent ? t("parent_hub.headers.now_pill") : ""}
               </Text>
             </Pressable>
           );
@@ -2045,16 +2080,16 @@ function ExploreNextStageBlock({
           >
             <View style={styles.exploreGroupHeader}>
               <Text style={styles.exploreGroupTitle}>
-                For Age {HUB_AGE_BANDS[band].label}
+                {t("parent_hub.headers.for_age_band", { label: HUB_AGE_BANDS[band].label })}
               </Text>
               {isPreviewed && (
                 <View style={styles.previewingPill}>
-                  <Text style={styles.previewingText}>Previewing</Text>
+                  <Text style={styles.previewingText}>{t("parent_hub.headers.previewing")}</Text>
                 </View>
               )}
               {!isPreviewed && band === nearestFutureBand && (
                 <View style={styles.comingNextPill}>
-                  <Text style={styles.comingNextText}>Coming Up Next</Text>
+                  <Text style={styles.comingNextText}>{t("parent_hub.headers.coming_next")}</Text>
                 </View>
               )}
             </View>

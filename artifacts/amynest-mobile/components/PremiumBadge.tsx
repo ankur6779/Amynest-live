@@ -2,12 +2,13 @@ import React from "react";
 import { Pressable, Text, View, StyleSheet, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { brand, palette } from "@/constants/colors";
 
 type Props = {
   /** Tap handler — when provided, the badge becomes pressable (paywall route). */
   onPress?: () => void;
-  /** Override label text (defaults to "Premium"). */
+  /** Override label text (defaults to localised "Premium"). */
   label?: string;
   /** Wrapper style override. */
   style?: ViewStyle;
@@ -19,7 +20,9 @@ type Props = {
  * mirroring the visual weight of `<TryFreeBadge />` but with the locked-feature
  * gradient (purple → pink → amber).
  */
-export default function PremiumBadge({ onPress, label = "Premium", style }: Props) {
+export default function PremiumBadge({ onPress, label, style }: Props) {
+  const { t } = useTranslation();
+  const text = label ?? t("parent_hub.badges.premium");
   const inner = (
     <LinearGradient
       colors={[brand.primary, brand.pink500, palette.amber500]}
@@ -28,7 +31,7 @@ export default function PremiumBadge({ onPress, label = "Premium", style }: Prop
       style={[styles.pill, style]}
     >
       <Ionicons name="sparkles" size={9} color="#fff" />
-      <Text style={styles.text}>{label}</Text>
+      <Text style={styles.text}>{text}</Text>
     </LinearGradient>
   );
 
@@ -37,7 +40,7 @@ export default function PremiumBadge({ onPress, label = "Premium", style }: Prop
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`${label} feature, tap to upgrade`}
+        accessibilityLabel={t("parent_hub.badges.premium_feature_aria")}
         testID="premium-badge"
         hitSlop={12}
       >

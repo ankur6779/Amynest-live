@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, RefreshCw, AlertCircle } from "lucide-react";
@@ -45,6 +46,12 @@ const CONF_BG: Record<Prediction["confidence"], string> = {
   High: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
 };
 
+const CONF_KEY: Record<Prediction["confidence"], "low" | "medium" | "high"> = {
+  Low: "low",
+  Medium: "medium",
+  High: "high",
+};
+
 interface FuturePredictorProps {
   childId?: number | null;
   variant?: "full" | "compact";
@@ -55,6 +62,7 @@ export function FuturePredictor({
   variant = "full",
 }: FuturePredictorProps) {
   const authFetch = useAuthFetch();
+  const { t } = useTranslation();
 
   const queryKey = ["future-predictor", childId ?? null];
 
@@ -92,10 +100,10 @@ export function FuturePredictor({
   }
 
   const indicators: { key: string; title: string; ind: Indicator }[] = [
-    { key: "mood", title: "Mood", ind: data.mood },
-    { key: "energy", title: "Energy", ind: data.energy },
-    { key: "sleep", title: "Sleep", ind: data.sleep },
-    { key: "risk", title: "Risk", ind: data.risk },
+    { key: "mood", title: t("parent_hub.predictor.indicators.mood"), ind: data.mood },
+    { key: "energy", title: t("parent_hub.predictor.indicators.energy"), ind: data.energy },
+    { key: "sleep", title: t("parent_hub.predictor.indicators.sleep"), ind: data.sleep },
+    { key: "risk", title: t("parent_hub.predictor.indicators.risk"), ind: data.risk },
   ];
 
   return (
@@ -111,17 +119,20 @@ export function FuturePredictor({
             <div className="flex items-center gap-2 flex-wrap">
               <Sparkles className="h-4 w-4 text-purple-500" />
               <h3 className="font-bold text-base sm:text-lg leading-tight">
-                Amy AI · Tomorrow's Forecast
+                {t("parent_hub.predictor.title")}
               </h3>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {data.childName ? `For ${data.childName}` : "Family forecast"} · {data.forDate}
+              {data.childName
+                ? t("parent_hub.predictor.for_child", { name: data.childName })
+                : t("parent_hub.predictor.family_forecast")}{" "}
+              · {data.forDate}
             </p>
           </div>
           <button
             onClick={() => refetch()}
             disabled={isFetching}
-            aria-label="Refresh prediction"
+            aria-label={t("parent_hub.predictor.refresh_aria")}
             className="shrink-0 h-8 w-8 rounded-full bg-white/40 dark:bg-white/10 hover:bg-white/60 dark:hover:bg-white/20 flex items-center justify-center transition disabled:opacity-50"
             data-testid="button-refresh-predictor"
           >
@@ -129,7 +140,7 @@ export function FuturePredictor({
           </button>
         </div>
 
-        {/* Amy message */}
+        {/* Amy message — message text comes from the AI backend (out of scope) */}
         <p className="text-sm sm:text-base font-medium leading-relaxed text-foreground/90 italic">
           "{data.message}"
         </p>
@@ -160,7 +171,7 @@ export function FuturePredictor({
         {variant === "full" && data.suggestions.length > 0 && (
           <div className="rounded-2xl bg-white/40 dark:bg-white/[0.04] border border-white/40 dark:border-white/10 p-3">
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" /> What you can do
+              <AlertCircle className="h-3 w-3" /> {t("parent_hub.predictor.suggestions_title")}
             </p>
             <ul className="space-y-1.5">
               {data.suggestions.map((s, i) => (
@@ -178,10 +189,15 @@ export function FuturePredictor({
           <span
             className={`px-2.5 py-1 rounded-full border font-bold ${CONF_BG[data.confidence]}`}
           >
-            {data.confidence} confidence
+            {t(`parent_hub.predictor.confidence.${CONF_KEY[data.confidence]}`)}
+            {t("parent_hub.predictor.confidence.suffix")}
           </span>
           <span className="text-muted-foreground">
-            Based on last {data.dataPoints.daysOfData} days · {data.dataPoints.behaviorsConsidered} logs · {data.dataPoints.routinesConsidered} routines
+            {t("parent_hub.predictor.footer", {
+              days: data.dataPoints.daysOfData,
+              logs: data.dataPoints.behaviorsConsidered,
+              routines: data.dataPoints.routinesConsidered,
+            })}
           </span>
         </div>
       </CardContent>

@@ -1129,5 +1129,623 @@
       "class_5": "5th",
       "class_6plus": "6th+"
     }
+  },
+  "parent_hub": {
+    "shell": {
+      "title": "Parenting Hub",
+      "subtitle_web": "Science-backed articles & quick tips",
+      "subtitle_mobile": "Swipe between sections",
+      "eyebrow": "EXPERT-CURATED",
+      "no_child_title": "Add a child to get started",
+      "no_child_desc": "Personalized tips, articles, and activities unlock once Amy knows your child.",
+      "add_child": "Add Child",
+      "personalised_for": "Personalised for",
+      "ask_amy": "Ask Amy",
+      "tab_aria": "{{heading}} tab",
+      "today_empty": {
+        "title": "No routine for today",
+        "desc": "Generate a personalised plan and Amy will keep this list in sync.",
+        "cta": "Generate today's routine"
+      },
+      "today_regen": "Generate a new routine",
+      "section_for_child": "For {{name}} · age {{age}}",
+      "section_empty": "Nothing in this section for {{name}} just yet — keep checking back!"
+    },
+    "badges": {
+      "try_free": "Try Free",
+      "premium": "Premium",
+      "premium_feature": "Premium feature",
+      "premium_feature_aria": "Premium feature — tap to upgrade",
+      "new": "New"
+    },
+    "age_groups": {
+      "infant": "Infant",
+      "toddler": "Toddler",
+      "preschool": "Preschool",
+      "school_age": "School age",
+      "teen": "Teen"
+    },
+    "sections_meta": {
+      "today": {
+        "label": "Today",
+        "heading": "Today's Plan",
+        "description": "Tap Done as you finish each step"
+      },
+      "zones": {
+        "label": "Zones",
+        "heading": "Recommended Zones",
+        "description": "Curated parent surfaces & quick actions"
+      },
+      "modules": {
+        "label": "Learn",
+        "heading": "Learning Modules",
+        "description": "Practice + content matched to your child's age"
+      },
+      "activities": {
+        "label": "Do",
+        "heading": "Activities",
+        "description": "Hands-on play, life skills & food"
+      },
+      "cta_zones": "Open in Zones",
+      "cta_modules": "Open in Modules",
+      "cta_activities": "Open in Activities"
+    },
+    "amy": {
+      "title": "Ask Amy AI",
+      "desc": "Warm, practical parenting advice — instantly",
+      "lead": "Tap a topic and Amy will give you warm, practical parenting advice — instantly.",
+      "lead_short": "Tap a topic and Amy will reply.",
+      "ask_anything": "Ask Amy anything",
+      "prompts": {
+        "sleep": {
+          "label": "Sleep problems",
+          "prompt": "My child is having trouble sleeping. What should I do?"
+        },
+        "tantrums": {
+          "label": "Tantrums",
+          "prompt": "My child is having frequent tantrums. How should I handle this?"
+        },
+        "picky_eating": {
+          "label": "Picky eating",
+          "prompt": "My child is a picky eater. What strategies can help?"
+        },
+        "school_anxiety": {
+          "label": "School anxiety",
+          "prompt": "My child is anxious about going to school. How can I help?"
+        },
+        "screen_time": {
+          "label": "Screen time",
+          "prompt": "How much screen time is appropriate for my child's age?"
+        },
+        "language": {
+          "label": "Language",
+          "prompt": "How can I support my child's language and speech development?"
+        },
+        "picky": {
+          "label": "Picky eating",
+          "prompt": "My child is a picky eater. What strategies can help?"
+        },
+        "school": {
+          "label": "School anxiety",
+          "prompt": "My child is anxious about going to school. How can I help?"
+        },
+        "screen": {
+          "label": "Screen time",
+          "prompt": "How much screen time is appropriate for my child's age?"
+        }
+      },
+      "cta": "Ask Amy anything"
+    },
+    "emotional": {
+      "title": "Emotional Support",
+      "desc": "Parenting is hard. Amy is here to listen and help — no judgment.",
+      "cards": {
+        "overwhelmed": {
+          "title": "I'm feeling overwhelmed",
+          "subtitle": "It's okay. You're not alone.",
+          "prompt": "I'm feeling completely overwhelmed as a parent. What can I do to feel better?"
+        },
+        "child_anxious": {
+          "title": "My child seems anxious",
+          "subtitle": "Let's figure this out together.",
+          "prompt": "My child seems anxious and worried a lot. How can I help them?"
+        },
+        "struggling_connect": {
+          "title": "We're struggling to connect",
+          "subtitle": "Small steps can make a big difference.",
+          "prompt": "I feel like my child and I aren't connecting well. How can we build a stronger bond?"
+        },
+        "need_break": {
+          "title": "I need a parenting break",
+          "subtitle": "Self-care is part of good parenting.",
+          "prompt": "I'm a parent who needs some time for myself. How can I take care of my own wellbeing?"
+        }
+      }
+    },
+    "predictor": {
+      "loading": "Amy is thinking about tomorrow…",
+      "title": "Amy AI · Tomorrow's Forecast",
+      "family_forecast": "Family forecast",
+      "for_child": "For {{name}}",
+      "refresh_aria": "Refresh prediction",
+      "indicators": {
+        "mood": "Mood",
+        "energy": "Energy",
+        "sleep": "Sleep",
+        "risk": "Risk"
+      },
+      "confidence": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "suffix": " confidence"
+      },
+      "suggestions_title": "What you can do",
+      "footer": "Based on last {{days}} days · {{logs}} logs · {{routines}} routines",
+      "footer_short": "{{days}}d · {{logs}} logs · {{routines}} routines"
+    },
+    "event_prep": {
+      "title": "🎉 Event Prep (School Ready)",
+      "desc": "Last-minute fancy dress, DIY costume guides, ready speeches and audio read-aloud — all in one place.",
+      "cta": "Open Event Prep",
+      "badges": {
+        "independence": "🇮🇳 Independence Day",
+        "republic": "🎖️ Republic Day",
+        "gandhi": "🕊️ Gandhi Jayanti",
+        "last_minute": "⏱ Last-Minute"
+      }
+    },
+    "smart_study": {
+      "title": "Smart Study Zone",
+      "desc_html": "Adaptive learning from <strong>Nursery to Class 10</strong>. Tap-and-listen for the little ones, short notes plus practice for older kids — Amy explains in easy language.",
+      "desc_plain": "Adaptive learning from Nursery to Class 10. Tap-and-listen for the little ones, short notes plus practice for older kids — Amy explains in easy language.",
+      "cta": "Open Smart Study Zone",
+      "badges": {
+        "play": "👶 Play & Learn",
+        "junior": "📘 Class 1–5",
+        "senior": "📊 Class 6–10"
+      }
+    },
+    "stage_milestones": {
+      "title": "What {{name}} will love at {{band}}",
+      "description": "A peek at the developmental wins coming up at {{range}} — we grow with your child.",
+      "cta": "Ask Amy how to gently prepare {{name}}"
+    },
+    "graduation": {
+      "title": "{{name}} has unlocked the full Parent Hub",
+      "desc": "Every feature is now tuned to their stage — keep showing up, the rest is just consistency."
+    },
+    "age_sections": {
+      "skill_focus": {
+        "title": "Skills to Focus on for {{name}}",
+        "desc": "Age-appropriate development activities for today",
+        "footer": "✨ The AI will incorporate these focus areas when generating {{name}}'s routine"
+      },
+      "story": {
+        "title": "Story Time for {{name}}",
+        "desc": "Age-appropriate moral stories",
+        "read_aloud": "Read Aloud",
+        "stop": "Stop",
+        "moral_label": "💡 Moral of the Story",
+        "footer": "📚 Read this story to {{name}} tonight for a meaningful bedtime moment"
+      },
+      "parent_tasks": {
+        "title": "Your Parent Tasks",
+        "desc": "Things you can do for {{name}} today",
+        "done_counter": "{{done}}/{{total}} done",
+        "celebration": "🌟 Amazing! You're a star parent today!"
+      }
+    },
+    "tiles": {
+      "articles": {
+        "title": "Parenting Articles",
+        "desc": "Research-based, age-matched reading",
+        "empty": "Add a child to see matched articles."
+      },
+      "tips": {
+        "title": "Daily Tips",
+        "desc": "Amy AI picks today's best tips",
+        "empty": "Add a child to unlock daily tips."
+      },
+      "ptm-prep": {
+        "title": "🧾 PTM Prep Assistant",
+        "sublabel": "Prepare · Attend · Act — for parent-teacher meetings"
+      },
+      "smart-study": {
+        "title": "📚 Smart Study Zone",
+        "sublabel": "Nursery → Class 10 · audio + practice"
+      },
+      "morning-flow": {
+        "title": "🌅 School Morning Flow",
+        "sublabel": "Night prep · steps · smart delay"
+      },
+      "olympiad": {
+        "title": "🏆 Olympiad Zone",
+        "sublabel": "Daily 5 · practice · math, science, reasoning, GK"
+      },
+      "kids-control-center": {
+        "title": "Kids Control Center",
+        "sublabel": "Smart control · Safe child experience",
+        "soon": "SOON 🚀"
+      },
+      "meals": {
+        "title": "🍱 Tiffin & Meals",
+        "sublabel": "Smart suggestions tuned to your child's taste"
+      },
+      "nutrition": {
+        "title": "🥗 Nutrition Hub",
+        "sublabel": "न्यूट्रिशन हब · Age-wise nutrition science"
+      },
+      "event-prep": {
+        "title": "🎉 Event Prep",
+        "sublabel": "Fancy dress · DIY guide · speeches"
+      },
+      "activities": {
+        "title": "Activities & Learning",
+        "desc": "Games, audio lessons & more",
+        "lead": "Educational activities curated by Amy for your child's age group."
+      },
+      "story-hub": {
+        "title": "🎬 Kids Story Hub",
+        "sublabel": "Bedtime, moral & fun stories — Netflix-style"
+      },
+      "art-craft": {
+        "title": "🎨 Art & Craft Videos",
+        "desc": "Short creative videos to inspire your child"
+      },
+      "worksheets": {
+        "title": "📄 Printable Worksheets",
+        "desc": "Coloring, math, tracing & more · 5 free / day"
+      },
+      "facts": {
+        "title": "✨ Amazing Facts",
+        "desc": "Mind-blowing facts for curious kids",
+        "empty": "Add a child to unlock age-matched facts."
+      },
+      "life-skills": {
+        "title": "🧭 Life Skills Mode",
+        "desc": "Daily real-life skills, ages 2–15"
+      },
+      "meal-suggestions": {
+        "title": "🍱 Amy AI Meal Suggestions",
+        "desc": "AI-generated tiffin & meal ideas for your child"
+      },
+      "smart-math-tricks": {
+        "title": "🧮 Smart Math Tricks",
+        "desc": "Mental math shortcuts kids actually love",
+        "empty": "Add a child to unlock smart math tricks."
+      },
+      "coloring-books": {
+        "title": "🎨 Coloring Books",
+        "desc": "Print-ready coloring pages, refreshed daily",
+        "empty": "Add a child to unlock coloring books."
+      },
+      "fun-sheets": {
+        "title": "📄 Fun Sheets",
+        "desc": "Activity sheets, mazes & puzzles",
+        "empty": "Add a child to unlock fun sheets."
+      },
+      "skills-focus": {
+        "title": "🎯 Skills to Focus This Week",
+        "desc": "Age-matched developmental priorities"
+      },
+      "daily-story": {
+        "title": "📖 Daily Story",
+        "desc": "A fresh story to read together every day"
+      },
+      "daily-puzzle": {
+        "title": "🧩 Daily Puzzle",
+        "desc": "5 adaptive brain puzzles a day"
+      }
+    },
+    "tiles_activity": {
+      "gaming_reward": {
+        "title": "Gaming Reward",
+        "desc": "10 educational mini-games · earn points"
+      },
+      "rewards_shop": {
+        "title": "Rewards Shop",
+        "desc": "Spend points on real-world treats"
+      },
+      "audio_lessons": {
+        "title": "Amy Audio Lessons",
+        "desc": "3–5 min parenting lessons · hands-free"
+      }
+    },
+    "tips_fallbacks": [
+      "Catch them being good — name the behavior aloud.",
+      "Offer two acceptable choices to defuse power struggles.",
+      "Read together for 10 min before bed to anchor the routine."
+    ],
+    "nutrition_tags": [
+      "WHO",
+      "ICMR",
+      "Indian meals",
+      "Family mode"
+    ],
+    "locked": {
+      "label": "Unlock to continue",
+      "cta": "Unlock Premium"
+    },
+    "emotional_cards": {
+      "overwhelmed": {
+        "title": "I'm feeling overwhelmed",
+        "subtitle": "It's okay. You're not alone.",
+        "prompt": "I'm feeling completely overwhelmed as a parent. What can I do to feel better?"
+      },
+      "anxious": {
+        "title": "My child seems anxious",
+        "subtitle": "Let's figure this out together.",
+        "prompt": "My child seems anxious and worried a lot. How can I help them?"
+      },
+      "connect": {
+        "title": "We're struggling to connect",
+        "subtitle": "Small steps can make a big difference.",
+        "prompt": "I feel like my child and I aren't connecting well. How can we build a stronger bond?"
+      },
+      "break": {
+        "title": "I need a parenting break",
+        "subtitle": "Self-care is part of good parenting.",
+        "prompt": "I'm a parent who needs some time for myself. How can I take care of my own wellbeing?"
+      }
+    },
+    "emotional_footer": {
+      "lead": "Parenting is hard. Amy is here to listen and help — no judgment.",
+      "reassure_title": "You're doing better than you think 💜",
+      "reassure_body": "Research shows that the fact you're seeking information and support makes you an above-average parent. The worry itself is evidence of love."
+    },
+    "web_tiles": {
+      "command-center": {
+        "title": "Command Center",
+        "description": "Today's overview, mood, sleep & quick actions"
+      },
+      "tomorrow-forecast": {
+        "title": "Amy AI — Tomorrow's Forecast",
+        "description": "Mood, energy & sleep prediction for tomorrow"
+      },
+      "smart-math-tricks": {
+        "title": "🧮 Smart Math Tricks",
+        "description": "Fun mental math shortcuts — Vedic style!"
+      },
+      "amy-ai": {
+        "title": "Ask Amy AI",
+        "description": "Get warm, practical parenting advice"
+      },
+      "articles": {
+        "title": "Parenting Articles",
+        "description": "Research-based, age-matched reading"
+      },
+      "daily-tips": {
+        "title": "Daily Tips",
+        "description": "Amy AI picks today's best tips for you"
+      },
+      "emotional": {
+        "title": "Emotional Support",
+        "description": "For the tough parenting days"
+      },
+      "activities": {
+        "title": "Activities & Learning",
+        "description": "Age-based games, stories & skills"
+      },
+      "art-craft": {
+        "title": "🎨 Art & Craft Videos",
+        "description": "Creative video tutorials — tap to watch, swipe to browse"
+      },
+      "story-hub": {
+        "title": "🎬 Kids Story Hub",
+        "description": "A whole library of bedtime, moral & fun stories — for ages 0–8"
+      },
+      "phonics": {
+        "title": "🔤 Phonics Learning",
+        "description": "Sound awareness → blending → reading, paced for your child's age"
+      },
+      "ptm-prep": {
+        "title": "🧾 PTM Prep Assistant",
+        "description": "Prepare questions, take notes & turn them into action steps"
+      },
+      "smart-study": {
+        "title": "📚 Smart Study Zone",
+        "description": "Adaptive learning Nursery → Class 10, with audio + practice"
+      },
+      "event-prep": {
+        "title": "🎉 Event Prep (School Ready)",
+        "description": "Fancy dress, DIY guide & speeches for school events"
+      },
+      "olympiad": {
+        "title": "Smart Olympiad Zone",
+        "description": "Daily 5 MCQs, weekly tests, badges & insights"
+      },
+      "life-skills": {
+        "title": "🧭 Life Skills Mode",
+        "description": "Daily real-life skills tailored to your child's age"
+      },
+      "coloring-books": {
+        "title": "🎨 Coloring Books",
+        "description": "Printable coloring sheets — preview, then download (2/day)"
+      },
+      "fun-sheets": {
+        "title": "📄 Fun Sheets",
+        "description": "Printable activity & learning PDFs — preview, then download (2/day)"
+      },
+      "olympiad-preview": {
+        "title": "🏆 Smart Olympiad Zone",
+        "description": "Daily 5 MCQs, weekly tests, badges & insights"
+      },
+      "ptm-prep-preview": {
+        "title": "🧾 PTM Prep Assistance",
+        "description": "Prepare questions, take notes & turn them into action steps"
+      },
+      "coloring-books-preview": {
+        "title": "🎨 Coloring Books",
+        "description": "Printable coloring sheets with preview & one-tap download"
+      },
+      "fun-sheets-preview": {
+        "title": "📄 Fun Sheets",
+        "description": "Printable activity & learning PDFs — 2 downloads/day per child"
+      }
+    },
+    "subsections": {
+      "baby-activities": {
+        "title": "Baby Activities",
+        "description": "Feeding, bonding, development & milestones"
+      },
+      "amazing-facts-baby": {
+        "title": "Amazing Facts",
+        "description": "Fun facts about your baby's world"
+      },
+      "daily-activity": {
+        "title": "Daily Activity",
+        "description": "Today's fun activity picked for your child"
+      },
+      "skills-to-focus-toddler": {
+        "title": "Skills to Focus",
+        "description": "Age-matched skills to practise this week"
+      },
+      "story-time": {
+        "title": "Story Time",
+        "description": "Short story to read together today"
+      },
+      "fun-and-play": {
+        "title": "Fun & Play",
+        "description": "Games and activities to enjoy together"
+      },
+      "parent-tasks-toddler": {
+        "title": "Parent Tasks",
+        "description": "Quick things to do for your child today"
+      },
+      "daily-puzzle-pre": {
+        "title": "Daily Puzzle",
+        "description": "A brain-teaser to sharpen little minds"
+      },
+      "amazing-facts-toddler": {
+        "title": "Amazing Facts",
+        "description": "Fun things to tell your little one today"
+      },
+      "spelling-mastery": {
+        "title": "Spelling Mastery",
+        "description": "Learn → Practice → Dictate → Compete with Amy's voice"
+      },
+      "daily-activity-older": {
+        "title": "Daily Activity",
+        "description": "Today's fun activity picked for your child"
+      },
+      "skills-to-focus-older": {
+        "title": "Skills to Focus",
+        "description": "Key skills to develop this stage"
+      },
+      "story-time-older": {
+        "title": "Story Time",
+        "description": "A short story for your child today"
+      },
+      "daily-puzzle-older": {
+        "title": "Daily Puzzle",
+        "description": "A brain-teaser to sharpen their mind"
+      },
+      "parent-tasks-older": {
+        "title": "Parent Tasks",
+        "description": "Quick things to do for your child today"
+      },
+      "amazing-facts-older": {
+        "title": "Amazing Facts",
+        "description": "Interesting facts to share with your child"
+      },
+      "spelling-mastery-older": {
+        "title": "Spelling Mastery",
+        "description": "Learn → Practice → Dictate → Compete with Amy's voice"
+      },
+      "printable-worksheets-all": {
+        "title": "Printable Worksheets",
+        "description": "Age-matched worksheets to download & print"
+      }
+    },
+    "headers": {
+      "section1_for": "Section 1 · For you",
+      "section2_next": "Section 2 · Coming next",
+      "for_child": "For {{name}}",
+      "personalised": "Personalised content tuned to where {{name}} is right now.",
+      "explore_next": "Explore the next stage for {{name}}",
+      "explore_blurb": "We grow as {{name}} grows — here's a peek at what unlocks next so you can plan ahead and stay one step in front.",
+      "current_child": "Current Child",
+      "select_child": "Select Child",
+      "add_child": "Add child",
+      "viewing": "Viewing",
+      "bottom_cta": "Generate today's routine",
+      "previewing": "Previewing",
+      "coming_next": "Coming Up Next"
+    },
+    "empty": {
+      "heading": "Add a child to get started",
+      "body": "Add your child's profile to unlock age-personalised tips, articles, and activities.",
+      "cta": "Add Child"
+    },
+    "preview_tiles": {
+      "life-skills": {
+        "title": "🧭 Life Skills Mode",
+        "description": "Daily real-life skills tailored to your child's age"
+      },
+      "olympiad": {
+        "title": "🏆 Smart Olympiad Zone",
+        "description": "Daily 5 MCQs, weekly tests, badges & insights"
+      },
+      "event-prep": {
+        "title": "🎉 Event Prep (School Ready)",
+        "description": "Fancy dress, DIY guide & speeches for school events"
+      },
+      "smart-study": {
+        "title": "📚 Smart Study Zone",
+        "description": "Adaptive learning Nursery → Class 10, with audio + practice"
+      },
+      "ptm-prep": {
+        "title": "🧾 PTM Prep Assistance",
+        "description": "Prepare questions, take notes & turn them into action steps"
+      },
+      "phonics": {
+        "title": "🔤 Phonics Learning",
+        "description": "Sound awareness → blending → reading, paced for your child's age"
+      },
+      "coloring-books": {
+        "title": "🎨 Coloring Books",
+        "description": "Printable coloring sheets with preview & one-tap download"
+      },
+      "fun-sheets": {
+        "title": "📄 Fun Sheets",
+        "description": "Printable activity & learning PDFs — 2 downloads/day per child"
+      }
+    },
+    "command_center": {
+      "quick": {
+        "play": {
+          "label": "10-min play"
+        },
+        "phonics": {
+          "label": "5-min phonics"
+        },
+        "lullaby": {
+          "label": "5-min lullaby"
+        },
+        "puzzle": {
+          "label": "5-min puzzle"
+        }
+      },
+      "quick_ideas_title": "Quick connection ideas",
+      "tap_timer": "Tap to start a timer",
+      "calming_title": "Calming tools — try these in order",
+      "calming_steps": [
+        "Breathe slowly 4-4-6 with them for 60 seconds.",
+        "Offer a tight hug + soft voice (no questions).",
+        "Switch to a low-stim activity: water bottle, soft toy, dim light."
+      ],
+      "winddown_title": "Wind-down plan for tonight",
+      "winddown_steps": [
+        "Dim lights 30 min before bedtime; no screens after.",
+        "Warm bath or face wash + same lullaby every night.",
+        "Lights out at the same time — set a calm alarm cue."
+      ],
+      "pick_play": "Pick a 10-min play — tap to start",
+      "close": "Close",
+      "start": "Start",
+      "no_routine": "No routine for today yet",
+      "no_routine_help": "Generate one to unlock the timeline + smart suggestions."
+    }
   }
 }

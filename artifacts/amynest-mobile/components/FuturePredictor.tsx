@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-nati
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -43,6 +44,12 @@ const CONF_COLOR: Record<Prediction["confidence"], { bg: string; text: string }>
   High:   { bg: "rgba(16,185,129,0.18)",  text: "#6ee7b7"        }, // audit-ok: emerald-300 high conf text
 };
 
+const CONF_KEY: Record<Prediction["confidence"], "low" | "medium" | "high"> = {
+  Low: "low",
+  Medium: "medium",
+  High: "high",
+};
+
 interface Props {
   childId?: number | null;
   variant?: "full" | "compact";
@@ -52,6 +59,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
   const authFetch = useAuthFetch();
   const c = useColors();
   const { mode } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(c, mode), [c, mode]);
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery<Prediction>({
@@ -73,7 +81,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
     return (
       <View style={styles.cardLoading}>
         <ActivityIndicator color={brand.purple500} />
-        <Text style={styles.loadingText}>Amy is thinking about tomorrow…</Text>
+        <Text style={styles.loadingText}>{t("parent_hub.predictor.loading")}</Text>
       </View>
     );
   }
@@ -81,10 +89,10 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
   if (isError || !data) return null;
 
   const indicators: Array<{ key: string; title: string; ind: Indicator }> = [
-    { key: "mood",   title: "MOOD",   ind: data.mood },
-    { key: "energy", title: "ENERGY", ind: data.energy },
-    { key: "sleep",  title: "SLEEP",  ind: data.sleep },
-    { key: "risk",   title: "RISK",   ind: data.risk },
+    { key: "mood",   title: t("parent_hub.predictor.indicators.mood").toUpperCase(),   ind: data.mood },
+    { key: "energy", title: t("parent_hub.predictor.indicators.energy").toUpperCase(), ind: data.energy },
+    { key: "sleep",  title: t("parent_hub.predictor.indicators.sleep").toUpperCase(),  ind: data.sleep },
+    { key: "risk",   title: t("parent_hub.predictor.indicators.risk").toUpperCase(),   ind: data.risk },
   ];
 
   return (
@@ -105,17 +113,19 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <Ionicons name="sparkles" size={13} color={brand.purple400} />
-            <Text style={styles.title}>Amy AI · Tomorrow's Forecast</Text>
+            <Text style={styles.title}>{t("parent_hub.predictor.title")}</Text>
           </View>
           <Text style={styles.subtitle}>
-            {data.childName ? `For ${data.childName}` : "Family forecast"} · {data.forDate}
+            {data.childName
+              ? t("parent_hub.predictor.for_child", { name: data.childName })
+              : t("parent_hub.predictor.family_forecast")} · {data.forDate}
           </Text>
         </View>
         <Pressable
           onPress={() => refetch()}
           disabled={isFetching}
           style={styles.refreshBtn}
-          accessibilityLabel="Refresh prediction"
+          accessibilityLabel={t("parent_hub.predictor.refresh_aria")}
         >
           <Ionicons
             name="refresh"
@@ -126,7 +136,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
         </Pressable>
       </View>
 
-      {/* Amy message */}
+      {/* Amy message — message text comes from the AI backend (out of scope) */}
       <Text style={styles.message}>"{data.message}"</Text>
 
       {/* Indicators grid */}
@@ -161,7 +171,9 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
         <View style={styles.sugBox}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 6 }}>
             <Ionicons name="alert-circle" size={11} color="rgba(255,255,255,0.65)" />
-            <Text style={styles.sugTitle}>WHAT YOU CAN DO</Text>
+            <Text style={styles.sugTitle}>
+              {t("parent_hub.predictor.suggestions_title").toUpperCase()}
+            </Text>
           </View>
           {data.suggestions.map((s, i) => (
             <View key={i} style={styles.sugRow}>
@@ -181,11 +193,16 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
           ]}
         >
           <Text style={[styles.confText, { color: CONF_COLOR[data.confidence].text }]}>
-            {data.confidence} confidence
+            {t(`parent_hub.predictor.confidence.${CONF_KEY[data.confidence]}`)}
+            {t("parent_hub.predictor.confidence.suffix")}
           </Text>
         </View>
         <Text style={styles.footerNote}>
-          {data.dataPoints.daysOfData}d · {data.dataPoints.behaviorsConsidered} logs · {data.dataPoints.routinesConsidered} routines
+          {t("parent_hub.predictor.footer_short", {
+            days: data.dataPoints.daysOfData,
+            logs: data.dataPoints.behaviorsConsidered,
+            routines: data.dataPoints.routinesConsidered,
+          })}
         </Text>
       </View>
     </LinearGradient>

@@ -1,5 +1,6 @@
 import { Sparkles, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import type { AgeBand } from "@/lib/age-bands";
 import { bandLabel, bandRangeLabel } from "@/lib/age-bands";
 import { STAGE_MILESTONES } from "@/lib/stage-milestones";
@@ -17,6 +18,7 @@ export function StageMilestonesCard({
   childName: string;
   nextBand: AgeBand;
 }) {
+  const { t } = useTranslation();
   const milestones = STAGE_MILESTONES[nextBand] ?? [];
 
   return (
@@ -27,11 +29,10 @@ export function StageMilestonesCard({
         </div>
         <div className="min-w-0">
           <p className="font-quicksand font-bold text-[15px] text-foreground leading-tight">
-            What {childName} will love at {bandLabel(nextBand)}
+            {t("parent_hub.stage_milestones.title", { name: childName, band: bandLabel(nextBand) })}
           </p>
           <p className="text-[12px] text-muted-foreground mt-0.5">
-            A peek at the developmental wins coming up at {bandRangeLabel(nextBand)} —
-            we grow with your child.
+            {t("parent_hub.stage_milestones.description", { range: bandRangeLabel(nextBand) })}
           </p>
         </div>
       </div>
@@ -57,7 +58,7 @@ export function StageMilestonesCard({
 
       <Link href="/assistant">
         <button className="mt-4 w-full inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100">
-          Ask Amy how to gently prepare {childName}
+          {t("parent_hub.stage_milestones.cta", { name: childName })}
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </Link>
@@ -70,15 +71,15 @@ export function StageMilestonesCard({
  * that they've reached the full feature ceiling.
  */
 export function GraduationStageCard({ childName }: { childName: string }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-2xl border-2 border-dashed border-violet-300/60 dark:border-violet-400/30 bg-gradient-to-br from-violet-50/60 to-fuchsia-50/60 dark:from-violet-500/[0.06] dark:to-fuchsia-500/[0.06] p-5 text-center">
       <div className="text-3xl mb-2">🎓</div>
       <p className="font-quicksand font-bold text-[15px] text-foreground">
-        {childName} has unlocked the full Parent Hub
+        {t("parent_hub.graduation.title", { name: childName })}
       </p>
       <p className="text-[12px] text-muted-foreground mt-1.5">
-        Every feature is now tuned to their stage — keep showing up, the rest
-        is just consistency.
+        {t("parent_hub.graduation.desc")}
       </p>
     </div>
   );
