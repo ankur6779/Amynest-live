@@ -7,7 +7,9 @@ import {
   spellingProgressTable,
   spellingCompetitionScoresTable,
   spellingSessionsTable,
+  spellingTournamentsTable,
   childrenTable,
+  type SpellingTournamentRow,
 } from "@workspace/db";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
@@ -167,6 +169,184 @@ export function applyAttempt(
     bestStreak,
     badges,
     starsEarnedThisAttempt: earned,
+  };
+}
+
+// ─── Tournament Mode helpers ────────────────────────────────────────────────
+//
+// Tournament = 3-round elimination ladder. Round difficulty + word count
+// + pass threshold are server-authored constants — the client cannot
+// influence them. Each round runs as a normal v2 server-graded session
+// (mode = "tournament") whose token is linked back to the tournament
+// row via `spelling_sessions.parent_tournament_token`.
+
+export const TOURNAMENT_ROUND_CONFIG: ReadonlyArray<{
+  round: number;
+  difficulty: SpellingDifficulty;
+  wordCount: number;
+  /** Min `wordsCorrect` to advance. R3 = 0 (final round always counts). */
+  passThreshold: number;
+}> = [
+  { round: 1, difficulty: "easy",   wordCount: 5, passThreshold: 3 },
+  { round: 2, difficulty: "medium", wordCount: 5, passThreshold: 3 },
+  { round: 3, difficulty: "hard",   wordCount: 5, passThreshold: 0 },
+];
+
+export function getRoundConfig(round: number): {
+  round: number;
+  difficulty: SpellingDifficulty;
+  wordCount: number;
+  passThreshold: number;
+} {
+  const cfg = TOURNAMENT_ROUND_CONFIG[round - 1];
+  if (!cfg) throw new Error(`invalid_round_${round}`);
+  return cfg;
+}
+
+export interface TournamentRoundResult {
+  round: number;
+  difficulty: SpellingDifficulty;
+  sessionToken: string;
+  score: number;
+  wordsCorrect: number;
+  wordsAttempted: number;
+  durationSec: number;
+}
+
+export interface TournamentStateForApply {
+  rounds: Array<TournamentRoundResult & { passed: boolean }>;
+  totalScore: number;
+}
+
+/**
+ * Pure round-progression rule. Decides whether the just-finalized round
+ * advances the player, eliminates them, or completes the tournament.
+ * Score is added to `totalScore` ONLY when the round is passed — failed
+ * round scores stay isolated to the rounds[] history.
+ */
+export function applyRoundResult(
+  prev: TournamentStateForApply,
+  result: TournamentRoundResult,
+): {
+  status: "active" | "eliminated" | "completed";
+  currentRound: number;
+  rounds: Array<TournamentRoundResult & { passed: boolean }>;
+  totalScore: number;
+  eliminatedAtRound: number | null;
+  passed: boolean;
+} {
+  const cfg = getRoundConfig(result.round);
+  const passed = result.wordsCorrect >= cfg.passThreshold;
+  const stamped = { ...result, passed };
+  const rounds = [...prev.rounds, stamped];
+  const totalScore = prev.totalScore + (passed ? result.score : 0);
+
+  if (!passed) {
+    return {
+      status: "eliminated",
+      currentRound: result.round,
+      rounds,
+      totalScore,
+      eliminatedAtRound: result.round,
+      passed,
+    };
+  }
+  if (result.round >= TOURNAMENT_ROUND_CONFIG.length) {
+    return {
+      status: "completed",
+      currentRound: result.round,
+      rounds,
+      totalScore,
+      eliminatedAtRound: null,
+      passed,
+    };
+  }
+  return {
+    status: "active",
+    currentRound: result.round + 1,
+    rounds,
+    totalScore,
+    eliminatedAtRound: null,
+    passed,
+  };
+}
+
+// ─── Battle Mode (vs AI) helpers ────────────────────────────────────────────
+//
+// AI opponent is a deterministic per-word simulator seeded by the
+// session token. We compute it once at session start and store it in
+// `spelling_sessions.ai_results` so the AI's behaviour cannot be
+// influenced by the client (e.g. by abandoning + retrying for a worse
+// outcome — the seeded result would be the same).
+//
+// Profiles are tuned so the bots feel fair: easy is beatable by a
+// patient kid, medium is honest competition, hard is a stretch goal.
+
+export const AI_OPPONENTS = {
+  ai_easy:   { label: "Beginner Bot", accuracy: 0.55, msMin: 3000, msMax: 7000 },
+  ai_medium: { label: "Smart Bot",    accuracy: 0.75, msMin: 2500, msMax: 5000 },
+  ai_hard:   { label: "Master Bot",   accuracy: 0.92, msMin: 1500, msMax: 3500 },
+} as const;
+
+export type AiOpponent = keyof typeof AI_OPPONENTS;
+
+/** FNV-1a 32-bit hash — turns the session token into an RNG seed. */
+function strHash(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/** Mulberry32 — small, deterministic RNG. */
+function seededRng(seed: number): () => number {
+  let t = seed >>> 0;
+  return function () {
+    t = (t + 0x6d2b79f5) | 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Simulate the AI opponent's per-word result. Pure — no DB I/O.
+ * Same `(wordCount, opponent, seed)` triple ALWAYS yields the same
+ * results, so the AI is fixed at session-creation time.
+ */
+export function simulateAiOpponent(
+  wordCount: number,
+  opponent: AiOpponent,
+  seed: string,
+): Array<{ correct: boolean; ms: number }> {
+  const profile = AI_OPPONENTS[opponent];
+  const rng = seededRng(strHash(`${opponent}:${seed}`));
+  const out: Array<{ correct: boolean; ms: number }> = [];
+  for (let i = 0; i < wordCount; i++) {
+    const correct = rng() < profile.accuracy;
+    const ms = Math.round(profile.msMin + rng() * (profile.msMax - profile.msMin));
+    out.push({ correct, ms });
+  }
+  return out;
+}
+
+/**
+ * Compute the AI's competition score from its simulated per-word
+ * results. Uses the same `computeCompetitionScore` formula as the
+ * human side so the two scores are directly comparable.
+ */
+export function computeAiScore(
+  aiResults: ReadonlyArray<{ correct: boolean; ms: number }>,
+): { score: number; correct: number; durationSec: number } {
+  const correct = aiResults.filter((r) => r.correct).length;
+  const totalMs = aiResults.reduce((acc, r) => acc + r.ms, 0);
+  const durationSec = Math.max(1, Math.ceil(totalMs / 1000));
+  return {
+    score: computeCompetitionScore(correct, durationSec),
+    correct,
+    durationSec,
   };
 }
 
@@ -563,14 +743,29 @@ router.get("/spelling/competition/leaderboard", async (req, res): Promise<void> 
 // client only ever sees an opaque sessionToken + per-word audio URLs —
 // never the answers.
 
-const sessionStartSchema = z.object({
-  childId: z.number().int().positive(),
-  ageGroup: ageGroupSchema,
-  mode: z.enum(["competition", "dictation"]),
-  difficulty: difficultySchema.default("easy"),
-  count: z.number().int().min(1).max(20).default(10),
-  source: z.enum(["curated", "ai"]).default("curated"),
-});
+const aiOpponentSchema = z.enum(["ai_easy", "ai_medium", "ai_hard"]);
+
+/**
+ * Public session start schema. Accepts Competition / Dictation / Battle.
+ * Tournament-mode sessions are intentionally NOT creatable here — the
+ * client must use POST /spelling/tournaments/start, which orchestrates
+ * the round sessions internally with mode = "tournament".
+ */
+const sessionStartSchema = z
+  .object({
+    childId: z.number().int().positive(),
+    ageGroup: ageGroupSchema,
+    mode: z.enum(["competition", "dictation", "battle"]),
+    difficulty: difficultySchema.default("easy"),
+    count: z.number().int().min(1).max(20).default(10),
+    source: z.enum(["curated", "ai"]).default("curated"),
+    /** Required iff mode === "battle". Picks AI strength. */
+    opponent: aiOpponentSchema.optional(),
+  })
+  .refine((v) => v.mode !== "battle" || !!v.opponent, {
+    message: "battle_requires_opponent",
+    path: ["opponent"],
+  });
 
 /**
  * Project a server-side word into a client-safe shape.
@@ -605,6 +800,118 @@ function safeWordFor(
   };
 }
 
+/**
+ * Pick words + prewarm TTS + insert a v2 session row. Shared between the
+ * public start endpoint and the tournament endpoints (which create one
+ * session per round). Returns either an `ok` payload with everything
+ * the caller needs to respond, or an `error` discriminator the caller
+ * can map to an HTTP status code.
+ */
+async function createSpellingSession(args: {
+  userId: string;
+  childId: number;
+  ageGroup: SpellingAgeGroup;
+  mode: "competition" | "dictation" | "tournament" | "battle";
+  difficulty: SpellingDifficulty;
+  count: number;
+  source: "curated" | "ai";
+  parentTournamentToken?: string | null;
+  aiOpponent?: AiOpponent | null;
+}): Promise<
+  | {
+      ok: true;
+      sessionToken: string;
+      startedAt: Date;
+      safeWords: ReturnType<typeof safeWordFor>[];
+      aiResults: Array<{ correct: boolean; ms: number }> | null;
+    }
+  | { ok: false; error: "no_words_available" | "audio_unavailable" }
+> {
+  let words: SpellingWord[] = [];
+  if (args.source === "ai") {
+    try {
+      words = await generateAiWords(args.ageGroup, args.difficulty, args.count);
+    } catch (err) {
+      logger.warn(
+        {
+          evt: "spelling.session_ai_fallback",
+          userId: args.userId,
+          code: err instanceof Error ? err.message : "ai_failed",
+        },
+        "ai word generation failed, falling back to curated",
+      );
+    }
+  }
+  if (words.length === 0) {
+    const pool = SPELLING_WORDS.filter(
+      (w) => w.ageGroup === args.ageGroup && w.difficulty === args.difficulty,
+    );
+    words = sample(pool, args.count);
+  }
+  if (words.length === 0) {
+    return { ok: false, error: "no_words_available" };
+  }
+
+  // Pre-warm TTS so the first audio request is a cache hit. Sequential
+  // for backpressure against ElevenLabs quotas + a clear failure mode.
+  const audioKeys: string[] = [];
+  try {
+    for (const w of words) {
+      const r = await synthesize(w.word, {});
+      audioKeys.push(r.cacheKey);
+    }
+  } catch (err) {
+    const code = err instanceof Error ? err.message : "tts_failed";
+    logger.error(
+      { evt: "spelling.session_tts_failed", userId: args.userId, code },
+      "session start failed: tts prewarm error",
+    );
+    return { ok: false, error: "audio_unavailable" };
+  }
+
+  const sessionToken = crypto.randomUUID();
+  // Battle mode: simulate the AI opponent ONCE, deterministically
+  // seeded by the (just-minted) sessionToken. Stored in the session
+  // row so subsequent attempt/finalize calls return the same numbers.
+  const aiResults = args.aiOpponent
+    ? simulateAiOpponent(words.length, args.aiOpponent, sessionToken)
+    : null;
+
+  const inserted = await db
+    .insert(spellingSessionsTable)
+    .values({
+      sessionToken,
+      childId: args.childId,
+      userId: args.userId,
+      ageGroup: args.ageGroup,
+      mode: args.mode,
+      difficulty: args.difficulty,
+      words: words.map((w) => ({
+        id: w.id,
+        word: w.word,
+        ageGroup: w.ageGroup,
+        difficulty: w.difficulty,
+        syllables: w.syllables,
+        chunks: w.chunks,
+        hint: w.hint,
+      })),
+      audioKeys,
+      attempts: {},
+      parentTournamentToken: args.parentTournamentToken ?? null,
+      aiOpponent: args.aiOpponent ?? null,
+      aiResults,
+    })
+    .returning({ startedAt: spellingSessionsTable.startedAt });
+
+  return {
+    ok: true,
+    sessionToken,
+    startedAt: inserted[0]?.startedAt ?? new Date(),
+    safeWords: words.map((w, i) => safeWordFor(sessionToken, i, w)),
+    aiResults,
+  };
+}
+
 router.post("/spelling/sessions/start", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) {
@@ -619,85 +926,31 @@ router.post("/spelling/sessions/start", async (req, res): Promise<void> => {
       .json({ error: "invalid_body", issues: parsed.error.flatten() });
     return;
   }
-  const { childId, ageGroup, mode, difficulty, count, source } = parsed.data;
+  const { childId, ageGroup, mode, difficulty, count, source, opponent } =
+    parsed.data;
 
   if (!(await ownsChild(userId, childId))) {
     res.status(403).json({ error: "forbidden" });
     return;
   }
 
-  // Pick words server-side. AI generation falls back to the curated
-  // catalog on any failure so a flaky upstream doesn't break the run.
-  let words: SpellingWord[] = [];
-  if (source === "ai") {
-    try {
-      words = await generateAiWords(ageGroup, difficulty, count);
-    } catch (err) {
-      logger.warn(
-        {
-          evt: "spelling.session_ai_fallback",
-          userId,
-          code: err instanceof Error ? err.message : "ai_failed",
-        },
-        "ai word generation failed, falling back to curated",
-      );
-    }
-  }
-  if (words.length === 0) {
-    const pool = SPELLING_WORDS.filter(
-      (w) => w.ageGroup === ageGroup && w.difficulty === difficulty,
-    );
-    words = sample(pool, count);
-  }
-  if (words.length === 0) {
-    res.status(500).json({ error: "no_words_available" });
+  const result = await createSpellingSession({
+    userId,
+    childId,
+    ageGroup,
+    mode,
+    difficulty,
+    count,
+    source,
+    aiOpponent: opponent ?? null,
+  });
+
+  if (!result.ok) {
+    res
+      .status(result.error === "no_words_available" ? 500 : 502)
+      .json({ error: result.error });
     return;
   }
-
-  // Pre-warm TTS so the client's first audio request is a cache hit. Also
-  // gives us the deterministic cacheKeys we'll store in the session row.
-  // Synthesise sequentially: we want backpressure against ElevenLabs
-  // quotas + a clear failure mode if any single word fails.
-  const audioKeys: string[] = [];
-  try {
-    for (const w of words) {
-      const r = await synthesize(w.word, {});
-      audioKeys.push(r.cacheKey);
-    }
-  } catch (err) {
-    const code = err instanceof Error ? err.message : "tts_failed";
-    logger.error(
-      { evt: "spelling.session_tts_failed", userId, code },
-      "session start failed: tts prewarm error",
-    );
-    res.status(502).json({ error: "audio_unavailable" });
-    return;
-  }
-
-  const sessionToken = crypto.randomUUID();
-
-  const inserted = await db
-    .insert(spellingSessionsTable)
-    .values({
-      sessionToken,
-      childId,
-      userId,
-      ageGroup,
-      mode,
-      difficulty,
-      words: words.map((w) => ({
-        id: w.id,
-        word: w.word,
-        ageGroup: w.ageGroup,
-        difficulty: w.difficulty,
-        syllables: w.syllables,
-        chunks: w.chunks,
-        hint: w.hint,
-      })),
-      audioKeys,
-      attempts: {},
-    })
-    .returning({ startedAt: spellingSessionsTable.startedAt });
 
   logger.info(
     {
@@ -707,19 +960,22 @@ router.post("/spelling/sessions/start", async (req, res): Promise<void> => {
       mode,
       ageGroup,
       difficulty,
-      count: words.length,
+      count: result.safeWords.length,
+      opponent: opponent ?? null,
     },
     "spelling session started",
   );
 
   res.json({
     ok: true,
-    sessionToken,
+    sessionToken: result.sessionToken,
     mode,
     ageGroup,
     difficulty,
-    startedAt: inserted[0]?.startedAt ?? new Date().toISOString(),
-    words: words.map((w, i) => safeWordFor(sessionToken, i, w)),
+    opponent: opponent ?? null,
+    aiOpponentLabel: opponent ? AI_OPPONENTS[opponent].label : null,
+    startedAt: result.startedAt,
+    words: result.safeWords,
   });
 });
 
@@ -842,6 +1098,11 @@ router.post(
       correct,
     );
 
+    // Battle mode: surface the AI's per-word result alongside the
+    // child's own attempt so the UI can show "AI got it right in 3.2s"
+    // immediately after the child submits. Null for non-battle modes.
+    const aiResult = session.aiResults?.[wordIndex] ?? null;
+
     res.json({
       ok: true,
       correct,
@@ -849,9 +1110,174 @@ router.post(
       // on a wrong answer — Competition UI hides this until finalize.
       correctAnswer: target,
       progress,
+      aiResult,
     });
   },
 );
+
+/** Discriminator returned by the finalize helper. */
+type FinalizeOutcome =
+  | { kind: "not_found" }
+  | {
+      kind: "finalized" | "already_finalized";
+      mode: string;
+      wordsAttempted: number;
+      wordsCorrect: number;
+      durationSec: number;
+      accuracyPct: number;
+      score: number | null;
+      aiScore: number | null;
+      winner: "you" | "ai" | "tie" | null;
+      competitionScoreId: number | null;
+      childId: number;
+      ageGroup: string;
+      parentTournamentToken: string | null;
+    };
+
+/**
+ * Idempotent server-side session finalize. Pure of HTTP concerns so it
+ * can be invoked from BOTH the public endpoint AND the tournament
+ * `/advance` endpoint (which finalizes the active round before deciding
+ * whether to start the next one). Always runs in a single transaction
+ * with row-locking so concurrent calls don't double-insert leaderboard
+ * rows.
+ */
+async function finalizeSpellingSession(
+  userId: string,
+  token: string,
+): Promise<FinalizeOutcome> {
+  return db.transaction(async (tx): Promise<FinalizeOutcome> => {
+    const rows = await tx
+      .select()
+      .from(spellingSessionsTable)
+      .where(eq(spellingSessionsTable.sessionToken, token))
+      .for("update")
+      .limit(1);
+    const session = rows[0];
+    if (!session || session.userId !== userId) {
+      return { kind: "not_found" };
+    }
+
+    const wordsAttempted = Object.keys(session.attempts).length;
+    const wordsCorrect = (
+      Object.values(session.attempts) as Array<{
+        guess: string;
+        correct: boolean;
+        ts: string;
+      }>
+    ).filter((a) => a.correct).length;
+
+    /** Decide winner from a (score, aiScore) pair. */
+    const winnerOf = (s: number | null, a: number | null): "you" | "ai" | "tie" | null => {
+      if (s === null || a === null) return null;
+      if (s > a) return "you";
+      if (s < a) return "ai";
+      return "tie";
+    };
+
+    // Already finalized → recompute response from stored columns. NEVER
+    // re-insert a leaderboard row.
+    if (session.finalizedAt) {
+      const fAttempted = session.finalWordsAttempted ?? wordsAttempted;
+      const fCorrect = session.finalWordsCorrect ?? wordsCorrect;
+      return {
+        kind: "already_finalized",
+        mode: session.mode,
+        wordsAttempted: fAttempted,
+        wordsCorrect: fCorrect,
+        durationSec: session.finalDurationSec ?? 0,
+        accuracyPct:
+          fAttempted === 0 ? 0 : Math.round((fCorrect / fAttempted) * 100),
+        score: session.finalScore,
+        aiScore: session.aiFinalScore,
+        winner: winnerOf(session.finalScore, session.aiFinalScore),
+        competitionScoreId: session.competitionScoreId,
+        childId: session.childId,
+        ageGroup: session.ageGroup,
+        parentTournamentToken: session.parentTournamentToken,
+      };
+    }
+
+    // Server-stamped duration: now - startedAt, clamped to >= 1s so the
+    // score formula can never divide by zero. The start time is
+    // server-authored; there is no client-side duration to validate.
+    const startedMs = session.startedAt.getTime();
+    const elapsedSec = Math.max(
+      1,
+      Math.round((Date.now() - startedMs) / 1000),
+    );
+    const accuracyPct =
+      wordsAttempted === 0
+        ? 0
+        : Math.round((wordsCorrect / wordsAttempted) * 100);
+
+    let score: number | null = null;
+    let aiScore: number | null = null;
+    let competitionScoreId: number | null = null;
+
+    if (
+      (session.mode === "competition" ||
+        session.mode === "tournament" ||
+        session.mode === "battle") &&
+      wordsAttempted > 0
+    ) {
+      score = computeCompetitionScore(wordsCorrect, elapsedSec);
+    }
+
+    // Only Competition mode writes the public leaderboard row.
+    // Tournament + Battle keep their scores private to the run.
+    if (session.mode === "competition" && score !== null) {
+      const inserted = await tx
+        .insert(spellingCompetitionScoresTable)
+        .values({
+          childId: session.childId,
+          userId: session.userId,
+          ageGroup: session.ageGroup,
+          wordsAttempted,
+          wordsCorrect,
+          accuracyPct,
+          durationSec: elapsedSec,
+          score,
+        })
+        .returning({ id: spellingCompetitionScoresTable.id });
+      competitionScoreId = inserted[0]?.id ?? null;
+    }
+
+    // Battle mode: AI score from its pre-stored simulated results.
+    if (session.mode === "battle" && session.aiResults) {
+      aiScore = computeAiScore(session.aiResults).score;
+    }
+
+    await tx
+      .update(spellingSessionsTable)
+      .set({
+        finalizedAt: sql`now()`,
+        finalScore: score,
+        finalDurationSec: elapsedSec,
+        finalWordsAttempted: wordsAttempted,
+        finalWordsCorrect: wordsCorrect,
+        competitionScoreId,
+        aiFinalScore: aiScore,
+      })
+      .where(eq(spellingSessionsTable.sessionToken, token));
+
+    return {
+      kind: "finalized",
+      mode: session.mode,
+      wordsAttempted,
+      wordsCorrect,
+      durationSec: elapsedSec,
+      accuracyPct,
+      score,
+      aiScore,
+      winner: winnerOf(score, aiScore),
+      competitionScoreId,
+      childId: session.childId,
+      ageGroup: session.ageGroup,
+      parentTournamentToken: session.parentTournamentToken,
+    };
+  });
+}
 
 router.post(
   "/spelling/sessions/:token/finalize",
@@ -869,119 +1295,7 @@ router.post(
     }
     const { token } = tokenParsed.data;
 
-    // Idempotent finalize: do everything inside a transaction with a row
-    // lock so two concurrent finalize calls don't race to insert two
-    // leaderboard rows. The first wins and stamps `finalizedAt`; the
-    // second observes that and returns the same summary.
-    const result = await db.transaction(async (tx) => {
-      const rows = await tx
-        .select()
-        .from(spellingSessionsTable)
-        .where(eq(spellingSessionsTable.sessionToken, token))
-        .for("update")
-        .limit(1);
-      const session = rows[0];
-      if (!session || session.userId !== userId) {
-        return { kind: "not_found" as const };
-      }
-
-      const wordsAttempted = Object.keys(session.attempts).length;
-      const wordsCorrect = (
-        Object.values(session.attempts) as Array<{
-          guess: string;
-          correct: boolean;
-          ts: string;
-        }>
-      ).filter((a) => a.correct).length;
-
-      // If already finalized, recompute the response from stored fields
-      // — never insert a new leaderboard row.
-      if (session.finalizedAt) {
-        return {
-          kind: "already_finalized" as const,
-          summary: {
-            mode: session.mode,
-            wordsAttempted: session.finalWordsAttempted ?? wordsAttempted,
-            wordsCorrect: session.finalWordsCorrect ?? wordsCorrect,
-            durationSec: session.finalDurationSec ?? 0,
-            accuracyPct:
-              (session.finalWordsAttempted ?? wordsAttempted) === 0
-                ? 0
-                : Math.round(
-                    ((session.finalWordsCorrect ?? wordsCorrect) /
-                      (session.finalWordsAttempted ?? wordsAttempted)) *
-                      100,
-                  ),
-            score: session.finalScore,
-          },
-          competitionScoreId: session.competitionScoreId,
-        };
-      }
-
-      // Server-stamped duration: now - startedAt. Clamp to >= 1s so
-      // accidental sub-second runs don't divide-by-zero in the score
-      // formula. We do NOT clamp to >= wordsAttempted here because the
-      // start time is server-authored — there is no client-side
-      // duration to validate.
-      const startedMs = session.startedAt.getTime();
-      const elapsedSec = Math.max(
-        1,
-        Math.round((Date.now() - startedMs) / 1000),
-      );
-      const accuracyPct =
-        wordsAttempted === 0
-          ? 0
-          : Math.round((wordsCorrect / wordsAttempted) * 100);
-
-      let score: number | null = null;
-      let competitionScoreId: number | null = null;
-
-      // Only Competition mode writes a leaderboard row. Dictation just
-      // closes out the session — its progress increments already
-      // happened per-attempt.
-      if (session.mode === "competition" && wordsAttempted > 0) {
-        score = computeCompetitionScore(wordsCorrect, elapsedSec);
-        const inserted = await tx
-          .insert(spellingCompetitionScoresTable)
-          .values({
-            childId: session.childId,
-            userId: session.userId,
-            ageGroup: session.ageGroup,
-            wordsAttempted,
-            wordsCorrect,
-            accuracyPct,
-            durationSec: elapsedSec,
-            score,
-          })
-          .returning({ id: spellingCompetitionScoresTable.id });
-        competitionScoreId = inserted[0]?.id ?? null;
-      }
-
-      await tx
-        .update(spellingSessionsTable)
-        .set({
-          finalizedAt: sql`now()`,
-          finalScore: score,
-          finalDurationSec: elapsedSec,
-          finalWordsAttempted: wordsAttempted,
-          finalWordsCorrect: wordsCorrect,
-          competitionScoreId,
-        })
-        .where(eq(spellingSessionsTable.sessionToken, token));
-
-      return {
-        kind: "finalized" as const,
-        summary: {
-          mode: session.mode,
-          wordsAttempted,
-          wordsCorrect,
-          durationSec: elapsedSec,
-          accuracyPct,
-          score,
-        },
-        competitionScoreId,
-      };
-    });
+    const result = await finalizeSpellingSession(userId, token);
 
     if (result.kind === "not_found") {
       res.status(404).json({ error: "session_not_found" });
@@ -994,16 +1308,436 @@ router.post(
         userId,
         token,
         kind: result.kind,
-        score: result.summary.score,
+        mode: result.mode,
+        score: result.score,
+        aiScore: result.aiScore,
       },
       "spelling session finalized",
     );
 
     res.json({
       ok: true,
-      summary: result.summary,
+      summary: {
+        mode: result.mode,
+        wordsAttempted: result.wordsAttempted,
+        wordsCorrect: result.wordsCorrect,
+        durationSec: result.durationSec,
+        accuracyPct: result.accuracyPct,
+        score: result.score,
+        aiScore: result.aiScore,
+        winner: result.winner,
+      },
       competitionScoreId: result.competitionScoreId,
       alreadyFinalized: result.kind === "already_finalized",
+    });
+  },
+);
+
+// ─── Tournament endpoints ───────────────────────────────────────────────────
+//
+// A tournament is a wrapper around 3 ordinary v2 sessions (one per
+// round). The client only ever holds the tournament's opaque token +
+// the active round's session token. Round difficulty + word count are
+// server-authored (TOURNAMENT_ROUND_CONFIG); the client cannot bias them.
+
+const tournamentTokenParamSchema = z.object({
+  tournamentToken: z.string().regex(/^[a-zA-Z0-9-]{8,128}$/),
+});
+
+const tournamentStartSchema = z.object({
+  childId: z.number().int().positive(),
+  ageGroup: ageGroupSchema,
+});
+
+/**
+ * Project a tournament row into a client-safe shape. Strips internal
+ * IDs but preserves the rounds array (which only contains scores +
+ * counts, no actual answers).
+ */
+function serializeTournament(t: SpellingTournamentRow) {
+  return {
+    tournamentToken: t.tournamentToken,
+    childId: t.childId,
+    ageGroup: t.ageGroup,
+    status: t.status,
+    currentRound: t.currentRound,
+    rounds: t.rounds,
+    totalScore: t.totalScore,
+    eliminatedAtRound: t.eliminatedAtRound,
+    startedAt: t.startedAt,
+    finalizedAt: t.finalizedAt,
+  };
+}
+
+router.post(
+  "/spelling/tournaments/start",
+  async (req, res): Promise<void> => {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+
+    const parsed = tournamentStartSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: "invalid_body", issues: parsed.error.flatten() });
+      return;
+    }
+    const { childId, ageGroup } = parsed.data;
+
+    if (!(await ownsChild(userId, childId))) {
+      res.status(403).json({ error: "forbidden" });
+      return;
+    }
+
+    const tournamentToken = crypto.randomUUID();
+    const r1 = getRoundConfig(1);
+
+    // Create the round-1 session FIRST. If the session can't be created
+    // (e.g. TTS down), we never insert a tournament row at all so the
+    // client just sees a clean failure with no orphan state.
+    const sessionResult = await createSpellingSession({
+      userId,
+      childId,
+      ageGroup,
+      mode: "tournament",
+      difficulty: r1.difficulty,
+      count: r1.wordCount,
+      source: "curated",
+      parentTournamentToken: tournamentToken,
+    });
+
+    if (!sessionResult.ok) {
+      res
+        .status(sessionResult.error === "no_words_available" ? 500 : 502)
+        .json({ error: sessionResult.error });
+      return;
+    }
+
+    const inserted = await db
+      .insert(spellingTournamentsTable)
+      .values({
+        tournamentToken,
+        userId,
+        childId,
+        ageGroup,
+        status: "active",
+        currentRound: 1,
+        rounds: [],
+        totalScore: 0,
+      })
+      .returning();
+    const tournament = inserted[0];
+    if (!tournament) {
+      res.status(500).json({ error: "tournament_create_failed" });
+      return;
+    }
+
+    logger.info(
+      {
+        evt: "spelling.tournament_start",
+        userId,
+        childId,
+        ageGroup,
+        tournamentToken,
+      },
+      "tournament started",
+    );
+
+    res.json({
+      ok: true,
+      tournament: serializeTournament(tournament),
+      session: {
+        sessionToken: sessionResult.sessionToken,
+        mode: "tournament" as const,
+        ageGroup,
+        difficulty: r1.difficulty,
+        round: 1,
+        passThreshold: r1.passThreshold,
+        startedAt: sessionResult.startedAt,
+        words: sessionResult.safeWords,
+      },
+    });
+  },
+);
+
+router.post(
+  "/spelling/tournaments/:tournamentToken/advance",
+  async (req, res): Promise<void> => {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+
+    const parsed = tournamentTokenParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_token" });
+      return;
+    }
+    const { tournamentToken } = parsed.data;
+
+    // Race-safety: a double-tap on "Continue" can fire two /advance
+    // requests in flight. Without serialization both could pass the
+    // status === "active" check, both call finalize (fine — finalize is
+    // idempotent), but then both proceed to createSpellingSession for
+    // the next round — leaving an orphan round-session row. Wrap the
+    // whole handler in a transaction and SELECT … FOR UPDATE on the
+    // tournament row so the second caller blocks until the first
+    // commits, then re-reads the now-non-active status and 409s.
+    //
+    // finalizeSpellingSession + createSpellingSession open their own
+    // top-level transactions on a separate pooled connection — they
+    // touch the spelling_sessions row (different row, no lock conflict),
+    // not the tournament row, so they don't deadlock with our outer tx.
+    const txResult = await db.transaction(async (tx) => {
+      const tRows = await tx
+        .select()
+        .from(spellingTournamentsTable)
+        .where(eq(spellingTournamentsTable.tournamentToken, tournamentToken))
+        .for("update")
+        .limit(1);
+      const tournament = tRows[0];
+      if (!tournament || tournament.userId !== userId) {
+        return { kind: "not_found" as const };
+      }
+      if (tournament.status !== "active") {
+        return {
+          kind: "not_active" as const,
+          tournament,
+        };
+      }
+
+      // Find the most recent session linked to this tournament — that's
+      // the active round to finalize.
+      const sessionRows = await tx
+        .select()
+        .from(spellingSessionsTable)
+        .where(
+          and(
+            eq(spellingSessionsTable.parentTournamentToken, tournamentToken),
+            eq(spellingSessionsTable.userId, userId),
+          ),
+        )
+        .orderBy(desc(spellingSessionsTable.startedAt))
+        .limit(1);
+      const activeSession = sessionRows[0];
+      if (!activeSession) {
+        return { kind: "no_session" as const };
+      }
+
+      const finalizeRes = await finalizeSpellingSession(
+        userId,
+        activeSession.sessionToken,
+      );
+      if (finalizeRes.kind === "not_found") {
+        return { kind: "session_not_found" as const };
+      }
+
+      const currentRound = tournament.currentRound;
+      const roundResult: TournamentRoundResult = {
+        round: currentRound,
+        difficulty: getRoundConfig(currentRound).difficulty,
+        sessionToken: activeSession.sessionToken,
+        score: finalizeRes.score ?? 0,
+        wordsCorrect: finalizeRes.wordsCorrect,
+        wordsAttempted: finalizeRes.wordsAttempted,
+        durationSec: finalizeRes.durationSec,
+      };
+
+      const next = applyRoundResult(
+        { rounds: tournament.rounds, totalScore: tournament.totalScore },
+        roundResult,
+      );
+
+      await tx
+        .update(spellingTournamentsTable)
+        .set({
+          status: next.status,
+          currentRound: next.currentRound,
+          rounds: next.rounds,
+          totalScore: next.totalScore,
+          eliminatedAtRound: next.eliminatedAtRound,
+          finalizedAt: next.status === "active" ? null : sql`now()`,
+        })
+        .where(eq(spellingTournamentsTable.tournamentToken, tournamentToken));
+
+      return {
+        kind: "ok" as const,
+        tournament,
+        currentRound,
+        roundResult,
+        next,
+      };
+    });
+
+    if (txResult.kind === "not_found") {
+      res.status(404).json({ error: "tournament_not_found" });
+      return;
+    }
+    if (txResult.kind === "not_active") {
+      res.status(409).json({
+        error: "tournament_not_active",
+        tournament: serializeTournament(txResult.tournament),
+      });
+      return;
+    }
+    if (txResult.kind === "no_session") {
+      res.status(500).json({ error: "no_active_round_session" });
+      return;
+    }
+    if (txResult.kind === "session_not_found") {
+      res.status(404).json({ error: "session_not_found" });
+      return;
+    }
+    const { tournament, currentRound, roundResult, next } = txResult;
+
+    // Start the next round's session if we advanced.
+    let nextSession: {
+      sessionToken: string;
+      mode: "tournament";
+      ageGroup: string;
+      difficulty: SpellingDifficulty;
+      round: number;
+      passThreshold: number;
+      startedAt: Date;
+      words: ReturnType<typeof safeWordFor>[];
+    } | null = null;
+    if (next.status === "active") {
+      const cfg = getRoundConfig(next.currentRound);
+      const sessRes = await createSpellingSession({
+        userId,
+        childId: tournament.childId,
+        ageGroup: tournament.ageGroup as SpellingAgeGroup,
+        mode: "tournament",
+        difficulty: cfg.difficulty,
+        count: cfg.wordCount,
+        source: "curated",
+        parentTournamentToken: tournamentToken,
+      });
+      if (!sessRes.ok) {
+        res.status(502).json({ error: sessRes.error });
+        return;
+      }
+      nextSession = {
+        sessionToken: sessRes.sessionToken,
+        mode: "tournament",
+        ageGroup: tournament.ageGroup,
+        difficulty: cfg.difficulty,
+        round: next.currentRound,
+        passThreshold: cfg.passThreshold,
+        startedAt: sessRes.startedAt,
+        words: sessRes.safeWords,
+      };
+    }
+
+    const refreshed = await db
+      .select()
+      .from(spellingTournamentsTable)
+      .where(eq(spellingTournamentsTable.tournamentToken, tournamentToken))
+      .limit(1);
+
+    logger.info(
+      {
+        evt: "spelling.tournament_advance",
+        userId,
+        tournamentToken,
+        fromRound: currentRound,
+        status: next.status,
+        passed: next.passed,
+        roundScore: roundResult.score,
+        totalScore: next.totalScore,
+      },
+      "tournament round advanced",
+    );
+
+    res.json({
+      ok: true,
+      tournament: refreshed[0]
+        ? serializeTournament(refreshed[0])
+        : serializeTournament(tournament),
+      lastRound: { ...roundResult, passed: next.passed },
+      nextSession,
+    });
+  },
+);
+
+router.get(
+  "/spelling/tournaments/:tournamentToken",
+  async (req, res): Promise<void> => {
+    const userId = getAuth(req).userId;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+
+    const parsed = tournamentTokenParamSchema.safeParse(req.params);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_token" });
+      return;
+    }
+    const { tournamentToken } = parsed.data;
+
+    const tRows = await db
+      .select()
+      .from(spellingTournamentsTable)
+      .where(eq(spellingTournamentsTable.tournamentToken, tournamentToken))
+      .limit(1);
+    const t = tRows[0];
+    if (!t || t.userId !== userId) {
+      res.status(404).json({ error: "tournament_not_found" });
+      return;
+    }
+
+    // For active tournaments, also include the in-flight round's
+    // session shape so a refresh / new device can resume.
+    let activeSession:
+      | {
+          sessionToken: string;
+          mode: "tournament";
+          ageGroup: string;
+          difficulty: string;
+          round: number;
+          passThreshold: number;
+          startedAt: Date;
+          words: ReturnType<typeof safeWordFor>[];
+        }
+      | null = null;
+    if (t.status === "active") {
+      const sessionRows = await db
+        .select()
+        .from(spellingSessionsTable)
+        .where(
+          and(
+            eq(spellingSessionsTable.parentTournamentToken, t.tournamentToken),
+            eq(spellingSessionsTable.userId, userId),
+          ),
+        )
+        .orderBy(desc(spellingSessionsTable.startedAt))
+        .limit(1);
+      const s = sessionRows[0];
+      if (s && !s.finalizedAt) {
+        activeSession = {
+          sessionToken: s.sessionToken,
+          mode: "tournament",
+          ageGroup: s.ageGroup,
+          difficulty: s.difficulty,
+          round: t.currentRound,
+          passThreshold: getRoundConfig(t.currentRound).passThreshold,
+          startedAt: s.startedAt,
+          words: (s.words as SpellingWord[]).map((w, i) =>
+            safeWordFor(s.sessionToken, i, w),
+          ),
+        };
+      }
+    }
+
+    res.json({
+      ok: true,
+      tournament: serializeTournament(t),
+      activeSession,
     });
   },
 );

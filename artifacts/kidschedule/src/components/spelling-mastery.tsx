@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   GraduationCap, BookOpen, Gamepad2, Headphones, Trophy,
   UserCheck, Sparkles, Volume2, VolumeX, RefreshCw, Star,
-  CheckCircle2, XCircle, Loader2,
+  CheckCircle2, XCircle, Loader2, Crown, Swords, Bot, User as UserIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,15 @@ import {
   type SafeSessionWord,
   type SessionFinalizeSummary,
   type SpellingProgress,
+  type SpellingAiOpponent,
   spellingAgeGroupFor,
   useSpellingTTS,
   useSpellingWords,
   useSpellingProgress,
   useSpellingLeaderboard,
   useSpellingSession,
+  useSpellingTournament,
+  AI_OPPONENT_LABELS,
   BADGE_LABELS,
 } from "@/hooks/use-spelling";
 
@@ -30,13 +33,22 @@ interface SpellingMasteryProps {
   ageMonths: number;
 }
 
-type Mode = "learn" | "practice" | "dictation" | "competition" | "parent";
+type Mode =
+  | "learn"
+  | "practice"
+  | "dictation"
+  | "competition"
+  | "tournament"
+  | "battle"
+  | "parent";
 
 const MODES: { id: Mode; label: string; icon: React.ComponentType<{ className?: string }>; tint: string }[] = [
   { id: "learn",       label: "Learn",       icon: BookOpen,    tint: "from-indigo-500 to-blue-500" },
   { id: "practice",    label: "Practice",    icon: Gamepad2,    tint: "from-emerald-500 to-teal-500" },
   { id: "dictation",   label: "Dictation",   icon: Headphones,  tint: "from-violet-500 to-purple-500" },
   { id: "competition", label: "Competition", icon: Trophy,      tint: "from-amber-500 to-orange-500" },
+  { id: "tournament",  label: "Tournament",  icon: Crown,       tint: "from-yellow-500 to-amber-600" },
+  { id: "battle",      label: "Battle",      icon: Swords,      tint: "from-rose-500 to-red-600" },
   { id: "parent",      label: "Parent Mode", icon: UserCheck,   tint: "from-pink-500 to-rose-500" },
 ];
 
@@ -205,6 +217,24 @@ export function SpellingMastery({ childId, childName, ageMonths }: SpellingMaste
         )}
         {mode === "competition" && (
           <CompetitionView
+            childId={childId}
+            ageGroup={ageGroup}
+            difficulty={difficulty}
+            wordsSource={wordsState.source}
+            tts={tts}
+            onProgressUpdate={progressState.setProgress}
+          />
+        )}
+        {mode === "tournament" && (
+          <TournamentView
+            childId={childId}
+            ageGroup={ageGroup}
+            tts={tts}
+            onProgressUpdate={progressState.setProgress}
+          />
+        )}
+        {mode === "battle" && (
+          <BattleView
             childId={childId}
             ageGroup={ageGroup}
             difficulty={difficulty}
@@ -1095,6 +1125,555 @@ function CompetitionView({
           {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
           Submit
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// TournamentView — 3-round elimination ladder (Easy → Medium → Hard)
+// ────────────────────────────────────────────────────────────────────────────
+//
+// Phases:
+//   idle      → not started; show overview + Start button
+//   playing   → grading the active round's words (auto-played + typed)
+//   between   → just finalized a round; show pass/fail banner + Continue
+//   done      → terminal status (eliminated or completed)
+//
+// Round progression is server-owned (POST /tournaments/:t/advance). The
+// difficulty + word count + pass thresholds are baked into
+// TOURNAMENT_ROUND_CONFIG on the server — the client just plays whatever
+// session it's handed.
+function TournamentView({
+  childId, ageGroup, tts, onProgressUpdate,
+}: {
+  childId: number;
+  ageGroup: SpellingAgeGroup;
+  tts: ReturnType<typeof useSpellingTTS>;
+  onProgressUpdate: (p: SpellingProgress) => void;
+}) {
+  const t = useSpellingTournament(childId, ageGroup, onProgressUpdate);
+  type Phase = "idle" | "playing" | "between" | "done";
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [idx, setIdx] = useState(0);
+  const [guess, setGuess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
+
+  const start = async () => {
+    setIdx(0);
+    setGuess("");
+    const ok = await t.start();
+    if (ok) setPhase("playing");
+  };
+
+  // Auto-play each new word during the round.
+  const word = t.activeSession?.words[idx];
+  useEffect(() => {
+    if (phase !== "playing" || !word?.audioUrl) return;
+    const handle = setTimeout(() => void tts.playUrl(word.audioUrl), 250);
+    return () => clearTimeout(handle);
+  }, [phase, idx, word?.audioUrl, tts]);
+
+  const submit = async () => {
+    if (phase !== "playing" || !word || submitting) return;
+    const trimmed = guess.trim();
+    if (!trimmed) return;
+    setSubmitting(true);
+    const result = await t.attempt(idx, trimmed);
+    setSubmitting(false);
+    if (!result || !t.activeSession) return;
+    setGuess("");
+
+    const nextIdx = idx + 1;
+    if (nextIdx >= t.activeSession.words.length) {
+      // Round done — flip to "between" while we await the server's
+      // verdict. The advance() call decides eliminated vs. next round.
+      setPhase("between");
+      setAdvancing(true);
+      const updated = await t.advance();
+      setAdvancing(false);
+      setIdx(0);
+      if (!updated || updated.status !== "active") {
+        setPhase("done");
+      }
+    } else {
+      setIdx(nextIdx);
+    }
+  };
+
+  const continueAfterRound = () => {
+    // After the inter-round banner, return to playing the next round.
+    if (t.activeSession && t.tournament?.status === "active") {
+      setPhase("playing");
+    }
+  };
+
+  if (phase === "idle") {
+    return (
+      <Card className="border-yellow-200/40 dark:border-yellow-500/20 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-500/[0.06] dark:to-amber-500/[0.06]">
+        <CardContent className="p-5 space-y-3 text-center">
+          <Crown className="h-10 w-10 mx-auto text-yellow-500" />
+          <p className="font-quicksand font-bold text-base text-foreground">
+            Spelling Tournament
+          </p>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            3 rounds: <b>Easy → Medium → Hard</b>. Get at least 3 of 5 in each
+            round to advance. Survive all 3 to win the trophy!
+          </p>
+          <div className="flex justify-center gap-1.5 text-[11px]">
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">R1 · Easy</span>
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">R2 · Medium</span>
+            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">R3 · Hard</span>
+          </div>
+          <Button
+            onClick={() => void start()}
+            disabled={t.loading}
+            className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white hover:from-yellow-600 hover:to-amber-700"
+          >
+            {t.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Crown className="h-4 w-4 mr-1" />}
+            Enter Tournament
+          </Button>
+          {t.error && (
+            <p className="text-[11px] text-red-600 dark:text-red-400">
+              Couldn't start: {t.error}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (phase === "between") {
+    const last = t.lastRound;
+    return (
+      <Card className="border-yellow-200/40 dark:border-yellow-500/20 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-500/[0.06] dark:to-amber-500/[0.06]">
+        <CardContent className="p-5 space-y-3 text-center">
+          {advancing || !last ? (
+            <>
+              <Loader2 className="h-8 w-8 mx-auto animate-spin text-amber-500" />
+              <p className="text-sm text-muted-foreground">Tallying round…</p>
+            </>
+          ) : last.passed ? (
+            <>
+              <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-500" />
+              <p className="font-quicksand font-extrabold text-lg text-foreground">
+                Round {last.round} cleared!
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {last.wordsCorrect} of {last.wordsAttempted} correct ·
+                +{last.score} points
+              </p>
+              {t.tournament?.status === "active" && (
+                <Button
+                  onClick={continueAfterRound}
+                  className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white"
+                >
+                  Continue to Round {t.tournament.currentRound} →
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <XCircle className="h-12 w-12 mx-auto text-rose-500" />
+              <p className="font-quicksand font-extrabold text-lg text-foreground">
+                Knocked out at Round {last.round}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Needed 3 correct, got {last.wordsCorrect}. Better luck next time!
+              </p>
+              <Button
+                onClick={() => { setPhase("idle"); t.reset(); }}
+                variant="outline"
+              >
+                Try again
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (phase === "done") {
+    const tournament = t.tournament;
+    const completed = tournament?.status === "completed";
+    return (
+      <Card className="border-yellow-200/40 dark:border-yellow-500/20 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-500/[0.06] dark:to-amber-500/[0.06]">
+        <CardContent className="p-5 space-y-3 text-center">
+          {completed ? (
+            <>
+              <Trophy className="h-14 w-14 mx-auto text-amber-500" />
+              <p className="font-quicksand font-extrabold text-xl text-foreground">
+                Tournament Champion!
+              </p>
+              <p className="text-xs text-muted-foreground">
+                All 3 rounds cleared. Total score:
+              </p>
+              <p className="font-quicksand font-extrabold text-3xl text-amber-700 dark:text-amber-300">
+                {tournament?.totalScore ?? 0}
+              </p>
+            </>
+          ) : (
+            <>
+              <XCircle className="h-12 w-12 mx-auto text-rose-500" />
+              <p className="font-quicksand font-extrabold text-lg text-foreground">
+                Eliminated at Round {tournament?.eliminatedAtRound ?? "—"}
+              </p>
+            </>
+          )}
+          {tournament?.rounds && tournament.rounds.length > 0 && (
+            <div className="space-y-1 max-w-sm mx-auto">
+              {tournament.rounds.map((r) => (
+                <div
+                  key={r.round}
+                  className="flex items-center justify-between text-xs rounded-md px-2 py-1 bg-white/70 dark:bg-white/[0.06]"
+                >
+                  <span className="font-bold capitalize">
+                    R{r.round} · {r.difficulty}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {r.wordsCorrect}/{r.wordsAttempted}
+                  </span>
+                  {r.passed ? (
+                    <span className="text-emerald-600 font-bold">+{r.score}</span>
+                  ) : (
+                    <span className="text-rose-600 font-bold">eliminated</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <Button
+            onClick={() => { setPhase("idle"); t.reset(); }}
+            className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white"
+          >
+            Play again
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // playing
+  const session = t.activeSession;
+  if (!session || !word) return null;
+  return (
+    <Card className="border-yellow-200/40 dark:border-yellow-500/20">
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-bold text-amber-700 dark:text-amber-300 capitalize">
+            Round {session.round} of 3 · {session.difficulty}
+          </span>
+          <span className="font-mono">
+            {idx + 1}/{session.words.length}
+          </span>
+          <span className="font-bold text-emerald-600">
+            ✓ {t.gradedIndices.size}
+          </span>
+        </div>
+        <p className="text-center text-sm text-muted-foreground">
+          🎧 Listen and type — pass {session.passThreshold > 0
+            ? `${session.passThreshold} of ${session.words.length}`
+            : "everything you can"} to {session.round < 3 ? "advance" : "win"}.
+        </p>
+        <div className="flex justify-center">
+          <PlayButtonsForUrl url={word.audioUrl} tts={tts} />
+        </div>
+        <Input
+          value={guess}
+          onChange={(e) => setGuess(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
+          placeholder={`Spell the word… (${word.letterCount} letters)`}
+          autoFocus
+          disabled={submitting}
+          className="text-center text-xl font-quicksand font-bold tracking-wider h-12"
+        />
+        <Button
+          onClick={() => void submit()}
+          disabled={!guess.trim() || submitting}
+          className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-white"
+        >
+          {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+          Submit
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// BattleView — turn-based You vs AI
+// ────────────────────────────────────────────────────────────────────────────
+//
+// Each word, the server returns BOTH the child's verdict AND the AI's
+// pre-simulated result for that same index — so we can show a side-by-
+// side scoreboard that updates word-by-word. Final score uses the same
+// computeCompetitionScore formula on both sides; winner is whoever has
+// the higher score (or "tie").
+function BattleView({
+  childId, ageGroup, difficulty, wordsSource, tts, onProgressUpdate,
+}: {
+  childId: number;
+  ageGroup: SpellingAgeGroup;
+  difficulty: SpellingDifficulty;
+  wordsSource: "curated" | "ai";
+  tts: ReturnType<typeof useSpellingTTS>;
+  onProgressUpdate: (p: SpellingProgress) => void;
+}) {
+  const session = useSpellingSession(childId, ageGroup, onProgressUpdate);
+  type Phase = "idle" | "running" | "done";
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [opponent, setOpponent] = useState<SpellingAiOpponent>("ai_medium");
+  const [idx, setIdx] = useState(0);
+  const [guess, setGuess] = useState("");
+  const [youCorrect, setYouCorrect] = useState(0);
+  const [aiCorrect, setAiCorrect] = useState(0);
+  /** Per-word reveal: child + AI verdicts after submit, for the running tally. */
+  const [reveals, setReveals] = useState<
+    Array<{ you: boolean; ai: { correct: boolean; ms: number } | null }>
+  >([]);
+  const [summary, setSummary] = useState<SessionFinalizeSummary | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const start = async () => {
+    setIdx(0);
+    setGuess("");
+    setYouCorrect(0);
+    setAiCorrect(0);
+    setReveals([]);
+    setSummary(null);
+    const ok = await session.start({
+      mode: "battle",
+      difficulty,
+      count: 5,
+      source: wordsSource,
+      opponent,
+    });
+    if (ok) setPhase("running");
+  };
+
+  const word = session.words[idx];
+
+  useEffect(() => {
+    if (phase !== "running" || !word?.audioUrl) return;
+    const handle = setTimeout(() => void tts.playUrl(word.audioUrl), 250);
+    return () => clearTimeout(handle);
+  }, [phase, idx, word?.audioUrl, tts]);
+
+  const submit = async () => {
+    if (phase !== "running" || !word || submitting) return;
+    const trimmed = guess.trim();
+    if (!trimmed) return;
+    setSubmitting(true);
+    const result = await session.attempt(idx, trimmed);
+    setSubmitting(false);
+    if (!result) return;
+    setReveals((prev) => [...prev, { you: result.correct, ai: result.aiResult }]);
+    if (result.correct) setYouCorrect((c) => c + 1);
+    if (result.aiResult?.correct) setAiCorrect((c) => c + 1);
+    setGuess("");
+
+    const nextIdx = idx + 1;
+    if (nextIdx >= session.words.length) {
+      setPhase("done");
+      const final = await session.finalize();
+      if (final) setSummary(final);
+    } else {
+      setIdx(nextIdx);
+    }
+  };
+
+  if (phase === "idle") {
+    return (
+      <Card className="border-rose-200/40 dark:border-rose-500/20 bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-500/[0.06] dark:to-red-500/[0.06]">
+        <CardContent className="p-5 space-y-4 text-center">
+          <Swords className="h-10 w-10 mx-auto text-rose-500" />
+          <div>
+            <p className="font-quicksand font-bold text-base text-foreground">
+              Battle vs AI
+            </p>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
+              5 words, head-to-head with a bot. Same words, same timer —
+              highest score wins.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">
+              Pick your opponent
+            </p>
+            <div className="flex justify-center gap-1.5 flex-wrap">
+              {(["ai_easy", "ai_medium", "ai_hard"] as const).map((op) => (
+                <button
+                  key={op}
+                  onClick={() => setOpponent(op)}
+                  className={[
+                    "px-3 py-1.5 rounded-full text-xs font-quicksand font-bold transition-all",
+                    opponent === op
+                      ? "bg-rose-600 text-white shadow-md"
+                      : "bg-white/70 dark:bg-white/[0.06] text-foreground hover:bg-white",
+                  ].join(" ")}
+                >
+                  {AI_OPPONENT_LABELS[op]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <Button
+            onClick={() => void start()}
+            disabled={session.loading}
+            className="bg-gradient-to-r from-rose-500 to-red-600 text-white hover:from-rose-600 hover:to-red-700"
+          >
+            {session.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Swords className="h-4 w-4 mr-1" />}
+            Start Battle
+          </Button>
+          {session.error && (
+            <p className="text-[11px] text-red-600 dark:text-red-400">
+              Couldn't start: {session.error}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (phase === "done") {
+    const winner = summary?.winner ?? null;
+    const winnerLabel =
+      winner === "you" ? "You won!"
+      : winner === "ai" ? `${AI_OPPONENT_LABELS[opponent]} won`
+      : winner === "tie" ? "It's a tie!"
+      : "All done";
+    const winnerTint =
+      winner === "you" ? "text-emerald-600 dark:text-emerald-400"
+      : winner === "ai" ? "text-rose-600 dark:text-rose-400"
+      : "text-amber-700 dark:text-amber-300";
+    return (
+      <Card className="border-rose-200/40 dark:border-rose-500/20 bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-500/[0.06] dark:to-red-500/[0.06]">
+        <CardContent className="p-5 space-y-3 text-center">
+          {winner === "you" ? <Trophy className="h-12 w-12 mx-auto text-amber-500" />
+            : <Swords className="h-12 w-12 mx-auto text-rose-500" />}
+          <p className={`font-quicksand font-extrabold text-xl ${winnerTint}`}>
+            {winnerLabel}
+          </p>
+          <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+            <div className="rounded-lg bg-white/70 dark:bg-white/[0.06] p-3">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <UserIcon className="h-4 w-4 text-emerald-600" />
+                <span className="text-xs font-bold">You</span>
+              </div>
+              <div className="font-quicksand font-extrabold text-2xl text-emerald-700 dark:text-emerald-300">
+                {summary?.score ?? 0}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {summary?.wordsCorrect ?? youCorrect}/{summary?.wordsAttempted ?? session.words.length} · {summary?.durationSec ?? 0}s
+              </div>
+            </div>
+            <div className="rounded-lg bg-white/70 dark:bg-white/[0.06] p-3">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Bot className="h-4 w-4 text-rose-600" />
+                <span className="text-xs font-bold">{AI_OPPONENT_LABELS[opponent]}</span>
+              </div>
+              <div className="font-quicksand font-extrabold text-2xl text-rose-700 dark:text-rose-300">
+                {summary?.aiScore ?? 0}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {aiCorrect}/{session.words.length}
+              </div>
+            </div>
+          </div>
+          <Button
+            onClick={() => void start()}
+            className="bg-gradient-to-r from-rose-500 to-red-600 text-white"
+          >
+            Rematch
+          </Button>
+          <Button
+            onClick={() => { setPhase("idle"); session.reset(); }}
+            variant="outline"
+            className="ml-2"
+          >
+            Change opponent
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // running
+  if (!word) return null;
+  return (
+    <Card className="border-rose-200/40 dark:border-rose-500/20">
+      <CardContent className="p-4 space-y-4">
+        {/* Live scoreboard */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 p-2 text-center">
+            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+              <UserIcon className="h-3 w-3" /> You
+            </div>
+            <div className="font-quicksand font-extrabold text-xl text-emerald-700 dark:text-emerald-300">
+              {youCorrect}
+            </div>
+          </div>
+          <div className="rounded-lg bg-rose-50 dark:bg-rose-500/10 p-2 text-center">
+            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-rose-700 dark:text-rose-300">
+              <Bot className="h-3 w-3" /> {AI_OPPONENT_LABELS[opponent]}
+            </div>
+            <div className="font-quicksand font-extrabold text-xl text-rose-700 dark:text-rose-300">
+              {aiCorrect}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-bold">Word {idx + 1} of {session.words.length}</span>
+          <span className="text-muted-foreground capitalize">{difficulty}</span>
+        </div>
+        <p className="text-center text-sm text-muted-foreground">
+          🎧 Listen and type — beat the bot!
+        </p>
+        <div className="flex justify-center">
+          <PlayButtonsForUrl url={word.audioUrl} tts={tts} />
+        </div>
+        <Input
+          value={guess}
+          onChange={(e) => setGuess(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
+          placeholder={`Spell the word… (${word.letterCount} letters)`}
+          autoFocus
+          disabled={submitting}
+          className="text-center text-xl font-quicksand font-bold tracking-wider h-12"
+        />
+        <Button
+          onClick={() => void submit()}
+          disabled={!guess.trim() || submitting}
+          className="w-full bg-gradient-to-r from-rose-500 to-red-600 text-white"
+        >
+          {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+          Submit
+        </Button>
+        {/* Last-word reveal: small running list of who got what. */}
+        {reveals.length > 0 && (
+          <div className="flex flex-wrap gap-1 justify-center pt-1">
+            {reveals.map((r, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md bg-white/60 dark:bg-white/[0.06]"
+              >
+                <span className="text-muted-foreground">#{i + 1}</span>
+                <span className={r.you ? "text-emerald-600" : "text-rose-600"}>
+                  {r.you ? "✓" : "✗"}
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <span className={r.ai?.correct ? "text-emerald-600" : "text-rose-600"}>
+                  {r.ai?.correct ? "✓" : "✗"}
+                </span>
+                {r.ai?.ms !== undefined && (
+                  <span className="text-muted-foreground">{(r.ai.ms / 1000).toFixed(1)}s</span>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

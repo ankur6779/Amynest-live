@@ -39,7 +39,7 @@ export const spellingSessionsTable = pgTable(
     userId: text("user_id").notNull(),
     /** "2-4" | "4-6" | "6-8" | "8-10+" */
     ageGroup: text("age_group").notNull(),
-    /** "competition" | "dictation" */
+    /** "competition" | "dictation" | "tournament" | "battle" */
     mode: text("mode").notNull(),
     /** "easy" | "medium" | "hard" */
     difficulty: text("difficulty").notNull(),
@@ -88,6 +88,29 @@ export const spellingSessionsTable = pgTable(
     finalWordsCorrect: integer("final_words_correct"),
     /** FK → spelling_competition_scores.id once a leaderboard row is written. */
     competitionScoreId: integer("competition_score_id"),
+    /**
+     * Tournament linkage — set when this session is one round of a
+     * tournament. NULL otherwise. Lets the server look up the parent
+     * tournament when /tournaments/:token/advance is called without
+     * the client having to pass both tokens.
+     */
+    parentTournamentToken: text("parent_tournament_token"),
+    /**
+     * Battle Mode — opponent strength. NULL unless `mode === "battle"`.
+     * One of: "ai_easy" | "ai_medium" | "ai_hard".
+     */
+    aiOpponent: text("ai_opponent"),
+    /**
+     * Per-word AI simulation result. Computed once at session start with
+     * a seeded RNG keyed on `sessionToken` so the AI's behaviour is
+     * fixed and not tamperable from the client. Parallel to `words`.
+     *   [{ correct: bool, ms: number }, ...]
+     */
+    aiResults: jsonb("ai_results").$type<
+      Array<{ correct: boolean; ms: number }>
+    >(),
+    /** Final AI score (server-computed at finalize). NULL for non-battle. */
+    aiFinalScore: integer("ai_final_score"),
   },
   (t) => ({
     tokenUq: uniqueIndex("spelling_sessions_token_uq").on(t.sessionToken),

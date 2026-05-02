@@ -407,9 +407,18 @@ export function useSpellingLeaderboard(
   return { rows, loading, error, refresh };
 }
 
-// ─── useSpellingSession — server-graded Competition / Dictation flow ────────
+// ─── useSpellingSession — server-graded Competition / Dictation / Battle ────
 
-export type SessionMode = "competition" | "dictation";
+export type SessionMode = "competition" | "dictation" | "battle";
+
+/** AI opponent strength for Battle Mode. */
+export type SpellingAiOpponent = "ai_easy" | "ai_medium" | "ai_hard";
+
+export const AI_OPPONENT_LABELS: Record<SpellingAiOpponent, string> = {
+  ai_easy:   "Beginner Bot",
+  ai_medium: "Smart Bot",
+  ai_hard:   "Master Bot",
+};
 
 /**
  * Per-word payload returned by the server. Deliberately omits the actual
@@ -433,6 +442,11 @@ export interface SessionAttemptResult {
    */
   correctAnswer: string;
   progress: SpellingProgress;
+  /**
+   * Battle Mode only: the AI opponent's pre-computed result for THIS
+   * word (deterministic, server-seeded). Null for other modes.
+   */
+  aiResult: { correct: boolean; ms: number } | null;
 }
 
 export interface SessionFinalizeSummary {
@@ -441,8 +455,12 @@ export interface SessionFinalizeSummary {
   wordsCorrect: number;
   durationSec: number;
   accuracyPct: number;
-  /** Null for non-competition modes. */
+  /** Null for Dictation. Set for Competition / Tournament / Battle. */
   score: number | null;
+  /** Battle Mode only: AI's final score using same formula. Null otherwise. */
+  aiScore: number | null;
+  /** Battle Mode only: who won. Null otherwise. */
+  winner: "you" | "ai" | "tie" | null;
 }
 
 export interface UseSpellingSessionState {
@@ -459,6 +477,8 @@ export interface UseSpellingSessionState {
     difficulty: SpellingDifficulty;
     count?: number;
     source?: SpellingSource;
+    /** Required iff mode === "battle". */
+    opponent?: SpellingAiOpponent;
   }) => Promise<boolean>;
   /** Submit a typed guess. Server returns correctness + updated progress. */
   attempt: (wordIndex: number, guess: string) => Promise<SessionAttemptResult | null>;
@@ -500,6 +520,7 @@ export function useSpellingSession(
       difficulty: SpellingDifficulty;
       count?: number;
       source?: SpellingSource;
+      opponent?: SpellingAiOpponent;
     }): Promise<boolean> => {
       if (!childId) return false;
       setLoading(true);
@@ -517,6 +538,11 @@ export function useSpellingSession(
             difficulty: opts.difficulty,
             count: opts.count ?? 10,
             source: opts.source ?? "curated",
+            // Only include opponent for Battle Mode — server's refine()
+            // will reject a stray opponent on competition/dictation.
+            ...(opts.mode === "battle" && opts.opponent
+              ? { opponent: opts.opponent }
+              : {}),
           }),
         });
         if (!res.ok) throw new Error(`session_start_${res.status}`);
@@ -571,6 +597,7 @@ export function useSpellingSession(
           correct: boolean;
           correctAnswer: string;
           progress: SpellingProgress;
+          aiResult: { correct: boolean; ms: number } | null;
         };
         setGradedIndices((prev) => {
           const next = new Set(prev);
@@ -582,6 +609,7 @@ export function useSpellingSession(
           correct: data.correct,
           correctAnswer: data.correctAnswer,
           progress: data.progress,
+          aiResult: data.aiResult,
         };
       } catch (err) {
         setError(err instanceof Error ? err.message : "session_attempt_failed");
@@ -639,6 +667,233 @@ export function useSpellingSession(
       start,
       attempt,
       finalize,
+      reset,
+    ],
+  );
+}
+
+// ─── useSpellingTournament — 3-round elimination orchestrator ───────────────
+//
+// The server owns the round progression: each round is its own
+// server-graded session (mode "tournament"), and the tournament row
+// stores the rolling state. This hook is a thin client driver that:
+//   1. POST /spelling/tournaments/start  → tournament + round 1 session
+//   2. attempt(idx, guess) hits the standard /sessions/:token/attempt
+//      using the active round's session token (re-using the v2 trust model)
+//   3. advance() finalizes the active round via the tournament endpoint
+//      and either receives the next round's session OR a terminal status.
+
+/** Per-round result as the server-side state machine returns it. */
+export interface TournamentRoundSnapshot {
+  round: number;
+  difficulty: SpellingDifficulty;
+  sessionToken: string;
+  score: number;
+  wordsCorrect: number;
+  wordsAttempted: number;
+  durationSec: number;
+  passed: boolean;
+}
+
+export interface TournamentSummary {
+  tournamentToken: string;
+  childId: number;
+  ageGroup: SpellingAgeGroup;
+  status: "active" | "eliminated" | "completed";
+  currentRound: number;
+  rounds: TournamentRoundSnapshot[];
+  totalScore: number;
+  eliminatedAtRound: number | null;
+  startedAt: string;
+  finalizedAt: string | null;
+}
+
+/** Active round's session — same shape the public start endpoint returns. */
+export interface TournamentActiveSession {
+  sessionToken: string;
+  mode: "tournament";
+  ageGroup: SpellingAgeGroup;
+  difficulty: SpellingDifficulty;
+  round: number;
+  passThreshold: number;
+  startedAt: string;
+  words: SafeSessionWord[];
+}
+
+export interface UseSpellingTournamentState {
+  tournament: TournamentSummary | null;
+  activeSession: TournamentActiveSession | null;
+  /** Indices of the active round's session that have been graded. */
+  gradedIndices: Set<number>;
+  /** Result of the most recently finalized round (for inter-round banner). */
+  lastRound: TournamentRoundSnapshot | null;
+  loading: boolean;
+  error: string | null;
+  start: () => Promise<boolean>;
+  /** Submit a typed guess for the active round's word. */
+  attempt: (wordIndex: number, guess: string) => Promise<SessionAttemptResult | null>;
+  /** Finalize the active round and (if active) load the next one. */
+  advance: () => Promise<TournamentSummary | null>;
+  /** Drop local state — does NOT delete the server-side tournament. */
+  reset: () => void;
+}
+
+export function useSpellingTournament(
+  childId: number | null,
+  ageGroup: SpellingAgeGroup,
+  onProgressUpdate?: (p: SpellingProgress) => void,
+): UseSpellingTournamentState {
+  const authFetch = useAuthFetch();
+  const [tournament, setTournament] = useState<TournamentSummary | null>(null);
+  const [activeSession, setActiveSession] =
+    useState<TournamentActiveSession | null>(null);
+  const [gradedIndices, setGradedIndices] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [lastRound, setLastRound] = useState<TournamentRoundSnapshot | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const reset = useCallback(() => {
+    setTournament(null);
+    setActiveSession(null);
+    setGradedIndices(new Set());
+    setLastRound(null);
+    setError(null);
+  }, []);
+
+  const start = useCallback(async (): Promise<boolean> => {
+    if (!childId) return false;
+    setLoading(true);
+    setError(null);
+    setLastRound(null);
+    setGradedIndices(new Set());
+    try {
+      const res = await authFetch("/api/spelling/tournaments/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ childId, ageGroup }),
+      });
+      if (!res.ok) throw new Error(`tournament_start_${res.status}`);
+      const data = (await res.json()) as {
+        ok: true;
+        tournament: TournamentSummary;
+        session: TournamentActiveSession;
+      };
+      setTournament(data.tournament);
+      setActiveSession(data.session);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "tournament_start_failed");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [authFetch, childId, ageGroup]);
+
+  const attempt = useCallback(
+    async (
+      wordIndex: number,
+      guess: string,
+    ): Promise<SessionAttemptResult | null> => {
+      if (!activeSession) return null;
+      try {
+        const res = await authFetch(
+          `/api/spelling/sessions/${activeSession.sessionToken}/attempt`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ wordIndex, guess }),
+          },
+        );
+        if (res.status === 409) {
+          setError("already_graded");
+          return null;
+        }
+        if (!res.ok) throw new Error(`tournament_attempt_${res.status}`);
+        const data = (await res.json()) as {
+          ok: true;
+          correct: boolean;
+          correctAnswer: string;
+          progress: SpellingProgress;
+          aiResult: { correct: boolean; ms: number } | null;
+        };
+        setGradedIndices((prev) => {
+          const next = new Set(prev);
+          next.add(wordIndex);
+          return next;
+        });
+        onProgressUpdate?.(data.progress);
+        return {
+          correct: data.correct,
+          correctAnswer: data.correctAnswer,
+          progress: data.progress,
+          aiResult: data.aiResult,
+        };
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "tournament_attempt_failed",
+        );
+        return null;
+      }
+    },
+    [authFetch, activeSession, onProgressUpdate],
+  );
+
+  const advance = useCallback(async (): Promise<TournamentSummary | null> => {
+    if (!tournament) return null;
+    setLoading(true);
+    try {
+      const res = await authFetch(
+        `/api/spelling/tournaments/${tournament.tournamentToken}/advance`,
+        { method: "POST", headers: { "Content-Type": "application/json" } },
+      );
+      if (!res.ok) throw new Error(`tournament_advance_${res.status}`);
+      const data = (await res.json()) as {
+        ok: true;
+        tournament: TournamentSummary;
+        lastRound: TournamentRoundSnapshot;
+        nextSession: TournamentActiveSession | null;
+      };
+      setTournament(data.tournament);
+      setLastRound(data.lastRound);
+      setActiveSession(data.nextSession);
+      // Reset graded indices for the new round (or clear when terminal).
+      setGradedIndices(new Set());
+      return data.tournament;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "tournament_advance_failed");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [authFetch, tournament]);
+
+  return useMemo(
+    () => ({
+      tournament,
+      activeSession,
+      gradedIndices,
+      lastRound,
+      loading,
+      error,
+      start,
+      attempt,
+      advance,
+      reset,
+    }),
+    [
+      tournament,
+      activeSession,
+      gradedIndices,
+      lastRound,
+      loading,
+      error,
+      start,
+      attempt,
+      advance,
       reset,
     ],
   );
