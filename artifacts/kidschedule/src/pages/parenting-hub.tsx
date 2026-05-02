@@ -18,6 +18,7 @@ import { PtmPrepAssistant } from "@/components/ptm-prep";
 import { EventPrepCard } from "@/components/event-prep-card";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
 import { PhonicsLearning } from "@/components/phonics-learning";
+import { SpellingMastery } from "@/components/spelling-mastery";
 import { ColoringBooks } from "@/components/coloring-books";
 import { FunSheets } from "@/components/fun-sheets";
 import { StoryHub } from "@/components/story-hub";
@@ -467,6 +468,19 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
           >
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
+
+          <SubSection gateSection="hub_activities"
+            icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
+            title="Spelling Mastery"
+            description="Learn → Practice → Dictate → Compete with Amy's voice"
+            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20"
+          >
+            <SpellingMastery
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+              ageMonths={totalAgeMonths}
+            />
+          </SubSection>
         </>
       )}
 
@@ -531,6 +545,19 @@ function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: Activit
             accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
           >
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
+          </SubSection>
+
+          <SubSection gateSection="hub_activities"
+            icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
+            title="Spelling Mastery"
+            description="Learn → Practice → Dictate → Compete with Amy's voice"
+            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20"
+          >
+            <SpellingMastery
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+              ageMonths={totalAgeMonths}
+            />
           </SubSection>
         </>
       )}
