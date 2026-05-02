@@ -2,15 +2,17 @@
  * Infant Poems Catalog
  *
  * Age-segmented calming poems for the 0–24 month "Poems for your baby"
- * module. Built per Spec 3 — pure local data, NO ElevenLabs, NO API calls.
- * The sample poems for the three age groups (Sleep baby sleep / Clap clap
- * little hands / One little star) come straight from the spec; the rest
- * follow the same shape (4–6 short lines, gentle rhyme, soothing imagery).
+ * module. The sample poems for the three age groups (Sleep baby sleep /
+ * Clap clap little hands / One little star) come straight from the spec;
+ * the rest follow the same shape (4–6 short lines, gentle rhyme,
+ * soothing imagery).
  *
- * Audio: each poem is read aloud at runtime by the browser's built-in
- * SpeechSynthesis API (see `useInfantPoemPlayer`). If a future task adds
- * pre-recorded MP3s, drop the URL on the optional `audioUrl` field and the
- * player will prefer it over speech synthesis automatically.
+ * Audio: each poem is read aloud by ElevenLabs via the shared
+ * `/api/tts/synthesize` endpoint (see `useInfantPoemPlayer`). The server
+ * caches each MP3 by content hash so each poem is generated ONCE
+ * GLOBALLY by ElevenLabs, then served from cache to every user. To
+ * override with a hand-recorded MP3, set the optional `audioUrl` field
+ * on a poem and the player will use it directly, skipping synthesis.
  */
 
 export type PoemAgeGroup = "0-6m" | "6-12m" | "12-24m";
