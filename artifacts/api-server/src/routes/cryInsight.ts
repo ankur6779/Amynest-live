@@ -100,10 +100,11 @@ function toClientSession(row: CrySessionRow) {
 
 router.post("/cry-insight/analyze", async (req, res): Promise<void> => {
   const auth = getAuth(req);
-  if (!auth) {
+  if (!auth.userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
+  const userId = auth.userId;
 
   const parsed = analyzeBodySchema.safeParse(req.body);
   if (!parsed.success) {
@@ -114,7 +115,7 @@ router.post("/cry-insight/analyze", async (req, res): Promise<void> => {
   }
   const body = parsed.data;
 
-  const child = await loadOwnedChild(body.childId, auth.userId);
+  const child = await loadOwnedChild(body.childId, userId);
   if (!child) {
     res.status(404).json({ error: "child_not_found" });
     return;
@@ -159,7 +160,7 @@ router.post("/cry-insight/analyze", async (req, res): Promise<void> => {
     .insert(crySessionsTable)
     .values({
       childId: body.childId,
-      userId: auth.userId,
+      userId,
       durationMs: body.durationMs,
       audioStats: safeStats,
       context: ctx as Record<string, unknown>,
@@ -186,10 +187,11 @@ router.post("/cry-insight/analyze", async (req, res): Promise<void> => {
 
 router.get("/cry-insight/history/:childId", async (req, res): Promise<void> => {
   const auth = getAuth(req);
-  if (!auth) {
+  if (!auth.userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
+  const userId = auth.userId;
 
   const params = historyParamsSchema.safeParse(req.params);
   if (!params.success) {
@@ -202,7 +204,7 @@ router.get("/cry-insight/history/:childId", async (req, res): Promise<void> => {
     return;
   }
 
-  const child = await loadOwnedChild(params.data.childId, auth.userId);
+  const child = await loadOwnedChild(params.data.childId, userId);
   if (!child) {
     res.status(404).json({ error: "child_not_found" });
     return;
@@ -214,7 +216,7 @@ router.get("/cry-insight/history/:childId", async (req, res): Promise<void> => {
     .where(
       and(
         eq(crySessionsTable.childId, params.data.childId),
-        eq(crySessionsTable.userId, auth.userId),
+        eq(crySessionsTable.userId, userId),
       ),
     )
     .orderBy(desc(crySessionsTable.createdAt))
