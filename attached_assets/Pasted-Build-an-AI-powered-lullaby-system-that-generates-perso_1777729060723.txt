@@ -1,0 +1,90 @@
+Build an AI-powered lullaby system that generates personalized, human-like lullabies for babies using OpenAI (lyrics) + ElevenLabs (voice).
+
+GOAL:
+Deliver soothing, realistic lullabies tailored to the child.
+
+--------------------------------------------------
+1. USER INPUT
+--------------------------------------------------
+Collect:
+- Child name
+- Age (months/years)
+- Mood (sleep / calm / crying)
+- Language (EN/Hindi)
+- Theme (nature / stars / animals)
+
+--------------------------------------------------
+2. LYRICS GENERATION (OPENAI)
+--------------------------------------------------
+Generate lullaby lyrics:
+
+Requirements:
+- Soft, repetitive, calming tone
+- Short lines
+- Include child name
+- Rhythm-friendly (singable)
+
+Example:
+“Sleep little Aarav, under the moonlight,
+Stars are watching, shining so bright…”
+
+--------------------------------------------------
+3. VOICE GENERATION (ELEVENLABS)
+--------------------------------------------------
+Convert lyrics into lullaby voice:
+
+Settings:
+- Soft female/mother voice
+- Slow speed
+- Warm tone
+- Slight melody-like pacing
+
+--------------------------------------------------
+4. AUDIO STYLE
+--------------------------------------------------
+- Add background soft music (optional)
+- Add ambient sounds:
+   • Rain
+   • Heartbeat
+   • White noise
+
+--------------------------------------------------
+5. OUTPUT PLAYER
+--------------------------------------------------
+Show:
+
+- Play/Pause
+- Loop toggle
+- Timer (15m / 30m / 1h)
+- Download option
+
+--------------------------------------------------
+6. PERSONALIZATION (WOW FEATURE)
+--------------------------------------------------
+- Remember child preferences
+- Suggest lullabies automatically
+
+--------------------------------------------------
+7. MULTI VARIATIONS
+--------------------------------------------------
+Generate:
+- 3 different lullabies per request
+- User selects favorite
+
+--------------------------------------------------
+8. SAFETY
+--------------------------------------------------
+- Volume control (safe range)
+- No sudden loud sounds
+
+--------------------------------------------------
+9. PERFORMANCE
+--------------------------------------------------
+- Cache generated lullabies
+- Reuse if same input
+
+--------------------------------------------------
+DELIVERABLE:
+- Personalized lullaby generator
+- Real human-like voice output
+- Interactive audio experience

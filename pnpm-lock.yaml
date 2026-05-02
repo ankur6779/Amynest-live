@@ -205,6 +205,9 @@ importers:
       '@workspace/olympiad':
         specifier: workspace:*
         version: link:../../lib/olympiad
+      '@workspace/parenting-articles':
+        specifier: workspace:*
+        version: link:../../lib/parenting-articles
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
@@ -540,6 +543,9 @@ importers:
       '@workspace/olympiad':
         specifier: workspace:*
         version: link:../../lib/olympiad
+      '@workspace/parenting-articles':
+        specifier: workspace:*
+        version: link:../../lib/parenting-articles
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
@@ -1229,6 +1235,8 @@ importers:
   lib/morning-flow: {}
 
   lib/olympiad: {}
+
+  lib/parenting-articles: {}
 
   lib/ptm-prep: {}
 

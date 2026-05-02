@@ -16,6 +16,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LifeSkillsZone } from "@/components/LifeSkillsZone";
 import InfantHub from "@/components/InfantHub";
+import { ParentingArticles } from "@/components/ParentingArticles";
 import { ArtCraftReels } from "@/components/ArtCraftReels";
 import { PrintableWorksheets } from "@/components/PrintableWorksheets";
 import { AmazingFacts } from "@/components/AmazingFacts";
@@ -374,22 +375,14 @@ export default function HubScreen() {
               >
                 <Text style={styles.sectionLead}>
                   {effective
-                    ? `Curated for ${effective.name}'s age. Open the web app for the full library.`
+                    ? `Curated for ${effective.name}'s age. Tap any article to read or listen.`
                     : "Add a child to see matched articles."}
                 </Text>
-                <View style={styles.articleList}>
-                  {[
-                    { t: "Positive discipline 101", e: "🌱" },
-                    { t: "Building emotional vocabulary", e: "💬" },
-                    { t: "Why play matters", e: "🧩" },
-                  ].map(a => (
-                    <View key={a.t} style={styles.articleItem}>
-                      <Text style={{ fontSize: 18 }}>{a.e}</Text>
-                      <Text style={styles.articleTitle}>{a.t}</Text>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
-                    </View>
-                  ))}
-                </View>
+                {effective && (
+                  <ParentingArticles
+                    childAgeMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
+                  />
+                )}
               </Section>
               </LockedBlock>
               </View>
