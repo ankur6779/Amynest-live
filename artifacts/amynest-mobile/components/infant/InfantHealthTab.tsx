@@ -15,11 +15,13 @@ import {
   getUpcomingVaccinationsWithLog,
   getVaccinationSummary,
   getCommonIssuesForAge,
+  pickLang,
   type VaxLogMap,
   type VaxStatus,
 } from "@workspace/infant-hub";
 import { brand, palette } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { langOf } from "@/utils/lang";
 
 type Props = { ageMonths: number; childId?: number };
 
@@ -38,7 +40,8 @@ function flashToast(msg: string) {
 /** Mobile twin of the web Health sub-card: India NIS / IAP vaccinations
  *  with per-dose tracking + the common-issue references. */
 export default function InfantHealthTab({ ageMonths, childId }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = langOf(i18n.language);
   const authFetch = useAuthFetch();
 
   const [logMap, setLogMap] = useState<VaxLogMap>({});
@@ -396,7 +399,7 @@ export default function InfantHealthTab({ ageMonths, childId }: Props) {
                 <Text style={styles.issueEmoji}>{i.emoji}</Text>
                 <Text style={styles.issueTitle}>{i.title}</Text>
               </View>
-              <Text style={styles.issueBody}>{i.content}</Text>
+              <Text style={styles.issueBody}>{pickLang(i.content, lang)}</Text>
             </View>
           ))
         )}

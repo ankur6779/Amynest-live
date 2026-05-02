@@ -6,8 +6,10 @@ import {
   getWakeSpec,
   getSleepIssuePreviews,
   getRoutinePreview,
+  pickLang,
 } from "@workspace/infant-hub";
 import { brand, palette } from "@/constants/colors";
+import { langOf } from "@/utils/lang";
 
 type Props = { ageMonths: number };
 
@@ -15,7 +17,8 @@ type Props = { ageMonths: number };
  *  sleep-issue preview, and a routine preview seeded from the wake-window
  *  spec. */
 export default function InfantSleepHelpers({ ageMonths }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = langOf(i18n.language);
   const spec = getWakeSpec(ageMonths);
   const issues = getSleepIssuePreviews(ageMonths);
   const routine = getRoutinePreview(ageMonths);
@@ -76,10 +79,10 @@ export default function InfantSleepHelpers({ ageMonths }: Props) {
                 <Text style={styles.issueEmoji}>{i.emoji}</Text>
                 <Text style={styles.issueTitle}>{i.title}</Text>
               </View>
-              <Text style={styles.issueDetail}>{i.detail}</Text>
+              <Text style={styles.issueDetail}>{pickLang(i.detail, lang)}</Text>
               <View style={styles.tipRow}>
                 <Ionicons name="bulb-outline" size={12} color={palette.emerald400} />
-                <Text style={styles.tipText}>{i.tip}</Text>
+                <Text style={styles.tipText}>{pickLang(i.tip, lang)}</Text>
               </View>
             </View>
           ))

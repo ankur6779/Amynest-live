@@ -2,15 +2,17 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { getFeedingGuide } from "@workspace/infant-hub";
+import { getFeedingGuide, pickLang } from "@workspace/infant-hub";
 import { brand, palette } from "@/constants/colors";
+import { langOf } from "@/utils/lang";
 
 type Props = { ageMonths: number };
 
 /** Mobile twin of the Feeding reference card: age-appropriate feeding type,
  *  frequency, and a tip ported from the web `getFeedingGuide`. */
 export default function InfantFeedingReference({ ageMonths }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = langOf(i18n.language);
   const guide = getFeedingGuide(ageMonths);
   return (
     <View style={styles.block}>
@@ -21,16 +23,16 @@ export default function InfantFeedingReference({ ageMonths }: Props) {
 
       <View style={styles.row}>
         <Text style={styles.label}>{t("infant_hub.feeding_ref.type")}</Text>
-        <Text style={styles.value}>{guide.type}</Text>
+        <Text style={styles.value}>{pickLang(guide.type, lang)}</Text>
       </View>
       <View style={styles.row}>
         <Text style={styles.label}>{t("infant_hub.feeding_ref.frequency")}</Text>
-        <Text style={styles.value}>{guide.freq}</Text>
+        <Text style={styles.value}>{pickLang(guide.freq, lang)}</Text>
       </View>
 
       <View style={styles.tipBlock}>
         <Text style={styles.tipLabel}>{t("infant_hub.feeding_ref.tip_label")}</Text>
-        <Text style={styles.tipBody}>{guide.tip}</Text>
+        <Text style={styles.tipBody}>{pickLang(guide.tip, lang)}</Text>
       </View>
     </View>
   );
