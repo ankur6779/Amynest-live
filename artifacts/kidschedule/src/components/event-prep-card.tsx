@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PartyPopper, Sparkles, ArrowRight } from "lucide-react";
+import { SubItemGate } from "@/components/sub-item-gate";
 
 /**
  * Hub card shown inside Parenting Hub. The full Event Prep experience
@@ -35,12 +36,14 @@ export function EventPrepCard() {
               <Badge label="🕊️ Gandhi Jayanti" />
               <Badge label="⏱ Last-Minute" />
             </div>
-            <Button asChild className="mt-4 rounded-full bg-pink-600 hover:bg-pink-700 text-white">
-              <Link href="/event-prep">
-                Open Event Prep
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            <SubItemGate sectionId="hub_event_prep" subItemId="open_event_prep">
+              <Button asChild className="mt-4 rounded-full bg-pink-600 hover:bg-pink-700 text-white">
+                <Link href="/event-prep">
+                  Open Event Prep
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </SubItemGate>
           </div>
         </div>
       </CardContent>

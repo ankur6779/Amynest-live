@@ -10,6 +10,7 @@ import {
 import type { AgeGroup } from "@/lib/age-groups";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
+import { SubItemGate } from "@/components/sub-item-gate";
 
 const CATEGORIES: TipCategory[] = ["tip", "health", "activity", "guidance"];
 const AI_DAILY_LIMIT = 2;
@@ -170,8 +171,8 @@ export function DailyTips({
           const canPersonalize = !isPersonalized && aiUsed < AI_DAILY_LIMIT && !isBusy;
 
           return (
+            <SubItemGate key={cat} sectionId="hub_tips" subItemId={cat}>
             <div
-              key={cat}
               className={`relative rounded-3xl border-2 border-border bg-gradient-to-br ${meta.gradient} p-4 shadow-sm transition-all hover:shadow-md ${isPersonalized ? `ring-2 ${meta.ring}` : ""}`}
             >
               {/* Top row: emoji + label */}
@@ -235,6 +236,7 @@ export function DailyTips({
                 </div>
               </div>
             </div>
+            </SubItemGate>
           );
         })}
       </div>

@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, Sparkles, ArrowRight } from "lucide-react";
+import { SubItemGate } from "@/components/sub-item-gate";
 
 /**
  * Hub card shown inside Parenting Hub. The full experience lives at /study.
@@ -33,12 +34,14 @@ export function SmartStudyZone() {
               <Badge label="📘 Class 1–5" />
               <Badge label="📊 Class 6–10" />
             </div>
-            <Button asChild className="mt-4 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white">
-              <Link href="/study">
-                Open Smart Study Zone
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            <SubItemGate sectionId="hub_smart_study" subItemId="open_smart_study">
+              <Button asChild className="mt-4 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Link href="/study">
+                  Open Smart Study Zone
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </SubItemGate>
           </div>
         </div>
       </CardContent>

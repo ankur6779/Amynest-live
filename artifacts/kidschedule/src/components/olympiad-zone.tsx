@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SubItemGate } from "@/components/sub-item-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -805,30 +806,36 @@ export function OlympiadZone({ child }: OlympiadZoneProps) {
           <TabsTrigger value="progress">Progress</TabsTrigger>
         </TabsList>
         <TabsContent value="daily" className="mt-3 space-y-3">
-          <DailyTab
-            childId={child.id}
-            childName={child.name}
-            ageBand={ageBand}
-            stats={stats}
-            setStats={setStats}
-          />
-          <WeeklyTestCard
-            childId={child.id}
-            ageBand={ageBand}
-            stats={stats}
-            setStats={setStats}
-          />
+          <SubItemGate sectionId="hub_olympiad" subItemId="olympiad_daily">
+            <DailyTab
+              childId={child.id}
+              childName={child.name}
+              ageBand={ageBand}
+              stats={stats}
+              setStats={setStats}
+            />
+            <WeeklyTestCard
+              childId={child.id}
+              ageBand={ageBand}
+              stats={stats}
+              setStats={setStats}
+            />
+          </SubItemGate>
         </TabsContent>
         <TabsContent value="practice" className="mt-3">
-          <PracticeTab
-            childId={child.id}
-            ageBand={ageBand}
-            stats={stats}
-            setStats={setStats}
-          />
+          <SubItemGate sectionId="hub_olympiad" subItemId="olympiad_practice">
+            <PracticeTab
+              childId={child.id}
+              ageBand={ageBand}
+              stats={stats}
+              setStats={setStats}
+            />
+          </SubItemGate>
         </TabsContent>
         <TabsContent value="progress" className="mt-3">
-          <ProgressTab stats={stats} childName={child.name} />
+          <SubItemGate sectionId="hub_olympiad" subItemId="olympiad_progress">
+            <ProgressTab stats={stats} childName={child.name} />
+          </SubItemGate>
         </TabsContent>
       </Tabs>
     </div>

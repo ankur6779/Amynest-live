@@ -9,6 +9,7 @@ import {
   type PtmCategory, type PtmSession, type PtmStage,
 } from "@workspace/ptm-prep";
 import { AmyIcon } from "@/components/amy-icon";
+import { SubItemGate } from "@/components/sub-item-gate";
 import {
   ChevronRight, ClipboardList, Pencil, Plus, Sparkles, Target, Trash2,
   CheckCircle2, Circle, History, ArrowRight,
@@ -102,13 +103,15 @@ export function PtmPrepAssistant({ child }: Props) {
               </p>
             </div>
           </div>
-          <button
-            onClick={startSession}
-            className="mt-3 w-full h-10 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-[13px] inline-flex items-center justify-center gap-2"
-            data-testid="ptm-start"
-          >
-            <Sparkles className="h-4 w-4" /> Start a PTM Prep
-          </button>
+          <SubItemGate sectionId="hub_ptm_prep" subItemId="start_ptm" className="mt-3 block">
+            <button
+              onClick={startSession}
+              className="w-full h-10 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-[13px] inline-flex items-center justify-center gap-2"
+              data-testid="ptm-start"
+            >
+              <Sparkles className="h-4 w-4" /> Start a PTM Prep
+            </button>
+          </SubItemGate>
         </div>
         <HistoryBlock
           history={visibleHistory} open={historyOpen} setOpen={setHistoryOpen}

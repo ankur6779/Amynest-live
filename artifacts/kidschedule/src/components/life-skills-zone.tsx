@@ -14,6 +14,7 @@ import {
   POINTS_BY_DIFFICULTY, pickDailyLifeSkillTasks, tasksFor,
   buildAmyLifeSkillInsight, uiLabel,
 } from "@workspace/life-skills";
+import { SubItemGate } from "@/components/sub-item-gate";
 
 // ─── Storage shape ────────────────────────────────────────────────────────────
 interface DailyRecord { taskIds: string[]; done: string[]; skipped: string[] }
@@ -245,7 +246,8 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
             const isSkipped = (stats.daily[date]?.skipped ?? []).includes(task.id);
             const settled = isDone || isSkipped;
             return (
-              <Card key={task.id} className={settled ? "opacity-70" : ""}>
+              <SubItemGate key={task.id} sectionId="hub_life_skills" subItemId={task.id}>
+              <Card className={settled ? "opacity-70" : ""}>
                 <CardContent className="p-3 space-y-2">
                   <div className="flex items-start gap-2">
                     <span className="text-xl shrink-0">{CATEGORY_EMOJI[task.category]}</span>
@@ -291,6 +293,7 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
                   )}
                 </CardContent>
               </Card>
+              </SubItemGate>
             );
           })}
         </div>
