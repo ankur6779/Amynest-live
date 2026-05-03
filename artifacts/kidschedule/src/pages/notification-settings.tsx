@@ -7,7 +7,7 @@ import { useWebPush } from "@/hooks/use-web-push";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, Monitor, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, Monitor, CheckCircle2, XCircle, Loader2, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 type Prefs = {
   routineEnabled: boolean;
@@ -321,6 +321,23 @@ export default function NotificationSettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <button
+          type="button"
+          onClick={() => navigate("/notification-diagnostics")}
+          className="mt-6 w-full flex items-center gap-3 rounded-xl border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 px-4 py-3 text-left transition"
+        >
+          <HelpCircle className="w-5 h-5 text-purple-300 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-white">
+              Why didn't I get my notification?
+            </div>
+            <div className="text-xs text-purple-200/70">
+              Check token health, quiet hours and recent failures.
+            </div>
+          </div>
+          <ChevronLeft className="w-4 h-4 text-purple-300 rotate-180 shrink-0" />
+        </button>
 
         <h2 className="text-xs uppercase tracking-widest text-purple-400/60 mt-8 mb-3">
           {t("toasts.notification_settings_page.recent_deliveries")}
