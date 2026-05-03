@@ -685,7 +685,9 @@
       "open_system_settings": "System notification settings kholein",
       "recent_deliveries": "Recent deliveries",
       "history_loading": "Load ho raha hai…",
-      "history_empty": "Abhi tak kuch deliver nahi hua hai. Yeh confirm karne ke liye ki aapka device notifications receive kar raha hai, upar kisi bhi category se ek test bhejein."
+      "history_empty": "Abhi tak kuch deliver nahi hua hai. Yeh confirm karne ke liye ki aapka device notifications receive kar raha hai, upar kisi bhi category se ek test bhejein.",
+      "diagnostics_title": "Mujhe meri notification kyun nahi mili?",
+      "diagnostics_desc": "Token health, quiet hours aur recent failures dekhein."
     },
     "insights": {
       "title": "Parent Insights",

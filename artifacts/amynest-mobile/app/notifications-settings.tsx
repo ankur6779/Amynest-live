@@ -240,6 +240,20 @@ export default function NotificationSettingsScreen() {
         <Text style={styles.systemBtnText}>{t("screens.notif_settings.open_system_settings")}</Text>
       </Pressable>
 
+      <Pressable
+        onPress={() => router.push("/notifications-diagnostics")}
+        style={styles.diagBtn}
+      >
+        <Ionicons name="help-circle-outline" size={20} color={brand.primary} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.diagBtnTitle}>{t("screens.notif_settings.diagnostics_title")}</Text>
+          <Text style={styles.diagBtnDesc}>
+            {t("screens.notif_settings.diagnostics_desc")}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={brand.primary} />
+      </Pressable>
+
       <Text style={styles.sectionLabel}>{t("screens.notif_settings.recent_deliveries")}</Text>
       <View style={styles.historyCard}>
         {history.isLoading ? (
@@ -338,6 +352,20 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: brand.primary + "1A",
     },
     systemBtnText: { color: brand.primary, fontSize: 14, fontWeight: "600" },
+    diagBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginTop: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: brand.primary + "55",
+      backgroundColor: brand.primary + "14",
+    },
+    diagBtnTitle: { color: c.text, fontSize: 14, fontWeight: "700" },
+    diagBtnDesc: { color: c.textMuted, fontSize: 12, marginTop: 2 },
     sectionLabel: {
       color: c.textMuted,
       fontSize: 12,

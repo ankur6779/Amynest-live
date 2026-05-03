@@ -685,7 +685,9 @@
       "open_system_settings": "Open system notification settings",
       "recent_deliveries": "Recent deliveries",
       "history_loading": "Loading…",
-      "history_empty": "Nothing has been delivered yet. Send a test from any category above to confirm your device is receiving notifications."
+      "history_empty": "Nothing has been delivered yet. Send a test from any category above to confirm your device is receiving notifications.",
+      "diagnostics_title": "Why didn't I get my notification?",
+      "diagnostics_desc": "Check token health, quiet hours and recent failures."
     },
     "insights": {
       "title": "Parent Insights",
