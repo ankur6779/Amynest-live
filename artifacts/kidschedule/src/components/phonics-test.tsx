@@ -285,7 +285,7 @@ function QuestionCard({
               <Zap className="h-3 w-3" /> {secondsLeft}s
             </Badge>
           )}
-          <Badge variant="outline" className="text-[10px] font-medium text-foreground dark:text-muted-foreground">
+          <Badge variant="outline" className="text-[10px] font-medium text-foreground">
             {TYPE_LABEL[question.type]}
           </Badge>
         </div>
@@ -300,7 +300,7 @@ function QuestionCard({
           feedback === "wrong" && "pt-anim-wrong border-rose-400",
         )}
       >
-        <p className="text-sm font-medium text-foreground dark:text-muted-foreground">
+        <p className="text-sm font-medium text-foreground">
           {question.prompt.instruction}
         </p>
 
@@ -386,7 +386,7 @@ function QuestionCard({
                 )}
               >
                 {opt.emoji && <span className="text-3xl">{opt.emoji}</span>}
-                <span className="text-lg sm:text-xl font-bold text-foreground dark:text-muted-foreground">
+                <span className="text-lg sm:text-xl font-bold text-foreground">
                   {opt.label}
                 </span>
                 {showCorrect && (
@@ -603,7 +603,9 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
         index: 0, answers: [], selectedIndex: null, feedback: null,
       });
     } catch (err) {
-      setPhase({ kind: "idle" });
+      // Go back to mode-pick (not idle) so the user stays on the game picker
+      // and can choose a different mode without losing their daily/weekly selection.
+      setPhase({ kind: "mode-pick", testType });
       const raw = err instanceof Error ? err.message : "Failed to start test";
       setAvailError(friendlyStartError(raw));
     }
@@ -708,18 +710,18 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
   return (
     <Card
       data-testid="phonics-test-card"
-      className="border-border bg-gradient-to-br from-white shadow-md"
+      className="border-border bg-card dark:bg-card shadow-md"
     >
       <CardContent className="p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-2xl p-2.5 bg-card text-primary-foreground shadow-md">
+          <div className="rounded-2xl p-2.5 bg-primary text-primary-foreground shadow-md">
             <GraduationCap className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base sm:text-lg font-extrabold text-foreground dark:text-muted-foreground leading-tight">
+            <h3 className="text-base sm:text-lg font-extrabold text-foreground leading-tight">
               Phonics Test
             </h3>
-            <p className="text-xs text-foreground dark:text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Quick check of {childName}'s phonics — Daily 5 questions or Weekly 20.
             </p>
           </div>
@@ -754,8 +756,9 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
                   data-testid={`phonics-test-start-${tt}`}
                   className={cn(
                     "h-auto rounded-2xl py-4 px-4 flex flex-col items-start gap-1 text-left whitespace-normal",
-                    "bg-card text-primary-foreground",
-                    "disabled:opacity-60 disabled:from-muted disabled:to-muted",
+                    "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white",
+                    "hover:from-violet-600 hover:to-fuchsia-600",
+                    "disabled:opacity-60 disabled:from-muted disabled:to-muted disabled:text-muted-foreground",
                   )}
                 >
                   <span className="text-sm font-extrabold">{label}</span>
@@ -885,7 +888,7 @@ function ResultPanel({ data, childName, onDone }: ResultPanelProps) {
         </div>
         <div className="flex items-center justify-center gap-2">
           <Trophy className="h-4 w-4 text-foreground" />
-          <span className="text-sm font-extrabold text-foreground dark:text-muted-foreground">
+          <span className="text-sm font-extrabold text-foreground">
             {insight.performanceLabel}
           </span>
         </div>
@@ -895,7 +898,7 @@ function ResultPanel({ data, childName, onDone }: ResultPanelProps) {
         <div className="flex items-center gap-2 text-xs font-bold text-foreground">
           <Sparkles className="h-3.5 w-3.5" /> {childName}'s phonics insight
         </div>
-        <p className="text-sm text-foreground dark:text-muted-foreground leading-relaxed">
+        <p className="text-sm text-foreground leading-relaxed">
           {insight.text}
         </p>
         {insight.suggestion && (
@@ -907,7 +910,7 @@ function ResultPanel({ data, childName, onDone }: ResultPanelProps) {
 
       {weakConcepts.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-bold text-foreground dark:text-muted-foreground">
+          <div className="text-xs font-bold text-foreground">
             Sounds to revisit
           </div>
           <div className="flex flex-wrap gap-2">
