@@ -257,19 +257,23 @@ export default function StudyScreen() {
             mode={view.mode}
             subjectId={view.subjectId}
             topicId={view.topicId}
-            onScored={(score, total) => {
+            onScored={(score, total, perQuestion) => {
               const m = view.mode;
               const sid = view.subjectId;
               const tid = view.topicId;
               const cid = view.childId;
-              const passed = score >= Math.ceil(total * 0.6);
-              // Persist the attempt locally first so a flaky network
-              // never loses data, then flush. Anything still queued
-              // (offline, 5xx) replays on next mount of TodaysPlanSection.
+              // Persist one attempt per question locally first so a flaky
+              // network never loses data, then flush. Anything still
+              // queued (offline, 5xx) replays on next mount of
+              // TodaysPlanSection. Per-question writes let weak-topic
+              // detection react inside the same session.
               (async () => {
-                await enqueueAttempt({
-                  childId: cid, subject: sid, topicId: tid, correct: passed,
-                });
+                const nowIso = new Date().toISOString();
+                for (const q of perQuestion) {
+                  await enqueueAttempt({
+                    childId: cid, subject: sid, topicId: tid, correct: q.correct, ts: nowIso,
+                  });
+                }
                 await flushAttemptQueue(authFetch);
               })();
               let result: ApplyResult | null = null;
@@ -541,7 +545,11 @@ function TopicDetail({
   mode: "basic" | "advanced";
   subjectId: string;
   topicId: string;
-  onScored: (score: number, total: number) => ApplyResult | null;
+  onScored: (
+    score: number,
+    total: number,
+    perQuestion: { correct: boolean }[],
+  ) => ApplyResult | null;
 }) {
   const { t } = useTranslation();
   const subjects: SubjectPack[] = mode === "basic" ? BASIC_SUBJECTS : ADVANCED_SUBJECTS;
@@ -563,7 +571,8 @@ function TopicDetail({
   const isPerfect = submitted && score === total && total > 0;
   const submit = () => {
     setSubmitted(true);
-    const res = onScored(score, total);
+    const perQuestion = topic.questions.map((q, i) => ({ correct: picks[i] === q.answer }));
+    const res = onScored(score, total, perQuestion);
     const perfect = score === total && total > 0;
     const passed = score >= Math.ceil(total * 0.6);
     if (perfect) {

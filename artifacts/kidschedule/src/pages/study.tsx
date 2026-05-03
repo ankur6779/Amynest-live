@@ -567,9 +567,18 @@ function TopicDetail({
     );
     onScored(nextP);
 
-    // Fire-and-forget: tell the server about this attempt so tomorrow's
-    // adaptive plan reflects today's accuracy. We log one attempt with the
-    // overall pass/fail result (per-question writes would be chattier).
+    // Fire-and-forget: tell the server about every question attempted so
+    // the rolling 20-attempt window fills quickly and weak-topic
+    // detection reacts within the same session, not across sessions.
+    // Batched into a single POST to keep network cost flat.
+    const nowIso = new Date().toISOString();
+    const perQuestion = topic.questions.map((q, i) => ({
+      childId,
+      subject: subj.id,
+      topicId: topic.id,
+      correct: picks[i] === q.answer,
+      ts: nowIso,
+    }));
     (async () => {
       try {
         const token = await getToken();
@@ -577,12 +586,7 @@ function TopicDetail({
         await fetch("/api/smart-study/attempt", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            childId,
-            subject: subj.id,
-            topicId: topic.id,
-            correct: score >= Math.ceil(total * 0.6),
-          }),
+          body: JSON.stringify(perQuestion),
         });
       } catch { /* best-effort */ }
     })();

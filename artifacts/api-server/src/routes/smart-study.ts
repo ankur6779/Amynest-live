@@ -142,12 +142,20 @@ router.post("/smart-study/daily-plan", async (req, res): Promise<void> => {
 
 // ─── POST /api/smart-study/attempt ───────────────────────────────────────────
 
-const AttemptBody = z.object({
+const SingleAttempt = z.object({
   childId: z.number().int().positive(),
   subject: z.string().min(1).max(40),
   topicId: z.string().min(1).max(80),
   correct: z.boolean(),
+  // Optional client-side timestamp — used when replaying a queued attempt
+  // so the rolling 7-day accuracy window stays accurate even if delivery
+  // is delayed (offline mobile sessions). Falls back to server `now()`.
+  ts: z.string().datetime().optional(),
 });
+// Clients may post one attempt or a batch (one per question). The cap
+// keeps a single request bounded — a Practice/Test session is at most
+// ~20 questions, so 50 leaves headroom without inviting abuse.
+const AttemptBody = z.union([SingleAttempt, z.array(SingleAttempt).min(1).max(50)]);
 
 router.post("/smart-study/attempt", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
@@ -160,9 +168,19 @@ router.post("/smart-study/attempt", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
     return;
   }
-  const { childId, subject, topicId, correct } = parsed.data;
-  if (!VALID_SUBJECTS.has(subject)) {
-    res.status(400).json({ error: "unknown_subject" });
+  const incoming = Array.isArray(parsed.data) ? parsed.data : [parsed.data];
+  for (const a of incoming) {
+    if (!VALID_SUBJECTS.has(a.subject)) {
+      res.status(400).json({ error: "unknown_subject" });
+      return;
+    }
+  }
+  // All attempts in a single request must target the same child — keeps
+  // the ownership check (and DB writes) simple and avoids accidental
+  // cross-child writes from a buggy client.
+  const childId = incoming[0]!.childId;
+  if (incoming.some((a) => a.childId !== childId)) {
+    res.status(400).json({ error: "mixed_child_ids" });
     return;
   }
 
@@ -173,47 +191,72 @@ router.post("/smart-study/attempt", async (req, res): Promise<void> => {
       return;
     }
 
-    const existing = await db
-      .select()
-      .from(childLearningProgressTable)
-      .where(
-        and(
-          eq(childLearningProgressTable.childId, childId),
-          eq(childLearningProgressTable.subject, subject),
-        ),
-      )
-      .limit(1);
-    const row: ChildLearningProgressRow | undefined = existing[0];
+    // Group by subject so each affected `child_learning_progress` row is
+    // loaded + updated exactly once per request, regardless of how many
+    // per-question attempts the client batched.
+    const bySubject = new Map<string, LearningAttempt[]>();
+    for (const a of incoming) {
+      const list = bySubject.get(a.subject) ?? [];
+      list.push({
+        topicId: a.topicId,
+        correct: a.correct,
+        ts: a.ts ?? new Date().toISOString(),
+      });
+      bySubject.set(a.subject, list);
+    }
 
-    const prevAttempts = parseAttempts(row?.accuracyRecent);
-    const next: LearningAttempt = { topicId, correct, ts: new Date().toISOString() };
-    const merged = appendAttempt(prevAttempts, next);
-    const weak = recomputeWeakTopics(
-      merged.map((a) => ({ topicId: a.topicId, correct: a.correct })),
-    );
+    const result: { subject: string; weakTopics: string[]; attemptsCount: number }[] = [];
 
-    if (row) {
-      await db
-        .update(childLearningProgressTable)
-        .set({
+    for (const [subject, attempts] of bySubject.entries()) {
+      const existing = await db
+        .select()
+        .from(childLearningProgressTable)
+        .where(
+          and(
+            eq(childLearningProgressTable.childId, childId),
+            eq(childLearningProgressTable.subject, subject),
+          ),
+        )
+        .limit(1);
+      const row: ChildLearningProgressRow | undefined = existing[0];
+
+      let merged = parseAttempts(row?.accuracyRecent);
+      for (const next of attempts) merged = appendAttempt(merged, next);
+      const weak = recomputeWeakTopics(
+        merged.map((a) => ({ topicId: a.topicId, correct: a.correct })),
+      );
+
+      if (row) {
+        await db
+          .update(childLearningProgressTable)
+          .set({
+            accuracyRecent: merged,
+            weakTopics: weak,
+            lastActiveAt: new Date(),
+            updatedAt: sql`now()`,
+          })
+          .where(eq(childLearningProgressTable.id, row.id));
+      } else {
+        await db.insert(childLearningProgressTable).values({
+          childId,
+          userId,
+          subject,
           accuracyRecent: merged,
           weakTopics: weak,
           lastActiveAt: new Date(),
-          updatedAt: sql`now()`,
-        })
-        .where(eq(childLearningProgressTable.id, row.id));
-    } else {
-      await db.insert(childLearningProgressTable).values({
-        childId,
-        userId,
-        subject,
-        accuracyRecent: merged,
-        weakTopics: weak,
-        lastActiveAt: new Date(),
-      });
+        });
+      }
+      result.push({ subject, weakTopics: weak, attemptsCount: merged.length });
     }
 
-    res.json({ ok: true, weakTopics: weak, attemptsCount: merged.length });
+    // Back-compat: a single-attempt request returns the original flat
+    // shape so existing clients keep working unchanged.
+    if (!Array.isArray(parsed.data)) {
+      const r = result[0]!;
+      res.json({ ok: true, weakTopics: r.weakTopics, attemptsCount: r.attemptsCount });
+      return;
+    }
+    res.json({ ok: true, results: result });
   } catch (err) {
     logger.error(
       `smart-study attempt failed: ${err instanceof Error ? err.message : String(err)}`,
