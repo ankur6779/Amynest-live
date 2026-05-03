@@ -1283,7 +1283,12 @@
       "level_addition": "जोड़",
       "level_subtraction": "घटाव",
       "level_multidigit": "बड़ी संख्या",
-      "level_mental": "मानसिक"
+      "level_mental": "मानसिक",
+      "weekly_leaderboard": "साप्ताहिक लीडरबोर्ड",
+      "your_rank": "{{total}} में से #{{rank}}",
+      "no_scores_yet": "इस हफ़्ते अभी कोई स्कोर नहीं — पहले बनो!",
+      "you": "तुम",
+      "pts": "अंक"
     }
   },
   "routines_generate": {

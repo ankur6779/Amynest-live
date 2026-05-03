@@ -141,6 +141,19 @@ interface ProgressShape {
   totalPoints: number;
 }
 
+interface LeaderboardEntry {
+  rank: number;
+  childId: number;
+  name: string;
+  points: number;
+  isMe: boolean;
+}
+interface LeaderboardShape {
+  weekStart: string;
+  top: LeaderboardEntry[];
+  me: { rank: number; points: number; total: number };
+}
+
 // ─── Bead UI ────────────────────────────────────────────────────────────
 
 function BeadColumn({
@@ -677,9 +690,22 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
   const authFetch = useAuthFetch();
   const amy = useAmyVoice();
   const [progress, setProgress] = useState<ProgressShape | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardShape | null>(null);
   const [mode, setMode] = useState<Mode>("learn");
   const [level, setLevel] = useState<LevelId>(1);
   const [loading, setLoading] = useState(true);
+
+  // Pull the friends/family leaderboard. Lightweight — re-fetched on
+  // mount and after every challenge completion so the strip reflects
+  // the child's latest weekly points without a manual refresh.
+  const refreshLeaderboard = useCallback(() => {
+    authFetch(`/api/abacus/leaderboard?childId=${childId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.top) setLeaderboard(data as LeaderboardShape);
+      })
+      .catch(() => { /* leaderboard is non-essential — silent on failure */ });
+  }, [authFetch, childId]);
 
   // Fetch progress + initial mode/level on mount and whenever the child changes.
   // Hydrate from localStorage immediately so the UI is responsive offline,
@@ -713,10 +739,11 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
       })
       .catch(() => { /* keep cached state on network failure */ })
       .finally(() => !cancelled && setLoading(false));
+    refreshLeaderboard();
     return () => {
       cancelled = true;
     };
-  }, [authFetch, childId]);
+  }, [authFetch, childId, refreshLeaderboard]);
 
   const persistMode = useCallback(
     (next: Mode, lvl: LevelId) => {
@@ -768,7 +795,7 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
         }
       }
       // Always log the session totals so the lifetime counters move.
-      void authFetch("/api/abacus/progress", {
+      await authFetch("/api/abacus/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -779,8 +806,10 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
           totalPoints: points,
         }),
       }).catch(() => {});
+      // Refresh the leaderboard so the strip updates with the new score.
+      refreshLeaderboard();
     },
-    [authFetch, childId, level, mode, progress],
+    [authFetch, childId, level, mode, progress, refreshLeaderboard],
   );
 
   if (loading) {
@@ -813,6 +842,51 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
           <span>
             ✅ {completed.length} / {LEVELS.length} {t("abacus.levels")}
           </span>
+        </div>
+      )}
+
+      {/* Weekly friends/family leaderboard strip */}
+      {leaderboard && (
+        <div
+          className="rounded-xl border border-border bg-card px-3 py-2 space-y-1"
+          data-testid="abacus-leaderboard"
+        >
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Trophy className="h-3.5 w-3.5" />
+              {t("abacus.weekly_leaderboard")}
+            </span>
+            <span data-testid="abacus-leaderboard-rank">
+              {t("abacus.your_rank", {
+                rank: leaderboard.me.rank,
+                total: leaderboard.me.total,
+              })}
+            </span>
+          </div>
+          {leaderboard.top.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-1">
+              {t("abacus.no_scores_yet")}
+            </p>
+          ) : (
+            <ol className="space-y-0.5">
+              {leaderboard.top.map((row) => (
+                <li
+                  key={row.childId}
+                  className={[
+                    "flex items-center justify-between text-xs rounded px-2 py-1",
+                    row.isMe ? "bg-primary/10 font-bold text-foreground" : "text-foreground",
+                  ].join(" ")}
+                  data-testid={`abacus-leaderboard-row-${row.rank}`}
+                >
+                  <span>
+                    <span className="inline-block w-5 text-muted-foreground">#{row.rank}</span>
+                    {row.isMe ? `${row.name} (${t("abacus.you")})` : row.name}
+                  </span>
+                  <span>{row.points} {t("abacus.pts")}</span>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
       )}
 

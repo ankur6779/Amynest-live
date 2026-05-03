@@ -38,6 +38,19 @@ interface ProgressShape {
   totalPoints: number;
 }
 
+interface LeaderboardEntry {
+  rank: number;
+  childId: number;
+  name: string;
+  points: number;
+  isMe: boolean;
+}
+interface LeaderboardShape {
+  weekStart: string;
+  top: LeaderboardEntry[];
+  me: { rank: number; points: number; total: number };
+}
+
 // ─── Bead UI (animated soroban beads) ───────────────────────────────────
 
 function UpperBead({ active }: { active: boolean }) {
@@ -611,9 +624,21 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
   const c = useColors();
   const authFetch = useAuthFetch();
   const [progress, setProgress] = useState<ProgressShape | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardShape | null>(null);
   const [mode, setMode] = useState<Mode>("learn");
   const [level, setLevel] = useState<LevelId>(1);
   const [loading, setLoading] = useState(true);
+
+  // Pull the friends/family weekly leaderboard. Failure is silent — the
+  // strip just stays hidden so it never blocks the core abacus UI.
+  const refreshLeaderboard = useCallback(() => {
+    authFetch(`/api/abacus/leaderboard?childId=${childId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.top) setLeaderboard(data as LeaderboardShape);
+      })
+      .catch(() => {});
+  }, [authFetch, childId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -633,8 +658,9 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
       })
       .catch(() => {})
       .finally(() => !cancelled && setLoading(false));
+    refreshLeaderboard();
     return () => { cancelled = true; };
-  }, [authFetch, childId]);
+  }, [authFetch, childId, refreshLeaderboard]);
 
   const persistMode = useCallback((next: Mode, lvl: LevelId) => {
     void authFetch("/api/abacus/progress", {
@@ -670,7 +696,7 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
         }));
       }
     }
-    void authFetch("/api/abacus/progress", {
+    await authFetch("/api/abacus/progress", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -680,7 +706,9 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
         totalPoints: points,
       }),
     }).catch(() => {});
-  }, [authFetch, childId, level, mode]);
+    // Refresh leaderboard so the strip reflects the new weekly score.
+    refreshLeaderboard();
+  }, [authFetch, childId, level, mode, refreshLeaderboard]);
 
   if (loading) {
     return <ActivityIndicator size="small" color={brand.violet600} style={{ padding: 12 }} />;
@@ -713,6 +741,64 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
           <Text style={{ color: palette.amber800, fontSize: 12 }}>
             ✅ {completed.length} / {LEVELS.length} {t("abacus.levels")}
           </Text>
+        </View>
+      )}
+
+      {leaderboard && (
+        <View
+          style={[
+            styles.leaderboard,
+            { backgroundColor: c.surface, borderColor: c.border },
+          ]}
+        >
+          <View style={styles.rowBetween}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <MaterialCommunityIcons name="trophy" size={14} color={palette.amber600} />
+              <Text style={{
+                color: c.muted, fontSize: 11, fontWeight: "700",
+                letterSpacing: 0.5, textTransform: "uppercase",
+              }}>
+                {t("abacus.weekly_leaderboard")}
+              </Text>
+            </View>
+            <Text style={{ color: c.muted, fontSize: 11, fontWeight: "700" }}>
+              {t("abacus.your_rank", {
+                rank: leaderboard.me.rank,
+                total: leaderboard.me.total,
+              })}
+            </Text>
+          </View>
+          {leaderboard.top.length === 0 ? (
+            <Text style={{ color: c.muted, fontSize: 12, paddingVertical: 4 }}>
+              {t("abacus.no_scores_yet")}
+            </Text>
+          ) : (
+            <View style={{ gap: 2 }}>
+              {leaderboard.top.map((row) => (
+                <View
+                  key={row.childId}
+                  style={[
+                    styles.leaderboardRow,
+                    row.isMe && { backgroundColor: brand.violet50 },
+                  ]}
+                >
+                  <Text style={{
+                    color: c.text, fontSize: 12,
+                    fontWeight: row.isMe ? "800" : "500",
+                  }}>
+                    <Text style={{ color: c.muted }}>#{row.rank} </Text>
+                    {row.isMe ? `${row.name} (${t("abacus.you")})` : row.name}
+                  </Text>
+                  <Text style={{
+                    color: c.text, fontSize: 12,
+                    fontWeight: row.isMe ? "800" : "600",
+                  }}>
+                    {row.points} {t("abacus.pts")}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       )}
 
@@ -847,6 +933,15 @@ const styles = StyleSheet.create({
     borderRadius: 10, borderWidth: 1,
   },
   modeBody: { borderWidth: 1, borderRadius: 14, padding: 12 },
+  leaderboard: {
+    borderWidth: 1, borderRadius: 12, paddingHorizontal: 10,
+    paddingVertical: 8, gap: 4,
+  },
+  leaderboardRow: {
+    flexDirection: "row", justifyContent: "space-between",
+    alignItems: "center", paddingHorizontal: 6, paddingVertical: 4,
+    borderRadius: 6,
+  },
 });
 
 export default AbacusZone;

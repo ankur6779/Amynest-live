@@ -50,6 +50,17 @@ export const abacusProgressTable = pgTable(
     totalAttempts: integer("total_attempts").notNull().default(0),
     /** Cumulative challenge points the child has earned. */
     totalPoints: integer("total_points").notNull().default(0),
+    /**
+     * Points earned in the current weekly leaderboard window. Reset to 0
+     * by `log_session` whenever `weekStartedAt` is older than the current
+     * Monday-00:00-UTC boundary. The leaderboard endpoint also treats a
+     * stale `weekStartedAt` as 0 so reads never depend on a write to reset.
+     */
+    weeklyPoints: integer("weekly_points").notNull().default(0),
+    /** ISO timestamp of the Monday (00:00 UTC) of the active leaderboard week. */
+    weekStartedAt: timestamp("week_started_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -1187,7 +1187,12 @@
       "level_addition": "Add",
       "level_subtraction": "Subtract",
       "level_multidigit": "Big numbers",
-      "level_mental": "Mental"
+      "level_mental": "Mental",
+      "weekly_leaderboard": "Weekly leaderboard",
+      "your_rank": "#{{rank}} of {{total}}",
+      "no_scores_yet": "No scores yet this week — be the first!",
+      "you": "you",
+      "pts": "pts"
     }
   },
   "parent_hub": {
