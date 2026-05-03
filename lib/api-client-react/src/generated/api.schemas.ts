@@ -553,6 +553,47 @@ export interface LifeSkillRolePlay {
   parentPrompt: LifeSkillLocalizedText;
 }
 
+export interface SmartStudyInsightsWeakTopic {
+  topicId: string;
+  topicTitle: string;
+}
+
+export interface SmartStudyInsightsSubject {
+  subject: string;
+  subjectTitle: string;
+  subjectEmoji: string;
+  /** Rolling 7-day accuracy percentage. Null when no in-window attempts. */
+  accuracyPct?: number | null;
+  /** Number of attempts that contributed to accuracyPct. */
+  sampleSize: number;
+  weakTopics: SmartStudyInsightsWeakTopic[];
+}
+
+export type SmartStudyInsightsMode =
+  (typeof SmartStudyInsightsMode)[keyof typeof SmartStudyInsightsMode];
+
+export const SmartStudyInsightsMode = {
+  play: "play",
+  basic: "basic",
+  advanced: "advanced",
+} as const;
+
+export type SmartStudyInsightsYesterday = {
+  date: string;
+  planSize: number;
+  doneCount: number;
+  completionPct: number;
+} | null;
+
+export interface SmartStudyInsights {
+  childId: number;
+  childName: string;
+  mode: SmartStudyInsightsMode;
+  hasData: boolean;
+  subjects: SmartStudyInsightsSubject[];
+  yesterday?: SmartStudyInsightsYesterday;
+}
+
 export type ListRoutinesParams = {
   childId?: number;
 };
@@ -598,3 +639,7 @@ export const GetLifeSkillRolePlaysAgeBand = {
   kid: "kid",
   teen: "teen",
 } as const;
+
+export type GetSmartStudyInsightsParams = {
+  childId: number;
+};

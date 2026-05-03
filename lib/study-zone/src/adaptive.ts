@@ -243,6 +243,30 @@ export function buildDailyPlan(input: BuildPlanInput): DailyPlan {
   return { date: input.dateIso, mode: planMode, items };
 }
 
+/**
+ * Rolling 7-day accuracy percentage (0–100) for a subject's attempts.
+ * Returns `null` when there's no in-window attempt to summarise — callers
+ * (e.g. the parent insights panel) can then render a "no data yet" state
+ * instead of a misleading 0%.
+ *
+ * Mirrors the windowing rules in `difficultyForAccuracy` so the UI and
+ * the planner agree on what "recent" means.
+ */
+export function accuracyPctForWindow(
+  attempts: { correct: boolean; ts?: string }[],
+  now: Date = new Date(),
+): { pct: number; sampleSize: number } | null {
+  const cutoff = now.getTime() - ACCURACY_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+  const recent = attempts.filter((a) => {
+    if (!a.ts) return true;
+    const t = Date.parse(a.ts);
+    return Number.isNaN(t) ? true : t >= cutoff;
+  });
+  if (recent.length === 0) return null;
+  const correct = recent.filter((a) => a.correct).length;
+  return { pct: Math.round((correct / recent.length) * 100), sampleSize: recent.length };
+}
+
 /** Completion percentage for a plan vs. an attempt history. An item counts
  *  as "done today" if any attempt for its topicId exists for today. */
 export function planCompletionPct(

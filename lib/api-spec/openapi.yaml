@@ -24,6 +24,8 @@ tags:
     description: Per-day, per-child Parent Task completions
   - name: life-skills
     description: Life Skills Mode — daily age-banded skills, streaks, and role-play scenarios
+  - name: smart-study
+    description: Smart Study Zone insights and adaptive plans
 paths:
   /healthz:
     get:
@@ -657,6 +659,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/LifeSkillRolePlay"
+
+  /smart-study/insights:
+    get:
+      operationId: getSmartStudyInsights
+      tags: [smart-study]
+      summary: Get parent-facing Smart Study insights for a child
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Insights summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmartStudyInsights"
+        "404":
+          description: Child not found
 
   /dashboard/behavior-stats:
     get:
@@ -1652,3 +1675,80 @@ components:
         parentPrompt:
           $ref: "#/components/schemas/LifeSkillLocalizedText"
       required: [id, ageBand, title, setup, childLine, parentPrompt]
+    SmartStudyInsightsWeakTopic:
+      type: object
+      properties:
+        topicId:
+          type: string
+        topicTitle:
+          type: string
+      required:
+        - topicId
+        - topicTitle
+
+    SmartStudyInsightsSubject:
+      type: object
+      properties:
+        subject:
+          type: string
+        subjectTitle:
+          type: string
+        subjectEmoji:
+          type: string
+        accuracyPct:
+          type: integer
+          nullable: true
+          description: Rolling 7-day accuracy percentage. Null when no in-window attempts.
+        sampleSize:
+          type: integer
+          description: Number of attempts that contributed to accuracyPct.
+        weakTopics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SmartStudyInsightsWeakTopic"
+      required:
+        - subject
+        - subjectTitle
+        - subjectEmoji
+        - sampleSize
+        - weakTopics
+
+    SmartStudyInsights:
+      type: object
+      properties:
+        childId:
+          type: integer
+        childName:
+          type: string
+        mode:
+          type: string
+          enum: [play, basic, advanced]
+        hasData:
+          type: boolean
+        subjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/SmartStudyInsightsSubject"
+        yesterday:
+          type: object
+          nullable: true
+          properties:
+            date:
+              type: string
+            planSize:
+              type: integer
+            doneCount:
+              type: integer
+            completionPct:
+              type: integer
+          required:
+            - date
+            - planSize
+            - doneCount
+            - completionPct
+      required:
+        - childId
+        - childName
+        - mode
+        - hasData
+        - subjects

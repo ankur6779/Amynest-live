@@ -11,8 +11,11 @@ import {
   type LearningAttempt,
 } from "@workspace/db";
 import {
+  accuracyPctForWindow,
   appendAttempt,
   buildDailyPlan,
+  getBasicSubject,
+  getAdvancedSubject,
   planCompletionPct,
   recomputeWeakTopics,
   resolveStudyMode,
@@ -260,6 +263,136 @@ router.post("/smart-study/attempt", async (req, res): Promise<void> => {
   } catch (err) {
     logger.error(
       `smart-study attempt failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// ─── GET /api/smart-study/insights ───────────────────────────────────────────
+//
+// Parent-facing summary so parents can see *why* the child's adaptive plan
+// looks the way it does — the underlying engine already runs on
+// child_learning_progress, this endpoint just exposes the same signals
+// (weak topics, 7-day accuracy per subject, yesterday's plan completion)
+// in a shape that's directly renderable by the Parent Command Center.
+
+const InsightsQuery = z.object({
+  childId: z.coerce.number().int().positive(),
+});
+
+router.get("/smart-study/insights", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const parsed = InsightsQuery.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    return;
+  }
+  const { childId } = parsed.data;
+
+  try {
+    const child = await loadOwnedChild(childId, userId);
+    if (!child) {
+      res.status(404).json({ error: "child_not_found" });
+      return;
+    }
+    const mode = resolveStudyMode(child.age ?? 0, child.childClass);
+
+    const rows = await db
+      .select()
+      .from(childLearningProgressTable)
+      .where(
+        and(
+          eq(childLearningProgressTable.childId, childId),
+          eq(childLearningProgressTable.userId, userId),
+        ),
+      );
+
+    const subjectsForPlan = rows.map((r) => ({
+      subject: r.subject,
+      attempts: parseAttempts(r.accuracyRecent),
+      weakTopics: parseWeakTopics(r.weakTopics),
+    }));
+
+    // Per-subject summaries (only for subjects valid in the child's mode so
+    // the UI doesn't render stale rows for a subject the child outgrew).
+    const packs = mode === "advanced" ? ADVANCED_SUBJECTS : BASIC_SUBJECTS;
+    const lookupTopicTitle = (subjectId: string, topicId: string): string => {
+      const pack =
+        mode === "advanced"
+          ? getAdvancedSubject(subjectId)
+          : getBasicSubject(subjectId);
+      return pack?.topics.find((t) => t.id === topicId)?.title ?? topicId;
+    };
+
+    const subjects = packs.map((pack) => {
+      const row = rows.find((r) => r.subject === pack.id);
+      const attempts = row ? parseAttempts(row.accuracyRecent) : [];
+      const weakIds = row ? parseWeakTopics(row.weakTopics) : [];
+      const acc = accuracyPctForWindow(attempts);
+      return {
+        subject: pack.id,
+        subjectTitle: pack.title,
+        subjectEmoji: pack.emoji,
+        accuracyPct: acc?.pct ?? null,
+        sampleSize: acc?.sampleSize ?? 0,
+        weakTopics: weakIds.map((tid) => ({
+          topicId: tid,
+          topicTitle: lookupTopicTitle(pack.id, tid),
+        })),
+      };
+    });
+
+    // Yesterday's plan completion: rebuild yesterday's plan deterministically
+    // (the engine seeds on date+age so this matches what the child saw) and
+    // count topics that have an attempt timestamped on yesterday.
+    let yesterday: {
+      date: string;
+      planSize: number;
+      doneCount: number;
+      completionPct: number;
+    } | null = null;
+    if (mode !== "play") {
+      const y = new Date();
+      y.setUTCDate(y.getUTCDate() - 1);
+      const yIso = todayIsoUtc(y);
+      const yPlan = buildDailyPlan({
+        childAge: child.age ?? 0,
+        childClass: child.childClass,
+        dateIso: yIso,
+        subjects: subjectsForPlan,
+      });
+      const doneIds = new Set<string>();
+      for (const r of rows) {
+        for (const a of parseAttempts(r.accuracyRecent)) {
+          if (a.ts.slice(0, 10) === yIso) doneIds.add(a.topicId);
+        }
+      }
+      const doneCount = yPlan.items.filter((it) => doneIds.has(it.topicId)).length;
+      yesterday = {
+        date: yIso,
+        planSize: yPlan.items.length,
+        doneCount,
+        completionPct: planCompletionPct(yPlan, doneIds),
+      };
+    }
+
+    const hasData = rows.length > 0;
+
+    res.json({
+      childId: child.id,
+      childName: child.name,
+      mode,
+      hasData,
+      subjects,
+      yesterday,
+    });
+  } catch (err) {
+    logger.error(
+      `smart-study insights failed: ${err instanceof Error ? err.message : String(err)}`,
     );
     res.status(500).json({ error: "server_error" });
   }

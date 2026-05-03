@@ -622,6 +622,16 @@ exports[`ParentCommandCenter — JSX snapshots > fullscreen dashboard (open) ren
             </span>
           </button>
         </div>
+        <div
+          data-testid="learning-insights-loading"
+        >
+          <span>
+            LEARNING INSIGHTS
+          </span>
+          <span>
+            Loading…
+          </span>
+        </div>
         <div>
           <div>
             <span>

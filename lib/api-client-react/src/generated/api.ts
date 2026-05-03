@@ -41,6 +41,7 @@ import type {
   GetParentProfileResponse,
   GetRecipeBody,
   GetRecipeResponse,
+  GetSmartStudyInsightsParams,
   HealthStatus,
   LifeSkillProgressResponse,
   LifeSkillRolePlay,
@@ -52,6 +53,7 @@ import type {
   Routine,
   SetLifeSkillProgressBody,
   SetParentTaskCompletionBody,
+  SmartStudyInsights,
   UpdateChildBody,
   UpdateRoutineItemsBody,
   UpdateRoutineUiPrefsBody,
@@ -2992,6 +2994,106 @@ export function useGetLifeSkillRolePlays<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetLifeSkillRolePlaysQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get parent-facing Smart Study insights for a child
+ */
+export const getGetSmartStudyInsightsUrl = (
+  params: GetSmartStudyInsightsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/smart-study/insights?${stringifiedParams}`
+    : `/api/smart-study/insights`;
+};
+
+export const getSmartStudyInsights = async (
+  params: GetSmartStudyInsightsParams,
+  options?: RequestInit,
+): Promise<SmartStudyInsights> => {
+  return customFetch<SmartStudyInsights>(getGetSmartStudyInsightsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSmartStudyInsightsQueryKey = (
+  params?: GetSmartStudyInsightsParams,
+) => {
+  return [`/api/smart-study/insights`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetSmartStudyInsightsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSmartStudyInsights>>,
+  TError = ErrorType<void>,
+>(
+  params: GetSmartStudyInsightsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSmartStudyInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSmartStudyInsightsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSmartStudyInsights>>
+  > = ({ signal }) =>
+    getSmartStudyInsights(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSmartStudyInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSmartStudyInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSmartStudyInsights>>
+>;
+export type GetSmartStudyInsightsQueryError = ErrorType<void>;
+
+/**
+ * @summary Get parent-facing Smart Study insights for a child
+ */
+
+export function useGetSmartStudyInsights<
+  TData = Awaited<ReturnType<typeof getSmartStudyInsights>>,
+  TError = ErrorType<void>,
+>(
+  params: GetSmartStudyInsightsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSmartStudyInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSmartStudyInsightsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
