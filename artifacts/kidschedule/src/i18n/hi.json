@@ -1173,7 +1173,17 @@
       "class_3": "तीसरी",
       "class_4": "चौथी",
       "class_5": "पांचवीं",
-      "class_6plus": "छठी+"
+      "class_6plus": "छठी+",
+      "country_transition_msg": "पहले, मैं आपकी location के हिसाब से Amy को personalize करती हूँ 🌍",
+      "child_name_after_country": "अब, आपके बच्चे का नाम क्या है?",
+      "country_detecting": "आपकी location ढूंढी जा रही है…",
+      "country_detected_in": "हमें लगता है आप यहाँ हैं",
+      "country_confirm_yes": "हाँ, बिलकुल सही ✓",
+      "country_change": "देश बदलें",
+      "country_pick_popular": "लोकप्रिय देश",
+      "country_search_placeholder": "अपना देश खोजें…",
+      "country_not_found": "कोई देश नहीं मिला",
+      "country_other_cuisines": "🌍 अन्य cuisines देखें"
     },
     "abacus": {
       "loading": "अबेकस लोड हो रहा है…",

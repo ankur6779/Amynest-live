@@ -36,6 +36,7 @@ interface ParentData {
   region: string;
   mobileNumber: string;
   allergies: string;
+  country: string;
 }
 
 interface ChatMessage {
@@ -45,6 +46,7 @@ interface ChatMessage {
 
 type Step =
   | "intro"
+  | "country-confirm"
   | "child-name" | "child-dob"
   | "infant-feeding" | "infant-sleep"               // infant path (age < 2)
   | "child-school" | "child-class"                  // standard path (age >= 2)
@@ -114,6 +116,104 @@ const REGION_OPTS = [
   { label: "Punjabi",            value: "punjabi" },
   { label: "Global / Continental", value: "global" },
 ];
+
+// ─── Country data ────────────────────────────────────────────────────────────
+const TOP_COUNTRIES = [
+  { code: "US", name: "United States", flag: "🇺🇸" },
+  { code: "GB", name: "United Kingdom", flag: "🇬🇧" },
+  { code: "CA", name: "Canada",         flag: "🇨🇦" },
+  { code: "AU", name: "Australia",      flag: "🇦🇺" },
+  { code: "AE", name: "UAE",            flag: "🇦🇪" },
+  { code: "IN", name: "India",          flag: "🇮🇳" },
+];
+
+const ALL_COUNTRIES = [
+  ...TOP_COUNTRIES,
+  { code: "NZ", name: "New Zealand",   flag: "🇳🇿" },
+  { code: "SG", name: "Singapore",     flag: "🇸🇬" },
+  { code: "MY", name: "Malaysia",      flag: "🇲🇾" },
+  { code: "PK", name: "Pakistan",      flag: "🇵🇰" },
+  { code: "BD", name: "Bangladesh",    flag: "🇧🇩" },
+  { code: "LK", name: "Sri Lanka",     flag: "🇱🇰" },
+  { code: "NP", name: "Nepal",         flag: "🇳🇵" },
+  { code: "PH", name: "Philippines",   flag: "🇵🇭" },
+  { code: "ID", name: "Indonesia",     flag: "🇮🇩" },
+  { code: "TH", name: "Thailand",      flag: "🇹🇭" },
+  { code: "VN", name: "Vietnam",       flag: "🇻🇳" },
+  { code: "JP", name: "Japan",         flag: "🇯🇵" },
+  { code: "KR", name: "South Korea",   flag: "🇰🇷" },
+  { code: "CN", name: "China",         flag: "🇨🇳" },
+  { code: "HK", name: "Hong Kong",     flag: "🇭🇰" },
+  { code: "DE", name: "Germany",       flag: "🇩🇪" },
+  { code: "FR", name: "France",        flag: "🇫🇷" },
+  { code: "IT", name: "Italy",         flag: "🇮🇹" },
+  { code: "ES", name: "Spain",         flag: "🇪🇸" },
+  { code: "NL", name: "Netherlands",   flag: "🇳🇱" },
+  { code: "BE", name: "Belgium",       flag: "🇧🇪" },
+  { code: "SE", name: "Sweden",        flag: "🇸🇪" },
+  { code: "NO", name: "Norway",        flag: "🇳🇴" },
+  { code: "DK", name: "Denmark",       flag: "🇩🇰" },
+  { code: "FI", name: "Finland",       flag: "🇫🇮" },
+  { code: "CH", name: "Switzerland",   flag: "🇨🇭" },
+  { code: "AT", name: "Austria",       flag: "🇦🇹" },
+  { code: "PT", name: "Portugal",      flag: "🇵🇹" },
+  { code: "IE", name: "Ireland",       flag: "🇮🇪" },
+  { code: "PL", name: "Poland",        flag: "🇵🇱" },
+  { code: "SA", name: "Saudi Arabia",  flag: "🇸🇦" },
+  { code: "QA", name: "Qatar",         flag: "🇶🇦" },
+  { code: "KW", name: "Kuwait",        flag: "🇰🇼" },
+  { code: "BH", name: "Bahrain",       flag: "🇧🇭" },
+  { code: "OM", name: "Oman",          flag: "🇴🇲" },
+  { code: "EG", name: "Egypt",         flag: "🇪🇬" },
+  { code: "TR", name: "Turkey",        flag: "🇹🇷" },
+  { code: "IL", name: "Israel",        flag: "🇮🇱" },
+  { code: "JO", name: "Jordan",        flag: "🇯🇴" },
+  { code: "LB", name: "Lebanon",       flag: "🇱🇧" },
+  { code: "ZA", name: "South Africa",  flag: "🇿🇦" },
+  { code: "KE", name: "Kenya",         flag: "🇰🇪" },
+  { code: "NG", name: "Nigeria",       flag: "🇳🇬" },
+  { code: "GH", name: "Ghana",         flag: "🇬🇭" },
+  { code: "MX", name: "Mexico",        flag: "🇲🇽" },
+  { code: "BR", name: "Brazil",        flag: "🇧🇷" },
+  { code: "AR", name: "Argentina",     flag: "🇦🇷" },
+  { code: "CO", name: "Colombia",      flag: "🇨🇴" },
+  { code: "RU", name: "Russia",        flag: "🇷🇺" },
+  { code: "MV", name: "Maldives",      flag: "🇲🇻" },
+  { code: "MM", name: "Myanmar",       flag: "🇲🇲" },
+];
+
+function flagEmoji(code: string): string {
+  return code.toUpperCase().split("").map((c) =>
+    String.fromCodePoint(c.charCodeAt(0) + 127397)
+  ).join("");
+}
+
+/** Grade/class labels per country education system */
+function getClassSystem(code: string): { labels: string[]; values: string[] } {
+  if (code === "GB" || code === "IE") {
+    const v = ["Reception", "Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6", "Year 7", "Year 8+"];
+    return { labels: v, values: v };
+  }
+  if (code === "AU" || code === "NZ") {
+    const v = ["Prep / Kinder", "Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6", "Year 7+"];
+    return { labels: v, values: v };
+  }
+  if (["AE", "SA", "QA", "KW", "BH", "OM"].includes(code)) {
+    const v = ["KG 1", "KG 2", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6+"];
+    return { labels: v, values: v };
+  }
+  // Default: US, CA, and all others
+  const v = ["Kindergarten", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8+"];
+  return { labels: v, values: v };
+}
+
+/** Default cuisine region for parent-region step */
+function getDefaultRegion(code: string): string {
+  if (["IN", "PK", "BD", "LK", "NP"].includes(code))                                 return "north_indian";
+  if (["AE", "SA", "QA", "KW", "BH", "OM", "EG", "TR", "JO", "LB"].includes(code)) return "middle_eastern";
+  if (["JP", "KR", "CN", "HK", "SG", "TH", "ID", "MY", "PH", "VN"].includes(code)) return "asian";
+  return "western";
+}
 
 // ─── Infant-specific options ─────────────────────────────────────────────────
 const FEEDING_OPTS = [
@@ -223,11 +323,13 @@ function ProgressBar({ step }: { step: Step }) {
   const { t } = useTranslation();
   // Infant path is short; standard path is longer. Both share the parent section.
   const infantOrder: Step[] = [
+    "country-confirm",
     "child-name", "child-dob", "infant-feeding", "infant-sleep",
     "add-more", "parent-name", "parent-role", "parent-work",
     "parent-region", "parent-mobile", "parent-allergies",
   ];
   const standardOrder: Step[] = [
+    "country-confirm",
     "child-name", "child-dob", "child-school", "child-class",
     "child-school-start", "child-school-end", "child-school-days",
     "child-wake", "child-sleep",
@@ -268,6 +370,11 @@ export default function OnboardingPage() {
   const [selected, setSelected] = useState("");
   const [dobInput, setDobInput] = useState("");
   const [regionDrillDown, setRegionDrillDown] = useState(false);
+  const [countryCode, setCountryCode] = useState("IN");
+  const [countryName, setCountryName] = useState("India");
+  const [detectedCountry, setDetectedCountry] = useState<{ code: string; name: string } | "loading" | null>("loading");
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
 
   const [children, setChildren] = useState<ChildData[]>([]);
   const [curr, setCurr] = useState<Partial<ChildData>>({});
@@ -310,8 +417,8 @@ export default function OnboardingPage() {
           role: "amy",
           text: t("screens.onboarding.intro_greeting", { name: firstName }),
         }]);
-        setTimeout(() => amySays(t("screens.onboarding.intro_start"), 800), 900);
-        setTimeout(() => setStep("child-name"), 2400);
+        setTimeout(() => amySays(t("screens.onboarding.country_transition_msg"), 800), 900);
+        setTimeout(() => setStep("country-confirm"), 2600);
       }, 600);
     }
   }, []);
@@ -362,6 +469,7 @@ export default function OnboardingPage() {
         role: (parent.role || "mother").toLowerCase(),
         workType: parent.workType || "work_from_home",
         region: parent.region || "pan_indian",
+        country: parent.country || countryCode,
       };
       if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
       if (parent.allergies) parentBody.allergies = parent.allergies;
@@ -401,6 +509,211 @@ export default function OnboardingPage() {
   function goDashboard() {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     window.location.assign(`${base}/dashboard`);
+  }
+
+  // ─── Country detection ───────────────────────────────────────────────────────
+  useEffect(() => {
+    async function detect() {
+      try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+        clearTimeout(tid);
+        if (res.ok) {
+          const data = await res.json() as { country_code?: string; country_name?: string };
+          if (data.country_code && data.country_name) {
+            setCountryCode(data.country_code);
+            setCountryName(data.country_name);
+            setDetectedCountry({ code: data.country_code, name: data.country_name });
+            return;
+          }
+        }
+      } catch { /* network or timeout */ }
+      // Fallback: browser locale e.g. "en-IN" → "IN"
+      const lang = navigator.language || (navigator.languages?.[0] ?? "");
+      const parts = lang.split("-");
+      if (parts.length === 2 && parts[1].length === 2) {
+        const code = parts[1].toUpperCase();
+        const found = ALL_COUNTRIES.find((c) => c.code === code);
+        if (found) {
+          setCountryCode(found.code);
+          setCountryName(found.name);
+          setDetectedCountry({ code: found.code, name: found.name });
+          return;
+        }
+      }
+      // Detection failed — show picker directly
+      setDetectedCountry(null);
+      setShowCountryPicker(true);
+    }
+    detect();
+  }, []);
+
+  function confirmCountry(code: string, name: string) {
+    setCountryCode(code);
+    setCountryName(name);
+    setShowCountryPicker(false);
+    setCountrySearch("");
+    // Pre-select Indian drilldown for South Asian users
+    if (["IN", "PK", "BD", "LK", "NP"].includes(code)) {
+      setRegionDrillDown(true);
+    } else {
+      setRegionDrillDown(false);
+    }
+    setParent((p) => ({ ...p, country: code, region: getDefaultRegion(code) }));
+    amySays(t("screens.onboarding.child_name_after_country"), 300);
+    setTimeout(() => setStep("child-name"), 1300);
+  }
+
+  // ─── Country-confirm step ────────────────────────────────────────────────────
+  if (step === "country-confirm") {
+    const isDetecting = detectedCountry === "loading";
+    const flag = flagEmoji(countryCode);
+    const searchResults = countrySearch.trim().length > 0
+      ? ALL_COUNTRIES.filter((c) =>
+          c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+          c.code.toLowerCase().includes(countrySearch.toLowerCase())
+        )
+      : [];
+
+    if (showCountryPicker) {
+      return (
+        <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
+          {/* Header */}
+          <div
+            className="sticky top-0 z-10 px-4 py-4 flex items-center gap-3"
+            style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
+          >
+            <button
+              onClick={() => { setShowCountryPicker(false); setCountrySearch(""); }}
+              className="w-8 h-8 flex items-center justify-center rounded-full"
+              style={{ background: GLASS_BG, color: "#fff" }}
+            >
+              ←
+            </button>
+            <h2 className="text-base font-bold" style={{ color: "#fff" }}>
+              {t("screens.onboarding.country_pick_popular")}
+            </h2>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 max-w-lg mx-auto w-full">
+            {/* Top 6 grid */}
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.5)" }}>
+              {t("screens.onboarding.country_pick_popular")}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {TOP_COUNTRIES.map((c) => (
+                <button
+                  key={c.code}
+                  onClick={() => confirmCountry(c.code, c.name)}
+                  className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left"
+                  style={CHIP_DARK}
+                >
+                  <span style={{ fontSize: 22 }}>{c.flag}</span>
+                  <span style={{ color: "#fff" }}>{c.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Search bar */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={t("screens.onboarding.country_search_placeholder")}
+                value={countrySearch}
+                onChange={(e) => setCountrySearch(e.target.value)}
+                autoFocus
+                className="w-full rounded-2xl px-4 py-3.5 text-sm outline-none border"
+                style={{ ...INPUT_DARK, paddingLeft: "2.75rem" }}
+              />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.4)", fontSize: 16 }}>🔍</span>
+            </div>
+
+            {/* Search results */}
+            {countrySearch.trim().length > 0 && (
+              searchResults.length === 0 ? (
+                <p className="text-sm text-center py-4" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  {t("screens.onboarding.country_not_found")}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {searchResults.map((c) => (
+                    <button
+                      key={c.code}
+                      onClick={() => confirmCountry(c.code, c.name)}
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left"
+                      style={CHIP_DARK}
+                    >
+                      <span style={{ fontSize: 22 }}>{c.flag}</span>
+                      <span style={{ color: "#fff" }}>{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="min-h-dvh flex flex-col items-center justify-center gap-6 px-5"
+        style={{ background: BG }}
+      >
+        <AmyMascotLogo size={56} />
+
+        {isDetecting ? (
+          <div className="flex flex-col items-center gap-4">
+            <div
+              className="w-10 h-10 rounded-full border-2"
+              style={{
+                borderColor: "rgba(255,255,255,0.15)",
+                borderTopColor: "hsl(var(--brand-indigo-500))",
+                animation: "spin 0.9s linear infinite",
+              }}
+            />
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+              {t("screens.onboarding.country_detecting")}
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Detected card */}
+            <div
+              className="w-full max-w-sm rounded-3xl p-6 flex flex-col items-center gap-3"
+              style={{ background: GLASS_BG, border: GLASS_BORDER }}
+            >
+              <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>
+                {t("screens.onboarding.country_detected_in")}
+              </p>
+              <span style={{ fontSize: 56, lineHeight: 1 }}>{flag}</span>
+              <h2 className="text-2xl font-extrabold text-center" style={{ color: "#fff" }}>
+                {countryName}
+              </h2>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-3 w-full max-w-sm">
+              <button
+                onClick={() => confirmCountry(countryCode, countryName)}
+                className="w-full py-4 rounded-2xl font-bold text-base active:scale-95 transition-all"
+                style={{ background: GRAD, color: "#fff", boxShadow: "0 6px 24px rgba(99,102,241,0.4)" }}
+              >
+                {t("screens.onboarding.country_confirm_yes")}
+              </button>
+              <button
+                onClick={() => setShowCountryPicker(true)}
+                className="w-full py-3 text-sm font-semibold"
+                style={{ color: "rgba(255,255,255,0.65)", background: "none", border: "none" }}
+              >
+                {t("screens.onboarding.country_change")}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
   }
 
   // ─── Notifications step ─────────────────────────────────────────────────────
@@ -736,8 +1049,12 @@ export default function OnboardingPage() {
       }
 
       case "child-class": {
-        const classLabels = CLASS_KEYS.map((k) => t(`screens.onboarding.${k}`));
-        const selectedIdx = CLASS_VALUES.indexOf(selected);
+        const useSouthAsianSystem = ["IN", "PK", "BD", "LK", "NP"].includes(countryCode);
+        const classLabels = useSouthAsianSystem
+          ? CLASS_KEYS.map((k) => t(`screens.onboarding.${k}`))
+          : getClassSystem(countryCode).labels;
+        const classValues = useSouthAsianSystem ? CLASS_VALUES : getClassSystem(countryCode).values;
+        const selectedIdx = classValues.indexOf(selected);
         const selectedLabel = selectedIdx >= 0 ? classLabels[selectedIdx] : selected;
         return (
           <GridChips
@@ -745,7 +1062,7 @@ export default function OnboardingPage() {
             selected={selectedLabel}
             onSelect={(label) => {
               const idx = classLabels.indexOf(label);
-              const canonical = idx >= 0 ? CLASS_VALUES[idx] : label;
+              const canonical = idx >= 0 ? classValues[idx] : label;
               setSelected(canonical);
               setCurr((c) => ({ ...c, childClass: canonical }));
               const name = curr.name || t("screens.onboarding.default_child_name");
@@ -1013,26 +1330,37 @@ export default function OnboardingPage() {
         ];
         const opts = regionDrillDown ? indianOpts : globalOpts;
         return (
-          <div className="grid grid-cols-2 gap-2">
-            {opts.map((opt) => (
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              {opts.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    if (!regionDrillDown && opt.value === "indian") {
+                      setRegionDrillDown(true);
+                      setMessages((m) => [...m, { role: "amy", text: t("screens.onboarding.region_indian_drilldown") }]);
+                      return;
+                    }
+                    setRegionDrillDown(false);
+                    setParent((p) => ({ ...p, region: opt.value }));
+                    userReplies(opt.label, "parent-mobile", t("screens.onboarding.mobile_question"));
+                  }}
+                  className="py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
+                  style={CHIP_DARK}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {regionDrillDown && (
               <button
-                key={opt.value}
-                onClick={() => {
-                  if (!regionDrillDown && opt.value === "indian") {
-                    setRegionDrillDown(true);
-                    setMessages((m) => [...m, { role: "amy", text: t("screens.onboarding.region_indian_drilldown") }]);
-                    return;
-                  }
-                  setRegionDrillDown(false);
-                  setParent((p) => ({ ...p, region: opt.value }));
-                  userReplies(opt.label, "parent-mobile", t("screens.onboarding.mobile_question"));
-                }}
-                className="py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={CHIP_DARK}
+                onClick={() => setRegionDrillDown(false)}
+                className="text-xs self-center mt-1"
+                style={{ color: "rgba(255,255,255,0.55)" }}
               >
-                {opt.label}
+                {t("screens.onboarding.country_other_cuisines")}
               </button>
-            ))}
+            )}
           </div>
         );
       }
