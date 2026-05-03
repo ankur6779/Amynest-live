@@ -1721,7 +1721,7 @@
       "body": "Age-personalised tips, articles aur activities unlock karne ke liye apne bachhe ki profile add karein.",
       "cta": "Bachcha Add karein"
     },
-    "preview_tiles": {
+    "web_tiles_preview": {
       "life-skills": {
         "title": "🧭 Life Skills Mode",
         "description": "Aapke bachhe ki age ke hisaab se roz ke real-life skills"

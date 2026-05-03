@@ -1721,7 +1721,7 @@
       "body": "Add your child's profile to unlock age-personalised tips, articles, and activities.",
       "cta": "Add Child"
     },
-    "preview_tiles": {
+    "web_tiles_preview": {
       "life-skills": {
         "title": "🧭 Life Skills Mode",
         "description": "Daily real-life skills tailored to your child's age"
