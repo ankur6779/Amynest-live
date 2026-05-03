@@ -553,6 +553,7 @@ export default function HubScreen() {
               <Section
                 id="amy"
                 icon={<MaterialCommunityIcons name="brain" size={20} color="#fff" />}
+                emoji="🤖"
                 accent={[brand.primary, ACCENT_PINK]}
                 title={t("parent_hub.amy.title")}
                 desc={t("parent_hub.amy.desc")}
@@ -589,6 +590,7 @@ export default function HubScreen() {
               <Section
                 id="articles"
                 icon={<Ionicons name="book" size={20} color="#fff" />}
+                emoji="📚"
                 accent={[palette.emerald500, palette.emerald400]}
                 title={t("parent_hub.tiles.articles.title")}
                 desc={t("parent_hub.tiles.articles.desc")}
@@ -624,6 +626,7 @@ export default function HubScreen() {
               <Section
                 id="tips"
                 icon={<Ionicons name="sparkles" size={20} color="#fff" />}
+                emoji="💡"
                 accent={[brand.violet400, colors.light.primary]}
                 title={t("parent_hub.tiles.tips.title")}
                 desc={t("parent_hub.tiles.tips.desc")}
@@ -669,6 +672,7 @@ export default function HubScreen() {
               <Section
                 id="emotional"
                 icon={<Ionicons name="heart" size={20} color="#fff" />}
+                emoji="💖"
                 accent={[brand.pink400, ACCENT_PINK]}
                 title={t("parent_hub.emotional.title")}
                 desc={t("parent_hub.emotional.desc")}
@@ -718,7 +722,7 @@ export default function HubScreen() {
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <Ionicons name="clipboard" size={20} color="#fff" />
+                        <Text style={{ fontSize: 22 }}>📋</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -759,7 +763,7 @@ export default function HubScreen() {
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <Ionicons name="school" size={20} color="#fff" />
+                        <Text style={{ fontSize: 22 }}>🎓</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -800,7 +804,7 @@ export default function HubScreen() {
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <Ionicons name="sunny" size={20} color="#fff" />
+                        <Text style={{ fontSize: 22 }}>🌅</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -841,7 +845,7 @@ export default function HubScreen() {
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <Ionicons name="trophy" size={20} color="#fff" />
+                        <Text style={{ fontSize: 22 }}>🏆</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -935,7 +939,7 @@ export default function HubScreen() {
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <MaterialCommunityIcons name="food-apple" size={22} color="#fff" />
+                        <Text style={{ fontSize: 22 }}>🍎</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -968,7 +972,7 @@ export default function HubScreen() {
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <MaterialCommunityIcons name="food-apple-outline" size={22} color="#fff" />
+                        <Text style={{ fontSize: 22 }}>🥗</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.nutrition.title")}</Text>
@@ -1016,7 +1020,7 @@ export default function HubScreen() {
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <MaterialCommunityIcons name="party-popper" size={22} color="#fff" />
+                        <Text style={{ fontSize: 22 }}>🎉</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -1045,6 +1049,7 @@ export default function HubScreen() {
               <Section
                 id="activities"
                 icon={<Ionicons name="color-palette" size={20} color="#fff" />}
+                emoji="🎨"
                 accent={[brand.rose400, palette.amber500]}
                 title={t("parent_hub.tiles.activities.title")}
                 desc={t("parent_hub.tiles.activities.desc")}
@@ -1066,7 +1071,7 @@ export default function HubScreen() {
                     style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
                   >
                     <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                      <Ionicons name="game-controller" size={20} color="#fff" />
+                      <Text style={{ fontSize: 22 }}>🎮</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.gaming_reward.title")}</Text>
@@ -1087,7 +1092,7 @@ export default function HubScreen() {
                     style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
                   >
                     <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                      <Ionicons name="gift" size={20} color="#fff" />
+                      <Text style={{ fontSize: 22 }}>🎁</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.rewards_shop.title")}</Text>
@@ -1108,7 +1113,7 @@ export default function HubScreen() {
                     style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
                   >
                     <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                      <Ionicons name="headset" size={20} color="#fff" />
+                      <Text style={{ fontSize: 22 }}>🎧</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.audio_lessons.title")}</Text>
@@ -1146,7 +1151,7 @@ export default function HubScreen() {
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <Ionicons name="film" size={22} color="#fff" />
+                        <Text style={{ fontSize: 22 }}>🎬</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -1171,6 +1176,7 @@ export default function HubScreen() {
               <Section
                 id="art-craft"
                 icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
+                emoji="🖌️"
                 accent={[brand.pink400, brand.purple500]}
                 title={t("parent_hub.tiles.art-craft.title")}
                 desc={t("parent_hub.tiles.art-craft.desc")}
@@ -1190,6 +1196,7 @@ export default function HubScreen() {
               <Section
                 id="worksheets"
                 icon={<MaterialCommunityIcons name="file-document-outline" size={20} color="#fff" />}
+                emoji="📄"
                 accent={[palette.sky500, palette.indigo500]}
                 title={t("parent_hub.tiles.worksheets.title")}
                 desc={t("parent_hub.tiles.worksheets.desc")}
@@ -1209,6 +1216,7 @@ export default function HubScreen() {
               <Section
                 id="facts"
                 icon={<Ionicons name="sparkles" size={20} color="#fff" />}
+                emoji="✨"
                 accent={[palette.amber500, brand.rose400]}
                 title={t("parent_hub.tiles.facts.title")}
                 desc={t("parent_hub.tiles.facts.desc")}
@@ -1237,6 +1245,7 @@ export default function HubScreen() {
                   <Section
                     id="life-skills"
                     icon={<Ionicons name="compass" size={20} color="#fff" />}
+                    emoji="🧭"
                     accent={[palette.emerald500, palette.emerald400]}
                     title={t("parent_hub.tiles.life-skills.title")}
                     desc={t("parent_hub.tiles.life-skills.desc")}
@@ -1263,6 +1272,7 @@ export default function HubScreen() {
               <Section
                 id="meal-suggestions"
                 icon={<MaterialCommunityIcons name="food" size={20} color="#fff" />}
+                emoji="🍱"
                 accent={[palette.emerald500, palette.lime500]}
                 title={t("parent_hub.tiles.meal-suggestions.title")}
                 desc={t("parent_hub.tiles.meal-suggestions.desc")}
@@ -1289,6 +1299,7 @@ export default function HubScreen() {
               <Section
                 id="smart-math-tricks"
                 icon={<MaterialCommunityIcons name="calculator-variant" size={20} color="#fff" />}
+                emoji="🧮"
                 accent={[brand.violet600, palette.amber500]}
                 title={t("parent_hub.tiles.smart-math-tricks.title")}
                 desc={t("parent_hub.tiles.smart-math-tricks.desc")}
@@ -1319,6 +1330,7 @@ export default function HubScreen() {
               <Section
                 id="abacus"
                 icon={<MaterialCommunityIcons name="abacus" size={20} color="#fff" />}
+                emoji="🔢"
                 accent={[palette.amber500, palette.rose500]}
                 title={t("screens.tabs_hub.abacus_pro_zone")} // audit-ok: brand product name, intentional EN-only
                 desc="Learn the soroban — beads, brain & speed math"
@@ -1353,6 +1365,7 @@ export default function HubScreen() {
               <Section
                 id="coloring-books"
                 icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
+                emoji="🖍️"
                 accent={[brand.pink500, palette.amber500]}
                 title={t("parent_hub.tiles.coloring-books.title")}
                 desc={t("parent_hub.tiles.coloring-books.desc")}
@@ -1383,6 +1396,7 @@ export default function HubScreen() {
               <Section
                 id="fun-sheets"
                 icon={<MaterialCommunityIcons name="file-document-edit" size={20} color="#fff" />}
+                emoji="✏️"
                 accent={[palette.teal600, palette.emerald500]}
                 title={t("parent_hub.tiles.fun-sheets.title")}
                 desc={t("parent_hub.tiles.fun-sheets.desc")}
@@ -1414,6 +1428,7 @@ export default function HubScreen() {
                 <Section
                   id="skills-focus"
                   icon={<Ionicons name="bulb" size={20} color="#fff" />}
+                  emoji="🌟"
                   accent={[brand.purple500, brand.pink500]}
                   title={t("parent_hub.tiles.skills-focus.title")}
                   desc={t("parent_hub.tiles.skills-focus.desc")}
@@ -1435,6 +1450,7 @@ export default function HubScreen() {
                 <Section
                   id="daily-story"
                   icon={<Ionicons name="book" size={20} color="#fff" />}
+                  emoji="📖"
                   accent={[palette.amber500, brand.pink400]}
                   title={t("parent_hub.tiles.daily-story.title")}
                   desc={t("parent_hub.tiles.daily-story.desc")}
@@ -1456,6 +1472,7 @@ export default function HubScreen() {
                 <Section
                   id="daily-puzzle"
                   icon={<Ionicons name="extension-puzzle" size={20} color="#fff" />}
+                  emoji="🧩"
                   accent={[palette.indigo500, brand.purple500]}
                   title={t("parent_hub.tiles.daily-puzzle.title")}
                   desc={t("parent_hub.tiles.daily-puzzle.desc")}
@@ -2156,10 +2173,15 @@ function ExploreNextStageBlock({
 }
 
 function Section({
-  id, icon, accent, title, desc, open, onToggle, onOpen, tryFree = false, children,
+  id, icon, emoji, accent, title, desc, open, onToggle, onOpen, tryFree = false, children,
 }: {
   id: string;
   icon: React.ReactNode;
+  /** Optional emoji rendered inside the gradient icon box. When provided,
+   *  it replaces the `icon` prop entirely. Used to make every tile
+   *  visually distinct and avoid blank squares on platforms where the
+   *  vector-icons font fails to load (e.g. some Android WebView builds). */
+  emoji?: string;
   accent: [string, string];
   title: string;
   desc: string;
@@ -2196,7 +2218,7 @@ function Section({
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.sectionIcon}
         >
-          {icon}
+          {emoji ? <Text style={{ fontSize: 24 }}>{emoji}</Text> : icon}
         </LinearGradient>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
