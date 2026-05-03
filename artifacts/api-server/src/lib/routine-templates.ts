@@ -1199,7 +1199,10 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
   const findIdx = (pred: (it: ScheduleItem) => boolean): number => out.findIndex(pred);
 
   // 1. Breakfast handling
-  const bfIdx = findIdx((it) => /^breakfast$/i.test(it.activity));
+  // Match common AI variants like "Family Breakfast", "Light Breakfast",
+  // "Breakfast Time", or just "Breakfast". Guarded by category === "meal" so
+  // we don't accidentally retime non-meal blocks that happen to mention the word.
+  const bfIdx = findIdx((it) => /\bbreakfast\b/i.test(it.activity) && (it.category ?? "").toLowerCase() === "meal");
   if (bfIdx !== -1) {
     const bf = out[bfIdx];
     if (hasSchool) {
@@ -1244,7 +1247,9 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
   }
 
   // 3. Lunch handling
-  const lunchIdx = findIdx((it) => /^lunch$/i.test(it.activity));
+  // Match "Family Lunch", "Light Lunch", "Lunch Time", etc. Category guard
+  // prevents matching school/tiffin items like "School lunch / tiffin".
+  const lunchIdx = findIdx((it) => /\blunch\b/i.test(it.activity) && (it.category ?? "").toLowerCase() === "meal");
   if (lunchIdx !== -1) {
     const lunch = out[lunchIdx];
     if (hasSchool && (ageGroup === "preschool" || ageGroup === "early_school" || ageGroup === "pre_teen")) {
@@ -1269,7 +1274,7 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
   // 4. Drunch (5–6 PM) — guarantee one block in the 17:00–18:00 window every
   // day. First, try to upgrade an existing afternoon snack; otherwise, insert
   // a new Drunch block.
-  const drunchIdx = findIdx((it) => /(^drunch$|afternoon snack|after-school snack|mid-morning snack|post-school snack|evening snack)/i.test(it.activity));
+  const drunchIdx = findIdx((it) => /(\bdrunch\b|afternoon snack|after-school snack|mid-morning snack|post-school snack|evening snack)/i.test(it.activity) && (it.category ?? "").toLowerCase() === "meal");
   if (drunchIdx !== -1) {
     const it = out[drunchIdx];
     it.activity = "Drunch";
@@ -1291,8 +1296,10 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
     });
   }
 
-  // 5. Dinner — anchor 20:00–21:00 if currently outside that band
-  const dinIdx = findIdx((it) => /^dinner$/i.test(it.activity));
+  // 5. Dinner — anchor 20:00–21:00 if currently outside that band.
+  // Match "Family Dinner", "Early Dinner", "Light Dinner", "Dinner Time", etc.
+  // Category guard prevents matching unrelated activities that mention dinner.
+  const dinIdx = findIdx((it) => /\bdinner\b/i.test(it.activity) && (it.category ?? "").toLowerCase() === "meal");
   if (dinIdx !== -1) {
     const din = out[dinIdx];
     const t = clamp(timeToMins(din.time), 20 * 60, 21 * 60);

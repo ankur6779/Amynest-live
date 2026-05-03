@@ -104,6 +104,29 @@ function nonSchoolItems() {
   ];
 }
 
+/**
+ * Non-school-day fixture where the AI uses descriptive meal names instead of
+ * the bare canonical labels — e.g. "Family Dinner", "Light Breakfast",
+ * "Family Lunch". The anchor regexes must still match these and re-anchor
+ * meals into the correct windows; otherwise the AI's bad times survive
+ * (this was the bug behind "Dinner showing at 5 PM").
+ */
+function nonSchoolDescriptiveMealItems() {
+  return [
+    { time: "07:00", activity: "Wake up", duration: 20, category: "hygiene" },
+    { time: "07:20", activity: "Light Breakfast", duration: 30, category: "meal" },
+    { time: "10:00", activity: "Outdoor Play", duration: 60, category: "play" },
+    { time: "11:00", activity: "Creative Art", duration: 45, category: "play" },
+    { time: "11:45", activity: "Family Lunch", duration: 30, category: "meal" },
+    { time: "12:15", activity: "Board Game Night", duration: 60, category: "play" },
+    { time: "13:15", activity: "Afternoon Snack", duration: 25, category: "meal" },
+    { time: "13:40", activity: "Reading for Pleasure", duration: 30, category: "study" },
+    { time: "17:00", activity: "Family Dinner", duration: 30, category: "meal" },
+    { time: "17:30", activity: "Story Time", duration: 30, category: "study" },
+    { time: "21:00", activity: "Bedtime", duration: 30, category: "sleep" },
+  ];
+}
+
 /** School day where AI also includes a tiffin slot inside the school window. */
 function schoolDayWithTiffinItems() {
   return [
@@ -485,6 +508,58 @@ describe("generateAiRoutine — meal-slot anchoring (school day)", () => {
     assert.ok(n.protein, "nutrition.protein should be set");
     assert.ok(n.carbs, "nutrition.carbs should be set");
     assert.ok(n.fat, "nutrition.fat should be set");
+  });
+});
+
+// ─── Meal-slot anchoring: descriptive AI labels ───────────────────────────
+// Regression: the AI often returns "Family Dinner", "Light Breakfast",
+// "Family Lunch" instead of the bare canonical names. The anchor regexes
+// must still match (matched as a whole word) so meals land in their windows.
+// Without this, dinner stayed at the AI's 17:00 slot — what the user reported
+// as "dinner showing at 5 PM in the routine preview".
+describe("generateAiRoutine — meal-slot anchoring (descriptive labels)", () => {
+  async function descriptiveResult() {
+    return generateAiRoutine({
+      ...BASE,
+      hasSchool: false,
+      openaiClient: makeMockOpenai({
+        title: "Weekend with Family Meals",
+        items: nonSchoolDescriptiveMealItems(),
+      }),
+    });
+  }
+
+  it("re-anchors 'Family Dinner' (not just 'Dinner') into 20:00–21:00", async () => {
+    const result = await descriptiveResult();
+    const dinner = result.items.find((i) => /\bdinner\b/i.test(i.activity));
+    assert.ok(dinner !== undefined, "A dinner block should be present");
+    const t = toMins(dinner.time);
+    assert.ok(
+      t >= 20 * 60 && t <= 21 * 60,
+      `'${dinner.activity}' should be anchored 20:00–21:00, got "${dinner.time}"`,
+    );
+  });
+
+  it("re-anchors 'Light Breakfast' into 08:00–09:00", async () => {
+    const result = await descriptiveResult();
+    const bf = result.items.find((i) => /\bbreakfast\b/i.test(i.activity));
+    assert.ok(bf !== undefined, "A breakfast block should be present");
+    const t = toMins(bf.time);
+    assert.ok(
+      t >= 8 * 60 && t <= 9 * 60,
+      `'${bf.activity}' should be anchored 08:00–09:00, got "${bf.time}"`,
+    );
+  });
+
+  it("re-anchors 'Family Lunch' into 13:30–14:30", async () => {
+    const result = await descriptiveResult();
+    const lunch = result.items.find((i) => /\blunch\b/i.test(i.activity));
+    assert.ok(lunch !== undefined, "A lunch block should be present");
+    const t = toMins(lunch.time);
+    assert.ok(
+      t >= 13 * 60 + 30 && t <= 14 * 60 + 30,
+      `'${lunch.activity}' should be anchored 13:30–14:30, got "${lunch.time}"`,
+    );
   });
 });
 
