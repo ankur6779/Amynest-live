@@ -1173,7 +1173,17 @@
       "class_3": "3rd",
       "class_4": "4th",
       "class_5": "5th",
-      "class_6plus": "6th+"
+      "class_6plus": "6th+",
+      "country_transition_msg": "First, let me personalize Amy for your location 🌍",
+      "child_name_after_country": "Now, what's your child's name?",
+      "country_detecting": "Detecting your location…",
+      "country_detected_in": "We think you're in",
+      "country_confirm_yes": "Yes, that's right ✓",
+      "country_change": "Change country",
+      "country_pick_popular": "Popular countries",
+      "country_search_placeholder": "Search your country…",
+      "country_not_found": "No country found",
+      "country_other_cuisines": "🌍 Show other cuisines"
     },
     "abacus": {
       "loading": "Loading abacus…",
