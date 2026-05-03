@@ -1183,7 +1183,22 @@
       "country_pick_popular": "लोकप्रिय देश",
       "country_search_placeholder": "अपना देश खोजें…",
       "country_not_found": "कोई देश नहीं मिला",
-      "country_other_cuisines": "🌍 अन्य cuisines देखें"
+      "country_other_cuisines": "🌍 अन्य cuisines देखें",
+      "region_recommended": "अनुशंसित",
+      "region_max_reached": "अधिकतम 3 cuisines चुने",
+      "region_western_sub": "Pasta, salads, sandwiches",
+      "region_asian_sub": "Stir fry, noodles, sushi",
+      "region_middle_eastern_sub": "Hummus, grills, pita",
+      "region_vegetarian_sub": "Salads, legumes, whole grains",
+      "region_mixed_sub": "दुनिया भर की variety",
+      "region_indian_sub": "दाल, रोटी, घर का खाना",
+      "region_north_sub": "दाल, रोटी, पनीर, सब्ज़ी",
+      "region_south_sub": "इडली, डोसा, सांभर, चावल",
+      "region_gujarati_sub": "थाली, ढोकला, मीठा-हल्का",
+      "region_maharashtrian_sub": "वरण, अमटी, मिसल पाव",
+      "region_punjabi_sub": "बटर चिकन, पराठा, लस्सी",
+      "region_bengali_sub": "मछली, चावल, सरसों की ग्रेवी",
+      "region_pan_indian_sub": "विविध क्षेत्रीय घर का खाना"
     },
     "abacus": {
       "loading": "अबेकस लोड हो रहा है…",

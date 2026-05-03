@@ -1183,7 +1183,22 @@
       "country_pick_popular": "Popular countries",
       "country_search_placeholder": "Apna country search karein…",
       "country_not_found": "Koi country nahi mili",
-      "country_other_cuisines": "🌍 Aur cuisines dekhein"
+      "country_other_cuisines": "🌍 Aur cuisines dekhein",
+      "region_recommended": "Recommended",
+      "region_max_reached": "Max 3 cuisines select ho gaye",
+      "region_western_sub": "Pasta, salads, sandwiches",
+      "region_asian_sub": "Stir fry, noodles, sushi",
+      "region_middle_eastern_sub": "Hummus, grills, pita",
+      "region_vegetarian_sub": "Salads, legumes, whole grains",
+      "region_mixed_sub": "Duniya bhar ki variety",
+      "region_indian_sub": "Dal, roti, ghar ka khana",
+      "region_north_sub": "Dal, roti, paneer, sabzi",
+      "region_south_sub": "Idli, dosa, sambar, chawal",
+      "region_gujarati_sub": "Thali, dhokla, meetha-halka",
+      "region_maharashtrian_sub": "Varan, amti, misal pav",
+      "region_punjabi_sub": "Butter chicken, paratha, lassi",
+      "region_bengali_sub": "Maachh, chawal, sarson ki gravy",
+      "region_pan_indian_sub": "Varied regional ghar ka khana"
     },
     "abacus": {
       "loading": "Abacus load ho raha hai…",
