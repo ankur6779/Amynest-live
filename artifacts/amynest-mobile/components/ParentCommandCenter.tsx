@@ -711,6 +711,12 @@ function CommandCenterDashboard(props: DashboardProps) {
           />
         )}
 
+        {/* Smart Study learning insights — shows the parent the same signals
+            the adaptive engine uses (weak topics, 7-day accuracy per subject,
+            yesterday's plan completion) so they understand *why* the daily
+            plan looks the way it does. */}
+        <LearningInsightsSection childId={child.id} />
+
         {/* Insights footer */}
         {insights.length > 0 && (
           <View style={{ gap: 8 }}>
@@ -1125,6 +1131,184 @@ function TimedActivityPanel({
     </View>
   );
 }
+
+// ─── Learning insights ───────────────────────────────────────────────────
+//
+// Reads /api/smart-study/insights for the child and shows the parent the
+// signals the adaptive Smart Study engine uses under the hood: weak topics,
+// rolling 7-day accuracy per subject, and yesterday's adaptive plan
+// completion. Mirrors the web Parent Command Center section.
+type SmartStudyInsightsResponse = {
+  childId: number;
+  childName: string;
+  mode: "play" | "basic" | "advanced";
+  hasData: boolean;
+  subjects: Array<{
+    subject: string;
+    subjectTitle: string;
+    subjectEmoji: string;
+    accuracyPct: number | null;
+    sampleSize: number;
+    weakTopics: Array<{ topicId: string; topicTitle: string }>;
+  }>;
+  yesterday: {
+    date: string;
+    planSize: number;
+    doneCount: number;
+    completionPct: number;
+  } | null;
+};
+
+function LearningInsightsSection({ childId }: { childId: number }) {
+  const authFetch = useAuthFetch();
+  const { data, isLoading } = useQuery<SmartStudyInsightsResponse>({
+    queryKey: ["smart-study-insights", childId],
+    queryFn: async () => {
+      const r = await authFetch(`/api/smart-study/insights?childId=${childId}`);
+      if (!r.ok) throw new Error(`insights ${r.status}`);
+      return r.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    return (
+      <View style={li.section} testID="learning-insights-loading">
+        <Text style={d.sectionTitle}>LEARNING INSIGHTS</Text>
+        <Text style={li.empty}>Loading…</Text>
+      </View>
+    );
+  }
+  if (!data || data.mode === "play") return null;
+  if (!data.hasData) {
+    return (
+      <View style={li.section} testID="learning-insights-empty">
+        <Text style={d.sectionTitle}>LEARNING INSIGHTS</Text>
+        <Text style={li.empty}>
+          {data.childName} hasn't tried Smart Study yet. Once they answer a
+          few questions you'll see weak topics and accuracy trends here.
+        </Text>
+      </View>
+    );
+  }
+
+  const subjectsWithSignal = data.subjects.filter(
+    (s) => s.sampleSize > 0 || s.weakTopics.length > 0,
+  );
+  const y = data.yesterday;
+
+  return (
+    <View style={li.section} testID="learning-insights">
+      <View style={d.sectionHead}>
+        <Text style={d.sectionTitle}>LEARNING INSIGHTS</Text>
+        {y && y.planSize > 0 ? (
+          <Text style={li.yesterday} testID="learning-insights-yesterday">
+            Yesterday: {y.doneCount}/{y.planSize} ({y.completionPct}%)
+          </Text>
+        ) : null}
+      </View>
+      {subjectsWithSignal.length === 0 ? (
+        <Text style={li.empty}>
+          Not enough activity yet to spot weak topics. A couple of Smart
+          Study sessions this week will unlock trends.
+        </Text>
+      ) : (
+        <View style={{ gap: 8 }}>
+          {subjectsWithSignal.map((s) => {
+            const acc = s.accuracyPct;
+            const accColor =
+              acc == null
+                ? "rgba(255,255,255,0.65)"
+                : acc >= 80
+                ? palette.emerald400
+                : acc < 60
+                ? palette.rose400
+                : palette.amber400;
+            return (
+              <View
+                key={s.subject}
+                style={li.row}
+                testID={`learning-insights-subject-${s.subject}`}
+              >
+                <View style={li.rowHead}>
+                  <Text style={li.subjectTitle} numberOfLines={1}>
+                    {s.subjectEmoji} {s.subjectTitle}
+                  </Text>
+                  <Text style={[li.accuracy, { color: accColor }]}>
+                    {acc == null ? "— %" : `${acc}%`}
+                  </Text>
+                </View>
+                <Text style={li.meta}>
+                  {s.sampleSize > 0
+                    ? `Last 7 days · ${s.sampleSize} attempt${s.sampleSize === 1 ? "" : "s"}`
+                    : "Last 7 days · no attempts yet"}
+                </Text>
+                {s.weakTopics.length > 0 ? (
+                  <View style={li.chipRow}>
+                    {s.weakTopics.map((w) => (
+                      <Text key={w.topicId} style={li.chip}>
+                        {w.topicTitle}
+                      </Text>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const li = StyleSheet.create({
+  section: {
+    borderRadius: 20,
+    padding: 14,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderWidth: 1,
+    borderColor: "rgba(168,85,247,0.22)",
+    gap: 10,
+  },
+  yesterday: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "rgba(245,243,255,0.9)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+    overflow: "hidden",
+  },
+  empty: { fontSize: 12, color: "rgba(196,181,253,0.85)", lineHeight: 17 },
+  row: {
+    borderRadius: 14,
+    padding: 11,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+    gap: 4,
+  },
+  rowHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  subjectTitle: { flex: 1, fontSize: 13, fontWeight: "900", color: "#fff" },
+  accuracy: { fontSize: 12, fontWeight: "900", fontVariant: ["tabular-nums"] },
+  meta: { fontSize: 10.5, color: "rgba(196,181,253,0.7)" },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
+  chip: {
+    fontSize: 10.5,
+    fontWeight: "800",
+    color: palette.rose200,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(244,63,94,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(251,113,133,0.35)",
+    overflow: "hidden",
+  },
+});
 
 function Confetti() {
   // Tiny burst — 12 dots with random translations. Pure RN, no extra dep.

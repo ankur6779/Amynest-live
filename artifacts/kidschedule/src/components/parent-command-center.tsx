@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
-import { useListRoutines, useGetDashboardSummary, useUpdateRoutineItems, useCreateBehaviorLog, getListRoutinesQueryKey, type RoutineItem } from "@workspace/api-client-react";
+import { useListRoutines, useGetDashboardSummary, useUpdateRoutineItems, useCreateBehaviorLog, useGetSmartStudyInsights, getListRoutinesQueryKey, type RoutineItem } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { computeCommandCenter, pickPlayIdeas, type AdaptiveItem, type AdaptiveMood, type AdaptiveSleepQuality, type CommandActionId, type CommandSuggestion, type PlayIdea } from "@workspace/family-routine";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -680,6 +680,12 @@ function CommandCenterDashboard(props: DashboardProps) {
           "Try a 10-min play" suggestion chip with 3 tap-to-start ideas. */}
       {activePanel === "play-picker" && <PlayPickerPanel ideas={playIdeas} onPick={pickPlayIdea} onClose={() => setActivePanel(null)} />}
 
+      {/* Smart Study learning insights — surfaces *why* tomorrow's adaptive
+          plan looks the way it does (weak topics, 7-day accuracy per
+          subject, yesterday's plan completion). Powered by the same
+          child_learning_progress table the Smart Study engine reads. */}
+      <LearningInsightsSection childId={child.id} />
+
       {/* Insights summary footer */}
       {insights.length > 0 && <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {insights.map((ins, i) => {
@@ -717,6 +723,119 @@ function CommandCenterDashboard(props: DashboardProps) {
       {/* Re-trigger keyframes when shakeKey changes by mounting + auto-removing */}
       {shakeKey > 0 && <ShakeOverlay key={shakeKey} />}
     </div>;
+}
+
+// ─── Learning insights ───────────────────────────────────────────────────
+//
+// Reads /api/smart-study/insights for the child and shows the parent the
+// signals the adaptive Smart Study engine uses under the hood: weak topics
+// (so they know what to revise with the child), rolling 7-day accuracy per
+// subject (so they can spot a slipping subject), and yesterday's adaptive
+// plan completion (so they can see whether the child actually used it).
+function LearningInsightsSection({ childId }: { childId: number }) {
+  const { data, isLoading } = useGetSmartStudyInsights({ childId });
+
+  if (isLoading) {
+    return (
+      <section data-testid="learning-insights-loading" className="rounded-3xl border border-border bg-primary/[0.04] p-4 sm:p-5">
+        <div className="h-4 w-40 rounded bg-white/10 animate-pulse" />
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="h-16 rounded-2xl bg-white/5 animate-pulse" />
+          <div className="h-16 rounded-2xl bg-white/5 animate-pulse" />
+        </div>
+      </section>
+    );
+  }
+  if (!data || data.mode === "play") return null;
+  if (!data.hasData) {
+    return (
+      <section data-testid="learning-insights-empty" className="rounded-3xl border border-border bg-primary/[0.04] p-4 sm:p-5">
+        <h3 className="text-sm font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <BookOpen className="h-3.5 w-3.5" /> Learning insights
+        </h3>
+        <p className="mt-2 text-[12.5px] text-white/70 leading-snug">
+          {data.childName} hasn't tried Smart Study yet. Once they answer a few
+          questions, you'll see weak topics and accuracy trends here.
+        </p>
+      </section>
+    );
+  }
+
+  const subjectsWithSignal = data.subjects.filter(
+    (s) => s.sampleSize > 0 || s.weakTopics.length > 0,
+  );
+  const yesterday = data.yesterday;
+
+  return (
+    <section data-testid="learning-insights" className="rounded-3xl border border-border bg-primary/[0.04] p-4 sm:p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <BookOpen className="h-3.5 w-3.5" /> Learning insights
+        </h3>
+        {yesterday && yesterday.planSize > 0 && (
+          <span
+            data-testid="learning-insights-yesterday"
+            className="text-[11px] text-white/80 font-bold rounded-full px-2.5 py-1 bg-white/5 border border-white/10"
+          >
+            Yesterday: {yesterday.doneCount}/{yesterday.planSize} ({yesterday.completionPct}%)
+          </span>
+        )}
+      </div>
+      {subjectsWithSignal.length === 0 ? (
+        <p className="text-[12.5px] text-white/70 leading-snug">
+          Not enough activity yet to spot weak topics. Encourage a couple of
+          Smart Study sessions this week to unlock trends.
+        </p>
+      ) : (
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {subjectsWithSignal.map((s) => {
+            const acc = s.accuracyPct;
+            const tone =
+              acc == null
+                ? "text-white/70"
+                : acc >= 80
+                ? "text-emerald-300"
+                : acc < 60
+                ? "text-rose-300"
+                : "text-amber-300";
+            return (
+              <li
+                key={s.subject}
+                data-testid={`learning-insights-subject-${s.subject}`}
+                className="rounded-2xl border border-white/10 bg-white/5 p-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[13px] font-black text-white truncate">
+                    <span aria-hidden>{s.subjectEmoji}</span> {s.subjectTitle}
+                  </p>
+                  <span className={`text-[12px] font-black tabular-nums ${tone}`}>
+                    {acc == null ? "— %" : `${acc}%`}
+                  </span>
+                </div>
+                <p className="text-[10.5px] text-white/60 mt-0.5">
+                  {s.sampleSize > 0
+                    ? `Last 7 days · ${s.sampleSize} attempt${s.sampleSize === 1 ? "" : "s"}`
+                    : "Last 7 days · no attempts yet"}
+                </p>
+                {s.weakTopics.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {s.weakTopics.map((w) => (
+                      <span
+                        key={w.topicId}
+                        className="text-[10.5px] font-bold rounded-full px-2 py-0.5 bg-rose-500/15 text-rose-200 border border-rose-400/20"
+                      >
+                        {w.topicTitle}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
 }
 
 // ─── Subcomponents ───────────────────────────────────────────────────────

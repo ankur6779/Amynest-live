@@ -1086,6 +1086,50 @@ export const GetLifeSkillRolePlaysResponse = zod.array(
 );
 
 /**
+ * @summary Get parent-facing Smart Study insights for a child
+ */
+export const GetSmartStudyInsightsQueryParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const GetSmartStudyInsightsResponse = zod.object({
+  childId: zod.number(),
+  childName: zod.string(),
+  mode: zod.enum(["play", "basic", "advanced"]),
+  hasData: zod.boolean(),
+  subjects: zod.array(
+    zod.object({
+      subject: zod.string(),
+      subjectTitle: zod.string(),
+      subjectEmoji: zod.string(),
+      accuracyPct: zod
+        .number()
+        .nullish()
+        .describe(
+          "Rolling 7-day accuracy percentage. Null when no in-window attempts.",
+        ),
+      sampleSize: zod
+        .number()
+        .describe("Number of attempts that contributed to accuracyPct."),
+      weakTopics: zod.array(
+        zod.object({
+          topicId: zod.string(),
+          topicTitle: zod.string(),
+        }),
+      ),
+    }),
+  ),
+  yesterday: zod
+    .object({
+      date: zod.string(),
+      planSize: zod.number(),
+      doneCount: zod.number(),
+      completionPct: zod.number(),
+    })
+    .nullish(),
+});
+
+/**
  * @summary Get behavior stats per child
  */
 export const GetBehaviorStatsResponseItem = zod.object({
