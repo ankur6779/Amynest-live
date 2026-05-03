@@ -268,11 +268,11 @@ export function SmartMathTricks({
           { key: "today", label: "Today", icon: "✨" },
           { key: "learn", label: "Learn All", icon: "📚" },
           { key: "practice", label: "Practice", icon: "🎯" },
-        ] as { key: Tab; label: string; icon: string }[]).map(t => {
-          const active = tab === t.key;
+        ] as { key: Tab; label: string; icon: string }[]).map(item => {
+          const active = tab === item.key;
           return (
-            <Pressable key={t.key} onPress={() => setTab(t.key)} style={[styles.tab, active && styles.tabActive]}>
-              <Text style={[styles.tabText, active && styles.tabTextActive]}>{t.icon} {t.label}</Text>
+            <Pressable key={item.key} onPress={() => setTab(item.key)} style={[styles.tab, active && styles.tabActive]}>
+              <Text style={[styles.tabText, active && styles.tabTextActive]}>{item.icon} {item.label}</Text>
             </Pressable>
           );
         })}
@@ -301,6 +301,7 @@ function TrickCard({
   onToggle(): void;
   showPractice?: boolean;
 }) {
+  const { t } = useTranslation();
   const c = useColors();
   const styles = useMemo(() => makeStyles(c), [c]);
   const { speak, stop, speaking, loading } = useAmyVoice();
@@ -425,6 +426,7 @@ function TrickCard({
 function TodayTab({ pool, childName, starIds, seenIds, onStar }: {
   pool: MathTrick[]; childName: string; starIds: string[]; seenIds: string[]; onStar(id: string): void;
 }) {
+  const { t } = useTranslation();
   const c = useColors();
   const styles = useMemo(() => makeStyles(c), [c]);
   const todayTricks = useMemo(() => pickTodayTricks(pool, childName, seenIds), [pool, childName, seenIds]);
@@ -433,14 +435,14 @@ function TodayTab({ pool, childName, starIds, seenIds, onStar }: {
   return (
     <View style={{ gap: 8 }}>
       <Text style={styles.tabHint}>{t("components.smart_math_tricks.2_new_tricks_every_day")}</Text>
-      {todayTricks.map(t => (
+      {todayTricks.map(tr => (
         <TrickCard
-          key={t.id}
-          trick={t}
-          starred={starIds.includes(t.id)}
-          onStar={() => onStar(t.id)}
-          expanded={expanded === t.id}
-          onToggle={() => setExpanded(prev => prev === t.id ? null : t.id)}
+          key={tr.id}
+          trick={tr}
+          starred={starIds.includes(tr.id)}
+          onStar={() => onStar(tr.id)}
+          expanded={expanded === tr.id}
+          onToggle={() => setExpanded(prev => prev === tr.id ? null : tr.id)}
           showPractice
         />
       ))}
@@ -455,7 +457,7 @@ function LearnAllTab({ pool, starIds, onStar }: {
   const c = useColors();
   const styles = useMemo(() => makeStyles(c), [c]);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const mastered = pool.filter(t => starIds.includes(t.id)).length;
+  const mastered = pool.filter(tr => starIds.includes(tr.id)).length;
 
   return (
     <View style={{ gap: 8 }}>
@@ -463,14 +465,14 @@ function LearnAllTab({ pool, starIds, onStar }: {
         <Text style={styles.tabHint}>{pool.length} tricks in your level</Text>
         <Text style={[styles.tabHint, { color: palette.amber400, fontWeight: "700" }]}>⭐ {mastered}/{pool.length} mastered</Text>
       </View>
-      {pool.map(t => (
+      {pool.map(tr => (
         <TrickCard
-          key={t.id}
-          trick={t}
-          starred={starIds.includes(t.id)}
-          onStar={() => onStar(t.id)}
-          expanded={expanded === t.id}
-          onToggle={() => setExpanded(prev => prev === t.id ? null : t.id)}
+          key={tr.id}
+          trick={tr}
+          starred={starIds.includes(tr.id)}
+          onStar={() => onStar(tr.id)}
+          expanded={expanded === tr.id}
+          onToggle={() => setExpanded(prev => prev === tr.id ? null : tr.id)}
           showPractice
         />
       ))}
@@ -481,6 +483,7 @@ function LearnAllTab({ pool, starIds, onStar }: {
 function PracticeTab({ pool, childName, onStar }: {
   pool: MathTrick[]; childName: string; onStar(id: string): void;
 }) {
+  const { t } = useTranslation();
   const c = useColors();
   const styles = useMemo(() => makeStyles(c), [c]);
   const SESSION_SIZE = Math.min(5, pool.length);
