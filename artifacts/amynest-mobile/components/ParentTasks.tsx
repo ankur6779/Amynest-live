@@ -47,6 +47,7 @@ export function ParentTasks({
   ageMonths?: number;
   childName?: string;
 }) {
+  const { t } = useTranslation();
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
   const authFetch = useAuthFetch();
@@ -68,7 +69,6 @@ export function ParentTasks({
         `/api/parent-tasks?childId=${childId}&date=${dateStr}`,
       );
       if (!r.ok) return [];
-      const { t } = useTranslation();
       return (await r.json()) as Completion[];
     },
     staleTime: 60 * 1000,

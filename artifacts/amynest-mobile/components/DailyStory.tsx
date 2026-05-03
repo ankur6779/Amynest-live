@@ -20,6 +20,7 @@ const CAT_LABEL: Record<Story["category"], string> = {
 };
 
 export function DailyStory({ ageMonths = 36 }: { ageMonths?: number }) {
+  const { t } = useTranslation();
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
   const pool = useMemo(() => getDailyStoryPool(ageMonths), [ageMonths]);
@@ -27,7 +28,6 @@ export function DailyStory({ ageMonths = 36 }: { ageMonths?: number }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (pool.length === 0) {
-    const { t } = useTranslation();
     return (
       <Text style={s.dim}>
         No stories available yet for this age. Try the Story Hub for video stories.

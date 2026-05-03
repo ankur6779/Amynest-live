@@ -91,6 +91,7 @@ const CATEGORY_LABEL: Record<FactCategory | "all", string> = {
 };
 
 export function AmazingFacts({ ageMonths = 60 }: { ageMonths?: number }) {
+  const { t } = useTranslation();
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
 
@@ -107,7 +108,6 @@ export function AmazingFacts({ ageMonths = 60 }: { ageMonths?: number }) {
   useEffect(() => { setIdx(0); }, [category, ageMonths]);
 
   if (filtered.length === 0) {
-    const { t } = useTranslation();
     return <Text style={s.dim}>{t("components.amazing_facts.no_facts_available_right_now")}</Text>;
   }
 
