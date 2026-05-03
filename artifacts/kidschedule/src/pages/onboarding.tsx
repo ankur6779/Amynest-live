@@ -134,7 +134,12 @@ function getAgeGroup(years: number): AgeGroup {
 }
 
 const GRAD = "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))";
-const BG = "linear-gradient(160deg,hsl(var(--brand-indigo-100)) 0%,hsl(var(--brand-violet-50)) 55%,hsl(var(--brand-pink-50)) 100%)";
+const BG = "linear-gradient(160deg,#0f0a2e 0%,#1a0d40 55%,#0d0824 100%)";
+const GLASS_BG = "rgba(255,255,255,0.10)";
+const GLASS_BORDER = "1px solid rgba(168,85,247,0.30)";
+const BAR_BG = "rgba(15,10,46,0.92)";
+const CHIP_DARK = { background: GLASS_BG, color: "#fff", border: "1px solid rgba(168,85,247,0.30)" } as const;
+const INPUT_DARK = { background: "rgba(255,255,255,0.08)", color: "#fff", borderColor: "rgba(168,85,247,0.4)" } as const;
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 // size prop is in Tailwind spacing units (×4px), matching the old convention.
@@ -148,7 +153,7 @@ function TypingBubble() {
       <AmyAvatar size={8} />
       <div
         className="px-4 py-3 rounded-2xl rounded-bl-sm flex gap-1 items-center"
-        style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)", border: "1px solid rgba(99,102,241,0.15)" }}
+        style={{ background: GLASS_BG, backdropFilter: "blur(12px)", border: GLASS_BORDER }}
       >
         {[0, 1, 2].map((i) => (
           <span
@@ -167,8 +172,8 @@ function AmyBubble({ text }: { text: string }) {
     <div className="flex gap-2 items-end" style={{ animation: "chat-pop 0.3s ease-out" }}>
       <AmyAvatar size={8} />
       <div
-        className="max-w-xs px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed text-foreground"
-        style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)", border: "1px solid rgba(99,102,241,0.15)" }}
+        className="max-w-xs px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed"
+        style={{ background: GLASS_BG, backdropFilter: "blur(12px)", border: GLASS_BORDER, color: "#fff" }}
       >
         {text}
       </div>
@@ -195,8 +200,8 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
       onClick={onClick}
       className="px-4 py-2.5 rounded-2xl text-sm font-semibold border transition-all active:scale-95"
       style={selected
-        ? { background: GRAD, color: "#fff", border: "transparent", boxShadow: "0 4px 12px rgba(99,102,241,0.3)" }
-        : { background: "rgba(255,255,255,0.9)", color: "hsl(var(--brand-indigo-950))", border: "1px solid #c7d2fe" }
+        ? { background: GRAD, color: "#fff", border: "transparent", boxShadow: "0 4px 12px rgba(99,102,241,0.4)" }
+        : { background: GLASS_BG, color: "#fff", border: "1px solid rgba(168,85,247,0.30)" }
       }
     >
       {label}
@@ -236,10 +241,10 @@ function ProgressBar({ step }: { step: Step }) {
   return (
     <div className="px-4 pt-4 pb-2">
       <div className="flex justify-between text-xs mb-1.5">
-        <span className="font-semibold text-foreground">{t("screens.onboarding.amy_setup")}</span>
-        <span className="text-muted-foreground">{Math.min(pct, 100)}%</span>
+        <span className="font-semibold" style={{ color: "#fff" }}>{t("screens.onboarding.amy_setup")}</span>
+        <span style={{ color: "rgba(255,255,255,0.6)" }}>{Math.min(pct, 100)}%</span>
       </div>
-      <div className="w-full h-1.5 rounded-full" style={{ background: "rgba(99,102,241,0.12)" }}>
+      <div className="w-full h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }}>
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%`, background: GRAD }} />
       </div>
     </div>
@@ -405,17 +410,17 @@ export default function OnboardingPage() {
         </div>
 
         <div className="text-center">
-          <h2 className="text-xl font-extrabold text-foreground mb-2">
+          <h2 className="text-xl font-extrabold mb-2" style={{ color: "#fff" }}>
             {t("screens.onboarding.notif_title")}
           </h2>
-          <p className="text-sm text-foreground leading-relaxed max-w-xs mx-auto">
+          <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: "rgba(255,255,255,0.75)" }}>
             {t("screens.onboarding.notif_subtitle")}
           </p>
         </div>
 
         <div
           className="w-full max-w-sm rounded-2xl p-4"
-          style={{ background: "rgba(255,255,255,0.9)", border: "1px solid rgba(99,102,241,0.15)" }}
+          style={{ background: GLASS_BG, border: GLASS_BORDER }}
         >
           {[
             { emoji: "⏰", text: t("screens.onboarding.notif_benefit_routines") },
@@ -424,7 +429,7 @@ export default function OnboardingPage() {
           ].map(({ emoji, text }) => (
             <div key={text} className="flex items-center gap-3 py-2">
               <span style={{ fontSize: 18 }}>{emoji}</span>
-              <p className="text-sm font-medium text-foreground">{text}</p>
+              <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>{text}</p>
             </div>
           ))}
         </div>
@@ -473,8 +478,8 @@ export default function OnboardingPage() {
               <span className="text-4xl">🧠</span>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-foreground">{t("screens.onboarding.saving_title")}</p>
-              <p className="text-foreground font-bold text-2xl mt-1">{t("screens.onboarding.saving_subtitle")}</p>
+              <p className="text-xl font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.saving_title")}</p>
+              <p className="font-bold text-2xl mt-1" style={{ color: "rgba(255,255,255,0.85)" }}>{t("screens.onboarding.saving_subtitle")}</p>
             </div>
             <div className="flex gap-2">
               {[0, 1, 2].map((i) => (
@@ -486,18 +491,18 @@ export default function OnboardingPage() {
           <div className="flex flex-col items-center gap-5 w-full max-w-sm" style={{ animation: "splash-in 0.5s ease-out" }}>
             <div className="text-6xl">🎉</div>
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-foreground">{t("screens.onboarding.done_title")}</h2>
-              <p className="text-foreground mt-1">{t("screens.onboarding.done_subtitle", { name: childName })}</p>
+              <h2 className="text-2xl font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.done_title")}</h2>
+              <p className="mt-1" style={{ color: "rgba(255,255,255,0.8)" }}>{t("screens.onboarding.done_subtitle", { name: childName })}</p>
             </div>
             <div
               className="w-full rounded-3xl p-5 shadow-xl"
-              style={{ background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)", border: "1px solid rgba(99,102,241,0.15)" }}
+              style={{ background: GLASS_BG, backdropFilter: "blur(12px)", border: GLASS_BORDER }}
             >
               <div className="flex items-start gap-3">
                 <span className="text-2xl mt-0.5">✏️</span>
                 <div>
-                  <p className="font-bold text-foreground text-sm">{t("screens.onboarding.edit_anytime_title")}</p>
-                  <p className="text-foreground text-xs mt-1 leading-relaxed">
+                  <p className="font-bold text-sm" style={{ color: "#fff" }}>{t("screens.onboarding.edit_anytime_title")}</p>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
                     {t("screens.onboarding.edit_anytime_body_before")}<strong>{t("screens.onboarding.edit_profile")}</strong>{t("screens.onboarding.edit_anytime_or")}<strong>{t("screens.onboarding.edit_children")}</strong>{t("screens.onboarding.edit_anytime_body_after")}
                   </p>
                 </div>
@@ -537,7 +542,7 @@ export default function OnboardingPage() {
           <div className="flex gap-2">
             <input
               className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-              style={{ background: "rgba(255,255,255,0.95)", color: "hsl(var(--brand-indigo-950))" }}
+              style={INPUT_DARK}
               placeholder={t("screens.onboarding.child_name_placeholder")}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
@@ -569,7 +574,7 @@ export default function OnboardingPage() {
             <input
               type="date"
               className="w-full rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-              style={{ background: "rgba(255,255,255,0.95)", color: "hsl(var(--brand-indigo-950))" }}
+              style={INPUT_DARK}
               value={dobInput}
               max={new Date().toISOString().split("T")[0]}
               onChange={(e) => setDobInput(e.target.value)}
@@ -620,7 +625,7 @@ export default function OnboardingPage() {
                     userReplies(opt, "infant-sleep", t("screens.onboarding.feeding_reply", { name: babyName }));
                   }}
                   className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                  style={{ background: "rgba(255,255,255,0.9)", color: "hsl(var(--brand-indigo-950))", border: "1px solid #c7d2fe" }}
+                  style={CHIP_DARK}
                 >
                   {opt}
                 </button>
@@ -628,7 +633,7 @@ export default function OnboardingPage() {
             </div>
             <button
               onClick={() => userReplies(t("screens.onboarding.skip_for_now"), "infant-sleep", t("screens.onboarding.skip_sleep_reply", { name: babyName }))}
-              className="text-xs text-foreground hover:text-foreground self-center mt-1"
+              className="text-xs self-center mt-1" style={{ color: "rgba(255,255,255,0.55)" }}
             >
               {t("screens.onboarding.skip_later")}
             </button>
@@ -679,7 +684,7 @@ export default function OnboardingPage() {
                   );
                 }}
                 className="w-full py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all text-left px-4"
-                style={{ background: "rgba(255,255,255,0.9)", color: "hsl(var(--brand-indigo-950))", border: "1px solid #c7d2fe" }}
+                style={CHIP_DARK}
               >
                 {opt}
               </button>
@@ -711,7 +716,7 @@ export default function OnboardingPage() {
                   }
                 }}
                 className="flex-1 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={{ background: "rgba(255,255,255,0.9)", color: "hsl(var(--brand-indigo-950))", border: "1px solid #c7d2fe" }}
+                style={CHIP_DARK}
               >
                 {opt.label}
               </button>
@@ -797,9 +802,9 @@ export default function OnboardingPage() {
                     onClick={() => toggle(day)}
                     className="px-4 py-2.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                     style={{
-                      background: on ? GRAD : "rgba(255,255,255,0.9)",
-                      color: on ? "#fff" : "hsl(var(--brand-indigo-950))",
-                      border: on ? "1px solid transparent" : "1px solid #c7d2fe",
+                      background: on ? GRAD : GLASS_BG,
+                      color: "#fff",
+                      border: on ? "1px solid transparent" : "1px solid rgba(168,85,247,0.30)",
                     }}
                   >
                     {label}
@@ -886,7 +891,7 @@ export default function OnboardingPage() {
                 className="flex-1 py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
                 style={!opt.isYes
                   ? { background: GRAD, color: "#fff", border: "transparent" }
-                  : { background: "rgba(255,255,255,0.9)", color: "hsl(var(--brand-indigo-950))", border: "1px solid #c7d2fe" }
+                  : CHIP_DARK
                 }
               >
                 {opt.label}
@@ -901,7 +906,7 @@ export default function OnboardingPage() {
           <div className="flex gap-2">
             <input
               className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-              style={{ background: "rgba(255,255,255,0.95)", color: "hsl(var(--brand-indigo-950))" }}
+              style={INPUT_DARK}
               placeholder={t("screens.onboarding.parent_name_placeholder")}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
@@ -944,7 +949,7 @@ export default function OnboardingPage() {
                   userReplies(r.label, "parent-work", t("screens.onboarding.work_question"));
                 }}
                 className="py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={{ background: "rgba(255,255,255,0.9)", color: "hsl(var(--brand-indigo-950))", border: "1px solid #c7d2fe" }}
+                style={CHIP_DARK}
               >
                 {r.label}
               </button>
@@ -969,7 +974,7 @@ export default function OnboardingPage() {
                   userReplies(label, "parent-region", t("screens.onboarding.region_question"));
                 }}
                 className="w-full py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={{ background: "rgba(255,255,255,0.9)", color: "hsl(var(--brand-indigo-950))", border: "1px solid #c7d2fe" }}
+                style={CHIP_DARK}
               >
                 {label}
               </button>
@@ -1013,7 +1018,7 @@ export default function OnboardingPage() {
                   userReplies(opt.label, "parent-mobile", t("screens.onboarding.mobile_question"));
                 }}
                 className="py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                style={{ background: "rgba(255,255,255,0.9)", color: "hsl(var(--brand-indigo-950))", border: "1px solid #c7d2fe" }}
+                style={CHIP_DARK}
               >
                 {opt.label}
               </button>
@@ -1030,7 +1035,7 @@ export default function OnboardingPage() {
                 type="tel"
                 inputMode="tel"
                 className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-                style={{ background: "rgba(255,255,255,0.95)", color: "hsl(var(--brand-indigo-950))" }}
+                style={INPUT_DARK}
                 placeholder={t("screens.onboarding.mobile_placeholder")}
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
@@ -1056,7 +1061,7 @@ export default function OnboardingPage() {
             </div>
             <button
               onClick={() => userReplies(t("screens.onboarding.skip_for_now"), "parent-allergies", t("screens.onboarding.allergies_skip"))}
-              className="text-xs text-foreground hover:text-foreground self-center mt-1"
+              className="text-xs self-center mt-1" style={{ color: "rgba(255,255,255,0.55)" }}
             >
               {t("screens.onboarding.skip_later")}
             </button>
@@ -1069,7 +1074,7 @@ export default function OnboardingPage() {
             <div className="flex gap-2">
               <input
                 className="flex-1 rounded-2xl px-4 py-3.5 text-sm outline-none border border-border focus:border-primary transition-colors"
-                style={{ background: "rgba(255,255,255,0.95)", color: "hsl(var(--brand-indigo-950))" }}
+                style={INPUT_DARK}
                 placeholder={t("screens.onboarding.allergies_placeholder")}
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
@@ -1100,7 +1105,7 @@ export default function OnboardingPage() {
                 userReplies(t("screens.onboarding.no_allergies_reply"), "saving");
                 setTimeout(() => saveEverything(), 800);
               }}
-              className="text-xs text-foreground hover:text-foreground self-center mt-1"
+              className="text-xs self-center mt-1" style={{ color: "rgba(255,255,255,0.55)" }}
             >
               {t("screens.onboarding.no_allergies_button")}
             </button>
@@ -1116,17 +1121,17 @@ export default function OnboardingPage() {
     <div className="min-h-dvh flex flex-col" style={{ background: BG }}>
       <div
         className="sticky top-0 z-10"
-        style={{ background: "rgba(238,242,255,0.85)", backdropFilter: "blur(8px)" }}
+        style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(168,85,247,0.15)" }}
       >
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2.5">
             <AmyAvatar size={8} />
             <div>
-              <p className="text-xs font-bold text-foreground">{t("screens.onboarding.amy_coach")}</p>
-              <p className="text-xs text-foreground">{t("screens.onboarding.setting_up")}</p>
+              <p className="text-xs font-bold" style={{ color: "#fff" }}>{t("screens.onboarding.amy_coach")}</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{t("screens.onboarding.setting_up")}</p>
             </div>
           </div>
-          <span className="text-[11px] font-semibold text-foreground px-3 py-1.5">
+          <span className="text-[11px] font-semibold px-3 py-1.5" style={{ color: "rgba(255,255,255,0.7)" }}>
             {t("screens.onboarding.setup_required")}
           </span>
         </div>
@@ -1146,7 +1151,7 @@ export default function OnboardingPage() {
       {!typing && step !== "intro" && (
         <div
           className="sticky bottom-0 px-4 py-4 max-w-lg mx-auto w-full"
-          style={{ background: "rgba(238,242,255,0.9)", backdropFilter: "blur(8px)" }}
+          style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderTop: "1px solid rgba(168,85,247,0.15)" }}
         >
           {renderInput()}
         </div>
