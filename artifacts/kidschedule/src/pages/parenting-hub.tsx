@@ -5,7 +5,7 @@ import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, ChevronUp, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText } from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, ChevronUp, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText, Calculator, Sigma } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
@@ -863,6 +863,14 @@ const SECTION_2_PREVIEW_TILES: Array<{
 }, {
   id: "event-prep",
   icon: <Sparkles className="h-5 w-5 text-primary" />,
+  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
+}, {
+  id: "smart-math-tricks",
+  icon: <Sigma className="h-5 w-5 text-primary" />,
+  accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
+}, {
+  id: "abacus",
+  icon: <Calculator className="h-5 w-5 text-primary" />,
   accentClass: "bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card"
 }, {
   id: "smart-study",
