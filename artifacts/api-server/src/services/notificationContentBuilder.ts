@@ -279,8 +279,9 @@ export async function buildNutritionInsight(
 }
 
 /**
- * Amy AI insight — surfaces a parenting tip relevant to the child's age and
- * recent behavior log.
+ * Amy AI insight — uses the child's recent activity (last 7 days of completed
+ * routines, behaviour logs, parent-hub progress) to produce a personalised
+ * tip. Falls back to the age-group template if no signal is available.
  */
 export async function buildAmyInsight(
   userId: string,
@@ -290,20 +291,157 @@ export async function buildAmyInsight(
   if (!child) return null;
   const date = todayLocalDateString(timezone);
 
-  const insights: Record<ReturnType<typeof ageGroup>, string> = {
-    toddler: `Naming feelings out loud helps ${child.name} build emotional vocabulary.`,
-    preschool: `Try a 5-minute "calm corner" with ${child.name} after big emotions.`,
-    child: `${child.name} is at the age where chores build real confidence.`,
-    tween: `Open-ended questions get more from ${child.name} than yes/no ones.`,
-  };
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  // Pull the last week of routines for this child + recent behaviour notes +
+  // parent-hub progress feedback rows.
+  const [routines, recentBehaviors, recentProgress] = await Promise.all([
+    db
+      .select({ items: routinesTable.items, date: routinesTable.date })
+      .from(routinesTable)
+      .where(
+        and(
+          eq(routinesTable.childId, child.id),
+          gte(routinesTable.createdAt, sevenDaysAgo),
+        ),
+      )
+      .orderBy(desc(routinesTable.createdAt))
+      .limit(7),
+    db
+      .select({ behavior: behaviorsTable.behavior, type: behaviorsTable.type, createdAt: behaviorsTable.createdAt })
+      .from(behaviorsTable)
+      .where(
+        and(
+          eq(behaviorsTable.childId, child.id),
+          gte(behaviorsTable.createdAt, sevenDaysAgo),
+        ),
+      )
+      .orderBy(desc(behaviorsTable.createdAt))
+      .limit(10),
+    db
+      .select({ feedback: userProgressTable.feedback, planTitle: userProgressTable.planTitle })
+      .from(userProgressTable)
+      .where(
+        and(
+          eq(userProgressTable.userId, userId),
+          gte(userProgressTable.createdAt, sevenDaysAgo),
+        ),
+      )
+      .limit(20),
+  ]);
+
+  // Tally completion across this week's routines.
+  let completed = 0;
+  let total = 0;
+  for (const r of routines) {
+    const items = (r.items ?? []) as Array<{ status?: string }>;
+    for (const it of items) {
+      total++;
+      if (it.status === "completed" || it.status === "done") completed++;
+    }
+  }
+  const completionRate = total > 0 ? completed / total : 0;
+  const positiveBehaviors = recentBehaviors.filter((b) => b.type === "positive").length;
+  const challengingBehaviors = recentBehaviors.filter(
+    (b) => b.type === "challenging" || b.type === "negative",
+  ).length;
+  const hubWins = recentProgress.filter((p) => p.feedback === "yes").length;
+
+  // Pick the most relevant signal in priority order. Each branch keeps the
+  // body short (≤ 110 chars) so it renders fully on iOS / Android lock screens.
+  let body: string | null = null;
+  if (total >= 3 && completionRate >= 0.7) {
+    body = `${child.name} finished ${completed} of ${total} routine tasks this week — keep celebrating those wins.`;
+  } else if (total >= 3 && completionRate <= 0.3) {
+    body = `Only ${completed}/${total} tasks done this week. Try shrinking ${child.name}'s routine to 3 essentials.`;
+  } else if (challengingBehaviors >= 2 && challengingBehaviors > positiveBehaviors) {
+    body = `Tough week noted for ${child.name}. Try a 5-minute calm-corner reset before the next flare-up.`;
+  } else if (positiveBehaviors >= 2) {
+    body = `${positiveBehaviors} positive moments logged for ${child.name} — name them out loud to reinforce.`;
+  } else if (hubWins >= 3) {
+    body = `You logged ${hubWins} parenting wins in the Hub this week — pick one to repeat tomorrow.`;
+  }
+
+  if (!body) {
+    const insights: Record<ReturnType<typeof ageGroup>, string> = {
+      toddler: `Naming feelings out loud helps ${child.name} build emotional vocabulary.`,
+      preschool: `Try a 5-minute "calm corner" with ${child.name} after big emotions.`,
+      child: `${child.name} is at the age where chores build real confidence.`,
+      tween: `Open-ended questions get more from ${child.name} than yes/no ones.`,
+    };
+    body = insights[ageGroup(child.age)];
+  }
 
   return {
     title: "Today's Amy insight 💡",
-    body: insights[ageGroup(child.age)],
+    body,
     deepLink: "/hub",
     dedupKey: `insight:${date}`,
     data: { childId: child.id },
   };
+}
+
+/* ----------------------  Per-task routine reminder  -------------------- */
+
+/**
+ * Build the reminder for a single routine item (e.g. "Breakfast at 8:00 AM").
+ * Used by the per-minute scheduler in notificationCron.
+ */
+export function buildRoutineItem(opts: {
+  childName: string;
+  childId: number;
+  routineId: number;
+  itemIndex: number;
+  itemTime: string;
+  activity: string;
+  date: string;
+}): BuiltNotification {
+  return {
+    title: `${opts.activity} at ${opts.itemTime}`,
+    body: `Time for ${opts.childName} to start: ${opts.activity}.`,
+    deepLink: "/routine",
+    dedupKey: `routine_item:${opts.routineId}:${opts.itemIndex}:${opts.date}`,
+    data: {
+      childId: opts.childId,
+      routineId: opts.routineId,
+      itemIndex: opts.itemIndex,
+    },
+  };
+}
+
+/**
+ * Test-mode builder for `routine_item`. Picks the next non-completed item
+ * from the user's most recent routine and renders the same notification the
+ * per-minute scheduler would. Returns null if there's nothing to remind
+ * about (e.g. no routine for today, all items done).
+ */
+async function buildRoutineItemTest(
+  userId: string,
+  timezone: string,
+): Promise<BuiltNotification | null> {
+  const child = await getPrimaryChild(userId);
+  if (!child) return null;
+  const date = todayLocalDateString(timezone);
+  const [routine] = await db
+    .select()
+    .from(routinesTable)
+    .where(and(eq(routinesTable.childId, child.id), eq(routinesTable.date, date)))
+    .limit(1);
+  if (!routine) return null;
+  const items = (routine.items ?? []) as Array<{ time?: string; activity?: string; status?: string }>;
+  const next = items.find(
+    (it) => it.time && it.activity && it.status !== "completed" && it.status !== "skipped",
+  );
+  if (!next) return null;
+  return buildRoutineItem({
+    childName: child.name,
+    childId: child.id,
+    routineId: routine.id,
+    itemIndex: items.indexOf(next),
+    itemTime: next.time!,
+    activity: next.activity!,
+    date,
+  });
 }
 
 /** Map a category to its content builder. */
@@ -312,6 +450,7 @@ export const contentBuilders: Record<
   (userId: string, timezone: string) => Promise<BuiltNotification | null>
 > = {
   routine: buildMorningRoutine,
+  routine_item: buildRoutineItemTest,
   nutrition: buildNutritionInsight,
   insights: buildAmyInsight,
   weekly: buildWeeklyReport,

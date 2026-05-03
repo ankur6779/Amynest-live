@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 
 type Prefs = {
   routineEnabled: boolean;
+  routineItemEnabled: boolean;
   nutritionEnabled: boolean;
   insightsEnabled: boolean;
   weeklyEnabled: boolean;
@@ -36,18 +37,21 @@ type Prefs = {
   dailyCap: number;
 };
 
+type TestCategory =
+  | "routine"
+  | "routine_item"
+  | "nutrition"
+  | "insights"
+  | "weekly"
+  | "engagement"
+  | "good_night";
+
 type CategoryDef = {
   key: keyof Prefs;
   title: string;
   description: string;
   Icon: typeof Bell;
-  testCategory:
-    | "routine"
-    | "nutrition"
-    | "insights"
-    | "weekly"
-    | "engagement"
-    | "good_night";
+  testCategory: TestCategory;
 };
 
 const CATEGORIES: CategoryDef[] = [
@@ -57,6 +61,13 @@ const CATEGORIES: CategoryDef[] = [
     description: "Morning, evening and bedtime nudges to stay on track.",
     Icon: Calendar,
     testCategory: "routine",
+  },
+  {
+    key: "routineItemEnabled",
+    title: "Per-task reminders",
+    description: "A heads-up about 5 minutes before each routine item.",
+    Icon: Calendar,
+    testCategory: "routine_item",
   },
   {
     key: "nutritionEnabled",
@@ -218,6 +229,27 @@ export default function NotificationSettingsPage() {
       toast({ title: t("toasts.notification_settings.save_failed_title"), description: err.message, variant: "destructive" }),
   });
 
+  // Recent delivery feed — drives the "Recent deliveries" section so users
+  // can self-diagnose missed notifications.
+  type HistoryRow = {
+    id: number;
+    category: string;
+    title: string;
+    body: string;
+    status: string;
+    platform: string | null;
+    errorMessage: string | null;
+    sentAt: string;
+  };
+  const history = useQuery<{ items: HistoryRow[] }>({
+    queryKey: ["notification-history"],
+    queryFn: async () => {
+      const r = await authFetch("/api/notifications/history?limit=20");
+      if (!r.ok) throw new Error("Failed to load history");
+      return r.json();
+    },
+  });
+
   const test = useMutation({
     mutationFn: async (category: CategoryDef["testCategory"]) => {
       const r = await authFetch("/api/notifications/test", {
@@ -346,6 +378,52 @@ export default function NotificationSettingsPage() {
             <div className="text-purple-200/60 text-sm mt-1">
               Timezone: {local.timezone}. We never send notifications during this window.
             </div>
+          </CardContent>
+        </Card>
+
+        <h2 className="text-xs uppercase tracking-widest text-purple-400/60 mt-8 mb-3">
+          Recent deliveries
+        </h2>
+        <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md">
+          <CardContent className="p-2">
+            {history.isLoading ? (
+              <div className="p-4 text-purple-200/70 text-sm">Loading…</div>
+            ) : !history.data || history.data.items.length === 0 ? (
+              <div className="p-4 text-purple-200/70 text-sm">
+                Nothing has been delivered yet. Send a test from any category
+                above to confirm your device is receiving notifications.
+              </div>
+            ) : (
+              <ul className="divide-y divide-purple-500/10">
+                {history.data.items.slice(0, 10).map((row) => {
+                  const ok = row.status === "sent";
+                  return (
+                    <li key={row.id} className="p-3 flex items-start gap-3">
+                      {ok ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-white truncate">
+                          {row.title}
+                        </div>
+                        <div className="text-xs text-purple-200/60 truncate">
+                          {row.category} · {row.status}
+                          {row.errorMessage ? ` · ${row.errorMessage}` : ""}
+                        </div>
+                      </div>
+                      <div className="text-xs text-purple-300/60 shrink-0">
+                        {new Date(row.sentAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </div>
