@@ -12,10 +12,6 @@ interface LockedBlockProps {
    * the dedicated /pricing page so users see a complete plan comparison.
    */
   reason?: PaywallReason;
-  /** Legacy — no longer rendered. Kept for prop compatibility. */
-  label?: string;
-  /** Legacy — no longer rendered. Kept for prop compatibility. */
-  cta?: string;
   rounded?: string;
   children: React.ReactNode;
 }

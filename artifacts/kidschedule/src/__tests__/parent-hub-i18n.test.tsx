@@ -67,7 +67,7 @@ describe("LockedBlock re-renders on language change", () => {
   it("swaps the premium-feature label when language flips en → hi", async () => {
     await i18n.changeLanguage("en");
     render(
-      <LockedBlock locked reason="hub_locked" label="ignored" cta="ignored">
+      <LockedBlock locked reason="hub_locked">
         <div>hidden child</div>
       </LockedBlock>,
     );

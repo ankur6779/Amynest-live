@@ -9,8 +9,6 @@ type Props = {
   locked: boolean;
   /** Reason passed to /paywall (used for analytics + paywall headline). */
   reason?: string;
-  label?: string;
-  cta?: string;
   radius?: number;
   style?: ViewStyle;
   children: React.ReactNode;

@@ -445,8 +445,6 @@ export default function RoutinesScreen() {
                   key={r.id}
                   locked={isLocked}
                   reason="routines_limit"
-                  label="Premium"
-                  cta="Unlock All Routines"
                   radius={18}
                 >
                   <TouchableOpacity
