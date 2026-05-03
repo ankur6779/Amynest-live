@@ -240,6 +240,51 @@ describe("buildCombinedTimeline", () => {
   });
 });
 
+describe("editable preview helpers", () => {
+  const items = [
+    { time: "7:00 AM", activity: "Wake", duration: 15, category: "morning" },
+    { time: "7:30 AM", activity: "Tiffin pack", duration: 10, category: "tiffin", notes: "Options: Idli | Upma" },
+    { time: "9:00 AM", activity: "School", duration: 360, category: "school" },
+  ];
+
+  it("applyTiffinSelection swaps tiffin row activity and leaves others", async () => {
+    const { applyTiffinSelection } = await import("./familyTimeline.js");
+    const out = applyTiffinSelection(items, "Upma");
+    assert.equal(out[1].activity, "Upma");
+    assert.equal(out[1].notes, "Options: Idli | Upma");
+    assert.equal(out[0].activity, "Wake");
+  });
+
+  it("shiftItemTime moves a row by delta minutes", async () => {
+    const { shiftItemTime } = await import("./familyTimeline.js");
+    const later = shiftItemTime(items, 0, 15);
+    assert.equal(later[0].time, "7:15 AM");
+    const earlier = shiftItemTime(items, 2, -30);
+    assert.equal(earlier[2].time, "8:30 AM");
+  });
+
+  it("shiftItemTime returns input unchanged for bad index", async () => {
+    const { shiftItemTime } = await import("./familyTimeline.js");
+    assert.strictEqual(shiftItemTime(items, 99, 15), items);
+  });
+
+  it("removeItemAt drops the row at the given index", async () => {
+    const { removeItemAt } = await import("./familyTimeline.js");
+    const out = removeItemAt(items, 1);
+    assert.equal(out.length, 2);
+    assert.equal(out[1].activity, "School");
+  });
+
+  it("buildCombinedTimeline now exposes itemIdx for editable previews", async () => {
+    const { buildCombinedTimeline } = await import("./familyTimeline.js");
+    const rows = buildCombinedTimeline(fam);
+    // Aisha has 3 items; the school row is index 2 in her items array.
+    const school = rows.find((r) => r.activity === "School");
+    assert.ok(school);
+    assert.equal(school!.itemIdx, 2);
+  });
+});
+
 describe("parseTimeToMinutes", () => {
   it("matches parseDisplayTime semantics", () => {
     assert.equal(parseTimeToMinutes("7:00 AM"), 7 * 60);

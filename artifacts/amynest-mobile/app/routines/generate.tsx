@@ -45,6 +45,9 @@ import {
   type RegionValue,
   extractTiffinSummary,
   buildCombinedTimeline,
+  applyTiffinSelection,
+  shiftItemTime,
+  removeItemAt,
   type FRTimelineFamilyResult,
   shiftRoutineItems,
   isEssentialTask,
@@ -965,6 +968,7 @@ export default function GenerateRoutineScreen() {
           <FamilyResultsPreview
             t={t}
             results={familyResults}
+            setResults={setFamilyResults}
             onSaveAll={handleSaveAll}
             onCancel={() => setFamilyResults(null)}
             isSaving={isSavingAll}
@@ -1539,16 +1543,18 @@ function ParentAvailEntryCard({
   );
 }
 
-// ─── Family results preview ──────────────────────────────────────────────
+// ─── Family results preview (editable) ──────────────────────────────────
 function FamilyResultsPreview({
   t,
   results,
+  setResults,
   onSaveAll,
   onCancel,
   isSaving,
 }: {
   t: ReturnType<typeof useTranslation>["t"];
   results: FRTimelineFamilyResult[];
+  setResults: React.Dispatch<React.SetStateAction<FRTimelineFamilyResult[] | null>>;
   onSaveAll: () => void;
   onCancel: () => void;
   isSaving: boolean;
@@ -1556,12 +1562,67 @@ function FamilyResultsPreview({
   const tiffin = useMemo(() => extractTiffinSummary(results), [results]);
   const timeline = useMemo(() => buildCombinedTimeline(results), [results]);
 
+  // Tap-to-edit modal state for timeline rows.
+  const [editing, setEditing] = useState<{
+    childId: number;
+    itemIdx: number;
+    time: string;
+    activity: string;
+    childName: string;
+  } | null>(null);
+
+  const mutateChild = useCallback(
+    (
+      childId: number,
+      fn: (items: FRTimelineFamilyResult["routine"]["items"]) => FRTimelineFamilyResult["routine"]["items"],
+    ) => {
+      setResults((prev) =>
+        (prev ?? []).map((r) =>
+          r.child.id === childId
+            ? { ...r, routine: { ...r.routine, items: fn(r.routine.items) } }
+            : r,
+        ),
+      );
+    },
+    [setResults],
+  );
+
+  const handlePickTiffin = useCallback(
+    (childId: number, opt: string) => {
+      Haptics.selectionAsync();
+      mutateChild(childId, (items) => applyTiffinSelection(items, opt));
+    },
+    [mutateChild],
+  );
+
+  const handleShift = useCallback(
+    (deltaMinutes: number) => {
+      if (!editing) return;
+      Haptics.selectionAsync();
+      mutateChild(editing.childId, (items) => shiftItemTime(items, editing.itemIdx, deltaMinutes));
+      setEditing(null);
+    },
+    [editing, mutateChild],
+  );
+
+  const handleDelete = useCallback(() => {
+    if (!editing) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    mutateChild(editing.childId, (items) => removeItemAt(items, editing.itemIdx));
+    setEditing(null);
+  }, [editing, mutateChild]);
+
   return (
     <View style={{ marginTop: 24, gap: 16 }}>
       <Text style={styles.previewHeading}>
         {t("routines_generate.family_preview_title", {
           count: results.length,
           defaultValue: `Preview · ${results.length} routine${results.length === 1 ? "" : "s"}`,
+        })}
+      </Text>
+      <Text style={styles.previewEditHint}>
+        {t("routines_generate.family_preview_edit_hint", {
+          defaultValue: "Tap a tiffin option to swap it. Tap a timeline row to delay, advance, or skip it.",
         })}
       </Text>
 
@@ -1576,30 +1637,54 @@ function FamilyResultsPreview({
             </View>
           </View>
           <View style={{ gap: 10 }}>
-            {tiffin.map(({ child, time, options }) => (
-              <View key={child.id} style={styles.tiffinChildCard}>
-                <View style={styles.tiffinChildHeader}>
-                  <View style={styles.tiffinNameBadge}>
-                    <Ionicons name="person" size={11} color={palette.amber800} />
-                    <Text style={styles.tiffinNameText}>{child.name}</Text>
-                  </View>
-                  <Text style={styles.tiffinTime}>
-                    {t("tiffin_summary.pack_by", { time, defaultValue: `Pack by ${time}` })}
-                  </Text>
-                  <Text style={styles.tiffinFood}>
-                    {child.foodType === "non_veg" ? "🍗" : "🥦"}
-                  </Text>
-                </View>
-                <View style={styles.tiffinOptionsRow}>
-                  {options.map((opt, i) => (
-                    <View key={i} style={styles.tiffinOption}>
-                      <Text style={{ fontSize: 11, color: palette.amber600 }}>🥘</Text>
-                      <Text style={styles.tiffinOptionText}>{opt}</Text>
+            {tiffin.map(({ child, time, options }) => {
+              // Selected option is whichever option string matches the
+              // tiffin row's current `activity`. Falls back to none until
+              // the parent makes a pick.
+              const currentItem = results
+                .find((r) => r.child.id === child.id)
+                ?.routine.items.find((i) => i.category === "tiffin");
+              const selected = currentItem?.activity;
+              return (
+                <View key={child.id} style={styles.tiffinChildCard}>
+                  <View style={styles.tiffinChildHeader}>
+                    <View style={styles.tiffinNameBadge}>
+                      <Ionicons name="person" size={11} color={palette.amber800} />
+                      <Text style={styles.tiffinNameText}>{child.name}</Text>
                     </View>
-                  ))}
+                    <Text style={styles.tiffinTime}>
+                      {t("tiffin_summary.pack_by", { time, defaultValue: `Pack by ${time}` })}
+                    </Text>
+                    <Text style={styles.tiffinFood}>
+                      {child.foodType === "non_veg" ? "🍗" : "🥦"}
+                    </Text>
+                  </View>
+                  <View style={styles.tiffinOptionsRow}>
+                    {options.map((opt, i) => {
+                      const isSelected = selected === opt;
+                      return (
+                        <TouchableOpacity
+                          key={i}
+                          onPress={() => handlePickTiffin(child.id, opt)}
+                          activeOpacity={0.85}
+                          style={[styles.tiffinOption, isSelected && styles.tiffinOptionSelected]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Pick ${opt} for ${child.name}`}
+                          accessibilityState={{ selected: isSelected }}
+                        >
+                          <Text style={{ fontSize: 11, color: isSelected ? "#fff" : palette.amber600 }}>
+                            {isSelected ? "✓" : "🥘"}
+                          </Text>
+                          <Text style={[styles.tiffinOptionText, isSelected && styles.tiffinOptionTextSelected]}>
+                            {opt}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </View>
       )}
@@ -1612,7 +1697,23 @@ function FamilyResultsPreview({
         </Text>
         <View style={{ gap: 6, marginTop: 10 }}>
           {timeline.map((row, idx) => (
-            <View key={idx} style={styles.timelineRow}>
+            <TouchableOpacity
+              key={`${row.childId}-${row.itemIdx}-${idx}`}
+              activeOpacity={0.7}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setEditing({
+                  childId: row.childId,
+                  itemIdx: row.itemIdx,
+                  time: row.time,
+                  activity: row.activity,
+                  childName: row.childName,
+                });
+              }}
+              style={styles.timelineRow}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${row.activity} at ${row.time} for ${row.childName}`}
+            >
               <Text style={styles.timelineRowTime}>{row.time}</Text>
               <View style={[styles.timelineDot, { backgroundColor: CHILD_COLORS[row.colorIdx % CHILD_COLORS.length] }]} />
               <View style={{ flex: 1 }}>
@@ -1626,10 +1727,72 @@ function FamilyResultsPreview({
                 </View>
                 <Text style={styles.timelineMeta}>{row.duration}m · {row.category}</Text>
               </View>
-            </View>
+              <Ionicons name="create-outline" size={14} color="rgba(255,255,255,0.35)" />
+            </TouchableOpacity>
           ))}
         </View>
       </View>
+
+      {/* Per-row edit sheet */}
+      <Modal visible={!!editing} transparent animationType="fade" onRequestClose={() => setEditing(null)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setEditing(null)}>
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={[brand.purple500, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalHeader}>
+              <Text style={{ fontSize: 26 }}>✏️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalHeaderTitle} numberOfLines={1}>
+                  {editing?.activity ?? ""}
+                </Text>
+                <Text style={styles.modalHeaderSubtitle}>
+                  {editing ? `${editing.childName} · ${editing.time}` : ""}
+                </Text>
+              </View>
+            </LinearGradient>
+            <View style={{ padding: 16, gap: 10 }}>
+              <Text style={styles.modalLabel}>
+                {t("routines_generate.family_preview_edit_title", { defaultValue: "Adjust this task" })}
+              </Text>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => handleShift(-15)}
+                  activeOpacity={0.85}
+                  style={[styles.editAction, { flex: 1 }]}
+                >
+                  <Ionicons name="play-back" size={16} color={brand.purple500} />
+                  <Text style={styles.editActionText}>
+                    {t("routines_generate.family_preview_advance", { defaultValue: "−15 min" })}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleShift(15)}
+                  activeOpacity={0.85}
+                  style={[styles.editAction, { flex: 1 }]}
+                >
+                  <Ionicons name="play-forward" size={16} color={brand.purple500} />
+                  <Text style={styles.editActionText}>
+                    {t("routines_generate.family_preview_delay", { defaultValue: "+15 min" })}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                onPress={handleDelete}
+                activeOpacity={0.85}
+                style={[styles.editAction, styles.editActionDanger]}
+              >
+                <Ionicons name="trash-outline" size={16} color={palette.rose500} />
+                <Text style={[styles.editActionText, { color: palette.rose500 }]}>
+                  {t("routines_generate.family_preview_skip", { defaultValue: "Skip / remove from day" })}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setEditing(null)} activeOpacity={0.7} style={{ paddingVertical: 6 }}>
+                <Text style={styles.modalCancel}>
+                  {t("common.cancel", { defaultValue: "Cancel" })}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Action buttons */}
       <View style={{ flexDirection: "row", gap: 10 }}>
@@ -1908,6 +2071,21 @@ const styles = StyleSheet.create({
   emptySub: { fontSize: 13, color: "rgba(255,255,255,0.6)", textAlign: "center" },
 
   previewHeading: { fontSize: 15, fontWeight: "800", color: "#fff" },
+  previewEditHint: {
+    fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: -8,
+    fontStyle: "italic",
+  },
+  editAction: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    paddingVertical: 12, paddingHorizontal: 12, borderRadius: 12,
+    borderWidth: 1, borderColor: "rgba(167,139,250,0.45)",
+    backgroundColor: "rgba(167,139,250,0.10)",
+  },
+  editActionDanger: {
+    borderColor: "rgba(244,63,94,0.45)",
+    backgroundColor: "rgba(244,63,94,0.08)",
+  },
+  editActionText: { fontSize: 13, fontWeight: "700", color: brand.purple500 },
 
   tiffinCard: {
     backgroundColor: palette.amber50, borderWidth: 1, borderColor: palette.amber200,
@@ -1928,10 +2106,15 @@ const styles = StyleSheet.create({
   tiffinOptionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   tiffinOption: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
     backgroundColor: palette.amber50, borderWidth: 1, borderColor: palette.amber200,
   },
+  tiffinOptionSelected: {
+    backgroundColor: palette.amber600,
+    borderColor: palette.amber800,
+  },
   tiffinOptionText: { fontSize: 11, fontWeight: "600", color: palette.amber800 },
+  tiffinOptionTextSelected: { color: "#fff", fontWeight: "800" },
 
   timelineCard: {
     backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1,
