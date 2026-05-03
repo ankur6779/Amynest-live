@@ -1305,8 +1305,8 @@ export default function ParentingHub() {
                     <PreviewHubCard
                       id={tile.id}
                       icon={tile.icon}
-                      title={t(`parent_hub.preview_tiles.${tile.id}.title`)}
-                      description={t(`parent_hub.preview_tiles.${tile.id}.description`)}
+                      title={t(`parent_hub.web_tiles_preview.${tile.id}.title`)}
+                      description={t(`parent_hub.web_tiles_preview.${tile.id}.description`)}
                       accentClass={tile.accentClass}
                     />
                   </ComingNextWrapper>
@@ -1367,7 +1367,7 @@ function ForYouHeader({
 
 // ─── Section 2 preview tiles ────────────────────────────────────────────────
 // Fixed list shown ONLY for 0–24 month children. Title & description are
-// looked up at render time via `t("parent_hub.preview_tiles.<id>.title")`
+// looked up at render time via `t("parent_hub.web_tiles_preview.<id>.title")`
 // so each tile re-renders when the active language changes.
 const SECTION_2_PREVIEW_TILES: Array<{
   id: string;

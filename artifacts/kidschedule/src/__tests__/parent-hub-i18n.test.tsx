@@ -98,6 +98,8 @@ describe("parent_hub copy roundtrips through every supported language", () => {
     "parent_hub.tiles_activity.gaming_reward.title",
     "parent_hub.web_tiles.command-center.title",
     "parent_hub.web_tiles.smart-study.description",
+    "parent_hub.web_tiles_preview.life-skills.title",
+    "parent_hub.web_tiles_preview.olympiad.description",
     "parent_hub.subsections.story-time.title",
     "parent_hub.subsections.spelling-mastery.description",
     "parent_hub.headers.section1_for",
