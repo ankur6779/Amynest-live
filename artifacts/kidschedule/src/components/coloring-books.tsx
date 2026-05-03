@@ -213,7 +213,7 @@ export function ColoringBooks({
       </div>;
   }
   if (listError) {
-    return <Card className="bg-muted dark:bg-primary border-border dark:border-primary rounded-2xl">
+    return <Card className="bg-muted dark:bg-card border-border dark:border-primary rounded-2xl">
         <CardContent className="p-4 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -230,7 +230,7 @@ export function ColoringBooks({
   const allDone = pagination !== null && pagination.total === 0;
   return <div className="space-y-4" data-testid="coloring-books-section">
       {/* Daily quota banner */}
-      {quota && <div data-testid="coloring-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-primary border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-primary border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
+      {quota && <div data-testid="coloring-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
           <span className="flex items-center gap-2 font-semibold">
             <Palette className="h-4 w-4" />
             {quotaExhausted ? `Daily limit reached for ${childName}` : `${quota.remaining} of ${quota.limit} downloads left today`}
@@ -257,7 +257,7 @@ export function ColoringBooks({
           const showRowError = rowError?.id === file.id;
           return <Card key={file.id} data-testid={`coloring-card-${file.id}`} className="group relative overflow-hidden rounded-2xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-border hover:shadow-[0_0_0_1px_rgba(244,63,94,0.25),0_10px_36px_-10px_rgba(244,63,94,0.30)] transition-all">
                   <CardContent className="p-3">
-                    <div className="aspect-[3/4] w-full mb-3 overflow-hidden rounded-xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary ring-1 ring-primary dark:ring-primary flex items-center justify-center">
+                    <div className="aspect-[3/4] w-full mb-3 overflow-hidden rounded-xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card ring-1 ring-primary dark:ring-primary flex items-center justify-center">
                       <ThumbnailWithFallback src={file.thumbnailUrl} alt={file.name} />
                     </div>
                     <p className="font-quicksand font-bold text-[13px] leading-tight text-foreground line-clamp-2 mb-2 min-h-[2.4em]" title={file.name}>

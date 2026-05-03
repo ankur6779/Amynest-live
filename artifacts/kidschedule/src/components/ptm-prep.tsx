@@ -96,9 +96,9 @@ export function PtmPrepAssistant({
   // ── No session yet — landing card ────────────────────────────────────────
   if (!session) {
     return <div className="px-4 pb-4 space-y-3">
-        <div className="rounded-2xl bg-gradient-to-br from-muted via-white to-muted dark:from-primary dark:via-muted dark:to-primary border border-border dark:border-border p-4">
+        <div className="rounded-2xl bg-gradient-to-br from-muted via-white to-muted dark:from-card dark:via-muted dark:to-card border border-border dark:border-border p-4">
           <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-xl bg-muted dark:bg-primary flex items-center justify-center text-xl shrink-0">🧾</div>
+            <div className="h-10 w-10 rounded-xl bg-muted dark:bg-card flex items-center justify-center text-xl shrink-0">🧾</div>
             <div className="min-w-0 flex-1">
               <p className="font-quicksand font-bold text-sm text-foreground">{t("components.ptm_prep.ptm_prep_assistant")}</p>
               <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug">
@@ -139,7 +139,7 @@ export function PtmPrepAssistant({
           const active = session.stage === s;
           const done = STAGE_ORDER.indexOf(session.stage) > i;
           return <div key={s} className="flex items-center gap-1.5 flex-1">
-                <button onClick={() => setSession(cur => cur ? setStage(cur, s) : cur)} className={`flex-1 px-2 py-1.5 rounded-lg text-[12px] font-bold transition-all border ${active ? "bg-primary text-white border-primary shadow-sm" : done ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border" : "bg-white dark:bg-card text-muted-foreground border-border hover:border-border"}`} data-testid={`ptm-stage-${s}`}>
+                <button onClick={() => setSession(cur => cur ? setStage(cur, s) : cur)} className={`flex-1 px-2 py-1.5 rounded-lg text-[12px] font-bold transition-all border ${active ? "bg-primary text-white border-primary shadow-sm" : done ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border" : "bg-white dark:bg-card text-muted-foreground border-border hover:border-border"}`} data-testid={`ptm-stage-${s}`}>
                   {STAGE_LABELS[s].emoji} {STAGE_LABELS[s].title}
                 </button>
                 {i < STAGE_ORDER.length - 1 && <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />}
@@ -154,7 +154,7 @@ export function PtmPrepAssistant({
       </div>
 
       {/* Carry-over hint */}
-      {carry && carry.carriedOver.length > 0 && <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border px-3 py-2 text-[12px] text-primary dark:text-muted-foreground">
+      {carry && carry.carriedOver.length > 0 && <div className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border px-3 py-2 text-[12px] text-primary dark:text-muted-foreground">
           <span className="font-bold">{t("components.ptm_prep.last_ptm")}{carry.prevDate}):</span> {carry.prevDoneCount}/{carry.prevTotal} {t("components.ptm_prep.actions_done")} {carry.carriedOver.length} {t("components.ptm_prep.item_s_still_pending_keep_going")}
         </div>}
 
@@ -352,7 +352,7 @@ function ActStage({
   };
   return <div className="space-y-3">
       {/* Amy hint */}
-      {amyHint && <div className="flex items-start gap-2 p-2.5 rounded-xl bg-muted dark:bg-primary border border-border dark:border-border">
+      {amyHint && <div className="flex items-start gap-2 p-2.5 rounded-xl bg-muted dark:bg-card border border-border dark:border-border">
           <AmyIcon size={16} bounce />
           <p className="text-[12px] leading-snug text-foreground/90">{amyHint}</p>
         </div>}

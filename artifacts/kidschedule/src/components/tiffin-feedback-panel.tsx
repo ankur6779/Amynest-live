@@ -82,17 +82,17 @@ export function TiffinFeedbackPanel({
     saveHistory(next);
     onChange(next);
   };
-  return <div className="mx-3 mt-3 rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-muted dark:from-primary dark:via-muted dark:to-primary overflow-hidden">
+  return <div className="mx-3 mt-3 rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-muted dark:from-card dark:via-muted dark:to-card overflow-hidden">
       {/* Header */}
       <div className="px-3.5 py-2.5 flex items-center gap-2 border-b border-border dark:border-border">
-        <div className="h-8 w-8 rounded-xl bg-muted dark:bg-primary flex items-center justify-center text-base shrink-0">
+        <div className="h-8 w-8 rounded-xl bg-muted dark:bg-card flex items-center justify-center text-base shrink-0">
           🍱
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-quicksand font-bold text-[13.5px] text-foreground">{t("components.tiffin_feedback_panel.today_s_tiffin_feedback")}</p>
           <p className="text-[10.5px] text-muted-foreground">{t("components.tiffin_feedback_panel.helps_amy_learn_what_your_child_loves")}</p>
         </div>
-        {summary.totalRated > 0 && <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground">
+        {summary.totalRated > 0 && <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground">
             {summary.eatenPct}{t("components.tiffin_feedback_panel.eaten")}
           </span>}
       </div>
@@ -114,7 +114,7 @@ export function TiffinFeedbackPanel({
                 {pickableMeals.map(m => <option key={m.id} value={m.id}>{m.emoji ? `${m.emoji} ` : ""}{m.title}</option>)}
               </select>
               <div className="grid grid-cols-3 gap-1.5">
-                {(["eaten", "half", "not_eaten"] as TiffinStatus[]).map(s => <button key={s} onClick={() => submit(s)} className={`text-[11px] font-bold px-2 py-1.5 rounded-lg border transition-all ${s === "eaten" ? "border-border hover:bg-muted dark:hover:bg-primary text-primary dark:text-muted-foreground" : s === "half" ? "border-border hover:bg-muted dark:hover:bg-primary text-primary dark:text-muted-foreground" : "border-border hover:bg-muted dark:hover:bg-primary text-primary dark:text-muted-foreground"}`} data-testid={`tiffin-status-${s}`}>
+                {(["eaten", "half", "not_eaten"] as TiffinStatus[]).map(s => <button key={s} onClick={() => submit(s)} className={`text-[11px] font-bold px-2 py-1.5 rounded-lg border transition-all ${s === "eaten" ? "border-border hover:bg-muted dark:hover:bg-card text-primary dark:text-muted-foreground" : s === "half" ? "border-border hover:bg-muted dark:hover:bg-card text-primary dark:text-muted-foreground" : "border-border hover:bg-muted dark:hover:bg-card text-primary dark:text-muted-foreground"}`} data-testid={`tiffin-status-${s}`}>
                     {STATUS_EMOJI[s]} {STATUS_LABEL[s]}
                   </button>)}
               </div>
@@ -122,7 +122,7 @@ export function TiffinFeedbackPanel({
           </>}
 
         {/* Amy hint */}
-        {amyHint && <div className="flex items-start gap-2 mt-3 p-2 rounded-lg bg-muted dark:bg-primary border border-border dark:border-border">
+        {amyHint && <div className="flex items-start gap-2 mt-3 p-2 rounded-lg bg-muted dark:bg-card border border-border dark:border-border">
             <AmyIcon size={14} />
             <p className="text-[11.5px] leading-snug text-foreground/90">{amyHint}</p>
           </div>}
@@ -133,7 +133,7 @@ export function TiffinFeedbackPanel({
               <Heart className="h-3 w-3 text-primary fill-primary" /> {t("components.tiffin_feedback_panel.top_liked_foods")}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {summary.topLiked.map(m => <span key={m.mealId} className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground border border-border dark:border-border" title={`${m.eaten} eaten · ${m.half} half · ${m.notEaten} refused`}>
+              {summary.topLiked.map(m => <span key={m.mealId} className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground border border-border dark:border-border" title={`${m.eaten} eaten · ${m.half} half · ${m.notEaten} refused`}>
                   {m.emoji ?? "🍱"} {m.mealTitle}
                   <span className="text-primary font-medium">×{m.eaten}</span>
                 </span>)}

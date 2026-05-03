@@ -69,9 +69,9 @@ const CATEGORY_STYLES: Record<string, string> = {
 };
 const STATUS_STYLES: Record<ItemStatus, string> = {
   pending: "",
-  completed: "border-border bg-muted dark:bg-card dark:border-border",
+  completed: "border-border bg-muted dark:bg-card dark:border-primary",
   skipped: "border-dashed border-muted-foreground/30 opacity-60",
-  delayed: "border-border bg-muted dark:bg-card dark:border-border"
+  delayed: "border-border bg-muted dark:bg-card dark:border-primary"
 };
 function parse12hToMinutes(timeStr: string): number {
   const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
@@ -1413,14 +1413,14 @@ export default function RoutineDetail() {
 
 
       {/* Amy AI editing tip — guides parents to the Edit button on every task */}
-      {dateMode !== "past" && items.some(i => i.status !== "completed" && i.status !== "skipped") && <div className="rounded-2xl border-2 border-border bg-muted dark:bg-card dark:border-border p-3 flex items-start gap-2.5">
+      {dateMode !== "past" && items.some(i => i.status !== "completed" && i.status !== "skipped") && <div className="rounded-2xl border-2 border-border bg-muted dark:bg-card dark:border-primary p-3 flex items-start gap-2.5">
           <div className="bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-sm">
             <Sparkles className="h-3.5 w-3.5" />
           </div>
           <p className="text-xs text-primary dark:text-foreground font-medium leading-snug">
             <strong className="text-primary dark:text-foreground">{t("pages.routines.detail.tip_from_amy_ai")}</strong>{" "}
             {t("pages.routines.detail.tap_the")}{" "}
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border border-border bg-muted text-primary dark:bg-muted dark:text-foreground font-bold text-[10px] align-middle">
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border border-border bg-muted text-primary dark:bg-card dark:text-muted-foreground font-bold text-[10px] align-middle">
               <Pencil className="h-2.5 w-2.5" /> {t("pages.routines.detail.edit")}
             </span>{" "}
             {t("pages.routines.detail.chip_on_any_task_to_change_its_time_name_or_duration_i_ll_ke")}
@@ -1434,7 +1434,7 @@ export default function RoutineDetail() {
             {t("pages.routines.detail.all")}{items.length})
           </button>
           {ageBands.map(band => {
-        return <button key={band} type="button" onClick={() => setAgeBandFilter(ageBandFilter === band ? null : band)} className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${ageBandFilter === band ? "bg-primary text-white border-primary" : "bg-muted text-primary border-border hover:bg-muted dark:bg-card dark:text-foreground dark:border-border"}`} aria-pressed={ageBandFilter === band}>
+        return <button key={band} type="button" onClick={() => setAgeBandFilter(ageBandFilter === band ? null : band)} className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${ageBandFilter === band ? "bg-primary text-white border-primary" : "bg-muted text-primary border-border hover:bg-muted dark:bg-card dark:text-muted-foreground dark:border-primary"}`} aria-pressed={ageBandFilter === band}>
               {t("pages.routines.detail.ages_2")} {band.replace("-", "–")} ({ageBandCounts[band] ?? 0})
             </button>;
       })}

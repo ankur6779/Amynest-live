@@ -211,28 +211,28 @@ export function WakeWindowSystem({
     asleep: {
       label: "Asleep",
       color: "text-primary dark:text-muted-foreground",
-      bg: "bg-muted dark:bg-primary",
+      bg: "bg-muted dark:bg-card",
       emoji: "😴",
       msg: "Sleeping since " + (lastEvent ? fmtTime(lastEvent.ts) : "—") + ". Tap 'Just woke up' when they wake."
     },
     normal: {
       label: "Normal",
       color: "text-primary dark:text-muted-foreground",
-      bg: "bg-muted dark:bg-primary",
+      bg: "bg-muted dark:bg-card",
       emoji: "🟢",
       msg: `Plenty of awake time left. Aim for sleep around ${spec.windowMin - elapsedMin > 0 ? `${spec.windowMin - elapsedMin} min` : "now"}.`
     },
     tired: {
       label: "Getting tired",
       color: "text-primary dark:text-muted-foreground",
-      bg: "bg-muted dark:bg-primary",
+      bg: "bg-muted dark:bg-card",
       emoji: "🟡",
       msg: "Start the nap routine now — dim lights, quiet voice, swaddle/sleep sack."
     },
     overtired: {
       label: "Overtired",
       color: "text-primary dark:text-muted-foreground",
-      bg: "bg-muted dark:bg-primary",
+      bg: "bg-muted dark:bg-card",
       emoji: "🔴",
       msg: "Past the window — use motion (rocking, carrier) + white noise to break the cortisol spike."
     }
@@ -519,17 +519,17 @@ export function SleepIssueDetector({
   const SEV_META = {
     info: {
       color: "text-primary dark:text-muted-foreground",
-      bg: "bg-muted dark:bg-primary",
+      bg: "bg-muted dark:bg-card",
       border: "border-border dark:border-border"
     },
     warn: {
       color: "text-primary dark:text-muted-foreground",
-      bg: "bg-muted dark:bg-primary",
+      bg: "bg-muted dark:bg-card",
       border: "border-border dark:border-border"
     },
     alert: {
       color: "text-primary dark:text-muted-foreground",
-      bg: "bg-muted dark:bg-primary",
+      bg: "bg-muted dark:bg-card",
       border: "border-border dark:border-border"
     }
   } as const;
@@ -735,7 +735,7 @@ export function RoutineBuilder({
   return <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-[12px] text-muted-foreground">{t("components.infant_sleep_module.auto_generated_for_age_tap_any_row_to_edit")}</p>
-        <button onClick={regenerate} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-[10px] font-bold hover:bg-muted dark:hover:bg-primary transition-colors">
+        <button onClick={regenerate} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground text-[10px] font-bold hover:bg-muted dark:hover:bg-card transition-colors">
           <RotateCcw className="h-3 w-3" />
           {t("components.infant_sleep_module.regenerate")}
         </button>
@@ -860,7 +860,7 @@ export function SleepWeeklyInsights({
   const maxBar = Math.max(...barData.map(b => b.min), 60);
   return <div className="space-y-3">
       {/* Headline */}
-      <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-4">
+      <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-4">
         <div className="flex items-center gap-2 mb-2">
           <TrendingUp className="h-4 w-4 text-primary dark:text-primary" />
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">{t("components.infant_sleep_module.7_day_summary")}</p>
@@ -883,7 +883,7 @@ export function SleepWeeklyInsights({
       </div>
 
       {/* Trend message */}
-      <div className={`rounded-xl border p-3 ${stats.trend === "good" ? "bg-muted dark:bg-primary border-border" : "bg-muted dark:bg-primary border-border"}`}>
+      <div className={`rounded-xl border p-3 ${stats.trend === "good" ? "bg-muted dark:bg-card border-border" : "bg-muted dark:bg-card border-border"}`}>
         <div className="flex items-start gap-2">
           <Sparkles className={`h-4 w-4 shrink-0 mt-0.5 ${stats.trend === "good" ? "text-primary" : "text-primary"}`} />
           <div>
@@ -908,8 +908,8 @@ function Stat({
   accent: "violet" | "indigo";
 }) {
   const map = {
-    violet: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
-    indigo: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"
+    violet: "bg-muted dark:bg-card text-primary dark:text-muted-foreground",
+    indigo: "bg-muted dark:bg-card text-primary dark:text-muted-foreground"
   } as const;
   return <div className={`rounded-lg ${map[accent]} px-2 py-1.5 text-center`}>
       <p className="text-[9px] font-bold uppercase tracking-wide opacity-80">{label}</p>

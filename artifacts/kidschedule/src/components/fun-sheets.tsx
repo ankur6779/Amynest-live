@@ -177,7 +177,7 @@ export function FunSheets({
   const quotaExhausted = quota !== null && quota.remaining <= 0;
   return <div className="space-y-4" data-testid="fun-sheets-section">
       {/* Daily quota banner */}
-      {quota && <div data-testid="funsheet-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-primary border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-primary border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
+      {quota && <div data-testid="funsheet-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
           <span className="flex items-center gap-2 font-semibold">
             <FileDown className="h-4 w-4" />
             {quotaExhausted ? `Daily limit reached for ${childName}` : `${quota.remaining} of ${quota.limit} downloads left today`}

@@ -263,27 +263,27 @@ const SOUNDS: SoundDef[] = [{
   id: "rain",
   emoji: "🌧️",
   label: "Rain",
-  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
+  color: "bg-muted dark:bg-card border-border text-primary dark:text-muted-foreground"
 }, {
   id: "heartbeat",
   emoji: "❤️",
   label: "Heartbeat",
-  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
+  color: "bg-muted dark:bg-card border-border text-primary dark:text-muted-foreground"
 }, {
   id: "fan",
   emoji: "💨",
   label: "Fan",
-  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
+  color: "bg-muted dark:bg-card border-border text-primary dark:text-muted-foreground"
 }, {
   id: "lullaby",
   emoji: "🎵",
   label: "Lullaby",
-  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
+  color: "bg-muted dark:bg-card border-border text-primary dark:text-muted-foreground"
 }, {
   id: "ocean",
   emoji: "🌊",
   label: "Ocean",
-  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
+  color: "bg-muted dark:bg-card border-border text-primary dark:text-muted-foreground"
 }];
 
 // ─── Web Audio engine ────────────────────────────────────────────────────────────
@@ -579,9 +579,9 @@ const CAT_LABEL: Record<TipCategory, string> = {
   soothing: "Soothing Techniques"
 };
 const CAT_COLORS: Record<TipCategory, string> = {
-  routine: "bg-muted dark:bg-primary border-border dark:border-border",
-  environment: "bg-muted dark:bg-primary border-border dark:border-border",
-  soothing: "bg-muted dark:bg-primary border-border dark:border-border"
+  routine: "bg-muted dark:bg-card border-border dark:border-border",
+  environment: "bg-muted dark:bg-card border-border dark:border-border",
+  soothing: "bg-muted dark:bg-card border-border dark:border-border"
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────────
@@ -704,7 +704,7 @@ export function BabySleepAssistant({
 
       {/* ── Smart Suggestions ────────────────────────────────── */}
       <Card className="rounded-3xl border-2 border-border dark:border-border bg-muted overflow-hidden">
-        <button onClick={() => setShowSuggestions(v => !v)} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted dark:bg-primary transition-colors">
+        <button onClick={() => setShowSuggestions(v => !v)} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted dark:bg-card transition-colors">
           <div className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{t("components.baby_sleep_assistant.smart_suggestions")}</span>
@@ -725,7 +725,7 @@ export function BabySleepAssistant({
           <div className="flex items-center gap-2">
             <Star className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{t("components.baby_sleep_assistant.sleep_tips")}</span>
-            <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border text-[10px] px-2 py-0.5 rounded-full">
+            <Badge className="bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border text-[10px] px-2 py-0.5 rounded-full">
               {ageMonths < 3 ? "0–3 mo" : ageMonths < 6 ? "3–6 mo" : "6–12 mo"}
             </Badge>
           </div>
@@ -745,7 +745,7 @@ export function BabySleepAssistant({
                     </p>
                   </div>
                   <div className="flex items-center gap-2 pt-0.5">
-                    <button onClick={() => markTried(tip.id)} className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all ${isTried ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border border-border dark:border-border" : "bg-white/80 text-muted-foreground border border-white hover:bg-white hover:text-foreground"}`}>
+                    <button onClick={() => markTried(tip.id)} className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all ${isTried ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground border border-border dark:border-border" : "bg-white/80 text-muted-foreground border border-white hover:bg-white hover:text-foreground"}`}>
                       <CheckCircle2 className="h-3 w-3" />
                       {isTried ? "Tried!" : "Mark as tried"}
                     </button>
@@ -782,7 +782,7 @@ export function BabySleepAssistant({
 
             {CHECKLIST_ITEMS.map(item => {
           const checked = !!checklist[item.id];
-          return <button key={item.id} onClick={() => toggleCheck(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-left ${checked ? "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground" : "bg-muted/30 border-transparent hover:border-muted-foreground/20"}`}>
+          return <button key={item.id} onClick={() => toggleCheck(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-left ${checked ? "bg-muted dark:bg-card border-border text-primary dark:text-muted-foreground" : "bg-muted/30 border-transparent hover:border-muted-foreground/20"}`}>
                   {checked ? <CheckSquare className="h-5 w-5 text-primary flex-shrink-0" /> : <Square className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
                   <span className="text-lg flex-shrink-0">{item.emoji}</span>
                   <span className={`text-sm font-medium ${checked ? "line-through text-primary dark:text-muted-foreground" : "text-foreground"}`}>
@@ -791,7 +791,7 @@ export function BabySleepAssistant({
                 </button>;
         })}
 
-            {checkedCount === CHECKLIST_ITEMS.length && <div className="flex items-center gap-2 bg-muted dark:bg-primary text-primary dark:text-muted-foreground rounded-2xl px-4 py-2.5 text-sm font-bold border border-border dark:border-border">
+            {checkedCount === CHECKLIST_ITEMS.length && <div className="flex items-center gap-2 bg-muted dark:bg-card text-primary dark:text-muted-foreground rounded-2xl px-4 py-2.5 text-sm font-bold border border-border dark:border-border">
                 <CheckCircle2 className="h-4 w-4" />
                 {t("components.baby_sleep_assistant.all_done_baby_is_ready_for_sleep")}
               </div>}
@@ -808,7 +808,7 @@ export function BabySleepAssistant({
           <div className="flex items-center gap-2">
             <Volume2 className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{t("components.baby_sleep_assistant.sleep_sounds")}</span>
-            {activeSound && <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border text-[10px] px-2 py-0.5 rounded-full animate-pulse">
+            {activeSound && <Badge className="bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border text-[10px] px-2 py-0.5 rounded-full animate-pulse">
                 {t("components.baby_sleep_assistant.playing")}
               </Badge>}
           </div>
@@ -829,20 +829,20 @@ export function BabySleepAssistant({
             </div>
 
             {/* Playback controls */}
-            {activeSound && <div className="bg-muted dark:bg-primary border border-border dark:border-border rounded-2xl px-4 py-3 space-y-3">
+            {activeSound && <div className="bg-muted dark:bg-card border border-border dark:border-border rounded-2xl px-4 py-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-bold text-primary dark:text-muted-foreground">
                     {SOUNDS.find(s => s.id === activeSound)?.emoji}{" "}
                     {SOUNDS.find(s => s.id === activeSound)?.label}
                   </p>
                   <div className="flex items-center gap-2">
-                    <button onClick={nextSound} className="flex items-center gap-1 text-xs font-bold text-primary dark:text-muted-foreground bg-muted dark:bg-primary hover:bg-muted dark:bg-primary px-2.5 py-1 rounded-full transition-colors">
+                    <button onClick={nextSound} className="flex items-center gap-1 text-xs font-bold text-primary dark:text-muted-foreground bg-muted dark:bg-card hover:bg-muted dark:bg-card px-2.5 py-1 rounded-full transition-colors">
                       <SkipForward className="h-3 w-3" /> {t("components.baby_sleep_assistant.next")}
                     </button>
                     <button onClick={() => {
                 engineRef.current?.stop();
                 setActiveSound(null);
-              }} className="flex items-center gap-1 text-xs font-bold text-primary bg-muted dark:bg-primary hover:bg-muted dark:bg-primary px-2.5 py-1 rounded-full transition-colors border border-border dark:border-border">
+              }} className="flex items-center gap-1 text-xs font-bold text-primary bg-muted dark:bg-card hover:bg-muted dark:bg-card px-2.5 py-1 rounded-full transition-colors border border-border dark:border-border">
                       <VolumeX className="h-3 w-3" /> {t("components.baby_sleep_assistant.stop")}
                     </button>
                   </div>

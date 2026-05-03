@@ -100,7 +100,7 @@ export function InfantPoems({
   }
   return <div className="space-y-3" data-testid="infant-poems-section">
       {/* Header strip */}
-      <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary border border-border dark:border-border p-3 backdrop-blur-md">
+      <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card border border-border dark:border-border p-3 backdrop-blur-md">
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="h-4 w-4 text-primary dark:text-muted-foreground" />
           <p className="text-xs font-bold text-primary dark:text-muted-foreground">
@@ -142,7 +142,7 @@ export function InfantPoems({
         </div>}
 
       {/* Load More */}
-      {hasMore && <button onClick={() => setVisible(v => Math.min(poemsInGroup.length, v + PAGE_SIZE))} data-testid="poem-load-more" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border dark:border-border bg-white/40 dark:bg-white/5 hover:bg-muted dark:hover:bg-primary text-primary dark:text-muted-foreground text-xs font-bold transition-colors">
+      {hasMore && <button onClick={() => setVisible(v => Math.min(poemsInGroup.length, v + PAGE_SIZE))} data-testid="poem-load-more" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border dark:border-border bg-white/40 dark:bg-white/5 hover:bg-muted dark:hover:bg-card text-primary dark:text-muted-foreground text-xs font-bold transition-colors">
           <Plus className="h-3.5 w-3.5" />
           {t("components.infant_poems.load_more_poems")}
         </button>}

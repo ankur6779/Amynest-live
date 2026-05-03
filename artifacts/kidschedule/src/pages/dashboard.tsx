@@ -89,8 +89,8 @@ function HeroGreeting({
     hour: "2-digit",
     minute: "2-digit"
   }) : null;
-  return <div className="relative overflow-hidden rounded-3xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-white dark:from-primary dark:via-muted dark:to-muted px-5 sm:px-6 py-5 sm:py-6 animate-in fade-in duration-400">
-      <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-muted dark:bg-primary blur-3xl pointer-events-none" />
+  return <div className="relative overflow-hidden rounded-3xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-white dark:from-card dark:via-muted dark:to-muted px-5 sm:px-6 py-5 sm:py-6 animate-in fade-in duration-400">
+      <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-muted dark:bg-card blur-3xl pointer-events-none" />
       <div className="relative flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
         <div className="min-w-0">
           <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-primary dark:text-primary">{greeting}</p>
@@ -152,7 +152,7 @@ function ChildrenStrip({
             animationDelay: `${i * 80}ms`
           }}>
                 <div className="flex items-center gap-2.5">
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-muted dark:bg-primary border border-border dark:border-border">
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-muted dark:bg-card border border-border dark:border-border">
                     {info.emoji}
                   </div>
                   <div className="min-w-0">
@@ -167,7 +167,7 @@ function ChildrenStrip({
             </Link>;
       })}
         <Link href="/children/new">
-          <div className="shrink-0 snap-start min-w-[110px] rounded-2xl border border-dashed border-border p-3.5 flex items-center justify-center text-center hover:border-border hover:bg-muted dark:hover:bg-primary transition-all cursor-pointer">
+          <div className="shrink-0 snap-start min-w-[110px] rounded-2xl border border-dashed border-border p-3.5 flex items-center justify-center text-center hover:border-border hover:bg-muted dark:hover:bg-card transition-all cursor-pointer">
             <div>
               <div className="text-xl mb-1">➕</div>
               <p className="text-xs font-bold text-muted-foreground">{t("pages.dashboard.add_child")}</p>
@@ -262,7 +262,7 @@ function NowNextTimeline({
                 <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-muted-foreground"}`}>
                   <div className="text-xs font-bold">{item.time}</div>
                   {isCurrent && <span className="mt-1 text-[9px] font-black uppercase bg-white/25 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.now")}</span>}
-                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
+                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-muted dark:bg-card text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={`font-bold text-sm ${isCurrent ? "text-white" : "text-foreground"} ${completed ? "line-through opacity-60" : ""}`} style={{
@@ -309,7 +309,7 @@ function StreakCard({
           </p>
         </div>
         <div className="shrink-0">
-          {streak > 0 && <span className="text-xs font-bold text-primary dark:text-primary bg-muted dark:bg-primary border border-border dark:border-border px-2 py-0.5 rounded-full">
+          {streak > 0 && <span className="text-xs font-bold text-primary dark:text-primary bg-muted dark:bg-card border border-border dark:border-border px-2 py-0.5 rounded-full">
               {streak >= 7 ? "🏆 Epic" : streak >= 3 ? "🔥 Hot" : "✨ Active"}
             </span>}
         </div>
@@ -424,7 +424,7 @@ function AmySuggestionCard({
     });
   }
   const display = suggestions.slice(0, 2);
-  return <div className="rounded-2xl border border-border dark:border-border bg-muted dark:bg-primary overflow-hidden">
+  return <div className="rounded-2xl border border-border dark:border-border bg-muted dark:bg-card overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border dark:border-border">
         <AmyIcon size={18} bounce />
         <span className="font-quicksand font-bold text-sm text-foreground">{t("pages.dashboard.amy_ai_suggests")}</span>
@@ -466,7 +466,7 @@ function ParentScoreCard({
       </div>
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-2xl bg-muted dark:bg-primary border border-border dark:border-border flex items-center justify-center shrink-0">
+          <div className="h-14 w-14 rounded-2xl bg-muted dark:bg-card border border-border dark:border-border flex items-center justify-center shrink-0">
             <span className="font-black text-2xl text-primary dark:text-primary">{grade}</span>
           </div>
           <div className="flex-1 min-w-0">
@@ -540,7 +540,7 @@ function RewardsCard({
             <Trophy className="h-4 w-4 text-primary" />
             {t("pages.dashboard.rewards_points")}
           </CardTitle>
-          <div className="flex items-center gap-1.5 bg-muted dark:bg-primary text-primary dark:text-muted-foreground rounded-full px-3 py-1 border border-border dark:border-border">
+          <div className="flex items-center gap-1.5 bg-muted dark:bg-card text-primary dark:text-muted-foreground rounded-full px-3 py-1 border border-border dark:border-border">
             <Star className="h-3.5 w-3.5 fill-primary" />
             <span className="font-black text-sm">{points}</span>
             <span className="text-xs font-medium">{t("pages.dashboard.pts")}</span>
@@ -548,13 +548,13 @@ function RewardsCard({
         </div>
       </CardHeader>
       <CardContent className="p-4 space-y-4">
-        {redeemMsg && <div className="text-sm font-medium text-center py-1.5 px-3 bg-muted dark:bg-primary border border-border dark:border-border rounded-xl text-primary dark:text-muted-foreground">
+        {redeemMsg && <div className="text-sm font-medium text-center py-1.5 px-3 bg-muted dark:bg-card border border-border dark:border-border rounded-xl text-primary dark:text-muted-foreground">
             {redeemMsg}
           </div>}
         {badges.length > 0 && <div>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">{t("pages.dashboard.badges_earned")}</p>
             <div className="flex flex-wrap gap-2">
-              {badges.map(b => <div key={b.id} className="flex items-center gap-1.5 bg-muted dark:bg-primary border border-border dark:border-border rounded-full px-2.5 py-1 text-xs font-bold text-primary dark:text-muted-foreground">
+              {badges.map(b => <div key={b.id} className="flex items-center gap-1.5 bg-muted dark:bg-card border border-border dark:border-border rounded-full px-2.5 py-1 text-xs font-bold text-primary dark:text-muted-foreground">
                   {b.emoji} {b.label}
                 </div>)}
             </div>
@@ -598,35 +598,35 @@ function OnboardingScreen({
     label: "Amy AI Routine Generator",
     desc: "Smart daily schedules tailored to your child's age and needs.",
     color: "from-primary to-primary",
-    bg: "bg-muted dark:bg-primary border-border dark:border-border"
+    bg: "bg-muted dark:bg-card border-border dark:border-border"
   }, {
     icon: <TrendingUp className="h-5 w-5" />,
     emoji: "📊",
     label: "Progress Tracking",
     desc: "Monitor growth, streaks, and milestones in one beautiful view.",
     color: "from-primary to-primary",
-    bg: "bg-muted dark:bg-primary border-border dark:border-border"
+    bg: "bg-muted dark:bg-card border-border dark:border-border"
   }, {
     icon: <Target className="h-5 w-5" />,
     emoji: "🎯",
     label: "Daily Activities",
     desc: "Age-based activities that build skills while keeping kids engaged.",
     color: "from-primary to-primary",
-    bg: "bg-muted dark:bg-primary border-border dark:border-border"
+    bg: "bg-muted dark:bg-card border-border dark:border-border"
   }, {
     icon: <Star className="h-5 w-5" />,
     emoji: "🧩",
     label: "Learning & Puzzles",
     desc: "Adaptive daily puzzles that grow harder as your child levels up.",
     color: "from-primary to-primary",
-    bg: "bg-muted dark:bg-primary border-border dark:border-border"
+    bg: "bg-muted dark:bg-card border-border dark:border-border"
   }, {
     icon: <Heart className="h-5 w-5" />,
     emoji: "❤️",
     label: "Parenting Tips",
     desc: "Expert-curated tips, sleep guides, and milestone insights.",
     color: "from-primary to-primary",
-    bg: "bg-muted dark:bg-primary border-border dark:border-border"
+    bg: "bg-muted dark:bg-card border-border dark:border-border"
   }];
   return <div className="min-h-[80vh] flex flex-col items-center justify-start animate-in fade-in duration-500">
       <div data-on-dark className="w-full rounded-3xl bg-gradient-to-br from-primary via-primary to-primary p-8 mb-8 text-white text-center relative overflow-hidden shadow-xl">
@@ -886,7 +886,7 @@ export default function Dashboard() {
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-foreground group-hover:text-primary dark:group-hover:text-primary transition-colors truncate">{routine.title}</h4>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                            <span className="inline-flex items-center justify-center rounded-full bg-muted dark:bg-primary px-2 py-0.5 text-xs font-medium text-primary dark:text-muted-foreground border border-border dark:border-border">
+                            <span className="inline-flex items-center justify-center rounded-full bg-muted dark:bg-card px-2 py-0.5 text-xs font-medium text-primary dark:text-muted-foreground border border-border dark:border-border">
                               {routine.childName}
                             </span>
                             <span>{new Date(routine.date).toLocaleDateString(undefined, {
@@ -940,8 +940,8 @@ export default function Dashboard() {
                 {stats.map(stat => <div key={stat.childId} className="p-4">
                     <h4 className="font-bold text-foreground mb-3">{stat.childName}</h4>
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1.5 flex-1 bg-muted dark:bg-primary rounded-lg p-2 border border-border dark:border-border">
-                        <div className="bg-muted dark:bg-primary p-1 rounded-md text-primary dark:text-primary">
+                      <div className="flex items-center gap-1.5 flex-1 bg-muted dark:bg-card rounded-lg p-2 border border-border dark:border-border">
+                        <div className="bg-muted dark:bg-card p-1 rounded-md text-primary dark:text-primary">
                           <TrendingUp className="h-3.5 w-3.5" />
                         </div>
                         <span className="font-bold text-primary dark:text-muted-foreground">{stat.positive}</span>
@@ -976,8 +976,8 @@ export default function Dashboard() {
 
       {/* ── Gaming Reward ─────────────────────────────────────────── */}
       <Link href="/games">
-        <button type="button" className="w-full text-left rounded-2xl p-4 border border-border hover:border-border dark:hover:border-border bg-card hover:bg-muted dark:hover:bg-primary hover:shadow-sm transition-all flex items-center gap-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-xl bg-muted dark:bg-primary border border-border dark:border-border">
+        <button type="button" className="w-full text-left rounded-2xl p-4 border border-border hover:border-border dark:hover:border-border bg-card hover:bg-muted dark:hover:bg-card hover:shadow-sm transition-all flex items-center gap-4">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-xl bg-muted dark:bg-card border border-border dark:border-border">
             🎮
           </div>
           <div className="flex-1 min-w-0">

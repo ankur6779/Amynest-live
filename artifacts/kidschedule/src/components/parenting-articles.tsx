@@ -248,7 +248,7 @@ function ArticleModal({
           }
           if (section.type === "tip") {
             return <div key={i} className={wrapperClass}>
-                  <div className="bg-gradient-to-r from-muted dark:from-primary to-muted dark:to-primary border border-border dark:border-border rounded-2xl p-4 flex gap-3 items-start">
+                  <div className="bg-gradient-to-r from-muted dark:from-card to-muted dark:to-card border border-border dark:border-border rounded-2xl p-4 flex gap-3 items-start">
                     <div className="shrink-0 text-lg">✨</div>
                     <p className="text-primary dark:text-muted-foreground text-sm leading-relaxed font-medium flex-1">
                       {section.text}
@@ -367,7 +367,7 @@ export function ParentingArticles({
       {/* Section header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-muted dark:bg-primary flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-muted dark:bg-card flex items-center justify-center">
             <BookOpen className="h-4 w-4 text-primary" />
           </div>
           <div>
@@ -382,7 +382,7 @@ export function ParentingArticles({
       </div>
 
       {/* Continue reading strip */}
-      {continueArticle && !activeArticle && <button onClick={() => openArticle(continueArticle)} className="w-full flex items-center gap-3 bg-gradient-to-r from-muted dark:from-primary to-muted dark:to-primary border border-border dark:border-border rounded-2xl px-4 py-3 hover:border-border transition-all text-left">
+      {continueArticle && !activeArticle && <button onClick={() => openArticle(continueArticle)} className="w-full flex items-center gap-3 bg-gradient-to-r from-muted dark:from-card to-muted dark:to-card border border-border dark:border-border rounded-2xl px-4 py-3 hover:border-border transition-all text-left">
           <span className="text-2xl shrink-0">{continueArticle.emoji}</span>
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold text-primary uppercase tracking-wide">{t("components.parenting_articles.continue_reading")}</p>

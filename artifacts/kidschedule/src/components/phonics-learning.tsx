@@ -120,7 +120,7 @@ function ExampleChips({
   if (words.length === 0) return null;
   const chipCls = size === "md" ? "px-2 py-0.5 text-[11px]" : "px-1.5 py-[1px] text-[10px]";
   return <div className="mt-1 flex flex-wrap gap-1" data-testid="phonics-example-chips">
-      {words.map(w => <span key={w} className={cn("inline-flex items-center rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground font-medium border border-border dark:border-border", chipCls)}>
+      {words.map(w => <span key={w} className={cn("inline-flex items-center rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground font-medium border border-border dark:border-border", chipCls)}>
           {w}
         </span>)}
     </div>;
@@ -299,7 +299,7 @@ function PersonalizationBadge({
   const {
     t
   } = useTranslation();
-  return <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-muted dark:via-primary to-muted dark:to-primary border border-primary/20 px-4 py-3 flex items-center gap-3">
+  return <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-muted dark:via-card to-muted dark:to-card border border-primary/20 px-4 py-3 flex items-center gap-3">
       <span className="text-2xl">{level.emoji}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -361,7 +361,7 @@ function TodaysActivityCard({
   return <Card data-testid="phonics-todays-activity" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
             <Sparkles className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
@@ -376,7 +376,7 @@ function TodaysActivityCard({
         </div>
 
         {/* Focus tile — taller layout for sentences/stories */}
-        <div className={cn("rounded-3xl bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary border border-border dark:border-border p-5 transition-transform hover:scale-[1.01] active:scale-[0.99]", isLongForm ? "flex flex-col items-start gap-4" : "flex items-center gap-4")}>
+        <div className={cn("rounded-3xl bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card border border-border dark:border-border p-5 transition-transform hover:scale-[1.01] active:scale-[0.99]", isLongForm ? "flex flex-col items-start gap-4" : "flex items-center gap-4")}>
           {todaysItem.emoji && <span className={isLongForm ? "text-4xl" : "text-5xl shrink-0"} aria-hidden>
               {todaysItem.emoji}
             </span>}
@@ -393,7 +393,7 @@ function TodaysActivityCard({
           <div className="text-xs text-muted-foreground">
             {playCount > 0 ? `Played ${playCount} time${playCount !== 1 ? "s" : ""}` : "Not practised yet"}
           </div>
-          <Button type="button" size="sm" variant="outline" onClick={() => toggleMastered(todaysItem.id, todaysItem.contentId)} disabled={!canMaster} title={canMaster ? undefined : "Play the sound at least once first"} className={cn("rounded-full h-8 px-3 text-xs font-bold border", isMastered ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border" : "bg-white/70 dark:bg-white/[0.06] text-foreground border-border hover:border-border hover:text-primary", !canMaster && "opacity-50 cursor-not-allowed hover:border-border hover:text-foreground")}>
+          <Button type="button" size="sm" variant="outline" onClick={() => toggleMastered(todaysItem.id, todaysItem.contentId)} disabled={!canMaster} title={canMaster ? undefined : "Play the sound at least once first"} className={cn("rounded-full h-8 px-3 text-xs font-bold border", isMastered ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border" : "bg-white/70 dark:bg-white/[0.06] text-foreground border-border hover:border-border hover:text-primary", !canMaster && "opacity-50 cursor-not-allowed hover:border-border hover:text-foreground")}>
             <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
             {isMastered ? "Mastered!" : "Mark mastered"}
           </Button>
@@ -447,14 +447,14 @@ function PracticeSoundsCard({
   return <Card data-testid="phonics-practice-sounds" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
             <BookOpen className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-quicksand text-base font-bold text-foreground">{t("components.phonics_learning.practice_sounds")}</h3>
             <p className="text-xs text-muted-foreground">{t("components.phonics_learning.tap_any_tile_to_hear_the_sound")}</p>
           </div>
-          <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-0 text-[10px] font-bold">
+          <Badge className="bg-muted dark:bg-card text-primary dark:text-muted-foreground border-0 text-[10px] font-bold">
             {items.length} {items.length === 1 ? "sound" : "sounds"}
           </Badge>
         </div>
@@ -475,7 +475,7 @@ function PracticeSoundsCard({
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <AudioPlayButton text={it.phoneme ?? it.sound} mode={it.phoneme ? "phonics" : undefined} size="sm" variant="violet" ariaLabel={`Play sound ${it.symbol}`} onPlay={() => recordPlay(it.id, it.contentId)} />
-                    {showBlend && <Button type="button" size="sm" variant="outline" onClick={() => setBlendItem(it)} className="rounded-full h-7 px-2.5 text-[10px] font-bold border-border text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary">
+                    {showBlend && <Button type="button" size="sm" variant="outline" onClick={() => setBlendItem(it)} className="rounded-full h-7 px-2.5 text-[10px] font-bold border-border text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-card">
                         {t("components.phonics_learning.blend")}
                       </Button>}
                     {count > 0 && <span className="text-[10px] text-muted-foreground font-medium">{count}×</span>}
@@ -527,7 +527,7 @@ function BlendPanel({
     t
   } = useTranslation();
   const sounds = (item.example ?? item.symbol).split("–").map(s => s.trim()).filter(Boolean);
-  return <div role="dialog" aria-label={`Blend ${item.symbol}`} className="mt-4 rounded-2xl border border-border dark:border-border bg-muted dark:bg-primary p-4">
+  return <div role="dialog" aria-label={`Blend ${item.symbol}`} className="mt-4 rounded-2xl border border-border dark:border-border bg-muted dark:bg-card p-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-bold text-primary dark:text-muted-foreground">{t("components.phonics_learning.blend_it_together")}</p>
         <Button type="button" variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0 rounded-full text-primary dark:text-muted-foreground" aria-label={t("components.phonics_learning.close_blend_panel")}>
@@ -585,7 +585,7 @@ function ProgressTrackerCard({
   return <Card data-testid="phonics-progress" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
             <Trophy className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
@@ -605,7 +605,7 @@ function ProgressTrackerCard({
             <span className="text-xs font-semibold text-foreground">{t("components.phonics_learning.mastery")}</span>
             <span className="text-xs font-bold text-primary dark:text-muted-foreground">{completionPct}%</span>
           </div>
-          <div className="h-2.5 w-full rounded-full bg-muted dark:bg-primary overflow-hidden border border-border dark:border-border">
+          <div className="h-2.5 w-full rounded-full bg-muted dark:bg-card overflow-hidden border border-border dark:border-border">
             <div data-testid="phonics-mastery-bar" className="h-full bg-gradient-to-r from-primary to-primary transition-all duration-500" style={{
             width: `${completionPct}%`
           }} />
@@ -656,7 +656,7 @@ function ParentTipsCard({
   return <Card data-testid="phonics-parent-tips" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
             <Lightbulb className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
@@ -666,7 +666,7 @@ function ParentTipsCard({
         </div>
 
         <div className="space-y-2 mb-4">
-          {display.map((ins, i) => <div key={i} data-testid={`phonics-insight-${ins.tone}`} className={cn("rounded-2xl border px-3 py-2.5 flex items-start gap-2.5", ins.tone === "good" && "bg-muted dark:bg-primary border-border dark:border-border", ins.tone === "warn" && "bg-muted dark:bg-primary border-border dark:border-border", ins.tone === "info" && "bg-muted dark:bg-primary border-border dark:border-border")}>
+          {display.map((ins, i) => <div key={i} data-testid={`phonics-insight-${ins.tone}`} className={cn("rounded-2xl border px-3 py-2.5 flex items-start gap-2.5", ins.tone === "good" && "bg-muted dark:bg-card border-border dark:border-border", ins.tone === "warn" && "bg-muted dark:bg-card border-border dark:border-border", ins.tone === "info" && "bg-muted dark:bg-card border-border dark:border-border")}>
               <span className="text-lg shrink-0" aria-hidden>{ins.emoji}</span>
               <p className={cn("text-xs leading-relaxed font-medium", ins.tone === "good" && "text-primary dark:text-muted-foreground", ins.tone === "warn" && "text-primary dark:text-muted-foreground", ins.tone === "info" && "text-primary dark:text-muted-foreground")}>
                 {ins.text}
@@ -790,7 +790,7 @@ function PhonicsDownloadCard({
   return <Card data-testid="phonics-download-card" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
             <FileText className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
@@ -801,7 +801,7 @@ function PhonicsDownloadCard({
               {t("components.phonics_learning.15_sets_covering_short_vowels_blends_digraphs_more")}
             </p>
           </div>
-          {downloadCount !== null && downloadCount > 0 && <Badge data-testid="phonics-download-count" className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border font-bold text-[10px] shrink-0">
+          {downloadCount !== null && downloadCount > 0 && <Badge data-testid="phonics-download-count" className="bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border font-bold text-[10px] shrink-0">
               {downloadCount}{t("components.phonics_learning.downloaded")}
             </Badge>}
         </div>

@@ -52,12 +52,12 @@ export function VoiceSettingsPanel({
   };
   const currentVoiceName = ELEVENLABS_VOICES[settings.lang]?.[settings.gender] ?? "ElevenLabs Indian";
   return <div className="relative flex items-center gap-1">
-      <Button variant="outline" size="sm" onClick={handleToggle} className={`rounded-full gap-2 ${settings.enabled ? "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground" : ""}`}>
+      <Button variant="outline" size="sm" onClick={handleToggle} className={`rounded-full gap-2 ${settings.enabled ? "bg-muted dark:bg-card border-border text-primary dark:text-muted-foreground" : ""}`}>
         {settings.enabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         {settings.enabled ? "Voice On" : "Voice"}
       </Button>
 
-      {settings.enabled && <button title={t("components.voice_settings.voice_settings")} onClick={() => setOpen(o => !o)} className="p-1.5 rounded-full border border-border dark:border-border bg-muted dark:bg-primary text-primary hover:bg-muted dark:bg-primary transition-colors text-[11px] font-bold">
+      {settings.enabled && <button title={t("components.voice_settings.voice_settings")} onClick={() => setOpen(o => !o)} className="p-1.5 rounded-full border border-border dark:border-border bg-muted dark:bg-card text-primary hover:bg-muted dark:bg-card transition-colors text-[11px] font-bold">
           🎙
         </button>}
 
@@ -100,7 +100,7 @@ export function VoiceSettingsPanel({
             </div>
 
             {/* Active voice info */}
-            <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border px-3 py-2.5">
+            <div className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border px-3 py-2.5">
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
                 {t("components.voice_settings.active_voice")}
               </p>

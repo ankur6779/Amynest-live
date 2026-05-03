@@ -200,7 +200,7 @@ export default function RecipesPage() {
 
         {/* Empty state */}
         {!isLoading && recipes.length === 0 && <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <div className="h-16 w-16 rounded-2xl bg-muted dark:bg-primary flex items-center justify-center">
+            <div className="h-16 w-16 rounded-2xl bg-muted dark:bg-card flex items-center justify-center">
               <BookOpen className="h-8 w-8 text-primary" />
             </div>
             <div>

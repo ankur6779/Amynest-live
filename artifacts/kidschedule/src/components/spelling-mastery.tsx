@@ -220,7 +220,7 @@ function SpellingHero({
                 {stars % 10}/10 to L{level + 1}
               </span>
             </div>
-            <div className="mt-1.5 h-1.5 rounded-full bg-muted dark:bg-primary overflow-hidden">
+            <div className="mt-1.5 h-1.5 rounded-full bg-muted dark:bg-card overflow-hidden">
               <div className="h-full bg-gradient-to-r from-primary to-primary transition-all" style={{
               width: `${progressPct}%`
             }} />
@@ -364,7 +364,7 @@ function LearnView({
           <PlayButtons text={word.word} tts={tts} />
         </div>
 
-        <div className="rounded-xl bg-muted dark:bg-primary p-3 space-y-3">
+        <div className="rounded-xl bg-muted dark:bg-card p-3 space-y-3">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-primary dark:text-muted-foreground font-bold mb-1.5">
               {t("components.spelling_mastery.syllables")}
@@ -382,7 +382,7 @@ function LearnView({
             <div className="flex flex-wrap gap-1.5">
               {word.chunks.map((s, i) => <button key={i} onClick={() => void tts.speak(s, {
               slow: true
-            })} className="px-2.5 py-1 rounded-md bg-white dark:bg-white/[0.08] text-sm font-bold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary">
+            })} className="px-2.5 py-1 rounded-md bg-white dark:bg-white/[0.08] text-sm font-bold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-card">
                   {s}
                 </button>)}
             </div>
@@ -509,7 +509,7 @@ function MissingLetterGame({
           {options.map(o => {
           const picked = chosen === o;
           const isAns = chosen !== null && o === target;
-          return <button key={o} onClick={() => pick(o)} disabled={chosen !== null} className={["py-3 rounded-xl text-lg font-quicksand font-extrabold transition-all", chosen === null ? "bg-muted hover:bg-muted dark:bg-primary dark:hover:bg-primary text-primary dark:text-muted-foreground" : isAns ? "bg-primary text-white" : picked ? "bg-primary text-white" : "bg-white/40 dark:bg-white/[0.04] text-muted-foreground"].join(" ")}>
+          return <button key={o} onClick={() => pick(o)} disabled={chosen !== null} className={["py-3 rounded-xl text-lg font-quicksand font-extrabold transition-all", chosen === null ? "bg-muted hover:bg-muted dark:bg-card dark:hover:bg-card text-primary dark:text-muted-foreground" : isAns ? "bg-primary text-white" : picked ? "bg-primary text-white" : "bg-white/40 dark:bg-white/[0.04] text-muted-foreground"].join(" ")}>
                 {o}
               </button>;
         })}
@@ -584,7 +584,7 @@ function JumbledLetterGame({
         {/* Picked row */}
         <div className="min-h-[56px] rounded-xl border-2 border-dashed border-border dark:border-primary bg-muted dark:bg-primary/[0.05] p-2 flex flex-wrap justify-center gap-1.5">
           {picked.length === 0 && <span className="text-xs text-muted-foreground self-center">{t("components.spelling_mastery.tap_letters_below")}</span>}
-          {picked.map((p, i) => <button key={p.id} onClick={() => remove(i)} className={["w-10 h-10 rounded-lg font-quicksand font-extrabold text-lg transition-all", committed === "ok" ? "bg-primary text-white" : committed === "bad" ? "bg-primary text-white" : "bg-white dark:bg-white/[0.08] text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary"].join(" ")}>
+          {picked.map((p, i) => <button key={p.id} onClick={() => remove(i)} className={["w-10 h-10 rounded-lg font-quicksand font-extrabold text-lg transition-all", committed === "ok" ? "bg-primary text-white" : committed === "bad" ? "bg-primary text-white" : "bg-white dark:bg-white/[0.08] text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-card"].join(" ")}>
               {p.ch}
             </button>)}
         </div>
@@ -728,7 +728,7 @@ function DictationView({
 
         <Input value={guess} onChange={e => !verdict && setGuess(e.target.value)} onKeyDown={e => {
         if (e.key === "Enter") void submit();
-      }} placeholder={`Type the word… (${word.letterCount} letters)`} autoFocus disabled={!!verdict || submitting} className={["text-center text-xl font-quicksand font-bold tracking-wider h-12", verdict?.correct === true ? "border-primary bg-muted dark:bg-primary" : "", verdict?.correct === false ? "border-primary bg-muted dark:bg-primary" : ""].join(" ")} />
+      }} placeholder={`Type the word… (${word.letterCount} letters)`} autoFocus disabled={!!verdict || submitting} className={["text-center text-xl font-quicksand font-bold tracking-wider h-12", verdict?.correct === true ? "border-primary bg-muted dark:bg-card" : "", verdict?.correct === false ? "border-primary bg-muted dark:bg-card" : ""].join(" ")} />
 
         {!verdict ? <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-primary hover:bg-primary text-white">
             {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
@@ -998,9 +998,9 @@ function TournamentView({
             {tFn("components.spelling_mastery.3_rounds")} <b>{tFn("components.spelling_mastery.easy_medium_hard")}</b>{tFn("components.spelling_mastery.get_at_least_3_of_5_in_each_round_to_advance_survive_all_3_t")}
           </p>
           <div className="flex justify-center gap-1.5 text-[11px]">
-            <span className="px-2 py-0.5 rounded-full bg-muted text-primary dark:bg-primary dark:text-muted-foreground">{tFn("components.spelling_mastery.r1_easy")}</span>
-            <span className="px-2 py-0.5 rounded-full bg-muted text-primary dark:bg-primary dark:text-muted-foreground">{tFn("components.spelling_mastery.r2_medium")}</span>
-            <span className="px-2 py-0.5 rounded-full bg-muted text-primary dark:bg-primary dark:text-muted-foreground">{tFn("components.spelling_mastery.r3_hard")}</span>
+            <span className="px-2 py-0.5 rounded-full bg-muted text-primary dark:bg-card dark:text-muted-foreground">{tFn("components.spelling_mastery.r1_easy")}</span>
+            <span className="px-2 py-0.5 rounded-full bg-muted text-primary dark:bg-card dark:text-muted-foreground">{tFn("components.spelling_mastery.r2_medium")}</span>
+            <span className="px-2 py-0.5 rounded-full bg-muted text-primary dark:bg-card dark:text-muted-foreground">{tFn("components.spelling_mastery.r3_hard")}</span>
           </div>
           <Button onClick={() => void start()} disabled={t.loading} className="bg-gradient-to-r from-primary to-primary text-white hover:from-primary hover:to-primary">
             {t.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Crown className="h-4 w-4 mr-1" />}
@@ -1304,7 +1304,7 @@ function BattleView({
       <CardContent className="p-4 space-y-4">
         {/* Live scoreboard */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-muted dark:bg-primary p-2 text-center">
+          <div className="rounded-lg bg-muted dark:bg-card p-2 text-center">
             <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-primary dark:text-muted-foreground">
               <UserIcon className="h-3 w-3" /> {t("components.spelling_mastery.you_2")}
             </div>
@@ -1312,7 +1312,7 @@ function BattleView({
               {youCorrect}
             </div>
           </div>
-          <div className="rounded-lg bg-muted dark:bg-primary p-2 text-center">
+          <div className="rounded-lg bg-muted dark:bg-card p-2 text-center">
             <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-primary dark:text-muted-foreground">
               <Bot className="h-3 w-3" /> {AI_OPPONENT_LABELS[opponent]}
             </div>
@@ -1419,7 +1419,7 @@ function ParentRow({
       </button>
       <button onClick={() => void tts.speak(word.word, {
       slow: true
-    })} className="w-9 h-9 shrink-0 rounded-lg bg-muted dark:bg-primary text-primary dark:text-muted-foreground flex items-center justify-center hover:bg-muted" aria-label={`Play ${word.word} slowly`}>
+    })} className="w-9 h-9 shrink-0 rounded-lg bg-muted dark:bg-card text-primary dark:text-muted-foreground flex items-center justify-center hover:bg-muted" aria-label={`Play ${word.word} slowly`}>
         <span className="text-base">🐢</span>
       </button>
       <div className="flex-1 min-w-0">

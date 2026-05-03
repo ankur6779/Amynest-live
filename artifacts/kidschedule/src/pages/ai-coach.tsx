@@ -28,193 +28,193 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "behavior",
   title: "Behavior",
   emoji: "🎯",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "manage-tantrums",
     title: "Manage Tantrums",
     emoji: "😤",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "handle-aggression",
     title: "Handle Aggression",
     emoji: "✋",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "reduce-defiance",
     title: "Reduce Defiance",
     emoji: "🛑",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "emotional-regulation",
     title: "Emotional Regulation",
     emoji: "💗",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "separation-anxiety",
     title: "Separation Anxiety",
     emoji: "🫂",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 }, {
   id: "screen-focus",
   title: "Screen & Focus",
   emoji: "📱",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "balance-screen-time",
     title: "Balance Screen Time",
     emoji: "📱",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "reduce-mobile-addiction",
     title: "Reduce Mobile Addiction",
     emoji: "📵",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "improve-focus-span",
     title: "Improve Focus Span",
     emoji: "🎯",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "reduce-shorts-overuse",
     title: "Reduce YouTube / Shorts Overuse",
     emoji: "🎬",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "reduce-instant-gratification",
     title: "Reduce Instant Gratification",
     emoji: "⏳",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 }, {
   id: "eating",
   title: "Eating",
   emoji: "🍽️",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "encourage-independent-eating",
     title: "Encourage Independent Eating",
     emoji: "🥄",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "navigate-fussy-eating",
     title: "Navigate Fussy Eating",
     emoji: "🥦",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "stop-junk-food-craving",
     title: "Stop Junk Food Craving",
     emoji: "🍟",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "healthy-eating-routine",
     title: "Build Healthy Eating Routine",
     emoji: "🍎",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "improve-mealtime-behavior",
     title: "Improve Mealtime Behavior",
     emoji: "🍽️",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 }, {
   id: "sleep",
   title: "Sleep",
   emoji: "😴",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "improve-sleep-patterns",
     title: "Improve Sleep Patterns",
     emoji: "😴",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "fix-bedtime-resistance",
     title: "Fix Bedtime Resistance",
     emoji: "🛏️",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "stop-night-waking",
     title: "Stop Night Waking",
     emoji: "🌙",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "consistent-sleep-routine",
     title: "Build Consistent Routine",
     emoji: "🕘",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "reduce-late-sleeping",
     title: "Reduce Late Sleeping Habit",
     emoji: "⏰",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 }, {
   id: "learning",
   title: "Learning",
   emoji: "📚",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "boost-concentration",
     title: "Boost Concentration",
     emoji: "🎯",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "build-study-discipline",
     title: "Build Study Discipline",
     emoji: "📖",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "increase-learning-interest",
     title: "Increase Learning Interest",
     emoji: "💡",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "reduce-homework-resistance",
     title: "Reduce Homework Resistance",
     emoji: "✏️",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "develop-growth-mindset",
     title: "Develop Growth Mindset",
     emoji: "🌱",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 }, {
   id: "infant-problems",
   title: "Infant Parent Problems (0–2 yrs)",
   emoji: "👶",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: INFANT_PROBLEMS.map(p => ({
     id: p.id,
     title: p.title.en,
     emoji: p.emoji,
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }))
 }, {
   id: "parenting-challenges",
   title: "Parenting Challenges",
   emoji: "💝",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "manage-grandparents-interference",
     title: "Manage Grandparents' Interference",
     emoji: "👵",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "align-parenting-between-parents",
     title: "Align Parenting Between Parents",
     emoji: "🤝",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "handle-working-parent-guilt",
     title: "Handle Working Parent Guilt",
     emoji: "💼",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "set-consistent-family-rules",
     title: "Set Consistent Family Rules",
     emoji: "📋",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 },
 // ─── NEW: Toddler Behavior (2–4 yrs focused) ─────────────────────────
@@ -222,32 +222,32 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "toddler-behavior",
   title: "Toddler Behavior (2–4 yrs)",
   emoji: "🧒",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "toddler-tantrums",
     title: "Toddler Tantrums (2–4)",
     emoji: "😤",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "hitting-biting",
     title: "Hitting & Biting",
     emoji: "🦷",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "no-phase",
     title: "The 'No' Phase",
     emoji: "🙅",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "public-meltdowns",
     title: "Public Meltdowns",
     emoji: "🛒",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "whining-and-clinginess",
     title: "Whining & Clinginess",
     emoji: "🥺",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 },
 // ─── NEW: Daily Skills & Independence ────────────────────────────────
@@ -255,32 +255,32 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "daily-skills",
   title: "Daily Skills & Independence",
   emoji: "🚽",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "potty-training-readiness",
     title: "Potty Training Readiness",
     emoji: "🪴",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "potty-day-training",
     title: "Day Toilet Training",
     emoji: "🚽",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "potty-night-training",
     title: "Night-Time Dry",
     emoji: "🌙",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "potty-public-anxiety",
     title: "Public Toilet Anxiety",
     emoji: "🚻",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "self-dressing",
     title: "Self-Dressing & Hygiene",
     emoji: "👕",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 },
 // ─── NEW: Family Dynamics ────────────────────────────────────────────
@@ -288,32 +288,32 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "family-dynamics",
   title: "Family Dynamics",
   emoji: "👨‍👩‍👧‍👦",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "sibling-rivalry",
     title: "Sibling Rivalry",
     emoji: "⚔️",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "sharing-turn-taking",
     title: "Sharing & Turn-Taking",
     emoji: "🤲",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "new-baby-adjustment",
     title: "Adjusting to New Baby",
     emoji: "👶",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "sibling-fights",
     title: "Sibling Fights & Hitting",
     emoji: "🥊",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "favouritism-feelings",
     title: "Handle Favouritism Feelings",
     emoji: "💔",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 },
 // ─── NEW: Special Situations ─────────────────────────────────────────
@@ -321,32 +321,32 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "special-situations",
   title: "Special Situations",
   emoji: "✈️",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "travel-with-kids",
     title: "Travel With Kids",
     emoji: "✈️",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "hospital-doctor-visit",
     title: "Hospital / Doctor Visit",
     emoji: "🏥",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "daycare-school-transition",
     title: "Daycare / School Transition",
     emoji: "🎒",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "welcoming-new-sibling",
     title: "Welcoming a New Sibling",
     emoji: "🎀",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "moving-houses",
     title: "Moving to a New Home",
     emoji: "📦",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 },
 // ─── NEW: Kids Health Concern (research & science-based) ─────────────
@@ -354,37 +354,37 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "kids-health-concern",
   title: "Kids Health Concern",
   emoji: "🩺",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "child-obesity-management",
     title: "Childhood Obesity & Weight Management",
     emoji: "⚖️",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "nutrition-deficiency",
     title: "Nutrition Deficiency (Hidden Problem)",
     emoji: "🥗",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "boost-immunity",
     title: "Immunity & Frequent Illness",
     emoji: "🛡️",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "dental-health",
     title: "Dental Health",
     emoji: "🦷",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "digital-health-eye-care",
     title: "Screen Addiction & Digital Health",
     emoji: "👀",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "early-milestones-0-5",
     title: "Early Development & Milestones (0–5 yrs)",
     emoji: "🌱",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 },
 // ─── For You (Parent Self-Care) — age question is skipped for this category ─
@@ -392,42 +392,42 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "for-you",
   title: "For You (Parent Self-Care)",
   emoji: "💖",
-  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
+  gradient: "from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card",
   items: [{
     id: "parent-burnout",
     title: "Beat Parent Burnout",
     emoji: "🪫",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "stay-calm-anger",
     title: "Stay Calm When Angry",
     emoji: "🧘",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "guilt-after-yelling",
     title: "Handle Guilt After Yelling",
     emoji: "💔",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "find-me-time",
     title: "Find 'Me Time' Daily",
     emoji: "☕",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "couple-time-balance",
     title: "Balance Partner & Parent Time",
     emoji: "💑",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "improve-own-sleep",
     title: "Improve Your Own Sleep",
     emoji: "🌙",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }, {
     id: "manage-overwhelm",
     title: "Manage Daily Overwhelm",
     emoji: "🌪️",
-    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
+    gradient: "from-muted dark:from-card to-muted dark:to-card"
   }]
 }];
 const ALL_GOALS: GoalItem[] = GOAL_CATEGORIES.flatMap(c => c.items);
@@ -1310,7 +1310,7 @@ export default function AICoachPage() {
               <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back")}
             </Link>
             <Link href="/amy-coach/progress">
-              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-muted dark:bg-primary transition-all">
+              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
                 <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress")}
               </button>
             </Link>
@@ -1360,7 +1360,7 @@ export default function AICoachPage() {
               <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.categories")}
             </button>
             <Link href="/amy-coach/progress">
-              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-muted dark:bg-primary transition-all">
+              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
                 <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_2")}
               </button>
             </Link>
@@ -1419,7 +1419,7 @@ export default function AICoachPage() {
             <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_2")}
           </Link>
           <Link href="/amy-coach/progress">
-            <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-muted dark:bg-primary transition-all">
+            <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-muted dark:bg-card transition-all">
               <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_3")}
             </button>
           </Link>

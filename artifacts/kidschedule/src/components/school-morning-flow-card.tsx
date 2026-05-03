@@ -12,7 +12,7 @@ export function SchoolMorningFlowCard() {
   const {
     t
   } = useTranslation();
-  return <Card className="rounded-2xl overflow-hidden border-border dark:border-border bg-gradient-to-br from-muted via-white to-muted dark:from-primary dark:via-muted dark:to-primary shadow-sm">
+  return <Card className="rounded-2xl overflow-hidden border-border dark:border-border bg-gradient-to-br from-muted via-white to-muted dark:from-card dark:via-muted dark:to-card shadow-sm">
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
           <div className="h-12 w-12 rounded-2xl bg-primary text-primary dark:text-muted-foreground flex items-center justify-center shrink-0">
