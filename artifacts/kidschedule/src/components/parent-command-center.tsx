@@ -122,24 +122,24 @@ export function ParentCommandCenter({
   } = result;
   return <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
-        <button type="button" data-section-id="command-center" data-testid="command-center-tile" className={["group w-full text-left rounded-2xl overflow-hidden", "bg-gradient-to-br from-primary via-primary to-primary", "border border-white/60 dark:border-border", "shadow-[0_0_0_1px_rgba(168,85,247,0.18),0_18px_50px_-18px_rgba(168,85,247,0.45)]", "hover:shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_22px_60px_-18px_rgba(168,85,247,0.7)]", "hover:border-border transition-all duration-300", "p-3 sm:p-4 flex items-center gap-3"].join(" ")}>
-          <ProgressRing pct={overview.routineCompletionPct} size={56} />
+        <button type="button" data-section-id="command-center" data-testid="command-center-tile" className={["group w-full text-left rounded-2xl overflow-hidden", "bg-gradient-to-br from-primary/10 via-card to-card dark:from-primary/15 dark:via-card dark:to-card", "border border-primary/25 dark:border-border", "shadow-[0_0_0_1px_rgba(168,85,247,0.08),0_12px_40px_-18px_rgba(168,85,247,0.35)]", "hover:shadow-[0_0_0_1px_rgba(168,85,247,0.2),0_18px_50px_-18px_rgba(168,85,247,0.5)]", "hover:border-primary/40 transition-all duration-300", "p-3 sm:p-4 flex items-center gap-3"].join(" ")}>
+          <ProgressRing pct={overview.routineCompletionPct} size={56} textClassName="text-foreground" trackColor="hsl(var(--muted))" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
-              <p className="font-quicksand font-bold text-[14px] leading-tight text-primary-foreground truncate">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <p className="font-quicksand font-bold text-[14px] leading-tight text-foreground truncate">
                 {child.name}{t("components.parent_command_center.s_command_center")}
               </p>
             </div>
-            <p className="text-[11px] text-primary-foreground/80 truncate mt-0.5">
-              <span className="font-bold text-primary-foreground">{overview.statusEmoji} {overview.statusLabel}</span>
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+              <span className="font-bold text-foreground">{overview.statusEmoji} {overview.statusLabel}</span>
               {suggestions.length > 0 && <> · {suggestions[0].emoji} {suggestions[0].label}</>}
             </p>
-            <p className="text-[10.5px] text-primary-foreground/80 mt-0.5 truncate">
+            <p className="text-[10.5px] text-muted-foreground mt-0.5 truncate">
               {overview.routineCompletedTasks}/{overview.routineTotalTasks} {t("components.parent_command_center.done")} {MOOD_LABEL[overview.mood]} · {SLEEP_LABEL[overview.sleepQuality]}
             </p>
           </div>
-          <span className={["shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5", "bg-white/95 text-primary", "text-[11px] font-bold shadow-[0_8px_24px_-8px_rgba(0,0,0,0.25)]", "group-hover:scale-[1.04] transition-transform"].join(" ")}>
+          <span className={["shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5", "bg-primary text-primary-foreground", "text-[11px] font-bold shadow-[0_8px_24px_-8px_rgba(168,85,247,0.5)]", "group-hover:scale-[1.04] transition-transform"].join(" ")}>
             {t("components.parent_command_center.open")}
             <ArrowRight className="h-3 w-3" />
           </span>
@@ -830,10 +830,14 @@ function LearningInsightsSection({ childId }: { childId: number }) {
 
 function ProgressRing({
   pct,
-  size = 80
+  size = 80,
+  textClassName = "text-white",
+  trackColor = "rgba(255,255,255,0.12)"
 }: {
   pct: number;
   size?: number;
+  textClassName?: string;
+  trackColor?: string;
 }) {
   // Use stroke-dashoffset for the animation; the "to 100" stroke at start
   // gives the satisfying "fill in" effect on first render.
@@ -854,13 +858,13 @@ function ProgressRing({
             <stop offset="100%" stopColor="hsl(var(--brand-emerald-500))" />
           </linearGradient>
         </defs>
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.12)" strokeWidth={stroke} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={r} stroke={trackColor} strokeWidth={stroke} fill="none" />
         <circle cx={size / 2} cy={size / 2} r={r} stroke={`url(#ring-${size})`} strokeWidth={stroke} strokeLinecap="round" fill="none" strokeDasharray={c} strokeDashoffset={offset} style={{
         transition: "stroke-dashoffset 800ms cubic-bezier(.2,.8,.2,1)"
       }} />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="font-black tabular-nums text-white" style={{
+        <span className={`font-black tabular-nums ${textClassName}`} style={{
         fontSize: Math.max(12, Math.round(size * 0.28))
       }}>
           {safe}%
