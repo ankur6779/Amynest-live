@@ -3436,6 +3436,19 @@
       "subject": "Subject",
       "topic_placeholder": "Topic (optional) — e.g. addition, phonics letter B, water cycle",
       "amy_is_thinking": "Amy is thinking…"
+    },
+    "life_skills_page": {
+      "back": "Back",
+      "title": "Life Skills Mode",
+      "loading": "Loading…",
+      "empty_message": "Add a child between 2 and 15 years to unlock Life Skills.",
+      "add_a_child": "Add a child",
+      "role_play_title": "Role-play this skill",
+      "show": "Show",
+      "hide": "Hide",
+      "no_scenarios": "No scenarios yet.",
+      "day_streak": "day streak",
+      "best": "best"
     }
   }
 }

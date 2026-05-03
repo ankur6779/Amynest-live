@@ -473,6 +473,9 @@ importers:
       '@workspace/integrations-openai-ai-server':
         specifier: workspace:*
         version: link:../../lib/integrations-openai-ai-server
+      '@workspace/life-skills':
+        specifier: workspace:*
+        version: link:../../lib/life-skills
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../../lib/study-zone

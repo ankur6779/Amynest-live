@@ -36,15 +36,21 @@ import type {
   GenerateInsightsResponse,
   GenerateRoutineBody,
   GeneratedRoutine,
+  GetLifeSkillRolePlaysParams,
+  GetLifeSkillsTodayParams,
   GetParentProfileResponse,
   GetRecipeBody,
   GetRecipeResponse,
   HealthStatus,
+  LifeSkillProgressResponse,
+  LifeSkillRolePlay,
+  LifeSkillsTodayResponse,
   ListBehaviorsParams,
   ListParentTaskCompletionsParams,
   ListRoutinesParams,
   ParentTaskCompletion,
   Routine,
+  SetLifeSkillProgressBody,
   SetParentTaskCompletionBody,
   UpdateChildBody,
   UpdateRoutineItemsBody,
@@ -2706,6 +2712,293 @@ export const useClearParentTaskCompletion = <
 > => {
   return useMutation(getClearParentTaskCompletionMutationOptions(options));
 };
+
+/**
+ * @summary Today's age-banded life-skill cards plus streak + weekly bar
+ */
+export const getGetLifeSkillsTodayUrl = (params: GetLifeSkillsTodayParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/life-skills/today?${stringifiedParams}`
+    : `/api/life-skills/today`;
+};
+
+export const getLifeSkillsToday = async (
+  params: GetLifeSkillsTodayParams,
+  options?: RequestInit,
+): Promise<LifeSkillsTodayResponse> => {
+  return customFetch<LifeSkillsTodayResponse>(
+    getGetLifeSkillsTodayUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLifeSkillsTodayQueryKey = (
+  params?: GetLifeSkillsTodayParams,
+) => {
+  return [`/api/life-skills/today`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetLifeSkillsTodayQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLifeSkillsToday>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetLifeSkillsTodayParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLifeSkillsToday>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLifeSkillsTodayQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLifeSkillsToday>>
+  > = ({ signal }) => getLifeSkillsToday(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLifeSkillsToday>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLifeSkillsTodayQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLifeSkillsToday>>
+>;
+export type GetLifeSkillsTodayQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Today's age-banded life-skill cards plus streak + weekly bar
+ */
+
+export function useGetLifeSkillsToday<
+  TData = Awaited<ReturnType<typeof getLifeSkillsToday>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetLifeSkillsTodayParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLifeSkillsToday>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLifeSkillsTodayQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Mark a life skill as done or skipped for a child on a date
+ */
+export const getSetLifeSkillProgressUrl = () => {
+  return `/api/life-skills/progress`;
+};
+
+export const setLifeSkillProgress = async (
+  setLifeSkillProgressBody: SetLifeSkillProgressBody,
+  options?: RequestInit,
+): Promise<LifeSkillProgressResponse> => {
+  return customFetch<LifeSkillProgressResponse>(getSetLifeSkillProgressUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setLifeSkillProgressBody),
+  });
+};
+
+export const getSetLifeSkillProgressMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setLifeSkillProgress>>,
+    TError,
+    { data: BodyType<SetLifeSkillProgressBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setLifeSkillProgress>>,
+  TError,
+  { data: BodyType<SetLifeSkillProgressBody> },
+  TContext
+> => {
+  const mutationKey = ["setLifeSkillProgress"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setLifeSkillProgress>>,
+    { data: BodyType<SetLifeSkillProgressBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return setLifeSkillProgress(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetLifeSkillProgressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setLifeSkillProgress>>
+>;
+export type SetLifeSkillProgressMutationBody =
+  BodyType<SetLifeSkillProgressBody>;
+export type SetLifeSkillProgressMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark a life skill as done or skipped for a child on a date
+ */
+export const useSetLifeSkillProgress = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setLifeSkillProgress>>,
+    TError,
+    { data: BodyType<SetLifeSkillProgressBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setLifeSkillProgress>>,
+  TError,
+  { data: BodyType<SetLifeSkillProgressBody> },
+  TContext
+> => {
+  return useMutation(getSetLifeSkillProgressMutationOptions(options));
+};
+
+/**
+ * @summary Role-play scenarios for an age band
+ */
+export const getGetLifeSkillRolePlaysUrl = (
+  params: GetLifeSkillRolePlaysParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/life-skills/role-plays?${stringifiedParams}`
+    : `/api/life-skills/role-plays`;
+};
+
+export const getLifeSkillRolePlays = async (
+  params: GetLifeSkillRolePlaysParams,
+  options?: RequestInit,
+): Promise<LifeSkillRolePlay[]> => {
+  return customFetch<LifeSkillRolePlay[]>(getGetLifeSkillRolePlaysUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLifeSkillRolePlaysQueryKey = (
+  params?: GetLifeSkillRolePlaysParams,
+) => {
+  return [`/api/life-skills/role-plays`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetLifeSkillRolePlaysQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLifeSkillRolePlays>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetLifeSkillRolePlaysParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLifeSkillRolePlays>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLifeSkillRolePlaysQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLifeSkillRolePlays>>
+  > = ({ signal }) =>
+    getLifeSkillRolePlays(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLifeSkillRolePlays>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLifeSkillRolePlaysQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLifeSkillRolePlays>>
+>;
+export type GetLifeSkillRolePlaysQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Role-play scenarios for an age band
+ */
+
+export function useGetLifeSkillRolePlays<
+  TData = Awaited<ReturnType<typeof getLifeSkillRolePlays>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetLifeSkillRolePlaysParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLifeSkillRolePlays>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLifeSkillRolePlaysQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get behavior stats per child
