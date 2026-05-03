@@ -44,6 +44,18 @@ interface RoutineItemShape {
   status?: string;
 }
 
+/**
+ * Per-routine UI prefs persisted on `routines.ui_prefs`. The mobile per-routine
+ * "Reminders" toggle writes `pushReminders` here so the cron knows which
+ * routines to push for. We treat anything not strictly `true` as opt-out so
+ * legacy routines (which only carry `ageBandFilter`) stay silent until the user
+ * explicitly turns reminders on.
+ */
+function routinePushOptedIn(uiPrefs: unknown): boolean {
+  if (!uiPrefs || typeof uiPrefs !== "object") return false;
+  return (uiPrefs as { pushReminders?: unknown }).pushReminders === true;
+}
+
 let started = false;
 
 const TZ = process.env["NOTIFICATION_TZ"] ?? "Asia/Kolkata";
@@ -175,6 +187,12 @@ async function dispatchPerItemReminders(): Promise<{
         );
 
       for (const { routine, child } of rows) {
+        // Per-task push reminders are opt-in per routine: the mobile app sets
+        // `uiPrefs.pushReminders = true` when the user flips the toggle on
+        // the routine detail screen. Without this gate we would push for
+        // every today's routine of every user with the (default-on) global
+        // routine_item category enabled.
+        if (!routinePushOptedIn(routine.uiPrefs)) continue;
         const items = (routine.items ?? []) as RoutineItemShape[];
         for (let i = 0; i < items.length; i++) {
           const item = items[i]!;

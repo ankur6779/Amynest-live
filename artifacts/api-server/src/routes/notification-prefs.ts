@@ -210,6 +210,12 @@ router.get("/notifications/diagnostics", async (req, res): Promise<void> => {
         .innerJoin(childrenTable, eq(childrenTable.id, routinesTable.childId))
         .where(and(eq(childrenTable.userId, userId), eq(routinesTable.date, localDate)));
       for (const { routine } of rows) {
+        // Per-routine opt-in mirrors the cron filter: if the user hasn't
+        // flipped on the per-task reminder toggle for this routine, the cron
+        // won't push for it, so the diagnostics screen shouldn't claim a
+        // "next scheduled" item for it either.
+        const uiPrefs = routine.uiPrefs as { pushReminders?: unknown } | null;
+        if (!uiPrefs || uiPrefs.pushReminders !== true) continue;
         const items = (routine.items ?? []) as Array<{ time?: string; activity?: string; status?: string }>;
         for (const item of items) {
           if (!item.time || !item.activity) continue;

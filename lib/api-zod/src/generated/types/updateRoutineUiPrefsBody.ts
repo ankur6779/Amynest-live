@@ -12,4 +12,6 @@
 export interface UpdateRoutineUiPrefsBody {
   /** Selected age-band filter chip, or null to clear. */
   ageBandFilter?: string | null;
+  /** Enable or disable server-pushed per-task reminders for this routine. */
+  pushReminders?: boolean;
 }

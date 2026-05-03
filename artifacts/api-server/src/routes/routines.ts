@@ -344,7 +344,7 @@ type RoutineItem = {
 
 // Per-routine UI prefs that sync across web + mobile. The DB column defaults
 // to {} on legacy rows, so we normalise here before parsing the API response.
-type RoutineUiPrefs = { ageBandFilter?: string | null };
+type RoutineUiPrefs = { ageBandFilter?: string | null; pushReminders?: boolean };
 function normaliseUiPrefs(raw: unknown): RoutineUiPrefs {
   if (!raw || typeof raw !== "object") return {};
   const obj = raw as Record<string, unknown>;
@@ -352,6 +352,9 @@ function normaliseUiPrefs(raw: unknown): RoutineUiPrefs {
   if ("ageBandFilter" in obj) {
     const v = obj.ageBandFilter;
     out.ageBandFilter = typeof v === "string" ? v : null;
+  }
+  if ("pushReminders" in obj) {
+    out.pushReminders = obj.pushReminders === true;
   }
   return out;
 }
@@ -893,8 +896,12 @@ router.patch("/routines/:id/ui-prefs", async (req, res): Promise<void> => {
   const existing = normaliseUiPrefs(owned.uiPrefs);
   const next: RoutineUiPrefs = { ...existing };
   // Only overwrite fields explicitly provided in the request body.
-  if ("ageBandFilter" in (req.body ?? {})) {
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  if ("ageBandFilter" in body) {
     next.ageBandFilter = parsed.data.ageBandFilter ?? null;
+  }
+  if ("pushReminders" in body) {
+    next.pushReminders = parsed.data.pushReminders === true;
   }
 
   const [routine] = await db

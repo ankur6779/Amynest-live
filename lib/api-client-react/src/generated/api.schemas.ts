@@ -130,6 +130,11 @@ export interface RoutineItem {
 export interface RoutineUiPrefs {
   /** Currently selected age-band filter chip, or null for "All". */
   ageBandFilter?: string | null;
+  /** When true, the server-side notification cron sends a push reminder
+~5 minutes before each pending item in this routine. Independent of
+local on-device notifications and survives reinstall / Expo Go.
+ */
+  pushReminders?: boolean;
 }
 
 export interface Routine {
@@ -149,6 +154,8 @@ export interface Routine {
 export interface UpdateRoutineUiPrefsBody {
   /** Selected age-band filter chip, or null to clear. */
   ageBandFilter?: string | null;
+  /** Enable or disable server-pushed per-task reminders for this routine. */
+  pushReminders?: boolean;
 }
 
 export interface CreateRoutineBody {
