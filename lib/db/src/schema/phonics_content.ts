@@ -8,6 +8,7 @@ import {
   timestamp,
   uniqueIndex,
   index,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -33,6 +34,13 @@ export const phonicsContentTable = pgTable(
     sound: text("sound").notNull(),
     /** Optional caption: example word, blend hint, or comprehension prompt. */
     example: text("example"),
+    /**
+     * Optional list of 3–4 example words for a `letter` row (e.g. for "B":
+     * ["Ball", "Bat", "Banana"]). Renders as a small example carousel under
+     * the tile so the child sees multiple words that start with the sound.
+     * NULL for non-letter rows.
+     */
+    examples: jsonb("examples").$type<string[]>(),
     /**
      * Bare phonics-only TTS text — just the phoneme ("buh", "ah", "shhh"),
      * no letter name, no example word. Populated for `letter` rows so the

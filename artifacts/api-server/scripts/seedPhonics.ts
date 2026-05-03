@@ -11,7 +11,7 @@ import { db, phonicsContentTable } from "@workspace/db";
 import type { InsertPhonicsContent } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
-type SeedItem = Omit<InsertPhonicsContent, "active" | "audioUrl" | "phoneme"> & {
+type SeedItem = Omit<InsertPhonicsContent, "active" | "audioUrl" | "phoneme" | "examples"> & {
   audioUrl?: string | null;
   /**
    * Phonics-only TTS text — the bare phoneme ("buh", "ah", "shhh") with no
@@ -19,6 +19,11 @@ type SeedItem = Omit<InsertPhonicsContent, "active" | "audioUrl" | "phoneme"> & 
    * SOUND not the LETTER NAME. NULL for sounds/words/sentences/stories.
    */
   phoneme?: string | null;
+  /**
+   * 3–4 example words for a `letter` row (e.g. for "B": ["Ball","Bat","Banana"]).
+   * Used by the multi-example chip row in the Phonics learning UI.
+   */
+  examples?: string[] | null;
 };
 
 // ─── 12–24 months: animal + environment sounds ───────────────────────────────
@@ -36,20 +41,39 @@ const TIER_12_24M: SeedItem[] = [
 ];
 
 // ─── 2–3 years: A–Z phonics ──────────────────────────────────────────────────
-const ALPHABET: Array<[string, string, string, string]> = [
-  // [letter, phonetic, exampleWord, emoji]
-  ["A", "ah",  "Apple",      "🍎"], ["B", "buh", "Ball",   "⚽"], ["C", "kuh", "Cat",     "🐱"],
-  ["D", "duh", "Dog",        "🐶"], ["E", "eh",  "Egg",    "🥚"], ["F", "fff", "Fish",    "🐟"],
-  ["G", "guh", "Goat",       "🐐"], ["H", "huh", "Hat",    "🎩"], ["I", "ih",  "Igloo",   "🧊"],
-  ["J", "juh", "Jug",        "🫙"],  ["K", "kuh", "Kite",   "🪁"], ["L", "lll", "Lion",    "🦁"],
-  ["M", "mmm", "Moon",       "🌙"], ["N", "nnn", "Nest",   "🪺"], ["O", "oh",  "Orange",  "🍊"],
-  ["P", "puh", "Pig",        "🐷"], ["Q", "kwuh", "Queen", "👑"], ["R", "rrr", "Rain",    "🌧️"],
-  ["S", "sss", "Sun",        "☀️"], ["T", "tuh", "Tiger",  "🐯"], ["U", "uh",  "Umbrella", "☂️"],
-  ["V", "vvv", "Van",        "🚐"], ["W", "wuh", "Water",  "💧"], ["X", "ks",  "Box",     "📦"],
-  ["Y", "yuh", "Yo-yo",      "🪀"], ["Z", "zzz", "Zebra",  "🦓"],
+// Each row: [letter, phonetic, primaryExampleWord, emoji, [3-4 more examples]]
+// `primaryExampleWord` drives the legacy single-example caption; `extraExamples`
+// becomes the multi-example chip row in the new Phonics learning UI (T002).
+const ALPHABET: Array<[string, string, string, string, string[]]> = [
+  ["A", "ah",   "Apple",    "🍎",  ["Apple", "Ant", "Arm"]],
+  ["B", "buh",  "Ball",     "⚽",  ["Ball", "Bat", "Banana", "Bear"]],
+  ["C", "kuh",  "Cat",      "🐱",  ["Cat", "Cup", "Car"]],
+  ["D", "duh",  "Dog",      "🐶",  ["Dog", "Duck", "Door"]],
+  ["E", "eh",   "Egg",      "🥚",  ["Egg", "Elephant", "Ear"]],
+  ["F", "fff",  "Fish",     "🐟",  ["Fish", "Fan", "Frog", "Foot"]],
+  ["G", "guh",  "Goat",     "🐐",  ["Goat", "Gift", "Grape"]],
+  ["H", "huh",  "Hat",      "🎩",  ["Hat", "House", "Horse"]],
+  ["I", "ih",   "Igloo",    "🧊",  ["Igloo", "Ice", "Insect"]],
+  ["J", "juh",  "Jug",      "🫙",  ["Jug", "Jam", "Jeep"]],
+  ["K", "kuh",  "Kite",     "🪁",  ["Kite", "King", "Key"]],
+  ["L", "lll",  "Lion",     "🦁",  ["Lion", "Leaf", "Leg"]],
+  ["M", "mmm",  "Moon",     "🌙",  ["Moon", "Mango", "Mum"]],
+  ["N", "nnn",  "Nest",     "🪺",  ["Nest", "Nose", "Nine"]],
+  ["O", "oh",   "Orange",   "🍊",  ["Orange", "Owl", "Ox"]],
+  ["P", "puh",  "Pig",      "🐷",  ["Pig", "Pen", "Pot", "Pan"]],
+  ["Q", "kwuh", "Queen",    "👑",  ["Queen", "Quilt", "Question"]],
+  ["R", "rrr",  "Rain",     "🌧️", ["Rain", "Rabbit", "Ring"]],
+  ["S", "sss",  "Sun",      "☀️",  ["Sun", "Snake", "Star", "Sock"]],
+  ["T", "tuh",  "Tiger",    "🐯",  ["Tiger", "Tap", "Top"]],
+  ["U", "uh",   "Umbrella", "☂️",  ["Umbrella", "Up", "Under"]],
+  ["V", "vvv",  "Van",      "🚐",  ["Van", "Vase", "Violin"]],
+  ["W", "wuh",  "Water",    "💧",  ["Water", "Wind", "Wolf"]],
+  ["X", "ks",   "Box",      "📦",  ["Box", "Fox", "Six"]],
+  ["Y", "yuh",  "Yo-yo",    "🪀",  ["Yo-yo", "Yak", "Yellow"]],
+  ["Z", "zzz",  "Zebra",    "🦓",  ["Zebra", "Zoo", "Zip"]],
 ];
 
-const TIER_2_3Y: SeedItem[] = ALPHABET.map(([letter, phon, word, emoji], i) => ({
+const TIER_2_3Y: SeedItem[] = ALPHABET.map(([letter, phon, word, emoji, examples], i) => ({
   ageGroup: "2_3y",
   level: i + 1,
   type: "letter",
@@ -59,6 +83,7 @@ const TIER_2_3Y: SeedItem[] = ALPHABET.map(([letter, phon, word, emoji], i) => (
   // the child hears just /buh/ instead of "B says buh, B for Ball".
   phoneme: phon,
   example: word,
+  examples,
   emoji,
   hint: `${letter} is for ${word}`,
 }));
@@ -198,6 +223,7 @@ async function main() {
           sound: item.sound,
           phoneme: item.phoneme ?? null,
           example: item.example ?? null,
+          examples: item.examples ?? null,
           emoji: item.emoji ?? null,
           hint: item.hint ?? null,
           audioUrl: item.audioUrl ?? null,

@@ -1305,8 +1305,6 @@ export default function HubScreen() {
               <LockedBlock
                 reason="hub_locked"
                 locked={hubUsage.isFeatureLocked("hub_abacus")}
-                label="Unlock to continue" // audit-ok: brand CTA, matches other LockedBlock copy
-                cta="Unlock Premium"
               >
               <Section
                 id="abacus"
