@@ -1023,8 +1023,6 @@ components:
           type: string
         hasSchool:
           type: boolean
-        isWorkingDay:
-          type: boolean
         specialPlans:
           type: string
           nullable: true
@@ -1034,24 +1032,16 @@ components:
         mood:
           type: string
           nullable: true
-        parent1Role:
+        caregiver:
           type: string
-          nullable: true
-        parent1WorkType:
+          enum: [mom, dad, both, grandparent, babysitter]
+          default: mom
+          description: Who is handling the child today. Drives tone, simplification, and bonding density. Reuses the HandlerKey enum from @workspace/family-routine.
+        weatherOutdoor:
           type: string
-          nullable: true
-        parent1IsWorking:
-          type: boolean
-          nullable: true
-        parent2Role:
-          type: string
-          nullable: true
-        parent2WorkType:
-          type: string
-          nullable: true
-        parent2IsWorking:
-          type: boolean
-          nullable: true
+          enum: [yes, no, limited]
+          default: "yes"
+          description: Outdoor-weather signal. "no" swaps outdoor blocks for indoor alternatives, "limited" shortens them and adds an indoor backup note.
         region:
           type: string
           nullable: true

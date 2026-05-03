@@ -5,21 +5,20 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { GenerateRoutineBodyCaregiver } from "./generateRoutineBodyCaregiver";
+import type { GenerateRoutineBodyWeatherOutdoor } from "./generateRoutineBodyWeatherOutdoor";
 
 export interface GenerateRoutineBody {
   childId: number;
   date: string;
   hasSchool?: boolean;
-  isWorkingDay?: boolean;
   specialPlans?: string | null;
   fridgeItems?: string | null;
   mood?: string | null;
-  parent1Role?: string | null;
-  parent1WorkType?: string | null;
-  parent1IsWorking?: boolean | null;
-  parent2Role?: string | null;
-  parent2WorkType?: string | null;
-  parent2IsWorking?: boolean | null;
+  /** Who is handling the child today. Drives tone, simplification, and bonding density. Reuses the HandlerKey enum from @workspace/family-routine. */
+  caregiver?: GenerateRoutineBodyCaregiver;
+  /** Outdoor-weather signal. "no" swaps outdoor blocks for indoor alternatives, "limited" shortens them and adds an indoor backup note. */
+  weatherOutdoor?: GenerateRoutineBodyWeatherOutdoor;
   region?: string | null;
   wakeTime?: string | null;
   age?: number | null;

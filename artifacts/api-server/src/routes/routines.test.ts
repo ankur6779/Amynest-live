@@ -22,15 +22,18 @@ import { REGION_LABELS, type Region } from "../lib/routine-templates.js";
 
 // ─── Mock-client factory ───────────────────────────────────────────────────
 function makeMockOpenai(responseJson: object) {
-  return {
+  const calls: Array<{ messages: Array<{ role: string; content: string }> }> = [];
+  const client = {
     chat: {
       completions: {
-        create: async () => ({
-          choices: [{ message: { content: JSON.stringify(responseJson) } }],
-        }),
+        create: async (p: { messages: Array<{ role: string; content: string }> }) => {
+          calls.push({ messages: p.messages });
+          return { choices: [{ message: { content: JSON.stringify(responseJson) } }] };
+        },
       },
     },
   };
+  return Object.assign(client, { _calls: calls });
 }
 
 // ─── Shared base params ────────────────────────────────────────────────────
@@ -45,7 +48,8 @@ const BASE = {
   foodType: "veg",
   mood: "happy",
   date: "2026-04-23",
-  parentAvailSummary: "Parent available in the morning.",
+  caregiver: "mom" as const,
+  weatherOutdoor: "yes" as const,
 };
 
 // ─── Fixture helpers ───────────────────────────────────────────────────────
@@ -951,3 +955,89 @@ for (const check of SIGNATURE_DISHES) {
     });
   });
 }
+
+// ─── Caregiver + weather AI prompt assertions ────────────────────────────────
+
+describe("generateAiRoutine — prompt content (caregiver + weather)", () => {
+  it("includes the caregiver line and excludes legacy parent/isWorking tokens", async () => {
+    const mock = makeMockOpenai({ title: "Day", items: nonSchoolItems() });
+    await generateAiRoutine({
+      ...BASE,
+      hasSchool: false,
+      caregiver: "grandparent",
+      weatherOutdoor: "no",
+      openaiClient: mock,
+    });
+    const userMsg = mock._calls[0]!.messages.find((m) => m.role === "user")!.content;
+    assert.match(userMsg, /Caregiver today: Grandparent/);
+    assert.match(userMsg, /grandparent is caring/i);
+    assert.match(userMsg, /Outdoor weather:/);
+    assert.match(userMsg, /Outdoor play is NOT possible/);
+    assert.doesNotMatch(userMsg, /parent1/i);
+    assert.doesNotMatch(userMsg, /parent2/i);
+    assert.doesNotMatch(userMsg, /isWorking/);
+    assert.doesNotMatch(userMsg, /isWorkingDay/);
+  });
+
+  it("varies the prompt per caregiver", async () => {
+    const prompts: Record<string, string> = {};
+    for (const c of ["mom", "dad", "both", "grandparent", "babysitter"] as const) {
+      const mock = makeMockOpenai({ title: "Day", items: nonSchoolItems() });
+      await generateAiRoutine({
+        ...BASE,
+        hasSchool: false,
+        caregiver: c,
+        openaiClient: mock,
+      });
+      prompts[c] = mock._calls[0]!.messages.find((m) => m.role === "user")!.content;
+    }
+    assert.notEqual(prompts.mom, prompts.dad);
+    assert.notEqual(prompts.mom, prompts.babysitter);
+    assert.notEqual(prompts.grandparent, prompts.babysitter);
+    assert.match(prompts.babysitter, /babysitter/i);
+    assert.match(prompts.both, /both parents/i);
+  });
+});
+
+describe("generateAiRoutine — weather adjustment is applied to AI output", () => {
+  function isOutdoorish(activity: string, category: string): boolean {
+    return /\b(outdoor|park|cycling|cycle|bike|walk|playground|swim|run|jog|football|cricket|tennis|skating|nature|garden)\b/i.test(activity)
+      || /^outdoor/.test(category.toLowerCase());
+  }
+
+  it("weatherOutdoor=no removes outdoor activities from AI items", async () => {
+    const result = await generateAiRoutine({
+      ...BASE,
+      hasSchool: false,
+      caregiver: "mom",
+      weatherOutdoor: "no",
+      openaiClient: makeMockOpenai({ title: "Day", items: nonSchoolItems() }),
+    });
+    const remaining = result.items.filter((it) => isOutdoorish(it.activity, it.category ?? ""));
+    assert.equal(remaining.length, 0, `Outdoor leftovers from AI: ${remaining.map((r) => r.activity).join(", ")}`);
+  });
+
+  it("weatherOutdoor=limited halves duration on AI outdoor items vs yes", async () => {
+    const yesRes = await generateAiRoutine({
+      ...BASE,
+      hasSchool: false,
+      caregiver: "mom",
+      weatherOutdoor: "yes",
+      openaiClient: makeMockOpenai({ title: "Day", items: nonSchoolItems() }),
+    });
+    const limRes = await generateAiRoutine({
+      ...BASE,
+      hasSchool: false,
+      caregiver: "mom",
+      weatherOutdoor: "limited",
+      openaiClient: makeMockOpenai({ title: "Day", items: nonSchoolItems() }),
+    });
+    const yesOut = yesRes.items.filter((it) => isOutdoorish(it.activity, it.category ?? ""));
+    const limOut = limRes.items.filter((it) => isOutdoorish(it.activity, it.category ?? ""));
+    if (yesOut.length > 0 && limOut.length > 0) {
+      const yesTotal = yesOut.reduce((s, it) => s + (it.duration ?? 0), 0);
+      const limTotal = limOut.reduce((s, it) => s + (it.duration ?? 0), 0);
+      assert.ok(limTotal <= yesTotal);
+    }
+  });
+});

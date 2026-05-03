@@ -45,9 +45,8 @@ beforeAll(() => {
     mood: "balanced",
     foodType: "veg",
     region: "pan_indian",
-    p1Free: true,
-    p2Free: true,
-    bothBusy: false,
+    caregiver: "both",
+    weatherOutdoor: "yes",
     date: "Monday",
   }).items;
 
@@ -64,9 +63,8 @@ beforeAll(() => {
     mood: "balanced",
     foodType: "veg",
     region: "pan_indian",
-    p1Free: true,
-    p2Free: true,
-    bothBusy: false,
+    caregiver: "both",
+    weatherOutdoor: "yes",
     date: "Saturday",
   }).items;
 });

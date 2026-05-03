@@ -78,7 +78,8 @@ vi.mock("@/components/voice-settings", () => ({
   VoiceSettingsPanel: () => null,
 }));
 
-vi.mock("@workspace/family-routine", () => ({
+vi.mock("@workspace/family-routine", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@workspace/family-routine")>()),
   runAdaptiveEngine: vi.fn().mockImplementation((items: unknown[]) => ({
     items: items ?? [],
     changed: false,
@@ -135,9 +136,8 @@ describe("RoutineDetail page — school day", () => {
       mood: "balanced",
       foodType: "veg",
       region: "pan_indian",
-      p1Free: true,
-      p2Free: true,
-      bothBusy: false,
+      caregiver: "both",
+      weatherOutdoor: "yes",
       date: "Monday",
     }).items;
 
@@ -213,9 +213,8 @@ describe("RoutineDetail page — non-school day", () => {
       mood: "balanced",
       foodType: "veg",
       region: "pan_indian",
-      p1Free: true,
-      p2Free: true,
-      bothBusy: false,
+      caregiver: "both",
+      weatherOutdoor: "yes",
       date: "Saturday",
     }).items;
 
