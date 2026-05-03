@@ -164,6 +164,11 @@ describe("ParentCommandCenter — JSX snapshots", () => {
     await act(async () => { await Promise.resolve(); });
     fireEvent.click(screen.getByTestId("command-center-tile"));
     await screen.findByTestId("command-center-dashboard");
+    // Dashboard fires additional queries (learning-insights, etc.) on open.
+    // Flush microtasks so those queries land before the snapshot — without
+    // this the snapshot can capture the loading state under slow CI.
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    await screen.findByTestId("learning-insights-empty");
     expect(container).toMatchSnapshot();
   });
 });

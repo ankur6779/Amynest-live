@@ -32,8 +32,30 @@ const captured = vi.hoisted(() => ({ styles: {} as Record<string, any> }));
 
 vi.mock("react-native", async () => {
   const actual = await vi.importActual<any>("react-native");
+  const ease = (n: number) => n;
+  const easingFactory = Object.assign(ease, { out: () => ease, inOut: () => ease, in: () => ease, cubic: ease, ease });
+  const animatedValue = () => ({
+    interpolate: () => "0%",
+    setValue: () => {},
+    stopAnimation: () => {},
+    addListener: () => 0,
+    removeListener: () => {},
+    removeAllListeners: () => {},
+  });
+  const noopAnim = () => ({ start: (cb?: any) => { cb && cb({ finished: true }); }, stop: () => {}, reset: () => {} });
   return {
     ...actual,
+    Easing: { out: () => ease, inOut: () => ease, in: () => ease, cubic: ease, ease, linear: ease },
+    Animated: {
+      ...(actual.Animated ?? {}),
+      Value: function (this: any, v: number) { return animatedValue(); } as any,
+      View: actual.View,
+      timing: noopAnim,
+      sequence: noopAnim,
+      parallel: noopAnim,
+      loop: noopAnim,
+      delay: noopAnim,
+    },
     StyleSheet: {
       ...actual.StyleSheet,
       create: (styles: Record<string, any>) => {
@@ -83,6 +105,22 @@ vi.mock("@tanstack/react-query", () => ({
 
 vi.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
+vi.mock("expo-constants", () => ({
+  default: { executionEnvironment: "standalone" },
+  ExecutionEnvironment: { Bare: "bare", Standalone: "standalone", StoreClient: "storeClient" },
+}));
+
+vi.mock("expo-device", () => ({
+  isDevice: false,
+}));
+
+vi.mock("expo-notifications", () => ({
+  getPermissionsAsync: vi.fn().mockResolvedValue({ status: "undetermined", granted: false }),
+  requestPermissionsAsync: vi.fn().mockResolvedValue({ status: "granted", granted: true }),
+  setNotificationChannelAsync: vi.fn().mockResolvedValue(undefined),
+  AndroidImportance: { DEFAULT: 3 },
 }));
 
 vi.mock("expo-haptics", () => ({
