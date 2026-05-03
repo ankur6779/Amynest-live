@@ -181,11 +181,86 @@ function ensureKey(ns, text) {
   }
 }
 
+// Match a `const { t, ... } = useTranslation();` line (with optional extras
+// in the destructure). Used both to detect existing hook calls and to strip
+// misplaced ones before re-inserting at the top of the component body.
+// Capture group 1 is the FULL destructure (including braces) so we can
+// preserve any extra members like `i18n` when hoisting.
+const HOOK_LINE_RE =
+  /^\s*const\s*(\{\s*t\b[^}]*\})\s*=\s*useTranslation\s*\(\s*\)\s*;?\s*$/;
+
+// Component function declaration patterns. We restrict to PascalCase names so
+// that helper functions like `formatRelative` / `slugify` are not mistaken
+// for components.
+const FUNC_DECL_RE =
+  /^(\s*)(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+([A-Z][A-Za-z0-9_]*)\s*[<(]/;
+const ARROW_DECL_RE =
+  /^(\s*)(?:export\s+(?:default\s+)?)?(?:const|let|var)\s+([A-Z][A-Za-z0-9_]*)\s*[:=]/;
+
+/**
+ * Locate every component function in `content` whose body contains a `t(`
+ * call. Returns the line index that opens the body (the line ending in `{`),
+ * the matching close-line, the indentation to use for inserting hooks, and
+ * the component name.
+ *
+ * Top-level components are required to have their closing brace at the same
+ * indentation as the declaration — true for every component file in this
+ * codebase. Nested arrow components are intentionally ignored: we never want
+ * to inject `useTranslation()` inside a callback.
+ */
+function findComponentBodies(content) {
+  const lines = content.split("\n");
+  const bodies = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const decl = line.match(FUNC_DECL_RE) || line.match(ARROW_DECL_RE);
+    if (!decl) continue;
+
+    const declIndent = decl[1] || "";
+
+    // Walk forward to the line whose trimmed-end is `{`. That is the line
+    // that opens the body. Bail out if we don't find one within a few lines
+    // (defensive — keeps us from walking into the next declaration).
+    let openLine = -1;
+    for (let j = i; j < Math.min(i + 30, lines.length); j++) {
+      const stripped = lines[j].replace(/\/\/.*$/, "").trimEnd();
+      if (stripped.endsWith("{")) {
+        openLine = j;
+        break;
+      }
+    }
+    if (openLine < 0) continue;
+
+    // Closing brace at the declaration's indent.
+    let closeLine = -1;
+    for (let j = openLine + 1; j < lines.length; j++) {
+      if (lines[j] === declIndent + "}" || lines[j].startsWith(declIndent + "} ")) {
+        closeLine = j;
+        break;
+      }
+    }
+    if (closeLine < 0) continue;
+
+    const bodySlice = lines.slice(openLine + 1, closeLine);
+    if (!/\bt\s*\(/.test(bodySlice.join("\n"))) continue;
+
+    bodies.push({
+      name: decl[2],
+      openLine,
+      closeLine,
+      bodyIndent: declIndent + "  ",
+    });
+  }
+
+  return bodies;
+}
+
 function ensureUseTranslation(content) {
   let changed = false;
 
+  // 1. Ensure the import exists.
   if (!/from\s+["']react-i18next["']/.test(content)) {
-    // Insert import after the last existing import line
     const lines = content.split("\n");
     let lastImportIdx = -1;
     for (let i = 0; i < lines.length; i++) {
@@ -203,27 +278,148 @@ function ensureUseTranslation(content) {
     changed = true;
   }
 
-  if (!/useTranslation\s*\(\s*\)/.test(content)) {
-    // Insert `const { t } = useTranslation();` before the first `return (`
-    // or `return <` line, using the same indentation.
-    const lines = content.split("\n");
-    let target = -1;
-    for (let i = 0; i < lines.length; i++) {
-      if (/^\s*return\s*\(/.test(lines[i]) || /^\s*return\s*</.test(lines[i])) {
-        target = i;
-        break;
+  // 2. For every component function whose body uses `t(`, ensure exactly
+  //    one `const { t } = useTranslation();` lives at the very top of the
+  //    body. Process bodies in reverse so earlier line indices remain valid.
+  let lines = content.split("\n");
+  const bodies = findComponentBodies(content).sort(
+    (a, b) => b.openLine - a.openLine,
+  );
+
+  for (const body of bodies) {
+    const bodyLines = lines.slice(body.openLine + 1, body.closeLine);
+
+    // Collect existing hook bindings in this body, preserving each one's
+    // destructure shape (so extra members like `i18n` survive a hoist).
+    // Then strip them out — we'll re-add a single canonical line at the top.
+    const destructures = [];
+    const stripped = [];
+    for (const l of bodyLines) {
+      const m = l.match(HOOK_LINE_RE);
+      if (m) {
+        destructures.push(m[1]);
+        continue;
       }
+      stripped.push(l);
     }
-    if (target >= 0) {
-      const indent = lines[target].match(/^(\s*)/)[1];
-      lines.splice(target, 0, `${indent}const { t } = useTranslation();`);
-      content = lines.join("\n");
+
+    // Merge multiple destructures by union of identifiers (defensive — in
+    // practice there is at most one per body). Falls back to `{ t }` when
+    // the body had no existing hook call (the script's t() insertion just
+    // added the first usage).
+    let destructure = "{ t }";
+    if (destructures.length > 0) {
+      const ids = new Set();
+      for (const d of destructures) {
+        const inner = d.replace(/^\{\s*|\s*\}$/g, "");
+        for (const part of inner.split(",")) {
+          const id = part.trim();
+          if (id) ids.add(id);
+        }
+      }
+      // Keep `t` first for readability, then any extras in their original
+      // first-seen order.
+      const ordered = ["t", ...[...ids].filter((id) => id !== "t")];
+      destructure = `{ ${ordered.join(", ")} }`;
+    }
+
+    const canonical = `${body.bodyIndent}const ${destructure} = useTranslation();`;
+    stripped.unshift(canonical);
+
+    // Determine whether any change is needed. The body is already correct iff
+    // the original first line was the canonical hook call (same destructure)
+    // and no other duplicates existed below it.
+    const wasAlreadyCorrect =
+      destructures.length === 1 &&
+      bodyLines.length > 0 &&
+      bodyLines[0] === canonical;
+
+    if (!wasAlreadyCorrect) {
+      lines.splice(
+        body.openLine + 1,
+        body.closeLine - body.openLine - 1,
+        ...stripped,
+      );
       changed = true;
     }
   }
 
-  return { content, changed };
+  return { content: lines.join("\n"), changed };
 }
+
+/**
+ * Post-write guard. Returns an array of human-readable issue strings — one
+ * per misplaced `useTranslation()` call. Empty array means the file is safe.
+ *
+ * A call is considered misplaced if it appears inside any of:
+ *  - a non-component function body (camelCase / lowercase name)
+ *  - a nested arrow callback (`=> {`) inside a component
+ *  - after a `return ` statement at the same or shallower indent as the call
+ *  - inside an `if (...) {` / `} else {` branch (deeper indent than the
+ *    enclosing component body)
+ */
+function validateHookPlacement(content) {
+  const issues = [];
+  const lines = content.split("\n");
+
+  // Pre-compute which line ranges belong to component bodies (via the same
+  // detector ensureUseTranslation uses) so we can recognise "outside any
+  // component" vs "inside component but at wrong depth".
+  const bodies = findComponentBodies(content);
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!HOOK_LINE_RE.test(lines[i])) continue;
+    const callIndent = lines[i].match(/^(\s*)/)[1];
+
+    const owner = bodies.find(
+      (b) => i > b.openLine && i < b.closeLine,
+    );
+
+    if (!owner) {
+      issues.push(
+        `line ${i + 1}: useTranslation() call is not inside a recognised component function body`,
+      );
+      continue;
+    }
+
+    if (callIndent !== owner.bodyIndent) {
+      issues.push(
+        `line ${i + 1}: useTranslation() in component "${owner.name}" is at indent ${callIndent.length}, expected ${owner.bodyIndent.length} (likely inside an if/else branch or nested callback)`,
+      );
+      continue;
+    }
+
+    // Reject if any earlier body line at the same indent contains a `return`
+    // statement. That means the hook would only run on some renders.
+    for (let j = owner.openLine + 1; j < i; j++) {
+      const prev = lines[j];
+      const prevIndent = prev.match(/^(\s*)/)[1];
+      if (prevIndent.length > owner.bodyIndent.length) continue;
+      // Allow blank lines, comments, imports, other hooks, declarations.
+      if (/^\s*return\b/.test(prev)) {
+        issues.push(
+          `line ${i + 1}: useTranslation() in component "${owner.name}" appears AFTER an earlier \`return\` on line ${j + 1} — this violates the Rules of Hooks`,
+        );
+        break;
+      }
+      // An `if (...) ... return` on a single line is also an early return.
+      if (/^\s*if\s*\(.+\)\s*return\b/.test(prev)) {
+        issues.push(
+          `line ${i + 1}: useTranslation() in component "${owner.name}" appears AFTER an early-return guard on line ${j + 1}`,
+        );
+        break;
+      }
+    }
+  }
+
+  return issues;
+}
+
+module.exports = {
+  ensureUseTranslation,
+  validateHookPlacement,
+  findComponentBodies,
+};
 
 function processFile(rel) {
   const abs = path.join(ROOT, rel);
@@ -325,38 +521,56 @@ function processFile(rel) {
   const ensured = ensureUseTranslation(newContent);
   newContent = ensured.content;
 
+  // Pre-write guard: refuse to write if the resulting file would have a
+  // misplaced useTranslation() call (after an early return, inside an
+  // if-branch, or inside a nested callback). This is the source-of-truth
+  // protection requested by Task #252.
+  const issues = validateHookPlacement(newContent);
+  if (issues.length > 0) {
+    console.error(
+      `\n❌ Refusing to write ${rel} — useTranslation() would be placed in a hooks-order-unsafe location:`,
+    );
+    for (const msg of issues) console.error(`     ${msg}`);
+    console.error(
+      `   Hoist the hook call to the very top of the component body manually, then re-run.`,
+    );
+    throw new Error(`hooks-order placement violation in ${rel}`);
+  }
+
   fs.writeFileSync(abs, newContent, "utf8");
   return { rel, replaced: totalReplaced };
 }
 
-const results = [];
-for (const rel of DEFERRED_FILES) {
-  results.push(processFile(rel));
-}
+if (require.main === module) {
+  const results = [];
+  for (const rel of DEFERRED_FILES) {
+    results.push(processFile(rel));
+  }
 
-// Save updated locale files (English and stub HI/HG)
-fs.writeFileSync(
-  path.join(I18N_DIR, "en.json"),
-  JSON.stringify(en, null, 2) + "\n"
-);
-fs.writeFileSync(
-  path.join(I18N_DIR, "hi.json"),
-  JSON.stringify(hi, null, 2) + "\n"
-);
-fs.writeFileSync(
-  path.join(I18N_DIR, "hinglish.json"),
-  JSON.stringify(hg, null, 2) + "\n"
-);
+  // Save updated locale files (English and stub HI/HG)
+  fs.writeFileSync(
+    path.join(I18N_DIR, "en.json"),
+    JSON.stringify(en, null, 2) + "\n"
+  );
+  fs.writeFileSync(
+    path.join(I18N_DIR, "hi.json"),
+    JSON.stringify(hi, null, 2) + "\n"
+  );
+  fs.writeFileSync(
+    path.join(I18N_DIR, "hinglish.json"),
+    JSON.stringify(hg, null, 2) + "\n"
+  );
 
-fs.writeFileSync(
-  "/tmp/amynest-new-i18n-keys.json",
-  JSON.stringify(newKeys, null, 2)
-);
+  fs.writeFileSync(
+    "/tmp/amynest-new-i18n-keys.json",
+    JSON.stringify(newKeys, null, 2)
+  );
 
-const totalReplacements = results.reduce((s, r) => s + r.replaced, 0);
-console.log(`✓ Migrated ${totalReplacements} string(s) across ${results.length} files.`);
-console.log(`✓ Added ${Object.keys(newKeys).length} new key(s).`);
-console.log(`✓ Wrote new keys to /tmp/amynest-new-i18n-keys.json`);
-for (const r of results) {
-  if (r.replaced > 0) console.log(`   ${r.replaced.toString().padStart(4)}  ${r.rel}`);
+  const totalReplacements = results.reduce((s, r) => s + r.replaced, 0);
+  console.log(`✓ Migrated ${totalReplacements} string(s) across ${results.length} files.`);
+  console.log(`✓ Added ${Object.keys(newKeys).length} new key(s).`);
+  console.log(`✓ Wrote new keys to /tmp/amynest-new-i18n-keys.json`);
+  for (const r of results) {
+    if (r.replaced > 0) console.log(`   ${r.replaced.toString().padStart(4)}  ${r.rel}`);
+  }
 }
