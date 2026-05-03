@@ -425,6 +425,134 @@ export interface BehaviorStat {
   neutral: number;
 }
 
+export interface LifeSkillLocalizedText {
+  en: string;
+  hi: string;
+  hinglish: string;
+}
+
+export type LifeSkillTaskAgeBand =
+  (typeof LifeSkillTaskAgeBand)[keyof typeof LifeSkillTaskAgeBand];
+
+export const LifeSkillTaskAgeBand = {
+  toddler: "toddler",
+  preschool: "preschool",
+  kid: "kid",
+  teen: "teen",
+} as const;
+
+export type LifeSkillTaskCategory =
+  (typeof LifeSkillTaskCategory)[keyof typeof LifeSkillTaskCategory];
+
+export const LifeSkillTaskCategory = {
+  hygiene: "hygiene",
+  social: "social",
+  responsibility: "responsibility",
+  emotional: "emotional",
+  money: "money",
+  time: "time",
+  self_care: "self_care",
+  chores: "chores",
+} as const;
+
+export type LifeSkillTaskDifficulty =
+  (typeof LifeSkillTaskDifficulty)[keyof typeof LifeSkillTaskDifficulty];
+
+export const LifeSkillTaskDifficulty = {
+  easy: "easy",
+  medium: "medium",
+  hard: "hard",
+} as const;
+
+export interface LifeSkillTask {
+  id: string;
+  ageBand: LifeSkillTaskAgeBand;
+  category: LifeSkillTaskCategory;
+  difficulty: LifeSkillTaskDifficulty;
+  title: LifeSkillLocalizedText;
+  description: LifeSkillLocalizedText;
+  parentTip: LifeSkillLocalizedText;
+}
+
+export interface LifeSkillStreak {
+  current: number;
+  best: number;
+}
+
+export interface LifeSkillWeeklyDay {
+  date: string;
+  completed: boolean;
+}
+
+export type LifeSkillsTodayResponseAgeBand =
+  (typeof LifeSkillsTodayResponseAgeBand)[keyof typeof LifeSkillsTodayResponseAgeBand];
+
+export const LifeSkillsTodayResponseAgeBand = {
+  toddler: "toddler",
+  preschool: "preschool",
+  kid: "kid",
+  teen: "teen",
+} as const;
+
+export interface LifeSkillsTodayResponse {
+  ageBand: LifeSkillsTodayResponseAgeBand;
+  date: string;
+  tasks: LifeSkillTask[];
+  completedSkillIds: string[];
+  skippedSkillIds: string[];
+  streak: LifeSkillStreak;
+  weeklyBar: LifeSkillWeeklyDay[];
+}
+
+export type SetLifeSkillProgressBodyAction =
+  (typeof SetLifeSkillProgressBodyAction)[keyof typeof SetLifeSkillProgressBodyAction];
+
+export const SetLifeSkillProgressBodyAction = {
+  done: "done",
+} as const;
+
+export interface SetLifeSkillProgressBody {
+  childId: number;
+  skillId: string;
+  action: SetLifeSkillProgressBodyAction;
+  date?: string | null;
+}
+
+export type LifeSkillProgressResponseAction =
+  (typeof LifeSkillProgressResponseAction)[keyof typeof LifeSkillProgressResponseAction];
+
+export const LifeSkillProgressResponseAction = {
+  done: "done",
+} as const;
+
+export interface LifeSkillProgressResponse {
+  childId: number;
+  skillId: string;
+  date: string;
+  action: LifeSkillProgressResponseAction;
+  streak: LifeSkillStreak;
+  weeklyBar: LifeSkillWeeklyDay[];
+}
+
+export type LifeSkillRolePlayAgeBand =
+  (typeof LifeSkillRolePlayAgeBand)[keyof typeof LifeSkillRolePlayAgeBand];
+
+export const LifeSkillRolePlayAgeBand = {
+  toddler: "toddler",
+  preschool: "preschool",
+  kid: "kid",
+  teen: "teen",
+} as const;
+
+export interface LifeSkillRolePlay {
+  id: string;
+  ageBand: LifeSkillRolePlayAgeBand;
+  title: LifeSkillLocalizedText;
+  setup: LifeSkillLocalizedText;
+  childLine: LifeSkillLocalizedText;
+  parentPrompt: LifeSkillLocalizedText;
+}
+
 export type ListRoutinesParams = {
   childId?: number;
 };
@@ -452,3 +580,21 @@ export type ClearParentTaskCompletionParams = {
   date: string;
   taskKey: string;
 };
+
+export type GetLifeSkillsTodayParams = {
+  childId: number;
+};
+
+export type GetLifeSkillRolePlaysParams = {
+  ageBand: GetLifeSkillRolePlaysAgeBand;
+};
+
+export type GetLifeSkillRolePlaysAgeBand =
+  (typeof GetLifeSkillRolePlaysAgeBand)[keyof typeof GetLifeSkillRolePlaysAgeBand];
+
+export const GetLifeSkillRolePlaysAgeBand = {
+  toddler: "toddler",
+  preschool: "preschool",
+  kid: "kid",
+  teen: "teen",
+} as const;

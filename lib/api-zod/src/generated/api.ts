@@ -968,6 +968,124 @@ export const ClearParentTaskCompletionQueryParams = zod.object({
 });
 
 /**
+ * @summary Today's age-banded life-skill cards plus streak + weekly bar
+ */
+export const GetLifeSkillsTodayQueryParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const GetLifeSkillsTodayResponse = zod.object({
+  ageBand: zod.enum(["toddler", "preschool", "kid", "teen"]),
+  date: zod.string(),
+  tasks: zod.array(
+    zod.object({
+      id: zod.string(),
+      ageBand: zod.enum(["toddler", "preschool", "kid", "teen"]),
+      category: zod.enum([
+        "hygiene",
+        "social",
+        "responsibility",
+        "emotional",
+        "money",
+        "time",
+        "self_care",
+        "chores",
+      ]),
+      difficulty: zod.enum(["easy", "medium", "hard"]),
+      title: zod.object({
+        en: zod.string(),
+        hi: zod.string(),
+        hinglish: zod.string(),
+      }),
+      description: zod.object({
+        en: zod.string(),
+        hi: zod.string(),
+        hinglish: zod.string(),
+      }),
+      parentTip: zod.object({
+        en: zod.string(),
+        hi: zod.string(),
+        hinglish: zod.string(),
+      }),
+    }),
+  ),
+  completedSkillIds: zod.array(zod.string()),
+  skippedSkillIds: zod.array(zod.string()),
+  streak: zod.object({
+    current: zod.number(),
+    best: zod.number(),
+  }),
+  weeklyBar: zod.array(
+    zod.object({
+      date: zod.string(),
+      completed: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary Mark a life skill as done or skipped for a child on a date
+ */
+export const SetLifeSkillProgressBody = zod.object({
+  childId: zod.number(),
+  skillId: zod.string(),
+  action: zod.enum(["done"]),
+  date: zod.string().nullish(),
+});
+
+export const SetLifeSkillProgressResponse = zod.object({
+  childId: zod.number(),
+  skillId: zod.string(),
+  date: zod.string(),
+  action: zod.enum(["done"]),
+  streak: zod.object({
+    current: zod.number(),
+    best: zod.number(),
+  }),
+  weeklyBar: zod.array(
+    zod.object({
+      date: zod.string(),
+      completed: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary Role-play scenarios for an age band
+ */
+export const GetLifeSkillRolePlaysQueryParams = zod.object({
+  ageBand: zod.enum(["toddler", "preschool", "kid", "teen"]),
+});
+
+export const GetLifeSkillRolePlaysResponseItem = zod.object({
+  id: zod.string(),
+  ageBand: zod.enum(["toddler", "preschool", "kid", "teen"]),
+  title: zod.object({
+    en: zod.string(),
+    hi: zod.string(),
+    hinglish: zod.string(),
+  }),
+  setup: zod.object({
+    en: zod.string(),
+    hi: zod.string(),
+    hinglish: zod.string(),
+  }),
+  childLine: zod.object({
+    en: zod.string(),
+    hi: zod.string(),
+    hinglish: zod.string(),
+  }),
+  parentPrompt: zod.object({
+    en: zod.string(),
+    hi: zod.string(),
+    hinglish: zod.string(),
+  }),
+});
+export const GetLifeSkillRolePlaysResponse = zod.array(
+  GetLifeSkillRolePlaysResponseItem,
+);
+
+/**
  * @summary Get behavior stats per child
  */
 export const GetBehaviorStatsResponseItem = zod.object({

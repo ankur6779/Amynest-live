@@ -705,6 +705,11 @@ function OnboardingScreen({
             {t("pages.dashboard.explore_parenting_hub")}
           </button>
         </Link>
+        <Link href="/life-skills">
+          <button className="w-full h-12 rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-900 dark:text-emerald-100 font-bold text-sm hover:bg-emerald-100/70 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+            🧭 Life Skills Mode
+          </button>
+        </Link>
       </div>
       <p className="text-xs text-muted-foreground text-center mt-6 pb-4">
         {t("pages.dashboard.works_for_ages_0_15_years_science_backed_parenting_plans")}

@@ -445,10 +445,219 @@ export const UI_LABELS = {
   noneToday:     { en: "All today's skills are done. Come back tomorrow!",
                    hi: "आज के सभी कौशल पूरे हो गए — कल फिर आएं!",
                    hinglish: "Aaj ke saare skills done — kal phir aana!" },
+  dayStreak:     { en: "day streak",           hi: "दिन की लय",         hinglish: "din ki streak" },
+  best:          { en: "best",                 hi: "सर्वश्रेष्ठ",        hinglish: "best" },
+  rolePlayTitle: { en: "Role-play this skill", hi: "इस कौशल का रोल-प्ले", hinglish: "Is skill ka role-play" },
+  show:          { en: "Show",                 hi: "दिखाएँ",            hinglish: "Dikhayein" },
+  hide:          { en: "Hide",                 hi: "छिपाएँ",            hinglish: "Chhupayein" },
+  noScenarios:   { en: "No scenarios yet.",    hi: "अभी कोई परिदृश्य नहीं।", hinglish: "Abhi koi scenario nahi." },
 } as const satisfies Record<string, LocalizedText>;
 
 export type UILabelKey = keyof typeof UI_LABELS;
 
 export function uiLabel(key: UILabelKey, lang: LifeSkillLang = "en"): string {
   return UI_LABELS[key][lang];
+}
+
+// ─── Streak & weekly bar helpers ─────────────────────────────────────────────
+// Pure functions used by both client + server so the streak math is
+// guaranteed identical no matter who computes it.
+
+/** Format a Date as YYYY-MM-DD in local time. */
+export function formatLifeSkillDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function addDays(d: Date, n: number): Date {
+  const c = new Date(d);
+  c.setDate(c.getDate() + n);
+  return c;
+}
+
+/**
+ * Compute the current consecutive-day streak ending today (or yesterday if
+ * the user hasn't logged anything yet today). Any day with ≥ 1 completed
+ * skill counts. A gap of even one day resets the streak.
+ *
+ * `dates` may contain duplicates and ordering doesn't matter.
+ */
+export function computeLifeSkillStreak(
+  dates: readonly string[],
+  today: Date = new Date(),
+): { current: number; best: number } {
+  const set = new Set<string>();
+  for (const raw of dates) {
+    if (typeof raw === "string" && raw.length >= 10) set.add(raw.slice(0, 10));
+  }
+  if (set.size === 0) return { current: 0, best: 0 };
+
+  // Best streak — scan sorted dates and count longest consecutive run.
+  const sorted = Array.from(set).sort();
+  let best = 1;
+  let run = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i - 1]! + "T00:00:00");
+    const cur = new Date(sorted[i]! + "T00:00:00");
+    const diff = Math.round((cur.getTime() - prev.getTime()) / 86_400_000);
+    if (diff === 1) {
+      run += 1;
+      if (run > best) best = run;
+    } else {
+      run = 1;
+    }
+  }
+
+  // Current streak — count back from today (or yesterday if no entry today).
+  const todayKey = formatLifeSkillDate(today);
+  const yKey = formatLifeSkillDate(addDays(today, -1));
+  let cursor: Date;
+  if (set.has(todayKey)) cursor = new Date(today);
+  else if (set.has(yKey)) cursor = addDays(today, -1);
+  else return { current: 0, best };
+
+  let current = 0;
+  while (set.has(formatLifeSkillDate(cursor))) {
+    current += 1;
+    cursor = addDays(cursor, -1);
+  }
+  return { current, best };
+}
+
+/**
+ * Return the last 7 calendar days (oldest first) flagged by whether any
+ * skill was completed that day. Drives the weekly progress bar UI.
+ */
+export function buildLifeSkillWeeklyBar(
+  dates: readonly string[],
+  today: Date = new Date(),
+): Array<{ date: string; completed: boolean }> {
+  const set = new Set<string>();
+  for (const raw of dates) {
+    if (typeof raw === "string" && raw.length >= 10) set.add(raw.slice(0, 10));
+  }
+  const out: Array<{ date: string; completed: boolean }> = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = formatLifeSkillDate(addDays(today, -i));
+    out.push({ date: d, completed: set.has(d) });
+  }
+  return out;
+}
+
+// ─── Role-play scenarios ─────────────────────────────────────────────────────
+// One scenario per age band so caregivers always have a concrete prompt
+// they can act out with the child after finishing today's skill.
+
+export interface RolePlayScenario {
+  id: string;
+  ageBand: LifeSkillAgeBand;
+  title: LocalizedText;
+  setup: LocalizedText;
+  childLine: LocalizedText;
+  parentPrompt: LocalizedText;
+}
+
+export const ROLE_PLAY_SCENARIOS: RolePlayScenario[] = [
+  {
+    id: "rp-tod-1",
+    ageBand: "toddler",
+    title: {
+      en: "Sharing the snack",
+      hi: "नाश्ता बाँटना",
+      hinglish: "Snack share karna",
+    },
+    setup: {
+      en: "Pretend two stuffed animals both want the same biscuit.",
+      hi: "दो खिलौनों को एक ही बिस्किट चाहिए — दिखाएं।",
+      hinglish: "Do toys ko ek hi biscuit chahiye — yeh act karo.",
+    },
+    childLine: {
+      en: "Say: 'Let's share — one piece for you, one for me!'",
+      hi: "बोलें: 'चलो बाँटते हैं — एक तुम्हारा, एक मेरा!'",
+      hinglish: "Bolo: 'Chalo share karte hain — ek tumhara, ek mera!'",
+    },
+    parentPrompt: {
+      en: "Praise the moment they break the biscuit themselves.",
+      hi: "जब वे खुद बिस्किट तोड़ें, तारीफ करें।",
+      hinglish: "Jab wo khud biscuit todein, tareef karo.",
+    },
+  },
+  {
+    id: "rp-pre-1",
+    ageBand: "preschool",
+    title: {
+      en: "Asking for help politely",
+      hi: "विनम्रता से मदद मांगना",
+      hinglish: "Politely help maangna",
+    },
+    setup: {
+      en: "Pretend the child can't reach a toy on a high shelf.",
+      hi: "बच्चा ऊँची शेल्फ़ पर खिलौने तक नहीं पहुँच पा रहा।",
+      hinglish: "Bachcha ek high shelf ka toy reach nahi kar pa raha.",
+    },
+    childLine: {
+      en: "Say: 'Excuse me, can you please help me reach the toy?'",
+      hi: "बोलें: 'माफ कीजिए, क्या आप मुझे खिलौना देने में मदद करेंगे?'",
+      hinglish: "Bolo: 'Excuse me, kya aap mujhe woh toy dene mein help karenge?'",
+    },
+    parentPrompt: {
+      en: "Model both polite and rude versions — let them pick the better one.",
+      hi: "विनम्र और रूखे दोनों तरीके दिखाएं — उन्हें चुनने दें।",
+      hinglish: "Polite aur rude dono versions dikhaao — wo choose karein.",
+    },
+  },
+  {
+    id: "rp-kid-1",
+    ageBand: "kid",
+    title: {
+      en: "Asking for the bill at a shop",
+      hi: "दुकान पर बिल माँगना",
+      hinglish: "Shop pe bill maangna",
+    },
+    setup: {
+      en: "You're the shopkeeper, they're buying notebooks worth ₹120.",
+      hi: "आप दुकानदार हैं — वे ₹120 की कॉपियाँ खरीद रहे हैं।",
+      hinglish: "Aap shopkeeper, woh ₹120 ki notebooks le rahe hain.",
+    },
+    childLine: {
+      en: "Say: 'Bhaiya, kitne hue? Can I have the bill please?'",
+      hi: "बोलें: 'भैया, कितने हुए? कृपया बिल दीजिए।'",
+      hinglish: "Bolo: 'Bhaiya, kitne hue? Bill please de dijiye.'",
+    },
+    parentPrompt: {
+      en: "Hand back the right change — let them count it before pocketing.",
+      hi: "सही बाकी पैसे दें — पॉकेट में रखने से पहले गिनवाएं।",
+      hinglish: "Sahi change wapas do — pocket mein rakhne se pehle ginwao.",
+    },
+  },
+  {
+    id: "rp-teen-1",
+    ageBand: "teen",
+    title: {
+      en: "Saying no to a friend's bad idea",
+      hi: "दोस्त के गलत सुझाव को मना करना",
+      hinglish: "Friend ki galat baat ko mana karna",
+    },
+    setup: {
+      en: "Pretend a friend wants them to skip class to hang out.",
+      hi: "मान लें दोस्त चाहता है कि वे क्लास छोड़कर बाहर जाएँ।",
+      hinglish: "Maan lo friend chahta hai wo class chhodke bahar jaayein.",
+    },
+    childLine: {
+      en: "Say: 'Not today — I have a test tomorrow. Let's plan for Sunday.'",
+      hi: "बोलें: 'आज नहीं — कल टेस्ट है। रविवार को मिलते हैं।'",
+      hinglish: "Bolo: 'Aaj nahi — kal test hai. Sunday plan karte hain.'",
+    },
+    parentPrompt: {
+      en: "Discuss why a firm but friendly 'no' protects both their goals and the friendship.",
+      hi: "बात करें कि सख्त लेकिन मित्रवत ‘ना’ क्यों सही है।",
+      hinglish: "Baat karo ki firm but friendly ‘no’ kyu sahi hai.",
+    },
+  },
+];
+
+export function rolePlaysFor(ageBand: LifeSkillAgeBand): RolePlayScenario[] {
+  return ROLE_PLAY_SCENARIOS.filter((s) => s.ageBand === ageBand);
 }

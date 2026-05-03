@@ -22,6 +22,8 @@ tags:
     description: AI routine generation
   - name: parent-tasks
     description: Per-day, per-child Parent Task completions
+  - name: life-skills
+    description: Life Skills Mode — daily age-banded skills, streaks, and role-play scenarios
 paths:
   /healthz:
     get:
@@ -595,6 +597,66 @@ paths:
       responses:
         "204":
           description: Cleared (or already absent)
+
+  /life-skills/today:
+    get:
+      operationId: getLifeSkillsToday
+      tags: [life-skills]
+      summary: Today's age-banded life-skill cards plus streak + weekly bar
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Today's life-skills payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifeSkillsTodayResponse"
+
+  /life-skills/progress:
+    post:
+      operationId: setLifeSkillProgress
+      tags: [life-skills]
+      summary: Mark a life skill as done or skipped for a child on a date
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetLifeSkillProgressBody"
+      responses:
+        "200":
+          description: Updated streak + weekly bar after the write
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifeSkillProgressResponse"
+
+  /life-skills/role-plays:
+    get:
+      operationId: getLifeSkillRolePlays
+      tags: [life-skills]
+      summary: Role-play scenarios for an age band
+      parameters:
+        - name: ageBand
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [toddler, preschool, kid, teen]
+      responses:
+        "200":
+          description: Role-play scenarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LifeSkillRolePlay"
 
   /dashboard/behavior-stats:
     get:
@@ -1451,3 +1513,142 @@ components:
         - positive
         - negative
         - neutral
+
+    LifeSkillLocalizedText:
+      type: object
+      properties:
+        en:
+          type: string
+        hi:
+          type: string
+        hinglish:
+          type: string
+      required: [en, hi, hinglish]
+
+    LifeSkillTask:
+      type: object
+      properties:
+        id:
+          type: string
+        ageBand:
+          type: string
+          enum: [toddler, preschool, kid, teen]
+        category:
+          type: string
+          enum: [hygiene, social, responsibility, emotional, money, time, self_care, chores]
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        title:
+          $ref: "#/components/schemas/LifeSkillLocalizedText"
+        description:
+          $ref: "#/components/schemas/LifeSkillLocalizedText"
+        parentTip:
+          $ref: "#/components/schemas/LifeSkillLocalizedText"
+      required: [id, ageBand, category, difficulty, title, description, parentTip]
+
+    LifeSkillStreak:
+      type: object
+      properties:
+        current:
+          type: integer
+        best:
+          type: integer
+      required: [current, best]
+
+    LifeSkillWeeklyDay:
+      type: object
+      properties:
+        date:
+          type: string
+        completed:
+          type: boolean
+      required: [date, completed]
+
+    LifeSkillsTodayResponse:
+      type: object
+      properties:
+        ageBand:
+          type: string
+          enum: [toddler, preschool, kid, teen]
+        date:
+          type: string
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/LifeSkillTask"
+        completedSkillIds:
+          type: array
+          items:
+            type: string
+        skippedSkillIds:
+          type: array
+          items:
+            type: string
+        streak:
+          $ref: "#/components/schemas/LifeSkillStreak"
+        weeklyBar:
+          type: array
+          items:
+            $ref: "#/components/schemas/LifeSkillWeeklyDay"
+      required:
+        - ageBand
+        - date
+        - tasks
+        - completedSkillIds
+        - skippedSkillIds
+        - streak
+        - weeklyBar
+
+    SetLifeSkillProgressBody:
+      type: object
+      properties:
+        childId:
+          type: integer
+        skillId:
+          type: string
+        action:
+          type: string
+          enum: [done]
+        date:
+          type: string
+          nullable: true
+      required: [childId, skillId, action]
+
+    LifeSkillProgressResponse:
+      type: object
+      properties:
+        childId:
+          type: integer
+        skillId:
+          type: string
+        date:
+          type: string
+        action:
+          type: string
+          enum: [done]
+        streak:
+          $ref: "#/components/schemas/LifeSkillStreak"
+        weeklyBar:
+          type: array
+          items:
+            $ref: "#/components/schemas/LifeSkillWeeklyDay"
+      required: [childId, skillId, date, action, streak, weeklyBar]
+
+    LifeSkillRolePlay:
+      type: object
+      properties:
+        id:
+          type: string
+        ageBand:
+          type: string
+          enum: [toddler, preschool, kid, teen]
+        title:
+          $ref: "#/components/schemas/LifeSkillLocalizedText"
+        setup:
+          $ref: "#/components/schemas/LifeSkillLocalizedText"
+        childLine:
+          $ref: "#/components/schemas/LifeSkillLocalizedText"
+        parentPrompt:
+          $ref: "#/components/schemas/LifeSkillLocalizedText"
+      required: [id, ageBand, title, setup, childLine, parentPrompt]

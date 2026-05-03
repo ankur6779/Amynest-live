@@ -3436,6 +3436,19 @@
       "subject": "Subject",
       "topic_placeholder": "Topic (optional) — jaise addition, phonics letter B, water cycle",
       "amy_is_thinking": "Amy soch rahi hai…"
+    },
+    "life_skills_page": {
+      "back": "Wapas",
+      "title": "Life Skills Mode",
+      "loading": "Load ho raha hai…",
+      "empty_message": "Life Skills unlock karne ke liye 2 se 15 saal ka bachcha add karein.",
+      "add_a_child": "Bachcha add karein",
+      "role_play_title": "Is skill ka role-play karein",
+      "show": "Dikhayein",
+      "hide": "Chhupayein",
+      "no_scenarios": "Abhi koi scenario nahi.",
+      "day_streak": "din ki streak",
+      "best": "best"
     }
   }
 }

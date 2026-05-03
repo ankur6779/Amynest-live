@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 import {
   type LifeSkillTask, type LifeSkillCategory, type LifeSkillLang,
+  type LifeSkillAgeBand, type RolePlayScenario,
   type CategoryStat,
   ageBandForLifeSkills, ageBandLabel,
   CATEGORY_EMOJI, CATEGORY_LABEL, DIFFICULTY_LABEL,
@@ -12,74 +13,92 @@ import {
   buildAmyLifeSkillInsight, uiLabel,
 } from "@workspace/life-skills";
 import { brand, brandAlpha, palette } from "@/constants/colors";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 
-interface DailyRecord { taskIds: string[]; done: string[]; skipped: string[] }
-interface ChildLifeSkillStats {
-  totalPoints: number;
-  byCategory: Record<LifeSkillCategory, CategoryStat>;
-  daily: Record<string, DailyRecord>;
-  lang: LifeSkillLang;
+interface TodayResponse {
+  ageBand: LifeSkillAgeBand;
+  date: string;
+  tasks: LifeSkillTask[];
+  completedSkillIds: string[];
+  skippedSkillIds: string[];
+  streak: { current: number; best: number };
+  weeklyBar: Array<{ date: string; completed: boolean }>;
 }
 
 const ALL_CATEGORIES: LifeSkillCategory[] = [
   "hygiene", "social", "responsibility", "emotional",
   "money", "time", "self_care", "chores",
 ];
+const cacheKey = (childId: string | number) => `lifeskills:v1:${childId}`;
+const langKey = (childId: string | number) => `lifeskills:lang:${childId}`;
+const skipKey = (childId: string | number, date: string) =>
+  `lifeskills:skip:${childId}:${date}`;
+// Offline mutation queue — pending POST /life-skills/progress payloads that
+// the user submitted while offline. Replayed on next successful refresh.
+const queueKey = (childId: string | number) => `lifeskills:queue:${childId}`;
 
-function emptyStats(lang: LifeSkillLang): ChildLifeSkillStats {
-  const byCategory = {} as Record<LifeSkillCategory, CategoryStat>;
-  for (const c of ALL_CATEGORIES) byCategory[c] = { done: 0, skipped: 0 };
-  return { totalPoints: 0, byCategory, daily: {}, lang };
+interface QueuedDone {
+  childId: number;
+  skillId: string;
+  action: "done";
+  date: string;
+  queuedAt: number;
 }
 
-const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-const storageKey = (childId: string | number) => `lifeskills:v1:${childId}`;
+async function readQueue(childId: string | number): Promise<QueuedDone[]> {
+  try {
+    const raw = await AsyncStorage.getItem(queueKey(childId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (q): q is QueuedDone =>
+        !!q && typeof q === "object" &&
+        typeof (q as QueuedDone).childId === "number" &&
+        typeof (q as QueuedDone).skillId === "string" &&
+        (q as QueuedDone).action === "done" &&
+        typeof (q as QueuedDone).date === "string",
+    );
+  } catch { return []; }
+}
+
+async function writeQueue(childId: string | number, q: QueuedDone[]): Promise<void> {
+  try { await AsyncStorage.setItem(queueKey(childId), JSON.stringify(q)); } catch { /* noop */ }
+}
+
 const todayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
-const yesterdayISO = () => {
-  const d = new Date(); d.setDate(d.getDate() - 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
-function parseStats(raw: string | null, fallbackLang: LifeSkillLang): ChildLifeSkillStats {
-  const def = emptyStats(fallbackLang);
-  if (!raw) return def;
-  try {
-    const p = JSON.parse(raw) as Partial<ChildLifeSkillStats>;
-    const byCategory = { ...def.byCategory };
-    for (const c of ALL_CATEGORIES) {
-      const e = (p.byCategory as Record<string, unknown> | undefined)?.[c] as
-        { done?: unknown; skipped?: unknown } | undefined;
-      byCategory[c] = { done: num(e?.done), skipped: num(e?.skipped) };
-    }
-    const daily: Record<string, DailyRecord> = {};
-    if (p.daily && typeof p.daily === "object") {
-      for (const [k, v] of Object.entries(p.daily as Record<string, unknown>)) {
-        const r = v as Partial<DailyRecord> | undefined;
-        daily[k] = {
-          taskIds: Array.isArray(r?.taskIds) ? r!.taskIds.filter((x): x is string => typeof x === "string") : [],
-          done: Array.isArray(r?.done) ? r!.done.filter((x): x is string => typeof x === "string") : [],
-          skipped: Array.isArray(r?.skipped) ? r!.skipped.filter((x): x is string => typeof x === "string") : [],
-        };
-      }
-    }
-    const lang: LifeSkillLang =
-      p.lang === "hi" || p.lang === "hinglish" || p.lang === "en" ? p.lang : fallbackLang;
-    return { totalPoints: num(p.totalPoints), byCategory, daily, lang };
-  } catch {
-    return def;
-  }
-}
 
 function detectLang(i18nLang: string | undefined): LifeSkillLang {
   if (!i18nLang) return "en";
   const l = i18nLang.toLowerCase();
-  // Check hinglish FIRST — "hinglish" also startsWith "hi".
   if (l === "hinglish" || l.includes("hing") || l === "in-en") return "hinglish";
   if (l === "hi" || l.startsWith("hi-") || l.startsWith("hi_")) return "hi";
   return "en";
+}
+
+function localFallback(child: { id: string | number; age: number }): TodayResponse {
+  const ageBand = ageBandForLifeSkills(child.age);
+  const date = todayISO();
+  const weeklyBar: Array<{ date: string; completed: boolean }> = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    weeklyBar.push({
+      date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+      completed: false,
+    });
+  }
+  return {
+    ageBand,
+    date,
+    tasks: pickDailyLifeSkillTasks({ ageBand, date, childKey: child.id, count: 2 }),
+    completedSkillIds: [],
+    skippedSkillIds: [],
+    streak: { current: 0, best: 0 },
+    weeklyBar,
+  };
 }
 
 interface Props {
@@ -89,113 +108,204 @@ interface Props {
 export function LifeSkillsZone({ child }: Props) {
   const { i18n } = useTranslation();
   const fallbackLang = detectLang(i18n.language);
-  const [loaded, setLoaded] = useState(false);
-  const [stats, setStatsState] = useState<ChildLifeSkillStats>(() => emptyStats(fallbackLang));
+  const authFetch = useAuthFetch();
 
+  const [data, setData] = useState<TodayResponse>(() => localFallback(child));
+  const [lang, setLangState] = useState<LifeSkillLang>(fallbackLang);
+  const [skippedToday, setSkippedToday] = useState<Set<string>>(new Set());
+  const [rolePlays, setRolePlays] = useState<RolePlayScenario[]>([]);
+  const [showRolePlay, setShowRolePlay] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  // Hydrate language preference + offline cache.
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(storageKey(child.id));
+        const [rawLang, rawCache] = await Promise.all([
+          AsyncStorage.getItem(langKey(child.id)),
+          AsyncStorage.getItem(cacheKey(child.id)),
+        ]);
         if (!alive) return;
-        setStatsState(parseStats(raw, fallbackLang));
-      } finally {
-        if (alive) setLoaded(true);
-      }
+        if (rawLang === "en" || rawLang === "hi" || rawLang === "hinglish") {
+          setLangState(rawLang);
+        }
+        if (rawCache) {
+          try { setData(JSON.parse(rawCache) as TodayResponse); } catch { /* noop */ }
+        }
+      } catch { /* noop */ }
     })();
     return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [child.id]);
 
-  // Serialize AsyncStorage writes so they can't complete out of order.
-  const writeChainRef = React.useRef<Promise<void>>(Promise.resolve());
-  const updateStats = (mut: (prev: ChildLifeSkillStats) => ChildLifeSkillStats) => {
-    setStatsState((prev) => {
-      const next = mut(prev);
-      const payload = JSON.stringify(next);
-      writeChainRef.current = writeChainRef.current
-        .catch(() => {})
-        .then(() => AsyncStorage.setItem(storageKey(child.id), payload).catch(() => {}));
-      return next;
-    });
-  };
-  const setLang = (lang: LifeSkillLang) => updateStats((prev) => ({ ...prev, lang }));
-  const lang = stats.lang;
+  // Hydrate per-day skipped state from AsyncStorage so reload preserves it.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(skipKey(child.id, data.date));
+        if (!alive) return;
+        const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+        setSkippedToday(
+          new Set(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : []),
+        );
+      } catch { setSkippedToday(new Set()); }
+    })();
+    return () => { alive = false; };
+  }, [data.date, child.id]);
 
-  const ageBand = ageBandForLifeSkills(child.age);
-  const date = todayISO();
-  const yesterdayPicks = stats.daily[yesterdayISO()]?.taskIds ?? [];
-
-  const todaysTasks = useMemo(
-    () => pickDailyLifeSkillTasks({ ageBand, date, childKey: child.id, count: 2, previousIds: yesterdayPicks }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ageBand, date, child.id, yesterdayPicks.join("|")],
-  );
-
-  // Resolve today's locked tasks. Hardened: if persisted IDs no longer resolve
-  // (age-band changed, stale data), fall back to today's fresh picks. If only
-  // some IDs resolve, backfill from today's picks up to the target count.
-  const TARGET_COUNT = 2;
-  const lockedTasks = useMemo<LifeSkillTask[]>(() => {
-    if (todaysTasks.length === 0) return [];
-    const todayRec = stats.daily[date];
-    if (!todayRec || todayRec.taskIds.length === 0) return todaysTasks;
-    const resolved = todayRec.taskIds
-      .map((id) => todaysTasks.find((t) => t.id === id) ?? tasksFor(ageBand).find((t) => t.id === id))
-      .filter((t): t is LifeSkillTask => Boolean(t));
-    if (resolved.length === 0) return todaysTasks;
-    if (resolved.length >= TARGET_COUNT) return resolved;
-    const seen = new Set(resolved.map((t) => t.id));
-    for (const t of todaysTasks) {
-      if (resolved.length >= TARGET_COUNT) break;
-      if (!seen.has(t.id)) { resolved.push(t); seen.add(t.id); }
+  // Replay any queued offline `done` mutations, then fetch authoritative
+  // data + cache it. Each replayed item is removed only when the server
+  // accepts it; transient failures keep the queue intact for next refresh.
+  const refresh = React.useCallback(async () => {
+    const queue = await readQueue(child.id);
+    if (queue.length > 0) {
+      const remaining: QueuedDone[] = [];
+      for (const item of queue) {
+        try {
+          const r = await authFetch("/api/life-skills/progress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              childId: item.childId,
+              skillId: item.skillId,
+              action: item.action,
+              date: item.date,
+            }),
+          });
+          // Treat 2xx and 4xx (e.g. unknown skill) as terminal so we don't
+          // retry forever; only network/5xx stays in the queue.
+          if (!r.ok && r.status >= 500) remaining.push(item);
+        } catch {
+          remaining.push(item);
+        }
+      }
+      await writeQueue(child.id, remaining);
     }
-    return resolved;
-  }, [todaysTasks, stats.daily, date, ageBand]);
 
-  const handleAction = (task: LifeSkillTask, action: "done" | "skip") => {
-    updateStats((prev) => {
-      const lockedIds = lockedTasks.map((t) => t.id);
-      const baseRec: DailyRecord = prev.daily[date] ?? { taskIds: lockedIds, done: [], skipped: [] };
-      if (baseRec.done.includes(task.id) || baseRec.skipped.includes(task.id)) return prev;
-      const newRec: DailyRecord = {
-        taskIds: baseRec.taskIds.length > 0 ? baseRec.taskIds : lockedIds,
-        done: action === "done" ? [...baseRec.done, task.id] : baseRec.done,
-        skipped: action === "skip" ? [...baseRec.skipped, task.id] : baseRec.skipped,
-      };
-      const cat = task.category;
-      const byCategory = { ...prev.byCategory };
-      byCategory[cat] = {
-        done: prev.byCategory[cat].done + (action === "done" ? 1 : 0),
-        skipped: prev.byCategory[cat].skipped + (action === "skip" ? 1 : 0),
-      };
-      return {
-        ...prev,
-        totalPoints: prev.totalPoints + (action === "done" ? POINTS_BY_DIFFICULTY[task.difficulty] : 0),
-        byCategory,
-        daily: { ...prev.daily, [date]: newRec },
-      };
-    });
+    try {
+      const r = await authFetch(`/api/life-skills/today?childId=${encodeURIComponent(String(child.id))}`);
+      if (!r.ok) return;
+      const body = (await r.json()) as TodayResponse;
+      setData(body);
+      AsyncStorage.setItem(cacheKey(child.id), JSON.stringify(body)).catch(() => {});
+    } catch { /* keep cached/fallback */ }
+  }, [authFetch, child.id]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  // Fetch role-play scenarios for this band.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await authFetch(`/api/life-skills/role-plays?ageBand=${encodeURIComponent(data.ageBand)}`);
+        if (!r.ok || !alive) return;
+        const body = (await r.json()) as RolePlayScenario[];
+        if (alive) setRolePlays(body);
+      } catch { /* offline — leave empty */ }
+    })();
+    return () => { alive = false; };
+  }, [authFetch, data.ageBand]);
+
+  const setLang = (l: LifeSkillLang) => {
+    setLangState(l);
+    AsyncStorage.setItem(langKey(child.id), l).catch(() => {});
   };
 
+  const completedSet = useMemo(() => new Set(data.completedSkillIds), [data.completedSkillIds]);
+
+  const handleAction = async (task: LifeSkillTask, action: "done" | "skip") => {
+    if (action === "skip") {
+      setSkippedToday((p) => {
+        const n = new Set(p); n.add(task.id);
+        AsyncStorage.setItem(skipKey(child.id, data.date), JSON.stringify(Array.from(n))).catch(() => {});
+        return n;
+      });
+      return;
+    }
+    if (completedSet.has(task.id) || pending) return;
+    setPending(true);
+    const childIdNum = typeof child.id === "number" ? child.id : Number(child.id);
+    const payload: QueuedDone = {
+      childId: childIdNum,
+      skillId: task.id,
+      action: "done",
+      date: data.date,
+      queuedAt: Date.now(),
+    };
+    try {
+      const r = await authFetch("/api/life-skills/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childId: payload.childId,
+          skillId: payload.skillId,
+          action: payload.action,
+          date: payload.date,
+        }),
+      });
+      if (r.ok) {
+        await refresh();
+      } else if (r.status >= 500) {
+        // Server hiccup — queue for replay so the user's tap isn't lost.
+        const q = await readQueue(child.id);
+        await writeQueue(child.id, [...q, payload]);
+      }
+      // 4xx (e.g. unknown skill / forbidden) is intentionally NOT queued.
+    } catch {
+      // Offline / network error — persist the intent so refresh() replays it.
+      const q = await readQueue(child.id);
+      await writeQueue(child.id, [...q, payload]);
+      // Optimistically reflect completion locally so UI feels responsive;
+      // the next successful refresh will overwrite with server truth.
+      setData((prev) => ({
+        ...prev,
+        completedSkillIds: prev.completedSkillIds.includes(task.id)
+          ? prev.completedSkillIds
+          : [...prev.completedSkillIds, task.id],
+      }));
+    }
+    finally { setPending(false); }
+  };
+
+  const ageBand = data.ageBand;
   const categoriesForBand = useMemo(() => {
     const set = new Set<LifeSkillCategory>();
     for (const t of tasksFor(ageBand)) set.add(t.category);
     return Array.from(set);
   }, [ageBand]);
 
-  const langs: LifeSkillLang[] = ["en", "hi", "hinglish"];
+  // Per-category tally for today's two tasks (mirrors web).
+  const byCategory = useMemo(() => {
+    const acc: Record<LifeSkillCategory, CategoryStat> = {} as Record<LifeSkillCategory, CategoryStat>;
+    for (const c of ALL_CATEGORIES) acc[c] = { done: 0, skipped: 0 };
+    for (const t of data.tasks) {
+      if (completedSet.has(t.id)) acc[t.category].done += 1;
+      else if (skippedToday.has(t.id)) acc[t.category].skipped += 1;
+    }
+    return acc;
+  }, [data.tasks, completedSet, skippedToday]);
 
-  if (!loaded) {
-    return <Text style={styles.muted}>Loading…</Text>;
-  }
+  const totalPoints = useMemo(() => {
+    let pts = 0;
+    for (const t of data.tasks) {
+      if (completedSet.has(t.id)) pts += POINTS_BY_DIFFICULTY[t.difficulty];
+    }
+    return pts;
+  }, [data.tasks, completedSet]);
+
+  const langs: LifeSkillLang[] = ["en", "hi", "hinglish"];
+  const allSettled =
+    data.tasks.length > 0 &&
+    data.tasks.every((t) => completedSet.has(t.id) || skippedToday.has(t.id));
 
   return (
     <View style={{ gap: 10 }}>
-      {/* Header strip */}
+      {/* Header */}
       <View style={styles.headerRow}>
         <Text style={styles.headerText}>
-          {ageBandLabel(ageBand, lang)} · {stats.totalPoints} {uiLabel("points", lang)}
+          {ageBandLabel(ageBand, lang)} · {totalPoints} {uiLabel("points", lang)}
         </Text>
         <View style={styles.langRow}>
           {langs.map((l) => (
@@ -212,22 +322,31 @@ export function LifeSkillsZone({ child }: Props) {
         </View>
       </View>
 
+      {/* Streak fire + weekly bar */}
+      <View style={styles.streakCard}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Ionicons name="flame" size={16} color={brand.amber400} />
+          <Text style={styles.streakText}>
+            {data.streak.current} {uiLabel("dayStreak", lang)}
+          </Text>
+          <Text style={styles.muted}>· {uiLabel("best", lang)} {data.streak.best}</Text>
+        </View>
+        <View style={styles.weeklyRow}>
+          {data.weeklyBar.map((d) => (
+            <View
+              key={d.date}
+              style={[styles.weeklyCell, d.completed && styles.weeklyCellOn]}
+            />
+          ))}
+        </View>
+      </View>
+
       {/* Today's tasks */}
       <Text style={styles.sectionLabel}>{uiLabel("todayTitle", lang)}</Text>
-      {(() => {
-        // Banner rule (shared with web): all assigned tasks settled.
-        const doneSet = stats.daily[date]?.done ?? [];
-        const skipSet = stats.daily[date]?.skipped ?? [];
-        const allSettled = lockedTasks.length > 0 &&
-          lockedTasks.every((t) => doneSet.includes(t.id) || skipSet.includes(t.id));
-        if (allSettled) {
-          return <Text style={styles.muted}>✅ {uiLabel("noneToday", lang)}</Text>;
-        }
-        return null;
-      })()}
-      {lockedTasks.map((task) => {
-        const isDone = (stats.daily[date]?.done ?? []).includes(task.id);
-        const isSkipped = (stats.daily[date]?.skipped ?? []).includes(task.id);
+      {allSettled && <Text style={styles.muted}>✅ {uiLabel("noneToday", lang)}</Text>}
+      {data.tasks.map((task) => {
+        const isDone = completedSet.has(task.id);
+        const isSkipped = skippedToday.has(task.id);
         const settled = isDone || isSkipped;
         return (
           <View key={task.id} style={[styles.taskCard, settled && { opacity: 0.65 }]}>
@@ -260,7 +379,11 @@ export function LifeSkillsZone({ child }: Props) {
 
             {!settled && (
               <View style={{ flexDirection: "row", gap: 8 }}>
-                <Pressable onPress={() => handleAction(task, "done")} style={[styles.btn, styles.btnPrimary, { flex: 1 }]}>
+                <Pressable
+                  disabled={pending}
+                  onPress={() => handleAction(task, "done")}
+                  style={[styles.btn, styles.btnPrimary, { flex: 1 }, pending && { opacity: 0.6 }]}
+                >
                   <Ionicons name="checkmark-circle" size={14} color="#fff" />
                   <Text style={styles.btnPrimaryText}>{uiLabel("markDone", lang)}</Text>
                 </Pressable>
@@ -274,11 +397,33 @@ export function LifeSkillsZone({ child }: Props) {
         );
       })}
 
-      {/* Per-category progress */}
+      {/* Role-play */}
+      <View style={styles.subCard}>
+        <Pressable onPress={() => setShowRolePlay((v) => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Ionicons name="happy" size={16} color="#C7B6FF" />{/* audit-ok: violet-200 role-play marker */}
+          <Text style={[styles.sectionLabel, { flex: 1 }]}>{uiLabel("rolePlayTitle", lang)}</Text>
+          <Text style={styles.muted}>{showRolePlay ? uiLabel("hide", lang) : uiLabel("show", lang)}</Text>
+        </Pressable>
+        {showRolePlay && (
+          <View style={{ marginTop: 8, gap: 8 }}>
+            {rolePlays.map((rp) => (
+              <View key={rp.id} style={styles.rolePlayCard}>
+                <Text style={styles.rpTitle}>{rp.title[lang]}</Text>
+                <Text style={styles.rpBody}>{rp.setup[lang]}</Text>
+                <Text style={styles.rpBody}>👧 {rp.childLine[lang]}</Text>
+                <Text style={styles.rpBody}>👨‍👩‍👧 {rp.parentPrompt[lang]}</Text>
+              </View>
+            ))}
+            {rolePlays.length === 0 && <Text style={styles.muted}>{uiLabel("noScenarios", lang)}</Text>}
+          </View>
+        )}
+      </View>
+
+      {/* Per-category progress (today only) */}
       <View style={styles.subCard}>
         <Text style={styles.sectionLabel}>{uiLabel("progressByCat", lang)}</Text>
         {categoriesForBand.map((c) => {
-          const stat = stats.byCategory[c];
+          const stat = byCategory[c];
           const poolSize = tasksFor(ageBand).filter((t) => t.category === c).length;
           const pct = poolSize === 0 ? 0 : Math.min(100, Math.round((stat.done / poolSize) * 100));
           return (
@@ -298,11 +443,11 @@ export function LifeSkillsZone({ child }: Props) {
       {/* Amy AI Insight */}
       <View style={[styles.subCard, styles.insightCard]}>
         <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
-          <Ionicons name="sparkles" size={16} color="#C7B6FF" /> {/* audit-ok: violet-200 sparkle for life-skills insight */}
+          <Ionicons name="sparkles" size={16} color="#C7B6FF" />{/* audit-ok: violet-200 sparkle */}
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionLabel}>{uiLabel("amyInsight", lang)}</Text>
             <Text style={[styles.muted, { marginTop: 4 }]}>
-              {buildAmyLifeSkillInsight(stats.byCategory, child.name, lang)}
+              {buildAmyLifeSkillInsight(byCategory, child.name, lang)}
             </Text>
           </View>
         </View>
@@ -322,6 +467,20 @@ const styles = StyleSheet.create({
 
   sectionLabel: { color: "#fff", fontWeight: "800", fontSize: 13 },
   muted: { color: "rgba(255,255,255,0.6)", fontSize: 12 },
+
+  streakCard: {
+    padding: 12, borderRadius: 14, gap: 8,
+    backgroundColor: brandAlpha.amber400_08,
+    borderWidth: 1, borderColor: brandAlpha.amber400_25,
+  },
+  streakText: { color: "#fff", fontWeight: "800", fontSize: 13 },
+  weeklyRow: { flexDirection: "row", gap: 4 },
+  weeklyCell: {
+    flex: 1, height: 18, borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
+  },
+  weeklyCellOn: { backgroundColor: palette.emerald400, borderColor: palette.emerald400 },
 
   taskCard: {
     padding: 12, borderRadius: 14, gap: 8,
@@ -361,7 +520,14 @@ const styles = StyleSheet.create({
   catLabel: { color: "#fff", fontWeight: "700", fontSize: 12 },
   progressTrack: { height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" },
   progressFill: { height: "100%", backgroundColor: palette.emerald400 },
+
+  rolePlayCard: {
+    padding: 8, borderRadius: 10, gap: 4,
+    backgroundColor: "rgba(167,139,250,0.06)",
+    borderWidth: 1, borderColor: "rgba(167,139,250,0.18)",
+  },
+  rpTitle: { color: "#fff", fontWeight: "800", fontSize: 12 },
+  rpBody: { color: "rgba(255,255,255,0.78)", fontSize: 11, lineHeight: 15 },
 });
 
-// Silence unused-import lint when ScrollView ever isn't used in v1.
 void ScrollView;

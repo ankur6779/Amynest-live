@@ -3436,6 +3436,19 @@
       "subject": "विषय",
       "topic_placeholder": "विषय (वैकल्पिक) — जैसे जोड़, phonics letter B, जल चक्र",
       "amy_is_thinking": "Amy सोच रही है…"
+    },
+    "life_skills_page": {
+      "back": "वापस",
+      "title": "लाइफ स्किल्स मोड",
+      "loading": "लोड हो रहा है…",
+      "empty_message": "लाइफ स्किल्स अनलॉक करने के लिए 2 से 15 साल का बच्चा जोड़ें।",
+      "add_a_child": "बच्चा जोड़ें",
+      "role_play_title": "इस स्किल का रोल-प्ले करें",
+      "show": "दिखाएँ",
+      "hide": "छिपाएँ",
+      "no_scenarios": "अभी कोई परिदृश्य नहीं।",
+      "day_streak": "दिन की लय",
+      "best": "सर्वश्रेष्ठ"
     }
   }
 }
