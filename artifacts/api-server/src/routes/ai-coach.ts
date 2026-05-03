@@ -860,7 +860,7 @@ STRICT RULES:
 - Reference at least 5 different researchers/principles across the 12 wins
 - "deep_explanation" must be 6-8 lines of substantive science, not generic
 - Every win MUST include a "science_reference" naming a real researcher, theory, study, or guideline body (AAP/WHO/CDC/NIH/RCPCH etc.). Generic phrases like "research shows" are NOT acceptable — name the source.
-- When the parent has provided topic-specific context above, weave those specifics into the wins (examples, micro_tasks, mistake_to_avoid) so the plan feels personalised — not generic.
+- When the parent has provided topic-specific context above, weave those specifics into the wins (root_cause, examples, actions, micro_tasks, mistake_to_avoid) so the plan feels personalised — name the location/device/food/trigger they reported instead of generic phrasing.
 - Output ONLY the JSON object — no other text
 
 ━━━ AGE-STAGE DEVELOPMENTAL BRIEF (${input.ageGroup}) ━━━
@@ -1043,7 +1043,7 @@ Child age group: ${input.ageGroup} years
 Severity: ${input.severity}
 Common triggers: ${triggers}
 Current routine/approach: ${input.routine}
-
+${renderTopicAnswersBlock(input.topicAnswers)}
 Return ONLY valid JSON in this EXACT shape:
 {
   "title": "Empathetic title naming the goal in 4-6 words",
@@ -1075,6 +1075,7 @@ STRICT RULES:
 - Reference at least 5 different researchers/principles across the 12 wins
 - "deep_explanation" must be 6-8 lines of substantive science, not generic
 - Every win MUST include a "science_reference" naming a real researcher, theory, study, or guideline body (AAP/WHO/CDC/NIH/RCPCH etc.). Generic phrases like "research shows" are NOT acceptable — name the source.
+- When the parent has provided topic-specific context above, weave those specifics into the wins (root_cause, examples, actions, micro_tasks, mistake_to_avoid) so the plan feels personalised — name the location/device/food/trigger they reported instead of generic phrasing.
 - Output ONLY the JSON object — no other text
 
 ${goalBrief}`;
