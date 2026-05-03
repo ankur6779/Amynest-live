@@ -118,3 +118,24 @@ app foreground.
 5. Force an FCM `messaging/registration-token-not-registered` (e.g. by
    uninstalling the PWA in one browser); the next dispatch should remove
    the row from `push_tokens` (visible in `/diagnostics`).
+
+## Manual QA sign-off (Task #226)
+
+The dev container cannot exercise real APNS / FCM transports, so the
+checklist above must be run once on real hardware before closing this
+task. Capture the diagnostics payload (`GET /api/notifications/diagnostics`)
+alongside any failure so the row in `push_tokens` and the matching
+`notification_log` entry can be inspected.
+
+| Surface         | Tester | Date | Steps 1-5 result | Diagnostics snapshot attached | Bugs filed |
+| --------------- | ------ | ---- | ---------------- | ----------------------------- | ---------- |
+| Real iPhone     |        |      |                  |                               |            |
+| Real Android    |        |      |                  |                               |            |
+| Desktop PWA     |        |      |                  |                               |            |
+
+For each FAIL row, open a bug with:
+* the surface + OS version
+* the exact step number that failed
+* the JSON body returned by `/api/notifications/diagnostics` at the time
+  of failure (tokens, recent deliveries, quiet-hours state, daily cap)
+* any client-side console / device log excerpt
