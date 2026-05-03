@@ -14,6 +14,7 @@ import { SvgXml } from "react-native-svg";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { brand, brandAlpha, palette } from "@/constants/colors";
+import { enqueueAttempt, flushAttemptQueue } from "@/lib/smart-study-queue";
 import { useTranslation } from "react-i18next";
 import {
   PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
@@ -26,6 +27,7 @@ import {
   DAILY_GOAL_TARGET,
   type StudyMode, type SubjectPack, type StudyTopic, type PlayItem,
   type EngagementState, type ApplyResult,
+  type DailyPlan, type PlanItem,
 } from "@workspace/study-zone";
 
 type Child = { id: number; name: string; age: number; ageMonths?: number; childClass?: string | null };
@@ -226,6 +228,17 @@ export default function StudyScreen() {
         ) : view.kind === "study-home" ? (
           <>
             <EngagementStrip engagement={progress.engagement} />
+            <TodaysPlanSection
+              childId={view.childId}
+              childName={child?.name ?? ""}
+              onOpen={(item) => setView({
+                kind: "study-topic",
+                childId: view.childId,
+                mode: item.mode,
+                subjectId: item.subject,
+                topicId: item.topicId,
+              })}
+            />
             <StudyHome mode={view.mode} progress={progress} onOpen={(sid) =>
               setView({ kind: "study-subject", childId: view.childId, mode: view.mode, subjectId: sid })
             } />
@@ -248,6 +261,17 @@ export default function StudyScreen() {
               const m = view.mode;
               const sid = view.subjectId;
               const tid = view.topicId;
+              const cid = view.childId;
+              const passed = score >= Math.ceil(total * 0.6);
+              // Persist the attempt locally first so a flaky network
+              // never loses data, then flush. Anything still queued
+              // (offline, 5xx) replays on next mount of TodaysPlanSection.
+              (async () => {
+                await enqueueAttempt({
+                  childId: cid, subject: sid, topicId: tid, correct: passed,
+                });
+                await flushAttemptQueue(authFetch);
+              })();
               let result: ApplyResult | null = null;
               updateProgress((prev) => {
                 const subj = { ...(prev[m][sid] ?? {}) };
@@ -682,6 +706,98 @@ function TopicDetail({
 
 // ─── Engagement components ───────────────────────────────────────────────────
 
+function TodaysPlanSection({
+  childId, childName, onOpen,
+}: {
+  childId: number;
+  childName: string;
+  onOpen: (item: PlanItem) => void;
+}) {
+  const { t } = useTranslation();
+  const authFetch = useAuthFetch();
+  const [plan, setPlan] = useState<DailyPlan | null>(null);
+  const [completionPct, setCompletionPct] = useState(0);
+  const [doneTopicIds, setDoneTopicIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      // Reconcile any attempts captured offline before asking for today's
+      // plan, so the response reflects them.
+      try { await flushAttemptQueue(authFetch); } catch { /* ignore */ }
+      try {
+        const r = await authFetch("/api/smart-study/daily-plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ childId }),
+        });
+        if (!r.ok) { if (!cancelled) setLoading(false); return; }
+        const data = (await r.json()) as { plan: DailyPlan; completionPct: number; doneTopicIds: string[] };
+        if (cancelled) return;
+        setPlan(data.plan);
+        setCompletionPct(data.completionPct);
+        setDoneTopicIds(new Set(data.doneTopicIds));
+      } catch { /* falls back to subject grid */ }
+      finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [childId, authFetch]);
+
+  if (loading || !plan) return null;
+
+  return (
+    <View style={styles.planCard}>
+      <View style={styles.planHeader}>
+        <Text style={styles.planTitle}>✨ {t("screens.study.todays_plan")}</Text>
+        <Text style={styles.planPct}>{t("screens.study.plan_completion", { pct: completionPct })}</Text>
+      </View>
+      <Text style={styles.planSub}>{t("screens.study.todays_plan_subtitle", { name: childName })}</Text>
+      {plan.items.length === 0 ? (
+        <Text style={styles.planEmpty}>{t("screens.study.todays_plan_empty")}</Text>
+      ) : (
+        <View style={{ gap: 8, marginTop: 10 }}>
+          {plan.items.map((it) => {
+            const done = doneTopicIds.has(it.topicId);
+            return (
+              <Pressable
+                key={it.id}
+                onPress={() => { lightTap(); onOpen(it); }}
+                style={styles.planItem}
+              >
+                <Text style={{ fontSize: 22 }}>{it.subjectEmoji}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.planItemTitle} numberOfLines={1}>{it.topicTitle}</Text>
+                  <View style={styles.planItemMetaRow}>
+                    <Text style={styles.planItemSubject}>{it.subjectTitle}</Text>
+                    <Text style={styles.planDot}>·</Text>
+                    <View style={[styles.planChip, { backgroundColor: palette.indigo50 }]}>
+                      <Text style={[styles.planChipText, { color: palette.indigo700 }]}>
+                        {t(`screens.study.plan_difficulty_${it.difficulty}`)}
+                      </Text>
+                    </View>
+                    <View style={[styles.planChip, { backgroundColor: palette.amber100 }]}>
+                      <Text style={[styles.planChipText, { color: palette.amber700 }]}>
+                        {t(`screens.study.plan_source_${it.source}`)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <Ionicons
+                  name={done ? "checkmark-circle" : "chevron-forward"}
+                  size={20}
+                  color={done ? palette.emerald500 : palette.slate500}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
 function EngagementStrip({ engagement }: { engagement: EngagementState }) {
   const { t } = useTranslation();
   const goalPct = Math.min(100, Math.round((engagement.goalProgress / DAILY_GOAL_TARGET) * 100));
@@ -880,6 +996,37 @@ const styles = StyleSheet.create({
   emptyDesc: { fontSize: 13, color: palette.slate500, marginTop: 4 },
 
   imageWrap: { backgroundColor: "#fff", borderRadius: 16, padding: 8, borderWidth: 1, borderColor: palette.gray200, overflow: "hidden" },
+
+  // Today's Plan
+  planCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: brandAlpha.indigo500_20,
+    marginBottom: 4,
+  },
+  planHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  planTitle: { fontSize: 15, fontWeight: "800", color: palette.slate900 },
+  planPct: { fontSize: 11, color: palette.slate500, fontWeight: "700" },
+  planSub: { fontSize: 12, color: palette.slate500, marginTop: 2 },
+  planEmpty: { fontSize: 13, color: palette.slate500, marginTop: 10 },
+  planItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: palette.gray200,
+    backgroundColor: "#fff",
+  },
+  planItemTitle: { fontSize: 14, fontWeight: "800", color: palette.slate900 },
+  planItemMetaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" },
+  planItemSubject: { fontSize: 11, color: palette.slate500 },
+  planDot: { fontSize: 11, color: palette.slate500 },
+  planChip: { paddingVertical: 1, paddingHorizontal: 6, borderRadius: 999 },
+  planChipText: { fontSize: 10, fontWeight: "800" },
 
   // Engagement strip
   engStrip: {

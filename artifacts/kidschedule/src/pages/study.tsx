@@ -8,7 +8,9 @@ import {
   resolveStudyMode, MODE_LABELS,
   type StudyMode, type PlayCategory, type PlayItem,
   type SubjectPack, type StudyTopic,
+  type DailyPlan, type PlanItem,
 } from "@workspace/study-zone";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -146,6 +148,17 @@ export default function StudyPage() {
       ) : view.kind === "study-home" ? (
         <>
           {progress && <EngagementStrip engagement={progress.engagement} />}
+          <TodaysPlanSection
+            childId={view.childId}
+            childName={child?.name ?? ""}
+            onOpen={(item) => setView({
+              kind: "study-topic",
+              childId: view.childId,
+              mode: item.mode,
+              subjectId: item.subject,
+              topicId: item.topicId,
+            })}
+          />
           <StudyHome
             mode={view.mode}
             progress={progress}
@@ -171,6 +184,117 @@ export default function StudyPage() {
         />
       )}
     </div>
+  );
+}
+
+// ─── Today's Plan ────────────────────────────────────────────────────────────
+
+function TodaysPlanSection({
+  childId, childName, onOpen,
+}: {
+  childId: number;
+  childName: string;
+  onOpen: (item: PlanItem) => void;
+}) {
+  const { t } = useTranslation();
+  const { getToken } = useAuth();
+  const [plan, setPlan] = useState<DailyPlan | null>(null);
+  const [completionPct, setCompletionPct] = useState(0);
+  const [doneTopicIds, setDoneTopicIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) { if (!cancelled) setLoading(false); return; }
+        const res = await fetch("/api/smart-study/daily-plan", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ childId }),
+        });
+        if (!res.ok) { if (!cancelled) setLoading(false); return; }
+        const data = (await res.json()) as {
+          plan: DailyPlan;
+          completionPct: number;
+          doneTopicIds: string[];
+        };
+        if (cancelled) return;
+        setPlan(data.plan);
+        setCompletionPct(data.completionPct);
+        setDoneTopicIds(new Set(data.doneTopicIds));
+      } catch {
+        /* surface nothing — falls back to subject grid */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [childId, getToken]);
+
+  if (loading || !plan) return null;
+
+  return (
+    <Card className="rounded-2xl mb-3 border-indigo-200 dark:border-indigo-800">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-1">
+          <div className="font-quicksand text-lg font-bold text-foreground flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-indigo-500" />
+            {t("screens.study.todays_plan")}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {t("screens.study.plan_completion", { pct: completionPct })}
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          {t("screens.study.todays_plan_subtitle", { name: childName })}
+        </p>
+        {plan.items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("screens.study.todays_plan_empty")}</p>
+        ) : (
+          <div className="grid gap-2">
+            {plan.items.map((it) => {
+              const done = doneTopicIds.has(it.topicId);
+              return (
+                <button
+                  key={it.id}
+                  onClick={() => onOpen(it)}
+                  className="text-left rounded-xl border p-3 flex items-center gap-3 hover-elevate transition"
+                  data-testid={`plan-item-${it.subject}-${it.topicId}`}
+                >
+                  <div className="text-2xl">{it.subjectEmoji}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-quicksand font-bold text-foreground truncate">
+                      {it.topicTitle}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                      <span>{it.subjectTitle}</span>
+                      <span>·</span>
+                      <span className="px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                        {t(`screens.study.plan_difficulty_${it.difficulty}`)}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                        {t(`screens.study.plan_source_${it.source}`)}
+                      </span>
+                    </div>
+                  </div>
+                  {done ? (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -429,6 +553,7 @@ function TopicDetail({
   const { toast } = useToast();
   const { t } = useTranslation();
   const { speak: amySpeak, stop: amyStop, speaking: amySpeaking, loading: amyLoading } = useAmyVoice();
+  const { getToken } = useAuth();
   if (!subj || !topic) return <p className="text-sm text-muted-foreground">{t("screens.study.topic_not_found")}</p>;
 
   const score = topic.questions.reduce((acc, q, i) => acc + (picks[i] === q.answer ? 1 : 0), 0);
@@ -441,6 +566,26 @@ function TopicDetail({
       childId, mode, subj.id, topic.id, score, total,
     );
     onScored(nextP);
+
+    // Fire-and-forget: tell the server about this attempt so tomorrow's
+    // adaptive plan reflects today's accuracy. We log one attempt with the
+    // overall pass/fail result (per-question writes would be chattier).
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        await fetch("/api/smart-study/attempt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            childId,
+            subject: subj.id,
+            topicId: topic.id,
+            correct: score >= Math.ceil(total * 0.6),
+          }),
+        });
+      } catch { /* best-effort */ }
+    })();
 
     const perfect = score === total && total > 0;
     const passed = score >= Math.ceil(total * 0.6);
