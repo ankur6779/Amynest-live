@@ -402,6 +402,7 @@ CRITICAL RULES — follow ALL exactly:
 - 12–16 activities covering wake-up to sleep. Include breakfast, lunch, dinner, and at least one snack.
 - Include at least 2 outdoor/play activities and 1–2 family bonding activities.
 - Activities must match the child's age group and mood.
+- MEAL NOTES FORMAT — for EVERY meal, snack, tiffin, and drunch block, the "notes" field MUST start with "Options: " and list 3–4 concrete dish names separated by " | " (pipe with spaces). Example: "Options: Poha with peanuts | Vegetable upma | Aloo paratha with curd | Idli with sambar". Each option must be a complete, specific dish — NOT a generic category like "breakfast" or "snack". Every option in the list MUST respect the child's diet, allergies, and food style described below.
 ${buildDietConstraintBlock(params.foodType)}
 ${params.allergies ? `
 ALLERGY CONSTRAINT — SAFETY-CRITICAL (HARD RULE — non-negotiable):
@@ -488,6 +489,10 @@ NO-SCHOOL RULES — today is a school-free day:
     fridgeItems: params.fridgeItems,
     customRecipes: params.customRecipes,
     region: params.region as Region | undefined,
+    // Forward diet preferences so meal slot options get filtered to remove
+    // forbidden ingredients (vegan/jain) and child-specific allergens.
+    foodType: params.foodType,
+    allergies: params.allergies ?? null,
   });
 
   const weatherAdjusted = applyWeatherAdjustment(
