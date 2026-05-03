@@ -40,17 +40,17 @@ export function AmyFaceSVG({ size = 36, className = "" }: AmyFaceSVGProps) {
           <stop offset="100%" stopColor="#D8D8EE" />
         </radialGradient>
         <radialGradient id="bodyGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#A855F7" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#7C3AED" stopOpacity="0.05" />
+          <stop offset="0%" stopColor="hsl(var(--brand-purple-500))" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="hsl(var(--brand-violet-600))" stopOpacity="0.05" />
         </radialGradient>
         <linearGradient id="capGrad" x1="10%" y1="0%" x2="90%" y2="100%">
-          <stop offset="0%" stopColor="#6366F1" />
-          <stop offset="50%" stopColor="#7C3AED" />
-          <stop offset="100%" stopColor="#A855F7" />
+          <stop offset="0%" stopColor="hsl(var(--brand-indigo-500))" />
+          <stop offset="50%" stopColor="hsl(var(--brand-violet-600))" />
+          <stop offset="100%" stopColor="hsl(var(--brand-purple-500))" />
         </linearGradient>
         <linearGradient id="capVisorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#5B21B6" />
-          <stop offset="100%" stopColor="#4C1D95" />
+          <stop offset="0%" stopColor="hsl(var(--brand-violet-800))" />
+          <stop offset="100%" stopColor="hsl(var(--brand-violet-900))" />
         </linearGradient>
         <radialGradient id="capSheen" cx="30%" cy="18%" r="50%">
           <stop offset="0%" stopColor="white" stopOpacity="0.22" />
@@ -120,8 +120,8 @@ export function AmyFaceSVG({ size = 36, className = "" }: AmyFaceSVGProps) {
       />
 
       {/* "Amy Ai" badge on cap */}
-      <rect x="22" y="26" width="20" height="8" rx="4" fill="#EC4899" />
-      <rect x="22.5" y="26.5" width="19" height="7" rx="3.5" fill="#F472B6" opacity="0.3" />
+      <rect x="22" y="26" width="20" height="8" rx="4" fill="hsl(var(--brand-pink-500))" />
+      <rect x="22.5" y="26.5" width="19" height="7" rx="3.5" fill="hsl(var(--brand-pink-400))" opacity="0.3" />
       <text
         x="32"
         y="30.8"
@@ -155,8 +155,8 @@ export function AmyFaceSVG({ size = 36, className = "" }: AmyFaceSVGProps) {
       )}
 
       {/* Beak */}
-      <ellipse cx="32" cy="51.5" rx="3.5" ry="2.2" fill="#FFAD2F" />
-      <ellipse cx="32" cy="50.5" rx="3.2" ry="1.4" fill="#FFD166" />
+      <ellipse cx="32" cy="51.5" rx="3.5" ry="2.2" fill="hsl(var(--brand-orange-400))" />
+      <ellipse cx="32" cy="50.5" rx="3.2" ry="1.4" fill="hsl(var(--brand-yellow-300))" />
 
       {/* Body highlight / fluff */}
       <ellipse cx="40" cy="33" rx="4" ry="3" fill="white" opacity="0.22" />

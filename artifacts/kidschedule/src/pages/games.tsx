@@ -116,13 +116,13 @@ export default function GamesPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
             onClick={() => setLocation("/dashboard")}
-            style={{ color: "#c4b5fd", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
+            style={{ color: "hsl(var(--brand-violet-300))", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
             aria-label={t("screens.games.back")}
           >
             <ArrowLeft size={18} />
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Gamepad2 size={20} color="#c4b5fd" />
+            <Gamepad2 size={20} color="hsl(var(--brand-violet-300))" />
             <h1 style={{ fontFamily: "Quicksand, sans-serif", fontSize: 18, fontWeight: 800, margin: 0 }}>{t("screens.games.title")}</h1>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function GamesPage() {
           )}
           <div style={{
             display: "flex", alignItems: "center", gap: 6,
-            background: "linear-gradient(135deg, #f59e0b, #f97316)",
+            background: "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-orange-500)))",
             padding: "6px 12px", borderRadius: 999, color: "#fff", fontWeight: 800, fontSize: 13,
             boxShadow: "0 4px 12px rgba(245,158,11,0.35)",
           }}>
@@ -164,7 +164,7 @@ export default function GamesPage() {
           borderRadius: 14, padding: 12,
           display: "flex", alignItems: "center", gap: 10, fontSize: 13,
         }}>
-          <Sparkles size={18} color="#fbbf24" />
+          <Sparkles size={18} color="hsl(var(--brand-amber-300))" />
           <div style={{ flex: 1, color: "#e6e1f5" }}>{suggestion.line}</div>
         </div>
         <div style={{
@@ -172,7 +172,7 @@ export default function GamesPage() {
           display: "flex", justifyContent: "space-between", alignItems: "center",
           fontSize: 12, color: "#a99fd9",
         }}>
-          <span>{t("screens.games.played_today_label")} <strong style={{ color: limitHit ? "#fca5a5" : "#fff" }}>{playedToday} / {limit}</strong></span>
+          <span>{t("screens.games.played_today_label")} <strong style={{ color: limitHit ? "hsl(var(--brand-red-300))" : "#fff" }}>{playedToday} / {limit}</strong></span>
           <span>{t("screens.games.earn_to_unlock")}</span>
         </div>
       </div>
@@ -181,11 +181,11 @@ export default function GamesPage() {
         <div style={{
           maxWidth: 720, margin: "10px auto 0", padding: "10px 14px",
           background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)",
-          borderRadius: 12, color: "#fecaca", fontSize: 13,
+          borderRadius: 12, color: "hsl(var(--brand-red-200))", fontSize: 13,
           display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
         }}>
           <span>{error}</span>
-          <button onClick={() => setError(null)} style={{ background: "transparent", border: "none", color: "#fecaca", cursor: "pointer" }}><X size={14} /></button>
+          <button onClick={() => setError(null)} style={{ background: "transparent", border: "none", color: "hsl(var(--brand-red-200))", cursor: "pointer" }}><X size={14} /></button>
         </div>
       )}
 
@@ -197,22 +197,22 @@ export default function GamesPage() {
           borderRadius: 14, padding: "12px 14px",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "#c4b5fd", textTransform: "uppercase", letterSpacing: 0.6 }}>{t("screens.games.skill_progress")}</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "hsl(var(--brand-violet-300))", textTransform: "uppercase", letterSpacing: 0.6 }}>{t("screens.games.skill_progress")}</span>
             <span style={{ fontSize: 11, color: "#7c6fb8" }}>{t("screens.games.skill_subtitle")}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10 }}>
             {skills.map(({ cat, pct }) => (
               <div key={cat}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#e6e1f5", marginBottom: 4 }}>
-                  <span>{CATEGORY_EMOJI[cat]} {CATEGORY_LABEL[cat].split(" &")[0]}</span>
-                  <span style={{ fontWeight: 800, color: pct >= 75 ? "#4ade80" : pct >= 40 ? "#fbbf24" : "#a99fd9" }}>{pct}%</span>
+                  <span>{CATEGORY_EMOJI[cat]} {CATEGORY_LABEL[cat].split("&")[0]}</span>
+                  <span style={{ fontWeight: 800, color: pct >= 75 ? "hsl(var(--brand-green-400))" : pct >= 40 ? "hsl(var(--brand-amber-300))" : "#a99fd9" }}>{pct}%</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                   <div style={{
                     width: `${pct}%`, height: "100%",
-                    background: pct >= 75 ? "linear-gradient(90deg,#22c55e,#4ade80)"
-                      : pct >= 40 ? "linear-gradient(90deg,#f59e0b,#fbbf24)"
-                      : "linear-gradient(90deg,#8b5cf6,#a78bfa)",
+                    background: pct >= 75 ? "linear-gradient(90deg,hsl(var(--brand-green-500)),hsl(var(--brand-green-400)))"
+                      : pct >= 40 ? "linear-gradient(90deg,hsl(var(--brand-amber-500)),hsl(var(--brand-amber-300)))"
+                      : "linear-gradient(90deg,hsl(var(--brand-violet-500)),hsl(var(--brand-violet-400)))",
                     transition: "width 0.4s",
                   }} />
                 </div>
@@ -257,7 +257,7 @@ export default function GamesPage() {
                         position: "absolute", top: 8, right: 8,
                         background: "rgba(0,0,0,0.4)", borderRadius: 999,
                         padding: 4,
-                      }}><Lock size={11} color="#fbbf24" /></div>
+                      }}><Lock size={11} color="hsl(var(--brand-amber-300))" /></div>
                     )}
                     <div style={{
                       fontSize: 36, lineHeight: 1, width: 56, height: 56,
@@ -273,14 +273,14 @@ export default function GamesPage() {
                     )}
 
                     {soon ? (
-                      <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "#fbbf24" }}>{t("screens.games.coming_soon")}</div>
+                      <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "hsl(var(--brand-amber-300))" }}>{t("screens.games.coming_soon")}</div>
                     ) : unlocked ? (
                       <button
                         onClick={() => onPlay(g)}
                         disabled={limitHit}
                         style={{
                           marginTop: 6, width: "100%",
-                          background: limitHit ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #8b5cf6, #ec4899)",
+                          background: limitHit ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
                           color: "#fff", border: "none", borderRadius: 999,
                           padding: "7px 0", fontSize: 12.5, fontWeight: 700,
                           cursor: limitHit ? "default" : "pointer",
@@ -354,7 +354,7 @@ function GameModal({
             </div>
           </div>
           <button onClick={onClose} aria-label={t("screens.games.close")}
-            style={{ color: "#c4b5fd", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+            style={{ color: "hsl(var(--brand-violet-300))", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
             <X size={16} />
           </button>
         </div>
@@ -381,7 +381,7 @@ function GameModal({
 
         {state.kind === "result" && (
           <div style={{ textAlign: "center", padding: "8px 4px 0" }}>
-            <Trophy size={48} color={state.perfect ? "#fbbf24" : "#c4b5fd"} style={{ margin: "12px auto" }} />
+            <Trophy size={48} color={state.perfect ? "hsl(var(--brand-amber-300))" : "hsl(var(--brand-violet-300))"} style={{ margin: "12px auto" }} />
             <h3 style={{ margin: "0 0 6px", fontSize: 20, fontFamily: "Quicksand, sans-serif", fontWeight: 800 }}>
               {state.perfect ? t("screens.games.perfect_score") : t("screens.games.nice_work")}
             </h3>
@@ -390,7 +390,7 @@ function GameModal({
             </p>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              background: "linear-gradient(135deg, #f59e0b, #f97316)",
+              background: "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-orange-500)))",
               color: "#fff", padding: "10px 18px", borderRadius: 999,
               fontSize: 15, fontWeight: 800,
               boxShadow: "0 4px 14px rgba(245,158,11,0.4)",
@@ -403,7 +403,7 @@ function GameModal({
               <button
                 onClick={onClose}
                 style={{
-                  background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+                  background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
                   color: "#fff", border: "none", borderRadius: 999,
                   padding: "10px 22px", fontSize: 14, fontWeight: 700, cursor: "pointer",
                 }}
@@ -480,11 +480,11 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Gift size={22} color="#fbbf24" />
+            <Gift size={22} color="hsl(var(--brand-amber-300))" />
             <h3 style={{ margin: 0, fontSize: 17, fontFamily: "Quicksand, sans-serif", fontWeight: 800 }}>{t("screens.games.reward_redemption")}</h3>
           </div>
           <button onClick={onClose} aria-label={t("screens.games.close")}
-            style={{ color: "#c4b5fd", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+            style={{ color: "hsl(var(--brand-violet-300))", background: "rgba(167,139,250,0.15)", borderRadius: 999, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
             <X size={16} />
           </button>
         </div>
@@ -495,7 +495,7 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
         }}>
           <span style={{ fontSize: 13, color: "#c7c0e8" }}>{t("screens.games.available_points")}</span>
           <span style={{ fontSize: 18, fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <Coins size={16} color="#fbbf24" /> {points}
+            <Coins size={16} color="hsl(var(--brand-amber-300))" /> {points}
           </span>
         </div>
 
@@ -513,8 +513,8 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
         {msg && (
           <div style={{
             background: msg.startsWith("✨") ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-            border: "1px solid " + (msg.startsWith("✨") ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"),
-            color: msg.startsWith("✨") ? "#86efac" : "#fca5a5",
+            border: "1px solid" + (msg.startsWith("✨") ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"),
+            color: msg.startsWith("✨") ? "hsl(var(--brand-green-300))" : "hsl(var(--brand-red-300))",
             padding: "8px 12px", borderRadius: 10, fontSize: 13, marginBottom: 12,
           }}>{msg}</div>
         )}
@@ -538,7 +538,7 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
                   onClick={() => onRedeem(r)}
                   disabled={!can}
                   style={{
-                    background: can ? "linear-gradient(135deg, #f59e0b, #f97316)" : "rgba(255,255,255,0.06)",
+                    background: can ? "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-orange-500)))" : "rgba(255,255,255,0.06)",
                     color: "#fff", border: "none", borderRadius: 999,
                     padding: "6px 14px", fontSize: 12, fontWeight: 700,
                     cursor: can ? "pointer" : "default", opacity: can ? 1 : 0.5,
@@ -546,7 +546,7 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
                 >{t("screens.games.redeem_button")}</button>
                 {r.id.startsWith("custom-") && (
                   <button onClick={() => onDelete(r.id)} aria-label={t("screens.games.delete_reward")}
-                    style={{ background: "transparent", color: "#fca5a5", border: "none", cursor: "pointer" }}>
+                    style={{ background: "transparent", color: "hsl(var(--brand-red-300))", border: "none", cursor: "pointer" }}>
                     <Trash2 size={14} />
                   </button>
                 )}
@@ -559,7 +559,7 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
           <button onClick={() => setShowAdd(true)}
             style={{
               width: "100%", padding: "10px 0",
-              background: "rgba(255,255,255,0.06)", color: "#c4b5fd",
+              background: "rgba(255,255,255,0.06)", color: "hsl(var(--brand-violet-300))",
               border: "1px dashed rgba(139,92,246,0.5)", borderRadius: 12,
               fontSize: 13, fontWeight: 700, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -579,8 +579,8 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
                 style={{ width: 70, padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.3)", color: "#fff", fontSize: 13 }} />
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: "transparent", color: "#c4b5fd", border: "1px solid rgba(139,92,246,0.3)", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>{t("screens.games.cancel")}</button>
-              <button onClick={onAdd} style={{ flex: 1, background: "linear-gradient(135deg, #8b5cf6, #ec4899)", color: "#fff", border: "none", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <button onClick={() => setShowAdd(false)} style={{ flex: 1, background: "transparent", color: "hsl(var(--brand-violet-300))", border: "1px solid rgba(139,92,246,0.3)", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>{t("screens.games.cancel")}</button>
+              <button onClick={onAdd} style={{ flex: 1, background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))", color: "#fff", border: "none", padding: "8px 0", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <Check size={14} /> {t("screens.games.save")}
               </button>
             </div>
@@ -589,7 +589,7 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
 
         {redemptions.length > 0 && (
           <details style={{ marginTop: 16, color: "#c7c0e8" }}>
-            <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#c4b5fd" }}>{t("screens.games.recent_redemptions", { count: redemptions.length })}</summary>
+            <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700, color: "hsl(var(--brand-violet-300))" }}>{t("screens.games.recent_redemptions", { count: redemptions.length })}</summary>
             <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
               {redemptions.slice(0, 8).map((r, i) => (
                 <div key={i} style={{ fontSize: 12, color: "#a99fd9", display: "flex", justifyContent: "space-between" }}>

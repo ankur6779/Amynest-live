@@ -71,7 +71,7 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
     <div style={{ textAlign: "center" }}>
       <div style={{ display: "flex", justifyContent: "space-between", color: "#a99fd9", fontSize: 12, marginBottom: 10 }}>
         <span>Question {idx + 1} of {TOTAL}</span>
-        <span style={{ color: timeLeft <= 3 ? "#fca5a5" : "#a99fd9", fontWeight: 700 }}>⏱ {timeLeft}s</span>
+        <span style={{ color: timeLeft <= 3 ? "hsl(var(--brand-red-300))" : "#a99fd9", fontWeight: 700 }}>⏱ {timeLeft}s</span>
       </div>
       <div style={{ fontSize: 44, fontWeight: 800, color: "#fff", margin: "8px 0 22px", fontFamily: "Quicksand, sans-serif" }}>
         {r.question} = ?
@@ -80,7 +80,7 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
         {r.choices.map((c) => {
           const isCorrect = c === r.correct;
           const reveal = feedback !== null;
-          const bg = reveal && isCorrect ? "#22c55e"
+          const bg = reveal && isCorrect ? "hsl(var(--brand-green-500))"
             : reveal && !isCorrect ? "rgba(255,255,255,0.06)"
             : "rgba(255,255,255,0.08)";
           return (
@@ -94,7 +94,7 @@ export function SpeedMathGame({ onFinish }: { onFinish: (score: number, total: n
           );
         })}
       </div>
-      <div style={{ marginTop: 14, color: "#c4b5fd", fontSize: 12, fontWeight: 700 }}>Score: {score}</div>
+      <div style={{ marginTop: 14, color: "hsl(var(--brand-violet-300))", fontSize: 12, fontWeight: 700 }}>Score: {score}</div>
     </div>
   );
 }

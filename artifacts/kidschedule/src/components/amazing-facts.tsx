@@ -564,9 +564,9 @@ const CATEGORY_LABEL: Record<FactCategory, string> = {
   gk: "G.K."
 };
 const CATEGORY_COLORS: Record<FactCategory, string> = {
-  animal: "bg-green-100 dark:bg-green-500/20 text-green-800 dark:text-green-200 border-green-200 dark:border-green-400/30",
-  science: "bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-400/30",
-  gk: "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-400/30"
+  animal: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border",
+  science: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border",
+  gk: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border"
 };
 function lsKey(childName: string) {
   return `amynest_facts_${childName.replace(/\s+/g, "_").toLowerCase()}`;
@@ -664,7 +664,7 @@ export function AmazingFacts({
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-amber-400" />
+          <Sparkles className="h-5 w-5 text-primary" />
           <h3 className="font-bold text-base">{t("components.amazing_facts.amazing_facts_for_today")}</h3>
         </div>
         <button onClick={refreshFacts} className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-full">
@@ -693,7 +693,7 @@ export function AmazingFacts({
                   </p>
                   {lang === "hi" && <p className="text-xs text-muted-foreground mt-1 leading-snug">{fact.text}</p>}
                 </div>
-                <button onClick={() => toggleLike(fact.id)} className={`flex-shrink-0 flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1.5 transition-all ${isLiked ? "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-200 border border-blue-200 dark:border-blue-400/30" : "bg-muted/60 text-muted-foreground hover:bg-blue-50 dark:bg-blue-500/15 hover:text-blue-600"}`} title={t("components.amazing_facts.interesting")}>
+                <button onClick={() => toggleLike(fact.id)} className={`flex-shrink-0 flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1.5 transition-all ${isLiked ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border border-border dark:border-border" : "bg-muted/60 text-muted-foreground hover:bg-muted dark:bg-primary hover:text-primary"}`} title={t("components.amazing_facts.interesting")}>
                   <ThumbsUp className="h-3 w-3" />
                   {isLiked && <span>{t("components.amazing_facts.liked")}</span>}
                 </button>

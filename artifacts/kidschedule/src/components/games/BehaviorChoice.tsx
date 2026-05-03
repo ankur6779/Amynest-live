@@ -89,7 +89,7 @@ export function BehaviorChoiceGame({ onFinish }: { onFinish: (score: number, tot
                 background: reveal && o.correct ? "rgba(34,197,94,0.22)"
                           : reveal && isPicked ? "rgba(239,68,68,0.18)"
                                                 : "rgba(255,255,255,0.08)",
-                border: "1px solid " + (reveal && o.correct ? "rgba(34,197,94,0.6)"
+                border: "1px solid" + (reveal && o.correct ? "rgba(34,197,94,0.6)"
                                        : reveal && isPicked ? "rgba(239,68,68,0.5)"
                                                             : "rgba(139,92,246,0.3)"),
                 color: "#fff", fontSize: 13.5, lineHeight: 1.4,

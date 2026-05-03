@@ -67,8 +67,8 @@ const POEMS_0_6M: InfantPoem[] = [
     ageGroup: "0-6m",
     mood: "Sleep",
     icon: "Moon",
-    gradient: "from-indigo-600 via-violet-600 to-purple-700",
-    tint: "#7c3aed",
+    gradient: "",
+    tint: "hsl(var(--brand-violet-600))",
   },
   {
     id: "hush-little-cloud",
@@ -82,8 +82,8 @@ const POEMS_0_6M: InfantPoem[] = [
     ageGroup: "0-6m",
     mood: "Sleep",
     icon: "Cloud",
-    gradient: "from-slate-600 via-indigo-600 to-blue-700",
-    tint: "#4f46e5",
+    gradient: "from-muted",
+    tint: "hsl(var(--brand-indigo-600))",
   },
   {
     id: "moon-and-me",
@@ -97,8 +97,8 @@ const POEMS_0_6M: InfantPoem[] = [
     ageGroup: "0-6m",
     mood: "Calm",
     icon: "Moon",
-    gradient: "from-blue-700 via-indigo-700 to-slate-800",
-    tint: "#3730a3",
+    gradient: "to-muted",
+    tint: "hsl(var(--brand-indigo-800))",
   },
   {
     id: "tiny-tiny-star",
@@ -112,8 +112,8 @@ const POEMS_0_6M: InfantPoem[] = [
     ageGroup: "0-6m",
     mood: "Sleep",
     icon: "Star",
-    gradient: "from-violet-700 via-purple-700 to-fuchsia-700",
-    tint: "#9333ea",
+    gradient: "",
+    tint: "hsl(var(--brand-purple-600))",
   },
 ];
 
@@ -131,8 +131,8 @@ const POEMS_6_12M: InfantPoem[] = [
     ageGroup: "6-12m",
     mood: "Calm",
     icon: "Sparkles",
-    gradient: "from-rose-500 via-pink-500 to-fuchsia-500",
-    tint: "#ec4899",
+    gradient: "",
+    tint: "hsl(var(--brand-pink-500))",
   },
   {
     id: "round-and-round",
@@ -146,8 +146,8 @@ const POEMS_6_12M: InfantPoem[] = [
     ageGroup: "6-12m",
     mood: "Calm",
     icon: "Sun",
-    gradient: "from-amber-400 via-orange-400 to-rose-400",
-    tint: "#fb923c",
+    gradient: "",
+    tint: "hsl(var(--brand-orange-400))",
   },
   {
     id: "soft-little-bird",
@@ -161,8 +161,8 @@ const POEMS_6_12M: InfantPoem[] = [
     ageGroup: "6-12m",
     mood: "Learning",
     icon: "Bird",
-    gradient: "from-sky-400 via-cyan-400 to-teal-400",
-    tint: "#22d3ee",
+    gradient: "",
+    tint: "hsl(var(--brand-cyan-500))",
   },
   {
     id: "pat-pat-pat",
@@ -176,8 +176,8 @@ const POEMS_6_12M: InfantPoem[] = [
     ageGroup: "6-12m",
     mood: "Sleep",
     icon: "Heart",
-    gradient: "from-pink-500 via-rose-500 to-red-500",
-    tint: "#f43f5e",
+    gradient: "",
+    tint: "hsl(var(--brand-rose-500))",
   },
   {
     id: "humming-bumblebee",
@@ -191,8 +191,8 @@ const POEMS_6_12M: InfantPoem[] = [
     ageGroup: "6-12m",
     mood: "Learning",
     icon: "Flower2",
-    gradient: "from-yellow-400 via-amber-400 to-orange-500",
-    tint: "#f59e0b",
+    gradient: "",
+    tint: "hsl(var(--brand-amber-500))",
   },
 ];
 
@@ -210,8 +210,8 @@ const POEMS_12_24M: InfantPoem[] = [
     ageGroup: "12-24m",
     mood: "Learning",
     icon: "Star",
-    gradient: "from-indigo-500 via-blue-500 to-cyan-500",
-    tint: "#3b82f6",
+    gradient: "",
+    tint: "hsl(var(--brand-blue-500))",
   },
   {
     id: "colours-of-the-day",
@@ -225,8 +225,8 @@ const POEMS_12_24M: InfantPoem[] = [
     ageGroup: "12-24m",
     mood: "Learning",
     icon: "Sparkles",
-    gradient: "from-emerald-500 via-teal-500 to-cyan-500",
-    tint: "#14b8a6",
+    gradient: "",
+    tint: "hsl(var(--brand-teal-500))",
   },
   {
     id: "tiny-feet-walk",
@@ -240,8 +240,8 @@ const POEMS_12_24M: InfantPoem[] = [
     ageGroup: "12-24m",
     mood: "Learning",
     icon: "Sprout",
-    gradient: "from-lime-500 via-green-500 to-emerald-500",
-    tint: "#22c55e",
+    gradient: "",
+    tint: "hsl(var(--brand-green-500))",
   },
   {
     id: "goodnight-little-everything",
@@ -255,8 +255,8 @@ const POEMS_12_24M: InfantPoem[] = [
     ageGroup: "12-24m",
     mood: "Sleep",
     icon: "Moon",
-    gradient: "from-slate-700 via-indigo-700 to-purple-800",
-    tint: "#6366f1",
+    gradient: "from-muted",
+    tint: "hsl(var(--brand-indigo-500))",
   },
   {
     id: "kind-little-heart",
@@ -270,7 +270,7 @@ const POEMS_12_24M: InfantPoem[] = [
     ageGroup: "12-24m",
     mood: "Calm",
     icon: "Heart",
-    gradient: "from-fuchsia-500 via-pink-500 to-rose-500",
+    gradient: "",
     tint: "#d946ef",
   },
 ];

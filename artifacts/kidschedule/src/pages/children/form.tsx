@@ -73,27 +73,27 @@ function getAgeGroupInfo(totalMonths: number) {
   if (totalMonths < 12) return {
     label: "Infant",
     emoji: "👶",
-    color: "bg-pink-100 text-pink-800 border-pink-200"
+    color: "bg-muted text-primary border-border"
   };
   if (totalMonths < 36) return {
     label: "Toddler",
     emoji: "🍼",
-    color: "bg-purple-100 text-purple-800 border-purple-200"
+    color: "bg-muted text-primary border-border"
   };
   if (totalMonths < 60) return {
     label: "Preschool",
     emoji: "🎨",
-    color: "bg-blue-100 text-blue-800 border-blue-200"
+    color: "bg-muted text-primary border-border"
   };
   if (totalMonths < 120) return {
     label: "School Age",
     emoji: "📚",
-    color: "bg-green-100 text-green-800 border-green-200"
+    color: "bg-muted text-primary border-border"
   };
   return {
     label: "Pre-Teen",
     emoji: "🎯",
-    color: "bg-orange-100 text-orange-800 border-orange-200"
+    color: "bg-muted text-primary border-border"
   };
 }
 const todayStr = new Date().toISOString().slice(0, 10);
@@ -350,8 +350,8 @@ export default function ChildForm() {
         <AlertDialogContent className="rounded-3xl max-w-sm mx-auto">
           <AlertDialogHeader>
             <div className="flex justify-center mb-3">
-              <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center">
-                <Crown className="h-7 w-7 text-amber-500" />
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                <Crown className="h-7 w-7 text-primary" />
               </div>
             </div>
             <AlertDialogTitle className="text-center text-xl">{t("pages.children.form.upgrade_to_premium")}</AlertDialogTitle>
@@ -361,7 +361,7 @@ export default function ChildForm() {
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
             <Link href="/pricing">
-              <AlertDialogAction className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white rounded-2xl h-12 font-bold text-base">
+              <AlertDialogAction className="w-full bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white rounded-2xl h-12 font-bold text-base">
                 <Sparkles className="h-4 w-4 mr-2" />
                 {t("pages.children.form.see_upgrade_plans")}
               </AlertDialogAction>
@@ -386,17 +386,17 @@ export default function ChildForm() {
       </header>
 
       {/* Upfront banner when user is already at the free limit */}
-      {isAtFreeLimit && <div className="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-            <Crown className="h-4 w-4 text-amber-500" />
+      {isAtFreeLimit && <div className="rounded-2xl bg-gradient-to-r from-muted to-muted border border-border p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+            <Crown className="h-4 w-4 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-amber-900 text-sm">{t("pages.children.form.free_plan_1_child_only")}</p>
-            <p className="text-amber-700 text-xs mt-1">
+            <p className="font-bold text-primary text-sm">{t("pages.children.form.free_plan_1_child_only")}</p>
+            <p className="text-primary text-xs mt-1">
               {t("pages.children.form.you_already_have")} {existingCount} {t("pages.children.form.child_profile_upgrade_to_premium_to_add_more_children_and_un")}
             </p>
             <Link href="/pricing">
-              <button className="mt-2 text-xs font-bold text-amber-700 underline underline-offset-2 hover:text-amber-900">
+              <button className="mt-2 text-xs font-bold text-primary underline underline-offset-2 hover:text-primary">
                 {t("pages.children.form.view_upgrade_plans")}
               </button>
             </Link>
@@ -498,11 +498,11 @@ export default function ChildForm() {
               </div>
 
               {/* ── INFANT BANNER ── */}
-              {calculatedAge && isInfant && <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 flex items-start gap-3">
+              {calculatedAge && isInfant && <div className="bg-muted border border-border rounded-2xl p-4 flex items-start gap-3">
                   <span className="text-2xl">👶</span>
                   <div>
-                    <p className="font-bold text-pink-800">{t("pages.children.form.infant_mode_will_be_used")}</p>
-                    <p className="text-xs text-pink-700 mt-1">
+                    <p className="font-bold text-primary">{t("pages.children.form.infant_mode_will_be_used")}</p>
+                    <p className="text-xs text-primary mt-1">
                       {t("pages.children.form.for_babies_under_1_year_amynest_shows_parenting_guidance_car")}
                     </p>
                   </div>
@@ -528,7 +528,7 @@ export default function ChildForm() {
                         {opt.label}
                       </button>)}
                   </div>
-                  {watchIsSchoolGoing === undefined && <p className="text-xs text-amber-600 mt-2 font-medium">{t("pages.children.form.please_select_an_option_to_continue")}</p>}
+                  {watchIsSchoolGoing === undefined && <p className="text-xs text-primary mt-2 font-medium">{t("pages.children.form.please_select_an_option_to_continue")}</p>}
                 </div>}
 
               {/* ── SCHOOL DETAILS (only if school = YES) ── */}
@@ -835,7 +835,7 @@ export default function ChildForm() {
               </div>
 
               {!watchDob && <p className="text-center text-xs text-muted-foreground">{t("pages.children.form.enter_your_child_s_date_of_birth_to_continue")}</p>}
-              {!isInfant && watchDob && watchIsSchoolGoing === undefined && <p className="text-center text-xs text-amber-600 font-medium">{t("pages.children.form.please_answer_the_school_question_above")}</p>}
+              {!isInfant && watchDob && watchIsSchoolGoing === undefined && <p className="text-center text-xs text-primary font-medium">{t("pages.children.form.please_answer_the_school_question_above")}</p>}
 
             </form>
           </Form>

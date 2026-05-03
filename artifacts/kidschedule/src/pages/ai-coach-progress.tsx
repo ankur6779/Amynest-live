@@ -52,7 +52,7 @@ export default function AICoachProgressPage() {
 
       <div>
         <h1 className="font-quicksand text-2xl font-bold flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-violet-500" />
+          <BarChart3 className="h-6 w-6 text-foreground" />
           {t("screens.ai_coach_progress.title")}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -68,14 +68,14 @@ export default function AICoachProgressPage() {
 
       {!loading && sessions.length === 0 && (
         <div className="rounded-2xl border-2 border-dashed border-border p-10 text-center space-y-3">
-          <Sparkles className="h-10 w-10 text-violet-400 mx-auto" />
+          <Sparkles className="h-10 w-10 text-foreground mx-auto" />
           <h3 className="font-bold">{t("screens.ai_coach_progress.empty_title")}</h3>
           <p className="text-sm text-muted-foreground">
             {t("screens.ai_coach_progress.empty_body")}
           </p>
           <button
             onClick={() => setLocation("/amy-coach")}
-            className="mt-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-white font-bold text-sm"
+            className="mt-2 px-5 py-2.5 rounded-full bg-card text-primary-foreground font-bold text-sm"
           >
             {t("screens.ai_coach_progress.start_plan")}
           </button>
@@ -91,11 +91,11 @@ export default function AICoachProgressPage() {
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold tracking-wider text-violet-600 uppercase">{s.goalLabel}</p>
+                      <p className="text-[10px] font-bold tracking-wider text-foreground uppercase">{s.goalLabel}</p>
                       <h3 className="font-quicksand font-bold text-base mt-0.5 leading-tight">{s.planTitle}</h3>
                     </div>
                     {s.completed === s.totalWins && (
-                      <Trophy className="h-5 w-5 text-amber-500 shrink-0" />
+                      <Trophy className="h-5 w-5 text-foreground shrink-0" />
                     )}
                   </div>
 
@@ -104,11 +104,11 @@ export default function AICoachProgressPage() {
                       <span className="font-semibold text-muted-foreground">
                         {t("screens.ai_coach_progress.wins_count", { done: s.completed, total: s.totalWins })}
                       </span>
-                      <span className="font-bold text-violet-700">{pct}%</span>
+                      <span className="font-bold text-foreground">{pct}%</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all"
+                        className="h-full bg-card transition-all"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -125,7 +125,7 @@ export default function AICoachProgressPage() {
                           title={fb ? t("screens.ai_coach_progress.win_done_title", { n: wn, label: FEEDBACK_LABEL[fb.feedback] }) : t("screens.ai_coach_progress.win_pending_title", { n: wn })}
                           className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                             fb
-                              ? "bg-violet-100 text-violet-700"
+                              ? "bg-muted text-foreground"
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
@@ -141,7 +141,7 @@ export default function AICoachProgressPage() {
                     </p>
                     <button
                       onClick={() => setLocation(`/amy-coach?resume=${s.sessionId}`)}
-                      className="flex items-center gap-1 text-xs font-bold text-violet-700 hover:text-violet-900"
+                      className="flex items-center gap-1 text-xs font-bold text-foreground hover:text-foreground"
                     >
                       {t("screens.ai_coach_progress.continue_plan")} <ArrowRight className="h-3 w-3" />
                     </button>

@@ -114,7 +114,7 @@ export function StoryFlowPlayer({
       v.removeEventListener("error", handleError);
     };
   }, [story.id, onProgress, onEnded, onError]);
-  return <div data-on-dark className="relative overflow-hidden rounded-2xl bg-black shadow-2xl shadow-purple-900/40" data-testid={`story-flow-player-${story.id}`}>
+  return <div data-on-dark className="relative overflow-hidden rounded-2xl bg-black shadow-2xl shadow" data-testid={`story-flow-player-${story.id}`}>
       {/* Top bar: progress dots + close */}
       <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
         <div className="flex items-center gap-2">
@@ -135,7 +135,7 @@ export function StoryFlowPlayer({
 
       {/* Video element or error state */}
       {errored ? <div data-on-dark className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-black p-8 text-center">
-          <AlertCircle className="h-10 w-10 text-red-400" />
+          <AlertCircle className="h-10 w-10 text-primary" />
           <p className="text-sm font-semibold text-white">{t("components.story_player.couldn_t_load_this_story")}</p>
           <p className="text-xs text-white/50">{t("components.story_player.skipping_to_next")}</p>
         </div> : <video data-on-dark key={story.id} ref={videoRef} src={story.streamUrl} controls autoPlay playsInline className="aspect-video w-full bg-black" />}
@@ -178,7 +178,7 @@ export function StoryFlowPlayer({
             <RotateCcw className="h-3.5 w-3.5" />
             {t("components.story_player.replay")}
           </Button>
-          <Button size="sm" onClick={onNext} className="h-8 gap-1.5 bg-violet-600 text-xs text-white hover:bg-violet-500">
+          <Button size="sm" onClick={onNext} className="h-8 gap-1.5 bg-primary text-xs text-white hover:bg-primary">
             {t("components.story_player.next")}
             <ChevronRight className="h-3.5 w-3.5" />
           </Button>

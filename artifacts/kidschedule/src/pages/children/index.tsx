@@ -72,7 +72,7 @@ export default function ChildrenList() {
                           </span>}
                         {(child as any).isSchoolGoing && (() => {
                       const summary = summariseSchoolDays((child as any).schoolDays);
-                      return summary ? <span className="flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md text-xs font-medium">
+                      return summary ? <span className="flex items-center gap-1 bg-muted text-primary px-2 py-0.5 rounded-md text-xs font-medium">
                               <Calendar className="h-3 w-3" />
                               {summary}
                             </span> : null;

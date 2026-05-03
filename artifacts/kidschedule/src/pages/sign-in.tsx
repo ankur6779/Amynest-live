@@ -143,7 +143,7 @@ function NeonRingHero() {
         position: "absolute",
         inset: 0,
         borderRadius: "50%",
-        background: "conic-gradient(from 0deg, #a855f7 0deg, #ec4899 90deg, #a855f7 180deg, #ec4899 270deg, #a855f7 360deg)",
+        background: "conic-gradient(from 0deg, hsl(var(--brand-purple-500)) 0deg, hsl(var(--brand-pink-500)) 90deg, hsl(var(--brand-purple-500)) 180deg, hsl(var(--brand-pink-500)) 270deg, hsl(var(--brand-purple-500)) 360deg)",
         WebkitMaskImage: `radial-gradient(circle, transparent ${MASK_IN}px, black ${MASK_OUT}px)`,
         maskImage: `radial-gradient(circle, transparent ${MASK_IN}px, black ${MASK_OUT}px)`,
         animation: "siRingRotate 11s linear infinite",
@@ -208,7 +208,7 @@ function NeonRingHero() {
           fontWeight: 700,
           letterSpacing: "4px",
           textTransform: "uppercase",
-          background: "linear-gradient(92deg, #a855f7 0%, #ec4899 100%)",
+          background: "linear-gradient(92deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
           WebkitBackgroundClip: "text",
           backgroundClip: "text",
           color: "transparent",
@@ -386,7 +386,7 @@ export default function SignInPage() {
       }}>
           {t("screens.sign_in.inbox_body_before")}{" "}
           <span style={{
-          color: "#C084FC",
+          color: "hsl(var(--brand-purple-400))",
           fontWeight: 600
         }}>{resetEmail}</span>
           {t("screens.sign_in.inbox_body_after")}
@@ -395,7 +395,7 @@ export default function SignInPage() {
         width: "100%",
         height: "50px",
         borderRadius: "999px",
-        background: "linear-gradient(90deg, #a855f7 0%, #ec4899 100%)",
+        background: "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
         border: "none",
         color: "#FFFFFF",
         fontSize: "16px",
@@ -455,7 +455,7 @@ export default function SignInPage() {
           width: "100%",
           height: "50px",
           borderRadius: "999px",
-          background: resetBusy ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, #a855f7 0%, #ec4899 100%)",
+          background: resetBusy ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
           border: "none",
           color: "#FFFFFF",
           fontSize: "16px",
@@ -570,7 +570,7 @@ export default function SignInPage() {
             border: "none",
             padding: 0,
             fontSize: "12px",
-            color: "#a855f7",
+            color: "hsl(var(--brand-purple-500))",
             fontWeight: 600,
             cursor: "pointer",
             fontFamily: "inherit"
@@ -608,7 +608,7 @@ export default function SignInPage() {
         width: "100%",
         height: "50px",
         borderRadius: "999px",
-        background: busy ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, #a855f7 0%, #ec4899 100%)",
+        background: busy ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
         border: "none",
         color: "#FFFFFF",
         fontSize: "16px",
@@ -630,7 +630,7 @@ export default function SignInPage() {
     }}>
         {t("screens.sign_in.no_account")}{" "}
         <Link href="/sign-up" style={{
-        color: "#a855f7",
+        color: "hsl(var(--brand-purple-500))",
         fontWeight: 600,
         textDecoration: "none"
       }}>
@@ -648,7 +648,7 @@ function ErrorBanner({
 }) {
   return <div style={{
     fontSize: "13px",
-    color: "#FF8080",
+    color: "hsl(var(--brand-red-400))",
     background: "rgba(255,60,60,0.10)",
     border: "1px solid rgba(255,60,60,0.22)",
     borderRadius: "12px",

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const COLORS = [
-  { id: "r", name: "Red",    bg: "#ef4444" },
-  { id: "b", name: "Blue",   bg: "#3b82f6" },
-  { id: "g", name: "Green",  bg: "#22c55e" },
-  { id: "y", name: "Yellow", bg: "#facc15" },
-  { id: "p", name: "Purple", bg: "#a855f7" },
-  { id: "o", name: "Orange", bg: "#fb923c" },
+  { id: "r", name: "Red",    bg: "hsl(var(--brand-red-500))" },
+  { id: "b", name: "Blue",   bg: "hsl(var(--brand-blue-500))" },
+  { id: "g", name: "Green",  bg: "hsl(var(--brand-green-500))" },
+  { id: "y", name: "Yellow", bg: "hsl(var(--brand-amber-400))" },
+  { id: "p", name: "Purple", bg: "hsl(var(--brand-purple-500))" },
+  { id: "o", name: "Orange", bg: "hsl(var(--brand-orange-400))" },
 ];
 
 function buildSequence(len: number): string[] {
@@ -73,7 +73,7 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
           <div style={{
             width: 64, height: 64, borderRadius: 16,
             background: COLORS.find((c) => c.id === seq[showIdx])?.bg ?? "#fff",
-            boxShadow: "0 0 30px " + (COLORS.find((c) => c.id === seq[showIdx])?.bg ?? "#fff") + "55",
+            boxShadow: "0 0 30px" + (COLORS.find((c) => c.id === seq[showIdx])?.bg ?? "#fff") + "55",
             transition: "background 0.15s",
           }} />
         )}
@@ -81,7 +81,7 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
           <div style={{ color: "#c7c0e8", fontSize: 13 }}>Now tap the colours in order ({input.length}/{seq.length})</div>
         )}
         {phase === "feedback" && (
-          <div style={{ fontSize: 32, color: correctRound ? "#22c55e" : "#ef4444", fontWeight: 800 }}>
+          <div style={{ fontSize: 32, color: correctRound ? "hsl(var(--brand-green-500))" : "hsl(var(--brand-red-500))", fontWeight: 800 }}>
             {correctRound ? "✓" : "✗"}
           </div>
         )}
@@ -99,7 +99,7 @@ export function ColorMemoryGame({ onFinish }: { onFinish: (score: number, total:
           >{c.name}</button>
         ))}
       </div>
-      <div style={{ marginTop: 14, color: "#c4b5fd", fontSize: 12, fontWeight: 700 }}>Score: {score}</div>
+      <div style={{ marginTop: 14, color: "hsl(var(--brand-violet-300))", fontSize: 12, fontWeight: 700 }}>Score: {score}</div>
     </div>
   );
 }

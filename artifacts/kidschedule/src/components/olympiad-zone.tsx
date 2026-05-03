@@ -321,7 +321,7 @@ function QuizRunner({
           const ok = userAns === q.correct;
           return <div key={q.id} className="rounded-lg border bg-card p-3 text-sm">
                 <div className="flex items-start gap-2">
-                  {ok ? <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />}
+                  {ok ? <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />}
                   <div className="flex-1">
                     <p className="font-medium">{q.question}</p>
                     <p className="text-xs mt-1 text-muted-foreground">
@@ -379,16 +379,16 @@ function QuizRunner({
             {q.options.map((opt, i) => {
             const showCorrect = isAnswered && i === q.correct;
             const showWrong = isAnswered && picked === i && i !== q.correct;
-            return <button key={i} onClick={() => onPick(i)} disabled={isAnswered} className={`w-full text-left px-3 py-2.5 rounded-lg border-2 text-sm transition-all ${showCorrect ? "bg-green-50 dark:bg-green-900/20 border-green-500" : showWrong ? "bg-rose-50 dark:bg-rose-900/20 border-rose-500" : isAnswered ? "border-border opacity-60" : picked === i ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+            return <button key={i} onClick={() => onPick(i)} disabled={isAnswered} className={`w-full text-left px-3 py-2.5 rounded-lg border-2 text-sm transition-all ${showCorrect ? "bg-muted dark:bg-primary border-primary" : showWrong ? "bg-muted dark:bg-primary border-primary" : isAnswered ? "border-border opacity-60" : picked === i ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
                   <span className="font-semibold mr-2">{String.fromCharCode(65 + i)}.</span>
                   {opt}
-                  {showCorrect && <CheckCircle2 className="inline h-4 w-4 ml-2 text-green-600" />}
-                  {showWrong && <XCircle className="inline h-4 w-4 ml-2 text-rose-600" />}
+                  {showCorrect && <CheckCircle2 className="inline h-4 w-4 ml-2 text-primary" />}
+                  {showWrong && <XCircle className="inline h-4 w-4 ml-2 text-primary" />}
                 </button>;
           })}
           </div>
 
-          {isAnswered && <div className={`rounded-lg p-3 text-sm flex gap-2 ${isCorrect ? "bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100" : "bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-100"}`}>
+          {isAnswered && <div className={`rounded-lg p-3 text-sm flex gap-2 ${isCorrect ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"}`}>
               <Lightbulb className="h-4 w-4 shrink-0 mt-0.5" />
               <p>{q.explanation}</p>
             </div>}
@@ -443,7 +443,7 @@ function DailyTab({
           const ok = userAns === q.correct;
           return <div key={q.id} className="rounded-lg border bg-card p-3 text-sm">
                 <div className="flex items-start gap-2">
-                  {ok ? <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />}
+                  {ok ? <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />}
                   <div className="flex-1">
                     <p className="font-medium">{q.question}</p>
                     <p className="text-xs mt-1 text-muted-foreground">
@@ -457,9 +457,9 @@ function DailyTab({
       </div>;
   }
   return <div className="space-y-3">
-      <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
+      <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border dark:border-primary">
         <CardContent className="p-3 flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-purple-600 shrink-0" />
+          <Sparkles className="h-5 w-5 text-primary shrink-0" />
           <div className="text-xs">
             <p className="font-semibold">{childName}{t("components.olympiad_zone.s_daily_5")}</p>
             <p className="text-muted-foreground">
@@ -637,23 +637,23 @@ function ProgressTab({
   return <div className="space-y-4">
       {/* Top stats */}
       <div className="grid grid-cols-3 gap-2">
-        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+        <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
           <CardContent className="p-3 text-center">
-            <Trophy className="h-5 w-5 mx-auto text-amber-600" />
+            <Trophy className="h-5 w-5 mx-auto text-primary" />
             <p className="text-xl font-bold mt-1">{stats.totalPoints}</p>
             <p className="text-xs text-muted-foreground">{t("components.olympiad_zone.points_2")}</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20">
+        <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
           <CardContent className="p-3 text-center">
-            <Flame className="h-5 w-5 mx-auto text-rose-600" />
+            <Flame className="h-5 w-5 mx-auto text-primary" />
             <p className="text-xl font-bold mt-1">{stats.streak}</p>
             <p className="text-xs text-muted-foreground">{t("components.olympiad_zone.day_streak")}</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+        <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
           <CardContent className="p-3 text-center">
-            <Target className="h-5 w-5 mx-auto text-emerald-600" />
+            <Target className="h-5 w-5 mx-auto text-primary" />
             <p className="text-xl font-bold mt-1">{overallPct}%</p>
             <p className="text-xs text-muted-foreground">{t("components.olympiad_zone.accuracy")}</p>
           </CardContent>
@@ -683,10 +683,10 @@ function ProgressTab({
       </Card>
 
       {/* Amy AI insight */}
-      <Card className="border-purple-200 dark:border-purple-800">
+      <Card className="border-border dark:border-primary">
         <CardContent className="p-4">
           <div className="flex items-start gap-2">
-            <Sparkles className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+            <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div>
               <p className="font-quicksand font-bold text-sm">{t("components.olympiad_zone.amy_s_insight")}</p>
               <p className="text-xs text-muted-foreground mt-1">{buildAmyInsight(stats, childName)}</p>
@@ -696,10 +696,10 @@ function ProgressTab({
       </Card>
 
       {/* Parent guidance */}
-      <Card className="bg-blue-50/60 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
+      <Card className="bg-muted dark:bg-primary border-border dark:border-primary">
         <CardContent className="p-4">
           <div className="flex items-start gap-2">
-            <Lightbulb className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+            <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div>
               <p className="font-quicksand font-bold text-sm">{t("components.olympiad_zone.for_you_parent")}</p>
               <p className="text-xs text-muted-foreground mt-1">{buildParentTip(stats)}</p>
@@ -715,7 +715,7 @@ function ProgressTab({
           <div className="grid grid-cols-3 gap-2">
             {BADGES.map(b => {
             const earned = stats.badges.includes(b.id);
-            return <div key={b.id} title={b.hint} className={`rounded-lg border p-2 text-center text-[11px] ${earned ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300" : "opacity-50"}`}>
+            return <div key={b.id} title={b.hint} className={`rounded-lg border p-2 text-center text-[11px] ${earned ? "bg-muted dark:bg-primary border-border" : "opacity-50"}`}>
                   <div className="text-xl">{b.emoji}</div>
                   <div className="font-medium leading-tight mt-0.5">{b.label}</div>
                 </div>;
@@ -746,9 +746,9 @@ function WeeklyTestCard({
   const [open, setOpen] = useState(false);
   const questions = useMemo(() => pickWeeklyQuestions(ageBand, weekKey, childId), [ageBand, weekKey, childId]);
   if (weeklyRun?.submitted) {
-    return <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-amber-300">
+    return <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border">
         <CardContent className="p-3 flex items-center gap-3">
-          <Crown className="h-5 w-5 text-amber-600 shrink-0" />
+          <Crown className="h-5 w-5 text-primary shrink-0" />
           <div className="text-xs flex-1">
             <p className="font-semibold">{t("components.olympiad_zone.weekly_test_done")}</p>
             <p className="text-muted-foreground">
@@ -759,10 +759,10 @@ function WeeklyTestCard({
       </Card>;
   }
   if (open) {
-    return <Card className="border-amber-300">
+    return <Card className="border-border">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Crown className="h-5 w-5 text-amber-600" />
+            <Crown className="h-5 w-5 text-primary" />
             <p className="font-quicksand font-bold">{t("components.olympiad_zone.weekly_test")}{questions.length} {t("components.olympiad_zone.questions")}</p>
           </div>
           <QuizRunner questions={questions} pointsPerCorrect={15} perfectBonus={50} onComplete={({
@@ -801,9 +801,9 @@ function WeeklyTestCard({
         </CardContent>
       </Card>;
   }
-  return <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-amber-300">
+  return <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border">
       <CardContent className="p-3 flex items-center gap-3">
-        <Crown className="h-5 w-5 text-amber-600 shrink-0" />
+        <Crown className="h-5 w-5 text-primary shrink-0" />
         <div className="text-xs flex-1">
           <p className="font-semibold">{t("components.olympiad_zone.weekly_test_2")}</p>
           <p className="text-muted-foreground">{questions.length} {t("components.olympiad_zone.questions_across_all_4_subjects_15_pts_each_50_bonus")}</p>
@@ -842,7 +842,7 @@ export function OlympiadZone({
   return <div className="space-y-3">
       {/* Header strip */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Star className="h-3.5 w-3.5 text-amber-500" />
+        <Star className="h-3.5 w-3.5 text-primary" />
         <span>{t("components.olympiad_zone.level")} <strong>{ageBandLabel(ageBand)}</strong></span>
         <span>·</span>
         <span>{t("components.olympiad_zone.difficulty_2")} <strong>{DIFFICULTY_LABELS[stats.difficulty]}</strong></span>

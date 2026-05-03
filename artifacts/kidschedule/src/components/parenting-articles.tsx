@@ -146,7 +146,7 @@ function ArticleModal({
           </span>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={handleSave} className={`rounded-full ${saved ? "text-violet-600" : "text-muted-foreground"}`} aria-label={saved ? "Unsave article" : "Save article"}>
+          <Button variant="ghost" size="icon" onClick={handleSave} className={`rounded-full ${saved ? "text-primary" : "text-muted-foreground"}`} aria-label={saved ? "Unsave article" : "Save article"}>
             {saved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
           </Button>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full" aria-label={t("components.parenting_articles.close_article")}>
@@ -248,9 +248,9 @@ function ArticleModal({
           }
           if (section.type === "tip") {
             return <div key={i} className={wrapperClass}>
-                  <div className="bg-gradient-to-r from-violet-50 dark:from-violet-500/15 to-pink-50 dark:to-pink-500/15 border border-violet-200 dark:border-violet-400/30 rounded-2xl p-4 flex gap-3 items-start">
+                  <div className="bg-gradient-to-r from-muted dark:from-primary to-muted dark:to-primary border border-border dark:border-border rounded-2xl p-4 flex gap-3 items-start">
                     <div className="shrink-0 text-lg">✨</div>
-                    <p className="text-violet-800 dark:text-violet-200 text-sm leading-relaxed font-medium flex-1">
+                    <p className="text-primary dark:text-muted-foreground text-sm leading-relaxed font-medium flex-1">
                       {section.text}
                     </p>
                     {listenBtn}
@@ -325,7 +325,7 @@ function ArticleCard({
             <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
               <Volume2 className="h-3 w-3" /> {t("components.parenting_articles.read_aloud")}
             </span>
-            {saved && <span className="text-violet-500">
+            {saved && <span className="text-primary">
                 <BookmarkCheck className="h-3.5 w-3.5" />
               </span>}
           </span>
@@ -367,8 +367,8 @@ export function ParentingArticles({
       {/* Section header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
-            <BookOpen className="h-4 w-4 text-emerald-600" />
+          <div className="w-8 h-8 rounded-xl bg-muted dark:bg-primary flex items-center justify-center">
+            <BookOpen className="h-4 w-4 text-primary" />
           </div>
           <div>
             <h2 className="font-quicksand font-bold text-base text-foreground">{t("components.parenting_articles.parenting_articles")}</h2>
@@ -382,13 +382,13 @@ export function ParentingArticles({
       </div>
 
       {/* Continue reading strip */}
-      {continueArticle && !activeArticle && <button onClick={() => openArticle(continueArticle)} className="w-full flex items-center gap-3 bg-gradient-to-r from-violet-50 dark:from-violet-500/15 to-indigo-50 dark:to-indigo-500/15 border border-violet-200 dark:border-violet-400/30 rounded-2xl px-4 py-3 hover:border-violet-400 transition-all text-left">
+      {continueArticle && !activeArticle && <button onClick={() => openArticle(continueArticle)} className="w-full flex items-center gap-3 bg-gradient-to-r from-muted dark:from-primary to-muted dark:to-primary border border-border dark:border-border rounded-2xl px-4 py-3 hover:border-border transition-all text-left">
           <span className="text-2xl shrink-0">{continueArticle.emoji}</span>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wide">{t("components.parenting_articles.continue_reading")}</p>
+            <p className="text-[10px] font-bold text-primary uppercase tracking-wide">{t("components.parenting_articles.continue_reading")}</p>
             <p className="text-sm font-bold text-foreground truncate">{continueArticle.title}</p>
           </div>
-          <ChevronRight className="h-4 w-4 text-violet-500 shrink-0" />
+          <ChevronRight className="h-4 w-4 text-primary shrink-0" />
         </button>}
 
       {/* Category filter chips */}

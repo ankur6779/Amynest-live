@@ -14,26 +14,26 @@ const CATEGORY_META: Record<CueCategory, {
   hunger: {
     label: "Hunger",
     emoji: "🍼",
-    color: "text-amber-700 dark:text-amber-300",
-    bg: "bg-amber-100 dark:bg-amber-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bg: "bg-muted dark:bg-primary"
   },
   sleep: {
     label: "Sleep",
     emoji: "😴",
-    color: "text-indigo-700 dark:text-indigo-300",
-    bg: "bg-indigo-100 dark:bg-indigo-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bg: "bg-muted dark:bg-primary"
   },
   overstim: {
     label: "Overstimulation",
     emoji: "🌀",
-    color: "text-rose-700 dark:text-rose-300",
-    bg: "bg-rose-100 dark:bg-rose-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bg: "bg-muted dark:bg-primary"
   },
   discomfort: {
     label: "Discomfort",
     emoji: "🤕",
-    color: "text-orange-700 dark:text-orange-300",
-    bg: "bg-orange-100 dark:bg-orange-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bg: "bg-muted dark:bg-primary"
   }
 };
 
@@ -421,10 +421,10 @@ export function BabyCuesEngine({
 
       {/* Category Filter Pills */}
       <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
-        <button onClick={() => setFilterCat("all")} className={["shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border backdrop-blur-md", filterCat === "all" ? "bg-violet-500 text-white border-violet-500 shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]" : "bg-white/50 dark:bg-white/5 border-border text-muted-foreground hover:border-violet-300"].join(" ")}>
+        <button onClick={() => setFilterCat("all")} className={["shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border backdrop-blur-md", filterCat === "all" ? "bg-primary text-white border-primary shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]" : "bg-white/50 dark:bg-white/5 border-border text-muted-foreground hover:border-border"].join(" ")}>
           {t("components.infant_baby_cues.all")}
         </button>
-        {(Object.entries(CATEGORY_META) as [CueCategory, typeof CATEGORY_META[CueCategory]][]).map(([key, meta]) => <button key={key} onClick={() => setFilterCat(key)} className={["shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border backdrop-blur-md", filterCat === key ? `${meta.bg} ${meta.color} border-current shadow-[0_0_0_1px_currentColor]` : "bg-white/50 dark:bg-white/5 border-border text-muted-foreground hover:border-violet-300"].join(" ")}>
+        {(Object.entries(CATEGORY_META) as [CueCategory, typeof CATEGORY_META[CueCategory]][]).map(([key, meta]) => <button key={key} onClick={() => setFilterCat(key)} className={["shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border backdrop-blur-md", filterCat === key ? `${meta.bg} ${meta.color} border-current shadow-[0_0_0_1px_currentColor]` : "bg-white/50 dark:bg-white/5 border-border text-muted-foreground hover:border-border"].join(" ")}>
             <span>{meta.emoji}</span>
             <span>{meta.label}</span>
           </button>)}
@@ -450,7 +450,7 @@ export function BabyCuesEngine({
       </div>
 
       {/* Active Cue Detail Card with swipe nav */}
-      {activeCue && <div key={activeCue.id} className="relative rounded-2xl bg-gradient-to-br from-white/90 to-violet-50/60 dark:from-white/10 dark:to-violet-900/20 border-2 border-violet-300/60 dark:border-violet-400/30 backdrop-blur-xl p-4 shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_18px_50px_-12px_rgba(168,85,247,0.45)] animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {activeCue && <div key={activeCue.id} className="relative rounded-2xl bg-gradient-to-br from-white/90 to-muted dark:from-white/10 dark:to-primary border-2 border-border dark:border-border backdrop-blur-xl p-4 shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_18px_50px_-12px_rgba(168,85,247,0.45)] animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Header with category pill */}
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${CATEGORY_META[activeCue.category].bg} ${CATEGORY_META[activeCue.category].color}`}>
@@ -470,32 +470,32 @@ export function BabyCuesEngine({
 
           {/* Insight / Reason / Action */}
           <div className="space-y-2.5">
-            <div className="rounded-lg bg-violet-50/80 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-400/20 p-2.5">
+            <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <Sparkles className="h-3 w-3 text-violet-600 dark:text-violet-400" />
-                <p className="text-[10px] font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">{t("components.infant_baby_cues.what_it_means")}</p>
+                <Sparkles className="h-3 w-3 text-primary dark:text-primary" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_baby_cues.what_it_means")}</p>
               </div>
-              <p className="text-[13px] text-violet-900 dark:text-violet-100 leading-snug font-semibold">{activeCue.insight}</p>
+              <p className="text-[13px] text-primary dark:text-muted-foreground leading-snug font-semibold">{activeCue.insight}</p>
             </div>
-            <div className="rounded-lg bg-sky-50/80 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-400/20 p-2.5">
+            <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <Eye className="h-3 w-3 text-sky-600 dark:text-sky-400" />
-                <p className="text-[10px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300">{t("components.infant_baby_cues.why_this_happens")}</p>
+                <Eye className="h-3 w-3 text-primary dark:text-primary" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_baby_cues.why_this_happens")}</p>
               </div>
-              <p className="text-[12px] text-sky-900/90 dark:text-sky-100/90 leading-snug">{activeCue.reason}</p>
+              <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{activeCue.reason}</p>
             </div>
-            <div className="rounded-lg bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/20 p-2.5">
+            <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <Lightbulb className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{t("components.infant_baby_cues.what_to_do")}</p>
+                <Lightbulb className="h-3 w-3 text-primary dark:text-primary" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_baby_cues.what_to_do")}</p>
               </div>
-              <p className="text-[12px] text-emerald-900/90 dark:text-emerald-100/90 leading-snug">{activeCue.action}</p>
+              <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{activeCue.action}</p>
             </div>
           </div>
 
           {/* Feedback + Swipe Nav */}
           <div key={feedbackKey} className="mt-3.5 flex items-center justify-between gap-2 pt-3 border-t border-border/40">
-            <button onClick={goPrev} disabled={activeIdx <= 0} className="p-1.5 rounded-full bg-white/60 dark:bg-white/10 border border-border disabled:opacity-30 hover:border-violet-400 transition-all" aria-label={t("components.infant_baby_cues.previous_cue")}>
+            <button onClick={goPrev} disabled={activeIdx <= 0} className="p-1.5 rounded-full bg-white/60 dark:bg-white/10 border border-border disabled:opacity-30 hover:border-border transition-all" aria-label={t("components.infant_baby_cues.previous_cue")}>
               <ChevronLeft className="h-4 w-4" />
             </button>
 
@@ -508,7 +508,7 @@ export function BabyCuesEngine({
             return toast({
               description: t("toasts.infant_baby_cues.helpful")
             });
-          }} className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:scale-110 transition-transform" aria-label={t("components.infant_baby_cues.helpful_2")}>
+          }} className="p-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:scale-110 transition-transform" aria-label={t("components.infant_baby_cues.helpful_2")}>
                 <ThumbsUp className="h-3.5 w-3.5" />
               </button>
               <button onClick={() => {
@@ -518,12 +518,12 @@ export function BabyCuesEngine({
             return toast({
               description: t("toasts.infant_baby_cues.not_helpful")
             });
-          }} className="p-1.5 rounded-full bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:scale-110 transition-transform" aria-label={t("components.infant_baby_cues.not_helpful")}>
+          }} className="p-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:scale-110 transition-transform" aria-label={t("components.infant_baby_cues.not_helpful")}>
                 <ThumbsDown className="h-3.5 w-3.5" />
               </button>
             </div>
 
-            <button onClick={goNext} disabled={activeIdx < 0 || activeIdx >= filtered.length - 1} className="p-1.5 rounded-full bg-white/60 dark:bg-white/10 border border-border disabled:opacity-30 hover:border-violet-400 transition-all" aria-label={t("components.infant_baby_cues.next_cue")}>
+            <button onClick={goNext} disabled={activeIdx < 0 || activeIdx >= filtered.length - 1} className="p-1.5 rounded-full bg-white/60 dark:bg-white/10 border border-border disabled:opacity-30 hover:border-border transition-all" aria-label={t("components.infant_baby_cues.next_cue")}>
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -571,24 +571,24 @@ export function CommunicationCoaching({
   }
   const action = actions[idx % actions.length];
   return <div className="space-y-3">
-      <div className="rounded-2xl bg-gradient-to-br from-fuchsia-100/80 to-rose-100/80 dark:from-fuchsia-900/30 dark:to-rose-900/30 border border-fuchsia-300/60 dark:border-fuchsia-400/30 p-4 backdrop-blur-md">
+      <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-4 backdrop-blur-md">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5">
-            <MessageCircle className="h-4 w-4 text-fuchsia-600 dark:text-fuchsia-400" />
-            <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-700 dark:text-fuchsia-300">{t("components.infant_baby_cues.try_this_now")}</p>
+            <MessageCircle className="h-4 w-4 text-primary dark:text-primary" />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">{t("components.infant_baby_cues.try_this_now")}</p>
           </div>
-          <span className="text-[10px] text-fuchsia-600/80 dark:text-fuchsia-400/80">{t("components.infant_baby_cues.serve_return")}</span>
+          <span className="text-[10px] text-primary dark:text-primary">{t("components.infant_baby_cues.serve_return")}</span>
         </div>
 
         <div className="flex items-start gap-3">
           <span className="text-3xl leading-none shrink-0">{action.emoji}</span>
           <div className="min-w-0">
-            <p className="font-bold text-base text-fuchsia-900 dark:text-fuchsia-100 leading-tight mb-1">{action.title}</p>
-            <p className="text-[12px] text-fuchsia-800/85 dark:text-fuchsia-100/85 leading-relaxed">{action.body}</p>
+            <p className="font-bold text-base text-primary dark:text-muted-foreground leading-tight mb-1">{action.title}</p>
+            <p className="text-[12px] text-primary dark:text-muted-foreground leading-relaxed">{action.body}</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-fuchsia-300/40 dark:border-fuchsia-400/20">
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border dark:border-border">
           <button onClick={() => {
           const {
             t
@@ -596,24 +596,24 @@ export function CommunicationCoaching({
           return toast({
             description: t("toasts.infant_baby_cues.tried")
           });
-        }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-fuchsia-500 text-white text-[11px] font-bold hover:bg-fuchsia-600 transition-colors">
+        }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-white text-[11px] font-bold hover:bg-primary transition-colors">
             <Heart className="h-3 w-3" />
             {t("components.infant_baby_cues.i_tried_this")}
           </button>
-          <button onClick={() => setIdx(i => (i + 1) % actions.length)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/60 dark:bg-white/10 border border-fuchsia-300/40 text-fuchsia-700 dark:text-fuchsia-300 text-[11px] font-bold hover:border-fuchsia-500 transition-all">
+          <button onClick={() => setIdx(i => (i + 1) % actions.length)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/60 dark:bg-white/10 border border-border text-primary dark:text-muted-foreground text-[11px] font-bold hover:border-primary transition-all">
             <RotateCcw className="h-3 w-3" />
             {t("components.infant_baby_cues.another_idea")}
           </button>
         </div>
 
-        <p className="mt-2 text-[10px] text-fuchsia-600/70 dark:text-fuchsia-400/70 text-center">
+        <p className="mt-2 text-[10px] text-primary dark:text-primary text-center">
           {idx + 1} / {actions.length} {t("components.infant_baby_cues.refreshes_during_the_day")}
         </p>
       </div>
 
       {/* Mini explainer */}
       <div className="rounded-xl bg-white/50 dark:bg-white/5 border border-border p-3 flex items-start gap-2">
-        <Sparkles className="h-3.5 w-3.5 text-violet-500 mt-0.5 shrink-0" />
+        <Sparkles className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
         <p className="text-[11px] text-muted-foreground leading-snug">
           <span className="font-bold text-foreground">{t("components.infant_baby_cues.serve_and_return")}</span> {t("components.infant_baby_cues.means_responding_to_baby_s_signals_a_sound_a_look_a_gesture_")}
         </p>

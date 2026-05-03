@@ -21,16 +21,16 @@ export function EngagementStrip({ engagement }: { engagement: EngagementState })
   const goalPct = Math.min(100, Math.round((engagement.goalProgress / DAILY_GOAL_TARGET) * 100));
   const recentBadges = engagement.badges.slice(-6).reverse();
   return (
-    <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-400/20 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-indigo-950/40 dark:via-zinc-900 dark:to-purple-950/40 p-4">
+    <div className="rounded-2xl border border-border bg-card via-white p-4">
       <div className="flex items-center gap-3 flex-wrap">
         <Stat
-          icon={<Flame className="h-4 w-4 text-orange-500" />}
+          icon={<Flame className="h-4 w-4 text-foreground" />}
           label="Streak"
           value={`${engagement.streak} d`}
           tone="orange"
         />
         <Stat
-          icon={<Star className="h-4 w-4 text-amber-500" />}
+          icon={<Star className="h-4 w-4 text-foreground" />}
           label="XP"
           value={engagement.xp.toString()}
           tone="amber"
@@ -42,14 +42,14 @@ export function EngagementStrip({ engagement }: { engagement: EngagementState })
 
       {recentBadges.length > 0 && (
         <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
-          <Trophy className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+          <Trophy className="h-3.5 w-3.5 text-foreground shrink-0" />
           {recentBadges.map((id) => {
             const b = badgeLabel(id);
             if (!b) return null;
             return (
               <span
                 key={id}
-                className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-white/10 border border-indigo-200/60 dark:border-indigo-400/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:text-indigo-200"
+                className="shrink-0 inline-flex items-center gap-1 rounded-full bg-card border border-border px-2 py-0.5 text-[11px] font-semibold text-foreground"
               >
                 <span aria-hidden>{b.emoji}</span>
                 {b.label}
@@ -72,8 +72,8 @@ function Stat({
 }) {
   const pillCls =
     tone === "orange"
-      ? "bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-200"
-      : "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200";
+      ? "bg-muted text-foreground"
+      : "bg-muted text-foreground";
   return (
     <div className="inline-flex items-center gap-1.5">
       {icon}
@@ -92,12 +92,12 @@ function GoalRing({ pct, done, target }: { pct: number; done: number; target: nu
   return (
     <div className="relative h-12 w-12">
       <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48">
-        <circle cx="24" cy="24" r={r} className="stroke-indigo-200 dark:stroke-indigo-500/30" strokeWidth="4" fill="none" />
+        <circle cx="24" cy="24" r={r} className="stroke-primary" strokeWidth="4" fill="none" />
         <motion.circle
           cx="24"
           cy="24"
           r={r}
-          className="stroke-indigo-500 dark:stroke-indigo-300"
+          className="stroke-primary"
           strokeWidth="4"
           strokeLinecap="round"
           fill="none"
@@ -107,7 +107,7 @@ function GoalRing({ pct, done, target }: { pct: number; done: number; target: nu
           style={{ strokeDasharray: c }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-[9px] font-bold text-indigo-700 dark:text-indigo-200">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-[9px] font-bold text-foreground">
         <Target className="h-3 w-3" />
         <span>{done}/{target}</span>
       </div>
@@ -130,7 +130,7 @@ export function XpPopup({ amount, trigger }: { amount: number; trigger: number }
             animate={{ opacity: 1, y: -28, scale: 1 }}
             exit={{ opacity: 0, y: -52 }}
             transition={{ duration: 0.9, ease: "easeOut" }}
-            className="px-3 py-1 rounded-full bg-amber-400 text-amber-950 text-sm font-extrabold shadow-lg shadow-amber-500/30"
+            className="px-3 py-1 rounded-full bg-primary text-foreground text-sm font-extrabold shadow-lg shadow"
           >
             +{amount} XP ⭐
           </motion.div>

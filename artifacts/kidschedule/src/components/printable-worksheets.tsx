@@ -138,7 +138,7 @@ export function PrintableWorksheets({
     }}>
         <p style={{
         fontSize: 14,
-        color: "#dc2626",
+        color: "hsl(var(--brand-red-600))",
         marginBottom: 14
       }}>⚠ {error}</p>
         <button onClick={() => {
@@ -165,8 +165,8 @@ export function PrintableWorksheets({
       alignItems: "center",
       gap: 10,
       marginBottom: 14,
-      background: isLimitReached ? "#fef2f2" : "#f0fdf4",
-      border: `1.5px solid ${isLimitReached ? "#fca5a5" : "#86efac"}`,
+      background: isLimitReached ? "hsl(var(--brand-red-100))" : "hsl(var(--brand-green-100))",
+      border: `1.5px solid ${isLimitReached ? "hsl(var(--brand-red-300))" : "hsl(var(--brand-green-300))"}`,
       borderRadius: 12,
       padding: "10px 14px"
     }}>
@@ -178,7 +178,7 @@ export function PrintableWorksheets({
           margin: 0,
           fontSize: 13,
           fontWeight: 700,
-          color: isLimitReached ? "#dc2626" : "#16a34a"
+          color: isLimitReached ? "hsl(var(--brand-red-600))" : "hsl(var(--brand-green-600))"
         }}>
             {isLimitReached ? "Daily limit reached" : `${remaining} download${remaining !== 1 ? "s" : ""} left today`}
           </p>
@@ -371,7 +371,7 @@ function WorksheetCard({
       }} loading="lazy" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" /> : <div style={{
         width: "100%",
         height: "100%",
-        background: "linear-gradient(135deg, #f0f4ff 0%, #fdf2f8 100%)",
+        background: "linear-gradient(135deg, #f0f4ff 0%, hsl(var(--brand-pink-50)) 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center"
@@ -389,7 +389,7 @@ function WorksheetCard({
         top: 8,
         right: 8,
         background: "rgba(255,255,255,0.92)",
-        color: isPdf ? "#dc2626" : "#2563eb",
+        color: isPdf ? "hsl(var(--brand-red-600))" : "hsl(var(--brand-blue-600))",
         fontSize: 10,
         fontWeight: 800,
         padding: "2px 7px",

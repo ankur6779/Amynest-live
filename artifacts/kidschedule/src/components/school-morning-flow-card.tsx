@@ -12,10 +12,10 @@ export function SchoolMorningFlowCard() {
   const {
     t
   } = useTranslation();
-  return <Card className="rounded-2xl overflow-hidden border-orange-200/60 dark:border-orange-400/20 bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-orange-950/40 dark:via-zinc-900 dark:to-amber-950/40 shadow-sm">
+  return <Card className="rounded-2xl overflow-hidden border-border dark:border-border bg-gradient-to-br from-muted via-white to-muted dark:from-primary dark:via-muted dark:to-primary shadow-sm">
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-orange-500/15 text-orange-600 dark:text-orange-300 flex items-center justify-center shrink-0">
+          <div className="h-12 w-12 rounded-2xl bg-primary text-primary dark:text-muted-foreground flex items-center justify-center shrink-0">
             <Sunrise className="h-6 w-6" />
           </div>
           <div className="flex-1 min-w-0">
@@ -28,7 +28,7 @@ export function SchoolMorningFlowCard() {
               <Badge label="⚡ Step flow" />
               <Badge label="🧠 Smart delay" />
             </div>
-            <Button asChild className="mt-4 rounded-full bg-orange-600 hover:bg-orange-700 text-white">
+            <Button asChild className="mt-4 rounded-full bg-primary hover:bg-primary text-white">
               <Link href="/school-morning-flow">
                 {t("components.school_morning_flow_card.open_morning_flow")}
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -44,7 +44,7 @@ function Badge({
 }: {
   label: string;
 }) {
-  return <span className="px-2 py-0.5 rounded-full bg-white/70 dark:bg-white/10 border border-orange-200/60 dark:border-orange-400/20 text-foreground/80">
+  return <span className="px-2 py-0.5 rounded-full bg-white/70 dark:bg-white/10 border border-border dark:border-border text-foreground/80">
       {label}
     </span>;
 }

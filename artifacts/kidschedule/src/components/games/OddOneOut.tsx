@@ -100,7 +100,7 @@ export function OddOneOutGame({
       marginTop: 16,
       fontSize: 14,
       fontWeight: 700,
-      color: feedback === "correct" ? "#86efac" : "#fca5a5"
+      color: feedback === "correct" ? "hsl(var(--brand-green-300))" : "hsl(var(--brand-red-300))"
     }}>
           {feedback === "correct" ? "Yes! ✨" : `The odd one was ${r.odd}`}
         </div>}

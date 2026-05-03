@@ -230,14 +230,14 @@ export function StoryHub({
         <div className="overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
           {/* Thumbnail */}
           <div data-on-dark className="relative aspect-video w-full bg-black">
-            {currentStory.thumbnailUrl ? <img src={currentStory.thumbnailUrl} alt={currentStory.title} className="h-full w-full object-cover opacity-80" /> : <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-900/60 to-pink-900/60">
+            {currentStory.thumbnailUrl ? <img src={currentStory.thumbnailUrl} alt={currentStory.title} className="h-full w-full object-cover opacity-80" /> : <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary">
                 <Film className="h-16 w-16 text-white/30" />
               </div>}
 
             {/* Play button overlay */}
             <button type="button" onClick={() => setIsPlaying(true)} className="absolute inset-0 flex items-center justify-center bg-black/40 transition hover:bg-black/50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/30" aria-label={`Watch ${currentStory.title}`}>
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-2xl transition hover:scale-105 hover:bg-white">
-                <Play className="ml-1 h-7 w-7 fill-purple-900 text-purple-900" />
+                <Play className="ml-1 h-7 w-7 fill-primary text-primary" />
               </div>
             </button>
 
@@ -255,7 +255,7 @@ export function StoryHub({
                 {currentStory.category}
               </p>
             </div>
-            <Button data-on-dark onClick={() => setIsPlaying(true)} className="shrink-0 gap-2 bg-violet-600 text-white hover:bg-violet-500">
+            <Button data-on-dark onClick={() => setIsPlaying(true)} className="shrink-0 gap-2 bg-primary text-white hover:bg-primary">
               <Play className="h-4 w-4 fill-current" />
               {t("components.story_hub.watch")}
             </Button>

@@ -20,9 +20,9 @@ export function ComingNextWrapper({
   return (
     <div className="relative group/coming-next">
       {/* Coming Next pill — sits above the card */}
-      <div className="absolute -top-2.5 left-3 z-10 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-100 to-rose-100 dark:from-amber-500/20 dark:to-rose-500/20 border border-amber-300/60 dark:border-amber-400/30 px-2.5 py-0.5 shadow-sm">
-        <Lock className="h-2.5 w-2.5 text-amber-700 dark:text-amber-300" />
-        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-200">
+      <div className="absolute -top-2.5 left-3 z-10 flex items-center gap-1.5 rounded-full bg-card border border-border px-2.5 py-0.5 shadow-sm">
+        <Lock className="h-2.5 w-2.5 text-foreground" />
+        <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">
           Coming next · For age {bandLowerLabel(band)}
         </span>
       </div>
@@ -31,7 +31,7 @@ export function ComingNextWrapper({
       <div
         className={[
           "rounded-2xl transition-all duration-300",
-          "ring-1 ring-amber-200/60 dark:ring-amber-400/20",
+          "ring-1 ring-primary",
           "opacity-75 saturate-75 hover:opacity-100 hover:saturate-100",
           "shadow-[0_2px_18px_-10px_rgba(245,158,11,0.35)]",
         ].join(" ")}

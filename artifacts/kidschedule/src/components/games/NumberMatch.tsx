@@ -46,7 +46,7 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
         {dots.map((_, i) => (
           <span key={i} style={{
             width: 22, height: 22, borderRadius: "50%",
-            background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+            background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
             display: "inline-block",
           }} />
         ))}
@@ -56,8 +56,8 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
           const reveal = picked !== null;
           const isCorrect = c === r.count;
           const isPicked = picked === c;
-          const bg = reveal && isCorrect ? "#22c55e"
-            : reveal && isPicked && !isCorrect ? "#ef4444"
+          const bg = reveal && isCorrect ? "hsl(var(--brand-green-500))"
+            : reveal && isPicked && !isCorrect ? "hsl(var(--brand-red-500))"
             : "rgba(255,255,255,0.08)";
           return (
             <button key={c} disabled={reveal} onClick={() => onPick(c)}
@@ -70,7 +70,7 @@ export function NumberMatchGame({ onFinish }: { onFinish: (score: number, total:
           );
         })}
       </div>
-      <div style={{ marginTop: 14, color: "#c4b5fd", fontSize: 12, fontWeight: 700 }}>Score: {score}</div>
+      <div style={{ marginTop: 14, color: "hsl(var(--brand-violet-300))", fontSize: 12, fontWeight: 700 }}>Score: {score}</div>
     </div>
   );
 }

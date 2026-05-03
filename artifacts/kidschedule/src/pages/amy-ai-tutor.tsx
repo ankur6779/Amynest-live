@@ -183,7 +183,7 @@ export default function AmyAiTutorPage() {
           <h1 className="font-quicksand text-3xl font-bold text-foreground flex items-center gap-2">
             <AmyIcon size={38} bounce ring />
             Amy AI Tutor
-            <Badge className="bg-gradient-to-r from-violet-500 to-pink-500 text-white text-xs font-bold border-0 ml-1">
+            <Badge className="bg-card text-white text-xs font-bold border-0 ml-1">
               <Zap className="h-3 w-3 mr-1" />
               Tutor v1
             </Badge>
@@ -200,9 +200,9 @@ export default function AmyAiTutorPage() {
         className={cn(
           "flex-shrink-0 mb-3 rounded-2xl px-4 py-2 flex items-center justify-between gap-3 border text-sm",
           limitReached
-            ? "bg-rose-50 border-rose-200 text-rose-700"
+            ? "bg-muted border-border text-foreground"
             : remaining <= 2
-              ? "bg-amber-50 border-amber-200 text-amber-700"
+              ? "bg-muted border-border text-foreground"
               : "bg-primary/5 border-primary/20 text-primary/80",
         )}
       >
@@ -218,7 +218,7 @@ export default function AmyAiTutorPage() {
         </div>
         {limitReached && (
           <Link href="/pricing">
-            <Button size="sm" className="rounded-full gap-1.5 shrink-0 bg-rose-600 hover:bg-rose-700 text-white" data-testid="button-upgrade-amy-tutor">
+            <Button size="sm" className="rounded-full gap-1.5 shrink-0 bg-primary hover:bg-primary text-white" data-testid="button-upgrade-amy-tutor">
               <Zap className="h-3.5 w-3.5" />
               Upgrade
             </Button>
@@ -269,8 +269,8 @@ export default function AmyAiTutorPage() {
                 className={cn(
                   "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap transition-colors",
                   active
-                    ? "bg-violet-600 text-white border-violet-600"
-                    : "bg-card text-foreground/70 border-border hover:border-violet-400/40 hover:bg-violet-50",
+                    ? "bg-primary text-white border-primary"
+                    : "bg-card text-foreground/70 border-border hover:border-primary hover:bg-muted",
                 )}
               >
                 <span aria-hidden>{s.emoji}</span>
@@ -406,7 +406,7 @@ function TurnView({
               {reply.examples.map((ex, i) => (
                 <span
                   key={i}
-                  className="inline-block rounded-full bg-violet-100 text-violet-800 text-xs font-semibold px-2.5 py-0.5"
+                  className="inline-block rounded-full bg-muted text-foreground text-xs font-semibold px-2.5 py-0.5"
                 >
                   {ex}
                 </span>
@@ -426,11 +426,11 @@ function TurnView({
                     const stateClass = !showVerdict
                       ? "border-border hover:border-primary/40 hover:bg-primary/10"
                       : isPicked && isCorrect
-                        ? "border-emerald-400 bg-emerald-50 text-emerald-800"
+                        ? "border-primary bg-muted text-foreground"
                         : isPicked && !isCorrect
-                          ? "border-rose-400 bg-rose-50 text-rose-800"
+                          ? "border-primary bg-muted text-foreground"
                           : isCorrect
-                            ? "border-emerald-300 bg-emerald-50/60 text-emerald-700"
+                            ? "border-border bg-muted text-foreground"
                             : "border-border opacity-70";
                     return (
                       <button

@@ -74,9 +74,9 @@ const ICON_SIZES: Record<NonNullable<AudioPlayButtonProps["size"]>, string> = {
 
 const VARIANT_CLASSES: Record<NonNullable<AudioPlayButtonProps["variant"]>, string> = {
   primary: "bg-primary text-primary-foreground hover:bg-primary/90",
-  violet:  "bg-violet-500 text-white hover:bg-violet-600",
-  amber:   "bg-amber-500 text-white hover:bg-amber-600",
-  ghost:   "bg-white/70 dark:bg-white/[0.06] text-foreground hover:bg-white",
+  violet:  "bg-primary text-primary-foreground hover:bg-primary",
+  amber:   "bg-primary text-primary-foreground hover:bg-primary",
+  ghost:   "bg-card text-foreground hover:bg-card",
 };
 
 /**

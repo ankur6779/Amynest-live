@@ -12,7 +12,7 @@ export function TryFreeBadge({ className = "" }: { className?: string }) {
       className={[
         "inline-flex items-center gap-1 rounded-full",
         // audit-ok: intentional "free" green accent (brand affordance)
-        "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30",
+        "bg-muted dark:bg-primary text-primary dark:text-muted-foreground ring-1 ring-primary",
         "px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
         className,
       ].join(" ")}

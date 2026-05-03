@@ -27,193 +27,193 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "behavior",
   title: "Behavior",
   emoji: "🎯",
-  gradient: "from-rose-100 dark:from-rose-500/20 via-pink-50 dark:via-pink-500/15 to-orange-100 dark:to-orange-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "manage-tantrums",
     title: "Manage Tantrums",
     emoji: "😤",
-    gradient: "from-rose-100 dark:from-rose-500/20 to-pink-200 dark:to-pink-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "handle-aggression",
     title: "Handle Aggression",
     emoji: "✋",
-    gradient: "from-red-100 dark:from-red-500/20 to-rose-200 dark:to-rose-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "reduce-defiance",
     title: "Reduce Defiance",
     emoji: "🛑",
-    gradient: "from-amber-100 dark:from-amber-500/20 to-orange-200 dark:to-orange-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "emotional-regulation",
     title: "Emotional Regulation",
     emoji: "💗",
-    gradient: "from-pink-100 dark:from-pink-500/20 to-fuchsia-200 dark:to-fuchsia-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "separation-anxiety",
     title: "Separation Anxiety",
     emoji: "🫂",
-    gradient: "from-violet-100 dark:from-violet-500/20 to-purple-200 dark:to-purple-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 }, {
   id: "screen-focus",
   title: "Screen & Focus",
   emoji: "📱",
-  gradient: "from-sky-100 dark:from-sky-500/20 via-blue-50 dark:via-blue-500/15 to-indigo-100 dark:to-indigo-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "balance-screen-time",
     title: "Balance Screen Time",
     emoji: "📱",
-    gradient: "from-sky-100 dark:from-sky-500/20 to-blue-200 dark:to-blue-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "reduce-mobile-addiction",
     title: "Reduce Mobile Addiction",
     emoji: "📵",
-    gradient: "from-blue-100 dark:from-blue-500/20 to-indigo-200 dark:to-indigo-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "improve-focus-span",
     title: "Improve Focus Span",
     emoji: "🎯",
-    gradient: "from-purple-100 dark:from-purple-500/20 to-fuchsia-200 dark:to-fuchsia-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "reduce-shorts-overuse",
     title: "Reduce YouTube / Shorts Overuse",
     emoji: "🎬",
-    gradient: "from-rose-100 dark:from-rose-500/20 to-red-200 dark:to-red-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "reduce-instant-gratification",
     title: "Reduce Instant Gratification",
     emoji: "⏳",
-    gradient: "from-amber-100 dark:from-amber-500/20 to-yellow-200 dark:to-yellow-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 }, {
   id: "eating",
   title: "Eating",
   emoji: "🍽️",
-  gradient: "from-emerald-100 dark:from-emerald-500/20 via-green-50 dark:via-green-500/15 to-teal-100 dark:to-teal-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "encourage-independent-eating",
     title: "Encourage Independent Eating",
     emoji: "🥄",
-    gradient: "from-emerald-100 dark:from-emerald-500/20 to-green-200 dark:to-green-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "navigate-fussy-eating",
     title: "Navigate Fussy Eating",
     emoji: "🥦",
-    gradient: "from-teal-100 dark:from-teal-500/20 to-cyan-200 dark:to-cyan-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "stop-junk-food-craving",
     title: "Stop Junk Food Craving",
     emoji: "🍟",
-    gradient: "from-orange-100 dark:from-orange-500/20 to-amber-200 dark:to-amber-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "healthy-eating-routine",
     title: "Build Healthy Eating Routine",
     emoji: "🍎",
-    gradient: "from-green-100 dark:from-green-500/20 to-emerald-200 dark:to-emerald-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "improve-mealtime-behavior",
     title: "Improve Mealtime Behavior",
     emoji: "🍽️",
-    gradient: "from-lime-100 dark:from-lime-500/20 to-green-200 dark:to-green-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 }, {
   id: "sleep",
   title: "Sleep",
   emoji: "😴",
-  gradient: "from-indigo-100 dark:from-indigo-500/20 via-violet-50 dark:via-violet-500/15 to-purple-100 dark:to-purple-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "improve-sleep-patterns",
     title: "Improve Sleep Patterns",
     emoji: "😴",
-    gradient: "from-indigo-100 dark:from-indigo-500/20 to-violet-200 dark:to-violet-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "fix-bedtime-resistance",
     title: "Fix Bedtime Resistance",
     emoji: "🛏️",
-    gradient: "from-purple-100 dark:from-purple-500/20 to-indigo-200 dark:to-indigo-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "stop-night-waking",
     title: "Stop Night Waking",
     emoji: "🌙",
-    gradient: "from-blue-100 dark:from-blue-500/20 to-indigo-200 dark:to-indigo-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "consistent-sleep-routine",
     title: "Build Consistent Routine",
     emoji: "🕘",
-    gradient: "from-violet-100 dark:from-violet-500/20 to-purple-200 dark:to-purple-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "reduce-late-sleeping",
     title: "Reduce Late Sleeping Habit",
     emoji: "⏰",
-    gradient: "from-indigo-100 dark:from-indigo-500/20 to-blue-200 dark:to-blue-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 }, {
   id: "learning",
   title: "Learning",
   emoji: "📚",
-  gradient: "from-purple-100 dark:from-purple-500/20 via-fuchsia-50 dark:via-fuchsia-500/15 to-pink-100 dark:to-pink-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "boost-concentration",
     title: "Boost Concentration",
     emoji: "🎯",
-    gradient: "from-purple-100 dark:from-purple-500/20 to-fuchsia-200 dark:to-fuchsia-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "build-study-discipline",
     title: "Build Study Discipline",
     emoji: "📖",
-    gradient: "from-blue-100 dark:from-blue-500/20 to-sky-200 dark:to-sky-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "increase-learning-interest",
     title: "Increase Learning Interest",
     emoji: "💡",
-    gradient: "from-yellow-100 dark:from-yellow-500/20 to-amber-200 dark:to-amber-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "reduce-homework-resistance",
     title: "Reduce Homework Resistance",
     emoji: "✏️",
-    gradient: "from-teal-100 dark:from-teal-500/20 to-emerald-200 dark:to-emerald-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "develop-growth-mindset",
     title: "Develop Growth Mindset",
     emoji: "🌱",
-    gradient: "from-green-100 dark:from-green-500/20 to-lime-200 dark:to-lime-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 }, {
   id: "infant-problems",
   title: "Infant Parent Problems (0–2 yrs)",
   emoji: "👶",
-  gradient: "from-pink-100 dark:from-pink-500/20 via-rose-50 dark:via-rose-500/15 to-amber-100 dark:to-amber-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: INFANT_PROBLEMS.map(p => ({
     id: p.id,
     title: p.title.en,
     emoji: p.emoji,
-    gradient: "from-pink-100 dark:from-pink-500/20 to-rose-200 dark:to-rose-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }))
 }, {
   id: "parenting-challenges",
   title: "Parenting Challenges",
   emoji: "💝",
-  gradient: "from-amber-100 dark:from-amber-500/20 via-orange-50 dark:via-orange-500/15 to-yellow-100 dark:to-yellow-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "manage-grandparents-interference",
     title: "Manage Grandparents' Interference",
     emoji: "👵",
-    gradient: "from-rose-100 dark:from-rose-500/20 to-pink-200 dark:to-pink-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "align-parenting-between-parents",
     title: "Align Parenting Between Parents",
     emoji: "🤝",
-    gradient: "from-violet-100 dark:from-violet-500/20 to-purple-200 dark:to-purple-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "handle-working-parent-guilt",
     title: "Handle Working Parent Guilt",
     emoji: "💼",
-    gradient: "from-sky-100 dark:from-sky-500/20 to-blue-200 dark:to-blue-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "set-consistent-family-rules",
     title: "Set Consistent Family Rules",
     emoji: "📋",
-    gradient: "from-amber-100 dark:from-amber-500/20 to-orange-200 dark:to-orange-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 },
 // ─── NEW: Toddler Behavior (2–4 yrs focused) ─────────────────────────
@@ -221,32 +221,32 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "toddler-behavior",
   title: "Toddler Behavior (2–4 yrs)",
   emoji: "🧒",
-  gradient: "from-rose-100 dark:from-rose-500/20 via-pink-50 dark:via-pink-500/15 to-amber-100 dark:to-amber-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "toddler-tantrums",
     title: "Toddler Tantrums (2–4)",
     emoji: "😤",
-    gradient: "from-rose-100 dark:from-rose-500/20 to-pink-200 dark:to-pink-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "hitting-biting",
     title: "Hitting & Biting",
     emoji: "🦷",
-    gradient: "from-red-100 dark:from-red-500/20 to-rose-200 dark:to-rose-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "no-phase",
     title: "The 'No' Phase",
     emoji: "🙅",
-    gradient: "from-amber-100 dark:from-amber-500/20 to-orange-200 dark:to-orange-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "public-meltdowns",
     title: "Public Meltdowns",
     emoji: "🛒",
-    gradient: "from-pink-100 dark:from-pink-500/20 to-fuchsia-200 dark:to-fuchsia-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "whining-and-clinginess",
     title: "Whining & Clinginess",
     emoji: "🥺",
-    gradient: "from-violet-100 dark:from-violet-500/20 to-purple-200 dark:to-purple-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 },
 // ─── NEW: Daily Skills & Independence ────────────────────────────────
@@ -254,32 +254,32 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "daily-skills",
   title: "Daily Skills & Independence",
   emoji: "🚽",
-  gradient: "from-teal-100 dark:from-teal-500/20 via-emerald-50 dark:via-emerald-500/15 to-cyan-100 dark:to-cyan-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "potty-training-readiness",
     title: "Potty Training Readiness",
     emoji: "🪴",
-    gradient: "from-teal-100 dark:from-teal-500/20 to-emerald-200 dark:to-emerald-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "potty-day-training",
     title: "Day Toilet Training",
     emoji: "🚽",
-    gradient: "from-cyan-100 dark:from-cyan-500/20 to-teal-200 dark:to-teal-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "potty-night-training",
     title: "Night-Time Dry",
     emoji: "🌙",
-    gradient: "from-indigo-100 dark:from-indigo-500/20 to-violet-200 dark:to-violet-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "potty-public-anxiety",
     title: "Public Toilet Anxiety",
     emoji: "🚻",
-    gradient: "from-sky-100 dark:from-sky-500/20 to-blue-200 dark:to-blue-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "self-dressing",
     title: "Self-Dressing & Hygiene",
     emoji: "👕",
-    gradient: "from-emerald-100 dark:from-emerald-500/20 to-green-200 dark:to-green-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 },
 // ─── NEW: Family Dynamics ────────────────────────────────────────────
@@ -287,32 +287,32 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "family-dynamics",
   title: "Family Dynamics",
   emoji: "👨‍👩‍👧‍👦",
-  gradient: "from-violet-100 dark:from-violet-500/20 via-fuchsia-50 dark:via-fuchsia-500/15 to-pink-100 dark:to-pink-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "sibling-rivalry",
     title: "Sibling Rivalry",
     emoji: "⚔️",
-    gradient: "from-rose-100 dark:from-rose-500/20 to-pink-200 dark:to-pink-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "sharing-turn-taking",
     title: "Sharing & Turn-Taking",
     emoji: "🤲",
-    gradient: "from-amber-100 dark:from-amber-500/20 to-orange-200 dark:to-orange-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "new-baby-adjustment",
     title: "Adjusting to New Baby",
     emoji: "👶",
-    gradient: "from-pink-100 dark:from-pink-500/20 to-rose-200 dark:to-rose-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "sibling-fights",
     title: "Sibling Fights & Hitting",
     emoji: "🥊",
-    gradient: "from-red-100 dark:from-red-500/20 to-rose-200 dark:to-rose-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "favouritism-feelings",
     title: "Handle Favouritism Feelings",
     emoji: "💔",
-    gradient: "from-violet-100 dark:from-violet-500/20 to-purple-200 dark:to-purple-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 },
 // ─── NEW: Special Situations ─────────────────────────────────────────
@@ -320,32 +320,32 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "special-situations",
   title: "Special Situations",
   emoji: "✈️",
-  gradient: "from-orange-100 dark:from-orange-500/20 via-amber-50 dark:via-amber-500/15 to-yellow-100 dark:to-yellow-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "travel-with-kids",
     title: "Travel With Kids",
     emoji: "✈️",
-    gradient: "from-sky-100 dark:from-sky-500/20 to-blue-200 dark:to-blue-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "hospital-doctor-visit",
     title: "Hospital / Doctor Visit",
     emoji: "🏥",
-    gradient: "from-rose-100 dark:from-rose-500/20 to-red-200 dark:to-red-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "daycare-school-transition",
     title: "Daycare / School Transition",
     emoji: "🎒",
-    gradient: "from-amber-100 dark:from-amber-500/20 to-orange-200 dark:to-orange-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "welcoming-new-sibling",
     title: "Welcoming a New Sibling",
     emoji: "🎀",
-    gradient: "from-pink-100 dark:from-pink-500/20 to-rose-200 dark:to-rose-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "moving-houses",
     title: "Moving to a New Home",
     emoji: "📦",
-    gradient: "from-emerald-100 dark:from-emerald-500/20 to-teal-200 dark:to-teal-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 },
 // ─── NEW: Kids Health Concern (research & science-based) ─────────────
@@ -353,37 +353,37 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "kids-health-concern",
   title: "Kids Health Concern",
   emoji: "🩺",
-  gradient: "from-emerald-100 dark:from-emerald-500/20 via-teal-50 dark:via-teal-500/15 to-cyan-100 dark:to-cyan-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "child-obesity-management",
     title: "Childhood Obesity & Weight Management",
     emoji: "⚖️",
-    gradient: "from-emerald-100 dark:from-emerald-500/20 to-teal-200 dark:to-teal-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "nutrition-deficiency",
     title: "Nutrition Deficiency (Hidden Problem)",
     emoji: "🥗",
-    gradient: "from-lime-100 dark:from-lime-500/20 to-green-200 dark:to-green-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "boost-immunity",
     title: "Immunity & Frequent Illness",
     emoji: "🛡️",
-    gradient: "from-cyan-100 dark:from-cyan-500/20 to-sky-200 dark:to-sky-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "dental-health",
     title: "Dental Health",
     emoji: "🦷",
-    gradient: "from-blue-100 dark:from-blue-500/20 to-indigo-200 dark:to-indigo-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "digital-health-eye-care",
     title: "Screen Addiction & Digital Health",
     emoji: "👀",
-    gradient: "from-violet-100 dark:from-violet-500/20 to-purple-200 dark:to-purple-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "early-milestones-0-5",
     title: "Early Development & Milestones (0–5 yrs)",
     emoji: "🌱",
-    gradient: "from-amber-100 dark:from-amber-500/20 to-yellow-200 dark:to-yellow-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 },
 // ─── For You (Parent Self-Care) — age question is skipped for this category ─
@@ -391,42 +391,42 @@ const GOAL_CATEGORIES: GoalCategory[] = [{
   id: "for-you",
   title: "For You (Parent Self-Care)",
   emoji: "💖",
-  gradient: "from-fuchsia-100 dark:from-fuchsia-500/20 via-pink-50 dark:via-pink-500/15 to-rose-100 dark:to-rose-500/20",
+  gradient: "from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary",
   items: [{
     id: "parent-burnout",
     title: "Beat Parent Burnout",
     emoji: "🪫",
-    gradient: "from-rose-100 dark:from-rose-500/20 to-pink-200 dark:to-pink-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "stay-calm-anger",
     title: "Stay Calm When Angry",
     emoji: "🧘",
-    gradient: "from-violet-100 dark:from-violet-500/20 to-purple-200 dark:to-purple-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "guilt-after-yelling",
     title: "Handle Guilt After Yelling",
     emoji: "💔",
-    gradient: "from-pink-100 dark:from-pink-500/20 to-rose-200 dark:to-rose-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "find-me-time",
     title: "Find 'Me Time' Daily",
     emoji: "☕",
-    gradient: "from-amber-100 dark:from-amber-500/20 to-orange-200 dark:to-orange-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "couple-time-balance",
     title: "Balance Partner & Parent Time",
     emoji: "💑",
-    gradient: "from-fuchsia-100 dark:from-fuchsia-500/20 to-pink-200 dark:to-pink-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "improve-own-sleep",
     title: "Improve Your Own Sleep",
     emoji: "🌙",
-    gradient: "from-indigo-100 dark:from-indigo-500/20 to-violet-200 dark:to-violet-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }, {
     id: "manage-overwhelm",
     title: "Manage Daily Overwhelm",
     emoji: "🌪️",
-    gradient: "from-sky-100 dark:from-sky-500/20 to-blue-200 dark:to-blue-500/25"
+    gradient: "from-muted dark:from-primary to-muted dark:to-primary"
   }]
 }];
 const ALL_GOALS: GoalItem[] = GOAL_CATEGORIES.flatMap(c => c.items);
@@ -471,7 +471,7 @@ function GoalBadge({
   } = useTranslation();
   if (access === "open") return null;
   if (access === "try-free") {
-    return <span className="absolute top-2 right-2 flex items-center gap-0.5 text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full shadow-md pointer-events-none select-none">
+    return <span className="absolute top-2 right-2 flex items-center gap-0.5 text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full shadow-md pointer-events-none select-none">
         {t("pages.ai_coach.try_free")}
       </span>;
   }
@@ -1285,14 +1285,14 @@ export default function AICoachPage() {
               <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back")}
             </Link>
             <Link href="/amy-coach/progress">
-              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-200 hover:bg-violet-200 dark:bg-violet-500/25 transition-all">
+              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-muted dark:bg-primary transition-all">
                 <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress")}
               </button>
             </Link>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input autoFocus type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={t("pages.ai_coach.search_goals")} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-violet-400" />
+            <input autoFocus type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={t("pages.ai_coach.search_goals")} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-border" />
           </div>
           <div className="space-y-6">
             {filteredCategories.map(cat => <section key={cat.id}>
@@ -1335,13 +1335,13 @@ export default function AICoachPage() {
               <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.categories")}
             </button>
             <Link href="/amy-coach/progress">
-              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-200 hover:bg-violet-200 dark:bg-violet-500/25 transition-all">
+              <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-muted dark:bg-primary transition-all">
                 <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_2")}
               </button>
             </Link>
           </div>
 
-          <div className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-violet-400/25 p-4" style={{
+          <div className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-4" style={{
           background: "linear-gradient(135deg,rgba(139,92,246,0.2) 0%,rgba(236,72,153,0.1) 100%)",
           boxShadow: "0 0 35px rgba(139,92,246,0.25), inset 0 1px 0 rgba(255,255,255,0.07)"
         }}>
@@ -1359,7 +1359,7 @@ export default function AICoachPage() {
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={`Search in ${activeCat.title}…`} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-violet-400" />
+            <input type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={`Search in ${activeCat.title}…`} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-border" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1394,14 +1394,14 @@ export default function AICoachPage() {
             <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_2")}
           </Link>
           <Link href="/amy-coach/progress">
-            <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-200 hover:bg-violet-200 dark:bg-violet-500/25 transition-all">
+            <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-muted dark:bg-primary transition-all">
               <BarChart3 className="h-3.5 w-3.5" /> {t("pages.ai_coach.my_progress_3")}
             </button>
           </Link>
         </div>
 
         {/* Premium hero panel */}
-        <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-violet-400/40 p-5" style={{
+        <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5" style={{
         background: "linear-gradient(135deg,rgba(76,29,149,0.92) 0%,rgba(124,58,237,0.85) 50%,rgba(190,24,93,0.82) 100%)",
         boxShadow: "0 0 50px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)"
       }}>
@@ -1413,16 +1413,16 @@ export default function AICoachPage() {
         }} />
           <div className="relative flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{
-            background: "linear-gradient(135deg,#a78bfa,#f472b6)",
+            background: "linear-gradient(135deg,hsl(var(--brand-violet-400)),hsl(var(--brand-pink-400)))",
             boxShadow: "0 0 20px rgba(139,92,246,0.7)"
           }}>
               <Sparkles className="h-6 w-6 text-white" />
             </div>
             <div>
               <h1 className="font-quicksand text-2xl font-bold">
-                <span className="text-violet-200">{t("pages.ai_coach.amy")}</span>{" "}
+                <span className="text-muted-foreground">{t("pages.ai_coach.amy")}</span>{" "}
                 <span className="text-white">{t("pages.ai_coach.co_parent")}</span>{" "}
-                <span className="text-pink-200">AI</span>
+                <span className="text-muted-foreground">AI</span>
               </h1>
               <p className="text-xs text-white/85 mt-0.5">{t("pages.ai_coach.choose_a_goal_i_ll_build_your_12_step_science_plan")}</p>
             </div>
@@ -1431,16 +1431,16 @@ export default function AICoachPage() {
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={t("pages.ai_coach.search_all_goals")} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-violet-400" />
+          <input type="text" value={goalSearch} onChange={e => setGoalSearch(e.target.value)} placeholder={t("pages.ai_coach.search_all_goals")} className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-border bg-card text-sm focus:outline-none focus:border-border" />
         </div>
 
         {/* Audio Lessons entry card */}
-        <button data-on-dark onClick={() => setLocation("/audio-lessons")} className="relative w-full rounded-3xl p-4 border border-violet-400/50 text-left backdrop-blur-md hover:border-violet-400/80 hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
+        <button data-on-dark onClick={() => setLocation("/audio-lessons")} className="relative w-full rounded-3xl p-4 border border-border text-left backdrop-blur-md hover:border-border hover:scale-[1.01] active:scale-[0.98] transition-all overflow-hidden flex items-center gap-4" style={{
         background: "linear-gradient(135deg,rgba(76,29,149,0.88) 0%,rgba(190,24,93,0.78) 100%)",
         boxShadow: "0 0 24px rgba(139,92,246,0.35), inset 0 1px 0 rgba(255,255,255,0.14)"
       }}>
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-2xl" style={{
-          background: "linear-gradient(135deg,#a78bfa,#f472b6)"
+          background: "linear-gradient(135deg,hsl(var(--brand-violet-400)),hsl(var(--brand-pink-400)))"
         }}>
             🎙️
           </div>
@@ -1448,7 +1448,7 @@ export default function AICoachPage() {
             <p className="font-quicksand font-bold text-base text-white leading-tight">{t("pages.ai_coach.amy_audio_lessons")}</p>
             <p className="text-[11.5px] text-white/85 mt-0.5">{t("pages.ai_coach.hands_full_listen_to_age_curated_parenting_lessons_3_5_min_e")}</p>
           </div>
-          <span className="text-violet-100 text-lg shrink-0">→</span>
+          <span className="text-muted-foreground text-lg shrink-0">→</span>
         </button>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1456,7 +1456,7 @@ export default function AICoachPage() {
           const {
             t
           } = useTranslation();
-          return <button key={cat.id} data-on-dark onClick={() => setSelectedCategoryId(cat.id)} className="relative rounded-3xl p-5 border border-violet-400/40 text-left backdrop-blur-md hover:border-violet-300/70 hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 overflow-hidden" style={{
+          return <button key={cat.id} data-on-dark onClick={() => setSelectedCategoryId(cat.id)} className="relative rounded-3xl p-5 border border-border text-left backdrop-blur-md hover:border-border hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 overflow-hidden" style={{
             background: "linear-gradient(135deg,rgba(76,29,149,0.85) 0%,rgba(124,58,237,0.78) 60%,rgba(190,24,93,0.75) 100%)",
             boxShadow: "0 6px 24px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.14)",
             animationDelay: `${i * 60}ms`
@@ -1484,7 +1484,7 @@ export default function AICoachPage() {
           <ChevronLeft className="h-4 w-4" /> {t("pages.ai_coach.back_3")}
         </button>
 
-        <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-violet-400/40 p-5 space-y-5" style={{
+        <div data-on-dark className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5 space-y-5" style={{
         background: "linear-gradient(135deg,rgba(76,29,149,0.92) 0%,rgba(124,58,237,0.85) 50%,rgba(190,24,93,0.82) 100%)",
         boxShadow: "0 0 50px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)"
       }}>
@@ -1501,7 +1501,7 @@ export default function AICoachPage() {
               <span>{selectedGoal?.title}</span>
             </div>
             <div className="h-2 bg-white/15 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-violet-300 to-pink-300 transition-all" style={{
+              <div className="h-full bg-gradient-to-r from-muted to-muted transition-all" style={{
               width: `${progressPct}%`,
               boxShadow: "0 0 8px rgba(255,255,255,0.6)"
             }} />
@@ -1533,7 +1533,7 @@ export default function AICoachPage() {
           </div>
 
           <button data-on-dark onClick={handleNextQ} disabled={!isAnswered} className="relative w-full py-4 rounded-2xl font-bold text-base text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all" style={{
-          background: "linear-gradient(135deg,#a78bfa,#f472b6)",
+          background: "linear-gradient(135deg,hsl(var(--brand-violet-400)),hsl(var(--brand-pink-400)))",
           boxShadow: isAnswered ? "0 0 30px rgba(255,255,255,0.45)" : "none"
         }}>
             {qIndex < QUESTIONS.length - 1 ? "Next →" : "Build My Plan ✨"}
@@ -1549,7 +1549,7 @@ export default function AICoachPage() {
       // Safe fallback view — never triggers a state update during render.
       return <div className="max-w-2xl mx-auto px-4 py-10 text-center space-y-4">
           <p className="text-sm text-white/70">{t("pages.ai_coach.this_topic_isn_t_available")}</p>
-          <button onClick={() => setPhase("goals")} className="text-sm font-bold px-4 py-2 rounded-full bg-violet-500/20 text-violet-100">
+          <button onClick={() => setPhase("goals")} className="text-sm font-bold px-4 py-2 rounded-full bg-primary text-muted-foreground">
             {t("pages.ai_coach.back_to_topics")}
           </button>
         </div>;
@@ -1563,7 +1563,7 @@ export default function AICoachPage() {
         </div>
 
         {/* Hero card */}
-        <div className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-pink-400/25 p-5" style={{
+        <div className="relative rounded-3xl overflow-hidden backdrop-blur-md border border-border p-5" style={{
         background: "linear-gradient(135deg,rgba(244,114,182,0.22) 0%,rgba(251,146,60,0.12) 100%)",
         boxShadow: "0 0 35px rgba(236,72,153,0.25), inset 0 1px 0 rgba(255,255,255,0.07)"
       }}>
@@ -1598,7 +1598,7 @@ export default function AICoachPage() {
           </h2>
           <ol className="space-y-2.5">
             {problem.solution.map((s, i) => <li key={i} className="flex items-start gap-3">
-                <span className="shrink-0 w-6 h-6 rounded-full bg-pink-500/25 border border-pink-400/40 text-pink-100 text-[11px] font-bold flex items-center justify-center mt-0.5">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-primary border border-border text-muted-foreground text-[11px] font-bold flex items-center justify-center mt-0.5">
                   {i + 1}
                 </span>
                 <span className="text-sm text-white/90 leading-relaxed">{pickInfLang(s, lang)}</span>
@@ -1607,13 +1607,13 @@ export default function AICoachPage() {
         </section>
 
         {/* (C) Amy AI Insight */}
-        <section className="rounded-2xl p-4 border border-violet-400/30 backdrop-blur-md" style={{
+        <section className="rounded-2xl p-4 border border-border backdrop-blur-md" style={{
         background: "linear-gradient(135deg,rgba(139,92,246,0.22) 0%,rgba(236,72,153,0.12) 100%)",
         boxShadow: "0 0 22px rgba(139,92,246,0.18)"
       }}>
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-4 w-4 text-violet-200" />
-            <h2 className="font-quicksand text-xs font-bold uppercase tracking-wider text-violet-100">
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-quicksand text-xs font-bold uppercase tracking-wider text-muted-foreground">
               {t("pages.ai_coach.amy_ai_insight")}
             </h2>
           </div>
@@ -1621,10 +1621,10 @@ export default function AICoachPage() {
         </section>
 
         {/* (D) Reassurance */}
-        <section className="rounded-2xl p-4 border border-pink-400/30 backdrop-blur-md flex items-start gap-3" style={{
+        <section className="rounded-2xl p-4 border border-border backdrop-blur-md flex items-start gap-3" style={{
         background: "linear-gradient(135deg,rgba(244,114,182,0.18) 0%,rgba(251,146,60,0.08) 100%)"
       }}>
-          <Heart className="h-5 w-5 text-pink-300 shrink-0 mt-0.5 fill-pink-400/40" />
+          <Heart className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5 fill-primary" />
           <div>
             <p className="text-sm text-white/95 font-medium leading-relaxed">{pickInfLang(problem.reassure, lang)}</p>
             <p className="text-[11px] text-white/50 mt-1">{t("pages.ai_coach.i_m_here_to_help_amy")}</p>
@@ -1639,7 +1639,7 @@ export default function AICoachPage() {
 
   // ── PHASE: LOADING ───────────────────────────────────────────────────
   if (phase === "resuming") {
-    return <div className="fixed inset-0 z-50 bg-gradient-to-br from-violet-900 via-purple-900 to-pink-900 flex items-center justify-center">
+    return <div className="fixed inset-0 z-50 bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center">
         <div className="text-center text-white px-8 space-y-6">
           <div className="relative w-20 h-20 mx-auto">
             <Loader2 className="absolute inset-0 w-20 h-20 animate-spin" />
@@ -1655,7 +1655,7 @@ export default function AICoachPage() {
     const TOTAL_WINS = 12;
     const built = Math.max(0, Math.min(TOTAL_WINS, progressWinCount));
     const pct = Math.round(built / TOTAL_WINS * 100);
-    return <div className="fixed inset-0 z-50 bg-gradient-to-br from-violet-900 via-purple-900 to-pink-900 flex items-center justify-center">
+    return <div className="fixed inset-0 z-50 bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center">
         <div className="text-center text-white px-8 space-y-6 w-full max-w-sm">
           <div className="relative w-20 h-20 mx-auto">
             <Sparkles className="absolute inset-0 w-20 h-20 animate-spin" style={{
@@ -1709,7 +1709,7 @@ export default function AICoachPage() {
         backdropFilter: "blur(8px)"
       }}>
           <button onClick={handleStartOver} style={{
-          color: "#6d28d9",
+          color: "hsl(var(--brand-violet-700))",
           background: "rgba(167,139,250,0.15)",
           borderRadius: 999,
           width: 36,
@@ -1728,7 +1728,7 @@ export default function AICoachPage() {
           display: "flex",
           alignItems: "center",
           gap: 8,
-          background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+          background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
           color: "#fff",
           padding: "7px 14px",
           borderRadius: 999,
@@ -1745,7 +1745,7 @@ export default function AICoachPage() {
           gap: 6
         }}>
             <button onClick={handlePrintPlan} style={{
-            color: "#6d28d9",
+            color: "hsl(var(--brand-violet-700))",
             background: "rgba(167,139,250,0.15)",
             borderRadius: 999,
             width: 36,
@@ -1759,7 +1759,7 @@ export default function AICoachPage() {
               <Printer size={16} />
             </button>
             <button onClick={handleShare} style={{
-            color: "#6d28d9",
+            color: "hsl(var(--brand-violet-700))",
             background: "rgba(167,139,250,0.15)",
             borderRadius: 999,
             width: 36,
@@ -1773,7 +1773,7 @@ export default function AICoachPage() {
               <Share2 size={16} />
             </button>
             <button onClick={() => setLocation("/amy-coach/progress")} style={{
-            color: "#6d28d9",
+            color: "hsl(var(--brand-violet-700))",
             background: "rgba(167,139,250,0.15)",
             borderRadius: 999,
             width: 36,
@@ -1809,7 +1809,7 @@ export default function AICoachPage() {
           border: "none",
           cursor: "pointer",
           padding: 0,
-          background: i <= activeIdx ? "#8b5cf6" : "rgba(139,92,246,0.2)",
+          background: i <= activeIdx ? "hsl(var(--brand-violet-500))" : "rgba(139,92,246,0.2)",
           transition: "background 0.3s"
         }} />)}
         </div>
@@ -1881,7 +1881,7 @@ export default function AICoachPage() {
               {!hasFeedback && !atLastLoaded && <div style={{
             fontSize: 11.5,
             fontWeight: 700,
-            color: "#fbbf24",
+            color: "hsl(var(--brand-amber-300))",
             background: "rgba(251,191,36,0.12)",
             border: "1px solid rgba(251,191,36,0.35)",
             padding: "5px 12px",
@@ -1896,7 +1896,7 @@ export default function AICoachPage() {
             gap: 6,
             fontSize: 11.5,
             fontWeight: 700,
-            color: "#c4b5fd",
+            color: "hsl(var(--brand-violet-300))",
             background: "rgba(139,92,246,0.12)",
             border: "1px solid rgba(139,92,246,0.35)",
             padding: "5px 12px",
@@ -1913,7 +1913,7 @@ export default function AICoachPage() {
             gap: 12
           }}>
                 <button onClick={() => goToCard(Math.max(0, activeIdx - 1))} disabled={activeIdx === 0} style={{
-              color: "#c4b5fd",
+              color: "hsl(var(--brand-violet-300))",
               background: "rgba(255,255,255,0.08)",
               backdropFilter: "blur(8px)",
               boxShadow: "0 0 15px rgba(139,92,246,0.15)",
@@ -1932,7 +1932,7 @@ export default function AICoachPage() {
                 </button>
                 <button data-on-dark onClick={() => goToCard(Math.min(plan.wins.length - 1, activeIdx + 1))} disabled={nextDisabled} title={!hasFeedback ? "Mark how this win went before moving on" : waitingForNext ? "Generating next strategy…" : undefined} style={{
               color: "#fff",
-              background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+              background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
               boxShadow: "0 4px 12px rgba(139,92,246,0.3)",
               borderRadius: 999,
               padding: "10px 16px",
@@ -2030,7 +2030,7 @@ function WinCard({
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
-        background: isExtension ? "linear-gradient(135deg, #f59e0b, #ec4899)" : "linear-gradient(135deg, #8b5cf6, #ec4899)",
+        background: isExtension ? "linear-gradient(135deg, hsl(var(--brand-amber-500)), hsl(var(--brand-pink-500)))" : "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
         color: "#fff",
         padding: "5px 12px",
         borderRadius: 999,
@@ -2053,7 +2053,7 @@ function WinCard({
           fontSize: 10,
           fontWeight: 800,
           letterSpacing: 1.2,
-          color: "#a78bfa",
+          color: "hsl(var(--brand-violet-400))",
           marginBottom: 4
         }}>
               {t("pages.ai_coach.your_plan")}
@@ -2080,7 +2080,7 @@ function WinCard({
             fontSize: 10,
             fontWeight: 800,
             letterSpacing: 1,
-            color: "#f9a8d4",
+            color: "hsl(var(--brand-pink-300))",
             marginBottom: 4
           }}>
                   {t("pages.ai_coach.root_cause")}
@@ -2113,7 +2113,7 @@ function WinCard({
         </h3>
         <p style={{
         fontSize: 13.5,
-        color: "#c4b5fd",
+        color: "hsl(var(--brand-violet-300))",
         marginBottom: 16,
         lineHeight: 1.4,
         fontWeight: 600
@@ -2137,7 +2137,7 @@ function WinCard({
           padding: "4px 10px",
           borderRadius: 999,
           background: "rgba(139,92,246,0.2)",
-          color: "#c4b5fd",
+          color: "hsl(var(--brand-violet-300))",
           fontWeight: 700,
           border: "1px solid rgba(139,92,246,0.3)"
         }}>
@@ -2159,7 +2159,7 @@ function WinCard({
           fontSize: 10,
           fontWeight: 800,
           letterSpacing: 1,
-          color: "#a5b4fc",
+          color: "hsl(var(--brand-indigo-300))",
           marginBottom: 6
         }}>
               {t("pages.ai_coach.why_this_works")}
@@ -2186,7 +2186,7 @@ function WinCard({
           fontSize: 10,
           fontWeight: 800,
           letterSpacing: 1,
-          color: "#c4b5fd",
+          color: "hsl(var(--brand-violet-300))",
           marginBottom: 10
         }}>
             {t("pages.ai_coach.do_this")}
@@ -2211,7 +2211,7 @@ function WinCard({
               width: 22,
               height: 22,
               borderRadius: 999,
-              background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+              background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
               color: "#fff",
               display: "flex",
               alignItems: "center",
@@ -2237,7 +2237,7 @@ function WinCard({
           fontSize: 10,
           fontWeight: 800,
           letterSpacing: 1,
-          color: "#86efac",
+          color: "hsl(var(--brand-green-300))",
           marginBottom: 4
         }}>
               {t("pages.ai_coach.real_example")}
@@ -2264,7 +2264,7 @@ function WinCard({
           fontSize: 10,
           fontWeight: 800,
           letterSpacing: 1,
-          color: "#fca5a5",
+          color: "hsl(var(--brand-red-300))",
           marginBottom: 4
         }}>
               {t("pages.ai_coach.mistake_to_avoid")}
@@ -2291,7 +2291,7 @@ function WinCard({
           fontSize: 10,
           fontWeight: 800,
           letterSpacing: 1,
-          color: "#c4b5fd",
+          color: "hsl(var(--brand-violet-300))",
           marginBottom: 4
         }}>
               {t("pages.ai_coach.do_this_today_under_5_min")}
@@ -2342,7 +2342,7 @@ function WinCard({
             {[{
             v: "yes" as const,
             label: "Worked",
-            color: "#15803d",
+            color: "hsl(var(--brand-green-700))",
             bg: "rgba(34,197,94,0.15)",
             border: "rgba(34,197,94,0.45)"
           }, {
@@ -2354,7 +2354,7 @@ function WinCard({
           }, {
             v: "no" as const,
             label: "Not worked for me",
-            color: "#b91c1c",
+            color: "hsl(var(--brand-red-700))",
             bg: "rgba(248,113,113,0.12)",
             border: "rgba(248,113,113,0.4)"
           }].map(b => {
@@ -2391,7 +2391,7 @@ function WinCard({
           fontSize: 11,
           fontWeight: 800,
           letterSpacing: 1,
-          color: "#92400e",
+          color: "hsl(var(--brand-amber-800))",
           marginBottom: 6
         }}>
               {t("pages.ai_coach.extra_support_added")}
@@ -2399,7 +2399,7 @@ function WinCard({
             <p style={{
           fontSize: 13,
           lineHeight: 1.55,
-          color: "#78350f"
+          color: "hsl(var(--brand-amber-900))"
         }}>
               {t("pages.ai_coach.i_ve_added_3_fresh_strategies_at_the_end_of_your_plan_differ")} <strong>{t("pages.ai_coach.next_2")}</strong> {t("pages.ai_coach.to_reach_them")}
             </p>
@@ -2420,7 +2420,7 @@ function WinCard({
         }}>{currentFeedback === "yes" ? "🎉" : "💜"}</span>
             <p style={{
           fontSize: 12.5,
-          color: "#14532d",
+          color: "hsl(var(--brand-green-900))",
           fontWeight: 600,
           margin: 0
         }}>
@@ -2522,14 +2522,14 @@ export function ListenButton({
         <button type="button" onClick={() => handleLangChange("en")} aria-pressed={lang === "en"} data-testid="coach-listen-lang-en" style={{
         ...langChipBase,
         background: lang === "en" ? "rgba(124,58,237,0.45)" : "transparent",
-        color: lang === "en" ? "#f5f3ff" : "rgba(196,181,253,0.95)"
+        color: lang === "en" ? "hsl(var(--brand-violet-50))" : "rgba(196,181,253,0.95)"
       }}>
           EN
         </button>
         <button type="button" onClick={() => handleLangChange("hi")} aria-pressed={lang === "hi"} data-testid="coach-listen-lang-hi" style={{
         ...langChipBase,
         background: lang === "hi" ? "rgba(124,58,237,0.45)" : "transparent",
-        color: lang === "hi" ? "#f5f3ff" : "rgba(196,181,253,0.95)"
+        color: lang === "hi" ? "hsl(var(--brand-violet-50))" : "rgba(196,181,253,0.95)"
       }}>
           HI
         </button>
@@ -2573,13 +2573,13 @@ function PrintablePlan({
       fontFamily: "Georgia, 'Times New Roman', serif"
     }}>
         <div style={{
-        borderBottom: "2px solid #6d28d9",
+        borderBottom: "2px solid hsl(var(--brand-violet-700))",
         paddingBottom: 12,
         marginBottom: 16
       }}>
           <p style={{
           fontSize: 11,
-          color: "#6d28d9",
+          color: "hsl(var(--brand-violet-700))",
           margin: 0,
           letterSpacing: 1,
           fontWeight: 700
@@ -2615,7 +2615,7 @@ function PrintablePlan({
         } = useTranslation();
         return <section key={w.win} style={{
           pageBreakInside: "avoid",
-          borderLeft: "3px solid #8b5cf6",
+          borderLeft: "3px solid hsl(var(--brand-violet-500))",
           padding: "10px 14px",
           marginBottom: 14,
           background: "#fafafa"
@@ -2672,7 +2672,7 @@ function PrintablePlan({
               </p>}
             {w.mistake_to_avoid && <p style={{
             fontSize: 11,
-            color: "#7f1d1d",
+            color: "hsl(var(--brand-red-900))",
             margin: "6px 0",
             lineHeight: 1.5
           }}>
@@ -2680,7 +2680,7 @@ function PrintablePlan({
               </p>}
             {w.micro_task && <p style={{
             fontSize: 11,
-            color: "#065f46",
+            color: "hsl(var(--brand-emerald-800))",
             margin: "6px 0",
             lineHeight: 1.5
           }}>

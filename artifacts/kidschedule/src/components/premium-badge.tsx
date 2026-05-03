@@ -20,15 +20,15 @@ export function PremiumBadge({
 }: PremiumBadgeProps) {
   const classes = [
     "inline-flex items-center gap-1 rounded-full",
-    "bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500",
-    "text-white",
-    "shadow-md shadow-purple-500/30",
+    "bg-card",
+    "text-primary-foreground",
+    "shadow-md shadow",
     "px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
     onClick ? "cursor-pointer hover:brightness-110 transition" : "",
     className,
   ]
     .filter(Boolean)
-    .join(" ");
+    .join("");
 
   if (onClick) {
     return (

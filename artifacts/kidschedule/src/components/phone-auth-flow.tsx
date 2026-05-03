@@ -93,7 +93,7 @@ export default function PhoneAuthFlow({
     borderRadius: "14px",
     background: "rgba(123,63,242,0.15)",
     border: "1px solid rgba(123,63,242,0.45)",
-    color: "#C4B5FD",
+    color: "hsl(var(--brand-violet-300))",
     fontSize: "15px",
     fontWeight: 600,
     display: "flex",
@@ -120,7 +120,7 @@ export default function PhoneAuthFlow({
     flex: 2,
     height: "46px",
     borderRadius: "14px",
-    background: disabled ? "rgba(123,63,242,0.30)" : "#7B3FF2",
+    background: disabled ? "rgba(123,63,242,0.30)" : "hsl(var(--brand-violet-600))",
     border: "none",
     color: "#FFFFFF",
     fontSize: "15px",
@@ -213,7 +213,7 @@ export default function PhoneAuthFlow({
         color: "rgba(200,180,255,0.70)"
       }}>
           {t("components.phone_auth_flow.otp_sent_to")} <span style={{
-          color: "#C4B5FD",
+          color: "hsl(var(--brand-violet-300))",
           fontWeight: 600
         }}>{phoneFull}</span>
         </label>
@@ -240,7 +240,7 @@ export default function PhoneAuthFlow({
         }}>{t("components.phone_auth_flow.resend_in")} {resendTimer}s</span> : <button type="button" onClick={() => sendOtp(true)} style={{
           background: "none",
           border: "none",
-          color: "#A78BFA",
+          color: "hsl(var(--brand-violet-400))",
           fontWeight: 600,
           cursor: "pointer",
           fontSize: "13px",

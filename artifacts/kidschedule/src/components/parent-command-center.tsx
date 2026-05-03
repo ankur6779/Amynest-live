@@ -122,11 +122,11 @@ export function ParentCommandCenter({
   } = result;
   return <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
-        <button type="button" data-section-id="command-center" data-testid="command-center-tile" className={["group w-full text-left rounded-2xl overflow-hidden", "bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-emerald-500/15", "border border-white/60 dark:border-violet-400/30", "shadow-[0_0_0_1px_rgba(168,85,247,0.18),0_18px_50px_-18px_rgba(168,85,247,0.45)]", "hover:shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_22px_60px_-18px_rgba(168,85,247,0.7)]", "hover:border-violet-400/60 transition-all duration-300", "p-3 sm:p-4 flex items-center gap-3"].join(" ")}>
+        <button type="button" data-section-id="command-center" data-testid="command-center-tile" className={["group w-full text-left rounded-2xl overflow-hidden", "bg-gradient-to-br from-primary via-primary to-primary", "border border-white/60 dark:border-border", "shadow-[0_0_0_1px_rgba(168,85,247,0.18),0_18px_50px_-18px_rgba(168,85,247,0.45)]", "hover:shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_22px_60px_-18px_rgba(168,85,247,0.7)]", "hover:border-border transition-all duration-300", "p-3 sm:p-4 flex items-center gap-3"].join(" ")}>
           <ProgressRing pct={overview.routineCompletionPct} size={56} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
               <p className="font-quicksand font-bold text-[14px] leading-tight text-foreground truncate">
                 {child.name}{t("components.parent_command_center.s_command_center")}
               </p>
@@ -139,7 +139,7 @@ export function ParentCommandCenter({
               {overview.routineCompletedTasks}/{overview.routineTotalTasks} {t("components.parent_command_center.done")} {MOOD_LABEL[overview.mood]} · {SLEEP_LABEL[overview.sleepQuality]}
             </p>
           </div>
-          <span className={["shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5", "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white", "text-[11px] font-bold shadow-[0_8px_24px_-8px_rgba(168,85,247,0.7)]", "group-hover:scale-[1.04] transition-transform"].join(" ")}>
+          <span className={["shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5", "bg-gradient-to-r from-primary to-primary text-white", "text-[11px] font-bold shadow-[0_8px_24px_-8px_rgba(168,85,247,0.7)]", "group-hover:scale-[1.04] transition-transform"].join(" ")}>
             {t("components.parent_command_center.open")}
             <ArrowRight className="h-3 w-3" />
           </span>
@@ -147,7 +147,7 @@ export function ParentCommandCenter({
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-card backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content data-testid="command-center-dialog" className={["fixed inset-0 z-[61] overflow-y-auto", "bg-gradient-to-br from-[#0a0820] via-[#1a1040] to-[#0a0820]", "text-white", "data-[state=open]:animate-in data-[state=closed]:animate-out", "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0", "data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"].join(" ")}>
           <Dialog.Title className="sr-only">{child.name}{t("components.parent_command_center.s_command_center_2")}</Dialog.Title>
           <Dialog.Description className="sr-only">
@@ -528,14 +528,14 @@ function CommandCenterDashboard(props: DashboardProps) {
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-[0_10px_30px_-8px_rgba(168,85,247,0.7)]">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary flex items-center justify-center shadow-[0_10px_30px_-8px_rgba(168,85,247,0.7)]">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
             <h2 className="font-quicksand font-black text-xl sm:text-2xl truncate text-white">
               {child.name}{t("components.parent_command_center.s_command_center_3")}
             </h2>
-            <p className="text-[12px] text-violet-200/80">
+            <p className="text-[12px] text-muted-foreground">
               {overview.statusEmoji} {overview.statusLabel} · {parentStatus.effortSummary}
             </p>
           </div>
@@ -544,7 +544,7 @@ function CommandCenterDashboard(props: DashboardProps) {
           {todayRoutineId && <button type="button" onClick={() => {
           onClose();
           navigate(`/routines/${todayRoutineId}`);
-        }} className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-violet-400/40 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-violet-100 hover:bg-white/10">
+        }} className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-border bg-white/5 px-3 py-1.5 text-[11px] font-bold text-muted-foreground hover:bg-white/10">
               {t("components.parent_command_center.open_routine")} <ArrowRight className="h-3 w-3" />
             </button>}
           <Dialog.Close asChild>
@@ -556,18 +556,18 @@ function CommandCenterDashboard(props: DashboardProps) {
       </div>
 
       {/* Hero: animated progress ring + cyclable mood/sleep */}
-      <section className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-5 sm:gap-7 items-center rounded-3xl border border-violet-400/25 bg-white/[0.03] backdrop-blur-xl p-5 sm:p-7 shadow-[0_0_0_1px_rgba(168,85,247,0.15),0_30px_70px_-20px_rgba(168,85,247,0.45)]">
+      <section className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-5 sm:gap-7 items-center rounded-3xl border border-border bg-white/[0.03] backdrop-blur-xl p-5 sm:p-7 shadow-[0_0_0_1px_rgba(168,85,247,0.15),0_30px_70px_-20px_rgba(168,85,247,0.45)]">
         <ProgressRing pct={overview.routineCompletionPct} size={140} />
         <div className="space-y-3">
           <div className="flex items-baseline gap-2">
             <p className="text-4xl sm:text-5xl font-black text-white">
-              {overview.routineCompletionPct}<span className="text-2xl text-violet-200/70">%</span>
+              {overview.routineCompletionPct}<span className="text-2xl text-muted-foreground">%</span>
             </p>
-            <p className="text-sm text-violet-200/80 font-bold">
+            <p className="text-sm text-muted-foreground font-bold">
               {overview.routineCompletedTasks}/{overview.routineTotalTasks} {t("components.parent_command_center.done_2")}
             </p>
           </div>
-          <p className="text-sm text-violet-100/90 leading-snug">{parentStatus.stressLabel}</p>
+          <p className="text-sm text-muted-foreground leading-snug">{parentStatus.stressLabel}</p>
           <div className="flex flex-wrap gap-2">
             <CycleChip label={MOOD_LABEL[mood]} caption="Mood — tap to cycle" onClick={() => persistMood(MOOD_CYCLE[(MOOD_CYCLE.indexOf(mood) + 1) % MOOD_CYCLE.length])} testId="cycle-mood" />
             <CycleChip label={SLEEP_LABEL[sleep]} caption="Sleep — tap to cycle" onClick={() => persistSleep(SLEEP_CYCLE[(SLEEP_CYCLE.indexOf(sleep) + 1) % SLEEP_CYCLE.length])} testId="cycle-sleep" />
@@ -577,10 +577,10 @@ function CommandCenterDashboard(props: DashboardProps) {
 
       {/* Auto-suggestion chips */}
       {suggestions.length > 0 && <section data-testid="suggestion-row" className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-violet-300/80">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
             {t("components.parent_command_center.try_next")}
           </span>
-          {suggestions.map(s => <button key={s.id} type="button" data-testid={`suggestion-${s.id}`} onClick={() => onSuggestion(s)} className={["inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold", "border border-violet-400/40 bg-violet-500/15 text-white", "hover:bg-violet-500/30 hover:border-violet-300 hover:shadow-[0_0_24px_-4px_rgba(168,85,247,0.7)]", "transition-all"].join(" ")}>
+          {suggestions.map(s => <button key={s.id} type="button" data-testid={`suggestion-${s.id}`} onClick={() => onSuggestion(s)} className={["inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold", "border border-border bg-primary text-white", "hover:bg-primary hover:border-border hover:shadow-[0_0_24px_-4px_rgba(168,85,247,0.7)]", "transition-all"].join(" ")}>
               <span className="text-base">{s.emoji}</span> {s.label}
             </button>)}
         </section>}
@@ -593,12 +593,12 @@ function CommandCenterDashboard(props: DashboardProps) {
       navigate("/routines");
     }} /> : <>
           {/* Today timeline (with swipe-to-skip + undo) */}
-          <section data-testid="timeline-section" className="rounded-3xl border border-violet-400/20 bg-white/[0.03] backdrop-blur-xl p-4 sm:p-5">
+          <section data-testid="timeline-section" className="rounded-3xl border border-border bg-white/[0.03] backdrop-blur-xl p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-black uppercase tracking-wider text-violet-200">
+              <h3 className="text-sm font-black uppercase tracking-wider text-muted-foreground">
                 {t("components.parent_command_center.today_s_timeline")}
               </h3>
-              <span className="text-[11px] text-violet-300/70 font-bold">
+              <span className="text-[11px] text-muted-foreground font-bold">
                 {timeline.filter(t => t.status === "completed").length}/{timeline.length} {t("components.parent_command_center.complete")}
               </span>
             </div>
@@ -610,15 +610,15 @@ function CommandCenterDashboard(props: DashboardProps) {
           {/* Quick activity strip — separate from the strategic action grid.
               Each chip opens an inline timed activity that logs a positive
               moment when finished. */}
-          <section data-testid="quick-activity-strip" className="rounded-3xl border border-emerald-400/20 bg-emerald-500/[0.04] p-4 sm:p-5">
+          <section data-testid="quick-activity-strip" className="rounded-3xl border border-border bg-primary/[0.04] p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-black uppercase tracking-wider text-emerald-200">
+              <h3 className="text-sm font-black uppercase tracking-wider text-muted-foreground">
                 {t("parent_hub.command_center.quick_ideas_title")}
               </h3>
-              <span className="text-[11px] text-emerald-200/70 font-bold">{t("parent_hub.command_center.tap_timer")}</span>
+              <span className="text-[11px] text-muted-foreground font-bold">{t("parent_hub.command_center.tap_timer")}</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {quickActivities.map(q => <button key={q.id} type="button" data-testid={`quick-${q.id}`} onClick={() => startQuickActivity(q.id)} className={["relative flex flex-col items-center justify-center gap-1.5 px-3 py-3.5 rounded-2xl", "border border-emerald-400/25 bg-white/5 text-white", "hover:bg-emerald-500/15 hover:border-emerald-300/60 hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)]", "transition-all duration-200 active:scale-95", activePanel === q.id ? "border-emerald-300 bg-emerald-500/15" : ""].join(" ")}>
+              {quickActivities.map(q => <button key={q.id} type="button" data-testid={`quick-${q.id}`} onClick={() => startQuickActivity(q.id)} className={["relative flex flex-col items-center justify-center gap-1.5 px-3 py-3.5 rounded-2xl", "border border-border bg-white/5 text-white", "hover:bg-primary hover:border-border hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)]", "transition-all duration-200 active:scale-95", activePanel === q.id ? "border-border bg-primary" : ""].join(" ")}>
                   <span className="text-2xl" aria-hidden>{q.emoji}</span>
                   <span className="text-[11.5px] font-black text-center leading-tight">{q.label}</span>
                 </button>)}
@@ -633,7 +633,7 @@ function CommandCenterDashboard(props: DashboardProps) {
           const {
             t
           } = useTranslation();
-          return <button key={a.id} type="button" data-testid={`action-${a.id}`} onClick={() => onAction(a.id)} disabled={updateItems.isPending && (a.id === "simplify-today" || a.id === "fix-routine")} className={["relative flex flex-col items-center justify-center gap-1.5 px-3 py-3.5 rounded-2xl", "border transition-all duration-200 active:scale-95 overflow-hidden", a.severity === "primary" ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white border-transparent shadow-[0_18px_36px_-12px_rgba(168,85,247,0.8)]" : "bg-white/5 text-white border-white/15 hover:border-violet-300/60 hover:bg-white/10 hover:shadow-[0_0_24px_-6px_rgba(168,85,247,0.6)]", flashAction === a.id ? "scale-[1.04]" : ""].join(" ")}>
+          return <button key={a.id} type="button" data-testid={`action-${a.id}`} onClick={() => onAction(a.id)} disabled={updateItems.isPending && (a.id === "simplify-today" || a.id === "fix-routine")} className={["relative flex flex-col items-center justify-center gap-1.5 px-3 py-3.5 rounded-2xl", "border transition-all duration-200 active:scale-95 overflow-hidden", a.severity === "primary" ? "bg-gradient-to-br from-primary to-primary text-white border-transparent shadow-[0_18px_36px_-12px_rgba(168,85,247,0.8)]" : "bg-white/5 text-white border-white/15 hover:border-border hover:bg-white/10 hover:shadow-[0_0_24px_-6px_rgba(168,85,247,0.6)]", flashAction === a.id ? "scale-[1.04]" : ""].join(" ")}>
                 <span className="text-2xl" aria-hidden>
                   {a.emoji}
                 </span>
@@ -686,7 +686,7 @@ function CommandCenterDashboard(props: DashboardProps) {
         const {
           t
         } = useTranslation();
-        return <div key={i} className={["rounded-2xl border p-3.5", ins.tone === "good" ? "border-emerald-400/30 bg-emerald-500/10" : ins.tone === "warn" ? "border-amber-400/30 bg-amber-500/10" : "border-violet-400/30 bg-violet-500/10"].join(" ")}>
+        return <div key={i} className={["rounded-2xl border p-3.5", ins.tone === "good" ? "border-border bg-primary" : ins.tone === "warn" ? "border-border bg-primary" : "border-border bg-primary"].join(" ")}>
               <p className="text-[10px] font-black uppercase tracking-wide text-white/70 flex items-center gap-1">
                 <Sparkles className="h-3 w-3" /> {t("components.parent_command_center.amy_ai_insight")}
               </p>
@@ -700,7 +700,7 @@ function CommandCenterDashboard(props: DashboardProps) {
         </section>}
 
       {/* Toast — supports an optional Undo affordance for swipe-to-skip. */}
-      {toast && <div data-testid="command-center-toast" className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[70] flex items-center gap-3 rounded-full px-4 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-[13px] font-bold shadow-[0_18px_50px_-10px_rgba(168,85,247,0.7)] animate-in fade-in slide-in-from-bottom-2">
+      {toast && <div data-testid="command-center-toast" className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[70] flex items-center gap-3 rounded-full px-4 py-2 bg-gradient-to-r from-primary to-primary text-white text-[13px] font-bold shadow-[0_18px_50px_-10px_rgba(168,85,247,0.7)] animate-in fade-in slide-in-from-bottom-2">
           <span>{toast.msg}</span>
           {toast.undo && <button type="button" data-testid="command-center-toast-undo" onClick={() => {
         const fn = toast.undo;
@@ -742,9 +742,9 @@ function ProgressRing({
       <svg width={size} height={size} className="-rotate-90">
         <defs>
           <linearGradient id={`ring-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#a855f7" />
-            <stop offset="50%" stopColor="#ec4899" />
-            <stop offset="100%" stopColor="#10b981" />
+            <stop offset="0%" stopColor="hsl(var(--brand-purple-500))" />
+            <stop offset="50%" stopColor="hsl(var(--brand-pink-500))" />
+            <stop offset="100%" stopColor="hsl(var(--brand-emerald-500))" />
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.12)" strokeWidth={stroke} fill="none" />
@@ -772,9 +772,9 @@ function CycleChip({
   onClick: () => void;
   testId?: string;
 }) {
-  return <button type="button" onClick={onClick} data-testid={testId} className="group inline-flex flex-col items-start rounded-2xl border border-violet-400/40 bg-violet-500/10 px-3 py-1.5 text-left hover:bg-violet-500/20 hover:border-violet-300/70 transition-all">
+  return <button type="button" onClick={onClick} data-testid={testId} className="group inline-flex flex-col items-start rounded-2xl border border-border bg-primary px-3 py-1.5 text-left hover:bg-primary hover:border-border transition-all">
       <span className="text-[12px] font-black text-white">{label}</span>
-      <span className="text-[10px] text-violet-300/70 font-bold uppercase tracking-wide">{caption}</span>
+      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">{caption}</span>
     </button>;
 }
 function ActionPanel({
@@ -794,9 +794,9 @@ function ActionPanel({
     t
   } = useTranslation();
   const palette: Record<string, string> = {
-    rose: "border-rose-400/35 bg-rose-500/10",
-    indigo: "border-indigo-400/35 bg-indigo-500/10",
-    emerald: "border-emerald-400/35 bg-emerald-500/10"
+    rose: "border-border bg-primary",
+    indigo: "border-border bg-primary",
+    emerald: "border-border bg-primary"
   };
   return <section data-testid="command-center-panel" className={["rounded-3xl border p-4 sm:p-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200", palette[tone]].join(" ")}>
       <div className="flex items-center gap-2 text-white">
@@ -812,7 +812,7 @@ function ActionPanel({
           </li>)}
       </ol>
       <div className="flex justify-end">
-        <button type="button" onClick={onDone} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-black bg-white text-slate-900 hover:bg-white/90">
+        <button type="button" onClick={onDone} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-black bg-white text-foreground hover:bg-white/90">
           <PartyPopper className="h-3.5 w-3.5" /> {t("components.parent_command_center.done_3")}
         </button>
       </div>
@@ -830,7 +830,7 @@ function PlayPickerPanel({
   const {
     t
   } = useTranslation();
-  return <section data-testid="play-picker-panel" className="rounded-3xl border border-emerald-400/35 bg-emerald-500/10 p-4 sm:p-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+  return <section data-testid="play-picker-panel" className="rounded-3xl border border-border bg-primary p-4 sm:p-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-white">
           <span className="rounded-full bg-white/10 p-1.5"><Dices className="h-4 w-4" /></span>
@@ -846,13 +846,13 @@ function PlayPickerPanel({
           t
         } = useTranslation();
         return <li key={idea.id}>
-            <button type="button" data-testid={`play-idea-${idea.id}`} onClick={() => onPick(idea)} className="w-full text-left flex items-start gap-3 rounded-2xl border border-emerald-400/25 bg-white/5 hover:bg-emerald-500/15 hover:border-emerald-300/60 hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)] p-3 transition-all active:scale-[0.99]">
+            <button type="button" data-testid={`play-idea-${idea.id}`} onClick={() => onPick(idea)} className="w-full text-left flex items-start gap-3 rounded-2xl border border-border bg-white/5 hover:bg-primary hover:border-border hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)] p-3 transition-all active:scale-[0.99]">
               <span className="text-2xl shrink-0" aria-hidden>{idea.emoji}</span>
               <span className="flex-1 min-w-0">
                 <span className="block text-[13px] font-black text-white leading-tight">{idea.title}</span>
                 <span className="block text-[11.5px] text-white/70 mt-0.5 leading-snug">{idea.description}</span>
               </span>
-              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white text-slate-900 px-2.5 py-1 text-[10.5px] font-black">
+              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white text-foreground px-2.5 py-1 text-[10.5px] font-black">
                 {t("parent_hub.command_center.start")}
                 <ArrowRight className="h-3 w-3" />
               </span>
@@ -870,13 +870,13 @@ function EmptyState({
   const {
     t
   } = useTranslation();
-  return <div data-testid="command-center-empty" className="rounded-2xl border border-dashed border-violet-400/40 bg-white/[0.02] p-6 text-center space-y-3">
+  return <div data-testid="command-center-empty" className="rounded-2xl border border-dashed border-border bg-white/[0.02] p-6 text-center space-y-3">
       <p className="text-3xl">🪄</p>
       <p className="text-sm font-bold text-white">{t("parent_hub.command_center.no_routine")}</p>
-      <p className="text-[12px] text-violet-200/70">
+      <p className="text-[12px] text-muted-foreground">
         {t("parent_hub.command_center.no_routine_help")}
       </p>
-      <button type="button" onClick={onCreate} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-4 py-2 text-[12px] font-black">
+      <button type="button" onClick={onCreate} className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary text-white px-4 py-2 text-[12px] font-black">
         <Wand2 className="h-3.5 w-3.5" /> {t("components.parent_command_center.create_today_s_routine")}
       </button>
     </div>;
@@ -894,7 +894,7 @@ function Confetti() {
     const rot = Math.round(Math.random() * 720 - 360);
     const dx = Math.round(Math.random() * 200 - 100);
     const dy = 280 + Math.random() * 140;
-    const colors = ["#a855f7", "#ec4899", "#10b981", "#f59e0b", "#38bdf8"];
+    const colors = ["hsl(var(--brand-purple-500))", "hsl(var(--brand-pink-500))", "hsl(var(--brand-emerald-500))", "hsl(var(--brand-amber-500))", "hsl(var(--brand-sky-400))"];
     const color = colors[i % colors.length];
     // Build the style as our extended type, then widen to CSSProperties when
     // handing it to React (custom CSS vars aren't part of CSSProperties).
@@ -995,20 +995,20 @@ function SwipeableTimelineRow({
     setDx(0);
     if (delta <= -SKIP_THRESHOLD) onSkip();
   }
-  return <li data-testid={t.current ? "timeline-current" : t.next ? "timeline-next" : undefined} className={["relative flex items-center gap-3 rounded-2xl border p-3 transition-all touch-pan-y select-none", t.current ? "border-fuchsia-400/60 bg-gradient-to-r from-fuchsia-500/15 to-violet-500/15 shadow-[0_0_30px_-6px_rgba(217,70,239,0.55)]" : t.next ? "border-violet-400/40 bg-violet-500/10" : "border-white/10 bg-white/[0.02]", t.status === "completed" ? "opacity-60" : "", t.status === "skipped" ? "opacity-40 line-through" : ""].join(" ")} style={{
+  return <li data-testid={t.current ? "timeline-current" : t.next ? "timeline-next" : undefined} className={["relative flex items-center gap-3 rounded-2xl border p-3 transition-all touch-pan-y select-none", t.current ? "border-border bg-gradient-to-r from-primary to-primary shadow-[0_0_30px_-6px_rgba(217,70,239,0.55)]" : t.next ? "border-border bg-primary" : "border-white/10 bg-white/[0.02]", t.status === "completed" ? "opacity-60" : "", t.status === "skipped" ? "opacity-40 line-through" : ""].join(" ")} style={{
     transform: dx ? `translateX(${dx}px)` : undefined
   }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}>
       <div className="w-14 shrink-0">
-        <p className="text-[11px] font-black tracking-wide text-violet-200">{t.time}</p>
-        <p className="text-[10px] text-violet-300/70 uppercase">{t.duration}m</p>
+        <p className="text-[11px] font-black tracking-wide text-muted-foreground">{t.time}</p>
+        <p className="text-[10px] text-muted-foreground uppercase">{t.duration}m</p>
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-white truncate">{t.activity}</p>
-        <p className="text-[11px] text-violet-300/70 truncate">
+        <p className="text-[11px] text-muted-foreground truncate">
           {t.current ? "Now" : t.next ? "Up next" : t.category || ""}
         </p>
       </div>
-      {t.status === "completed" ? <span className="rounded-full px-2 py-0.5 text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+      {t.status === "completed" ? <span className="rounded-full px-2 py-0.5 text-[10px] font-black bg-primary text-muted-foreground border border-border">
           {tFn("components.parent_command_center.done_4")}
         </span> : t.status === "skipped" ? <span className="rounded-full px-2 py-0.5 text-[10px] font-black bg-white/10 text-white/70 border border-white/20">
           {tFn("components.parent_command_center.skipped")}
@@ -1016,7 +1016,7 @@ function SwipeableTimelineRow({
           <button type="button" onClick={onSkip} data-testid={`skip-step-${t.index}`} aria-label={`Skip ${t.activity}`} className="hidden sm:inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold bg-white/5 text-white/70 border border-white/15 hover:bg-white/10 hover:text-white">
             {tFn("components.parent_command_center.skip")}
           </button>
-          <button type="button" onClick={onComplete} data-testid={`complete-step-${t.index}`} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold bg-emerald-500/15 text-emerald-200 border border-emerald-400/30 hover:bg-emerald-500/25 hover:border-emerald-300">
+          <button type="button" onClick={onComplete} data-testid={`complete-step-${t.index}`} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold bg-primary text-muted-foreground border border-border hover:bg-primary hover:border-border">
             <Check className="h-3 w-3" /> {tFn("components.parent_command_center.done_5")}
           </button>
         </div>}
@@ -1063,7 +1063,7 @@ function TimedActivityPanel({
   const mm = Math.floor(remaining / 60).toString().padStart(2, "0");
   const ss = (remaining % 60).toString().padStart(2, "0");
   const pct = Math.round((totalSeconds - remaining) / totalSeconds * 100);
-  return <section data-testid={`timed-activity-${activity.id}`} className="rounded-3xl border border-emerald-400/35 bg-emerald-500/10 p-4 sm:p-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+  return <section data-testid={`timed-activity-${activity.id}`} className="rounded-3xl border border-border bg-primary p-4 sm:p-5 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-white">
           <span className="rounded-full bg-white/10 p-1.5">{activity.icon}</span>
@@ -1080,7 +1080,7 @@ function TimedActivityPanel({
           {mm}:{ss}
         </p>
         <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-emerald-400 to-violet-400 transition-all" style={{
+          <div className="h-full bg-gradient-to-r from-primary to-primary transition-all" style={{
           width: `${pct}%`
         }} />
         </div>
@@ -1089,7 +1089,7 @@ function TimedActivityPanel({
         <button type="button" onClick={() => setRunning(r => !r)} data-testid={`timed-toggle-${activity.id}`} className="rounded-full bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 text-[12px] font-black">
           {running ? "Pause" : "Resume"}
         </button>
-        <button type="button" onClick={onDone} data-testid={`timed-done-${activity.id}`} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-black bg-white text-slate-900 hover:bg-white/90">
+        <button type="button" onClick={onDone} data-testid={`timed-done-${activity.id}`} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-black bg-white text-foreground hover:bg-white/90">
           <PartyPopper className="h-3.5 w-3.5" /> {t("components.parent_command_center.done_with_my_child")}
         </button>
       </div>

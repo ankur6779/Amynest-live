@@ -138,7 +138,7 @@ export function useSubscription() {
           subscription_id: subscriptionId,
           name: "AmyNest AI",
           description: "AmyNest Premium subscription",
-          theme: { color: "#7B3FF2" },
+          theme: { color: "hsl(var(--brand-violet-600))" },
           prefill,
           notes: { plan },
           handler: async (resp: RazorpayCheckoutResponse) => {

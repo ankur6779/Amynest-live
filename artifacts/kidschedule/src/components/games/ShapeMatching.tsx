@@ -87,7 +87,7 @@ export function ShapeMatchingGame({ onFinish }: { onFinish: (score: number, tota
       </h3>
 
       {selected && (
-        <div style={{ marginBottom: 8, fontSize: 13, color: "#c4b5fd", fontWeight: 700 }}>
+        <div style={{ marginBottom: 8, fontSize: 13, color: "hsl(var(--brand-violet-300))", fontWeight: 700 }}>
           Selected: {selectedShape?.emoji} {selectedShape?.label} — now tap the matching name below
         </div>
       )}
@@ -108,7 +108,7 @@ export function ShapeMatchingGame({ onFinish }: { onFinish: (score: number, tota
                   : isSelected
                   ? "rgba(139,92,246,0.35)"
                   : "rgba(255,255,255,0.08)",
-                border: `2px solid ${done ? "rgba(34,197,94,0.6)" : isSelected ? "#a78bfa" : "rgba(139,92,246,0.3)"}`,
+                border: `2px solid ${done ? "rgba(34,197,94,0.6)" : isSelected ? "hsl(var(--brand-violet-400))" : "rgba(139,92,246,0.3)"}`,
                 cursor: done ? "default" : "pointer",
                 opacity: done ? 0.5 : 1,
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -140,17 +140,17 @@ export function ShapeMatchingGame({ onFinish }: { onFinish: (score: number, tota
                   : "rgba(255,255,255,0.06)",
                 border: `1.5px solid ${done ? "rgba(34,197,94,0.6)" : isFeedback && !feedback?.ok ? "rgba(239,68,68,0.5)" : "rgba(139,92,246,0.3)"}`,
                 cursor: done ? "default" : "pointer",
-                color: "#e9d5ff",
+                color: "hsl(var(--brand-purple-300))",
               }}
             >
-              {done ? "✓ " : ""}{s.label}
+              {done ? "✓" : ""}{s.label}
             </button>
           );
         })}
       </div>
 
       {feedback && !feedback.ok && (
-        <div style={{ marginTop: 12, fontSize: 12, color: "#fca5a5", fontWeight: 700 }}>
+        <div style={{ marginTop: 12, fontSize: 12, color: "hsl(var(--brand-red-300))", fontWeight: 700 }}>
           Not quite — try again!
         </div>
       )}

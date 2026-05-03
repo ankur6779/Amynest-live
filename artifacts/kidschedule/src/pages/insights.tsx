@@ -59,12 +59,12 @@ function ChangeChip({ pct, pts }: { pct?: number; pts?: number }) {
   const { t } = useTranslation();
   const val = pts ?? pct ?? 0;
   if (val > 0) return (
-    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-full">
       <TrendingUp className="h-3 w-3" />+{Math.abs(val).toFixed(0)}{pts !== undefined ? "pts" : "%"}
     </span>
   );
   if (val < 0) return (
-    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-500/15 dark:text-rose-400 px-2 py-0.5 rounded-full">
+    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-full">
       <TrendingDown className="h-3 w-3" />-{Math.abs(val).toFixed(0)}{pts !== undefined ? "pts" : "%"}
     </span>
   );
@@ -131,7 +131,7 @@ export default function InsightsPage() {
         {!isLoading && data && !data.hasChildren && (
           <Card className="rounded-3xl">
             <CardContent className="p-10 flex flex-col items-center gap-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-3xl">👶</div>
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-3xl">👶</div>
               <h2 className="font-bold text-lg">{t("screens.insights.no_children_title")}</h2>
               <p className="text-sm text-muted-foreground">{t("screens.insights.no_children_text")}</p>
               <Link href="/children/new">
@@ -144,7 +144,7 @@ export default function InsightsPage() {
         {!isLoading && data?.hasChildren && !data.hasActivity && (
           <Card className="rounded-3xl">
             <CardContent className="p-10 flex flex-col items-center gap-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-3xl">📊</div>
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-3xl">📊</div>
               <h2 className="font-bold text-lg">{range === "week" ? t("screens.insights.no_activity_week") : t("screens.insights.no_activity_month")}</h2>
               <p className="text-sm text-muted-foreground">{range === "week" ? t("screens.insights.no_activity_text_week") : t("screens.insights.no_activity_text_month")}</p>
               <Link href="/routines">
@@ -217,7 +217,7 @@ export default function InsightsPage() {
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 transition-all duration-500"
+                            className="h-full rounded-full bg-card transition-all duration-500"
                             style={{ width: `${Math.min(100, child.routineCompletionRate)}%` }}
                           />
                         </div>
@@ -254,8 +254,8 @@ export default function InsightsPage() {
 
             {/* Ask Amy CTA */}
             <Link href="/assistant">
-              <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-violet-500/10 to-pink-500/10 border border-violet-200 dark:border-violet-500/30 cursor-pointer hover:from-violet-500/15 hover:to-pink-500/15 transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white shrink-0">
+              <div className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border cursor-pointer transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center text-primary-foreground shrink-0">
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <div>

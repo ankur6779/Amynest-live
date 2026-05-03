@@ -2,20 +2,20 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 const COLORS = [{
   id: "red",
-  bg: "#ef4444",
-  glow: "#fca5a5"
+  bg: "hsl(var(--brand-red-500))",
+  glow: "hsl(var(--brand-red-300))"
 }, {
   id: "blue",
-  bg: "#3b82f6",
-  glow: "#93c5fd"
+  bg: "hsl(var(--brand-blue-500))",
+  glow: "hsl(var(--brand-blue-300))"
 }, {
   id: "green",
-  bg: "#22c55e",
-  glow: "#86efac"
+  bg: "hsl(var(--brand-green-500))",
+  glow: "hsl(var(--brand-green-300))"
 }, {
   id: "yellow",
-  bg: "#eab308",
-  glow: "#fde68a"
+  bg: "hsl(var(--brand-yellow-500))",
+  glow: "hsl(var(--brand-amber-200))"
 }];
 export function SequenceMemoryGame({
   onFinish

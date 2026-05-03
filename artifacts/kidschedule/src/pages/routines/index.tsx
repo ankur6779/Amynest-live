@@ -144,18 +144,18 @@ function WeekCalendar({
           } else {
             onGatedNavigate(`/routines/generate?date=${dateStr}`);
           }
-        }} className={`flex flex-col items-center gap-1 p-1.5 rounded-2xl border-2 transition-all text-xs min-h-[72px] justify-between ${isToday ? "border-primary bg-primary text-primary-foreground" : dayRoutines.length > 0 ? "border-green-300 bg-green-50 text-green-800 hover:border-green-400" : isWeekend ? "border-border/40 bg-muted/30 text-muted-foreground hover:border-amber-300 hover:bg-amber-50" : "border-border/50 bg-card text-foreground hover:border-primary/40 hover:bg-primary/5"}`}>
+        }} className={`flex flex-col items-center gap-1 p-1.5 rounded-2xl border-2 transition-all text-xs min-h-[72px] justify-between ${isToday ? "border-primary bg-primary text-primary-foreground" : dayRoutines.length > 0 ? "border-border bg-muted text-primary hover:border-border" : isWeekend ? "border-border/40 bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted" : "border-border/50 bg-card text-foreground hover:border-primary/40 hover:bg-primary/5"}`}>
               <span className={`font-bold text-[10px] ${isToday ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
                 {DAY_NAMES[i]}
               </span>
               <span className="font-black text-base leading-none">{day.getDate()}</span>
               {dayRoutines.length > 0 ? <div className="flex flex-col items-center gap-0.5 w-full">
                   <div className="w-full h-1 rounded-full bg-current/20 overflow-hidden">
-                    <div className={`h-full rounded-full ${isToday ? "bg-white/60" : "bg-green-500"}`} style={{
+                    <div className={`h-full rounded-full ${isToday ? "bg-white/60" : "bg-primary"}`} style={{
                 width: `${dayPct}%`
               }} />
                   </div>
-                  <span className={`text-[9px] font-bold ${isToday ? "text-primary-foreground/70" : "text-green-600"}`}>
+                  <span className={`text-[9px] font-bold ${isToday ? "text-primary-foreground/70" : "text-primary"}`}>
                     {dayRoutines.length > 1 ? `${dayRoutines.length} routines` : `${dayPct}%`}
                   </span>
                 </div> : isWeekend ? <span className="text-[9px]">🏖️</span> : <span className="text-[9px] opacity-50">{t("pages.routines.index.add")}</span>}
@@ -165,7 +165,7 @@ function WeekCalendar({
 
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground px-1">
         <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-primary bg-primary" />{t("pages.routines.index.today")}</span>
-        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-green-300 bg-green-50" />{t("pages.routines.index.has_routine")}</span>
+        <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-border bg-muted" />{t("pages.routines.index.has_routine")}</span>
         <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-border/40 bg-muted/30" />{t("pages.routines.index.weekend_no_school")}</span>
         <span className="flex items-center gap-1"><div className="w-3 h-3 rounded border-2 border-border/50 bg-card" />{t("pages.routines.index.tap_to_generate")}</span>
       </div>

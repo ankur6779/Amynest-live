@@ -154,7 +154,7 @@ export default function AssistantPage() {
           <h1 className="font-quicksand text-3xl font-bold text-foreground flex items-center gap-2">
             <AmyIcon size={38} bounce ring />
             {t("ai.page_title")}
-            <Badge className="bg-gradient-to-r from-violet-500 to-pink-500 text-white text-xs font-bold border-0 ml-1">
+            <Badge className="bg-card text-primary-foreground text-xs font-bold border-0 ml-1">
               <Zap className="h-3 w-3 mr-1" />
               {t("ai.badge_label")}
             </Badge>
@@ -172,9 +172,9 @@ export default function AssistantPage() {
       {/* Daily limit bar */}
       <div className={`flex-shrink-0 mb-3 rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 border text-sm ${
         limitReached
-          ? "bg-rose-50 border-rose-200 text-rose-700"
+          ? "bg-muted border-border text-foreground"
           : remaining <= 2
-          ? "bg-amber-50 border-amber-200 text-amber-700"
+          ? "bg-muted border-border text-foreground"
           : "bg-primary/5 border-primary/20 text-primary/80"
       }`}>
         <div className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default function AssistantPage() {
         </div>
         {limitReached ? (
           <Link href="/pricing">
-            <Button size="sm" className="rounded-full gap-1.5 shrink-0 bg-rose-600 hover:bg-rose-700 text-white" data-testid="button-upgrade-banner">
+            <Button size="sm" className="rounded-full gap-1.5 shrink-0 bg-primary hover:bg-primary text-primary-foreground" data-testid="button-upgrade-banner">
               <Zap className="h-3.5 w-3.5" />
               {t("ai.upgrade")}
             </Button>
@@ -239,11 +239,11 @@ export default function AssistantPage() {
             </div>
 
             {limitReached && (
-              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 text-sm text-rose-700 max-w-sm text-center space-y-3">
+              <div className="bg-muted border border-border rounded-2xl p-5 text-sm text-foreground max-w-sm text-center space-y-3">
                 <p className="font-bold text-base">{t("ai.quota_exhausted")}</p>
                 <p>{t("ai.quota_exhausted_body", { limit: dailyLimit })}</p>
                 <Link href="/pricing">
-                  <Button className="w-full rounded-full gap-2 bg-rose-600 hover:bg-rose-700 text-white" data-testid="button-upgrade-empty">
+                  <Button className="w-full rounded-full gap-2 bg-primary hover:bg-primary text-primary-foreground" data-testid="button-upgrade-empty">
                     <Zap className="h-4 w-4" />
                     {t("ai.upgrade_premium")}
                   </Button>
@@ -318,11 +318,11 @@ export default function AssistantPage() {
       {/* Input */}
       <div className="flex-shrink-0 pt-3 border-t border-border/50">
         {limitReached ? (
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-center text-rose-700 space-y-2">
+          <div className="bg-muted border border-border rounded-2xl p-4 text-center text-foreground space-y-2">
             <p className="font-bold text-sm">{t("ai.quota_exhausted")}</p>
             <p className="text-xs">{t("ai.quota_exhausted_input", { limit: dailyLimit })}</p>
             <Link href="/pricing">
-              <Button size="sm" className="rounded-full gap-1.5 bg-rose-600 hover:bg-rose-700 text-white" data-testid="button-upgrade-input">
+              <Button size="sm" className="rounded-full gap-1.5 bg-primary hover:bg-primary text-primary-foreground" data-testid="button-upgrade-input">
                 <Zap className="h-3.5 w-3.5" />
                 {t("ai.upgrade_premium")}
               </Button>

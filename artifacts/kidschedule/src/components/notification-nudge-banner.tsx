@@ -216,95 +216,95 @@ export function NotificationNudgeBanner() {
       recoveryCopy = "Click the lock icon to the left of the URL → Site settings → Notifications → Allow, then refresh";
     }
     return <div className="relative flex items-start gap-3 rounded-2xl px-4 py-3 text-sm" style={{
-      background: "linear-gradient(135deg,#FEF2F2,#FFF7ED)",
+      background: "linear-gradient(135deg,hsl(var(--brand-red-100)),hsl(var(--brand-amber-100)))",
       border: "1px solid rgba(239,68,68,0.25)"
     }}>
         <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center mt-0.5" style={{
         background: "rgba(239,68,68,0.12)"
       }}>
-          <BellOff className="w-4 h-4 text-red-500" />
+          <BellOff className="w-4 h-4 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-red-700 text-sm leading-snug">
+          <p className="font-semibold text-primary text-sm leading-snug">
             {t("components.notification_nudge_banner.notifications_blocked_hain")}
           </p>
-          <p className="text-red-500 text-xs mt-0.5 leading-relaxed">
+          <p className="text-primary text-xs mt-0.5 leading-relaxed">
             {recoveryCopy}
           </p>
         </div>
         <button onClick={handleDismiss} className="shrink-0 p-1 rounded-full" aria-label={t("components.notification_nudge_banner.dismiss")}>
-          <X className="w-4 h-4 text-red-300" />
+          <X className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>;
   }
   if (state === "reconnect") {
     return <div className="relative flex items-center gap-3 rounded-2xl px-4 py-3" style={{
-      background: "linear-gradient(135deg,#FFFBEB,#FEF3C7)",
+      background: "linear-gradient(135deg,hsl(var(--brand-amber-100)),hsl(var(--brand-amber-100)))",
       border: "1px solid rgba(245,158,11,0.3)"
     }}>
         <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{
-        background: "linear-gradient(135deg,#F59E0B,#EF4444)"
+        background: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-red-500)))"
       }}>
           <RefreshCw className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-amber-900 text-sm leading-snug">
+          <p className="font-semibold text-primary text-sm leading-snug">
             {t("components.notification_nudge_banner.notifications_reconnect_karo")}
           </p>
-          <p className="text-amber-700 text-xs mt-0.5 leading-relaxed">
+          <p className="text-primary text-xs mt-0.5 leading-relaxed">
             {t("components.notification_nudge_banner.reminders_setup_nahi_hai_ek_tap_mein_fresh_setup_ho_jayega")}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <button onClick={requestAndRegister} disabled={working} className="px-3 py-1.5 rounded-xl text-white text-xs font-bold transition-all active:scale-95" style={{
-          background: "linear-gradient(135deg,#F59E0B,#EF4444)",
+          background: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-red-500)))",
           boxShadow: "0 3px 10px rgba(245,158,11,0.35)",
           opacity: working ? 0.7 : 1
         }}>
             {working ? "Wait…" : "Reconnect"}
           </button>
-          <button onClick={handleDismiss} className="text-[11px] font-medium text-amber-600">
+          <button onClick={handleDismiss} className="text-[11px] font-medium text-primary">
             {t("components.notification_nudge_banner.later")}
           </button>
         </div>
         <button onClick={handleDismiss} className="absolute top-2 right-2 p-0.5 rounded-full" aria-label={t("components.notification_nudge_banner.dismiss_2")}>
-          <X className="w-3 h-3 text-amber-400" />
+          <X className="w-3 h-3 text-primary" />
         </button>
       </div>;
   }
 
   // state === "ask"
   return <div className="relative flex items-center gap-3 rounded-2xl px-4 py-3" style={{
-    background: "linear-gradient(135deg,#EEF2FF 0%,#F5F3FF 60%,#FDF2F8 100%)",
+    background: "linear-gradient(135deg,hsl(var(--brand-indigo-100)) 0%,hsl(var(--brand-violet-50)) 60%,hsl(var(--brand-pink-50)) 100%)",
     border: "1px solid rgba(99,102,241,0.25)"
   }}>
       <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{
-      background: "linear-gradient(135deg,#6366F1,#A855F7)"
+      background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))"
     }}>
         <Bell className="w-5 h-5 text-white" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-indigo-900 text-sm leading-snug">
+        <p className="font-semibold text-primary text-sm leading-snug">
           {t("components.notification_nudge_banner.routine_reminders_enable_karo")}
         </p>
-        <p className="text-indigo-500 text-xs mt-0.5 leading-relaxed">
+        <p className="text-primary text-xs mt-0.5 leading-relaxed">
           {t("components.notification_nudge_banner.bedtime_meals_aur_routines_time_pe_yaad_dilayenge")}
         </p>
       </div>
       <div className="flex flex-col items-end gap-1.5 shrink-0">
         <button onClick={requestAndRegister} disabled={working} className="px-3 py-1.5 rounded-xl text-white text-xs font-bold transition-all active:scale-95" style={{
-        background: "linear-gradient(135deg,#6366F1,#A855F7)",
+        background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))",
         boxShadow: "0 3px 10px rgba(99,102,241,0.35)",
         opacity: working ? 0.7 : 1
       }}>
           {working ? "Wait…" : "Allow"}
         </button>
-        <button onClick={handleDismiss} className="text-[11px] font-medium text-indigo-400">
+        <button onClick={handleDismiss} className="text-[11px] font-medium text-primary">
           {t("components.notification_nudge_banner.later_2")}
         </button>
       </div>
       <button onClick={handleDismiss} className="absolute top-2 right-2 p-0.5 rounded-full" aria-label={t("components.notification_nudge_banner.dismiss_3")}>
-        <X className="w-3 h-3 text-indigo-300" />
+        <X className="w-3 h-3 text-muted-foreground" />
       </button>
     </div>;
 }

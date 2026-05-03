@@ -89,11 +89,11 @@ function HeroGreeting({
     hour: "2-digit",
     minute: "2-digit"
   }) : null;
-  return <div className="relative overflow-hidden rounded-3xl border border-violet-100/70 dark:border-violet-400/15 bg-gradient-to-br from-violet-50/70 via-white to-white dark:from-violet-500/10 dark:via-slate-900/40 dark:to-slate-900/40 px-5 sm:px-6 py-5 sm:py-6 animate-in fade-in duration-400">
-      <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-violet-200/40 dark:bg-violet-500/15 blur-3xl pointer-events-none" />
+  return <div className="relative overflow-hidden rounded-3xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-white dark:from-primary dark:via-muted dark:to-muted px-5 sm:px-6 py-5 sm:py-6 animate-in fade-in duration-400">
+      <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-muted dark:bg-primary blur-3xl pointer-events-none" />
       <div className="relative flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
         <div className="min-w-0">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-violet-600 dark:text-violet-400">{greeting}</p>
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-primary dark:text-primary">{greeting}</p>
           <h1 className="font-quicksand text-2xl sm:text-[28px] font-black text-foreground mt-1 leading-[1.15] tracking-tight">
             👋 {heading}
           </h1>
@@ -103,7 +103,7 @@ function HeroGreeting({
         </div>
         <div className="shrink-0 flex items-center gap-2 text-xs text-muted-foreground">
           <span className="hidden sm:inline font-medium">{dateStr}</span>
-          {syncedTime && <span className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-slate-900/60 backdrop-blur rounded-full px-2.5 py-1 border border-border/70">
+          {syncedTime && <span className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-card backdrop-blur rounded-full px-2.5 py-1 border border-border/70">
               <LiveDot />
               <span className="font-semibold">{t("pages.dashboard.live")} {syncedTime}</span>
             </span>}
@@ -137,7 +137,7 @@ function ChildrenStrip({
   } = useTranslation();
   if (children.length === 0) return null;
   return <div>
-      <SectionLabel action={<Link href="/children" className="text-[11px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700">
+      <SectionLabel action={<Link href="/children" className="text-[11px] font-bold text-primary dark:text-primary hover:text-primary">
             {t("common.manage")} →
           </Link>}>
         {t("dashboard.your_little_ones")}
@@ -151,11 +151,11 @@ function ChildrenStrip({
         const group = getAgeGroup(c.age, ageMonths);
         const info = getAgeGroupInfo(group);
         return <Link key={c.id} href={`/children/${c.id}`}>
-              <div className="relative shrink-0 snap-start min-w-[160px] sm:min-w-[175px] rounded-2xl border border-border bg-card p-3.5 overflow-hidden transition-all hover:scale-[1.02] hover:border-violet-300 dark:hover:border-violet-500/50 hover:shadow-sm cursor-pointer" style={{
+              <div className="relative shrink-0 snap-start min-w-[160px] sm:min-w-[175px] rounded-2xl border border-border bg-card p-3.5 overflow-hidden transition-all hover:scale-[1.02] hover:border-border dark:hover:border-primary hover:shadow-sm cursor-pointer" style={{
             animationDelay: `${i * 80}ms`
           }}>
                 <div className="flex items-center gap-2.5">
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-violet-50 dark:bg-violet-500/15 border border-violet-100 dark:border-violet-400/20">
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-muted dark:bg-primary border border-border dark:border-border">
                     {info.emoji}
                   </div>
                   <div className="min-w-0">
@@ -170,7 +170,7 @@ function ChildrenStrip({
             </Link>;
       })}
         <Link href="/children/new">
-          <div className="shrink-0 snap-start min-w-[110px] rounded-2xl border border-dashed border-border p-3.5 flex items-center justify-center text-center hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-500/5 transition-all cursor-pointer">
+          <div className="shrink-0 snap-start min-w-[110px] rounded-2xl border border-dashed border-border p-3.5 flex items-center justify-center text-center hover:border-border hover:bg-muted dark:hover:bg-primary transition-all cursor-pointer">
             <div>
               <div className="text-xl mb-1">➕</div>
               <p className="text-xs font-bold text-muted-foreground">{t("pages.dashboard.add_child")}</p>
@@ -187,8 +187,8 @@ function LiveDot() {
     t
   } = useTranslation();
   return <span className="relative inline-flex items-center h-2 w-2" aria-label={t("pages.dashboard.live_data")}>
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-muted opacity-75" />
+      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
     </span>;
 }
 
@@ -210,7 +210,7 @@ function NowNextTimeline({
           <p className="font-bold text-foreground">{t("pages.dashboard.no_plan_for_today_yet")}</p>
           <p className="text-xs text-muted-foreground">{t("pages.dashboard.create_today_s_routine_in_one_tap")}</p>
           <Link href="/routines/generate">
-            <button className="mt-1 inline-flex items-center gap-2 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm px-5 py-2.5 transition-colors">
+            <button className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary text-white font-bold text-sm px-5 py-2.5 transition-colors">
               <Sparkles className="h-4 w-4" />
               {t("pages.dashboard.plan_my_child_s_day")}
             </button>
@@ -247,11 +247,11 @@ function NowNextTimeline({
   return <Card className="rounded-2xl border border-border bg-card overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-violet-500" />
+          <Clock className="h-4 w-4 text-primary" />
           <span className="font-quicksand font-bold text-sm text-foreground">{t("pages.dashboard.today_s_timeline")}</span>
           <LiveDot />
         </div>
-        <Link href="/routines" className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 flex items-center gap-0.5">
+        <Link href="/routines" className="text-xs font-bold text-primary dark:text-primary hover:text-primary flex items-center gap-0.5">
           {t("pages.dashboard.view_all")} <ArrowRight className="h-3 w-3 ml-0.5" />
         </Link>
       </div>
@@ -264,11 +264,11 @@ function NowNextTimeline({
         const isNext = idx === (currentIdx >= 0 ? 1 : 0);
         const completed = item.status === "completed";
         return <Link key={`${item.routineId}-${idx}`} href={`/routines/${item.routineId}`}>
-              <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-violet-600 text-white" : "bg-muted/50 hover:bg-muted"}`}>
+              <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-primary text-white" : "bg-muted/50 hover:bg-muted"}`}>
                 <div className={`flex flex-col items-center w-14 shrink-0 ${isCurrent ? "text-white" : "text-muted-foreground"}`}>
                   <div className="text-xs font-bold">{item.time}</div>
                   {isCurrent && <span className="mt-1 text-[9px] font-black uppercase bg-white/25 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.now")}</span>}
-                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-300 px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
+                  {!isCurrent && isNext && <span className="mt-1 text-[9px] font-black uppercase bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-1.5 py-0.5 rounded-full">{t("pages.dashboard.next")}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={`font-bold text-sm ${isCurrent ? "text-white" : "text-foreground"} ${completed ? "line-through opacity-60" : ""}`} style={{
@@ -277,15 +277,15 @@ function NowNextTimeline({
               }}>
                     {item.activity}
                   </div>
-                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-violet-100" : "text-muted-foreground"}`}>
+                  <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap ${isCurrent ? "text-muted-foreground" : "text-muted-foreground"}`}>
                     <span>{item.childName} · {item.duration}m</span>
-                    {item.ageBand && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-sky-700 bg-sky-50 border-sky-200"}`}>
+                    {item.ageBand && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold rounded-full px-1.5 py-0.5 border ${isCurrent ? "bg-white/20 text-white border-white/30" : "text-primary bg-muted border-border"}`}>
                         <Users className="h-2.5 w-2.5" />
                         {t("pages.dashboard.ages")} {item.ageBand.replace("-", "–")}
                       </span>}
                   </div>
                 </div>
-                {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
+                {completed && !isCurrent && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
               </div>
             </Link>;
       })}
@@ -303,7 +303,7 @@ function StreakCard({
     t
   } = useTranslation();
   return <Link href="/progress">
-      <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card hover:border-violet-300 dark:hover:border-violet-500/40 hover:shadow-sm transition-all cursor-pointer group">
+      <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card hover:border-border dark:hover:border-primary hover:shadow-sm transition-all cursor-pointer group">
         <div className={`text-2xl ${streak === 0 ? "grayscale opacity-40" : ""}`}>🔥</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5">
@@ -315,7 +315,7 @@ function StreakCard({
           </p>
         </div>
         <div className="shrink-0">
-          {streak > 0 && <span className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/15 border border-violet-100 dark:border-violet-400/20 px-2 py-0.5 rounded-full">
+          {streak > 0 && <span className="text-xs font-bold text-primary dark:text-primary bg-muted dark:bg-primary border border-border dark:border-border px-2 py-0.5 rounded-full">
               {streak >= 7 ? "🏆 Epic" : streak >= 3 ? "🔥 Hot" : "✨ Active"}
             </span>}
         </div>
@@ -338,7 +338,7 @@ function StatTile({
   return <div className="flex flex-col gap-2 p-3.5 rounded-xl border border-border bg-card">
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
-        <span className="text-violet-500 dark:text-violet-400">{icon}</span>
+        <span className="text-primary dark:text-primary">{icon}</span>
       </div>
       <div>
         <div className="text-2xl font-black text-foreground leading-none">{value}</div>
@@ -430,13 +430,13 @@ function AmySuggestionCard({
     });
   }
   const display = suggestions.slice(0, 2);
-  return <div className="rounded-2xl border border-violet-100 dark:border-violet-400/20 bg-violet-50/50 dark:bg-violet-500/8 overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-violet-100 dark:border-violet-400/15">
+  return <div className="rounded-2xl border border-border dark:border-border bg-muted dark:bg-primary overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border dark:border-border">
         <AmyIcon size={18} bounce />
         <span className="font-quicksand font-bold text-sm text-foreground">{t("pages.dashboard.amy_ai_suggests")}</span>
       </div>
       <div className="p-3 space-y-2">
-        {display.map((s, i) => <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-slate-900/60 border border-border text-sm">
+        {display.map((s, i) => <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-card border border-border text-sm">
             <span className="text-base shrink-0 mt-0.5">{s.emoji}</span>
             <p className="leading-snug text-foreground/85">{s.text}</p>
           </div>)}
@@ -467,13 +467,13 @@ function ParentScoreCard({
   const percentile = score >= 80 ? 90 : score >= 60 ? 70 : score >= 40 ? 50 : score >= 20 ? 30 : 15;
   return <div className="rounded-2xl border border-border bg-card overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-        <Trophy className="h-4 w-4 text-violet-500" />
+        <Trophy className="h-4 w-4 text-primary" />
         <span className="font-quicksand font-bold text-sm text-foreground">{t("pages.dashboard.parent_score")}</span>
       </div>
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-2xl bg-violet-50 dark:bg-violet-500/15 border border-violet-100 dark:border-violet-400/20 flex items-center justify-center shrink-0">
-            <span className="font-black text-2xl text-violet-600 dark:text-violet-400">{grade}</span>
+          <div className="h-14 w-14 rounded-2xl bg-muted dark:bg-primary border border-border dark:border-border flex items-center justify-center shrink-0">
+            <span className="font-black text-2xl text-primary dark:text-primary">{grade}</span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-1.5">
@@ -489,7 +489,7 @@ function ParentScoreCard({
             <span className="font-bold text-foreground">{completionRate}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-1.5">
-            <div className="bg-violet-500 h-1.5 rounded-full transition-all" style={{
+            <div className="bg-primary h-1.5 rounded-full transition-all" style={{
             width: `${completionRate}%`
           }} />
           </div>
@@ -498,7 +498,7 @@ function ParentScoreCard({
             <span className="font-bold text-foreground">{daysActive}/7</span>
           </div>
           <div className="w-full bg-muted rounded-full h-1.5">
-            <div className="bg-violet-400 h-1.5 rounded-full transition-all" style={{
+            <div className="bg-muted h-1.5 rounded-full transition-all" style={{
             width: `${daysActive / 7 * 100}%`
           }} />
           </div>
@@ -543,24 +543,24 @@ function RewardsCard({
       <CardHeader className="pb-3 border-b border-border/50">
         <div className="flex items-center justify-between">
           <CardTitle className="font-quicksand text-base flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-violet-600" />
+            <Trophy className="h-4 w-4 text-primary" />
             {t("pages.dashboard.rewards_points")}
           </CardTitle>
-          <div className="flex items-center gap-1.5 bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 rounded-full px-3 py-1 border border-violet-100 dark:border-violet-400/20">
-            <Star className="h-3.5 w-3.5 fill-violet-500" />
+          <div className="flex items-center gap-1.5 bg-muted dark:bg-primary text-primary dark:text-muted-foreground rounded-full px-3 py-1 border border-border dark:border-border">
+            <Star className="h-3.5 w-3.5 fill-primary" />
             <span className="font-black text-sm">{points}</span>
             <span className="text-xs font-medium">{t("pages.dashboard.pts")}</span>
           </div>
         </div>
       </CardHeader>
       <CardContent className="p-4 space-y-4">
-        {redeemMsg && <div className="text-sm font-medium text-center py-1.5 px-3 bg-green-50 dark:bg-green-500/15 border border-green-200 dark:border-green-400/30 rounded-xl text-green-800 dark:text-green-200">
+        {redeemMsg && <div className="text-sm font-medium text-center py-1.5 px-3 bg-muted dark:bg-primary border border-border dark:border-border rounded-xl text-primary dark:text-muted-foreground">
             {redeemMsg}
           </div>}
         {badges.length > 0 && <div>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">{t("pages.dashboard.badges_earned")}</p>
             <div className="flex flex-wrap gap-2">
-              {badges.map(b => <div key={b.id} className="flex items-center gap-1.5 bg-violet-50 dark:bg-violet-500/15 border border-violet-100 dark:border-violet-400/20 rounded-full px-2.5 py-1 text-xs font-bold text-violet-700 dark:text-violet-300">
+              {badges.map(b => <div key={b.id} className="flex items-center gap-1.5 bg-muted dark:bg-primary border border-border dark:border-border rounded-full px-2.5 py-1 text-xs font-bold text-primary dark:text-muted-foreground">
                   {b.emoji} {b.label}
                 </div>)}
             </div>
@@ -581,7 +581,7 @@ function RewardsCard({
                     <p className="text-xs text-muted-foreground">{r.cost} {t("pages.dashboard.pts_2")}</p>
                   </div>
                 </div>
-                <button onClick={() => handleRedeem(r)} className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${points >= r.cost ? "bg-violet-600 text-white hover:bg-violet-700" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
+                <button onClick={() => handleRedeem(r)} className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${points >= r.cost ? "bg-primary text-white hover:bg-primary" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
                   {t("pages.dashboard.redeem")}
                 </button>
               </div>;
@@ -606,39 +606,39 @@ function OnboardingScreen({
     emoji: "🧠",
     label: "Amy AI Routine Generator",
     desc: "Smart daily schedules tailored to your child's age and needs.",
-    color: "from-violet-500 to-indigo-500",
-    bg: "bg-violet-50 dark:bg-violet-500/10 border-violet-100 dark:border-violet-400/20"
+    color: "from-primary to-primary",
+    bg: "bg-muted dark:bg-primary border-border dark:border-border"
   }, {
     icon: <TrendingUp className="h-5 w-5" />,
     emoji: "📊",
     label: "Progress Tracking",
     desc: "Monitor growth, streaks, and milestones in one beautiful view.",
-    color: "from-violet-500 to-indigo-500",
-    bg: "bg-violet-50 dark:bg-violet-500/10 border-violet-100 dark:border-violet-400/20"
+    color: "from-primary to-primary",
+    bg: "bg-muted dark:bg-primary border-border dark:border-border"
   }, {
     icon: <Target className="h-5 w-5" />,
     emoji: "🎯",
     label: "Daily Activities",
     desc: "Age-based activities that build skills while keeping kids engaged.",
-    color: "from-violet-500 to-indigo-500",
-    bg: "bg-violet-50 dark:bg-violet-500/10 border-violet-100 dark:border-violet-400/20"
+    color: "from-primary to-primary",
+    bg: "bg-muted dark:bg-primary border-border dark:border-border"
   }, {
     icon: <Star className="h-5 w-5" />,
     emoji: "🧩",
     label: "Learning & Puzzles",
     desc: "Adaptive daily puzzles that grow harder as your child levels up.",
-    color: "from-violet-500 to-indigo-500",
-    bg: "bg-violet-50 dark:bg-violet-500/10 border-violet-100 dark:border-violet-400/20"
+    color: "from-primary to-primary",
+    bg: "bg-muted dark:bg-primary border-border dark:border-border"
   }, {
     icon: <Heart className="h-5 w-5" />,
     emoji: "❤️",
     label: "Parenting Tips",
     desc: "Expert-curated tips, sleep guides, and milestone insights.",
-    color: "from-violet-500 to-indigo-500",
-    bg: "bg-violet-50 dark:bg-violet-500/10 border-violet-100 dark:border-violet-400/20"
+    color: "from-primary to-primary",
+    bg: "bg-muted dark:bg-primary border-border dark:border-border"
   }];
   return <div className="min-h-[80vh] flex flex-col items-center justify-start animate-in fade-in duration-500">
-      <div data-on-dark className="w-full rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-violet-700 p-8 mb-8 text-white text-center relative overflow-hidden shadow-xl">
+      <div data-on-dark className="w-full rounded-3xl bg-gradient-to-br from-primary via-primary to-primary p-8 mb-8 text-white text-center relative overflow-hidden shadow-xl">
         <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/10 -translate-y-12 translate-x-12 blur-sm" />
         <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-white/10 translate-y-10 -translate-x-10 blur-sm" />
         <div className="relative z-10 flex justify-center mb-5">
@@ -646,27 +646,27 @@ function OnboardingScreen({
             <ellipse cx="80" cy="128" rx="55" ry="8" fill="white" fillOpacity="0.15" />
             <rect x="42" y="68" width="26" height="48" rx="13" fill="white" fillOpacity="0.9" />
             <circle cx="55" cy="55" r="18" fill="white" fillOpacity="0.95" />
-            <circle cx="49" cy="53" r="2.5" fill="#6366F1" />
-            <circle cx="61" cy="53" r="2.5" fill="#6366F1" />
-            <path d="M49 60 Q55 65 61 60" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <circle cx="49" cy="53" r="2.5" fill="hsl(var(--brand-indigo-500))" />
+            <circle cx="61" cy="53" r="2.5" fill="hsl(var(--brand-indigo-500))" />
+            <path d="M49 60 Q55 65 61 60" stroke="hsl(var(--brand-indigo-500))" strokeWidth="2" strokeLinecap="round" fill="none" />
             <path d="M68 82 Q88 72 96 78" stroke="white" strokeOpacity="0.9" strokeWidth="10" strokeLinecap="round" />
             <rect x="90" y="88" width="22" height="36" rx="11" fill="white" fillOpacity="0.85" />
             <circle cx="101" cy="76" r="14" fill="white" fillOpacity="0.95" />
-            <circle cx="96.5" cy="74" r="2" fill="#EC4899" />
-            <circle cx="105.5" cy="74" r="2" fill="#EC4899" />
-            <path d="M97 80 Q101 84 105 80" stroke="#EC4899" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+            <circle cx="96.5" cy="74" r="2" fill="hsl(var(--brand-pink-500))" />
+            <circle cx="105.5" cy="74" r="2" fill="hsl(var(--brand-pink-500))" />
+            <path d="M97 80 Q101 84 105 80" stroke="hsl(var(--brand-pink-500))" strokeWidth="1.8" strokeLinecap="round" fill="none" />
             <text x="22" y="42" fontSize="16" fill="white" fillOpacity="0.7">✨</text>
             <text x="120" y="50" fontSize="12" fill="white" fillOpacity="0.6">⭐</text>
             <text x="118" y="100" fontSize="10" fill="white" fillOpacity="0.5">🌟</text>
           </svg>
         </div>
         <div className="relative z-10 space-y-2">
-          <p className="text-violet-200 text-sm font-semibold uppercase tracking-widest">{t("pages.dashboard.meet_amy_ai")}</p>
+          <p className="text-muted-foreground text-sm font-semibold uppercase tracking-widest">{t("pages.dashboard.meet_amy_ai")}</p>
           <h1 className="text-3xl font-black leading-tight">
             👋 Hi{displayName ? `, ${displayName}` : ""} 😊
           </h1>
-          <p className="text-violet-100 text-lg font-medium">{t("pages.dashboard.i_m_amy_your_smart_parenting_partner")}</p>
-          <p className="text-violet-200/90 text-sm max-w-xs mx-auto leading-relaxed mt-1">
+          <p className="text-muted-foreground text-lg font-medium">{t("pages.dashboard.i_m_amy_your_smart_parenting_partner")}</p>
+          <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed mt-1">
             {t("pages.dashboard.create_personalised_routines_track_progress_and_make_parenti")}
           </p>
         </div>
@@ -694,13 +694,13 @@ function OnboardingScreen({
       </div>
       <div className="w-full space-y-3">
         <Link href="/amy-coach">
-          <button className="w-full h-14 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-black text-base shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+          <button className="w-full h-14 rounded-2xl bg-primary hover:bg-primary text-white font-black text-base shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
             <Sparkles className="h-5 w-5" />
             {t("pages.dashboard.experience_now")}
           </button>
         </Link>
         <Link href="/parenting-hub">
-          <button className="w-full h-12 rounded-2xl border-2 border-border bg-background text-foreground font-bold text-sm hover:bg-muted/50 hover:border-violet-400/40 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+          <button className="w-full h-12 rounded-2xl border-2 border-border bg-background text-foreground font-bold text-sm hover:bg-muted/50 hover:border-border active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
             <BookOpenIcon />
             {t("pages.dashboard.explore_parenting_hub")}
           </button>
@@ -866,12 +866,12 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-violet-500" />
+                  <Calendar className="h-5 w-5 text-primary" />
                   {t("pages.dashboard.recent_routines")}
                 </CardTitle>
                 <CardDescription>{t("pages.dashboard.latest_generated_schedules")}</CardDescription>
               </div>
-              <Link href="/routines" className="text-sm font-medium text-violet-600 dark:text-violet-400 hover:underline flex items-center">
+              <Link href="/routines" className="text-sm font-medium text-primary dark:text-primary hover:underline flex items-center">
                 {t("pages.dashboard.view_all_2")} <ArrowRight className="h-4 w-4 ml-1" />
               </Link>
             </div>
@@ -888,9 +888,9 @@ export default function Dashboard() {
               return <Link key={routine.id} href={`/routines/${routine.id}`} className="block hover:bg-muted/30 transition-colors p-4 group">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors truncate">{routine.title}</h4>
+                          <h4 className="font-bold text-foreground group-hover:text-primary dark:group-hover:text-primary transition-colors truncate">{routine.title}</h4>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                            <span className="inline-flex items-center justify-center rounded-full bg-violet-50 dark:bg-violet-500/15 px-2 py-0.5 text-xs font-medium text-violet-700 dark:text-violet-300 border border-violet-100 dark:border-violet-400/20">
+                            <span className="inline-flex items-center justify-center rounded-full bg-muted dark:bg-primary px-2 py-0.5 text-xs font-medium text-primary dark:text-muted-foreground border border-border dark:border-border">
                               {routine.childName}
                             </span>
                             <span>{new Date(routine.date).toLocaleDateString(undefined, {
@@ -905,7 +905,7 @@ export default function Dashboard() {
                               <div className="text-xs font-bold text-foreground">{pct}%</div>
                               <div className="text-[10px] text-muted-foreground">{done}/{items.length}</div>
                             </div>}
-                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-violet-500 opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0" />
+                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0" />
                         </div>
                       </div>
                     </Link>;
@@ -913,7 +913,7 @@ export default function Dashboard() {
               </div> : <div className="p-8 text-center flex flex-col items-center justify-center text-muted-foreground h-full min-h-[200px]">
                 <Calendar className="h-10 w-10 text-muted-foreground/30 mb-3" />
                 <p>{t("pages.dashboard.no_routines_created_yet")}</p>
-                <Link href="/routines/generate" className="mt-4 text-violet-600 dark:text-violet-400 font-medium hover:underline">
+                <Link href="/routines/generate" className="mt-4 text-primary dark:text-primary font-medium hover:underline">
                   {t("pages.dashboard.create_your_first_routine")}
                 </Link>
               </div>}
@@ -926,12 +926,12 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="font-quicksand text-lg flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-violet-500" />
+                  <Activity className="h-5 w-5 text-primary" />
                   {t("pages.dashboard.behavior_highlights")}
                 </CardTitle>
                 <CardDescription>{t("pages.dashboard.overall_stats_by_child")}</CardDescription>
               </div>
-              <Link href="/behavior" className="text-sm font-medium text-violet-600 dark:text-violet-400 hover:underline flex items-center">
+              <Link href="/behavior" className="text-sm font-medium text-primary dark:text-primary hover:underline flex items-center">
                 {t("pages.dashboard.log_behavior")} <ArrowRight className="h-4 w-4 ml-1" />
               </Link>
             </div>
@@ -944,11 +944,11 @@ export default function Dashboard() {
                 {stats.map(stat => <div key={stat.childId} className="p-4">
                     <h4 className="font-bold text-foreground mb-3">{stat.childName}</h4>
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1.5 flex-1 bg-violet-50 dark:bg-violet-500/10 rounded-lg p-2 border border-violet-100 dark:border-violet-400/15">
-                        <div className="bg-violet-100 dark:bg-violet-500/20 p-1 rounded-md text-violet-600 dark:text-violet-400">
+                      <div className="flex items-center gap-1.5 flex-1 bg-muted dark:bg-primary rounded-lg p-2 border border-border dark:border-border">
+                        <div className="bg-muted dark:bg-primary p-1 rounded-md text-primary dark:text-primary">
                           <TrendingUp className="h-3.5 w-3.5" />
                         </div>
-                        <span className="font-bold text-violet-700 dark:text-violet-300">{stat.positive}</span>
+                        <span className="font-bold text-primary dark:text-muted-foreground">{stat.positive}</span>
                       </div>
                       <div className="flex items-center gap-1.5 flex-1 bg-destructive/10 rounded-lg p-2">
                         <div className="bg-destructive/20 p-1 rounded-md text-destructive">
@@ -967,7 +967,7 @@ export default function Dashboard() {
               </div> : <div className="p-8 text-center flex flex-col items-center justify-center text-muted-foreground h-full min-h-[200px]">
                 <Star className="h-10 w-10 text-muted-foreground/30 mb-3" />
                 <p>{t("pages.dashboard.no_behavior_logged_yet")}</p>
-                <Link href="/behavior" className="mt-4 text-violet-600 dark:text-violet-400 font-medium hover:underline">
+                <Link href="/behavior" className="mt-4 text-primary dark:text-primary font-medium hover:underline">
                   {t("pages.dashboard.track_a_behavior")}
                 </Link>
               </div>}
@@ -980,8 +980,8 @@ export default function Dashboard() {
 
       {/* ── Gaming Reward ─────────────────────────────────────────── */}
       <Link href="/games">
-        <button type="button" className="w-full text-left rounded-2xl p-4 border border-border hover:border-violet-300 dark:hover:border-violet-400/40 bg-card hover:bg-violet-50/40 dark:hover:bg-violet-500/8 hover:shadow-sm transition-all flex items-center gap-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-xl bg-violet-50 dark:bg-violet-500/15 border border-violet-100 dark:border-violet-400/20">
+        <button type="button" className="w-full text-left rounded-2xl p-4 border border-border hover:border-border dark:hover:border-border bg-card hover:bg-muted dark:hover:bg-primary hover:shadow-sm transition-all flex items-center gap-4">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 text-xl bg-muted dark:bg-primary border border-border dark:border-border">
             🎮
           </div>
           <div className="flex-1 min-w-0">
@@ -995,7 +995,7 @@ export default function Dashboard() {
       </Link>
 
       {/* ── Primary CTA ──────────────────────────────────────────── */}
-      <button type="button" onClick={handleGenerateRoutine} data-testid="dashboard-generate-routine-btn" className="w-full h-14 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-black text-base shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2">
+      <button type="button" onClick={handleGenerateRoutine} data-testid="dashboard-generate-routine-btn" className="w-full h-14 rounded-2xl bg-primary hover:bg-primary text-white font-black text-base shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2">
         <Sparkles className="h-5 w-5" />
         {t("pages.dashboard.generate_today_s_routine")}
       </button>

@@ -208,7 +208,7 @@ export class ReactInstanceRecovery extends Component<
             style={{
               padding: "12px 24px",
               borderRadius: 9999,
-              background: "linear-gradient(135deg,#a855f7,#ec4899)",
+              background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
               color: "#fff",
               fontWeight: 600,
               border: 0,

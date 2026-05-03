@@ -73,11 +73,11 @@ export default function SchoolMorningFlowPage() {
           </Button>
           <div className="min-w-0">
             <h1 className="font-quicksand text-2xl font-bold text-foreground flex items-center gap-2">
-              <Sunrise className="h-6 w-6 text-orange-500" />
+              <Sunrise className="h-6 w-6 text-foreground" />
               {t("screens.school_morning_flow.header_title")}
             </h1>
             <p className="text-sm text-muted-foreground truncate inline-flex items-center gap-1.5">
-              <Heart className="h-3.5 w-3.5 text-pink-500" /> {AMY_ENCOURAGEMENT}
+              <Heart className="h-3.5 w-3.5 text-foreground" /> {AMY_ENCOURAGEMENT}
             </p>
           </div>
         </div>
@@ -90,18 +90,18 @@ export default function SchoolMorningFlowPage() {
 
       {/* Amy delay nudge */}
       {delay.showAmyNudge && (
-        <Card className="rounded-2xl border-amber-300/70 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40">
+        <Card className="rounded-2xl border-border bg-card">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <div className="h-9 w-9 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+              <div className="h-9 w-9 rounded-full bg-primary text-foreground flex items-center justify-center shrink-0">
                 <Zap className="h-4 w-4" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-quicksand font-bold text-foreground text-sm">{AMY_NUDGE_TITLE}</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {AMY_NUDGE_BODY} <span className="font-semibold text-amber-700 dark:text-amber-300">{t("screens.school_morning_flow.minutes_behind", { count: delay.delayMinutes })}</span>
+                  {AMY_NUDGE_BODY} <span className="font-semibold text-foreground">{t("screens.school_morning_flow.minutes_behind", { count: delay.delayMinutes })}</span>
                 </div>
-                <Button size="sm" className="mt-3 rounded-full bg-amber-600 hover:bg-amber-700 text-white" onClick={acceptSimplify}>
+                <Button size="sm" className="mt-3 rounded-full bg-primary hover:bg-primary text-primary-foreground" onClick={acceptSimplify}>
                   <Sparkles className="h-3.5 w-3.5 mr-1" /> {t("screens.school_morning_flow.simplify_rest")}
                 </Button>
               </div>
@@ -116,14 +116,14 @@ export default function SchoolMorningFlowPage() {
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
               <h2 className="font-quicksand text-lg font-bold text-foreground inline-flex items-center gap-2">
-                <Sunrise className="h-5 w-5 text-orange-500" /> {t("screens.school_morning_flow.morning_flow_title")}
+                <Sunrise className="h-5 w-5 text-foreground" /> {t("screens.school_morning_flow.morning_flow_title")}
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {t("screens.school_morning_flow.steps_summary", { count: STEPS.length, minutes: planned })}
               </p>
             </div>
             {!state.startedAt && (
-              <Button className="rounded-full bg-orange-600 hover:bg-orange-700 text-white" onClick={startMorning}>
+              <Button className="rounded-full bg-primary hover:bg-primary text-primary-foreground" onClick={startMorning}>
                 <Play className="h-4 w-4 mr-1" /> {t("screens.school_morning_flow.start_morning")}
               </Button>
             )}
@@ -161,7 +161,7 @@ export default function SchoolMorningFlowPage() {
           </div>
 
           {summary.doneCount + summary.skippedCount === STEPS.length && (
-            <div className="mt-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200/70 dark:border-green-500/30 p-3 text-sm text-foreground">
+            <div className="mt-4 rounded-xl bg-muted border border-border p-3 text-sm text-foreground">
               <span className="font-quicksand font-bold">{t("screens.school_morning_flow.all_done")}</span> {summary.skippedCount > 0 ? t("screens.school_morning_flow.skipped_message", { count: summary.skippedCount }) : t("screens.school_morning_flow.smooth_morning")} {t("screens.school_morning_flow.have_great_day")}
             </div>
           )}
@@ -174,7 +174,7 @@ export default function SchoolMorningFlowPage() {
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
               <h2 className="font-quicksand text-lg font-bold text-foreground inline-flex items-center gap-2">
-                <Moon className="h-5 w-5 text-indigo-500" /> {t("screens.school_morning_flow.prepare_tomorrow_title")}
+                <Moon className="h-5 w-5 text-foreground" /> {t("screens.school_morning_flow.prepare_tomorrow_title")}
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {t("screens.school_morning_flow.prepare_subtitle", { done: night.done, total: night.total })}
@@ -191,14 +191,14 @@ export default function SchoolMorningFlowPage() {
                   className={[
                     "flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-all",
                     checked
-                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10"
-                      : "border-border bg-white dark:bg-zinc-900 hover:border-indigo-300",
+                      ? "border-primary bg-muted"
+                      : "border-border bg-card hover:border-border",
                   ].join(" ")}
                 >
                   <span className="text-xl">{item.emoji}</span>
                   <span className="flex-1 font-medium text-sm text-foreground">{item.label}</span>
                   {checked
-                    ? <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                    ? <CheckCircle2 className="h-5 w-5 text-foreground" />
                     : <span className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />}
                 </button>
               );
@@ -209,8 +209,8 @@ export default function SchoolMorningFlowPage() {
 
       {/* Link out to full routines feature */}
       <div className="text-center text-xs text-muted-foreground">
-        {t("screens.school_morning_flow.need_detailed")}{" "}
-        <Link href="/routines" className="text-orange-600 hover:underline font-medium">{t("screens.school_morning_flow.open_routines")}</Link>
+        {t("screens.school_morning_flow.need_detailed")}{""}
+        <Link href="/routines" className="text-foreground hover:underline font-medium">{t("screens.school_morning_flow.open_routines")}</Link>
       </div>
     </div>
   );
@@ -234,11 +234,11 @@ function StepRow({
   return (
     <div className={[
       "flex items-center gap-3 rounded-xl border-2 p-3 transition-colors",
-      done ? "border-green-400 bg-green-50/60 dark:bg-green-500/10" :
-      skipped ? "border-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 opacity-70" :
-      "border-border bg-white dark:bg-zinc-900",
+      done ? "border-primary bg-muted" :
+      skipped ? "border-border bg-muted opacity-70" :
+      "border-border bg-card",
     ].join(" ")}>
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 text-xs font-bold shrink-0">
+      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-foreground text-xs font-bold shrink-0">
         {index}
       </div>
       <div className="text-2xl">{step.emoji}</div>
@@ -249,7 +249,7 @@ function StepRow({
         ].filter(Boolean).join(" ")}>{step.title}</div>
         <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
           <Clock className="h-3 w-3" /> {t("screens.school_morning_flow.approx_minutes", { count: step.defaultMinutes })}
-          {!step.essential && <span className="ml-1 px-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-[10px]">{t("screens.school_morning_flow.optional")}</span>}
+          {!step.essential && <span className="ml-1 px-1.5 rounded-full bg-muted text-[10px]">{t("screens.school_morning_flow.optional")}</span>}
         </div>
       </div>
       {status === "pending" ? (
@@ -257,7 +257,7 @@ function StepRow({
           <Button size="sm" variant="outline" className="rounded-full h-8 px-3" onClick={onSkip}>
             <XCircle className="h-3.5 w-3.5 mr-1" /> {t("screens.school_morning_flow.skip")}
           </Button>
-          <Button size="sm" className="rounded-full h-8 px-3 bg-green-600 hover:bg-green-700 text-white" onClick={onDone}>
+          <Button size="sm" className="rounded-full h-8 px-3 bg-primary hover:bg-primary text-primary-foreground" onClick={onDone}>
             <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> {t("screens.school_morning_flow.done")}
           </Button>
         </div>

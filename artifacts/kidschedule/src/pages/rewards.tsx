@@ -12,9 +12,9 @@ function PointsBurst({ points }: { points: number }) {
   const { t } = useTranslation();
   return (
     <div className="relative flex flex-col items-center justify-center py-8">
-      <div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.4)]">
-        <span className="text-3xl font-extrabold text-white leading-none">{points}</span>
-        <span className="text-xs font-bold text-white/80 uppercase tracking-wider mt-0.5">{t("screens.rewards.stars_label")}</span>
+      <div className="w-28 h-28 rounded-full bg-card flex flex-col items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.4)]">
+        <span className="text-3xl font-extrabold text-primary-foreground leading-none">{points}</span>
+        <span className="text-xs font-bold text-primary-foreground uppercase tracking-wider mt-0.5">{t("screens.rewards.stars_label")}</span>
       </div>
     </div>
   );
@@ -80,11 +80,11 @@ export default function RewardsPage() {
         </div>
 
         {/* Points burst */}
-        <Card data-on-dark className="rounded-3xl overflow-hidden bg-gradient-to-br from-violet-600 to-pink-600 border-0">
+        <Card data-on-dark className="rounded-3xl overflow-hidden bg-card border-0">
           <CardContent className="p-0">
             <PointsBurst points={points} />
             <div className="text-center pb-5">
-              <p className="text-white/80 text-sm font-semibold">{t("screens.rewards.earn_caption")}</p>
+              <p className="text-primary-foreground text-sm font-semibold">{t("screens.rewards.earn_caption")}</p>
             </div>
           </CardContent>
         </Card>
@@ -118,14 +118,14 @@ export default function RewardsPage() {
               return (
                 <Card key={reward.id} className="rounded-2xl">
                   <CardContent className="p-4 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-2xl shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-2xl shrink-0">
                       {reward.emoji}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-foreground truncate">{reward.label}</p>
                       <div className="flex items-center gap-1 mt-0.5">
-                        <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400">{t("screens.rewards.cost_stars", { count: reward.cost })}</span>
+                        <Star className="h-3 w-3 text-foreground fill-primary" />
+                        <span className="text-xs font-bold text-foreground">{t("screens.rewards.cost_stars", { count: reward.cost })}</span>
                       </div>
                     </div>
                     <button
@@ -133,7 +133,7 @@ export default function RewardsPage() {
                       disabled={!canAfford || redeemingId === reward.id}
                       className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shrink-0 ${
                         canAfford
-                          ? "bg-gradient-to-r from-violet-500 to-pink-500 text-white hover:opacity-90 active:scale-95"
+                          ? "bg-card text-primary-foreground hover:opacity-90 active:scale-95"
                           : "bg-muted text-muted-foreground cursor-not-allowed"
                       }`}
                     >
@@ -187,7 +187,7 @@ export default function RewardsPage() {
                       <p className="text-sm font-semibold text-foreground">{r.rewardLabel}</p>
                       <p className="text-xs text-muted-foreground">{new Date(r.date).toLocaleDateString()}</p>
                     </div>
-                    <span className="text-xs font-bold text-rose-500">-{r.cost} ⭐</span>
+                    <span className="text-xs font-bold text-foreground">-{r.cost} ⭐</span>
                   </div>
                 ))}
               </div>
@@ -203,7 +203,7 @@ export default function RewardsPage() {
                       <p className="text-sm font-semibold text-foreground">{entry.activity}</p>
                       <p className="text-xs text-muted-foreground">{entry.childName} · {new Date(entry.date).toLocaleDateString()}</p>
                     </div>
-                    <span className="text-xs font-bold text-emerald-500">+{entry.points}</span>
+                    <span className="text-xs font-bold text-foreground">+{entry.points}</span>
                   </div>
                 ))}
               </div>

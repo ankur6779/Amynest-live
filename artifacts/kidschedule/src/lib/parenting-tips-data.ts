@@ -13,10 +13,10 @@ export const CATEGORY_META: Record<
   TipCategory,
   { emoji: string; label: { en: string; hi: string }; gradient: string; ring: string }
 > = {
-  tip:      { emoji: "💡", label: { en: "Today's Tip",     hi: "आज की सलाह"     }, gradient: "from-amber-50 to-yellow-50 dark:from-amber-500/15 dark:to-yellow-500/10",  ring: "ring-amber-200 dark:ring-amber-400/40"  },
-  health:   { emoji: "🩺", label: { en: "Health Tip",       hi: "स्वास्थ्य सुझाव" }, gradient: "from-emerald-50 to-teal-50 dark:from-emerald-500/15 dark:to-teal-500/10",  ring: "ring-emerald-200 dark:ring-emerald-400/40" },
-  activity: { emoji: "🎯", label: { en: "Activity",         hi: "गतिविधि"        }, gradient: "from-sky-50 to-blue-50 dark:from-sky-500/15 dark:to-blue-500/10",      ring: "ring-sky-200 dark:ring-sky-400/40"     },
-  guidance: { emoji: "💗", label: { en: "Parent Guidance",  hi: "पेरेंट गाइडेंस"  }, gradient: "from-rose-50 to-pink-50 dark:from-rose-500/15 dark:to-pink-500/10",     ring: "ring-rose-200 dark:ring-rose-400/40"    },
+  tip:      { emoji: "💡", label: { en: "Today's Tip",     hi: "आज की सलाह"     }, gradient: "",  ring: "ring-primary"  },
+  health:   { emoji: "🩺", label: { en: "Health Tip",       hi: "स्वास्थ्य सुझाव" }, gradient: "",  ring: "ring-primary" },
+  activity: { emoji: "🎯", label: { en: "Activity",         hi: "गतिविधि"        }, gradient: "",      ring: "ring-primary"     },
+  guidance: { emoji: "💗", label: { en: "Parent Guidance",  hi: "पेरेंट गाइडेंस"  }, gradient: "",     ring: "ring-primary"    },
 };
 
 export const PARENTING_TIPS: Record<AgeGroup, Record<TipCategory, TipEntry[]>> = {

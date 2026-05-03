@@ -246,7 +246,7 @@ export function LifeSkillsZone({
   return <div className="space-y-3">
       {/* Header strip */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-        <Compass className="h-3.5 w-3.5 text-emerald-500" />
+        <Compass className="h-3.5 w-3.5 text-primary" />
         <span>{t("components.life_skills_zone.level")} <strong>{ageBandLabel(ageBand, lang)}</strong></span>
         <span>·</span>
         <span>{stats.totalPoints} {uiLabel("points", lang)}</span>
@@ -262,8 +262,8 @@ export function LifeSkillsZone({
       <div>
         <p className="font-quicksand font-bold text-sm mb-2">{uiLabel("todayTitle", lang)}</p>
         {/* Banner rule (shared with mobile): all assigned tasks settled. */}
-        {lockedTasks.length > 0 && remainingTasks.length === 0 && <Card className="bg-emerald-50/80 dark:bg-emerald-900/20 border-emerald-300">
-            <CardContent className="p-3 text-sm text-center text-emerald-900 dark:text-emerald-100">
+        {lockedTasks.length > 0 && remainingTasks.length === 0 && <Card className="bg-muted dark:bg-primary border-border">
+            <CardContent className="p-3 text-sm text-center text-primary dark:text-muted-foreground">
               ✅ {uiLabel("noneToday", lang)}
             </CardContent>
           </Card>}
@@ -280,14 +280,14 @@ export function LifeSkillsZone({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-quicksand font-bold text-sm leading-snug">{task.title[lang]}</p>
-                        {isDone && <span className="text-[10px] font-bold text-emerald-600">✓ {uiLabel("done", lang)}</span>}
-                        {isSkipped && <span className="text-[10px] font-bold text-amber-600">— {uiLabel("skipped", lang)}</span>}
+                        {isDone && <span className="text-[10px] font-bold text-primary">✓ {uiLabel("done", lang)}</span>}
+                        {isSkipped && <span className="text-[10px] font-bold text-primary">— {uiLabel("skipped", lang)}</span>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{task.description[lang]}</p>
                       <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground flex-wrap">
                         <span className="rounded-full bg-muted px-2 py-0.5">{CATEGORY_LABEL[task.category][lang]}</span>
                         <span className="rounded-full bg-muted px-2 py-0.5">{DIFFICULTY_LABEL[task.difficulty][lang]}</span>
-                        <span className="rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-2 py-0.5">
+                        <span className="rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5">
                           +{POINTS_BY_DIFFICULTY[task.difficulty]} {uiLabel("points", lang)}
                         </span>
                       </div>
@@ -295,8 +295,8 @@ export function LifeSkillsZone({
                   </div>
 
                   {/* Parent tip */}
-                  <div className="rounded-lg bg-blue-50/70 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-2 flex gap-1.5 text-xs">
-                    <Lightbulb className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-primary p-2 flex gap-1.5 text-xs">
+                    <Lightbulb className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
                     <p>
                       <span className="font-semibold">{uiLabel("parentTip", lang)}: </span>
                       {task.parentTip[lang]}
@@ -340,10 +340,10 @@ export function LifeSkillsZone({
       </Card>
 
       {/* Amy AI Insight */}
-      <Card className="border-purple-200 dark:border-purple-800">
+      <Card className="border-border dark:border-primary">
         <CardContent className="p-4">
           <div className="flex items-start gap-2">
-            <Sparkles className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+            <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <div>
               <p className="font-quicksand font-bold text-sm">{uiLabel("amyInsight", lang)}</p>
               <p className="text-xs text-muted-foreground mt-1">

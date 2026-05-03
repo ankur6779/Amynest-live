@@ -116,7 +116,7 @@ export default function AudioLessonsPage() {
       borderBottom: "1px solid rgba(139,92,246,0.2)"
     }}>
         <button onClick={() => setLocation("/amy-coach")} style={{
-        color: "#c4b5fd",
+        color: "hsl(var(--brand-violet-300))",
         background: "rgba(167,139,250,0.15)",
         borderRadius: 999,
         width: 36,
@@ -134,7 +134,7 @@ export default function AudioLessonsPage() {
         alignItems: "center",
         gap: 8
       }}>
-          <Headphones size={20} color="#c4b5fd" />
+          <Headphones size={20} color="hsl(var(--brand-violet-300))" />
           <h1 style={{
           fontFamily: "Quicksand, sans-serif",
           fontSize: 18,
@@ -177,7 +177,7 @@ export default function AudioLessonsPage() {
           padding: "9px 14px",
           borderRadius: 999,
           border: "1px solid " + (active ? "transparent" : "rgba(139,92,246,0.3)"),
-          background: active ? "linear-gradient(135deg, #8b5cf6, #ec4899)" : "rgba(255,255,255,0.06)",
+          background: active ? "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))" : "rgba(255,255,255,0.06)",
           color: "#fff",
           fontWeight: 700,
           fontSize: 13,
@@ -226,7 +226,7 @@ export default function AudioLessonsPage() {
             position: "absolute",
             top: 10,
             right: 10,
-            background: "linear-gradient(135deg, #059669, #10b981)",
+            background: "linear-gradient(135deg, hsl(var(--brand-emerald-600)), hsl(var(--brand-emerald-500)))",
             color: "#fff",
             fontSize: 10,
             fontWeight: 800,
@@ -243,7 +243,7 @@ export default function AudioLessonsPage() {
             right: 10,
             background: "rgba(251,191,36,0.15)",
             border: "1px solid rgba(251,191,36,0.5)",
-            color: "#fbbf24",
+            color: "hsl(var(--brand-amber-300))",
             fontSize: 10,
             fontWeight: 800,
             padding: "3px 8px",
@@ -328,7 +328,7 @@ export default function AudioLessonsPage() {
             flexShrink: 0,
             marginTop: 4,
             display: "none"
-          }} /> : <Volume2 size={18} color="#c4b5fd" style={{
+          }} /> : <Volume2 size={18} color="hsl(var(--brand-violet-300))" style={{
             flexShrink: 0,
             marginTop: 4
           }} />}
@@ -481,7 +481,7 @@ function PlayerSheet({
             </div>
           </div>
           <button onClick={onClose} aria-label={t("pages.audio_lessons.close")} style={{
-          color: "#c4b5fd",
+          color: "hsl(var(--brand-violet-300))",
           background: "rgba(167,139,250,0.15)",
           borderRadius: 999,
           width: 34,
@@ -501,7 +501,7 @@ function PlayerSheet({
         borderRadius: 12,
         background: "rgba(239,68,68,0.12)",
         border: "1px solid rgba(239,68,68,0.3)",
-        color: "#fecaca",
+        color: "hsl(var(--brand-red-200))",
         fontSize: 13,
         marginBottom: 12
       }}>
@@ -518,7 +518,7 @@ function PlayerSheet({
           flex: 1,
           height: 3,
           borderRadius: 2,
-          background: i <= paragraphIdx ? "#8b5cf6" : "rgba(139,92,246,0.2)",
+          background: i <= paragraphIdx ? "hsl(var(--brand-violet-500))" : "rgba(139,92,246,0.2)",
           transition: "background 0.3s"
         }} />)}
         </div>
@@ -546,7 +546,7 @@ function PlayerSheet({
           cursor: "pointer",
           fontSize: 12,
           fontWeight: 700,
-          color: "#c4b5fd"
+          color: "hsl(var(--brand-violet-300))"
         }}>
             {lang === "hi" ? "पूरा transcript दिखाएं" : lang === "hinglish" ? "Poora transcript dikhayein" : "Show full transcript"}
           </summary>
@@ -598,7 +598,7 @@ function PlayerSheet({
 
           <button onClick={() => setPlaying(p => !p)} aria-label={playing ? "Pause" : "Play"} style={{
           color: "#fff",
-          background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+          background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
           border: "none",
           borderRadius: 999,
           width: 64,
@@ -652,7 +652,7 @@ function PlayerSheet({
           padding: "5px 10px",
           borderRadius: 999,
           border: "1px solid " + (rate === r ? "transparent" : "rgba(139,92,246,0.3)"),
-          background: rate === r ? "linear-gradient(135deg, #8b5cf6, #ec4899)" : "transparent",
+          background: rate === r ? "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))" : "transparent",
           color: "#fff",
           cursor: "pointer"
         }}>{r}×</button>)}

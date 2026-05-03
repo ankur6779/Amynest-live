@@ -191,14 +191,14 @@ export default function RecipesPage() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <ChefHat className="h-6 w-6 text-orange-500" />
+              <ChefHat className="h-6 w-6 text-primary" />
               <h1 className="text-2xl font-black text-foreground">{t("pages.recipes.my_recipes")}</h1>
             </div>
             <p className="text-sm text-muted-foreground">
               {t("pages.recipes.save_your_family_recipes_when_a_meal_name_matches_the_routin")}
             </p>
           </div>
-          <Button onClick={openAdd} className="gap-2 bg-orange-500 hover:bg-orange-600 text-white shadow-md">
+          <Button onClick={openAdd} className="gap-2 bg-primary hover:bg-primary text-white shadow-md">
             <Plus className="h-4 w-4" />
             {t("pages.recipes.add_recipe")}
           </Button>
@@ -206,8 +206,8 @@ export default function RecipesPage() {
 
         {/* Empty state */}
         {!isLoading && recipes.length === 0 && <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <div className="h-16 w-16 rounded-2xl bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center">
-              <BookOpen className="h-8 w-8 text-orange-400" />
+            <div className="h-16 w-16 rounded-2xl bg-muted dark:bg-primary flex items-center justify-center">
+              <BookOpen className="h-8 w-8 text-primary" />
             </div>
             <div>
               <p className="text-lg font-bold text-foreground">{t("pages.recipes.no_recipes_saved_yet")}</p>
@@ -215,7 +215,7 @@ export default function RecipesPage() {
                 {t("pages.recipes.add_your_family_s_favourite_recipes_and_they_ll_appear_autom")}
               </p>
             </div>
-            <Button onClick={openAdd} variant="outline" className="gap-2 border-orange-200 text-orange-600 hover:bg-orange-50">
+            <Button onClick={openAdd} variant="outline" className="gap-2 border-border text-primary hover:bg-muted">
               <Plus className="h-4 w-4" />
               {t("pages.recipes.add_your_first_recipe")}
             </Button>
@@ -229,12 +229,12 @@ export default function RecipesPage() {
           const {
             t
           } = useTranslation();
-          return <Card key={recipe.id} className="overflow-hidden border border-orange-100 dark:border-orange-900/30 shadow-sm hover:shadow-md transition-shadow">
+          return <Card key={recipe.id} className="overflow-hidden border border-border dark:border-primary shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <ChefHat className="h-4 w-4 text-orange-500 shrink-0" />
+                        <ChefHat className="h-4 w-4 text-primary shrink-0" />
                         <h3 className="font-bold text-base text-foreground leading-tight" style={{
                       wordBreak: "break-word"
                     }}>
@@ -300,7 +300,7 @@ export default function RecipesPage() {
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ChefHat className="h-5 w-5 text-orange-500" />
+              <ChefHat className="h-5 w-5 text-primary" />
               {editing ? "Edit Recipe" : "Add Recipe"}
             </DialogTitle>
             <DialogDescription>
@@ -376,7 +376,7 @@ export default function RecipesPage() {
               <Button type="button" variant="outline" className="flex-1" onClick={closeDialog}>
                 {t("pages.recipes.cancel_2")}
               </Button>
-              <Button type="submit" className="flex-1 bg-orange-500 hover:bg-orange-600 text-white" disabled={saveMutation.isPending}>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary text-white" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving…" : editing ? "Update Recipe" : "Save Recipe"}
               </Button>
             </div>

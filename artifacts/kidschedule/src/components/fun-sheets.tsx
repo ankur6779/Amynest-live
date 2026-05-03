@@ -177,7 +177,7 @@ export function FunSheets({
   const quotaExhausted = quota !== null && quota.remaining <= 0;
   return <div className="space-y-4" data-testid="fun-sheets-section">
       {/* Daily quota banner */}
-      {quota && <div data-testid="funsheet-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-amber-50/70 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-900 dark:text-amber-200" : "bg-teal-50/70 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/30 text-teal-900 dark:text-teal-200"].join(" ")}>
+      {quota && <div data-testid="funsheet-quota-banner" className={["flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm", quotaExhausted ? "bg-muted dark:bg-primary border border-border dark:border-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-primary border border-border dark:border-primary text-primary dark:text-muted-foreground"].join(" ")}>
           <span className="flex items-center gap-2 font-semibold">
             <FileDown className="h-4 w-4" />
             {quotaExhausted ? `Daily limit reached for ${childName}` : `${quota.remaining} of ${quota.limit} downloads left today`}
@@ -187,7 +187,7 @@ export function FunSheets({
 
       {/* Loading */}
       {loading && <div className="flex items-center justify-center py-10">
-          <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>}
 
       {/* Error */}
@@ -205,7 +205,7 @@ export function FunSheets({
       {/* Empty state — all downloaded */}
       {!loading && !listError && pagination !== null && pagination.total === 0 && <Card className="bg-white/60 dark:bg-white/[0.04] border border-white/50 dark:border-white/10 rounded-2xl">
           <CardContent className="p-8 text-center">
-            <CheckCircle2 className="h-10 w-10 text-teal-500 mx-auto mb-3" />
+            <CheckCircle2 className="h-10 w-10 text-primary mx-auto mb-3" />
             <p className="font-quicksand font-bold text-base text-foreground">
               {t("components.fun_sheets.all_caught_up")}
             </p>
@@ -225,7 +225,7 @@ export function FunSheets({
           const isDownloading = downloadingId === file.id;
           const thisRowError = rowError?.id === file.id ? rowError.message : null;
           const canDownload = !quotaExhausted || file.downloaded;
-          return <div key={file.id} data-testid={`funsheet-card-${file.id}`} className={["group relative flex flex-col rounded-2xl overflow-hidden border transition-all duration-200", "bg-white/70 dark:bg-white/[0.04] backdrop-blur-xl", file.downloaded ? "border-teal-200/60 dark:border-teal-400/20 opacity-70" : "border-white/60 dark:border-white/10 hover:border-teal-300/60"].join(" ")}>
+          return <div key={file.id} data-testid={`funsheet-card-${file.id}`} className={["group relative flex flex-col rounded-2xl overflow-hidden border transition-all duration-200", "bg-white/70 dark:bg-white/[0.04] backdrop-blur-xl", file.downloaded ? "border-border dark:border-border opacity-70" : "border-white/60 dark:border-white/10 hover:border-border"].join(" ")}>
                   {/* Thumbnail */}
                   <div className="relative aspect-[3/4] w-full bg-muted/30 overflow-hidden">
                     <ThumbnailWithFallback src={file.thumbnailUrl} alt={file.name} />
@@ -256,7 +256,7 @@ export function FunSheets({
                         <Eye className="h-3 w-3" />
                         {t("components.fun_sheets.view")}
                       </Button>
-                      <Button size="sm" onClick={() => handleDownload(file)} disabled={isDownloading || !canDownload && !file.downloaded} className={["flex-1 rounded-xl text-[11px] h-7 gap-1 px-2", file.downloaded ? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-300/60 hover:bg-teal-500/30" : "bg-teal-600 hover:bg-teal-700 text-white"].join(" ")} data-testid={`funsheet-download-btn-${file.id}`}>
+                      <Button size="sm" onClick={() => handleDownload(file)} disabled={isDownloading || !canDownload && !file.downloaded} className={["flex-1 rounded-xl text-[11px] h-7 gap-1 px-2", file.downloaded ? "bg-primary text-primary dark:text-muted-foreground border border-border hover:bg-primary" : "bg-primary hover:bg-primary text-white"].join(" ")} data-testid={`funsheet-download-btn-${file.id}`}>
                         {isDownloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
                         {file.downloaded ? "Again" : "Get"}
                       </Button>
@@ -315,7 +315,7 @@ function ThumbnailWithFallback({
   } = useTranslation();
   const [errored, setErrored] = useState(false);
   if (errored) {
-    return <div className="flex flex-col items-center justify-center text-teal-400 dark:text-teal-300 p-4 w-full h-full">
+    return <div className="flex flex-col items-center justify-center text-primary dark:text-muted-foreground p-4 w-full h-full">
         <FileDown className="h-10 w-10 mb-1.5" />
         <span className="text-[10px] font-semibold uppercase tracking-wide">{t("components.fun_sheets.pdf")}</span>
       </div>;

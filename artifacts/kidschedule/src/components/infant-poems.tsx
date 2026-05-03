@@ -100,21 +100,21 @@ export function InfantPoems({
   }
   return <div className="space-y-3" data-testid="infant-poems-section">
       {/* Header strip */}
-      <div className="rounded-2xl bg-gradient-to-br from-violet-100/80 via-fuchsia-100/60 to-rose-100/80 dark:from-violet-900/30 dark:via-fuchsia-900/20 dark:to-rose-900/30 border border-violet-200/60 dark:border-violet-400/20 p-3 backdrop-blur-md">
+      <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary border border-border dark:border-border p-3 backdrop-blur-md">
         <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-300" />
-          <p className="text-xs font-bold text-violet-900 dark:text-violet-100">
+          <Sparkles className="h-4 w-4 text-primary dark:text-muted-foreground" />
+          <p className="text-xs font-bold text-primary dark:text-muted-foreground">
             {t("components.infant_poems.poems_for_your_baby")}
           </p>
         </div>
-        <p className="text-[12px] text-violet-800/80 dark:text-violet-100/70 leading-snug">
+        <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">
           {t("components.infant_poems.soft_age_appropriate_verses_with_gentle_audio_playback_tap_a")}
         </p>
       </div>
 
       {/* Age sub-tabs */}
       <div role="tablist" aria-label={t("components.infant_poems.poem_age_groups")} className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-white/30 dark:bg-white/5 border border-white/40 dark:border-white/10">
-        {POEM_AGE_GROUPS.map(g => <button key={g.id} role="tab" aria-selected={group === g.id} data-testid={`poem-age-tab-${g.id}`} onClick={() => setGroup(g.id)} className={`px-2 py-2 rounded-lg text-xs font-bold transition-all ${group === g.id ? "bg-violet-500 text-white shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]" : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"}`}>
+        {POEM_AGE_GROUPS.map(g => <button key={g.id} role="tab" aria-selected={group === g.id} data-testid={`poem-age-tab-${g.id}`} onClick={() => setGroup(g.id)} className={`px-2 py-2 rounded-lg text-xs font-bold transition-all ${group === g.id ? "bg-primary text-white shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]" : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/10"}`}>
             {g.label}
           </button>)}
       </div>
@@ -142,7 +142,7 @@ export function InfantPoems({
         </div>}
 
       {/* Load More */}
-      {hasMore && <button onClick={() => setVisible(v => Math.min(poemsInGroup.length, v + PAGE_SIZE))} data-testid="poem-load-more" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-violet-300/60 dark:border-violet-400/30 bg-white/40 dark:bg-white/5 hover:bg-violet-50 dark:hover:bg-violet-500/10 text-violet-700 dark:text-violet-300 text-xs font-bold transition-colors">
+      {hasMore && <button onClick={() => setVisible(v => Math.min(poemsInGroup.length, v + PAGE_SIZE))} data-testid="poem-load-more" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border dark:border-border bg-white/40 dark:bg-white/5 hover:bg-muted dark:hover:bg-primary text-primary dark:text-muted-foreground text-xs font-bold transition-colors">
           <Plus className="h-3.5 w-3.5" />
           {t("components.infant_poems.load_more_poems")}
         </button>}
@@ -292,7 +292,7 @@ function PoemFullscreenPlayer({
       }} transition={{
         duration: 0.6,
         ease: "easeOut"
-      }} className={`absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-black bg-gradient-to-br ${poem.gradient}`} style={{
+      }} className={`absolute inset-0 bg-gradient-to-b from-muted via-muted to-black bg-gradient-to-br ${poem.gradient}`} style={{
         backgroundBlendMode: "soft-light"
       }} aria-hidden />
           <FloatingStars />
@@ -343,7 +343,7 @@ function PoemFullscreenPlayer({
             } else {
               player.pause();
             }
-          }} aria-label={player.isLoading ? "Loading poem audio" : player.isPlaying && !player.isPaused ? "Pause poem" : "Play poem"} data-testid="poem-play-pause" disabled={player.isLoading} className="h-16 w-16 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-80">
+          }} aria-label={player.isLoading ? "Loading poem audio" : player.isPlaying && !player.isPaused ? "Pause poem" : "Play poem"} data-testid="poem-play-pause" disabled={player.isLoading} className="h-16 w-16 rounded-full bg-white text-foreground flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-80">
                 {player.isLoading ? <Loader2 className="h-7 w-7 animate-spin" /> : player.isPlaying && !player.isPaused ? <Pause className="h-7 w-7" fill="currentColor" /> : <Play className="h-7 w-7 ml-0.5" fill="currentColor" />}
               </button>
 
@@ -360,7 +360,7 @@ function PoemFullscreenPlayer({
 
             {/* Sleep timer pills */}
             <div className="flex gap-2 mb-2">
-              {TIMER_OPTIONS.map(t => <button key={t.label} onClick={() => player.setTimer(t.ms)} data-testid={`poem-timer-${t.label.toLowerCase()}`} aria-pressed={player.timerMs === t.ms} className={`flex-1 py-2 rounded-xl text-xs font-bold backdrop-blur-md transition-all ${player.timerMs === t.ms ? "bg-white text-slate-900" : "bg-white/15 hover:bg-white/25 text-white"}`}>
+              {TIMER_OPTIONS.map(t => <button key={t.label} onClick={() => player.setTimer(t.ms)} data-testid={`poem-timer-${t.label.toLowerCase()}`} aria-pressed={player.timerMs === t.ms} className={`flex-1 py-2 rounded-xl text-xs font-bold backdrop-blur-md transition-all ${player.timerMs === t.ms ? "bg-white text-foreground" : "bg-white/15 hover:bg-white/25 text-white"}`}>
                   {t.label}
                 </button>)}
             </div>
@@ -368,7 +368,7 @@ function PoemFullscreenPlayer({
             {!player.supported && <p className="text-[11px] text-white/70 text-center mt-3">
                 {t("components.infant_poems.audio_playback_isn_t_supported_in_this_browser_the_poem_is_s")}
               </p>}
-            {player.error && <p className="text-[11px] text-rose-200 text-center mt-3" data-testid="poem-error">
+            {player.error && <p className="text-[11px] text-muted-foreground text-center mt-3" data-testid="poem-error">
                 {t("components.infant_poems.couldn_t_load_audio_tap_play_to_try_again")}
               </p>}
           </div>

@@ -87,7 +87,7 @@ export function SubItemGate({
           data-testid="sub-item-lock-overlay"
           className="absolute inset-0 z-10 cursor-pointer rounded-2xl bg-background/30 backdrop-blur-[1px] hover:bg-background/40 transition-colors flex items-center justify-center"
         >
-          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500 text-white shadow-md shadow-purple-500/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">
+          <span className="inline-flex items-center gap-1 rounded-full bg-card text-primary-foreground shadow-md shadow px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">
             <Lock className="h-3 w-3" />
             {t("parent_hub.badges.premium_feature")}
           </span>

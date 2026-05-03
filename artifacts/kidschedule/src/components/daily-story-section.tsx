@@ -26,27 +26,27 @@ const CAT: Record<StoryCategory, {
 }> = {
   moral: {
     label: "Moral",
-    color: "#a855f7",
+    color: "hsl(var(--brand-purple-500))",
     bg: "rgba(168,85,247,0.12)",
-    dot: "#a855f7"
+    dot: "hsl(var(--brand-purple-500))"
   },
   fun: {
     label: "Fun",
-    color: "#f59e0b",
+    color: "hsl(var(--brand-amber-500))",
     bg: "rgba(245,158,11,0.12)",
-    dot: "#f59e0b"
+    dot: "hsl(var(--brand-amber-500))"
   },
   animal: {
     label: "Animal",
-    color: "#10b981",
+    color: "hsl(var(--brand-emerald-500))",
     bg: "rgba(16,185,129,0.12)",
-    dot: "#10b981"
+    dot: "hsl(var(--brand-emerald-500))"
   },
   learning: {
     label: "Learning",
-    color: "#3b82f6",
+    color: "hsl(var(--brand-blue-500))",
     bg: "rgba(59,130,246,0.12)",
-    dot: "#3b82f6"
+    dot: "hsl(var(--brand-blue-500))"
   }
 };
 
@@ -496,10 +496,10 @@ function FeaturedCard({
       <div className="p-4 pb-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300">
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-muted dark:bg-muted text-primary dark:text-muted-foreground">
               {t("components.daily_story_section.featured")}
             </span>
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300">
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-muted dark:bg-muted text-primary dark:text-muted-foreground">
               {t("components.daily_story_section.new_today")}
             </span>
           </div>
@@ -688,7 +688,7 @@ export function DailyStorySection({
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-xs text-amber-600 dark:text-amber-300 font-semibold">
+          <p className="text-xs text-primary dark:text-muted-foreground font-semibold">
             {t("components.daily_story_section.daily_stories_for")} {childName} · {visible.length} {t("components.daily_story_section.shown")}
           </p>
         </div>
@@ -706,7 +706,7 @@ export function DailyStorySection({
       {rest.map(story => <StoryCard key={story.id} story={story} isPlaying={playingId === story.id} onPlay={() => handlePlay(story)} expanded={expanded.has(story.id)} onToggleExpand={() => toggleExpand(story.id)} />)}
 
       {/* Load More */}
-      {hasMore && <button onClick={() => setPage(p => p + 1)} className="w-full mt-3 py-3 rounded-2xl border-2 border-dashed text-sm font-bold text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-400/30 hover:bg-amber-50 dark:hover:bg-amber-400/10 transition-all active:scale-[0.98]">
+      {hasMore && <button onClick={() => setPage(p => p + 1)} className="w-full mt-3 py-3 rounded-2xl border-2 border-dashed text-sm font-bold text-primary dark:text-muted-foreground border-border dark:border-border hover:bg-muted dark:hover:bg-muted transition-all active:scale-[0.98]">
           {t("components.daily_story_section.load_5_more_stories")}
         </button>}
 

@@ -30,7 +30,7 @@ const TRICKS: MathTrick[] = [
   id: "t01",
   age: "4-6",
   emoji: "🔟",
-  color: "#f59e0b",
+  color: "hsl(var(--brand-amber-500))",
   title: "Add 10 Easily",
   trick: "Just add 1 to the tens digit!",
   example: "23 + 10 = 33  →  tens: 2 becomes 3",
@@ -45,7 +45,7 @@ const TRICKS: MathTrick[] = [
   id: "t02",
   age: "4-6",
   emoji: "9️⃣",
-  color: "#8b5cf6",
+  color: "hsl(var(--brand-violet-500))",
   title: "Add 9 Trick",
   trick: "Add 10, then subtract 1!",
   example: "24 + 9 → 24 + 10 = 34 → 34 − 1 = 33",
@@ -60,7 +60,7 @@ const TRICKS: MathTrick[] = [
   id: "t03",
   age: "4-6",
   emoji: "✌️",
-  color: "#22c55e",
+  color: "hsl(var(--brand-green-500))",
   title: "Double Numbers",
   trick: "Add the number to itself!",
   example: "6 + 6 = 12  →  double of 6",
@@ -75,7 +75,7 @@ const TRICKS: MathTrick[] = [
   id: "t04",
   age: "4-6",
   emoji: "🌟",
-  color: "#06b6d4",
+  color: "hsl(var(--brand-cyan-500))",
   title: "Near Double",
   trick: "Double the smaller, then add 1!",
   example: "6 + 7 → 6+6 = 12, then +1 = 13",
@@ -90,7 +90,7 @@ const TRICKS: MathTrick[] = [
   id: "t05",
   age: "4-6",
   emoji: "5️⃣",
-  color: "#ef4444",
+  color: "hsl(var(--brand-red-500))",
   title: "Add 5 Trick",
   trick: "Add 10, then subtract 5!",
   example: "12 + 5 → 12 + 10 = 22 → 22 − 5 = 17",
@@ -107,7 +107,7 @@ const TRICKS: MathTrick[] = [
   id: "m01",
   age: "6-8",
   emoji: "⚡",
-  color: "#8b5cf6",
+  color: "hsl(var(--brand-violet-500))",
   title: "Multiply by 9",
   trick: "Multiply by 10, then subtract the number!",
   example: "9 × 7 → 10×7 = 70 → 70 − 7 = 63",
@@ -122,7 +122,7 @@ const TRICKS: MathTrick[] = [
   id: "m02",
   age: "6-8",
   emoji: "1️⃣1️⃣",
-  color: "#f59e0b",
+  color: "hsl(var(--brand-amber-500))",
   title: "Multiply by 11",
   trick: "Add the two digits and place in the middle!",
   example: "23 × 11: 2+(2+3)+3 = 253",
@@ -137,7 +137,7 @@ const TRICKS: MathTrick[] = [
   id: "m03",
   age: "6-8",
   emoji: "💠",
-  color: "#06b6d4",
+  color: "hsl(var(--brand-cyan-500))",
   title: "Square Ending in 5",
   trick: "Multiply first digit by (first digit + 1), then add 25!",
   example: "25² → 2×3 = 6 → 625",
@@ -152,7 +152,7 @@ const TRICKS: MathTrick[] = [
   id: "m04",
   age: "6-8",
   emoji: "✋",
-  color: "#22c55e",
+  color: "hsl(var(--brand-green-500))",
   title: "Multiply by 5",
   trick: "Multiply by 10, then divide by 2!",
   example: "8 × 5 → 8×10 = 80 → 80÷2 = 40",
@@ -167,7 +167,7 @@ const TRICKS: MathTrick[] = [
   id: "m05",
   age: "6-8",
   emoji: "4️⃣",
-  color: "#ef4444",
+  color: "hsl(var(--brand-red-500))",
   title: "Multiply by 4",
   trick: "Double the number twice!",
   example: "6 × 4 → 6×2 = 12 → 12×2 = 24",
@@ -182,7 +182,7 @@ const TRICKS: MathTrick[] = [
   id: "m06",
   age: "6-8",
   emoji: "💯",
-  color: "#f59e0b",
+  color: "hsl(var(--brand-amber-500))",
   title: "Multiply by 25",
   trick: "Divide by 4, then multiply by 100!",
   example: "8 × 25 → 8÷4 = 2 → 2×100 = 200",
@@ -197,7 +197,7 @@ const TRICKS: MathTrick[] = [
   id: "m07",
   age: "6-8",
   emoji: "5️⃣0️⃣",
-  color: "#8b5cf6",
+  color: "hsl(var(--brand-violet-500))",
   title: "Multiply by 50",
   trick: "Multiply by 100, then divide by 2!",
   example: "6 × 50 → 6×100 = 600 → 600÷2 = 300",
@@ -212,7 +212,7 @@ const TRICKS: MathTrick[] = [
   id: "m08",
   age: "6-8",
   emoji: "💯",
-  color: "#06b6d4",
+  color: "hsl(var(--brand-cyan-500))",
   title: "Subtract from 100",
   trick: "Subtract each digit from 9, last from 10!",
   example: "100 − 47 → (9−4)(10−7) = 53",
@@ -227,7 +227,7 @@ const TRICKS: MathTrick[] = [
   id: "m09",
   age: "6-8",
   emoji: "🚀",
-  color: "#22c55e",
+  color: "hsl(var(--brand-green-500))",
   title: "Add Big Numbers Fast",
   trick: "Round up, then adjust!",
   example: "98 + 36 → 100 + 36 = 136 → 136−2 = 134",
@@ -242,7 +242,7 @@ const TRICKS: MathTrick[] = [
   id: "m10",
   age: "6-8",
   emoji: "✖️",
-  color: "#ef4444",
+  color: "hsl(var(--brand-red-500))",
   title: "Multiply by 2",
   trick: "Just double the number!",
   example: "9 × 2 = 18  →  double of 9",
@@ -257,7 +257,7 @@ const TRICKS: MathTrick[] = [
   id: "m11",
   age: "6-8",
   emoji: "3️⃣",
-  color: "#f59e0b",
+  color: "hsl(var(--brand-amber-500))",
   title: "Multiply by 3",
   trick: "Double the number, then add it once more!",
   example: "7 × 3 → 7×2 = 14 → 14+7 = 21",
@@ -272,7 +272,7 @@ const TRICKS: MathTrick[] = [
   id: "m12",
   age: "6-8",
   emoji: "➗",
-  color: "#8b5cf6",
+  color: "hsl(var(--brand-violet-500))",
   title: "Divide by 2",
   trick: "Just halve the number!",
   example: "20 ÷ 2 = 10  →  half of 20",
@@ -287,7 +287,7 @@ const TRICKS: MathTrick[] = [
   id: "m13",
   age: "6-8",
   emoji: "🔟",
-  color: "#06b6d4",
+  color: "hsl(var(--brand-cyan-500))",
   title: "Multiply by 10",
   trick: "Add a zero at the end!",
   example: "7 × 10 = 70  →  just add 0",
@@ -302,7 +302,7 @@ const TRICKS: MathTrick[] = [
   id: "m14",
   age: "6-8",
   emoji: "💯",
-  color: "#22c55e",
+  color: "hsl(var(--brand-green-500))",
   title: "Multiply by 100",
   trick: "Add two zeros at the end!",
   example: "5 × 100 = 500  →  add 00",
@@ -317,7 +317,7 @@ const TRICKS: MathTrick[] = [
   id: "m15",
   age: "6-8",
   emoji: "9️⃣9️⃣",
-  color: "#ef4444",
+  color: "hsl(var(--brand-red-500))",
   title: "Add 99 Trick",
   trick: "Add 100, then subtract 1!",
   example: "45 + 99 → 45+100 = 145 → 145−1 = 144",
@@ -332,7 +332,7 @@ const TRICKS: MathTrick[] = [
   id: "m16",
   age: "6-8",
   emoji: "➖",
-  color: "#f59e0b",
+  color: "hsl(var(--brand-amber-500))",
   title: "Subtract 9 Trick",
   trick: "Subtract 10, then add 1!",
   example: "56 − 9 → 56−10 = 46 → 46+1 = 47",
@@ -347,7 +347,7 @@ const TRICKS: MathTrick[] = [
   id: "m17",
   age: "6-8",
   emoji: "8️⃣",
-  color: "#8b5cf6",
+  color: "hsl(var(--brand-violet-500))",
   title: "Multiply by 8",
   trick: "Double 3 times!",
   example: "5 × 8 → ×2=10 → ×2=20 → ×2=40",
@@ -362,7 +362,7 @@ const TRICKS: MathTrick[] = [
   id: "m18",
   age: "6-8",
   emoji: "6️⃣",
-  color: "#06b6d4",
+  color: "hsl(var(--brand-cyan-500))",
   title: "Multiply by 6",
   trick: "Multiply by 3, then double!",
   example: "8 × 6 → 8×3=24 → 24×2=48",
@@ -377,7 +377,7 @@ const TRICKS: MathTrick[] = [
   id: "m19",
   age: "6-8",
   emoji: "7️⃣",
-  color: "#22c55e",
+  color: "hsl(var(--brand-green-500))",
   title: "Multiply by 7",
   trick: "Use 5s and 2s: ×5 + ×2!",
   example: "7 × 8 → 5×8=40 → 2×8=16 → 40+16=56",
@@ -392,7 +392,7 @@ const TRICKS: MathTrick[] = [
   id: "m20",
   age: "6-8",
   emoji: "1️⃣1️⃣",
-  color: "#ef4444",
+  color: "hsl(var(--brand-red-500))",
   title: "Quick Square 11",
   trick: "11 × 11 = 121 (memorise!)",
   example: "1+1 = 2 in middle → 121",
@@ -407,7 +407,7 @@ const TRICKS: MathTrick[] = [
   id: "m21",
   age: "6-8",
   emoji: "1️⃣2️⃣",
-  color: "#f59e0b",
+  color: "hsl(var(--brand-amber-500))",
   title: "Quick Square 12",
   trick: "12 × 12 = 144 (memorise!)",
   example: "12 × 12 = (10+2)² = 100+40+4 = 144",
@@ -641,8 +641,8 @@ function TrickCard({
           onStar();
         }} className="px-3 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95" style={{
           background: starred ? "#fbbf2433" : "rgba(255,255,255,0.08)",
-          border: `1.5px solid ${starred ? "#fbbf24" : "rgba(255,255,255,0.12)"}`,
-          color: starred ? "#fbbf24" : "rgba(255,255,255,0.4)"
+          border: `1.5px solid ${starred ? "hsl(var(--brand-amber-300))" : "rgba(255,255,255,0.12)"}`,
+          color: starred ? "hsl(var(--brand-amber-300))" : "rgba(255,255,255,0.4)"
         }} title={t("components.smart_math_tricks.mark_as_mastered")}>
                 {starred ? "⭐" : "☆"}
               </button>
@@ -665,11 +665,11 @@ function TrickCard({
             if (submitted) {
               if (isC) {
                 bg = "rgba(34,197,94,0.2)";
-                border = "#22c55e";
+                border = "hsl(var(--brand-green-500))";
                 anim = "mt-correct 500ms ease both";
               } else if (isSel && !isC) {
                 bg = "rgba(239,68,68,0.2)";
-                border = "#ef4444";
+                border = "hsl(var(--brand-red-500))";
                 anim = "mt-wrong 400ms ease both";
               } else {
                 color = "rgba(255,255,255,0.25)";
@@ -692,7 +692,7 @@ function TrickCard({
         }}>{t("components.smart_math_tricks.check")}</button> : <div>
                   <div className="rounded-xl px-3 py-2 text-center text-xs font-bold mb-2" style={{
             background: isCorrect ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-            color: isCorrect ? "#4ade80" : "#f87171"
+            color: isCorrect ? "hsl(var(--brand-green-400))" : "hsl(var(--brand-red-400))"
           }}>
                     {isCorrect ? `✅ Correct! ${trick.practiceQ.hint}` : `❌ Answer: ${trick.practiceQ.answer} — ${trick.practiceQ.hint}`}
                   </div>
@@ -755,7 +755,7 @@ function LearnAllTab({
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-white/40">{pool.length} {t("components.smart_math_tricks.tricks_in_your_level")}</p>
         <p className="text-xs font-bold" style={{
-        color: "#fbbf24"
+        color: "hsl(var(--brand-amber-300))"
       }}>⭐ {mastered}/{pool.length} {t("components.smart_math_tricks.mastered")}</p>
       </div>
       {pool.map(t => <TrickCard key={t.id} trick={t} starred={starIds.includes(t.id)} onStar={() => onStar(t.id)} expanded={expanded === t.id} onToggle={() => setExpanded(prev => prev === t.id ? null : t.id)} showPractice />)}
@@ -868,7 +868,7 @@ function PracticeTab({
         </div>
         <div className="rounded-2xl px-6 py-3 inline-block font-black text-2xl" style={{
         background: "rgba(255,255,255,0.1)",
-        color: pct === 100 ? "#fbbf24" : "#94a3b8"
+        color: pct === 100 ? "hsl(var(--brand-amber-300))" : "#94a3b8"
       }}>
           {correct}/{SESSION_SIZE} ⭐
         </div>
@@ -876,7 +876,7 @@ function PracticeTab({
           {pct === 100 ? "🌟 Perfect! You're a math genius!" : pct >= 60 ? "👍 Great work! Keep practising!" : "💪 Keep going — you'll nail it!"}
         </p>
         <button onClick={handleRestart} className="w-full max-w-xs py-3.5 rounded-2xl font-black text-sm text-white transition-all active:scale-95" style={{
-        background: "linear-gradient(135deg,#f59e0b,#fbbf24)"
+        background: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-amber-300)))"
       }}>
           {t("components.smart_math_tricks.try_again")}
         </button>
@@ -918,11 +918,11 @@ function PracticeTab({
         if (submitted) {
           if (isC) {
             bg = "rgba(34,197,94,0.2)";
-            border = "#22c55e";
+            border = "hsl(var(--brand-green-500))";
             anim = "mt-correct 500ms ease both";
           } else if (isSel) {
             bg = "rgba(239,68,68,0.2)";
-            border = "#ef4444";
+            border = "hsl(var(--brand-red-500))";
             anim = "mt-wrong 400ms ease both";
           } else {
             color = "rgba(255,255,255,0.25)";
@@ -930,7 +930,7 @@ function PracticeTab({
           }
         } else if (isSel) {
           bg = "rgba(245,158,11,0.2)";
-          border = "#f59e0b";
+          border = "hsl(var(--brand-amber-500))";
         }
         return <button key={opt} disabled={submitted} onClick={() => setSelected(opt)} className="py-3.5 px-2 rounded-xl font-black text-sm text-center transition-all active:scale-95 disabled:cursor-default" style={{
           background: bg,
@@ -945,7 +945,7 @@ function PracticeTab({
       {submitted && <div className="rounded-xl px-4 py-2.5 text-center text-xs font-bold" style={{
       animation: "mt-appear 200ms ease both",
       background: isCorrect ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-      color: isCorrect ? "#4ade80" : "#f87171"
+      color: isCorrect ? "hsl(var(--brand-green-400))" : "hsl(var(--brand-red-400))"
     }}>
           {isCorrect ? `✅ ${cur.practiceQ.hint}` : `❌ Correct: ${cur.practiceQ.answer} — ${cur.practiceQ.hint}`}
         </div>}
@@ -963,11 +963,11 @@ function PracticeTab({
 
       {/* Action */}
       {!submitted ? <button onClick={handleSubmit} disabled={!selected} className="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all active:scale-95 disabled:opacity-30" style={{
-      background: "linear-gradient(135deg,#f59e0b,#fbbf24)"
+      background: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-amber-300)))"
     }}>
           {t("components.smart_math_tricks.check_answer")}
         </button> : <button onClick={handleNext} className="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all active:scale-95" style={{
-      background: idx + 1 >= SESSION_SIZE ? "linear-gradient(135deg,#f59e0b,#fbbf24)" : "linear-gradient(135deg,#6366f1,#8b5cf6)"
+      background: idx + 1 >= SESSION_SIZE ? "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-amber-300)))" : "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-violet-500)))"
     }}>
           {idx + 1 >= SESSION_SIZE ? "🏆 See Results!" : "Next →"}
         </button>}
@@ -1040,7 +1040,7 @@ export function SmartMathTricks({
           </div>
           <div className="text-right">
             <p className="text-[11px] font-bold" style={{
-            color: "#fbbf24"
+            color: "hsl(var(--brand-amber-300))"
           }}>⭐ {mathSt.starIds.length}</p>
             <p className="text-[10px] text-white/30">{t("components.smart_math_tricks.mastered_2")}</p>
           </div>
@@ -1052,7 +1052,7 @@ export function SmartMathTricks({
       }}>
           {tabs.map(t => <button key={t.key} onClick={() => setTab(t.key)} className="flex-1 py-2 rounded-xl font-bold text-xs transition-all active:scale-95" style={{
           background: tab === t.key ? "rgba(245,158,11,0.3)" : "transparent",
-          color: tab === t.key ? "#fbbf24" : "rgba(255,255,255,0.4)",
+          color: tab === t.key ? "hsl(var(--brand-amber-300))" : "rgba(255,255,255,0.4)",
           border: tab === t.key ? "1px solid rgba(245,158,11,0.4)" : "1px solid transparent"
         }}>
               {t.icon} {t.label}

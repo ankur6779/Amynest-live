@@ -120,7 +120,7 @@ function ExampleChips({
   if (words.length === 0) return null;
   const chipCls = size === "md" ? "px-2 py-0.5 text-[11px]" : "px-1.5 py-[1px] text-[10px]";
   return <div className="mt-1 flex flex-wrap gap-1" data-testid="phonics-example-chips">
-      {words.map(w => <span key={w} className={cn("inline-flex items-center rounded-full bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-200 font-medium border border-violet-200/70 dark:border-violet-400/25", chipCls)}>
+      {words.map(w => <span key={w} className={cn("inline-flex items-center rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground font-medium border border-border dark:border-border", chipCls)}>
           {w}
         </span>)}
     </div>;
@@ -169,7 +169,7 @@ export function PhonicsLearning({
   if (!level) {
     return <Card className="rounded-3xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]">
         <CardContent className="p-5 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-foreground">{t("components.phonics_learning.phonics_is_for_ages_1_6")}</p>
             <p className="text-sm text-muted-foreground mt-1">
@@ -299,7 +299,7 @@ function PersonalizationBadge({
   const {
     t
   } = useTranslation();
-  return <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-fuchsia-100/40 dark:via-fuchsia-500/10 to-violet-100/40 dark:to-violet-500/10 border border-primary/20 px-4 py-3 flex items-center gap-3">
+  return <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-muted dark:via-primary to-muted dark:to-primary border border-primary/20 px-4 py-3 flex items-center gap-3">
       <span className="text-2xl">{level.emoji}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -361,8 +361,8 @@ function TodaysActivityCard({
   return <Card data-testid="phonics-todays-activity" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-violet-100 dark:bg-violet-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
-            <Sparkles className="h-5 w-5 text-violet-600 dark:text-violet-300" />
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <Sparkles className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-quicksand text-base font-bold text-foreground">{t("components.phonics_learning.today_s_activity")}</h3>
@@ -376,7 +376,7 @@ function TodaysActivityCard({
         </div>
 
         {/* Focus tile — taller layout for sentences/stories */}
-        <div className={cn("rounded-3xl bg-gradient-to-br from-violet-50 dark:from-violet-500/15 to-fuchsia-50 dark:to-fuchsia-500/15 border border-violet-200/60 dark:border-violet-400/20 p-5", isLongForm ? "flex flex-col items-start gap-4" : "flex items-center gap-4")}>
+        <div className={cn("rounded-3xl bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary border border-border dark:border-border p-5", isLongForm ? "flex flex-col items-start gap-4" : "flex items-center gap-4")}>
           {todaysItem.emoji && <span className={isLongForm ? "text-4xl" : "text-5xl shrink-0"} aria-hidden>
               {todaysItem.emoji}
             </span>}
@@ -393,7 +393,7 @@ function TodaysActivityCard({
           <div className="text-xs text-muted-foreground">
             {playCount > 0 ? `Played ${playCount} time${playCount !== 1 ? "s" : ""}` : "Not practised yet"}
           </div>
-          <Button type="button" size="sm" variant="outline" onClick={() => toggleMastered(todaysItem.id, todaysItem.contentId)} disabled={!canMaster} title={canMaster ? undefined : "Play the sound at least once first"} className={cn("rounded-full h-8 px-3 text-xs font-bold border", isMastered ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 border-emerald-300" : "bg-white/70 dark:bg-white/[0.06] text-foreground border-border hover:border-emerald-300 hover:text-emerald-700", !canMaster && "opacity-50 cursor-not-allowed hover:border-border hover:text-foreground")}>
+          <Button type="button" size="sm" variant="outline" onClick={() => toggleMastered(todaysItem.id, todaysItem.contentId)} disabled={!canMaster} title={canMaster ? undefined : "Play the sound at least once first"} className={cn("rounded-full h-8 px-3 text-xs font-bold border", isMastered ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border" : "bg-white/70 dark:bg-white/[0.06] text-foreground border-border hover:border-border hover:text-primary", !canMaster && "opacity-50 cursor-not-allowed hover:border-border hover:text-foreground")}>
             <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
             {isMastered ? "Mastered!" : "Mark mastered"}
           </Button>
@@ -447,14 +447,14 @@ function PracticeSoundsCard({
   return <Card data-testid="phonics-practice-sounds" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-fuchsia-100 dark:bg-fuchsia-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
-            <BookOpen className="h-5 w-5 text-fuchsia-600 dark:text-fuchsia-300" />
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <BookOpen className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-quicksand text-base font-bold text-foreground">{t("components.phonics_learning.practice_sounds")}</h3>
             <p className="text-xs text-muted-foreground">{t("components.phonics_learning.tap_any_tile_to_hear_the_sound")}</p>
           </div>
-          <Badge className="bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-200 border-0 text-[10px] font-bold">
+          <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-0 text-[10px] font-bold">
             {items.length} {items.length === 1 ? "sound" : "sounds"}
           </Badge>
         </div>
@@ -467,8 +467,8 @@ function PracticeSoundsCard({
           const count = progress.practiced[it.id] ?? 0;
           const mastered = !!progress.mastered[it.id];
           const showBlend = level.features.blending && it.example?.includes("–");
-          return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("relative rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all", mastered ? "border-emerald-300 dark:border-emerald-400/40 ring-1 ring-emerald-300/50" : "border-white/60 dark:border-white/10 hover:border-primary/30")}>
-                  {mastered && <CheckCircle2 className="absolute top-1.5 right-1.5 h-3.5 w-3.5 text-emerald-500 fill-emerald-100" />}
+          return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("relative rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all", mastered ? "border-border dark:border-border ring-1 ring-primary" : "border-white/60 dark:border-white/10 hover:border-primary/30")}>
+                  {mastered && <CheckCircle2 className="absolute top-1.5 right-1.5 h-3.5 w-3.5 text-primary fill-muted" />}
                   <div className="flex items-center gap-2">
                     {it.emoji && <span className="text-2xl shrink-0">{it.emoji}</span>}
                     <div className="flex-1 min-w-0">
@@ -478,7 +478,7 @@ function PracticeSoundsCard({
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <AudioPlayButton text={it.phoneme ?? it.sound} mode={it.phoneme ? "phonics" : undefined} size="sm" variant="violet" ariaLabel={`Play sound ${it.symbol}`} onPlay={() => recordPlay(it.id, it.contentId)} />
-                    {showBlend && <Button type="button" size="sm" variant="outline" onClick={() => setBlendItem(it)} className="rounded-full h-7 px-2.5 text-[10px] font-bold border-violet-300 text-violet-700 dark:text-violet-200 hover:bg-violet-50 dark:hover:bg-violet-500/15">
+                    {showBlend && <Button type="button" size="sm" variant="outline" onClick={() => setBlendItem(it)} className="rounded-full h-7 px-2.5 text-[10px] font-bold border-border text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary">
                         {t("components.phonics_learning.blend")}
                       </Button>}
                     {count > 0 && <span className="text-[10px] text-muted-foreground font-medium">{count}×</span>}
@@ -493,7 +493,7 @@ function PracticeSoundsCard({
           const count = progress.practiced[it.id] ?? 0;
           const mastered = !!progress.mastered[it.id];
           const isLong = it.type === "sentence" || it.type === "story";
-          return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("flex items-start gap-3 rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all", mastered ? "border-emerald-300 dark:border-emerald-400/40" : "border-white/60 dark:border-white/10 hover:border-primary/30")}>
+          return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("flex items-start gap-3 rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all", mastered ? "border-border dark:border-border" : "border-white/60 dark:border-white/10 hover:border-primary/30")}>
                   {it.emoji && <span className="text-xl shrink-0">{it.emoji}</span>}
                   <div className="flex-1 min-w-0">
                     <p className={cn("font-semibold text-foreground leading-snug", isLong ? "text-sm" : "text-sm")}>
@@ -507,7 +507,7 @@ function PracticeSoundsCard({
                         {count > 0 ? ` · played ${count}×` : ""}
                       </p> : null}
                   </div>
-                  {mastered && <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-1" />}
+                  {mastered && <CheckCircle2 className="h-4 w-4 text-primary mt-1" />}
                   <AudioPlayButton text={it.phoneme ?? it.sound} mode={it.phoneme ? "phonics" : undefined} size="sm" variant="violet" ariaLabel={`Read aloud: ${it.symbol}`} onPlay={() => recordPlay(it.id, it.contentId)} />
                 </div>;
         })}
@@ -533,27 +533,27 @@ function BlendPanel({
     t
   } = useTranslation();
   const sounds = (item.example ?? item.symbol).split("–").map(s => s.trim()).filter(Boolean);
-  return <div role="dialog" aria-label={`Blend ${item.symbol}`} className="mt-4 rounded-2xl border border-violet-300 dark:border-violet-400/30 bg-violet-50/80 dark:bg-violet-500/15 p-4">
+  return <div role="dialog" aria-label={`Blend ${item.symbol}`} className="mt-4 rounded-2xl border border-border dark:border-border bg-muted dark:bg-primary p-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-bold text-violet-900 dark:text-violet-100">{t("components.phonics_learning.blend_it_together")}</p>
-        <Button type="button" variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0 rounded-full text-violet-700 dark:text-violet-200" aria-label={t("components.phonics_learning.close_blend_panel")}>
+        <p className="text-sm font-bold text-primary dark:text-muted-foreground">{t("components.phonics_learning.blend_it_together")}</p>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0 rounded-full text-primary dark:text-muted-foreground" aria-label={t("components.phonics_learning.close_blend_panel")}>
           ×
         </Button>
       </div>
 
       <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
         {sounds.map((s, i) => <div key={i} className="flex items-center gap-2">
-            <div className="rounded-xl bg-white dark:bg-white/[0.08] border border-violet-200 dark:border-violet-400/30 px-3 py-2 flex items-center gap-2">
-              <span className="font-quicksand text-xl font-bold text-violet-700 dark:text-violet-200">{s}</span>
+            <div className="rounded-xl bg-white dark:bg-white/[0.08] border border-border dark:border-border px-3 py-2 flex items-center gap-2">
+              <span className="font-quicksand text-xl font-bold text-primary dark:text-muted-foreground">{s}</span>
               {/* BlendPanel sounds are individual phonemes ("c", "a", "t") — */}
               {/* always use phonics mode for crisp single-sound pronunciation. */}
               <AudioPlayButton text={s} mode="phonics" size="sm" variant="violet" ariaLabel={`Play ${s}`} />
             </div>
-            {i < sounds.length - 1 && <span className="text-violet-400 text-xl">+</span>}
+            {i < sounds.length - 1 && <span className="text-primary text-xl">+</span>}
           </div>)}
       </div>
 
-      <div className="flex items-center justify-center gap-3 pt-3 border-t border-violet-200 dark:border-violet-400/30">
+      <div className="flex items-center justify-center gap-3 pt-3 border-t border-border dark:border-border">
         <span className="text-2xl">→</span>
         <div className="flex items-center gap-2">
           {item.emoji && <span className="text-2xl">{item.emoji}</span>}
@@ -591,8 +591,8 @@ function ProgressTrackerCard({
   return <Card data-testid="phonics-progress" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-100 dark:bg-emerald-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
-            <Trophy className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <Trophy className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-quicksand text-base font-bold text-foreground">{t("components.phonics_learning.progress_tracker")}</h3>
@@ -609,10 +609,10 @@ function ProgressTrackerCard({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-semibold text-foreground">{t("components.phonics_learning.mastery")}</span>
-            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{completionPct}%</span>
+            <span className="text-xs font-bold text-primary dark:text-muted-foreground">{completionPct}%</span>
           </div>
-          <div className="h-2.5 w-full rounded-full bg-emerald-100/60 dark:bg-emerald-500/15 overflow-hidden border border-emerald-200/60 dark:border-emerald-400/20">
-            <div data-testid="phonics-mastery-bar" className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500" style={{
+          <div className="h-2.5 w-full rounded-full bg-muted dark:bg-primary overflow-hidden border border-border dark:border-border">
+            <div data-testid="phonics-mastery-bar" className="h-full bg-gradient-to-r from-primary to-primary transition-all duration-500" style={{
             width: `${completionPct}%`
           }} />
           </div>
@@ -662,8 +662,8 @@ function ParentTipsCard({
   return <Card data-testid="phonics-parent-tips" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-amber-100 dark:bg-amber-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
-            <Lightbulb className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <Lightbulb className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-quicksand text-base font-bold text-foreground">{t("components.phonics_learning.parent_tips_insights")}</h3>
@@ -672,9 +672,9 @@ function ParentTipsCard({
         </div>
 
         <div className="space-y-2 mb-4">
-          {display.map((ins, i) => <div key={i} data-testid={`phonics-insight-${ins.tone}`} className={cn("rounded-2xl border px-3 py-2.5 flex items-start gap-2.5", ins.tone === "good" && "bg-emerald-50/80 dark:bg-emerald-500/15 border-emerald-200/60 dark:border-emerald-400/30", ins.tone === "warn" && "bg-amber-50/80 dark:bg-amber-500/15 border-amber-200/60 dark:border-amber-400/30", ins.tone === "info" && "bg-violet-50/80 dark:bg-violet-500/15 border-violet-200/60 dark:border-violet-400/30")}>
+          {display.map((ins, i) => <div key={i} data-testid={`phonics-insight-${ins.tone}`} className={cn("rounded-2xl border px-3 py-2.5 flex items-start gap-2.5", ins.tone === "good" && "bg-muted dark:bg-primary border-border dark:border-border", ins.tone === "warn" && "bg-muted dark:bg-primary border-border dark:border-border", ins.tone === "info" && "bg-muted dark:bg-primary border-border dark:border-border")}>
               <span className="text-lg shrink-0" aria-hidden>{ins.emoji}</span>
-              <p className={cn("text-xs leading-relaxed font-medium", ins.tone === "good" && "text-emerald-900 dark:text-emerald-100", ins.tone === "warn" && "text-amber-900 dark:text-amber-100", ins.tone === "info" && "text-violet-900 dark:text-violet-100")}>
+              <p className={cn("text-xs leading-relaxed font-medium", ins.tone === "good" && "text-primary dark:text-muted-foreground", ins.tone === "warn" && "text-primary dark:text-muted-foreground", ins.tone === "info" && "text-primary dark:text-muted-foreground")}>
                 {ins.text}
               </p>
             </div>)}
@@ -796,8 +796,8 @@ function PhonicsDownloadCard({
   return <Card data-testid="phonics-download-card" className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-fuchsia-100 dark:bg-fuchsia-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
-            <FileText className="h-5 w-5 text-fuchsia-600 dark:text-fuchsia-300" />
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <FileText className="h-5 w-5 text-primary dark:text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-quicksand text-base font-bold text-foreground">
@@ -807,12 +807,12 @@ function PhonicsDownloadCard({
               {t("components.phonics_learning.15_sets_covering_short_vowels_blends_digraphs_more")}
             </p>
           </div>
-          {downloadCount !== null && downloadCount > 0 && <Badge data-testid="phonics-download-count" className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border-emerald-200/80 dark:border-emerald-400/30 font-bold text-[10px] shrink-0">
+          {downloadCount !== null && downloadCount > 0 && <Badge data-testid="phonics-download-count" className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border font-bold text-[10px] shrink-0">
               {downloadCount}{t("components.phonics_learning.downloaded")}
             </Badge>}
         </div>
 
-        <Button type="button" onClick={handleDownload} disabled={downloading} data-testid="phonics-download-button" className="w-full rounded-2xl gap-2 font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md disabled:opacity-70">
+        <Button type="button" onClick={handleDownload} disabled={downloading} data-testid="phonics-download-button" className="w-full rounded-2xl gap-2 font-semibold bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white shadow-md disabled:opacity-70">
           {downloading ? <>
               <Loader2 className="h-4 w-4 animate-spin" />
               {t("components.phonics_learning.preparing_download")}
@@ -822,7 +822,7 @@ function PhonicsDownloadCard({
             </>}
         </Button>
 
-        {error && <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1.5">
+        {error && <p className="text-xs text-primary dark:text-primary mt-2 flex items-center gap-1.5">
             <AlertCircle className="h-3.5 w-3.5" />
             {error}
           </p>}

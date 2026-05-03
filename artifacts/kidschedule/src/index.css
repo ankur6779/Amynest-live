@@ -310,6 +310,95 @@
   --muted-border: hsl(var(--muted));
   --accent-border: hsl(var(--accent));
   --destructive-border: hsl(var(--destructive));
+
+  /* ── Task #219: brand color scale (used by mascot SVGs,
+     recharts, inline style props that cannot consume Tailwind
+     utility classes). Values mirror Tailwind palette HSL triples;
+     dark mode reuses the same swatches because brand colors should
+     be identifiable across themes. ─────────────────────────────── */
+  --brand-violet-50: 250 100% 98%;
+  --brand-violet-100: 251 91% 95%;
+  --brand-violet-200: 251 95% 92%;
+  --brand-violet-300: 252 95% 85%;
+  --brand-violet-400: 255 92% 76%;
+  --brand-violet-500: 258 90% 66%;
+  --brand-violet-600: 262 83% 58%;
+  --brand-violet-700: 263 70% 50%;
+  --brand-violet-800: 263 69% 42%;
+  --brand-violet-900: 264 67% 35%;
+  --brand-violet-950: 261 73% 23%;
+  --brand-purple-300: 279 96% 84%;
+  --brand-purple-400: 273 95% 75%;
+  --brand-purple-500: 271 91% 65%;
+  --brand-purple-600: 271 81% 56%;
+  --brand-purple-700: 272 72% 47%;
+  --brand-pink-50: 327 73% 97%;
+  --brand-pink-100: 326 78% 95%;
+  --brand-pink-300: 327 87% 82%;
+  --brand-pink-400: 330 81% 71%;
+  --brand-pink-500: 330 81% 60%;
+  --brand-pink-600: 333 71% 51%;
+  --brand-pink-700: 335 78% 42%;
+  --brand-rose-400: 351 95% 71%;
+  --brand-rose-500: 350 89% 60%;
+  --brand-rose-600: 346 77% 50%;
+  --brand-amber-100: 55 92% 95%;
+  --brand-amber-200: 48 96% 76%;
+  --brand-amber-300: 46 96% 64%;
+  --brand-amber-400: 43 96% 56%;
+  --brand-amber-500: 38 92% 50%;
+  --brand-amber-600: 32 95% 44%;
+  --brand-amber-700: 26 90% 37%;
+  --brand-amber-800: 23 83% 31%;
+  --brand-amber-900: 22 78% 26%;
+  --brand-orange-400: 27 96% 61%;
+  --brand-orange-500: 25 95% 53%;
+  --brand-orange-600: 21 90% 48%;
+  --brand-emerald-100: 149 80% 90%;
+  --brand-emerald-400: 158 64% 52%;
+  --brand-emerald-500: 160 84% 39%;
+  --brand-emerald-600: 161 94% 30%;
+  --brand-emerald-700: 163 94% 24%;
+  --brand-emerald-800: 163 88% 20%;
+  --brand-green-100: 141 79% 85%;
+  --brand-green-300: 142 77% 73%;
+  --brand-green-400: 142 71% 60%;
+  --brand-green-500: 142 71% 45%;
+  --brand-green-600: 142 76% 36%;
+  --brand-green-700: 142 72% 29%;
+  --brand-green-900: 143 64% 16%;
+  --brand-blue-100: 214 95% 93%;
+  --brand-blue-300: 212 96% 78%;
+  --brand-blue-400: 213 94% 68%;
+  --brand-blue-500: 217 91% 60%;
+  --brand-blue-600: 221 83% 53%;
+  --brand-sky-400: 199 95% 64%;
+  --brand-sky-500: 199 89% 48%;
+  --brand-sky-600: 200 98% 39%;
+  --brand-cyan-500: 189 94% 43%;
+  --brand-indigo-100: 226 100% 94%;
+  --brand-indigo-300: 230 94% 82%;
+  --brand-indigo-400: 234 89% 74%;
+  --brand-indigo-500: 239 84% 67%;
+  --brand-indigo-600: 243 75% 59%;
+  --brand-indigo-700: 245 58% 51%;
+  --brand-indigo-800: 244 55% 41%;
+  --brand-indigo-900: 242 47% 34%;
+  --brand-indigo-950: 244 75% 20%;
+  --brand-red-100: 0 93% 94%;
+  --brand-red-200: 0 96% 89%;
+  --brand-red-300: 0 94% 82%;
+  --brand-red-400: 0 91% 71%;
+  --brand-red-500: 0 84% 60%;
+  --brand-red-600: 0 72% 51%;
+  --brand-red-700: 0 74% 42%;
+  --brand-yellow-300: 53 98% 77%;
+  --brand-yellow-400: 48 96% 53%;
+  --brand-yellow-500: 45 93% 47%;
+  --brand-teal-400: 172 66% 50%;
+  --brand-teal-500: 173 80% 40%;
+  --brand-teal-600: 175 84% 32%;
+  --brand-teal-700: 175 77% 26%;
 }
 
 .dark {

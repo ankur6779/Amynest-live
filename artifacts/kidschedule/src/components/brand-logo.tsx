@@ -7,9 +7,9 @@ interface BrandLogoProps {
 }
 
 const LETTERS = [
-  { char: "A", color: "#FF4757", glow: "#FF6B7A", shadow: "#CC0020" },
-  { char: "m", color: "#FF6B35", glow: "#FF8C5A", shadow: "#CC4400" },
-  { char: "y", color: "#FFC300", glow: "#FFD740", shadow: "#CC9900" },
+  { char: "A", color: "hsl(var(--brand-red-500))", glow: "#FF6B7A", shadow: "#CC0020" },
+  { char: "m", color: "hsl(var(--brand-orange-500))", glow: "hsl(var(--brand-orange-400))", shadow: "#CC4400" },
+  { char: "y", color: "hsl(var(--brand-yellow-500))", glow: "hsl(var(--brand-yellow-400))", shadow: "#CC9900" },
   { char: "N", color: "#2ECC71", glow: "#58D68D", shadow: "#1A9950" },
   { char: "e", color: "#3498DB", glow: "#5DADE2", shadow: "#1A6FA0" },
   { char: "s", color: "#9B59B6", glow: "#BB8FCE", shadow: "#6C3483" },
@@ -24,7 +24,7 @@ const SPRINKLE_POSITIONS = [
   { x: 78, y: 25, r: 45  },
   { x: 90, y: 65, r: 100 },
 ];
-const SPRINKLE_COLORS = ["#FF4757","#FFC300","#2ECC71","#3498DB","#E91E8C","#9B59B6"];
+const SPRINKLE_COLORS = ["hsl(var(--brand-red-500))","hsl(var(--brand-yellow-500))","#2ECC71","#3498DB","#E91E8C","#9B59B6"];
 
 export function BrandLogo({ size = "md", showTagline = false }: BrandLogoProps) {
   const { mode } = useTheme();
@@ -122,7 +122,7 @@ export function BrandLogo({ size = "md", showTagline = false }: BrandLogoProps) 
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: LETTERS.length * 0.04 + 0.1, type: "spring", stiffness: 260 }}
           >
-            <span style={{ color: "#00BCD4", fontWeight: 900 }}>A</span>
+            <span style={{ color: "hsl(var(--brand-cyan-500))", fontWeight: 900 }}>A</span>
             <span style={{ color: "#7C4DFF", fontWeight: 900 }}>I</span>
           </motion.span>
         </div>

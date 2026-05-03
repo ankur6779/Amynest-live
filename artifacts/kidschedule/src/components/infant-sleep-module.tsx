@@ -213,29 +213,29 @@ export function WakeWindowSystem({
     },
     asleep: {
       label: "Asleep",
-      color: "text-indigo-700 dark:text-indigo-300",
-      bg: "bg-indigo-100 dark:bg-indigo-500/20",
+      color: "text-primary dark:text-muted-foreground",
+      bg: "bg-muted dark:bg-primary",
       emoji: "😴",
       msg: "Sleeping since " + (lastEvent ? fmtTime(lastEvent.ts) : "—") + ". Tap 'Just woke up' when they wake."
     },
     normal: {
       label: "Normal",
-      color: "text-emerald-700 dark:text-emerald-300",
-      bg: "bg-emerald-100 dark:bg-emerald-500/20",
+      color: "text-primary dark:text-muted-foreground",
+      bg: "bg-muted dark:bg-primary",
       emoji: "🟢",
       msg: `Plenty of awake time left. Aim for sleep around ${spec.windowMin - elapsedMin > 0 ? `${spec.windowMin - elapsedMin} min` : "now"}.`
     },
     tired: {
       label: "Getting tired",
-      color: "text-amber-700 dark:text-amber-300",
-      bg: "bg-amber-100 dark:bg-amber-500/20",
+      color: "text-primary dark:text-muted-foreground",
+      bg: "bg-muted dark:bg-primary",
       emoji: "🟡",
       msg: "Start the nap routine now — dim lights, quiet voice, swaddle/sleep sack."
     },
     overtired: {
       label: "Overtired",
-      color: "text-rose-700 dark:text-rose-300",
-      bg: "bg-rose-100 dark:bg-rose-500/20",
+      color: "text-primary dark:text-muted-foreground",
+      bg: "bg-muted dark:bg-primary",
       emoji: "🔴",
       msg: "Past the window — use motion (rocking, carrier) + white noise to break the cortisol spike."
     }
@@ -281,11 +281,11 @@ export function WakeWindowSystem({
 
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-2">
-        <button onClick={() => recordEvent("wake_up")} className="rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-[0_4px_12px_-2px_rgba(245,158,11,0.5)]">
+        <button onClick={() => recordEvent("wake_up")} className="rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 bg-primary hover:bg-primary text-white transition-all shadow-[0_4px_12px_-2px_rgba(245,158,11,0.5)]">
           <Sun className="h-4 w-4" />
           {t("components.infant_sleep_module.just_woke_up")}
         </button>
-        <button onClick={() => recordEvent("down")} className="rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-[0_4px_12px_-2px_rgba(79,70,229,0.5)]">
+        <button onClick={() => recordEvent("down")} className="rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 bg-primary hover:bg-primary text-white transition-all shadow-[0_4px_12px_-2px_rgba(79,70,229,0.5)]">
           <Moon className="h-4 w-4" />
           {t("components.infant_sleep_module.down_for_sleep")}
         </button>
@@ -349,7 +349,7 @@ function TodaySnapshot({
               <span className="text-base">{e.type === "wake_up" ? "☀️" : "🌙"}</span>
               <span className="font-semibold text-foreground">{e.type === "wake_up" ? "Woke up" : "Down for sleep"}</span>
               <span className="text-muted-foreground ml-auto">{fmtTime(e.ts)}</span>
-              <button onClick={() => removeEvent(e.id)} className="text-muted-foreground hover:text-rose-500 transition-colors" aria-label={t("components.infant_sleep_module.delete_event")}>
+              <button onClick={() => removeEvent(e.id)} className="text-muted-foreground hover:text-primary transition-colors" aria-label={t("components.infant_sleep_module.delete_event")}>
                 <X className="h-3 w-3" />
               </button>
             </div>;
@@ -524,19 +524,19 @@ export function SleepIssueDetector({
   const issues = useMemo(() => detectIssues(log, spec), [log, spec]);
   const SEV_META = {
     info: {
-      color: "text-sky-700 dark:text-sky-300",
-      bg: "bg-sky-50 dark:bg-sky-500/10",
-      border: "border-sky-200/60 dark:border-sky-400/20"
+      color: "text-primary dark:text-muted-foreground",
+      bg: "bg-muted dark:bg-primary",
+      border: "border-border dark:border-border"
     },
     warn: {
-      color: "text-amber-700 dark:text-amber-300",
-      bg: "bg-amber-50 dark:bg-amber-500/10",
-      border: "border-amber-200/60 dark:border-amber-400/20"
+      color: "text-primary dark:text-muted-foreground",
+      bg: "bg-muted dark:bg-primary",
+      border: "border-border dark:border-border"
     },
     alert: {
-      color: "text-rose-700 dark:text-rose-300",
-      bg: "bg-rose-50 dark:bg-rose-500/10",
-      border: "border-rose-200/60 dark:border-rose-400/20"
+      color: "text-primary dark:text-muted-foreground",
+      bg: "bg-muted dark:bg-primary",
+      border: "border-border dark:border-border"
     }
   } as const;
   return <div className="space-y-2">
@@ -747,7 +747,7 @@ export function RoutineBuilder({
   return <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-[12px] text-muted-foreground">{t("components.infant_sleep_module.auto_generated_for_age_tap_any_row_to_edit")}</p>
-        <button onClick={regenerate} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 text-[10px] font-bold hover:bg-violet-200 dark:hover:bg-violet-500/25 transition-colors">
+        <button onClick={regenerate} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-[10px] font-bold hover:bg-muted dark:hover:bg-primary transition-colors">
           <RotateCcw className="h-3 w-3" />
           {t("components.infant_sleep_module.regenerate")}
         </button>
@@ -763,7 +763,7 @@ export function RoutineBuilder({
                 <input type="text" value={editTime} onChange={e => setEditTime(e.target.value)} placeholder="7:00 AM" className="w-full px-2 py-1.5 rounded-lg text-sm border border-border bg-white dark:bg-white/10 text-foreground" />
                 <input type="text" value={editActivity} onChange={e => setEditActivity(e.target.value)} placeholder={t("components.infant_sleep_module.activity")} className="w-full px-2 py-1.5 rounded-lg text-sm border border-border bg-white dark:bg-white/10 text-foreground" />
                 <div className="flex gap-2">
-                  <button onClick={() => saveEdit(item.id)} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-emerald-500 text-white text-[11px] font-bold hover:bg-emerald-600">
+                  <button onClick={() => saveEdit(item.id)} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary text-white text-[11px] font-bold hover:bg-primary">
                     <Check className="h-3 w-3" /> {t("components.infant_sleep_module.save")}
                   </button>
                   <button onClick={() => setEditing(null)} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-muted text-foreground text-[11px] font-bold">
@@ -774,10 +774,10 @@ export function RoutineBuilder({
                 <span className="text-base shrink-0">{item.emoji}</span>
                 <span className="text-[11px] font-bold text-primary tabular-nums shrink-0 w-16">{item.time}</span>
                 <span className="text-[12px] text-foreground flex-1 truncate">{item.activity}</span>
-                <button onClick={() => startEdit(item)} className="text-muted-foreground hover:text-violet-500 p-1" aria-label={t("components.infant_sleep_module.edit")}>
+                <button onClick={() => startEdit(item)} className="text-muted-foreground hover:text-primary p-1" aria-label={t("components.infant_sleep_module.edit")}>
                   <Edit3 className="h-3 w-3" />
                 </button>
-                <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-rose-500 p-1" aria-label={t("components.infant_sleep_module.remove")}>
+                <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-primary p-1" aria-label={t("components.infant_sleep_module.remove")}>
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>}
@@ -785,7 +785,7 @@ export function RoutineBuilder({
       })}
       </div>
 
-      <button onClick={addItem} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 border-dashed border-border text-[12px] font-bold text-muted-foreground hover:border-violet-400 hover:text-violet-500 transition-all">
+      <button onClick={addItem} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 border-dashed border-border text-[12px] font-bold text-muted-foreground hover:border-border hover:text-primary transition-all">
         <Plus className="h-3.5 w-3.5" />
         {t("components.infant_sleep_module.add_custom_item")}
       </button>
@@ -875,10 +875,10 @@ export function SleepWeeklyInsights({
   const maxBar = Math.max(...barData.map(b => b.min), 60);
   return <div className="space-y-3">
       {/* Headline */}
-      <div className="rounded-2xl bg-gradient-to-br from-violet-100/80 to-fuchsia-100/80 dark:from-violet-900/30 dark:to-fuchsia-900/30 border border-violet-200/60 dark:border-violet-400/20 p-4">
+      <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-4">
         <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-          <p className="text-[10px] font-bold uppercase tracking-wider text-violet-700 dark:text-violet-300">{t("components.infant_sleep_module.7_day_summary")}</p>
+          <TrendingUp className="h-4 w-4 text-primary dark:text-primary" />
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">{t("components.infant_sleep_module.7_day_summary")}</p>
         </div>
         <div className="grid grid-cols-3 gap-2 mb-3">
           <Stat label="Avg / day" value={fmtDuration(stats.avgMin)} accent="violet" />
@@ -889,23 +889,23 @@ export function SleepWeeklyInsights({
         {/* Bar chart */}
         <div className="flex items-end justify-between gap-1 h-20 px-1">
           {barData.map((b, i) => <div key={i} className="flex flex-col items-center gap-1 flex-1">
-              <div className="w-full rounded-t bg-gradient-to-t from-violet-500 to-fuchsia-400 transition-all" style={{
+              <div className="w-full rounded-t bg-gradient-to-t from-primary to-primary transition-all" style={{
             height: `${Math.max(2, b.min / maxBar * 60)}px`
           }} title={`${b.day}: ${fmtDuration(b.min)}`} />
-              <span className="text-[9px] text-violet-600 dark:text-violet-300 font-bold">{b.day}</span>
+              <span className="text-[9px] text-primary dark:text-muted-foreground font-bold">{b.day}</span>
             </div>)}
         </div>
       </div>
 
       {/* Trend message */}
-      <div className={`rounded-xl border p-3 ${stats.trend === "good" ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200/60" : "bg-amber-50 dark:bg-amber-500/10 border-amber-200/60"}`}>
+      <div className={`rounded-xl border p-3 ${stats.trend === "good" ? "bg-muted dark:bg-primary border-border" : "bg-muted dark:bg-primary border-border"}`}>
         <div className="flex items-start gap-2">
-          <Sparkles className={`h-4 w-4 shrink-0 mt-0.5 ${stats.trend === "good" ? "text-emerald-600" : "text-amber-600"}`} />
+          <Sparkles className={`h-4 w-4 shrink-0 mt-0.5 ${stats.trend === "good" ? "text-primary" : "text-primary"}`} />
           <div>
-            <p className={`text-sm font-bold ${stats.trend === "good" ? "text-emerald-800 dark:text-emerald-200" : "text-amber-800 dark:text-amber-200"}`}>
+            <p className={`text-sm font-bold ${stats.trend === "good" ? "text-primary dark:text-muted-foreground" : "text-primary dark:text-muted-foreground"}`}>
               {stats.trend === "good" ? "Sleep is on track" : "Sleep total is below target"}
             </p>
-            <p className={`text-[12px] mt-1 leading-snug ${stats.trend === "good" ? "text-emerald-700/85 dark:text-emerald-300/85" : "text-amber-700/85 dark:text-amber-300/85"}`}>
+            <p className={`text-[12px] mt-1 leading-snug ${stats.trend === "good" ? "text-primary dark:text-muted-foreground" : "text-primary dark:text-muted-foreground"}`}>
               {stats.trend === "good" ? `Average ${fmtDuration(stats.avgMin)}/day is healthy for this age. Keep the consistent rhythm going.` : `Average ${fmtDuration(stats.avgMin)}/day is below the typical ${fmtDuration(spec.totalDayMin + 11 * 60)} for this age. Try one earlier nap and an earlier bedtime by 30 min.`}
             </p>
           </div>
@@ -923,8 +923,8 @@ function Stat({
   accent: "violet" | "indigo";
 }) {
   const map = {
-    violet: "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-200",
-    indigo: "bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-200"
+    violet: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
+    indigo: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"
   } as const;
   return <div className={`rounded-lg ${map[accent]} px-2 py-1.5 text-center`}>
       <p className="text-[9px] font-bold uppercase tracking-wide opacity-80">{label}</p>

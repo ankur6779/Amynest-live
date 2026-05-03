@@ -4,12 +4,12 @@ import { useMemo, useState } from "react";
 // The player picks a color from a palette then taps cells to fill them.
 
 const PALETTE = [
-  { id: 0, color: "#ef4444", label: "Red"    },
-  { id: 1, color: "#3b82f6", label: "Blue"   },
-  { id: 2, color: "#22c55e", label: "Green"  },
-  { id: 3, color: "#f59e0b", label: "Yellow" },
-  { id: 4, color: "#a855f7", label: "Purple" },
-  { id: 5, color: "#f97316", label: "Orange" },
+  { id: 0, color: "hsl(var(--brand-red-500))", label: "Red"    },
+  { id: 1, color: "hsl(var(--brand-blue-500))", label: "Blue"   },
+  { id: 2, color: "hsl(var(--brand-green-500))", label: "Green"  },
+  { id: 3, color: "hsl(var(--brand-amber-500))", label: "Yellow" },
+  { id: 4, color: "hsl(var(--brand-purple-500))", label: "Purple" },
+  { id: 5, color: "hsl(var(--brand-orange-500))", label: "Orange" },
 ];
 
 // Each picture uses a subset of palette indices arranged on a 4×4 grid.
@@ -136,7 +136,7 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ color: "#a99fd9", fontSize: 12, marginBottom: 4 }}>
-        Round {roundIdx + 1} of {TOTAL} — "<strong style={{ color: "#fff" }}>{pic.label}</strong>"
+        Round {roundIdx + 1} of {TOTAL} — "<strong style={{ color:"#fff"}}>{pic.label}</strong>"
       </div>
       <div style={{ color: "#7c6fb8", fontSize: 11, marginBottom: 10 }}>
         Pick a colour then tap cells to fill them.
@@ -221,7 +221,7 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
         <button
           onClick={checkAndAdvance}
           style={{
-            background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
+            background: "linear-gradient(135deg, hsl(var(--brand-violet-500)), hsl(var(--brand-pink-500)))",
             color: "#fff", border: "none", borderRadius: 999,
             padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer",
             marginBottom: 8,
@@ -232,7 +232,7 @@ export function ColorFillGame({ onFinish }: { onFinish: (score: number, total: n
       )}
 
       {feedback === "correct" && (
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#86efac" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "hsl(var(--brand-green-300))" }}>
           Perfect colours! 🎨
         </div>
       )}

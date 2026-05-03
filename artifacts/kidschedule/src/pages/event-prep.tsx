@@ -93,10 +93,10 @@ export default function EventPrepPage() {
             <Card
               key={c.id}
               onClick={() => setView({ kind: "home", childId: c.id })}
-              className="cursor-pointer hover:border-pink-400 transition"
+              className="cursor-pointer hover:border-primary transition"
             >
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-pink-100 flex items-center justify-center text-2xl">👧</div>
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-2xl">👧</div>
                 <div>
                   <div className="font-bold">{c.name}</div>
                   <div className="text-xs text-muted-foreground">{t("screens.event_prep.age_label", { age: c.age })}</div>
@@ -124,10 +124,10 @@ export default function EventPrepPage() {
         {/* ✨ Amy AI Generator entry */}
         <Card
           onClick={() => setView({ kind: "generator", childId: child.id })}
-          className="cursor-pointer mt-4 border-purple-300 bg-gradient-to-br from-purple-100 via-pink-100 to-fuchsia-100 dark:from-purple-950/40 dark:via-pink-950/40 dark:to-fuchsia-950/40 hover:border-purple-500 transition"
+          className="cursor-pointer mt-4 border-border bg-card hover:border-primary transition"
         >
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center">
+            <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center">
               <Wand2 className="h-7 w-7" />
             </div>
             <div className="flex-1">
@@ -136,7 +136,7 @@ export default function EventPrepPage() {
                 {t("screens.event_prep.amy_generator_sub")}
               </p>
             </div>
-            <ChevronRight className="h-6 w-6 text-purple-700" />
+            <ChevronRight className="h-6 w-6 text-foreground" />
           </CardContent>
         </Card>
 
@@ -146,10 +146,10 @@ export default function EventPrepPage() {
             setFilter({ lastMinute: true });
             setView({ kind: "category", childId: child.id, categoryId: "fancy-dress" });
           }}
-          className="cursor-pointer mt-4 border-amber-300 bg-gradient-to-br from-amber-100 via-orange-100 to-pink-100 dark:from-amber-950/40 dark:via-orange-950/40 dark:to-pink-950/40 hover:border-amber-500 transition"
+          className="cursor-pointer mt-4 border-border bg-card hover:border-primary transition"
         >
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center">
+            <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center">
               <Zap className="h-7 w-7" />
             </div>
             <div className="flex-1">
@@ -158,13 +158,13 @@ export default function EventPrepPage() {
                 {t("screens.event_prep.last_minute_sub")}
               </p>
             </div>
-            <ChevronRight className="h-6 w-6 text-amber-700" />
+            <ChevronRight className="h-6 w-6 text-foreground" />
           </CardContent>
         </Card>
 
         {/* Amy AI quick picks */}
         <h2 className="font-bold mt-6 mb-3 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-pink-600" /> {t("screens.event_prep.amy_picks", { name: child.name })}
+          <Sparkles className="h-4 w-4 text-foreground" /> {t("screens.event_prep.amy_picks", { name: child.name })}
         </h2>
         <AmyRecommendations child={child} onOpen={(id) => setView({ kind: "detail", childId: child.id, characterId: id })} />
 
@@ -260,7 +260,7 @@ export default function EventPrepPage() {
 
         {/* Hero */}
         <div
-          className="rounded-2xl mt-4 p-8 text-white shadow-lg"
+          className="rounded-2xl mt-4 p-8 text-primary-foreground shadow-lg"
           style={{ background: `linear-gradient(135deg, ${ch.accent[0]}, ${ch.accent[1]})` }}
         >
           <div className="text-7xl text-center mb-3">{ch.emoji}</div>
@@ -292,7 +292,7 @@ export default function EventPrepPage() {
         </Card>
 
         {/* Speech */}
-        <Card className="mt-3 border-pink-200 bg-pink-50/50 dark:bg-pink-950/20">
+        <Card className="mt-3 border-border bg-muted">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold">{t("screens.event_prep.your_speech")}</h3>
@@ -352,10 +352,10 @@ function CategoryCard({ category, count, onOpen }: { category: EventCategory; co
   return (
     <Card
       onClick={onOpen}
-      className="cursor-pointer overflow-hidden hover:shadow-lg transition border-2 border-transparent hover:border-pink-300"
+      className="cursor-pointer overflow-hidden hover:shadow-lg transition border-2 border-transparent hover:border-border"
     >
       <div
-        className="p-5 text-white"
+        className="p-5 text-primary-foreground"
         style={{ background: `linear-gradient(135deg, ${category.accent[0]}, ${category.accent[1]})` }}
       >
         <div className="text-4xl mb-1">{category.emoji}</div>
@@ -363,7 +363,7 @@ function CategoryCard({ category, count, onOpen }: { category: EventCategory; co
       </div>
       <CardContent className="p-3 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{category.blurb}</span>
-        <span className="text-xs font-semibold text-pink-600">{t("screens.event_prep.ideas_count", { count })}</span>
+        <span className="text-xs font-semibold text-foreground">{t("screens.event_prep.ideas_count", { count })}</span>
       </CardContent>
     </Card>
   );
@@ -374,22 +374,22 @@ function CharacterCard({ ch, onOpen }: { ch: EventCharacter; onOpen: () => void 
   return (
     <Card
       onClick={onOpen}
-      className="cursor-pointer overflow-hidden hover:shadow-lg transition border-2 border-transparent hover:border-pink-300"
+      className="cursor-pointer overflow-hidden hover:shadow-lg transition border-2 border-transparent hover:border-border"
     >
       <div
         data-on-dark
-        className="p-6 relative h-32 flex items-center justify-center text-white"
+        className="p-6 relative h-32 flex items-center justify-center text-primary-foreground"
         style={{ background: `linear-gradient(135deg, ${ch.accent[0]}, ${ch.accent[1]})` }}
       >
         <div className="text-6xl">{ch.emoji}</div>
-        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/30 text-[10px] font-bold flex items-center gap-1">
+        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-foreground text-[10px] font-bold flex items-center gap-1">
           <Clock className="h-3 w-3" /> {ch.timeMinutes} {t("screens.event_prep.minutes_short")}
         </div>
-        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/30 text-[10px] font-bold">
+        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-card text-[10px] font-bold">
           {ch.difficulty}
         </div>
         {ch.lowCost && (
-          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-white/30 text-[10px] font-bold">
+          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-card text-[10px] font-bold">
             💸
           </div>
         )}
@@ -428,8 +428,8 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
       onClick={onClick}
       className={`text-xs px-3 py-1.5 rounded-full border transition ${
         active
-          ? "bg-pink-600 text-white border-pink-600"
-          : "bg-white dark:bg-zinc-800 text-foreground/80 border-zinc-300 dark:border-zinc-600 hover:border-pink-400"
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-card text-foreground/80 border-border hover:border-primary"
       }`}
     >
       {children}
@@ -439,7 +439,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="px-2.5 py-1 rounded-full bg-white/25 border border-white/30 inline-flex items-center gap-1 font-semibold">
+    <span className="px-2.5 py-1 rounded-full bg-card border border-border inline-flex items-center gap-1 font-semibold">
       {children}
     </span>
   );
@@ -454,7 +454,7 @@ function AmyRecommendations({ child, onOpen }: { child: Child; onOpen: (id: stri
   const cat = EVENT_CATEGORIES.find((c) => c.id === category)!;
 
   return (
-    <Card className="border-pink-200 bg-gradient-to-br from-pink-50/50 to-purple-50/50 dark:from-pink-950/20 dark:to-purple-950/20">
+    <Card className="border-border bg-card">
       <CardContent className="p-4">
         <div className="text-xs text-muted-foreground mb-3">
           {t("screens.event_prep.best_matches_prefix")}<strong>{cat.title}</strong>{t("screens.event_prep.best_matches_suffix", { name: child.name, age: child.age })}
@@ -464,7 +464,7 @@ function AmyRecommendations({ child, onOpen }: { child: Child; onOpen: (id: stri
             <button
               key={ch.id}
               onClick={() => onOpen(ch.id)}
-              className="text-left rounded-xl p-3 bg-white dark:bg-zinc-900 border hover:border-pink-400 transition"
+              className="text-left rounded-xl p-3 bg-card border hover:border-primary transition"
             >
               <div className="text-3xl">{ch.emoji}</div>
               <div className="font-bold text-sm mt-1">{ch.character}</div>

@@ -15,26 +15,26 @@ const CATEGORY_META: Record<MCategory, {
   motor: {
     label: "Motor",
     emoji: "🤸",
-    color: "text-orange-700 dark:text-orange-300",
-    bg: "bg-orange-100 dark:bg-orange-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bg: "bg-muted dark:bg-primary"
   },
   cognitive: {
     label: "Thinking",
     emoji: "🧠",
-    color: "text-violet-700 dark:text-violet-300",
-    bg: "bg-violet-100 dark:bg-violet-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bg: "bg-muted dark:bg-primary"
   },
   social: {
     label: "Social",
     emoji: "💞",
-    color: "text-rose-700 dark:text-rose-300",
-    bg: "bg-rose-100 dark:bg-rose-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bg: "bg-muted dark:bg-primary"
   },
   language: {
     label: "Language",
     emoji: "💬",
-    color: "text-sky-700 dark:text-sky-300",
-    bg: "bg-sky-100 dark:bg-sky-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bg: "bg-muted dark:bg-primary"
   }
 };
 type BuddyMilestone = {
@@ -582,13 +582,13 @@ export function BuddyMilestonePlanner({
   }, [bandMilestones, progress]);
   return <div className="space-y-4">
       {/* ── Weekly Summary Card ─────────────────────────────────────── */}
-      <div className="rounded-2xl bg-gradient-to-br from-violet-100/80 via-fuchsia-100/60 to-pink-100/80 dark:from-violet-900/30 dark:via-fuchsia-900/20 dark:to-pink-900/30 border border-violet-200/60 dark:border-violet-400/20 p-4 backdrop-blur-md">
+      <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary border border-border dark:border-border p-4 backdrop-blur-md">
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-violet-600 dark:text-violet-300" />
-            <p className="text-[10px] font-bold uppercase tracking-wider text-violet-700 dark:text-violet-300">{t("components.infant_milestones.weekly_summary")}</p>
+            <Trophy className="h-4 w-4 text-primary dark:text-muted-foreground" />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">{t("components.infant_milestones.weekly_summary")}</p>
           </div>
-          <span className="text-[10px] font-bold text-violet-600/80 dark:text-violet-300/80">{getBandLabel(ageBand)}</span>
+          <span className="text-[10px] font-bold text-primary dark:text-muted-foreground">{getBandLabel(ageBand)}</span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 mb-3">
@@ -599,17 +599,17 @@ export function BuddyMilestonePlanner({
 
         {/* Big progress bar */}
         <div className="h-2.5 rounded-full bg-white/60 dark:bg-white/10 overflow-hidden mb-2">
-          <div className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 transition-all duration-700" style={{
+          <div className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary transition-all duration-700" style={{
           width: `${stats.pct}%`
         }} />
         </div>
 
-        {stats.nextFocus.length > 0 && <div className="mt-3 pt-3 border-t border-violet-300/40 dark:border-violet-400/20">
+        {stats.nextFocus.length > 0 && <div className="mt-3 pt-3 border-t border-border dark:border-border">
             <div className="flex items-center gap-1.5 mb-1">
-              <Target className="h-3 w-3 text-violet-600 dark:text-violet-300" />
-              <p className="text-[10px] font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">{t("components.infant_milestones.next_focus")}</p>
+              <Target className="h-3 w-3 text-primary dark:text-muted-foreground" />
+              <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.next_focus")}</p>
             </div>
-            <p className="text-[12px] text-violet-800/90 dark:text-violet-100/90 leading-snug">
+            <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">
               {stats.nextFocus.join(" · ")}
             </p>
           </div>}
@@ -619,7 +619,7 @@ export function BuddyMilestonePlanner({
       <div>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-fuchsia-500" />
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
             <p className="text-xs font-bold text-foreground">{t("components.infant_milestones.this_week_s_plan")}</p>
           </div>
           <p className="text-[10px] text-muted-foreground">{weeklyPlan.length} {t("components.infant_milestones.for_you_to_focus_on")}</p>
@@ -645,18 +645,18 @@ export function BuddyMilestonePlanner({
       </div>
 
       {/* ── Parent Guidance Tip ─────────────────────────────────────── */}
-      <div className="rounded-xl bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 border border-rose-200/60 dark:border-rose-400/20 p-3">
+      <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3">
         <div className="flex items-start gap-2.5">
-          <Heart className="h-4 w-4 text-rose-500 fill-rose-300 dark:fill-rose-500/30 shrink-0 mt-0.5" />
+          <Heart className="h-4 w-4 text-primary fill-muted dark:fill-primary shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 mb-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300">{t("components.infant_milestones.a_gentle_reminder")}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">{t("components.infant_milestones.a_gentle_reminder")}</p>
             </div>
-            <p className="text-[12px] text-rose-900/90 dark:text-rose-100/90 leading-relaxed">
+            <p className="text-[12px] text-primary dark:text-muted-foreground leading-relaxed">
               {PARENT_TIPS[tipIdx % PARENT_TIPS.length]}
             </p>
           </div>
-          <button onClick={() => setTipIdx(i => i + 1)} className="text-rose-500 dark:text-rose-300 hover:text-rose-600 transition-colors p-1" aria-label={t("components.infant_milestones.next_tip")}>
+          <button onClick={() => setTipIdx(i => i + 1)} className="text-primary dark:text-muted-foreground hover:text-primary transition-colors p-1" aria-label={t("components.infant_milestones.next_tip")}>
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -676,10 +676,10 @@ function SummaryStat({
   sub: string;
 }) {
   return <div className="rounded-lg bg-white/70 dark:bg-white/10 px-2 py-2 text-center">
-      <p className="text-[9px] font-bold uppercase tracking-wide text-violet-600/80 dark:text-violet-300/80">{label}</p>
-      <p className="text-base font-bold text-violet-900 dark:text-violet-100 leading-tight tabular-nums">
+      <p className="text-[9px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{label}</p>
+      <p className="text-base font-bold text-primary dark:text-muted-foreground leading-tight tabular-nums">
         {value}
-        {sub && <span className="text-[10px] text-violet-600/60 dark:text-violet-300/60 ml-0.5 font-medium">{sub}</span>}
+        {sub && <span className="text-[10px] text-primary dark:text-muted-foreground ml-0.5 font-medium">{sub}</span>}
       </p>
     </div>;
 }
@@ -699,7 +699,7 @@ function ActionBtn({
   const base = "flex flex-col items-center gap-0.5 py-2 rounded-lg text-[10px] font-bold transition-all border";
   let cls = "";
   if (active) {
-    cls = accent === "emerald" ? "bg-emerald-500 text-white border-emerald-600 shadow-[0_4px_12px_-2px_rgba(16,185,129,0.5)]" : accent === "amber" ? "bg-amber-500 text-white border-amber-600 shadow-[0_4px_12px_-2px_rgba(245,158,11,0.5)]" : "bg-muted-foreground/30 text-foreground border-muted-foreground/40";
+    cls = accent === "emerald" ? "bg-primary text-white border-primary shadow-[0_4px_12px_-2px_rgba(16,185,129,0.5)]" : accent === "amber" ? "bg-primary text-white border-primary shadow-[0_4px_12px_-2px_rgba(245,158,11,0.5)]" : "bg-muted-foreground/30 text-foreground border-muted-foreground/40";
   } else {
     cls = "bg-white/60 dark:bg-white/5 text-muted-foreground border-border hover:border-current hover:text-foreground";
   }
@@ -728,7 +728,7 @@ function MilestoneCard({
   const cur = state;
   const cat = CATEGORY_META[m.category];
   const pct = cur === "achieved" ? 100 : cur === "in_progress" ? 50 : 0;
-  return <div className={["rounded-2xl border-2 backdrop-blur-md transition-all overflow-hidden", cur === "achieved" ? "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-300/60 dark:border-emerald-400/30 shadow-[0_8px_24px_-12px_rgba(16,185,129,0.4)]" : cur === "in_progress" ? "bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-300/60 dark:border-amber-400/30 shadow-[0_8px_24px_-12px_rgba(245,158,11,0.4)]" : "bg-white/60 dark:bg-white/[0.04] border-border"].join(" ")}>
+  return <div className={["rounded-2xl border-2 backdrop-blur-md transition-all overflow-hidden", cur === "achieved" ? "bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border dark:border-border shadow-[0_8px_24px_-12px_rgba(16,185,129,0.4)]" : cur === "in_progress" ? "bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border dark:border-border shadow-[0_8px_24px_-12px_rgba(245,158,11,0.4)]" : "bg-white/60 dark:bg-white/[0.04] border-border"].join(" ")}>
       <button onClick={onToggle} className="w-full p-3 flex items-start gap-3 text-left">
         <span className="text-2xl leading-none shrink-0 mt-0.5">{m.emoji}</span>
         <div className="min-w-0 flex-1">
@@ -741,7 +741,7 @@ function MilestoneCard({
           </div>
           <p className="text-[12px] text-muted-foreground leading-snug">{m.explanation}</p>
           <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden mt-2">
-            <div className={`h-full rounded-full transition-all duration-500 ${cur === "achieved" ? "bg-gradient-to-r from-emerald-500 to-teal-500" : cur === "in_progress" ? "bg-gradient-to-r from-amber-500 to-orange-500" : "bg-muted-foreground/30"}`} style={{
+            <div className={`h-full rounded-full transition-all duration-500 ${cur === "achieved" ? "bg-gradient-to-r from-primary to-primary" : cur === "in_progress" ? "bg-gradient-to-r from-primary to-primary" : "bg-muted-foreground/30"}`} style={{
             width: `${pct}%`
           }} />
           </div>
@@ -750,50 +750,50 @@ function MilestoneCard({
       </button>
 
       {isOpen && <div className="px-3 pb-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="rounded-lg bg-violet-50/80 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-400/20 p-2.5">
+          <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
             <div className="flex items-center gap-1.5 mb-0.5">
-              <Heart className="h-3 w-3 text-violet-600 dark:text-violet-400" />
-              <p className="text-[10px] font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">{t("components.infant_milestones.why_it_matters")}</p>
+              <Heart className="h-3 w-3 text-primary dark:text-primary" />
+              <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.why_it_matters")}</p>
             </div>
-            <p className="text-[12px] text-violet-900/90 dark:text-violet-100/90 leading-snug">{m.whyItMatters}</p>
+            <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{m.whyItMatters}</p>
           </div>
 
-          <div className="rounded-lg bg-sky-50/80 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-400/20 p-2.5">
+          <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="flex items-center gap-1.5">
-                <PlayCircle className="h-3 w-3 text-sky-600 dark:text-sky-400" />
-                <p className="text-[10px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300">{t("components.infant_milestones.try_this_activity")}</p>
+                <PlayCircle className="h-3 w-3 text-primary dark:text-primary" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.try_this_activity")}</p>
               </div>
-              <span className="inline-flex items-center gap-0.5 text-[10px] text-sky-700/80 dark:text-sky-300/80 font-bold">
+              <span className="inline-flex items-center gap-0.5 text-[10px] text-primary dark:text-muted-foreground font-bold">
                 <Clock className="h-2.5 w-2.5" />
                 {m.timeRequired}
               </span>
             </div>
-            <p className="text-[12px] text-sky-900/90 dark:text-sky-100/90 leading-snug">{m.activity}</p>
+            <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{m.activity}</p>
           </div>
 
-          {cur === "not_started" && <div className="rounded-lg bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-400/20 p-2.5">
+          {cur === "not_started" && <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <Lightbulb className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                <p className="text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">{t("components.infant_milestones.try_an_easier_start")}</p>
+                <Lightbulb className="h-3 w-3 text-primary dark:text-primary" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.try_an_easier_start")}</p>
               </div>
-              <p className="text-[12px] text-amber-900/90 dark:text-amber-100/90 leading-snug">{m.easierVariation}</p>
+              <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{m.easierVariation}</p>
             </div>}
-          {cur === "in_progress" && <div className="rounded-lg bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-400/20 p-2.5">
+          {cur === "in_progress" && <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <Smile className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                <p className="text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">{t("components.infant_milestones.almost_there")}</p>
+                <Smile className="h-3 w-3 text-primary dark:text-primary" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.almost_there")}</p>
               </div>
-              <p className="text-[12px] text-amber-900/90 dark:text-amber-100/90 leading-snug">
+              <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">
                 {t("components.infant_milestones.keep_showing_up_daily_even_2_minutes_counts_if_progress_feel")} {m.easierVariation}
               </p>
             </div>}
-          {cur === "achieved" && <div className="rounded-lg bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/50 dark:border-emerald-400/20 p-2.5">
+          {cur === "achieved" && <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <ArrowUp className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{t("components.infant_milestones.next_level")}</p>
+                <ArrowUp className="h-3 w-3 text-primary dark:text-primary" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.next_level")}</p>
               </div>
-              <p className="text-[12px] text-emerald-900/90 dark:text-emerald-100/90 leading-snug">{m.nextLevel}</p>
+              <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{m.nextLevel}</p>
             </div>}
 
           <div className="grid grid-cols-3 gap-1.5 pt-1">
@@ -840,8 +840,8 @@ function BandLibrary({
                 <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ${cat.bg} ${cat.color}`}>
                   {cat.emoji}
                 </span>
-                {st === "achieved" && <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />}
-                {st === "in_progress" && <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />}
+                {st === "achieved" && <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />}
+                {st === "in_progress" && <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
               </button>;
       })}
         </div>}

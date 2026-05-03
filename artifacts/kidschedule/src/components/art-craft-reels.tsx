@@ -598,7 +598,7 @@ export function ArtCraftReels() {
         initializedRef.current = false;
         loadMore(0, true);
       }} style={{
-        background: "var(--primary, #7b3ff2)",
+        background: "var(--primary, hsl(var(--brand-violet-600)))",
         color: "#fff",
         border: "none",
         borderRadius: 24,
@@ -678,7 +678,7 @@ export function ArtCraftReels() {
             {t("components.art_craft_reels.you_ve_seen_all_2")} {videos.length} {t("components.art_craft_reels.videos_2")}
           </p>}
         {error && videos.length > 0 && <p style={{
-        color: "var(--destructive, #ef4444)",
+        color: "var(--destructive, hsl(var(--brand-red-500)))",
         fontSize: 12,
         marginTop: 6
       }}>

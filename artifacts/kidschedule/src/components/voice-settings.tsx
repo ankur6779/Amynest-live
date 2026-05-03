@@ -55,12 +55,12 @@ export function VoiceSettingsPanel({
   };
   const currentVoiceName = ELEVENLABS_VOICES[settings.lang]?.[settings.gender] ?? "ElevenLabs Indian";
   return <div className="relative flex items-center gap-1">
-      <Button variant="outline" size="sm" onClick={handleToggle} className={`rounded-full gap-2 ${settings.enabled ? "bg-violet-50 dark:bg-violet-500/15 border-violet-300 text-violet-700 dark:text-violet-200" : ""}`}>
+      <Button variant="outline" size="sm" onClick={handleToggle} className={`rounded-full gap-2 ${settings.enabled ? "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground" : ""}`}>
         {settings.enabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         {settings.enabled ? "Voice On" : "Voice"}
       </Button>
 
-      {settings.enabled && <button title={t("components.voice_settings.voice_settings")} onClick={() => setOpen(o => !o)} className="p-1.5 rounded-full border border-violet-200 dark:border-violet-400/30 bg-violet-50 dark:bg-violet-500/15 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 transition-colors text-[11px] font-bold">
+      {settings.enabled && <button title={t("components.voice_settings.voice_settings")} onClick={() => setOpen(o => !o)} className="p-1.5 rounded-full border border-border dark:border-border bg-muted dark:bg-primary text-primary hover:bg-muted dark:bg-primary transition-colors text-[11px] font-bold">
           🎙
         </button>}
 
@@ -82,7 +82,7 @@ export function VoiceSettingsPanel({
               <div className="flex gap-2">
                 {(["en", "hi"] as VoiceLang[]).map(lang => <button key={lang} onClick={() => update({
               lang
-            })} className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${settings.lang === lang ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 dark:text-violet-200 border-violet-200 dark:border-violet-400/30 hover:border-violet-400 dark:bg-transparent"}`}>
+            })} className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${settings.lang === lang ? "bg-primary text-white border-primary" : "bg-white text-primary dark:text-muted-foreground border-border dark:border-border hover:border-border dark:bg-transparent"}`}>
                     {lang === "en" ? "🇬🇧 English" : "🇮🇳 Hindi"}
                   </button>)}
               </div>
@@ -96,18 +96,18 @@ export function VoiceSettingsPanel({
               <div className="flex gap-2">
                 {(["female", "male"] as VoiceGender[]).map(g => <button key={g} onClick={() => update({
               gender: g
-            })} className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${settings.gender === g ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-emerald-700 dark:text-emerald-200 border-emerald-200 dark:border-emerald-400/30 hover:border-emerald-400 dark:bg-transparent"}`}>
+            })} className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${settings.gender === g ? "bg-primary text-white border-primary" : "bg-white text-primary dark:text-muted-foreground border-border dark:border-border hover:border-border dark:bg-transparent"}`}>
                     {g === "female" ? "👩 Female" : "👨 Male"}
                   </button>)}
               </div>
             </div>
 
             {/* Active voice info */}
-            <div className="rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-400/30 px-3 py-2.5">
+            <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border px-3 py-2.5">
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
                 {t("components.voice_settings.active_voice")}
               </p>
-              <p className="text-xs font-bold text-violet-800 dark:text-violet-200">{currentVoiceName}</p>
+              <p className="text-xs font-bold text-primary dark:text-muted-foreground">{currentVoiceName}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{t("components.voice_settings.powered_by_elevenlabs_ai")}</p>
             </div>
 
