@@ -114,6 +114,9 @@ type ChildType = {
   age: number;
   childClass?: string | null;
   foodType?: string;
+  dietType?: string | null;
+  foodStyle?: string | null;
+  subCuisine?: string | null;
   schoolStartTime: string;
   schoolEndTime: string;
   wakeUpTime: string;
@@ -122,6 +125,25 @@ type ChildType = {
   travelModeOther?: string | null;
   goals: string;
 };
+
+const DIET_LABELS: Record<string, string> = {
+  vegetarian: "🥦 Vegetarian",
+  vegan: "🌱 Vegan",
+  eggetarian: "🥚 Eggetarian",
+  non_veg: "🍗 Non-Vegetarian",
+  pescatarian: "🐟 Pescatarian",
+  jain: "🙏 Jain (Pure Veg)",
+  halal: "☪️ Halal",
+  kosher: "✡️ Kosher",
+  sattvik: "🕉️ Sattvik",
+  no_preference: "🍽️ No preference",
+};
+
+function effectiveDietLabel(child: ChildType, parentDietType?: string | null): string {
+  const dt = child.dietType || parentDietType;
+  if (dt && DIET_LABELS[dt]) return DIET_LABELS[dt];
+  return child.foodType === "non_veg" ? "🍗 Non-Vegetarian" : "🥦 Vegetarian";
+}
 type FamilyResult = {
   child: ChildType;
   routine: GeneratedRoutine;
@@ -371,9 +393,11 @@ function parseTimeToMinutes(t: string): number {
   return h * 60 + (minutes || 0);
 }
 function TiffinSummaryCard({
-  familyResults
+  familyResults,
+  parentDietType,
 }: {
   familyResults: FamilyResult[];
+  parentDietType?: string | null;
 }) {
   const {
     t
@@ -418,7 +442,7 @@ function TiffinSummaryCard({
               </div>
               <span className="text-xs text-primary">{t("pages.routines.generate.pack_by")} {time}</span>
               <span className="text-xs text-primary ml-1">
-                {child.foodType === "non_veg" ? "🍗 Non-veg" : "🥦 Veg"}
+                {effectiveDietLabel(child as ChildType, parentDietType)}
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -590,13 +614,17 @@ export default function RoutineGenerate() {
     }
   });
 
-  // Parent profile region — sent in generation payload so the server doesn't
-  // have to guess. Falls back to undefined when the profile hasn't loaded yet.
+  // Parent profile — region sent in generation payload, dietType used for
+  // display fallback when child hasn't set a custom diet preference.
   const [parentRegion, setParentRegion] = React.useState<string | undefined>(undefined);
+  const [parentDietType, setParentDietType] = React.useState<string | null>(null);
   React.useEffect(() => {
     let cancelled = false;
     authFetch("/api/parent-profile").then(r => r.ok ? r.json() : null).then(p => {
-      if (!cancelled && p?.region) setParentRegion(p.region);
+      if (!cancelled) {
+        if (p?.region) setParentRegion(p.region);
+        if (p?.dietType) setParentDietType(p.dietType);
+      }
     }).catch(() => {});
     return () => {
       cancelled = true;
@@ -1350,7 +1378,7 @@ export default function RoutineGenerate() {
                         </div>
                         <div className="flex items-center gap-2 text-sm mt-1">
                           <span className="text-muted-foreground text-xs">{t("pages.routines.generate.diet")}</span>
-                          <span className="text-xs font-medium">{selectedChildData.foodType === "non_veg" ? "🍗 Non-Vegetarian" : "🥦 Vegetarian"}</span>
+                          <span className="text-xs font-medium">{effectiveDietLabel(selectedChildData as ChildType, parentDietType)}</span>
                         </div>
                         {selectedChildData.goals && <div className="mt-2 pt-2 border-t border-border/50">
                             <p className="text-xs text-muted-foreground">🎯 {selectedChildData.goals}</p>
@@ -1731,7 +1759,7 @@ export default function RoutineGenerate() {
         })()}
 
               {/* SECTION 3: Tiffin Suggestions */}
-              <TiffinSummaryCard familyResults={familyResults} />
+              <TiffinSummaryCard familyResults={familyResults} parentDietType={parentDietType} />
 
               {/* SECTION 2: Combined Timeline */}
               <Card className="rounded-3xl border-none shadow-sm bg-card">
