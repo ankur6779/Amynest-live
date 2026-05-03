@@ -32,6 +32,7 @@ import FuturePredictor from "@/components/FuturePredictor";
 import AiMealGenerator from "@/components/AiMealGenerator";
 import ParentCommandCenter from "@/components/ParentCommandCenter";
 import { PhonicsTestCard } from "@/components/PhonicsTestCard";
+import { PhonicsLearningCard } from "@/components/PhonicsLearningCard";
 import { SmartMathTricks } from "@/components/SmartMathTricks";
 import { AbacusZone } from "@/components/AbacusZone";
 import { ColoringBooks } from "@/components/ColoringBooks";
@@ -854,6 +855,15 @@ export default function HubScreen() {
                   </LinearGradient>
                 </Pressable>
               </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "phonics-learning",
+            ageBands: HUB_CONTENT_AGE_BANDS.phonics,
+            node: (
+              <View style={tileW("phonics-learning")}>
+                <PhonicsLearningCard childId={effective?.id} />
               </View>
             ),
           });
