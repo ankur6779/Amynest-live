@@ -1168,6 +1168,7 @@ type SmartStudyInsightsResponse = {
 };
 
 function LearningInsightsSection({ childId }: { childId: number }) {
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
   const { data, isLoading } = useQuery<SmartStudyInsightsResponse>({
     queryKey: ["smart-study-insights", childId],
@@ -1182,8 +1183,8 @@ function LearningInsightsSection({ childId }: { childId: number }) {
   if (isLoading) {
     return (
       <View style={li.section} testID="learning-insights-loading">
-        <Text style={d.sectionTitle}>LEARNING INSIGHTS</Text>
-        <Text style={li.empty}>Loading…</Text>
+        <Text style={d.sectionTitle}>{t("components.parent_command_center.learning_insights")}</Text>
+        <Text style={li.empty}>{t("common.loading")}</Text>
       </View>
     );
   }
@@ -1191,7 +1192,7 @@ function LearningInsightsSection({ childId }: { childId: number }) {
   if (!data.hasData) {
     return (
       <View style={li.section} testID="learning-insights-empty">
-        <Text style={d.sectionTitle}>LEARNING INSIGHTS</Text>
+        <Text style={d.sectionTitle}>{t("components.parent_command_center.learning_insights")}</Text>
         <Text style={li.empty}>
           {data.childName} hasn't tried Smart Study yet. Once they answer a
           few questions you'll see weak topics and accuracy trends here.
@@ -1208,7 +1209,7 @@ function LearningInsightsSection({ childId }: { childId: number }) {
   return (
     <View style={li.section} testID="learning-insights">
       <View style={d.sectionHead}>
-        <Text style={d.sectionTitle}>LEARNING INSIGHTS</Text>
+        <Text style={d.sectionTitle}>{t("components.parent_command_center.learning_insights")}</Text>
         {y && y.planSize > 0 ? (
           <Text style={li.yesterday} testID="learning-insights-yesterday">
             Yesterday: {y.doneCount}/{y.planSize} ({y.completionPct}%)

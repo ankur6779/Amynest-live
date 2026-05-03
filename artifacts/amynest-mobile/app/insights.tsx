@@ -400,7 +400,7 @@ export default function InsightsScreen() {
             routines/behaviour activity gate so parents whose child only
             uses the Abacus PRO Zone still see weekly trends. */}
         {data?.hasChildren && abacus && abacus.children.length > 0 && (
-          <Section title="Abacus this week">
+          <Section title={t("screens.insights.abacus_this_week")}>
             {abacus.children.map((c) => (
               <View key={c.childId} style={styles.abacusCard}>
                 <View style={styles.abacusHeaderRow}>
@@ -417,7 +417,7 @@ export default function InsightsScreen() {
                     <View style={styles.abacusNextRow}>
                       <Ionicons name="sparkles" size={14} color={brand.purple500} />
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.abacusNextLabel}>Next up</Text>
+                        <Text style={styles.abacusNextLabel}>{t("screens.insights.abacus_next_up")}</Text>
                         <Text style={styles.abacusNextText}>{c.nextRecommendedAction}</Text>
                       </View>
                     </View>
@@ -432,12 +432,12 @@ export default function InsightsScreen() {
                         <Text style={styles.abacusStatValue}>{c.accuracyPct}%</Text>
                       </View>
                       <View style={styles.abacusStatBox}>
-                        <Text style={styles.abacusStatLabel}>Points</Text>
+                        <Text style={styles.abacusStatLabel}>{t("screens.insights.abacus_points")}</Text>
                         <Text style={styles.abacusStatValue}>{c.pointsThisWeek}</Text>
-                        <Text style={styles.abacusStatSub}>this week</Text>
+                        <Text style={styles.abacusStatSub}>{t("screens.insights.this_week")}</Text>
                       </View>
                       <View style={styles.abacusStatBox}>
-                        <Text style={styles.abacusStatLabel}>Levels</Text>
+                        <Text style={styles.abacusStatLabel}>{t("screens.insights.abacus_levels")}</Text>
                         <Text style={styles.abacusStatValue}>
                           {c.levelsCompletedTotal}/5
                         </Text>
@@ -451,7 +451,7 @@ export default function InsightsScreen() {
                     <View style={styles.abacusNextRow}>
                       <Ionicons name="sparkles" size={14} color={brand.purple500} />
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.abacusNextLabel}>Next up</Text>
+                        <Text style={styles.abacusNextLabel}>{t("screens.insights.abacus_next_up")}</Text>
                         <Text style={styles.abacusNextText}>{c.nextRecommendedAction}</Text>
                       </View>
                     </View>

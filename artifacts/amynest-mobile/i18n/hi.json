@@ -757,7 +757,11 @@
       "section_most_planned": "सबसे ज्यादा प्लान की गई गतिविधियां",
       "section_day_of_week": "सप्ताह के दिन की गतिविधि",
       "ask_amy_title": "Amy से पूछें कि किस पर ध्यान दें",
-      "ask_amy_sub": "अपने डेटा से व्यक्तिगत विश्लेषण पाएं"
+      "ask_amy_sub": "अपने डेटा से व्यक्तिगत विश्लेषण पाएं",
+      "abacus_this_week": "इस हफ्ते अबेकस",
+      "abacus_next_up": "आगे क्या",
+      "abacus_points": "अंक",
+      "abacus_levels": "स्तर"
     },
     "kids_control_center": {
       "back": "वापस",
@@ -2267,7 +2271,8 @@
       "done_with_my_child": "अपने बच्चे के साथ हो गया",
       "today_s_timeline": "आज की टाइमलाइन",
       "create_today_s_routine": "आज की दिनचर्या बनाएँ",
-      "open_today_s_routine": "आज की दिनचर्या खोलें"
+      "open_today_s_routine": "आज की दिनचर्या खोलें",
+      "learning_insights": "सीखने की जानकारी"
     },
     "parenting_articles": {
       "close_article": "लेख बंद करें",
@@ -2294,7 +2299,8 @@
     "phonics_test_runner": {
       "go_back": "वापस जाएं",
       "sounds_to_revisit": "फिर से सुनने के लिए ध्वनियाँ",
-      "back_to_phonics_tests": "फोनीक्स टेस्ट में वापस जाएं"
+      "back_to_phonics_tests": "फोनीक्स टेस्ट में वापस जाएं",
+      "undo": "वापस लें"
     },
     "premium_splash": {
       "meet": "मिलें",
