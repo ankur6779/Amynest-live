@@ -61,6 +61,7 @@ interface Props {
 }
 
 export default function SmartMealSuggestions({ region: regionProp, childAge: ageProp, isVeg: isVegProp }: Props) {
+  const { t } = useTranslation();
   const colors = useColors();
   const authFetch = useAuthFetch();
   const [audience, setAudience] = useState<Audience>("kids_tiffin");
@@ -104,7 +105,6 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
         setChildAge(Number(children[0].age));
       }
     });
-    const { t } = useTranslation();
     return () => { cancelled = true; };
   }, []);
 
@@ -368,6 +368,7 @@ function MealCard({
 function RecipeModal({
   meal, showCalories, onClose, styles, colors,
 }: { meal: RankedMeal; showCalories: boolean; onClose: () => void; styles: any; colors: any }) {
+  const { t } = useTranslation();
   const [voicePref, setVoicePref] = useState<"female" | "male">("female");
   const voiceId = voicePref === "male" ? VOICE_MALE_ID : VOICE_FEMALE_ID;
   const { speaking, loading, speak, stop } = useAmyVoice({ voiceId });

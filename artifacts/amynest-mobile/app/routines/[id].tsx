@@ -258,7 +258,7 @@ export default function RoutineDetailScreen() {
 
   const { data: routine, isLoading } = useQuery<Routine>({
     queryKey: ["routine", id],
-    queryFn: () => authFetch(`/api/routines/${id}`).then(r =>{t("screens.routines_id.r_json_as_promise")}<Routine>,
+    queryFn: () => authFetch(`/api/routines/${id}`).then(r => r.json() as Promise<Routine>),
     enabled: !!id,
   });
 

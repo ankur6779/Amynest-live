@@ -109,14 +109,14 @@ export default function ProfileScreen() {
 
   const { data: children = [] } = useQuery<Child[]>({
     queryKey: ["children"],
-    queryFn: () => authFetch("/api/children").then(r =>{t("screens.tabs_profile.r_json_as_promise")}<Child[]>,
+    queryFn: () => authFetch("/api/children").then(r => r.json() as Promise<Child[]>),
   });
 
   // ─── Notification preferences ─────────────────────────────────────────
   type NotifPrefs = { emailNotificationsEnabled: boolean; lastWeeklyRecapSentAt: string | null };
   const { data: notifPrefs } = useQuery<NotifPrefs>({
     queryKey: ["notification-preferences"],
-    queryFn: async () => authFetch("/api/notifications/preferences").then(r =>{t("screens.tabs_profile.r_json_as_promise")}<NotifPrefs>,
+    queryFn: async () => authFetch("/api/notifications/preferences").then(r => r.json() as Promise<NotifPrefs>),
   });
   const togglePrefMut = useMutation({
     mutationFn: async (enabled: boolean) => {

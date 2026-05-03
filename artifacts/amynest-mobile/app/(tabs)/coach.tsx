@@ -304,7 +304,7 @@ export default function CoachScreen() {
     return Math.min(100, Math.round((sum / denom) * 100));
   }, [feedbackByWin, plan]);
 
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // ─── Resume session: detect ?resume=<sessionId>, load plan + feedback ────
   useEffect(() => {
@@ -1317,6 +1317,7 @@ function WinCard({
   currentFeedback?: Feedback; extending: boolean;
   onFeedback: (f: Feedback) => void; width: number;
 }) {
+  const { t } = useTranslation();
   const isExtension = w.win > 12;
   const cardColors: [string, string, string] = isExtension
     ? ["#1B1B3A", "#241640", "#0B0B1A"] // audit-ok: always-dark win-card background gradient

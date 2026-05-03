@@ -134,6 +134,7 @@ function VoicePreviewButton({ voice }: { voice: ElevenLabsVoice }) {
 }
 
 export default function VoiceSettingsPanel({ visible, onClose, settings, onChange }: Props) {
+  const { t } = useTranslation();
   const c = useColors();
 
   const filtered = ELEVENLABS_VOICES.filter((v) => v.lang === settings.lang && v.gender === settings.gender);

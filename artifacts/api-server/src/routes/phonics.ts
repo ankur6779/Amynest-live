@@ -13,6 +13,10 @@ import {
   type PhonicsContentRow,
   type PhonicsProgressRow,
 } from "@workspace/db";
+import {
+  readCachedAudio,
+  synthesize,
+} from "../services/elevenLabsService";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   AGE_GROUP_LABEL,
@@ -964,6 +968,121 @@ router.get("/phonics/tests/history/:childId", async (req, res): Promise<void> =>
       `phonics tests history failed: ${err instanceof Error ? err.message : String(err)}`,
     );
     res.status(500).json({ error: "server_error" });
+  }
+});
+
+// ─── Phoneme audio (T001) ────────────────────────────────────────────────────
+//
+// `GET /api/phonics/sound/:letter.mp3` — returns the *phoneme* sound for a
+// single letter or common digraph (e.g. /b/ "buh", not the letter name "bee").
+// Public and unauthenticated on purpose:
+//   • input is bounded to a fixed enum (a-z + curated digraphs) so abuse can
+//     never inflate ElevenLabs cost beyond ~36 generations TOTAL across the
+//     entire user base — first call generates, every subsequent call is a
+//     content-hash GCS hit forever.
+//   • response is plain audio bytes; no PII; no per-user state read or written.
+//
+// Uses `mode: "phonics"` voice settings (high stability, no style) tuned for
+// crisp, repeatable phoneme renders. See elevenLabsService VOICE_SETTINGS.
+
+/**
+ * Letter → spoken phoneme. Strings are what we hand to ElevenLabs verbatim,
+ * so they are deliberately phonetic ASCII spellings — NOT the letter name.
+ *
+ * Short vowels are used ("ah" for A, "eh" for E, etc.) because that's what
+ * early-reader phonics curricula start with. Continuous consonants are
+ * stretched ("fff", "mmm", "sss", "lll") so the child hears the sound
+ * itself; stop consonants get the conventional "uh" trailer ("buh", "duh",
+ * "puh") that phonics teachers use to make them audible.
+ */
+const PHONEME_PROMPTS: Record<string, string> = {
+  a: "ah",
+  b: "buh",
+  c: "kuh",
+  d: "duh",
+  e: "eh",
+  f: "fff",
+  g: "guh",
+  h: "huh",
+  i: "ih",
+  j: "juh",
+  k: "kuh",
+  l: "lll",
+  m: "mmm",
+  n: "nnn",
+  o: "ah",
+  p: "puh",
+  q: "kwuh",
+  r: "rrr",
+  s: "sss",
+  t: "tuh",
+  u: "uh",
+  v: "vvv",
+  w: "wuh",
+  x: "ks",
+  y: "yuh",
+  z: "zzz",
+  // Common digraphs taught in stages 3-4
+  sh: "shhh",
+  ch: "chuh",
+  th: "thhh",
+  ph: "fff",
+  wh: "wuh",
+  ng: "ng",
+};
+
+/** Allowed letter param values — exposed for tests + the public route guard. */
+export const PHONEME_LETTERS = Object.keys(PHONEME_PROMPTS);
+
+/**
+ * Synthesize the phoneme sound for a single letter / digraph using the
+ * shared ElevenLabs cache. Returns the same envelope as `synthesize()` so
+ * callers can stream via /api/tts/audio/:key.mp3 if they prefer.
+ */
+export async function synthesizePhonicsSound(letter: string) {
+  const key = letter.toLowerCase();
+  const prompt = PHONEME_PROMPTS[key];
+  if (!prompt) throw new Error("invalid_letter");
+  return synthesize(prompt, { mode: "phonics" });
+}
+
+export const phonicsPublicRouter: IRouter = Router();
+
+phonicsPublicRouter.get("/phonics/sound/:letter.mp3", async (req, res): Promise<void> => {
+  const raw = String(req.params.letter ?? "").toLowerCase();
+  if (!Object.prototype.hasOwnProperty.call(PHONEME_PROMPTS, raw)) {
+    res.status(400).json({ error: "invalid_letter" });
+    return;
+  }
+  try {
+    const result = await synthesizePhonicsSound(raw);
+    const cached = await readCachedAudio(result.cacheKey);
+    if (!cached) {
+      // synthesize() just wrote the row + GCS object, so a miss here is a
+      // genuine infra fault, not a normal cache miss.
+      res.status(500).json({ error: "audio_unavailable" });
+      return;
+    }
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Length", String(cached.buffer.byteLength));
+    // Phoneme bytes are immutable for a given letter → safe to cache hard.
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    res.status(200).end(cached.buffer);
+  } catch (err) {
+    const code = err instanceof Error ? err.message : "phonics_sound_failed";
+    logger.error(
+      { evt: "phonics.sound_failed", letter: raw, code },
+      "phonics phoneme synthesis failed",
+    );
+    // Public endpoint — keep the error vocabulary tiny so we never leak
+    // internal codes like `tts_missing_api_key` or `tts_upstream_502`. The
+    // detailed code is preserved in the structured log above.
+    if (code === "invalid_letter") {
+      res.status(400).json({ error: "invalid_letter" });
+    } else {
+      res.status(502).json({ error: "audio_unavailable" });
+    }
   }
 });
 

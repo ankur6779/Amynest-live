@@ -29,7 +29,7 @@ import giftTokensRouter from "./gift-tokens";
 import recipesRouter from "./recipes";
 import ttsRouter, { ttsPublicRouter } from "./tts";
 import audioLessonsRouter from "./audio-lessons";
-import phonicsRouter from "./phonics";
+import phonicsRouter, { phonicsPublicRouter } from "./phonics";
 import abacusRouter from "./abacus";
 import spellingRouter, { spellingPublicRouter } from "./spelling";
 import dailyPuzzleRouter from "./daily-puzzle";
@@ -69,6 +69,10 @@ router.use(ttsPublicRouter);
 // <audio> tags can fetch without juggling bearer tokens; the session token
 // itself authenticates (only the parent who owns the child receives it).
 router.use(spellingPublicRouter);
+// /api/phonics/sound/:letter.mp3 — bounded-input (a-z + curated digraphs)
+// public phoneme audio. Mounted BEFORE requireAuth so <audio>/expo-audio
+// can fetch without bearer tokens. See PHONEME_PROMPTS in phonics.ts.
+router.use(phonicsPublicRouter);
 router.use(requireAuth);
 router.use(onboardingRouter);
 router.use(childrenRouter);

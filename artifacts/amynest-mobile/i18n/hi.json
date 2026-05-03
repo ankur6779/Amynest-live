@@ -992,8 +992,7 @@
       "color_green": "हरा",
       "color_yellow": "पीला",
       "color_purple": "बैंगनी",
-      "color_orange": "नारंगी",
-      "now_t_born": "अब - t.born"
+      "color_orange": "नारंगी"
     },
     "onboarding_chat": {
       "amy_intro": "नमस्ते {{name}}! मैं Amy हूँ, आपकी पेरेंटिंग कोच। चलिए आपकी प्रोफ़ाइल सेट करते हैं — लगभग 2 मिनट लगेंगे!",
@@ -1241,8 +1240,7 @@
       "status_available": "उपलब्ध",
       "status_redeemed": "इस्तेमाल हुआ",
       "status_expired": "समाप्त",
-      "status_used": "उपयोग किया",
-      "promise": "वचन"
+      "status_used": "उपयोग किया"
     },
     "abacus": {
       "loading": "अबेकस लोड हो रहा है…",
@@ -1322,7 +1320,6 @@
       "view_full_behavior_history": "पूरी Behavior History देखें"
     },
     "children_id": {
-      "r_json_as_promise": "r.json()) के रूप में वचन",
       "change_child_photo": "बच्चे की फ़ोटो बदलें",
       "remove_photo": "फ़ोटो हटाएं",
       "school_going": "स्कूल जा रहा है",
@@ -1439,7 +1436,6 @@
       "plan_your_child_s_day": "अपने बच्चे का दिन plan करें"
     },
     "routines_id": {
-      "r_json_as_promise": "r.json()) को वायदे के रूप में",
       "routine": "रूटीन",
       "routine_not_found": "Routine नहीं मिली",
       "mood": "मन: ",
@@ -1526,13 +1522,11 @@
       "open_amy_s_premium_guided_wins": "Amy की premium guided wins खोलें"
     },
     "tabs_hub": {
-      "2_effective_age": "= 2 && प्रभावी.उम्र",
       "abacus_pro_zone": "🧮 अबेकस PRO ज़ोन"
     },
     "tabs_index": {
       "add_child": "बच्चा जोड़ें",
       "day_streak": "डे स्ट्रीक",
-      "15_hour": "= 15 && घंटा",
       "amy_ai_suggests": "एमी एआई सुझाव देता है",
       "all_looking_good_today": "आज सब कुछ बढ़िया है!",
       "parent_score": "माता-पिता का स्कोर",
@@ -1553,7 +1547,6 @@
       "i_m_amy_your_smart_parenting_partner": "मैं Amy हूँ — आपकी स्मार्ट पेरेंटिंग पार्टनर ❤️"
     },
     "tabs_profile": {
-      "r_json_as_promise": "r.json()) को वादा के रूप में",
       "your_parent_profile": "आपका माता-पिता प्रोफ़ाइल",
       "my_parent_profile": "मेरा माता-पिता प्रोफ़ाइल",
       "personal_info": "व्यक्तिगत जानकारी",
@@ -1578,7 +1571,6 @@
       "developer_tools": "डेवलपर उपकरण"
     },
     "tabs_routines": {
-      "r_json_as_promise": "r.json()) को प्रॉमिस के रूप में",
       "your_day_planned": "आपका दिन, योजनाबद्ध",
       "routines": "रूटीन",
       "daily_schedules_generated_by_ai": "AI द्वारा बनाए गए daily schedules",
@@ -2227,7 +2219,6 @@
     "infant_infant_health_tab": {
       "vaccination_tracker": "वैक्सीनेशन ट्रैकर",
       "done": "पूर्ण ·",
-      "v_agemonths": "v.आयुमहीने",
       "missed": "छूट गया"
     },
     "insight_card": {
@@ -2254,7 +2245,6 @@
     },
     "parent_command_center": {
       "open": "खोलें",
-      "promise": "वादा",
       "open_routine": "खोलें रूटीन",
       "close": "बंद करें",
       "try_next": "अगला आजमाएं",
@@ -2289,7 +2279,6 @@
       "parent_tasks_for_today": "👨‍👩‍👧 आज के माता-पिता के कार्य"
     },
     "phone_auth_flow": {
-      "promise": "वादा",
       "continue_with_phone": "फोन से जारी रखें",
       "enter_your_mobile_number": "अपना मोबाइल नंबर डालें",
       "cancel": "रद्द करें",
@@ -2319,7 +2308,6 @@
       "all_worksheets_viewed": "सभी वर्कशीट देखी गई",
       "prev": "← पूर्व",
       "next": "अगला →",
-      "void_styles_returntype": "अविराम; शैलियाँ: ReturnType",
       "you_ve_gone_through_the_whole_collection": "आपने पूरी कलेक्शन देख ली है। नई वर्कशीट नियमित रूप से जोड़ी जा रही हैं!"
     },
     "profile_lock_screen": {

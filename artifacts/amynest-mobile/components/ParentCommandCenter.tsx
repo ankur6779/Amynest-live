@@ -283,9 +283,9 @@ type DashboardProps = {
   persistSleep: (s: AdaptiveSleepQuality) => void;
   result: CommandCenterResult;
   onClose: () => void;
-  onSimplify: (items: AdaptiveItem[]) =>{t("components.parent_command_center.promise")}<unknown>;
-  onUpdateItems: (items: AdaptiveItem[]) =>{t("components.parent_command_center.promise")}<unknown>;
-  onLogBehavior: (behavior: string, type: "positive" | "negative" | "neutral") =>{t("components.parent_command_center.promise")}<unknown>;
+  onSimplify: (items: AdaptiveItem[]) => Promise<unknown>;
+  onUpdateItems: (items: AdaptiveItem[]) => Promise<unknown>;
+  onLogBehavior: (behavior: string, type: "positive" | "negative" | "neutral") => Promise<unknown>;
   onOpenRoutine: () => void;
   updating: boolean;
 };

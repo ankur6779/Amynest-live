@@ -48,6 +48,7 @@ vi.mock("@workspace/api-client-react", async () => {
     }),
     useUpdateRoutineItems: () => ({ mutateAsync: updateItemsMutateAsync, isPending: false }),
     useCreateBehaviorLog: () => ({ mutateAsync: createBehaviorMutateAsync, isPending: false }),
+    useGetSmartStudyInsights: () => ({ data: undefined, isLoading: false }),
     getListRoutinesQueryKey: () => ["routines"],
   };
 });
@@ -70,9 +71,8 @@ declare global {
   var __routines: Array<{ id: number; date: string; items: AdaptiveItem[] }>;
 }
 
-const today = new Date().toISOString().slice(0, 10);
-
 function setRoutine(items: AdaptiveItem[]): void {
+  const today = new Date().toISOString().slice(0, 10);
   globalThis.__routines = [{ id: 42, date: today, items }];
 }
 

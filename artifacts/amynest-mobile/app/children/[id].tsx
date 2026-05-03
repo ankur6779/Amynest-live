@@ -78,7 +78,7 @@ export default function ChildDetailScreen() {
 
   const { data: child, isLoading } = useQuery<Child>({
     queryKey: ["child", id],
-    queryFn: () => authFetch(`/api/children/${id}`).then(r =>{t("screens.children_id.r_json_as_promise")}<Child>,
+    queryFn: () => authFetch(`/api/children/${id}`).then(r => r.json() as Promise<Child>),
     enabled: !!id && id !== "new",
   });
 

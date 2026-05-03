@@ -164,6 +164,7 @@ const sectionHdrStyles = StyleSheet.create({
 // ─── Children Strip ───────────────────────────────────────────────────────────
 
 function ChildrenStrip({ children, onManage, onAdd }: { children: Child[]; onManage: () => void; onAdd: () => void }) {
+  const { t } = useTranslation();
   const c = useColors();
   if (children.length === 0) return null;
   return (
@@ -232,6 +233,7 @@ const childStripStyles = StyleSheet.create({
 // ─── Streak Card ──────────────────────────────────────────────────────────────
 
 function StreakCard({ streak, onPress }: { streak: number; onPress: () => void }) {
+  const { t } = useTranslation();
   const c = useColors();
   const label = streak >= 7 ? "🏆 Epic" : streak >= 3 ? "🔥 Hot" : "✨ Active";
   return (
@@ -340,6 +342,7 @@ const statStyles = StyleSheet.create({
 // ─── Amy AI Suggestion Card ───────────────────────────────────────────────────
 
 function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: number }) {
+  const { t } = useTranslation();
   const c = useColors();
   const todayStr = formatYMD(new Date());
   const todayRoutines = routines.filter((r) => r.date.slice(0, 10) === todayStr);
@@ -359,7 +362,7 @@ function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: 
     suggestions.push({ emoji: "🌟", text: "Amazing progress today! Consider a small reward to celebrate." });
   }
 
-  if (hour >{t("screens.tabs_index.15_hour")}<= 17) {
+  if (hour > 15 && hour <= 17) {
     suggestions.push({ emoji: "❤️", text: "Good time for a 15-min bonding activity — a quick walk or board game goes a long way." });
   }
 
@@ -432,6 +435,7 @@ const amyStyles = StyleSheet.create({
 // ─── Parent Score Card ────────────────────────────────────────────────────────
 
 function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: number }) {
+  const { t } = useTranslation();
   const c = useColors();
   const last7 = routines.slice(0, 7);
   const totalItems = last7.flatMap((r) => r.items).length;
@@ -514,6 +518,7 @@ function RecentRoutinesList({
   loading: boolean;
   onPress: (id: number) => void;
 }) {
+  const { t } = useTranslation();
   const c = useColors();
   if (loading) {
     return (
@@ -588,6 +593,7 @@ const recentStyles = StyleSheet.create({
 // ─── Behavior Highlights ──────────────────────────────────────────────────────
 
 function BehaviorHighlights({ stats, loading }: { stats: BehaviorStat[]; loading: boolean }) {
+  const { t } = useTranslation();
   const c = useColors();
   if (loading) {
     return (
@@ -642,6 +648,7 @@ const behaviorStyles = StyleSheet.create({
 // ─── Rewards Card ─────────────────────────────────────────────────────────────
 
 function RewardsCard({ onViewAll }: { onViewAll: () => void }) {
+  const { t } = useTranslation();
   const c = useColors();
   const [points, setPoints] = useState(0);
   const [badges, setBadges] = useState<Badge[]>([]);
@@ -768,6 +775,7 @@ function OnboardingScreen({ displayName, onGetStarted, onExploreHub }: {
   onGetStarted: () => void;
   onExploreHub: () => void;
 }) {
+  const { t } = useTranslation();
   const c = useColors();
   const { theme } = useTheme();
   const features = [

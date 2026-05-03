@@ -338,7 +338,7 @@ export default function PremiumCoachScreen() {
   // Deterministic post-append scroll: when wins length grows past pending target, scroll there
   useEffect(() => {
     if (pendingScrollTo === null) return;
-    if (pendingScrollTo >{t("screens.coach_premium.0_pendingscrollto")}< wins.length) {
+    if (pendingScrollTo >= 0 && pendingScrollTo < wins.length) {
       const id = requestAnimationFrame(() => {
         listRef.current?.scrollToIndex({ index: pendingScrollTo, animated: true });
         setPendingScrollTo(null);
