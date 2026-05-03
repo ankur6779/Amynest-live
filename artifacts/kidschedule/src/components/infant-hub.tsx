@@ -627,11 +627,11 @@ export function InfantHub({
           MAJOR SECTION — Infant Parenting (0–24 months only)
           Glass + glow wrapper grouping all 7 infant tools under one umbrella.
           ══════════════════════════════════════════════════════════════════════ */}
-      {ageMonths >= 0 && ageMonths < 24 && <Card className="relative overflow-hidden rounded-3xl border-2 border-border dark:border-border shadow-[0_8px_40px_-12px_rgba(168,85,247,0.4)] bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary backdrop-blur-xl">
+      {ageMonths >= 0 && ageMonths < 24 && <Card className="relative overflow-hidden rounded-3xl border-2 border-border dark:border-border shadow-[0_8px_40px_-12px_rgba(168,85,247,0.4)] bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card backdrop-blur-xl">
           {/* Glow accents */}
-          <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-muted dark:bg-primary blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-muted dark:bg-primary blur-3xl" />
-          <div className="pointer-events-none absolute top-1/2 left-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted dark:bg-primary blur-2xl" />
+          <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-muted dark:bg-primary/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-muted dark:bg-primary/15 blur-3xl" />
+          <div className="pointer-events-none absolute top-1/2 left-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted dark:bg-primary/15 blur-2xl" />
 
           <CardContent className="relative p-4 sm:p-5 space-y-3">
             {/* Major section header */}
@@ -643,7 +643,7 @@ export function InfantHub({
                 <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground mb-0.5">
                   {t("components.infant_hub.major_section")}
                 </p>
-                <h2 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-primary via-primary to-primary dark:from-muted dark:via-muted dark:to-muted bg-clip-text text-transparent leading-tight">
+                <h2 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-primary via-primary to-primary dark:from-foreground dark:via-foreground dark:to-foreground bg-clip-text text-transparent leading-tight">
                   {t("components.infant_hub.infant_parenting")}
                 </h2>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
