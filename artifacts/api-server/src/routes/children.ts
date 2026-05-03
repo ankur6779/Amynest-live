@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, asc, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
-import { db, childrenTable } from "@workspace/db";
+import { db, childrenTable, parentProfilesTable } from "@workspace/db";
 import {
   CreateChildBody,
   UpdateChildBody,
@@ -70,7 +70,35 @@ router.post("/children", async (req, res): Promise<void> => {
     }
   }
 
-  const [child] = await db.insert(childrenTable).values({ ...parsed.data, userId }).returning();
+  // Auto-inherit food prefs from parent profile when not explicitly provided.
+  // If the caller didn't pass dietType/foodStyle, copy from the parent profile
+  // and mark foodPrefInherited=true so the child form can show the banner.
+  let inheritedPrefs: Record<string, unknown> = {};
+  if (!parsed.data.dietType && !parsed.data.foodStyle) {
+    const [pp] = await db
+      .select()
+      .from(parentProfilesTable)
+      .where(eq(parentProfilesTable.userId, userId));
+    if (pp?.dietType || pp?.foodStyle) {
+      inheritedPrefs = {
+        dietType: pp.dietType ?? null,
+        foodStyle: pp.foodStyle ?? null,
+        subCuisine: pp.subCuisine ?? null,
+        allergies: pp.allergies ?? null,
+        foodPrefInherited: true,
+      };
+    }
+  }
+
+  // Strip nulls from boolean NOT-NULL columns (Zod allows null from OpenAPI nullable, DB does not).
+  const insertData = {
+    ...parsed.data,
+    foodPrefInherited: parsed.data.foodPrefInherited ?? undefined,
+    foodPrefCustomized: parsed.data.foodPrefCustomized ?? undefined,
+    ...inheritedPrefs,
+    userId,
+  };
+  const [child] = await db.insert(childrenTable).values(insertData).returning();
 
   // Referral system: creating a child counts as the user's first
   // meaningful feature use. Idempotent (only flips pending → valid).
@@ -117,9 +145,14 @@ router.patch("/children/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const updateData = {
+    ...parsed.data,
+    foodPrefInherited: parsed.data.foodPrefInherited ?? undefined,
+    foodPrefCustomized: parsed.data.foodPrefCustomized ?? undefined,
+  };
   const [child] = await db
     .update(childrenTable)
-    .set(parsed.data)
+    .set(updateData)
     .where(and(eq(childrenTable.id, params.data.id), eq(childrenTable.userId, userId)))
     .returning();
   if (!child) {

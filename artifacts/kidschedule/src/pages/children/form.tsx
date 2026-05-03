@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Trash2, Loader2, Baby, Camera, X, GraduationCap, School, Crown, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -98,6 +99,44 @@ function getAgeGroupInfo(totalMonths: number) {
 }
 const todayStr = new Date().toISOString().slice(0, 10);
 const inputClass = "rounded-xl h-12 bg-muted/50 border-transparent focus-visible:bg-background";
+
+const DIET_OPTIONS = [
+  { value: "vegetarian", label: "Vegetarian", emoji: "🥦" },
+  { value: "vegan", label: "Vegan", emoji: "🌱" },
+  { value: "eggetarian", label: "Eggetarian", emoji: "🥚" },
+  { value: "non_veg", label: "Non-Vegetarian", emoji: "🍗" },
+  { value: "pescatarian", label: "Pescatarian", emoji: "🐟" },
+  { value: "no_preference", label: "No preference", emoji: "🍽️" },
+];
+const FOOD_STYLE_OPTIONS = [
+  { value: "indian", label: "Indian", emoji: "🪔" },
+  { value: "western", label: "Western", emoji: "🍕" },
+  { value: "asian", label: "Asian", emoji: "🍜" },
+  { value: "middle_eastern", label: "Middle Eastern", emoji: "🧆" },
+  { value: "mixed", label: "Mixed", emoji: "🌍" },
+];
+const INDIAN_SUB_OPTIONS = [
+  { value: "north_indian", label: "North Indian", emoji: "🫓" },
+  { value: "south_indian", label: "South Indian", emoji: "🥘" },
+  { value: "gujarati", label: "Gujarati", emoji: "🫙" },
+  { value: "maharashtrian", label: "Maharashtrian", emoji: "🥜" },
+  { value: "punjabi", label: "Punjabi", emoji: "🧅" },
+  { value: "bengali", label: "Bengali", emoji: "🐟" },
+  { value: "pan_indian", label: "Pan Indian", emoji: "🇮🇳" },
+];
+const ALLERGY_CHIPS = [
+  { value: "gluten", label: "Gluten" },
+  { value: "dairy", label: "Dairy" },
+  { value: "eggs", label: "Eggs" },
+  { value: "nuts", label: "Nuts" },
+  { value: "peanuts", label: "Peanuts" },
+  { value: "soy", label: "Soy" },
+  { value: "shellfish", label: "Shellfish" },
+  { value: "sesame", label: "Sesame" },
+];
+function deriveFoodType(dt: string): "veg" | "non_veg" {
+  return ["vegetarian", "vegan", "eggetarian", "jain", "sattvik"].includes(dt) ? "veg" : "non_veg";
+}
 export default function ChildForm() {
   const {
     t
@@ -114,6 +153,13 @@ export default function ChildForm() {
   const [babysitters, setBabysitters] = useState<Babysitter[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [dietType, setDietType] = useState("vegetarian");
+  const [foodStyle, setFoodStyle] = useState("indian");
+  const [subCuisine, setSubCuisine] = useState("");
+  const [allergyChips, setAllergyChips] = useState<string[]>([]);
+  const [allergyText, setAllergyText] = useState("");
+  const [foodPrefInherited, setFoodPrefInherited] = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = !!params.id && params.id !== "new";
   const childId = isEditing ? parseInt(params.id as string) : 0;
@@ -193,6 +239,19 @@ export default function ChildForm() {
         babysitterId: child.babysitterId ?? undefined
       });
       if ((child as any).photoUrl) setPhotoPreview((child as any).photoUrl);
+      const dt = (child as any).dietType ?? "vegetarian";
+      const fs = (child as any).foodStyle ?? "indian";
+      const sc = (child as any).subCuisine ?? "";
+      const rawAllergies: string = (child as any).allergies ?? "";
+      const chips = ALLERGY_CHIPS.map(c => c.value).filter(v => rawAllergies.split(",").map((s: string) => s.trim()).includes(v));
+      const textPart = rawAllergies.split(",").map((s: string) => s.trim()).filter(s => s && !ALLERGY_CHIPS.some(c => c.value === s)).join(", ");
+      setDietType(dt);
+      setFoodStyle(fs);
+      setSubCuisine(sc);
+      setAllergyChips(chips);
+      setAllergyText(textPart);
+      setFoodPrefInherited(!!(child as any).foodPrefInherited);
+      setCustomizeOpen(!!(child as any).foodPrefCustomized);
     }
   }, [child, form, isEditing]);
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,7 +303,13 @@ export default function ChildForm() {
       schoolDays: schoolGoing ? data.schoolDays && data.schoolDays.length > 0 ? data.schoolDays : [1, 2, 3, 4, 5] : null,
       travelMode: schoolGoing ? data.travelMode ?? "car" : "car",
       travelModeOther: schoolGoing && data.travelMode === "other" ? data.travelModeOther : undefined,
-      foodType: data.foodType,
+      foodType: deriveFoodType(dietType),
+      dietType: dietType || null,
+      foodStyle: foodStyle || null,
+      subCuisine: subCuisine || null,
+      allergies: [...allergyChips, allergyText].filter(Boolean).join(", ") || null,
+      foodPrefInherited: !customizeOpen && foodPrefInherited,
+      foodPrefCustomized: customizeOpen,
       goals: data.goals?.trim() || "General daily routine",
       babysitterId: data.babysitterId || undefined,
       photoUrl: photoPreview || undefined
@@ -675,29 +740,96 @@ export default function ChildForm() {
               {/* ── FOOD PREFERENCE ── */}
               <div>
                 <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wide">{t("pages.children.form.food_preference")}</p>
-                <FormField control={form.control} name="foodType" render={({
-                field
-              }) => {
-                return <FormItem>
-                    <FormLabel className="font-bold">{t("pages.children.form.diet_type")}</FormLabel>
-                    <FormDescription>{t("pages.children.form.used_for_smart_tiffin_and_meal_suggestions")}</FormDescription>
-                    <div className="flex gap-3 mt-1">
-                      {[{
-                      value: "veg",
-                      label: "🥦 Vegetarian",
-                      desc: "No meat/fish/eggs"
-                    }, {
-                      value: "non_veg",
-                      label: "🍗 Non-Vegetarian",
-                      desc: "Includes eggs, meat, fish"
-                    }].map(opt => <button key={opt.value} type="button" onClick={() => field.onChange(opt.value)} className={`flex-1 py-3 px-4 rounded-2xl font-bold border-2 transition-all text-sm text-left ${field.value === opt.value ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted/50 text-foreground border-transparent hover:border-primary/40"}`}>
-                          <div>{opt.label}</div>
-                          <div className={`text-xs font-normal mt-0.5 ${field.value === opt.value ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{opt.desc}</div>
-                        </button>)}
+                {foodPrefInherited && !customizeOpen ? (
+                  <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl p-3 gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">🌍 {t("pages.children.form.using_family_preferences")}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {DIET_OPTIONS.find(d => d.value === dietType)?.emoji} {DIET_OPTIONS.find(d => d.value === dietType)?.label}
+                        {foodStyle ? ` · ${FOOD_STYLE_OPTIONS.find(s => s.value === foodStyle)?.label ?? foodStyle}` : ""}
+                      </p>
                     </div>
-                    <FormMessage />
-                  </FormItem>;
-              }} />
+                    <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => setCustomizeOpen(true)}>
+                      {t("pages.children.form.customize_for_child")}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {customizeOpen && (
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs text-primary font-medium">{t("pages.children.form.personalized_for_child", { name: form.watch("name") || "this child" })}</span>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold">{t("pages.children.form.diet_type")}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {DIET_OPTIONS.map(opt => (
+                          <button key={opt.value} type="button"
+                            onClick={() => { setDietType(opt.value); form.setValue("foodType", deriveFoodType(opt.value)); }}
+                            className={cn("px-3 py-1.5 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
+                              dietType === opt.value ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border text-foreground hover:border-primary/50 bg-background")}>
+                            <span>{opt.emoji}</span>{opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold">{t("pages.children.form.food_style")}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {FOOD_STYLE_OPTIONS.map(opt => (
+                          <button key={opt.value} type="button"
+                            onClick={() => { setFoodStyle(opt.value); if (opt.value !== "indian") setSubCuisine(""); }}
+                            className={cn("px-3 py-1.5 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
+                              foodStyle === opt.value ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border text-foreground hover:border-primary/50 bg-background")}>
+                            <span>{opt.emoji}</span>{opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {foodStyle === "indian" && (
+                      <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                        <p className="text-sm font-semibold">{t("pages.children.form.indian_sub_cuisine")} <span className="font-normal text-muted-foreground text-xs">{t("pages.children.form.optional_label")}</span></p>
+                        <div className="flex flex-wrap gap-2">
+                          {INDIAN_SUB_OPTIONS.map(opt => (
+                            <button key={opt.value} type="button"
+                              onClick={() => setSubCuisine(prev => prev === opt.value ? "" : opt.value)}
+                              className={cn("px-3 py-1.5 rounded-full text-sm border font-medium flex items-center gap-1.5 transition-all",
+                                subCuisine === opt.value ? "bg-primary/15 text-primary border-primary" : "border-border text-foreground hover:border-primary/50 bg-background")}>
+                              <span>{opt.emoji}</span>{opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold">{t("pages.children.form.food_restrictions")}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {ALLERGY_CHIPS.map(chip => (
+                          <button key={chip.value} type="button"
+                            onClick={() => setAllergyChips(prev => prev.includes(chip.value) ? prev.filter(c => c !== chip.value) : [...prev, chip.value])}
+                            className={cn("px-3 py-1.5 rounded-full text-sm border font-medium transition-all",
+                              allergyChips.includes(chip.value) ? "bg-primary/15 text-primary border-primary" : "border-border text-foreground hover:border-primary/50 bg-background")}>
+                            {chip.label}
+                          </button>
+                        ))}
+                      </div>
+                      <Input
+                        placeholder={t("pages.children.form.other_restrictions_placeholder")}
+                        value={allergyText}
+                        onChange={e => setAllergyText(e.target.value)}
+                        className="h-9 text-sm rounded-xl bg-muted/50 border-transparent focus-visible:bg-background"
+                      />
+                    </div>
+                    {customizeOpen && (
+                      <button type="button"
+                        onClick={() => setCustomizeOpen(false)}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        ← {t("pages.children.form.use_family_preferences_instead")}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* ── BABYSITTER ── */}

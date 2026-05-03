@@ -519,10 +519,16 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
   let region: string = parsed.data.region ?? "pan_indian";
   if (userId) {
     const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
-    // Prefer granular dietType (vegan/eggetarian/pescatarian) for AI prompt accuracy
-    if (pp?.dietType) foodType = pp.dietType;
+    // Prefer child-level dietType (customized) → parent dietType → legacy foodType
+    if ((child as any).dietType) foodType = (child as any).dietType;
+    else if (pp?.dietType) foodType = pp.dietType;
     else if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
-    if (!parsed.data.region && pp?.region) region = pp.region;
+    // Region: child foodStyle overrides parent region
+    if ((child as any).foodStyle) {
+      const cs = (child as any).foodStyle as string;
+      const sc = ((child as any).subCuisine as string | undefined) ?? "";
+      region = cs === "indian" ? (sc || "pan_indian") : cs;
+    } else if (!parsed.data.region && pp?.region) region = pp.region;
   }
 
   const userCustomRecipes = await db
@@ -617,10 +623,16 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
   let foodType = (child as any).foodType ?? "veg";
   let region: string = parsed.data.region ?? "pan_indian";
   const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
-  // Prefer granular dietType (vegan/eggetarian/pescatarian) for AI prompt accuracy
-  if (pp?.dietType) foodType = pp.dietType;
+  // Prefer child-level dietType (customized) → parent dietType → legacy foodType
+  if ((child as any).dietType) foodType = (child as any).dietType;
+  else if (pp?.dietType) foodType = pp.dietType;
   else if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
-  if (!parsed.data.region && pp?.region) region = pp.region;
+  // Region: child foodStyle overrides parent region
+  if ((child as any).foodStyle) {
+    const cs = (child as any).foodStyle as string;
+    const sc = ((child as any).subCuisine as string | undefined) ?? "";
+    region = cs === "indian" ? (sc || "pan_indian") : cs;
+  } else if (!parsed.data.region && pp?.region) region = pp.region;
 
   // Optional overrides for AI generation
   const effWakeUp = parsed.data.wakeTime ?? child.wakeUpTime;
@@ -1119,14 +1131,20 @@ router.post("/routines/:id/partial-regenerate", async (req, res): Promise<void> 
     : totalAgeMonths < 120 ? "early_school"
     : "pre_teen";
 
-  // Resolve region + foodType from parent profile
+  // Resolve region + foodType from child → parent profile
   let foodType: string = (child as any).foodType ?? "veg";
   let region: string = "pan_indian";
   const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
-  // Prefer granular dietType (vegan/eggetarian/pescatarian) for AI prompt accuracy
-  if (pp?.dietType) foodType = pp.dietType;
+  // Prefer child-level dietType (customized) → parent dietType → legacy foodType
+  if ((child as any).dietType) foodType = (child as any).dietType;
+  else if (pp?.dietType) foodType = pp.dietType;
   else if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
-  if (pp?.region) region = pp.region;
+  // Region: child foodStyle overrides parent region
+  if ((child as any).foodStyle) {
+    const cs = (child as any).foodStyle as string;
+    const sc = ((child as any).subCuisine as string | undefined) ?? "";
+    region = cs === "indian" ? (sc || "pan_indian") : cs;
+  } else if (pp?.region) region = pp.region;
 
   const newItems = generatePartialRoutine({
     childName: child.name,
