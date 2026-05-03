@@ -427,7 +427,9 @@ function buildMissingLetterQ(row: PhonicsContentRow, ctx: BuildContext, idx: num
 
 function buildBuildWordQ(row: PhonicsContentRow, ctx: BuildContext, idx: number): Question | null {
   const word = exampleWord(row).toLowerCase();
-  if (word.length < 3 || word.length > 6 || !/^[a-z]+$/.test(word)) return null;
+  // Upper length cap relaxed from 6→8 so more CVC+ words qualify and the
+  // single-builder mode can fill the requested count for more age tiers.
+  if (word.length < 3 || word.length > 8 || !/^[a-z]+$/.test(word)) return null;
   const letters = word.split("");
   // Add a couple of distractor letters not already in the target.
   const distractors = pickLetterDistractors(letters[0]!, ctx.rng, 4)
@@ -537,44 +539,88 @@ export function generateQuestions(opts: GenerateOptions): Question[] {
     cvcRows: active.filter((r) => isCvc(exampleWord(r))),
   };
 
-  // Mode-specific allowed types. The two new modes (missing_letter,
-  // build_word) lock the entire session to a single builder so the UI is
-  // a consistent mini-game; speed_challenge reuses the mixed-type set.
-  const allowedTypes: QuestionType[] =
+  // Mode-specific allowed types. The two single-builder modes
+  // (missing_letter, build_word) try their dedicated builder first and then
+  // fall back to the mixed AGE_TYPES set if the strict word filters can't
+  // satisfy the requested count from the current age tier's content.
+  // speed_challenge reuses the mixed-type set directly.
+  const lockedType: QuestionType | null =
     gameMode === "missing_letter"
-      ? ["missing_letter"]
+      ? "missing_letter"
       : gameMode === "build_word"
-        ? ["build_word"]
-        : AGE_TYPES[ageGroup];
-
-  const ordered = shuffle(pool, rng);
+        ? "build_word"
+        : null;
+  const mixedTypes: QuestionType[] = AGE_TYPES[ageGroup];
 
   const out: Question[] = [];
   let typeCursor = 0;
+
+  // Pass 1 — locked builder (or mixed set) over the deduped pool.
+  const ordered = shuffle(pool, rng);
   for (const row of ordered) {
     if (out.length >= count) break;
-    // Try each allowed type starting at the cursor — first builder that
-    // returns a question wins. This guarantees a balanced type mix.
     let built: Question | null = null;
-    for (let i = 0; i < allowedTypes.length; i++) {
-      const t = allowedTypes[(typeCursor + i) % allowedTypes.length]!;
-      built = BUILDERS[t](row, ctx, out.length);
-      if (built) break;
+    if (lockedType) {
+      built = BUILDERS[lockedType](row, ctx, out.length);
+    } else {
+      for (let i = 0; i < mixedTypes.length; i++) {
+        const t = mixedTypes[(typeCursor + i) % mixedTypes.length]!;
+        built = BUILDERS[t](row, ctx, out.length);
+        if (built) break;
+      }
     }
     if (built) {
-      // Speed challenge: stamp every question with a time budget the client
-      // uses to drive its countdown. Other modes leave it undefined.
-      if (gameMode === "speed_challenge") {
-        built = {
-          ...built,
-          prompt: {
-            ...built.prompt,
-            meta: { ...(built.prompt.meta ?? {}), timeLimitSec: SPEED_TIME_LIMIT_SEC },
-          },
-        };
-      }
       out.push(built);
       typeCursor++;
+    }
+  }
+
+  // Pass 2 (locked modes only) — re-iterate the pool with a fresh shuffle so
+  // the builder gets to pick a different blanked letter / different letter
+  // pool ordering for the same row, surfacing more questions from the same
+  // content.
+  if (lockedType && out.length < count) {
+    const ordered2 = shuffle(pool, rng);
+    for (const row of ordered2) {
+      if (out.length >= count) break;
+      const built = BUILDERS[lockedType](row, ctx, out.length);
+      if (built) out.push(built);
+    }
+  }
+
+  // Pass 3 (locked modes only) — top up with the mixed AGE_TYPES builders so
+  // the session still has `count` questions even when the strict single-mode
+  // filters can't be satisfied by the available content. Better to ship a
+  // slightly mixed test than to 409 the user back to the home screen.
+  if (lockedType && out.length < count) {
+    const ordered3 = shuffle(active, rng);
+    for (const row of ordered3) {
+      if (out.length >= count) break;
+      let built: Question | null = null;
+      for (let i = 0; i < mixedTypes.length; i++) {
+        const t = mixedTypes[(typeCursor + i) % mixedTypes.length]!;
+        built = BUILDERS[t](row, ctx, out.length);
+        if (built) break;
+      }
+      if (built) {
+        out.push(built);
+        typeCursor++;
+      }
+    }
+  }
+
+  // Speed challenge: stamp every question with a time budget the client uses
+  // to drive its countdown. Other modes leave it undefined.
+  if (gameMode === "speed_challenge") {
+    for (let i = 0; i < out.length; i++) {
+      const q = out[i]!;
+      out[i] = {
+        ...q,
+        prompt: {
+          ...q.prompt,
+          meta: { ...(q.prompt.meta ?? {}), timeLimitSec: SPEED_TIME_LIMIT_SEC },
+        },
+      };
     }
   }
   return out;
