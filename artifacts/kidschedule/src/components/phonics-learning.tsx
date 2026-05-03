@@ -376,7 +376,7 @@ function TodaysActivityCard({
         </div>
 
         {/* Focus tile — taller layout for sentences/stories */}
-        <div className={cn("rounded-3xl bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary border border-border dark:border-border p-5", isLongForm ? "flex flex-col items-start gap-4" : "flex items-center gap-4")}>
+        <div className={cn("rounded-3xl bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary border border-border dark:border-border p-5 transition-transform hover:scale-[1.01] active:scale-[0.99]", isLongForm ? "flex flex-col items-start gap-4" : "flex items-center gap-4")}>
           {todaysItem.emoji && <span className={isLongForm ? "text-4xl" : "text-5xl shrink-0"} aria-hidden>
               {todaysItem.emoji}
             </span>}
@@ -467,7 +467,7 @@ function PracticeSoundsCard({
           const count = progress.practiced[it.id] ?? 0;
           const mastered = !!progress.mastered[it.id];
           const showBlend = level.features.blending && it.example?.includes("–");
-          return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("relative rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all", mastered ? "border-border dark:border-border ring-1 ring-primary" : "border-white/60 dark:border-white/10 hover:border-primary/30")}>
+          return <div key={it.id} data-testid={`phonics-tile-${it.id}`} className={cn("relative rounded-2xl p-3 border bg-white/70 dark:bg-white/[0.05] transition-all hover:scale-[1.02] hover:shadow-md active:scale-95", mastered ? "border-border dark:border-border ring-1 ring-primary animate-pulse-slow" : "border-white/60 dark:border-white/10 hover:border-primary/30")}>
                   {mastered && <CheckCircle2 className="absolute top-1.5 right-1.5 h-3.5 w-3.5 text-primary fill-muted" />}
                   <div className="flex items-center gap-2">
                     {it.emoji && <span className="text-2xl shrink-0">{it.emoji}</span>}

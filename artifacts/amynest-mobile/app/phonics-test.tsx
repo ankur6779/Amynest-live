@@ -8,10 +8,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
-import { palette } from "@/constants/colors";
+import { palette, brand } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { API_BASE_URL } from "@/constants/api";
-import { PhonicsTestRunner, type TestType } from "@/components/PhonicsTestRunner";
+import { PhonicsTestRunner, type TestType, type GameMode } from "@/components/PhonicsTestRunner";
 import { useTranslation } from "react-i18next";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -55,6 +55,8 @@ export default function PhonicsTestScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTest, setActiveTest] = useState<TestType | null>(null);
+  const [pickingMode, setPickingMode] = useState<TestType | null>(null);
+  const [activeMode, setActiveMode] = useState<GameMode>("hear_tap");
 
   // Step 1: load children, pick active.
   useEffect(() => {
@@ -127,9 +129,73 @@ export default function PhonicsTestScreen() {
           childId={activeChild.id}
           childName={activeChild.name}
           testType={activeTest}
+          gameMode={activeMode}
           onCompleted={() => { void refreshAvailability(); }}
           onCancel={() => setActiveTest(null)}
         />
+      </View>
+    );
+  }
+
+  // ─── Render: game-mode picker overlay (after picking daily/weekly) ───────
+  if (pickingMode && activeChild) {
+    const modes: Array<{ id: GameMode; label: string; sub: string; icon: keyof typeof Ionicons.glyphMap; colors: readonly [string, string] }> = [
+      { id: "hear_tap",        label: "Hear & Tap",     sub: "Listen, then tap",     icon: "ear",    colors: [brand.violet500,    brand.pink500] },
+      { id: "missing_letter",  label: "Missing Letter", sub: "Fill the blank",       icon: "create", colors: [palette.sky500,    palette.cyan500] },
+      { id: "build_word",      label: "Build Word",     sub: "Tap letters in order", icon: "grid",   colors: [palette.emerald500, palette.teal500] },
+      { id: "speed_challenge", label: "Speed Round",    sub: "Beat the clock!",      icon: "flash",  colors: [palette.amber500,  palette.orange500] },
+    ];
+    return (
+      <View style={{ flex: 1, paddingTop: insets.top }}>
+        <LinearGradient
+          colors={theme.gradient}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.header}>
+          <Pressable onPress={() => setPickingMode(null)} hitSlop={12}>
+            <Ionicons name="chevron-back" size={26} color={theme.text.primary} />
+          </Pressable>
+          {/* i18n-ignore-start — short kid-facing label, not yet translated */}
+          <Text style={[styles.headerTitle, { color: theme.text.primary }]}>Pick a Game</Text>
+          {/* i18n-ignore-end */}
+          <View style={{ width: 26 }} />
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
+          <Text style={[styles.subtitle, { color: theme.text.secondary, marginBottom: 18 }]}>
+            {pickingMode === "daily" ? "Daily test" : "Weekly test"} for {activeChild.name}
+          </Text>
+          <View style={{ gap: 12 }}>
+            {modes.map((m) => (
+              <TouchableOpacity
+                key={m.id}
+                onPress={() => {
+                  setActiveMode(m.id);
+                  setActiveTest(pickingMode);
+                  setPickingMode(null);
+                }}
+                activeOpacity={0.85}
+                testID={`phonics-test-mode-${m.id}`}
+              >
+                <LinearGradient
+                  colors={m.colors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.startBtn}
+                >
+                  <Ionicons name={m.icon} size={26} color="#fff" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.startBtnTitle}>{m.label}</Text>
+                    <Text style={styles.startBtnSub}>{m.sub}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={22} color="#fff" />
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -223,7 +289,7 @@ export default function PhonicsTestScreen() {
                 <TouchableOpacity
                   key={tt}
                   disabled={disabled}
-                  onPress={() => setActiveTest(tt)}
+                  onPress={() => setPickingMode(tt)}
                   activeOpacity={0.85}
                   testID={`phonics-test-start-${tt}`}
                 >
