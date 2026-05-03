@@ -28,8 +28,8 @@ const NOISE_TYPES: NoiseType[] = [{
   label: "Shushing",
   desc: "A rhythmic 'shhhh' sound — the closest thing to what baby heard in the womb. Air rushing through blood vessels + muffled heartbeat = built-in white noise.",
   bestFor: "Newborns (0–4 months), overtired or inconsolable crying",
-  gradient: "from-sky-500 via-cyan-500 to-teal-500",
-  tint: "#06b6d4",
+  gradient: "from-primary via-primary to-primary",
+  tint: "hsl(var(--brand-cyan-500))",
   iconAnim: "wave"
 }, {
   id: "rain",
@@ -37,8 +37,8 @@ const NOISE_TYPES: NoiseType[] = [{
   label: "Rain",
   desc: "Consistent broadband noise that masks household sounds — TV, voices, traffic. Rain is the most universally soothing for babies.",
   bestFor: "All ages, especially 2–12 months for naps in noisy homes",
-  gradient: "from-blue-600 via-indigo-600 to-slate-700",
-  tint: "#4f46e5",
+  gradient: "from-primary via-primary to-muted",
+  tint: "hsl(var(--brand-indigo-600))",
   iconAnim: "float"
 }, {
   id: "fan",
@@ -46,7 +46,7 @@ const NOISE_TYPES: NoiseType[] = [{
   label: "Fan",
   desc: "Low-frequency rumble that deeply masks sound and has a grounding effect. Many parents swear by a real fan rather than a recording.",
   bestFor: "Overtired newborns, summer sleep, colicky phases",
-  gradient: "from-slate-600 via-zinc-600 to-stone-700",
+  gradient: "from-muted via-muted to-muted",
   tint: "#71717a",
   iconAnim: "spin"
 }, {
@@ -55,8 +55,8 @@ const NOISE_TYPES: NoiseType[] = [{
   label: "Heartbeat",
   desc: "Mimics the sound baby heard for 9 months inside the womb. Deeply familiar and calming, especially in the 4th trimester (first 3 months).",
   bestFor: "Newborns 0–3 months, transition from arms to cot",
-  gradient: "from-rose-500 via-pink-500 to-fuchsia-600",
-  tint: "#ec4899",
+  gradient: "from-primary via-primary to-primary",
+  tint: "hsl(var(--brand-pink-500))",
   iconAnim: "pulse"
 }, {
   id: "pink",
@@ -64,8 +64,8 @@ const NOISE_TYPES: NoiseType[] = [{
   label: "Pink Noise",
   desc: "Like white noise but weighted to lower frequencies — more like rushing water than static. Many babies and toddlers prefer it over pure white noise.",
   bestFor: "Older babies 6 months+, toddlers who've outgrown white noise",
-  gradient: "from-fuchsia-500 via-purple-500 to-violet-600",
-  tint: "#a855f7",
+  gradient: "from-primary via-primary to-primary",
+  tint: "hsl(var(--brand-purple-500))",
   iconAnim: "wave"
 }, {
   id: "white",
@@ -73,7 +73,7 @@ const NOISE_TYPES: NoiseType[] = [{
   label: "White Noise",
   desc: "Pure broadband static — every frequency at equal energy. The classic 'TV between channels' sound. Most universally tested with newborns.",
   bestFor: "Newborns 0–4 months, masking loud household noise",
-  gradient: "from-gray-400 via-gray-500 to-gray-600",
+  gradient: "from-muted via-muted to-muted",
   tint: "#9ca3af",
   iconAnim: "wave"
 }, {
@@ -82,8 +82,8 @@ const NOISE_TYPES: NoiseType[] = [{
   label: "Womb",
   desc: "Recordings combining heartbeat, blood flow, and muffled voice. The most complete recreation of the womb sound environment.",
   bestFor: "Newborns 0–6 weeks, especially premature or NICU graduates",
-  gradient: "from-rose-600 via-red-600 to-orange-600",
-  tint: "#f43f5e",
+  gradient: "from-primary via-primary to-primary",
+  tint: "hsl(var(--brand-rose-500))",
   iconAnim: "pulse"
 }];
 type AgeTip = {
@@ -229,8 +229,8 @@ export function WhiteNoiseLullaby({
 
       {/* ── Tab toggle ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-white/30 dark:bg-white/5 border border-white/40 dark:border-white/10">
-        <TabBtn active={tab === "noise"} onClick={() => setTab("noise")} icon={<Wind className="h-3.5 w-3.5" />} label="White Noise" activeClass="bg-indigo-500 text-white shadow-[0_4px_12px_-2px_rgba(99,102,241,0.5)]" />
-        <TabBtn active={tab === "poems"} onClick={() => setTab("poems")} icon={<Sparkles className="h-3.5 w-3.5" />} label="Poems" activeClass="bg-violet-500 text-white shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]" />
+        <TabBtn active={tab === "noise"} onClick={() => setTab("noise")} icon={<Wind className="h-3.5 w-3.5" />} label="White Noise" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(99,102,241,0.5)]" />
+        <TabBtn active={tab === "poems"} onClick={() => setTab("poems")} icon={<Sparkles className="h-3.5 w-3.5" />} label="Poems" activeClass="bg-primary text-white shadow-[0_4px_12px_-2px_rgba(139,92,246,0.5)]" />
       </div>
 
       {/* ── White Noise tab ─────────────────────────────────────────── */}
@@ -243,7 +243,7 @@ export function WhiteNoiseLullaby({
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center justify-between">
               <span>{t("components.infant_sounds.tap_to_play_long_press_info")}</span>
-              {engine.isPlaying && <button onClick={() => setOpenFullscreen(true)} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-300 hover:underline normal-case tracking-normal" data-testid="open-fullscreen-from-tilegrid">
+              {engine.isPlaying && <button onClick={() => setOpenFullscreen(true)} className="text-[10px] font-bold text-primary dark:text-muted-foreground hover:underline normal-case tracking-normal" data-testid="open-fullscreen-from-tilegrid">
                   {t("components.infant_sounds.open_player")}
                 </button>}
             </p>
@@ -276,15 +276,15 @@ export function WhiteNoiseLullaby({
             y: -6
           }} transition={{
             duration: 0.18
-          }} className="rounded-xl bg-indigo-50/80 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-400/20 p-3 space-y-2">
+          }} className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{n.emoji}</span>
-                    <p className="font-bold text-sm text-indigo-900 dark:text-indigo-100">{n.label}</p>
+                    <p className="font-bold text-sm text-primary dark:text-muted-foreground">{n.label}</p>
                   </div>
-                  <p className="text-[12px] text-indigo-800/90 dark:text-indigo-100/80 leading-relaxed">{n.desc}</p>
-                  <div className="flex items-start gap-1.5 rounded-lg bg-indigo-200/40 dark:bg-indigo-500/20 px-2 py-1.5">
-                    <Info className="h-3 w-3 text-indigo-600 dark:text-indigo-300 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-indigo-800 dark:text-indigo-200 leading-snug">
+                  <p className="text-[12px] text-primary dark:text-muted-foreground leading-relaxed">{n.desc}</p>
+                  <div className="flex items-start gap-1.5 rounded-lg bg-muted dark:bg-primary px-2 py-1.5">
+                    <Info className="h-3 w-3 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-primary dark:text-muted-foreground leading-snug">
                       <span className="font-bold">{t("components.infant_sounds.best_for")}</span> {n.bestFor}
                     </p>
                   </div>
@@ -298,15 +298,15 @@ export function WhiteNoiseLullaby({
           </AnimatePresence>
 
           {/* Age-specific guidance card */}
-          <div className="rounded-2xl bg-gradient-to-br from-indigo-100/80 via-violet-100/60 to-purple-100/80 dark:from-indigo-900/30 dark:via-violet-900/20 dark:to-purple-900/30 border border-indigo-200/60 dark:border-indigo-400/20 p-3.5 backdrop-blur-md">
+          <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary border border-border dark:border-border p-3.5 backdrop-blur-md">
             <div className="flex items-center gap-2 mb-2">
-              <Volume2 className="h-4 w-4 text-indigo-600 dark:text-indigo-300 shrink-0" />
-              <p className="text-xs font-bold text-indigo-900 dark:text-indigo-100">{ageTip.headline}</p>
+              <Volume2 className="h-4 w-4 text-primary dark:text-muted-foreground shrink-0" />
+              <p className="text-xs font-bold text-primary dark:text-muted-foreground">{ageTip.headline}</p>
             </div>
-            <p className="text-[12px] text-indigo-800/90 dark:text-indigo-100/80 leading-relaxed mb-2.5">{ageTip.tip}</p>
-            <div className="flex items-start gap-1.5 rounded-lg bg-indigo-200/50 dark:bg-indigo-500/20 px-2.5 py-2">
-              <VolumeX className="h-3 w-3 text-indigo-700 dark:text-indigo-300 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-indigo-800 dark:text-indigo-200 leading-snug">
+            <p className="text-[12px] text-primary dark:text-muted-foreground leading-relaxed mb-2.5">{ageTip.tip}</p>
+            <div className="flex items-start gap-1.5 rounded-lg bg-muted dark:bg-primary px-2.5 py-2">
+              <VolumeX className="h-3 w-3 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-[11px] text-primary dark:text-muted-foreground leading-snug">
                 <span className="font-bold">{t("components.infant_sounds.volume_rule")}</span> {ageTip.volume}
               </p>
             </div>
@@ -404,7 +404,7 @@ function SoundTile({
   onToggle: () => void;
   onInfo: () => void;
 }) {
-  return <div className={["relative rounded-2xl overflow-hidden border-2 transition-all", active ? "border-white/50 shadow-[0_8px_28px_-6px_var(--tile-glow)] scale-[1.02]" : "border-border bg-white/60 dark:bg-white/[0.04] hover:border-indigo-300 dark:hover:border-indigo-500/60"].join(" ")} style={{
+  return <div className={["relative rounded-2xl overflow-hidden border-2 transition-all", active ? "border-white/50 shadow-[0_8px_28px_-6px_var(--tile-glow)] scale-[1.02]" : "border-border bg-white/60 dark:bg-white/[0.04] hover:border-border dark:hover:border-primary"].join(" ")} style={{
     // Custom CSS var so the inline shadow above can pick up the per-tile tint.
     "--tile-glow": active ? `${noise.tint}60` : "transparent"
   } as React.CSSProperties}>
@@ -522,25 +522,25 @@ function MiniPlayer({
     y: 8
   }} transition={{
     duration: 0.2
-  }} className="rounded-2xl border border-indigo-200 dark:border-indigo-400/30 bg-gradient-to-br from-indigo-50/95 to-violet-50/95 dark:from-indigo-900/40 dark:to-violet-900/40 backdrop-blur-md p-2.5 flex items-center gap-2.5 shadow-lg" data-testid="mini-player">
+  }} className="rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary backdrop-blur-md p-2.5 flex items-center gap-2.5 shadow-lg" data-testid="mini-player">
       <div className="flex -space-x-1.5 shrink-0">
         {activeIds.slice(0, 3).map(id => {
         const n = NOISE_TYPES.find(x => x.id === id)!;
-        return <div key={id} className="h-7 w-7 rounded-full border-2 border-white dark:border-indigo-950 flex items-center justify-center text-base shadow" style={{
+        return <div key={id} className="h-7 w-7 rounded-full border-2 border-white dark:border-primary flex items-center justify-center text-base shadow" style={{
           background: n.tint
         }}>{n.emoji}</div>;
       })}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-bold text-indigo-900 dark:text-indigo-100 leading-tight">
+        <p className="text-[12px] font-bold text-primary dark:text-muted-foreground leading-tight">
           {activeIds.length} {t("components.infant_sounds.sound")}{activeIds.length === 1 ? "" : "s"} {t("components.infant_sounds.playing")}
         </p>
-        {engine.remainingMs !== null && engine.remainingMs > 0 && <p className="text-[10px] text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+        {engine.remainingMs !== null && engine.remainingMs > 0 && <p className="text-[10px] text-primary dark:text-muted-foreground flex items-center gap-1">
             <Clock className="h-2.5 w-2.5" /> {formatRemaining(engine.remainingMs)} {t("components.infant_sounds.left")}
           </p>}
       </div>
-      <button onClick={onOpenFullscreen} className="text-[11px] font-bold text-indigo-700 dark:text-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20">{t("components.infant_sounds.open")}</button>
-      <button onClick={() => engine.stopAll()} aria-label={t("components.infant_sounds.stop_all_sounds")} data-testid="mini-stop-all" className="h-8 w-8 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow">
+      <button onClick={onOpenFullscreen} className="text-[11px] font-bold text-primary dark:text-muted-foreground px-2.5 py-1.5 rounded-lg hover:bg-muted dark:hover:bg-primary">{t("components.infant_sounds.open")}</button>
+      <button onClick={() => engine.stopAll()} aria-label={t("components.infant_sounds.stop_all_sounds")} data-testid="mini-stop-all" className="h-8 w-8 rounded-full bg-primary hover:bg-primary text-white flex items-center justify-center shadow">
         <X className="h-4 w-4" />
       </button>
     </motion.div>;
@@ -692,7 +692,7 @@ function FullscreenPlayer({
                         <span className="text-base shrink-0" aria-hidden>{n.emoji}</span>
                         <span className="text-[11px] font-bold w-16 shrink-0">{n.label}</span>
                         <input type="range" min={0} max={1} step={0.01} value={engine.volumes[id]} onChange={e => engine.setVolume(id, parseFloat(e.target.value))} aria-label={`${n.label} volume`} data-testid={`fullscreen-volume-${id}`} className="flex-1 h-1 accent-white" />
-                        <button onClick={() => engine.stop(id)} aria-label={`Stop ${n.label}`} className="h-6 w-6 rounded-full bg-white/15 hover:bg-rose-500/80 flex items-center justify-center">
+                        <button onClick={() => engine.stop(id)} aria-label={`Stop ${n.label}`} className="h-6 w-6 rounded-full bg-white/15 hover:bg-primary flex items-center justify-center">
                           <X className="h-3 w-3" />
                         </button>
                       </div>;
@@ -727,7 +727,7 @@ function FullscreenPlayer({
               {engine.isPlaying && <button onClick={() => {
             engine.stopAll();
             engine.setTimer(null);
-          }} data-testid="fullscreen-stop-all" className="w-full py-3 rounded-xl bg-rose-500/90 hover:bg-rose-500 backdrop-blur-md text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg">
+          }} data-testid="fullscreen-stop-all" className="w-full py-3 rounded-xl bg-primary hover:bg-primary backdrop-blur-md text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg">
                   <X className="h-4 w-4" /> {t("components.infant_sounds.stop_everything")}
                 </button>}
             </div>

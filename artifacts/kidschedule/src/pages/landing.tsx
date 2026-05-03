@@ -9,43 +9,43 @@ const COACH_HIGHLIGHT_KEYS = ["landing.highlight_1", "landing.highlight_2", "lan
 const PROBLEMS = [{
   icon: Flame,
   labelKey: "landing.problem_tantrums",
-  color: "#EF4444"
+  color: "hsl(var(--brand-red-500))"
 }, {
   icon: Smartphone,
   labelKey: "landing.problem_screen",
-  color: "#06B6D4"
+  color: "hsl(var(--brand-cyan-500))"
 }, {
   icon: Moon,
   labelKey: "landing.problem_sleep",
-  color: "#6366F1"
+  color: "hsl(var(--brand-indigo-500))"
 }, {
   icon: EarOff,
   labelKey: "landing.problem_listening",
-  color: "#F97316"
+  color: "hsl(var(--brand-orange-500))"
 }, {
   icon: Utensils,
   labelKey: "landing.problem_eating",
-  color: "#EC4899"
+  color: "hsl(var(--brand-pink-500))"
 }, {
   icon: Target,
   labelKey: "landing.problem_focus",
-  color: "#A855F7"
+  color: "hsl(var(--brand-purple-500))"
 }];
 const SECONDARY_FEATURES = [{
   icon: Calendar,
   titleKey: "landing.feature_routine_title",
   descKey: "landing.feature_routine_desc",
-  gradient: "linear-gradient(135deg,#06B6D4,#3B82F6)"
+  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))"
 }, {
   icon: LayoutGrid,
   titleKey: "landing.feature_hub_title",
   descKey: "landing.feature_hub_desc",
-  gradient: "linear-gradient(135deg,#EC4899,#F97316)"
+  gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-orange-500)))"
 }, {
   icon: Zap,
   titleKey: "landing.feature_ai_title",
   descKey: "landing.feature_ai_desc",
-  gradient: "linear-gradient(135deg,#FFD166,#F97316)"
+  gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-orange-500)))"
 }];
 const STEPS = [{
   icon: Target,
@@ -91,85 +91,85 @@ const ALL_FEATURES = [{
   icon: ShieldCheck,
   title: "Kids Control Center",
   desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.",
-  gradient: "linear-gradient(135deg,#7B3FF2,#FF4ECD)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-violet-600)),#FF4ECD)",
   badge: "Coming Soon"
 }, {
   icon: TrendingUp,
   title: "Behavior Tracking",
   desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC (Antecedent-Behavior-Consequence) behavioral analysis.",
-  gradient: "linear-gradient(135deg,#10B981,#06B6D4)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-emerald-500)),hsl(var(--brand-cyan-500)))",
   badge: "Popular"
 }, {
   icon: Gamepad2,
   title: "Gaming Reward Zone",
   desc: "Gamified milestones based on B.F. Skinner's positive reinforcement — kids earn real rewards tied to real-world achievements.",
-  gradient: "linear-gradient(135deg,#FFD166,#EF4444)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-red-500)))",
   badge: "New"
 }, {
   icon: Baby,
   title: "Infant Sleep Tracker",
   desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.",
-  gradient: "linear-gradient(135deg,#60A5FA,#6366F1)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-blue-400)),hsl(var(--brand-indigo-500)))",
   badge: "New"
 }, {
   icon: Video,
   title: "Parenting Reels",
   desc: "Short, expert-curated video reels on positive parenting techniques from leading child psychologists.",
-  gradient: "linear-gradient(135deg,#EC4899,#A855F7)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-purple-500)))",
   badge: null
 }, {
   icon: Lightbulb,
   title: "Daily Parenting Tips",
   desc: "Science-backed tip delivered every day — personalized to your child's age and developmental stage per Piaget's framework.",
-  gradient: "linear-gradient(135deg,#FFD166,#F97316)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-orange-500)))",
   badge: null
 }, {
   icon: Activity,
   title: "Life Skills Zone",
   desc: "Teach independence — from dressing to cooking — with Montessori-aligned milestone tracking that builds intrinsic motivation.",
-  gradient: "linear-gradient(135deg,#A855F7,#6366F1)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
   badge: null
 }, {
   icon: GraduationCap,
   title: "Olympiad Zone",
   desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14. Builds executive function.",
-  gradient: "linear-gradient(135deg,#F59E0B,#EF4444)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-red-500)))",
   badge: null
 }, {
   icon: Palette,
   title: "Art & Craft Reels",
   desc: "Step-by-step activity videos that stimulate creativity and fine motor development in young children.",
-  gradient: "linear-gradient(135deg,#EC4899,#F97316)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-orange-500)))",
   badge: null
 }, {
   icon: FileText,
   title: "Printable Worksheets",
   desc: "Age-appropriate worksheets for learning, colouring, and motor skill development — printable anytime.",
-  gradient: "linear-gradient(135deg,#06B6D4,#10B981)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-emerald-500)))",
   badge: null
 }, {
   icon: Puzzle,
   title: "Daily Brain Puzzles",
   desc: "Brain-boosting puzzles tailored to your child's cognitive stage — builds logic, creativity and working memory.",
-  gradient: "linear-gradient(135deg,#F97316,#A855F7)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-purple-500)))",
   badge: null
 }, {
   icon: BookOpen,
   title: "Parenting Articles",
   desc: "Deep-dive articles written by child development experts and child psychologists on every stage of childhood.",
-  gradient: "linear-gradient(135deg,#3B82F6,#06B6D4)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-blue-500)),hsl(var(--brand-cyan-500)))",
   badge: null
 }, {
   icon: Users,
   title: "Babysitter Profiles",
   desc: "Create and share child care profiles securely. Routines, allergies, and notes — all in one safe place.",
-  gradient: "linear-gradient(135deg,#10B981,#A855F7)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-emerald-500)),hsl(var(--brand-purple-500)))",
   badge: null
 }, {
   icon: Award,
   title: "Parent Score & Streaks",
   desc: "Gamified motivation keeps you consistent — earn points, build streaks, and celebrate every parenting win.",
-  gradient: "linear-gradient(135deg,#FFD166,#EF4444)",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-red-500)))",
   badge: null
 }];
 const TESTIMONIALS = [{
@@ -177,21 +177,21 @@ const TESTIMONIALS = [{
   location: "Mumbai, India",
   text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. I never thought a parenting app could be this specific — it felt like talking to an actual child psychologist.",
   avatar: "P",
-  color: "#A855F7",
+  color: "hsl(var(--brand-purple-500))",
   result: "Tantrums reduced 80% in 3 weeks"
 }, {
   name: "Rahul & Kavya",
   location: "Bangalore, India",
   text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings. Data-driven parenting actually works — we saw the pattern in the app first.",
   avatar: "R",
-  color: "#06B6D4",
+  color: "hsl(var(--brand-cyan-500))",
   result: "Identified sleep-trigger pattern in 5 days"
 }, {
   name: "Sarah K.",
   location: "Dubai, UAE",
   text: "Twin toddlers + infant sleep tracker + Amy's personalized CDC-aligned tips = sanity saved. The sleep schedule feature got our 6-month-old sleeping through the night in 11 days. Nothing else had worked.",
   avatar: "S",
-  color: "#EC4899",
+  color: "hsl(var(--brand-pink-500))",
   result: "Baby sleeping through the night in 11 days"
 }];
 export default function LandingPage() {
@@ -223,11 +223,11 @@ export default function LandingPage() {
           100% { background-position: 200% 50% }
         }
         @keyframes amyColorCycle {
-          0%   { color: #7B3FF2 }
+          0%   { color: hsl(var(--brand-violet-600)) }
           25%  { color: #FF4ECD }
-          50%  { color: #4FC3F7 }
-          75%  { color: #FFD166 }
-          100% { color: #7B3FF2 }
+          50%  { color: hsl(var(--brand-sky-400)) }
+          75%  { color: hsl(var(--brand-yellow-300)) }
+          100% { color: hsl(var(--brand-violet-600)) }
         }
         @keyframes amyCounterGlow {
           0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.3) }
@@ -251,7 +251,7 @@ export default function LandingPage() {
           text-shadow: 0 0 24px rgba(168,85,247,0.35);
         }
         .amy-gradient-text {
-          background: linear-gradient(90deg,#A855F7,#6366F1,#06B6D4,#A855F7);
+          background: linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)),hsl(var(--brand-cyan-500)),hsl(var(--brand-purple-500)));
           background-size: 200% auto;
           -webkit-background-clip: text;
           background-clip: text;
@@ -277,7 +277,7 @@ export default function LandingPage() {
           border-color: rgba(168,85,247,0.4);
         }
         .amy-cta {
-          background: linear-gradient(135deg,#A855F7 0%,#EC4899 100%);
+          background: linear-gradient(135deg,hsl(var(--brand-purple-500)) 0%,hsl(var(--brand-pink-500)) 100%);
           box-shadow: 0 10px 40px rgba(168,85,247,0.5), 0 0 0 1px rgba(255,255,255,0.1) inset;
           transition: transform .3s ease, box-shadow .3s ease;
         }
@@ -344,7 +344,7 @@ export default function LandingPage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg,#7C3AED,#A855F7,#F472B6);
+          background: linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)),hsl(var(--brand-pink-400)));
           border-radius: 50%;
           width: 28px;
           height: 28px;
@@ -362,7 +362,7 @@ export default function LandingPage() {
           right: 2px;
           height: 9px;
           border-radius: 999px 999px 4px 4px;
-          background: linear-gradient(90deg,#4C1D95,#7C3AED,#A855F7,#EC4899);
+          background: linear-gradient(90deg,hsl(var(--brand-violet-900)),hsl(var(--brand-violet-600)),hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)));
           box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset;
           animation: amyCapShine 2.8s ease-in-out infinite;
         }
@@ -381,16 +381,16 @@ export default function LandingPage() {
       {/* Glow blobs */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-30" style={{
-        background: "radial-gradient(circle,#A855F7,transparent 70%)"
+        background: "radial-gradient(circle,hsl(var(--brand-purple-500)),transparent 70%)"
       }} />
         <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-25" style={{
-        background: "radial-gradient(circle,#3B82F6,transparent 70%)"
+        background: "radial-gradient(circle,hsl(var(--brand-blue-500)),transparent 70%)"
       }} />
         <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full opacity-20" style={{
-        background: "radial-gradient(circle,#EC4899,transparent 70%)"
+        background: "radial-gradient(circle,hsl(var(--brand-pink-500)),transparent 70%)"
       }} />
         <div className="absolute top-2/3 left-10 w-[300px] h-[300px] rounded-full opacity-15" style={{
-        background: "radial-gradient(circle,#06B6D4,transparent 70%)"
+        background: "radial-gradient(circle,hsl(var(--brand-cyan-500)),transparent 70%)"
       }} />
       </div>
 
@@ -401,7 +401,7 @@ export default function LandingPage() {
             <AmyMascotLogo size={44} />
             <div className="flex flex-col leading-tight">
               <span className="font-quicksand font-black text-xl" style={{
-              background: "linear-gradient(90deg,#A855F7,#EC4899,#06B6D4)",
+              background: "linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)),hsl(var(--brand-cyan-500)))",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent"
             }}>
@@ -482,7 +482,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-              <Sparkles className="h-3 w-3 text-pink-300" />
+              <Sparkles className="h-3 w-3 text-muted-foreground" />
               {t("landing.problems_eyebrow")}
             </div>
             <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
@@ -540,12 +540,12 @@ export default function LandingPage() {
           borderColor: "rgba(168,85,247,0.35)"
         }}>
             <div aria-hidden className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-40 pointer-events-none" style={{
-            background: "radial-gradient(circle,#A855F7,transparent 70%)"
+            background: "radial-gradient(circle,hsl(var(--brand-purple-500)),transparent 70%)"
           }} />
             <div className="relative">
               <div className="flex flex-col md:flex-row md:items-start gap-5 md:gap-7 mb-6">
                 <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl flex items-center justify-center shrink-0" style={{
-                background: "linear-gradient(135deg,#A855F7,#6366F1)",
+                background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
                 boxShadow: "0 10px 30px rgba(168,85,247,0.45)"
               }}>
                   <Brain className="h-7 w-7 md:h-8 md:w-8 text-white" />
@@ -556,7 +556,7 @@ export default function LandingPage() {
                       {t("landing.coach_title")}
                     </h3>
                     <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
-                    background: "linear-gradient(135deg,#A855F7,#EC4899)",
+                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
                     boxShadow: "0 4px 14px rgba(236,72,153,0.4)"
                   }}>
                       {t("landing.core_feature")}
@@ -576,7 +576,7 @@ export default function LandingPage() {
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.08)"
                 }}>
-                    <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-purple-300 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground shrink-0" />
                     <span className="text-white/85 text-xs md:text-sm font-medium">{t(key)}</span>
                   </div>;
               })}
@@ -595,7 +595,7 @@ export default function LandingPage() {
             <div className="relative">
               <div className="flex flex-col md:flex-row md:items-start gap-5 md:gap-7 mb-6">
                 <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl flex items-center justify-center shrink-0" style={{
-                background: "linear-gradient(135deg,#7B3FF2,#FF4ECD)",
+                background: "linear-gradient(135deg,hsl(var(--brand-violet-600)),#FF4ECD)",
                 boxShadow: "0 10px 30px rgba(255,78,205,0.45)"
               }}>
                   <ShieldCheck className="h-7 w-7 md:h-8 md:w-8 text-white" />
@@ -606,7 +606,7 @@ export default function LandingPage() {
                       {t("pages.landing.kids_control_center")}
                     </h3>
                     <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
-                    background: "linear-gradient(135deg,#7B3FF2,#FF4ECD)",
+                    background: "linear-gradient(135deg,hsl(var(--brand-violet-600)),#FF4ECD)",
                     boxShadow: "0 4px 14px rgba(255,78,205,0.4)"
                   }}>
                       {t("pages.landing.coming_soon")}
@@ -622,7 +622,7 @@ export default function LandingPage() {
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.08)"
               }}>
-                    <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-pink-300 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground shrink-0" />
                     <span className="text-white/85 text-xs md:text-sm font-medium">{feat}</span>
                   </div>)}
               </div>
@@ -677,7 +677,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-              <Sparkles className="h-3 w-3 text-cyan-300" />
+              <Sparkles className="h-3 w-3 text-muted-foreground" />
               {t("pages.landing.everything_in_one_app")}
             </div>
             <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
@@ -697,7 +697,7 @@ export default function LandingPage() {
             badge
           }) => <div key={title} className="amy-feature-card rounded-2xl p-5 md:p-6 flex flex-col gap-3 relative overflow-hidden">
                 {badge && <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{
-              background: badge === "New" ? "linear-gradient(135deg,#06B6D4,#3B82F6)" : "linear-gradient(135deg,#F97316,#EF4444)"
+              background: badge === "New" ? "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))" : "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-red-500)))"
             }}>
                     {badge}
                   </span>}
@@ -734,7 +734,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-              <Zap className="h-3 w-3 text-yellow-300" />
+              <Zap className="h-3 w-3 text-muted-foreground" />
               {t("landing.how_eyebrow")}
             </div>
             <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
@@ -756,13 +756,13 @@ export default function LandingPage() {
             } = useTranslation();
             return <div key={titleKey} className="amy-glass-card rounded-3xl p-6 md:p-7 relative">
                 <div className="absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm font-quicksand" style={{
-                background: "linear-gradient(135deg,#A855F7,#EC4899)",
+                background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
                 boxShadow: "0 6px 18px rgba(236,72,153,0.45)"
               }}>
                   {idx + 1}
                 </div>
                 <div className="h-12 w-12 rounded-2xl flex items-center justify-center mb-4" style={{
-                background: "linear-gradient(135deg,#A855F7,#6366F1)",
+                background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-indigo-500)))",
                 boxShadow: "0 8px 24px rgba(168,85,247,0.3)"
               }}>
                   <Icon className="h-6 w-6 text-white" />
@@ -782,7 +782,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-              <Heart className="h-3 w-3 text-pink-300" />
+              <Heart className="h-3 w-3 text-muted-foreground" />
               {t("pages.landing.parent_stories")}
             </div>
             <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
@@ -804,7 +804,7 @@ export default function LandingPage() {
           }) => <div key={name} className="amy-testimonial rounded-3xl p-6 flex flex-col gap-4">
                 <div className="flex justify-between items-start">
                   <div className="flex">
-                    {[1, 2, 3, 4, 5].map(s => <Star key={s} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}
+                    {[1, 2, 3, 4, 5].map(s => <Star key={s} className="h-4 w-4 text-primary fill-primary" />)}
                   </div>
                 </div>
                 {/* Outcome badge */}
@@ -841,12 +841,12 @@ export default function LandingPage() {
           borderColor: "rgba(168,85,247,0.25)"
         }}>
             <div aria-hidden className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full opacity-30 pointer-events-none" style={{
-            background: "radial-gradient(circle,#6366F1,transparent 70%)"
+            background: "radial-gradient(circle,hsl(var(--brand-indigo-500)),transparent 70%)"
           }} />
 
             <div className="relative text-center mb-9">
               <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl mb-5" style={{
-              background: "linear-gradient(135deg,#6366F1,#A855F7)",
+              background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))",
               boxShadow: "0 10px 30px rgba(99,102,241,0.45)"
             }}>
                 <ShieldCheck className="h-7 w-7 text-white" />
@@ -876,7 +876,7 @@ export default function LandingPage() {
                   background: "rgba(168,85,247,0.20)",
                   border: "1px solid rgba(168,85,247,0.35)"
                 }}>
-                    <Icon className="h-5 w-5 text-purple-300" />
+                    <Icon className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <h3 className="font-quicksand font-bold text-base md:text-lg text-white mb-1.5">
                     {t(titleKey)}
@@ -898,17 +898,17 @@ export default function LandingPage() {
         }}>
             {/* bg glow blobs */}
             <div aria-hidden className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30 pointer-events-none" style={{
-            background: "radial-gradient(circle,#A855F7,transparent 70%)"
+            background: "radial-gradient(circle,hsl(var(--brand-purple-500)),transparent 70%)"
           }} />
             <div aria-hidden className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full opacity-25 pointer-events-none" style={{
-            background: "radial-gradient(circle,#EC4899,transparent 70%)"
+            background: "radial-gradient(circle,hsl(var(--brand-pink-500)),transparent 70%)"
           }} />
 
             <div className="relative flex flex-col md:flex-row items-center gap-10 md:gap-0 px-8 py-12 md:py-14">
               {/* Left: copy + buttons */}
               <div className="flex-1 text-center md:text-left z-10">
                 <div className="inline-flex items-center gap-1.5 amy-glass mb-5 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
-                  <Smartphone className="h-3 w-3 text-purple-300" />
+                  <Smartphone className="h-3 w-3 text-muted-foreground" />
                   {t("pages.landing.available_on_ios_android")}
                 </div>
                 <h2 className="font-quicksand font-black text-3xl md:text-4xl text-white leading-tight mb-4">
@@ -935,7 +935,7 @@ export default function LandingPage() {
                       <p className="text-white/70 font-bold text-base">{t("pages.landing.app_store")}</p>
                     </div>
                     <span className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white" style={{
-                    background: "linear-gradient(135deg,#A855F7,#EC4899)"
+                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))"
                   }}>
                       {t("pages.landing.soon")}
                     </span>
@@ -949,8 +949,8 @@ export default function LandingPage() {
                 }}>
                     <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 opacity-70" aria-hidden>
                       <path d="M3.18 23.76c.3.17.65.19.97.06l12.14-7.01-2.66-2.67-10.45 9.62z" fill="#EA4335" />
-                      <path d="M22.47 10.3L19.7 8.72l-3.03 2.96 3.03 3.04 2.79-1.61c.8-.46.8-1.75-.02-2.81z" fill="#FBBC04" />
-                      <path d="M3.18.24C2.88.4 2.69.72 2.69 1.12v21.76l10.7-10.7L3.18.24z" fill="#4285F4" />
+                      <path d="M22.47 10.3L19.7 8.72l-3.03 2.96 3.03 3.04 2.79-1.61c.8-.46.8-1.75-.02-2.81z" fill="hsl(var(--brand-yellow-400))" />
+                      <path d="M3.18.24C2.88.4 2.69.72 2.69 1.12v21.76l10.7-10.7L3.18.24z" fill="hsl(var(--brand-blue-500))" />
                       <path d="M16.29 8.28L3.18.24C2.86.07 2.51.09 2.18.26l10.99 10.82 3.12-2.8z" fill="#34A853" />
                     </svg>
                     <div className="text-left leading-tight">
@@ -958,7 +958,7 @@ export default function LandingPage() {
                       <p className="text-white/70 font-bold text-base">{t("pages.landing.google_play")}</p>
                     </div>
                     <span className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white" style={{
-                    background: "linear-gradient(135deg,#A855F7,#EC4899)"
+                    background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))"
                   }}>
                       {t("pages.landing.soon_2")}
                     </span>
@@ -993,7 +993,7 @@ export default function LandingPage() {
                     {/* App header */}
                     <div className="flex items-center gap-1.5 px-1">
                       <div className="h-5 w-5 rounded-full flex items-center justify-center" style={{
-                      background: "linear-gradient(135deg,#7C3AED,#EC4899)"
+                      background: "linear-gradient(135deg,hsl(var(--brand-violet-600)),hsl(var(--brand-pink-500)))"
                     }}>
                         <span className="text-white text-[7px] font-black">A</span>
                       </div>
@@ -1008,15 +1008,15 @@ export default function LandingPage() {
                       <div className="flex flex-col gap-1">
                         {[{
                         label: "Wake up & stretch",
-                        color: "#A855F7",
+                        color: "hsl(var(--brand-purple-500))",
                         time: "7:00"
                       }, {
                         label: "Breakfast time",
-                        color: "#F97316",
+                        color: "hsl(var(--brand-orange-500))",
                         time: "7:30"
                       }, {
                         label: "Reading zone",
-                        color: "#06B6D4",
+                        color: "hsl(var(--brand-cyan-500))",
                         time: "8:00"
                       }].map(({
                         label,
@@ -1046,11 +1046,11 @@ export default function LandingPage() {
                       {[{
                       label: "Streak",
                       value: "14d",
-                      color: "#FFD166"
+                      color: "hsl(var(--brand-yellow-300))"
                     }, {
                       label: "Score",
                       value: "920",
-                      color: "#A855F7"
+                      color: "hsl(var(--brand-purple-500))"
                     }].map(({
                       label,
                       value,
@@ -1072,7 +1072,7 @@ export default function LandingPage() {
                   }}>
                       {[Calendar, Brain, MessageCircle, Users].map((Icon, i) => <div key={i} className={`flex flex-col items-center gap-0.5 ${i === 0 ? "opacity-100" : "opacity-40"}`}>
                           <Icon className="h-3 w-3 text-white" />
-                          <div className={`h-0.5 w-3 rounded-full ${i === 0 ? "bg-purple-400" : "bg-transparent"}`} />
+                          <div className={`h-0.5 w-3 rounded-full ${i === 0 ? "bg-muted" : "bg-transparent"}`} />
                         </div>)}
                     </div>
                   </div>
@@ -1100,7 +1100,7 @@ export default function LandingPage() {
               <AmyIcon size={38} ring />
               <div className="flex flex-col leading-tight">
                 <span className="font-quicksand font-black text-lg" style={{
-                background: "linear-gradient(90deg,#A855F7,#EC4899,#06B6D4)",
+                background: "linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)),hsl(var(--brand-cyan-500)))",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent"
               }}>

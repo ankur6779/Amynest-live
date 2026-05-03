@@ -5,8 +5,8 @@ import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useWebPush } from "@/hooks/use-web-push";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 
-const GRAD = "linear-gradient(135deg,#6366F1,#A855F7)";
-const BG   = "linear-gradient(160deg,#EEF2FF 0%,#F5F3FF 55%,#FDF2F8 100%)";
+const GRAD = "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))";
+const BG   = "linear-gradient(160deg,hsl(var(--brand-indigo-100)) 0%,hsl(var(--brand-violet-50)) 55%,hsl(var(--brand-pink-50)) 100%)";
 
 export default function NotifyPromptPage() {
   const { t } = useTranslation();
@@ -51,14 +51,14 @@ export default function NotifyPromptPage() {
 
       <h1
         className="text-2xl font-extrabold text-center mb-3"
-        style={{ color: "#1e1b4b" }}
+        style={{ color: "hsl(var(--brand-indigo-950))" }}
       >
         {t("screens.notify_prompt.title")}
       </h1>
 
       <p
         className="text-sm text-center mb-8 leading-relaxed"
-        style={{ color: "#6366F1", maxWidth: 300 }}
+        style={{ color: "hsl(var(--brand-indigo-500))", maxWidth: 300 }}
       >
         {t("screens.notify_prompt.subtitle")}
       </p>
@@ -75,7 +75,7 @@ export default function NotifyPromptPage() {
           ].map(({ emoji, text }) => (
             <div key={text} className="flex items-center gap-3 py-2">
               <span style={{ fontSize: 20 }}>{emoji}</span>
-              <p className="text-sm font-medium" style={{ color: "#1e1b4b" }}>{text}</p>
+              <p className="text-sm font-medium" style={{ color: "hsl(var(--brand-indigo-950))" }}>{text}</p>
             </div>
           ))}
         </div>
@@ -83,7 +83,7 @@ export default function NotifyPromptPage() {
         <button
           onClick={handleAllow}
           disabled={loading}
-          className="w-full py-4 rounded-2xl text-white font-bold text-base active:scale-95 transition-all"
+          className="w-full py-4 rounded-2xl text-primary-foreground font-bold text-base active:scale-95 transition-all"
           style={{
             background: GRAD,
             boxShadow: "0 6px 24px rgba(99,102,241,0.4)",
@@ -96,7 +96,7 @@ export default function NotifyPromptPage() {
         <button
           onClick={handleSkip}
           className="w-full py-3 text-sm font-semibold"
-          style={{ color: "#6366F1", background: "none", border: "none", cursor: "pointer" }}
+          style={{ color: "hsl(var(--brand-indigo-500))", background: "none", border: "none", cursor: "pointer" }}
         >
           {t("screens.notify_prompt.maybe_later")}
         </button>

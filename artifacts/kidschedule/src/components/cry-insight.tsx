@@ -65,22 +65,22 @@ const CAUSE_META: Record<CryCause, {
   hunger: {
     emoji: "🍼",
     label: "Hunger",
-    color: "from-amber-500 to-orange-500"
+    color: "from-primary to-primary"
   },
   sleepy: {
     emoji: "😴",
     label: "Sleepy",
-    color: "from-indigo-500 to-violet-500"
+    color: "from-primary to-primary"
   },
   discomfort: {
     emoji: "😣",
     label: "Discomfort",
-    color: "from-rose-500 to-pink-500"
+    color: "from-primary to-primary"
   },
   pain: {
     emoji: "🤕",
     label: "Pain",
-    color: "from-red-500 to-rose-600"
+    color: "from-primary to-primary"
   }
 };
 const RECORD_LIMIT_MS = 15_000;
@@ -366,9 +366,9 @@ export function CryInsight({
   const recordPctFull = Math.min(100, elapsedMs / RECORD_LIMIT_MS * 100);
   return <div className="space-y-3" data-testid="cry-insight-root">
       {/* Beta banner */}
-      <div className="flex items-start gap-2 rounded-2xl bg-gradient-to-r from-amber-100/80 to-rose-100/80 dark:from-amber-900/30 dark:to-rose-900/30 border border-amber-300/60 dark:border-amber-400/30 p-3">
-        <ShieldAlert className="h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
-        <p className="text-[11px] leading-snug text-amber-900 dark:text-amber-100">
+      <div className="flex items-start gap-2 rounded-2xl bg-gradient-to-r from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3">
+        <ShieldAlert className="h-4 w-4 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
+        <p className="text-[11px] leading-snug text-primary dark:text-muted-foreground">
           <span className="font-bold">{t("components.cry_insight.beta_estimate_only")}</span>{" "}
           {t("components.cry_insight.cry_insight_uses_simple_audio_context_cues_to_suggest_a_like")}
         </p>
@@ -376,7 +376,7 @@ export function CryInsight({
 
       {/* Context form */}
       <div className="rounded-2xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 p-3.5 backdrop-blur-md space-y-3">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">
           {t("components.cry_insight.quick_context_for")} {childName}
         </p>
 
@@ -388,7 +388,7 @@ export function CryInsight({
               {feedHrs < 1 ? `${Math.round(feedHrs * 60)} min` : `${feedHrs.toFixed(1)} hr`} {t("components.cry_insight.ago")}
             </span>
           </div>
-          <input type="range" min={0.25} max={6} step={0.25} value={feedHrs} onChange={e => setFeedHrs(parseFloat(e.target.value))} className="w-full accent-orange-500" data-testid="feed-slider" />
+          <input type="range" min={0.25} max={6} step={0.25} value={feedHrs} onChange={e => setFeedHrs(parseFloat(e.target.value))} className="w-full accent-primary" data-testid="feed-slider" />
         </div>
 
         {/* Sleep slider */}
@@ -399,7 +399,7 @@ export function CryInsight({
               {sleepHrs < 1 ? `${Math.round(sleepHrs * 60)} min` : `${sleepHrs.toFixed(1)} hr`} {t("components.cry_insight.ago_2")}
             </span>
           </div>
-          <input type="range" min={0} max={6} step={0.25} value={sleepHrs} onChange={e => setSleepHrs(parseFloat(e.target.value))} className="w-full accent-indigo-500" data-testid="sleep-slider" />
+          <input type="range" min={0} max={6} step={0.25} value={sleepHrs} onChange={e => setSleepHrs(parseFloat(e.target.value))} className="w-full accent-primary" data-testid="sleep-slider" />
         </div>
 
         {/* Diaper toggle (3-state) */}
@@ -409,18 +409,18 @@ export function CryInsight({
             {[{
             v: true,
             label: "Yes — clean",
-            cls: "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
+            cls: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"
           }, {
             v: false,
             label: "No / dirty",
-            cls: "bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-200"
+            cls: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"
           }, {
             v: null,
             label: "Not sure",
             cls: "bg-muted text-muted-foreground"
           }].map(opt => {
             const active = diaperRecent === opt.v;
-            return <button key={String(opt.v)} type="button" onClick={() => setDiaperRecent(opt.v as boolean | null)} className={["flex-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition-all", active ? `${opt.cls} ring-2 ring-violet-400` : "bg-muted/40 text-muted-foreground"].join(" ")} data-testid={`diaper-${String(opt.v)}`}>
+            return <button key={String(opt.v)} type="button" onClick={() => setDiaperRecent(opt.v as boolean | null)} className={["flex-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition-all", active ? `${opt.cls} ring-2 ring-primary` : "bg-muted/40 text-muted-foreground"].join(" ")} data-testid={`diaper-${String(opt.v)}`}>
                   {opt.label}
                 </button>;
           })}
@@ -430,16 +430,16 @@ export function CryInsight({
         {/* Fever toggle */}
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold text-foreground">{t("components.cry_insight.feels_warm_has_temperature")}</p>
-          <button type="button" onClick={() => setFever(v => !v)} className={["rounded-full px-3 py-1 text-[11px] font-bold transition-all", fever ? "bg-rose-500 text-white shadow" : "bg-muted text-muted-foreground"].join(" ")} aria-pressed={fever} data-testid="fever-toggle">
+          <button type="button" onClick={() => setFever(v => !v)} className={["rounded-full px-3 py-1 text-[11px] font-bold transition-all", fever ? "bg-primary text-white shadow" : "bg-muted text-muted-foreground"].join(" ")} aria-pressed={fever} data-testid="fever-toggle">
             {fever ? "Yes" : "No"}
           </button>
         </div>
       </div>
 
       {/* Recorder */}
-      <div className="rounded-2xl bg-gradient-to-br from-violet-50/70 to-fuchsia-50/70 dark:from-violet-950/40 dark:to-fuchsia-950/40 border border-violet-200/60 dark:border-violet-400/20 p-4 backdrop-blur-md">
+      <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-4 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={recording ? stopRecording : startRecording} disabled={analysing} className={["h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg transition-all", recording ? "bg-rose-500 hover:bg-rose-600 animate-pulse" : "bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700", analysing ? "opacity-50 cursor-not-allowed" : ""].join(" ")} data-testid={recording ? "stop-recording" : "start-recording"} aria-label={recording ? "Stop recording" : "Start recording"}>
+          <button type="button" onClick={recording ? stopRecording : startRecording} disabled={analysing} className={["h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg transition-all", recording ? "bg-primary hover:bg-primary animate-pulse" : "bg-gradient-to-br from-primary to-primary hover:from-primary hover:to-primary", analysing ? "opacity-50 cursor-not-allowed" : ""].join(" ")} data-testid={recording ? "stop-recording" : "start-recording"} aria-label={recording ? "Stop recording" : "Start recording"}>
             {analysing ? <Loader2 className="h-6 w-6 animate-spin" /> : recording ? <Square className="h-5 w-5" fill="currentColor" /> : <Mic className="h-6 w-6" />}
           </button>
           <div className="min-w-0 flex-1">
@@ -449,8 +449,8 @@ export function CryInsight({
             <p className="text-[11px] text-muted-foreground leading-snug">
               {recording ? `Captures up to 15 s · ${elapsedSec}s recorded` : "Hold the phone near baby for 5–15 s. Audio is analysed on-device and never uploaded."}
             </p>
-            {recording && <div className="mt-1.5 h-1 w-full rounded-full bg-violet-200/60 dark:bg-violet-700/40 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all" style={{
+            {recording && <div className="mt-1.5 h-1 w-full rounded-full bg-muted dark:bg-primary overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-primary to-primary transition-all" style={{
               width: `${recordPctFull}%`
             }} />
               </div>}
@@ -458,16 +458,16 @@ export function CryInsight({
         </div>
 
         {/* Skip-audio fallback */}
-        {!recording && <button type="button" onClick={analyseWithoutAudio} disabled={analysing} className="mt-3 w-full rounded-xl border border-violet-300/60 dark:border-violet-400/30 px-3 py-2 text-xs font-bold text-violet-700 dark:text-violet-200 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50" data-testid="analyse-no-audio">
+        {!recording && <button type="button" onClick={analyseWithoutAudio} disabled={analysing} className="mt-3 w-full rounded-xl border border-border dark:border-border px-3 py-2 text-xs font-bold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary transition-colors disabled:opacity-50" data-testid="analyse-no-audio">
             <Sparkles className="inline h-3.5 w-3.5 mr-1.5" />
             {t("components.cry_insight.analyse_using_context_only_no_audio")}
           </button>}
       </div>
 
       {/* Result */}
-      {result && <div className="rounded-2xl bg-white/80 dark:bg-white/5 border border-violet-200/60 dark:border-violet-400/20 p-4 backdrop-blur-md space-y-3" data-testid="cry-result">
+      {result && <div className="rounded-2xl bg-white/80 dark:bg-white/5 border border-border dark:border-border p-4 backdrop-blur-md space-y-3" data-testid="cry-result">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300 flex items-center gap-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground flex items-center gap-1.5">
               <Activity className="h-3.5 w-3.5" />
               {t("components.cry_insight.likely_cause")}
             </p>
@@ -499,19 +499,19 @@ export function CryInsight({
           </div>
 
           {/* Suggestion */}
-          <div className="rounded-xl bg-gradient-to-br from-violet-100/70 to-fuchsia-100/70 dark:from-violet-900/30 dark:to-fuchsia-900/30 border border-violet-200/60 dark:border-violet-400/20 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-violet-700 dark:text-violet-300 mb-1">
+          <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground mb-1">
               {t("components.cry_insight.try_this")}
             </p>
-            <p className="text-sm text-violet-900 dark:text-violet-50 leading-snug">
+            <p className="text-sm text-primary dark:text-muted-foreground leading-snug">
               {result.suggestion}
             </p>
           </div>
 
           {/* Medical-flag warning */}
-          {result.medicalFlag && <div className="flex items-start gap-2 rounded-xl bg-rose-100/80 dark:bg-rose-900/30 border border-rose-300/60 dark:border-rose-400/30 p-3">
-              <AlertTriangle className="h-4 w-4 text-rose-700 dark:text-rose-300 shrink-0 mt-0.5" />
-              <p className="text-[11px] leading-snug text-rose-900 dark:text-rose-100">
+          {result.medicalFlag && <div className="flex items-start gap-2 rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3">
+              <AlertTriangle className="h-4 w-4 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-[11px] leading-snug text-primary dark:text-muted-foreground">
                 <span className="font-bold">{t("components.cry_insight.worth_a_check")}</span>{" "}
                 {t("components.cry_insight.the_cry_pattern_the_info_you_shared_looks_intense_if_baby_se")}
               </p>

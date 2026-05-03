@@ -134,11 +134,11 @@ export function SmartMealSuggestions() {
     setQuery(q);
     inputRef.current?.focus();
   };
-  return <div className="rounded-2xl border border-violet-100 dark:border-violet-400/20 bg-gradient-to-br from-violet-50/60 via-white to-amber-50/40 dark:from-violet-500/8 dark:via-slate-900/30 dark:to-amber-500/8 overflow-hidden">
+  return <div className="rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-muted dark:from-primary dark:via-muted dark:to-primary overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3.5 border-b border-violet-100 dark:border-violet-400/15 flex items-center justify-between gap-3">
+      <div className="px-4 py-3.5 border-b border-border dark:border-border flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="h-9 w-9 rounded-xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-lg shrink-0">
+          <div className="h-9 w-9 rounded-xl bg-muted dark:bg-primary flex items-center justify-center text-lg shrink-0">
             🍱
           </div>
           <div className="min-w-0">
@@ -151,19 +151,19 @@ export function SmartMealSuggestions() {
           </div>
         </div>
         {/* Audience toggle */}
-        <div className="flex bg-white/70 dark:bg-slate-900/40 border border-border rounded-full p-0.5 shrink-0">
+        <div className="flex bg-white/70 dark:bg-card border border-border rounded-full p-0.5 shrink-0">
           <button onClick={() => {
           setAudience("kids_tiffin");
           setMeals([]);
           setHasGenerated(false);
-        }} className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${audience === "kids_tiffin" ? "bg-violet-600 text-white shadow" : "text-muted-foreground hover:text-foreground"}`} data-testid="meals-tab-kids">
+        }} className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${audience === "kids_tiffin" ? "bg-primary text-white shadow" : "text-muted-foreground hover:text-foreground"}`} data-testid="meals-tab-kids">
             {t("components.smart_meal_suggestions.kids")}
           </button>
           <button onClick={() => {
           setAudience("parent_healthy");
           setMeals([]);
           setHasGenerated(false);
-        }} className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${audience === "parent_healthy" ? "bg-violet-600 text-white shadow" : "text-muted-foreground hover:text-foreground"}`} data-testid="meals-tab-parent">
+        }} className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${audience === "parent_healthy" ? "bg-primary text-white shadow" : "text-muted-foreground hover:text-foreground"}`} data-testid="meals-tab-parent">
             {t("components.smart_meal_suggestions.parent")}
           </button>
         </div>
@@ -174,17 +174,17 @@ export function SmartMealSuggestions() {
         <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
           {t("components.smart_meal_suggestions.what_would_you_like_to_cook_today")}
         </label>
-        <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} maxLength={300} className="w-full h-11 px-3.5 rounded-xl border border-border bg-white dark:bg-slate-900/40 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400 transition-all" data-testid="meals-query-input" />
+        <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} maxLength={300} className="w-full h-11 px-3.5 rounded-xl border border-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-border transition-all" data-testid="meals-query-input" />
 
         {/* Quick suggestion chips */}
         <div className="flex flex-wrap gap-1.5 mt-2.5">
-          {placeholders.slice(1).map(q => <button key={q} type="button" onClick={() => handleSuggestionClick(q)} className="text-[11px] px-2.5 py-1 rounded-full border border-dashed border-violet-200 dark:border-violet-400/30 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 text-muted-foreground hover:text-foreground transition-all">
+          {placeholders.slice(1).map(q => <button key={q} type="button" onClick={() => handleSuggestionClick(q)} className="text-[11px] px-2.5 py-1 rounded-full border border-dashed border-border dark:border-border hover:border-border hover:bg-muted dark:hover:bg-primary text-muted-foreground hover:text-foreground transition-all">
               {q}
             </button>)}
         </div>
 
         {/* Generate button */}
-        <button type="button" onClick={() => void handleGenerate()} disabled={loading} className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.98]" data-testid="meals-generate-btn">
+        <button type="button" onClick={() => void handleGenerate()} disabled={loading} className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.98]" data-testid="meals-generate-btn">
           {loading ? <>
               <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
               {t("components.smart_meal_suggestions.amy_is_cooking_up_recipes")}
@@ -197,7 +197,7 @@ export function SmartMealSuggestions() {
 
       {/* Amy message */}
       {amyMessage && !loading && <div className="px-4 pb-2">
-          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/50 border border-violet-100 dark:border-violet-400/20">
+          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/80 dark:bg-card border border-border dark:border-border">
             <AmyIcon size={18} bounce />
             <p className="text-[12.5px] leading-snug text-foreground/90">{amyMessage}</p>
           </div>
@@ -207,9 +207,9 @@ export function SmartMealSuggestions() {
       <div ref={resultsRef} className="pb-4">
         {loading ? <div className="flex gap-3 px-4 overflow-hidden">
             {[0, 1, 2, 3, 4].map(i => <div key={i} className="shrink-0 w-[160px] h-[200px] rounded-2xl bg-muted animate-pulse" />)}
-          </div> : fetchError ? <div className="mx-4 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/20 text-center">
-            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{fetchError}</p>
-            <button type="button" onClick={() => void handleGenerate()} className="mt-2 text-xs text-red-600 dark:text-red-400 underline font-bold">
+          </div> : fetchError ? <div className="mx-4 p-4 rounded-xl bg-muted dark:bg-primary border border-border dark:border-border text-center">
+            <p className="text-sm text-primary dark:text-primary font-medium">{fetchError}</p>
+            <button type="button" onClick={() => void handleGenerate()} className="mt-2 text-xs text-primary dark:text-primary underline font-bold">
               {t("components.smart_meal_suggestions.try_again")}
             </button>
           </div> : meals.length > 0 ? <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-2 scroll-smooth" style={{
@@ -222,7 +222,7 @@ export function SmartMealSuggestions() {
             <div className="text-3xl mb-2">🍱</div>
             <p className="text-sm text-muted-foreground">
               {t("components.smart_meal_suggestions.type_what_you_want_to_cook_above_and_hit")}{" "}
-              <span className="font-bold text-violet-600">{t("components.smart_meal_suggestions.generate")}</span> {t("components.smart_meal_suggestions.amy_will_create_personalised_recipes_just_for_you")}
+              <span className="font-bold text-primary">{t("components.smart_meal_suggestions.generate")}</span> {t("components.smart_meal_suggestions.amy_will_create_personalised_recipes_just_for_you")}
             </p>
           </div> : <div className="px-4 py-4 text-center text-sm text-muted-foreground">
             {t("components.smart_meal_suggestions.no_meals_found_try_a_different_description")}
@@ -252,7 +252,7 @@ function MealCard({
   return <button type="button" onClick={e => {
     e.stopPropagation();
     onOpen();
-  }} style={style} className="group shrink-0 snap-start w-[165px] rounded-2xl overflow-hidden border border-border bg-card hover:border-violet-300 dark:hover:border-violet-500/50 hover:shadow-md active:scale-95 transition-all text-left animate-in fade-in" data-testid={`meal-card-${meal.id}`}>
+  }} style={style} className="group shrink-0 snap-start w-[165px] rounded-2xl overflow-hidden border border-border bg-card hover:border-border dark:hover:border-primary hover:shadow-md active:scale-95 transition-all text-left animate-in fade-in" data-testid={`meal-card-${meal.id}`}>
       <div className="relative h-[100px] flex items-center justify-center text-[52px]" style={{
       background: `linear-gradient(135deg, ${meal.bgGradient[0]}, ${meal.bgGradient[1]})`
     }}>
@@ -260,7 +260,7 @@ function MealCard({
         <span className="absolute top-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wide bg-white/85 text-foreground px-1.5 py-0.5 rounded-full shadow-sm">
           {tag}
         </span>
-        {meal.isVeg && <span className="absolute top-1.5 right-1.5 text-[9px] font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded-full shadow-sm">
+        {meal.isVeg && <span className="absolute top-1.5 right-1.5 text-[9px] font-bold bg-primary text-white px-1.5 py-0.5 rounded-full shadow-sm">
             {t("components.smart_meal_suggestions.veg")}
           </span>}
       </div>
@@ -268,9 +268,9 @@ function MealCard({
         <p className="font-bold text-[12.5px] text-foreground leading-tight line-clamp-2">{meal.title}</p>
         <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
           <span className="inline-flex items-center gap-0.5"><Clock className="h-3 w-3" /> {meal.prepMinutes}m</span>
-          {showCalories && <span className="inline-flex items-center gap-0.5"><Flame className="h-3 w-3 text-orange-500" /> {meal.calories}</span>}
+          {showCalories && <span className="inline-flex items-center gap-0.5"><Flame className="h-3 w-3 text-primary" /> {meal.calories}</span>}
         </div>
-        <p className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold">{t("components.smart_meal_suggestions.tap_for_recipe")}</p>
+        <p className="text-[10px] text-primary dark:text-primary font-semibold">{t("components.smart_meal_suggestions.tap_for_recipe")}</p>
       </div>
     </button>;
 }
@@ -335,30 +335,30 @@ function RecipeModal({
           <div>
             <h3 className="font-quicksand font-black text-xl text-foreground leading-tight">{meal.title}</h3>
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {meal.tags.map(t => <span key={t} className="text-[10.5px] font-bold uppercase tracking-wide bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-200 px-2 py-0.5 rounded-full">
+              {meal.tags.map(t => <span key={t} className="text-[10.5px] font-bold uppercase tracking-wide bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full">
                   {t}
                 </span>)}
-              <span className="text-[10.5px] font-bold uppercase tracking-wide bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              <span className="text-[10.5px] font-bold uppercase tracking-wide bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                 <Clock className="h-2.5 w-2.5" /> {meal.prepMinutes} {t("components.smart_meal_suggestions.min")}
               </span>
-              {showCalories && <span className="text-[10.5px] font-bold uppercase tracking-wide bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              {showCalories && <span className="text-[10.5px] font-bold uppercase tracking-wide bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                   <Flame className="h-2.5 w-2.5" /> {meal.calories} {t("components.smart_meal_suggestions.kcal")}
                 </span>}
             </div>
           </div>
 
           {/* Read Aloud */}
-          <div className="rounded-2xl border border-violet-100 dark:border-violet-400/25 bg-violet-50/60 dark:bg-violet-500/10 p-3">
+          <div className="rounded-2xl border border-border dark:border-border bg-muted dark:bg-primary p-3">
             <div className="flex items-center justify-between gap-2">
-              <button onClick={handleReadAloud} disabled={loading} className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-70 disabled:cursor-wait text-white font-bold text-xs px-3.5 py-2 rounded-full" data-testid="meal-read-aloud">
+              <button onClick={handleReadAloud} disabled={loading} className="inline-flex items-center gap-2 bg-primary hover:bg-primary disabled:opacity-70 disabled:cursor-wait text-white font-bold text-xs px-3.5 py-2 rounded-full" data-testid="meal-read-aloud">
                 {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
                 {loading ? "Loading…" : speaking ? "Stop" : "Read Aloud"}
               </button>
-              <div className="flex bg-white/70 dark:bg-slate-900/40 border border-border rounded-full p-0.5">
-                <button onClick={() => switchVoice("female")} className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${voicePref === "female" ? "bg-violet-600 text-white" : "text-muted-foreground"}`}>
+              <div className="flex bg-white/70 dark:bg-card border border-border rounded-full p-0.5">
+                <button onClick={() => switchVoice("female")} className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${voicePref === "female" ? "bg-primary text-white" : "text-muted-foreground"}`}>
                   {t("components.smart_meal_suggestions.female")}
                 </button>
-                <button onClick={() => switchVoice("male")} className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${voicePref === "male" ? "bg-violet-600 text-white" : "text-muted-foreground"}`}>
+                <button onClick={() => switchVoice("male")} className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${voicePref === "male" ? "bg-primary text-white" : "text-muted-foreground"}`}>
                   {t("components.smart_meal_suggestions.male")}
                 </button>
               </div>
@@ -368,7 +368,7 @@ function RecipeModal({
           {/* Ingredients */}
           <div>
             <p className="font-bold text-sm text-foreground mb-2 inline-flex items-center gap-1.5">
-              <Utensils className="h-3.5 w-3.5 text-violet-500" /> {t("components.smart_meal_suggestions.ingredients")}
+              <Utensils className="h-3.5 w-3.5 text-primary" /> {t("components.smart_meal_suggestions.ingredients")}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {meal.ingredients.map(ing => <span key={ing} className="text-[11px] font-medium px-2 py-0.5 rounded-full border bg-muted border-border text-foreground/70">
@@ -380,11 +380,11 @@ function RecipeModal({
           {/* Steps */}
           <div>
             <p className="font-bold text-sm text-foreground mb-2 inline-flex items-center gap-1.5">
-              <ChefHat className="h-3.5 w-3.5 text-violet-500" /> {t("components.smart_meal_suggestions.steps")}
+              <ChefHat className="h-3.5 w-3.5 text-primary" /> {t("components.smart_meal_suggestions.steps")}
             </p>
             <ol className="space-y-2">
               {meal.steps.map((step, i) => <li key={i} className="flex gap-2.5 text-sm leading-snug">
-                  <span className="shrink-0 h-5 w-5 rounded-full bg-violet-600 text-white text-[11px] font-black flex items-center justify-center mt-0.5">
+                  <span className="shrink-0 h-5 w-5 rounded-full bg-primary text-white text-[11px] font-black flex items-center justify-center mt-0.5">
                     {i + 1}
                   </span>
                   <span className="text-foreground/90">{step}</span>

@@ -103,7 +103,7 @@ export default function NotificationDiagnosticsPage() {
   if (isLoading) {
     return (
       <div data-on-dark className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0D0022] via-[#180040] to-[#0A001E]">
-        <div className="h-8 w-8 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
+        <div className="h-8 w-8 rounded-full border-2 border-border border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -115,17 +115,17 @@ export default function NotificationDiagnosticsPage() {
           <button
             type="button"
             onClick={() => navigate("/notification-settings")}
-            className="flex items-center gap-1 text-purple-200/80 hover:text-white mb-6 text-sm"
+            className="flex items-center gap-1 text-muted-foreground hover:text-white mb-6 text-sm"
           >
             <ChevronLeft className="w-4 h-4" />
             Back
           </button>
-          <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md">
-            <CardContent className="p-6 text-purple-200/80">
+          <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
+            <CardContent className="p-6 text-muted-foreground">
               We couldn't load your diagnostics right now.{" "}
               <button
                 type="button"
-                className="underline text-purple-300"
+                className="underline text-muted-foreground"
                 onClick={() => refetch()}
               >
                 Try again
@@ -147,21 +147,21 @@ export default function NotificationDiagnosticsPage() {
         <button
           type="button"
           onClick={() => navigate("/notification-settings")}
-          className="flex items-center gap-1 text-purple-200/80 hover:text-white mb-6 text-sm"
+          className="flex items-center gap-1 text-muted-foreground hover:text-white mb-6 text-sm"
         >
           <ChevronLeft className="w-4 h-4" />
           Back to notification settings
         </button>
 
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center">
-            <Bell className="w-5 h-5 text-purple-300" />
+          <div className="w-10 h-10 rounded-xl bg-primary border border-border flex items-center justify-center">
+            <Bell className="w-5 h-5 text-muted-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-white">
             Why didn't I get my notification?
           </h1>
         </div>
-        <p className="text-purple-200/70 text-sm mb-6 leading-relaxed">
+        <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
           A quick health check of your devices, recent deliveries and quiet
           hours. Most missed notifications fall into one of the buckets below.
         </p>
@@ -171,7 +171,7 @@ export default function NotificationDiagnosticsPage() {
             type="button"
             size="sm"
             variant="ghost"
-            className="h-8 text-purple-300 hover:text-white hover:bg-purple-500/20"
+            className="h-8 text-muted-foreground hover:text-white hover:bg-primary"
             onClick={() => refetch()}
             disabled={isFetching}
           >
@@ -180,32 +180,32 @@ export default function NotificationDiagnosticsPage() {
         </div>
 
         {/* ── Devices / tokens ─────────────────────────────────────── */}
-        <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md mb-4">
+        <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-white flex items-center gap-2">
               {hasTokens ? (
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <CheckCircle2 className="w-4 h-4 text-primary" />
               ) : (
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                <AlertTriangle className="w-4 h-4 text-primary" />
               )}
               Your devices
             </CardTitle>
           </CardHeader>
           <CardContent>
             {!hasTokens ? (
-              <div className="text-purple-200/80 text-sm leading-relaxed">
+              <div className="text-muted-foreground text-sm leading-relaxed">
                 <p className="mb-2">
                   No devices are registered for push notifications yet — that's
                   almost always why nothing arrives.
                 </p>
-                <p className="text-purple-200/60">
+                <p className="text-muted-foreground">
                   Open the AmyNest app on your phone and grant notification
                   permission, or enable browser notifications from the
                   notification settings page.
                 </p>
               </div>
             ) : (
-              <ul className="divide-y divide-purple-500/10">
+              <ul className="divide-y divide-border">
                 {data.tokens.map((tok) => {
                   const Icon =
                     tok.platform === "ios" || tok.platform === "android"
@@ -213,15 +213,15 @@ export default function NotificationDiagnosticsPage() {
                       : Monitor;
                   return (
                     <li key={tok.id} className="py-3 flex items-start gap-3">
-                      <Icon className="w-5 h-5 text-purple-300 mt-0.5 shrink-0" />
+                      <Icon className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-white">
                           {tok.deviceName ?? tok.platform}
-                          <span className="text-purple-200/50 ml-2 text-xs uppercase">
+                          <span className="text-muted-foreground ml-2 text-xs uppercase">
                             {tok.platform}
                           </span>
                         </div>
-                        <div className="text-xs text-purple-200/60 mt-0.5">
+                        <div className="text-xs text-muted-foreground mt-0.5">
                           Last active {formatRelative(tok.lastSeenAt)} · added{" "}
                           {formatRelative(tok.createdAt)}
                         </div>
@@ -235,65 +235,65 @@ export default function NotificationDiagnosticsPage() {
         </Card>
 
         {/* ── Quiet hours / local time / cap ───────────────────────── */}
-        <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md mb-4">
+        <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-white flex items-center gap-2">
               {data.inQuietHours ? (
-                <Moon className="w-4 h-4 text-amber-400" />
+                <Moon className="w-4 h-4 text-primary" />
               ) : (
-                <Clock className="w-4 h-4 text-green-400" />
+                <Clock className="w-4 h-4 text-primary" />
               )}
               Quiet hours & timing
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-purple-200/80 space-y-2">
+          <CardContent className="text-sm text-muted-foreground space-y-2">
             <div>
-              <span className="text-purple-200/60">Your local time: </span>
+              <span className="text-muted-foreground">Your local time: </span>
               <span className="text-white font-semibold">{data.localTime}</span>
-              <span className="text-purple-200/60"> ({data.timezone})</span>
+              <span className="text-muted-foreground"> ({data.timezone})</span>
             </div>
             {data.inQuietHours ? (
-              <div className="text-amber-200/90">
+              <div className="text-muted-foreground">
                 You're currently inside quiet hours, so AmyNest won't send any
                 push notifications until quiet hours end.
               </div>
             ) : (
-              <div className="text-purple-200/70">
+              <div className="text-muted-foreground">
                 You're outside quiet hours — notifications can be delivered now.
               </div>
             )}
-            <div className="text-purple-200/60">
+            <div className="text-muted-foreground">
               Daily cap: up to {data.dailyCap} notifications per day.
             </div>
           </CardContent>
         </Card>
 
         {/* ── Next scheduled ───────────────────────────────────────── */}
-        <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md mb-4">
+        <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-white flex items-center gap-2">
-              <CalendarClock className="w-4 h-4 text-purple-300" />
+              <CalendarClock className="w-4 h-4 text-muted-foreground" />
               Next scheduled notification
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-purple-200/80">
+          <CardContent className="text-sm text-muted-foreground">
             {data.nextScheduled ? (
               <div>
                 <div className="text-white font-semibold">
                   {categoryLabel(data.nextScheduled.category)}
                   {data.nextScheduled.activity ? (
-                    <span className="text-purple-200/70 font-normal">
+                    <span className="text-muted-foreground font-normal">
                       {" "}— {data.nextScheduled.activity}
                     </span>
                   ) : null}
                 </div>
-                <div className="text-purple-200/70 mt-1">
+                <div className="text-muted-foreground mt-1">
                   At {data.nextScheduled.localTime} ·{" "}
                   {formatMinutesUntil(data.nextScheduled.minutesFromNow)}.
                 </div>
               </div>
             ) : (
-              <div className="text-purple-200/70">
+              <div className="text-muted-foreground">
                 Nothing more is scheduled for today. New notifications will be
                 queued tomorrow morning.
               </div>
@@ -302,48 +302,48 @@ export default function NotificationDiagnosticsPage() {
         </Card>
 
         {/* ── Recent failures ──────────────────────────────────────── */}
-        <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md mb-4">
+        <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-white flex items-center gap-2">
               {failures.length === 0 ? (
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <CheckCircle2 className="w-4 h-4 text-primary" />
               ) : (
-                <XCircle className="w-4 h-4 text-amber-400" />
+                <XCircle className="w-4 h-4 text-primary" />
               )}
               Recent issues
             </CardTitle>
           </CardHeader>
           <CardContent>
             {data.recent.length === 0 ? (
-              <div className="flex items-start gap-3 text-sm text-purple-200/70">
-                <Inbox className="w-4 h-4 text-purple-300 mt-0.5" />
+              <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                <Inbox className="w-4 h-4 text-muted-foreground mt-0.5" />
                 <div>
                   We haven't tried to send you anything recently. Use{" "}
-                  <span className="text-purple-200">Send test</span> on the {/* i18n-ok: refers to literal label of the Send-test button on the settings page */}
+                  <span className="text-muted-foreground">Send test</span> on the {/* i18n-ok: refers to literal label of the Send-test button on the settings page */}
                   settings page to confirm your device is wired up.
                 </div>
               </div>
             ) : failures.length === 0 ? (
-              <div className="text-sm text-purple-200/70">
+              <div className="text-sm text-muted-foreground">
                 Your last {data.recent.length} notification
                 {data.recent.length === 1 ? "" : "s"} all delivered
                 successfully.
               </div>
             ) : (
-              <ul className="divide-y divide-purple-500/10">
+              <ul className="divide-y divide-border">
                 {failures.map((row) => (
                   <li key={row.id} className="py-3 flex items-start gap-3">
-                    <XCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                    <XCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-white truncate">
                         {row.title || categoryLabel(row.category)}
                       </div>
-                      <div className="text-xs text-purple-200/60 mt-0.5">
+                      <div className="text-xs text-muted-foreground mt-0.5">
                         {categoryLabel(row.category)} · {row.status}
                         {row.errorMessage ? ` · ${row.errorMessage}` : ""}
                       </div>
                     </div>
-                    <div className="text-xs text-purple-300/60 shrink-0">
+                    <div className="text-xs text-muted-foreground shrink-0">
                       {formatRelative(row.sentAt)}
                     </div>
                   </li>
@@ -353,7 +353,7 @@ export default function NotificationDiagnosticsPage() {
           </CardContent>
         </Card>
 
-        <p className="text-xs text-purple-300/50 mt-6 leading-relaxed">
+        <p className="text-xs text-muted-foreground mt-6 leading-relaxed">
           Still missing notifications? Check your phone's system settings to
           make sure AmyNest is allowed to show notifications and isn't muted
           by Focus / Do Not Disturb.

@@ -142,7 +142,7 @@ function NeonRingHero() {
         position: "absolute",
         inset: 0,
         borderRadius: "50%",
-        background: "conic-gradient(from 0deg, #a855f7 0deg, #ec4899 90deg, #a855f7 180deg, #ec4899 270deg, #a855f7 360deg)",
+        background: "conic-gradient(from 0deg, hsl(var(--brand-purple-500)) 0deg, hsl(var(--brand-pink-500)) 90deg, hsl(var(--brand-purple-500)) 180deg, hsl(var(--brand-pink-500)) 270deg, hsl(var(--brand-purple-500)) 360deg)",
         WebkitMaskImage: `radial-gradient(circle, transparent ${MASK_IN}px, black ${MASK_OUT}px)`,
         maskImage: `radial-gradient(circle, transparent ${MASK_IN}px, black ${MASK_OUT}px)`,
         animation: "suRingRotate 10s linear infinite",
@@ -207,7 +207,7 @@ function NeonRingHero() {
           fontWeight: 700,
           letterSpacing: "3px",
           textTransform: "uppercase",
-          background: "linear-gradient(92deg, #a855f7 0%, #ec4899 100%)",
+          background: "linear-gradient(92deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
           WebkitBackgroundClip: "text",
           backgroundClip: "text",
           color: "transparent",
@@ -308,7 +308,7 @@ function ErrorBanner({
 }) {
   return <div style={{
     fontSize: "13px",
-    color: "#FF8080",
+    color: "hsl(var(--brand-red-400))",
     background: "rgba(255,60,60,0.10)",
     border: "1px solid rgba(255,60,60,0.22)",
     borderRadius: "12px",
@@ -478,7 +478,7 @@ export default function SignUpPage() {
         width: "100%",
         height: "50px",
         borderRadius: "999px",
-        background: busy || !canSubmit ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, #a855f7 0%, #ec4899 100%)",
+        background: busy || !canSubmit ? "rgba(75,65,110,0.7)" : "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
         border: "none",
         color: "#FFFFFF",
         fontSize: "16px",
@@ -500,7 +500,7 @@ export default function SignUpPage() {
     }}>
         {t("screens.sign_up.have_account")}{" "}
         <Link href="/sign-in" style={{
-        color: "#a855f7",
+        color: "hsl(var(--brand-purple-500))",
         fontWeight: 600,
         textDecoration: "none"
       }}>

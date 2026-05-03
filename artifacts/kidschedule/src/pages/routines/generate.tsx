@@ -28,25 +28,25 @@ const MOOD_OPTIONS: MoodOption[] = [{
   label: "Happy",
   emoji: "😊",
   hint: "Productive & energetic",
-  color: "border-green-300 bg-green-50 text-green-800"
+  color: "border-border bg-muted text-primary"
 }, {
   value: "normal",
   label: "Normal",
   emoji: "😐",
   hint: "Balanced routine",
-  color: "border-blue-200  bg-blue-50  text-blue-800"
+  color: "border-border  bg-muted  text-primary"
 }, {
   value: "lazy",
   label: "Lazy",
   emoji: "😴",
   hint: "Easier tasks + breaks",
-  color: "border-amber-300 bg-amber-50 text-amber-800"
+  color: "border-border bg-muted text-primary"
 }, {
   value: "angry",
   label: "Upset",
   emoji: "😡",
   hint: "Calming activities",
-  color: "border-rose-300  bg-rose-50  text-rose-800"
+  color: "border-border  bg-muted  text-primary"
 }];
 const TRAVEL_MODE_LABELS: Record<string, string> = {
   van: "🚐 Van / Bus",
@@ -294,10 +294,10 @@ function ParentEntryForm({
                 {l}
               </button>)}
           </div>
-          {entry.isWorking === true && <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+          {entry.isWorking === true && <div className="bg-muted border border-border rounded-xl p-3 text-xs text-primary">
               {t("pages.routines.generate.amy_ai_will_assign_independent_or_babysitter_tasks_during_wo")}
             </div>}
-          {entry.isWorking === false && <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
+          {entry.isWorking === false && <div className="bg-muted border border-border rounded-xl p-3 text-xs text-primary">
               {t("pages.routines.generate.great_the_ai_will_add_plenty_of_parent_child_activities_toda")}
             </div>}
         </div>}
@@ -316,7 +316,7 @@ function ParentEntryForm({
         </div>}
 
       {/* Homemaker info */}
-      {entry.workType === "homemaker" && <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800">
+      {entry.workType === "homemaker" && <div className="bg-muted border border-border rounded-xl p-3 text-xs text-primary">
           {t("pages.routines.generate.as_a_homemaker_you_re_free_all_day_amy_ai_will_include_more_")}
         </div>}
     </div>;
@@ -340,8 +340,8 @@ function ParentAvailSection({
   // Status badge for summary
   const p1Status = avail.p1.workType ? avail.p1.workType === "homemaker" ? "free" : avail.p1.isWorking === true ? "busy" : avail.p1.isWorking === false ? "free" : "pending" : "pending";
   const statusColor = {
-    busy: "bg-amber-100 text-amber-800 border-amber-300",
-    free: "bg-green-100 text-green-800 border-green-300",
+    busy: "bg-muted text-primary border-border",
+    free: "bg-muted text-primary border-border",
     pending: "bg-muted text-muted-foreground border-border"
   };
   return <div className="space-y-4">
@@ -425,12 +425,12 @@ function TiffinSummaryCard({
     options: string[];
   }[];
   if (tiffinData.length === 0) return null;
-  return <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5">
+  return <div className="bg-muted border border-border rounded-3xl p-5">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-2xl">🍱</span>
         <div>
-          <h3 className="font-quicksand font-bold text-amber-900 text-lg">{t("pages.routines.generate.tiffin_box_suggestions")}</h3>
-          <p className="text-amber-700 text-xs">{t("pages.routines.generate.for_school_going_kids_choose_one_per_child")}</p>
+          <h3 className="font-quicksand font-bold text-primary text-lg">{t("pages.routines.generate.tiffin_box_suggestions")}</h3>
+          <p className="text-primary text-xs">{t("pages.routines.generate.for_school_going_kids_choose_one_per_child")}</p>
         </div>
       </div>
       <div className="space-y-4">
@@ -442,20 +442,20 @@ function TiffinSummaryCard({
         const {
           t
         } = useTranslation();
-        return <div key={child.id} className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-amber-100 dark:border-amber-400/30">
+        return <div key={child.id} className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-border dark:border-border">
             <div className="flex items-center gap-2 mb-3">
-              <div className="bg-amber-100 text-amber-700 rounded-full px-3 py-0.5 text-xs font-bold flex items-center gap-1">
+              <div className="bg-muted text-primary rounded-full px-3 py-0.5 text-xs font-bold flex items-center gap-1">
                 <User className="h-3 w-3" />
                 {child.name}
               </div>
-              <span className="text-xs text-amber-600">{t("pages.routines.generate.pack_by")} {time}</span>
-              <span className="text-xs text-amber-500 ml-1">
+              <span className="text-xs text-primary">{t("pages.routines.generate.pack_by")} {time}</span>
+              <span className="text-xs text-primary ml-1">
                 {child.foodType === "non_veg" ? "🍗 Non-veg" : "🥦 Veg"}
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {options.map((opt, i) => <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
-                  <span className="text-amber-500">🥘</span>
+              {options.map((opt, i) => <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted border border-border text-primary text-sm font-medium">
+                  <span className="text-primary">🥘</span>
                   {opt}
                 </div>)}
             </div>
@@ -469,7 +469,7 @@ function CombinedTimeline({
 }: {
   familyResults: FamilyResult[];
 }) {
-  const childColors = ["bg-blue-500", "bg-purple-500", "bg-green-500", "bg-rose-500", "bg-orange-500"];
+  const childColors = ["bg-primary", "bg-primary", "bg-primary", "bg-primary", "bg-primary"];
   const allItems = familyResults.flatMap(({
     child,
     routine
@@ -1292,8 +1292,8 @@ export default function RoutineGenerate() {
           {isGenerating || isAiGenerating ? <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card mt-4">
               <CardContent className="p-12 flex flex-col items-center justify-center text-center space-y-6">
                 <div className="relative">
-                  <div className={`absolute inset-0 rounded-full animate-ping ${isAiGenerating ? "bg-violet-400/20" : "bg-primary/20"}`} />
-                  <div className={`relative w-20 h-20 rounded-full flex items-center justify-center ${isAiGenerating ? "bg-violet-100 text-violet-600" : "bg-primary/10 text-primary"}`}>
+                  <div className={`absolute inset-0 rounded-full animate-ping ${isAiGenerating ? "bg-muted" : "bg-primary/20"}`} />
+                  <div className={`relative w-20 h-20 rounded-full flex items-center justify-center ${isAiGenerating ? "bg-muted text-primary" : "bg-primary/10 text-primary"}`}>
                     {isAiGenerating ? <Brain className="h-10 w-10 animate-pulse" /> : <Sparkles className="h-10 w-10 animate-pulse" />}
                   </div>
                 </div>
@@ -1306,7 +1306,7 @@ export default function RoutineGenerate() {
                   </p>
                 </div>
                 <div className="w-full max-w-xs bg-muted rounded-full h-2 mt-4 overflow-hidden">
-                  <div className={`h-full rounded-full w-1/2 animate-[pulse_2s_ease-in-out_infinite] ${isAiGenerating ? "bg-violet-500" : "bg-primary"}`} />
+                  <div className={`h-full rounded-full w-1/2 animate-[pulse_2s_ease-in-out_infinite] ${isAiGenerating ? "bg-primary" : "bg-primary"}`} />
                 </div>
               </CardContent>
             </Card> : <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card mt-4">
@@ -1379,19 +1379,19 @@ export default function RoutineGenerate() {
 
                 {/* Parenting Hub promo — shown after child is selected */}
                 {selectedChildData && <Link href="/parenting-hub">
-                    <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 flex items-center gap-4 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer">
-                      <div className="h-10 w-10 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0">
+                    <div className="rounded-2xl border-2 border-border bg-gradient-to-r from-muted to-muted p-4 flex items-center gap-4 hover:border-border hover:shadow-md transition-all cursor-pointer">
+                      <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center shrink-0">
                         <span className="text-xl">📚</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-emerald-900 text-sm leading-tight">
+                        <p className="font-bold text-primary text-sm leading-tight">
                           {t("pages.routines.generate.parenting_hub_tips_stories_activities")}
                         </p>
-                        <p className="text-xs text-emerald-700 mt-0.5">
+                        <p className="text-xs text-primary mt-0.5">
                           {t("pages.routines.generate.age_based_content_for")} {selectedChildData.name} →
                         </p>
                       </div>
-                      <Brain className="h-5 w-5 text-emerald-500 shrink-0" />
+                      <Brain className="h-5 w-5 text-primary shrink-0" />
                     </div>
                   </Link>}
 
@@ -1430,12 +1430,12 @@ export default function RoutineGenerate() {
                   </p>
 
                   {/* Existing routine warning */}
-                  {existingRoutine?.exists && !overrideMode && <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 space-y-3">
+                  {existingRoutine?.exists && !overrideMode && <div className="rounded-2xl border-2 border-border bg-muted p-4 space-y-3">
                       <div className="flex items-start gap-3">
-                        <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                        <AlertTriangle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-bold text-amber-900 text-sm">{t("pages.routines.generate.routine_already_exists_for_this_date")}</p>
-                          <p className="text-amber-700 text-xs mt-0.5">
+                          <p className="font-bold text-primary text-sm">{t("pages.routines.generate.routine_already_exists_for_this_date")}</p>
+                          <p className="text-primary text-xs mt-0.5">
                             {selectedChildData?.name ?? "This child"} {t("pages.routines.generate.already_has_a_routine_on")}{" "}
                             {new Date(date + "T00:00:00").toLocaleDateString(undefined, {
                         weekday: "long",
@@ -1447,25 +1447,25 @@ export default function RoutineGenerate() {
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link href={`/routines/${existingRoutine.routineId}`}>
-                          <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-amber-300 text-amber-700 hover:bg-amber-100 transition-colors">
+                          <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-border text-primary hover:bg-muted transition-colors">
                             <ExternalLink className="h-3.5 w-3.5" />
                             {t("pages.routines.generate.view_existing_routine")}
                           </button>
                         </Link>
-                        <button onClick={() => setOverrideMode(true)} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+                        <button onClick={() => setOverrideMode(true)} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-primary text-white hover:bg-primary transition-colors">
                           <RefreshCw className="h-3.5 w-3.5" />
                           {t("pages.routines.generate.override_regenerate")}
                         </button>
                       </div>
                     </div>}
 
-                  {overrideMode && <div className="rounded-2xl border-2 border-orange-300 bg-orange-50 p-3 flex items-center gap-3">
-                      <RefreshCw className="h-4 w-4 text-orange-600 shrink-0" />
+                  {overrideMode && <div className="rounded-2xl border-2 border-border bg-muted p-3 flex items-center gap-3">
+                      <RefreshCw className="h-4 w-4 text-primary shrink-0" />
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-orange-900">{t("pages.routines.generate.override_mode_active")}</p>
-                        <p className="text-xs text-orange-700">{t("pages.routines.generate.the_existing_routine_will_be_replaced_when_you_generate")}</p>
+                        <p className="text-sm font-bold text-primary">{t("pages.routines.generate.override_mode_active")}</p>
+                        <p className="text-xs text-primary">{t("pages.routines.generate.the_existing_routine_will_be_replaced_when_you_generate")}</p>
                       </div>
-                      <button onClick={() => setOverrideMode(false)} className="text-xs text-orange-600 underline font-medium">{t("pages.routines.generate.cancel")}</button>
+                      <button onClick={() => setOverrideMode(false)} className="text-xs text-primary underline font-medium">{t("pages.routines.generate.cancel")}</button>
                     </div>}
                 </div>
 
@@ -1483,44 +1483,44 @@ export default function RoutineGenerate() {
                   } = useTranslation();
                   const d = new Date(date + "T00:00:00");
                   const day = d.getDay();
-                  return (day === 0 || day === 6) && schoolQuestionRequired ? <span className="text-xs bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">{t("pages.routines.generate.weekend_auto_detected")}</span> : null;
+                  return (day === 0 || day === 6) && schoolQuestionRequired ? <span className="text-xs bg-muted text-primary font-bold px-2 py-0.5 rounded-full">{t("pages.routines.generate.weekend_auto_detected")}</span> : null;
                 })()}
                   </div>
 
                   {/* INFANT — no school, just info */}
-                  {selectedChildAgeGroup === "infant" && <div className="bg-pink-50 border-2 border-pink-200 rounded-2xl p-4 flex items-center gap-3">
+                  {selectedChildAgeGroup === "infant" && <div className="bg-muted border-2 border-border rounded-2xl p-4 flex items-center gap-3">
                       <span className="text-3xl">👶</span>
                       <div>
-                        <p className="font-bold text-pink-900 text-sm">{t("pages.routines.generate.infant_care_mode_school_not_applicable")}</p>
-                        <p className="text-xs text-pink-700 mt-0.5">{t("pages.routines.generate.the_routine_will_focus_on_feeding_sleep_sensory_activities_a")}</p>
+                        <p className="font-bold text-primary text-sm">{t("pages.routines.generate.infant_care_mode_school_not_applicable")}</p>
+                        <p className="text-xs text-primary mt-0.5">{t("pages.routines.generate.the_routine_will_focus_on_feeding_sleep_sensory_activities_a")}</p>
                       </div>
                     </div>}
 
                   {/* TODDLER — no school, play mode */}
-                  {selectedChildAgeGroup === "toddler" && <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl p-4 flex items-center gap-3">
+                  {selectedChildAgeGroup === "toddler" && <div className="bg-muted border-2 border-border rounded-2xl p-4 flex items-center gap-3">
                       <span className="text-3xl">🧸</span>
                       <div>
-                        <p className="font-bold text-purple-900 text-sm">{t("pages.routines.generate.learning_play_mode_active")}</p>
-                        <p className="text-xs text-purple-700 mt-0.5">{t("pages.routines.generate.the_routine_will_include_age_appropriate_play_sensory_activi")}</p>
+                        <p className="font-bold text-primary text-sm">{t("pages.routines.generate.learning_play_mode_active")}</p>
+                        <p className="text-xs text-primary mt-0.5">{t("pages.routines.generate.the_routine_will_include_age_appropriate_play_sensory_activi")}</p>
                       </div>
                     </div>}
 
                   {/* PRESCHOOL, no school enrolled */}
-                  {selectedChildAgeGroup === "preschool" && !(selectedChildData as any)?.isSchoolGoing && <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 flex items-center gap-3">
+                  {selectedChildAgeGroup === "preschool" && !(selectedChildData as any)?.isSchoolGoing && <div className="bg-muted border-2 border-border rounded-2xl p-4 flex items-center gap-3">
                       <span className="text-3xl">🎨</span>
                       <div>
-                        <p className="font-bold text-blue-900 text-sm">{t("pages.routines.generate.home_learning_mode_play_based_routine")}</p>
-                        <p className="text-xs text-blue-700 mt-0.5">{t("pages.routines.generate.your_child_isn_t_in_school_yet_the_routine_will_include_crea")}</p>
+                        <p className="font-bold text-primary text-sm">{t("pages.routines.generate.home_learning_mode_play_based_routine")}</p>
+                        <p className="text-xs text-primary mt-0.5">{t("pages.routines.generate.your_child_isn_t_in_school_yet_the_routine_will_include_crea")}</p>
                       </div>
                     </div>}
 
                   {/* PRESCHOOL with school, or SCHOOL-AGE+ — show full toggle */}
                   {schoolQuestionRequired && <>
                       <ToggleGroup value={hasSchool} onChange={setHasSchool} options={[["Yes, school day", true, "🏫"], ["No, day off", false, "🏖️"]]} />
-                      {hasSchool === true && <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-sm text-amber-800">
+                      {hasSchool === true && <div className="bg-muted border border-border rounded-2xl p-3 text-sm text-primary">
                           {t("pages.routines.generate.amy_ai_will_suggest_a_tiffin_lunchbox_for_your_child_and_pla")}
                         </div>}
-                      {hasSchool === false && <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-sm text-amber-800">
+                      {hasSchool === false && <div className="bg-muted border border-border rounded-2xl p-3 text-sm text-primary">
                           {t("pages.routines.generate.amy_ai_will_skip_school_blocks_and_add_outdoor_play_hobby_ac")}
                         </div>}
                     </>}
@@ -1593,20 +1593,20 @@ export default function RoutineGenerate() {
                 </div>
 
                 <div className="pt-2 space-y-3">
-                  {existingRoutine?.exists && !overrideMode ? <p className="text-center text-sm text-amber-700 font-medium bg-amber-50 border border-amber-200 rounded-2xl py-3 px-4">
+                  {existingRoutine?.exists && !overrideMode ? <p className="text-center text-sm text-primary font-medium bg-muted border border-border rounded-2xl py-3 px-4">
                       {t("pages.routines.generate.choose")} <strong>{t("pages.routines.generate.view_existing_routine_2")}</strong> or <strong>{t("pages.routines.generate.override_regenerate_2")}</strong> {t("pages.routines.generate.above_to_continue")}
                     </p> : <>
                       {/* Standard rule-based routine */}
-                      <Button onClick={() => handleGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating} size="lg" className={`w-full rounded-full h-14 text-lg font-bold shadow-sm transition-all ${overrideMode ? "bg-orange-600 hover:bg-orange-700" : ""}`}>
+                      <Button onClick={() => handleGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating} size="lg" className={`w-full rounded-full h-14 text-lg font-bold shadow-sm transition-all ${overrideMode ? "bg-primary hover:bg-primary" : ""}`}>
                         {isGenerating ? <><Sparkles className="h-5 w-5 mr-2 animate-spin" />{t("pages.routines.generate.generating")}</> : overrideMode ? <><RefreshCw className="h-5 w-5 mr-2" />{t("pages.routines.generate.regenerate_override")}</> : <><Sparkles className="h-5 w-5 mr-2" />{t("pages.routines.generate.generate_smart_routine")}</>}
                       </Button>
 
                       {/* Smart AI Routine button */}
                       <div className="relative">
-                        <Button onClick={() => handleAiGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating || createMutation.isPending} size="lg" variant="outline" className="w-full rounded-full h-12 text-base font-bold border-2 border-violet-300 text-violet-700 hover:bg-violet-50 hover:border-violet-400 transition-all">
+                        <Button onClick={() => handleAiGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating || createMutation.isPending} size="lg" variant="outline" className="w-full rounded-full h-12 text-base font-bold border-2 border-border text-primary hover:bg-muted hover:border-border transition-all">
                           {isAiGenerating ? <><Brain className="h-5 w-5 mr-2 animate-pulse" />{t("pages.routines.generate.amy_is_thinking")}</> : <><Zap className="h-5 w-5 mr-2" />{t("pages.routines.generate.smart_amy_ai_routine")}</>}
                         </Button>
-                        <Badge className="absolute -top-2 -right-1 bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-[10px] font-bold border-0 px-1.5 py-0.5">
+                        <Badge className="absolute -top-2 -right-1 bg-gradient-to-r from-primary to-primary text-white text-[10px] font-bold border-0 px-1.5 py-0.5">
                           {t("pages.routines.generate.amy_ai")}
                         </Badge>
                       </div>
@@ -1655,11 +1655,11 @@ export default function RoutineGenerate() {
           {/* Family results */}
           {!isGeneratingFamily && familyResults && <div className="space-y-6">
               {/* Success banner */}
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+              <div className="bg-muted border border-border rounded-2xl p-4 flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
                 <div>
-                  <p className="font-bold text-green-800">{t("pages.routines.generate.family_routine_ready")}</p>
-                  <p className="text-xs text-green-700">{familyResults.length} {t("pages.routines.generate.routine")}{familyResults.length > 1 ? "s" : ""} {t("pages.routines.generate.generated_for")} {familyDate}</p>
+                  <p className="font-bold text-primary">{t("pages.routines.generate.family_routine_ready")}</p>
+                  <p className="text-xs text-primary">{familyResults.length} {t("pages.routines.generate.routine")}{familyResults.length > 1 ? "s" : ""} {t("pages.routines.generate.generated_for")} {familyDate}</p>
                 </div>
               </div>
 
@@ -1670,18 +1670,18 @@ export default function RoutineGenerate() {
           } = useTranslation();
           const suggestions = buildSyncSuggestions(familyResults as unknown as FRFamilyResult[]);
           if (suggestions.length === 0) return null;
-          return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/30">
+          return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
                     <CardContent className="p-5">
                       <div className="flex items-center gap-2 mb-3">
-                        <Brain className="h-5 w-5 text-violet-600" />
-                        <h3 className="font-quicksand font-bold text-violet-900 dark:text-violet-200 text-lg">{t("family_routine.amy_suggests")}</h3>
+                        <Brain className="h-5 w-5 text-primary" />
+                        <h3 className="font-quicksand font-bold text-primary dark:text-muted-foreground text-lg">{t("family_routine.amy_suggests")}</h3>
                       </div>
                       <div className="space-y-2">
-                        {suggestions.map((s, i) => <div key={i} className="flex items-start gap-3 bg-white/70 dark:bg-white/5 rounded-2xl p-3 border border-violet-100 dark:border-violet-400/20">
+                        {suggestions.map((s, i) => <div key={i} className="flex items-start gap-3 bg-white/70 dark:bg-white/5 rounded-2xl p-3 border border-border dark:border-border">
                             <span className="text-xl shrink-0">{s.icon}</span>
                             <div>
-                              <p className="font-bold text-sm text-violet-900 dark:text-violet-100">{s.title}</p>
-                              <p className="text-xs text-violet-700 dark:text-violet-300 mt-0.5 leading-relaxed">{s.body}</p>
+                              <p className="font-bold text-sm text-primary dark:text-muted-foreground">{s.title}</p>
+                              <p className="text-xs text-primary dark:text-muted-foreground mt-0.5 leading-relaxed">{s.body}</p>
                             </div>
                           </div>)}
                       </div>
@@ -1696,16 +1696,16 @@ export default function RoutineGenerate() {
           } = useTranslation();
           const fp = computeFamilyPoints(familyResults as unknown as FRFamilyResult[]);
           const totalPossible = familyResults.reduce((s, r) => s + r.routine.items.reduce((ss, i) => ss + ((i as any).rewardPoints ?? 5), 0), 0);
-          return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
+          return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Star className="h-5 w-5 text-amber-600" />
-                          <h3 className="font-quicksand font-bold text-amber-900 dark:text-amber-100 text-lg">{t("family_routine.family_points")}</h3>
+                          <Star className="h-5 w-5 text-primary" />
+                          <h3 className="font-quicksand font-bold text-primary dark:text-muted-foreground text-lg">{t("family_routine.family_points")}</h3>
                         </div>
                         <div className="text-right">
-                          <p className="text-3xl font-black text-amber-700 dark:text-amber-200 leading-none">{totalPossible + 20}</p>
-                          <p className="text-[10px] text-amber-600 dark:text-amber-300 font-bold uppercase tracking-wide">{t("family_routine.possible_today")}</p>
+                          <p className="text-3xl font-black text-primary dark:text-muted-foreground leading-none">{totalPossible + 20}</p>
+                          <p className="text-[10px] text-primary dark:text-muted-foreground font-bold uppercase tracking-wide">{t("family_routine.possible_today")}</p>
                         </div>
                       </div>
                       <div className="space-y-1.5">
@@ -1714,15 +1714,15 @@ export default function RoutineGenerate() {
                     t
                   } = useTranslation();
                   return <div key={p.name} className="flex items-center justify-between text-sm bg-white/60 dark:bg-white/5 rounded-xl px-3 py-2">
-                            <span className="font-bold text-amber-900 dark:text-amber-100">{p.name}</span>
-                            <span className="text-amber-700 dark:text-amber-300 font-bold">{t("family_routine.earns_pts", {
+                            <span className="font-bold text-primary dark:text-muted-foreground">{p.name}</span>
+                            <span className="text-primary dark:text-muted-foreground font-bold">{t("family_routine.earns_pts", {
                         pts: Math.round(totalPossible / familyResults.length)
                       })}</span>
                           </div>;
                 })}
-                        <div className="flex items-center justify-between text-sm bg-amber-200/60 dark:bg-amber-400/10 rounded-xl px-3 py-2 mt-2 border border-amber-300/60">
-                          <span className="font-bold text-amber-900 dark:text-amber-100">{t("family_routine.family_bonus")}</span>
-                          <span className="text-amber-700 dark:text-amber-300 font-black">{t("pages.routines.generate.20_pts")}</span>
+                        <div className="flex items-center justify-between text-sm bg-muted dark:bg-muted rounded-xl px-3 py-2 mt-2 border border-border">
+                          <span className="font-bold text-primary dark:text-muted-foreground">{t("family_routine.family_bonus")}</span>
+                          <span className="text-primary dark:text-muted-foreground font-black">{t("pages.routines.generate.20_pts")}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -1779,7 +1779,7 @@ export default function RoutineGenerate() {
                     {familyResults.map(({
                 child
               }, i) => {
-                const colors = ["bg-blue-500", "bg-purple-500", "bg-green-500", "bg-rose-500", "bg-orange-500"];
+                const colors = ["bg-primary", "bg-primary", "bg-primary", "bg-primary", "bg-primary"];
                 return <div key={child.id} className="flex items-center gap-1.5 text-xs font-medium">
                           <div className={`w-2.5 h-2.5 rounded-full ${colors[i % colors.length]}`} />
                           {child.name}
@@ -1876,21 +1876,21 @@ export default function RoutineGenerate() {
                     const childGroup = getAgeGroup(child.age, (child as any).ageMonths ?? 0);
                     const notSchoolApplicable = childGroup === "infant" || childGroup === "toddler" || childGroup === "preschool" && !(child as any).isSchoolGoing;
                     if (childGroup === "infant") return <div className="px-4 pb-3">
-                                  <div className="flex items-center gap-2 bg-pink-50 border border-pink-200 rounded-xl px-3 py-2">
+                                  <div className="flex items-center gap-2 bg-muted border border-border rounded-xl px-3 py-2">
                                     <span className="text-lg">👶</span>
-                                    <p className="text-xs font-bold text-pink-800">{t("pages.routines.generate.infant_care_mode_no_school_scheduling")}</p>
+                                    <p className="text-xs font-bold text-primary">{t("pages.routines.generate.infant_care_mode_no_school_scheduling")}</p>
                                   </div>
                                 </div>;
                     if (childGroup === "toddler") return <div className="px-4 pb-3">
-                                  <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-xl px-3 py-2">
+                                  <div className="flex items-center gap-2 bg-muted border border-border rounded-xl px-3 py-2">
                                     <span className="text-lg">🧸</span>
-                                    <p className="text-xs font-bold text-purple-800">{t("pages.routines.generate.learning_play_mode_no_school_scheduling")}</p>
+                                    <p className="text-xs font-bold text-primary">{t("pages.routines.generate.learning_play_mode_no_school_scheduling")}</p>
                                   </div>
                                 </div>;
                     if (childGroup === "preschool" && !(child as any).isSchoolGoing) return <div className="px-4 pb-3">
-                                  <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
+                                  <div className="flex items-center gap-2 bg-muted border border-border rounded-xl px-3 py-2">
                                     <span className="text-lg">🎨</span>
-                                    <p className="text-xs font-bold text-blue-800">{t("pages.routines.generate.home_learning_mode_play_based_routine_2")}</p>
+                                    <p className="text-xs font-bold text-primary">{t("pages.routines.generate.home_learning_mode_play_based_routine_2")}</p>
                                   </div>
                                 </div>;
 
@@ -1978,7 +1978,7 @@ export default function RoutineGenerate() {
                 </div>
 
                 {/* Tiffin info */}
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">
+                <div className="bg-muted border border-border rounded-2xl p-4 text-sm text-primary">
                   <p className="font-bold mb-1">{t("pages.routines.generate.smart_tiffin_planning")}</p>
                   <p>{t("pages.routines.generate.for_each_school_going_child_the_ai_will_suggest_3_tiffin_lun")}</p>
                 </div>
@@ -2000,12 +2000,12 @@ export default function RoutineGenerate() {
       {/* ── Wake-up Confirmation Dialog ──────────────────────────────────────── */}
       {showWakeConfirm && <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-card rounded-3xl shadow-2xl border border-border animate-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-t-3xl p-5 text-white">
+            <div className="bg-gradient-to-r from-primary to-primary rounded-t-3xl p-5 text-white">
               <div className="flex items-center gap-3 mb-1">
                 <span className="text-3xl">⏰</span>
                 <div>
                   <p className="font-quicksand font-bold text-lg leading-tight">{t("pages.routines.generate.good_morning")}</p>
-                  <p className="text-amber-100 text-xs">{t("pages.routines.generate.let_s_personalise_today_s_routine")}</p>
+                  <p className="text-muted-foreground text-xs">{t("pages.routines.generate.let_s_personalise_today_s_routine")}</p>
                 </div>
               </div>
             </div>
@@ -2021,11 +2021,11 @@ export default function RoutineGenerate() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setWakeAnswer("yes")} className={`flex flex-col items-center gap-1.5 py-4 rounded-2xl border-2 font-bold transition-all ${wakeAnswer === "yes" ? "bg-green-500 border-green-500 text-white" : "bg-card border-border text-foreground hover:border-green-400"}`}>
+                <button onClick={() => setWakeAnswer("yes")} className={`flex flex-col items-center gap-1.5 py-4 rounded-2xl border-2 font-bold transition-all ${wakeAnswer === "yes" ? "bg-primary border-primary text-white" : "bg-card border-border text-foreground hover:border-border"}`}>
                   <span className="text-2xl">✅</span>
                   <span className="text-sm">{t("pages.routines.generate.yes_on_time")}</span>
                 </button>
-                <button onClick={() => setWakeAnswer("no")} className={`flex flex-col items-center gap-1.5 py-4 rounded-2xl border-2 font-bold transition-all ${wakeAnswer === "no" ? "bg-orange-500 border-orange-500 text-white" : "bg-card border-border text-foreground hover:border-orange-400"}`}>
+                <button onClick={() => setWakeAnswer("no")} className={`flex flex-col items-center gap-1.5 py-4 rounded-2xl border-2 font-bold transition-all ${wakeAnswer === "no" ? "bg-primary border-primary text-white" : "bg-card border-border text-foreground hover:border-border"}`}>
                   <span className="text-2xl">⏱️</span>
                   <span className="text-sm">{t("pages.routines.generate.no_different_time")}</span>
                 </button>
@@ -2061,12 +2061,12 @@ export default function RoutineGenerate() {
       {/* ── Past Essential Task Check Dialog ─────────────────────────────────── */}
       {showTaskCheck && <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-card rounded-3xl shadow-2xl border border-border animate-in slide-in-from-bottom-4 duration-300 max-h-[85vh] flex flex-col">
-            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-t-3xl p-5 text-white shrink-0">
+            <div className="bg-gradient-to-r from-primary to-primary rounded-t-3xl p-5 text-white shrink-0">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">✅</span>
                 <div>
                   <p className="font-quicksand font-bold text-lg leading-tight">{t("pages.routines.generate.morning_check_in")}</p>
-                  <p className="text-blue-100 text-xs">{t("pages.routines.generate.mark_what_s_already_been_done")}</p>
+                  <p className="text-muted-foreground text-xs">{t("pages.routines.generate.mark_what_s_already_been_done")}</p>
                 </div>
               </div>
             </div>
@@ -2083,7 +2083,7 @@ export default function RoutineGenerate() {
             }) => <button key={idx} onClick={() => setTaskCheckMap(prev => ({
               ...prev,
               [idx]: !prev[idx]
-            }))} className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${taskCheckMap[idx] ? "bg-green-50 border-green-400 text-green-900" : "bg-rose-50 border-rose-300 text-rose-900"}`}>
+            }))} className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${taskCheckMap[idx] ? "bg-muted border-border text-primary" : "bg-muted border-border text-primary"}`}>
                     <span className="text-xl">{taskCheckMap[idx] ? "✅" : "❌"}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm truncate">{item.activity}</p>

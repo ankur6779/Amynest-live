@@ -109,7 +109,7 @@ export default function StudyPage() {
           </Button>
           <div className="min-w-0">
             <h1 className="font-quicksand text-2xl font-bold text-foreground flex items-center gap-2">
-              <GraduationCap className="h-6 w-6 text-indigo-600" />
+              <GraduationCap className="h-6 w-6 text-foreground" />
               {t("screens.study.header_title")}
             </h1>
             <p className="text-sm text-muted-foreground truncate">
@@ -325,7 +325,7 @@ function ChildPicker({ children, onPick }: { children: Child[]; onPick: (c: Chil
         return (
           <Card key={c.id} className="rounded-2xl hover-elevate cursor-pointer" onClick={() => onPick(c)}>
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xl">
+              <div className="h-12 w-12 rounded-full bg-muted text-foreground flex items-center justify-center text-xl">
                 {label.emoji}
               </div>
               <div className="flex-1 min-w-0">
@@ -421,8 +421,8 @@ function PlayCategoryView({
               transition={{ duration: 0.4 }}
               className={[
                 "group relative rounded-2xl border-2 p-4 text-left transition-colors",
-                "bg-white dark:bg-zinc-900",
-                done ? "border-green-400 dark:border-green-500/60" : "border-indigo-200 dark:border-indigo-500/30",
+                "bg-card",
+                done ? "border-primary" : "border-border",
                 "hover:shadow-md active:shadow-inner",
               ].join(" ")}
             >
@@ -434,7 +434,7 @@ function PlayCategoryView({
                 >
                   {item.emoji ?? "·"}
                 </motion.div>
-                {done && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                {done && <CheckCircle2 className="h-4 w-4 text-foreground" />}
               </div>
               <div className="mt-2 font-quicksand font-bold text-foreground text-lg">{item.label}</div>
               {isRhyme && item.body ? (
@@ -444,7 +444,7 @@ function PlayCategoryView({
               ) : (
                 <div className="text-[11px] text-muted-foreground mt-1">{item.speak}</div>
               )}
-              <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-300 font-medium">
+              <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-foreground font-medium">
                 <Volume2 className="h-3 w-3" /> {t("screens.study.tap_to_hear")}
               </div>
             </motion.button>
@@ -516,7 +516,7 @@ function SubjectTopicList({
                 <div className="font-quicksand font-bold text-foreground">{t.title}</div>
                 <div className="text-xs text-muted-foreground line-clamp-1">{t.notes.split("\n")[0]}</div>
                 {stat && (
-                  <div className="text-[11px] mt-1 inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-300 font-medium">
+                  <div className="text-[11px] mt-1 inline-flex items-center gap-1 text-foreground font-medium">
                     <Trophy className="h-3 w-3" /> {tr("screens.study.best_score", { score: stat.score, total: stat.total })}
                   </div>
                 )}
@@ -626,7 +626,7 @@ function TopicDetail({
       <Card className="rounded-2xl">
         <CardContent className="p-5">
           {topic.imageExample && (
-            <div className="mb-4 rounded-xl overflow-hidden border border-border/40 bg-white">
+            <div className="mb-4 rounded-xl overflow-hidden border border-border/40 bg-card">
               <img
                 src={`data:image/svg+xml;utf8,${encodeURIComponent(topic.imageExample)}`}
                 alt={`${topic.title} illustration`}
@@ -637,7 +637,7 @@ function TopicDetail({
           )}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="font-quicksand font-bold text-foreground inline-flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-indigo-600" /> {t("screens.study.notes_from_amy")}
+              <Sparkles className="h-4 w-4 text-foreground" /> {t("screens.study.notes_from_amy")}
             </div>
             <Button
               size="sm"
@@ -645,7 +645,7 @@ function TopicDetail({
               className="rounded-full"
               onClick={() => {
                 if (amySpeaking || amyLoading) { amyStop(); return; }
-                amySpeak(topic.notes.replace(/\n/g, ". "));
+                amySpeak(topic.notes.replace(/\n/g, "."));
               }}
             >
               {(amySpeaking || amyLoading) ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
@@ -676,7 +676,7 @@ function TopicDetail({
           <div className="flex items-center justify-between mb-3">
             <div className="font-quicksand font-bold text-foreground">{t("screens.study.practice_label", { count: total })}</div>
             {!practiceOpen && (
-              <Button className="rounded-full bg-indigo-600 hover:bg-indigo-700" onClick={() => setPracticeOpen(true)}>
+              <Button className="rounded-full bg-primary hover:bg-primary" onClick={() => setPracticeOpen(true)}>
                 {t("screens.study.try_now")}
               </Button>
             )}
@@ -697,9 +697,9 @@ function TopicDetail({
                       const correct = q.answer === oi;
                       const showState = submitted;
                       const cls = !showState
-                        ? selected ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10" : "border-border"
-                        : correct ? "border-green-500 bg-green-50 dark:bg-green-500/10"
-                        : selected ? "border-red-400 bg-red-50 dark:bg-red-500/10"
+                        ? selected ? "border-primary bg-muted" : "border-border"
+                        : correct ? "border-primary bg-muted"
+                        : selected ? "border-primary bg-muted"
                         : "border-border opacity-70";
                       return (
                         <button
@@ -709,8 +709,8 @@ function TopicDetail({
                           className={`text-left rounded-lg border-2 px-3 py-2 text-sm ${cls} transition-colors`}
                         >
                           <span className="inline-flex items-center gap-2">
-                            {showState && correct && <CheckCircle2 className="h-4 w-4 text-green-600" />}
-                            {showState && !correct && selected && <XCircle className="h-4 w-4 text-red-600" />}
+                            {showState && correct && <CheckCircle2 className="h-4 w-4 text-foreground" />}
+                            {showState && !correct && selected && <XCircle className="h-4 w-4 text-foreground" />}
                             {opt}
                           </span>
                         </button>
@@ -725,7 +725,7 @@ function TopicDetail({
               <div className="flex items-center justify-between flex-wrap gap-3">
                 {!submitted ? (
                   <Button
-                    className="rounded-full bg-indigo-600 hover:bg-indigo-700"
+                    className="rounded-full bg-primary hover:bg-primary"
                     onClick={submit}
                     disabled={picks.some((p) => p === -1)}
                   >
@@ -738,7 +738,7 @@ function TopicDetail({
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: [0.6, 1.15, 1], opacity: 1 }}
                       transition={{ duration: 0.5 }}
-                      className={`font-quicksand font-extrabold text-lg ${isPerfect ? "text-amber-500 dark:text-amber-300" : "text-foreground"}`}
+                      className={`font-quicksand font-extrabold text-lg ${isPerfect ? "text-foreground" : "text-foreground"}`}
                     >
                       {t("screens.study.you_got", { score, total, emoji: score === total ? "🎉" : score >= Math.ceil(total * 0.6) ? "👍" : "💪" })}
                     </motion.div>

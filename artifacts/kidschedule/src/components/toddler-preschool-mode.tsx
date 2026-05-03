@@ -470,10 +470,10 @@ function DoneExplosion({
   message: string;
 }) {
   if (!visible) return null;
-  return <div className="absolute inset-0 rounded-3xl flex items-center justify-center bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm z-10 pointer-events-none animate-in fade-in duration-200">
+  return <div className="absolute inset-0 rounded-3xl flex items-center justify-center bg-white/80 dark:bg-card backdrop-blur-sm z-10 pointer-events-none animate-in fade-in duration-200">
       <div className="text-center animate-in zoom-in-75 duration-300">
         <div className="text-5xl mb-2 animate-bounce">⭐</div>
-        <p className="font-quicksand text-xl font-bold text-yellow-600">{message}</p>
+        <p className="font-quicksand text-xl font-bold text-primary">{message}</p>
         <div className="flex justify-center gap-1 mt-2">
           {["✨", "🌟", "💫"].map((s, i) => <span key={i} className="text-xl animate-bounce" style={{
           animationDelay: `${i * 0.1}s`
@@ -555,7 +555,7 @@ function InteractiveCard({
 
         {/* Actions */}
         <div className="flex gap-2">
-          <Button size="sm" onClick={handleDone} disabled={showExplosion} className="flex-1 rounded-full h-10 font-bold bg-green-500 hover:bg-green-600 text-white border-0 text-sm shadow-sm">
+          <Button size="sm" onClick={handleDone} disabled={showExplosion} className="flex-1 rounded-full h-10 font-bold bg-primary hover:bg-primary text-white border-0 text-sm shadow-sm">
             <CheckCircle2 className="h-4 w-4 mr-1.5" /> {t("components.toddler_preschool_mode.done")}
           </Button>
           <Button size="sm" variant="outline" onClick={onNext} className={`rounded-full h-10 px-4 font-bold border-2 ${accent.border} ${accent.title} bg-white/80 hover:bg-white text-sm`}>
@@ -603,43 +603,43 @@ function StoryPlayer({
     stop();
     next();
   };
-  return <Card className="rounded-3xl border-2 border-amber-200 dark:border-amber-400/30 bg-gradient-to-br from-amber-50 dark:from-amber-500/15 to-orange-50 dark:to-orange-500/15 shadow-none">
+  return <Card className="rounded-3xl border-2 border-border dark:border-border bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary shadow-none">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-2xl">📖</span>
           <div className="flex-1">
-            <h3 className="font-quicksand text-base font-bold text-amber-900 dark:text-amber-100">{t("components.toddler_preschool_mode.story_time_for")} {childName}</h3>
-            <p className="text-xs text-amber-700 dark:text-amber-200">{t("components.toddler_preschool_mode.short_moral_stories")} {idx + 1} of {stories.length}</p>
+            <h3 className="font-quicksand text-base font-bold text-primary dark:text-muted-foreground">{t("components.toddler_preschool_mode.story_time_for")} {childName}</h3>
+            <p className="text-xs text-primary dark:text-muted-foreground">{t("components.toddler_preschool_mode.short_moral_stories")} {idx + 1} of {stories.length}</p>
           </div>
         </div>
 
         {/* Story card */}
-        <div className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-amber-100 dark:border-amber-400/30 mb-3">
+        <div className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-border dark:border-border mb-3">
           <div className="flex items-start justify-between mb-3 gap-2">
-            <h4 className="font-quicksand font-bold text-lg text-amber-900 dark:text-amber-100">
+            <h4 className="font-quicksand font-bold text-lg text-primary dark:text-muted-foreground">
               {story.emoji} {story.title}
             </h4>
-            <Button size="sm" variant="outline" onClick={handleSpeak} className={`shrink-0 rounded-full h-8 px-3 text-xs font-bold border-amber-300 transition-all ${speaking || loading ? "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-200" : "text-amber-700 dark:text-amber-200 hover:bg-amber-50 dark:bg-amber-500/15"}`}>
+            <Button size="sm" variant="outline" onClick={handleSpeak} className={`shrink-0 rounded-full h-8 px-3 text-xs font-bold border-border transition-all ${speaking || loading ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : "text-primary dark:text-muted-foreground hover:bg-muted dark:bg-primary"}`}>
               {speaking || loading ? <><VolumeX className="h-3 w-3 mr-1" />{loading ? "…" : "Stop"}</> : <><Volume2 className="h-3 w-3 mr-1" />{t("components.toddler_preschool_mode.read_aloud")}</>}
             </Button>
           </div>
           <p className="text-sm text-foreground/80 leading-relaxed italic mb-4">
             "{story.story}"
           </p>
-          <div className="bg-amber-50 dark:bg-amber-500/15 rounded-xl p-3 border border-amber-200 dark:border-amber-400/30">
-            <p className="text-xs font-bold text-amber-800 dark:text-amber-200 mb-1">{t("components.toddler_preschool_mode.moral")}</p>
-            <p className="text-sm text-amber-900 dark:text-amber-100 font-semibold">{story.moral}</p>
+          <div className="bg-muted dark:bg-primary rounded-xl p-3 border border-border dark:border-border">
+            <p className="text-xs font-bold text-primary dark:text-muted-foreground mb-1">{t("components.toddler_preschool_mode.moral")}</p>
+            <p className="text-sm text-primary dark:text-muted-foreground font-semibold">{story.moral}</p>
           </div>
         </div>
 
         {/* Navigation */}
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={handleNext} className="flex-1 rounded-full h-9 border-amber-300 text-amber-800 dark:text-amber-200 font-bold text-sm hover:bg-amber-100 dark:bg-amber-500/20">
+          <Button size="sm" variant="outline" onClick={handleNext} className="flex-1 rounded-full h-9 border-border text-primary dark:text-muted-foreground font-bold text-sm hover:bg-muted dark:bg-primary">
             <SkipForward className="h-4 w-4 mr-1.5" /> {t("components.toddler_preschool_mode.next_story")}
           </Button>
         </div>
 
-        <p className="text-[10px] text-amber-600 mt-3 text-center">
+        <p className="text-[10px] text-primary mt-3 text-center">
           {t("components.toddler_preschool_mode.read_this_story_to")} {childName} {t("components.toddler_preschool_mode.at_bedtime_for_a_meaningful_connection_moment")}
         </p>
       </CardContent>
@@ -725,32 +725,32 @@ export function ToddlerPreschoolMode({
   };
   const totalDone = Object.values(doneCounts).reduce((a, b) => a + b, 0);
   const accentActivity = {
-    bg: "bg-blue-50 dark:bg-blue-500/15",
-    border: "border-blue-200 dark:border-blue-400/30",
-    title: "text-blue-900 dark:text-blue-100",
-    badge: "text-blue-700 dark:text-blue-200",
-    badgeBg: "bg-blue-100 dark:bg-blue-500/20"
+    bg: "bg-muted dark:bg-primary",
+    border: "border-border dark:border-border",
+    title: "text-primary dark:text-muted-foreground",
+    badge: "text-primary dark:text-muted-foreground",
+    badgeBg: "bg-muted dark:bg-primary"
   };
   const accentSkill = {
-    bg: "bg-violet-50 dark:bg-violet-500/15",
-    border: "border-violet-200 dark:border-violet-400/30",
-    title: "text-violet-900 dark:text-violet-100",
-    badge: "text-violet-700 dark:text-violet-200",
-    badgeBg: "bg-violet-100 dark:bg-violet-500/20"
+    bg: "bg-muted dark:bg-primary",
+    border: "border-border dark:border-border",
+    title: "text-primary dark:text-muted-foreground",
+    badge: "text-primary dark:text-muted-foreground",
+    badgeBg: "bg-muted dark:bg-primary"
   };
   const accentTask = {
-    bg: "bg-rose-50 dark:bg-rose-500/15",
-    border: "border-rose-200 dark:border-rose-400/30",
-    title: "text-rose-900 dark:text-rose-100",
-    badge: "text-rose-700 dark:text-rose-200",
-    badgeBg: "bg-rose-100 dark:bg-rose-500/20"
+    bg: "bg-muted dark:bg-primary",
+    border: "border-border dark:border-border",
+    title: "text-primary dark:text-muted-foreground",
+    badge: "text-primary dark:text-muted-foreground",
+    badgeBg: "bg-muted dark:bg-primary"
   };
   const accentFun = {
-    bg: "bg-green-50 dark:bg-green-500/15",
-    border: "border-green-200 dark:border-green-400/30",
-    title: "text-green-900 dark:text-green-100",
-    badge: "text-green-700 dark:text-green-200",
-    badgeBg: "bg-green-100 dark:bg-green-500/20"
+    bg: "bg-muted dark:bg-primary",
+    border: "border-border dark:border-border",
+    title: "text-primary dark:text-muted-foreground",
+    badge: "text-primary dark:text-muted-foreground",
+    badgeBg: "bg-muted dark:bg-primary"
   };
   const act = activities[actIdx];
   const skill = skills[skillIdx];
@@ -760,16 +760,16 @@ export function ToddlerPreschoolMode({
   return <div className="space-y-5">
 
       {/* ── Hero Banner — hidden in focused view ── */}
-      {!showOnly && <div className={`rounded-3xl border-2 p-5 ${isToddler ? "bg-gradient-to-br from-purple-50 dark:from-purple-500/15 via-pink-50 dark:via-pink-500/15 to-blue-50 dark:to-blue-500/15 border-purple-200 dark:border-purple-400/30" : "bg-gradient-to-br from-blue-50 dark:from-blue-500/15 via-green-50 dark:via-green-500/15 to-teal-50 dark:to-teal-500/15 border-blue-200 dark:border-blue-400/30"}`}>
+      {!showOnly && <div className={`rounded-3xl border-2 p-5 ${isToddler ? "bg-gradient-to-br from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary border-border dark:border-border" : "bg-gradient-to-br from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary border-border dark:border-border"}`}>
         <div className="flex items-center gap-4 mb-4">
           <div className="text-5xl">{headerEmoji}</div>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <Badge className={`font-bold text-xs ${isToddler ? "bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-200 border-purple-300" : "bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200 border-blue-300"}`}>
+              <Badge className={`font-bold text-xs ${isToddler ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border" : "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border"}`}>
                 {label}
               </Badge>
               <Badge variant="outline" className="text-xs font-medium">{ageLabel}</Badge>
-              {totalDone > 0 && <Badge className="bg-yellow-100 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 border-yellow-300 text-xs font-bold">
+              {totalDone > 0 && <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border text-xs font-bold">
                   ⭐ {totalDone} {t("components.toddler_preschool_mode.done_today_2")}
                 </Badge>}
             </div>
@@ -785,8 +785,8 @@ export function ToddlerPreschoolMode({
           <span className="text-xs font-bold text-muted-foreground">{t("components.toddler_preschool_mode.today_s_stars")}</span>
           {Array.from({
           length: Math.max(5, totalDone + 2)
-        }, (_, i) => <Star key={i} className={`h-5 w-5 transition-all duration-300 ${i < totalDone ? "text-yellow-500 fill-yellow-500" : "text-gray-200 fill-gray-200"}`} />)}
-          {totalDone >= 4 && <span className="text-xs font-bold text-yellow-600 ml-1">{t("components.toddler_preschool_mode.super_parent_day")}</span>}
+        }, (_, i) => <Star key={i} className={`h-5 w-5 transition-all duration-300 ${i < totalDone ? "text-primary fill-primary" : "text-muted-foreground fill-muted"}`} />)}
+          {totalDone >= 4 && <span className="text-xs font-bold text-primary ml-1">{t("components.toddler_preschool_mode.super_parent_day")}</span>}
         </div>
       </div>}
 
@@ -818,11 +818,11 @@ export function ToddlerPreschoolMode({
       {show("story") && <StoryPlayer stories={stories} childName={childName} accentColor={ageGroup} />}
 
       {/* ── 🌟 All Done Banner — only in full view ── */}
-      {!showOnly && totalDone >= 4 && <Card className="rounded-3xl border-2 border-yellow-300 bg-gradient-to-br from-yellow-50 dark:from-yellow-500/15 to-amber-50 dark:to-amber-500/15 shadow-none">
+      {!showOnly && totalDone >= 4 && <Card className="rounded-3xl border-2 border-border bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary shadow-none">
           <CardContent className="p-5 text-center">
             <div className="text-4xl mb-2">🏆</div>
-            <h3 className="font-quicksand text-lg font-bold text-yellow-800 dark:text-yellow-200 mb-1">{t("components.toddler_preschool_mode.you_re_a_super_parent_today")}</h3>
-            <p className="text-sm text-yellow-700 dark:text-yellow-200">
+            <h3 className="font-quicksand text-lg font-bold text-primary dark:text-muted-foreground mb-1">{t("components.toddler_preschool_mode.you_re_a_super_parent_today")}</h3>
+            <p className="text-sm text-primary dark:text-muted-foreground">
               {childName} {t("components.toddler_preschool_mode.is_lucky_to_have_you_showing_up_this_way_every_one_of_these_")}
             </p>
             <div className="flex justify-center gap-2 mt-3 flex-wrap">

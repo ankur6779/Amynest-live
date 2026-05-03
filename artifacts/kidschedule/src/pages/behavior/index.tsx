@@ -299,7 +299,7 @@ export default function BehaviorTracker() {
         </div>
         <div className="flex items-center gap-2">
           <LangToggle lang={lang} setLang={setLang} />
-          <button onClick={() => setSituationKey("crying")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold hover:bg-rose-200 dark:hover:bg-rose-500/30 transition-colors border border-rose-200 dark:border-rose-500/30">
+          <button onClick={() => setSituationKey("crying")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-primary transition-colors border border-border dark:border-primary">
             <HelpCircle className="h-3.5 w-3.5" />
             {L.situationMode}
           </button>
@@ -336,8 +336,8 @@ export default function BehaviorTracker() {
                 <p className="text-xs font-bold text-foreground truncate">{c.name}</p>
                 <p className="text-[10px] text-muted-foreground mb-1.5">{t("pages.behavior.index.today")}</p>
                 <div className="flex gap-2">
-                  <span className="text-[11px] font-bold text-emerald-600">😊 {childPos}</span>
-                  <span className="text-[11px] font-bold text-red-500">😡 {childNeg}</span>
+                  <span className="text-[11px] font-bold text-primary">😊 {childPos}</span>
+                  <span className="text-[11px] font-bold text-primary">😡 {childNeg}</span>
                 </div>
               </div>;
         const locked = !isPremium && index > 0;
@@ -350,7 +350,7 @@ export default function BehaviorTracker() {
       {/* Blocks */}
       <div className="flex flex-col gap-3">
         {/* 1. Quick Log */}
-        <Block icon={<Zap className="h-5 w-5 text-amber-600" />} title={L.quickLog} subtitle={L.tap1Log} iconBg="bg-amber-100 dark:bg-amber-500/20" open={openBlock === "quick-log"} onToggle={() => toggle("quick-log")}>
+        <Block icon={<Zap className="h-5 w-5 text-primary" />} title={L.quickLog} subtitle={L.tap1Log} iconBg="bg-muted dark:bg-primary" open={openBlock === "quick-log"} onToggle={() => toggle("quick-log")}>
           <div className="space-y-4">
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
               {QUICK_BEHAVIOR_KEYS.map(key => {
@@ -403,14 +403,14 @@ export default function BehaviorTracker() {
         </Block>
 
         {/* 2. Today Summary */}
-        <Block icon={<span className="text-xl">📊</span>} title={L.todaySummary} subtitle={`${todayLogs.length} ${L.loggedToday}`} iconBg="bg-blue-100 dark:bg-blue-500/20" open={openBlock === "summary"} onToggle={() => toggle("summary")}>
+        <Block icon={<span className="text-xl">📊</span>} title={L.todaySummary} subtitle={`${todayLogs.length} ${L.loggedToday}`} iconBg="bg-muted dark:bg-primary" open={openBlock === "summary"} onToggle={() => toggle("summary")}>
           <div className="space-y-3">
             {/* Score */}
-            <div className="rounded-xl bg-gradient-to-r from-primary/10 to-violet-500/10 border border-primary/20 p-4 text-center">
+            <div className="rounded-xl bg-gradient-to-r from-primary/10 to-primary border border-primary/20 p-4 text-center">
               <p className="text-4xl font-black text-primary">{score}</p>
               <p className="text-sm font-bold text-foreground mt-1">{L.score}: {scoreLabel(score, lang)}</p>
               <div className="mt-2 h-2 rounded-full bg-white/50 dark:bg-white/10 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-primary to-violet-500 transition-all duration-700" style={{
+                <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary transition-all duration-700" style={{
                 width: `${score}%`
               }} />
               </div>
@@ -420,18 +420,18 @@ export default function BehaviorTracker() {
               {[{
               label: L.positive,
               count: pos,
-              color: "#10B981",
-              bg: "bg-emerald-100 dark:bg-emerald-500/20"
+              color: "hsl(var(--brand-emerald-500))",
+              bg: "bg-muted dark:bg-primary"
             }, {
               label: L.challenging,
               count: neg,
-              color: "#EF4444",
-              bg: "bg-red-100 dark:bg-red-500/20"
+              color: "hsl(var(--brand-red-500))",
+              bg: "bg-muted dark:bg-primary"
             }, {
               label: L.neutral,
               count: neu,
               color: "#6B7280",
-              bg: "bg-gray-100 dark:bg-gray-500/20"
+              bg: "bg-muted dark:bg-card"
             }].map(item => <div key={item.label} className={`rounded-xl p-3 text-center ${item.bg} border border-white/50`}>
                   <p className="text-2xl font-black" style={{
                 color: item.color
@@ -443,9 +443,9 @@ export default function BehaviorTracker() {
         </Block>
 
         {/* 3. Amy Insights */}
-        <Block icon={<Brain className="h-5 w-5 text-violet-600" />} title={L.amyInsights} subtitle={insights.length > 0 ? `${insights.length} pattern${insights.length > 1 ? "s" : ""} found` : "Log more to unlock"} iconBg="bg-violet-100 dark:bg-violet-500/20" open={openBlock === "insights"} onToggle={() => toggle("insights")}>
+        <Block icon={<Brain className="h-5 w-5 text-primary" />} title={L.amyInsights} subtitle={insights.length > 0 ? `${insights.length} pattern${insights.length > 1 ? "s" : ""} found` : "Log more to unlock"} iconBg="bg-muted dark:bg-primary" open={openBlock === "insights"} onToggle={() => toggle("insights")}>
           {insights.length === 0 ? <p className="text-sm text-muted-foreground py-2 text-center">{L.noInsights}</p> : <div className="space-y-3">
-              {insights.map((ins, i) => <div key={i} className="flex gap-3 p-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20">
+              {insights.map((ins, i) => <div key={i} className="flex gap-3 p-3 rounded-xl bg-muted dark:bg-primary border border-border dark:border-primary">
                   <span className="text-xl shrink-0">{ins.icon}</span>
                   <p className="text-sm text-foreground leading-relaxed">{ins.text}</p>
                 </div>)}
@@ -453,17 +453,17 @@ export default function BehaviorTracker() {
         </Block>
 
         {/* 4. Weekly Trends */}
-        <Block icon={<BarChart2 className="h-5 w-5 text-blue-600" />} title={L.weeklyTrends} subtitle="Last 7 days" iconBg="bg-blue-100 dark:bg-blue-500/20" open={openBlock === "trends"} onToggle={() => toggle("trends")}>
+        <Block icon={<BarChart2 className="h-5 w-5 text-primary" />} title={L.weeklyTrends} subtitle="Last 7 days" iconBg="bg-muted dark:bg-primary" open={openBlock === "trends"} onToggle={() => toggle("trends")}>
           <div className="flex items-end gap-1.5 h-28">
             {weekData.map((d, i) => <div key={i} className="flex-1 flex flex-col items-center gap-1">
                 <div className="w-full flex flex-col gap-0.5 justify-end" style={{
               height: "80px"
             }}>
-                  {d.pos > 0 && <div className="w-full rounded-t-sm bg-emerald-400 dark:bg-emerald-500" style={{
+                  {d.pos > 0 && <div className="w-full rounded-t-sm bg-muted dark:bg-primary" style={{
                 height: `${d.pos / maxWeek * 80}px`,
                 minHeight: 4
               }} />}
-                  {d.neg > 0 && <div className="w-full rounded-b-sm bg-red-400 dark:bg-red-500" style={{
+                  {d.neg > 0 && <div className="w-full rounded-b-sm bg-muted dark:bg-primary" style={{
                 height: `${d.neg / maxWeek * 80}px`,
                 minHeight: 4
               }} />}
@@ -475,13 +475,13 @@ export default function BehaviorTracker() {
               </div>)}
           </div>
           <div className="flex gap-4 mt-2 pt-2 border-t border-border/30">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-emerald-400" /><span className="text-[11px] text-muted-foreground">{L.positive}</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-red-400" /><span className="text-[11px] text-muted-foreground">{L.challenging}</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-muted" /><span className="text-[11px] text-muted-foreground">{L.positive}</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-muted" /><span className="text-[11px] text-muted-foreground">{L.challenging}</span></div>
           </div>
         </Block>
 
         {/* 5. Solutions & Tips */}
-        <Block icon={<Lightbulb className="h-5 w-5 text-orange-500" />} title={L.solutions} subtitle="Amy's proven tips per situation" iconBg="bg-orange-100 dark:bg-orange-500/20" open={openBlock === "solutions"} onToggle={() => toggle("solutions")}>
+        <Block icon={<Lightbulb className="h-5 w-5 text-primary" />} title={L.solutions} subtitle="Amy's proven tips per situation" iconBg="bg-muted dark:bg-primary" open={openBlock === "solutions"} onToggle={() => toggle("solutions")}>
           <div className="space-y-4">
             {(["tantrum", "crying", "not_listening", "good_behavior", "low_energy"] as QuickBehaviorKey[]).map(key => {
             const def = QUICK_BEHAVIORS[key];

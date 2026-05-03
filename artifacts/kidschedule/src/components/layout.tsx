@@ -23,7 +23,7 @@ function SmartParentBadge({
   const {
     t
   } = useTranslation();
-  return <span className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm ${className}`} data-testid="badge-smart-parent">
+  return <span className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-primary to-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm ${className}`} data-testid="badge-smart-parent">
       <Sparkles className="h-2.5 w-2.5" />
       {t("components.layout.smart_parent")}
     </span>;
@@ -46,11 +46,11 @@ function ThemeToggleRow({
     onToggle?.();
   }} data-testid="button-theme-toggle" className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
       <span className="flex items-center gap-3">
-        {isDark ? <Moon className="h-5 w-5 text-violet-400" /> : <Sun className="h-5 w-5 text-amber-500" />}
+        {isDark ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
         <span>{isDark ? t("nav.dark_mode") : t("nav.light_mode")}</span>
       </span>
-      <span className={`relative h-6 w-11 rounded-full border transition-colors ${isDark ? "bg-violet-500/40 border-violet-400/50" : "bg-slate-200 border-slate-300"}`}>
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full shadow-md transition-transform ${isDark ? "translate-x-5 bg-violet-500" : "translate-x-0.5 bg-amber-500"}`} />
+      <span className={`relative h-6 w-11 rounded-full border transition-colors ${isDark ? "bg-primary border-border" : "bg-muted border-border"}`}>
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full shadow-md transition-transform ${isDark ? "translate-x-5 bg-primary" : "translate-x-0.5 bg-primary"}`} />
       </span>
     </button>;
 }
@@ -227,7 +227,7 @@ export function Layout({
                 return <Link key={item.href} href={item.href} onClick={closeSidebar} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                       <item.icon className="h-5 w-5 shrink-0" />
                       <span className="flex-1 truncate">{t(item.labelKey)}</span>
-                      {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
+                      {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-primary to-primary px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
                           {item.badge}
                         </span>}
                     </Link>;
@@ -271,7 +271,7 @@ export function Layout({
             return <Link key={item.href} href={item.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <item.icon className="h-5 w-5 shrink-0" />
                   <span className="flex-1 truncate">{t(item.labelKey)}</span>
-                  {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
+                  {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-primary to-primary px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
                       {item.badge}
                     </span>}
                 </Link>;
@@ -322,7 +322,7 @@ export function Layout({
           BOTH themes (matches native iOS/Android tab bar conventions),
           so the legacy-color safety net in index.css must NOT rewrite
           the white text / white borders inside it on light mode. */}
-      <nav data-on-dark className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-slate-900/95 backdrop-blur-xl border-t border-white/10 md:hidden pb-safe">
+      <nav data-on-dark className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-card backdrop-blur-xl border-t border-white/10 md:hidden pb-safe">
         <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">
           {BOTTOM_NAV_ITEMS.map(item => {
           const {
@@ -331,18 +331,18 @@ export function Layout({
           const isActive = location === item.href || location.startsWith(item.href + "/");
           if (item.center) {
             return <Link key={item.href} href={item.href} className="relative flex flex-col items-center justify-end -translate-y-5">
-                  <div className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-white transition-transform active:scale-90 ${isActive ? "bg-gradient-to-br from-indigo-500 to-violet-500 shadow-[0_10px_25px_rgba(99,102,241,0.55)] ring-2 ring-white/20" : "bg-gradient-to-br from-indigo-500 to-violet-500 shadow-[0_8px_20px_rgba(99,102,241,0.45)]"}`}>
+                  <div className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-white transition-transform active:scale-90 ${isActive ? "bg-gradient-to-br from-primary to-primary shadow-[0_10px_25px_rgba(99,102,241,0.55)] ring-2 ring-white/20" : "bg-gradient-to-br from-primary to-primary shadow-[0_8px_20px_rgba(99,102,241,0.45)]"}`}>
                     <item.icon className="h-7 w-7" />
                   </div>
-                  <span className={`mt-1 text-[10px] font-semibold ${isActive ? "text-indigo-300" : "text-slate-300"}`}>
+                  <span className={`mt-1 text-[10px] font-semibold ${isActive ? "text-muted-foreground" : "text-muted-foreground"}`}>
                     {t(item.labelKey)}
                   </span>
                 </Link>;
           }
-          return <Link key={item.href} href={item.href} className={`relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${isActive ? "text-indigo-400" : "text-slate-400"}`}>
-                <item.icon className={`h-5 w-5 ${isActive ? "fill-indigo-400/15" : ""}`} />
+          return <Link key={item.href} href={item.href} className={`relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                <item.icon className={`h-5 w-5 ${isActive ? "fill-primary" : ""}`} />
                 <span className="text-[11px] font-medium leading-none">{t(item.labelKey)}</span>
-                {isActive && <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-indigo-400" />}
+                {isActive && <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-muted" />}
               </Link>;
         })}
         </div>

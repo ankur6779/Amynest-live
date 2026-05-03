@@ -74,8 +74,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws1",
   title: "ABC Tracing Practice",
   emoji: "✏️",
-  bg: "bg-blue-100 dark:bg-blue-500/20",
-  accent: "#3B82F6",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-blue-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
   ageMax: 60,
@@ -84,8 +84,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws2",
   title: "1–10 Number Counting",
   emoji: "🔢",
-  bg: "bg-green-100 dark:bg-green-500/20",
-  accent: "#10B981",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-emerald-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
   ageMax: 60,
@@ -94,8 +94,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws3",
   title: "Color the Farm Animals",
   emoji: "🐄",
-  bg: "bg-orange-100 dark:bg-orange-500/20",
-  accent: "#F97316",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-orange-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
   ageMax: 72,
@@ -104,8 +104,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws4",
   title: "Match the Shapes",
   emoji: "🔵",
-  bg: "bg-purple-100 dark:bg-purple-500/20",
-  accent: "#8B5CF6",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-violet-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
   ageMax: 60,
@@ -114,8 +114,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws5",
   title: "Big & Small Sort",
   emoji: "🐘",
-  bg: "bg-amber-100 dark:bg-amber-500/20",
-  accent: "#D97706",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-amber-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
   ageMax: 54,
@@ -124,8 +124,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws6",
   title: "Write My Name Practice",
   emoji: "✨",
-  bg: "bg-pink-100 dark:bg-pink-500/20",
-  accent: "#EC4899",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-pink-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
   ageMax: 84,
@@ -134,8 +134,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws7",
   title: "Spot the Difference",
   emoji: "👀",
-  bg: "bg-teal-100 dark:bg-teal-500/20",
-  accent: "#14B8A6",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-teal-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
   ageMax: 96,
@@ -144,8 +144,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws8",
   title: "Connect the Dots – Stars",
   emoji: "🌟",
-  bg: "bg-yellow-100 dark:bg-yellow-500/20",
-  accent: "#EAB308",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-yellow-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
   ageMax: 84,
@@ -154,8 +154,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws9",
   title: "Alphabet Coloring A–Z",
   emoji: "🎨",
-  bg: "bg-rose-100 dark:bg-rose-500/20",
-  accent: "#F43F5E",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-rose-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
   ageMax: 72,
@@ -164,8 +164,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws10",
   title: "Simple Addition Fun",
   emoji: "➕",
-  bg: "bg-indigo-100 dark:bg-indigo-500/20",
-  accent: "#6366F1",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-indigo-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 48,
   ageMax: 96,
@@ -174,8 +174,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws11",
   title: "Hindi Varnamala Tracing",
   emoji: "हि",
-  bg: "bg-emerald-100 dark:bg-emerald-500/20",
-  accent: "#059669",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-emerald-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
   ageMax: 84,
@@ -184,8 +184,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws12",
   title: "My Body Parts Worksheet",
   emoji: "🧍",
-  bg: "bg-sky-100 dark:bg-sky-500/20",
-  accent: "#0EA5E9",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-sky-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
   ageMax: 72,
@@ -194,7 +194,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws13",
   title: "Fruits & Vegetables Match",
   emoji: "🍎",
-  bg: "bg-lime-100 dark:bg-lime-500/20",
+  bg: "bg-muted dark:bg-primary",
   accent: "#84CC16",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
@@ -204,8 +204,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws14",
   title: "Weather Chart Worksheet",
   emoji: "🌤️",
-  bg: "bg-cyan-100 dark:bg-cyan-500/20",
-  accent: "#06B6D4",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-cyan-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 48,
   ageMax: 96,
@@ -214,8 +214,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws15",
   title: "Multiplication Table 2–5",
   emoji: "✖️",
-  bg: "bg-violet-100 dark:bg-violet-500/20",
-  accent: "#7C3AED",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-violet-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 72,
   ageMax: 96,
@@ -224,7 +224,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws16",
   title: "Story Sequencing Cards",
   emoji: "📖",
-  bg: "bg-fuchsia-100 dark:bg-fuchsia-500/20",
+  bg: "bg-muted dark:bg-primary",
   accent: "#D946EF",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 60,
@@ -234,8 +234,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws17",
   title: "Map of India Fill-in",
   emoji: "🗺️",
-  bg: "bg-orange-100 dark:bg-orange-500/20",
-  accent: "#EA580C",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-orange-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 72,
   ageMax: 96,
@@ -244,8 +244,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws18",
   title: "Colour the Rangoli",
   emoji: "🪔",
-  bg: "bg-red-100 dark:bg-red-500/20",
-  accent: "#DC2626",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-red-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
   ageMax: 96,
@@ -254,8 +254,8 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws19",
   title: "Opposite Words Match",
   emoji: "🔄",
-  bg: "bg-blue-100 dark:bg-blue-500/20",
-  accent: "#2563EB",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-blue-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 48,
   ageMax: 84,
@@ -264,7 +264,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws20",
   title: "Clock Reading Practice",
   emoji: "⏰",
-  bg: "bg-stone-100",
+  bg: "bg-muted",
   accent: "#78716C",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 60,
@@ -275,8 +275,8 @@ const REELS: Reel[] = [{
   id: "r1",
   title: "Easy Paper Butterfly Craft",
   emoji: "🦋",
-  bg: "bg-pink-100 dark:bg-pink-500/20",
-  accent: "#EC4899",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-pink-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "4 min",
   ageMin: 24,
@@ -285,8 +285,8 @@ const REELS: Reel[] = [{
   id: "r2",
   title: "Rainbow Umbrella Painting",
   emoji: "🌈",
-  bg: "bg-yellow-100 dark:bg-yellow-500/20",
-  accent: "#F59E0B",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-amber-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "6 min",
   ageMin: 24,
@@ -295,8 +295,8 @@ const REELS: Reel[] = [{
   id: "r3",
   title: "Clay Fruits – Mango & Apple",
   emoji: "🥭",
-  bg: "bg-orange-100 dark:bg-orange-500/20",
-  accent: "#F97316",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-orange-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "8 min",
   ageMin: 36,
@@ -305,8 +305,8 @@ const REELS: Reel[] = [{
   id: "r4",
   title: "DIY Paper Crown for Kids",
   emoji: "👑",
-  bg: "bg-amber-100 dark:bg-amber-500/20",
-  accent: "#D97706",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-amber-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "5 min",
   ageMin: 24,
@@ -315,8 +315,8 @@ const REELS: Reel[] = [{
   id: "r5",
   title: "Vegetable Stamp Art",
   emoji: "🥦",
-  bg: "bg-green-100 dark:bg-green-500/20",
-  accent: "#10B981",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-emerald-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "7 min",
   ageMin: 24,
@@ -325,8 +325,8 @@ const REELS: Reel[] = [{
   id: "r6",
   title: "How to Draw a Lion – Easy",
   emoji: "🦁",
-  bg: "bg-amber-100 dark:bg-amber-500/20",
-  accent: "#B45309",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-amber-700))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "6 min",
   ageMin: 36,
@@ -335,8 +335,8 @@ const REELS: Reel[] = [{
   id: "r7",
   title: "Sock Puppet Show Craft",
   emoji: "🧦",
-  bg: "bg-purple-100 dark:bg-purple-500/20",
-  accent: "#7C3AED",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-violet-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "9 min",
   ageMin: 36,
@@ -345,8 +345,8 @@ const REELS: Reel[] = [{
   id: "r8",
   title: "Nature Collage with Leaves",
   emoji: "🍃",
-  bg: "bg-teal-100 dark:bg-teal-500/20",
-  accent: "#0D9488",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-teal-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "7 min",
   ageMin: 24,
@@ -355,8 +355,8 @@ const REELS: Reel[] = [{
   id: "r9",
   title: "Marble Run Paper Craft",
   emoji: "⚙️",
-  bg: "bg-blue-100 dark:bg-blue-500/20",
-  accent: "#3B82F6",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-blue-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "10 min",
   ageMin: 60,
@@ -365,8 +365,8 @@ const REELS: Reel[] = [{
   id: "r10",
   title: "Diwali Diya Decoration",
   emoji: "🪔",
-  bg: "bg-red-100 dark:bg-red-500/20",
-  accent: "#DC2626",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-red-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "8 min",
   ageMin: 36,
@@ -375,8 +375,8 @@ const REELS: Reel[] = [{
   id: "r11",
   title: "Paper Plate Fish Mobile",
   emoji: "🐠",
-  bg: "bg-sky-100 dark:bg-sky-500/20",
-  accent: "#0284C7",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-sky-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "5 min",
   ageMin: 24,
@@ -385,8 +385,8 @@ const REELS: Reel[] = [{
   id: "r12",
   title: "Finger Printing Art – Flowers",
   emoji: "🌸",
-  bg: "bg-rose-100 dark:bg-rose-500/20",
-  accent: "#F43F5E",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-rose-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "6 min",
   ageMin: 24,
@@ -395,7 +395,7 @@ const REELS: Reel[] = [{
   id: "r13",
   title: "Create a Paper Zoo",
   emoji: "🦒",
-  bg: "bg-lime-100 dark:bg-lime-500/20",
+  bg: "bg-muted dark:bg-primary",
   accent: "#65A30D",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "12 min",
@@ -405,7 +405,7 @@ const REELS: Reel[] = [{
   id: "r14",
   title: "Sand Art Greeting Cards",
   emoji: "🏖️",
-  bg: "bg-yellow-100 dark:bg-yellow-500/20",
+  bg: "bg-muted dark:bg-primary",
   accent: "#CA8A04",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "8 min",
@@ -415,7 +415,7 @@ const REELS: Reel[] = [{
   id: "r15",
   title: "Recycled Robot Craft",
   emoji: "🤖",
-  bg: "bg-slate-100 dark:bg-slate-500/20",
+  bg: "bg-muted dark:bg-card",
   accent: "#475569",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "11 min",
@@ -425,8 +425,8 @@ const REELS: Reel[] = [{
   id: "r16",
   title: "Paper Bag Puppet Animals",
   emoji: "🐸",
-  bg: "bg-emerald-100 dark:bg-emerald-500/20",
-  accent: "#059669",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-emerald-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "7 min",
   ageMin: 24,
@@ -436,8 +436,8 @@ const ORIGAMI: Origami[] = [{
   id: "og1",
   title: "Learn to make a Paper Boat",
   emoji: "⛵",
-  bg: "bg-sky-100 dark:bg-sky-500/20",
-  accent: "#0284C7",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-sky-600))",
   difficulty: "Easy",
   ageMin: 24,
   ageMax: 96,
@@ -465,8 +465,8 @@ const ORIGAMI: Origami[] = [{
   id: "og2",
   title: "Fold a Flying Paper Airplane",
   emoji: "✈️",
-  bg: "bg-blue-100 dark:bg-blue-500/20",
-  accent: "#3B82F6",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-blue-500))",
   difficulty: "Easy",
   ageMin: 36,
   ageMax: 96,
@@ -494,8 +494,8 @@ const ORIGAMI: Origami[] = [{
   id: "og3",
   title: "Make a Jumping Paper Frog",
   emoji: "🐸",
-  bg: "bg-green-100 dark:bg-green-500/20",
-  accent: "#16A34A",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-green-600))",
   difficulty: "Medium",
   ageMin: 48,
   ageMax: 96,
@@ -529,8 +529,8 @@ const ORIGAMI: Origami[] = [{
   id: "og4",
   title: "Create a Paper Butterfly",
   emoji: "🦋",
-  bg: "bg-pink-100 dark:bg-pink-500/20",
-  accent: "#DB2777",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-pink-600))",
   difficulty: "Easy",
   ageMin: 24,
   ageMax: 96,
@@ -558,8 +558,8 @@ const ORIGAMI: Origami[] = [{
   id: "og5",
   title: "Fold a Paper Tulip Flower",
   emoji: "🌷",
-  bg: "bg-rose-100 dark:bg-rose-500/20",
-  accent: "#E11D48",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-rose-600))",
   difficulty: "Medium",
   ageMin: 48,
   ageMax: 96,
@@ -590,8 +590,8 @@ const ORIGAMI: Origami[] = [{
   id: "og6",
   title: "Make a Paper Crane (Tsuru)",
   emoji: "🦢",
-  bg: "bg-purple-100 dark:bg-purple-500/20",
-  accent: "#9333EA",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-purple-600))",
   difficulty: "Fun",
   ageMin: 72,
   ageMax: 96,
@@ -631,8 +631,8 @@ const ORIGAMI: Origami[] = [{
   id: "og7",
   title: "Fold a Paper Bunny",
   emoji: "🐰",
-  bg: "bg-amber-100 dark:bg-amber-500/20",
-  accent: "#D97706",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-amber-600))",
   difficulty: "Easy",
   ageMin: 24,
   ageMax: 84,
@@ -660,7 +660,7 @@ const ORIGAMI: Origami[] = [{
   id: "og8",
   title: "Simple Paper Star",
   emoji: "⭐",
-  bg: "bg-yellow-100 dark:bg-yellow-500/20",
+  bg: "bg-muted dark:bg-primary",
   accent: "#CA8A04",
   difficulty: "Easy",
   ageMin: 24,
@@ -686,8 +686,8 @@ const ORIGAMI: Origami[] = [{
   id: "og9",
   title: "Paper Heart for Mom",
   emoji: "❤️",
-  bg: "bg-red-100 dark:bg-red-500/20",
-  accent: "#DC2626",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-red-600))",
   difficulty: "Easy",
   ageMin: 36,
   ageMax: 96,
@@ -715,8 +715,8 @@ const ORIGAMI: Origami[] = [{
   id: "og10",
   title: "Fold a Sailboat Card",
   emoji: "⛵",
-  bg: "bg-teal-100 dark:bg-teal-500/20",
-  accent: "#0F766E",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-teal-700))",
   difficulty: "Medium",
   ageMin: 48,
   ageMax: 96,
@@ -747,8 +747,8 @@ const ORIGAMI: Origami[] = [{
   id: "og11",
   title: "Make a Paper Peacock",
   emoji: "🦚",
-  bg: "bg-emerald-100 dark:bg-emerald-500/20",
-  accent: "#059669",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-emerald-600))",
   difficulty: "Fun",
   ageMin: 60,
   ageMax: 96,
@@ -788,8 +788,8 @@ const ORIGAMI: Origami[] = [{
   id: "og12",
   title: "Paper Pinwheel Spinner",
   emoji: "🌀",
-  bg: "bg-indigo-100 dark:bg-indigo-500/20",
-  accent: "#4F46E5",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-indigo-600))",
   difficulty: "Easy",
   ageMin: 24,
   ageMax: 84,
@@ -814,8 +814,8 @@ const ORIGAMI: Origami[] = [{
   id: "og13",
   title: "Fold a Cute Paper Fox",
   emoji: "🦊",
-  bg: "bg-orange-100 dark:bg-orange-500/20",
-  accent: "#EA580C",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-orange-600))",
   difficulty: "Medium",
   ageMin: 48,
   ageMax: 96,
@@ -849,7 +849,7 @@ const ORIGAMI: Origami[] = [{
   id: "og14",
   title: "Origami Elephant",
   emoji: "🐘",
-  bg: "bg-slate-100 dark:bg-slate-500/20",
+  bg: "bg-muted dark:bg-card",
   accent: "#475569",
   difficulty: "Fun",
   ageMin: 60,
@@ -887,8 +887,8 @@ const ORIGAMI: Origami[] = [{
   id: "og15",
   title: "Paper Fortune Teller",
   emoji: "🔮",
-  bg: "bg-violet-100 dark:bg-violet-500/20",
-  accent: "#7C3AED",
+  bg: "bg-muted dark:bg-primary",
+  accent: "hsl(var(--brand-violet-600))",
   difficulty: "Easy",
   ageMin: 36,
   ageMax: 96,
@@ -916,7 +916,7 @@ const ORIGAMI: Origami[] = [{
   id: "og16",
   title: "Mini Paper Basket",
   emoji: "🧺",
-  bg: "bg-lime-100 dark:bg-lime-500/20",
+  bg: "bg-muted dark:bg-primary",
   accent: "#65A30D",
   difficulty: "Medium",
   ageMin: 48,
@@ -1017,7 +1017,7 @@ function DrivePreviewModal({
         <button onClick={onClose} aria-label={t("components.daily_kids_activity.close")} className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white hover:bg-white/20 transition-all font-bold text-sm">✕</button>
 
         {/* ── Section label strip ───────────────────────────── */}
-        <div className={`flex items-center gap-2 px-4 pt-4 pb-2 flex-shrink-0 ${isVideo ? "text-rose-400" : "text-sky-400"}`}>
+        <div className={`flex items-center gap-2 px-4 pt-4 pb-2 flex-shrink-0 ${isVideo ? "text-primary" : "text-primary"}`}>
           <span className="text-base">{isVideo ? "🎥" : "📄"}</span>
           <span className="text-[11px] font-black uppercase tracking-widest">
             {isVideo ? "Watch & Learn" : "Worksheet Preview"}
@@ -1040,14 +1040,14 @@ function DrivePreviewModal({
           {/* Title */}
           <h2 className="text-white font-black text-xl leading-snug mb-1.5 pr-8">{item.title}</h2>
           {/* Description */}
-          <p className="text-gray-400 text-sm leading-relaxed mb-4">{item.desc}</p>
+          <p className="text-muted-foreground text-sm leading-relaxed mb-4">{item.desc}</p>
 
           {/* ── Action buttons ────────────────────────────── */}
           <div className="flex flex-col gap-2.5 pb-5">
 
             {/* Primary: Play / Preview */}
             <a href={item.downloadUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-black text-sm transition-all active:scale-95" style={{
-            background: isVideo ? "linear-gradient(135deg,#e11d48,#f97316)" : "linear-gradient(135deg,#2563eb,#7c3aed)"
+            background: isVideo ? "linear-gradient(135deg,hsl(var(--brand-rose-600)),hsl(var(--brand-orange-500)))" : "linear-gradient(135deg,hsl(var(--brand-blue-600)),hsl(var(--brand-violet-600)))"
           }}>
               <span className="text-white text-base">{isVideo ? "▶️" : "👁"}</span>
               <span className="text-white">{isVideo ? "Play Video" : "Open Full Preview"}</span>
@@ -1059,14 +1059,14 @@ function DrivePreviewModal({
                 <span className="text-white text-sm">⬇️</span>
                 <span className="text-white font-bold text-sm">{t("components.daily_kids_activity.download")}</span>
               </a>
-              <button onClick={onSave} className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95 border font-bold text-sm ${isSaved ? "bg-rose-500/20 border-rose-500/40 text-rose-400" : "bg-white/10 border-white/10 text-white hover:bg-white/20"}`}>
+              <button onClick={onSave} className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95 border font-bold text-sm ${isSaved ? "bg-primary border-primary text-primary" : "bg-white/10 border-white/10 text-white hover:bg-white/20"}`}>
                 <span className="text-base">{isSaved ? "❤️" : "🤍"}</span>
                 {isSaved ? "Saved" : "Save"}
               </button>
             </div>
 
             {/* Close button */}
-            <button onClick={onClose} className="w-full py-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-all active:scale-95 border border-white/10 text-gray-400 font-bold text-sm">
+            <button onClick={onClose} className="w-full py-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-all active:scale-95 border border-white/10 text-muted-foreground font-bold text-sm">
               {t("components.daily_kids_activity.close_2")}
             </button>
           </div>
@@ -1182,7 +1182,7 @@ export function DailyKidsActivity({
       {modalItem && <DrivePreviewModal item={modalItem} onClose={closeModal} isSaved={saved.has(modalItem.id)} onSave={() => toggleSaved(modalItem.id)} />}
 
       {/* ── Section Header ─────────────────────────────────────── */}
-      <div className="rounded-2xl bg-gradient-to-r from-fuchsia-500 via-pink-500 to-orange-400 p-4 text-white shadow-md relative overflow-hidden">
+      <div className="rounded-2xl bg-gradient-to-r from-primary via-primary to-primary p-4 text-white shadow-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-28 h-28 rounded-full bg-white/10 -translate-y-8 translate-x-8 blur-sm" />
         <div className="relative z-10">
           <p className="text-xs font-black uppercase tracking-widest text-white/80 mb-0.5">{t("components.daily_kids_activity.today_s_special")}</p>
@@ -1192,9 +1192,9 @@ export function DailyKidsActivity({
       </div>
 
       {/* ── Parent Guidance ────────────────────────────────────── */}
-      <div className="flex items-center gap-3 rounded-2xl bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-400/30 px-4 py-3">
+      <div className="flex items-center gap-3 rounded-2xl bg-muted dark:bg-primary border border-border dark:border-border px-4 py-3">
         <span className="text-2xl">❤️</span>
-        <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+        <p className="text-sm font-semibold text-primary dark:text-muted-foreground">
           {t("components.daily_kids_activity.spend_20_30_minutes_doing_this_activity_with_your_child")}
         </p>
       </div>
@@ -1255,8 +1255,8 @@ function WorksheetCard({
   return <div className={`rounded-xl border overflow-hidden flex flex-col transition-all ${done ? "opacity-70" : ""}`}>
       {/* Preview area — clickable to open modal */}
       <div role="button" tabIndex={0} onClick={onPreview} onKeyDown={e => e.key === "Enter" && onPreview()} className={`relative ${item.bg} flex flex-col items-center justify-center p-3 h-28 w-full group cursor-pointer`}>
-        {done && <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center rounded-t-xl">
-            <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">✓</div>
+        {done && <div className="absolute inset-0 bg-primary flex items-center justify-center rounded-t-xl">
+            <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">✓</div>
           </div>}
         {/* Preview hint on hover */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-t-xl flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -1267,7 +1267,7 @@ function WorksheetCard({
         <button onClick={e => {
         e.stopPropagation();
         onSave();
-      }} className={`absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full transition-all ${saved ? "bg-rose-500 text-white" : "bg-white/60 text-muted-foreground hover:bg-white"}`} title={saved ? "Unsave" : "Save for later"}>
+      }} className={`absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full transition-all ${saved ? "bg-primary text-white" : "bg-white/60 text-muted-foreground hover:bg-white"}`} title={saved ? "Unsave" : "Save for later"}>
           <span className="text-xs">{saved ? "♥" : "♡"}</span>
         </button>
       </div>
@@ -1275,14 +1275,14 @@ function WorksheetCard({
       <div className="p-2 flex-1 flex flex-col justify-between bg-card">
         <p className="text-xs font-bold text-foreground leading-snug mb-2">{item.title}</p>
         <div className="flex gap-1.5">
-          <button onClick={onPreview} className="flex-1 text-center text-[10px] font-bold py-1 rounded-lg bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-200 hover:bg-fuchsia-500 hover:text-white transition-colors">
+          <button onClick={onPreview} className="flex-1 text-center text-[10px] font-bold py-1 rounded-lg bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-primary hover:text-white transition-colors">
             {t("components.daily_kids_activity.preview_2")}
           </button>
           <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-[10px] font-bold py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
             {t("components.daily_kids_activity.drive")}
           </a>
         </div>
-        <button onClick={onDone} className={`w-full mt-1.5 text-[10px] font-bold py-1 rounded-lg transition-colors ${done ? "bg-green-500 text-white" : "bg-muted text-muted-foreground hover:bg-green-100 dark:bg-green-500/20 hover:text-green-700 dark:text-green-200"}`}>
+        <button onClick={onDone} className={`w-full mt-1.5 text-[10px] font-bold py-1 rounded-lg transition-colors ${done ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-primary hover:text-primary dark:text-muted-foreground"}`}>
           {done ? "✓ Done" : "Mark Done"}
         </button>
       </div>
@@ -1319,11 +1319,11 @@ function ReelCard({
         </div>
         <span className="text-3xl">{item.emoji}</span>
         <span className="mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/60 text-foreground">{item.duration}</span>
-        {done && <div className="absolute top-2 left-2 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">✓</div>}
+        {done && <div className="absolute top-2 left-2 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold pointer-events-none">✓</div>}
         <button onClick={e => {
         e.stopPropagation();
         onSave();
-      }} className={`absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full transition-all ${saved ? "bg-rose-500 text-white" : "bg-white/60 text-muted-foreground hover:bg-white"}`}>
+      }} className={`absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full transition-all ${saved ? "bg-primary text-white" : "bg-white/60 text-muted-foreground hover:bg-white"}`}>
           <span className="text-xs">{saved ? "♥" : "♡"}</span>
         </button>
       </div>
@@ -1331,14 +1331,14 @@ function ReelCard({
       <div className="p-2 flex-1 flex flex-col justify-between bg-card">
         <p className="text-xs font-bold text-foreground leading-snug mb-2">{item.title}</p>
         <div className="flex gap-1.5 mb-1.5">
-          <button onClick={onPreview} className="flex-1 text-[10px] font-bold py-1 rounded-lg bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-200 hover:bg-fuchsia-500 hover:text-white transition-colors">
+          <button onClick={onPreview} className="flex-1 text-[10px] font-bold py-1 rounded-lg bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-primary hover:text-white transition-colors">
             {t("components.daily_kids_activity.play")}
           </button>
           <a href={item.videoUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-[10px] font-bold py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
             {t("components.daily_kids_activity.drive_2")}
           </a>
         </div>
-        <button onClick={onDone} className={`w-full text-[10px] font-bold py-1 rounded-lg transition-colors ${done ? "bg-green-500 text-white" : "bg-muted text-muted-foreground hover:bg-green-100 dark:bg-green-500/20 hover:text-green-700 dark:text-green-200"}`}>
+        <button onClick={onDone} className={`w-full text-[10px] font-bold py-1 rounded-lg transition-colors ${done ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-primary hover:text-primary dark:text-muted-foreground"}`}>
           {done ? "✓ Watched" : "Mark Done"}
         </button>
       </div>
@@ -1347,9 +1347,9 @@ function ReelCard({
 
 // ─── Origami Card ─────────────────────────────────────────────────────────────
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-200",
-  Medium: "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-200",
-  Fun: "bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200"
+  Easy: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
+  Medium: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
+  Fun: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"
 };
 
 // ─── Fold Diagram SVG Data ───────────────────────────────────────────────────
@@ -1361,63 +1361,63 @@ const FOLD_SVG: Record<FoldShape, {
 }> = {
   start: {
     d: "M10,10 L90,10 L90,90 L10,90 Z",
-    fill: "#FEF9C3",
+    fill: "hsl(var(--brand-amber-100))",
     crease: "M50,10 L50,90 M10,50 L90,50"
   },
   halfH: {
     d: "M10,35 L90,35 L90,65 L10,65 Z",
-    fill: "#DBEAFE",
+    fill: "hsl(var(--brand-blue-100))",
     crease: "M10,50 L90,50",
     arrowD: "M50,62 L50,38"
   },
   halfV: {
     d: "M35,10 L65,10 L65,90 L35,90 Z",
-    fill: "#BFDBFE",
+    fill: "hsl(var(--brand-blue-100))",
     crease: "M50,10 L50,90",
     arrowD: "M62,50 L38,50"
   },
   diagFold: {
     d: "M10,10 L90,90 L10,90 Z",
-    fill: "#E0E7FF",
+    fill: "hsl(var(--brand-indigo-100))",
     crease: "M10,10 L90,90"
   },
   diamond: {
     d: "M50,10 L90,50 L50,90 L10,50 Z",
-    fill: "#FCE7F3",
+    fill: "hsl(var(--brand-pink-100))",
     crease: "M10,50 L90,50 M50,10 L50,90"
   },
   kite: {
     d: "M50,10 L85,58 L50,82 L15,58 Z",
-    fill: "#D1FAE5",
+    fill: "hsl(var(--brand-emerald-100))",
     crease: "M50,10 L50,82",
     arrowD: "M15,58 L50,10"
   },
   blintz: {
     d: "M50,10 L90,50 L50,90 L10,50 Z",
-    fill: "#FEF3C7",
+    fill: "hsl(var(--brand-amber-100))",
     crease: "M10,10 L90,90 M90,10 L10,90"
   },
   foldUp: {
     d: "M10,40 L90,40 L90,90 L10,90 Z",
-    fill: "#DCFCE7",
+    fill: "hsl(var(--brand-green-100))",
     crease: "M10,40 L90,40",
     arrowD: "M50,66 L50,42"
   },
   foldDown: {
     d: "M10,10 L90,10 L90,60 L10,60 Z",
-    fill: "#FEE2E2",
+    fill: "hsl(var(--brand-red-100))",
     crease: "M10,60 L90,60",
     arrowD: "M50,34 L50,58"
   },
   pullOpen: {
     d: "M15,25 L85,25 L92,75 L8,75 Z",
-    fill: "#F0FDF4",
+    fill: "hsl(var(--brand-green-100))",
     crease: "M50,25 L50,75",
     arrowD: "M28,50 L8,50"
   },
   crease: {
     d: "M10,10 L90,10 L90,90 L10,90 Z",
-    fill: "#F5F3FF",
+    fill: "hsl(var(--brand-violet-50))",
     crease: "M10,50 L90,50 M50,10 L50,90"
   },
   done: {
@@ -1447,7 +1447,7 @@ function FoldDiagram({
         <span style={{
         fontSize: size * 0.48
       }}>{emoji}</span>
-        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full">{t("components.daily_kids_activity.final")}</span>
+        <span className="text-[10px] font-bold text-primary bg-muted dark:bg-primary px-2 py-0.5 rounded-full">{t("components.daily_kids_activity.final")}</span>
       </div>;
   }
   const cfg = FOLD_SVG[fold];
@@ -1458,15 +1458,15 @@ function FoldDiagram({
           <feDropShadow dx="2" dy="3" stdDeviation="3" floodColor="#00000030" />
         </filter>
         <marker id={`arr-${uid}`} markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
-          <path d="M0,0 L7,3.5 L0,7 Z" fill="#F59E0B" />
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="hsl(var(--brand-amber-500))" />
         </marker>
       </defs>
       {/* Paper shape */}
       <path d={cfg.d} fill={cfg.fill} stroke="#94A3B8" strokeWidth="1.5" filter={`url(#sh-${uid})`} />
       {/* Crease lines */}
-      {cfg.crease && <path d={cfg.crease} stroke="#818CF8" strokeWidth="1.5" strokeDasharray="4,2.5" fill="none" />}
+      {cfg.crease && <path d={cfg.crease} stroke="hsl(var(--brand-indigo-400))" strokeWidth="1.5" strokeDasharray="4,2.5" fill="none" />}
       {/* Direction arrow */}
-      {cfg.arrowD && <path d={cfg.arrowD} stroke="#F59E0B" strokeWidth="2.5" fill="none" strokeLinecap="round" markerEnd={`url(#arr-${uid})`} />}
+      {cfg.arrowD && <path d={cfg.arrowD} stroke="hsl(var(--brand-amber-500))" strokeWidth="2.5" fill="none" strokeLinecap="round" markerEnd={`url(#arr-${uid})`} />}
     </svg>;
 }
 
@@ -1604,13 +1604,13 @@ function AnimatedFoldStage({
         animation: "og-draw-arrow 700ms 200ms ease-out forwards"
       }} />
           {/* Main arrow */}
-          <path d={meta.arrowD} stroke="#FBBF24" strokeWidth="2.8" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{
+          <path d={meta.arrowD} stroke="hsl(var(--brand-amber-300))" strokeWidth="2.8" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{
         strokeDasharray: 220,
         strokeDashoffset: 220,
         animation: "og-draw-arrow 700ms 200ms ease-out forwards"
       }} />
           {/* Hint text badge */}
-          <text x="50" y="96" textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#FBBF24" fontFamily="system-ui,sans-serif" style={{
+          <text x="50" y="96" textAnchor="middle" fontSize="7.5" fontWeight="800" fill="hsl(var(--brand-amber-300))" fontFamily="system-ui,sans-serif" style={{
         opacity: 0,
         animation: "og-fade-in 300ms 700ms ease forwards",
         letterSpacing: "0.08em",
@@ -1757,7 +1757,7 @@ function OrigamiStepsModal({
 
         {/* ── PHASE: cover ────────────────────────────────────────────── */}
         {phase === "cover" && <div className="flex flex-col items-center text-center overflow-y-auto" style={{
-        background: "linear-gradient(160deg,#1e1b4b 0%,#0f0f1a 100%)"
+        background: "linear-gradient(160deg,hsl(var(--brand-indigo-950)) 0%,#0f0f1a 100%)"
       }}>
             <button onClick={onClose} aria-label={t("components.daily_kids_activity.close_3")} className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
@@ -1833,8 +1833,8 @@ function OrigamiStepsModal({
                   </button>
                   {/* Voice toggle */}
                   <button onClick={() => setVoiceOn(v => !v)} aria-label={t("components.daily_kids_activity.toggle_voice")} className="text-[10px] font-black px-2 py-0.5 rounded-full border transition-all" style={{
-                borderColor: voiceOn ? "#22c55e" : "rgba(255,255,255,0.15)",
-                color: voiceOn ? "#22c55e" : "rgba(255,255,255,0.35)",
+                borderColor: voiceOn ? "hsl(var(--brand-green-500))" : "rgba(255,255,255,0.15)",
+                color: voiceOn ? "hsl(var(--brand-green-500))" : "rgba(255,255,255,0.35)",
                 background: voiceOn ? "#22c55e22" : "transparent"
               }}>
                     {speaking ? "🔊" : voiceOn ? "🔊" : "🔇"}
@@ -1851,7 +1851,7 @@ function OrigamiStepsModal({
               {/* Segmented progress bar — clickable */}
               <div className="flex gap-1">
                 {item.steps.map((_, i) => <button key={i} onClick={() => goTo(i)} className="h-1.5 rounded-full flex-1 transition-all duration-300" style={{
-              background: i < step ? "#10b981" : i === step ? item.accent : "rgba(255,255,255,0.12)"
+              background: i < step ? "hsl(var(--brand-emerald-500))" : i === step ? item.accent : "rgba(255,255,255,0.12)"
             }} aria-label={`Go to step ${i + 1}`} />)}
               </div>
             </div>
@@ -1922,7 +1922,7 @@ function OrigamiStepsModal({
                   {t("components.daily_kids_activity.previous")}
                 </button>
                 <button onClick={goNext} className="flex-[2] py-3.5 rounded-2xl font-black text-sm text-white transition-all active:scale-95" style={{
-              background: step < total - 1 ? `linear-gradient(135deg,${item.accent},${item.accent}bb)` : "linear-gradient(135deg,#10b981,#3b82f6)"
+              background: step < total - 1 ? `linear-gradient(135deg,${item.accent},${item.accent}bb)` : "linear-gradient(135deg,hsl(var(--brand-emerald-500)),hsl(var(--brand-blue-500)))"
             }}>
                   {step < total - 1 ? "Next Step →" : "🎉 Finish!"}
                 </button>
@@ -1936,7 +1936,7 @@ function OrigamiStepsModal({
 
         {/* ── PHASE: done ──────────────────────────────────────────────── */}
         {phase === "done" && <div className="flex flex-col items-center text-center overflow-y-auto pb-10" style={{
-        background: "linear-gradient(160deg,#052e16 0%,#0f0f18 100%)"
+        background: "linear-gradient(160deg,hsl(var(--brand-green-900)) 0%,#0f0f18 100%)"
       }}>
             <button onClick={onClose} aria-label={t("components.daily_kids_activity.close_5")} className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all">✕</button>
 
@@ -2077,8 +2077,8 @@ function OrigamiCard({
       {/* ── Large preview area ─────────────────────────── */}
       <div className={`relative ${item.bg} flex flex-col items-center justify-center pt-5 pb-3 px-2`}>
         {/* Done overlay */}
-        {done && <div className="absolute inset-0 bg-green-500/15 flex items-center justify-center z-10 rounded-t-2xl">
-            <div className="bg-green-500 text-white rounded-full w-9 h-9 flex items-center justify-center text-base font-black shadow-lg">✓</div>
+        {done && <div className="absolute inset-0 bg-primary flex items-center justify-center z-10 rounded-t-2xl">
+            <div className="bg-primary text-white rounded-full w-9 h-9 flex items-center justify-center text-base font-black shadow-lg">✓</div>
           </div>}
 
         {/* Large emoji final output */}
@@ -2091,7 +2091,7 @@ function OrigamiCard({
           <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${DIFFICULTY_COLORS[item.difficulty]}`}>
             {item.difficulty}
           </span>
-          <span className="text-[9px] font-bold bg-white/70 text-gray-700 px-2 py-0.5 rounded-full">
+          <span className="text-[9px] font-bold bg-white/70 text-foreground px-2 py-0.5 rounded-full">
             {item.steps.length} {t("components.daily_kids_activity.steps_2")}
           </span>
         </div>
@@ -2103,7 +2103,7 @@ function OrigamiCard({
         </div>
 
         {/* Save heart */}
-        <button onClick={onSave} className={`absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full transition-all ${saved ? "bg-rose-500 text-white" : "bg-white/60 text-muted-foreground hover:bg-white"}`}>
+        <button onClick={onSave} className={`absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full transition-all ${saved ? "bg-primary text-white" : "bg-white/60 text-muted-foreground hover:bg-white"}`}>
           <span className="text-xs">{saved ? "♥" : "♡"}</span>
         </button>
       </div>
@@ -2127,7 +2127,7 @@ function OrigamiCard({
             <a href={item.guideUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl bg-muted text-muted-foreground text-[10px] font-bold hover:bg-muted/80 transition-colors border border-border">
               {t("components.daily_kids_activity.guide")}
             </a>
-            <button onClick={onDone} className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-colors border ${done ? "bg-green-500 text-white border-green-500" : "bg-muted text-muted-foreground hover:bg-green-100 dark:bg-green-500/20 hover:text-green-700 dark:text-green-200 border-border"}`}>
+            <button onClick={onDone} className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-colors border ${done ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-primary hover:text-primary dark:text-muted-foreground border-border"}`}>
               {done ? "✓ Done" : "Mark Done"}
             </button>
           </div>

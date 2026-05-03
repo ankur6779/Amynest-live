@@ -59,14 +59,14 @@ export default function TermsOfServicePage() {
   const {
     t
   } = useTranslation();
-  return <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-rose-50">
-      <header className="border-b border-slate-200 bg-white/70 backdrop-blur">
+  return <div className="min-h-screen bg-gradient-to-br from-muted via-white to-muted">
+      <header className="border-b border-border bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
           <Link href="/">
             <span className="flex items-center gap-2 cursor-pointer">
               <img src="/amynest-logo.png" alt={t("pages.terms.amynest_ai")} className="h-8 w-8 rounded-full" />
               <span className="font-quicksand text-lg font-black" style={{
-              background: "linear-gradient(90deg,#A855F7,#EC4899,#06B6D4)",
+              background: "linear-gradient(90deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)),hsl(var(--brand-cyan-500)))",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent"
             }}>
@@ -75,31 +75,31 @@ export default function TermsOfServicePage() {
             </span>
           </Link>
           <Link href="/">
-            <span className="text-sm text-slate-500 hover:text-slate-800 cursor-pointer">{t("screens.common.home_link")}</span>
+            <span className="text-sm text-foreground hover:text-foreground cursor-pointer">{t("screens.common.home_link")}</span>
           </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-5 py-10">
-        <h1 className="mb-2 text-3xl font-black text-slate-900">{t("screens.terms.heading")}</h1>
-        <p className="mb-8 text-sm text-slate-400">{t("screens.terms.last_updated")}</p>
+        <h1 className="mb-2 text-3xl font-black text-foreground">{t("screens.terms.heading")}</h1>
+        <p className="mb-8 text-sm text-muted-foreground">{t("screens.terms.last_updated")}</p>
 
-        <p className="my-3 leading-relaxed text-slate-700">
+        <p className="my-3 leading-relaxed text-foreground">
           {t("screens.terms.intro_before")} <strong>{t("pages.terms.amynest_ai_3")}</strong> {t("screens.terms.intro_at")}{" "}
-          <a href="https://amynest.in" className="text-indigo-600 underline hover:text-indigo-800">
+          <a href="https://amynest.in" className="text-primary underline hover:text-primary">
             {t("pages.terms.amynest_in")}
           </a>
           {t("screens.terms.intro_after")}
         </p>
 
         {sections.map(s => <section key={s.title} className="mt-8">
-            <h2 className="mb-3 text-xl font-bold text-slate-900">{s.title}</h2>
-            <p className="leading-relaxed text-slate-700">{s.body}</p>
+            <h2 className="mb-3 text-xl font-bold text-foreground">{s.title}</h2>
+            <p className="leading-relaxed text-foreground">{s.body}</p>
           </section>)}
       </main>
 
-      <footer className="border-t border-slate-200 bg-white/60 py-6">
-        <p className="text-center text-xs text-slate-400">{t("screens.common.copyright")}</p>
+      <footer className="border-t border-border bg-white/60 py-6">
+        <p className="text-center text-xs text-muted-foreground">{t("screens.common.copyright")}</p>
       </footer>
     </div>;
 }

@@ -166,7 +166,7 @@ export function HiddenObjectsGame({
       fontSize: 11
     }}>
         {t("components.games.hidden_objects.found")} <strong style={{
-        color: "#c4b5fd"
+        color: "hsl(var(--brand-violet-300))"
       }}>{foundTargets.size}</strong> / {scene.targets.length}
       </div>
     </div>;

@@ -258,32 +258,32 @@ const SOUNDS: SoundDef[] = [{
   id: "white",
   emoji: "🌫️",
   label: "White Noise",
-  color: "bg-slate-100 dark:bg-slate-500/20 border-slate-300 text-slate-800 dark:text-slate-200"
+  color: "bg-muted dark:bg-card border-border text-foreground dark:text-muted-foreground"
 }, {
   id: "rain",
   emoji: "🌧️",
   label: "Rain",
-  color: "bg-blue-100 dark:bg-blue-500/20 border-blue-300 text-blue-800 dark:text-blue-200"
+  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
 }, {
   id: "heartbeat",
   emoji: "❤️",
   label: "Heartbeat",
-  color: "bg-red-100 dark:bg-red-500/20 border-red-300 text-red-800 dark:text-red-200"
+  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
 }, {
   id: "fan",
   emoji: "💨",
   label: "Fan",
-  color: "bg-cyan-100 dark:bg-cyan-500/20 border-cyan-300 text-cyan-800 dark:text-cyan-200"
+  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
 }, {
   id: "lullaby",
   emoji: "🎵",
   label: "Lullaby",
-  color: "bg-purple-100 dark:bg-purple-500/20 border-purple-300 text-purple-800 dark:text-purple-200"
+  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
 }, {
   id: "ocean",
   emoji: "🌊",
   label: "Ocean",
-  color: "bg-teal-100 dark:bg-teal-500/20 border-teal-300 text-teal-800 dark:text-teal-200"
+  color: "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground"
 }];
 
 // ─── Web Audio engine ────────────────────────────────────────────────────────────
@@ -579,9 +579,9 @@ const CAT_LABEL: Record<TipCategory, string> = {
   soothing: "Soothing Techniques"
 };
 const CAT_COLORS: Record<TipCategory, string> = {
-  routine: "bg-indigo-50 dark:bg-indigo-500/15 border-indigo-200 dark:border-indigo-400/30",
-  environment: "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-400/30",
-  soothing: "bg-purple-50 dark:bg-purple-500/15 border-purple-200 dark:border-purple-400/30"
+  routine: "bg-muted dark:bg-primary border-border dark:border-border",
+  environment: "bg-muted dark:bg-primary border-border dark:border-border",
+  soothing: "bg-muted dark:bg-primary border-border dark:border-border"
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────────
@@ -695,7 +695,7 @@ export function BabySleepAssistant({
 
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Moon className="h-5 w-5 text-indigo-500" />
+        <Moon className="h-5 w-5 text-primary" />
         <h3 className="font-bold text-base">{t("components.baby_sleep_assistant.baby_sleep_assistant")}</h3>
         <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-xs">
           {ageMonths} {t("components.baby_sleep_assistant.month")}{ageMonths !== 1 ? "s" : ""}
@@ -703,16 +703,16 @@ export function BabySleepAssistant({
       </div>
 
       {/* ── Smart Suggestions ────────────────────────────────── */}
-      <Card className="rounded-3xl border-2 border-amber-200 dark:border-amber-400/30 bg-amber-50/50 overflow-hidden">
-        <button onClick={() => setShowSuggestions(v => !v)} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-amber-50 dark:bg-amber-500/15 transition-colors">
+      <Card className="rounded-3xl border-2 border-border dark:border-border bg-muted overflow-hidden">
+        <button onClick={() => setShowSuggestions(v => !v)} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted dark:bg-primary transition-colors">
           <div className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-amber-500" />
+            <Lightbulb className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{t("components.baby_sleep_assistant.smart_suggestions")}</span>
           </div>
           {showSuggestions ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </button>
-        {showSuggestions && <CardContent className="px-5 pb-5 pt-0 border-t border-amber-200 dark:border-amber-400/30 space-y-2">
-            {suggestions.map((s, i) => <div key={i} className="flex items-start gap-3 bg-white/70 rounded-2xl px-3 py-2.5 border border-amber-100 dark:border-amber-400/30">
+        {showSuggestions && <CardContent className="px-5 pb-5 pt-0 border-t border-border dark:border-border space-y-2">
+            {suggestions.map((s, i) => <div key={i} className="flex items-start gap-3 bg-white/70 rounded-2xl px-3 py-2.5 border border-border dark:border-border">
                 <span className="text-xl flex-shrink-0">{s.emoji}</span>
                 <p className="text-sm text-foreground leading-snug">{s.text}</p>
               </div>)}
@@ -723,9 +723,9 @@ export function BabySleepAssistant({
       <Card className="rounded-3xl border-border/50 overflow-hidden">
         <button onClick={() => setShowTips(v => !v)} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-violet-500" />
+            <Star className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{t("components.baby_sleep_assistant.sleep_tips")}</span>
-            <Badge className="bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-200 border-violet-200 dark:border-violet-400/30 text-[10px] px-2 py-0.5 rounded-full">
+            <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border text-[10px] px-2 py-0.5 rounded-full">
               {ageMonths < 3 ? "0–3 mo" : ageMonths < 6 ? "3–6 mo" : "6–12 mo"}
             </Badge>
           </div>
@@ -748,7 +748,7 @@ export function BabySleepAssistant({
                     </p>
                   </div>
                   <div className="flex items-center gap-2 pt-0.5">
-                    <button onClick={() => markTried(tip.id)} className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all ${isTried ? "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-200 border border-green-200 dark:border-green-400/30" : "bg-white/80 text-muted-foreground border border-white hover:bg-white hover:text-foreground"}`}>
+                    <button onClick={() => markTried(tip.id)} className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all ${isTried ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border border-border dark:border-border" : "bg-white/80 text-muted-foreground border border-white hover:bg-white hover:text-foreground"}`}>
                       <CheckCircle2 className="h-3 w-3" />
                       {isTried ? "Tried!" : "Mark as tried"}
                     </button>
@@ -766,7 +766,7 @@ export function BabySleepAssistant({
       <Card className="rounded-3xl border-border/50 overflow-hidden">
         <button onClick={() => setShowChecklist(v => !v)} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-2">
-            <CheckSquare className="h-5 w-5 text-emerald-500" />
+            <CheckSquare className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{t("components.baby_sleep_assistant.pre_sleep_checklist")}</span>
             <span className="text-xs font-bold text-muted-foreground">
               {checkedCount}/{CHECKLIST_ITEMS.length}
@@ -778,23 +778,23 @@ export function BabySleepAssistant({
         {showChecklist && <CardContent className="px-5 pb-5 pt-0 border-t border-border/40 space-y-2">
             {/* Progress bar */}
             <div className="h-2 bg-muted rounded-full overflow-hidden mt-1 mb-3">
-              <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{
+              <div className="h-full bg-primary rounded-full transition-all duration-500" style={{
             width: `${checkedCount / CHECKLIST_ITEMS.length * 100}%`
           }} />
             </div>
 
             {CHECKLIST_ITEMS.map(item => {
           const checked = !!checklist[item.id];
-          return <button key={item.id} onClick={() => toggleCheck(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-left ${checked ? "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-300 text-emerald-800 dark:text-emerald-200" : "bg-muted/30 border-transparent hover:border-muted-foreground/20"}`}>
-                  {checked ? <CheckSquare className="h-5 w-5 text-emerald-500 flex-shrink-0" /> : <Square className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
+          return <button key={item.id} onClick={() => toggleCheck(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-left ${checked ? "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground" : "bg-muted/30 border-transparent hover:border-muted-foreground/20"}`}>
+                  {checked ? <CheckSquare className="h-5 w-5 text-primary flex-shrink-0" /> : <Square className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
                   <span className="text-lg flex-shrink-0">{item.emoji}</span>
-                  <span className={`text-sm font-medium ${checked ? "line-through text-emerald-700 dark:text-emerald-200" : "text-foreground"}`}>
+                  <span className={`text-sm font-medium ${checked ? "line-through text-primary dark:text-muted-foreground" : "text-foreground"}`}>
                     {item.label}
                   </span>
                 </button>;
         })}
 
-            {checkedCount === CHECKLIST_ITEMS.length && <div className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 rounded-2xl px-4 py-2.5 text-sm font-bold border border-emerald-200 dark:border-emerald-400/30">
+            {checkedCount === CHECKLIST_ITEMS.length && <div className="flex items-center gap-2 bg-muted dark:bg-primary text-primary dark:text-muted-foreground rounded-2xl px-4 py-2.5 text-sm font-bold border border-border dark:border-border">
                 <CheckCircle2 className="h-4 w-4" />
                 {t("components.baby_sleep_assistant.all_done_baby_is_ready_for_sleep")}
               </div>}
@@ -809,9 +809,9 @@ export function BabySleepAssistant({
       <Card className="rounded-3xl border-border/50 overflow-hidden">
         <button onClick={() => setShowSounds(v => !v)} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-2">
-            <Volume2 className="h-5 w-5 text-blue-500" />
+            <Volume2 className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{t("components.baby_sleep_assistant.sleep_sounds")}</span>
-            {activeSound && <Badge className="bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-400/30 text-[10px] px-2 py-0.5 rounded-full animate-pulse">
+            {activeSound && <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border text-[10px] px-2 py-0.5 rounded-full animate-pulse">
                 {t("components.baby_sleep_assistant.playing")}
               </Badge>}
           </div>
@@ -826,7 +826,7 @@ export function BabySleepAssistant({
               t
             } = useTranslation();
             const isPlaying = activeSound === sound.id;
-            return <button key={sound.id} onClick={() => playSound(sound.id)} className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl border-2 font-bold text-xs transition-all ${isPlaying ? "bg-blue-500 border-blue-500 text-white shadow-md scale-95" : `${sound.color} hover:scale-95`}`}>
+            return <button key={sound.id} onClick={() => playSound(sound.id)} className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl border-2 font-bold text-xs transition-all ${isPlaying ? "bg-primary border-primary text-white shadow-md scale-95" : `${sound.color} hover:scale-95`}`}>
                     <span className="text-2xl">{sound.emoji}</span>
                     <span>{sound.label}</span>
                     {isPlaying && <span className="text-[10px] opacity-80 animate-pulse">{t("components.baby_sleep_assistant.playing_2")}</span>}
@@ -835,20 +835,20 @@ export function BabySleepAssistant({
             </div>
 
             {/* Playback controls */}
-            {activeSound && <div className="bg-blue-50 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-400/30 rounded-2xl px-4 py-3 space-y-3">
+            {activeSound && <div className="bg-muted dark:bg-primary border border-border dark:border-border rounded-2xl px-4 py-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-blue-800 dark:text-blue-200">
+                  <p className="text-sm font-bold text-primary dark:text-muted-foreground">
                     {SOUNDS.find(s => s.id === activeSound)?.emoji}{" "}
                     {SOUNDS.find(s => s.id === activeSound)?.label}
                   </p>
                   <div className="flex items-center gap-2">
-                    <button onClick={nextSound} className="flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-200 bg-blue-100 dark:bg-blue-500/20 hover:bg-blue-200 dark:bg-blue-500/25 px-2.5 py-1 rounded-full transition-colors">
+                    <button onClick={nextSound} className="flex items-center gap-1 text-xs font-bold text-primary dark:text-muted-foreground bg-muted dark:bg-primary hover:bg-muted dark:bg-primary px-2.5 py-1 rounded-full transition-colors">
                       <SkipForward className="h-3 w-3" /> {t("components.baby_sleep_assistant.next")}
                     </button>
                     <button onClick={() => {
                 engineRef.current?.stop();
                 setActiveSound(null);
-              }} className="flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:bg-red-500/20 px-2.5 py-1 rounded-full transition-colors border border-red-200 dark:border-red-400/30">
+              }} className="flex items-center gap-1 text-xs font-bold text-primary bg-muted dark:bg-primary hover:bg-muted dark:bg-primary px-2.5 py-1 rounded-full transition-colors border border-border dark:border-border">
                       <VolumeX className="h-3 w-3" /> {t("components.baby_sleep_assistant.stop")}
                     </button>
                   </div>
@@ -856,9 +856,9 @@ export function BabySleepAssistant({
 
                 {/* Volume slider */}
                 <div className="flex items-center gap-3">
-                  <VolumeX className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
-                  <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => handleVolumeChange(Number(e.target.value))} className="flex-1 accent-blue-500" />
-                  <Volume2 className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                  <VolumeX className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                  <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => handleVolumeChange(Number(e.target.value))} className="flex-1 accent-primary" />
+                  <Volume2 className="h-3.5 w-3.5 text-primary flex-shrink-0" />
                 </div>
               </div>}
 

@@ -53,25 +53,25 @@ type RoutineItem = {
   parentHubTopic?: string;
 };
 const CATEGORY_STYLES: Record<string, string> = {
-  morning: "bg-amber-100 text-amber-800 border-amber-200",
-  meal: "bg-orange-100 text-orange-800 border-orange-200",
-  school: "bg-blue-100 text-blue-800 border-blue-200",
-  travel: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  homework: "bg-purple-100 text-purple-800 border-purple-200",
-  play: "bg-green-100 text-green-800 border-green-200",
-  exercise: "bg-lime-100 text-lime-800 border-lime-200",
-  screen: "bg-cyan-100 text-cyan-800 border-cyan-200",
-  hygiene: "bg-pink-100 text-pink-800 border-pink-200",
-  sleep: "bg-slate-100 text-slate-600 border-slate-200",
-  "wind-down": "bg-violet-100 text-violet-700 border-violet-200",
-  bonding: "bg-rose-100 text-rose-800 border-rose-200",
-  tiffin: "bg-amber-100 text-amber-800 border-amber-200"
+  morning: "bg-muted text-primary border-border",
+  meal: "bg-muted text-primary border-border",
+  school: "bg-muted text-primary border-border",
+  travel: "bg-muted text-primary border-border",
+  homework: "bg-muted text-primary border-border",
+  play: "bg-muted text-primary border-border",
+  exercise: "bg-muted text-primary border-border",
+  screen: "bg-muted text-primary border-border",
+  hygiene: "bg-muted text-primary border-border",
+  sleep: "bg-muted text-foreground border-border",
+  "wind-down": "bg-muted text-primary border-border",
+  bonding: "bg-muted text-primary border-border",
+  tiffin: "bg-muted text-primary border-border"
 };
 const STATUS_STYLES: Record<ItemStatus, string> = {
   pending: "",
-  completed: "border-green-400 bg-green-50 dark:bg-green-950/40 dark:border-green-700/60",
+  completed: "border-border bg-muted dark:bg-primary dark:border-primary",
   skipped: "border-dashed border-muted-foreground/30 opacity-60",
-  delayed: "border-amber-400 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-700/60"
+  delayed: "border-border bg-muted dark:bg-primary dark:border-primary"
 };
 function parse12hToMinutes(timeStr: string): number {
   const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
@@ -257,7 +257,7 @@ function SlideToComplete({
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
       opacity: Math.max(0, 1 - progress * 2.2)
     }}>
-        <span className="text-xs font-bold text-slate-500 tracking-wide">
+        <span className="text-xs font-bold text-foreground tracking-wide">
           {done ? "✅ Completed!" : "Slide to complete  →"}
         </span>
       </div>
@@ -265,7 +265,7 @@ function SlideToComplete({
       {progress > 0.5 && <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
       opacity: Math.max(0, progress * 2 - 1)
     }}>
-          <span className="text-xs font-black text-green-700 tracking-wide">{t("pages.routines.detail.release_to_complete")}</span>
+          <span className="text-xs font-black text-primary tracking-wide">{t("pages.routines.detail.release_to_complete")}</span>
         </div>}
       {/* Knob */}
       <div className="absolute top-1 rounded-full bg-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing" style={{
@@ -275,7 +275,7 @@ function SlideToComplete({
       transition: dragging ? "none" : "left 0.3s cubic-bezier(0.34,1.56,0.64,1)",
       touchAction: "none"
     }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-        <Check className={`h-4 w-4 transition-colors ${done ? "text-green-600" : "text-slate-400"}`} />
+        <Check className={`h-4 w-4 transition-colors ${done ? "text-primary" : "text-muted-foreground"}`} />
       </div>
     </div>;
 }
@@ -340,9 +340,9 @@ function RoutineItemModal({
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className="text-white/80 text-xs font-medium">{item.time} · {item.duration}m</span>
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-sm">{item.category}</span>
-              {status === "completed" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/80 text-white">{t("pages.routines.detail.done")}</span>}
-              {status === "skipped" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-500/80 text-white">{t("pages.routines.detail.skipped")}</span>}
-              {status === "delayed" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/80 text-white">{t("pages.routines.detail.delayed")}</span>}
+              {status === "completed" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary text-white">{t("pages.routines.detail.done")}</span>}
+              {status === "skipped" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-card text-white">{t("pages.routines.detail.skipped")}</span>}
+              {status === "delayed" && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary text-white">{t("pages.routines.detail.delayed")}</span>}
               {item.ageBand && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/25 text-white border border-white/30 backdrop-blur-sm inline-flex items-center gap-1">
                   <Users className="h-3 w-3" />
                   {t("pages.routines.detail.ages")} {item.ageBand.replace("-", "–")}
@@ -354,9 +354,9 @@ function RoutineItemModal({
         {/* Body */}
         <div className="p-5 space-y-4">
           {/* Skip reason */}
-          {item.skipReason && <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-2xl p-3">
-              <span className="text-amber-500 mt-0.5">⚠️</span>
-              <p className="text-sm text-amber-800 font-medium leading-relaxed" style={{
+          {item.skipReason && <div className="flex items-start gap-2 bg-muted border border-border rounded-2xl p-3">
+              <span className="text-primary mt-0.5">⚠️</span>
+              <p className="text-sm text-primary font-medium leading-relaxed" style={{
             wordBreak: "break-word"
           }}>{item.skipReason}</p>
             </div>}
@@ -365,7 +365,7 @@ function RoutineItemModal({
           {item.notes && item.notes.startsWith("Options:") ? <div className="space-y-2">
               <p className="text-sm font-bold text-foreground">{t("pages.routines.detail.meal_options")}</p>
               <div className="flex flex-wrap gap-2">
-                {item.notes.replace("Options:", "").split("|").map((opt, oi) => <span key={oi} className="text-sm font-medium px-3 py-1.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+                {item.notes.replace("Options:", "").split("|").map((opt, oi) => <span key={oi} className="text-sm font-medium px-3 py-1.5 rounded-full bg-muted text-primary border border-border">
                     {opt.trim()}
                   </span>)}
               </div>
@@ -384,14 +384,14 @@ function RoutineItemModal({
               <button onClick={() => {
             onComplete();
             onClose();
-          }} className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 active:scale-95 transition-all">
+          }} className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-muted border border-border text-primary hover:bg-muted active:scale-95 transition-all">
                 <Check className="h-5 w-5" />
                 <span className="text-xs font-bold">{t("pages.routines.detail.complete")}</span>
               </button>
               <button onClick={() => {
             onDelay();
             onClose();
-          }} className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 active:scale-95 transition-all">
+          }} className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-muted border border-border text-primary hover:bg-muted active:scale-95 transition-all">
                 <Clock className="h-5 w-5" />
                 <span className="text-xs font-bold">{t("pages.routines.detail.delay_15m")}</span>
               </button>
@@ -1308,7 +1308,7 @@ export default function RoutineDetail() {
             <VoiceSettingsPanel onToggle={enabled => setVoiceOn(enabled)} />
 
             <Link href="/parenting-hub">
-              <Button variant="outline" size="sm" className="rounded-full gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+              <Button variant="outline" size="sm" className="rounded-full gap-2 border-border text-primary hover:bg-muted">
                 <BookOpen className="h-4 w-4" />
                 {t("pages.routines.detail.hub")}
               </Button>
@@ -1354,7 +1354,7 @@ export default function RoutineDetail() {
               {childPhotoUrl ? <img src={childPhotoUrl} alt={routine.childName} className="w-5 h-5 rounded-full object-cover" /> : <User className="h-3.5 w-3.5" />}
               {routine.childName}
             </div>
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${dateMode === "today" ? "bg-primary/10 text-primary border border-primary/30 font-bold" : dateMode === "future" ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-muted text-muted-foreground border border-border"}`}>
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${dateMode === "today" ? "bg-primary/10 text-primary border border-primary/30 font-bold" : dateMode === "future" ? "bg-muted text-primary border border-border" : "bg-muted text-muted-foreground border border-border"}`}>
               <CalendarIcon className="h-3.5 w-3.5" />
               {new Date(routine.date + "T00:00:00").toLocaleDateString(undefined, {
               weekday: "long",
@@ -1362,7 +1362,7 @@ export default function RoutineDetail() {
               day: "numeric"
             })}
               {dateMode === "today" && <span className="ml-1 text-[10px] font-black uppercase tracking-wide bg-primary text-white rounded-full px-1.5 py-0.5">{t("pages.routines.detail.today")}</span>}
-              {dateMode === "future" && <span className="ml-1 text-[10px] font-black uppercase tracking-wide bg-blue-600 text-white rounded-full px-1.5 py-0.5">{t("pages.routines.detail.upcoming")}</span>}
+              {dateMode === "future" && <span className="ml-1 text-[10px] font-black uppercase tracking-wide bg-primary text-white rounded-full px-1.5 py-0.5">{t("pages.routines.detail.upcoming")}</span>}
               {dateMode === "past" && <span className="ml-1 text-[10px] font-black uppercase tracking-wide bg-muted-foreground text-white rounded-full px-1.5 py-0.5">{t("pages.routines.detail.past")}</span>}
             </div>
             {/* Day starts at badge — shows the first activity time (= wake time) */}
@@ -1372,7 +1372,7 @@ export default function RoutineDetail() {
             } = useTranslation();
             const firstTime = routine.items.find(it => it.category !== "sleep" && !/sleep|bedtime/i.test(it.activity))?.time;
             if (!firstTime) return null;
-            return <div className="flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full text-sm font-bold">
+            return <div className="flex items-center gap-1.5 bg-muted text-primary border border-border px-3 py-1 rounded-full text-sm font-bold">
                   <Clock className="h-3.5 w-3.5" />
                   {t("pages.routines.detail.day_starts_at")} {firstTime}
                 </div>;
@@ -1380,7 +1380,7 @@ export default function RoutineDetail() {
           </div>
 
           {/* Date mode banners */}
-          {dateMode === "future" && <div className="mt-3 flex items-center gap-2.5 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 text-sm text-blue-800">
+          {dateMode === "future" && <div className="mt-3 flex items-center gap-2.5 bg-muted border border-border rounded-2xl px-4 py-3 text-sm text-primary">
               <span className="text-lg">📅</span>
               <span><strong>{t("pages.routines.detail.future_routine")}</strong> {t("pages.routines.detail.all_tasks_are_shown_as_scheduled_you_can_start_interacting_o")}</span>
             </div>}
@@ -1425,18 +1425,18 @@ export default function RoutineDetail() {
           </div>}
 
         {/* Amy AI suggests banner — driven by the Adaptive Engine */}
-        <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 flex items-start gap-3">
-          <div className="bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm">
+        <div className="rounded-2xl border-2 border-border bg-gradient-to-r from-muted to-muted p-4 flex items-start gap-3">
+          <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm">
             <Sparkles className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide mb-0.5">{t("pages.routines.detail.amy_ai_suggests")}</p>
-            <p className="text-sm text-emerald-900 font-medium leading-snug">{amyTip}</p>
+            <p className="text-xs font-bold text-primary uppercase tracking-wide mb-0.5">{t("pages.routines.detail.amy_ai_suggests")}</p>
+            <p className="text-sm text-primary font-medium leading-snug">{amyTip}</p>
             {dateMode === "today" && (dailySummary.delayed > 0 || dailySummary.adjusted > 0) && <div className="flex flex-wrap gap-1.5 mt-2">
-                {dailySummary.delayed > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                {dailySummary.delayed > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-primary border border-border">
                     ⏱ {dailySummary.delayed} {t("pages.routines.detail.delayed_2")}
                   </span>}
-                {dailySummary.adjusted > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+                {dailySummary.adjusted > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-primary border border-border">
                     ⚡ {dailySummary.adjusted} {t("pages.routines.detail.auto_adjusted")}
                   </span>}
               </div>}
@@ -1446,14 +1446,14 @@ export default function RoutineDetail() {
 
 
       {/* Amy AI editing tip — guides parents to the Edit button on every task */}
-      {dateMode !== "past" && items.some(i => i.status !== "completed" && i.status !== "skipped") && <div className="rounded-2xl border-2 border-violet-200 bg-violet-50 dark:bg-violet-950/30 dark:border-violet-700/50 p-3 flex items-start gap-2.5">
-          <div className="bg-violet-500 text-white w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-sm">
+      {dateMode !== "past" && items.some(i => i.status !== "completed" && i.status !== "skipped") && <div className="rounded-2xl border-2 border-border bg-muted dark:bg-primary dark:border-primary p-3 flex items-start gap-2.5">
+          <div className="bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-sm">
             <Sparkles className="h-3.5 w-3.5" />
           </div>
-          <p className="text-xs text-violet-900 dark:text-violet-100 font-medium leading-snug">
-            <strong className="text-violet-700 dark:text-violet-200">{t("pages.routines.detail.tip_from_amy_ai")}</strong>{" "}
+          <p className="text-xs text-primary dark:text-muted-foreground font-medium leading-snug">
+            <strong className="text-primary dark:text-muted-foreground">{t("pages.routines.detail.tip_from_amy_ai")}</strong>{" "}
             {t("pages.routines.detail.tap_the")}{" "}
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border border-violet-300 bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-100 font-bold text-[10px] align-middle">
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border border-border bg-muted text-primary dark:bg-primary dark:text-muted-foreground font-bold text-[10px] align-middle">
               <Pencil className="h-2.5 w-2.5" /> {t("pages.routines.detail.edit")}
             </span>{" "}
             {t("pages.routines.detail.chip_on_any_task_to_change_its_time_name_or_duration_i_ll_ke")}
@@ -1470,7 +1470,7 @@ export default function RoutineDetail() {
         const {
           t
         } = useTranslation();
-        return <button key={band} type="button" onClick={() => setAgeBandFilter(ageBandFilter === band ? null : band)} className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${ageBandFilter === band ? "bg-sky-500 text-white border-sky-500" : "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800"}`} aria-pressed={ageBandFilter === band}>
+        return <button key={band} type="button" onClick={() => setAgeBandFilter(ageBandFilter === band ? null : band)} className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${ageBandFilter === band ? "bg-primary text-white border-primary" : "bg-muted text-primary border-border hover:bg-muted dark:bg-primary dark:text-muted-foreground dark:border-primary"}`} aria-pressed={ageBandFilter === band}>
               {t("pages.routines.detail.ages_2")} {band.replace("-", "–")} ({ageBandCounts[band] ?? 0})
             </button>;
       })}
@@ -1518,18 +1518,18 @@ export default function RoutineDetail() {
                 </div>
 
                 {/* Activity Card — click to expand */}
-                <Card className={`flex-1 min-w-0 rounded-2xl shadow-sm border-2 overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer ${item.category === "school" ? "border-indigo-200 bg-indigo-50/40" : isCurrentTask ? "border-primary ring-2 ring-primary/20 shadow-md" : item.category === "bonding" && !statusStyle ? "border-rose-200" : statusStyle || "border-border"}`} onClick={() => editingIndex === null && setExpandedIndex(index)}>
-                  {item.category === "school" && <div className="bg-indigo-100/70 border-b border-indigo-200 px-4 py-1.5 flex items-center gap-1.5">
-                      <span className="text-indigo-500 text-xs">🏫</span>
-                      <span className="text-indigo-700 text-xs font-bold">{t("pages.routines.detail.in_school_protected_time")}</span>
+                <Card className={`flex-1 min-w-0 rounded-2xl shadow-sm border-2 overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer ${item.category === "school" ? "border-border bg-muted" : isCurrentTask ? "border-primary ring-2 ring-primary/20 shadow-md" : item.category === "bonding" && !statusStyle ? "border-border" : statusStyle || "border-border"}`} onClick={() => editingIndex === null && setExpandedIndex(index)}>
+                  {item.category === "school" && <div className="bg-muted border-b border-border px-4 py-1.5 flex items-center gap-1.5">
+                      <span className="text-primary text-xs">🏫</span>
+                      <span className="text-primary text-xs font-bold">{t("pages.routines.detail.in_school_protected_time")}</span>
                     </div>}
-                  {item.category === "bonding" && <div className="bg-rose-50 border-b border-rose-100 px-4 py-1.5 flex items-center gap-1.5">
-                      <span className="text-rose-500 text-xs">❤️</span>
-                      <span className="text-rose-600 text-xs font-bold">{t("pages.routines.detail.family_bonding_time")}</span>
+                  {item.category === "bonding" && <div className="bg-muted border-b border-border px-4 py-1.5 flex items-center gap-1.5">
+                      <span className="text-primary text-xs">❤️</span>
+                      <span className="text-primary text-xs font-bold">{t("pages.routines.detail.family_bonding_time")}</span>
                     </div>}
-                  {item.category === "tiffin" && <div className="bg-amber-50 border-b border-amber-100 px-4 py-1.5 flex items-center gap-1.5">
-                      <span className="text-amber-500 text-xs">🍱</span>
-                      <span className="text-amber-700 text-xs font-bold">{t("pages.routines.detail.tiffin_lunchbox_prep")}</span>
+                  {item.category === "tiffin" && <div className="bg-muted border-b border-border px-4 py-1.5 flex items-center gap-1.5">
+                      <span className="text-primary text-xs">🍱</span>
+                      <span className="text-primary text-xs font-bold">{t("pages.routines.detail.tiffin_lunchbox_prep")}</span>
                     </div>}
                   {isCurrentTask && <div className="bg-primary/10 border-b border-primary/20 px-4 py-1.5 flex items-center gap-1.5">
                       <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
@@ -1545,8 +1545,8 @@ export default function RoutineDetail() {
                         const img = getActivityImage(item.category, item.activity, seed);
                         return <>
                                 <img src={img.src} alt={item.activity} className={`w-full h-full object-cover ${status === "skipped" ? "grayscale opacity-50" : status === "completed" ? "opacity-80" : ""}`} />
-                                {status === "completed" && <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
-                                    <div className="bg-green-500 rounded-full w-5 h-5 flex items-center justify-center">
+                                {status === "completed" && <div className="absolute inset-0 bg-primary flex items-center justify-center">
+                                    <div className="bg-primary rounded-full w-5 h-5 flex items-center justify-center">
                                       <span className="text-white text-[10px] font-black">✓</span>
                                     </div>
                                   </div>}
@@ -1608,26 +1608,26 @@ export default function RoutineDetail() {
 
                           {/* Status & category chips — wrap onto new line on small screens */}
                           <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                            {status === "completed" && <Badge className="bg-green-100 text-green-700 border-green-200 rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.done_2")}</Badge>}
-                            {status === "skipped" && item.skipReason && <Badge className="bg-amber-100 text-amber-700 border-amber-200 rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.auto_skipped")}</Badge>}
+                            {status === "completed" && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.done_2")}</Badge>}
+                            {status === "skipped" && item.skipReason && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.auto_skipped")}</Badge>}
                             {status === "skipped" && !item.skipReason && <Badge className="bg-muted text-muted-foreground border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.skipped_2")}</Badge>}
-                            {status === "delayed" && <Badge className="bg-amber-100 text-amber-700 border-amber-200 rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.delayed_3")}</Badge>}
-                            {item.adjusted && status !== "completed" && <Badge className="bg-violet-100 text-violet-700 border-violet-200 rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5" title={t("pages.routines.detail.auto_adjusted_by_amy_ai")}>
+                            {status === "delayed" && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5">{t("pages.routines.detail.delayed_3")}</Badge>}
+                            {item.adjusted && status !== "completed" && <Badge className="bg-muted text-primary border-border rounded-full text-[10px] sm:text-xs font-bold px-2 py-0.5" title={t("pages.routines.detail.auto_adjusted_by_amy_ai")}>
                                 {t("pages.routines.detail.adjusted")}
                               </Badge>}
                             <Badge className={`rounded-full text-[10px] sm:text-xs font-bold border px-2 py-0.5 ${catStyle}`}>
                               {item.category}
                             </Badge>
-                            {priority === "high" && status === "pending" && !isCurrentTask && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-600 bg-rose-50 border border-rose-200 rounded-full px-1.5 py-0.5">
+                            {priority === "high" && status === "pending" && !isCurrentTask && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wide text-primary bg-muted border border-border rounded-full px-1.5 py-0.5">
                                 {t("pages.routines.detail.essential")}
                               </span>}
-                            {item.ageBand && <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-1.5 py-0.5">
+                            {item.ageBand && <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-bold text-primary bg-muted border border-border rounded-full px-1.5 py-0.5">
                                 <Users className="h-2.5 w-2.5" />
                                 {t("pages.routines.detail.ages_3")} {item.ageBand.replace("-", "–")}
                               </span>}
                           </div>
                           {/* Auto-skip reason */}
-                          {item.skipReason && <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1 font-medium">
+                          {item.skipReason && <p className="text-[11px] text-primary bg-muted border border-border rounded-lg px-2 py-1 mt-1 font-medium">
                               {item.skipReason}
                             </p>}
                           {item.notes && item.notes.startsWith("Options:") ? <div className="mt-1.5 space-y-1.5">
@@ -1635,7 +1635,7 @@ export default function RoutineDetail() {
                               <div className="flex flex-wrap gap-1.5">
                                 {item.notes.replace("Options:", "").split("|").map((opt, oi) => {
                               const meal = opt.trim();
-                              return <button key={oi} onClick={() => fetchRecipe(meal)} className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors">
+                              return <button key={oi} onClick={() => fetchRecipe(meal)} className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-primary border border-border hover:bg-muted transition-colors">
                                       <ChefHat className="h-3 w-3" />
                                       {meal}
                                     </button>;
@@ -1656,7 +1656,7 @@ export default function RoutineDetail() {
                         </div>}
                       {/* Quick action row for delayed/non-pending */}
                       {isInteractive && editingIndex !== index && status === "delayed" && <div className="flex gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => updateItemStatus(index, "completed")} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors border border-green-200">
+                          <button onClick={() => updateItemStatus(index, "completed")} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted text-primary hover:bg-muted transition-colors border border-border">
                             <Check className="h-3 w-3" /> {t("pages.routines.detail.complete_2")}
                           </button>
                           <button onClick={() => updateItemStatus(index, "skipped")} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors border border-border">
@@ -1691,16 +1691,16 @@ export default function RoutineDetail() {
     }} routineId={routineId} seed={expandedIndex !== null ? (routineId ?? 0) * 100 + expandedIndex : 0} />
 
       {/* ── Global floating undo chip ───────────────────────────────── */}
-      {undoSnapshot && <div data-on-dark className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-4 py-2.5 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+      {undoSnapshot && <div data-on-dark className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-card text-white px-4 py-2.5 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
           <span className="text-sm font-medium">{undoLabel}</span>
-          <button onClick={handleUndo} className="text-sm font-black text-amber-400 hover:text-amber-300 transition-colors">
+          <button onClick={handleUndo} className="text-sm font-black text-primary hover:text-muted-foreground transition-colors">
             {t("pages.routines.detail.undo_2")}
           </button>
-          <button onClick={clearUndo} className="text-gray-400 hover:text-white text-xs ml-1">✕</button>
+          <button onClick={clearUndo} className="text-muted-foreground hover:text-white text-xs ml-1">✕</button>
         </div>}
 
       {/* ── Daily Summary (today + past) ────────────────────────────── */}
-      {dateMode !== "future" && totalCount > 0 && <div className="mt-4 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-violet-500/5 to-pink-500/5 p-4 sm:p-5 space-y-3">
+      {dateMode !== "future" && totalCount > 0 && <div className="mt-4 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-primary to-primary p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-bold text-base sm:text-lg text-foreground flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -1711,21 +1711,21 @@ export default function RoutineDetail() {
             </span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="rounded-xl bg-green-50 border border-green-200 px-3 py-2 text-center">
-              <div className="text-lg font-black text-green-700">{dailySummary.completed}</div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-green-700">{t("pages.routines.detail.done_4")}</div>
+            <div className="rounded-xl bg-muted border border-border px-3 py-2 text-center">
+              <div className="text-lg font-black text-primary">{dailySummary.completed}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-primary">{t("pages.routines.detail.done_4")}</div>
             </div>
-            <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-center">
-              <div className="text-lg font-black text-amber-700">{dailySummary.delayed}</div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700">{t("pages.routines.detail.delayed_4")}</div>
+            <div className="rounded-xl bg-muted border border-border px-3 py-2 text-center">
+              <div className="text-lg font-black text-primary">{dailySummary.delayed}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-primary">{t("pages.routines.detail.delayed_4")}</div>
             </div>
-            <div className="rounded-xl bg-violet-50 border border-violet-200 px-3 py-2 text-center">
-              <div className="text-lg font-black text-violet-700">{dailySummary.adjusted}</div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-violet-700">{t("pages.routines.detail.adjusted_2")}</div>
+            <div className="rounded-xl bg-muted border border-border px-3 py-2 text-center">
+              <div className="text-lg font-black text-primary">{dailySummary.adjusted}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-primary">{t("pages.routines.detail.adjusted_2")}</div>
             </div>
-            <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-center">
-              <div className="text-lg font-black text-slate-700">{dailySummary.skipped}</div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-slate-700">{t("pages.routines.detail.skipped_3")}</div>
+            <div className="rounded-xl bg-muted border border-border px-3 py-2 text-center">
+              <div className="text-lg font-black text-foreground">{dailySummary.skipped}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-foreground">{t("pages.routines.detail.skipped_3")}</div>
             </div>
           </div>
           <div className="flex items-start gap-2 rounded-xl bg-card border border-border px-3 py-2">
@@ -1758,13 +1758,13 @@ export default function RoutineDetail() {
         <DialogContent className="rounded-2xl max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-quicksand flex items-center gap-2">
-              <ChefHat className="h-5 w-5 text-orange-500" />
+              <ChefHat className="h-5 w-5 text-primary" />
               {recipeLoading ? "Loading Recipe..." : recipeData?.name ?? selectedMeal}
             </DialogTitle>
           </DialogHeader>
 
           {recipeLoading && <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <div className="bg-orange-50 text-orange-500 w-16 h-16 rounded-full flex items-center justify-center">
+              <div className="bg-muted text-primary w-16 h-16 rounded-full flex items-center justify-center">
                 <ChefHat className="h-8 w-8 animate-bounce" />
               </div>
               <p className="text-muted-foreground text-sm">{t("pages.routines.detail.generating_recipe")}</p>
@@ -1773,18 +1773,18 @@ export default function RoutineDetail() {
           {recipeData && !recipeLoading && <div className="space-y-5">
               {/* Quick stats */}
               <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col items-center bg-orange-50 rounded-xl p-2.5 text-center">
-                  <Timer className="h-4 w-4 text-orange-500 mb-1" />
+                <div className="flex flex-col items-center bg-muted rounded-xl p-2.5 text-center">
+                  <Timer className="h-4 w-4 text-primary mb-1" />
                   <p className="text-xs font-bold text-foreground">{recipeData.prepTime}</p>
                   <p className="text-xs text-muted-foreground">{t("pages.routines.detail.prep")}</p>
                 </div>
-                <div className="flex flex-col items-center bg-red-50 rounded-xl p-2.5 text-center">
-                  <Timer className="h-4 w-4 text-red-500 mb-1" />
+                <div className="flex flex-col items-center bg-muted rounded-xl p-2.5 text-center">
+                  <Timer className="h-4 w-4 text-primary mb-1" />
                   <p className="text-xs font-bold text-foreground">{recipeData.cookTime}</p>
                   <p className="text-xs text-muted-foreground">{t("pages.routines.detail.cook")}</p>
                 </div>
-                <div className="flex flex-col items-center bg-green-50 rounded-xl p-2.5 text-center">
-                  <Users className="h-4 w-4 text-green-600 mb-1" />
+                <div className="flex flex-col items-center bg-muted rounded-xl p-2.5 text-center">
+                  <Users className="h-4 w-4 text-primary mb-1" />
                   <p className="text-xs font-bold text-foreground">{recipeData.servings}</p>
                   <p className="text-xs text-muted-foreground">{t("pages.routines.detail.serves")}</p>
                 </div>
@@ -1797,7 +1797,7 @@ export default function RoutineDetail() {
                 <h4 className="font-bold text-sm mb-2 text-foreground">{t("pages.routines.detail.ingredients")}</h4>
                 <ul className="space-y-1.5">
                   {recipeData.ingredients?.map((ing: string, i: number) => <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                      <span className="text-orange-400 font-bold mt-0.5">•</span>
+                      <span className="text-primary font-bold mt-0.5">•</span>
                       {ing}
                     </li>)}
                 </ul>
@@ -1813,7 +1813,7 @@ export default function RoutineDetail() {
                 step: number;
                 instruction: string;
               }) => <li key={s.step} className="flex gap-3">
-                      <span className="bg-orange-100 text-orange-700 font-bold text-xs rounded-full h-5 w-5 flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
+                      <span className="bg-muted text-primary font-bold text-xs rounded-full h-5 w-5 flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
                       <p className="text-sm text-foreground/80 leading-relaxed">{s.instruction}</p>
                     </li>)}
                 </ol>
@@ -1821,9 +1821,9 @@ export default function RoutineDetail() {
 
               {recipeData.tips && <>
                   <Separator />
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                    <p className="text-xs font-bold text-amber-800 mb-1">{t("pages.routines.detail.parent_tip")}</p>
-                    <p className="text-xs text-amber-700 leading-relaxed">{recipeData.tips}</p>
+                  <div className="bg-muted border border-border rounded-xl p-3">
+                    <p className="text-xs font-bold text-primary mb-1">{t("pages.routines.detail.parent_tip")}</p>
+                    <p className="text-xs text-primary leading-relaxed">{recipeData.tips}</p>
                   </div>
                 </>}
             </div>}
@@ -1874,19 +1874,19 @@ export default function RoutineDetail() {
         <DialogContent className="rounded-2xl max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-quicksand flex items-center gap-2">
-              <Moon className="h-5 w-5 text-indigo-500" />
+              <Moon className="h-5 w-5 text-primary" />
               {t("pages.routines.detail.great_job_today")}
             </DialogTitle>
             <DialogDescription className="text-sm">
               {t("pages.routines.detail.bedtime_is_done_should_ai_generate_tomorrow_s_routine_automa")}
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-sm text-indigo-800">
+          <div className="bg-muted border border-border rounded-xl p-3 text-sm text-primary">
             <p className="font-medium mb-0.5">{t("pages.routines.detail.tomorrow_s_schedule_will_include")}</p>
-            <p className="text-xs text-indigo-600">{t("pages.routines.detail.weekend_or_school_day_activities_detected_automatically")}<br />{t("pages.routines.detail.balanced_meals_play_learning_rest")}<br />{t("pages.routines.detail.ready_the_moment_you_wake_up")}</p>
+            <p className="text-xs text-primary">{t("pages.routines.detail.weekend_or_school_day_activities_detected_automatically")}<br />{t("pages.routines.detail.balanced_meals_play_learning_rest")}<br />{t("pages.routines.detail.ready_the_moment_you_wake_up")}</p>
           </div>
           <div className="flex gap-2">
-            <Button className="flex-1 rounded-full bg-indigo-600 hover:bg-indigo-700" onClick={handleNextDayGen} disabled={nextDayLoading}>
+            <Button className="flex-1 rounded-full bg-primary hover:bg-primary" onClick={handleNextDayGen} disabled={nextDayLoading}>
               {nextDayLoading ? <><RotateCcw className="h-4 w-4 mr-2 animate-spin" />{t("pages.routines.detail.generating")}</> : <><Sparkles className="h-4 w-4 mr-2" />{t("pages.routines.detail.generate_tomorrow")}</>}
             </Button>
             <Button variant="outline" className="rounded-full" onClick={() => setNextDayDialogOpen(false)}>

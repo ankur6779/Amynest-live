@@ -56,40 +56,40 @@ function GiftTokenCard({
     }
     onCopy(token.giftCode);
   };
-  return <div className={["rounded-2xl border p-4 space-y-3", isAvailable ? "border-violet-400/40 bg-violet-50 dark:bg-violet-500/10" : "border-border bg-muted/30 opacity-60"].join(" ")}>
+  return <div className={["rounded-2xl border p-4 space-y-3", isAvailable ? "border-border bg-muted dark:bg-primary" : "border-border bg-muted/30 opacity-60"].join(" ")}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Ticket className={`h-4 w-4 ${isAvailable ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"}`} />
+          <Ticket className={`h-4 w-4 ${isAvailable ? "text-primary dark:text-primary" : "text-muted-foreground"}`} />
           <span className="font-quicksand font-bold text-sm">
             {t("screens.referrals.gift_card_days", {
             count: token.bonusDays
           })}
           </span>
         </div>
-        <Badge variant="secondary" className={`text-[10px] uppercase font-bold ${isAvailable ? "bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300" : token.status === "redeemed" ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300" : "text-muted-foreground"}`}>
+        <Badge variant="secondary" className={`text-[10px] uppercase font-bold ${isAvailable ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : token.status === "redeemed" ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : "text-muted-foreground"}`}>
           {token.status === "available" ? t("screens.referrals.status_available") : token.status === "redeemed" ? t("screens.referrals.status_redeemed") : token.status === "expired" ? t("screens.referrals.status_expired") : t("screens.referrals.status_used")}
         </Badge>
       </div>
 
-      <div className="flex items-center justify-between gap-2 rounded-xl border border-dashed border-violet-400/50 bg-white/60 dark:bg-white/5 px-3 py-2">
-        <code className="font-mono font-bold tracking-widest text-violet-700 dark:text-violet-300 text-sm">
+      <div className="flex items-center justify-between gap-2 rounded-xl border border-dashed border-border bg-white/60 dark:bg-white/5 px-3 py-2">
+        <code className="font-mono font-bold tracking-widest text-primary dark:text-muted-foreground text-sm">
           {token.giftCode}
         </code>
         {isAvailable && <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => onCopy(token.giftCode)}>
-            {copied === token.giftCode ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied === token.giftCode ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
             {copied === token.giftCode ? t("screens.referrals.copied") : t("screens.referrals.copy")}
           </Button>}
       </div>
 
       {isAvailable && <div className="flex gap-2">
-          <Button size="sm" className="flex-1 gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs" onClick={shareGift}>
+          <Button size="sm" className="flex-1 gap-1.5 bg-primary hover:bg-primary text-white text-xs" onClick={shareGift}>
             <Send className="h-3.5 w-3.5" />
             {t("screens.referrals.share_gift")}
           </Button>
           <a href={`https://wa.me/?text=${encodeURIComponent(t("screens.referrals.whatsapp_gift_text", {
         days: token.bonusDays,
         code: token.giftCode
-      }))}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-md border border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition">
+      }))}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted dark:bg-primary px-3 text-xs font-semibold text-primary dark:text-muted-foreground hover:bg-muted transition">
             <MessageCircle className="h-3.5 w-3.5" />
             {t("screens.referrals.whatsapp")}
           </a>
@@ -149,17 +149,17 @@ function RedeemGiftSection({
   };
   return <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-4">
       <div className="flex items-center gap-2">
-        <Gift className="h-5 w-5 text-amber-500" />
+        <Gift className="h-5 w-5 text-primary" />
         <h2 className="font-quicksand text-lg font-bold">{t("screens.referrals.redeem_heading")}</h2>
       </div>
       <p className="text-sm text-muted-foreground">
         {t("screens.referrals.redeem_subtitle")}
       </p>
 
-      {state === "success" ? <div className="rounded-2xl border border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 p-4 flex items-center gap-3">
-          <Check className="h-5 w-5 text-emerald-600 shrink-0" />
+      {state === "success" ? <div className="rounded-2xl border border-border bg-muted dark:bg-primary p-4 flex items-center gap-3">
+          <Check className="h-5 w-5 text-primary shrink-0" />
           <div>
-            <p className="font-semibold text-emerald-800 dark:text-emerald-200">
+            <p className="font-semibold text-primary dark:text-muted-foreground">
               {bonusDays > 0 ? t("screens.referrals.gift_redeemed_with_days", {
             days: bonusDays
           }) : t("screens.referrals.gift_redeemed_added")}
@@ -175,7 +175,7 @@ function RedeemGiftSection({
             {t("screens.referrals.redeem_button")}
           </Button>
         </div>}
-      {state === "error" && <p className="text-sm text-red-600 dark:text-red-400">{errorMsg}</p>}
+      {state === "error" && <p className="text-sm text-primary dark:text-primary">{errorMsg}</p>}
     </div>;
 }
 
@@ -256,7 +256,7 @@ export default function ReferralsPage() {
   };
   return <div className="space-y-6 pb-12">
       {/* Hero card */}
-      <div data-on-dark className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-amber-500 p-6 sm:p-8 text-white shadow-xl">
+      <div data-on-dark className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary p-6 sm:p-8 text-white shadow-xl">
         <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
         <div className="relative space-y-3">
@@ -299,7 +299,7 @@ export default function ReferralsPage() {
               {stats.code}
             </span>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => copy(stats.code)}>
-              {copied === stats.code ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+              {copied === stats.code ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
               {copied === stats.code ? t("screens.referrals.copied") : t("screens.referrals.copy")}
             </Button>
           </div>
@@ -318,7 +318,7 @@ export default function ReferralsPage() {
           <a href={`https://wa.me/?text=${encodeURIComponent(t("screens.referrals.whatsapp_share_text", {
           code: stats.code,
           link
-        }))}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition">
+        }))}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-muted dark:bg-primary px-3 py-2 text-sm font-semibold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary transition">
             <MessageCircle className="h-4 w-4" /> {t("screens.referrals.whatsapp")}
           </a>
           <a href={`mailto:?subject=${encodeURIComponent(t("screens.referrals.email_subject"))}&body=${encodeURIComponent(t("screens.referrals.email_body", {
@@ -331,12 +331,12 @@ export default function ReferralsPage() {
       </div>
 
       {/* Gift Tokens section — shown when user has any tokens */}
-      {giftTokens.length > 0 && <div className="rounded-3xl border border-violet-400/40 bg-card p-5 sm:p-6 shadow-sm space-y-4">
+      {giftTokens.length > 0 && <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-quicksand text-lg font-bold flex items-center gap-2">
-              <Ticket className="h-5 w-5 text-violet-500" /> {t("screens.referrals.your_gift_tokens")}
+              <Ticket className="h-5 w-5 text-primary" /> {t("screens.referrals.your_gift_tokens")}
             </h2>
-            <Badge variant="secondary" className="font-bold bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">
+            <Badge variant="secondary" className="font-bold bg-muted dark:bg-primary text-primary dark:text-muted-foreground">
               {t("screens.referrals.available_label", {
             count: availableGifts.length
           })}
@@ -363,7 +363,7 @@ export default function ReferralsPage() {
       <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="font-quicksand text-lg font-bold flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-amber-500" /> {t("screens.referrals.progress")}
+            <Trophy className="h-5 w-5 text-primary" /> {t("screens.referrals.progress")}
           </h2>
           <Badge variant="secondary" className="font-bold">
             {t("screens.referrals.rewards_count", {
@@ -393,13 +393,13 @@ export default function ReferralsPage() {
               {stats.paidReferrals} / {stats.paidThreshold}
             </span>
           </div>
-          <Progress value={paidProgress} className="h-2 [&>div]:bg-emerald-500" />
+          <Progress value={paidProgress} className="h-2 [&>div]:bg-primary" />
           <p className="text-xs text-muted-foreground mt-1.5">
             {t("screens.referrals.paid_helper")}
           </p>
         </div>
 
-        {capReached ? <div className="rounded-2xl border border-amber-400/40 bg-amber-50 dark:bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200 inline-flex items-center gap-2">
+        {capReached ? <div className="rounded-2xl border border-border bg-muted dark:bg-primary p-3 text-sm text-primary dark:text-muted-foreground inline-flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
             {t("screens.referrals.max_reached", {
           count: stats.rewardCap
@@ -427,12 +427,12 @@ export default function ReferralsPage() {
           } = useTranslation();
           return <div key={r.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-2.5">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className={`h-2 w-2 rounded-full shrink-0 ${r.status === "paid" ? "bg-emerald-500" : r.status === "valid" ? "bg-violet-500" : "bg-amber-400"}`} />
+                  <span className={`h-2 w-2 rounded-full shrink-0 ${r.status === "paid" ? "bg-primary" : r.status === "valid" ? "bg-primary" : "bg-muted"}`} />
                   <span className="text-sm font-semibold truncate">{t("screens.referrals.friend_label", {
                   id: r.id
                 })}</span>
                 </div>
-                <Badge variant={r.status === "paid" ? "default" : "secondary"} className={`text-[10px] uppercase font-bold ${r.status === "paid" ? "bg-emerald-500 hover:bg-emerald-500" : r.status === "valid" ? "bg-violet-500 hover:bg-violet-500 text-white" : ""}`}>
+                <Badge variant={r.status === "paid" ? "default" : "secondary"} className={`text-[10px] uppercase font-bold ${r.status === "paid" ? "bg-primary hover:bg-primary" : r.status === "valid" ? "bg-primary hover:bg-primary text-white" : ""}`}>
                   {r.status === "paid" ? t("screens.referrals.status_paid") : r.status === "valid" ? t("screens.referrals.status_active") : t("screens.referrals.status_pending")}
                 </Badge>
               </div>;

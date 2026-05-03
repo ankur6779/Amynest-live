@@ -107,11 +107,11 @@ export function RoutineInlineMeals({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region, audience, childAge, isVeg, mealType]);
-  return <div className="mt-2.5 rounded-xl border border-orange-100 dark:border-orange-400/20 bg-orange-50/60 dark:bg-orange-500/5 overflow-hidden">
+  return <div className="mt-2.5 rounded-xl border border-border dark:border-border bg-muted dark:bg-primary overflow-hidden">
       {/* Header */}
-      <div className="px-3 py-2 flex items-center gap-2 border-b border-orange-100 dark:border-orange-400/15">
+      <div className="px-3 py-2 flex items-center gap-2 border-b border-border dark:border-border">
         <AmyIcon size={15} bounce />
-        <p className="text-[11.5px] font-bold text-orange-700 dark:text-orange-300">
+        <p className="text-[11.5px] font-bold text-primary dark:text-muted-foreground">
           {t("components.routine_inline_meals.amy_ai_meal_suggestions")}
         </p>
         {amyMsg && <p className="text-[10px] text-muted-foreground ml-auto truncate max-w-[180px] hidden sm:block">
@@ -121,7 +121,7 @@ export function RoutineInlineMeals({
 
       {/* Cards */}
       {loading ? <div className="flex gap-2 px-3 py-2 overflow-hidden">
-          {[0, 1, 2, 3].map(i => <div key={i} className="shrink-0 w-[130px] h-[130px] rounded-xl bg-orange-100/60 dark:bg-orange-500/10 animate-pulse" />)}
+          {[0, 1, 2, 3].map(i => <div key={i} className="shrink-0 w-[130px] h-[130px] rounded-xl bg-muted dark:bg-primary animate-pulse" />)}
         </div> : meals.length === 0 ? <p className="text-[11px] text-muted-foreground px-3 py-3">{t("components.routine_inline_meals.no_suggestions_available_right_now")}</p> : <div className="flex gap-2 px-3 py-2.5 overflow-x-auto scroll-smooth" style={{
       scrollbarWidth: "none"
     }}>
@@ -143,7 +143,7 @@ function MiniMealCard({
   meal: AiMeal;
   onOpen: (e: React.MouseEvent) => void;
 }) {
-  return <button onClick={onOpen} className="group shrink-0 w-[130px] rounded-xl overflow-hidden border border-border bg-card hover:border-orange-300 dark:hover:border-orange-500/50 hover:shadow-sm transition-all text-left">
+  return <button onClick={onOpen} className="group shrink-0 w-[130px] rounded-xl overflow-hidden border border-border bg-card hover:border-border dark:hover:border-primary hover:shadow-sm transition-all text-left">
       <div className="relative h-[70px] flex items-center justify-center text-[38px]" style={{
       background: `linear-gradient(135deg, ${meal.bgGradient[0]}, ${meal.bgGradient[1]})`
     }}>
@@ -196,13 +196,13 @@ function RecipeSheet({
           <div>
             <h3 className="font-quicksand font-black text-xl text-foreground">{meal.title}</h3>
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {meal.tags.map(t => <span key={t} className="text-[10px] font-bold uppercase bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-200 px-2 py-0.5 rounded-full">
+              {meal.tags.map(t => <span key={t} className="text-[10px] font-bold uppercase bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full">
                   {t}
                 </span>)}
-              <span className="text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              <span className="text-[10px] font-bold uppercase bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                 <Clock className="h-2.5 w-2.5" /> {meal.prepMinutes} {t("components.routine_inline_meals.min")}
               </span>
-              {meal.calories > 0 && <span className="text-[10px] font-bold uppercase bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              {meal.calories > 0 && <span className="text-[10px] font-bold uppercase bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                   <Flame className="h-2.5 w-2.5" /> {meal.calories} {t("components.routine_inline_meals.kcal")}
                 </span>}
             </div>
@@ -210,7 +210,7 @@ function RecipeSheet({
 
           <div>
             <p className="font-bold text-sm text-foreground mb-2 flex items-center gap-1.5">
-              <Utensils className="h-3.5 w-3.5 text-orange-500" /> {t("components.routine_inline_meals.ingredients")}
+              <Utensils className="h-3.5 w-3.5 text-primary" /> {t("components.routine_inline_meals.ingredients")}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {meal.ingredients.map(ing => <span key={ing} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted border border-border text-foreground/80">
@@ -221,11 +221,11 @@ function RecipeSheet({
 
           <div>
             <p className="font-bold text-sm text-foreground mb-2 flex items-center gap-1.5">
-              <ChefHat className="h-3.5 w-3.5 text-orange-500" /> {t("components.routine_inline_meals.steps")}
+              <ChefHat className="h-3.5 w-3.5 text-primary" /> {t("components.routine_inline_meals.steps")}
             </p>
             <ol className="space-y-2">
               {meal.steps.map((step, i) => <li key={i} className="flex gap-2.5 text-sm leading-snug">
-                  <span className="shrink-0 h-5 w-5 rounded-full bg-orange-500 text-white text-[11px] font-black flex items-center justify-center mt-0.5">
+                  <span className="shrink-0 h-5 w-5 rounded-full bg-primary text-white text-[11px] font-black flex items-center justify-center mt-0.5">
                     {i + 1}
                   </span>
                   <span className="text-foreground/90">{step}</span>

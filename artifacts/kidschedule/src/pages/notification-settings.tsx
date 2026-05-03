@@ -84,26 +84,26 @@ function WebPushCard() {
   } = useWebPush();
   const label = status === "granted" ? "Enabled" : status === "denied" ? "Blocked in browser" : status === "unsupported" ? "Not supported in this browser" : status === "requesting" ? "Requesting permission…" : status === "error" ? "Setup failed — try again" : "Not enabled";
   const Icon = status === "granted" ? CheckCircle2 : status === "denied" || status === "error" ? XCircle : status === "requesting" ? Loader2 : Monitor;
-  const iconColor = status === "granted" ? "text-green-400" : status === "denied" || status === "error" ? "text-red-400" : "text-purple-300";
-  return <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md">
+  const iconColor = status === "granted" ? "text-primary" : status === "denied" || status === "error" ? "text-primary" : "text-muted-foreground";
+  return <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
       <CardContent className="flex items-start gap-4 p-4">
-        <div className="w-10 h-10 rounded-lg bg-purple-500/15 border border-purple-400/20 flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-lg bg-primary border border-border flex items-center justify-center shrink-0">
           <Icon className={`w-5 h-5 ${iconColor} ${status === "requesting" ? "animate-spin" : ""}`} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-white">{t("pages.notification_settings.browser_notifications")}</div>
-          <div className="text-sm text-purple-200/70 mt-1">
+          <div className="text-sm text-muted-foreground mt-1">
             {t("pages.notification_settings.receive_amynest_alerts_directly_in_this_browser_even_when_th")}
           </div>
-          <div className="text-xs text-purple-300/60 mt-1">{label}</div>
+          <div className="text-xs text-muted-foreground mt-1">{label}</div>
           {status !== "unsupported" && <div className="flex gap-2 mt-2">
-              {status !== "granted" && <Button type="button" size="sm" variant="ghost" className="h-7 text-purple-300 hover:text-white hover:bg-purple-500/20" onClick={enable} disabled={status === "requesting" || status === "denied"}>
+              {status !== "granted" && <Button type="button" size="sm" variant="ghost" className="h-7 text-muted-foreground hover:text-white hover:bg-primary" onClick={enable} disabled={status === "requesting" || status === "denied"}>
                   {status === "requesting" ? "Enabling…" : "Enable"}
                 </Button>}
-              {status === "granted" && <Button type="button" size="sm" variant="ghost" className="h-7 text-purple-300/60 hover:text-white hover:bg-purple-500/10" onClick={disable}>
+              {status === "granted" && <Button type="button" size="sm" variant="ghost" className="h-7 text-muted-foreground hover:text-white hover:bg-primary" onClick={disable}>
                   {t("pages.notification_settings.disable")}
                 </Button>}
-              {status === "denied" && <span className="text-xs text-red-300/70 mt-1 self-center">
+              {status === "denied" && <span className="text-xs text-muted-foreground mt-1 self-center">
                   {t("pages.notification_settings.unblock_in_browser_settings_site_permissions_notifications")}
                 </span>}
             </div>}
@@ -231,7 +231,7 @@ export default function NotificationSettingsPage() {
   });
   if (isLoading || !local) {
     return <div data-on-dark className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0D0022] via-[#180040] to-[#0A001E]">
-        <div className="h-8 w-8 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
+        <div className="h-8 w-8 rounded-full border-2 border-border border-t-transparent animate-spin" />
       </div>;
   }
   const toggle = (key: keyof Prefs, value: boolean) => {
@@ -246,29 +246,29 @@ export default function NotificationSettingsPage() {
   };
   return <div data-on-dark className="min-h-screen bg-gradient-to-br from-[#0D0022] via-[#180040] to-[#0A001E] py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <button type="button" onClick={() => navigate("/dashboard")} className="flex items-center gap-1 text-purple-200/80 hover:text-white mb-6 text-sm">
+        <button type="button" onClick={() => navigate("/dashboard")} className="flex items-center gap-1 text-muted-foreground hover:text-white mb-6 text-sm">
           <ChevronLeft className="w-4 h-4" />
           {t("pages.notification_settings.back")}
         </button>
 
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center">
-            <Bell className="w-5 h-5 text-purple-300" />
+          <div className="w-10 h-10 rounded-xl bg-primary border border-border flex items-center justify-center">
+            <Bell className="w-5 h-5 text-muted-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-white">{t("pages.notification_settings.notifications")}</h1>
         </div>
-        <p className="text-purple-200/70 text-sm mb-8 leading-relaxed">
+        <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
           {t("pages.notification_settings.choose_which_notifications_you_want_from_amynest_maximum")} {local.dailyCap} {t("pages.notification_settings.per_day_never_during_quiet_hours")}
         </p>
 
-        <h2 className="text-xs uppercase tracking-widest text-purple-400/60 mb-3">
+        <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
           {t("pages.notification_settings.this_browser")}
         </h2>
         <div className="mb-6">
           <WebPushCard />
         </div>
 
-        <h2 className="text-xs uppercase tracking-widest text-purple-400/60 mb-3">
+        <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
           {t("pages.notification_settings.notification_types")}
         </h2>
         <div className="space-y-3">
@@ -286,18 +286,18 @@ export default function NotificationSettingsPage() {
             return (
               <Card
                 key={cat.key}
-                className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md"
+                className="bg-white/[0.04] border-primary backdrop-blur-md"
               >
                 <CardContent className="flex items-start gap-4 p-4">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/15 border border-purple-400/20 flex items-center justify-center shrink-0">
-                    <Icon className="w-5 h-5 text-purple-300" />
+                  <div className="w-10 h-10 rounded-lg bg-primary border border-border flex items-center justify-center shrink-0">
+                    <Icon className="w-5 h-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-white">{title}</div>
-                    <div className="text-sm text-purple-200/70 mt-1">
+                    <div className="text-sm text-muted-foreground mt-1">
                       {description}
                     </div>
-                    {enabled && <Button type="button" size="sm" variant="ghost" className="mt-2 h-7 text-purple-300 hover:text-white hover:bg-purple-500/20" onClick={() => test.mutate(cat.testCategory)} disabled={test.isPending}>
+                    {enabled && <Button type="button" size="sm" variant="ghost" className="mt-2 h-7 text-muted-foreground hover:text-white hover:bg-primary" onClick={() => test.mutate(cat.testCategory)} disabled={test.isPending}>
                         {test.isPending ? "Sending…" : "Send test"}
                       </Button>}
                   </div>
@@ -308,15 +308,15 @@ export default function NotificationSettingsPage() {
           })}
         </div>
 
-        <Card className="mt-6 bg-white/[0.04] border-purple-500/20 backdrop-blur-md">
+        <Card className="mt-6 bg-white/[0.04] border-primary backdrop-blur-md">
           <CardHeader>
             <CardTitle className="text-base text-white">{t("pages.notification_settings.quiet_hours")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-purple-300 font-bold text-lg">
+            <div className="text-muted-foreground font-bold text-lg">
               {local.quietHoursStart} → {local.quietHoursEnd}
             </div>
-            <div className="text-purple-200/60 text-sm mt-1">
+            <div className="text-muted-foreground text-sm mt-1">
               {t("pages.notification_settings.timezone")} {local.timezone}{t("pages.notification_settings.we_never_send_notifications_during_this_window")}
             </div>
           </CardContent>
@@ -325,52 +325,52 @@ export default function NotificationSettingsPage() {
         <button
           type="button"
           onClick={() => navigate("/notification-diagnostics")}
-          className="mt-6 w-full flex items-center gap-3 rounded-xl border border-purple-400/30 bg-purple-500/10 hover:bg-purple-500/20 px-4 py-3 text-left transition"
+          className="mt-6 w-full flex items-center gap-3 rounded-xl border border-border bg-primary hover:bg-primary px-4 py-3 text-left transition"
         >
-          <HelpCircle className="w-5 h-5 text-purple-300 shrink-0" />
+          <HelpCircle className="w-5 h-5 text-muted-foreground shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-white">
               Why didn't I get my notification?
             </div>
-            <div className="text-xs text-purple-200/70">
+            <div className="text-xs text-muted-foreground">
               Check token health, quiet hours and recent failures.
             </div>
           </div>
-          <ChevronLeft className="w-4 h-4 text-purple-300 rotate-180 shrink-0" />
+          <ChevronLeft className="w-4 h-4 text-muted-foreground rotate-180 shrink-0" />
         </button>
 
-        <h2 className="text-xs uppercase tracking-widest text-purple-400/60 mt-8 mb-3">
+        <h2 className="text-xs uppercase tracking-widest text-primary mt-8 mb-3">
           {t("toasts.notification_settings_page.recent_deliveries")}
         </h2>
-        <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md">
+        <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
           <CardContent className="p-2">
             {history.isLoading ? (
-              <div className="p-4 text-purple-200/70 text-sm">{t("toasts.notification_settings_page.history_loading")}</div>
+              <div className="p-4 text-muted-foreground text-sm">{t("toasts.notification_settings_page.history_loading")}</div>
             ) : !history.data || history.data.items.length === 0 ? (
-              <div className="p-4 text-purple-200/70 text-sm">
+              <div className="p-4 text-muted-foreground text-sm">
                 {t("toasts.notification_settings_page.history_empty")}
               </div>
             ) : (
-              <ul className="divide-y divide-purple-500/10">
+              <ul className="divide-y divide-border">
                 {history.data.items.slice(0, 10).map((row) => {
                   const ok = row.status === "sent";
                   return (
                     <li key={row.id} className="p-3 flex items-start gap-3">
                       {ok ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                        <XCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-white truncate">
                           {row.title}
                         </div>
-                        <div className="text-xs text-purple-200/60 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           {row.category} · {row.status}
                           {row.errorMessage ? ` · ${row.errorMessage}` : ""}
                         </div>
                       </div>
-                      <div className="text-xs text-purple-300/60 shrink-0">
+                      <div className="text-xs text-muted-foreground shrink-0">
                         {new Date(row.sentAt).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit"

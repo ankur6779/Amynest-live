@@ -223,14 +223,14 @@ function FeedingReference({
     t
   } = useTranslation();
   const feed = getFeedingGuide(ageMonths);
-  return <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-400/20 p-3">
+  return <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3">
       <div className="flex items-center gap-2 mb-2">
-        <Flame className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-        <p className="text-xs font-bold text-amber-900 dark:text-amber-200">{t("components.infant_hub.feeding_guide")}</p>
+        <Flame className="h-4 w-4 text-primary dark:text-primary" />
+        <p className="text-xs font-bold text-primary dark:text-muted-foreground">{t("components.infant_hub.feeding_guide")}</p>
       </div>
-      <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{feed.type}</p>
-      <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">{feed.freq}</p>
-      <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-1.5 leading-snug">{feed.tip}</p>
+      <p className="text-xs font-semibold text-primary dark:text-muted-foreground">{feed.type}</p>
+      <p className="text-xs text-primary dark:text-primary mt-0.5">{feed.freq}</p>
+      <p className="text-[11px] text-primary dark:text-primary mt-1.5 leading-snug">{feed.tip}</p>
     </div>;
 }
 
@@ -243,14 +243,14 @@ function DailyActivities({
   const band = getBand(ageMonths);
   const activities = ACTIVITIES[band] ?? [];
   return <div className="space-y-2.5">
-      {activities.map(a => <div key={a.title} className="rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200/60 dark:border-sky-400/20 p-3 flex gap-3">
+      {activities.map(a => <div key={a.title} className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3 flex gap-3">
           <span className="text-2xl leading-none shrink-0">{a.emoji}</span>
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-              <p className="font-bold text-sm text-sky-900 dark:text-sky-100">{a.title}</p>
-              <span className="text-[10px] font-bold text-sky-500 dark:text-sky-400 ml-auto shrink-0">{a.duration}</span>
+              <p className="font-bold text-sm text-primary dark:text-muted-foreground">{a.title}</p>
+              <span className="text-[10px] font-bold text-primary dark:text-primary ml-auto shrink-0">{a.duration}</span>
             </div>
-            <p className="text-[12px] text-sky-800/80 dark:text-sky-200/80 leading-snug">{a.desc}</p>
+            <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{a.desc}</p>
           </div>
         </div>)}
     </div>;
@@ -278,16 +278,16 @@ function VaxRow({
   const {
     t
   } = useTranslation();
-  const containerCls = tone === "amber" ? "rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-400/20 px-2 py-1.5" : "rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-400/20 px-2 py-1.5";
-  const labelCls = tone === "amber" ? "text-[11px] font-bold text-amber-800 dark:text-amber-300" : "text-[11px] font-bold text-rose-800 dark:text-rose-300";
-  const subCls = tone === "amber" ? "text-[11px] text-amber-700/80 dark:text-amber-400/80" : "text-[11px] text-rose-700/80 dark:text-rose-400/80";
+  const containerCls = tone === "amber" ? "rounded-lg bg-muted dark:bg-primary border border-border dark:border-border px-2 py-1.5" : "rounded-lg bg-muted dark:bg-primary border border-border dark:border-border px-2 py-1.5";
+  const labelCls = tone === "amber" ? "text-[11px] font-bold text-primary dark:text-muted-foreground" : "text-[11px] font-bold text-primary dark:text-muted-foreground";
+  const subCls = tone === "amber" ? "text-[11px] text-primary dark:text-primary" : "text-[11px] text-primary dark:text-primary";
   return <div className={`${containerCls} mb-1`} data-testid={`vax-row-${v.ageLabel}`}>
       <div className="flex items-start gap-2">
-        {tone === "amber" ? <AlertTriangle className="h-3 w-3 text-amber-600 shrink-0 mt-0.5" /> : <X className="h-3 w-3 text-rose-600 shrink-0 mt-0.5" />}
+        {tone === "amber" ? <AlertTriangle className="h-3 w-3 text-primary shrink-0 mt-0.5" /> : <X className="h-3 w-3 text-primary shrink-0 mt-0.5" />}
         <div className="flex-1 min-w-0">
           <p className={labelCls}>
             {v.ageLabel}
-            {status === "missed" && <span className="ml-2 inline-block px-1 py-px rounded text-[9px] font-bold uppercase tracking-wider bg-rose-200 text-rose-900 dark:bg-rose-500/30 dark:text-rose-200">
+            {status === "missed" && <span className="ml-2 inline-block px-1 py-px rounded text-[9px] font-bold uppercase tracking-wider bg-muted text-primary dark:bg-primary dark:text-muted-foreground">
                 {t("components.infant_hub.missed")}
               </span>}
           </p>
@@ -295,11 +295,11 @@ function VaxRow({
         </div>
       </div>
       <div className="mt-1.5 flex flex-wrap gap-1.5 pl-5">
-        <button type="button" disabled={busy} onClick={() => onSet(v.ageLabel, status === "done" ? null : "done")} aria-pressed={status === "done"} data-testid={`vax-done-${v.ageLabel}`} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${status === "done" ? "bg-emerald-500 border-emerald-500 text-white" : "bg-white/60 dark:bg-white/5 border-emerald-300/70 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"}`}>
+        <button type="button" disabled={busy} onClick={() => onSet(v.ageLabel, status === "done" ? null : "done")} aria-pressed={status === "done"} data-testid={`vax-done-${v.ageLabel}`} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${status === "done" ? "bg-primary border-primary text-white" : "bg-white/60 dark:bg-white/5 border-border dark:border-primary text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary"}`}>
           {busy ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <CheckCircle2 className="h-2.5 w-2.5" />}
           {t("components.infant_hub.done")}
         </button>
-        <button type="button" disabled={busy} onClick={() => onSet(v.ageLabel, status === "missed" ? null : "missed")} aria-pressed={status === "missed"} data-testid={`vax-missed-${v.ageLabel}`} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${status === "missed" ? "bg-rose-500 border-rose-500 text-white" : "bg-white/60 dark:bg-white/5 border-rose-300/70 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10"}`}>
+        <button type="button" disabled={busy} onClick={() => onSet(v.ageLabel, status === "missed" ? null : "missed")} aria-pressed={status === "missed"} data-testid={`vax-missed-${v.ageLabel}`} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${status === "missed" ? "bg-primary border-primary text-white" : "bg-white/60 dark:bg-white/5 border-border dark:border-primary text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary"}`}>
           {busy ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <X className="h-2.5 w-2.5" />}
           {t("components.infant_hub.missed_2")}
         </button>
@@ -403,45 +403,45 @@ function HealthCare({
   const completedPct = Math.round(summary.done / Math.max(1, summary.total) * 100);
   return <div className="space-y-3">
       {/* Vaccination status */}
-      <div className="rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200/60 dark:border-teal-400/20 p-3" data-testid="vax-summary">
+      <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3" data-testid="vax-summary">
         <div className="flex items-center gap-2 mb-2">
-          <Syringe className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-          <p className="text-xs font-bold text-teal-900 dark:text-teal-200">
+          <Syringe className="h-4 w-4 text-primary dark:text-primary" />
+          <p className="text-xs font-bold text-primary dark:text-muted-foreground">
             {t("components.infant_hub.vaccination_tracker")}
           </p>
         </div>
 
-        <p className="text-[11px] text-teal-900/85 dark:text-teal-200/85 mb-1">
-          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+        <p className="text-[11px] text-primary dark:text-muted-foreground mb-1">
+          <span className="font-bold text-primary dark:text-primary">
             {summary.done}
           </span>{" "}
           {t("components.infant_hub.completed")}{" "}
-          <span className="font-bold text-amber-600 dark:text-amber-400">
+          <span className="font-bold text-primary dark:text-primary">
             {summary.pending}
           </span>{" "}
           {t("components.infant_hub.pending_of")} {summary.total} {t("components.infant_hub.total")}
         </p>
-        <div className="h-1.5 rounded-full bg-teal-100 dark:bg-teal-900/40 overflow-hidden mb-2">
-          <div className="h-full rounded-full bg-emerald-500 transition-all" style={{
+        <div className="h-1.5 rounded-full bg-muted dark:bg-primary overflow-hidden mb-2">
+          <div className="h-full rounded-full bg-primary transition-all" style={{
           width: `${completedPct}%`
         }} />
         </div>
 
         {upcoming.length > 0 && <div className="mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-primary mb-1">
               {t("components.infant_hub.upcoming_due_now")}
             </p>
             {upcoming.map(v => <VaxRow key={v.ageLabel} v={v} status={logMap[v.ageLabel]} busy={pendingLabel === v.ageLabel} onSet={setStatus} tone="amber" />)}
           </div>}
 
         {overdue.length > 0 && <div className="mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400 mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-primary mb-1">
               {t("components.infant_hub.pending_past_doses_to_confirm")}
             </p>
             {overdue.map(v => <VaxRow key={v.ageLabel} v={v} status={logMap[v.ageLabel]} busy={pendingLabel === v.ageLabel} onSet={setStatus} tone="rose" />)}
           </div>}
 
-        <p className="text-[10px] text-teal-700/70 dark:text-teal-400/70 leading-snug">
+        <p className="text-[10px] text-primary dark:text-primary leading-snug">
           {t("components.infant_hub.always_confirm_schedule_with_your_paediatrician_some_states_")}
         </p>
       </div>
@@ -476,23 +476,23 @@ function WeeklyInsight({
   } = useTranslation();
   const insight = getWeeklyInsight(childName, ageMonths);
   return <div className="space-y-3">
-      <div className="rounded-xl bg-gradient-to-br from-violet-100/80 to-fuchsia-100/80 dark:from-violet-900/30 dark:to-fuchsia-900/30 border border-violet-200/60 dark:border-violet-400/20 p-4">
+      <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-4">
         <div className="flex items-center gap-2 mb-2">
-          <Star className="h-4 w-4 text-violet-600 dark:text-violet-400 fill-violet-400" />
-          <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300">{t("components.infant_hub.this_week_s_insight")}</p>
+          <Star className="h-4 w-4 text-primary dark:text-primary fill-primary" />
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">{t("components.infant_hub.this_week_s_insight")}</p>
         </div>
-        <p className="font-bold text-sm text-violet-900 dark:text-violet-100 leading-snug mb-2">
+        <p className="font-bold text-sm text-primary dark:text-muted-foreground leading-snug mb-2">
           {insight.headline}
         </p>
-        <p className="text-[12px] text-violet-800/80 dark:text-violet-200/80 leading-relaxed">
+        <p className="text-[12px] text-primary dark:text-muted-foreground leading-relaxed">
           {insight.body}
         </p>
       </div>
-      <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-400/20 p-3 flex gap-2.5">
-        <Lightbulb className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+      <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3 flex gap-2.5">
+        <Lightbulb className="h-4 w-4 text-primary dark:text-primary shrink-0 mt-0.5" />
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 mb-0.5">{t("components.infant_hub.try_this_week")}</p>
-          <p className="text-[12px] text-emerald-800/90 dark:text-emerald-200/90 leading-snug">{insight.next}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-primary mb-0.5">{t("components.infant_hub.try_this_week")}</p>
+          <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{insight.next}</p>
         </div>
       </div>
     </div>;
@@ -525,12 +525,12 @@ export function InfantHub({
   };
   return <div className="space-y-3">
       {/* ── Header card with tips ──────────────────────────────────────────── */}
-      <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-pink-50/60 via-violet-50/40 to-sky-50/60 dark:from-pink-950/20 dark:via-violet-950/20 dark:to-sky-950/20 backdrop-blur-xl overflow-hidden">
+      <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary backdrop-blur-xl overflow-hidden">
         <CardContent className="p-4 sm:p-5 space-y-4">
           {/* Header */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-pink-600 dark:text-pink-300 mb-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground mb-0.5">
                 👶 {t("infant_hub.title")}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -552,7 +552,7 @@ export function InfantHub({
             return <button key={cat.key} onClick={() => {
               setActive(cat.key);
               setTipIndex(0);
-            }} className={["shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold transition-all duration-200", "backdrop-blur-md border", isActive ? "bg-white/80 dark:bg-white/10 border-violet-400/60 dark:border-violet-300/40 text-violet-900 dark:text-violet-100 shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_8px_24px_-8px_rgba(168,85,247,0.45)]" : "bg-white/40 dark:bg-white/5 border-white/60 dark:border-white/10 text-muted-foreground hover:border-violet-300/60"].join(" ")} aria-pressed={isActive}>
+            }} className={["shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold transition-all duration-200", "backdrop-blur-md border", isActive ? "bg-white/80 dark:bg-white/10 border-border dark:border-border text-primary dark:text-muted-foreground shadow-[0_0_0_1px_rgba(168,85,247,0.35),0_8px_24px_-8px_rgba(168,85,247,0.45)]" : "bg-white/40 dark:bg-white/5 border-white/60 dark:border-white/10 text-muted-foreground hover:border-border"].join(" ")} aria-pressed={isActive}>
                   <span className="text-base leading-none">{cat.emoji}</span>
                   <span>{t(`infant_hub.tabs.${cat.key}`)}</span>
                 </button>;
@@ -560,14 +560,14 @@ export function InfantHub({
           </div>
 
           {/* Amy AI Insight */}
-          <div className="rounded-2xl bg-gradient-to-br from-violet-100/70 to-fuchsia-100/70 dark:from-violet-900/30 dark:to-fuchsia-900/30 border border-violet-200/60 dark:border-violet-400/20 p-3.5">
+          <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3.5">
             <div className="flex items-center gap-2 mb-1.5">
-              <Brain className="h-4 w-4 text-violet-600 dark:text-violet-300" />
-              <p className="text-xs font-bold text-violet-900 dark:text-violet-100">
+              <Brain className="h-4 w-4 text-primary dark:text-muted-foreground" />
+              <p className="text-xs font-bold text-primary dark:text-muted-foreground">
                 {t("infant_hub.amy_suggests")}
               </p>
             </div>
-            <p className="text-sm text-violet-900/90 dark:text-violet-50 leading-snug">
+            <p className="text-sm text-primary dark:text-muted-foreground leading-snug">
               <span className="mr-1">{insight.emoji}</span>
               {pickLang(insight, lang)}
             </p>
@@ -597,11 +597,11 @@ export function InfantHub({
               return toast({
                 description: t("infant_hub.thanks")
               });
-            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-200 dark:hover:bg-emerald-500/25 transition-colors">
+            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-primary transition-colors">
                   <ThumbsUp className="h-3.5 w-3.5" />
                   {t("infant_hub.helpful")}
                 </button>
-                <button onClick={handleNext} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 text-xs font-bold hover:bg-violet-200 dark:hover:bg-violet-500/25 transition-colors">
+                <button onClick={handleNext} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-primary transition-colors">
                   <RotateCcw className="h-3.5 w-3.5" />
                   {t("infant_hub.next_tip")}
                 </button>
@@ -612,7 +612,7 @@ export function InfantHub({
               return toast({
                 description: t("infant_hub.tried_logged")
               });
-            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-bold hover:bg-amber-200 dark:hover:bg-amber-500/25 transition-colors">
+            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-primary transition-colors">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {t("infant_hub.tried_this")}
                 </button>
@@ -626,7 +626,7 @@ export function InfantHub({
 
           {/* Safety footer */}
           <div className="flex items-start gap-2 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
-            <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-600/70" />
+            <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
             <p className="leading-snug">{t("infant_hub.safe_disclaimer")}</p>
           </div>
         </CardContent>
@@ -636,23 +636,23 @@ export function InfantHub({
           MAJOR SECTION — Infant Parenting (0–24 months only)
           Glass + glow wrapper grouping all 7 infant tools under one umbrella.
           ══════════════════════════════════════════════════════════════════════ */}
-      {ageMonths >= 0 && ageMonths < 24 && <Card className="relative overflow-hidden rounded-3xl border-2 border-violet-300/40 dark:border-violet-400/20 shadow-[0_8px_40px_-12px_rgba(168,85,247,0.4)] bg-gradient-to-br from-violet-50/60 via-fuchsia-50/40 to-pink-50/60 dark:from-violet-950/30 dark:via-fuchsia-950/20 dark:to-pink-950/30 backdrop-blur-xl">
+      {ageMonths >= 0 && ageMonths < 24 && <Card className="relative overflow-hidden rounded-3xl border-2 border-border dark:border-border shadow-[0_8px_40px_-12px_rgba(168,85,247,0.4)] bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary backdrop-blur-xl">
           {/* Glow accents */}
-          <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-fuchsia-400/25 dark:bg-fuchsia-500/15 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-violet-400/25 dark:bg-violet-500/15 blur-3xl" />
-          <div className="pointer-events-none absolute top-1/2 left-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-300/15 dark:bg-pink-500/10 blur-2xl" />
+          <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-muted dark:bg-primary blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-muted dark:bg-primary blur-3xl" />
+          <div className="pointer-events-none absolute top-1/2 left-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted dark:bg-primary blur-2xl" />
 
           <CardContent className="relative p-4 sm:p-5 space-y-3">
             {/* Major section header */}
-            <button type="button" onClick={() => setIsParentingOpen(v => !v)} className="w-full flex items-start gap-3 pb-3 border-b border-violet-200/50 dark:border-violet-400/20 text-left" aria-expanded={isParentingOpen}>
-              <div className="shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-[0_6px_20px_-4px_rgba(217,70,239,0.6)] ring-1 ring-white/40 dark:ring-white/10">
+            <button type="button" onClick={() => setIsParentingOpen(v => !v)} className="w-full flex items-start gap-3 pb-3 border-b border-border dark:border-border text-left" aria-expanded={isParentingOpen}>
+              <div className="shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-primary via-primary to-primary flex items-center justify-center shadow-[0_6px_20px_-4px_rgba(217,70,239,0.6)] ring-1 ring-white/40 dark:ring-white/10">
                 <Baby className="h-5 w-5 text-white drop-shadow" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300 mb-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground mb-0.5">
                   {t("components.infant_hub.major_section")}
                 </p>
-                <h2 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-violet-700 via-fuchsia-700 to-pink-700 dark:from-violet-200 dark:via-fuchsia-200 dark:to-pink-200 bg-clip-text text-transparent leading-tight">
+                <h2 className="text-base sm:text-lg font-extrabold bg-gradient-to-r from-primary via-primary to-primary dark:from-muted dark:via-muted dark:to-muted bg-clip-text text-transparent leading-tight">
                   {t("components.infant_hub.infant_parenting")}
                 </h2>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
@@ -679,19 +679,19 @@ export function InfantHub({
                 <IHSection icon={<BedDouble className="h-4 w-4" />} title={t("components.infant_hub.sleep_system")} badge="Live">
                   <div className="space-y-5">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-2">{t("components.infant_hub.wake_window_tracker")}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2">{t("components.infant_hub.wake_window_tracker")}</p>
                       <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-2">{t("components.infant_hub.issue_detection")}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2">{t("components.infant_hub.issue_detection")}</p>
                       <SleepIssueDetector childName={childName} ageMonths={ageMonths} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2">{t("components.infant_hub.daily_routine_builder")}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2">{t("components.infant_hub.daily_routine_builder")}</p>
                       <RoutineBuilder childName={childName} ageMonths={ageMonths} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2">{t("components.infant_hub.weekly_insights")}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2">{t("components.infant_hub.weekly_insights")}</p>
                       <SleepWeeklyInsights childName={childName} ageMonths={ageMonths} />
                     </div>
                   </div>
@@ -731,14 +731,14 @@ export function InfantHub({
                 <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.parent_coaching")} badge="Interactive">
                   <div className="space-y-5">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 mb-2 flex items-center gap-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2 flex items-center gap-1">
                         <ListChecks className="h-3 w-3" />
                         {t("components.infant_hub.baby_cues_engine")}
                       </p>
                       <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-400 mb-2 flex items-center gap-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2 flex items-center gap-1">
                         <MessageCircle className="h-3 w-3" />
                         {t("components.infant_hub.communication_coaching")}
                       </p>

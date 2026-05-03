@@ -59,27 +59,27 @@ const BAND_META: Record<PressureBand, {
 }> = {
   restful: {
     label: "Restful",
-    color: "text-emerald-700 dark:text-emerald-300",
-    ring: "ring-emerald-400/60",
-    bg: "from-emerald-100/60 to-teal-100/60 dark:from-emerald-900/30 dark:to-teal-900/30"
+    color: "text-primary dark:text-muted-foreground",
+    ring: "ring-primary",
+    bg: "from-muted to-muted dark:from-primary dark:to-primary"
   },
   ideal: {
     label: "Ideal",
-    color: "text-emerald-700 dark:text-emerald-300",
-    ring: "ring-emerald-400/60",
-    bg: "from-emerald-100/60 to-lime-100/60 dark:from-emerald-900/30 dark:to-lime-900/30"
+    color: "text-primary dark:text-muted-foreground",
+    ring: "ring-primary",
+    bg: "from-muted to-muted dark:from-primary dark:to-primary"
   },
   tired: {
     label: "Getting tired",
-    color: "text-amber-800 dark:text-amber-200",
-    ring: "ring-amber-400/70",
-    bg: "from-amber-100/60 to-orange-100/60 dark:from-amber-900/30 dark:to-orange-900/30"
+    color: "text-primary dark:text-muted-foreground",
+    ring: "ring-primary",
+    bg: "from-muted to-muted dark:from-primary dark:to-primary"
   },
   overtired: {
     label: "Overtired",
-    color: "text-rose-800 dark:text-rose-200",
-    ring: "ring-rose-400/80",
-    bg: "from-rose-100/60 to-red-100/60 dark:from-rose-900/30 dark:to-red-900/30"
+    color: "text-primary dark:text-muted-foreground",
+    ring: "ring-primary",
+    bg: "from-muted to-muted dark:from-primary dark:to-primary"
   }
 };
 const WINDDOWN_TIPS = ["Dim the room — soft warm light only", "Reduce stimulation — quiet voices, slow movement", "Try a calming story or lullaby", "Offer a comfort object or gentle rock"];
@@ -266,15 +266,15 @@ export function SleepPredict({
   const outOfBand = ageMonths < 0 || ageMonths > 24;
   return <div className={["space-y-3 transition-opacity", dimmed ? "opacity-95" : "opacity-100"].join(" ")} data-testid="sleep-predict-root">
       {/* Disclaimer banner */}
-      <div className="flex items-start gap-2 rounded-2xl bg-gradient-to-r from-indigo-100/80 to-violet-100/80 dark:from-indigo-900/30 dark:to-violet-900/30 border border-indigo-300/60 dark:border-indigo-400/30 p-3">
-        <ShieldAlert className="h-4 w-4 text-indigo-700 dark:text-indigo-300 shrink-0 mt-0.5" />
-        <p className="text-[11px] leading-snug text-indigo-900 dark:text-indigo-100">
+      <div className="flex items-start gap-2 rounded-2xl bg-gradient-to-r from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3">
+        <ShieldAlert className="h-4 w-4 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
+        <p className="text-[11px] leading-snug text-primary dark:text-muted-foreground">
           <span className="font-bold">{t("components.sleep_predict.beta_guidance_only")}</span>{" "}
           {data?.disclaimer ?? "This is a guidance system based on sleep patterns, not medical advice."}
         </p>
       </div>
 
-      {outOfBand && <div className="rounded-2xl bg-amber-100/70 dark:bg-amber-900/30 border border-amber-300/60 p-3 text-[11px] text-amber-900 dark:text-amber-100">
+      {outOfBand && <div className="rounded-2xl bg-muted dark:bg-primary border border-border p-3 text-[11px] text-primary dark:text-muted-foreground">
           {t("components.sleep_predict.sleep_prediction_is_tuned_for_ages_0_24_months_showing_a_fle")} {childName}.
         </div>}
 
@@ -290,7 +290,7 @@ export function SleepPredict({
                 <div className="h-20 w-20 rounded-full" style={{
               background: `conic-gradient(currentColor ${ringDeg}deg, rgba(0,0,0,0.08) 0deg)`
             }} />
-                <div className="absolute inset-2 rounded-full bg-white/85 dark:bg-slate-900/70 flex flex-col items-center justify-center">
+                <div className="absolute inset-2 rounded-full bg-white/85 dark:bg-card flex flex-col items-center justify-center">
                   <span className={`text-lg font-bold ${band.color}`}>
                     {prediction.sleepPressure}
                   </span>
@@ -302,7 +302,7 @@ export function SleepPredict({
 
               {/* Next nap window */}
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300 mb-0.5 flex items-center gap-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground mb-0.5 flex items-center gap-1">
                   <AlarmClock className="h-3 w-3" />
                   {t("components.sleep_predict.next_sleep_window")}
                 </p>
@@ -319,21 +319,21 @@ export function SleepPredict({
             {/* Reason chain */}
             {prediction.reasons.length > 0 && <ul className="mt-3 space-y-1 text-[11px] text-foreground/80" data-testid="reason-chain">
                 {prediction.reasons.map((r, i) => <li key={i} className="flex items-start gap-1.5">
-                    <Sparkles className="h-3 w-3 mt-0.5 text-violet-500 shrink-0" />
+                    <Sparkles className="h-3 w-3 mt-0.5 text-primary shrink-0" />
                     <span>{r}</span>
                   </li>)}
               </ul>}
           </div>
 
           {/* Wind-down panel — only shown at >=80% pressure */}
-          {prediction.shouldWindDown && <div className="rounded-2xl bg-gradient-to-br from-slate-100 to-indigo-100/70 dark:from-slate-900/60 dark:to-indigo-950/50 border border-indigo-300/40 p-4" data-testid="winddown-panel">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+          {prediction.shouldWindDown && <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-muted dark:to-primary border border-border p-4" data-testid="winddown-panel">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground flex items-center gap-1">
                 <CloudMoon className="h-3 w-3" />
                 {t("components.sleep_predict.start_wind_down_now")}
               </p>
               <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[12px] text-foreground/85">
                 {WINDDOWN_TIPS.map(t => <li key={t} className="flex items-start gap-1.5">
-                    <Lightbulb className="h-3 w-3 mt-0.5 text-amber-500 shrink-0" />
+                    <Lightbulb className="h-3 w-3 mt-0.5 text-primary shrink-0" />
                     <span>{t}</span>
                   </li>)}
               </ul>
@@ -358,23 +358,23 @@ export function SleepPredict({
 
       {/* Log buttons */}
       <div className="rounded-2xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 p-3 space-y-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">
           {t("components.sleep_predict.log_sleep")}
         </p>
-        {activeStartIso ? <button type="button" onClick={logWake} disabled={logging} className="w-full rounded-full px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow disabled:opacity-60 flex items-center justify-center gap-2" data-testid="log-wake-btn">
+        {activeStartIso ? <button type="button" onClick={logWake} disabled={logging} className="w-full rounded-full px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-primary to-primary text-white shadow disabled:opacity-60 flex items-center justify-center gap-2" data-testid="log-wake-btn">
             {logging ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sun className="h-4 w-4" />}
             {t("components.sleep_predict.baby_s_awake_started")} {formatTime(activeStartIso)})
           </button> : <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => logSleep("nap")} disabled={logging} className="rounded-full px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow disabled:opacity-60 flex items-center justify-center gap-2" data-testid="log-nap-btn">
+            <button type="button" onClick={() => logSleep("nap")} disabled={logging} className="rounded-full px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-primary to-primary text-white shadow disabled:opacity-60 flex items-center justify-center gap-2" data-testid="log-nap-btn">
               {logging ? <Loader2 className="h-4 w-4 animate-spin" /> : <BedDouble className="h-4 w-4" />}
               {t("components.sleep_predict.nap_started")}
             </button>
-            <button type="button" onClick={() => logSleep("night")} disabled={logging} className="rounded-full px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-violet-600 to-purple-700 text-white shadow disabled:opacity-60 flex items-center justify-center gap-2" data-testid="log-night-btn">
+            <button type="button" onClick={() => logSleep("night")} disabled={logging} className="rounded-full px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-primary to-primary text-white shadow disabled:opacity-60 flex items-center justify-center gap-2" data-testid="log-night-btn">
               {logging ? <Loader2 className="h-4 w-4 animate-spin" /> : <Moon className="h-4 w-4" />}
               {t("components.sleep_predict.bedtime")}
             </button>
           </div>}
-        <button type="button" onClick={() => void refresh()} disabled={loading} className="w-full text-[11px] font-bold text-violet-600 dark:text-violet-300 inline-flex items-center justify-center gap-1 disabled:opacity-50" data-testid="refresh-btn">
+        <button type="button" onClick={() => void refresh()} disabled={loading} className="w-full text-[11px] font-bold text-primary dark:text-muted-foreground inline-flex items-center justify-center gap-1 disabled:opacity-50" data-testid="refresh-btn">
           <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
           {t("components.sleep_predict.refresh")}
         </button>
@@ -382,14 +382,14 @@ export function SleepPredict({
 
       {/* History */}
       {history.length > 0 && <div className="rounded-2xl bg-white/60 dark:bg-white/5 border border-white/50 dark:border-white/10 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600 dark:text-fuchsia-300 flex items-center gap-1 mb-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground flex items-center gap-1 mb-2">
             <History className="h-3 w-3" />
             {t("components.sleep_predict.recent_sleep")}{history.length})
           </p>
           <ul className="space-y-1.5" data-testid="sleep-history">
             {history.map(s => <li key={s.id} className="flex items-center justify-between text-[11px] text-foreground/85 rounded-lg bg-white/60 dark:bg-white/5 px-2.5 py-1.5">
                 <span className="flex items-center gap-1.5">
-                  {s.kind === "night" ? <Moon className="h-3 w-3 text-indigo-600 dark:text-indigo-300" /> : <BedDouble className="h-3 w-3 text-violet-600 dark:text-violet-300" />}
+                  {s.kind === "night" ? <Moon className="h-3 w-3 text-primary dark:text-muted-foreground" /> : <BedDouble className="h-3 w-3 text-primary dark:text-muted-foreground" />}
                   <span className="font-bold capitalize">{s.kind}</span>
                   <span className="text-muted-foreground">
                     {formatTime(s.startedAt)}

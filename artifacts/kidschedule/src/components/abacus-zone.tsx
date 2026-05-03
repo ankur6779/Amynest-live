@@ -98,7 +98,7 @@ function ConfettiBurst({ show }: { show: boolean }) {
         const x = (Math.random() - 0.5) * 280;
         const y = -120 - Math.random() * 80;
         const rot = (Math.random() - 0.5) * 720;
-        const colors = ["#f59e0b", "#ec4899", "#8b5cf6", "#10b981", "#f43f5e"];
+        const colors = ["hsl(var(--brand-amber-500))", "hsl(var(--brand-pink-500))", "hsl(var(--brand-violet-500))", "hsl(var(--brand-emerald-500))", "hsl(var(--brand-rose-500))"];
         const color = colors[i % colors.length];
         return (
           <motion.span
@@ -162,10 +162,10 @@ function BeadColumn({
     <div
       className={[
         "relative flex flex-col items-center gap-1 px-2 py-3 rounded-xl",
-        "bg-amber-50 dark:bg-amber-950/30 border-2",
+        "bg-muted border-2",
         highlight
-          ? "border-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.25)]"
-          : "border-amber-200 dark:border-amber-900/60",
+          ? "border-primary shadow-[0_0_0_3px_rgba(245,158,11,0.25)]"
+          : "border-border",
       ].join(" ")}
       data-testid={`abacus-rod-${rodIndex}`}
     >
@@ -183,13 +183,13 @@ function BeadColumn({
           transition={{ type: "spring", stiffness: 380, damping: 24 }}
           className={[
             "block h-7 w-12 rounded-full",
-            "bg-gradient-to-br from-rose-400 to-rose-600 shadow-md ring-1 ring-rose-700/40",
+            "bg-card shadow-md ring-1 ring-primary",
           ].join(" ")}
         />
       </button>
 
       {/* Crossbar */}
-      <div className="h-[3px] w-full rounded-full bg-amber-600/70" />
+      <div className="h-[3px] w-full rounded-full bg-primary" />
 
       {/* Lower beads (worth 1 each) */}
       <div className="relative h-28 w-full flex flex-col items-center justify-end gap-1 pb-1">
@@ -214,7 +214,7 @@ function BeadColumn({
               <motion.span
                 animate={{ y: isUp ? -8 : 0 }}
                 transition={{ type: "spring", stiffness: 380, damping: 24 }}
-                className="block h-6 w-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow ring-1 ring-amber-700/40"
+                className="block h-6 w-12 rounded-full bg-card shadow ring-1 ring-primary"
               />
             </button>
           );
@@ -241,7 +241,7 @@ function AbacusBoard({
 }) {
   const value = abacusValue(state);
   return (
-    <div className="rounded-2xl bg-amber-100/60 dark:bg-amber-950/20 border-2 border-amber-300 dark:border-amber-900 p-3">
+    <div className="rounded-2xl bg-muted border-2 border-border p-3">
       <div className="flex justify-center gap-2">
         {state.map((rod, i) => (
           <BeadColumn
@@ -288,14 +288,14 @@ function LearnMode({
         </span>
       </div>
       <AbacusBoard state={cur.state} onChange={() => {}} highlightRod={cur.highlightRod} disabled />
-      <p className="text-sm leading-relaxed text-foreground bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3">
+      <p className="text-sm leading-relaxed text-foreground bg-muted rounded-xl p-3">
         {cur.text}
       </p>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => (speaking ? onStop() : onSpeak(cur.text))}
-          className="inline-flex items-center gap-1 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold px-3 py-2"
+          className="inline-flex items-center gap-1 rounded-lg bg-primary hover:bg-primary text-primary-foreground text-xs font-semibold px-3 py-2"
           data-testid="abacus-learn-tts"
         >
           {speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
@@ -313,7 +313,7 @@ function LearnMode({
           type="button"
           disabled={step >= script.steps.length - 1}
           onClick={() => setStep((s) => Math.min(script.steps.length - 1, s + 1))}
-          className="rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-2 disabled:opacity-40"
+          className="rounded-lg bg-primary hover:bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 disabled:opacity-40"
           data-testid="abacus-learn-next"
         >
           {t("abacus.next")} →
@@ -352,9 +352,9 @@ function PracticeMode({ level }: { level: LevelId }) {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl bg-violet-50 dark:bg-violet-950/30 p-3 text-center">
+      <div className="rounded-xl bg-muted p-3 text-center">
         <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("abacus.show_on_abacus")}</p>
-        <p className="text-3xl font-black text-violet-700 dark:text-violet-300" data-testid="abacus-problem">
+        <p className="text-3xl font-black text-foreground" data-testid="abacus-problem">
           {problem.prompt}
         </p>
       </div>
@@ -372,8 +372,8 @@ function PracticeMode({ level }: { level: LevelId }) {
             className={[
               "text-center font-bold text-sm rounded-lg p-2",
               feedback === "correct"
-                ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
-                : "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300",
+                ? "bg-muted text-foreground"
+                : "bg-muted text-foreground",
             ].join(" ")}
             data-testid={`abacus-practice-feedback-${feedback}`}
           >
@@ -385,7 +385,7 @@ function PracticeMode({ level }: { level: LevelId }) {
         <button
           type="button"
           onClick={check}
-          className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2"
+          className="rounded-lg bg-primary hover:bg-primary text-primary-foreground text-xs font-semibold px-3 py-2"
           data-testid="abacus-practice-check"
         >
           ✓ {t("abacus.check")}
@@ -393,7 +393,7 @@ function PracticeMode({ level }: { level: LevelId }) {
         <button
           type="button"
           onClick={next}
-          className="rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold px-3 py-2 inline-flex items-center gap-1"
+          className="rounded-lg bg-primary hover:bg-primary text-primary-foreground text-xs font-semibold px-3 py-2 inline-flex items-center gap-1"
           data-testid="abacus-practice-next"
         >
           <RotateCw className="h-3.5 w-3.5" /> {t("abacus.new_problem")}
@@ -401,7 +401,7 @@ function PracticeMode({ level }: { level: LevelId }) {
         <button
           type="button"
           onClick={() => setShowHint(true)}
-          className="rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 text-xs font-semibold px-3 py-2"
+          className="rounded-lg bg-muted text-foreground text-xs font-semibold px-3 py-2"
         >
           💡 {t("abacus.hint")}
         </button>
@@ -414,7 +414,7 @@ function PracticeMode({ level }: { level: LevelId }) {
         </button>
       </div>
       {showHint && (
-        <p className="text-xs italic text-muted-foreground bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2">
+        <p className="text-xs italic text-muted-foreground bg-muted rounded-lg p-2">
           💡 {problem.hint}
         </p>
       )}
@@ -487,7 +487,7 @@ function ChallengeMode({
     return (
       <div className="text-center space-y-3 py-4 relative" data-testid="abacus-challenge-complete">
         <ConfettiBurst show={summary.passed} />
-        <Trophy className="h-12 w-12 mx-auto text-amber-500" />
+        <Trophy className="h-12 w-12 mx-auto text-foreground" />
         <h4 className="text-lg font-black">
           {summary.label === "perfect"
             ? t("abacus.label_perfect")
@@ -498,10 +498,10 @@ function ChallengeMode({
                 : t("abacus.label_keep_going")}
         </h4>
         <p className="text-sm">
-          {summary.correct} / {summary.totalQuestions} {t("abacus.correct_lower")} •{" "}
+          {summary.correct} / {summary.totalQuestions} {t("abacus.correct_lower")} •{""}
           <strong>{summary.totalPoints}</strong> {t("abacus.points")}
         </p>
-        <p className={`text-xs font-semibold ${summary.passed ? "text-emerald-600" : "text-amber-600"}`}>
+        <p className={`text-xs font-semibold ${summary.passed ? "text-foreground" : "text-foreground"}`}>
           {summary.passed ? `🔓 ${t("abacus.level_unlocked")}` : `${t("abacus.need_pct", { pct: lvlDef.unlockAccuracyPct })}`}
         </p>
       </div>
@@ -515,18 +515,18 @@ function ChallengeMode({
         <span className="font-mono">
           Q {idx + 1} / {problems.length}
         </span>
-        <span className={`font-bold ${tLeft <= 5 ? "text-rose-600" : "text-violet-600"}`} data-testid="abacus-challenge-timer">
+        <span className={`font-bold ${tLeft <= 5 ? "text-foreground" : "text-foreground"}`} data-testid="abacus-challenge-timer">
           ⏱ {tLeft}s
         </span>
       </div>
-      <div className="rounded-xl bg-violet-50 dark:bg-violet-950/30 p-3 text-center">
-        <p className="text-3xl font-black text-violet-700 dark:text-violet-300">{cur.prompt}</p>
+      <div className="rounded-xl bg-muted p-3 text-center">
+        <p className="text-3xl font-black text-foreground">{cur.prompt}</p>
       </div>
       <AbacusBoard state={board} onChange={setBoard} />
       <button
         type="button"
         onClick={() => advance(abacusValue(board) === cur.answer, Date.now() - startedAt.current)}
-        className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-3"
+        className="w-full rounded-lg bg-primary hover:bg-primary text-primary-foreground text-sm font-bold py-3"
         data-testid="abacus-challenge-submit"
       >
         ✓ {t("abacus.submit")}
@@ -548,8 +548,8 @@ function MentalMode({ level }: { level: LevelId }) {
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground text-center">{t("abacus.mental_intro")}</p>
-      <div className="rounded-xl bg-fuchsia-50 dark:bg-fuchsia-950/30 p-4 text-center">
-        <p className="text-4xl font-black text-fuchsia-700 dark:text-fuchsia-300">{problem.prompt}</p>
+      <div className="rounded-xl bg-muted p-4 text-center">
+        <p className="text-4xl font-black text-foreground">{problem.prompt}</p>
       </div>
       <input
         type="number"
@@ -557,15 +557,15 @@ function MentalMode({ level }: { level: LevelId }) {
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
         placeholder={t("abacus.your_answer")}
-        className="w-full rounded-lg border-2 border-fuchsia-200 dark:border-fuchsia-900 bg-background px-3 py-2 text-center text-xl font-bold"
+        className="w-full rounded-lg border-2 border-border bg-background px-3 py-2 text-center text-xl font-bold"
         data-testid="abacus-mental-answer"
       />
       {feedback !== "none" && (
         <p
           className={`text-center text-sm font-bold rounded-lg p-2 ${
             feedback === "correct"
-              ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700"
-              : "bg-rose-100 dark:bg-rose-900/40 text-rose-700"
+              ? "bg-muted text-foreground"
+              : "bg-muted text-foreground"
           }`}
         >
           {feedback === "correct" ? `🎉 ${t("abacus.correct")}` : `❌ ${problem.answer}`}
@@ -576,7 +576,7 @@ function MentalMode({ level }: { level: LevelId }) {
           type="button"
           onClick={() => setFeedback(Number(answer) === problem.answer ? "correct" : "wrong")}
           disabled={!answer.trim()}
-          className="flex-1 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-bold py-2 disabled:opacity-40"
+          className="flex-1 rounded-lg bg-primary hover:bg-primary text-primary-foreground text-sm font-bold py-2 disabled:opacity-40"
           data-testid="abacus-mental-check"
         >
           {t("abacus.check")}
@@ -584,7 +584,7 @@ function MentalMode({ level }: { level: LevelId }) {
         <button
           type="button"
           onClick={next}
-          className="rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold px-4 py-2"
+          className="rounded-lg bg-primary hover:bg-primary text-primary-foreground text-sm font-bold px-4 py-2"
         >
           {t("abacus.new_problem")} →
         </button>
@@ -639,27 +639,27 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
         onChange={(e) => setQuestion(e.target.value)}
         placeholder={t("abacus.tutor_placeholder")}
         rows={3}
-        className="w-full rounded-lg border-2 border-violet-200 dark:border-violet-900 bg-background px-3 py-2 text-sm"
+        className="w-full rounded-lg border-2 border-border bg-background px-3 py-2 text-sm"
         data-testid="abacus-tutor-question"
       />
       <button
         type="button"
         onClick={ask}
         disabled={loading || !question.trim()}
-        className="w-full rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white text-sm font-bold py-2 inline-flex items-center justify-center gap-1"
+        className="w-full rounded-lg bg-primary hover:bg-primary disabled:opacity-40 text-primary-foreground text-sm font-bold py-2 inline-flex items-center justify-center gap-1"
         data-testid="abacus-tutor-ask"
       >
         <Sparkles className="h-4 w-4" />
         {loading ? t("abacus.thinking") : t("abacus.ask_amy")}
       </button>
-      {err && <p className="text-xs text-rose-600 text-center">⚠️ {err}</p>}
+      {err && <p className="text-xs text-foreground text-center">⚠️ {err}</p>}
       {reply && (
-        <div className="rounded-xl bg-violet-50 dark:bg-violet-950/30 p-3 space-y-2" data-testid="abacus-tutor-reply">
+        <div className="rounded-xl bg-muted p-3 space-y-2" data-testid="abacus-tutor-reply">
           <p className="text-sm leading-relaxed">{reply}</p>
           <button
             type="button"
             onClick={() => (amy.speaking || amy.loading ? amy.stop() : amy.speak(reply))}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-violet-700 dark:text-violet-300"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-foreground"
           >
             {amy.speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
             {amy.speaking ? t("abacus.stop_voice") : t("abacus.amy_voice")}
@@ -806,7 +806,7 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
     <div className="space-y-3" data-testid="abacus-zone">
       {/* Progress strip */}
       {progress && (
-        <div className="flex items-center justify-between text-xs bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2">
+        <div className="flex items-center justify-between text-xs bg-muted rounded-lg px-3 py-2">
           <span>
             🏅 <strong>{progress.totalPoints}</strong> {t("abacus.points")}
           </span>
@@ -833,9 +833,9 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
               className={[
                 "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold border-2",
                 active
-                  ? "bg-amber-500 text-white border-amber-600"
+                  ? "bg-primary text-primary-foreground border-primary"
                   : unlocked
-                    ? "bg-background text-foreground border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/40"
+                    ? "bg-background text-foreground border-border hover:bg-muted"
                     : "bg-muted text-muted-foreground border-muted opacity-60",
               ].join(" ")}
               data-testid={`abacus-level-${l.id}`}
@@ -860,7 +860,7 @@ export function AbacusZone({ childId, childName, ageYears }: Props) {
             className={[
               "rounded-lg text-xs font-semibold py-2 px-1 border",
               mode === m.id
-                ? "bg-violet-600 text-white border-violet-700"
+                ? "bg-primary text-primary-foreground border-primary"
                 : "bg-background text-foreground border-border hover:bg-muted",
             ].join(" ")}
             data-testid={`abacus-mode-${m.id}`}

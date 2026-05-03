@@ -69,7 +69,7 @@ export function CardFlipGame({
           aspectRatio: "1 / 1",
           fontSize: 28,
           borderRadius: 10,
-          background: matched.includes(i) ? "rgba(34,197,94,0.2)" : open ? "rgba(139,92,246,0.25)" : "linear-gradient(135deg, #6d28d9, #4c1d95)",
+          background: matched.includes(i) ? "rgba(34,197,94,0.2)" : open ? "rgba(139,92,246,0.25)" : "linear-gradient(135deg, hsl(var(--brand-violet-700)), hsl(var(--brand-violet-900)))",
           border: "1px solid " + (matched.includes(i) ? "rgba(34,197,94,0.5)" : "rgba(139,92,246,0.4)"),
           color: "#fff",
           cursor: open ? "default" : "pointer",

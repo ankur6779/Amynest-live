@@ -86,7 +86,7 @@ export function TargetTapGame({
           color: "#fff"
         }}>{score}</strong> / {total}</span>
         <span style={{
-        color: timeLeft <= 5 ? "#fca5a5" : "#a99fd9",
+        color: timeLeft <= 5 ? "hsl(var(--brand-red-300))" : "#a99fd9",
         fontWeight: 700
       }}>⏱ {timeLeft}s</span>
       </div>
@@ -116,7 +116,7 @@ export function TargetTapGame({
           width: 52,
           height: 52,
           borderRadius: "50%",
-          background: "radial-gradient(circle at 30% 30%, #fff 0, #fbbf24 30%, #f97316 70%, #ea580c 100%)",
+          background: "radial-gradient(circle at 30% 30%, #fff 0, hsl(var(--brand-amber-300)) 30%, hsl(var(--brand-orange-500)) 70%, hsl(var(--brand-orange-600)) 100%)",
           border: "none",
           cursor: "pointer",
           boxShadow: "0 0 14px rgba(251,191,36,0.6)",
@@ -137,7 +137,7 @@ export function TargetTapGame({
       </div>
       <div style={{
       marginTop: 10,
-      color: "#c4b5fd",
+      color: "hsl(var(--brand-violet-300))",
       fontSize: 11
     }}>
         {t("components.games.target_tap.tap_each_target_before_it_disappears_30_seconds_total")}

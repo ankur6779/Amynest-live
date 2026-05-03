@@ -371,38 +371,38 @@ const TIP_CATEGORY_META: Record<TipCategory, {
   feeding: {
     label: "Feeding Tip",
     emoji: "🍼",
-    color: "text-amber-700 dark:text-amber-200",
-    bgColor: "bg-amber-50 dark:bg-amber-500/15",
-    borderColor: "border-amber-200 dark:border-amber-400/30",
-    badgeColor: "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200",
-    iconBg: "bg-amber-100 dark:bg-amber-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bgColor: "bg-muted dark:bg-primary",
+    borderColor: "border-border dark:border-border",
+    badgeColor: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
+    iconBg: "bg-muted dark:bg-primary"
   },
   health: {
     label: "Health Tip",
     emoji: "🏥",
-    color: "text-blue-700 dark:text-blue-200",
-    bgColor: "bg-blue-50 dark:bg-blue-500/15",
-    borderColor: "border-blue-200 dark:border-blue-400/30",
-    badgeColor: "bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200",
-    iconBg: "bg-blue-100 dark:bg-blue-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bgColor: "bg-muted dark:bg-primary",
+    borderColor: "border-border dark:border-border",
+    badgeColor: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
+    iconBg: "bg-muted dark:bg-primary"
   },
   development: {
     label: "Development Tip",
     emoji: "🧠",
-    color: "text-violet-700 dark:text-violet-200",
-    bgColor: "bg-violet-50 dark:bg-violet-500/15",
-    borderColor: "border-violet-200 dark:border-violet-400/30",
-    badgeColor: "bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-200",
-    iconBg: "bg-violet-100 dark:bg-violet-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bgColor: "bg-muted dark:bg-primary",
+    borderColor: "border-border dark:border-border",
+    badgeColor: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
+    iconBg: "bg-muted dark:bg-primary"
   },
   bonding: {
     label: "Bonding Activity",
     emoji: "❤️",
-    color: "text-rose-700 dark:text-rose-200",
-    bgColor: "bg-rose-50 dark:bg-rose-500/15",
-    borderColor: "border-rose-200 dark:border-rose-400/30",
-    badgeColor: "bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-200",
-    iconBg: "bg-rose-100 dark:bg-rose-500/20"
+    color: "text-primary dark:text-muted-foreground",
+    bgColor: "bg-muted dark:bg-primary",
+    borderColor: "border-border dark:border-border",
+    badgeColor: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
+    iconBg: "bg-muted dark:bg-primary"
   }
 };
 
@@ -615,7 +615,7 @@ function TipCard({
         <div className="px-5 py-4">
           {/* Progress dots */}
           <div className="flex gap-1 mb-4">
-            {tips.map((_, i) => <div key={i} className={`h-1.5 rounded-full flex-1 transition-all duration-300 ${understood.has(i) ? "bg-green-400" : i === index ? "bg-current opacity-70" : "bg-white/60"}`} style={{
+            {tips.map((_, i) => <div key={i} className={`h-1.5 rounded-full flex-1 transition-all duration-300 ${understood.has(i) ? "bg-muted" : i === index ? "bg-current opacity-70" : "bg-white/60"}`} style={{
             color: meta.color.replace("text-", "")
           }} />)}
           </div>
@@ -629,7 +629,7 @@ function TipCard({
         {/* Action buttons */}
         <div className={`px-5 pb-5 flex gap-2`}>
           <Button size="sm" variant="outline" onClick={handleUnderstand} disabled={justUnderstood} className={`flex-1 rounded-full h-9 font-bold border-2 ${meta.borderColor} ${meta.color} bg-white/80 hover:bg-white transition-all`}>
-            {justUnderstood ? <><CheckCircle2 className="h-4 w-4 mr-1.5 text-green-500" />{t("components.infant_mode.got_it")}</> : <><CheckCircle2 className="h-4 w-4 mr-1.5" />{t("components.infant_mode.i_understand")}</>}
+            {justUnderstood ? <><CheckCircle2 className="h-4 w-4 mr-1.5 text-primary" />{t("components.infant_mode.got_it")}</> : <><CheckCircle2 className="h-4 w-4 mr-1.5" />{t("components.infant_mode.i_understand")}</>}
           </Button>
           <Button size="sm" onClick={handleNext} className="rounded-full h-9 px-4 font-bold bg-foreground/10 text-foreground hover:bg-foreground/15 border-0 shadow-none">
             {t("components.infant_mode.next")} <ChevronRight className="h-4 w-4 ml-1" />
@@ -741,7 +741,7 @@ function MemoryMoments({
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-yellow-100 dark:bg-yellow-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
               <span className="text-2xl">📸</span>
             </div>
             <div>
@@ -749,22 +749,22 @@ function MemoryMoments({
               <p className="text-xs text-muted-foreground">{t("components.infant_mode.save_precious_milestones_memories")}</p>
             </div>
           </div>
-          <Button size="sm" onClick={() => setAdding(!adding)} className="rounded-full h-8 px-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs border-0">
+          <Button size="sm" onClick={() => setAdding(!adding)} className="rounded-full h-8 px-3 bg-primary hover:bg-primary text-white font-bold text-xs border-0">
             <Plus className="h-3.5 w-3.5 mr-1" />{t("components.infant_mode.save_moment")}
           </Button>
         </div>
 
         {adding && <div className="mb-4 flex gap-2">
             <input autoFocus value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && save()} placeholder={`e.g. ${childName} laughed for the first time!`} className="flex-1 rounded-2xl border border-border bg-white/70 dark:bg-white/[0.06] px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30" />
-            <Button size="sm" onClick={save} className="rounded-2xl bg-yellow-500 hover:bg-yellow-600 text-white font-bold border-0 px-4">
+            <Button size="sm" onClick={save} className="rounded-2xl bg-primary hover:bg-primary text-white font-bold border-0 px-4">
               {t("components.infant_mode.save")}
             </Button>
           </div>}
 
         {moments.length === 0 ? <div className="text-center py-6">
             <div className="text-3xl mb-2">📝</div>
-            <p className="text-sm text-yellow-700 dark:text-yellow-200 font-medium">{t("components.infant_mode.no_moments_saved_yet")}</p>
-            <p className="text-xs text-yellow-600 mt-1">{t("components.infant_mode.tap_save_moment_to_capture_today_s_memories")}</p>
+            <p className="text-sm text-primary dark:text-muted-foreground font-medium">{t("components.infant_mode.no_moments_saved_yet")}</p>
+            <p className="text-xs text-primary mt-1">{t("components.infant_mode.tap_save_moment_to_capture_today_s_memories")}</p>
           </div> : <div className="space-y-2">
             {moments.map(m => <div key={m.id} className="flex items-start gap-3 bg-white/70 dark:bg-white/[0.05] rounded-2xl p-3 border border-white/60 dark:border-white/10 group">
                 <span className="text-xl shrink-0">{m.emoji}</span>
@@ -772,7 +772,7 @@ function MemoryMoments({
                   <p className="text-sm font-medium text-foreground leading-snug">{m.text}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{m.date}</p>
                 </div>
-                <button onClick={() => remove(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-yellow-400 hover:text-rose-500 shrink-0 p-1">
+                <button onClick={() => remove(m.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary shrink-0 p-1">
                   ×
                 </button>
               </div>)}
@@ -834,13 +834,13 @@ export function InfantMode({
   return <div className="space-y-5">
 
       {/* ── Hero Banner — hidden when focused on a single category ── */}
-      {!showOnly && <div className="bg-gradient-to-br from-pink-50 dark:from-pink-500/15 via-purple-50 dark:via-purple-500/15 to-indigo-50 dark:to-indigo-500/15 border-2 border-pink-200 dark:border-pink-400/30 rounded-3xl p-5">
+      {!showOnly && <div className="bg-gradient-to-br from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary border-2 border-border dark:border-border rounded-3xl p-5">
         <div className="flex items-center gap-4 mb-4">
           <div className="text-5xl animate-bounce-slow">👶</div>
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <Badge className="bg-pink-100 dark:bg-pink-500/20 text-pink-800 dark:text-pink-200 border-pink-300 font-bold text-xs">{t("components.infant_mode.infant_mode")}</Badge>
-              <Badge className="bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-200 border-purple-300 font-bold text-xs">
+              <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border font-bold text-xs">{t("components.infant_mode.infant_mode")}</Badge>
+              <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border font-bold text-xs">
                 {t("components.infant_mode.tips_for")} {ageRangeLabel}
               </Badge>
             </div>
@@ -857,12 +857,12 @@ export function InfantMode({
             <span>{t("components.infant_mode.month")} {totalMonths}</span>
             <span>{t("components.infant_mode.12_months")}</span>
           </div>
-          <div className="h-2.5 bg-white/70 rounded-full overflow-hidden border border-pink-200 dark:border-pink-400/30">
-            <div className="h-full bg-gradient-to-r from-pink-400 to-purple-500 rounded-full transition-all duration-700" style={{
+          <div className="h-2.5 bg-white/70 rounded-full overflow-hidden border border-border dark:border-border">
+            <div className="h-full bg-gradient-to-r from-primary to-primary rounded-full transition-all duration-700" style={{
             width: `${Math.min(100, totalMonths / 12 * 100)}%`
           }} />
           </div>
-          <p className="text-xs text-purple-600 mt-1.5 font-medium text-center">
+          <p className="text-xs text-primary mt-1.5 font-medium text-center">
             {12 - Math.min(12, totalMonths)} {t("components.infant_mode.month_2")}{12 - totalMonths !== 1 ? "s" : ""} {t("components.infant_mode.until_first_birthday")}
           </p>
         </div>
@@ -875,7 +875,7 @@ export function InfantMode({
       {show("lullaby") && <Card className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
         <CardContent className="p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-purple-100 dark:bg-purple-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
               <span className="text-2xl">🎵</span>
             </div>
             <div className="flex-1">
@@ -885,7 +885,7 @@ export function InfantMode({
               </p>
             </div>
             {playing && <div className="flex gap-0.5 items-end h-5">
-                {[3, 5, 4, 6, 3].map((h, i) => <div key={i} className="w-1 bg-purple-500 rounded-full animate-bounce" style={{
+                {[3, 5, 4, 6, 3].map((h, i) => <div key={i} className="w-1 bg-primary rounded-full animate-bounce" style={{
               height: `${h * 3}px`,
               animationDelay: `${i * 0.12}s`
             }} />)}
@@ -893,16 +893,16 @@ export function InfantMode({
           </div>
 
           {/* Time-based suggestion */}
-          {!playing && <div className="bg-white/60 border border-purple-100 dark:border-purple-400/30 rounded-2xl p-3 mb-3 flex items-center gap-2">
+          {!playing && <div className="bg-white/60 border border-border dark:border-border rounded-2xl p-3 mb-3 flex items-center gap-2">
               <span className="text-lg">{suggestedTrack.emoji}</span>
               <div className="flex-1">
-                <p className="text-xs font-bold text-purple-800 dark:text-purple-200">{t("components.infant_mode.recommended_now")}</p>
-                <p className="text-xs text-purple-600">{suggestedTrack.name}</p>
+                <p className="text-xs font-bold text-primary dark:text-muted-foreground">{t("components.infant_mode.recommended_now")}</p>
+                <p className="text-xs text-primary">{suggestedTrack.name}</p>
               </div>
               <Button size="sm" onClick={() => {
             setLullabyIndex(LULLABY_TRACKS.indexOf(suggestedTrack));
             playTrack(suggestedTrack);
-          }} className="rounded-full h-7 px-3 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold border-0">
+          }} className="rounded-full h-7 px-3 bg-primary hover:bg-primary text-white text-xs font-bold border-0">
                 <Play className="h-3 w-3 mr-1" />{t("components.infant_mode.play")}
               </Button>
             </div>}
@@ -915,18 +915,18 @@ export function InfantMode({
             } = useTranslation();
             const isPlaying = playing === track.name;
             const isCurrent = i === lullabyIndex;
-            return <div key={track.name} className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 border transition-all ${isCurrent ? "bg-purple-100 dark:bg-purple-500/20 border-purple-300" : "bg-white/60 border-purple-100 dark:border-purple-400/30"}`}>
+            return <div key={track.name} className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 border transition-all ${isCurrent ? "bg-muted dark:bg-primary border-border" : "bg-white/60 border-border dark:border-border"}`}>
                   <span className="text-lg">{track.emoji}</span>
                   <div className="flex-1">
-                    <p className={`text-sm font-bold ${isCurrent ? "text-purple-900 dark:text-purple-100" : "text-purple-800 dark:text-purple-200"}`}>{track.name}</p>
-                    {track.timeOfDay !== "any" && <p className="text-[10px] text-purple-500 font-medium">{track.timeOfDay === "night" ? "🌙 Night" : "☀️ Daytime"}</p>}
+                    <p className={`text-sm font-bold ${isCurrent ? "text-primary dark:text-muted-foreground" : "text-primary dark:text-muted-foreground"}`}>{track.name}</p>
+                    {track.timeOfDay !== "any" && <p className="text-[10px] text-primary font-medium">{track.timeOfDay === "night" ? "🌙 Night" : "☀️ Daytime"}</p>}
                   </div>
-                  {isPlaying ? <Button size="sm" variant="outline" onClick={stopAll} className="rounded-full h-7 px-2 border-purple-300 text-purple-700 dark:text-purple-200 text-xs">
+                  {isPlaying ? <Button size="sm" variant="outline" onClick={stopAll} className="rounded-full h-7 px-2 border-border text-primary dark:text-muted-foreground text-xs">
                       <Square className="h-3 w-3 mr-1" />{t("components.infant_mode.stop")}
                     </Button> : <Button size="sm" onClick={() => {
                 setLullabyIndex(i);
                 playTrack(track);
-              }} className="rounded-full h-7 px-2 bg-purple-600 hover:bg-purple-700 text-white text-xs border-0">
+              }} className="rounded-full h-7 px-2 bg-primary hover:bg-primary text-white text-xs border-0">
                       <Play className="h-3 w-3 mr-1" />{t("components.infant_mode.play_2")}
                     </Button>}
                 </div>;
@@ -935,15 +935,15 @@ export function InfantMode({
 
           {/* Next song button */}
           <div className="flex gap-2 mt-3">
-            <Button variant="outline" size="sm" onClick={handleNextLullaby} className="flex-1 rounded-full h-9 border-purple-300 text-purple-700 dark:text-purple-200 font-bold text-sm hover:bg-purple-100 dark:bg-purple-500/20">
+            <Button variant="outline" size="sm" onClick={handleNextLullaby} className="flex-1 rounded-full h-9 border-border text-primary dark:text-muted-foreground font-bold text-sm hover:bg-muted dark:bg-primary">
               <SkipForward className="h-4 w-4 mr-1.5" />{t("components.infant_mode.next_song")}
             </Button>
-            {playing && <Button variant="outline" size="sm" onClick={stopAll} className="rounded-full h-9 px-4 border-rose-300 text-rose-700 dark:text-rose-200 font-bold text-sm hover:bg-rose-50 dark:bg-rose-500/15">
+            {playing && <Button variant="outline" size="sm" onClick={stopAll} className="rounded-full h-9 px-4 border-border text-primary dark:text-muted-foreground font-bold text-sm hover:bg-muted dark:bg-primary">
                 <Square className="h-4 w-4 mr-1" />{t("components.infant_mode.stop_2")}
               </Button>}
           </div>
 
-          <p className="text-[10px] text-purple-500 mt-3 text-center">
+          <p className="text-[10px] text-primary mt-3 text-center">
             {t("components.infant_mode.all_melodies_generated_by_your_browser_no_internet_needed")}
           </p>
         </CardContent>
@@ -953,7 +953,7 @@ export function InfantMode({
       {show("vaccines") && <Card className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
         <button className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/40 dark:hover:bg-white/[0.03] transition-colors" onClick={() => setVacOpen(!vacOpen)}>
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-blue-100 dark:bg-blue-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
               <span className="text-2xl">💉</span>
             </div>
             <div className="text-left">
@@ -966,15 +966,15 @@ export function InfantMode({
           </span>
         </button>
         {vacOpen && <CardContent className="px-5 pb-5 pt-0 space-y-2">
-            <p className="text-xs text-blue-600 font-medium mb-3">{t("components.infant_mode.always_follow_your_pediatrician_s_advice_general_indian_iap_")}</p>
+            <p className="text-xs text-primary font-medium mb-3">{t("components.infant_mode.always_follow_your_pediatrician_s_advice_general_indian_iap_")}</p>
             {VACCINES.map(v => {
           const status = getVaccineStatus(totalMonths, v.age);
-          return <div key={v.age} className={`rounded-xl p-3 border flex items-start gap-3 transition-all ${status === "done" ? "bg-green-50 dark:bg-green-500/15 border-green-200 dark:border-green-400/30" : status === "due_soon" ? "bg-amber-50 dark:bg-amber-500/15 border-amber-300 ring-1 ring-amber-300" : "bg-white border-blue-100 dark:border-blue-400/30"}`}>
-                  <div className={`text-xs font-bold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${status === "done" ? "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-200" : status === "due_soon" ? "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200" : "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-200"}`}>
+          return <div key={v.age} className={`rounded-xl p-3 border flex items-start gap-3 transition-all ${status === "done" ? "bg-muted dark:bg-primary border-border dark:border-border" : status === "due_soon" ? "bg-muted dark:bg-primary border-border ring-1 ring-primary" : "bg-white border-border dark:border-border"}`}>
+                  <div className={`text-xs font-bold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${status === "done" ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : status === "due_soon" ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"}`}>
                     {status === "done" ? "✅" : status === "due_soon" ? "⚡" : "📅"} {v.age}
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {v.vaccines.map(vac => <span key={vac} className={`text-xs px-2 py-0.5 rounded-full font-medium border ${status === "done" ? "bg-green-50 dark:bg-green-500/15 border-green-200 dark:border-green-400/30 text-green-800 dark:text-green-200" : status === "due_soon" ? "bg-amber-50 dark:bg-amber-500/15 border-amber-300 text-amber-900 dark:text-amber-100" : "bg-blue-50 dark:bg-blue-500/15 border-blue-200 dark:border-blue-400/30 text-blue-800 dark:text-blue-200"}`}>{vac}</span>)}
+                    {v.vaccines.map(vac => <span key={vac} className={`text-xs px-2 py-0.5 rounded-full font-medium border ${status === "done" ? "bg-muted dark:bg-primary border-border dark:border-border text-primary dark:text-muted-foreground" : status === "due_soon" ? "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground" : "bg-muted dark:bg-primary border-border dark:border-border text-primary dark:text-muted-foreground"}`}>{vac}</span>)}
                   </div>
                 </div>;
         })}

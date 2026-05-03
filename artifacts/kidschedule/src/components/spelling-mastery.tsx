@@ -23,37 +23,37 @@ const MODES: {
   id: "learn",
   label: "Learn",
   icon: BookOpen,
-  tint: "from-indigo-500 to-blue-500"
+  tint: "from-primary to-primary"
 }, {
   id: "practice",
   label: "Practice",
   icon: Gamepad2,
-  tint: "from-emerald-500 to-teal-500"
+  tint: "from-primary to-primary"
 }, {
   id: "dictation",
   label: "Dictation",
   icon: Headphones,
-  tint: "from-violet-500 to-purple-500"
+  tint: "from-primary to-primary"
 }, {
   id: "competition",
   label: "Competition",
   icon: Trophy,
-  tint: "from-amber-500 to-orange-500"
+  tint: "from-primary to-primary"
 }, {
   id: "tournament",
   label: "Tournament",
   icon: Crown,
-  tint: "from-yellow-500 to-amber-600"
+  tint: "from-primary to-primary"
 }, {
   id: "battle",
   label: "Battle",
   icon: Swords,
-  tint: "from-rose-500 to-red-600"
+  tint: "from-primary to-primary"
 }, {
   id: "parent",
   label: "Parent Mode",
   icon: UserCheck,
-  tint: "from-pink-500 to-rose-500"
+  tint: "from-primary to-primary"
 }];
 const AGE_GROUPS: {
   id: SpellingAgeGroup;
@@ -100,10 +100,10 @@ export function SpellingMastery({
       <SpellingHero progress={progressState.progress} childName={childName} />
 
       {/* Age + Difficulty + Word source */}
-      <Card className="border-violet-200/40 dark:border-violet-500/20 bg-gradient-to-br from-violet-50/60 to-indigo-50/60 dark:from-violet-500/[0.06] dark:to-indigo-500/[0.06]">
+      <Card className="border-border dark:border-primary bg-gradient-to-br from-muted to-muted dark:from-primary/[0.06] dark:to-primary/[0.06]">
         <CardContent className="p-3 space-y-3">
           <div className="flex flex-wrap gap-1.5">
-            {AGE_GROUPS.map(g => <button key={g.id} onClick={() => setAgeGroup(g.id)} className={["px-3 py-1.5 rounded-full text-xs font-quicksand font-bold transition-all", ageGroup === g.id ? "bg-violet-600 text-white shadow-md" : "bg-white/70 dark:bg-white/[0.06] text-foreground hover:bg-white"].join(" ")}>
+            {AGE_GROUPS.map(g => <button key={g.id} onClick={() => setAgeGroup(g.id)} className={["px-3 py-1.5 rounded-full text-xs font-quicksand font-bold transition-all", ageGroup === g.id ? "bg-primary text-white shadow-md" : "bg-white/70 dark:bg-white/[0.06] text-foreground hover:bg-white"].join(" ")}>
                 {g.label}
               </button>)}
           </div>
@@ -120,17 +120,17 @@ export function SpellingMastery({
                 {wordsState.loading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
                 {t("components.spelling_mastery.new_words")}
               </Button>
-              <Button size="sm" onClick={() => void wordsState.generateWithAI(difficulty)} disabled={wordsState.loading} className="h-8 text-xs bg-gradient-to-r from-pink-500 to-violet-600 text-white hover:from-pink-600 hover:to-violet-700">
+              <Button size="sm" onClick={() => void wordsState.generateWithAI(difficulty)} disabled={wordsState.loading} className="h-8 text-xs bg-gradient-to-r from-primary to-primary text-white hover:from-primary hover:to-primary">
                 <Sparkles className="h-3.5 w-3.5 mr-1" />
                 {t("components.spelling_mastery.ai_words")}
               </Button>
             </div>
           </div>
 
-          {wordsState.source === "ai" && <div className="text-[11px] text-violet-700 dark:text-violet-300 flex items-center gap-1">
+          {wordsState.source === "ai" && <div className="text-[11px] text-primary dark:text-muted-foreground flex items-center gap-1">
               <Sparkles className="h-3 w-3" /> {t("components.spelling_mastery.showing_ai_generated_words")}
             </div>}
-          {wordsState.error && <div className="text-[11px] text-red-600 dark:text-red-400">
+          {wordsState.error && <div className="text-[11px] text-primary dark:text-primary">
               {t("components.spelling_mastery.couldn_t_load_words")}{wordsState.error}{t("components.spelling_mastery.try_new_words")}
             </div>}
         </CardContent>
@@ -193,10 +193,10 @@ function SpellingHero({
   const badges = progress?.badges ?? [];
   // 10 stars per level — show progress to next.
   const progressPct = Math.min(100, Math.round(stars % 10 / 10 * 100));
-  return <Card className="border-amber-200/50 dark:border-amber-500/20 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-500/[0.08] dark:via-yellow-500/[0.06] dark:to-orange-500/[0.08]">
+  return <Card className="border-border dark:border-primary bg-gradient-to-br from-muted via-muted to-muted dark:from-primary/[0.08] dark:via-primary/[0.06] dark:to-primary/[0.08]">
       <CardContent className="p-3.5">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary flex items-center justify-center shadow-md shrink-0">
             <GraduationCap className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -204,13 +204,13 @@ function SpellingHero({
               <p className="font-quicksand font-bold text-[15px] text-foreground">
                 {childName}{t("components.spelling_mastery.s_spelling_journey")}
               </p>
-              <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30">
+              <Badge className="bg-primary text-primary dark:text-muted-foreground border-primary">
                 {t("components.spelling_mastery.level")} {level}
               </Badge>
             </div>
             <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1 font-bold text-amber-700 dark:text-amber-300">
-                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+              <span className="inline-flex items-center gap-1 font-bold text-primary dark:text-muted-foreground">
+                <Star className="h-3.5 w-3.5 fill-primary text-primary" />
                 {stars}
               </span>
               <span className="inline-flex items-center gap-1">
@@ -220,8 +220,8 @@ function SpellingHero({
                 {stars % 10}/10 to L{level + 1}
               </span>
             </div>
-            <div className="mt-1.5 h-1.5 rounded-full bg-amber-200/40 dark:bg-amber-500/20 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all" style={{
+            <div className="mt-1.5 h-1.5 rounded-full bg-muted dark:bg-primary overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-primary to-primary transition-all" style={{
               width: `${progressPct}%`
             }} />
             </div>
@@ -257,7 +257,7 @@ function PlayButtons({
     t
   } = useTranslation();
   return <div className="flex items-center gap-2">
-      <Button size="sm" onClick={() => void tts.speak(text)} disabled={tts.loading} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+      <Button size="sm" onClick={() => void tts.speak(text)} disabled={tts.loading} className="bg-primary hover:bg-primary text-white">
         {tts.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : tts.speaking ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
         {showLabel && (tts.speaking ? "Stop" : "Play")}
       </Button>
@@ -284,7 +284,7 @@ function PlayButtonsForUrl({
     t
   } = useTranslation();
   return <div className="flex items-center gap-2">
-      <Button size="sm" onClick={() => void tts.playUrl(url)} disabled={tts.loading || !url} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+      <Button size="sm" onClick={() => void tts.playUrl(url)} disabled={tts.loading || !url} className="bg-primary hover:bg-primary text-white">
         {tts.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : tts.speaking ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
         {tts.speaking ? "Stop" : "Play"}
       </Button>
@@ -346,13 +346,13 @@ function LearnView({
   if (loading || empty || !word) {
     return <EmptyOrLoading loading={loading} empty={empty} />;
   }
-  return <Card className="border-indigo-200/40 dark:border-indigo-500/20">
+  return <Card className="border-border dark:border-primary">
       <CardContent className="p-4 space-y-4">
         <div className="text-center">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-bold">
             {t("components.spelling_mastery.word")} {idx + 1} of {words.length}
           </p>
-          <p className="mt-2 text-5xl font-quicksand font-extrabold tracking-wide text-indigo-700 dark:text-indigo-300 capitalize">
+          <p className="mt-2 text-5xl font-quicksand font-extrabold tracking-wide text-primary dark:text-muted-foreground capitalize">
             {word.word}
           </p>
           <p className="mt-2 text-sm text-muted-foreground italic">
@@ -364,25 +364,25 @@ function LearnView({
           <PlayButtons text={word.word} tts={tts} />
         </div>
 
-        <div className="rounded-xl bg-indigo-50 dark:bg-indigo-500/10 p-3 space-y-3">
+        <div className="rounded-xl bg-muted dark:bg-primary p-3 space-y-3">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-indigo-700 dark:text-indigo-300 font-bold mb-1.5">
+            <p className="text-[10px] uppercase tracking-wider text-primary dark:text-muted-foreground font-bold mb-1.5">
               {t("components.spelling_mastery.syllables")}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {word.syllables.map((s, i) => <span key={i} className="px-3 py-1.5 rounded-lg bg-white dark:bg-white/[0.08] text-base font-quicksand font-bold text-indigo-700 dark:text-indigo-200">
+              {word.syllables.map((s, i) => <span key={i} className="px-3 py-1.5 rounded-lg bg-white dark:bg-white/[0.08] text-base font-quicksand font-bold text-primary dark:text-muted-foreground">
                   {s}
                 </span>)}
             </div>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-indigo-700 dark:text-indigo-300 font-bold mb-1.5">
+            <p className="text-[10px] uppercase tracking-wider text-primary dark:text-muted-foreground font-bold mb-1.5">
               {t("components.spelling_mastery.sounds")}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {word.chunks.map((s, i) => <button key={i} onClick={() => void tts.speak(s, {
               slow: true
-            })} className="px-2.5 py-1 rounded-md bg-white dark:bg-white/[0.08] text-sm font-bold text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-500/20">
+            })} className="px-2.5 py-1 rounded-md bg-white dark:bg-white/[0.08] text-sm font-bold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary">
                   {s}
                 </button>)}
             </div>
@@ -396,7 +396,7 @@ function LearnView({
           <Button onClick={() => {
           onCorrect();
           setIdx(i => Math.min(words.length - 1, i + 1));
-        }} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
+        }} className="flex-1 bg-primary hover:bg-primary text-white">
             <CheckCircle2 className="h-4 w-4 mr-1" /> {t("components.spelling_mastery.i_learned_it")}
           </Button>
         </div>
@@ -490,11 +490,11 @@ function MissingLetterGame({
     setChosen(val);
     onResult(val === target);
   };
-  return <Card className="border-emerald-200/40 dark:border-emerald-500/20">
+  return <Card className="border-border dark:border-primary">
       <CardContent className="p-4 space-y-4">
         <div className="text-center">
-          <p className="text-3xl font-quicksand font-extrabold tracking-wider text-emerald-700 dark:text-emerald-300 capitalize">
-            {chunks.map((c, i) => <span key={i} className={i === hideIdx ? chosen === null ? "text-emerald-300/70 underline" : correct ? "text-emerald-600" : "text-red-500 line-through" : ""}>
+          <p className="text-3xl font-quicksand font-extrabold tracking-wider text-primary dark:text-muted-foreground capitalize">
+            {chunks.map((c, i) => <span key={i} className={i === hideIdx ? chosen === null ? "text-muted-foreground underline" : correct ? "text-primary" : "text-primary line-through" : ""}>
                 {i === hideIdx && chosen === null ? "_".repeat(Math.max(1, c.length)) : i === hideIdx ? chosen : c}
               </span>)}
           </p>
@@ -509,17 +509,17 @@ function MissingLetterGame({
           {options.map(o => {
           const picked = chosen === o;
           const isAns = chosen !== null && o === target;
-          return <button key={o} onClick={() => pick(o)} disabled={chosen !== null} className={["py-3 rounded-xl text-lg font-quicksand font-extrabold transition-all", chosen === null ? "bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300" : isAns ? "bg-emerald-600 text-white" : picked ? "bg-red-500 text-white" : "bg-white/40 dark:bg-white/[0.04] text-muted-foreground"].join(" ")}>
+          return <button key={o} onClick={() => pick(o)} disabled={chosen !== null} className={["py-3 rounded-xl text-lg font-quicksand font-extrabold transition-all", chosen === null ? "bg-muted hover:bg-muted dark:bg-primary dark:hover:bg-primary text-primary dark:text-muted-foreground" : isAns ? "bg-primary text-white" : picked ? "bg-primary text-white" : "bg-white/40 dark:bg-white/[0.04] text-muted-foreground"].join(" ")}>
                 {o}
               </button>;
         })}
         </div>
 
         {chosen !== null && <div className="flex items-center justify-between gap-2">
-            <p className={["text-sm font-bold", correct ? "text-emerald-600" : "text-red-600"].join(" ")}>
+            <p className={["text-sm font-bold", correct ? "text-primary" : "text-primary"].join(" ")}>
               {correct ? "✅ Nice spelling!" : `❌ It's "${word.word}"`}
             </p>
-            <Button onClick={onNext} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button onClick={onNext} className="bg-primary hover:bg-primary text-white">
               {t("components.spelling_mastery.next")}
             </Button>
           </div>}
@@ -572,7 +572,7 @@ function JumbledLetterGame({
     if (committed) return;
     setPicked(picked.filter((_, idx) => idx !== i));
   };
-  return <Card className="border-emerald-200/40 dark:border-emerald-500/20">
+  return <Card className="border-border dark:border-primary">
       <CardContent className="p-4 space-y-4">
         <div className="text-center text-[11px] text-muted-foreground italic">
           {t("components.spelling_mastery.tap_the_letters_in_the_right_order_clue")}{word.hint}"
@@ -582,9 +582,9 @@ function JumbledLetterGame({
         </div>
 
         {/* Picked row */}
-        <div className="min-h-[56px] rounded-xl border-2 border-dashed border-emerald-300/60 dark:border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-500/[0.05] p-2 flex flex-wrap justify-center gap-1.5">
+        <div className="min-h-[56px] rounded-xl border-2 border-dashed border-border dark:border-primary bg-muted dark:bg-primary/[0.05] p-2 flex flex-wrap justify-center gap-1.5">
           {picked.length === 0 && <span className="text-xs text-muted-foreground self-center">{t("components.spelling_mastery.tap_letters_below")}</span>}
-          {picked.map((p, i) => <button key={p.id} onClick={() => remove(i)} className={["w-10 h-10 rounded-lg font-quicksand font-extrabold text-lg transition-all", committed === "ok" ? "bg-emerald-600 text-white" : committed === "bad" ? "bg-red-500 text-white" : "bg-white dark:bg-white/[0.08] text-emerald-700 dark:text-emerald-300 hover:bg-red-50 dark:hover:bg-red-500/20"].join(" ")}>
+          {picked.map((p, i) => <button key={p.id} onClick={() => remove(i)} className={["w-10 h-10 rounded-lg font-quicksand font-extrabold text-lg transition-all", committed === "ok" ? "bg-primary text-white" : committed === "bad" ? "bg-primary text-white" : "bg-white dark:bg-white/[0.08] text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary"].join(" ")}>
               {p.ch}
             </button>)}
         </div>
@@ -593,21 +593,21 @@ function JumbledLetterGame({
         <div className="flex flex-wrap justify-center gap-1.5">
           {tiles.map(t => {
           const used = picked.find(p => p.id === t.id);
-          return <button key={t.id} onClick={() => pick(t)} disabled={!!used || !!committed} className={["w-10 h-10 rounded-lg font-quicksand font-extrabold text-lg transition-all", used ? "bg-white/30 dark:bg-white/[0.04] text-muted-foreground/50" : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"].join(" ")}>
+          return <button key={t.id} onClick={() => pick(t)} disabled={!!used || !!committed} className={["w-10 h-10 rounded-lg font-quicksand font-extrabold text-lg transition-all", used ? "bg-white/30 dark:bg-white/[0.04] text-muted-foreground/50" : "bg-primary text-white hover:bg-primary shadow-sm"].join(" ")}>
                 {t.ch}
               </button>;
         })}
         </div>
 
         {committed && <div className="flex items-center justify-between gap-2">
-            <p className={["text-sm font-bold", committed === "ok" ? "text-emerald-600" : "text-red-600"].join(" ")}>
+            <p className={["text-sm font-bold", committed === "ok" ? "text-primary" : "text-primary"].join(" ")}>
               {committed === "ok" ? "✅ Spelt right!" : `❌ It's "${target}"`}
             </p>
             <Button onClick={() => {
           setPicked([]);
           setCommitted(null);
           onNext();
-        }} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+        }} className="bg-primary hover:bg-primary text-white">
               {t("components.spelling_mastery.next_2")}
             </Button>
           </div>}
@@ -711,13 +711,13 @@ function DictationView({
     setGuess("");
     setVerdict(null);
   };
-  return <Card className="border-violet-200/40 dark:border-violet-500/20">
+  return <Card className="border-border dark:border-primary">
       <CardContent className="p-4 space-y-4">
         <div className="text-center">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-bold">
             {t("components.spelling_mastery.dictation")} {idx + 1} / {session.words.length}
           </p>
-          <p className="mt-2 text-base text-violet-700 dark:text-violet-300 font-bold">
+          <p className="mt-2 text-base text-primary dark:text-muted-foreground font-bold">
             {t("components.spelling_mastery.listen_and_spell_the_word")}
           </p>
         </div>
@@ -728,22 +728,22 @@ function DictationView({
 
         <Input value={guess} onChange={e => !verdict && setGuess(e.target.value)} onKeyDown={e => {
         if (e.key === "Enter") void submit();
-      }} placeholder={`Type the word… (${word.letterCount} letters)`} autoFocus disabled={!!verdict || submitting} className={["text-center text-xl font-quicksand font-bold tracking-wider h-12", verdict?.correct === true ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" : "", verdict?.correct === false ? "border-red-500 bg-red-50 dark:bg-red-500/10" : ""].join(" ")} />
+      }} placeholder={`Type the word… (${word.letterCount} letters)`} autoFocus disabled={!!verdict || submitting} className={["text-center text-xl font-quicksand font-bold tracking-wider h-12", verdict?.correct === true ? "border-primary bg-muted dark:bg-primary" : "", verdict?.correct === false ? "border-primary bg-muted dark:bg-primary" : ""].join(" ")} />
 
-        {!verdict ? <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-violet-600 hover:bg-violet-700 text-white">
+        {!verdict ? <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-primary hover:bg-primary text-white">
             {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
             {t("components.spelling_mastery.check")}
           </Button> : <div className="space-y-2">
-            <div className={["flex items-center justify-center gap-2 text-sm font-bold", verdict.correct ? "text-emerald-600" : "text-red-600"].join(" ")}>
+            <div className={["flex items-center justify-center gap-2 text-sm font-bold", verdict.correct ? "text-primary" : "text-primary"].join(" ")}>
               {verdict.correct ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
               {verdict.correct ? `Spot on — "${verdict.correctAnswer}"` : `It's "${verdict.correctAnswer}"`}
             </div>
-            <Button onClick={() => void next()} className="w-full bg-violet-600 hover:bg-violet-700 text-white">
+            <Button onClick={() => void next()} className="w-full bg-primary hover:bg-primary text-white">
               {idx + 1 >= session.words.length ? "Start a new round →" : "Next word →"}
             </Button>
           </div>}
 
-        {session.error && <p className="text-[11px] text-red-600 dark:text-red-400 text-center">
+        {session.error && <p className="text-[11px] text-primary dark:text-primary text-center">
             {session.error === "already_graded" ? "Already graded — moving on." : `Couldn't grade (${session.error}).`}
           </p>}
       </CardContent>
@@ -835,29 +835,29 @@ function CompetitionView({
     }
   };
   if (phase === "idle") {
-    return <Card className="border-amber-200/40 dark:border-amber-500/20 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/[0.06] dark:to-orange-500/[0.06]">
+    return <Card className="border-border dark:border-primary bg-gradient-to-br from-muted to-muted dark:from-primary/[0.06] dark:to-primary/[0.06]">
         <CardContent className="p-5 space-y-3 text-center">
-          <Trophy className="h-10 w-10 mx-auto text-amber-500" />
+          <Trophy className="h-10 w-10 mx-auto text-primary" />
           <p className="font-quicksand font-bold text-base text-foreground">
             {t("components.spelling_mastery.spelling_competition")}
           </p>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {t("components.spelling_mastery.10_words_server_timed_and_server_scored_no_hints_listen_care")}
           </p>
-          <Button onClick={() => void start()} disabled={session.loading} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:from-amber-600 hover:to-orange-700">
+          <Button onClick={() => void start()} disabled={session.loading} className="bg-gradient-to-r from-primary to-primary text-white hover:from-primary hover:to-primary">
             {session.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trophy className="h-4 w-4 mr-1" />}
             {t("components.spelling_mastery.start_competition")}
           </Button>
-          {session.error && <p className="text-[11px] text-red-600 dark:text-red-400">
+          {session.error && <p className="text-[11px] text-primary dark:text-primary">
               {t("components.spelling_mastery.couldn_t_start")} {session.error}
             </p>}
         </CardContent>
       </Card>;
   }
   if (phase === "done") {
-    return <Card className="border-amber-200/40 dark:border-amber-500/20 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/[0.06] dark:to-orange-500/[0.06]">
+    return <Card className="border-border dark:border-primary bg-gradient-to-br from-muted to-muted dark:from-primary/[0.06] dark:to-primary/[0.06]">
         <CardContent className="p-5 space-y-3 text-center">
-          <Trophy className="h-12 w-12 mx-auto text-amber-500" />
+          <Trophy className="h-12 w-12 mx-auto text-primary" />
           <p className="font-quicksand font-extrabold text-lg text-foreground">
             {t("components.spelling_mastery.all_done")}
           </p>
@@ -868,11 +868,11 @@ function CompetitionView({
           </div>
           {summary?.score !== null && summary?.score !== undefined && <div className="text-sm">
               <span className="text-muted-foreground">{t("components.spelling_mastery.score")}</span>{" "}
-              <span className="font-quicksand font-extrabold text-2xl text-amber-700 dark:text-amber-300">
+              <span className="font-quicksand font-extrabold text-2xl text-primary dark:text-muted-foreground">
                 {summary.score}
               </span>
             </div>}
-          <Button onClick={() => void start()} className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
+          <Button onClick={() => void start()} className="bg-gradient-to-r from-primary to-primary text-white">
             {t("components.spelling_mastery.play_again")}
           </Button>
         </CardContent>
@@ -881,14 +881,14 @@ function CompetitionView({
 
   // running
   if (!word) return null;
-  return <Card className="border-amber-200/40 dark:border-amber-500/20">
+  return <Card className="border-border dark:border-primary">
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-amber-700 dark:text-amber-300">
+          <span className="font-bold text-primary dark:text-muted-foreground">
             {t("components.spelling_mastery.word_2")} {idx + 1} of {session.words.length}
           </span>
           <span className="font-mono">⏱ {elapsed}s</span>
-          <span className="font-bold text-emerald-600">✓ {correctCount}</span>
+          <span className="font-bold text-primary">✓ {correctCount}</span>
         </div>
         <p className="text-center text-sm text-muted-foreground">
           {t("components.spelling_mastery.listen_and_type_the_word_no_hints")}
@@ -899,7 +899,7 @@ function CompetitionView({
         <Input value={guess} onChange={e => setGuess(e.target.value)} onKeyDown={e => {
         if (e.key === "Enter") void submit();
       }} placeholder={`Spell the word… (${word.letterCount} letters)`} autoFocus disabled={submitting} className="text-center text-xl font-quicksand font-bold tracking-wider h-12" />
-        <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-amber-600 hover:bg-amber-700 text-white">
+        <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-primary hover:bg-primary text-white">
           {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
           {t("components.spelling_mastery.submit")}
         </Button>
@@ -988,9 +988,9 @@ function TournamentView({
     }
   };
   if (phase === "idle") {
-    return <Card className="border-yellow-200/40 dark:border-yellow-500/20 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-500/[0.06] dark:to-amber-500/[0.06]">
+    return <Card className="border-border dark:border-primary bg-gradient-to-br from-muted to-muted dark:from-primary/[0.06] dark:to-primary/[0.06]">
         <CardContent className="p-5 space-y-3 text-center">
-          <Crown className="h-10 w-10 mx-auto text-yellow-500" />
+          <Crown className="h-10 w-10 mx-auto text-primary" />
           <p className="font-quicksand font-bold text-base text-foreground">
             {tFn("components.spelling_mastery.spelling_tournament")}
           </p>
@@ -998,15 +998,15 @@ function TournamentView({
             {tFn("components.spelling_mastery.3_rounds")} <b>{tFn("components.spelling_mastery.easy_medium_hard")}</b>{tFn("components.spelling_mastery.get_at_least_3_of_5_in_each_round_to_advance_survive_all_3_t")}
           </p>
           <div className="flex justify-center gap-1.5 text-[11px]">
-            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">{tFn("components.spelling_mastery.r1_easy")}</span>
-            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">{tFn("components.spelling_mastery.r2_medium")}</span>
-            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">{tFn("components.spelling_mastery.r3_hard")}</span>
+            <span className="px-2 py-0.5 rounded-full bg-muted text-primary dark:bg-primary dark:text-muted-foreground">{tFn("components.spelling_mastery.r1_easy")}</span>
+            <span className="px-2 py-0.5 rounded-full bg-muted text-primary dark:bg-primary dark:text-muted-foreground">{tFn("components.spelling_mastery.r2_medium")}</span>
+            <span className="px-2 py-0.5 rounded-full bg-muted text-primary dark:bg-primary dark:text-muted-foreground">{tFn("components.spelling_mastery.r3_hard")}</span>
           </div>
-          <Button onClick={() => void start()} disabled={t.loading} className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white hover:from-yellow-600 hover:to-amber-700">
+          <Button onClick={() => void start()} disabled={t.loading} className="bg-gradient-to-r from-primary to-primary text-white hover:from-primary hover:to-primary">
             {t.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Crown className="h-4 w-4 mr-1" />}
             {tFn("components.spelling_mastery.enter_tournament")}
           </Button>
-          {t.error && <p className="text-[11px] text-red-600 dark:text-red-400">
+          {t.error && <p className="text-[11px] text-primary dark:text-primary">
               {tFn("components.spelling_mastery.couldn_t_start_2")} {t.error}
             </p>}
         </CardContent>
@@ -1014,24 +1014,24 @@ function TournamentView({
   }
   if (phase === "between") {
     const last = t.lastRound;
-    return <Card className="border-yellow-200/40 dark:border-yellow-500/20 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-500/[0.06] dark:to-amber-500/[0.06]">
+    return <Card className="border-border dark:border-primary bg-gradient-to-br from-muted to-muted dark:from-primary/[0.06] dark:to-primary/[0.06]">
         <CardContent className="p-5 space-y-3 text-center">
           {advancing || !last ? <>
-              <Loader2 className="h-8 w-8 mx-auto animate-spin text-amber-500" />
+              <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">{tFn("components.spelling_mastery.tallying_round")}</p>
             </> : last.passed ? <>
-              <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-500" />
+              <CheckCircle2 className="h-12 w-12 mx-auto text-primary" />
               <p className="font-quicksand font-extrabold text-lg text-foreground">
                 {tFn("components.spelling_mastery.round")} {last.round} {tFn("components.spelling_mastery.cleared")}
               </p>
               <p className="text-xs text-muted-foreground">
                 {last.wordsCorrect} of {last.wordsAttempted} {tFn("components.spelling_mastery.correct")}{last.score} {tFn("components.spelling_mastery.points")}
               </p>
-              {t.tournament?.status === "active" && <Button onClick={continueAfterRound} className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white">
+              {t.tournament?.status === "active" && <Button onClick={continueAfterRound} className="bg-gradient-to-r from-primary to-primary text-white">
                   {tFn("components.spelling_mastery.continue_to_round")} {t.tournament.currentRound} →
                 </Button>}
             </> : <>
-              <XCircle className="h-12 w-12 mx-auto text-rose-500" />
+              <XCircle className="h-12 w-12 mx-auto text-primary" />
               <p className="font-quicksand font-extrabold text-lg text-foreground">
                 {tFn("components.spelling_mastery.knocked_out_at_round")} {last.round}
               </p>
@@ -1051,21 +1051,21 @@ function TournamentView({
   if (phase === "done") {
     const tournament = t.tournament;
     const completed = tournament?.status === "completed";
-    return <Card className="border-yellow-200/40 dark:border-yellow-500/20 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-500/[0.06] dark:to-amber-500/[0.06]">
+    return <Card className="border-border dark:border-primary bg-gradient-to-br from-muted to-muted dark:from-primary/[0.06] dark:to-primary/[0.06]">
         <CardContent className="p-5 space-y-3 text-center">
           {completed ? <>
-              <Trophy className="h-14 w-14 mx-auto text-amber-500" />
+              <Trophy className="h-14 w-14 mx-auto text-primary" />
               <p className="font-quicksand font-extrabold text-xl text-foreground">
                 {tFn("components.spelling_mastery.tournament_champion")}
               </p>
               <p className="text-xs text-muted-foreground">
                 {tFn("components.spelling_mastery.all_3_rounds_cleared_total_score")}
               </p>
-              <p className="font-quicksand font-extrabold text-3xl text-amber-700 dark:text-amber-300">
+              <p className="font-quicksand font-extrabold text-3xl text-primary dark:text-muted-foreground">
                 {tournament?.totalScore ?? 0}
               </p>
             </> : <>
-              <XCircle className="h-12 w-12 mx-auto text-rose-500" />
+              <XCircle className="h-12 w-12 mx-auto text-primary" />
               <p className="font-quicksand font-extrabold text-lg text-foreground">
                 {tFn("components.spelling_mastery.eliminated_at_round")} {tournament?.eliminatedAtRound ?? "—"}
               </p>
@@ -1082,14 +1082,14 @@ function TournamentView({
                   <span className="text-muted-foreground">
                     {r.wordsCorrect}/{r.wordsAttempted}
                   </span>
-                  {r.passed ? <span className="text-emerald-600 font-bold">+{r.score}</span> : <span className="text-rose-600 font-bold">{tFn("components.spelling_mastery.eliminated")}</span>}
+                  {r.passed ? <span className="text-primary font-bold">+{r.score}</span> : <span className="text-primary font-bold">{tFn("components.spelling_mastery.eliminated")}</span>}
                 </div>;
           })}
             </div>}
           <Button onClick={() => {
           setPhase("idle");
           t.reset();
-        }} className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white">
+        }} className="bg-gradient-to-r from-primary to-primary text-white">
             {tFn("components.spelling_mastery.play_again_2")}
           </Button>
         </CardContent>
@@ -1099,16 +1099,16 @@ function TournamentView({
   // playing
   const session = t.activeSession;
   if (!session || !word) return null;
-  return <Card className="border-yellow-200/40 dark:border-yellow-500/20">
+  return <Card className="border-border dark:border-primary">
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-amber-700 dark:text-amber-300 capitalize">
+          <span className="font-bold text-primary dark:text-muted-foreground capitalize">
             {tFn("components.spelling_mastery.round_2")} {session.round} of 3 · {session.difficulty}
           </span>
           <span className="font-mono">
             {idx + 1}/{session.words.length}
           </span>
-          <span className="font-bold text-emerald-600">
+          <span className="font-bold text-primary">
             ✓ {t.gradedIndices.size}
           </span>
         </div>
@@ -1121,7 +1121,7 @@ function TournamentView({
         <Input value={guess} onChange={e => setGuess(e.target.value)} onKeyDown={e => {
         if (e.key === "Enter") void submit();
       }} placeholder={`Spell the word… (${word.letterCount} letters)`} autoFocus disabled={submitting} className="text-center text-xl font-quicksand font-bold tracking-wider h-12" />
-        <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-white">
+        <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-gradient-to-r from-primary to-primary text-white">
           {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
           {tFn("components.spelling_mastery.submit_2")}
         </Button>
@@ -1221,9 +1221,9 @@ function BattleView({
     }
   };
   if (phase === "idle") {
-    return <Card className="border-rose-200/40 dark:border-rose-500/20 bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-500/[0.06] dark:to-red-500/[0.06]">
+    return <Card className="border-border dark:border-primary bg-gradient-to-br from-muted to-muted dark:from-primary/[0.06] dark:to-primary/[0.06]">
         <CardContent className="p-5 space-y-4 text-center">
-          <Swords className="h-10 w-10 mx-auto text-rose-500" />
+          <Swords className="h-10 w-10 mx-auto text-primary" />
           <div>
             <p className="font-quicksand font-bold text-base text-foreground">
               {t("components.spelling_mastery.battle_vs_ai")}
@@ -1237,16 +1237,16 @@ function BattleView({
               {t("components.spelling_mastery.pick_your_opponent")}
             </p>
             <div className="flex justify-center gap-1.5 flex-wrap">
-              {(["ai_easy", "ai_medium", "ai_hard"] as const).map(op => <button key={op} onClick={() => setOpponent(op)} className={["px-3 py-1.5 rounded-full text-xs font-quicksand font-bold transition-all", opponent === op ? "bg-rose-600 text-white shadow-md" : "bg-white/70 dark:bg-white/[0.06] text-foreground hover:bg-white"].join(" ")}>
+              {(["ai_easy", "ai_medium", "ai_hard"] as const).map(op => <button key={op} onClick={() => setOpponent(op)} className={["px-3 py-1.5 rounded-full text-xs font-quicksand font-bold transition-all", opponent === op ? "bg-primary text-white shadow-md" : "bg-white/70 dark:bg-white/[0.06] text-foreground hover:bg-white"].join(" ")}>
                   {AI_OPPONENT_LABELS[op]}
                 </button>)}
             </div>
           </div>
-          <Button onClick={() => void start()} disabled={session.loading} className="bg-gradient-to-r from-rose-500 to-red-600 text-white hover:from-rose-600 hover:to-red-700">
+          <Button onClick={() => void start()} disabled={session.loading} className="bg-gradient-to-r from-primary to-primary text-white hover:from-primary hover:to-primary">
             {session.loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Swords className="h-4 w-4 mr-1" />}
             {t("components.spelling_mastery.start_battle")}
           </Button>
-          {session.error && <p className="text-[11px] text-red-600 dark:text-red-400">
+          {session.error && <p className="text-[11px] text-primary dark:text-primary">
               {t("components.spelling_mastery.couldn_t_start_3")} {session.error}
             </p>}
         </CardContent>
@@ -1255,20 +1255,20 @@ function BattleView({
   if (phase === "done") {
     const winner = summary?.winner ?? null;
     const winnerLabel = winner === "you" ? "You won!" : winner === "ai" ? `${AI_OPPONENT_LABELS[opponent]} won` : winner === "tie" ? "It's a tie!" : "All done";
-    const winnerTint = winner === "you" ? "text-emerald-600 dark:text-emerald-400" : winner === "ai" ? "text-rose-600 dark:text-rose-400" : "text-amber-700 dark:text-amber-300";
-    return <Card className="border-rose-200/40 dark:border-rose-500/20 bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-500/[0.06] dark:to-red-500/[0.06]">
+    const winnerTint = winner === "you" ? "text-primary dark:text-primary" : winner === "ai" ? "text-primary dark:text-primary" : "text-primary dark:text-muted-foreground";
+    return <Card className="border-border dark:border-primary bg-gradient-to-br from-muted to-muted dark:from-primary/[0.06] dark:to-primary/[0.06]">
         <CardContent className="p-5 space-y-3 text-center">
-          {winner === "you" ? <Trophy className="h-12 w-12 mx-auto text-amber-500" /> : <Swords className="h-12 w-12 mx-auto text-rose-500" />}
+          {winner === "you" ? <Trophy className="h-12 w-12 mx-auto text-primary" /> : <Swords className="h-12 w-12 mx-auto text-primary" />}
           <p className={`font-quicksand font-extrabold text-xl ${winnerTint}`}>
             {winnerLabel}
           </p>
           <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
             <div className="rounded-lg bg-white/70 dark:bg-white/[0.06] p-3">
               <div className="flex items-center justify-center gap-1.5 mb-1">
-                <UserIcon className="h-4 w-4 text-emerald-600" />
+                <UserIcon className="h-4 w-4 text-primary" />
                 <span className="text-xs font-bold">{t("components.spelling_mastery.you")}</span>
               </div>
-              <div className="font-quicksand font-extrabold text-2xl text-emerald-700 dark:text-emerald-300">
+              <div className="font-quicksand font-extrabold text-2xl text-primary dark:text-muted-foreground">
                 {summary?.score ?? 0}
               </div>
               <div className="text-[10px] text-muted-foreground">
@@ -1277,10 +1277,10 @@ function BattleView({
             </div>
             <div className="rounded-lg bg-white/70 dark:bg-white/[0.06] p-3">
               <div className="flex items-center justify-center gap-1.5 mb-1">
-                <Bot className="h-4 w-4 text-rose-600" />
+                <Bot className="h-4 w-4 text-primary" />
                 <span className="text-xs font-bold">{AI_OPPONENT_LABELS[opponent]}</span>
               </div>
-              <div className="font-quicksand font-extrabold text-2xl text-rose-700 dark:text-rose-300">
+              <div className="font-quicksand font-extrabold text-2xl text-primary dark:text-muted-foreground">
                 {summary?.aiScore ?? 0}
               </div>
               <div className="text-[10px] text-muted-foreground">
@@ -1288,7 +1288,7 @@ function BattleView({
               </div>
             </div>
           </div>
-          <Button onClick={() => void start()} className="bg-gradient-to-r from-rose-500 to-red-600 text-white">
+          <Button onClick={() => void start()} className="bg-gradient-to-r from-primary to-primary text-white">
             {t("components.spelling_mastery.rematch")}
           </Button>
           <Button onClick={() => {
@@ -1303,23 +1303,23 @@ function BattleView({
 
   // running
   if (!word) return null;
-  return <Card className="border-rose-200/40 dark:border-rose-500/20">
+  return <Card className="border-border dark:border-primary">
       <CardContent className="p-4 space-y-4">
         {/* Live scoreboard */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 p-2 text-center">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+          <div className="rounded-lg bg-muted dark:bg-primary p-2 text-center">
+            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-primary dark:text-muted-foreground">
               <UserIcon className="h-3 w-3" /> {t("components.spelling_mastery.you_2")}
             </div>
-            <div className="font-quicksand font-extrabold text-xl text-emerald-700 dark:text-emerald-300">
+            <div className="font-quicksand font-extrabold text-xl text-primary dark:text-muted-foreground">
               {youCorrect}
             </div>
           </div>
-          <div className="rounded-lg bg-rose-50 dark:bg-rose-500/10 p-2 text-center">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-rose-700 dark:text-rose-300">
+          <div className="rounded-lg bg-muted dark:bg-primary p-2 text-center">
+            <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-primary dark:text-muted-foreground">
               <Bot className="h-3 w-3" /> {AI_OPPONENT_LABELS[opponent]}
             </div>
-            <div className="font-quicksand font-extrabold text-xl text-rose-700 dark:text-rose-300">
+            <div className="font-quicksand font-extrabold text-xl text-primary dark:text-muted-foreground">
               {aiCorrect}
             </div>
           </div>
@@ -1337,7 +1337,7 @@ function BattleView({
         <Input value={guess} onChange={e => setGuess(e.target.value)} onKeyDown={e => {
         if (e.key === "Enter") void submit();
       }} placeholder={`Spell the word… (${word.letterCount} letters)`} autoFocus disabled={submitting} className="text-center text-xl font-quicksand font-bold tracking-wider h-12" />
-        <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-gradient-to-r from-rose-500 to-red-600 text-white">
+        <Button onClick={() => void submit()} disabled={!guess.trim() || submitting} className="w-full bg-gradient-to-r from-primary to-primary text-white">
           {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
           {t("components.spelling_mastery.submit_3")}
         </Button>
@@ -1345,11 +1345,11 @@ function BattleView({
         {reveals.length > 0 && <div className="flex flex-wrap gap-1 justify-center pt-1">
             {reveals.map((r, i) => <span key={i} className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md bg-white/60 dark:bg-white/[0.06]">
                 <span className="text-muted-foreground">#{i + 1}</span>
-                <span className={r.you ? "text-emerald-600" : "text-rose-600"}>
+                <span className={r.you ? "text-primary" : "text-primary"}>
                   {r.you ? "✓" : "✗"}
                 </span>
                 <span className="text-muted-foreground">·</span>
-                <span className={r.ai?.correct ? "text-emerald-600" : "text-rose-600"}>
+                <span className={r.ai?.correct ? "text-primary" : "text-primary"}>
                   {r.ai?.correct ? "✓" : "✗"}
                 </span>
                 {r.ai?.ms !== undefined && <span className="text-muted-foreground">{(r.ai.ms / 1000).toFixed(1)}s</span>}
@@ -1390,7 +1390,7 @@ function ParentView({
   } = useTranslation();
   const empty = !loading && words.length === 0;
   if (loading || empty) return <EmptyOrLoading loading={loading} empty={empty} />;
-  return <Card className="border-pink-200/40 dark:border-pink-500/20">
+  return <Card className="border-border dark:border-primary">
       <CardContent className="p-4 space-y-3">
         <div className="text-center">
           <p className="font-quicksand font-bold text-foreground">
@@ -1416,13 +1416,13 @@ function ParentRow({
   onAttempt: (correct: boolean) => void;
 }) {
   const [marked, setMarked] = useState<"ok" | "bad" | null>(null);
-  return <div className="flex items-center gap-2 p-2.5 rounded-xl bg-pink-50/60 dark:bg-pink-500/[0.06] border border-pink-200/40 dark:border-pink-500/20">
-      <button onClick={() => void tts.speak(word.word)} className="w-9 h-9 shrink-0 rounded-lg bg-pink-500 text-white flex items-center justify-center hover:bg-pink-600" aria-label={`Play ${word.word}`}>
+  return <div className="flex items-center gap-2 p-2.5 rounded-xl bg-muted dark:bg-primary/[0.06] border border-border dark:border-primary">
+      <button onClick={() => void tts.speak(word.word)} className="w-9 h-9 shrink-0 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary" aria-label={`Play ${word.word}`}>
         <Volume2 className="h-4 w-4" />
       </button>
       <button onClick={() => void tts.speak(word.word, {
       slow: true
-    })} className="w-9 h-9 shrink-0 rounded-lg bg-pink-100 dark:bg-pink-500/20 text-pink-700 dark:text-pink-200 flex items-center justify-center hover:bg-pink-200" aria-label={`Play ${word.word} slowly`}>
+    })} className="w-9 h-9 shrink-0 rounded-lg bg-muted dark:bg-primary text-primary dark:text-muted-foreground flex items-center justify-center hover:bg-muted" aria-label={`Play ${word.word} slowly`}>
         <span className="text-base">🐢</span>
       </button>
       <div className="flex-1 min-w-0">
@@ -1433,14 +1433,14 @@ function ParentRow({
       if (marked) return;
       setMarked("ok");
       onAttempt(true);
-    }} disabled={!!marked} className={marked === "ok" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}>
+    }} disabled={!!marked} className={marked === "ok" ? "bg-primary hover:bg-primary text-white" : ""}>
         ✓
       </Button>
       <Button size="sm" variant={marked === "bad" ? "default" : "outline"} onClick={() => {
       if (marked) return;
       setMarked("bad");
       onAttempt(false);
-    }} disabled={!!marked} className={marked === "bad" ? "bg-red-500 hover:bg-red-600 text-white" : ""}>
+    }} disabled={!!marked} className={marked === "bad" ? "bg-primary hover:bg-primary text-white" : ""}>
         ✗
       </Button>
     </div>;
@@ -1459,10 +1459,10 @@ function LeaderboardPanel({
   } = useTranslation();
   const lb = useSpellingLeaderboard(ageGroup);
   if (lb.rows.length === 0 && !lb.loading) return null;
-  return <Card className="border-amber-200/40 dark:border-amber-500/20">
+  return <Card className="border-border dark:border-primary">
       <CardContent className="p-3">
         <div className="flex items-center gap-2 mb-2">
-          <Trophy className="h-4 w-4 text-amber-500" />
+          <Trophy className="h-4 w-4 text-primary" />
           <p className="font-quicksand font-bold text-sm text-foreground">
             {t("components.spelling_mastery.family_leaderboard")} {ageGroup}
           </p>
@@ -1470,8 +1470,8 @@ function LeaderboardPanel({
         {lb.loading ? <p className="text-xs text-muted-foreground text-center py-2">
             <Loader2 className="h-3.5 w-3.5 mx-auto animate-spin" />
           </p> : <ol className="space-y-1">
-            {lb.rows.map((r, i) => <li key={r.id} className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg bg-amber-50/60 dark:bg-amber-500/[0.06]">
-                <span className="w-5 text-amber-700 dark:text-amber-300 font-bold">
+            {lb.rows.map((r, i) => <li key={r.id} className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg bg-muted dark:bg-primary/[0.06]">
+                <span className="w-5 text-primary dark:text-muted-foreground font-bold">
                   {i + 1}.
                 </span>
                 <span className="flex-1 truncate font-bold text-foreground">
@@ -1482,7 +1482,7 @@ function LeaderboardPanel({
                 </span>
                 <span className="text-muted-foreground">{r.accuracyPct}%</span>
                 <span className="text-muted-foreground">{r.durationSec}s</span>
-                <span className="font-quicksand font-extrabold text-amber-700 dark:text-amber-300">
+                <span className="font-quicksand font-extrabold text-primary dark:text-muted-foreground">
                   {r.score}
                 </span>
               </li>)}

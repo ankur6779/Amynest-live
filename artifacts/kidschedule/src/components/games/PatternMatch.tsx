@@ -100,7 +100,7 @@ export function PatternMatchGame({
         alignItems: "center",
         justifyContent: "center",
         background: s === "?" ? "rgba(139,92,246,0.2)" : "transparent",
-        border: s === "?" ? "2px dashed #c4b5fd" : "1px solid rgba(139,92,246,0.2)",
+        border: s === "?" ? "2px dashed hsl(var(--brand-violet-300))" : "1px solid rgba(139,92,246,0.2)",
         borderRadius: 8,
         color: s === "?" ? "#fff" : undefined
       }}>{s === "?" ? "?" : s}</div>)}
@@ -126,7 +126,7 @@ export function PatternMatchGame({
       marginTop: 16,
       fontSize: 14,
       fontWeight: 700,
-      color: feedback === "correct" ? "#86efac" : "#fca5a5"
+      color: feedback === "correct" ? "hsl(var(--brand-green-300))" : "hsl(var(--brand-red-300))"
     }}>
           {feedback === "correct" ? "Correct! ✨" : `Almost — the answer was ${correctValue}`}
         </div>}

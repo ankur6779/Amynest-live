@@ -97,7 +97,7 @@ export function FindMistakeGame({
         const reveal = picked !== null;
         const isMistake = i === r.mistakeIdx;
         const isPicked = picked === i;
-        const bg = reveal && isMistake ? "#22c55e" : reveal && isPicked && !isMistake ? "#ef4444" : "rgba(255,255,255,0.08)";
+        const bg = reveal && isMistake ? "hsl(var(--brand-green-500))" : reveal && isPicked && !isMistake ? "hsl(var(--brand-red-500))" : "rgba(255,255,255,0.08)";
         return <button key={i} disabled={reveal} onClick={() => onPick(i)} style={{
           background: bg,
           color: "#fff",
@@ -113,7 +113,7 @@ export function FindMistakeGame({
       </div>
       <div style={{
       marginTop: 14,
-      color: "#c4b5fd",
+      color: "hsl(var(--brand-violet-300))",
       fontSize: 12,
       fontWeight: 700
     }}>{t("components.games.find_mistake.score")} {score}</div>

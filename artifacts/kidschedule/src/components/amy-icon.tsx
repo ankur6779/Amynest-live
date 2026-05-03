@@ -43,8 +43,8 @@ export function AmyIcon({
   }}>
       <defs>
         <radialGradient id="amyFaceBg" cx="50%" cy="45%" r="55%">
-          <stop offset="0%" stopColor="#FFF0E6" />
-          <stop offset="55%" stopColor="#FFE0BC" />
+          <stop offset="0%" stopColor="hsl(var(--brand-amber-100))" />
+          <stop offset="55%" stopColor="hsl(var(--brand-amber-200))" />
           <stop offset="100%" stopColor="#F5C8A0" />
         </radialGradient>
       </defs>
@@ -98,7 +98,7 @@ export function AmyIcon({
         width: size,
         height: size,
         borderRadius: "9999px",
-        background: "linear-gradient(135deg,#7B3FF2,#FF4ECD,#4FC3F7)",
+        background: "linear-gradient(135deg,hsl(var(--brand-violet-600)),#FF4ECD,hsl(var(--brand-sky-400)))",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

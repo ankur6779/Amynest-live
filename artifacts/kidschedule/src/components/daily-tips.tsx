@@ -178,7 +178,7 @@ export function DailyTips({
       <div className="flex items-end justify-between gap-2 px-1">
         <div>
           <h2 className="text-base font-bold flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-amber-500" />
+            <Sparkles className="h-4 w-4 text-primary" />
             {ui.title}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">{ui.subtitle}</p>
@@ -213,7 +213,7 @@ export function DailyTips({
                     {meta.label[lang]}
                   </span>
                 </div>
-                {isPersonalized && <span className="inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                {isPersonalized && <span className="inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-primary px-2 py-0.5 text-[10px] font-bold text-primary dark:text-muted-foreground">
                     <Sparkles className="h-3 w-3" />
                     {t("components.daily_tips.amy_ai")}
                   </span>}
@@ -229,13 +229,13 @@ export function DailyTips({
 
               {/* Action row */}
               <div className="mt-3 flex items-center justify-between gap-2">
-                <button onClick={() => handleHelpful(tip.id)} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${liked ? "bg-emerald-500 text-white shadow-sm" : "bg-white/70 dark:bg-white/10 text-foreground hover:bg-white dark:hover:bg-white/15"}`} aria-pressed={liked}>
+                <button onClick={() => handleHelpful(tip.id)} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ${liked ? "bg-primary text-white shadow-sm" : "bg-white/70 dark:bg-white/10 text-foreground hover:bg-white dark:hover:bg-white/15"}`} aria-pressed={liked}>
                   <ThumbsUp className="h-3.5 w-3.5" />
                   {liked ? `${ui.helpful} ✓` : ui.helpful}
                 </button>
 
                 <div className="flex items-center gap-1.5">
-                  {canPersonalize && <button onClick={() => handlePersonalize(cat)} className="inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-amber-500/20 px-2.5 py-1.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-white dark:hover:bg-amber-500/30 transition-colors" title={ui.personalize}>
+                  {canPersonalize && <button onClick={() => handlePersonalize(cat)} className="inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-primary px-2.5 py-1.5 text-[11px] font-bold text-primary dark:text-muted-foreground hover:bg-white dark:hover:bg-primary transition-colors" title={ui.personalize}>
                       <Sparkles className="h-3.5 w-3.5" />
                       {ui.personalize}
                     </button>}

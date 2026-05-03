@@ -309,7 +309,7 @@ export function InfantSleepTracker({
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Moon className="h-5 w-5 text-indigo-500" />
+          <Moon className="h-5 w-5 text-primary" />
           <h3 className="font-bold text-base">{t("components.infant_sleep_tracker.sleep_tracker_prediction")}</h3>
         </div>
         <Badge variant="outline" className="rounded-full px-3 text-xs font-semibold gap-1.5">
@@ -318,35 +318,35 @@ export function InfantSleepTracker({
       </div>
 
       {/* ── Prediction card (shown once there's data) ─────── */}
-      {predNextSleep && pattern && <Card className="rounded-3xl border-2 border-indigo-200 dark:border-indigo-400/30 bg-gradient-to-br from-indigo-50 dark:from-indigo-500/15 to-purple-50 dark:to-purple-500/15 overflow-hidden">
+      {predNextSleep && pattern && <Card className="rounded-3xl border-2 border-border dark:border-border bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary overflow-hidden">
           <CardContent className="p-5 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-bold text-indigo-500 uppercase tracking-wide mb-1">{t("components.infant_sleep_tracker.next_predicted_sleep")}</p>
-                <p className="text-2xl font-extrabold text-indigo-800 dark:text-indigo-200">{formatTime12(predNextSleep)}</p>
-                <p className="text-sm text-indigo-700 dark:text-indigo-200 mt-0.5">
+                <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">{t("components.infant_sleep_tracker.next_predicted_sleep")}</p>
+                <p className="text-2xl font-extrabold text-primary dark:text-muted-foreground">{formatTime12(predNextSleep)}</p>
+                <p className="text-sm text-primary dark:text-muted-foreground mt-0.5">
                   {t("components.infant_sleep_tracker.based_on_last_wake_up_at")} <strong>{formatTime12(lastWakeTime)}</strong> {t("components.infant_sleep_tracker.avg")} {fmtDur(pattern.avgWakeWindow)} {t("components.infant_sleep_tracker.wake_window")}
                 </p>
               </div>
               <div className="text-4xl">😴</div>
             </div>
 
-            {predFreeMins && predFreeMins > 0 && <div className="bg-white/60 rounded-2xl px-4 py-2.5 border border-indigo-100 dark:border-indigo-400/30">
-                <p className="text-xs font-bold text-indigo-600 mb-1">{t("components.infant_sleep_tracker.estimated_nap_duration")}</p>
-                <p className="font-bold text-indigo-800 dark:text-indigo-200">~{fmtDur(predFreeMins)}</p>
+            {predFreeMins && predFreeMins > 0 && <div className="bg-white/60 rounded-2xl px-4 py-2.5 border border-border dark:border-border">
+                <p className="text-xs font-bold text-primary mb-1">{t("components.infant_sleep_tracker.estimated_nap_duration")}</p>
+                <p className="font-bold text-primary dark:text-muted-foreground">~{fmtDur(predFreeMins)}</p>
               </div>}
 
             {/* Parent productivity suggestion */}
-            {predFreeMins && predFreeMins >= 30 && <div className="bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-400/30 rounded-2xl px-4 py-3">
-                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-200 mb-1.5">{t("components.infant_sleep_tracker.your_free_time_window")}</p>
-                <p className="text-sm text-emerald-800 dark:text-emerald-200">
+            {predFreeMins && predFreeMins >= 30 && <div className="bg-muted dark:bg-primary border border-border dark:border-border rounded-2xl px-4 py-3">
+                <p className="text-xs font-bold text-primary dark:text-muted-foreground mb-1.5">{t("components.infant_sleep_tracker.your_free_time_window")}</p>
+                <p className="text-sm text-primary dark:text-muted-foreground">
                   {t("components.infant_sleep_tracker.you_may_get")} <strong>~{fmtDur(predFreeMins)}</strong> {t("components.infant_sleep_tracker.to_yourself_consider")}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {predFreeMins >= 60 && <span className="text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 px-2.5 py-1 rounded-full font-medium">{t("components.infant_sleep_tracker.rest")}</span>}
-                  {predFreeMins >= 45 && <span className="text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 px-2.5 py-1 rounded-full font-medium">{t("components.infant_sleep_tracker.work")}</span>}
-                  <span className="text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 px-2.5 py-1 rounded-full font-medium">{t("components.infant_sleep_tracker.eat_a_meal")}</span>
-                  {predFreeMins >= 30 && <span className="text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 px-2.5 py-1 rounded-full font-medium">{t("components.infant_sleep_tracker.light_tasks")}</span>}
+                  {predFreeMins >= 60 && <span className="text-xs bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2.5 py-1 rounded-full font-medium">{t("components.infant_sleep_tracker.rest")}</span>}
+                  {predFreeMins >= 45 && <span className="text-xs bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2.5 py-1 rounded-full font-medium">{t("components.infant_sleep_tracker.work")}</span>}
+                  <span className="text-xs bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2.5 py-1 rounded-full font-medium">{t("components.infant_sleep_tracker.eat_a_meal")}</span>
+                  {predFreeMins >= 30 && <span className="text-xs bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2.5 py-1 rounded-full font-medium">{t("components.infant_sleep_tracker.light_tasks")}</span>}
                 </div>
               </div>}
           </CardContent>
@@ -381,7 +381,7 @@ export function InfantSleepTracker({
                 </div>)}
             </div>
             {/* Consistency badge */}
-            <div className={`flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium ${pattern.consistency === "consistent" ? "bg-green-50 dark:bg-green-500/15 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-400/30" : pattern.consistency === "somewhat" ? "bg-amber-50 dark:bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-400/30" : "bg-red-50 dark:bg-red-500/15 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-400/30"}`}>
+            <div className={`flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium ${pattern.consistency === "consistent" ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border border-border dark:border-border" : pattern.consistency === "somewhat" ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border border-border dark:border-border" : "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border border-border dark:border-border"}`}>
               <TrendingUp className="h-4 w-4 flex-shrink-0" />
               {pattern.consistency === "consistent" && "✅ Sleep timing is consistent — great job!"}
               {pattern.consistency === "somewhat" && "⚠️ Sleep timing is somewhat consistent — getting there!"}
@@ -394,11 +394,11 @@ export function InfantSleepTracker({
       <Card className="rounded-3xl border-border/50 overflow-hidden">
         <button onClick={() => setShowInput(v => !v)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-3">
-            <Sun className="h-5 w-5 text-amber-500" />
+            <Sun className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">
               {todayEntry ? "Update Today's Sleep Log" : "Log Today's Sleep"}
             </span>
-            {todayEntry && <Badge className="bg-green-100 dark:bg-green-500/20 text-green-800 dark:text-green-200 text-xs border-green-200 dark:border-green-400/30 px-2 py-0.5 rounded-full">
+            {todayEntry && <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-xs border-border dark:border-border px-2 py-0.5 rounded-full">
                 {t("components.infant_sleep_tracker.logged")}
               </Badge>}
           </div>
@@ -409,7 +409,7 @@ export function InfantSleepTracker({
             {/* Wake-up time */}
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
-                <Sun className="h-3.5 w-3.5 text-amber-500" /> {t("components.infant_sleep_tracker.morning_wake_up_time")}
+                <Sun className="h-3.5 w-3.5 text-primary" /> {t("components.infant_sleep_tracker.morning_wake_up_time")}
               </label>
               <input type="time" className={inputCls} value={form.wakeUpTime} onChange={e => setForm(f => ({
             ...f,
@@ -421,7 +421,7 @@ export function InfantSleepTracker({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Moon className="h-3.5 w-3.5 text-indigo-400" /> {t("components.infant_sleep_tracker.nap_sessions")}
+                  <Moon className="h-3.5 w-3.5 text-primary" /> {t("components.infant_sleep_tracker.nap_sessions")}
                 </label>
                 <button type="button" onClick={addNap} className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary/80 transition-colors">
                   <Plus className="h-3.5 w-3.5" /> {t("components.infant_sleep_tracker.add_nap")}
@@ -454,7 +454,7 @@ export function InfantSleepTracker({
             {/* Night sleep start */}
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
-                <Moon className="h-3.5 w-3.5 text-indigo-500" /> {t("components.infant_sleep_tracker.night_sleep_start")}
+                <Moon className="h-3.5 w-3.5 text-primary" /> {t("components.infant_sleep_tracker.night_sleep_start")}
               </label>
               <input type="time" className={inputCls} value={form.nightSleepStart} onChange={e => setForm(f => ({
             ...f,
@@ -465,7 +465,7 @@ export function InfantSleepTracker({
             {/* Night wake-ups */}
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
-                <BedDouble className="h-3.5 w-3.5 text-violet-400" /> {t("components.infant_sleep_tracker.night_wake_ups_0_8")}
+                <BedDouble className="h-3.5 w-3.5 text-primary" /> {t("components.infant_sleep_tracker.night_wake_ups_0_8")}
               </label>
               <div className="flex gap-2 flex-wrap">
                 {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => <button key={n} type="button" onClick={() => setForm(f => ({
@@ -489,13 +489,13 @@ export function InfantSleepTracker({
       <Card className="rounded-3xl border-border/50 overflow-hidden">
         <button onClick={() => setShowTips(v => !v)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors">
           <div className="flex items-center gap-3">
-            <Lightbulb className="h-5 w-5 text-amber-400" />
+            <Lightbulb className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{t("components.infant_sleep_tracker.pre_sleep_tips_for")} {ageMonths < 3 ? "0–3" : ageMonths < 6 ? "3–6" : "6–12"} {t("components.infant_sleep_tracker.months")}</span>
           </div>
           {showTips ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
         </button>
         {showTips && <CardContent className="px-5 pb-5 pt-0 border-t border-border/40 space-y-2">
-            {PRE_SLEEP_TIPS[ageTier].map((tip, i) => <div key={i} className="flex items-start gap-3 bg-amber-50/60 rounded-2xl px-3 py-2.5">
+            {PRE_SLEEP_TIPS[ageTier].map((tip, i) => <div key={i} className="flex items-start gap-3 bg-muted rounded-2xl px-3 py-2.5">
                 <span className="text-xl flex-shrink-0">{tip.emoji}</span>
                 <p className="text-sm text-foreground leading-snug">{tip.tip}</p>
               </div>)}
@@ -546,7 +546,7 @@ export function InfantSleepTracker({
                 } = useTranslation();
                 return <span key={i}>
                         {t("components.infant_sleep_tracker.nap_3")} {i + 1}: <strong className="text-foreground">{formatTime12(n.start)}{n.end ? `–${formatTime12(n.end)}` : ""}</strong>
-                        {n.start && n.end && <span className="text-indigo-600 ml-1">({fmtDur(durMins(n.start, n.end))})</span>}
+                        {n.start && n.end && <span className="text-primary ml-1">({fmtDur(durMins(n.start, n.end))})</span>}
                       </span>;
               })}
                     {day.nightSleepStart && <span>{t("components.infant_sleep_tracker.bed")} <strong className="text-foreground">{formatTime12(day.nightSleepStart)}</strong></span>}

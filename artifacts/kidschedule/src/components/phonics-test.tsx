@@ -112,18 +112,18 @@ function QuestionCard({ question, index, total, onAnswer, selectedIndex }: Quest
     <div className="space-y-4" data-testid={`phonics-test-question-${index}`}>
       {/* Progress */}
       <div className="flex items-center justify-between gap-3">
-        <Badge variant="secondary" className="bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-200 border-0 text-[11px] font-bold">
+        <Badge variant="secondary" className="bg-muted text-foreground border-0 text-[11px] font-bold">
           Q {index + 1} / {total}
         </Badge>
-        <Badge variant="outline" className="text-[10px] font-medium text-slate-600 dark:text-slate-400">
+        <Badge variant="outline" className="text-[10px] font-medium text-foreground dark:text-muted-foreground">
           {TYPE_LABEL[question.type]}
         </Badge>
       </div>
       <Progress value={((index + 1) / total) * 100} className="h-1.5" />
 
       {/* Prompt */}
-      <div className="rounded-3xl bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/40 dark:to-fuchsia-950/40 border border-violet-200/60 dark:border-violet-500/20 p-5 sm:p-7 text-center space-y-3">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+      <div className="rounded-3xl bg-card border border-border p-5 sm:p-7 text-center space-y-3">
+        <p className="text-sm font-medium text-foreground dark:text-muted-foreground">
           {question.prompt.instruction}
         </p>
 
@@ -140,7 +140,7 @@ function QuestionCard({ question, index, total, onAnswer, selectedIndex }: Quest
             size="sm"
             onClick={playPrompt}
             data-testid={`phonics-test-play-${index}`}
-            className="gap-1.5 rounded-full border-violet-300 dark:border-violet-500/40 text-violet-700 dark:text-violet-200"
+            className="gap-1.5 rounded-full border-border text-foreground"
           >
             {loading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -168,18 +168,18 @@ function QuestionCard({ question, index, total, onAnswer, selectedIndex }: Quest
               data-testid={`phonics-test-option-${index}-${i}`}
               className={cn(
                 "relative rounded-2xl border-2 p-4 text-center transition-all min-h-[64px] flex items-center justify-center gap-2",
-                "bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-700",
-                "hover:border-violet-400 hover:shadow-md active:scale-[0.98]",
-                "disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:border-slate-200 dark:disabled:hover:border-slate-700",
-                isSelected && "border-violet-500 bg-violet-50 dark:bg-violet-950/40 ring-2 ring-violet-300 dark:ring-violet-500/40",
+                "bg-card border-border",
+                "hover:border-primary hover:shadow-md active:scale-[0.98]",
+                "disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:border-border",
+                isSelected && "border-primary bg-muted ring-2 ring-primary",
               )}
             >
               {opt.emoji && <span className="text-3xl">{opt.emoji}</span>}
-              <span className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">
+              <span className="text-lg sm:text-xl font-bold text-foreground dark:text-muted-foreground">
                 {opt.label}
               </span>
               {isSelected && (
-                <CheckCircle2 className="absolute -top-2 -right-2 h-6 w-6 text-violet-600 bg-white dark:bg-slate-900 rounded-full" />
+                <CheckCircle2 className="absolute -top-2 -right-2 h-6 w-6 text-foreground bg-card rounded-full" />
               )}
             </button>
           );
@@ -317,31 +317,31 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
   return (
     <Card
       data-testid="phonics-test-card"
-      className="border-violet-200/70 dark:border-violet-500/30 bg-gradient-to-br from-white via-violet-50/30 to-fuchsia-50/30 dark:from-slate-900 dark:via-violet-950/20 dark:to-fuchsia-950/20 shadow-md"
+      className="border-border bg-gradient-to-br from-white shadow-md"
     >
       <CardContent className="p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-2xl p-2.5 bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-md">
+          <div className="rounded-2xl p-2.5 bg-card text-primary-foreground shadow-md">
             <GraduationCap className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-50 leading-tight">
+            <h3 className="text-base sm:text-lg font-extrabold text-foreground dark:text-muted-foreground leading-tight">
               Phonics Test
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
+            <p className="text-xs text-foreground dark:text-muted-foreground">
               Quick check of {childName}'s phonics — Daily 5 questions or Weekly 20.
             </p>
           </div>
         </div>
 
         {availLoading && (
-          <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading availability…
           </div>
         )}
 
         {availError && (
-          <p className="text-xs text-red-600 dark:text-red-400" data-testid="phonics-test-error">
+          <p className="text-xs text-foreground" data-testid="phonics-test-error">
             {availError}
           </p>
         )}
@@ -363,8 +363,8 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
                   data-testid={`phonics-test-start-${tt}`}
                   className={cn(
                     "h-auto rounded-2xl py-4 px-4 flex flex-col items-start gap-1 text-left whitespace-normal",
-                    "bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white",
-                    "disabled:opacity-60 disabled:from-slate-400 disabled:to-slate-500",
+                    "bg-card text-primary-foreground",
+                    "disabled:opacity-60 disabled:from-muted disabled:to-muted",
                   )}
                 >
                   <span className="text-sm font-extrabold">{label}</span>
@@ -386,7 +386,7 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
         )}
 
         {phase.kind === "submitting" && (
-          <div className="flex items-center gap-2 py-6 justify-center text-violet-700 dark:text-violet-300">
+          <div className="flex items-center gap-2 py-6 justify-center text-foreground">
             <Loader2 className="h-5 w-5 animate-spin" /> Working…
           </div>
         )}
@@ -421,14 +421,14 @@ function ResultPanel({ data, childName, onDone }: ResultPanelProps) {
   const { breakdown, weakConcepts, insight } = data;
   const accuracy = breakdown.accuracyPct;
   const ringColor =
-    accuracy >= 80 ? "from-emerald-500 to-teal-500" :
-    accuracy >= 50 ? "from-amber-500 to-orange-500" :
-                     "from-rose-500 to-pink-500";
+    accuracy >= 80 ? "" :
+    accuracy >= 50 ? "" :
+                     "";
   return (
     <div className="space-y-4" data-testid="phonics-test-result">
       <div className="text-center space-y-2">
         <div className={cn(
-          "inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br text-white shadow-lg",
+          "inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br text-primary-foreground shadow-lg",
           ringColor,
         )}>
           <div className="text-center">
@@ -437,22 +437,22 @@ function ResultPanel({ data, childName, onDone }: ResultPanelProps) {
           </div>
         </div>
         <div className="flex items-center justify-center gap-2">
-          <Trophy className="h-4 w-4 text-amber-500" />
-          <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100">
+          <Trophy className="h-4 w-4 text-foreground" />
+          <span className="text-sm font-extrabold text-foreground dark:text-muted-foreground">
             {insight.performanceLabel}
           </span>
         </div>
       </div>
 
-      <div className="rounded-2xl bg-violet-50/70 dark:bg-violet-950/30 border border-violet-200/60 dark:border-violet-500/20 p-4 space-y-2">
-        <div className="flex items-center gap-2 text-xs font-bold text-violet-800 dark:text-violet-200">
+      <div className="rounded-2xl bg-muted border border-border p-4 space-y-2">
+        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
           <Sparkles className="h-3.5 w-3.5" /> {childName}'s phonics insight
         </div>
-        <p className="text-sm text-slate-800 dark:text-slate-100 leading-relaxed">
+        <p className="text-sm text-foreground dark:text-muted-foreground leading-relaxed">
           {insight.text}
         </p>
         {insight.suggestion && (
-          <p className="text-sm text-violet-900 dark:text-violet-200 leading-relaxed font-medium border-t border-violet-200/60 dark:border-violet-500/20 pt-2 mt-2">
+          <p className="text-sm text-foreground leading-relaxed font-medium border-t border-border pt-2 mt-2">
             💡 {insight.suggestion}
           </p>
         )}
@@ -460,7 +460,7 @@ function ResultPanel({ data, childName, onDone }: ResultPanelProps) {
 
       {weakConcepts.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          <div className="text-xs font-bold text-foreground dark:text-muted-foreground">
             Sounds to revisit
           </div>
           <div className="flex flex-wrap gap-2">
@@ -468,7 +468,7 @@ function ResultPanel({ data, childName, onDone }: ResultPanelProps) {
               <Badge
                 key={wc.id}
                 variant="secondary"
-                className="bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-200 border-0 text-sm py-1.5 px-3"
+                className="bg-muted text-foreground border-0 text-sm py-1.5 px-3"
               >
                 {wc.emoji ?? ""} {wc.symbol}
               </Badge>

@@ -461,21 +461,21 @@ const DIFF_CFG: Record<Difficulty, {
   easy: {
     label: "Easy",
     stars: "⭐",
-    color: "#22c55e",
+    color: "hsl(var(--brand-green-500))",
     bg: "rgba(34,197,94,0.12)",
     timer: null
   },
   medium: {
     label: "Medium",
     stars: "⭐⭐",
-    color: "#f59e0b",
+    color: "hsl(var(--brand-amber-500))",
     bg: "rgba(245,158,11,0.12)",
     timer: null
   },
   hard: {
     label: "Hard",
     stars: "⭐⭐⭐",
-    color: "#ef4444",
+    color: "hsl(var(--brand-red-500))",
     bg: "rgba(239,68,68,0.12)",
     timer: 30
   }
@@ -582,7 +582,7 @@ function TimerBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seconds, running]);
   const pct = left / seconds * 100;
-  const color = pct > 50 ? "#22c55e" : pct > 25 ? "#f59e0b" : "#ef4444";
+  const color = pct > 50 ? "hsl(var(--brand-green-500))" : pct > 25 ? "hsl(var(--brand-amber-500))" : "hsl(var(--brand-red-500))";
   return <div className="w-full">
       <div className="flex justify-between text-[11px] font-bold mb-1" style={{
       color
@@ -627,17 +627,17 @@ function OptionBtn({
   if (!submitted) {
     if (selected) {
       bg = "rgba(99,102,241,0.25)";
-      border = "#6366f1";
+      border = "hsl(var(--brand-indigo-500))";
     }
   } else {
     if (isCorrect) {
       bg = "rgba(34,197,94,0.25)";
-      border = "#22c55e";
+      border = "hsl(var(--brand-green-500))";
       anim = `pz-correct 600ms ease both`;
       icon = "✅";
     } else if (isWrongSelected) {
       bg = "rgba(239,68,68,0.25)";
-      border = "#ef4444";
+      border = "hsl(var(--brand-red-500))";
       anim = `pz-wrong 500ms ease both`;
       icon = "❌";
     } else {
@@ -705,7 +705,7 @@ function SessionDone({
 
       <div className="rounded-2xl px-5 py-3 mb-6 font-black text-2xl" style={{
       background: "rgba(255,255,255,0.1)",
-      color: correct === total ? "#fbbf24" : "#94a3b8"
+      color: correct === total ? "hsl(var(--brand-amber-300))" : "#94a3b8"
     }}>
         {correct} / {total} ⭐
       </div>
@@ -715,7 +715,7 @@ function SessionDone({
       </div>
 
       <button onClick={onRestart} className="w-full max-w-xs py-3.5 rounded-2xl font-black text-base text-white transition-all active:scale-95" style={{
-      background: "linear-gradient(135deg,#6366f1,#8b5cf6)"
+      background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-violet-500)))"
     }}>
         {t("components.daily_puzzle.play_again")}
       </button>
@@ -888,7 +888,7 @@ function PuzzleEngine({
   // ── Session done ─────────────────────────────────────────────────────────
   if (done) {
     return <div className="rounded-3xl overflow-hidden" style={{
-      background: "linear-gradient(160deg,#1e1b4b,#0f0f18)"
+      background: "linear-gradient(160deg,hsl(var(--brand-indigo-950)),#0f0f18)"
     }}>
         <style>{PUZZLE_STYLES}</style>
         <SessionDone results={results} childName={childName} difficulty={state.difficulty} onRestart={handleRestart} />
@@ -898,7 +898,7 @@ function PuzzleEngine({
   const isCorrectAnswer = submitted && selected === cur.correctAnswer;
   const isWrong = submitted && selected !== cur.correctAnswer;
   return <div className="rounded-3xl overflow-hidden" style={{
-    background: "linear-gradient(160deg,#1e1b4b 0%,#0f0f1a 100%)"
+    background: "linear-gradient(160deg,hsl(var(--brand-indigo-950)) 0%,#0f0f1a 100%)"
   }}>
       <style>{PUZZLE_STYLES}</style>
 
@@ -915,7 +915,7 @@ function PuzzleEngine({
 
         <button onClick={handleRepeat} className="text-[11px] font-bold px-2.5 py-1 rounded-full transition-all active:scale-95 border" style={{
         borderColor: "rgba(255,255,255,0.2)",
-        color: speaking ? "#fbbf24" : "rgba(255,255,255,0.5)",
+        color: speaking ? "hsl(var(--brand-amber-300))" : "rgba(255,255,255,0.5)",
         background: speaking ? "rgba(251,191,36,0.15)" : "transparent"
       }} title={t("components.daily_puzzle.repeat_question")}>
           {speaking ? "🔊" : "🔁"} {t("components.daily_puzzle.repeat")}
@@ -962,7 +962,7 @@ function PuzzleEngine({
         {submitted && <div className="mt-3 rounded-2xl px-4 py-2.5 text-center font-black text-sm" style={{
         animation: "pz-appear 250ms ease both",
         background: isCorrectAnswer ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)",
-        color: isCorrectAnswer ? "#4ade80" : "#f87171",
+        color: isCorrectAnswer ? "hsl(var(--brand-green-400))" : "hsl(var(--brand-red-400))",
         border: `1px solid ${isCorrectAnswer ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`
       }}>
             {isCorrectAnswer ? `✅ Correct! ${state.correctStreak >= 2 ? `🔥 ${state.correctStreak} in a row!` : "Well done!"}` : `❌ Oops! Correct answer: ${cur.correctAnswer}`}
@@ -972,7 +972,7 @@ function PuzzleEngine({
         {levelMsg && <div className="mt-2 rounded-2xl px-4 py-2.5 text-center font-bold text-sm" style={{
         animation: "pz-appear 300ms ease both",
         background: "rgba(139,92,246,0.2)",
-        color: "#c4b5fd",
+        color: "hsl(var(--brand-violet-300))",
         border: "1px solid rgba(139,92,246,0.3)"
       }}>
             {levelMsg}
@@ -982,11 +982,11 @@ function PuzzleEngine({
       {/* ── Action button ─────────────────────────────────────────────── */}
       <div className="px-4 pb-4">
         {!submitted ? <button onClick={handleSubmit} disabled={!selected} className="w-full py-3.5 rounded-2xl font-black text-base text-white transition-all active:scale-95 disabled:opacity-30" style={{
-        background: "linear-gradient(135deg,#6366f1,#8b5cf6)"
+        background: "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-violet-500)))"
       }}>
             {t("components.daily_puzzle.check_answer")}
           </button> : <button onClick={handleNext} className="w-full py-3.5 rounded-2xl font-black text-base text-white transition-all active:scale-95" style={{
-        background: idx + 1 >= puzzles.length ? "linear-gradient(135deg,#f59e0b,#fbbf24)" : "linear-gradient(135deg,#6366f1,#8b5cf6)"
+        background: idx + 1 >= puzzles.length ? "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-amber-300)))" : "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-violet-500)))"
       }}>
             {idx + 1 >= puzzles.length ? "🏆 See Results!" : "Next Puzzle →"}
           </button>}

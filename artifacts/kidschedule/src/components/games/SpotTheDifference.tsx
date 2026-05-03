@@ -110,7 +110,7 @@ export function SpotTheDifferenceGame({
           top: 2,
           right: 3,
           fontSize: 11,
-          color: "#86efac"
+          color: "hsl(var(--brand-green-300))"
         }}>✓</span>}
             </button>;
     }))}
@@ -133,7 +133,7 @@ export function SpotTheDifferenceGame({
       marginBottom: 10
     }}>
         {t("components.games.spot_the_difference.tap_the")} <strong style={{
-        color: "#c4b5fd"
+        color: "hsl(var(--brand-violet-300))"
       }}>{t("components.games.spot_the_difference.differences")}</strong> {t("components.games.spot_the_difference.in_the_right_picture_found")} {foundDiffs.size} / {total}
       </div>
 
@@ -155,7 +155,7 @@ export function SpotTheDifferenceGame({
         </div>
         <div>
           <div style={{
-          color: "#c4b5fd",
+          color: "hsl(var(--brand-violet-300))",
           fontSize: 10,
           marginBottom: 4,
           textTransform: "uppercase",
@@ -170,7 +170,7 @@ export function SpotTheDifferenceGame({
       marginTop: 12,
       fontSize: 13,
       fontWeight: 700,
-      color: "#86efac"
+      color: "hsl(var(--brand-green-300))"
     }}>
           {t("components.games.spot_the_difference.all")} {total} {t("components.games.spot_the_difference.differences_found")}
         </div>}

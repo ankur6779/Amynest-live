@@ -102,24 +102,24 @@ export default function KidsControlCenterPage() {
       <div className="relative min-h-screen overflow-hidden">
         {/* Ambient glow */}
         <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute -top-32 -left-20 h-80 w-80 rounded-full bg-violet-400/30 dark:bg-violet-500/25 blur-3xl" />
-          <div className="absolute top-40 -right-20 h-80 w-80 rounded-full bg-pink-400/25 dark:bg-pink-500/20 blur-3xl" />
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-72 w-[40rem] rounded-full bg-amber-300/20 dark:bg-amber-400/15 blur-3xl" />
+          <div className="absolute -top-32 -left-20 h-80 w-80 rounded-full bg-primary blur-3xl" />
+          <div className="absolute top-40 -right-20 h-80 w-80 rounded-full bg-primary blur-3xl" />
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-72 w-[40rem] rounded-full bg-primary blur-3xl" />
         </div>
 
         <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 pt-2 sm:pt-4 pb-6 sm:pb-10">
           {/* HEADER */}
           <header className="text-center mb-6 sm:mb-8">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-violet-500/15 to-pink-500/15 border border-violet-300/40 dark:border-violet-500/30 text-xs font-bold text-violet-700 dark:text-violet-300 mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border text-xs font-bold text-foreground mb-3">
               <Sparkles className="h-3 w-3" /> {t("screens.kids_control_center.coming_soon_badge")}
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-br from-violet-600 via-pink-500 to-amber-500 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-card bg-clip-text text-transparent">
               {t("screens.kids_control_center.title")}
             </h1>
           </header>
 
           {/* HERO */}
-          <section className="rounded-3xl p-5 sm:p-7 mb-5 backdrop-blur-xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 shadow-[0_8px_40px_-12px_rgba(124,58,237,0.35)]">
+          <section className="rounded-3xl p-5 sm:p-7 mb-5 backdrop-blur-xl bg-card border border-border shadow-[0_8px_40px_-12px_rgba(124,58,237,0.35)]">
             <h2 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight">
               {t("screens.kids_control_center.hero_title")}
             </h2>
@@ -129,9 +129,9 @@ export default function KidsControlCenterPage() {
           </section>
 
           {/* AMYNEST KIDS */}
-          <section className="rounded-3xl p-5 sm:p-7 mb-5 backdrop-blur-xl bg-gradient-to-br from-violet-500/10 via-white/60 to-pink-500/10 dark:from-violet-500/15 dark:via-white/5 dark:to-pink-500/15 border border-violet-200/60 dark:border-violet-500/20 shadow-[0_8px_40px_-12px_rgba(236,72,153,0.25)]">
+          <section className="rounded-3xl p-5 sm:p-7 mb-5 backdrop-blur-xl bg-card via-white/60 border border-border shadow-[0_8px_40px_-12px_rgba(236,72,153,0.25)]">
             <h3 className="text-lg sm:text-xl font-extrabold text-foreground mb-2">
-              {t("screens.kids_control_center.kids_section_title")}{" "}
+              {t("screens.kids_control_center.kids_section_title")}{""}
               <span className="text-sm font-semibold text-muted-foreground">{t("screens.kids_control_center.kids_section_subtitle")}</span>
             </h3>
             <p className="text-sm sm:text-[15px] text-foreground/80 leading-relaxed mb-4">
@@ -141,7 +141,7 @@ export default function KidsControlCenterPage() {
               {HIGHLIGHT_KEYS.map((h) => (
                 <div
                   key={h.key}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-white/70 dark:bg-white/8 border border-white/60 dark:border-white/10"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2.5 bg-card border border-border"
                 >
                   <span className="text-lg">{h.icon}</span>
                   <span className="text-xs sm:text-sm font-semibold text-foreground/90">{t(`screens.kids_control_center.${h.key}`)}</span>
@@ -159,7 +159,7 @@ export default function KidsControlCenterPage() {
               {FEATURE_KEYS.map((f) => (
                 <div
                   key={f.titleKey}
-                  className="group rounded-2xl p-4 backdrop-blur-xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 hover:border-violet-300/60 dark:hover:border-violet-500/40 hover:shadow-[0_8px_30px_-10px_rgba(124,58,237,0.4)] transition-all"
+                  className="group rounded-2xl p-4 backdrop-blur-xl bg-card border border-border hover:border-border hover:shadow-[0_8px_30px_-10px_rgba(124,58,237,0.4)] transition-all"
                   data-testid={`feature-${f.titleKey}`}
                 >
                   <div className="flex items-start gap-3">
@@ -175,16 +175,16 @@ export default function KidsControlCenterPage() {
           </section>
 
           {/* DESCRIPTION */}
-          <section className="rounded-3xl p-5 sm:p-6 mb-5 backdrop-blur-xl bg-gradient-to-br from-amber-100/50 to-rose-100/50 dark:from-amber-500/10 dark:to-rose-500/10 border border-amber-200/60 dark:border-amber-500/20">
+          <section className="rounded-3xl p-5 sm:p-6 mb-5 backdrop-blur-xl bg-card border border-border">
             <p className="text-sm sm:text-[15px] text-foreground/85 leading-relaxed text-center">
               {t("screens.kids_control_center.description_part1")}
-              <span className="font-bold text-violet-700 dark:text-violet-300"> {t("screens.kids_control_center.description_emphasis")} </span>
+              <span className="font-bold text-foreground"> {t("screens.kids_control_center.description_emphasis")} </span>
               {t("screens.kids_control_center.description_part2")}
             </p>
           </section>
 
           {/* FEEDBACK */}
-          <section className="rounded-3xl p-5 sm:p-7 backdrop-blur-xl bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 shadow-[0_8px_40px_-12px_rgba(124,58,237,0.30)]">
+          <section className="rounded-3xl p-5 sm:p-7 backdrop-blur-xl bg-card border border-border shadow-[0_8px_40px_-12px_rgba(124,58,237,0.30)]">
             <h3 className="text-lg sm:text-xl font-extrabold text-foreground text-center mb-1">
               {t("screens.kids_control_center.feedback_question")}
             </h3>
@@ -224,7 +224,7 @@ export default function KidsControlCenterPage() {
                     onChange={(e) => setComment(e.target.value.slice(0, 1000))}
                     placeholder={t("screens.kids_control_center.comment_placeholder")}
                     rows={3}
-                    className="w-full rounded-2xl px-4 py-3 text-sm bg-white/80 dark:bg-white/5 border border-border focus:border-violet-400 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-400/30 transition-all text-foreground placeholder:text-muted-foreground/70 resize-none"
+                    className="w-full rounded-2xl px-4 py-3 text-sm bg-card border border-border focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary transition-all text-foreground placeholder:text-muted-foreground/70 resize-none"
                     data-testid="input-feedback-comment"
                   />
                   <div className="flex justify-end mt-1">
@@ -240,7 +240,7 @@ export default function KidsControlCenterPage() {
                   data-testid="button-submit-feedback"
                   className={`relative w-full flex items-center justify-center gap-2.5 rounded-2xl px-6 py-4 font-bold text-base transition-all active:scale-[0.97]
                     ${canSubmit
-                      ? "bg-gradient-to-r from-violet-600 via-pink-500 to-amber-500 text-white shadow-[0_8px_30px_-8px_rgba(168,85,247,0.7)] hover:shadow-[0_12px_36px_-8px_rgba(168,85,247,0.85)] hover:scale-[1.01]"
+                      ? "bg-card text-primary-foreground shadow-[0_8px_30px_-8px_rgba(168,85,247,0.7)] hover:shadow-[0_12px_36px_-8px_rgba(168,85,247,0.85)] hover:scale-[1.01]"
                       : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
                     }`}
                 >
@@ -260,11 +260,11 @@ export default function KidsControlCenterPage() {
                 {/* Success message */}
                 {submitted && (
                   <div
-                    className="flex items-center justify-center gap-2 rounded-2xl px-4 py-3 bg-gradient-to-r from-violet-500/15 to-pink-500/15 border border-violet-300/40 dark:border-violet-500/30 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                    className="flex items-center justify-center gap-2 rounded-2xl px-4 py-3 bg-card border border-border animate-in fade-in slide-in-from-bottom-2 duration-300"
                     data-testid="text-feedback-thanks"
                   >
-                    <Check className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
-                    <span className="text-sm font-bold text-violet-700 dark:text-violet-300">
+                    <Check className="h-4 w-4 text-foreground shrink-0" />
+                    <span className="text-sm font-bold text-foreground">
                       {savedFeedback === "interested"
                         ? t("screens.kids_control_center.thanks_interested")
                         : t("screens.kids_control_center.thanks_not_interested")}
@@ -275,7 +275,7 @@ export default function KidsControlCenterPage() {
                 {/* Already submitted indicator */}
                 {savedFeedback && !submitted && !isDirty && (
                   <p className="text-center text-xs text-muted-foreground">
-                    {t("screens.kids_control_center.saved_prefix")}{" "}
+                    {t("screens.kids_control_center.saved_prefix")}{""}
                     <button
                       type="button"
                       className="underline hover:text-foreground transition-colors"
@@ -316,9 +316,9 @@ function SelectionButton({
       className={`relative flex items-center justify-center gap-2 rounded-2xl px-4 py-4 font-bold text-sm transition-all active:scale-[0.97]
         ${selected
           ? isInterested
-            ? "bg-gradient-to-br from-violet-500 to-pink-500 text-white shadow-[0_6px_24px_-8px_rgba(168,85,247,0.6)]"
-            : "bg-gradient-to-br from-slate-500 to-slate-600 text-white shadow-[0_6px_24px_-8px_rgba(100,116,139,0.5)]"
-          : "bg-white/80 dark:bg-white/5 border border-border hover:border-violet-300 dark:hover:border-violet-500/40 text-foreground"
+            ? "bg-card text-primary-foreground shadow-[0_6px_24px_-8px_rgba(168,85,247,0.6)]"
+            : "bg-gradient-to-br from-muted to-muted text-primary-foreground shadow-[0_6px_24px_-8px_rgba(100,116,139,0.5)]"
+          : "bg-card border border-border hover:border-border text-foreground"
         }`}
     >
       {selected && <Check className="h-3.5 w-3.5 shrink-0" />}

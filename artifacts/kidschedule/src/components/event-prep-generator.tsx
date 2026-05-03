@@ -91,10 +91,10 @@ export function EventPrepGenerator({
   };
   return <div className="space-y-4">
       {/* Form */}
-      <Card className="border-purple-200 bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-purple-950/30 dark:via-zinc-900 dark:to-pink-950/30">
+      <Card className="border-border bg-gradient-to-br from-muted via-white to-muted dark:from-primary dark:via-muted dark:to-primary">
         <CardContent className="p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-xl bg-purple-500/15 text-purple-600 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-xl bg-primary text-primary flex items-center justify-center">
               <Wand2 className="h-5 w-5" />
             </div>
             <div>
@@ -130,7 +130,7 @@ export function EventPrepGenerator({
             </ChipRow>
           </Field>
 
-          <Button onClick={onGenerate} className="w-full rounded-full bg-gradient-to-r from-pink-600 to-purple-600 hover:opacity-90 text-white font-bold">
+          <Button onClick={onGenerate} className="w-full rounded-full bg-gradient-to-r from-primary to-primary hover:opacity-90 text-white font-bold">
             <Sparkles className="h-4 w-4 mr-2" />
             {result ? "Generate again" : "Generate idea"}
           </Button>
@@ -140,7 +140,7 @@ export function EventPrepGenerator({
       {result && result.ideas.length > 0 && <div className="space-y-3">
           {/* Amy intro */}
           <div className="flex items-start gap-2 px-2">
-            <Heart className="h-4 w-4 text-pink-500 mt-0.5 shrink-0" />
+            <Heart className="h-4 w-4 text-primary mt-0.5 shrink-0" />
             <p className="text-sm text-foreground/90 italic">{result.intro}</p>
           </div>
 
@@ -188,7 +188,7 @@ function Chip({
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  return <button onClick={onClick} className={`text-xs px-3 py-1.5 rounded-full border transition ${active ? "bg-purple-600 border-purple-600 text-white" : "bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-foreground/80 hover:border-purple-400"}`}>
+  return <button onClick={onClick} className={`text-xs px-3 py-1.5 rounded-full border transition ${active ? "bg-primary border-primary text-white" : "bg-white dark:bg-card border-border dark:border-border text-foreground/80 hover:border-border"}`}>
       {children}
     </button>;
 }
@@ -209,7 +209,7 @@ function IdeaCard({
     t
   } = useTranslation();
   const c = idea.character;
-  return <Card className={highlight ? "border-2 border-pink-400 shadow-lg overflow-hidden" : "border overflow-hidden"}>
+  return <Card className={highlight ? "border-2 border-border shadow-lg overflow-hidden" : "border overflow-hidden"}>
       <div className="p-5 text-white relative" style={{
       background: `linear-gradient(135deg, ${c.accent[0]}, ${c.accent[1]})`
     }}>
@@ -248,7 +248,7 @@ function IdeaCard({
           </ol>
         </div>
 
-        <div className="rounded-xl bg-pink-50 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-400/30 p-3">
+        <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3">
           <div className="flex items-center justify-between mb-1">
             <div className="text-xs font-bold">{t("components.event_prep_generator.speech")}</div>
             <Button size="sm" variant={speakingId === c.id ? "default" : "outline"} onClick={() => onSpeak(c.id, idea.speech)} className="rounded-full h-7 px-3 text-xs">

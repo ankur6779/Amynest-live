@@ -123,7 +123,7 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ color: "#a99fd9", fontSize: 12, marginBottom: 8 }}>
-        Guide the 🟣 dot to 🏁 — Moves: <strong style={{ color: moves > MAX_MOVES * 0.75 ? "#fca5a5" : "#fff" }}>{moves}</strong> / {MAX_MOVES}
+        Guide the 🟣 dot to 🏁 — Moves: <strong style={{ color: moves > MAX_MOVES * 0.75 ? "hsl(var(--brand-red-300))" : "#fff" }}>{moves}</strong> / {MAX_MOVES}
       </div>
 
       {/* Maze grid */}
@@ -131,7 +131,7 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
         display: "inline-grid",
         gridTemplateColumns: `repeat(5, ${CELL}px)`,
         gap: 0,
-        border: `${WALL}px solid #7c3aed`,
+        border: `${WALL}px solid hsl(var(--brand-violet-600))`,
         borderRadius: 8,
         overflow: "hidden",
         margin: "0 auto 16px",
@@ -150,8 +150,8 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
                   : isExit
                   ? "rgba(34,197,94,0.2)"
                   : "rgba(255,255,255,0.03)",
-                borderRight: wallRight ? `${WALL}px solid #7c3aed` : `${WALL}px solid transparent`,
-                borderBottom: wallBottom ? `${WALL}px solid #7c3aed` : `${WALL}px solid transparent`,
+                borderRight: wallRight ? `${WALL}px solid hsl(var(--brand-violet-600))` : `${WALL}px solid transparent`,
+                borderBottom: wallBottom ? `${WALL}px solid hsl(var(--brand-violet-600))` : `${WALL}px solid transparent`,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 22,
                 transition: "background 0.15s",
@@ -177,7 +177,7 @@ export function MazeEscapeGame({ onFinish }: { onFinish: (score: number, total: 
       </div>
 
       {done && (
-        <div style={{ marginTop: 14, fontSize: 14, fontWeight: 700, color: won ? "#86efac" : "#fca5a5" }}>
+        <div style={{ marginTop: 14, fontSize: 14, fontWeight: 700, color: won ? "hsl(var(--brand-green-300))" : "hsl(var(--brand-red-300))" }}>
           {won ? "You escaped! 🎉" : "Out of moves! Try again next time."}
         </div>
       )}
@@ -196,7 +196,7 @@ function DPadBtn({ onClick, label }: { onClick: () => void; label: string }) {
         width: 40, height: 40, borderRadius: 10,
         background: "rgba(139,92,246,0.2)",
         border: "1px solid rgba(139,92,246,0.4)",
-        color: "#e9d5ff", fontSize: 16, cursor: "pointer",
+        color: "hsl(var(--brand-purple-300))", fontSize: 16, cursor: "pointer",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}
     >{label}</button>
