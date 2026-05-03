@@ -220,11 +220,12 @@ export function SmartMathTricks({
   childName: string;
   childAgeYears: number;
 }) {
+  const { t } = useTranslation();
   const c = useColors();
   const styles = useMemo(() => makeStyles(c), [c]);
 
   const ageGroup: TrickAge = childAgeYears <= 6 ? "4-6" : "6-8";
-  const pool = useMemo(() => TRICKS.filter(t => t.age === ageGroup), [ageGroup]);
+  const pool = useMemo(() => TRICKS.filter(tr => tr.age === ageGroup), [ageGroup]);
 
   const [tab, setTab] = useState<Tab>("today");
   const [starIds, setStarIds] = useState<string[]>([]);
@@ -240,7 +241,6 @@ export function SmartMathTricks({
       setSeenIds(st.seenIds);
       setHydrated(true);
     })();
-    const { t } = useTranslation();
     return () => { cancelled = true; };
   }, [childName]);
 

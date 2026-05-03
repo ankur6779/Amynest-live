@@ -292,6 +292,7 @@ export default function AiMealGenerator({
 
 // ─── Meal Card ────────────────────────────────────────────────────────────────
 function MealCard({ meal, onPress }: { meal: AiMeal; onPress: () => void }) {
+  const { t } = useTranslation();
   const tag = meal.tags[0] ?? (meal.isVeg ? "veg" : "");
   return (
     <TouchableOpacity activeOpacity={0.82} onPress={onPress} style={styles.card}>
@@ -321,6 +322,7 @@ function MealCard({ meal, onPress }: { meal: AiMeal; onPress: () => void }) {
 
 // ─── Recipe Sheet ─────────────────────────────────────────────────────────────
 function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
+  const { t } = useTranslation();
   const { speak, stop, speaking, loading } = useAmyVoice();
 
   const audioText =
