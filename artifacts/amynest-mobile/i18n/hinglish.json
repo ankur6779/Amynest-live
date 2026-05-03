@@ -1664,7 +1664,19 @@
     "task_missed": "Missed",
     "tap_toggle_hint": "Toggle karne ke liye tap karein. Missed tasks skipped mark honge.",
     "save_view_routine": "Save karke routine dekhein",
-    "skip_checkin": "Check-in skip karein aur as is save karein"
+    "skip_checkin": "Check-in skip karein aur as is save karein",
+    "weather_prompt": "Kya bachhe aaj bahar ja sakte hain?",
+    "weather_hint": "Isse Amy outdoor vs indoor activities plan karti hai.",
+    "weather_yes": "☀️ Haan",
+    "weather_no": "🌧️ Nahi",
+    "weather_limited": "⛅ Thoda",
+    "weather_auto_detect": "Auto-detect",
+    "weather_auto_detecting": "Detect kar rahe hain…",
+    "caregiver_note_mom": "Amy nurturing, gentle activities plan karegi.",
+    "caregiver_note_dad": "Amy active, energetic play add karegi.",
+    "caregiver_note_both": "Amy structured, balanced day banayegi.",
+    "caregiver_note_grandparent": "Amy storytelling aur slow-paced moments par focus karegi.",
+    "caregiver_note_babysitter": "Amy simple aur safe activities rakhegi."
   },
   "parent_avail": {
     "title": "Aaj kaun available hai?",

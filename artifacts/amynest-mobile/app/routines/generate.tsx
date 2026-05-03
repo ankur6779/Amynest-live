@@ -19,6 +19,7 @@ import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as Location from "expo-location";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -29,20 +30,10 @@ import { brand, palette } from "@/constants/colors";
 import {
   HANDLER_TYPES,
   type HandlerKey,
-  getHandlerInfo,
   simplifyForHandler,
   appendHandlerToPlans,
-  defaultAvailability,
-  isParentAvailComplete,
-  parentStatusLabel,
-  buildParentAvailPayload,
-  buildFamilyChildGeneratePayload,
-  AVAIL_KEY,
   WAKE_KEY,
   REGION_OPTIONS,
-  type ParentAvailData,
-  type ParentAvailEntry,
-  type WorkType,
   type RegionValue,
   extractTiffinSummary,
   buildCombinedTimeline,
@@ -56,6 +47,8 @@ import {
   inputToDisplay,
   displayToInput,
 } from "@workspace/family-routine";
+
+type WeatherOutdoor = "yes" | "no" | "limited";
 
 type Child = {
   id: number;
@@ -153,8 +146,38 @@ export default function GenerateRoutineScreen() {
   // ── Region picker (overrides parent profile when set) ───────────────────
   const [region, setRegion] = useState<RegionValue | null>(null);
 
-  // ── Parent availability ─────────────────────────────────────────────────
-  const [parentAvail, setParentAvail] = useState<ParentAvailData>(() => defaultAvailability());
+  // ── Weather (outdoor go-out today?) ────────────────────────────────────
+  const [weatherOutdoor, setWeatherOutdoor] = useState<WeatherOutdoor | null>(null);
+  const [weatherDetecting, setWeatherDetecting] = useState(false);
+
+  const handleAutoDetectWeather = useCallback(async () => {
+    if (weatherDetecting) return;
+    setWeatherDetecting(true);
+    try {
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== "granted") {
+        setWeatherDetecting(false);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=precipitation,temperature_2m,wind_speed_10m`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const cur = data?.current ?? {};
+      const precip = Number(cur.precipitation ?? 0);
+      const wind = Number(cur.wind_speed_10m ?? 0);
+      const temp = Number(cur.temperature_2m ?? 22);
+      let verdict: WeatherOutdoor = "yes";
+      if (precip > 0.5) verdict = "no";
+      else if (wind > 30 || temp < 5 || temp > 35) verdict = "limited"; // i18n-ok: numeric weather thresholds
+      setWeatherOutdoor(verdict);
+      Haptics.selectionAsync();
+    } catch {
+      // silent fail
+    } finally {
+      setWeatherDetecting(false);
+    }
+  }, [weatherDetecting]);
 
   // ── Family mode state ───────────────────────────────────────────────────
   const [familyChildSettings, setFamilyChildSettings] = useState<FamilyChildSettings>({});
@@ -174,30 +197,6 @@ export default function GenerateRoutineScreen() {
     queryFn: () => authFetch("/api/parent-profile").then((r) => (r.ok ? r.json() : null)),
   });
   const effectiveRegion = (region ?? (parentProfile?.region as RegionValue | undefined)) || undefined;
-
-  // ── Hydrate parent availability from AsyncStorage when date changes ────
-  useEffect(() => {
-    let cancelled = false;
-    AsyncStorage.getItem(AVAIL_KEY(date))
-      .then((raw) => {
-        if (cancelled) return;
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw) as ParentAvailData;
-            if (parsed?.p1) setParentAvail(parsed);
-          } catch {
-            /* ignore stale */
-          }
-        }
-      })
-      .catch(() => { /* ignore */ });
-    return () => { cancelled = true; };
-  }, [date]);
-
-  // Persist on every change so multiple kids generated same-day reuse the answers.
-  useEffect(() => {
-    AsyncStorage.setItem(AVAIL_KEY(date), JSON.stringify(parentAvail)).catch(() => { /* ignore */ });
-  }, [date, parentAvail]);
 
   // Auto-pick the first child if none selected
   useEffect(() => {
@@ -285,27 +284,6 @@ export default function GenerateRoutineScreen() {
   useEffect(() => {
     setConfirmedWakeTime(null);
   }, [selectedChild, date]);
-
-  // ── Parent avail mutators ───────────────────────────────────────────────
-  const updateP1 = useCallback((patch: Partial<ParentAvailEntry>) => {
-    setParentAvail((prev) => ({ ...prev, p1: { ...prev.p1, ...patch } }));
-  }, []);
-  const updateP2 = useCallback((patch: Partial<ParentAvailEntry>) => {
-    setParentAvail((prev) => ({
-      ...prev,
-      p2: { ...(prev.p2 ?? { role: "Father", workType: null, isWorking: null, workHours: "" }), ...patch },
-    }));
-  }, []);
-  const toggleSecondParent = useCallback(() => {
-    setParentAvail((prev) => {
-      if (prev.hasSecondParent) return { ...prev, hasSecondParent: false };
-      return {
-        ...prev,
-        hasSecondParent: true,
-        p2: prev.p2 ?? { role: "Father", workType: null, isWorking: null, workHours: "" },
-      };
-    });
-  }, []);
 
   // ── Today helper ───────────────────────────────────────────────────────
   const todayKey = useMemo(() => {
@@ -404,8 +382,9 @@ export default function GenerateRoutineScreen() {
     schoolStart: selectedChildData?.schoolStartTime,
     schoolEnd: selectedChildData?.schoolEndTime,
     region: effectiveRegion,
-    ...buildParentAvailPayload(parentAvail),
-  }), [selectedChild, date, hasSchool, specialPlans, handlerType, fridgeItems, mood, selectedChildData, effectiveRegion, parentAvail]);
+    caregiver: handlerType,
+    weatherOutdoor: weatherOutdoor ?? undefined,
+  }), [selectedChild, date, hasSchool, specialPlans, handlerType, fridgeItems, mood, selectedChildData, effectiveRegion, weatherOutdoor]);
 
   // ── Handle paywall response shared helper ──────────────────────────────
   const handlePaywallResponse = useCallback(async (res: Response): Promise<boolean> => {
@@ -631,18 +610,20 @@ export default function GenerateRoutineScreen() {
       try {
         const res = await authFetch("/api/routines/generate", {
           method: "POST",
-          // Shared helper keeps web ↔ mobile family payloads in lockstep.
-          body: JSON.stringify(
-            buildFamilyChildGeneratePayload({
-              child,
-              date,
-              hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
-              specialPlans: appendHandlerToPlans(specialPlans, handlerType),
-              fridgeItems,
-              region: effectiveRegion,
-              parentAvail,
-            }),
-          ),
+          body: JSON.stringify({
+            childId: child.id,
+            date,
+            hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
+            specialPlans: appendHandlerToPlans(specialPlans, handlerType),
+            fridgeItems: fridgeItems.trim() || undefined,
+            age: child.age,
+            wakeTime: child.wakeUpTime ?? undefined,
+            schoolStart: child.schoolStartTime ?? undefined,
+            schoolEnd: child.schoolEndTime ?? undefined,
+            region: effectiveRegion,
+            caregiver: handlerType,
+            weatherOutdoor: weatherOutdoor ?? undefined,
+          }),
         });
 
         if (res.status === 402 || res.status === 403) {
@@ -848,35 +829,46 @@ export default function GenerateRoutineScreen() {
           })}
         </View>
 
-        {/* Parent availability */}
-        <Text style={styles.sectionLabel}>{t("parent_avail.title", { defaultValue: "Who's around today?" })}</Text>
-        <Text style={[styles.optional, { marginTop: -4, marginBottom: 8 }]}>
-          {t("parent_avail.hint", { defaultValue: "Helps Amy assign tasks to the parent who's free." })}
+        {/* Weather: outdoor go-out today? */}
+        <Text style={styles.sectionLabel}>
+          {t("routines_generate.weather_prompt", { defaultValue: "Can the kids go outdoor today?" })}
         </Text>
-        <ParentAvailEntryCard
-          entry={parentAvail.p1}
-          onChange={updateP1}
-          label={t("parent_avail.p1_label", { defaultValue: "Parent 1" })}
-        />
-        <TouchableOpacity onPress={() => { Haptics.selectionAsync(); toggleSecondParent(); }} style={styles.secondParentToggle} activeOpacity={0.85}>
-          <Ionicons
-            name={parentAvail.hasSecondParent ? "remove-circle-outline" : "add-circle-outline"}
-            size={18}
-            color={brand.purple500}
-          />
-          <Text style={styles.secondParentText}>
-            {parentAvail.hasSecondParent
-              ? t("parent_avail.remove_p2", { defaultValue: "Remove second parent" })
-              : t("parent_avail.add_p2", { defaultValue: "Add second parent" })}
+        <Text style={[styles.optional, { marginTop: -4, marginBottom: 8 }]}>
+          {t("routines_generate.weather_hint", { defaultValue: "Helps Amy plan outdoor vs indoor activities." })}
+        </Text>
+        <View style={[styles.chipsRow, { marginBottom: 8 }]}>
+          {(["yes", "limited", "no"] as const).map((v) => {
+            const active = weatherOutdoor === v;
+            const label = t(`routines_generate.weather_${v}`, {
+              defaultValue: v === "yes" ? "☀️ Yes" : v === "no" ? "🌧️ No" : "⛅ Limited",
+            });
+            return (
+              <TouchableOpacity
+                key={v}
+                onPress={() => { Haptics.selectionAsync(); setWeatherOutdoor(v); }}
+                activeOpacity={0.85}
+                style={[styles.toggleChip, active && styles.toggleChipActive]}
+              >
+                <Text style={[styles.toggleChipText, active && { color: "#fff" }]}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        <TouchableOpacity
+          onPress={handleAutoDetectWeather}
+          disabled={weatherDetecting}
+          activeOpacity={0.85}
+          style={styles.weatherDetectBtn}
+        >
+          {weatherDetecting
+            ? <ActivityIndicator size="small" color={brand.purple500} />
+            : <Ionicons name="locate-outline" size={14} color={brand.purple500} />}
+          <Text style={styles.weatherDetectText}>
+            {weatherDetecting
+              ? t("routines_generate.weather_auto_detecting", { defaultValue: "Detecting…" })
+              : t("routines_generate.weather_auto_detect", { defaultValue: "Auto-detect" })}
           </Text>
         </TouchableOpacity>
-        {parentAvail.hasSecondParent && parentAvail.p2 && (
-          <ParentAvailEntryCard
-            entry={parentAvail.p2}
-            onChange={updateP2}
-            label={t("parent_avail.p2_label", { defaultValue: "Parent 2" })}
-          />
-        )}
 
         {mode === "single" ? (
           <SingleModeBody
@@ -1248,26 +1240,30 @@ function SingleModeBody(props: {
   } = props;
   return (
     <>
-      {/* Child picker */}
-      <Text style={styles.sectionLabel}>{t("routines_generate.choose_child", { defaultValue: "Choose a child" })}</Text>
-      <View style={styles.chipsRow}>
-        {children.map((c) => {
-          const active = selectedChild === c.id;
-          return (
-            <TouchableOpacity
-              key={c.id}
-              onPress={() => { Haptics.selectionAsync(); setSelectedChild(c.id); }}
-              activeOpacity={0.85}
-              style={[styles.chip, active && styles.chipActive]}
-            >
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>{c.name}</Text>
-              <Text style={[styles.chipMeta, active && { color: "rgba(255,255,255,0.85)" }]}>{c.age}y</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* Child picker — auto-skipped for single-child families */}
+      {children.length > 1 && (
+        <>
+          <Text style={styles.sectionLabel}>{t("routines_generate.choose_child", { defaultValue: "Choose a child" })}</Text>
+          <View style={styles.chipsRow}>
+            {children.map((c) => {
+              const active = selectedChild === c.id;
+              return (
+                <TouchableOpacity
+                  key={c.id}
+                  onPress={() => { Haptics.selectionAsync(); setSelectedChild(c.id); }}
+                  activeOpacity={0.85}
+                  style={[styles.chip, active && styles.chipActive]}
+                >
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{c.name}</Text>
+                  <Text style={[styles.chipMeta, active && { color: "rgba(255,255,255,0.85)" }]}>{c.age}y</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </>
+      )}
 
-      {/* Handler */}
+      {/* Caregiver / handler */}
       <Text style={styles.sectionLabel}>{t("family_routine.handler_title")}</Text>
       <View style={styles.handlerGrid}>
         {HANDLER_TYPES.map((h) => {
@@ -1293,7 +1289,9 @@ function SingleModeBody(props: {
           );
         })}
       </View>
-      <Text style={styles.handlerNote}>{getHandlerInfo(handlerType).note}</Text>
+      <Text style={styles.handlerNote}>
+        {t(`routines_generate.caregiver_note_${handlerType}`, { defaultValue: CAREGIVER_NOTE_FALLBACKS[handlerType] })}
+      </Text>
 
       {/* Mood */}
       <Text style={styles.sectionLabel}>How is {selectedChildData?.name ?? "your child"} feeling?</Text>
@@ -1471,7 +1469,9 @@ function FamilyModeBody(props: {
           );
         })}
       </View>
-      <Text style={styles.handlerNote}>{getHandlerInfo(handlerType).note}</Text>
+      <Text style={styles.handlerNote}>
+        {t(`routines_generate.caregiver_note_${handlerType}`, { defaultValue: CAREGIVER_NOTE_FALLBACKS[handlerType] })}
+      </Text>
 
       <Text style={styles.sectionLabel}>{t("routines_generate.family_special_plans", { defaultValue: "Anything special today?" })} <Text style={styles.optional}>{t("screens.routines_generate.optional")}</Text></Text>
       <TextInput
@@ -1499,101 +1499,14 @@ function FamilyModeBody(props: {
   );
 }
 
-// ─── Parent availability entry card ──────────────────────────────────────
-function ParentAvailEntryCard({
-  entry,
-  onChange,
-  label,
-}: {
-  entry: ParentAvailEntry;
-  onChange: (patch: Partial<ParentAvailEntry>) => void;
-  label: string;
-}) {
-  const { t } = useTranslation();
-  const colors = useColors();
-  const complete = isParentAvailComplete(entry);
-  const WORK_TYPES: { key: WorkType; emoji: string; tKey: string; fallback: string }[] = [
-    { key: "work_from_home", emoji: "🏠", tKey: "parent_avail.work_from_home", fallback: "WFH" },
-    { key: "work_from_office", emoji: "🏢", tKey: "parent_avail.work_from_office", fallback: "Office" },
-    { key: "homemaker", emoji: "🏡", tKey: "parent_avail.homemaker", fallback: "Homemaker" },
-  ];
-  return (
-    <View style={[styles.parentCard, complete && styles.parentCardComplete]}>
-      <View style={styles.parentCardHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.parentCardLabel}>{label}</Text>
-          <Text style={styles.parentCardStatus}>{parentStatusLabel(entry)}</Text>
-        </View>
-        {complete && <Ionicons name="checkmark-circle" size={20} color={palette.emerald500} />}
-      </View>
-
-      <Text style={styles.parentSubLabel}>{t("parent_avail.role_label", { defaultValue: "Role" })}</Text>
-      <TextInput
-        value={entry.role}
-        onChangeText={(v) => onChange({ role: v })}
-        placeholder={t("screens.routines_generate.mother_father_caregiver")}
-        placeholderTextColor={colors.textFaint}
-        style={styles.smallInput}
-      />
-
-      <Text style={styles.parentSubLabel}>{t("parent_avail.work_type_label", { defaultValue: "Work type" })}</Text>
-      <View style={styles.workTypeRow}>
-        {WORK_TYPES.map((w) => {
-          const active = entry.workType === w.key;
-          return (
-            <TouchableOpacity
-              key={w.key}
-              onPress={() => { Haptics.selectionAsync(); onChange({ workType: w.key }); }}
-              activeOpacity={0.85}
-              style={[styles.workTypeChip, active && styles.workTypeChipActive]}
-            >
-              <Text style={{ fontSize: 14 }}>{w.emoji}</Text>
-              <Text style={[styles.workTypeChipText, active && { color: "#fff" }]}>
-                {t(w.tKey, { defaultValue: w.fallback })}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {entry.workType && entry.workType !== "homemaker" && (
-        <>
-          <Text style={styles.parentSubLabel}>{t("parent_avail.is_working_today", { defaultValue: "Working today?" })}</Text>
-          <View style={styles.workTypeRow}>
-            {[
-              { label: t("parent_avail.yes_working", { defaultValue: "Yes, working" }), value: true },
-              { label: t("parent_avail.holiday", { defaultValue: "Holiday / off" }), value: false },
-            ].map((opt) => {
-              const active = entry.isWorking === opt.value;
-              return (
-                <TouchableOpacity
-                  key={String(opt.value)}
-                  onPress={() => { Haptics.selectionAsync(); onChange({ isWorking: opt.value }); }}
-                  activeOpacity={0.85}
-                  style={[styles.workTypeChip, active && styles.workTypeChipActive]}
-                >
-                  <Text style={[styles.workTypeChipText, active && { color: "#fff" }]}>{opt.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          {entry.isWorking === true && (
-            <>
-              <Text style={styles.parentSubLabel}>{t("parent_avail.work_hours_label", { defaultValue: "Work hours (optional)" })}</Text>
-              <TextInput
-                value={entry.workHours}
-                onChangeText={(v) => onChange({ workHours: v })}
-                placeholder="e.g. 9 AM – 5 PM"
-                placeholderTextColor={colors.textFaint}
-                style={styles.smallInput}
-              />
-            </>
-          )}
-        </>
-      )}
-    </View>
-  );
-}
+// ─── Caregiver helper-note copy (mirrors web spec wording) ───────────────
+const CAREGIVER_NOTE_FALLBACKS: Record<HandlerKey, string> = {
+  mom: "Amy will plan nurturing, gentle activities.",
+  dad: "Amy will add active, energetic play.",
+  both: "Amy will create a structured, balanced day.",
+  grandparent: "Amy will lean on storytelling and slow-paced moments.",
+  babysitter: "Amy will keep activities simple and safe.",
+};
 
 // ─── Family results preview (editable) ──────────────────────────────────
 function FamilyResultsPreview({
@@ -1977,31 +1890,13 @@ const styles = StyleSheet.create({
   regionChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
   regionChipText: { fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
 
-  parentCard: {
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
-    backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 16, padding: 14, marginBottom: 10,
+  weatherDetectBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    alignSelf: "flex-start", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
+    borderWidth: 1, borderColor: "rgba(167,139,250,0.45)",
+    backgroundColor: "rgba(167,139,250,0.10)", marginBottom: 16,
   },
-  parentCardComplete: { borderColor: "rgba(16,185,129,0.4)" },
-  parentCardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  parentCardLabel: { fontSize: 14, fontWeight: "800", color: "#fff" },
-  parentCardStatus: { fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2 },
-  parentSubLabel: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.6)", marginTop: 8, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
-  smallInput: {
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(0,0,0,0.25)",
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, color: "#fff",
-  },
-  workTypeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  workTypeChip: {
-    paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(255,255,255,0.04)",
-    flexDirection: "row", alignItems: "center", gap: 4,
-  },
-  workTypeChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
-  workTypeChipText: { fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
-  secondParentToggle: {
-    flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 8, marginBottom: 10,
-  },
-  secondParentText: { fontSize: 13, color: brand.purple500, fontWeight: "700" },
+  weatherDetectText: { fontSize: 12, fontWeight: "700", color: brand.purple500 },
 
   familyChildCard: {
     borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",

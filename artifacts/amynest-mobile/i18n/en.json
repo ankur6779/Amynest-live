@@ -1664,7 +1664,19 @@
     "task_missed": "Missed",
     "tap_toggle_hint": "Tap to toggle. Missed tasks will be marked as skipped.",
     "save_view_routine": "Save & View Routine",
-    "skip_checkin": "Skip check-in & save as is"
+    "skip_checkin": "Skip check-in & save as is",
+    "weather_prompt": "Can the kids go outdoor today?",
+    "weather_hint": "Helps Amy plan outdoor vs indoor activities.",
+    "weather_yes": "☀️ Yes",
+    "weather_no": "🌧️ No",
+    "weather_limited": "⛅ Limited",
+    "weather_auto_detect": "Auto-detect",
+    "weather_auto_detecting": "Detecting…",
+    "caregiver_note_mom": "Amy will plan nurturing, gentle activities.",
+    "caregiver_note_dad": "Amy will add active, energetic play.",
+    "caregiver_note_both": "Amy will create a structured, balanced day.",
+    "caregiver_note_grandparent": "Amy will lean on storytelling and slow-paced moments.",
+    "caregiver_note_babysitter": "Amy will keep activities simple and safe."
   },
   "parent_avail": {
     "title": "Who's around today?",
