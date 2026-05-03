@@ -319,7 +319,7 @@ export default function NotificationDiagnosticsPage() {
                 <Inbox className="w-4 h-4 text-purple-300 mt-0.5" />
                 <div>
                   We haven't tried to send you anything recently. Use{" "}
-                  <span className="text-purple-200">Send test</span> on the
+                  <span className="text-purple-200">Send test</span> on the {/* i18n-ok: refers to literal label of the Send-test button on the settings page */}
                   settings page to confirm your device is wired up.
                 </div>
               </div>

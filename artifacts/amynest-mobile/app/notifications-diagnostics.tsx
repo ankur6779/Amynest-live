@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -86,6 +87,7 @@ function categoryLabel(cat: string): string {
 }
 
 export default function NotificationDiagnosticsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const authFetch = useAuthFetch();
@@ -142,21 +144,20 @@ export default function NotificationDiagnosticsScreen() {
           <Pressable onPress={() => router.back()} style={styles.back} hitSlop={8}>
             <Ionicons name="chevron-back" size={26} color={c.text} />
           </Pressable>
-          <Text style={styles.title}>Why didn't I get my notification?</Text>
+          <Text style={styles.title}>{t("screens.notif_settings.diagnostics_title")}</Text>
         </View>
 
         <Text style={styles.subtitle}>
-          A quick health check of your devices, recent deliveries and quiet
-          hours. Most missed notifications fall into one of the buckets below.
+          {t("screens.notif_settings.diagnostics_subtitle")}
         </Text>
 
         {isError || !data ? (
           <View style={styles.card}>
             <Text style={styles.bodyText}>
-              We couldn't load your diagnostics right now.
+              {t("screens.notif_settings.diagnostics_load_error")}
             </Text>
             <Pressable onPress={() => refetch()} style={styles.retryBtn}>
-              <Text style={styles.retryText}>Try again</Text>
+              <Text style={styles.retryText}>{t("screens.notif_settings.diagnostics_try_again")}</Text>
             </Pressable>
           </View>
         ) : (
@@ -286,9 +287,9 @@ export default function NotificationDiagnosticsScreen() {
                   <View style={styles.card}>
                     {data.recent.length === 0 ? (
                       <Text style={styles.bodyText}>
-                        We haven't tried to send you anything recently. Use{" "}
-                        <Text style={styles.strong}>Send test</Text> on the
-                        settings page to confirm your device is wired up.
+                        {t("screens.notif_settings.diagnostics_recent_empty_prefix")}
+                        <Text style={styles.strong}>{t("screens.notif_settings.send_test")}</Text>
+                        {t("screens.notif_settings.diagnostics_recent_empty_suffix")}
                       </Text>
                     ) : failures.length === 0 ? (
                       <Text style={styles.bodyText}>
