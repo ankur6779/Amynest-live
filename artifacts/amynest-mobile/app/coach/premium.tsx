@@ -304,7 +304,6 @@ export default function PremiumCoachScreen() {
   // Loading → intro → cards
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("intro"), 1100);
-    const { t } = useTranslation();
     return () => clearTimeout(t1);
   }, []);
 

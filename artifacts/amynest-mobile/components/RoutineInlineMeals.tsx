@@ -90,7 +90,6 @@ export default function RoutineInlineMeals({
         if (!cancelled) setLoading(false);
       }
     })();
-    const { t } = useTranslation();
     return () => { cancelled = true; };
   }, [region, audience, childAge, isVeg, instanceIndex]);
 

@@ -60,6 +60,10 @@ args = "mobile-i18n-audit"
 task = "workflow.run"
 args = "locale-parity-audit"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "mobile-lint-react-hooks"
+
 [[workflows.workflow]]
 name = "test-routine-meals"
 author = "agent"
@@ -181,6 +185,17 @@ args = "node scripts/check-locale-parity.cjs"
 [workflows.workflow.metadata]
 outputType = "console"
 
+[[workflows.workflow]]
+name = "mobile-lint-react-hooks"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/amynest-mobile run lint"
+
+[workflows.workflow.metadata]
+isValidation = true
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
@@ -191,8 +206,24 @@ path = "scripts/post-merge.sh"
 timeoutMs = 20000
 
 [[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
 localPort = 20703
 externalPort = 80
+
+[[ports]]
+localPort = 21342
+externalPort = 3001
+
+[[ports]]
+localPort = 25261
+externalPort = 3000
 
 [userenv]
 

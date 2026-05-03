@@ -88,7 +88,6 @@ export default function NeonRingHero() {
     glowLoop.start();
     amyGlowLoop.start();
 
-    const { t } = useTranslation();
     return () => {
       spinLoop.stop();
       pulseLoop.stop();
