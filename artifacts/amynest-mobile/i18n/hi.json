@@ -1664,7 +1664,19 @@
     "task_missed": "छूट गया",
     "tap_toggle_hint": "बदलने के लिए टैप करें। छूटे काम स्किप मार्क होंगे।",
     "save_view_routine": "सेव करके रूटीन देखें",
-    "skip_checkin": "चेक-इन छोड़ें और जैसी है सेव करें"
+    "skip_checkin": "चेक-इन छोड़ें और जैसी है सेव करें",
+    "weather_prompt": "क्या बच्चे आज बाहर जा सकते हैं?",
+    "weather_hint": "इससे ऐमी आउटडोर/इनडोर एक्टिविटी प्लान करती है।",
+    "weather_yes": "☀️ हाँ",
+    "weather_no": "🌧️ नहीं",
+    "weather_limited": "⛅ थोड़ा",
+    "weather_auto_detect": "ऑटो-डिटेक्ट",
+    "weather_auto_detecting": "पता लगा रहे हैं…",
+    "caregiver_note_mom": "ऐमी कोमल और प्यार भरी एक्टिविटी रखेगी।",
+    "caregiver_note_dad": "ऐमी एक्टिव और एनर्जेटिक खेल जोड़ेगी।",
+    "caregiver_note_both": "ऐमी संतुलित और व्यवस्थित दिन बनाएगी।",
+    "caregiver_note_grandparent": "ऐमी कहानी और धीमी रफ़्तार वाले पल देगी।",
+    "caregiver_note_babysitter": "ऐमी आसान और सुरक्षित एक्टिविटी रखेगी।"
   },
   "parent_avail": {
     "title": "आज कौन-कौन उपलब्ध है?",
