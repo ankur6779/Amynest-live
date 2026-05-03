@@ -461,9 +461,6 @@ function PracticeSoundsCard({
 
         {useGrid ? <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {items.map(it => {
-          const {
-            t
-          } = useTranslation();
           const count = progress.practiced[it.id] ?? 0;
           const mastered = !!progress.mastered[it.id];
           const showBlend = level.features.blending && it.example?.includes("–");
@@ -487,9 +484,6 @@ function PracticeSoundsCard({
         })}
           </div> : <div className="space-y-2">
             {items.map(it => {
-          const {
-            t
-          } = useTranslation();
           const count = progress.practiced[it.id] ?? 0;
           const mastered = !!progress.mastered[it.id];
           const isLong = it.type === "sentence" || it.type === "story";
