@@ -1480,6 +1480,18 @@ export default function RoutineGenerate() {
                     </div>}
                 </div>
 
+                {/* Quick-generate CTA — visible right below the date picker */}
+                {!existingRoutine?.exists || overrideMode ? <div className="space-y-2 pt-1 pb-2">
+                    <Button onClick={() => handleAiGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating || createMutation.isPending} size="lg" className="w-full rounded-full h-13 text-base font-bold shadow-sm relative">
+                      {isAiGenerating ? <><Brain className="h-5 w-5 mr-2 animate-pulse" />{t("pages.routines.generate.amy_is_thinking")}</> : overrideMode ? <><RefreshCw className="h-5 w-5 mr-2" />{t("pages.routines.generate.regenerate_override")}</> : <><Zap className="h-5 w-5 mr-2" />{t("pages.routines.generate.smart_amy_ai_routine")}</>}
+                      <Badge className="absolute -top-2 -right-1 bg-gradient-to-r from-primary to-primary text-white text-[10px] font-bold border-0 px-1.5 py-0.5">{t("pages.routines.generate.amy_ai")}</Badge>
+                    </Button>
+                    <Button onClick={() => handleGenerate(false)} disabled={!isFormValid || isGenerating || isAiGenerating} size="lg" variant="outline" className="w-full rounded-full h-11 text-sm font-bold border-2 border-border text-primary hover:bg-muted">
+                      {isGenerating ? <><Sparkles className="h-4 w-4 mr-2 animate-spin" />{t("pages.routines.generate.generating")}</> : <><Sparkles className="h-4 w-4 mr-2" />{t("pages.routines.generate.generate_smart_routine")}</>}
+                    </Button>
+                    {!isFormValid && <p className="text-center text-xs text-destructive">{t("pages.routines.generate.please_select_a_child_and_answer_the_school_question_to_cont")}</p>}
+                  </div> : null}
+
                 {/* Step 3 — School today? (age-aware) */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
