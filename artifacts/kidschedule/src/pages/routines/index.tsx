@@ -251,15 +251,9 @@ export default function RoutinesList() {
     }
   }
   return <div className="flex flex-col gap-6 animate-in fade-in duration-500">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="font-quicksand text-3xl font-bold text-foreground">{t("pages.routines.index.routines")}</h1>
-          <p className="text-muted-foreground mt-1">{t("pages.routines.index.daily_schedules_generated_by_ai")}</p>
-        </div>
-        <Button onClick={handleGenerateClick} className="rounded-full shadow-sm bg-primary text-primary-foreground hover:bg-primary/90" data-testid="routines-generate-btn">
-          <Sparkles className="mr-2 h-4 w-4" />
-          {t("pages.routines.index.generate")}
-        </Button>
+      <header>
+        <h1 className="font-quicksand text-3xl font-bold text-foreground">{t("pages.routines.index.routines")}</h1>
+        <p className="text-muted-foreground mt-1">{t("pages.routines.index.daily_schedules_generated_by_ai")}</p>
       </header>
 
       {/* 🍱 Amy AI Meal Suggestions */}
@@ -342,5 +336,11 @@ export default function RoutinesList() {
                 </div>}
             </>}
         </>}
+
+      {/* Generate Child Routine CTA */}
+      <Button onClick={handleGenerateClick} size="lg" className="w-full rounded-full h-14 text-base font-bold shadow-md" data-testid="routines-generate-btn">
+        <Sparkles className="mr-2 h-5 w-5" />
+        {t("pages.routines.index.generate_child_routine")}
+      </Button>
     </div>;
 }

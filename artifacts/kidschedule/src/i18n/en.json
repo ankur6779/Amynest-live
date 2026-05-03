@@ -3512,7 +3512,8 @@
         "activities": "activities",
         "no_routines_yet": "No routines yet",
         "let_the_ai_build_a_perfect_day_for_your_child_based_on_their": "Let the AI build a perfect day for your child based on their goals and school times.",
-        "generate_first_routine": "Generate First Routine"
+        "generate_first_routine": "Generate First Routine",
+        "generate_child_routine": "Generate Child Routine"
       }
     },
     "sign_in": {

@@ -3512,7 +3512,8 @@
         "activities": "गतिविधियाँ",
         "no_routines_yet": "अभी तक कोई रूटीन नहीं",
         "let_the_ai_build_a_perfect_day_for_your_child_based_on_their": "AI को आपके बच्चे के लक्ष्यों और स्कूल के समय के आधार पर उसके लिए एक बेहतरीन दिन बनाने दें।",
-        "generate_first_routine": "पहला रूटीन जनरेट करें"
+        "generate_first_routine": "पहला रूटीन जनरेट करें",
+        "generate_child_routine": "बच्चे की रूटीन बनाएं"
       }
     },
     "sign_in": {
