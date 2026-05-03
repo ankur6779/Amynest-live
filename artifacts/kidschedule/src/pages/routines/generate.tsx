@@ -555,6 +555,10 @@ export default function RoutineGenerate() {
   // Per-date parent availability
   const [parentAvail, setParentAvail] = useState<ParentAvailData>(() => loadAvailability(format(new Date(), "yyyy-MM-dd")));
 
+  // Outdoor-weather signal sent to the routine generator (yes/no/limited).
+  // Defaults to "yes" so existing flows without the picker behave as before.
+  const [weatherOutdoor, setWeatherOutdoor] = useState<"yes" | "no" | "limited">("yes");
+
   // Handler type — who is taking care of the kids today
   const [handlerType, setHandlerType] = useState<HandlerKey>("mom");
 
@@ -565,6 +569,8 @@ export default function RoutineGenerate() {
   }>>({});
   const [familyDate, setFamilyDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [familyParentAvail, setFamilyParentAvail] = useState<ParentAvailData>(() => loadAvailability(format(new Date(), "yyyy-MM-dd")));
+  // Family-mode outdoor-weather signal (yes/no/limited).
+  const [familyWeatherOutdoor, setFamilyWeatherOutdoor] = useState<"yes" | "no" | "limited">("yes");
   const [familySpecialPlans, setFamilySpecialPlans] = useState("");
   const [familyFridgeItems, setFamilyFridgeItems] = useState("");
   const [familyProgress, setFamilyProgress] = useState<{
@@ -905,7 +911,8 @@ export default function RoutineGenerate() {
         schoolStart: selectedChildData?.schoolStartTime,
         schoolEnd: selectedChildData?.schoolEndTime,
         region: parentRegion,
-        ...buildParentAvailPayload(parentAvail)
+        caregiver: handlerType,
+        weatherOutdoor
       }
     }, {
       onSuccess: generatedData => {
@@ -967,7 +974,8 @@ export default function RoutineGenerate() {
         schoolStart: selectedChildData?.schoolStartTime,
         schoolEnd: selectedChildData?.schoolEndTime,
         region: parentRegion,
-        ...buildParentAvailPayload(parentAvail)
+        caregiver: handlerType,
+        weatherOutdoor
       };
       const res = await authFetch("/api/routines/generate-ai", {
         method: "POST",
@@ -1148,16 +1156,23 @@ export default function RoutineGenerate() {
       try {
         const generated = await new Promise<GeneratedRoutine>((resolve, reject) => {
           generateMutation.mutate({
-            // Shared helper keeps web ↔ mobile family payloads in lockstep.
-            data: buildFamilyChildGeneratePayload({
-              child,
-              date: familyDate,
-              hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
-              specialPlans: appendHandlerToPlans(familySpecialPlans, handlerType),
-              fridgeItems: familyFridgeItems,
-              region: parentRegion,
-              parentAvail: familyParentAvail
-            }) as never
+            // Server now derives bonding/handler tone from `caregiver` and
+            // outdoor swaps from `weatherOutdoor`. Old parent1*/parent2*
+            // fields would be silently dropped, so we send the new fields
+            // directly instead of reusing the legacy helper.
+            data: {
+              ...buildFamilyChildGeneratePayload({
+                child,
+                date: familyDate,
+                hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
+                specialPlans: appendHandlerToPlans(familySpecialPlans, handlerType),
+                fridgeItems: familyFridgeItems,
+                region: parentRegion,
+                parentAvail: familyParentAvail
+              }),
+              caregiver: handlerType,
+              weatherOutdoor: familyWeatherOutdoor
+            } as never
           }, {
             onSuccess: data => resolve(data as GeneratedRoutine),
             onError: reject
@@ -1541,8 +1556,27 @@ export default function RoutineGenerate() {
                     </>}
                 </div>
 
-                {/* Step 4 — Parent availability for this date */}
-                <ParentAvailSection stepNum={4} avail={parentAvail} onChange={setParentAvail} date={date} />
+                {/* Step 4 — Outdoor weather for this date */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">4</div>
+                    <Label className="text-lg font-bold">Is the weather okay for outdoor play?</Label>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { value: "yes", label: "Yes", emoji: "☀️", hint: "Outdoor play OK" },
+                      { value: "limited", label: "Limited", emoji: "⛅", hint: "Short outdoor only" },
+                      { value: "no", label: "No", emoji: "🌧️", hint: "Indoor alternatives" }
+                    ] as const).map(opt => {
+                      const active = weatherOutdoor === opt.value;
+                      return <button key={opt.value} type="button" onClick={() => setWeatherOutdoor(opt.value)} className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border-2 font-bold transition-all text-sm ${active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card text-foreground border-border hover:border-primary/40"}`}>
+                          <span className="text-xl leading-none">{opt.emoji}</span>
+                          <span>{opt.label}</span>
+                          <span className={`text-[10px] font-normal ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.hint}</span>
+                        </button>;
+                    })}
+                  </div>
+                </div>
 
                 {/* Step 5 — Special plans */}
                 <div className="space-y-4">
@@ -1944,8 +1978,27 @@ export default function RoutineGenerate() {
                   </div>
                 </div>
 
-                {/* Step 3 — Parent availability for this date */}
-                <ParentAvailSection stepNum={3} avail={familyParentAvail} onChange={setFamilyParentAvail} date={familyDate} />
+                {/* Step 3 — Outdoor weather for this date */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">3</div>
+                    <Label className="text-lg font-bold">Is the weather okay for outdoor play?</Label>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { value: "yes", label: "Yes", emoji: "☀️", hint: "Outdoor play OK" },
+                      { value: "limited", label: "Limited", emoji: "⛅", hint: "Short outdoor only" },
+                      { value: "no", label: "No", emoji: "🌧️", hint: "Indoor alternatives" }
+                    ] as const).map(opt => {
+                      const active = familyWeatherOutdoor === opt.value;
+                      return <button key={opt.value} type="button" onClick={() => setFamilyWeatherOutdoor(opt.value)} className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border-2 font-bold transition-all text-sm ${active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card text-foreground border-border hover:border-primary/40"}`}>
+                          <span className="text-xl leading-none">{opt.emoji}</span>
+                          <span>{opt.label}</span>
+                          <span className={`text-[10px] font-normal ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.hint}</span>
+                        </button>;
+                    })}
+                  </div>
+                </div>
 
                 {/* Step 4 — Special plans */}
                 <div className="space-y-4">
