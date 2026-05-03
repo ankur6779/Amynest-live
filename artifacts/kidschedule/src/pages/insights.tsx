@@ -6,7 +6,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Calendar, Smile, Heart, Trophy, Flame, Sun, Moon, Sparkles } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Calendar, Smile, Heart, Trophy, Flame, Sun, Moon, Sparkles, Calculator } from "lucide-react";
 
 type Range = "week" | "month";
 
@@ -33,6 +33,32 @@ interface SiblingHighlight {
   detail: string;
   icon: string;
   accent: string;
+}
+
+interface AbacusWeeklyChild {
+  childId: number;
+  childName: string;
+  childAge: number | null;
+  hasProgress: boolean;
+  currentLevel: number;
+  currentLevelLabel: string;
+  highestUnlocked: number;
+  levelsCompletedTotal: number;
+  levelsCompletedThisWeek: number;
+  pointsThisWeek: number;
+  accuracyPct: number;
+  accuracyIsWeekly: boolean;
+  totalCorrect: number;
+  totalAttempts: number;
+  totalPoints: number;
+  lastActiveAt: string | null;
+  nextRecommendedAction: string;
+}
+
+interface AbacusWeeklySummary {
+  generatedAt: string;
+  children: AbacusWeeklyChild[];
+  eligibleWithoutProgress: Array<{ childId: number; childName: string; childAge: number | null }>;
 }
 
 interface InsightsResponse {
@@ -91,6 +117,19 @@ export default function InsightsPage() {
     queryFn: async () => {
       const res = await authFetch(getApiUrl(`/api/dashboard/insights?range=${range}`));
       if (!res.ok) throw new Error("Failed to load insights");
+      return res.json();
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  // Abacus weekly summary is independent of the week/month toggle — the
+  // underlying schema only stores per-level best scores, so we can only
+  // meaningfully aggregate over a fixed trailing 7-day window.
+  const { data: abacus } = useQuery<AbacusWeeklySummary>({
+    queryKey: ["abacus-weekly-summary"],
+    queryFn: async () => {
+      const res = await authFetch(getApiUrl(`/api/abacus/weekly-summary`));
+      if (!res.ok) throw new Error("Failed to load abacus summary");
       return res.json();
     },
     staleTime: 5 * 60_000,
@@ -265,6 +304,86 @@ export default function InsightsPage() {
               </div>
             </Link>
           </>
+        )}
+
+        {/* Abacus weekly progress (per-child) — rendered independently of
+            the routines/behaviour activity gate above, so parents whose
+            child is only active in the Abacus PRO Zone still see it. */}
+        {!isLoading && data?.hasChildren && abacus && abacus.children.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="font-quicksand font-bold text-base text-foreground flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-primary" />
+              Abacus this week
+            </h2>
+            {abacus.children.map((c) => (
+              <Card key={c.childId} className="rounded-2xl">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-foreground">{c.childName}</p>
+                    <span className="text-xs text-muted-foreground">
+                      Level {c.currentLevel} · {c.currentLevelLabel}
+                    </span>
+                  </div>
+                  {!c.hasProgress ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        No abacus sessions yet — open the Abacus PRO Zone in the Parent Hub to get started.
+                      </p>
+                      <div className="flex items-start gap-2 rounded-xl bg-primary/10 px-3 py-2">
+                        <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-[11px] font-bold text-primary uppercase tracking-wide">
+                            Next up
+                          </p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {c.nextRecommendedAction}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div className="bg-muted/50 rounded-lg px-3 py-2">
+                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">
+                            {c.accuracyIsWeekly ? "Accuracy" : "Lifetime accuracy"}
+                          </p>
+                          <p className="text-lg font-extrabold text-foreground">{c.accuracyPct}%</p>
+                        </div>
+                        <div className="bg-muted/50 rounded-lg px-3 py-2">
+                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">Points</p>
+                          <p className="text-lg font-extrabold text-foreground">{c.pointsThisWeek}</p>
+                          <p className="text-[10px] text-muted-foreground">this week</p>
+                        </div>
+                        <div className="bg-muted/50 rounded-lg px-3 py-2">
+                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">Levels</p>
+                          <p className="text-lg font-extrabold text-foreground">
+                            {c.levelsCompletedTotal}/5
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {c.levelsCompletedThisWeek > 0
+                              ? `+${c.levelsCompletedThisWeek} this week`
+                              : "no new this week"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2 rounded-xl bg-primary/10 px-3 py-2">
+                        <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-[11px] font-bold text-primary uppercase tracking-wide">
+                            Next up
+                          </p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {c.nextRecommendedAction}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
     </Layout>

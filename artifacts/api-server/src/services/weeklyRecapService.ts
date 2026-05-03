@@ -4,6 +4,10 @@ import { db, parentProfilesTable, type ParentProfile } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { sendEmail, isEmailConfigured } from "../lib/email";
 import { buildInsights, type InsightsResponse } from "./insightsService";
+import {
+  buildAbacusWeeklySummary,
+  type AbacusWeeklySummary,
+} from "./abacusWeeklySummary";
 import { getParentTaskCompletionCounts } from "../routes/parent-tasks";
 
 const SIX_DAYS_MS = 6 * 24 * 60 * 60 * 1000;
@@ -104,16 +108,63 @@ function pickFocusArea(insights: InsightsResponse): string {
   return "Try planning one new activity category next week — variety keeps both of you engaged.";
 }
 
+function buildAbacusBlock(summary: AbacusWeeklySummary | null): {
+  html: string;
+  text: string;
+} {
+  if (!summary || summary.children.length === 0) return { html: "", text: "" };
+  const active = summary.children.filter((c) => c.hasProgress);
+  if (active.length === 0) return { html: "", text: "" };
+
+  const rows = active
+    .map((c) => {
+      const accLabel = c.accuracyIsWeekly ? "this week" : "lifetime";
+      return `
+      <tr>
+        <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;color:#0f172a;font-weight:600;">
+          ${escapeHtml(c.childName)}
+          <div style="font-weight:400;color:#64748b;font-size:12px;margin-top:2px;">Level ${c.currentLevel} · ${escapeHtml(c.currentLevelLabel)}</div>
+        </td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;color:#475569;text-align:right;">${c.accuracyPct}%<div style="font-size:11px;color:#94a3b8;">${accLabel}</div></td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;color:#475569;text-align:right;">${c.pointsThisWeek}<div style="font-size:11px;color:#94a3b8;">pts this week</div></td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;color:#475569;text-align:right;">${c.levelsCompletedTotal}/5<div style="font-size:11px;color:#94a3b8;">${c.levelsCompletedThisWeek > 0 ? `+${c.levelsCompletedThisWeek} this week` : "no new"}</div></td>
+      </tr>
+      <tr>
+        <td colspan="4" style="padding:8px 14px 14px;border-bottom:1px solid #f1f5f9;background:#faf5ff;color:#7c3aed;font-size:13px;">
+          <strong>Next up:</strong> ${escapeHtml(c.nextRecommendedAction)}
+        </td>
+      </tr>`;
+    })
+    .join("");
+
+  const html = `
+    <h3 style="margin:24px 0 8px;color:#0f172a;font-size:16px;">Abacus PRO Zone — this week</h3>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+      ${rows}
+    </table>`;
+
+  const textLines = [
+    "Abacus PRO Zone — this week:",
+    ...active.flatMap((c) => [
+      `  - ${c.childName}: Level ${c.currentLevel} (${c.currentLevelLabel}), ${c.accuracyPct}% ${c.accuracyIsWeekly ? "this week" : "lifetime"}, ${c.pointsThisWeek} pts this week, ${c.levelsCompletedTotal}/5 levels${c.levelsCompletedThisWeek > 0 ? ` (+${c.levelsCompletedThisWeek} this week)` : ""}`,
+      `      Next up: ${c.nextRecommendedAction}`,
+    ]),
+  ];
+  return { html, text: textLines.join("\n") };
+}
+
 export function composeWeeklyRecap(
   profile: ParentProfile,
   insights: InsightsResponse,
   parentTaskStats: ParentTaskRecapStats = EMPTY_PARENT_TASK_STATS,
+  abacusSummary: AbacusWeeklySummary | null = null,
 ): ComposedRecap {
   const greeting = profile.name ? `Hi ${escapeHtml(profile.name)},` : "Hi there,";
   const win = pickTopWin(insights);
   const focus = pickFocusArea(insights);
   const s = insights.summary;
   const parentTaskBlock = buildParentTaskBlock(parentTaskStats);
+  const abacusBlock = buildAbacusBlock(abacusSummary);
   const preheader = insights.hasActivity
     ? `${s.routinesThisPeriod} routines · ${s.behaviorsThisPeriod} moments · ${s.positiveRateThisPeriod}% positive`
     : "Your weekly snapshot from AmyNest";
@@ -249,6 +300,7 @@ export function composeWeeklyRecap(
                 <div style="font-size:15px;color:#0f172a;margin-top:4px;">${escapeHtml(focus)}</div>
               </div>
               ${parentTaskBlock.html}
+              ${abacusBlock.html}
               ${childrenBlock}
               ${familyBlock}
               ${dayBlock}
@@ -290,6 +342,7 @@ export function composeWeeklyRecap(
     `One thing to try: ${focus}`,
     "",
     ...(parentTaskBlock.text ? [parentTaskBlock.text, ""] : []),
+    ...(abacusBlock.text ? [abacusBlock.text, ""] : []),
     ...(insights.siblingHighlights && insights.siblingHighlights.length >= 2
       ? [
           "Family strengths:",
@@ -437,7 +490,21 @@ export async function sendRecapForUser(args: {
     fromDate,
     toDate,
   });
-  const composed = composeWeeklyRecap(profile, insights, parentTaskStats);
+  let abacusSummary: AbacusWeeklySummary | null = null;
+  try {
+    abacusSummary = await buildAbacusWeeklySummary({ userId });
+  } catch (err) {
+    logger.warn(
+      { err, userId },
+      "Abacus weekly summary failed for recap — continuing without it",
+    );
+  }
+  const composed = composeWeeklyRecap(
+    profile,
+    insights,
+    parentTaskStats,
+    abacusSummary,
+  );
 
   const result = await sendEmail({
     to: email,
