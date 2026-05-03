@@ -8,6 +8,8 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
+  Linking,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,10 +20,14 @@ import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand } from "@/constants/colors";
+import { brand, brandExtended } from "@/constants/colors";
+
+const HISTORY_OK_COLOR = brand.primary;
+const HISTORY_WARN_COLOR = brandExtended.errorSoft;
 
 type Prefs = {
   routineEnabled: boolean;
+  routineItemEnabled: boolean;
   nutritionEnabled: boolean;
   insightsEnabled: boolean;
   weeklyEnabled: boolean;
@@ -40,11 +46,21 @@ type Category = {
   icon: keyof typeof Ionicons.glyphMap;
   testCategory:
     | "routine"
+    | "routine_item"
     | "nutrition"
     | "insights"
     | "weekly"
     | "engagement"
     | "good_night";
+};
+
+type HistoryRow = {
+  id: number;
+  category: string;
+  title: string;
+  status: string;
+  errorMessage: string | null;
+  sentAt: string;
 };
 
 export default function NotificationSettingsScreen() {
@@ -59,6 +75,7 @@ export default function NotificationSettingsScreen() {
 
   const CATEGORIES: Category[] = [
     { key: "routineEnabled", title: t("screens.notif_settings.cat_routine_title"), description: t("screens.notif_settings.cat_routine_desc"), icon: "calendar-outline", testCategory: "routine" },
+    { key: "routineItemEnabled", title: "Per-task reminders", description: "A heads-up about 5 minutes before each routine item.", icon: "time-outline", testCategory: "routine_item" },
     { key: "nutritionEnabled", title: t("screens.notif_settings.cat_nutrition_title"), description: t("screens.notif_settings.cat_nutrition_desc"), icon: "nutrition-outline", testCategory: "nutrition" },
     { key: "insightsEnabled", title: t("screens.notif_settings.cat_insights_title"), description: t("screens.notif_settings.cat_insights_desc"), icon: "bulb-outline", testCategory: "insights" },
     { key: "weeklyEnabled", title: t("screens.notif_settings.cat_weekly_title"), description: t("screens.notif_settings.cat_weekly_desc"), icon: "stats-chart-outline", testCategory: "weekly" },
@@ -97,6 +114,23 @@ export default function NotificationSettingsScreen() {
       Alert.alert(t("alerts.notifications.save_failed_title"), err.message);
     },
   });
+
+  const history = useQuery<{ items: HistoryRow[] }>({
+    queryKey: ["notification-history"],
+    queryFn: async () => {
+      const r = await authFetch("/api/notifications/history?limit=20");
+      if (!r.ok) throw new Error("Failed to load history");
+      return r.json();
+    },
+  });
+
+  const openSystemSettings = () => {
+    if (Platform.OS === "ios") {
+      Linking.openURL("app-settings:");
+    } else {
+      Linking.openSettings();
+    }
+  };
 
   const test = useMutation({
     mutationFn: async (category: Category["testCategory"]) => {
@@ -200,6 +234,46 @@ export default function NotificationSettingsScreen() {
           {t("screens.notif_settings.quiet_help")}
         </Text>
       </View>
+
+      <Pressable onPress={openSystemSettings} style={styles.systemBtn}>
+        <Ionicons name="settings-outline" size={18} color={brand.primary} />
+        <Text style={styles.systemBtnText}>Open system notification settings</Text>
+      </Pressable>
+
+      <Text style={styles.sectionLabel}>Recent deliveries</Text>
+      <View style={styles.historyCard}>
+        {history.isLoading ? (
+          <Text style={styles.historyEmpty}>Loading…</Text>
+        ) : !history.data || history.data.items.length === 0 ? (
+          <Text style={styles.historyEmpty}>
+            Nothing has been delivered yet. Send a test from any category above to confirm your device is receiving notifications.
+          </Text>
+        ) : (
+          history.data.items.slice(0, 10).map((row) => {
+            const ok = row.status === "sent";
+            return (
+              <View key={row.id} style={styles.historyRow}>
+                <Ionicons
+                  name={ok ? "checkmark-circle" : "alert-circle"}
+                  size={18}
+                  color={ok ? HISTORY_OK_COLOR : HISTORY_WARN_COLOR}
+                  style={{ marginTop: 2 }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.historyTitle} numberOfLines={1}>{row.title}</Text>
+                  <Text style={styles.historyMeta} numberOfLines={1}>
+                    {row.category} · {row.status}
+                    {row.errorMessage ? ` · ${row.errorMessage}` : ""}
+                  </Text>
+                </View>
+                <Text style={styles.historyTime}>
+                  {new Date(row.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </Text>
+              </View>
+            );
+          })
+        )}
+      </View>
       </ScrollView>
     </View>
   );
@@ -252,5 +326,41 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     quietTitle: { color: c.text, fontSize: 15, fontWeight: "600", marginBottom: 6 },
     quietValue: { color: brand.primary, fontSize: 16, fontWeight: "700", marginBottom: 6 },
     quietHelp: { color: c.textMuted, fontSize: 12 },
+    systemBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      alignSelf: "flex-start",
+      marginTop: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 10,
+      backgroundColor: brand.primary + "1A",
+    },
+    systemBtnText: { color: brand.primary, fontSize: 14, fontWeight: "600" },
+    sectionLabel: {
+      color: c.textMuted,
+      fontSize: 12,
+      letterSpacing: 1.5,
+      textTransform: "uppercase",
+      marginTop: 24,
+      marginBottom: 10,
+    },
+    historyCard: {
+      backgroundColor: c.cardBackground,
+      borderRadius: 14,
+      paddingVertical: 4,
+    },
+    historyEmpty: { color: c.textMuted, fontSize: 13, padding: 16, lineHeight: 18 },
+    historyRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    historyTitle: { color: c.text, fontSize: 14 },
+    historyMeta: { color: c.textMuted, fontSize: 12, marginTop: 2 },
+    historyTime: { color: c.textMuted, fontSize: 11, marginLeft: 4 },
   });
 }

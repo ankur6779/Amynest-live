@@ -20,6 +20,7 @@ export const notificationPreferencesTable = pgTable("notification_preferences", 
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().unique(),
   routineEnabled: boolean("routine_enabled").notNull().default(true),
+  routineItemEnabled: boolean("routine_item_enabled").notNull().default(true),
   nutritionEnabled: boolean("nutrition_enabled").notNull().default(true),
   insightsEnabled: boolean("insights_enabled").notNull().default(true),
   weeklyEnabled: boolean("weekly_enabled").notNull().default(true),
@@ -38,6 +39,7 @@ export type InsertNotificationPreferences = typeof notificationPreferencesTable.
 
 export const NOTIFICATION_CATEGORIES = [
   "routine",
+  "routine_item",
   "nutrition",
   "insights",
   "weekly",

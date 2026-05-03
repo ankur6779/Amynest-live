@@ -204,6 +204,28 @@ export function NotificationNudgeBanner() {
   if (dismissed || state === "hidden") return null;
 
   if (state === "denied") {
+    // Recovery copy is platform-specific because the steps to re-enable
+    // notifications differ a lot across surfaces (Chrome desktop is a
+    // padlock dropdown, Chrome Android is a site-info screen, the TWA
+    // wrapper is the Android system app settings page).
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const inTwa = Boolean(getNativePushBridge());
+    const isAndroid = /Android/i.test(ua);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+    let recoveryCopy: string;
+    if (inTwa) {
+      recoveryCopy =
+        "Phone Settings → Apps → KidSchedule → Notifications → Allow";
+    } else if (isAndroid) {
+      recoveryCopy =
+        "Chrome → tap the lock icon next to the URL → Permissions → Notifications → Allow";
+    } else if (isMobile) {
+      recoveryCopy =
+        "Open this site in Safari/Chrome and allow notifications when prompted";
+    } else {
+      recoveryCopy =
+        "Click the lock icon to the left of the URL → Site settings → Notifications → Allow, then refresh";
+    }
     return (
       <div
         className="relative flex items-start gap-3 rounded-2xl px-4 py-3 text-sm"
@@ -223,7 +245,7 @@ export function NotificationNudgeBanner() {
             Notifications blocked hain
           </p>
           <p className="text-red-500 text-xs mt-0.5 leading-relaxed">
-            Phone Settings → Apps → KidSchedule → Notifications → <strong>Allow</strong>
+            {recoveryCopy}
           </p>
         </div>
         <button onClick={handleDismiss} className="shrink-0 p-1 rounded-full" aria-label="Dismiss">
