@@ -276,6 +276,10 @@ export async function generateAiRoutine(params: {
   caregiver: CaregiverKey;
   weatherOutdoor: WeatherOutdoor;
   customRecipes?: CustomRecipeEntry[];
+  // Food preference details — drive meal content directly
+  allergies?: string | null;    // comma-separated allergy list
+  foodStyle?: string | null;    // e.g. "indian", "western", "asian"
+  subCuisine?: string | null;   // e.g. "north_indian", "south_indian"
   // Infant-only context (ignored for non-infant age groups). Captured during
   // onboarding and editable on the child profile.
   feedingType?: string | null;
@@ -399,6 +403,22 @@ CRITICAL RULES — follow ALL exactly:
 - Include at least 2 outdoor/play activities and 1–2 family bonding activities.
 - Activities must match the child's age group and mood.
 ${buildDietConstraintBlock(params.foodType)}
+${params.allergies ? `
+ALLERGY CONSTRAINT — SAFETY-CRITICAL (HARD RULE — non-negotiable):
+This child has the following allergies/intolerances: ${params.allergies}
+NEVER include ANY of these allergens in any meal name, snack, drink, ingredient list, or recipe note — not even as a minor ingredient, garnish, or "optional" item.
+For EACH allergen listed:
+- Peanut / groundnut: no peanuts, peanut butter, peanut oil, groundnut oil, satay sauce, or any dish that may contain traces of peanut.
+- Milk / dairy / lactose: no milk, curd, dahi, ghee, butter, cream, cheese, paneer, khoya, lassi, Horlicks, Bournvita, whey protein, or any dairy product.
+- Egg: no egg, boiled egg, omelette, scrambled egg, mayonnaise, cake/biscuits with egg.
+- Gluten / wheat: no wheat roti, chapati, paratha, bread, naan, pasta, semolina (suji/rava), maida — use rice, jowar, bajra, or millet-based alternatives.
+- Soy: no soy milk, tofu, tempeh, soy sauce, edamame.
+- Tree nuts (cashew, almond, walnut, pistachio): avoid all listed nuts.
+- Shellfish / seafood: no prawn, shrimp, crab, lobster, oyster.
+- Fish: no fish of any kind.
+Always choose safe alternatives and note them clearly in activity notes.` : ""}
+${params.foodStyle ? `
+FOOD STYLE CONTEXT: The family follows a ${params.foodStyle === "indian" ? (params.subCuisine ? params.subCuisine.replace(/_/g, " ") + " Indian" : "Indian") : params.foodStyle} food style. Every meal, snack, and tiffin MUST reflect this style authentically. Do NOT default to generic pan-Indian food if a specific regional sub-cuisine is specified.` : ""}
 ${params.hasSchool ? `
 SCHOOL RULES — non-negotiable when "School today: Yes":
 - Insert exactly ONE activity with category "school" that starts at ${params.schoolStartTime} and ends at ${params.schoolEndTime}. Set its duration to the full minutes between those two times.
@@ -701,11 +721,21 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
   if ((child as any).dietType) foodType = (child as any).dietType;
   else if (pp?.dietType) foodType = pp.dietType;
   else if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
+
+  // Effective food style + sub-cuisine: child overrides parent
+  const effFoodStyle: string | null = (child as any).foodStyle ?? pp?.foodStyle ?? null;
+  const effSubCuisine: string | null = (child as any).subCuisine ?? pp?.subCuisine ?? null;
+
+  // Effective allergies: child overrides parent (merge both for safety)
+  const childAllergies: string = ((child as any).allergies ?? "").trim();
+  const parentAllergies: string = (pp?.allergies ?? "").trim();
+  const effAllergies: string | null = [childAllergies, parentAllergies]
+    .filter(Boolean)
+    .join(", ") || null;
+
   // Region: child foodStyle overrides parent region
-  if ((child as any).foodStyle) {
-    const cs = (child as any).foodStyle as string;
-    const sc = ((child as any).subCuisine as string | undefined) ?? "";
-    region = cs === "indian" ? (sc || "pan_indian") : cs;
+  if (effFoodStyle) {
+    region = effFoodStyle === "indian" ? (effSubCuisine || "pan_indian") : effFoodStyle;
   } else if (!parsed.data.region && pp?.region) region = pp.region;
 
   // Optional overrides for AI generation
@@ -741,6 +771,9 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       caregiver,
       weatherOutdoor,
       customRecipes: aiUserCustomRecipes,
+      allergies: effAllergies,
+      foodStyle: effFoodStyle,
+      subCuisine: effSubCuisine,
       feedingType: child.feedingType ?? null,
       sleepPattern: child.sleepPattern ?? null,
     });
