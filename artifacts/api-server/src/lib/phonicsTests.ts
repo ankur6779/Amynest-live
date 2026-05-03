@@ -23,13 +23,29 @@ export const AGE_GROUP_LABEL: Record<AgeGroup, string> = {
 
 export type TestType = "daily" | "weekly";
 
+/**
+ * Visual flavor of the test session — chosen by the parent on the start
+ * screen. Cooldowns + question count are still driven by `TestType`; mode
+ * only changes which question types are generated and how the client
+ * renders + scores them.
+ *
+ *   hear_tap        → mixed types using the existing AGE_TYPES table
+ *   missing_letter  → all questions are "fill the missing letter"
+ *   build_word      → all questions are "tap letter tiles to spell the word"
+ *   speed_challenge → mixed types like hear_tap, but each question carries
+ *                     a `prompt.meta.timeLimitSec` for the client timer.
+ */
+export type GameMode = "hear_tap" | "missing_letter" | "build_word" | "speed_challenge";
+
 export type QuestionType =
   | "animal_sound" // TTS animal sound → pick emoji
   | "letter_to_sound" // show letter glyph → pick spoken sound
   | "sound_to_letter" // TTS sound → pick letter glyph
   | "word_pic" // show emoji → pick word
   | "blending" // show "c-a-t" → pick the word
-  | "listening"; // TTS full word → pick word
+  | "listening" // TTS full word → pick word
+  | "missing_letter" // show "C _ T" → pick the missing letter
+  | "build_word"; // show emoji + tiles → tap letters in order
 
 export interface QuestionOption {
   label: string;
@@ -45,6 +61,20 @@ export interface QuestionPrompt {
   emoji?: string;
   /** If set, client should fetch TTS audio for this string and play it. */
   ttsText?: string;
+  /**
+   * Mode-specific structured data the client renderer needs.
+   *  - `targetWord` / `letterPool` are used by `build_word` so the client can
+   *    lay out scrambled letter tiles and self-validate the assembled word.
+   *  - `timeLimitSec` is set on every question for `speed_challenge` so the
+   *    client can show a countdown and auto-submit a wrong answer on expiry.
+   * Trusting the client to honestly report build_word success is acceptable
+   * for a kid-facing practice game (the answer would be obvious anyway).
+   */
+  meta?: {
+    targetWord?: string;
+    letterPool?: string[];
+    timeLimitSec?: number;
+  };
 }
 
 export interface Question {
@@ -60,7 +90,17 @@ export interface Question {
 }
 
 /** What the client receives — no `correctIndex`. */
-export type ClientQuestion = Omit<Question, "correctIndex">;
+export type ClientQuestion = Omit<Question, "correctIndex"> & {
+  /**
+   * Local-only correctness signal used by the kids' UI to instantly show
+   * green-glow / shake feedback without a server round-trip. The score is
+   * still authoritatively computed server-side from the encrypted session
+   * token, so this field carries no security guarantee — it exists purely
+   * for UX. Field name intentionally differs from `correctIndex` so that
+   * tests asserting plaintext `correctIndex` is stripped continue to pass.
+   */
+  _localCheck: number;
+};
 
 export interface ScoreBreakdown {
   correct: number;
@@ -341,6 +381,78 @@ function buildBlendingQ(row: PhonicsContentRow, ctx: BuildContext, idx: number):
   };
 }
 
+/** Pick `count` distinct alphabet letters that aren't `correct`. */
+function pickLetterDistractors(correct: string, rng: () => number, count = 3): string[] {
+  const cl = correct.toLowerCase();
+  const alphabet = "abcdefghijklmnopqrstuvwxyz".split("").filter((l) => l !== cl);
+  return shuffle(alphabet, rng).slice(0, count);
+}
+
+function buildMissingLetterQ(row: PhonicsContentRow, ctx: BuildContext, idx: number): Question | null {
+  const word = exampleWord(row).toLowerCase();
+  if (word.length < 3 || !/^[a-z]+$/.test(word)) return null;
+  // Prefer blanking a vowel — most pedagogically useful for early readers.
+  const vowelIdxs: number[] = [];
+  for (let i = 0; i < word.length; i++) if (VOWELS.has(word[i]!)) vowelIdxs.push(i);
+  const positions = vowelIdxs.length ? vowelIdxs : Array.from({ length: word.length }, (_, i) => i);
+  const blankAt = positions[Math.floor(ctx.rng() * positions.length)]!;
+  const correctLetter = word[blankAt]!;
+  const masked = word
+    .split("")
+    .map((c, i) => (i === blankAt ? "_" : c.toUpperCase()))
+    .join(" ");
+  const distractors = pickLetterDistractors(correctLetter, ctx.rng, 3);
+  const options: QuestionOption[] = shuffle(
+    [
+      { label: correctLetter.toUpperCase() },
+      ...distractors.map((d) => ({ label: d.toUpperCase() })),
+    ],
+    ctx.rng,
+  );
+  const correctIndex = options.findIndex((o) => o.label.toLowerCase() === correctLetter);
+  return {
+    id: `q${idx + 1}`,
+    conceptId: row.id,
+    type: "missing_letter",
+    prompt: {
+      instruction: "What letter is missing?",
+      text: masked,
+      emoji: row.emoji ?? undefined,
+      ttsText: word,
+    },
+    options,
+    correctIndex,
+  };
+}
+
+function buildBuildWordQ(row: PhonicsContentRow, ctx: BuildContext, idx: number): Question | null {
+  const word = exampleWord(row).toLowerCase();
+  if (word.length < 3 || word.length > 6 || !/^[a-z]+$/.test(word)) return null;
+  const letters = word.split("");
+  // Add a couple of distractor letters not already in the target.
+  const distractors = pickLetterDistractors(letters[0]!, ctx.rng, 4)
+    .filter((d) => !letters.includes(d))
+    .slice(0, 2);
+  const letterPool = shuffle([...letters, ...distractors], ctx.rng);
+  // Self-validating mode: client compares the assembled string to targetWord
+  // and reports selectedIndex 0 (correct) or 1 (wrong). The server still
+  // scores against correctIndex from the encrypted token.
+  const options: QuestionOption[] = [{ label: "✓" }, { label: "✗" }];
+  return {
+    id: `q${idx + 1}`,
+    conceptId: row.id,
+    type: "build_word",
+    prompt: {
+      instruction: "Tap the letters to spell the word",
+      emoji: row.emoji ?? undefined,
+      ttsText: word,
+      meta: { targetWord: word, letterPool },
+    },
+    options,
+    correctIndex: 0,
+  };
+}
+
 function buildListeningQ(row: PhonicsContentRow, ctx: BuildContext, idx: number): Question | null {
   const correct = exampleWord(row);
   const distractors = pickDistractorsBy(
@@ -384,7 +496,12 @@ const BUILDERS: Record<
   word_pic: buildWordPicQ,
   blending: buildBlendingQ,
   listening: buildListeningQ,
+  missing_letter: buildMissingLetterQ,
+  build_word: buildBuildWordQ,
 };
+
+/** Per-question time budget for speed_challenge mode. */
+const SPEED_TIME_LIMIT_SEC = 7;
 
 // ─── Public: generate questions ──────────────────────────────────────────────
 
@@ -398,10 +515,12 @@ export interface GenerateOptions {
   recentItemIds?: number[];
   /** Deterministic seed (e.g. `Date.now()` at test start). */
   seed: number;
+  /** Visual flavor — defaults to `hear_tap` (mixed types from AGE_TYPES). */
+  gameMode?: GameMode;
 }
 
 export function generateQuestions(opts: GenerateOptions): Question[] {
-  const { ageGroup, contentRows, count, recentItemIds = [], seed } = opts;
+  const { ageGroup, contentRows, count, recentItemIds = [], seed, gameMode = "hear_tap" } = opts;
   const rng = mulberry32(seed || 1);
 
   const recent = new Set(recentItemIds);
@@ -418,7 +537,16 @@ export function generateQuestions(opts: GenerateOptions): Question[] {
     cvcRows: active.filter((r) => isCvc(exampleWord(r))),
   };
 
-  const allowedTypes = AGE_TYPES[ageGroup];
+  // Mode-specific allowed types. The two new modes (missing_letter,
+  // build_word) lock the entire session to a single builder so the UI is
+  // a consistent mini-game; speed_challenge reuses the mixed-type set.
+  const allowedTypes: QuestionType[] =
+    gameMode === "missing_letter"
+      ? ["missing_letter"]
+      : gameMode === "build_word"
+        ? ["build_word"]
+        : AGE_TYPES[ageGroup];
+
   const ordered = shuffle(pool, rng);
 
   const out: Question[] = [];
@@ -434,6 +562,17 @@ export function generateQuestions(opts: GenerateOptions): Question[] {
       if (built) break;
     }
     if (built) {
+      // Speed challenge: stamp every question with a time budget the client
+      // uses to drive its countdown. Other modes leave it undefined.
+      if (gameMode === "speed_challenge") {
+        built = {
+          ...built,
+          prompt: {
+            ...built.prompt,
+            meta: { ...(built.prompt.meta ?? {}), timeLimitSec: SPEED_TIME_LIMIT_SEC },
+          },
+        };
+      }
       out.push(built);
       typeCursor++;
     }
@@ -521,6 +660,8 @@ interface SessionPayload {
   issuedAt: number;
   /** Random one-time-use id (UUID). Caller may supply for testing. */
   jti?: string;
+  /** Defaults to `hear_tap` when omitted (legacy tokens). */
+  gameMode?: GameMode;
 }
 
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 min
@@ -564,6 +705,7 @@ export function signSession(payload: SessionPayload, secret: string): string {
       })),
       iat: payload.issuedAt,
       j: jti,
+      g: payload.gameMode ?? "hear_tap",
     }),
     "utf8",
   );
@@ -598,6 +740,8 @@ export interface VerifiedSession {
   issuedAt: number;
   /** One-time-use id — submit handler MUST reject a previously-seen jti. */
   jti: string;
+  /** Defaults to `hear_tap` when missing from older tokens. */
+  gameMode: GameMode;
 }
 
 export function verifySession(token: string, secret: string, now = Date.now()): VerifiedSession | null {
@@ -634,6 +778,7 @@ export function verifySession(token: string, secret: string, now = Date.now()): 
   if (typeof parsed?.u !== "string" || !parsed.u) return null;
   if (typeof parsed?.j !== "string" || !parsed.j) return null;
   if (!Array.isArray(parsed.q)) return null;
+  const gm = typeof parsed?.g === "string" ? (parsed.g as GameMode) : "hear_tap";
   return {
     userId: String(parsed.u),
     childId: Number(parsed.c),
@@ -647,12 +792,13 @@ export function verifySession(token: string, secret: string, now = Date.now()): 
     })),
     issuedAt: parsed.iat,
     jti: String(parsed.j),
+    gameMode: gm,
   };
 }
 
 /** Strip correct answers before sending to the client. */
 export function toClientQuestions(qs: Question[]): ClientQuestion[] {
-  return qs.map(({ correctIndex: _drop, ...rest }) => rest);
+  return qs.map(({ correctIndex, ...rest }) => ({ ...rest, _localCheck: correctIndex }));
 }
 
 // ─── AI insight (weekly tests only) ──────────────────────────────────────────

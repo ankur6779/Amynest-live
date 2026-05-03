@@ -548,6 +548,7 @@ const WEEKLY_COUNT = 20;
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "";
 
 const TestTypeSchema = z.enum(["daily", "weekly"]);
+const GameModeSchema = z.enum(["hear_tap", "missing_letter", "build_word", "speed_challenge"]);
 
 async function loadLastResult(
   childId: number,
@@ -648,6 +649,8 @@ router.get("/phonics/tests/availability/:childId", async (req, res): Promise<voi
 const StartBody = z.object({
   childId: z.number().int().positive(),
   testType: TestTypeSchema,
+  /** Optional flavor — defaults to `hear_tap` for backwards compat. */
+  gameMode: GameModeSchema.optional(),
 });
 
 router.post("/phonics/tests/start", async (req, res): Promise<void> => {
@@ -661,7 +664,7 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
     return;
   }
-  const { childId, testType } = parsed.data;
+  const { childId, testType, gameMode = "hear_tap" } = parsed.data;
   try {
     const child = await loadOwnedChild(childId, userId);
     if (!child) {
@@ -698,6 +701,7 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
       count,
       recentItemIds,
       seed,
+      gameMode,
     });
     if (questions.length < count) {
       // Not enough variety to form a full test — degrade gracefully by
@@ -711,7 +715,7 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
     let sessionToken: string;
     try {
       sessionToken = signSession(
-        { userId, childId, testType, ageGroup, questions, issuedAt },
+        { userId, childId, testType, ageGroup, questions, issuedAt, gameMode },
         SESSION_SECRET,
       );
     } catch (err) {
@@ -726,6 +730,7 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
     res.json({
       sessionToken,
       testType,
+      gameMode,
       ageGroup,
       ageGroupLabel: AGE_GROUP_LABEL[ageGroup],
       questions: toClientQuestions(questions),
