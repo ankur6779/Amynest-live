@@ -670,6 +670,8 @@
       "quiet_help": "We never send notifications during this window.",
       "cat_routine_title": "Routine reminders",
       "cat_routine_desc": "Morning, evening and bedtime nudges to stay on track.",
+      "cat_routine_item_title": "Per-task reminders",
+      "cat_routine_item_desc": "A heads-up about 5 minutes before each routine item.",
       "cat_nutrition_title": "Nutrition suggestions",
       "cat_nutrition_desc": "Snack ideas, dinner inspiration and meal tips.",
       "cat_insights_title": "Amy AI insights",
@@ -679,7 +681,11 @@
       "cat_engagement_title": "Friendly nudges",
       "cat_engagement_desc": "Re-engagement messages and streak rewards.",
       "cat_goodnight_title": "Good night message",
-      "cat_goodnight_desc": "Wind-down reminder at bedtime."
+      "cat_goodnight_desc": "Wind-down reminder at bedtime.",
+      "open_system_settings": "Open system notification settings",
+      "recent_deliveries": "Recent deliveries",
+      "history_loading": "Loading…",
+      "history_empty": "Nothing has been delivered yet. Send a test from any category above to confirm your device is receiving notifications."
     },
     "insights": {
       "title": "Parent Insights",

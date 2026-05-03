@@ -670,6 +670,8 @@
       "quiet_help": "हम इस समय के दौरान कभी सूचनाएं नहीं भेजते।",
       "cat_routine_title": "रूटीन रिमाइंडर",
       "cat_routine_desc": "ट्रैक पर रहने के लिए सुबह, शाम और सोने के समय की नज़र।",
+      "cat_routine_item_title": "प्रति-कार्य रिमाइंडर",
+      "cat_routine_item_desc": "हर रूटीन आइटम से लगभग 5 मिनट पहले एक सूचना।",
       "cat_nutrition_title": "पोषण सुझाव",
       "cat_nutrition_desc": "स्नैक आइडिया, डिनर प्रेरणा और भोजन टिप्स।",
       "cat_insights_title": "Amy AI जानकारी",
@@ -679,7 +681,11 @@
       "cat_engagement_title": "दोस्ताना नज़र",
       "cat_engagement_desc": "पुनः जुड़ाव संदेश और स्ट्रीक पुरस्कार।",
       "cat_goodnight_title": "शुभ रात्रि संदेश",
-      "cat_goodnight_desc": "सोने के समय आराम का अनुस्मारक।"
+      "cat_goodnight_desc": "सोने के समय आराम का अनुस्मारक।",
+      "open_system_settings": "सिस्टम नोटिफिकेशन सेटिंग्स खोलें",
+      "recent_deliveries": "हाल की डिलीवरी",
+      "history_loading": "लोड हो रहा है…",
+      "history_empty": "अभी तक कुछ भी डिलीवर नहीं हुआ है। यह पुष्टि करने के लिए कि आपका डिवाइस सूचनाएं प्राप्त कर रहा है, ऊपर किसी भी श्रेणी से एक टेस्ट भेजें।"
     },
     "insights": {
       "title": "पैरेंट जानकारी",

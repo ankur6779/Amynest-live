@@ -415,6 +415,13 @@
       "save_error_title": "Error",
       "save_error_body": "Profile save nahi ho saki."
     },
+    "notification_settings_page": {
+      "cat_routine_item_title": "Per-task reminders",
+      "cat_routine_item_desc": "Har routine item se lagbhag 5 minute pehle ek heads-up.",
+      "recent_deliveries": "Recent deliveries",
+      "history_loading": "Load ho raha hai…",
+      "history_empty": "Abhi tak kuch deliver nahi hua hai. Yeh confirm karne ke liye ki aapka device notifications receive kar raha hai, upar kisi bhi category se ek test bhejein."
+    },
     "notification_settings": {
       "save_failed_title": "Save nahi ho saka",
       "test_sent_title": "Test bheja gaya",

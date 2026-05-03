@@ -330,6 +330,14 @@ export default function NotificationSettingsPage() {
           {CATEGORIES.map((cat) => {
             const enabled = Boolean(local[cat.key]);
             const Icon = cat.Icon;
+            const title =
+              cat.testCategory === "routine_item"
+                ? t("toasts.notification_settings_page.cat_routine_item_title")
+                : cat.title;
+            const description =
+              cat.testCategory === "routine_item"
+                ? t("toasts.notification_settings_page.cat_routine_item_desc")
+                : cat.description;
             return (
               <Card
                 key={cat.key}
@@ -340,9 +348,9 @@ export default function NotificationSettingsPage() {
                     <Icon className="w-5 h-5 text-purple-300" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-white">{cat.title}</div>
+                    <div className="font-semibold text-white">{title}</div>
                     <div className="text-sm text-purple-200/70 mt-1">
-                      {cat.description}
+                      {description}
                     </div>
                     {enabled && (
                       <Button
@@ -382,16 +390,15 @@ export default function NotificationSettingsPage() {
         </Card>
 
         <h2 className="text-xs uppercase tracking-widest text-purple-400/60 mt-8 mb-3">
-          Recent deliveries
+          {t("toasts.notification_settings_page.recent_deliveries")}
         </h2>
         <Card className="bg-white/[0.04] border-purple-500/20 backdrop-blur-md">
           <CardContent className="p-2">
             {history.isLoading ? (
-              <div className="p-4 text-purple-200/70 text-sm">Loading…</div>
+              <div className="p-4 text-purple-200/70 text-sm">{t("toasts.notification_settings_page.history_loading")}</div>
             ) : !history.data || history.data.items.length === 0 ? (
               <div className="p-4 text-purple-200/70 text-sm">
-                Nothing has been delivered yet. Send a test from any category
-                above to confirm your device is receiving notifications.
+                {t("toasts.notification_settings_page.history_empty")}
               </div>
             ) : (
               <ul className="divide-y divide-purple-500/10">

@@ -415,6 +415,13 @@
       "save_error_title": "त्रुटि",
       "save_error_body": "प्रोफ़ाइल सेव नहीं हो सकी।"
     },
+    "notification_settings_page": {
+      "cat_routine_item_title": "प्रति-कार्य रिमाइंडर",
+      "cat_routine_item_desc": "हर रूटीन आइटम से लगभग 5 मिनट पहले एक सूचना।",
+      "recent_deliveries": "हाल की डिलीवरी",
+      "history_loading": "लोड हो रहा है…",
+      "history_empty": "अभी तक कुछ भी डिलीवर नहीं हुआ है। यह पुष्टि करने के लिए कि आपका डिवाइस सूचनाएं प्राप्त कर रहा है, ऊपर किसी भी श्रेणी से एक टेस्ट भेजें।"
+    },
     "notification_settings": {
       "save_failed_title": "सेव नहीं हो सका",
       "test_sent_title": "टेस्ट भेजा गया",

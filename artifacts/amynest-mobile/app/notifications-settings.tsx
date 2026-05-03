@@ -75,7 +75,7 @@ export default function NotificationSettingsScreen() {
 
   const CATEGORIES: Category[] = [
     { key: "routineEnabled", title: t("screens.notif_settings.cat_routine_title"), description: t("screens.notif_settings.cat_routine_desc"), icon: "calendar-outline", testCategory: "routine" },
-    { key: "routineItemEnabled", title: "Per-task reminders", description: "A heads-up about 5 minutes before each routine item.", icon: "time-outline", testCategory: "routine_item" },
+    { key: "routineItemEnabled", title: t("screens.notif_settings.cat_routine_item_title"), description: t("screens.notif_settings.cat_routine_item_desc"), icon: "time-outline", testCategory: "routine_item" },
     { key: "nutritionEnabled", title: t("screens.notif_settings.cat_nutrition_title"), description: t("screens.notif_settings.cat_nutrition_desc"), icon: "nutrition-outline", testCategory: "nutrition" },
     { key: "insightsEnabled", title: t("screens.notif_settings.cat_insights_title"), description: t("screens.notif_settings.cat_insights_desc"), icon: "bulb-outline", testCategory: "insights" },
     { key: "weeklyEnabled", title: t("screens.notif_settings.cat_weekly_title"), description: t("screens.notif_settings.cat_weekly_desc"), icon: "stats-chart-outline", testCategory: "weekly" },
@@ -237,16 +237,16 @@ export default function NotificationSettingsScreen() {
 
       <Pressable onPress={openSystemSettings} style={styles.systemBtn}>
         <Ionicons name="settings-outline" size={18} color={brand.primary} />
-        <Text style={styles.systemBtnText}>Open system notification settings</Text>
+        <Text style={styles.systemBtnText}>{t("screens.notif_settings.open_system_settings")}</Text>
       </Pressable>
 
-      <Text style={styles.sectionLabel}>Recent deliveries</Text>
+      <Text style={styles.sectionLabel}>{t("screens.notif_settings.recent_deliveries")}</Text>
       <View style={styles.historyCard}>
         {history.isLoading ? (
-          <Text style={styles.historyEmpty}>Loading…</Text>
+          <Text style={styles.historyEmpty}>{t("screens.notif_settings.history_loading")}</Text>
         ) : !history.data || history.data.items.length === 0 ? (
           <Text style={styles.historyEmpty}>
-            Nothing has been delivered yet. Send a test from any category above to confirm your device is receiving notifications.
+            {t("screens.notif_settings.history_empty")}
           </Text>
         ) : (
           history.data.items.slice(0, 10).map((row) => {

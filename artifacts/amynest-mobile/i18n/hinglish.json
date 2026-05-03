@@ -670,6 +670,8 @@
       "quiet_help": "Hum is window mein kabhi notifications nahi bhejte.",
       "cat_routine_title": "Routine reminders",
       "cat_routine_desc": "Track par rehne ke liye subah, shaam aur sone ke nudges.",
+      "cat_routine_item_title": "Per-task reminders",
+      "cat_routine_item_desc": "Har routine item se lagbhag 5 minute pehle ek heads-up.",
       "cat_nutrition_title": "Nutrition suggestions",
       "cat_nutrition_desc": "Snack ideas, dinner inspiration aur meal tips.",
       "cat_insights_title": "Amy AI insights",
@@ -679,7 +681,11 @@
       "cat_engagement_title": "Dostana nudges",
       "cat_engagement_desc": "Re-engagement messages aur streak rewards.",
       "cat_goodnight_title": "Good night message",
-      "cat_goodnight_desc": "Sone ke samay wind-down reminder."
+      "cat_goodnight_desc": "Sone ke samay wind-down reminder.",
+      "open_system_settings": "System notification settings kholein",
+      "recent_deliveries": "Recent deliveries",
+      "history_loading": "Load ho raha hai…",
+      "history_empty": "Abhi tak kuch deliver nahi hua hai. Yeh confirm karne ke liye ki aapka device notifications receive kar raha hai, upar kisi bhi category se ek test bhejein."
     },
     "insights": {
       "title": "Parent Insights",
