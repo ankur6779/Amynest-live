@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import {
+  PHONICS_LEVELS,
   getPhonicsLevel,
+  type PhonicsAgeGroup,
   type PhonicsLevel,
 } from "@/lib/phonics-content";
 
@@ -173,6 +175,8 @@ function mergeProgress(
 
 export interface UsePhonicsDataResult {
   level: PhonicsLevel | null;
+  /** The child's natural (age-derived) stage — never overridden. */
+  defaultLevel: PhonicsLevel | null;
   source: "api" | "fallback";
   loading: boolean;
   items: DisplayPhonicsItem[];
@@ -187,9 +191,16 @@ export interface UsePhonicsDataResult {
 export function usePhonicsData(
   childId: number | string,
   totalAgeMonths: number,
+  overrideAgeGroup?: PhonicsAgeGroup | null,
 ): UsePhonicsDataResult {
   const authFetch = useAuthFetch();
-  const level = getPhonicsLevel(totalAgeMonths);
+  const defaultLevel = getPhonicsLevel(totalAgeMonths);
+  // Stage selector override: if the parent picked a different stage, fetch
+  // that stage's content + insights instead. Progress writes are still
+  // server-gated per child age (see api-server phonics.ts architect fix #4).
+  const level: PhonicsLevel | null = overrideAgeGroup
+    ? PHONICS_LEVELS[overrideAgeGroup] ?? defaultLevel
+    : defaultLevel;
   const ageGroup = level?.ageGroup ?? "";
 
   // ── State, all keyed by childId/ageGroup ────────────────────────────────
@@ -242,9 +253,9 @@ export function usePhonicsData(
 
     (async () => {
       try {
-        const res = await authFetch(
-          `/api/phonics?childId=${encodeURIComponent(String(childId))}`,
-        );
+        const qs = new URLSearchParams({ childId: String(childId) });
+        if (overrideAgeGroup) qs.set("ageGroup", overrideAgeGroup);
+        const res = await authFetch(`/api/phonics?${qs.toString()}`);
         if (cancelled || myReq !== reqIdRef.current) return;
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as {
@@ -309,7 +320,7 @@ export function usePhonicsData(
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authFetch, childId, ageGroup, refreshTick]);
+  }, [authFetch, childId, ageGroup, overrideAgeGroup, refreshTick]);
 
   // ── Derive display items ────────────────────────────────────────────────
   let items: DisplayPhonicsItem[];
@@ -410,6 +421,7 @@ export function usePhonicsData(
 
   return {
     level,
+    defaultLevel,
     source,
     loading,
     items,
