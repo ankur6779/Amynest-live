@@ -33,6 +33,13 @@ const SCAN_DIRS = [path.join(SRC, "components"), path.join(SRC, "pages")];
 // explicit, reviewable decision. Remove a file once its strings are
 // fully wrapped in t(...) and the audit passes for that file.
 const DEFERRED_FILES = new Set([
+  // All previously-deferred files have been migrated. Add a path back here
+  // only if you intentionally need to defer audit errors during a future
+  // migration, with a tracked follow-up.
+]);
+
+// Historical record of fully-migrated files (kept for documentation only).
+const _MIGRATED = new Set([
   "src/components/amazing-facts.tsx",
   "src/components/amy-fab.tsx",
   "src/components/amy-icon.tsx",
@@ -155,6 +162,28 @@ const PROP_RE = /\s(?:placeholder|aria-label|title|alt)\s*=\s*"([^"\n]{3,})"/g;
 // 3+ consecutive ASCII letters → looks like English
 const HAS_ENGLISH_RE = /[A-Za-z]{3,}/;
 
+// Patterns that indicate the captured snippet is JavaScript/TypeScript code
+// matched between `>` and `<` rather than real JSX text. The naive regex
+// above catches things like `>= 5 && hour <` or `=> Promise<void>` when a
+// line contains comparison/ternary operators or TS generics.
+const JS_CODE_PATTERNS = [
+  /&&/, /\|\|/, /===/, /!==/, /=>/, /<=/, />=/,
+  /\?\./, /\?\s*$/, /\?\s*\(/,
+  /^\s*[=&,()!:;.|?]/,           // starts with an operator/punctuation
+  /[=&|!?:(,]\s*$/,              // ends with an operator/punctuation
+  /^\s*&[a-z]+;\s*$/,            // pure HTML entity like &nbsp;
+  /\b(?:return|const|let|var|await|new|typeof|instanceof)\b/,
+  /\.[A-Za-z_]\w*\s*[(<]/,       // member call/generic: foo.bar( or foo.Bar<
+  /[A-Za-z_]\w*\s*:\s*[A-Z]/,    // TS type ann: name: SomeType
+];
+
+function looksLikeCode(text) {
+  for (const re of JS_CODE_PATTERNS) {
+    if (re.test(text)) return true;
+  }
+  return false;
+}
+
 function scanFile(filePath) {
   const rel       = path.relative(ROOT, filePath).replace(/\\/g, "/");
   const isDeferred = !NO_DEFER && DEFERRED_FILES.has(rel);
@@ -183,6 +212,20 @@ function scanFile(filePath) {
       if (!HAS_ENGLISH_RE.test(text)) continue;
       // Skip pure interpolation tokens like {value} (caught by regex `<` `>`)
       if (/^\{[^}]+\}$/.test(text)) continue;
+      // Skip captures that look like JS/TS code rather than user-facing text.
+      if (looksLikeCode(text)) continue;
+      // The match index points to the opening `>`. Examine surrounding chars
+      // to filter out TS arrow returns (`=> Promise<X>`) and TS generics
+      // (`Foo<Bar>`) that look like JSX text but are pure code.
+      const openIdx = m.index;
+      const closeIdx = m.index + m[0].length - 1; // position of `<`
+      const before = stripped.slice(Math.max(0, openIdx - 2), openIdx);
+      const afterCh = stripped[closeIdx + 1] || "";
+      // Preceded by `=`, `?`, `!`, or `:` (arrow / ternary / type) → code
+      if (/[=?!:]$/.test(before)) continue;
+      // Followed by `[A-Z]` (TS generic like `<Promise>`) or `/` (closing tag
+      // like `</div>` would have triggered text node end but defensive)
+      if (/[A-Z_]/.test(afterCh)) continue;
       findings.push({ lineNum: i + 1, snippet: text.slice(0, 80) });
     }
 
@@ -190,6 +233,7 @@ function scanFile(filePath) {
     while ((m = PROP_RE.exec(stripped)) !== null) {
       const text = m[1].trim();
       if (!HAS_ENGLISH_RE.test(text)) continue;
+      if (looksLikeCode(text)) continue;
       findings.push({ lineNum: i + 1, snippet: `(prop) ${text.slice(0, 80)}` });
     }
   }

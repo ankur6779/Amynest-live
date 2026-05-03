@@ -2,21 +2,29 @@ import { Link } from "wouter";
 import { Shield, Trash2, AlertTriangle, CheckCircle2, Smartphone, Settings, UserX, ChevronRight } from "lucide-react";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTranslation } from "react-i18next";
-
 export default function DeleteAccountPage() {
-  const { t } = useTranslation();
-  const DATA_ITEMS = t("screens.delete_account.data_items", { returnObjects: true }) as string[];
-  const IN_APP_STEPS = (t("screens.delete_account.steps", { returnObjects: true }) as Array<{ title: string; description: string }>).map(
-    (s, i) => ({ ...s, icon: [Smartphone, Settings, UserX, CheckCircle2][i] })
-  );
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background">
+  const {
+    t
+  } = useTranslation();
+  const DATA_ITEMS = t("screens.delete_account.data_items", {
+    returnObjects: true
+  }) as string[];
+  const IN_APP_STEPS = (t("screens.delete_account.steps", {
+    returnObjects: true
+  }) as Array<{
+    title: string;
+    description: string;
+  }>).map((s, i) => ({
+    ...s,
+    icon: [Smartphone, Settings, UserX, CheckCircle2][i]
+  }));
+  return <div className="min-h-screen bg-gradient-to-b from-background to-background">
       {/* Header */}
       <header className="border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
             <AmyMascotLogo size={32} />
-            <span className="text-lg font-semibold text-foreground">AmyNest</span>
+            <span className="text-lg font-semibold text-foreground">{t("pages.delete_account.amynest")}</span>
           </Link>
         </div>
       </header>
@@ -49,12 +57,10 @@ export default function DeleteAccountPage() {
           </div>
           <div className="rounded-xl border border-card-border bg-card p-5">
             <ul className="space-y-2.5">
-              {DATA_ITEMS.map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm text-card-foreground">
+              {DATA_ITEMS.map(item => <li key={item} className="flex items-center gap-3 text-sm text-card-foreground">
                   <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-400 dark:bg-red-500" />
                   {item}
-                </li>
-              ))}
+                </li>)}
             </ul>
             <p className="mt-4 text-xs text-muted-foreground">
               {t("screens.delete_account.retention_before")} <strong>{t("screens.delete_account.retention_days")}</strong> {t("screens.delete_account.retention_after")}
@@ -69,28 +75,26 @@ export default function DeleteAccountPage() {
           </h2>
           <div className="space-y-3">
             {IN_APP_STEPS.map((step, i) => {
-              const Icon = step.icon;
-              return (
-                <div
-                  key={i}
-                  className="flex items-start gap-4 rounded-xl border border-card-border bg-card px-5 py-4"
-                >
+            const {
+              t
+            } = useTranslation();
+            const Icon = step.icon;
+            return <div key={i} className="flex items-start gap-4 rounded-xl border border-card-border bg-card px-5 py-4">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40">
                     <Icon className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-muted-foreground">{t("screens.delete_account.step_label", { n: i + 1 })}</span>
+                      <span className="text-xs font-medium text-muted-foreground">{t("screens.delete_account.step_label", {
+                      n: i + 1
+                    })}</span>
                     </div>
                     <p className="text-sm font-semibold text-card-foreground">{step.title}</p>
                     <p className="mt-0.5 text-sm text-muted-foreground">{step.description}</p>
                   </div>
-                  {i < IN_APP_STEPS.length - 1 && (
-                    <ChevronRight className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground/60" />
-                  )}
-                </div>
-              );
-            })}
+                  {i < IN_APP_STEPS.length - 1 && <ChevronRight className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground/60" />}
+                </div>;
+          })}
           </div>
         </section>
 
@@ -101,11 +105,7 @@ export default function DeleteAccountPage() {
             <p className="mb-3 text-sm text-muted-foreground">
               {t("screens.delete_account.help_body")}
             </p>
-            <a
-              data-on-dark
-              href="mailto:support@amynest.app?subject=Account%20Deletion%20Request"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-            >
+            <a data-on-dark href="mailto:support@amynest.app?subject=Account%20Deletion%20Request" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90">
               {t("screens.delete_account.email_support")}
             </a>
             <p className="mt-3 text-xs text-muted-foreground">
@@ -129,6 +129,5 @@ export default function DeleteAccountPage() {
           </Link>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 }

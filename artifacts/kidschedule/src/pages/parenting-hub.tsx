@@ -5,13 +5,7 @@ import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  BookOpen, Brain, Sparkles, Heart, Palette,
-  ChevronDown, ChevronUp, MessageCircleHeart,
-  Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap,
-  UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown,
-  Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText,
-} from "lucide-react";
+import { BookOpen, Brain, Sparkles, Heart, Palette, ChevronDown, ChevronUp, MessageCircleHeart, Calendar, ArrowRight, Trophy, Compass, GraduationCap, ClipboardList, Zap, UserPlus, CheckCircle2, Users, AudioLines, Film, FileDown, Star, Baby, Gamepad2, Lightbulb, LayoutGrid, ScrollText } from "lucide-react";
 import { OlympiadZone } from "@/components/olympiad-zone";
 import { SmartStudyZone } from "@/components/smart-study-zone";
 import { PtmPrepAssistant } from "@/components/ptm-prep";
@@ -63,52 +57,37 @@ interface SectionProps {
   tryFree?: boolean;
   children: React.ReactNode;
 }
-
-function HubSection({ id, icon, title, description, accentClass, defaultOpen = false, tryFree = false, onOpen, children }: SectionProps & { onOpen?: () => void }) {
+function HubSection({
+  id,
+  icon,
+  title,
+  description,
+  accentClass,
+  defaultOpen = false,
+  tryFree = false,
+  onOpen,
+  children
+}: SectionProps & {
+  onOpen?: () => void;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   const toggle = () => {
-    setOpen((v) => {
+    setOpen(v => {
       const next = !v;
       if (next) onOpen?.();
       return next;
     });
   };
-  return (
-    <div
-      data-section-id={id}
-      className={[
-        "group relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
-        // Glass surface — light & dark
-        "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl",
-        "border border-white/50 dark:border-white/10",
-        "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]",
-        // Hover glow
-        "hover:border-primary/40 dark:hover:border-primary/40",
-        "hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]",
-        // Active (expanded) glow — stronger
-        open
-          ? "border-primary/60 dark:border-primary/50 shadow-[0_0_0_1px_rgba(168,85,247,0.45),0_18px_50px_-12px_rgba(168,85,247,0.45)]"
-          : "",
-      ].join(" ")}
-    >
-      <button
-        onClick={toggle}
-        className={[
-          "w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left",
-          "transition-colors duration-200",
-          open ? "bg-primary/[0.06] dark:bg-primary/[0.08]" : "hover:bg-white/40 dark:hover:bg-white/[0.03]",
-        ].join(" ")}
-        aria-expanded={open}
-      >
+  return <div data-section-id={id} className={["group relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
+  // Glass surface — light & dark
+  "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl", "border border-white/50 dark:border-white/10", "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]",
+  // Hover glow
+  "hover:border-primary/40 dark:hover:border-primary/40", "hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]",
+  // Active (expanded) glow — stronger
+  open ? "border-primary/60 dark:border-primary/50 shadow-[0_0_0_1px_rgba(168,85,247,0.45),0_18px_50px_-12px_rgba(168,85,247,0.45)]" : ""].join(" ")}>
+      <button onClick={toggle} className={["w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left", "transition-colors duration-200", open ? "bg-primary/[0.06] dark:bg-primary/[0.08]" : "hover:bg-white/40 dark:hover:bg-white/[0.03]"].join(" ")} aria-expanded={open}>
         <div className="flex items-center gap-3 min-w-0">
-          <div
-            className={[
-              "w-11 h-11 rounded-2xl flex items-center justify-center shrink-0",
-              "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]",
-              "ring-1 ring-white/40 dark:ring-white/10",
-              accentClass,
-            ].join(" ")}
-          >
+          <div className={["w-11 h-11 rounded-2xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]", "ring-1 ring-white/40 dark:ring-white/10", accentClass].join(" ")}>
             {icon}
           </div>
           <div className="min-w-0">
@@ -119,24 +98,14 @@ function HubSection({ id, icon, title, description, accentClass, defaultOpen = f
             <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate">{description}</p>
           </div>
         </div>
-        <span
-          className={[
-            "shrink-0 w-7 h-7 rounded-full flex items-center justify-center",
-            "border border-border/50 bg-white/50 dark:bg-white/5",
-            "transition-transform duration-300",
-            open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground",
-          ].join(" ")}
-        >
+        <span className={["shrink-0 w-7 h-7 rounded-full flex items-center justify-center", "border border-border/50 bg-white/50 dark:bg-white/5", "transition-transform duration-300", open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground"].join(" ")}>
           <ChevronDown className="h-4 w-4" />
         </span>
       </button>
-      {open && (
-        <div className="px-4 pb-5 pt-3 border-t border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/[0.015] animate-in fade-in slide-in-from-top-1 duration-300">
+      {open && <div className="px-4 pb-5 pt-3 border-t border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/[0.015] animate-in fade-in slide-in-from-top-1 duration-300">
           {children}
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 }
 
 // ─── Amy AI Suggestions Section ───────────────────────────────────────────────
@@ -147,29 +116,30 @@ const AMY_PROMPT_EMOJI: Record<typeof AMY_PROMPT_IDS[number], string> = {
   picky: "🥦",
   school: "📚",
   screen: "📱",
-  language: "💬",
+  language: "💬"
 };
-
 function AmyAISuggestionsSection() {
-  const { t } = useTranslation();
-  return (
-    <div className="space-y-3">
+  const {
+    t
+  } = useTranslation();
+  return <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
         {t("parent_hub.amy.lead")}
       </p>
       <div className="grid grid-cols-2 gap-2">
         {AMY_PROMPT_IDS.map(id => {
-          const label = t(`parent_hub.amy.prompts.${id}.label`);
-          const prompt = t(`parent_hub.amy.prompts.${id}.prompt`);
-          return (
-            <Link key={id} href={`/assistant?q=${encodeURIComponent(prompt)}`}>
+        const {
+          t
+        } = useTranslation();
+        const label = t(`parent_hub.amy.prompts.${id}.label`);
+        const prompt = t(`parent_hub.amy.prompts.${id}.prompt`);
+        return <Link key={id} href={`/assistant?q=${encodeURIComponent(prompt)}`}>
               <button className="w-full text-left flex items-center gap-2.5 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 px-3 py-2.5 transition-all">
                 <span className="text-xl shrink-0">{AMY_PROMPT_EMOJI[id]}</span>
                 <span className="text-sm font-semibold text-foreground">{label}</span>
               </button>
-            </Link>
-          );
-        })}
+            </Link>;
+      })}
       </div>
       <Link href="/assistant">
         <Button variant="outline" className="w-full rounded-xl gap-2 text-sm font-semibold">
@@ -178,8 +148,7 @@ function AmyAISuggestionsSection() {
           <ArrowRight className="h-4 w-4 ml-auto" />
         </Button>
       </Link>
-    </div>
-  );
+    </div>;
 }
 
 // ─── Emotional Support Section ────────────────────────────────────────────────
@@ -188,29 +157,31 @@ const EMOTIONAL_CARD_EMOJI: Record<typeof EMOTIONAL_CARD_IDS[number], string> = 
   overwhelmed: "🫂",
   anxious: "😰",
   connect: "😔",
-  break: "😮‍💨",
+  break: "😮‍💨"
 };
 const EMOTIONAL_CARD_BG: Record<typeof EMOTIONAL_CARD_IDS[number], string> = {
   overwhelmed: "bg-rose-50 dark:bg-rose-500/15 border-rose-200 dark:border-rose-400/30 hover:border-rose-400",
   anxious: "bg-amber-50 dark:bg-amber-500/15 border-amber-200 dark:border-amber-400/30 hover:border-amber-400",
   connect: "bg-violet-50 dark:bg-violet-500/15 border-violet-200 dark:border-violet-400/30 hover:border-violet-400",
-  break: "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-400/30 hover:border-emerald-400",
+  break: "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-400/30 hover:border-emerald-400"
 };
-
 function EmotionalSupportSection() {
-  const { t } = useTranslation();
-  return (
-    <div className="space-y-3">
+  const {
+    t
+  } = useTranslation();
+  return <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
         {t("parent_hub.emotional_footer.lead")}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {EMOTIONAL_CARD_IDS.map(id => {
-          const title = t(`parent_hub.emotional_cards.${id}.title`);
-          const subtitle = t(`parent_hub.emotional_cards.${id}.subtitle`);
-          const prompt = t(`parent_hub.emotional_cards.${id}.prompt`);
-          return (
-            <SubItemGate key={id} sectionId="hub_emotional" subItemId={id}>
+        const {
+          t
+        } = useTranslation();
+        const title = t(`parent_hub.emotional_cards.${id}.title`);
+        const subtitle = t(`parent_hub.emotional_cards.${id}.subtitle`);
+        const prompt = t(`parent_hub.emotional_cards.${id}.prompt`);
+        return <SubItemGate key={id} sectionId="hub_emotional" subItemId={id}>
               <Link href={`/assistant?q=${encodeURIComponent(prompt)}`}>
                 <button className={`w-full text-left rounded-2xl border-2 px-4 py-3 transition-all ${EMOTIONAL_CARD_BG[id]}`}>
                   <span className="text-2xl block mb-1">{EMOTIONAL_CARD_EMOJI[id]}</span>
@@ -218,9 +189,8 @@ function EmotionalSupportSection() {
                   <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
                 </button>
               </Link>
-            </SubItemGate>
-          );
-        })}
+            </SubItemGate>;
+      })}
       </div>
       <div className="bg-gradient-to-r from-pink-50 dark:from-pink-500/15 to-violet-50 dark:to-violet-500/15 border border-pink-200 dark:border-pink-400/30 rounded-2xl p-4 flex gap-3 items-start">
         <AmyIcon size={36} />
@@ -231,8 +201,7 @@ function EmotionalSupportSection() {
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
 
 // ─── Sub-section tile (Glass + Glow, collapsed by default) ──────────────────
@@ -250,48 +219,19 @@ interface SubSectionProps {
   gateSection?: string;
   children: React.ReactNode;
 }
-
 function SubSection({
   icon,
   title,
   description,
   accentClass,
   gateSection,
-  children,
+  children
 }: SubSectionProps) {
   const [open, setOpen] = useState(false);
-
-  const inner = (
-    <div
-      className={[
-        "relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
-        "bg-white/50 dark:bg-white/[0.035] backdrop-blur-xl",
-        "border border-white/60 dark:border-white/[0.08]",
-        "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)]",
-        open
-          ? "border-primary/50 dark:border-primary/40 shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_10px_28px_-8px_rgba(168,85,247,0.35)]"
-          : "hover:border-primary/25 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.12),0_6px_20px_-6px_rgba(168,85,247,0.18)]",
-      ].join(" ")}
-    >
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={[
-          "w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left",
-          "transition-colors duration-200",
-          open
-            ? "bg-primary/[0.04] dark:bg-primary/[0.06]"
-            : "hover:bg-white/40 dark:hover:bg-white/[0.025]",
-        ].join(" ")}
-        aria-expanded={open}
-      >
+  const inner = <div className={["relative rounded-2xl overflow-hidden transition-all duration-300 ease-out", "bg-white/50 dark:bg-white/[0.035] backdrop-blur-xl", "border border-white/60 dark:border-white/[0.08]", "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)]", open ? "border-primary/50 dark:border-primary/40 shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_10px_28px_-8px_rgba(168,85,247,0.35)]" : "hover:border-primary/25 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.12),0_6px_20px_-6px_rgba(168,85,247,0.18)]"].join(" ")}>
+      <button onClick={() => setOpen(v => !v)} className={["w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left", "transition-colors duration-200", open ? "bg-primary/[0.04] dark:bg-primary/[0.06]" : "hover:bg-white/40 dark:hover:bg-white/[0.025]"].join(" ")} aria-expanded={open}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <div
-            className={[
-              "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-              "shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] ring-1 ring-white/40 dark:ring-white/10",
-              accentClass,
-            ].join(" ")}
-          >
+          <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] ring-1 ring-white/40 dark:ring-white/10", accentClass].join(" ")}>
             {icon}
           </div>
           <div className="min-w-0">
@@ -299,32 +239,19 @@ function SubSection({
             <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{description}</p>
           </div>
         </div>
-        <span
-          className={[
-            "shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
-            "border border-border/50 bg-white/60 dark:bg-white/5",
-            "transition-transform duration-300",
-            open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground",
-          ].join(" ")}
-        >
+        <span className={["shrink-0 w-6 h-6 rounded-full flex items-center justify-center", "border border-border/50 bg-white/60 dark:bg-white/5", "transition-transform duration-300", open ? "rotate-180 text-primary border-primary/40" : "text-muted-foreground"].join(" ")}>
           <ChevronDown className="h-3.5 w-3.5" />
         </span>
       </button>
 
-      {open && (
-        <div className="px-3.5 pb-4 pt-3 border-t border-white/40 dark:border-white/[0.06] bg-white/20 dark:bg-white/[0.01] animate-in fade-in slide-in-from-top-1 duration-300">
+      {open && <div className="px-3.5 pb-4 pt-3 border-t border-white/40 dark:border-white/[0.06] bg-white/20 dark:bg-white/[0.01] animate-in fade-in slide-in-from-top-1 duration-300">
           {children}
-        </div>
-      )}
-    </div>
-  );
-
+        </div>}
+    </div>;
   if (gateSection) {
-    return (
-      <SubItemGate sectionId={gateSection} subItemId={title}>
+    return <SubItemGate sectionId={gateSection} subItemId={title}>
         {inner}
-      </SubItemGate>
-    );
+      </SubItemGate>;
   }
   return inner;
 }
@@ -335,273 +262,126 @@ interface ActivitiesSectionProps {
   effectiveChild: any;
   totalAgeMonths: number;
 }
-
-function ActivitiesSection({ ageGroup, effectiveChild, totalAgeMonths }: ActivitiesSectionProps) {
-  const { t } = useTranslation();
+function ActivitiesSection({
+  ageGroup,
+  effectiveChild,
+  totalAgeMonths
+}: ActivitiesSectionProps) {
+  const {
+    t
+  } = useTranslation();
   const isInfant = ageGroup === "infant";
   const isToddlerOrPreschool = ageGroup === "toddler" || ageGroup === "preschool";
   const isOlder = !isInfant && !isToddlerOrPreschool;
-
-  return (
-    <div className="space-y-2.5">
+  return <div className="space-y-2.5">
 
       {/* ── INFANT ─────────────────────────────────────────────────────── */}
-      {isInfant && (
-        <>
-          <SubSection gateSection="hub_activities"
-            icon={<Baby className="h-4 w-4 text-pink-500" />}
-            title={t("parent_hub.subsections.baby-activities.title")}
-            description={t("parent_hub.subsections.baby-activities.description")}
-            accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-rose-100 dark:to-rose-500/20"
-          >
-            <InfantMode
-              childName={effectiveChild.name}
-              ageYears={effectiveChild.age}
-              ageMonths={(effectiveChild as any).ageMonths ?? 0}
-              showOnly={null}
-            />
+      {isInfant && <>
+          <SubSection gateSection="hub_activities" icon={<Baby className="h-4 w-4 text-pink-500" />} title={t("parent_hub.subsections.baby-activities.title")} description={t("parent_hub.subsections.baby-activities.description")} accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-rose-100 dark:to-rose-500/20">
+            <InfantMode childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly={null} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
-            title={t("parent_hub.subsections.amazing-facts-baby.title")}
-            description={t("parent_hub.subsections.amazing-facts-baby.description")}
-            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
-          >
+          <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-amber-500" />} title={t("parent_hub.subsections.amazing-facts-baby.title")} description={t("parent_hub.subsections.amazing-facts-baby.description")} accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20">
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
-        </>
-      )}
+        </>}
 
       {/* ── TODDLER / PRESCHOOL ────────────────────────────────────────── */}
-      {isToddlerOrPreschool && (
-        <>
-          <SubSection gateSection="hub_activities"
-            icon={<Star className="h-4 w-4 text-orange-500" />}
-            title={t("parent_hub.subsections.daily-activity.title")}
-            description={t("parent_hub.subsections.daily-activity.description")}
-            accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-amber-100 dark:to-amber-500/20"
-          >
+      {isToddlerOrPreschool && <>
+          <SubSection gateSection="hub_activities" icon={<Star className="h-4 w-4 text-orange-500" />} title={t("parent_hub.subsections.daily-activity.title")} description={t("parent_hub.subsections.daily-activity.description")} accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-amber-100 dark:to-amber-500/20">
             <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<Brain className="h-4 w-4 text-violet-600" />}
-            title={t("parent_hub.subsections.skills-to-focus-toddler.title")}
-            description={t("parent_hub.subsections.skills-to-focus-toddler.description")}
-            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-purple-100 dark:to-purple-500/20"
-          >
-            <ToddlerPreschoolMode
-              ageGroup={ageGroup as "toddler" | "preschool"}
-              childName={effectiveChild.name}
-              ageYears={effectiveChild.age}
-              ageMonths={(effectiveChild as any).ageMonths ?? 0}
-              showOnly="skill"
-            />
+          <SubSection gateSection="hub_activities" icon={<Brain className="h-4 w-4 text-violet-600" />} title={t("parent_hub.subsections.skills-to-focus-toddler.title")} description={t("parent_hub.subsections.skills-to-focus-toddler.description")} accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-purple-100 dark:to-purple-500/20">
+            <ToddlerPreschoolMode ageGroup={ageGroup as "toddler" | "preschool"} childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly="skill" />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<BookOpen className="h-4 w-4 text-indigo-600" />}
-            title={t("parent_hub.subsections.story-time.title")}
-            description={t("parent_hub.subsections.story-time.description")}
-            accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20"
-          >
+          <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-indigo-600" />} title={t("parent_hub.subsections.story-time.title")} description={t("parent_hub.subsections.story-time.description")} accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20">
             <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<Gamepad2 className="h-4 w-4 text-emerald-600" />}
-            title={t("parent_hub.subsections.fun-and-play.title")}
-            description={t("parent_hub.subsections.fun-and-play.description")}
-            accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20"
-          >
-            <ToddlerPreschoolMode
-              ageGroup={ageGroup as "toddler" | "preschool"}
-              childName={effectiveChild.name}
-              ageYears={effectiveChild.age}
-              ageMonths={(effectiveChild as any).ageMonths ?? 0}
-              showOnly="fun"
-            />
+          <SubSection gateSection="hub_activities" icon={<Gamepad2 className="h-4 w-4 text-emerald-600" />} title={t("parent_hub.subsections.fun-and-play.title")} description={t("parent_hub.subsections.fun-and-play.description")} accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20">
+            <ToddlerPreschoolMode ageGroup={ageGroup as "toddler" | "preschool"} childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly="fun" />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<ScrollText className="h-4 w-4 text-rose-600" />}
-            title={t("parent_hub.subsections.parent-tasks-toddler.title")}
-            description={t("parent_hub.subsections.parent-tasks-toddler.description")}
-            accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
-          >
-            <ToddlerPreschoolMode
-              ageGroup={ageGroup as "toddler" | "preschool"}
-              childName={effectiveChild.name}
-              ageYears={effectiveChild.age}
-              ageMonths={(effectiveChild as any).ageMonths ?? 0}
-              showOnly="task"
-            />
+          <SubSection gateSection="hub_activities" icon={<ScrollText className="h-4 w-4 text-rose-600" />} title={t("parent_hub.subsections.parent-tasks-toddler.title")} description={t("parent_hub.subsections.parent-tasks-toddler.description")} accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20">
+            <ToddlerPreschoolMode ageGroup={ageGroup as "toddler" | "preschool"} childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly="task" />
           </SubSection>
 
-          {ageGroup === "preschool" && (
-            <SubSection gateSection="hub_activities"
-              icon={<LayoutGrid className="h-4 w-4 text-sky-600" />}
-              title={t("parent_hub.subsections.daily-puzzle-pre.title")}
-              description={t("parent_hub.subsections.daily-puzzle-pre.description")}
-              accentClass="bg-gradient-to-br from-sky-100 dark:from-sky-500/20 to-cyan-100 dark:to-cyan-500/20"
-            >
-              <DailyPuzzle
-                childName={effectiveChild.name}
-                ageGroup={ageGroup}
-                ageYears={effectiveChild.age}
-              />
-            </SubSection>
-          )}
+          {ageGroup === "preschool" && <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-sky-600" />} title={t("parent_hub.subsections.daily-puzzle-pre.title")} description={t("parent_hub.subsections.daily-puzzle-pre.description")} accentClass="bg-gradient-to-br from-sky-100 dark:from-sky-500/20 to-cyan-100 dark:to-cyan-500/20">
+              <DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} />
+            </SubSection>}
 
-          <SubSection gateSection="hub_activities"
-            icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
-            title={t("parent_hub.subsections.amazing-facts-toddler.title")}
-            description={t("parent_hub.subsections.amazing-facts-toddler.description")}
-            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
-          >
+          <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-amber-500" />} title={t("parent_hub.subsections.amazing-facts-toddler.title")} description={t("parent_hub.subsections.amazing-facts-toddler.description")} accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20">
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
-            title={t("parent_hub.subsections.spelling-mastery.title")}
-            description={t("parent_hub.subsections.spelling-mastery.description")}
-            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20"
-          >
-            <SpellingMastery
-              childId={effectiveChild.id}
-              childName={effectiveChild.name}
-              ageMonths={totalAgeMonths}
-            />
+          <SubSection gateSection="hub_activities" icon={<GraduationCap className="h-4 w-4 text-violet-600" />} title={t("parent_hub.subsections.spelling-mastery.title")} description={t("parent_hub.subsections.spelling-mastery.description")} accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20">
+            <SpellingMastery childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />
           </SubSection>
-        </>
-      )}
+        </>}
 
       {/* ── OLDER KIDS ─────────────────────────────────────────────────── */}
-      {isOlder && (
-        <>
-          {totalAgeMonths < 96 && (
-            <SubSection gateSection="hub_activities"
-              icon={<Star className="h-4 w-4 text-orange-500" />}
-              title={t("parent_hub.subsections.daily-activity-older.title")}
-              description={t("parent_hub.subsections.daily-activity-older.description")}
-              accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-amber-100 dark:to-amber-500/20"
-            >
+      {isOlder && <>
+          {totalAgeMonths < 96 && <SubSection gateSection="hub_activities" icon={<Star className="h-4 w-4 text-orange-500" />} title={t("parent_hub.subsections.daily-activity-older.title")} description={t("parent_hub.subsections.daily-activity-older.description")} accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-amber-100 dark:to-amber-500/20">
               <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
-            </SubSection>
-          )}
+            </SubSection>}
 
-          <SubSection gateSection="hub_activities"
-            icon={<Brain className="h-4 w-4 text-violet-600" />}
-            title={t("parent_hub.subsections.skills-to-focus-older.title")}
-            description={t("parent_hub.subsections.skills-to-focus-older.description")}
-            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-purple-100 dark:to-purple-500/20"
-          >
+          <SubSection gateSection="hub_activities" icon={<Brain className="h-4 w-4 text-violet-600" />} title={t("parent_hub.subsections.skills-to-focus-older.title")} description={t("parent_hub.subsections.skills-to-focus-older.description")} accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-purple-100 dark:to-purple-500/20">
             <SkillFocusSection group={ageGroup} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<BookOpen className="h-4 w-4 text-indigo-600" />}
-            title={t("parent_hub.subsections.story-time-older.title")}
-            description={t("parent_hub.subsections.story-time-older.description")}
-            accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20"
-          >
+          <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-indigo-600" />} title={t("parent_hub.subsections.story-time-older.title")} description={t("parent_hub.subsections.story-time-older.description")} accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-blue-100 dark:to-blue-500/20">
             <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<LayoutGrid className="h-4 w-4 text-sky-600" />}
-            title={t("parent_hub.subsections.daily-puzzle-older.title")}
-            description={t("parent_hub.subsections.daily-puzzle-older.description")}
-            accentClass="bg-gradient-to-br from-sky-100 dark:from-sky-500/20 to-cyan-100 dark:to-cyan-500/20"
-          >
-            <DailyPuzzle
-              childName={effectiveChild.name}
-              ageGroup={ageGroup}
-              ageYears={effectiveChild.age}
-            />
+          <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-sky-600" />} title={t("parent_hub.subsections.daily-puzzle-older.title")} description={t("parent_hub.subsections.daily-puzzle-older.description")} accentClass="bg-gradient-to-br from-sky-100 dark:from-sky-500/20 to-cyan-100 dark:to-cyan-500/20">
+            <DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<ScrollText className="h-4 w-4 text-rose-600" />}
-            title={t("parent_hub.subsections.parent-tasks-older.title")}
-            description={t("parent_hub.subsections.parent-tasks-older.description")}
-            accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
-          >
+          <SubSection gateSection="hub_activities" icon={<ScrollText className="h-4 w-4 text-rose-600" />} title={t("parent_hub.subsections.parent-tasks-older.title")} description={t("parent_hub.subsections.parent-tasks-older.description")} accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20">
             <ParentTasksSection group={ageGroup} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
-            title={t("parent_hub.subsections.amazing-facts-older.title")}
-            description={t("parent_hub.subsections.amazing-facts-older.description")}
-            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
-          >
+          <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-amber-500" />} title={t("parent_hub.subsections.amazing-facts-older.title")} description={t("parent_hub.subsections.amazing-facts-older.description")} accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20">
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities"
-            icon={<GraduationCap className="h-4 w-4 text-violet-600" />}
-            title={t("parent_hub.subsections.spelling-mastery-older.title")}
-            description={t("parent_hub.subsections.spelling-mastery-older.description")}
-            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20"
-          >
-            <SpellingMastery
-              childId={effectiveChild.id}
-              childName={effectiveChild.name}
-              ageMonths={totalAgeMonths}
-            />
+          <SubSection gateSection="hub_activities" icon={<GraduationCap className="h-4 w-4 text-violet-600" />} title={t("parent_hub.subsections.spelling-mastery-older.title")} description={t("parent_hub.subsections.spelling-mastery-older.description")} accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-indigo-100 dark:to-indigo-500/20">
+            <SpellingMastery childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />
           </SubSection>
-        </>
-      )}
+        </>}
 
       {/* ── Printable Worksheets (all age groups) ──────────────────────── */}
-      <SubSection gateSection="hub_activities"
-        icon={<FileDown className="h-4 w-4 text-teal-600" />}
-        title={t("parent_hub.subsections.printable-worksheets-all.title")}
-        description={t("parent_hub.subsections.printable-worksheets-all.description")}
-        accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20"
-      >
+      <SubSection gateSection="hub_activities" icon={<FileDown className="h-4 w-4 text-teal-600" />} title={t("parent_hub.subsections.printable-worksheets-all.title")} description={t("parent_hub.subsections.printable-worksheets-all.description")} accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20">
         <PrintableWorksheets childAgeMonths={totalAgeMonths} />
       </SubSection>
-    </div>
-  );
+    </div>;
 }
 
 // ─── Child Selector Panel ─────────────────────────────────────────────────────
-const AVATAR_COLORS = [
-  "from-violet-500 to-fuchsia-500",
-  "from-sky-500 to-indigo-500",
-  "from-emerald-500 to-teal-500",
-  "from-amber-500 to-orange-500",
-  "from-rose-500 to-pink-500",
-];
-
+const AVATAR_COLORS = ["from-violet-500 to-fuchsia-500", "from-sky-500 to-indigo-500", "from-emerald-500 to-teal-500", "from-amber-500 to-orange-500", "from-rose-500 to-pink-500"];
 function ChildSelectorPanel({
   childList,
   effectiveChild,
-  onSelect,
+  onSelect
 }: {
   childList: any[];
   effectiveChild: any;
   onSelect: (id: number) => void;
 }) {
-  const { t } = useTranslation();
+  const {
+    t
+  } = useTranslation();
   if (childList.length === 0) return null;
-
-  const getInitials = (name: string) =>
-    name.trim().split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-
+  const getInitials = (name: string) => name.trim().split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
   const getAge = (child: any) => {
-    const months = (child.ageMonths ?? 0);
+    const months = child.ageMonths ?? 0;
     if (child.age === 0) return `${months}m`;
     if (months > 0) return `${child.age}y ${months}m`;
     return `${child.age}y`;
   };
-
-  return (
-    <div className="rounded-2xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] overflow-hidden">
+  return <div className="rounded-2xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <div className="flex items-center gap-2">
@@ -621,40 +401,23 @@ function ChildSelectorPanel({
       {/* Child cards */}
       <div className="flex gap-3 px-3 pb-3 overflow-x-auto scrollbar-none">
         {childList.map((child: any, idx: number) => {
-          const group = getAgeGroup(child.age, (child as any).ageMonths ?? 0);
-          const info = getAgeGroupInfo(group);
-          const isSelected = effectiveChild?.id === child.id;
-          const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-          const initials = getInitials(child.name);
-          const ageLabel = getAge(child);
-
-          return (
-            <button
-              key={child.id}
-              onClick={() => onSelect(child.id)}
-              className={[
-                "shrink-0 relative flex flex-col items-center gap-2 rounded-2xl px-4 py-3 min-w-[96px] transition-all duration-200",
-                isSelected
-                  ? "bg-primary/10 dark:bg-primary/15 border-2 border-primary shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_4px_16px_-4px_rgba(168,85,247,0.4)]"
-                  : "bg-white/50 dark:bg-white/[0.03] border-2 border-border hover:border-primary/50 hover:bg-primary/5",
-              ].join(" ")}
-            >
+        const {
+          t
+        } = useTranslation();
+        const group = getAgeGroup(child.age, (child as any).ageMonths ?? 0);
+        const info = getAgeGroupInfo(group);
+        const isSelected = effectiveChild?.id === child.id;
+        const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+        const initials = getInitials(child.name);
+        const ageLabel = getAge(child);
+        return <button key={child.id} onClick={() => onSelect(child.id)} className={["shrink-0 relative flex flex-col items-center gap-2 rounded-2xl px-4 py-3 min-w-[96px] transition-all duration-200", isSelected ? "bg-primary/10 dark:bg-primary/15 border-2 border-primary shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_4px_16px_-4px_rgba(168,85,247,0.4)]" : "bg-white/50 dark:bg-white/[0.03] border-2 border-border hover:border-primary/50 hover:bg-primary/5"].join(" ")}>
               {/* Selected check */}
-              {isSelected && (
-                <span className="absolute top-2 right-2">
+              {isSelected && <span className="absolute top-2 right-2">
                   <CheckCircle2 className="h-4 w-4 text-primary fill-primary/20" />
-                </span>
-              )}
+                </span>}
 
               {/* Avatar */}
-              <div
-                className={[
-                  "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base",
-                  "bg-gradient-to-br shadow-md ring-2",
-                  colorClass,
-                  isSelected ? "ring-primary/60" : "ring-white dark:ring-white/10",
-                ].join(" ")}
-              >
+              <div className={["w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-base", "bg-gradient-to-br shadow-md ring-2", colorClass, isSelected ? "ring-primary/60" : "ring-white dark:ring-white/10"].join(" ")}>
                 {initials}
               </div>
 
@@ -669,24 +432,27 @@ function ChildSelectorPanel({
               </div>
 
               {/* Active chip */}
-              {isSelected && (
-                <span className="text-[9px] font-bold uppercase tracking-wider text-primary/80 bg-primary/10 rounded-full px-2 py-0.5">
-                  Viewing
-                </span>
-              )}
-            </button>
-          );
-        })}
+              {isSelected && <span className="text-[9px] font-bold uppercase tracking-wider text-primary/80 bg-primary/10 rounded-full px-2 py-0.5">
+                  {t("pages.parenting_hub.viewing")}
+                </span>}
+            </button>;
+      })}
       </div>
-    </div>
-  );
+    </div>;
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ParentingHub() {
-  const { t } = useTranslation();
-  const { data: children = [], isLoading } = useListChildren({
-    query: { queryKey: getListChildrenQueryKey() },
+  const {
+    t
+  } = useTranslation();
+  const {
+    data: children = [],
+    isLoading
+  } = useListChildren({
+    query: {
+      queryKey: getListChildrenQueryKey()
+    }
   });
   const STORAGE_KEY = "amynest:hub:activeChildId";
   const [selectedChildId, setSelectedChildId] = useState<number | null>(() => {
@@ -696,28 +462,16 @@ export default function ParentingHub() {
     }
     return null;
   });
-
-  const childList = (children as any[]) ?? [];
-
-  const effectiveChild = selectedChildId
-    ? childList.find((c: any) => c.id === selectedChildId) ?? childList[0]
-    : childList[0];
-
-  const ageGroup: AgeGroup | null = effectiveChild
-    ? getAgeGroup(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0)
-    : null;
-
-  const totalAgeMonths = effectiveChild
-    ? (effectiveChild.age * 12) + ((effectiveChild as any).ageMonths ?? 0)
-    : 0;
+  const childList = children as any[] ?? [];
+  const effectiveChild = selectedChildId ? childList.find((c: any) => c.id === selectedChildId) ?? childList[0] : childList[0];
+  const ageGroup: AgeGroup | null = effectiveChild ? getAgeGroup(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0) : null;
+  const totalAgeMonths = effectiveChild ? effectiveChild.age * 12 + ((effectiveChild as any).ageMonths ?? 0) : 0;
 
   // First-Time Free + Preview Lock — every Parent Hub feature is usable ONCE
   // for free (server-tracked). After that, free users see the locked overlay;
   // premium users always get full access.
   const hubUsage = useFeatureUsage();
-  const tryFreeFor = (id: string) =>
-    !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
-
+  const tryFreeFor = (id: string) => !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
   const handleChildSelect = (id: number) => {
     setSelectedChildId(id);
     if (typeof window !== "undefined") {
@@ -727,17 +481,14 @@ export default function ParentingHub() {
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
+    return <div className="flex items-center justify-center py-24">
         <div className="text-sm text-muted-foreground animate-pulse">{t("common.loading")}</div>
-      </div>
-    );
+      </div>;
   }
 
   // ── No children ───────────────────────────────────────────────────────────
   if (childList.length === 0) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-6">{/* keep narrow for empty state */}
+    return <div className="max-w-2xl mx-auto space-y-6">{/* keep narrow for empty state */}
         <PageHeader />
         <Card className="rounded-3xl border-2 border-dashed">
           <CardContent className="p-10 text-center space-y-4">
@@ -753,16 +504,12 @@ export default function ParentingHub() {
             </Link>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
 
   // ── Two-section layout: For You (current band) + Explore Next (next band) ──
-  const currentBand: AgeBand | null = effectiveChild
-    ? getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0)
-    : null;
+  const currentBand: AgeBand | null = effectiveChild ? getAgeBand(effectiveChild.age, (effectiveChild as any).ageMonths ?? 0) : null;
   const nextBand: AgeBand | null = currentBand ? getNextAgeBand(currentBand) : null;
-
   type SectionEntry = {
     id: string;
     /** Always renders in "For You" regardless of band. */
@@ -773,547 +520,349 @@ export default function ParentingHub() {
     featured?: boolean;
     render: () => React.ReactNode;
   };
-
   const sections: SectionEntry[] = effectiveChild ? [
-    // ── FEATURED (full-width, always-current) ─────────────────────────────
-    {
-      id: "command-center",
-      alwaysCurrent: true,
-      featured: true,
-      render: () => (
-        <HubSection
-          id="command-center"
-          icon={<Zap className="h-5 w-5 text-sky-600" />}
-          title={t("parent_hub.web_tiles.command-center.title")}
-          description={t("parent_hub.web_tiles.command-center.description")}
-          accentClass="bg-sky-100 dark:bg-sky-500/20"
-          defaultOpen={false}
-        >
-          <ParentCommandCenter child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
-        </HubSection>
-      ),
-    },
-
-    // ── INFANT HUB (band-restricted, featured) ────────────────────────────
-    // ONLY shown when the currently selected child is 0–24 months.
-    {
-      id: "infant-hub",
-      bands: ["0-2"],
-      featured: true,
-      render: () => {
-        if (!isInfantHubAge(totalAgeMonths)) return null;
-        return <InfantHub childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />;
-      },
-    },
-
-    {
-      id: "tomorrow-forecast",
-      alwaysCurrent: true,
-      featured: true,
-      render: () => (
-        <HubSection
-          id="tomorrow-forecast"
-          icon={<Sparkles className="h-5 w-5 text-violet-600" />}
-          title={t("parent_hub.web_tiles.tomorrow-forecast.title")}
-          description={t("parent_hub.web_tiles.tomorrow-forecast.description")}
-          accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20"
-          defaultOpen={false}
-        >
+  // ── FEATURED (full-width, always-current) ─────────────────────────────
+  {
+    id: "command-center",
+    alwaysCurrent: true,
+    featured: true,
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return <HubSection id="command-center" icon={<Zap className="h-5 w-5 text-sky-600" />} title={t("parent_hub.web_tiles.command-center.title")} description={t("parent_hub.web_tiles.command-center.description")} accentClass="bg-sky-100 dark:bg-sky-500/20" defaultOpen={false}>
+          <ParentCommandCenter child={{
+          id: effectiveChild.id,
+          name: effectiveChild.name,
+          age: effectiveChild.age
+        }} />
+        </HubSection>;
+    }
+  },
+  // ── INFANT HUB (band-restricted, featured) ────────────────────────────
+  // ONLY shown when the currently selected child is 0–24 months.
+  {
+    id: "infant-hub",
+    bands: ["0-2"],
+    featured: true,
+    render: () => {
+      if (!isInfantHubAge(totalAgeMonths)) return null;
+      return <InfantHub childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />;
+    }
+  }, {
+    id: "tomorrow-forecast",
+    alwaysCurrent: true,
+    featured: true,
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return <HubSection id="tomorrow-forecast" icon={<Sparkles className="h-5 w-5 text-violet-600" />} title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")} accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20" defaultOpen={false}>
           <FuturePredictor childId={effectiveChild.id} />
-        </HubSection>
-      ),
-    },
-
-    // ── Smart Math Tricks (age 4–8, shown near top of grid) ─────────────
-    {
-      id: "smart-math-tricks",
-      bands: ["4-6", "6-8"] as AgeBand[],
-      render: () => ageGroup ? (
-        <HubSection
-          id="smart-math-tricks"
-          icon={<Sparkles className="h-5 w-5 text-amber-500" />}
-          title={t("parent_hub.web_tiles.smart-math-tricks.title")}
-          description={t("parent_hub.web_tiles.smart-math-tricks.description")}
-          accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100 dark:to-orange-500/20"
-        >
+        </HubSection>;
+    }
+  },
+  // ── Smart Math Tricks (age 4–8, shown near top of grid) ─────────────
+  {
+    id: "smart-math-tricks",
+    bands: ["4-6", "6-8"] as AgeBand[],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return ageGroup ? <HubSection id="smart-math-tricks" icon={<Sparkles className="h-5 w-5 text-amber-500" />} title={t("parent_hub.web_tiles.smart-math-tricks.title")} description={t("parent_hub.web_tiles.smart-math-tricks.description")} accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-orange-100 dark:to-orange-500/20">
           <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
-        </HubSection>
-      ) : null,
-    },
-
-    // ── Abacus PRO Zone (age 4–10, learn/practice/challenge/mental/tutor) ─
-    {
-      id: "abacus",
-      bands: ["4-6", "6-8", "8-10"] as AgeBand[],
-      render: () => ageGroup ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_abacus")}
-        >
-          <HubSection
-            id="abacus"
-            icon={<Sparkles className="h-5 w-5 text-amber-600" />}
-            title="🧮 Abacus PRO Zone" // audit-ok: brand product name, intentional EN-only
-            description="Learn the soroban — beads, brain & speed math"
-            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-rose-100 dark:to-rose-500/20"
-            tryFree={tryFreeFor("hub_abacus")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_abacus")}
-          >
-            <AbacusZone
-              childId={effectiveChild.id}
-              childName={effectiveChild.name}
-              ageYears={effectiveChild.age}
-            />
+        </HubSection> : null;
+    }
+  },
+  // ── Abacus PRO Zone (age 4–10, learn/practice/challenge/mental/tutor) ─
+  {
+    id: "abacus",
+    bands: ["4-6", "6-8", "8-10"] as AgeBand[],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_abacus")}>
+          <HubSection id="abacus" icon={<Sparkles className="h-5 w-5 text-amber-600" />} title={t("pages.parenting_hub.abacus_pro_zone")} // audit-ok: brand product name, intentional EN-only
+        description="Learn the soroban — beads, brain & speed math" accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-rose-100 dark:to-rose-500/20" tryFree={tryFreeFor("hub_abacus")} onOpen={() => hubUsage.markFeatureUsed("hub_abacus")}>
+            <AbacusZone childId={effectiveChild.id} childName={effectiveChild.name} ageYears={effectiveChild.age} />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    // ── GRID — always-current ─────────────────────────────────────────────
-    {
-      id: "amy-ai",
-      alwaysCurrent: true,
-      render: () => (
-        <HubSection
-          id="amy-ai"
-          icon={<AmyIcon size={22} bounce />}
-          title={t("parent_hub.web_tiles.amy-ai.title")}
-          description={t("parent_hub.web_tiles.amy-ai.description")}
-          accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-rose-100 dark:to-rose-500/20"
-        >
+        </LockedBlock> : null;
+    }
+  },
+  // ── GRID — always-current ─────────────────────────────────────────────
+  {
+    id: "amy-ai",
+    alwaysCurrent: true,
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return <HubSection id="amy-ai" icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-rose-100 dark:to-rose-500/20">
           <AmyAISuggestionsSection />
-        </HubSection>
-      ),
-    },
-
-    {
-      id: "articles",
-      alwaysCurrent: true,
-      render: () => (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_articles")}
-        >
-          <HubSection
-            id="articles"
-            icon={<BookOpen className="h-5 w-5 text-emerald-600" />}
-            title={t("parent_hub.web_tiles.articles.title")}
-            description={t("parent_hub.web_tiles.articles.description")}
-            accentClass="bg-emerald-100 dark:bg-emerald-500/20"
-            tryFree={tryFreeFor("hub_articles")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_articles")}
-          >
+        </HubSection>;
+    }
+  }, {
+    id: "articles",
+    alwaysCurrent: true,
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_articles")}>
+          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-emerald-600" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-emerald-100 dark:bg-emerald-500/20" tryFree={tryFreeFor("hub_articles")} onOpen={() => hubUsage.markFeatureUsed("hub_articles")}>
             <ParentingArticles childAgeMonths={totalAgeMonths} />
           </HubSection>
-        </LockedBlock>
-      ),
-    },
-
-    {
-      id: "daily-tips",
-      alwaysCurrent: true,
-      render: () => ageGroup ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_tips")}
-        >
-          <HubSection
-            id="daily-tips"
-            icon={<Sparkles className="h-5 w-5 text-violet-600" />}
-            title={t("parent_hub.web_tiles.daily-tips.title")}
-            description={t("parent_hub.web_tiles.daily-tips.description")}
-            accentClass="bg-violet-100 dark:bg-violet-500/20"
-            tryFree={tryFreeFor("hub_tips")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_tips")}
-          >
+        </LockedBlock>;
+    }
+  }, {
+    id: "daily-tips",
+    alwaysCurrent: true,
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_tips")}>
+          <HubSection id="daily-tips" icon={<Sparkles className="h-5 w-5 text-violet-600" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-violet-100 dark:bg-violet-500/20" tryFree={tryFreeFor("hub_tips")} onOpen={() => hubUsage.markFeatureUsed("hub_tips")}>
             <DailyTips ageGroup={ageGroup} childName={effectiveChild.name} />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    {
-      id: "emotional",
-      alwaysCurrent: true,
-      render: () => (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_emotional")}
-        >
-          <HubSection
-            id="emotional"
-            icon={<Heart className="h-5 w-5 text-rose-500" />}
-            title={t("parent_hub.web_tiles.emotional.title")}
-            description={t("parent_hub.web_tiles.emotional.description")}
-            accentClass="bg-rose-100 dark:bg-rose-500/20"
-            tryFree={tryFreeFor("hub_emotional")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}
-          >
+        </LockedBlock> : null;
+    }
+  }, {
+    id: "emotional",
+    alwaysCurrent: true,
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_emotional")}>
+          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-rose-500" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-rose-100 dark:bg-rose-500/20" tryFree={tryFreeFor("hub_emotional")} onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}>
             <EmotionalSupportSection />
           </HubSection>
-        </LockedBlock>
-      ),
-    },
-
-    {
-      id: "activities",
-      alwaysCurrent: true,
-      render: () => ageGroup ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_activities")}
-        >
-          <HubSection
-            id="activities"
-            icon={<Palette className="h-5 w-5 text-fuchsia-600" />}
-            title={t("parent_hub.web_tiles.activities.title")}
-            description={t("parent_hub.web_tiles.activities.description")}
-            accentClass="bg-fuchsia-100 dark:bg-fuchsia-500/20"
-            tryFree={tryFreeFor("hub_activities")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_activities")}
-          >
-            <ActivitiesSection
-              ageGroup={ageGroup}
-              effectiveChild={effectiveChild}
-              totalAgeMonths={totalAgeMonths}
-            />
+        </LockedBlock>;
+    }
+  }, {
+    id: "activities",
+    alwaysCurrent: true,
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_activities")}>
+          <HubSection id="activities" icon={<Palette className="h-5 w-5 text-fuchsia-600" />} title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} accentClass="bg-fuchsia-100 dark:bg-fuchsia-500/20" tryFree={tryFreeFor("hub_activities")} onOpen={() => hubUsage.markFeatureUsed("hub_activities")}>
+            <ActivitiesSection ageGroup={ageGroup} effectiveChild={effectiveChild} totalAgeMonths={totalAgeMonths} />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    // ── Art & Craft Videos (always-current, standalone tile) ─────────────
-    {
-      id: "art-craft",
-      alwaysCurrent: true,
-      render: () => (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_art_craft")}
-        >
-          <HubSection
-            id="art-craft"
-            icon={<Palette className="h-5 w-5 text-orange-500" />}
-            title={t("parent_hub.web_tiles.art-craft.title")}
-            description={t("parent_hub.web_tiles.art-craft.description")}
-            accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-yellow-100 dark:to-yellow-500/20"
-            tryFree={tryFreeFor("hub_art_craft")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}
-          >
+        </LockedBlock> : null;
+    }
+  },
+  // ── Art & Craft Videos (always-current, standalone tile) ─────────────
+  {
+    id: "art-craft",
+    alwaysCurrent: true,
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_art_craft")}>
+          <HubSection id="art-craft" icon={<Palette className="h-5 w-5 text-orange-500" />} title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} accentClass="bg-gradient-to-br from-orange-100 dark:from-orange-500/20 to-yellow-100 dark:to-yellow-500/20" tryFree={tryFreeFor("hub_art_craft")} onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}>
             <ArtCraftReels />
           </HubSection>
-        </LockedBlock>
-      ),
-    },
-
-    // ── GRID — band-based ─────────────────────────────────────────────────
-    {
-      id: "story-hub",
-      bands: ["0-2", "2-4", "4-6", "6-8"],
-      render: () => (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_story_hub")}
-        >
-          <HubSection
-            id="story-hub"
-            icon={<Film className="h-5 w-5 text-rose-600" />}
-            title={t("parent_hub.web_tiles.story-hub.title")}
-            description={t("parent_hub.web_tiles.story-hub.description")}
-            accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-purple-100 dark:to-purple-500/20"
-            tryFree={tryFreeFor("hub_story_hub")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}
-          >
+        </LockedBlock>;
+    }
+  },
+  // ── GRID — band-based ─────────────────────────────────────────────────
+  {
+    id: "story-hub",
+    bands: ["0-2", "2-4", "4-6", "6-8"],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_story_hub")}>
+          <HubSection id="story-hub" icon={<Film className="h-5 w-5 text-rose-600" />} title={t("parent_hub.web_tiles.story-hub.title")} description={t("parent_hub.web_tiles.story-hub.description")} accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-purple-100 dark:to-purple-500/20" tryFree={tryFreeFor("hub_story_hub")} onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}>
             <StoryHub childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
-        </LockedBlock>
-      ),
-    },
-
-    {
-      id: "phonics",
-      bands: ["2-4", "4-6"],
-      render: () => (totalAgeMonths >= 12 && totalAgeMonths < 72) ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_phonics")}
-        >
-          <HubSection
-            id="phonics"
-            icon={<AudioLines className="h-5 w-5 text-violet-600" />}
-            title={t("parent_hub.web_tiles.phonics.title")}
-            description={t("parent_hub.web_tiles.phonics.description")}
-            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20"
-            tryFree={tryFreeFor("hub_phonics")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}
-          >
-            <PhonicsLearning
-              childId={effectiveChild.id}
-              childName={effectiveChild.name}
-              totalAgeMonths={totalAgeMonths}
-            />
+        </LockedBlock>;
+    }
+  }, {
+    id: "phonics",
+    bands: ["2-4", "4-6"],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return totalAgeMonths >= 12 && totalAgeMonths < 72 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_phonics")}>
+          <HubSection id="phonics" icon={<AudioLines className="h-5 w-5 text-violet-600" />} title={t("parent_hub.web_tiles.phonics.title")} description={t("parent_hub.web_tiles.phonics.description")} accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20" tryFree={tryFreeFor("hub_phonics")} onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}>
+            <PhonicsLearning childId={effectiveChild.id} childName={effectiveChild.name} totalAgeMonths={totalAgeMonths} />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    {
-      id: "ptm-prep",
-      bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 216) ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_ptm_prep")}
-        >
-          <HubSection
-            id="ptm-prep"
-            icon={<ClipboardList className="h-5 w-5 text-violet-600" />}
-            title={t("parent_hub.web_tiles.ptm-prep.title")}
-            description={t("parent_hub.web_tiles.ptm-prep.description")}
-            accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20"
-            tryFree={tryFreeFor("hub_ptm_prep")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}
-          >
-            <PtmPrepAssistant child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
+        </LockedBlock> : null;
+    }
+  }, {
+    id: "ptm-prep",
+    bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return totalAgeMonths >= 36 && totalAgeMonths < 216 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_ptm_prep")}>
+          <HubSection id="ptm-prep" icon={<ClipboardList className="h-5 w-5 text-violet-600" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20" tryFree={tryFreeFor("hub_ptm_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}>
+            <PtmPrepAssistant child={{
+            id: effectiveChild.id,
+            name: effectiveChild.name,
+            age: effectiveChild.age
+          }} />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    {
-      id: "smart-study",
-      bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 204) ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_smart_study")}
-        >
-          <HubSection
-            id="smart-study"
-            icon={<GraduationCap className="h-5 w-5 text-indigo-600" />}
-            title={t("parent_hub.web_tiles.smart-study.title")}
-            description={t("parent_hub.web_tiles.smart-study.description")}
-            accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20"
-            tryFree={tryFreeFor("hub_smart_study")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}
-          >
+        </LockedBlock> : null;
+    }
+  }, {
+    id: "smart-study",
+    bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return totalAgeMonths >= 36 && totalAgeMonths < 204 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_smart_study")}>
+          <HubSection id="smart-study" icon={<GraduationCap className="h-5 w-5 text-indigo-600" />} title={t("parent_hub.web_tiles.smart-study.title")} description={t("parent_hub.web_tiles.smart-study.description")} accentClass="bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20" tryFree={tryFreeFor("hub_smart_study")} onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}>
             <SmartStudyZone />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    {
-      id: "event-prep",
-      bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 180) ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_event_prep")}
-        >
-          <HubSection
-            id="event-prep"
-            icon={<Sparkles className="h-5 w-5 text-pink-600" />}
-            title={t("parent_hub.web_tiles.event-prep.title")}
-            description={t("parent_hub.web_tiles.event-prep.description")}
-            accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20"
-            tryFree={tryFreeFor("hub_event_prep")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}
-          >
+        </LockedBlock> : null;
+    }
+  }, {
+    id: "event-prep",
+    bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return totalAgeMonths >= 36 && totalAgeMonths < 180 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_event_prep")}>
+          <HubSection id="event-prep" icon={<Sparkles className="h-5 w-5 text-pink-600" />} title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} accentClass="bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20" tryFree={tryFreeFor("hub_event_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}>
             <EventPrepCard />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    {
-      id: "olympiad",
-      bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 36 && totalAgeMonths < 192) ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_olympiad")}
-        >
-          <HubSection
-            id="olympiad"
-            icon={<Trophy className="h-5 w-5 text-amber-600" />}
-            title={t("parent_hub.web_tiles.olympiad.title")}
-            description={t("parent_hub.web_tiles.olympiad.description")}
-            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
-            tryFree={tryFreeFor("hub_olympiad")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}
-          >
-            <OlympiadZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
+        </LockedBlock> : null;
+    }
+  }, {
+    id: "olympiad",
+    bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return totalAgeMonths >= 36 && totalAgeMonths < 192 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_olympiad")}>
+          <HubSection id="olympiad" icon={<Trophy className="h-5 w-5 text-amber-600" />} title={t("parent_hub.web_tiles.olympiad.title")} description={t("parent_hub.web_tiles.olympiad.description")} accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20" tryFree={tryFreeFor("hub_olympiad")} onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}>
+            <OlympiadZone child={{
+            id: effectiveChild.id,
+            name: effectiveChild.name,
+            age: effectiveChild.age
+          }} />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    {
-      id: "life-skills",
-      bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => (totalAgeMonths >= 24 && totalAgeMonths < 192) ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_life_skills")}
-        >
-          <HubSection
-            id="life-skills"
-            icon={<Compass className="h-5 w-5 text-emerald-600" />}
-            title={t("parent_hub.web_tiles.life-skills.title")}
-            description={t("parent_hub.web_tiles.life-skills.description")}
-            accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20"
-            tryFree={tryFreeFor("hub_life_skills")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}
-          >
-            <LifeSkillsZone child={{ id: effectiveChild.id, name: effectiveChild.name, age: effectiveChild.age }} />
+        </LockedBlock> : null;
+    }
+  }, {
+    id: "life-skills",
+    bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return totalAgeMonths >= 24 && totalAgeMonths < 192 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_life_skills")}>
+          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-emerald-600" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20" tryFree={tryFreeFor("hub_life_skills")} onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}>
+            <LifeSkillsZone child={{
+            id: effectiveChild.id,
+            name: effectiveChild.name,
+            age: effectiveChild.age
+          }} />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    {
-      // Coloring Books — Google-Drive-backed PDF library. Shows for age
-      // 2+ only (preview tile in Section 2 covers the 0-2 band). Daily
-      // download cap (2/day per child) and the "never repeat" rule are
-      // enforced server-side in artifacts/api-server/src/routes/coloring.ts.
-      id: "coloring-books",
-      bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => totalAgeMonths >= 24 ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_coloring_books")}
-        >
-          <HubSection
-            id="coloring-books"
-            icon={<Palette className="h-5 w-5 text-rose-600" />}
-            title={t("parent_hub.web_tiles.coloring-books.title")}
-            description={t("parent_hub.web_tiles.coloring-books.description")}
-            accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
-            tryFree={tryFreeFor("hub_coloring_books")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}
-          >
-            <ColoringBooks
-              childId={effectiveChild.id}
-              childName={effectiveChild.name}
-            />
+        </LockedBlock> : null;
+    }
+  }, {
+    // Coloring Books — Google-Drive-backed PDF library. Shows for age
+    // 2+ only (preview tile in Section 2 covers the 0-2 band). Daily
+    // download cap (2/day per child) and the "never repeat" rule are
+    // enforced server-side in artifacts/api-server/src/routes/coloring.ts.
+    id: "coloring-books",
+    bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_coloring_books")}>
+          <HubSection id="coloring-books" icon={<Palette className="h-5 w-5 text-rose-600" />} title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} accentClass="bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20" tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}>
+            <ColoringBooks childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-
-    {
-      // Fun Sheets — activity & learning PDFs from two Google Drive folders.
-      // Shows for age 2+ only; preview tile in Section 2 covers 0–24m.
-      // Daily cap: 2 downloads/day per child (server-enforced).
-      // Sorting: not-yet-downloaded first, already-downloaded last.
-      id: "fun-sheets",
-      bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
-      render: () => totalAgeMonths >= 24 ? (
-        <LockedBlock
-          reason="hub_locked"
-          locked={hubUsage.isFeatureLocked("hub_fun_sheets")}
-        >
-          <HubSection
-            id="fun-sheets"
-            icon={<FileDown className="h-5 w-5 text-teal-600" />}
-            title={t("parent_hub.web_tiles.fun-sheets.title")}
-            description={t("parent_hub.web_tiles.fun-sheets.description")}
-            accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20"
-            tryFree={tryFreeFor("hub_fun_sheets")}
-            onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}
-          >
-            <FunSheets
-              childId={effectiveChild.id}
-              childName={effectiveChild.name}
-            />
+        </LockedBlock> : null;
+    }
+  }, {
+    // Fun Sheets — activity & learning PDFs from two Google Drive folders.
+    // Shows for age 2+ only; preview tile in Section 2 covers 0–24m.
+    // Daily cap: 2 downloads/day per child (server-enforced).
+    // Sorting: not-yet-downloaded first, already-downloaded last.
+    id: "fun-sheets",
+    bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
+    render: () => {
+      const {
+        t
+      } = useTranslation();
+      return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_fun_sheets")}>
+          <HubSection id="fun-sheets" icon={<FileDown className="h-5 w-5 text-teal-600" />} title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} accentClass="bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20" tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}>
+            <FunSheets childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
-        </LockedBlock>
-      ) : null,
-    },
-  ] : [];
+        </LockedBlock> : null;
+    }
+  }] : [];
 
   // Bucket sections by age band.
-  const inForYou = (s: SectionEntry) =>
-    s.alwaysCurrent || (currentBand !== null && (s.bands?.includes(currentBand) ?? false));
-
+  const inForYou = (s: SectionEntry) => s.alwaysCurrent || currentBand !== null && (s.bands?.includes(currentBand) ?? false);
   const forYouAll = sections.filter(inForYou);
-  const forYouFeatured = forYouAll.filter((s) => s.featured);
-  const forYouGrid = forYouAll.filter((s) => !s.featured);
+  const forYouFeatured = forYouAll.filter(s => s.featured);
+  const forYouGrid = forYouAll.filter(s => !s.featured);
 
   // Section 2 ("Explore Next Stage") is shown ONLY for children whose age is
   // 0–24 months (band "0-2"). For 2+ children, Section 2 is removed entirely.
   // The preview tiles below are a fixed set the user has asked us to surface
   // for 0–24 month children, regardless of each tile's own band metadata.
   const showSection2 = currentBand === "0-2" && nextBand !== null;
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
+  return <div className="max-w-6xl mx-auto space-y-6 pb-12">
       <PageHeader />
 
       {/* ── Child Selector Panel ────────────────────────────────────────── */}
-      <ChildSelectorPanel
-        childList={childList}
-        effectiveChild={effectiveChild}
-        onSelect={handleChildSelect}
-      />
+      <ChildSelectorPanel childList={childList} effectiveChild={effectiveChild} onSelect={handleChildSelect} />
 
-      {effectiveChild && currentBand && (
-        <>
+      {effectiveChild && currentBand && <>
           {/* ── SECTION 1: For {Child Name} ─────────────────────────────── */}
-          <ForYouHeader
-            childName={effectiveChild.name}
-            band={currentBand}
-            ageGroup={ageGroup}
-          />
+          <ForYouHeader childName={effectiveChild.name} band={currentBand} ageGroup={ageGroup} />
 
           {/* Featured (full-width) */}
-          {forYouFeatured.length > 0 && (
-            <div className="space-y-3">
-              {forYouFeatured.map((s) => {
-                const node = s.render();
-                return node ? <div key={s.id}>{node}</div> : null;
-              })}
-            </div>
-          )}
+          {forYouFeatured.length > 0 && <div className="space-y-3">
+              {forYouFeatured.map(s => {
+          const node = s.render();
+          return node ? <div key={s.id}>{node}</div> : null;
+        })}
+            </div>}
 
           {/* 2-column grid */}
-          {forYouGrid.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-              {forYouGrid.map((s) => {
-                const node = s.render();
-                return node ? <div key={s.id}>{node}</div> : null;
-              })}
-            </div>
-          )}
+          {forYouGrid.length > 0 && <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+              {forYouGrid.map(s => {
+          const node = s.render();
+          return node ? <div key={s.id}>{node}</div> : null;
+        })}
+            </div>}
 
           {/* ── SECTION 2: Explore Next Stage — ONLY for 0-24 month children ── */}
-          {showSection2 && nextBand && (
-            <>
-              <ExploreNextHeader
-                childName={effectiveChild.name}
-                band={nextBand}
-              />
-              <div
-                data-testid="section-2-previews"
-                className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2"
-              >
-                {SECTION_2_PREVIEW_TILES.map((tile) => (
-                  <ComingNextWrapper key={tile.id} band={nextBand}>
-                    <PreviewHubCard
-                      id={tile.id}
-                      icon={tile.icon}
-                      title={t(`parent_hub.web_tiles_preview.${tile.id}.title`)}
-                      description={t(`parent_hub.web_tiles_preview.${tile.id}.description`)}
-                      accentClass={tile.accentClass}
-                    />
-                  </ComingNextWrapper>
-                ))}
+          {showSection2 && nextBand && <>
+              <ExploreNextHeader childName={effectiveChild.name} band={nextBand} />
+              <div data-testid="section-2-previews" className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
+                {SECTION_2_PREVIEW_TILES.map(tile => {
+            const {
+              t
+            } = useTranslation();
+            return <ComingNextWrapper key={tile.id} band={nextBand}>
+                    <PreviewHubCard id={tile.id} icon={tile.icon} title={t(`parent_hub.web_tiles_preview.${tile.id}.title`)} description={t(`parent_hub.web_tiles_preview.${tile.id}.description`)} accentClass={tile.accentClass} />
+                  </ComingNextWrapper>;
+          })}
               </div>
-            </>
-          )}
-        </>
-      )}
+            </>}
+        </>}
 
       {/* Bottom CTA */}
       <div className="text-center pt-2">
@@ -1324,24 +873,24 @@ export default function ParentingHub() {
           </button>
         </Link>
       </div>
-    </div>
-  );
+    </div>;
 }
 
 // ─── Section 1 / Section 2 headers ───────────────────────────────────────────
 function ForYouHeader({
   childName,
   band,
-  ageGroup,
+  ageGroup
 }: {
   childName: string;
   band: AgeBand;
   ageGroup: AgeGroup | null;
 }) {
-  const { t } = useTranslation();
+  const {
+    t
+  } = useTranslation();
   const groupInfo = ageGroup ? getAgeGroupInfo(ageGroup) : null;
-  return (
-    <div className="pt-1">
+  return <div className="pt-1">
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80">{t("parent_hub.headers.section1_for")}</span>
         <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1">
@@ -1349,18 +898,19 @@ function ForYouHeader({
         </Badge>
       </div>
       <h2 className="font-quicksand text-xl font-bold text-foreground mt-1.5 flex items-center gap-2 flex-wrap">
-        <span>{t("parent_hub.headers.for_child", { name: childName })}</span>
-        {groupInfo && (
-          <span className="text-base font-medium text-muted-foreground">
+        <span>{t("parent_hub.headers.for_child", {
+          name: childName
+        })}</span>
+        {groupInfo && <span className="text-base font-medium text-muted-foreground">
             {groupInfo.emoji} {groupInfo.label}
-          </span>
-        )}
+          </span>}
       </h2>
       <p className="text-xs text-muted-foreground mt-0.5">
-        {t("parent_hub.headers.personalised", { name: childName })}
+        {t("parent_hub.headers.personalised", {
+        name: childName
+      })}
       </p>
-    </div>
-  );
+    </div>;
 }
 
 // ─── Section 2 preview tiles ────────────────────────────────────────────────
@@ -1371,55 +921,45 @@ const SECTION_2_PREVIEW_TILES: Array<{
   id: string;
   icon: React.ReactNode;
   accentClass: string;
-}> = [
-  {
-    id: "life-skills",
-    icon: <Compass className="h-5 w-5 text-emerald-600" />,
-    accentClass: "bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20",
-  },
-  {
-    id: "olympiad",
-    icon: <Trophy className="h-5 w-5 text-amber-600" />,
-    accentClass: "bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20",
-  },
-  {
-    id: "event-prep",
-    icon: <Sparkles className="h-5 w-5 text-pink-600" />,
-    accentClass: "bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20",
-  },
-  {
-    id: "smart-study",
-    icon: <GraduationCap className="h-5 w-5 text-indigo-600" />,
-    accentClass: "bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20",
-  },
-  {
-    id: "ptm-prep",
-    icon: <ClipboardList className="h-5 w-5 text-violet-600" />,
-    accentClass: "bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20",
-  },
-  {
-    id: "phonics",
-    icon: <AudioLines className="h-5 w-5 text-violet-600" />,
-    accentClass: "bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20",
-  },
-  {
-    id: "coloring-books",
-    icon: <Palette className="h-5 w-5 text-rose-600" />,
-    accentClass: "bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20",
-  },
-  {
-    id: "fun-sheets",
-    icon: <FileDown className="h-5 w-5 text-teal-600" />,
-    accentClass: "bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20",
-  },
-];
-
+}> = [{
+  id: "life-skills",
+  icon: <Compass className="h-5 w-5 text-emerald-600" />,
+  accentClass: "bg-gradient-to-br from-emerald-100 dark:from-emerald-500/20 to-teal-100 dark:to-teal-500/20"
+}, {
+  id: "olympiad",
+  icon: <Trophy className="h-5 w-5 text-amber-600" />,
+  accentClass: "bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-yellow-100 dark:to-yellow-500/20"
+}, {
+  id: "event-prep",
+  icon: <Sparkles className="h-5 w-5 text-pink-600" />,
+  accentClass: "bg-gradient-to-br from-pink-100 dark:from-pink-500/20 to-orange-100 dark:to-orange-500/20"
+}, {
+  id: "smart-study",
+  icon: <GraduationCap className="h-5 w-5 text-indigo-600" />,
+  accentClass: "bg-gradient-to-br from-indigo-100 dark:from-indigo-500/20 to-purple-100 dark:to-purple-500/20"
+}, {
+  id: "ptm-prep",
+  icon: <ClipboardList className="h-5 w-5 text-violet-600" />,
+  accentClass: "bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-pink-100 dark:to-pink-500/20"
+}, {
+  id: "phonics",
+  icon: <AudioLines className="h-5 w-5 text-violet-600" />,
+  accentClass: "bg-gradient-to-br from-violet-100 dark:from-violet-500/20 to-fuchsia-100 dark:to-fuchsia-500/20"
+}, {
+  id: "coloring-books",
+  icon: <Palette className="h-5 w-5 text-rose-600" />,
+  accentClass: "bg-gradient-to-br from-rose-100 dark:from-rose-500/20 to-pink-100 dark:to-pink-500/20"
+}, {
+  id: "fun-sheets",
+  icon: <FileDown className="h-5 w-5 text-teal-600" />,
+  accentClass: "bg-gradient-to-br from-teal-100 dark:from-teal-500/20 to-cyan-100 dark:to-cyan-500/20"
+}];
 function PreviewHubCard({
   id,
   icon,
   title,
   description,
-  accentClass,
+  accentClass
 }: {
   id: string;
   icon: React.ReactNode;
@@ -1427,26 +967,9 @@ function PreviewHubCard({
   description: string;
   accentClass: string;
 }) {
-  return (
-    <div
-      data-section-id={id}
-      data-preview-only="true"
-      className={[
-        "group relative rounded-2xl overflow-hidden",
-        "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl",
-        "border border-white/50 dark:border-white/10",
-        "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]",
-      ].join(" ")}
-    >
+  return <div data-section-id={id} data-preview-only="true" className={["group relative rounded-2xl overflow-hidden", "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl", "border border-white/50 dark:border-white/10", "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]"].join(" ")}>
       <div className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
-        <div
-          className={[
-            "w-11 h-11 rounded-2xl flex items-center justify-center shrink-0",
-            "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]",
-            "ring-1 ring-white/40 dark:ring-white/10",
-            accentClass,
-          ].join(" ")}
-        >
+        <div className={["w-11 h-11 rounded-2xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]", "ring-1 ring-white/40 dark:ring-white/10", accentClass].join(" ")}>
           {icon}
         </div>
         <div className="min-w-0">
@@ -1458,44 +981,44 @@ function PreviewHubCard({
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
-
 function ExploreNextHeader({
   childName,
-  band,
+  band
 }: {
   childName: string;
   band: AgeBand;
 }) {
-  const { t } = useTranslation();
-  return (
-    <div className="pt-6">
+  const {
+    t
+  } = useTranslation();
+  return <div className="pt-6">
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">{t("parent_hub.headers.section2_next")}</span>
-        <Badge
-          variant="outline"
-          className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1 border-amber-300/60 dark:border-amber-400/30 text-amber-800 dark:text-amber-200"
-        >
+        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1 border-amber-300/60 dark:border-amber-400/30 text-amber-800 dark:text-amber-200">
           {bandLabel(band)}
         </Badge>
       </div>
       <h2 className="font-quicksand text-xl font-bold text-foreground mt-1.5">
-        {t("parent_hub.headers.explore_next", { name: childName })}
+        {t("parent_hub.headers.explore_next", {
+        name: childName
+      })}
       </h2>
       <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
-        {t("parent_hub.headers.explore_blurb", { name: childName })}
+        {t("parent_hub.headers.explore_blurb", {
+        name: childName
+      })}
       </p>
-    </div>
-  );
+    </div>;
 }
 
 // ─── Page Header ─────────────────────────────────────────────────────────────
 function PageHeader() {
-  const { t } = useTranslation();
-  return (
-    <div className="flex items-center gap-3">
+  const {
+    t
+  } = useTranslation();
+  return <div className="flex items-center gap-3">
       <div className="flex-1">
         <h1 className="font-quicksand text-2xl font-bold text-foreground flex items-center gap-2">
           <BookOpen className="h-6 w-6 text-emerald-600" />
@@ -1516,6 +1039,5 @@ function PageHeader() {
           <MessageCircleHeart className="h-4 w-4 text-rose-500" />
         </button>
       </Link>
-    </div>
-  );
+    </div>;
 }

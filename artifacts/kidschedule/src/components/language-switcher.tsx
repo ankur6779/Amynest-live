@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { SUPPORTED_LANGUAGES, setLanguage, type LanguageCode } from "@/i18n";
 
 export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
