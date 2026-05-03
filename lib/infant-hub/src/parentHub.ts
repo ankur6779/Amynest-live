@@ -1200,8 +1200,8 @@ export function getNoiseAgeTip(months: number): AgeNoiseTip {
 // reference.
 export type LullabyLang = "en" | "hi" | "hin";
 
-import { NOTE_FREQ } from "./audioSynth.js";
-import type { Note } from "./audioSynth.ts";
+import { NOTE_FREQ } from "./audioSynth";
+import type { Note } from "./audioSynth";
 const { C4, D4, E4, F4, G4, A4, B4, C5 } = NOTE_FREQ;
 const Q = 480;        // quarter note (~125 BPM lullaby tempo)
 const H = Q * 2;      // half note

@@ -687,7 +687,13 @@
       "history_loading": "Load ho raha hai…",
       "history_empty": "Abhi tak kuch deliver nahi hua hai. Yeh confirm karne ke liye ki aapka device notifications receive kar raha hai, upar kisi bhi category se ek test bhejein.",
       "diagnostics_title": "Mujhe meri notification kyun nahi mili?",
-      "diagnostics_desc": "Token health, quiet hours aur recent failures dekhein."
+      "diagnostics_desc": "Token health, quiet hours aur recent failures dekhein.",
+      "diagnostics_subtitle": "Aapke devices, recent deliveries aur quiet hours ka quick health check. Zyaadatar miss hui notifications neeche diye karano mein se kisi ek se judi hoti hain.",
+      "diagnostics_load_error": "Abhi aapke diagnostics load nahi ho paaye.",
+      "diagnostics_try_again": "Phir se try karein",
+      "diagnostics_recent_empty_html": "Humne haal hi mein aapko kuch bhejne ki koshish nahi ki. Apne device confirm karne ke liye settings page par <strong>Test bhejein</strong> use karein.",
+      "diagnostics_recent_empty_prefix": "Humne haal hi mein aapko kuch bhejne ki koshish nahi ki. Settings page par ",
+      "diagnostics_recent_empty_suffix": " use karein taaki aapka device confirm ho jaaye."
     },
     "insights": {
       "title": "Parent Insights",

@@ -687,7 +687,13 @@
       "history_loading": "Loading…",
       "history_empty": "Nothing has been delivered yet. Send a test from any category above to confirm your device is receiving notifications.",
       "diagnostics_title": "Why didn't I get my notification?",
-      "diagnostics_desc": "Check token health, quiet hours and recent failures."
+      "diagnostics_desc": "Check token health, quiet hours and recent failures.",
+      "diagnostics_subtitle": "A quick health check of your devices, recent deliveries and quiet hours. Most missed notifications fall into one of the buckets below.",
+      "diagnostics_load_error": "We couldn't load your diagnostics right now.",
+      "diagnostics_try_again": "Try again",
+      "diagnostics_recent_empty_html": "We haven't tried to send you anything recently. Use <strong>Send test</strong> on the settings page to confirm your device is wired up.",
+      "diagnostics_recent_empty_prefix": "We haven't tried to send you anything recently. Use ",
+      "diagnostics_recent_empty_suffix": " on the settings page to confirm your device is wired up."
     },
     "insights": {
       "title": "Parent Insights",
