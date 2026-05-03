@@ -95,6 +95,79 @@ function isSchoolDay(
   return days.includes(isoWeekday);
 }
 
+// ─── Diet constraint block ────────────────────────────────────────────────────
+// Returns a HARD CONSTRAINT block for the AI prompt. This block is inserted
+// into CRITICAL RULES so the AI treats it with the same weight as school-block
+// enforcement, not as a soft preference.
+export function buildDietConstraintBlock(foodType: string): string {
+  const ft = (foodType ?? "vegetarian").toLowerCase().replace(/-/g, "_");
+
+  if (ft === "vegan") return `
+DIET CONSTRAINT — VEGAN (HARD RULE — overrides all meal guidance above):
+The child follows a STRICT VEGAN diet. Every single meal, snack, drink, and recipe ingredient MUST be 100% plant-based.
+FORBIDDEN — NEVER include any of these in activity names, meal names, notes, or ingredient lists:
+  milk, cow milk, dairy milk, plant milk (ok), warm milk, cold milk, hot milk, malted milk, Horlicks, Bournvita, milk shake
+  curd, dahi, yogurt, Greek yogurt, lassi, buttermilk, chaas
+  butter, ghee, clarified butter, cream, whipping cream, heavy cream, sour cream, condensed milk, khoya, mawa
+  cheese, paneer, cottage cheese, ricotta, mozzarella
+  egg, boiled egg, scrambled egg, omelette, egg bhurji, anda
+  honey, royal jelly, beeswax
+  meat, chicken, mutton, beef, pork, lamb, fish, prawn, shrimp, seafood, tuna, salmon
+ALLOWED plant-based alternatives (use freely):
+  oat milk, almond milk, coconut milk, soy milk, rice milk
+  coconut yogurt, cashew curd, soy curd
+  coconut oil, cold-pressed oil, nut butter (peanut butter, almond butter), avocado
+  tofu, tempeh, edamame, soy chunks, soy granules, chickpea flour (besan), legumes
+  all vegetables, all fruits, all whole grains (roti, rice, oats, poha, upma), all lentils/dal, all nuts and seeds
+Meal examples for vegan Indian child: roti with dal + sabzi, oats with banana + almond milk, poha with peanuts + lemon, avocado toast, fruit chaat, sprouts salad, tofu bhurji, rajma rice, mixed dal khichdi.
+If ANY meal or note contains a forbidden item, replace the ENTIRE meal with a vegan alternative. Zero exceptions.`;
+
+  if (ft === "eggetarian") return `
+DIET CONSTRAINT — EGGETARIAN (HARD RULE):
+The child is Eggetarian — eggs are allowed, but NO meat, poultry, or seafood of any kind.
+FORBIDDEN: chicken, mutton, beef, pork, lamb, fish, prawn, shrimp, tuna, salmon, any seafood.
+ALLOWED: eggs (boiled, scrambled, omelette), all dairy (milk, curd, paneer, ghee), all vegetables, all grains, all legumes.`;
+
+  if (ft === "pescatarian") return `
+DIET CONSTRAINT — PESCATARIAN (HARD RULE):
+The child is Pescatarian — fish and seafood are allowed, but NO chicken, mutton, beef, pork, or land-animal meat.
+FORBIDDEN: chicken, mutton, beef, pork, lamb, goat meat, any land-animal meat.
+ALLOWED: fish, prawn, shrimp, seafood, eggs, all dairy, all vegetables, all grains.`;
+
+  if (ft === "jain") return `
+DIET CONSTRAINT — JAIN (HARD RULE):
+The child follows a strict Jain diet. FORBIDDEN: all meat, fish, eggs, and root vegetables.
+FORBIDDEN ROOT VEGETABLES: onion, garlic, potato, carrot, beetroot, radish (mooli), turnip, yam, ginger (raw/whole).
+ALLOWED: all above-ground vegetables (lauki, tinda, turai, karela, bhindi, capsicum, tomato — seed removed), dairy, grains, lentils, legumes.
+Use only Jain-friendly recipes — no onion, no garlic in any item.`;
+
+  if (ft === "sattvik") return `
+DIET CONSTRAINT — SATTVIK (HARD RULE):
+The child follows a Sattvik diet. FORBIDDEN: meat, fish, eggs, onion, garlic, mushrooms, processed/packaged food, alcohol, caffeine.
+ALLOWED: all dairy, all grains, all legumes, all above-ground vegetables (without onion/garlic), fruits, nuts, mild spices (cumin, turmeric, ginger, cardamom).`;
+
+  if (ft === "halal") return `
+DIET CONSTRAINT — HALAL (HARD RULE):
+All meat must be halal-certified. FORBIDDEN: pork, pork products (bacon, ham, lard), alcohol, any non-halal-certified meat.
+ALLOWED: halal chicken, halal mutton/beef/lamb, fish, eggs, all dairy, all vegetables, all grains.`;
+
+  if (ft === "kosher") return `
+DIET CONSTRAINT — KOSHER (HARD RULE):
+The child follows a Kosher diet. FORBIDDEN: pork, shellfish, mixing meat and dairy in the same meal, non-kosher meat.
+ALLOWED: kosher beef/chicken (not mixed with dairy), fish with fins and scales, eggs, vegetables, grains. Keep meat meals and dairy meals strictly separate.`;
+
+  if (ft === "non_veg" || ft === "nonveg" || ft === "no_preference") return `
+DIET CONSTRAINT — NON-VEGETARIAN:
+All food types are welcome — meat, fish, eggs, dairy, vegetables. Suggest balanced, nutritious meals including lean protein sources.`;
+
+  // default: vegetarian
+  return `
+DIET CONSTRAINT — VEGETARIAN (HARD RULE):
+The child is Vegetarian. FORBIDDEN: all meat, poultry, and seafood.
+FORBIDDEN: chicken, mutton, beef, pork, lamb, fish, prawn, shrimp, tuna, salmon, any seafood.
+ALLOWED: dairy (milk, curd, paneer, ghee, butter, cheese), eggs (eggetarian-style is NOT assumed — default NO eggs unless separately confirmed), all vegetables, all grains, all legumes, all fruits.`;
+}
+
 // ─── Age-appropriate meal guidance builder ──────────────────────────────────
 export function buildMealGuidance(ageGroup: AgeGroup): string {
   if (ageGroup === "infant") {
@@ -325,6 +398,7 @@ CRITICAL RULES — follow ALL exactly:
 - 12–16 activities covering wake-up to sleep. Include breakfast, lunch, dinner, and at least one snack.
 - Include at least 2 outdoor/play activities and 1–2 family bonding activities.
 - Activities must match the child's age group and mood.
+${buildDietConstraintBlock(params.foodType)}
 ${params.hasSchool ? `
 SCHOOL RULES — non-negotiable when "School today: Yes":
 - Insert exactly ONE activity with category "school" that starts at ${params.schoolStartTime} and ends at ${params.schoolEndTime}. Set its duration to the full minutes between those two times.
