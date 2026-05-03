@@ -212,7 +212,7 @@ export default defineConfig({
     },
     fs: {
       strict: true,
-      deny: ["**/.*"],
+      deny: ["**/.git", "**/.env*", "**/node_modules/.cache"],
     },
   },
   preview: {
