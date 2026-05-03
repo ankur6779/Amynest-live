@@ -44,6 +44,22 @@ args = "mobile-color-audit"
 task = "workflow.run"
 args = "kidschedule-on-dark-marker"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "kidschedule-color-audit"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "kidschedule-i18n-audit"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "mobile-i18n-audit"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "locale-parity-audit"
+
 [[workflows.workflow]]
 name = "test-routine-meals"
 author = "agent"
@@ -120,6 +136,50 @@ args = "node artifacts/kidschedule/scripts/check-on-dark-marker.js"
 
 [workflows.workflow.metadata]
 isValidation = true
+
+[[workflows.workflow]]
+name = "kidschedule-color-audit"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node artifacts/kidschedule/scripts/check-hardcoded-colors.cjs"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "kidschedule-i18n-audit"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node artifacts/kidschedule/scripts/check-i18n.cjs"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "mobile-i18n-audit"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node artifacts/amynest-mobile/scripts/check-i18n.js"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "locale-parity-audit"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node scripts/check-locale-parity.cjs"
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [agent]
 stack = "PNPM_WORKSPACE"
