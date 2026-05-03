@@ -112,6 +112,41 @@ function buildLocalInsights(
   return ins;
 }
 
+// ─── ExampleChips: small horizontal row of example words for a letter ────────
+//
+// Renders ["Ball","Bat","Banana"] as compact rounded chips so the child sees
+// multiple words that start with the sound, not just one. Sized "sm" for
+// tile use and "md" for the larger Today's Focus card.
+
+function ExampleChips({
+  words,
+  size,
+}: {
+  words: string[];
+  size: "sm" | "md";
+}) {
+  if (words.length === 0) return null;
+  const chipCls =
+    size === "md"
+      ? "px-2 py-0.5 text-[11px]"
+      : "px-1.5 py-[1px] text-[10px]";
+  return (
+    <div className="mt-1 flex flex-wrap gap-1" data-testid="phonics-example-chips">
+      {words.map((w) => (
+        <span
+          key={w}
+          className={cn(
+            "inline-flex items-center rounded-full bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-200 font-medium border border-violet-200/70 dark:border-violet-400/25",
+            chipCls,
+          )}
+        >
+          {w}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 interface PhonicsLearningProps {
@@ -329,9 +364,11 @@ function TodaysActivityCard({
             >
               {todaysItem.symbol}
             </p>
-            {todaysItem.example && (
+            {todaysItem.examples && todaysItem.examples.length > 0 ? (
+              <ExampleChips words={todaysItem.examples} size="md" />
+            ) : todaysItem.example ? (
               <p className="text-xs text-muted-foreground">{todaysItem.example}</p>
-            )}
+            ) : null}
           </div>
           <AudioPlayButton
             text={todaysItem.phoneme ?? todaysItem.sound}
@@ -456,9 +493,11 @@ function PracticeSoundsCard({
                     {it.emoji && <span className="text-2xl shrink-0">{it.emoji}</span>}
                     <div className="flex-1 min-w-0">
                       <p className="font-quicksand text-lg font-bold text-foreground leading-tight">{it.symbol}</p>
-                      {it.example && (
+                      {it.examples && it.examples.length > 0 ? (
+                        <ExampleChips words={it.examples} size="sm" />
+                      ) : it.example ? (
                         <p className="text-[10px] text-muted-foreground truncate">{it.example}</p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
@@ -516,12 +555,19 @@ function PracticeSoundsCard({
                     >
                       {it.symbol}
                     </p>
-                    {it.example && (
+                    {it.examples && it.examples.length > 0 ? (
+                      <div className="mt-1">
+                        <ExampleChips words={it.examples} size="sm" />
+                        {count > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5">played {count}×</p>
+                        )}
+                      </div>
+                    ) : it.example ? (
                       <p className="text-[10px] text-muted-foreground">
                         {it.example}
                         {count > 0 ? ` · played ${count}×` : ""}
                       </p>
-                    )}
+                    ) : null}
                   </div>
                   {mastered && <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-1" />}
                   <AudioPlayButton

@@ -19,6 +19,8 @@ export interface PhonicsApiItem {
   /** Bare phoneme (e.g. "buh") used by phonics-mode TTS. NULL for non-letter rows. */
   phoneme: string | null;
   example: string | null;
+  /** 3–4 example words ("Ball","Bat","Banana") rendered as chips. NULL for non-letter. */
+  examples: string[] | null;
   emoji: string | null;
   hint: string | null;
 }
@@ -54,6 +56,8 @@ export interface DisplayPhonicsItem {
    */
   phoneme?: string;
   example?: string;
+  /** 3–4 example words rendered as chips under the tile. Letter rows only. */
+  examples?: string[];
   emoji?: string;
   hint?: string;
   type: PhonicsType;
@@ -259,6 +263,7 @@ export function usePhonicsData(
           sound: it.sound,
           phoneme: it.phoneme ?? undefined,
           example: it.example ?? undefined,
+          examples: it.examples ?? undefined,
           emoji: it.emoji ?? undefined,
           hint: it.hint ?? undefined,
           type: it.type,
@@ -319,6 +324,7 @@ export function usePhonicsData(
       sound: it.sound,
       phoneme: it.phoneme,
       example: it.example,
+      examples: it.examples,
       emoji: it.emoji,
       hint: it.hint,
       type: inferType(it.id, level.ageGroup),

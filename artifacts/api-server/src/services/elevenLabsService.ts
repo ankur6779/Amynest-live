@@ -116,12 +116,23 @@ function computeCacheKey(
   modelId: string,
   mode: SynthesizeMode,
 ): string {
-  // Backwards compatible: `default` mode keeps the original key format so
-  // every existing GCS object + ttsCache row is still hit. Only non-default
-  // modes get a prefix, isolating them in a fresh namespace.
-  const prefix = mode === "default" ? "" : `${mode}|`;
+  // `default` mode preserves the legacy unprefixed preimage (`${modelId}|
+  // ${voiceId}|${text}`) so every pre-existing GCS object + ttsCache row is
+  // still a hit after this change.
+  //
+  // Non-default modes must live in a *separate* namespace AND must not be
+  // forge-able from a default-mode preimage. We achieve that by prefixing
+  // with a NUL byte — TTS prompts, voiceIds and modelIds never contain
+  // \x00 — and by using NUL as the field separator so a `|` inside any
+  // field can no longer collapse two preimages onto the same hash. See
+  // architect review note in the T001 PR.
+  if (mode === "default") {
+    return createHash("sha256")
+      .update(`${modelId}|${voiceId}|${text}`)
+      .digest("hex");
+  }
   return createHash("sha256")
-    .update(`${prefix}${modelId}|${voiceId}|${text}`)
+    .update(`\x00mode=${mode}\x00${modelId}\x00${voiceId}\x00${text}`)
     .digest("hex");
 }
 

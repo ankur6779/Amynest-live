@@ -14,7 +14,12 @@ export type PhonicsItem = {
    * sounds, sight words, sentences, stories — those keep using `sound`.
    */
   phoneme?: string;
-  example?: string;      // example word
+  example?: string;      // example word (legacy single)
+  /**
+   * Optional 3–4 example words shown as small chips under the tile
+   * (e.g. for "B": ["Ball","Bat","Banana"]). Letter rows only.
+   */
+  examples?: string[];
   emoji?: string;        // visual aid
   hint?: string;         // small caption shown under the tile
 };
@@ -76,16 +81,16 @@ const LEVEL_2_3Y: PhonicsLevel = {
   emoji: "🔤",
   focus: "One letter, one sound, one picture",
   items: [
-    { id: "bp-a", symbol: "A", sound: "A says ah",  phoneme: "ah",  example: "Apple",   emoji: "🍎" },
-    { id: "bp-b", symbol: "B", sound: "B says buh", phoneme: "buh", example: "Ball",    emoji: "⚽" },
-    { id: "bp-c", symbol: "C", sound: "C says kuh", phoneme: "kuh", example: "Cat",     emoji: "🐱" },
-    { id: "bp-d", symbol: "D", sound: "D says duh", phoneme: "duh", example: "Dog",     emoji: "🐶" },
-    { id: "bp-e", symbol: "E", sound: "E says eh",  phoneme: "eh",  example: "Egg",     emoji: "🥚" },
-    { id: "bp-f", symbol: "F", sound: "F says fff", phoneme: "fff", example: "Fish",    emoji: "🐟" },
-    { id: "bp-g", symbol: "G", sound: "G says guh", phoneme: "guh", example: "Goat",    emoji: "🐐" },
-    { id: "bp-h", symbol: "H", sound: "H says huh", phoneme: "huh", example: "Hat",     emoji: "🎩" },
-    { id: "bp-i", symbol: "I", sound: "I says ih",  phoneme: "ih",  example: "Igloo",   emoji: "🧊" },
-    { id: "bp-j", symbol: "J", sound: "J says juh", phoneme: "juh", example: "Jug",     emoji: "🫙" },
+    { id: "bp-a", symbol: "A", sound: "A says ah",  phoneme: "ah",  example: "Apple",   examples: ["Apple","Ant","Arm"],            emoji: "🍎" },
+    { id: "bp-b", symbol: "B", sound: "B says buh", phoneme: "buh", example: "Ball",    examples: ["Ball","Bat","Banana","Bear"],   emoji: "⚽" },
+    { id: "bp-c", symbol: "C", sound: "C says kuh", phoneme: "kuh", example: "Cat",     examples: ["Cat","Cup","Car"],              emoji: "🐱" },
+    { id: "bp-d", symbol: "D", sound: "D says duh", phoneme: "duh", example: "Dog",     examples: ["Dog","Duck","Door"],            emoji: "🐶" },
+    { id: "bp-e", symbol: "E", sound: "E says eh",  phoneme: "eh",  example: "Egg",     examples: ["Egg","Elephant","Ear"],         emoji: "🥚" },
+    { id: "bp-f", symbol: "F", sound: "F says fff", phoneme: "fff", example: "Fish",    examples: ["Fish","Fan","Frog","Foot"],     emoji: "🐟" },
+    { id: "bp-g", symbol: "G", sound: "G says guh", phoneme: "guh", example: "Goat",    examples: ["Goat","Gift","Grape"],          emoji: "🐐" },
+    { id: "bp-h", symbol: "H", sound: "H says huh", phoneme: "huh", example: "Hat",     examples: ["Hat","House","Horse"],          emoji: "🎩" },
+    { id: "bp-i", symbol: "I", sound: "I says ih",  phoneme: "ih",  example: "Igloo",   examples: ["Igloo","Ice","Insect"],         emoji: "🧊" },
+    { id: "bp-j", symbol: "J", sound: "J says juh", phoneme: "juh", example: "Jug",     examples: ["Jug","Jam","Jeep"],             emoji: "🫙" },
   ],
   features: {},
   parentTips: [
