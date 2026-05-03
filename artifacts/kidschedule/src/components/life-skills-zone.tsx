@@ -261,10 +261,10 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
           <div className="flex items-center gap-2 text-sm font-bold">
             <Flame className="h-4 w-4 text-amber-500" />
             <span>
-              {data.streak.current} {t("pages.life_skills_page.day_streak")}
+              {data.streak.current} {uiLabel("dayStreak", lang)}
             </span>
             <span className="text-xs text-muted-foreground font-normal ml-1">
-              ({t("pages.life_skills_page.best")}: {data.streak.best})
+              ({uiLabel("best", lang)}: {data.streak.best})
             </span>
           </div>
           <div className="mt-2 grid grid-cols-7 gap-1">
