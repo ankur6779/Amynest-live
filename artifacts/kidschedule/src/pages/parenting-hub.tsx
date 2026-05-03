@@ -31,6 +31,7 @@ import { DailyStorySection } from "@/components/daily-story-section";
 import { ToddlerPreschoolMode, type ToddlerShowOnly } from "@/components/toddler-preschool-mode";
 import { DailyPuzzle } from "@/components/daily-puzzle";
 import { SmartMathTricks } from "@/components/smart-math-tricks";
+import { AbacusZone } from "@/components/abacus-zone";
 import { AmazingFacts } from "@/components/amazing-facts";
 import { DailyKidsActivity } from "@/components/daily-kids-activity";
 import { ArtCraftReels } from "@/components/art-craft-reels";
@@ -837,6 +838,36 @@ export default function ParentingHub() {
         >
           <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
         </HubSection>
+      ) : null,
+    },
+
+    // ── Abacus PRO Zone (age 4–10, learn/practice/challenge/mental/tutor) ─
+    {
+      id: "abacus",
+      bands: ["4-6", "6-8", "8-10"] as AgeBand[],
+      render: () => ageGroup ? (
+        <LockedBlock
+          reason="hub_locked"
+          locked={hubUsage.isFeatureLocked("hub_abacus")}
+          label="Unlock to continue" // audit-ok: brand CTA, matches other LockedBlock copy
+          cta="Unlock Premium"
+        >
+          <HubSection
+            id="abacus"
+            icon={<Sparkles className="h-5 w-5 text-amber-600" />}
+            title="🧮 Abacus PRO Zone" // audit-ok: brand product name, intentional EN-only
+            description="Learn the soroban — beads, brain & speed math"
+            accentClass="bg-gradient-to-br from-amber-100 dark:from-amber-500/20 to-rose-100 dark:to-rose-500/20"
+            tryFree={tryFreeFor("hub_abacus")}
+            onOpen={() => hubUsage.markFeatureUsed("hub_abacus")}
+          >
+            <AbacusZone
+              childId={effectiveChild.id}
+              childName={effectiveChild.name}
+              ageYears={effectiveChild.age}
+            />
+          </HubSection>
+        </LockedBlock>
       ) : null,
     },
 

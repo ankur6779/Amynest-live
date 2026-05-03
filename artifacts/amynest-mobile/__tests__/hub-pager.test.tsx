@@ -206,6 +206,9 @@ vi.mock("@/components/ParentTasks", () => ({
 vi.mock("@/components/DailyPuzzle", () => ({
   DailyPuzzle: makeStub("daily-puzzle"),
 }));
+vi.mock("@/components/AbacusZone", () => ({
+  AbacusZone: makeStub("abacus-zone"),
+}));
 vi.mock("@/components/HubTile", () => ({
   HubTile: ({ children }: { children?: React.ReactNode }) =>
     React.createElement("div", { "data-stub": "hub-tile" }, children),
