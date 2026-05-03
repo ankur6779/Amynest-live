@@ -85,6 +85,85 @@ describe("adaptive.appendAttempt", () => {
     assert.equal(win[0]?.topicId, "t5");
     assert.equal(win[19]?.topicId, "t24");
   });
+
+  it("stays bounded at 20 across a per-question session burst", () => {
+    // Simulate the new client behaviour: a single session posts one
+    // attempt per question (e.g. 5 questions) — the rolling window must
+    // never exceed 20 even when prior history is already full.
+    let win: { topicId: string; correct: boolean; ts: string }[] = Array.from(
+      { length: 20 },
+      (_, i) => ({ topicId: "old", correct: true, ts: `${i}` }),
+    );
+    const session = Array.from({ length: 5 }, (_, i) => ({
+      topicId: "addition", correct: false, ts: `s${i}`,
+    }));
+    for (const a of session) win = appendAttempt(win, a);
+    assert.equal(win.length, 20);
+    // Last 5 entries are the per-question session, in order.
+    assert.deepEqual(
+      win.slice(-5).map((a) => a.ts),
+      ["s0", "s1", "s2", "s3", "s4"],
+    );
+  });
+});
+
+describe("adaptive: per-question attempt shape", () => {
+  it("flags a topic as weak after a single bad session (per-question writes)", () => {
+    // Before per-question logging the client posted ONE aggregate
+    // attempt per session, so two losing sessions were needed before
+    // recomputeWeakTopics fired (≥2 attempts on the topic). With
+    // per-question writes a single 5-question Practice run on a topic
+    // produces 5 attempts, so a sub-60% session flips the topic to weak
+    // immediately — which is the whole point of the change.
+    const session = [
+      { topicId: "addition", correct: false },
+      { topicId: "addition", correct: false },
+      { topicId: "addition", correct: false },
+      { topicId: "addition", correct: true },
+      { topicId: "addition", correct: false },
+    ]; // 1/5 = 20% accuracy
+    assert.deepEqual(recomputeWeakTopics(session), ["addition"]);
+  });
+
+  it("does NOT flag a passing per-question session as weak", () => {
+    const session = [
+      { topicId: "addition", correct: true },
+      { topicId: "addition", correct: true },
+      { topicId: "addition", correct: false },
+      { topicId: "addition", correct: true },
+      { topicId: "addition", correct: true },
+    ]; // 4/5 = 80% accuracy
+    assert.deepEqual(recomputeWeakTopics(session), []);
+  });
+
+  it("difficultyForAccuracy reacts within one per-question session", () => {
+    // Five wrong question-attempts in a single session is enough signal
+    // to drop difficulty to easy without waiting for a second session.
+    const attempts = Array.from({ length: 5 }, () => ({ correct: false }));
+    assert.equal(difficultyForAccuracy(attempts), "easy");
+  });
+
+  it("today's plan picks up a topic newly weak from this session's per-question writes", () => {
+    const mathPack = BASIC_SUBJECTS.find((s) => s.id === "math")!;
+    const weakTopic = mathPack.topics[0]!.id;
+    // Five per-question writes from one Practice run, mostly wrong.
+    const sessionAttempts = [
+      { topicId: weakTopic, correct: false },
+      { topicId: weakTopic, correct: false },
+      { topicId: weakTopic, correct: true },
+      { topicId: weakTopic, correct: false },
+      { topicId: weakTopic, correct: false },
+    ];
+    const weak = recomputeWeakTopics(sessionAttempts);
+    const plan = buildDailyPlan({
+      childAge: 8, dateIso: "2026-05-01",
+      subjects: [{ subject: "math", attempts: sessionAttempts, weakTopics: weak }],
+    });
+    const has = plan.items.some((i) =>
+      i.subject === "math" && i.topicId === weakTopic && i.source === "weak",
+    );
+    assert.ok(has, "expected newly-weak topic from this session to appear in today's plan");
+  });
 });
 
 describe("adaptive.buildDailyPlan", () => {
