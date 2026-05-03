@@ -19,6 +19,7 @@ function formatRelative(ts: number | null): string {
 }
 
 export default function AppDataStatusBanner() {
+  const { t } = useTranslation();
   const status = useAppStore((s) => s.status);
   const error = useAppStore((s) => s.error);
   const lastUpdated = useAppStore((s) => s.lastUpdated);
@@ -31,7 +32,6 @@ export default function AppDataStatusBanner() {
   const c = useColors();
 
   if (!isOnline) {
-    const { t } = useTranslation();
     return (
       <View style={[styles.banner, { backgroundColor: c.statusWarningBg, borderColor: c.statusWarningBorder }]}>
         <Ionicons name="cloud-offline" size={14} color={c.statusWarningText} />

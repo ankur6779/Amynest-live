@@ -26,8 +26,8 @@ export type MobileRecipeCardProps = {
 };
 
 export function MobileRecipeCard({ meal, recipe, nutrition }: MobileRecipeCardProps) {
-  if (!recipe && !nutrition) return null;
   const { t } = useTranslation();
+  if (!recipe && !nutrition) return null;
   return (
     <View style={s.container} testID="mobile-recipe-card">
       <Text style={s.header} testID="mobile-recipe-header">

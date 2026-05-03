@@ -56,6 +56,7 @@ async function bumpDaily(): Promise<DailyRecord> {
 }
 
 export function PrintableWorksheets() {
+  const { t } = useTranslation();
   const c = useColors();
   const { mode } = useTheme();
   const s = useMemo(() => makeStyles(c), [c]);
@@ -123,7 +124,6 @@ export function PrintableWorksheets() {
   }, [limitReached, mode]);
 
   if (loading) {
-    const { t } = useTranslation();
     return (
       <View style={s.center}>
         <ActivityIndicator color={ACCENT_PINK} />
