@@ -689,7 +689,12 @@
       "completion_rate": "पूर्णता दर",
       "section_highlights": "मुख्य बातें",
       "ask_amy_title": "Amy से इन जानकारियों के बारे में पूछें",
-      "ask_amy_sub": "अपने डेटा के आधार पर व्यक्तिगत पैरेंटिंग सलाह पाएं"
+      "ask_amy_sub": "अपने डेटा के आधार पर व्यक्तिगत पैरेंटिंग सलाह पाएं",
+      "stat_points": "अंक",
+      "stat_points_this_week": "इस सप्ताह",
+      "stat_levels": "स्तर",
+      "stat_levels_new_this_week": "इस सप्ताह +{{count}}",
+      "stat_levels_no_new_this_week": "इस सप्ताह कोई नया नहीं"
     },
     "kids_control_center": {
       "coming_soon_badge": "जल्द आ रहा है 🚀",

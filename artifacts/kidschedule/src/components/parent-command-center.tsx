@@ -782,10 +782,10 @@ function LearningInsightsSection({ childId }: { childId: number }) {
               acc == null
                 ? "text-white/70"
                 : acc >= 80
-                ? "text-emerald-300"
+                ? "text-[hsl(var(--brand-emerald-400))]"
                 : acc < 60
-                ? "text-rose-300"
-                : "text-amber-300";
+                ? "text-[hsl(var(--brand-rose-400))]"
+                : "text-[hsl(var(--brand-amber-300))]";
             return (
               <li
                 key={s.subject}
@@ -810,7 +810,7 @@ function LearningInsightsSection({ childId }: { childId: number }) {
                     {s.weakTopics.map((w) => (
                       <span
                         key={w.topicId}
-                        className="text-[10.5px] font-bold rounded-full px-2 py-0.5 bg-rose-500/15 text-rose-200 border border-rose-400/20"
+                        className="text-[10.5px] font-bold rounded-full px-2 py-0.5 bg-[hsl(var(--brand-rose-500)/0.15)] text-[hsl(var(--brand-rose-400))] border border-[hsl(var(--brand-rose-400)/0.2)]"
                       >
                         {w.topicTitle}
                       </span>
