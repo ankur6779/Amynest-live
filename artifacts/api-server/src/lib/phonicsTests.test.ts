@@ -197,6 +197,107 @@ describe("generateQuestions", () => {
     }
   });
 
+  // ─── Game-mode top-up: the bug behind task #268 ──────────────────────────
+  //
+  // Daily/Weekly tests with `gameMode = missing_letter` or `build_word` used
+  // to silently return 0 questions when the age tier's content didn't have
+  // enough rows that satisfied the strict single-builder filters
+  // (e.g. animal-sound rows for 12–24m, single-letter rows for 2–3y, etc).
+  // The route then 409'd and the cards "did nothing" on tap. The generator
+  // now tops up via the mixed AGE_TYPES set so the requested count is met.
+
+  const ALL_GAME_MODES = ["hear_tap", "missing_letter", "build_word", "speed_challenge"] as const;
+
+  // 26 letter rows (A–Z) with a CVC example word per letter — large enough
+  // that distinct-row builders can fill a Weekly (20) test for any age tier
+  // without re-iterating the pool.
+  const ALPHABET_XL: PhonicsContentRow[] = (() => {
+    const examples: Record<string, [string, string]> = {
+      A: ["Apple", "🍎"], B: ["Ball", "⚽"], C: ["Cat", "🐱"], D: ["Dog", "🐶"],
+      E: ["Egg", "🥚"], F: ["Fish", "🐟"], G: ["Goat", "🐐"], H: ["Hat", "🎩"],
+      I: ["Ink", "🖋️"], J: ["Jam", "🍓"], K: ["Kite", "🪁"], L: ["Lion", "🦁"],
+      M: ["Moon", "🌙"], N: ["Nest", "🪺"], O: ["Owl", "🦉"], P: ["Pig", "🐷"],
+      Q: ["Queen", "👑"], R: ["Rat", "🐀"], S: ["Sun", "☀️"], T: ["Tap", "🚰"],
+      U: ["Umbrella", "☂️"], V: ["Van", "🚐"], W: ["Web", "🕸️"], X: ["Xray", "❎"],
+      Y: ["Yak", "🐂"], Z: ["Zip", "🤐"],
+    };
+    return Object.entries(examples).map(([letter, [word, emoji]], i) =>
+      row({
+        id: 500 + i,
+        ageGroup: "2_3y", // ageGroup not consulted by generateQuestions
+        level: i + 1,
+        type: "letter",
+        symbol: letter,
+        sound: `${letter} for ${word}`,
+        example: word,
+        emoji,
+      }),
+    );
+  })();
+
+  function fixtureFor(ageGroup: AgeGroup, count: number): PhonicsContentRow[] {
+    // For Weekly (20) tests we need ≥20 distinct rows so non-locked builders
+    // can fill the count too. The 12_24m animal-sound fixture is the only
+    // one that meaningfully changes question shape, so we keep it for the
+    // small (5) test and fall back to the alphabet fixture for larger sizes.
+    if (count <= 5) {
+      if (ageGroup === "12_24m") return ANIMALS_12_24M;
+      if (ageGroup === "4_5y") return CVC_4_5Y;
+      return LETTERS_2_3Y;
+    }
+    return ALPHABET_XL;
+  }
+
+  for (const ageGroup of ["12_24m", "2_3y", "3_4y", "4_5y", "5_6y"] as AgeGroup[]) {
+    for (const gameMode of ALL_GAME_MODES) {
+      for (const count of [5, 20] as const) {
+        it(`fills count=${count} for ageGroup=${ageGroup} gameMode=${gameMode}`, () => {
+          const qs = generateQuestions({
+            ageGroup,
+            contentRows: fixtureFor(ageGroup, count),
+            count,
+            seed: 17 + count,
+            gameMode,
+          });
+          assert.equal(
+            qs.length,
+            count,
+            `expected ${count} questions, got ${qs.length}`,
+          );
+          // Sanity: every question is shaped correctly. build_word is the
+          // self-validating mini-game with a 2-option (✓/✗) shape; everything
+          // else exposes 4 multiple-choice options.
+          for (const q of qs) {
+            const expectedOptions = q.type === "build_word" ? 2 : 4;
+            assert.equal(
+              q.options.length,
+              expectedOptions,
+              `q.type=${q.type} should have ${expectedOptions} options`,
+            );
+            assert.ok(q.options[q.correctIndex], "correctIndex points to a real option");
+          }
+        });
+      }
+    }
+  }
+
+  it("speed_challenge stamps every question with timeLimitSec", () => {
+    const qs = generateQuestions({
+      ageGroup: "2_3y",
+      contentRows: LETTERS_2_3Y,
+      count: 5,
+      seed: 5,
+      gameMode: "speed_challenge",
+    });
+    assert.equal(qs.length, 5);
+    for (const q of qs) {
+      assert.ok(
+        typeof q.prompt.meta?.timeLimitSec === "number",
+        "speed_challenge questions carry a timeLimitSec",
+      );
+    }
+  });
+
   it("strips correctIndex when sending to client", () => {
     const qs = generateQuestions({ ageGroup: "2_3y", contentRows: LETTERS_2_3Y, count: 3, seed: 1 });
     const client = toClientQuestions(qs);

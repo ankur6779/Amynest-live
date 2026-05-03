@@ -2396,7 +2396,19 @@
       "go_back": "Go back",
       "sounds_to_revisit": "Sounds to revisit",
       "back_to_phonics_tests": "Back to Phonics Tests",
-      "undo": "Undo"
+      "undo": "Undo",
+      "errors": {
+        "title": "Couldn't start the test",
+        "not_enough_content": "We're still adding questions for this game. Try a different game mode for now.",
+        "no_content_for_age_group": "No phonics content is set up for this age group yet. Please check back soon.",
+        "cooldown_active": "This test isn't available yet. Try again later when the cool-down ends.",
+        "child_not_found": "We couldn't find this child profile. Please go back and try again.",
+        "age_not_supported": "Phonics tests are for ages 1–6. Please pick a child in that range.",
+        "session_misconfigured": "Something is misconfigured on our side. Please try again in a moment.",
+        "unauthorized": "Please sign in again to start the test.",
+        "invalid_body": "Something went wrong starting the test. Please try again.",
+        "generic": "Something went wrong starting the test. Please try again."
+      }
     },
     "premium_splash": {
       "meet": "MEET",

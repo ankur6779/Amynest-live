@@ -227,13 +227,28 @@ export function PhonicsTestRunner({
   }
 
   if (phase.kind === "error") {
+    // Map known server error codes to friendly translated copy. Anything we
+    // don't recognise falls back to the generic message so the user is never
+    // shown a raw token like "not_enough_content".
+    const KNOWN_CODES = new Set([
+      "not_enough_content",
+      "no_content_for_age_group",
+      "cooldown_active",
+      "child_not_found",
+      "age_not_supported",
+      "session_misconfigured",
+      "unauthorized",
+      "invalid_body",
+    ]);
+    const code = KNOWN_CODES.has(phase.message) ? phase.message : "generic";
+    const friendly = t(`components.phonics_test_runner.errors.${code}`);
     return (
       <View style={[styles.center, { backgroundColor: theme.bg.primary, padding: 24 }]}>
         <Ionicons name="alert-circle-outline" size={48} color={theme.status.danger} />
         <Text style={[styles.errorTitle, { color: theme.text.primary }]}>
-          Couldn't start the test
+          {t("components.phonics_test_runner.errors.title")}
         </Text>
-        <Text style={[styles.errorMsg, { color: theme.text.secondary }]}>{phase.message}</Text>
+        <Text style={[styles.errorMsg, { color: theme.text.secondary }]}>{friendly}</Text>
         <TouchableOpacity onPress={onCancel} style={[styles.primaryBtn, { backgroundColor: theme.brand.primary }]}>
           <Text style={styles.primaryBtnText}>{t("components.phonics_test_runner.go_back")}</Text>
         </TouchableOpacity>

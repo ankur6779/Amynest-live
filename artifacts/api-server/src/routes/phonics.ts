@@ -711,9 +711,24 @@ router.post("/phonics/tests/start", async (req, res): Promise<void> => {
       // Not enough variety to form a full test — degrade gracefully by
       // returning whatever we managed to build (or 409 if nothing).
       if (questions.length === 0) {
+        req.log.warn(
+          { childId, ageGroup, gameMode, testType, contentRows: contentRows.length },
+          "phonics tests start: not_enough_content — generator returned 0 questions",
+        );
         res.status(409).json({ error: "not_enough_content" });
         return;
       }
+      req.log.warn(
+        {
+          childId,
+          ageGroup,
+          gameMode,
+          testType,
+          requested: count,
+          got: questions.length,
+        },
+        "phonics tests start: partial fill — fewer questions than requested",
+      );
     }
     const issuedAt = Date.now();
     let sessionToken: string;

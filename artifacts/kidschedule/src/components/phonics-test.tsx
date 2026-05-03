@@ -80,6 +80,31 @@ function formatCountdown(target: string | null): string | null {
   return `${totalMin}m`;
 }
 
+// Map known server error codes from POST /api/phonics/tests/start to
+// friendly copy. Anything we don't recognise (HTTP 5xx, network errors,
+// etc.) falls back to a generic message so the user never sees a raw token
+// like "not_enough_content".
+const START_ERROR_COPY: Record<string, string> = {
+  not_enough_content:
+    "We're still adding questions for this game. Try a different game mode for now.",
+  no_content_for_age_group:
+    "No phonics content is set up for this age group yet. Please check back soon.",
+  cooldown_active:
+    "This test isn't available yet. Try again later when the cool-down ends.",
+  child_not_found:
+    "We couldn't find this child profile. Please refresh and try again.",
+  age_not_supported:
+    "Phonics tests are for ages 1–6. Please pick a child in that range.",
+  session_misconfigured:
+    "Something is misconfigured on our side. Please try again in a moment.",
+  unauthorized: "Please sign in again to start the test.",
+  invalid_body: "Something went wrong starting the test. Please try again.",
+};
+
+function friendlyStartError(raw: string): string {
+  return START_ERROR_COPY[raw] ?? "Something went wrong starting the test. Please try again.";
+}
+
 const TYPE_LABEL: Record<QuestionType, string> = {
   letter_to_sound: "Letter → Sound",
   sound_to_letter: "Sound → Letter",
@@ -579,7 +604,8 @@ export function PhonicsTest({ childId, childName, totalAgeMonths }: PhonicsTestP
       });
     } catch (err) {
       setPhase({ kind: "idle" });
-      setAvailError(err instanceof Error ? err.message : "Failed to start test");
+      const raw = err instanceof Error ? err.message : "Failed to start test";
+      setAvailError(friendlyStartError(raw));
     }
   }, [authFetch, numericChildId]);
 

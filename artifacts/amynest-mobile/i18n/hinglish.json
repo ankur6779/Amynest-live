@@ -2396,7 +2396,19 @@
       "go_back": "Go back",
       "sounds_to_revisit": "Sounds to revisit",
       "back_to_phonics_tests": "Back to Phonics Tests",
-      "undo": "Undo"
+      "undo": "Undo",
+      "errors": {
+        "title": "Test start nahi ho saka",
+        "not_enough_content": "Is game ke liye hum abhi aur questions add kar rahe hain. Filhal koi dusra game mode try kijiye.",
+        "no_content_for_age_group": "Is age group ke liye phonics content abhi taiyaar nahi hai. Thodi der baad dobara dekhiye.",
+        "cooldown_active": "Yeh test abhi available nahi hai. Cool-down khatam hone ke baad try kijiye.",
+        "child_not_found": "Hume yeh child profile nahi mili. Wapas jaakar dobara try kijiye.",
+        "age_not_supported": "Phonics tests 1–6 saal ke bachhon ke liye hain. Us range ka child select kijiye.",
+        "session_misconfigured": "Humari side se kuch misconfigured hai. Thodi der mein dobara try kijiye.",
+        "unauthorized": "Test start karne ke liye dobara sign in kijiye.",
+        "invalid_body": "Test start karne mein kuch gadbad hui. Dobara try kijiye.",
+        "generic": "Test start karne mein kuch gadbad hui. Dobara try kijiye."
+      }
     },
     "premium_splash": {
       "meet": "MEET",
