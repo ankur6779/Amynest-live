@@ -45,7 +45,8 @@ export type QuestionType =
   | "blending" // show "c-a-t" → pick the word
   | "listening" // TTS full word → pick word
   | "missing_letter" // show "C _ T" → pick the missing letter
-  | "build_word"; // show emoji + tiles → tap letters in order
+  | "build_word" // show emoji + tiles → tap letters in order
+  | "identify"; // TTS digraph/blend sound → pick which word starts with it
 
 export interface QuestionOption {
   label: string;
@@ -175,9 +176,9 @@ function spellOut(word: string): string {
 const AGE_TYPES: Record<AgeGroup, QuestionType[]> = {
   "12_24m": ["animal_sound"],
   "2_3y": ["letter_to_sound", "sound_to_letter", "word_pic"],
-  "3_4y": ["word_pic", "letter_to_sound", "sound_to_letter"],
-  "4_5y": ["word_pic", "blending", "listening", "letter_to_sound"],
-  "5_6y": ["blending", "listening", "word_pic"],
+  "3_4y": ["word_pic", "blending", "missing_letter", "letter_to_sound"],
+  "4_5y": ["word_pic", "blending", "listening", "missing_letter", "build_word"],
+  "5_6y": ["identify", "blending", "listening", "missing_letter", "build_word"],
 };
 
 // ─── Question builders ───────────────────────────────────────────────────────
@@ -425,6 +426,61 @@ function buildMissingLetterQ(row: PhonicsContentRow, ctx: BuildContext, idx: num
   };
 }
 
+/**
+ * identify — "Which word starts with this sound?"
+ *
+ * Anchors on a letter/digraph row (e.g. "sh", "ch", "B").  Plays the phoneme
+ * via TTS, then shows 4 word options — one whose spelling starts with the same
+ * letters/digraph, three that don't.  Works best for 5_6y where the letter
+ * rows are the digraphs (sh, ch, th …) and word rows include ship/chat/thin.
+ */
+function buildIdentifyQ(row: PhonicsContentRow, ctx: BuildContext, idx: number): Question | null {
+  if (row.type !== "letter") return null;
+  const targetPrefix = row.symbol.toLowerCase();
+  // Build a word pool from both wordRows and cvcRows.
+  const allWords = ctx.wordRows.length ? ctx.wordRows : ctx.cvcRows;
+  // Find words whose symbol starts with this letter/digraph.
+  const matching = allWords.filter((r) =>
+    exampleWord(r).toLowerCase().startsWith(targetPrefix),
+  );
+  if (matching.length === 0) return null;
+  // Pick one correct word.
+  const correctRow = matching[Math.floor(ctx.rng() * matching.length)]!;
+  const correctWord = exampleWord(correctRow);
+  // Pick 3 distractor words that DON'T start with targetPrefix.
+  const distractors = pickDistractorsBy(
+    allWords,
+    targetPrefix,
+    (r) => exampleWord(r).toLowerCase().slice(0, targetPrefix.length),
+    3,
+    ctx.rng,
+  );
+  if (distractors.length < 3) return null;
+  const options: QuestionOption[] = shuffle(
+    [
+      { label: correctWord, emoji: correctRow.emoji ?? undefined },
+      ...distractors.map((d) => ({ label: exampleWord(d), emoji: d.emoji ?? undefined })),
+    ],
+    ctx.rng,
+  );
+  const correctIndex = options.findIndex(
+    (o) => o.label.toLowerCase() === correctWord.toLowerCase(),
+  );
+  const ttsText = extractSound(row);
+  return {
+    id: `q${idx + 1}`,
+    conceptId: row.id,
+    type: "identify",
+    prompt: {
+      instruction: `Which word starts with this sound?`,
+      text: row.symbol,
+      ttsText,
+    },
+    options,
+    correctIndex,
+  };
+}
+
 function buildBuildWordQ(row: PhonicsContentRow, ctx: BuildContext, idx: number): Question | null {
   const word = exampleWord(row).toLowerCase();
   // Upper length cap relaxed from 6→8 so more CVC+ words qualify and the
@@ -500,6 +556,7 @@ const BUILDERS: Record<
   listening: buildListeningQ,
   missing_letter: buildMissingLetterQ,
   build_word: buildBuildWordQ,
+  identify: buildIdentifyQ,
 };
 
 /** Per-question time budget for speed_challenge mode. */

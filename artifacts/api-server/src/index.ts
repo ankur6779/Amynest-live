@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { startRazorpayWebhookCleanup } from "./lib/razorpayWebhookCleanup";
 import { startWeeklyRecapCron } from "./lib/weeklyRecapCron";
 import { startNotificationCron } from "./lib/notificationCron";
+import { seedPhonicsWordBank } from "./lib/phonicsWordBankSeed";
 
 const rawPort = process.env["PORT"];
 
@@ -28,4 +29,5 @@ app.listen(port, (err) => {
   startRazorpayWebhookCleanup();
   startWeeklyRecapCron();
   startNotificationCron();
+  void seedPhonicsWordBank();
 });

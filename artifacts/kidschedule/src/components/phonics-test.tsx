@@ -26,7 +26,7 @@ interface AvailabilityState {
 type QuestionType =
   | "letter_to_sound" | "sound_to_letter" | "word_pic"
   | "animal_sound" | "blending" | "listening"
-  | "missing_letter" | "build_word";
+  | "missing_letter" | "build_word" | "identify";
 
 // audit-block-ignore-start — phonics mini-games use intentional festive
 // gradient/accent palettes (violet, fuchsia, sky, emerald, amber, rose…) for
@@ -114,6 +114,7 @@ const TYPE_LABEL: Record<QuestionType, string> = {
   listening: "Listen & Choose",
   missing_letter: "Missing Letter",
   build_word: "Build the Word",
+  identify: "Which Word?",
 };
 
 const GAME_MODES: Array<{
