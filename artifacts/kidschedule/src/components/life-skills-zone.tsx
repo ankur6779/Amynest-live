@@ -35,6 +35,7 @@ import {
   useSetLifeSkillProgress,
   useGetLifeSkillRolePlays,
   getGetLifeSkillsTodayQueryKey,
+  getGetLifeSkillRolePlaysQueryKey,
   type LifeSkillsTodayResponse,
 } from "@workspace/api-client-react";
 import { SubItemGate } from "@/components/sub-item-gate";
@@ -86,6 +87,7 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
     { childId: childIdNum },
     {
       query: {
+        queryKey: getGetLifeSkillsTodayQueryKey({ childId: childIdNum }),
         enabled: Number.isFinite(childIdNum) && childIdNum > 0,
         staleTime: 60_000,
       },
@@ -94,7 +96,12 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
 
   const rolePlaysQuery = useGetLifeSkillRolePlays(
     { ageBand },
-    { query: { staleTime: 5 * 60_000 } },
+    {
+      query: {
+        queryKey: getGetLifeSkillRolePlaysQueryKey({ ageBand }),
+        staleTime: 5 * 60_000,
+      },
+    },
   );
 
   const [showRolePlay, setShowRolePlay] = useState(false);
