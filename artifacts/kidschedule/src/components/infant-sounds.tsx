@@ -273,13 +273,13 @@ export function WhiteNoiseLullaby({
             y: -6
           }} transition={{
             duration: 0.18
-          }} className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3 space-y-2">
+          }} className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{n.emoji}</span>
                     <p className="font-bold text-sm text-primary dark:text-muted-foreground">{n.label}</p>
                   </div>
                   <p className="text-[12px] text-primary dark:text-muted-foreground leading-relaxed">{n.desc}</p>
-                  <div className="flex items-start gap-1.5 rounded-lg bg-muted dark:bg-primary px-2 py-1.5">
+                  <div className="flex items-start gap-1.5 rounded-lg bg-muted dark:bg-card px-2 py-1.5">
                     <Info className="h-3 w-3 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
                     <p className="text-[11px] text-primary dark:text-muted-foreground leading-snug">
                       <span className="font-bold">{t("components.infant_sounds.best_for")}</span> {n.bestFor}
@@ -295,13 +295,13 @@ export function WhiteNoiseLullaby({
           </AnimatePresence>
 
           {/* Age-specific guidance card */}
-          <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary border border-border dark:border-border p-3.5 backdrop-blur-md">
+          <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card border border-border dark:border-border p-3.5 backdrop-blur-md">
             <div className="flex items-center gap-2 mb-2">
               <Volume2 className="h-4 w-4 text-primary dark:text-muted-foreground shrink-0" />
               <p className="text-xs font-bold text-primary dark:text-muted-foreground">{ageTip.headline}</p>
             </div>
             <p className="text-[12px] text-primary dark:text-muted-foreground leading-relaxed mb-2.5">{ageTip.tip}</p>
-            <div className="flex items-start gap-1.5 rounded-lg bg-muted dark:bg-primary px-2.5 py-2">
+            <div className="flex items-start gap-1.5 rounded-lg bg-muted dark:bg-card px-2.5 py-2">
               <VolumeX className="h-3 w-3 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-[11px] text-primary dark:text-muted-foreground leading-snug">
                 <span className="font-bold">{t("components.infant_sounds.volume_rule")}</span> {ageTip.volume}
@@ -519,7 +519,7 @@ function MiniPlayer({
     y: 8
   }} transition={{
     duration: 0.2
-  }} className="rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary backdrop-blur-md p-2.5 flex items-center gap-2.5 shadow-lg" data-testid="mini-player">
+  }} className="rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card backdrop-blur-md p-2.5 flex items-center gap-2.5 shadow-lg" data-testid="mini-player">
       <div className="flex -space-x-1.5 shrink-0">
         {activeIds.slice(0, 3).map(id => {
         const n = NOISE_TYPES.find(x => x.id === id)!;
@@ -536,7 +536,7 @@ function MiniPlayer({
             <Clock className="h-2.5 w-2.5" /> {formatRemaining(engine.remainingMs)} {t("components.infant_sounds.left")}
           </p>}
       </div>
-      <button onClick={onOpenFullscreen} className="text-[11px] font-bold text-primary dark:text-muted-foreground px-2.5 py-1.5 rounded-lg hover:bg-muted dark:hover:bg-primary">{t("components.infant_sounds.open")}</button>
+      <button onClick={onOpenFullscreen} className="text-[11px] font-bold text-primary dark:text-muted-foreground px-2.5 py-1.5 rounded-lg hover:bg-muted dark:hover:bg-card">{t("components.infant_sounds.open")}</button>
       <button onClick={() => engine.stopAll()} aria-label={t("components.infant_sounds.stop_all_sounds")} data-testid="mini-stop-all" className="h-8 w-8 rounded-full bg-primary hover:bg-primary text-white flex items-center justify-center shadow">
         <X className="h-4 w-4" />
       </button>

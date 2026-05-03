@@ -16,25 +16,25 @@ const CATEGORY_META: Record<MCategory, {
     label: "Motor",
     emoji: "🤸",
     color: "text-primary dark:text-muted-foreground",
-    bg: "bg-muted dark:bg-primary"
+    bg: "bg-muted dark:bg-card"
   },
   cognitive: {
     label: "Thinking",
     emoji: "🧠",
     color: "text-primary dark:text-muted-foreground",
-    bg: "bg-muted dark:bg-primary"
+    bg: "bg-muted dark:bg-card"
   },
   social: {
     label: "Social",
     emoji: "💞",
     color: "text-primary dark:text-muted-foreground",
-    bg: "bg-muted dark:bg-primary"
+    bg: "bg-muted dark:bg-card"
   },
   language: {
     label: "Language",
     emoji: "💬",
     color: "text-primary dark:text-muted-foreground",
-    bg: "bg-muted dark:bg-primary"
+    bg: "bg-muted dark:bg-card"
   }
 };
 type BuddyMilestone = {
@@ -579,7 +579,7 @@ export function BuddyMilestonePlanner({
   }, [bandMilestones, progress]);
   return <div className="space-y-4">
       {/* ── Weekly Summary Card ─────────────────────────────────────── */}
-      <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary border border-border dark:border-border p-4 backdrop-blur-md">
+      <div className="rounded-2xl bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card border border-border dark:border-border p-4 backdrop-blur-md">
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-primary dark:text-muted-foreground" />
@@ -642,7 +642,7 @@ export function BuddyMilestonePlanner({
       </div>
 
       {/* ── Parent Guidance Tip ─────────────────────────────────────── */}
-      <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3">
+      <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-3">
         <div className="flex items-start gap-2.5">
           <Heart className="h-4 w-4 text-primary fill-muted dark:fill-primary shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
@@ -725,7 +725,7 @@ function MilestoneCard({
   const cur = state;
   const cat = CATEGORY_META[m.category];
   const pct = cur === "achieved" ? 100 : cur === "in_progress" ? 50 : 0;
-  return <div className={["rounded-2xl border-2 backdrop-blur-md transition-all overflow-hidden", cur === "achieved" ? "bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border dark:border-border shadow-[0_8px_24px_-12px_rgba(16,185,129,0.4)]" : cur === "in_progress" ? "bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border dark:border-border shadow-[0_8px_24px_-12px_rgba(245,158,11,0.4)]" : "bg-white/60 dark:bg-white/[0.04] border-border"].join(" ")}>
+  return <div className={["rounded-2xl border-2 backdrop-blur-md transition-all overflow-hidden", cur === "achieved" ? "bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border-border dark:border-border shadow-[0_8px_24px_-12px_rgba(16,185,129,0.4)]" : cur === "in_progress" ? "bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border-border dark:border-border shadow-[0_8px_24px_-12px_rgba(245,158,11,0.4)]" : "bg-white/60 dark:bg-white/[0.04] border-border"].join(" ")}>
       <button onClick={onToggle} className="w-full p-3 flex items-start gap-3 text-left">
         <span className="text-2xl leading-none shrink-0 mt-0.5">{m.emoji}</span>
         <div className="min-w-0 flex-1">
@@ -747,7 +747,7 @@ function MilestoneCard({
       </button>
 
       {isOpen && <div className="px-3 pb-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
+          <div className="rounded-lg bg-muted dark:bg-card border border-border dark:border-border p-2.5">
             <div className="flex items-center gap-1.5 mb-0.5">
               <Heart className="h-3 w-3 text-primary dark:text-primary" />
               <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.why_it_matters")}</p>
@@ -755,7 +755,7 @@ function MilestoneCard({
             <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{m.whyItMatters}</p>
           </div>
 
-          <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
+          <div className="rounded-lg bg-muted dark:bg-card border border-border dark:border-border p-2.5">
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="flex items-center gap-1.5">
                 <PlayCircle className="h-3 w-3 text-primary dark:text-primary" />
@@ -769,14 +769,14 @@ function MilestoneCard({
             <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{m.activity}</p>
           </div>
 
-          {cur === "not_started" && <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
+          {cur === "not_started" && <div className="rounded-lg bg-muted dark:bg-card border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Lightbulb className="h-3 w-3 text-primary dark:text-primary" />
                 <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.try_an_easier_start")}</p>
               </div>
               <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{m.easierVariation}</p>
             </div>}
-          {cur === "in_progress" && <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
+          {cur === "in_progress" && <div className="rounded-lg bg-muted dark:bg-card border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Smile className="h-3 w-3 text-primary dark:text-primary" />
                 <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.almost_there")}</p>
@@ -785,7 +785,7 @@ function MilestoneCard({
                 {t("components.infant_milestones.keep_showing_up_daily_even_2_minutes_counts_if_progress_feel")} {m.easierVariation}
               </p>
             </div>}
-          {cur === "achieved" && <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
+          {cur === "achieved" && <div className="rounded-lg bg-muted dark:bg-card border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <ArrowUp className="h-3 w-3 text-primary dark:text-primary" />
                 <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_milestones.next_level")}</p>

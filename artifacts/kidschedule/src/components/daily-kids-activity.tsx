@@ -74,7 +74,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws1",
   title: "ABC Tracing Practice",
   emoji: "✏️",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-blue-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
@@ -84,7 +84,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws2",
   title: "1–10 Number Counting",
   emoji: "🔢",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-emerald-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
@@ -94,7 +94,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws3",
   title: "Color the Farm Animals",
   emoji: "🐄",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-orange-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
@@ -104,7 +104,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws4",
   title: "Match the Shapes",
   emoji: "🔵",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-violet-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
@@ -114,7 +114,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws5",
   title: "Big & Small Sort",
   emoji: "🐘",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-amber-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
@@ -124,7 +124,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws6",
   title: "Write My Name Practice",
   emoji: "✨",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-pink-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
@@ -134,7 +134,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws7",
   title: "Spot the Difference",
   emoji: "👀",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-teal-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
@@ -144,7 +144,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws8",
   title: "Connect the Dots – Stars",
   emoji: "🌟",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-yellow-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
@@ -154,7 +154,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws9",
   title: "Alphabet Coloring A–Z",
   emoji: "🎨",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-rose-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
@@ -164,7 +164,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws10",
   title: "Simple Addition Fun",
   emoji: "➕",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-indigo-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 48,
@@ -174,7 +174,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws11",
   title: "Hindi Varnamala Tracing",
   emoji: "हि",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-emerald-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
@@ -184,7 +184,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws12",
   title: "My Body Parts Worksheet",
   emoji: "🧍",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-sky-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
@@ -194,7 +194,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws13",
   title: "Fruits & Vegetables Match",
   emoji: "🍎",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "#84CC16",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 24,
@@ -204,7 +204,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws14",
   title: "Weather Chart Worksheet",
   emoji: "🌤️",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-cyan-500))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 48,
@@ -214,7 +214,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws15",
   title: "Multiplication Table 2–5",
   emoji: "✖️",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-violet-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 72,
@@ -224,7 +224,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws16",
   title: "Story Sequencing Cards",
   emoji: "📖",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "#D946EF",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 60,
@@ -234,7 +234,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws17",
   title: "Map of India Fill-in",
   emoji: "🗺️",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-orange-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 72,
@@ -244,7 +244,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws18",
   title: "Colour the Rangoli",
   emoji: "🪔",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-red-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 36,
@@ -254,7 +254,7 @@ const WORKSHEETS: Worksheet[] = [{
   id: "ws19",
   title: "Opposite Words Match",
   emoji: "🔄",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-blue-600))",
   fileUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   ageMin: 48,
@@ -275,7 +275,7 @@ const REELS: Reel[] = [{
   id: "r1",
   title: "Easy Paper Butterfly Craft",
   emoji: "🦋",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-pink-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "4 min",
@@ -285,7 +285,7 @@ const REELS: Reel[] = [{
   id: "r2",
   title: "Rainbow Umbrella Painting",
   emoji: "🌈",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-amber-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "6 min",
@@ -295,7 +295,7 @@ const REELS: Reel[] = [{
   id: "r3",
   title: "Clay Fruits – Mango & Apple",
   emoji: "🥭",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-orange-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "8 min",
@@ -305,7 +305,7 @@ const REELS: Reel[] = [{
   id: "r4",
   title: "DIY Paper Crown for Kids",
   emoji: "👑",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-amber-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "5 min",
@@ -315,7 +315,7 @@ const REELS: Reel[] = [{
   id: "r5",
   title: "Vegetable Stamp Art",
   emoji: "🥦",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-emerald-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "7 min",
@@ -325,7 +325,7 @@ const REELS: Reel[] = [{
   id: "r6",
   title: "How to Draw a Lion – Easy",
   emoji: "🦁",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-amber-700))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "6 min",
@@ -335,7 +335,7 @@ const REELS: Reel[] = [{
   id: "r7",
   title: "Sock Puppet Show Craft",
   emoji: "🧦",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-violet-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "9 min",
@@ -345,7 +345,7 @@ const REELS: Reel[] = [{
   id: "r8",
   title: "Nature Collage with Leaves",
   emoji: "🍃",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-teal-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "7 min",
@@ -355,7 +355,7 @@ const REELS: Reel[] = [{
   id: "r9",
   title: "Marble Run Paper Craft",
   emoji: "⚙️",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-blue-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "10 min",
@@ -365,7 +365,7 @@ const REELS: Reel[] = [{
   id: "r10",
   title: "Diwali Diya Decoration",
   emoji: "🪔",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-red-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "8 min",
@@ -375,7 +375,7 @@ const REELS: Reel[] = [{
   id: "r11",
   title: "Paper Plate Fish Mobile",
   emoji: "🐠",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-sky-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "5 min",
@@ -385,7 +385,7 @@ const REELS: Reel[] = [{
   id: "r12",
   title: "Finger Printing Art – Flowers",
   emoji: "🌸",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-rose-500))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "6 min",
@@ -395,7 +395,7 @@ const REELS: Reel[] = [{
   id: "r13",
   title: "Create a Paper Zoo",
   emoji: "🦒",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "#65A30D",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "12 min",
@@ -405,7 +405,7 @@ const REELS: Reel[] = [{
   id: "r14",
   title: "Sand Art Greeting Cards",
   emoji: "🏖️",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "#CA8A04",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "8 min",
@@ -425,7 +425,7 @@ const REELS: Reel[] = [{
   id: "r16",
   title: "Paper Bag Puppet Animals",
   emoji: "🐸",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-emerald-600))",
   videoUrl: "https://drive.google.com/drive/folders/1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3?usp=sharing",
   duration: "7 min",
@@ -436,7 +436,7 @@ const ORIGAMI: Origami[] = [{
   id: "og1",
   title: "Learn to make a Paper Boat",
   emoji: "⛵",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-sky-600))",
   difficulty: "Easy",
   ageMin: 24,
@@ -465,7 +465,7 @@ const ORIGAMI: Origami[] = [{
   id: "og2",
   title: "Fold a Flying Paper Airplane",
   emoji: "✈️",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-blue-500))",
   difficulty: "Easy",
   ageMin: 36,
@@ -494,7 +494,7 @@ const ORIGAMI: Origami[] = [{
   id: "og3",
   title: "Make a Jumping Paper Frog",
   emoji: "🐸",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-green-600))",
   difficulty: "Medium",
   ageMin: 48,
@@ -529,7 +529,7 @@ const ORIGAMI: Origami[] = [{
   id: "og4",
   title: "Create a Paper Butterfly",
   emoji: "🦋",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-pink-600))",
   difficulty: "Easy",
   ageMin: 24,
@@ -558,7 +558,7 @@ const ORIGAMI: Origami[] = [{
   id: "og5",
   title: "Fold a Paper Tulip Flower",
   emoji: "🌷",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-rose-600))",
   difficulty: "Medium",
   ageMin: 48,
@@ -590,7 +590,7 @@ const ORIGAMI: Origami[] = [{
   id: "og6",
   title: "Make a Paper Crane (Tsuru)",
   emoji: "🦢",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-purple-600))",
   difficulty: "Fun",
   ageMin: 72,
@@ -631,7 +631,7 @@ const ORIGAMI: Origami[] = [{
   id: "og7",
   title: "Fold a Paper Bunny",
   emoji: "🐰",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-amber-600))",
   difficulty: "Easy",
   ageMin: 24,
@@ -660,7 +660,7 @@ const ORIGAMI: Origami[] = [{
   id: "og8",
   title: "Simple Paper Star",
   emoji: "⭐",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "#CA8A04",
   difficulty: "Easy",
   ageMin: 24,
@@ -686,7 +686,7 @@ const ORIGAMI: Origami[] = [{
   id: "og9",
   title: "Paper Heart for Mom",
   emoji: "❤️",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-red-600))",
   difficulty: "Easy",
   ageMin: 36,
@@ -715,7 +715,7 @@ const ORIGAMI: Origami[] = [{
   id: "og10",
   title: "Fold a Sailboat Card",
   emoji: "⛵",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-teal-700))",
   difficulty: "Medium",
   ageMin: 48,
@@ -747,7 +747,7 @@ const ORIGAMI: Origami[] = [{
   id: "og11",
   title: "Make a Paper Peacock",
   emoji: "🦚",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-emerald-600))",
   difficulty: "Fun",
   ageMin: 60,
@@ -788,7 +788,7 @@ const ORIGAMI: Origami[] = [{
   id: "og12",
   title: "Paper Pinwheel Spinner",
   emoji: "🌀",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-indigo-600))",
   difficulty: "Easy",
   ageMin: 24,
@@ -814,7 +814,7 @@ const ORIGAMI: Origami[] = [{
   id: "og13",
   title: "Fold a Cute Paper Fox",
   emoji: "🦊",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-orange-600))",
   difficulty: "Medium",
   ageMin: 48,
@@ -887,7 +887,7 @@ const ORIGAMI: Origami[] = [{
   id: "og15",
   title: "Paper Fortune Teller",
   emoji: "🔮",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "hsl(var(--brand-violet-600))",
   difficulty: "Easy",
   ageMin: 36,
@@ -916,7 +916,7 @@ const ORIGAMI: Origami[] = [{
   id: "og16",
   title: "Mini Paper Basket",
   emoji: "🧺",
-  bg: "bg-muted dark:bg-primary",
+  bg: "bg-muted dark:bg-card",
   accent: "#65A30D",
   difficulty: "Medium",
   ageMin: 48,
@@ -1192,7 +1192,7 @@ export function DailyKidsActivity({
       </div>
 
       {/* ── Parent Guidance ────────────────────────────────────── */}
-      <div className="flex items-center gap-3 rounded-2xl bg-muted dark:bg-primary border border-border dark:border-border px-4 py-3">
+      <div className="flex items-center gap-3 rounded-2xl bg-muted dark:bg-card border border-border dark:border-border px-4 py-3">
         <span className="text-2xl">❤️</span>
         <p className="text-sm font-semibold text-primary dark:text-muted-foreground">
           {t("components.daily_kids_activity.spend_20_30_minutes_doing_this_activity_with_your_child")}
@@ -1275,14 +1275,14 @@ function WorksheetCard({
       <div className="p-2 flex-1 flex flex-col justify-between bg-card">
         <p className="text-xs font-bold text-foreground leading-snug mb-2">{item.title}</p>
         <div className="flex gap-1.5">
-          <button onClick={onPreview} className="flex-1 text-center text-[10px] font-bold py-1 rounded-lg bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-primary hover:text-white transition-colors">
+          <button onClick={onPreview} className="flex-1 text-center text-[10px] font-bold py-1 rounded-lg bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-primary hover:text-white transition-colors">
             {t("components.daily_kids_activity.preview_2")}
           </button>
           <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-[10px] font-bold py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
             {t("components.daily_kids_activity.drive")}
           </a>
         </div>
-        <button onClick={onDone} className={`w-full mt-1.5 text-[10px] font-bold py-1 rounded-lg transition-colors ${done ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-primary hover:text-primary dark:text-muted-foreground"}`}>
+        <button onClick={onDone} className={`w-full mt-1.5 text-[10px] font-bold py-1 rounded-lg transition-colors ${done ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-card hover:text-primary dark:text-muted-foreground"}`}>
           {done ? "✓ Done" : "Mark Done"}
         </button>
       </div>
@@ -1331,14 +1331,14 @@ function ReelCard({
       <div className="p-2 flex-1 flex flex-col justify-between bg-card">
         <p className="text-xs font-bold text-foreground leading-snug mb-2">{item.title}</p>
         <div className="flex gap-1.5 mb-1.5">
-          <button onClick={onPreview} className="flex-1 text-[10px] font-bold py-1 rounded-lg bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:bg-primary hover:text-white transition-colors">
+          <button onClick={onPreview} className="flex-1 text-[10px] font-bold py-1 rounded-lg bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:bg-primary hover:text-white transition-colors">
             {t("components.daily_kids_activity.play")}
           </button>
           <a href={item.videoUrl} target="_blank" rel="noopener noreferrer" className="flex-1 text-center text-[10px] font-bold py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
             {t("components.daily_kids_activity.drive_2")}
           </a>
         </div>
-        <button onClick={onDone} className={`w-full text-[10px] font-bold py-1 rounded-lg transition-colors ${done ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-primary hover:text-primary dark:text-muted-foreground"}`}>
+        <button onClick={onDone} className={`w-full text-[10px] font-bold py-1 rounded-lg transition-colors ${done ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-card hover:text-primary dark:text-muted-foreground"}`}>
           {done ? "✓ Watched" : "Mark Done"}
         </button>
       </div>
@@ -1347,9 +1347,9 @@ function ReelCard({
 
 // ─── Origami Card ─────────────────────────────────────────────────────────────
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
-  Medium: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
-  Fun: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"
+  Easy: "bg-muted dark:bg-card text-primary dark:text-muted-foreground",
+  Medium: "bg-muted dark:bg-card text-primary dark:text-muted-foreground",
+  Fun: "bg-muted dark:bg-card text-primary dark:text-muted-foreground"
 };
 
 // ─── Fold Diagram SVG Data ───────────────────────────────────────────────────
@@ -1447,7 +1447,7 @@ function FoldDiagram({
         <span style={{
         fontSize: size * 0.48
       }}>{emoji}</span>
-        <span className="text-[10px] font-bold text-primary bg-muted dark:bg-primary px-2 py-0.5 rounded-full">{t("components.daily_kids_activity.final")}</span>
+        <span className="text-[10px] font-bold text-primary bg-muted dark:bg-card px-2 py-0.5 rounded-full">{t("components.daily_kids_activity.final")}</span>
       </div>;
   }
   const cfg = FOLD_SVG[fold];
@@ -2127,7 +2127,7 @@ function OrigamiCard({
             <a href={item.guideUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl bg-muted text-muted-foreground text-[10px] font-bold hover:bg-muted/80 transition-colors border border-border">
               {t("components.daily_kids_activity.guide")}
             </a>
-            <button onClick={onDone} className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-colors border ${done ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-primary hover:text-primary dark:text-muted-foreground border-border"}`}>
+            <button onClick={onDone} className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold transition-colors border ${done ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground hover:bg-muted dark:bg-card hover:text-primary dark:text-muted-foreground border-border"}`}>
               {done ? "✓ Done" : "Mark Done"}
             </button>
           </div>

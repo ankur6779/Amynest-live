@@ -372,37 +372,37 @@ const TIP_CATEGORY_META: Record<TipCategory, {
     label: "Feeding Tip",
     emoji: "🍼",
     color: "text-primary dark:text-muted-foreground",
-    bgColor: "bg-muted dark:bg-primary",
+    bgColor: "bg-muted dark:bg-card",
     borderColor: "border-border dark:border-border",
-    badgeColor: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
-    iconBg: "bg-muted dark:bg-primary"
+    badgeColor: "bg-muted dark:bg-card text-primary dark:text-muted-foreground",
+    iconBg: "bg-muted dark:bg-card"
   },
   health: {
     label: "Health Tip",
     emoji: "🏥",
     color: "text-primary dark:text-muted-foreground",
-    bgColor: "bg-muted dark:bg-primary",
+    bgColor: "bg-muted dark:bg-card",
     borderColor: "border-border dark:border-border",
-    badgeColor: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
-    iconBg: "bg-muted dark:bg-primary"
+    badgeColor: "bg-muted dark:bg-card text-primary dark:text-muted-foreground",
+    iconBg: "bg-muted dark:bg-card"
   },
   development: {
     label: "Development Tip",
     emoji: "🧠",
     color: "text-primary dark:text-muted-foreground",
-    bgColor: "bg-muted dark:bg-primary",
+    bgColor: "bg-muted dark:bg-card",
     borderColor: "border-border dark:border-border",
-    badgeColor: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
-    iconBg: "bg-muted dark:bg-primary"
+    badgeColor: "bg-muted dark:bg-card text-primary dark:text-muted-foreground",
+    iconBg: "bg-muted dark:bg-card"
   },
   bonding: {
     label: "Bonding Activity",
     emoji: "❤️",
     color: "text-primary dark:text-muted-foreground",
-    bgColor: "bg-muted dark:bg-primary",
+    bgColor: "bg-muted dark:bg-card",
     borderColor: "border-border dark:border-border",
-    badgeColor: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground",
-    iconBg: "bg-muted dark:bg-primary"
+    badgeColor: "bg-muted dark:bg-card text-primary dark:text-muted-foreground",
+    iconBg: "bg-muted dark:bg-card"
   }
 };
 
@@ -741,7 +741,7 @@ function MemoryMoments({
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
               <span className="text-2xl">📸</span>
             </div>
             <div>
@@ -834,13 +834,13 @@ export function InfantMode({
   return <div className="space-y-5">
 
       {/* ── Hero Banner — hidden when focused on a single category ── */}
-      {!showOnly && <div className="bg-gradient-to-br from-muted dark:from-primary via-muted dark:via-primary to-muted dark:to-primary border-2 border-border dark:border-border rounded-3xl p-5">
+      {!showOnly && <div className="bg-gradient-to-br from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card border-2 border-border dark:border-border rounded-3xl p-5">
         <div className="flex items-center gap-4 mb-4">
           <div className="text-5xl animate-bounce-slow">👶</div>
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border font-bold text-xs">{t("components.infant_mode.infant_mode")}</Badge>
-              <Badge className="bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border font-bold text-xs">
+              <Badge className="bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border font-bold text-xs">{t("components.infant_mode.infant_mode")}</Badge>
+              <Badge className="bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border font-bold text-xs">
                 {t("components.infant_mode.tips_for")} {ageRangeLabel}
               </Badge>
             </div>
@@ -875,7 +875,7 @@ export function InfantMode({
       {show("lullaby") && <Card className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
         <CardContent className="p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
               <span className="text-2xl">🎵</span>
             </div>
             <div className="flex-1">
@@ -912,7 +912,7 @@ export function InfantMode({
             {LULLABY_TRACKS.map((track, i) => {
             const isPlaying = playing === track.name;
             const isCurrent = i === lullabyIndex;
-            return <div key={track.name} className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 border transition-all ${isCurrent ? "bg-muted dark:bg-primary border-border" : "bg-white/60 border-border dark:border-border"}`}>
+            return <div key={track.name} className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 border transition-all ${isCurrent ? "bg-muted dark:bg-card border-border" : "bg-white/60 border-border dark:border-border"}`}>
                   <span className="text-lg">{track.emoji}</span>
                   <div className="flex-1">
                     <p className={`text-sm font-bold ${isCurrent ? "text-primary dark:text-muted-foreground" : "text-primary dark:text-muted-foreground"}`}>{track.name}</p>
@@ -932,10 +932,10 @@ export function InfantMode({
 
           {/* Next song button */}
           <div className="flex gap-2 mt-3">
-            <Button variant="outline" size="sm" onClick={handleNextLullaby} className="flex-1 rounded-full h-9 border-border text-primary dark:text-muted-foreground font-bold text-sm hover:bg-muted dark:bg-primary">
+            <Button variant="outline" size="sm" onClick={handleNextLullaby} className="flex-1 rounded-full h-9 border-border text-primary dark:text-muted-foreground font-bold text-sm hover:bg-muted dark:bg-card">
               <SkipForward className="h-4 w-4 mr-1.5" />{t("components.infant_mode.next_song")}
             </Button>
-            {playing && <Button variant="outline" size="sm" onClick={stopAll} className="rounded-full h-9 px-4 border-border text-primary dark:text-muted-foreground font-bold text-sm hover:bg-muted dark:bg-primary">
+            {playing && <Button variant="outline" size="sm" onClick={stopAll} className="rounded-full h-9 px-4 border-border text-primary dark:text-muted-foreground font-bold text-sm hover:bg-muted dark:bg-card">
                 <Square className="h-4 w-4 mr-1" />{t("components.infant_mode.stop_2")}
               </Button>}
           </div>
@@ -950,7 +950,7 @@ export function InfantMode({
       {show("vaccines") && <Card className="group relative rounded-3xl overflow-hidden transition-all duration-300 ease-out bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-primary/40 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]">
         <button className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/40 dark:hover:bg-white/[0.03] transition-colors" onClick={() => setVacOpen(!vacOpen)}>
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-muted dark:bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/40 dark:ring-white/10">
               <span className="text-2xl">💉</span>
             </div>
             <div className="text-left">
@@ -966,12 +966,12 @@ export function InfantMode({
             <p className="text-xs text-primary font-medium mb-3">{t("components.infant_mode.always_follow_your_pediatrician_s_advice_general_indian_iap_")}</p>
             {VACCINES.map(v => {
           const status = getVaccineStatus(totalMonths, v.age);
-          return <div key={v.age} className={`rounded-xl p-3 border flex items-start gap-3 transition-all ${status === "done" ? "bg-muted dark:bg-primary border-border dark:border-border" : status === "due_soon" ? "bg-muted dark:bg-primary border-border ring-1 ring-primary" : "bg-white border-border dark:border-border"}`}>
-                  <div className={`text-xs font-bold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${status === "done" ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : status === "due_soon" ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"}`}>
+          return <div key={v.age} className={`rounded-xl p-3 border flex items-start gap-3 transition-all ${status === "done" ? "bg-muted dark:bg-card border-border dark:border-border" : status === "due_soon" ? "bg-muted dark:bg-card border-border ring-1 ring-primary" : "bg-white border-border dark:border-border"}`}>
+                  <div className={`text-xs font-bold px-2 py-1 rounded-lg shrink-0 whitespace-nowrap ${status === "done" ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground" : status === "due_soon" ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card text-primary dark:text-muted-foreground"}`}>
                     {status === "done" ? "✅" : status === "due_soon" ? "⚡" : "📅"} {v.age}
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {v.vaccines.map(vac => <span key={vac} className={`text-xs px-2 py-0.5 rounded-full font-medium border ${status === "done" ? "bg-muted dark:bg-primary border-border dark:border-border text-primary dark:text-muted-foreground" : status === "due_soon" ? "bg-muted dark:bg-primary border-border text-primary dark:text-muted-foreground" : "bg-muted dark:bg-primary border-border dark:border-border text-primary dark:text-muted-foreground"}`}>{vac}</span>)}
+                    {v.vaccines.map(vac => <span key={vac} className={`text-xs px-2 py-0.5 rounded-full font-medium border ${status === "done" ? "bg-muted dark:bg-card border-border dark:border-border text-primary dark:text-muted-foreground" : status === "due_soon" ? "bg-muted dark:bg-card border-border text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card border-border dark:border-border text-primary dark:text-muted-foreground"}`}>{vac}</span>)}
                   </div>
                 </div>;
         })}

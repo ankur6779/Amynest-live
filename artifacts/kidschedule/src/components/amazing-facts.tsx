@@ -564,9 +564,9 @@ const CATEGORY_LABEL: Record<FactCategory, string> = {
   gk: "G.K."
 };
 const CATEGORY_COLORS: Record<FactCategory, string> = {
-  animal: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border",
-  science: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border",
-  gk: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border-border dark:border-border"
+  animal: "bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border",
+  science: "bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border",
+  gk: "bg-muted dark:bg-card text-primary dark:text-muted-foreground border-border dark:border-border"
 };
 function lsKey(childName: string) {
   return `amynest_facts_${childName.replace(/\s+/g, "_").toLowerCase()}`;
@@ -690,7 +690,7 @@ export function AmazingFacts({
                   </p>
                   {lang === "hi" && <p className="text-xs text-muted-foreground mt-1 leading-snug">{fact.text}</p>}
                 </div>
-                <button onClick={() => toggleLike(fact.id)} className={`flex-shrink-0 flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1.5 transition-all ${isLiked ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground border border-border dark:border-border" : "bg-muted/60 text-muted-foreground hover:bg-muted dark:bg-primary hover:text-primary"}`} title={t("components.amazing_facts.interesting")}>
+                <button onClick={() => toggleLike(fact.id)} className={`flex-shrink-0 flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1.5 transition-all ${isLiked ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground border border-border dark:border-border" : "bg-muted/60 text-muted-foreground hover:bg-muted dark:bg-card hover:text-primary"}`} title={t("components.amazing_facts.interesting")}>
                   <ThumbsUp className="h-3 w-3" />
                   {isLiked && <span>{t("components.amazing_facts.liked")}</span>}
                 </button>

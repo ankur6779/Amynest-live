@@ -290,7 +290,7 @@ export default function BehaviorTracker() {
         </div>
         <div className="flex items-center gap-2">
           <LangToggle lang={lang} setLang={setLang} />
-          <button onClick={() => setSituationKey("crying")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-primary transition-colors border border-border dark:border-primary">
+          <button onClick={() => setSituationKey("crying")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted dark:bg-card text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-card transition-colors border border-border dark:border-primary">
             <HelpCircle className="h-3.5 w-3.5" />
             {L.situationMode}
           </button>
@@ -338,7 +338,7 @@ export default function BehaviorTracker() {
       {/* Blocks */}
       <div className="flex flex-col gap-3">
         {/* 1. Quick Log */}
-        <Block icon={<Zap className="h-5 w-5 text-primary" />} title={L.quickLog} subtitle={L.tap1Log} iconBg="bg-muted dark:bg-primary" open={openBlock === "quick-log"} onToggle={() => toggle("quick-log")}>
+        <Block icon={<Zap className="h-5 w-5 text-primary" />} title={L.quickLog} subtitle={L.tap1Log} iconBg="bg-muted dark:bg-card" open={openBlock === "quick-log"} onToggle={() => toggle("quick-log")}>
           <div className="space-y-4">
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
               {QUICK_BEHAVIOR_KEYS.map(key => {
@@ -391,7 +391,7 @@ export default function BehaviorTracker() {
         </Block>
 
         {/* 2. Today Summary */}
-        <Block icon={<span className="text-xl">📊</span>} title={L.todaySummary} subtitle={`${todayLogs.length} ${L.loggedToday}`} iconBg="bg-muted dark:bg-primary" open={openBlock === "summary"} onToggle={() => toggle("summary")}>
+        <Block icon={<span className="text-xl">📊</span>} title={L.todaySummary} subtitle={`${todayLogs.length} ${L.loggedToday}`} iconBg="bg-muted dark:bg-card" open={openBlock === "summary"} onToggle={() => toggle("summary")}>
           <div className="space-y-3">
             {/* Score */}
             <div className="rounded-xl bg-gradient-to-r from-primary/10 to-primary border border-primary/20 p-4 text-center">
@@ -409,12 +409,12 @@ export default function BehaviorTracker() {
               label: L.positive,
               count: pos,
               color: "hsl(var(--brand-emerald-500))",
-              bg: "bg-muted dark:bg-primary"
+              bg: "bg-muted dark:bg-card"
             }, {
               label: L.challenging,
               count: neg,
               color: "hsl(var(--brand-red-500))",
-              bg: "bg-muted dark:bg-primary"
+              bg: "bg-muted dark:bg-card"
             }, {
               label: L.neutral,
               count: neu,
@@ -431,9 +431,9 @@ export default function BehaviorTracker() {
         </Block>
 
         {/* 3. Amy Insights */}
-        <Block icon={<Brain className="h-5 w-5 text-primary" />} title={L.amyInsights} subtitle={insights.length > 0 ? `${insights.length} pattern${insights.length > 1 ? "s" : ""} found` : "Log more to unlock"} iconBg="bg-muted dark:bg-primary" open={openBlock === "insights"} onToggle={() => toggle("insights")}>
+        <Block icon={<Brain className="h-5 w-5 text-primary" />} title={L.amyInsights} subtitle={insights.length > 0 ? `${insights.length} pattern${insights.length > 1 ? "s" : ""} found` : "Log more to unlock"} iconBg="bg-muted dark:bg-card" open={openBlock === "insights"} onToggle={() => toggle("insights")}>
           {insights.length === 0 ? <p className="text-sm text-muted-foreground py-2 text-center">{L.noInsights}</p> : <div className="space-y-3">
-              {insights.map((ins, i) => <div key={i} className="flex gap-3 p-3 rounded-xl bg-muted dark:bg-primary border border-border dark:border-primary">
+              {insights.map((ins, i) => <div key={i} className="flex gap-3 p-3 rounded-xl bg-muted dark:bg-card border border-border dark:border-primary">
                   <span className="text-xl shrink-0">{ins.icon}</span>
                   <p className="text-sm text-foreground leading-relaxed">{ins.text}</p>
                 </div>)}
@@ -441,17 +441,17 @@ export default function BehaviorTracker() {
         </Block>
 
         {/* 4. Weekly Trends */}
-        <Block icon={<BarChart2 className="h-5 w-5 text-primary" />} title={L.weeklyTrends} subtitle="Last 7 days" iconBg="bg-muted dark:bg-primary" open={openBlock === "trends"} onToggle={() => toggle("trends")}>
+        <Block icon={<BarChart2 className="h-5 w-5 text-primary" />} title={L.weeklyTrends} subtitle="Last 7 days" iconBg="bg-muted dark:bg-card" open={openBlock === "trends"} onToggle={() => toggle("trends")}>
           <div className="flex items-end gap-1.5 h-28">
             {weekData.map((d, i) => <div key={i} className="flex-1 flex flex-col items-center gap-1">
                 <div className="w-full flex flex-col gap-0.5 justify-end" style={{
               height: "80px"
             }}>
-                  {d.pos > 0 && <div className="w-full rounded-t-sm bg-muted dark:bg-primary" style={{
+                  {d.pos > 0 && <div className="w-full rounded-t-sm bg-muted dark:bg-card" style={{
                 height: `${d.pos / maxWeek * 80}px`,
                 minHeight: 4
               }} />}
-                  {d.neg > 0 && <div className="w-full rounded-b-sm bg-muted dark:bg-primary" style={{
+                  {d.neg > 0 && <div className="w-full rounded-b-sm bg-muted dark:bg-card" style={{
                 height: `${d.neg / maxWeek * 80}px`,
                 minHeight: 4
               }} />}
@@ -469,7 +469,7 @@ export default function BehaviorTracker() {
         </Block>
 
         {/* 5. Solutions & Tips */}
-        <Block icon={<Lightbulb className="h-5 w-5 text-primary" />} title={L.solutions} subtitle="Amy's proven tips per situation" iconBg="bg-muted dark:bg-primary" open={openBlock === "solutions"} onToggle={() => toggle("solutions")}>
+        <Block icon={<Lightbulb className="h-5 w-5 text-primary" />} title={L.solutions} subtitle="Amy's proven tips per situation" iconBg="bg-muted dark:bg-card" open={openBlock === "solutions"} onToggle={() => toggle("solutions")}>
           <div className="space-y-4">
             {(["tantrum", "crying", "not_listening", "good_behavior", "low_energy"] as QuickBehaviorKey[]).map(key => {
             const def = QUICK_BEHAVIORS[key];

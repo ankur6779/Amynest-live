@@ -15,25 +15,25 @@ const CATEGORY_META: Record<CueCategory, {
     label: "Hunger",
     emoji: "🍼",
     color: "text-primary dark:text-muted-foreground",
-    bg: "bg-muted dark:bg-primary"
+    bg: "bg-muted dark:bg-card"
   },
   sleep: {
     label: "Sleep",
     emoji: "😴",
     color: "text-primary dark:text-muted-foreground",
-    bg: "bg-muted dark:bg-primary"
+    bg: "bg-muted dark:bg-card"
   },
   overstim: {
     label: "Overstimulation",
     emoji: "🌀",
     color: "text-primary dark:text-muted-foreground",
-    bg: "bg-muted dark:bg-primary"
+    bg: "bg-muted dark:bg-card"
   },
   discomfort: {
     label: "Discomfort",
     emoji: "🤕",
     color: "text-primary dark:text-muted-foreground",
-    bg: "bg-muted dark:bg-primary"
+    bg: "bg-muted dark:bg-card"
   }
 };
 
@@ -450,7 +450,7 @@ export function BabyCuesEngine({
       </div>
 
       {/* Active Cue Detail Card with swipe nav */}
-      {activeCue && <div key={activeCue.id} className="relative rounded-2xl bg-gradient-to-br from-white/90 to-muted dark:from-white/10 dark:to-primary border-2 border-border dark:border-border backdrop-blur-xl p-4 shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_18px_50px_-12px_rgba(168,85,247,0.45)] animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {activeCue && <div key={activeCue.id} className="relative rounded-2xl bg-gradient-to-br from-white/90 to-muted dark:from-white/10 dark:to-card border-2 border-border dark:border-border backdrop-blur-xl p-4 shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_18px_50px_-12px_rgba(168,85,247,0.45)] animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Header with category pill */}
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${CATEGORY_META[activeCue.category].bg} ${CATEGORY_META[activeCue.category].color}`}>
@@ -470,21 +470,21 @@ export function BabyCuesEngine({
 
           {/* Insight / Reason / Action */}
           <div className="space-y-2.5">
-            <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
+            <div className="rounded-lg bg-muted dark:bg-card border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Sparkles className="h-3 w-3 text-primary dark:text-primary" />
                 <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_baby_cues.what_it_means")}</p>
               </div>
               <p className="text-[13px] text-primary dark:text-muted-foreground leading-snug font-semibold">{activeCue.insight}</p>
             </div>
-            <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
+            <div className="rounded-lg bg-muted dark:bg-card border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Eye className="h-3 w-3 text-primary dark:text-primary" />
                 <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_baby_cues.why_this_happens")}</p>
               </div>
               <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{activeCue.reason}</p>
             </div>
-            <div className="rounded-lg bg-muted dark:bg-primary border border-border dark:border-border p-2.5">
+            <div className="rounded-lg bg-muted dark:bg-card border border-border dark:border-border p-2.5">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Lightbulb className="h-3 w-3 text-primary dark:text-primary" />
                 <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-muted-foreground">{t("components.infant_baby_cues.what_to_do")}</p>
@@ -505,14 +505,14 @@ export function BabyCuesEngine({
             return toast({
               description: t("toasts.infant_baby_cues.helpful")
             });
-          }} className="p-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:scale-110 transition-transform" aria-label={t("components.infant_baby_cues.helpful_2")}>
+          }} className="p-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:scale-110 transition-transform" aria-label={t("components.infant_baby_cues.helpful_2")}>
                 <ThumbsUp className="h-3.5 w-3.5" />
               </button>
               <button onClick={() => {
             return toast({
               description: t("toasts.infant_baby_cues.not_helpful")
             });
-          }} className="p-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground hover:scale-110 transition-transform" aria-label={t("components.infant_baby_cues.not_helpful")}>
+          }} className="p-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-muted-foreground hover:scale-110 transition-transform" aria-label={t("components.infant_baby_cues.not_helpful")}>
                 <ThumbsDown className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -565,7 +565,7 @@ export function CommunicationCoaching({
   }
   const action = actions[idx % actions.length];
   return <div className="space-y-3">
-      <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-4 backdrop-blur-md">
+      <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-4 backdrop-blur-md">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-1.5">
             <MessageCircle className="h-4 w-4 text-primary dark:text-primary" />

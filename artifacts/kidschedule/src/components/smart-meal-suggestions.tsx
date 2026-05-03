@@ -134,11 +134,11 @@ export function SmartMealSuggestions() {
     setQuery(q);
     inputRef.current?.focus();
   };
-  return <div className="rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-muted dark:from-primary dark:via-muted dark:to-primary overflow-hidden">
+  return <div className="rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-muted dark:from-card dark:via-muted dark:to-card overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3.5 border-b border-border dark:border-border flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="h-9 w-9 rounded-xl bg-muted dark:bg-primary flex items-center justify-center text-lg shrink-0">
+          <div className="h-9 w-9 rounded-xl bg-muted dark:bg-card flex items-center justify-center text-lg shrink-0">
             🍱
           </div>
           <div className="min-w-0">
@@ -178,7 +178,7 @@ export function SmartMealSuggestions() {
 
         {/* Quick suggestion chips */}
         <div className="flex flex-wrap gap-1.5 mt-2.5">
-          {placeholders.slice(1).map(q => <button key={q} type="button" onClick={() => handleSuggestionClick(q)} className="text-[11px] px-2.5 py-1 rounded-full border border-dashed border-border dark:border-border hover:border-border hover:bg-muted dark:hover:bg-primary text-muted-foreground hover:text-foreground transition-all">
+          {placeholders.slice(1).map(q => <button key={q} type="button" onClick={() => handleSuggestionClick(q)} className="text-[11px] px-2.5 py-1 rounded-full border border-dashed border-border dark:border-border hover:border-border hover:bg-muted dark:hover:bg-card text-muted-foreground hover:text-foreground transition-all">
               {q}
             </button>)}
         </div>
@@ -207,7 +207,7 @@ export function SmartMealSuggestions() {
       <div ref={resultsRef} className="pb-4">
         {loading ? <div className="flex gap-3 px-4 overflow-hidden">
             {[0, 1, 2, 3, 4].map(i => <div key={i} className="shrink-0 w-[160px] h-[200px] rounded-2xl bg-muted animate-pulse" />)}
-          </div> : fetchError ? <div className="mx-4 p-4 rounded-xl bg-muted dark:bg-primary border border-border dark:border-border text-center">
+          </div> : fetchError ? <div className="mx-4 p-4 rounded-xl bg-muted dark:bg-card border border-border dark:border-border text-center">
             <p className="text-sm text-primary dark:text-primary font-medium">{fetchError}</p>
             <button type="button" onClick={() => void handleGenerate()} className="mt-2 text-xs text-primary dark:text-primary underline font-bold">
               {t("components.smart_meal_suggestions.try_again")}
@@ -335,20 +335,20 @@ function RecipeModal({
           <div>
             <h3 className="font-quicksand font-black text-xl text-foreground leading-tight">{meal.title}</h3>
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {meal.tags.map(t => <span key={t} className="text-[10.5px] font-bold uppercase tracking-wide bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full">
+              {meal.tags.map(t => <span key={t} className="text-[10.5px] font-bold uppercase tracking-wide bg-muted dark:bg-card text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full">
                   {t}
                 </span>)}
-              <span className="text-[10.5px] font-bold uppercase tracking-wide bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              <span className="text-[10.5px] font-bold uppercase tracking-wide bg-muted dark:bg-card text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                 <Clock className="h-2.5 w-2.5" /> {meal.prepMinutes} {t("components.smart_meal_suggestions.min")}
               </span>
-              {showCalories && <span className="text-[10.5px] font-bold uppercase tracking-wide bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              {showCalories && <span className="text-[10.5px] font-bold uppercase tracking-wide bg-muted dark:bg-card text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                   <Flame className="h-2.5 w-2.5" /> {meal.calories} {t("components.smart_meal_suggestions.kcal")}
                 </span>}
             </div>
           </div>
 
           {/* Read Aloud */}
-          <div className="rounded-2xl border border-border dark:border-border bg-muted dark:bg-primary p-3">
+          <div className="rounded-2xl border border-border dark:border-border bg-muted dark:bg-card p-3">
             <div className="flex items-center justify-between gap-2">
               <button onClick={handleReadAloud} disabled={loading} className="inline-flex items-center gap-2 bg-primary hover:bg-primary disabled:opacity-70 disabled:cursor-wait text-white font-bold text-xs px-3.5 py-2 rounded-full" data-testid="meal-read-aloud">
                 {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : speaking ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}

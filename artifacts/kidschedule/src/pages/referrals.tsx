@@ -53,7 +53,7 @@ function GiftTokenCard({
     }
     onCopy(token.giftCode);
   };
-  return <div className={["rounded-2xl border p-4 space-y-3", isAvailable ? "border-border bg-muted dark:bg-primary" : "border-border bg-muted/30 opacity-60"].join(" ")}>
+  return <div className={["rounded-2xl border p-4 space-y-3", isAvailable ? "border-border bg-muted dark:bg-card" : "border-border bg-muted/30 opacity-60"].join(" ")}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Ticket className={`h-4 w-4 ${isAvailable ? "text-primary dark:text-primary" : "text-muted-foreground"}`} />
@@ -63,7 +63,7 @@ function GiftTokenCard({
           })}
           </span>
         </div>
-        <Badge variant="secondary" className={`text-[10px] uppercase font-bold ${isAvailable ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : token.status === "redeemed" ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : "text-muted-foreground"}`}>
+        <Badge variant="secondary" className={`text-[10px] uppercase font-bold ${isAvailable ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground" : token.status === "redeemed" ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground" : "text-muted-foreground"}`}>
           {token.status === "available" ? t("screens.referrals.status_available") : token.status === "redeemed" ? t("screens.referrals.status_redeemed") : token.status === "expired" ? t("screens.referrals.status_expired") : t("screens.referrals.status_used")}
         </Badge>
       </div>
@@ -86,7 +86,7 @@ function GiftTokenCard({
           <a href={`https://wa.me/?text=${encodeURIComponent(t("screens.referrals.whatsapp_gift_text", {
         days: token.bonusDays,
         code: token.giftCode
-      }))}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted dark:bg-primary px-3 text-xs font-semibold text-primary dark:text-muted-foreground hover:bg-muted transition">
+      }))}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-muted dark:bg-card px-3 text-xs font-semibold text-primary dark:text-muted-foreground hover:bg-muted transition">
             <MessageCircle className="h-3.5 w-3.5" />
             {t("screens.referrals.whatsapp")}
           </a>
@@ -150,7 +150,7 @@ function RedeemGiftSection({
         {t("screens.referrals.redeem_subtitle")}
       </p>
 
-      {state === "success" ? <div className="rounded-2xl border border-border bg-muted dark:bg-primary p-4 flex items-center gap-3">
+      {state === "success" ? <div className="rounded-2xl border border-border bg-muted dark:bg-card p-4 flex items-center gap-3">
           <Check className="h-5 w-5 text-primary shrink-0" />
           <div>
             <p className="font-semibold text-primary dark:text-muted-foreground">
@@ -309,7 +309,7 @@ export default function ReferralsPage() {
           <a href={`https://wa.me/?text=${encodeURIComponent(t("screens.referrals.whatsapp_share_text", {
           code: stats.code,
           link
-        }))}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-muted dark:bg-primary px-3 py-2 text-sm font-semibold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary transition">
+        }))}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-muted dark:bg-card px-3 py-2 text-sm font-semibold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-card transition">
             <MessageCircle className="h-4 w-4" /> {t("screens.referrals.whatsapp")}
           </a>
           <a href={`mailto:?subject=${encodeURIComponent(t("screens.referrals.email_subject"))}&body=${encodeURIComponent(t("screens.referrals.email_body", {
@@ -327,7 +327,7 @@ export default function ReferralsPage() {
             <h2 className="font-quicksand text-lg font-bold flex items-center gap-2">
               <Ticket className="h-5 w-5 text-primary" /> {t("screens.referrals.your_gift_tokens")}
             </h2>
-            <Badge variant="secondary" className="font-bold bg-muted dark:bg-primary text-primary dark:text-muted-foreground">
+            <Badge variant="secondary" className="font-bold bg-muted dark:bg-card text-primary dark:text-muted-foreground">
               {t("screens.referrals.available_label", {
             count: availableGifts.length
           })}
@@ -390,7 +390,7 @@ export default function ReferralsPage() {
           </p>
         </div>
 
-        {capReached ? <div className="rounded-2xl border border-border bg-muted dark:bg-primary p-3 text-sm text-primary dark:text-muted-foreground inline-flex items-center gap-2">
+        {capReached ? <div className="rounded-2xl border border-border bg-muted dark:bg-card p-3 text-sm text-primary dark:text-muted-foreground inline-flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
             {t("screens.referrals.max_reached", {
           count: stats.rewardCap

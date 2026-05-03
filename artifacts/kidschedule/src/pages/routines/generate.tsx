@@ -1647,7 +1647,7 @@ export default function RoutineGenerate() {
               {(() => {
           const suggestions = buildSyncSuggestions(familyResults as unknown as FRFamilyResult[]);
           if (suggestions.length === 0) return null;
-          return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
+          return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card">
                     <CardContent className="p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <Brain className="h-5 w-5 text-primary" />
@@ -1670,7 +1670,7 @@ export default function RoutineGenerate() {
               {(() => {
           const fp = computeFamilyPoints(familyResults as unknown as FRFamilyResult[]);
           const totalPossible = familyResults.reduce((s, r) => s + r.routine.items.reduce((ss, i) => ss + ((i as any).rewardPoints ?? 5), 0), 0);
-          return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
+          return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card">
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">

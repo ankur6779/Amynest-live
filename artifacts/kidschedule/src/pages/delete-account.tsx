@@ -32,7 +32,7 @@ export default function DeleteAccountPage() {
       <main className="mx-auto max-w-3xl px-6 py-12">
         {/* Hero */}
         <div className="mb-10 flex flex-col items-center text-center">
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted dark:bg-primary">
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted dark:bg-card">
             <Trash2 className="h-8 w-8 text-primary dark:text-primary" />
           </div>
           <h1 className="mb-3 text-3xl font-bold text-foreground">{t("screens.delete_account.title")}</h1>
@@ -42,7 +42,7 @@ export default function DeleteAccountPage() {
         </div>
 
         {/* Warning banner */}
-        <div className="mb-8 flex gap-3 rounded-xl border border-border bg-muted px-5 py-4 dark:border-primary dark:bg-primary">
+        <div className="mb-8 flex gap-3 rounded-xl border border-border bg-muted px-5 py-4 dark:border-primary dark:bg-card">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-primary dark:text-primary" />
           <p className="text-sm text-primary dark:text-muted-foreground">
             <strong>{t("screens.delete_account.warning_strong")}</strong> {t("screens.delete_account.warning_body")}
@@ -58,7 +58,7 @@ export default function DeleteAccountPage() {
           <div className="rounded-xl border border-card-border bg-card p-5">
             <ul className="space-y-2.5">
               {DATA_ITEMS.map(item => <li key={item} className="flex items-center gap-3 text-sm text-card-foreground">
-                  <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted dark:bg-primary" />
+                  <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted dark:bg-card" />
                   {item}
                 </li>)}
             </ul>
@@ -77,7 +77,7 @@ export default function DeleteAccountPage() {
             {IN_APP_STEPS.map((step, i) => {
             const Icon = step.icon;
             return <div key={i} className="flex items-start gap-4 rounded-xl border border-card-border bg-card px-5 py-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted dark:bg-primary">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted dark:bg-card">
                     <Icon className="h-4 w-4 text-primary dark:text-muted-foreground" />
                   </div>
                   <div className="flex-1">

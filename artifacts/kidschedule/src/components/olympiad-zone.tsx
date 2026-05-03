@@ -376,7 +376,7 @@ function QuizRunner({
             {q.options.map((opt, i) => {
             const showCorrect = isAnswered && i === q.correct;
             const showWrong = isAnswered && picked === i && i !== q.correct;
-            return <button key={i} onClick={() => onPick(i)} disabled={isAnswered} className={`w-full text-left px-3 py-2.5 rounded-lg border-2 text-sm transition-all ${showCorrect ? "bg-muted dark:bg-primary border-primary" : showWrong ? "bg-muted dark:bg-primary border-primary" : isAnswered ? "border-border opacity-60" : picked === i ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+            return <button key={i} onClick={() => onPick(i)} disabled={isAnswered} className={`w-full text-left px-3 py-2.5 rounded-lg border-2 text-sm transition-all ${showCorrect ? "bg-muted dark:bg-card border-primary" : showWrong ? "bg-muted dark:bg-card border-primary" : isAnswered ? "border-border opacity-60" : picked === i ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
                   <span className="font-semibold mr-2">{String.fromCharCode(65 + i)}.</span>
                   {opt}
                   {showCorrect && <CheckCircle2 className="inline h-4 w-4 ml-2 text-primary" />}
@@ -385,7 +385,7 @@ function QuizRunner({
           })}
           </div>
 
-          {isAnswered && <div className={`rounded-lg p-3 text-sm flex gap-2 ${isCorrect ? "bg-muted dark:bg-primary text-primary dark:text-muted-foreground" : "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"}`}>
+          {isAnswered && <div className={`rounded-lg p-3 text-sm flex gap-2 ${isCorrect ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground" : "bg-muted dark:bg-card text-primary dark:text-muted-foreground"}`}>
               <Lightbulb className="h-4 w-4 shrink-0 mt-0.5" />
               <p>{q.explanation}</p>
             </div>}
@@ -451,7 +451,7 @@ function DailyTab({
       </div>;
   }
   return <div className="space-y-3">
-      <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border dark:border-primary">
+      <Card className="bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border-border dark:border-primary">
         <CardContent className="p-3 flex items-center gap-3">
           <Sparkles className="h-5 w-5 text-primary shrink-0" />
           <div className="text-xs">
@@ -631,21 +631,21 @@ function ProgressTab({
   return <div className="space-y-4">
       {/* Top stats */}
       <div className="grid grid-cols-3 gap-2">
-        <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
+        <Card className="bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card">
           <CardContent className="p-3 text-center">
             <Trophy className="h-5 w-5 mx-auto text-primary" />
             <p className="text-xl font-bold mt-1">{stats.totalPoints}</p>
             <p className="text-xs text-muted-foreground">{t("components.olympiad_zone.points_2")}</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
+        <Card className="bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card">
           <CardContent className="p-3 text-center">
             <Flame className="h-5 w-5 mx-auto text-primary" />
             <p className="text-xl font-bold mt-1">{stats.streak}</p>
             <p className="text-xs text-muted-foreground">{t("components.olympiad_zone.day_streak")}</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
+        <Card className="bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card">
           <CardContent className="p-3 text-center">
             <Target className="h-5 w-5 mx-auto text-primary" />
             <p className="text-xl font-bold mt-1">{overallPct}%</p>
@@ -690,7 +690,7 @@ function ProgressTab({
       </Card>
 
       {/* Parent guidance */}
-      <Card className="bg-muted dark:bg-primary border-border dark:border-primary">
+      <Card className="bg-muted dark:bg-card border-border dark:border-primary">
         <CardContent className="p-4">
           <div className="flex items-start gap-2">
             <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
@@ -709,7 +709,7 @@ function ProgressTab({
           <div className="grid grid-cols-3 gap-2">
             {BADGES.map(b => {
             const earned = stats.badges.includes(b.id);
-            return <div key={b.id} title={b.hint} className={`rounded-lg border p-2 text-center text-[11px] ${earned ? "bg-muted dark:bg-primary border-border" : "opacity-50"}`}>
+            return <div key={b.id} title={b.hint} className={`rounded-lg border p-2 text-center text-[11px] ${earned ? "bg-muted dark:bg-card border-border" : "opacity-50"}`}>
                   <div className="text-xl">{b.emoji}</div>
                   <div className="font-medium leading-tight mt-0.5">{b.label}</div>
                 </div>;
@@ -740,7 +740,7 @@ function WeeklyTestCard({
   const [open, setOpen] = useState(false);
   const questions = useMemo(() => pickWeeklyQuestions(ageBand, weekKey, childId), [ageBand, weekKey, childId]);
   if (weeklyRun?.submitted) {
-    return <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border">
+    return <Card className="bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border-border">
         <CardContent className="p-3 flex items-center gap-3">
           <Crown className="h-5 w-5 text-primary shrink-0" />
           <div className="text-xs flex-1">
@@ -795,7 +795,7 @@ function WeeklyTestCard({
         </CardContent>
       </Card>;
   }
-  return <Card className="bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border-border">
+  return <Card className="bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border-border">
       <CardContent className="p-3 flex items-center gap-3">
         <Crown className="h-5 w-5 text-primary shrink-0" />
         <div className="text-xs flex-1">

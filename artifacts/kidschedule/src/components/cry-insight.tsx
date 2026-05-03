@@ -360,7 +360,7 @@ export function CryInsight({
   const recordPctFull = Math.min(100, elapsedMs / RECORD_LIMIT_MS * 100);
   return <div className="space-y-3" data-testid="cry-insight-root">
       {/* Beta banner */}
-      <div className="flex items-start gap-2 rounded-2xl bg-gradient-to-r from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3">
+      <div className="flex items-start gap-2 rounded-2xl bg-gradient-to-r from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-3">
         <ShieldAlert className="h-4 w-4 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
         <p className="text-[11px] leading-snug text-primary dark:text-muted-foreground">
           <span className="font-bold">{t("components.cry_insight.beta_estimate_only")}</span>{" "}
@@ -403,11 +403,11 @@ export function CryInsight({
             {[{
             v: true,
             label: "Yes — clean",
-            cls: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"
+            cls: "bg-muted dark:bg-card text-primary dark:text-muted-foreground"
           }, {
             v: false,
             label: "No / dirty",
-            cls: "bg-muted dark:bg-primary text-primary dark:text-muted-foreground"
+            cls: "bg-muted dark:bg-card text-primary dark:text-muted-foreground"
           }, {
             v: null,
             label: "Not sure",
@@ -431,7 +431,7 @@ export function CryInsight({
       </div>
 
       {/* Recorder */}
-      <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-4 backdrop-blur-md">
+      <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-4 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <button type="button" onClick={recording ? stopRecording : startRecording} disabled={analysing} className={["h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg transition-all", recording ? "bg-primary hover:bg-primary animate-pulse" : "bg-gradient-to-br from-primary to-primary hover:from-primary hover:to-primary", analysing ? "opacity-50 cursor-not-allowed" : ""].join(" ")} data-testid={recording ? "stop-recording" : "start-recording"} aria-label={recording ? "Stop recording" : "Start recording"}>
             {analysing ? <Loader2 className="h-6 w-6 animate-spin" /> : recording ? <Square className="h-5 w-5" fill="currentColor" /> : <Mic className="h-6 w-6" />}
@@ -443,7 +443,7 @@ export function CryInsight({
             <p className="text-[11px] text-muted-foreground leading-snug">
               {recording ? `Captures up to 15 s · ${elapsedSec}s recorded` : "Hold the phone near baby for 5–15 s. Audio is analysed on-device and never uploaded."}
             </p>
-            {recording && <div className="mt-1.5 h-1 w-full rounded-full bg-muted dark:bg-primary overflow-hidden">
+            {recording && <div className="mt-1.5 h-1 w-full rounded-full bg-muted dark:bg-card overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-primary to-primary transition-all" style={{
               width: `${recordPctFull}%`
             }} />
@@ -452,7 +452,7 @@ export function CryInsight({
         </div>
 
         {/* Skip-audio fallback */}
-        {!recording && <button type="button" onClick={analyseWithoutAudio} disabled={analysing} className="mt-3 w-full rounded-xl border border-border dark:border-border px-3 py-2 text-xs font-bold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary transition-colors disabled:opacity-50" data-testid="analyse-no-audio">
+        {!recording && <button type="button" onClick={analyseWithoutAudio} disabled={analysing} className="mt-3 w-full rounded-xl border border-border dark:border-border px-3 py-2 text-xs font-bold text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-card transition-colors disabled:opacity-50" data-testid="analyse-no-audio">
             <Sparkles className="inline h-3.5 w-3.5 mr-1.5" />
             {t("components.cry_insight.analyse_using_context_only_no_audio")}
           </button>}
@@ -493,7 +493,7 @@ export function CryInsight({
           </div>
 
           {/* Suggestion */}
-          <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3">
+          <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground mb-1">
               {t("components.cry_insight.try_this")}
             </p>
@@ -503,7 +503,7 @@ export function CryInsight({
           </div>
 
           {/* Medical-flag warning */}
-          {result.medicalFlag && <div className="flex items-start gap-2 rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3">
+          {result.medicalFlag && <div className="flex items-start gap-2 rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3">
               <AlertTriangle className="h-4 w-4 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-[11px] leading-snug text-primary dark:text-muted-foreground">
                 <span className="font-bold">{t("components.cry_insight.worth_a_check")}</span>{" "}

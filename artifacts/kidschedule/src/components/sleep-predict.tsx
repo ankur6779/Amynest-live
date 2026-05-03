@@ -61,25 +61,25 @@ const BAND_META: Record<PressureBand, {
     label: "Restful",
     color: "text-primary dark:text-muted-foreground",
     ring: "ring-primary",
-    bg: "from-muted to-muted dark:from-primary dark:to-primary"
+    bg: "from-muted to-muted dark:from-card dark:to-card"
   },
   ideal: {
     label: "Ideal",
     color: "text-primary dark:text-muted-foreground",
     ring: "ring-primary",
-    bg: "from-muted to-muted dark:from-primary dark:to-primary"
+    bg: "from-muted to-muted dark:from-card dark:to-card"
   },
   tired: {
     label: "Getting tired",
     color: "text-primary dark:text-muted-foreground",
     ring: "ring-primary",
-    bg: "from-muted to-muted dark:from-primary dark:to-primary"
+    bg: "from-muted to-muted dark:from-card dark:to-card"
   },
   overtired: {
     label: "Overtired",
     color: "text-primary dark:text-muted-foreground",
     ring: "ring-primary",
-    bg: "from-muted to-muted dark:from-primary dark:to-primary"
+    bg: "from-muted to-muted dark:from-card dark:to-card"
   }
 };
 const WINDDOWN_TIPS = ["Dim the room — soft warm light only", "Reduce stimulation — quiet voices, slow movement", "Try a calming story or lullaby", "Offer a comfort object or gentle rock"];
@@ -257,7 +257,7 @@ export function SleepPredict({
   const outOfBand = ageMonths < 0 || ageMonths > 24;
   return <div className={["space-y-3 transition-opacity", dimmed ? "opacity-95" : "opacity-100"].join(" ")} data-testid="sleep-predict-root">
       {/* Disclaimer banner */}
-      <div className="flex items-start gap-2 rounded-2xl bg-gradient-to-r from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3">
+      <div className="flex items-start gap-2 rounded-2xl bg-gradient-to-r from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-3">
         <ShieldAlert className="h-4 w-4 text-primary dark:text-muted-foreground shrink-0 mt-0.5" />
         <p className="text-[11px] leading-snug text-primary dark:text-muted-foreground">
           <span className="font-bold">{t("components.sleep_predict.beta_guidance_only")}</span>{" "}
@@ -265,7 +265,7 @@ export function SleepPredict({
         </p>
       </div>
 
-      {outOfBand && <div className="rounded-2xl bg-muted dark:bg-primary border border-border p-3 text-[11px] text-primary dark:text-muted-foreground">
+      {outOfBand && <div className="rounded-2xl bg-muted dark:bg-card border border-border p-3 text-[11px] text-primary dark:text-muted-foreground">
           {t("components.sleep_predict.sleep_prediction_is_tuned_for_ages_0_24_months_showing_a_fle")} {childName}.
         </div>}
 
@@ -317,7 +317,7 @@ export function SleepPredict({
           </div>
 
           {/* Wind-down panel — only shown at >=80% pressure */}
-          {prediction.shouldWindDown && <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-muted dark:to-primary border border-border p-4" data-testid="winddown-panel">
+          {prediction.shouldWindDown && <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-muted dark:to-card border border-border p-4" data-testid="winddown-panel">
               <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground flex items-center gap-1">
                 <CloudMoon className="h-3 w-3" />
                 {t("components.sleep_predict.start_wind_down_now")}

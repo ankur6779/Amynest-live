@@ -210,7 +210,7 @@ export function DailyTips({
                     {meta.label[lang]}
                   </span>
                 </div>
-                {isPersonalized && <span className="inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-primary px-2 py-0.5 text-[10px] font-bold text-primary dark:text-muted-foreground">
+                {isPersonalized && <span className="inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-card px-2 py-0.5 text-[10px] font-bold text-primary dark:text-muted-foreground">
                     <Sparkles className="h-3 w-3" />
                     {t("components.daily_tips.amy_ai")}
                   </span>}
@@ -232,7 +232,7 @@ export function DailyTips({
                 </button>
 
                 <div className="flex items-center gap-1.5">
-                  {canPersonalize && <button onClick={() => handlePersonalize(cat)} className="inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-primary px-2.5 py-1.5 text-[11px] font-bold text-primary dark:text-muted-foreground hover:bg-white dark:hover:bg-primary transition-colors" title={ui.personalize}>
+                  {canPersonalize && <button onClick={() => handlePersonalize(cat)} className="inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-card px-2.5 py-1.5 text-[11px] font-bold text-primary dark:text-muted-foreground hover:bg-white dark:hover:bg-card transition-colors" title={ui.personalize}>
                       <Sparkles className="h-3.5 w-3.5" />
                       {ui.personalize}
                     </button>}

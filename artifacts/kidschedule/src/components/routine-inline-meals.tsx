@@ -107,7 +107,7 @@ export function RoutineInlineMeals({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region, audience, childAge, isVeg, mealType]);
-  return <div className="mt-2.5 rounded-xl border border-border dark:border-border bg-muted dark:bg-primary overflow-hidden">
+  return <div className="mt-2.5 rounded-xl border border-border dark:border-border bg-muted dark:bg-card overflow-hidden">
       {/* Header */}
       <div className="px-3 py-2 flex items-center gap-2 border-b border-border dark:border-border">
         <AmyIcon size={15} bounce />
@@ -121,7 +121,7 @@ export function RoutineInlineMeals({
 
       {/* Cards */}
       {loading ? <div className="flex gap-2 px-3 py-2 overflow-hidden">
-          {[0, 1, 2, 3].map(i => <div key={i} className="shrink-0 w-[130px] h-[130px] rounded-xl bg-muted dark:bg-primary animate-pulse" />)}
+          {[0, 1, 2, 3].map(i => <div key={i} className="shrink-0 w-[130px] h-[130px] rounded-xl bg-muted dark:bg-card animate-pulse" />)}
         </div> : meals.length === 0 ? <p className="text-[11px] text-muted-foreground px-3 py-3">{t("components.routine_inline_meals.no_suggestions_available_right_now")}</p> : <div className="flex gap-2 px-3 py-2.5 overflow-x-auto scroll-smooth" style={{
       scrollbarWidth: "none"
     }}>
@@ -196,13 +196,13 @@ function RecipeSheet({
           <div>
             <h3 className="font-quicksand font-black text-xl text-foreground">{meal.title}</h3>
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {meal.tags.map(t => <span key={t} className="text-[10px] font-bold uppercase bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full">
+              {meal.tags.map(t => <span key={t} className="text-[10px] font-bold uppercase bg-muted dark:bg-card text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full">
                   {t}
                 </span>)}
-              <span className="text-[10px] font-bold uppercase bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              <span className="text-[10px] font-bold uppercase bg-muted dark:bg-card text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                 <Clock className="h-2.5 w-2.5" /> {meal.prepMinutes} {t("components.routine_inline_meals.min")}
               </span>
-              {meal.calories > 0 && <span className="text-[10px] font-bold uppercase bg-muted dark:bg-primary text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              {meal.calories > 0 && <span className="text-[10px] font-bold uppercase bg-muted dark:bg-card text-primary dark:text-muted-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                   <Flame className="h-2.5 w-2.5" /> {meal.calories} {t("components.routine_inline_meals.kcal")}
                 </span>}
             </div>

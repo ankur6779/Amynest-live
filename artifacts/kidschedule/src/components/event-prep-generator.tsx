@@ -91,7 +91,7 @@ export function EventPrepGenerator({
   };
   return <div className="space-y-4">
       {/* Form */}
-      <Card className="border-border bg-gradient-to-br from-muted via-white to-muted dark:from-primary dark:via-muted dark:to-primary">
+      <Card className="border-border bg-gradient-to-br from-muted via-white to-muted dark:from-card dark:via-muted dark:to-card">
         <CardContent className="p-5 space-y-4">
           <div className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-xl bg-primary text-primary flex items-center justify-center">
@@ -248,7 +248,7 @@ function IdeaCard({
           </ol>
         </div>
 
-        <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3">
+        <div className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3">
           <div className="flex items-center justify-between mb-1">
             <div className="text-xs font-bold">{t("components.event_prep_generator.speech")}</div>
             <Button size="sm" variant={speakingId === c.id ? "default" : "outline"} onClick={() => onSpeak(c.id, idea.speech)} className="rounded-full h-7 px-3 text-xs">
