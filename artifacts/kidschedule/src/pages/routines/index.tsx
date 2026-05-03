@@ -196,7 +196,7 @@ function WeekCalendar({ routines, isPremium, routinesMax, onGatedNavigate, onLoc
               const pct = items.length > 0 ? Math.round((done / items.length) * 100) : 0;
               const locked = isRoutineLocked(r.id);
               return (
-                <LockedBlock key={r.id} locked={locked} reason="routines_limit" label="Premium" cta="Unlock All Routines" rounded="rounded-2xl">
+                <LockedBlock key={r.id} locked={locked} reason="routines_limit" rounded="rounded-2xl">
                   <Link href={locked ? "#" : `/routines/${r.id}`} onClick={locked ? (e) => e.preventDefault() : undefined}>
                     <Card className="rounded-2xl border-border/50 shadow-sm hover:border-primary/30 transition-all cursor-pointer group">
                       <CardContent className="p-3 flex items-center gap-3">
@@ -329,8 +329,6 @@ export default function RoutinesList() {
                         key={routine.id}
                         locked={isLocked}
                         reason="routines_limit"
-                        label="Premium"
-                        cta="Unlock All Routines"
                         rounded="rounded-2xl"
                       >
                         <Link href={`/routines/${routine.id}`}>

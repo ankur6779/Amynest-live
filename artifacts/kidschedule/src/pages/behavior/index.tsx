@@ -291,8 +291,6 @@ export default function BehaviorTracker() {
               key={c.id}
               locked={locked}
               reason="child_limit"
-              label="Premium"
-              cta="Unlock"
               rounded="rounded-xl"
             >
               {chip}
@@ -327,8 +325,6 @@ export default function BehaviorTracker() {
                 key={c.id}
                 locked={locked}
                 reason="child_limit"
-                label="Premium"
-                cta="Unlock"
                 rounded="rounded-2xl"
               >
                 {card}

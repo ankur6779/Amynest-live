@@ -285,8 +285,6 @@ export default function BehaviorScreen() {
                 key={child.id}
                 locked={locked}
                 reason="child_limit"
-                label="Premium"
-                cta="Unlock"
                 radius={14}
               >
                 {chip}
@@ -319,8 +317,6 @@ export default function BehaviorScreen() {
                   key={child.id}
                   locked={locked}
                   reason="child_limit"
-                  label="Premium"
-                  cta="Unlock"
                   radius={16}
                   style={{ flexBasis: "48%", flexGrow: 1 }}
                 >
