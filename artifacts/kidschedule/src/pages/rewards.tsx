@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Layout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   getTotalPoints, getRewards, getRedemptions, getLedger, getBadges,
@@ -64,8 +63,7 @@ export default function RewardsPage() {
   };
 
   return (
-    <Layout>
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
+    <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
         {/* Toast */}
         {toastMsg && (
           <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-foreground text-background text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg animate-in fade-in slide-in-from-top-2">
@@ -219,7 +217,6 @@ export default function RewardsPage() {
             )}
           </div>
         )}
-      </div>
-    </Layout>
+    </div>
   );
 }
