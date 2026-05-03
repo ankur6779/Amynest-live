@@ -53,9 +53,8 @@ function baseParams(
     mood: "balanced",
     foodType: "veg",
     region: "pan_indian",
-    p1Free: true,
-    p2Free: true,
-    bothBusy: false,
+    caregiver: "mom",
+    weatherOutdoor: "yes",
     date: "2026-05-02",
   };
 }

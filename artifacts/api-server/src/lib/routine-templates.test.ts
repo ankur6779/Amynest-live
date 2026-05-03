@@ -307,9 +307,8 @@ describe("generateRuleBasedRoutine — school day end-to-end", () => {
     mood: "normal",
     foodType: "veg",
     region: "pan_indian" as const,
-    p1Free: false,
-    p2Free: false,
-    bothBusy: true,
+    caregiver: "mom" as const,
+    weatherOutdoor: "yes" as const,
     date: "2026-04-23",
   };
 
@@ -393,9 +392,8 @@ describe("generateRuleBasedRoutine — non-school day end-to-end", () => {
     mood: "normal",
     foodType: "veg",
     region: "pan_indian" as const,
-    p1Free: true,
-    p2Free: false,
-    bothBusy: false,
+    caregiver: "both" as const,
+    weatherOutdoor: "yes" as const,
     date: "2026-04-26", // Sunday
   };
 
@@ -463,9 +461,8 @@ describe("generateRuleBasedRoutine — preschool school day", () => {
     mood: "happy",
     foodType: "veg",
     region: "south_indian" as const,
-    p1Free: true,
-    p2Free: false,
-    bothBusy: false,
+    caregiver: "mom" as const,
+    weatherOutdoor: "yes" as const,
     date: "2026-04-21",
   };
 
@@ -738,5 +735,88 @@ describe("buildAgeBandGuidance snapshots — pre_teen", () => {
       AGE_BAND_SNAPSHOTS["pre_teen"],
       "pre_teen guidance has changed — update the snapshot if the change is intentional"
     );
+  });
+});
+
+// ─── Caregiver + weather smoke tests ──────────────────────────────────────────
+
+describe("generateRuleBasedRoutine — caregiver", () => {
+  const baseParams = {
+    childName: "Aarav",
+    ageGroup: "early_school" as const,
+    totalAgeMonths: 96,
+    wakeUpTime: "7:00 AM",
+    sleepTime: "9:30 PM",
+    schoolStartTime: "9:00 AM",
+    schoolEndTime: "3:00 PM",
+    travelMode: "walk",
+    hasSchool: false,
+    mood: "normal",
+    foodType: "veg",
+    region: "pan_indian" as const,
+    weatherOutdoor: "yes" as const,
+    date: "2026-04-26",
+  };
+
+  function bondCount(items: { category?: string }[]): number {
+    return items.filter((it) => (it.category ?? "").toLowerCase() === "family").length;
+  }
+
+  it("caregiver=both produces >= bonding count vs caregiver=mom", () => {
+    const both = generateRuleBasedRoutine({ ...baseParams, caregiver: "both" });
+    const mom = generateRuleBasedRoutine({ ...baseParams, caregiver: "mom" });
+    assert.ok(
+      bondCount(both.items) >= bondCount(mom.items),
+      `caregiver=both should have >= bonding than mom (got ${bondCount(both.items)} vs ${bondCount(mom.items)})`,
+    );
+  });
+
+  it("accepts all 5 caregiver values without throwing", () => {
+    for (const c of ["mom", "dad", "both", "grandparent", "babysitter"] as const) {
+      const out = generateRuleBasedRoutine({ ...baseParams, caregiver: c });
+      assert.ok(out.items.length > 0, `caregiver=${c} produced no items`);
+    }
+  });
+});
+
+describe("generateRuleBasedRoutine — weatherOutdoor", () => {
+  const baseParams = {
+    childName: "Priya",
+    ageGroup: "early_school" as const,
+    totalAgeMonths: 96,
+    wakeUpTime: "7:00 AM",
+    sleepTime: "9:30 PM",
+    schoolStartTime: "9:00 AM",
+    schoolEndTime: "3:00 PM",
+    travelMode: "walk",
+    hasSchool: false,
+    mood: "normal",
+    foodType: "veg",
+    region: "pan_indian" as const,
+    caregiver: "mom" as const,
+    date: "2026-04-26",
+  };
+
+  function isOutdoorish(activity: string, category: string): boolean {
+    return /\b(outdoor|park|cycling|cycle|bike|walk|playground|swim|run|jog|football|cricket|tennis|skating|nature|garden)\b/i.test(activity)
+      || /^outdoor/.test(category.toLowerCase());
+  }
+
+  it("weatherOutdoor=no leaves no outdoor activities in the schedule", () => {
+    const out = generateRuleBasedRoutine({ ...baseParams, weatherOutdoor: "no" });
+    const remaining = out.items.filter((it) => isOutdoorish(it.activity, it.category ?? ""));
+    assert.equal(remaining.length, 0, `Outdoor leftovers: ${remaining.map((r) => r.activity).join(", ")}`);
+  });
+
+  it("weatherOutdoor=limited shortens outdoor blocks", () => {
+    const yes = generateRuleBasedRoutine({ ...baseParams, weatherOutdoor: "yes" });
+    const limited = generateRuleBasedRoutine({ ...baseParams, weatherOutdoor: "limited" });
+    const yesOutdoor = yes.items.filter((it) => isOutdoorish(it.activity, it.category ?? ""));
+    const limOutdoor = limited.items.filter((it) => isOutdoorish(it.activity, it.category ?? ""));
+    if (yesOutdoor.length > 0 && limOutdoor.length > 0) {
+      const yesTotal = yesOutdoor.reduce((s, it) => s + (it.duration ?? 0), 0);
+      const limTotal = limOutdoor.reduce((s, it) => s + (it.duration ?? 0), 0);
+      assert.ok(limTotal <= yesTotal, `limited should not increase outdoor minutes (yes=${yesTotal}, limited=${limTotal})`);
+    }
   });
 });

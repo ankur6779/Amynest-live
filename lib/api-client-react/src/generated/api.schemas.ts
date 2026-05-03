@@ -166,20 +166,43 @@ export interface CreateRoutineBody {
   override?: boolean;
 }
 
+/**
+ * Who is handling the child today. Drives tone, simplification, and bonding density. Reuses the HandlerKey enum from @workspace/family-routine.
+ */
+export type GenerateRoutineBodyCaregiver =
+  (typeof GenerateRoutineBodyCaregiver)[keyof typeof GenerateRoutineBodyCaregiver];
+
+export const GenerateRoutineBodyCaregiver = {
+  mom: "mom",
+  dad: "dad",
+  both: "both",
+  grandparent: "grandparent",
+  babysitter: "babysitter",
+} as const;
+
+/**
+ * Outdoor-weather signal. "no" swaps outdoor blocks for indoor alternatives, "limited" shortens them and adds an indoor backup note.
+ */
+export type GenerateRoutineBodyWeatherOutdoor =
+  (typeof GenerateRoutineBodyWeatherOutdoor)[keyof typeof GenerateRoutineBodyWeatherOutdoor];
+
+export const GenerateRoutineBodyWeatherOutdoor = {
+  yes: "yes",
+  no: "no",
+  limited: "limited",
+} as const;
+
 export interface GenerateRoutineBody {
   childId: number;
   date: string;
   hasSchool?: boolean;
-  isWorkingDay?: boolean;
   specialPlans?: string | null;
   fridgeItems?: string | null;
   mood?: string | null;
-  parent1Role?: string | null;
-  parent1WorkType?: string | null;
-  parent1IsWorking?: boolean | null;
-  parent2Role?: string | null;
-  parent2WorkType?: string | null;
-  parent2IsWorking?: boolean | null;
+  /** Who is handling the child today. Drives tone, simplification, and bonding density. Reuses the HandlerKey enum from @workspace/family-routine. */
+  caregiver?: GenerateRoutineBodyCaregiver;
+  /** Outdoor-weather signal. "no" swaps outdoor blocks for indoor alternatives, "limited" shortens them and adds an indoor backup note. */
+  weatherOutdoor?: GenerateRoutineBodyWeatherOutdoor;
   region?: string | null;
   wakeTime?: string | null;
   age?: number | null;

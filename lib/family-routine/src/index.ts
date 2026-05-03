@@ -6,6 +6,13 @@
 
 export type HandlerKey = "mom" | "dad" | "both" | "grandparent" | "babysitter";
 
+/**
+ * Caregiver of the child for the day. Identical union to {@link HandlerKey} —
+ * exposed under a domain name so the routine-generation API and prompt layer
+ * can speak in "caregiver" terms without coupling to the older "handler" name.
+ */
+export type CaregiverKey = HandlerKey;
+
 export type HandlerInfo = {
   key: HandlerKey;
   label: string;
@@ -422,3 +429,4 @@ export * from "./adaptive";
 export * from "./commandCenter";
 export * from "./availability";
 export * from "./familyTimeline";
+export * from "./weather";

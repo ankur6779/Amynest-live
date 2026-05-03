@@ -2,6 +2,11 @@
 // Replaces OpenAI calls with deterministic, age-appropriate schedule building.
 
 import { recipeFor, nutritionFor } from "./meal-recipes.js";
+import {
+  applyWeatherAdjustment,
+  type CaregiverKey,
+  type WeatherOutdoor,
+} from "@workspace/family-routine";
 
 export type AgeGroup = "infant" | "toddler" | "preschool" | "early_school" | "pre_teen";
 
@@ -88,9 +93,14 @@ export type RoutineParams = {
   goals?: string;
   specialPlans?: string;
   fridgeItems?: string;
-  p1Free: boolean;
-  p2Free: boolean;
-  bothBusy: boolean;
+  /**
+   * Who is handling the child today. Drives bonding density + tone in the
+   * generated routine. Reuses the HandlerKey union from @workspace/family-routine.
+   * Defaults to "mom" at the route layer; required here for explicitness.
+   */
+  caregiver: CaregiverKey;
+  /** Outdoor-weather signal — controls activity replacement / shortening. */
+  weatherOutdoor: WeatherOutdoor;
   childClass?: string;
   date: string;
   behaviorContext?: string;
@@ -1387,8 +1397,23 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     childName, ageGroup, wakeUpTime, sleepTime,
     schoolStartTime, schoolEndTime, travelMode, hasSchool,
     mood, foodType, region, specialPlans, fridgeItems, date,
-    p1Free, p2Free, bothBusy, customRecipes,
+    caregiver, weatherOutdoor, customRecipes,
   } = params;
+
+  // Caregiver-driven bonding density. Both parents at home → extra bonding;
+  // single-handed mom/dad → standard; grandparent/babysitter → keep bonding
+  // density low (the post-generation `simplifyForHandler` pass in
+  // @workspace/family-routine handles the deeper trim for those handlers).
+  const allowExtraBonding = caregiver === "both" || caregiver === "mom" || caregiver === "dad";
+  const wantThirdBonding = caregiver === "both";
+  // Grandparent / babysitter substitute caregivers cannot lead high-effort
+  // cooking-from-scratch tasks; force a "simple meal" hint and prefer indoor
+  // play over demanding outdoor sports by treating outdoor weather as
+  // "limited" for the post-processing pass.
+  const isSubstituteCaregiver = caregiver === "grandparent" || caregiver === "babysitter";
+  const effectiveWeather: WeatherOutdoor = isSubstituteCaregiver && weatherOutdoor === "yes"
+    ? "limited"
+    : weatherOutdoor;
 
   const seed = dateSeed(date, childName);
   // Accept both "non_veg" (canonical) and legacy "nonveg"
@@ -1436,7 +1461,8 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     add(WIND_DOWN.infant[0]!);
     add(WIND_DOWN.infant[1]!);
     items.push({ ...SLEEP_ANCHOR.infant, time: minsToTime(sleepMins), status: "pending" });
-    return { title: makeTitle("infant", childName, false, seed), items: withRewardPoints(items) };
+    const infantWeather = applyWeatherAdjustment(items, effectiveWeather);
+    return { title: makeTitle("infant", childName, false, seed), items: withRewardPoints(infantWeather) };
   }
 
   // ── Structured routine for toddler → pre_teen ─────────────────────────────
@@ -1590,8 +1616,8 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     }
   }
 
-  // Add 3rd bonding if parent is free and time allows
-  if (bondAdded < 3 && !bothBusy && (p1Free || p2Free) && bondIdx < bondPool.length) {
+  // Add 3rd bonding when both parents are co-handling the day and time allows
+  if (bondAdded < 3 && wantThirdBonding && allowExtraBonding && bondIdx < bondPool.length) {
     const bond = bondPool[bondIdx]!;
     const remaining = windDownStart - cursor;
     if (remaining >= bond.duration + 10) {
@@ -1649,7 +1675,18 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     customRecipes,
     region,
   });
-  return { title, items: withRewardPoints(v2Items) };
+  let weatherAdjusted = applyWeatherAdjustment(v2Items, effectiveWeather);
+  // Substitute caregivers (grandparent / babysitter) cannot lead from-scratch
+  // recipes — strip recipe details on meal items so notes stay simple.
+  if (isSubstituteCaregiver) {
+    weatherAdjusted = weatherAdjusted.map((it) => {
+      if (it.category !== "meal" && it.category !== "tiffin") return it;
+      const note = it.notes ? `${it.notes} (Caregiver: keep meal simple — use pre-prepped or quick options.)` : "Caregiver: keep meal simple — use pre-prepped or quick options.";
+      const { recipe: _r, ...rest } = it as typeof it & { recipe?: unknown };
+      return { ...rest, notes: note };
+    });
+  }
+  return { title, items: withRewardPoints(weatherAdjusted) };
 }
 
 // ─── Rule-Based Insights Generator ───────────────────────────────────────────

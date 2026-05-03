@@ -241,9 +241,8 @@ describe("MobileRecipeCard — integration with generateRuleBasedRoutine", () =>
       mood: "balanced",
       foodType: "veg",
       region: "pan_indian",
-      p1Free: true,
-      p2Free: false,
-      bothBusy: false,
+      caregiver: "mom",
+      weatherOutdoor: "yes",
       date: "Monday",
     }).items;
 
@@ -260,9 +259,8 @@ describe("MobileRecipeCard — integration with generateRuleBasedRoutine", () =>
       mood: "balanced",
       foodType: "veg",
       region: "pan_indian",
-      p1Free: true,
-      p2Free: false,
-      bothBusy: false,
+      caregiver: "mom",
+      weatherOutdoor: "yes",
       date: "Saturday",
     }).items;
   });

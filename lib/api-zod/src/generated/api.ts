@@ -361,20 +361,28 @@ export const DeleteRoutineParams = zod.object({
 /**
  * @summary Generate a daily routine with AI
  */
+export const generateRoutineBodyCaregiverDefault = `mom`;
+export const generateRoutineBodyWeatherOutdoorDefault = `yes`;
+
 export const GenerateRoutineBody = zod.object({
   childId: zod.number(),
   date: zod.string(),
   hasSchool: zod.boolean().optional(),
-  isWorkingDay: zod.boolean().optional(),
   specialPlans: zod.string().nullish(),
   fridgeItems: zod.string().nullish(),
   mood: zod.string().nullish(),
-  parent1Role: zod.string().nullish(),
-  parent1WorkType: zod.string().nullish(),
-  parent1IsWorking: zod.boolean().nullish(),
-  parent2Role: zod.string().nullish(),
-  parent2WorkType: zod.string().nullish(),
-  parent2IsWorking: zod.boolean().nullish(),
+  caregiver: zod
+    .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+    .default(generateRoutineBodyCaregiverDefault)
+    .describe(
+      "Who is handling the child today. Drives tone, simplification, and bonding density. Reuses the HandlerKey enum from @workspace\/family-routine.",
+    ),
+  weatherOutdoor: zod
+    .enum(["yes", "no", "limited"])
+    .default(generateRoutineBodyWeatherOutdoorDefault)
+    .describe(
+      'Outdoor-weather signal. \"no\" swaps outdoor blocks for indoor alternatives, \"limited\" shortens them and adds an indoor backup note.',
+    ),
   region: zod.string().nullish(),
   wakeTime: zod.string().nullish(),
   age: zod.number().nullish(),

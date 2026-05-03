@@ -31,6 +31,8 @@ export * from "./dashboardSummary";
 export * from "./generatedRoutine";
 export * from "./generateInsightsResponse";
 export * from "./generateRoutineBody";
+export * from "./generateRoutineBodyCaregiver";
+export * from "./generateRoutineBodyWeatherOutdoor";
 export * from "./getLifeSkillRolePlaysAgeBand";
 export * from "./getLifeSkillRolePlaysParams";
 export * from "./getLifeSkillsTodayParams";
