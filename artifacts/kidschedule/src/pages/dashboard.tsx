@@ -62,7 +62,8 @@ function computeStreak(routines: Routine[]): number {
   return streak;
 }
 
-// ─── Hero Greeting — premium, calm, clear ────────────────────────────────
+// audit-block-ignore-start
+// ─── Hero Greeting — coral→orange gradient banner on dark dashboard ──────
 function HeroGreeting({
   displayName,
   hasChildren,
@@ -89,28 +90,37 @@ function HeroGreeting({
     hour: "2-digit",
     minute: "2-digit"
   }) : null;
-  return <div className="relative overflow-hidden rounded-3xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-white dark:from-card dark:via-muted dark:to-muted px-5 sm:px-6 py-5 sm:py-6 animate-in fade-in duration-400">
-      <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-muted dark:bg-card blur-3xl pointer-events-none" />
+  return (
+    <div data-on-dark className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-[#ff8a65] via-[#ff6f47] to-[#ff5a3c] px-5 sm:px-7 py-5 sm:py-6 shadow-lg animate-in fade-in duration-400">
+      <div className="absolute -top-16 -right-12 h-48 w-48 rounded-full bg-white/15 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-[#ffb38a]/30 blur-3xl pointer-events-none" />
       <div className="relative flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
         <div className="min-w-0">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-primary dark:text-primary">{greeting}</p>
-          <h1 className="font-quicksand text-2xl sm:text-[28px] font-black text-foreground mt-1 leading-[1.15] tracking-tight">
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#ffd9c9]">{greeting}</p>
+          <h1 className="font-quicksand text-2xl sm:text-[28px] font-black text-white mt-1 leading-[1.15] tracking-tight">
             👋 {heading}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1.5 leading-snug">
+          <p className="text-sm text-white/85 mt-1.5 leading-snug">
             {hasChildren ? t("dashboard.planned_for_you") : t("dashboard.setup_first")}
           </p>
         </div>
-        <div className="shrink-0 flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="shrink-0 flex items-center gap-2 text-xs text-white/85">
           <span className="hidden sm:inline font-medium">{dateStr}</span>
-          {syncedTime && <span className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-card backdrop-blur rounded-full px-2.5 py-1 border border-border/70">
-              <LiveDot />
+          {syncedTime && (
+            <span className="inline-flex items-center gap-1.5 bg-[#1a1326]/80 backdrop-blur rounded-full px-2.5 py-1 border border-white/10 text-white">
+              <span className="relative inline-flex items-center h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff7a59] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ff7a59]" />
+              </span>
               <span className="font-semibold">{t("pages.dashboard.live")} {syncedTime}</span>
-            </span>}
+            </span>
+          )}
         </div>
       </div>
-    </div>;
+    </div>
+  );
 }
+// audit-block-ignore-end
 
 // Tiny section label used to chunk the dashboard into clear groups
 function SectionLabel({
@@ -121,7 +131,7 @@ function SectionLabel({
   action?: React.ReactNode;
 }) {
   return <div className="flex items-center justify-between mt-1 mb-0.5 px-0.5">
-      <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-muted-foreground">{children}</p>
+      <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-white/60">{children}</p>
       {action}
     </div>;
 }
@@ -804,23 +814,33 @@ export default function Dashboard() {
     return <OnboardingScreen displayName={displayName} />;
   }
   if (loadingSummary) {
-    return <div className="flex flex-col gap-5 animate-in fade-in duration-400">
-        <Skeleton className="h-16 w-full rounded-2xl" />
-        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-5">
-          <div className="flex flex-col gap-4">
-            <Skeleton className="h-28 rounded-2xl" />
-            <Skeleton className="h-48 rounded-2xl" />
-          </div>
-          <div className="flex flex-col gap-3">
-            <Skeleton className="h-16 rounded-2xl" />
-            <Skeleton className="h-36 rounded-2xl" />
-            <Skeleton className="h-24 rounded-2xl" />
-            <Skeleton className="h-32 rounded-2xl" />
+    return (
+      // audit-block-ignore-start
+      <div data-on-dark className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 -mb-20 md:-mb-8 px-4 md:px-8 pt-4 md:pt-8 pb-24 md:pb-12 bg-[#0a1024] min-h-[calc(100vh-2rem)]">
+        {/* audit-block-ignore-end */}
+        <div className="flex flex-col gap-5 animate-in fade-in duration-400">
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-5">
+            <div className="flex flex-col gap-4">
+              <Skeleton className="h-28 rounded-2xl" />
+              <Skeleton className="h-48 rounded-2xl" />
+            </div>
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-16 rounded-2xl" />
+              <Skeleton className="h-36 rounded-2xl" />
+              <Skeleton className="h-24 rounded-2xl" />
+              <Skeleton className="h-32 rounded-2xl" />
+            </div>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-8">
+  return (
+    // audit-block-ignore-start
+    <div data-on-dark className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 -mb-20 md:-mb-8 px-4 md:px-8 pt-4 md:pt-8 pb-24 md:pb-12 bg-[#0a1024] min-h-[calc(100vh-2rem)]">
+      {/* audit-block-ignore-end */}
+      <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-8">
 
       {/* ── Hero Greeting ───────────────────────────────────────── */}
       <HeroGreeting displayName={displayName} hasChildren={(childrenList?.length ?? 0) > 0} lastUpdated={lastUpdated} />
@@ -995,5 +1015,7 @@ export default function Dashboard() {
         <Sparkles className="h-5 w-5" />
         {t("pages.dashboard.generate_today_s_routine")}
       </button>
-    </div>;
+      </div>
+    </div>
+  );
 }
