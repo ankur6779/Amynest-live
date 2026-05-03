@@ -1,0 +1,135 @@
+Upgrade AmyNest AI to use "country + cuisine preferences" for ALL food-related outputs.
+
+GOAL:
+Every meal, tiffin, and routine should feel local, familiar, and culturally relevant.
+
+---
+
+### 1. INPUT DATA
+
+Use:
+- user.country (US, India, UAE, UK, etc.)
+- user.cuisine_primary (Western, Indian, Asian, etc.)
+- user.cuisine_secondary (optional)
+- child_age
+- school_time
+
+---
+
+### 2. MEAL ENGINE (CORE LOGIC)
+
+Create a mapping system:
+
+IF country = US AND cuisine = Western:
+→ Suggest:
+- Breakfast: Oats, scrambled eggs, toast
+- Lunch: Sandwich, pasta, wraps
+- Dinner: Rice bowl, grilled chicken, salad
+
+IF country = India AND cuisine = Indian:
+→ Suggest:
+- Breakfast: Poha, dosa, paratha
+- Lunch: Dal, roti, sabzi
+- Dinner: Khichdi, curry
+
+IF country = UAE:
+→ Mix:
+- Indian + Middle Eastern
+
+---
+
+### 3. TIFFIN SYSTEM (IMPORTANT)
+
+Generate school tiffin based on:
+
+- easy to eat
+- non-messy
+- 15–20 min prep
+
+Examples:
+
+US:
+- Peanut butter sandwich
+- Fruit slices + yogurt
+
+India:
+- Paratha roll
+- Idli + chutney
+
+UK:
+- Wrap + cheese sticks
+
+---
+
+### 4. AI MEAL SUGGESTION (AMY AI)
+
+Prompt logic:
+
+"Suggest today's meals for a [age] child in [country], following [cuisine], keeping it healthy, quick, and kid-friendly."
+
+Output:
+- Breakfast
+- Lunch
+- Snack
+- Dinner
+
+---
+
+### 5. RECIPE ENGINE
+
+Each meal should have:
+
+- Name
+- Ingredients (simple)
+- Steps (3–5)
+- Time (under 20 mins)
+- Optional image
+
+---
+
+### 6. ROUTINE INTEGRATION
+
+When building daily routine:
+
+IF school day:
+→ include tiffin suggestion
+
+IF weekend:
+→ include fun meal (pizza, pancakes, etc.)
+
+---
+
+### 7. SMART VARIATION SYSTEM
+
+Avoid repetition:
+
+- Track last 5 meals
+- Do not repeat same item within 3 days
+
+---
+
+### 8. UI INTEGRATION
+
+Show:
+
+"🍱 Today’s Tiffin (Recommended for your region)"
+
+"🍽️ Meals based on your family’s food style"
+
+---
+
+### 9. FALLBACK LOGIC
+
+IF no cuisine selected:
+→ use country default
+
+IF unknown country:
+→ use global balanced meals
+
+---
+
+### 10. FUTURE EXPANSION
+
+- Allergy filter
+- Vegetarian toggle
+- Budget-based meals
