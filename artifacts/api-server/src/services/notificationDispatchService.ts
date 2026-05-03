@@ -292,24 +292,9 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     return { status: "throttled", reason: "category_disabled" };
   }
 
-  if (inQuietHours(prefs)) {
-    await logEvent(input, "throttled", "quiet_hours");
-    return { status: "throttled", reason: "quiet_hours" };
-  }
-
-  if (input.dedupKey && (await isDuplicate(input.userId, input.dedupKey))) {
-    await logEvent(input, "duplicate", "dedup_window");
-    return { status: "duplicate", reason: "dedup_window" };
-  }
-
-  if (!input.bypassDailyCap) {
-    const sentToday = await countSentToday(input.userId, prefs.timezone);
-    if (sentToday >= prefs.dailyCap) {
-      await logEvent(input, "throttled", `daily_cap:${prefs.dailyCap}`);
-      return { status: "throttled", reason: "daily_cap" };
-    }
-  }
-
+  // Fetch tokens first — no point running throttle checks if there's nobody to
+  // send to. Returning no_tokens before quiet-hours / daily-cap also avoids
+  // counting user-less dispatch attempts against the cap.
   const tokens = await db
     .select({ token: pushTokensTable.token, platform: pushTokensTable.platform })
     .from(pushTokensTable)
@@ -329,6 +314,24 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   if (expoTokens.length === 0 && webTokens.length === 0) {
     await logEvent(input, "no_tokens", "no_valid_tokens");
     return { status: "no_tokens", reason: "no_valid_tokens" };
+  }
+
+  if (input.dedupKey && (await isDuplicate(input.userId, input.dedupKey))) {
+    await logEvent(input, "duplicate", "dedup_window");
+    return { status: "duplicate", reason: "dedup_window" };
+  }
+
+  if (!input.bypassDailyCap) {
+    const sentToday = await countSentToday(input.userId, prefs.timezone);
+    if (sentToday >= prefs.dailyCap) {
+      await logEvent(input, "throttled", `daily_cap:${prefs.dailyCap}`);
+      return { status: "throttled", reason: "daily_cap" };
+    }
+  }
+
+  if (inQuietHours(prefs)) {
+    await logEvent(input, "throttled", "quiet_hours");
+    return { status: "throttled", reason: "quiet_hours" };
   }
 
   const ticketIds: string[] = [];
