@@ -1,8 +1,11 @@
 import { Router, type IRouter } from "express";
+import { eq } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { requireAuth } from "../middlewares/requireAuth";
 import { suggestMeals, type MealRegion } from "../lib/meal-suggestions";
 import { logger } from "../lib/logger.js";
+import { db } from "@workspace/db";
+import { childrenTable, parentProfilesTable } from "@workspace/db/schema";
 
 const router: IRouter = Router();
 
@@ -315,41 +318,98 @@ function parsePrepMinutes(time: string): number {
   return Math.min(120, Math.max(5, n));
 }
 
-function buildAiGeneratePrompt(query: string, region: string, audience: string, childAge?: number, isVeg?: boolean, language: Lang = "en", country?: string): string {
+const ALLERGY_EXPANSION_MEALS: Record<string, string> = {
+  dairy: "milk, curd/dahi, paneer, cheese, butter, ghee, yoghurt/yogurt, cream, lassi, kheer, mayo (dairy-based)",
+  gluten: "wheat, maida/all-purpose flour, bread, roti, paratha, naan, pasta, noodles, semolina/suji/rava, biscuits, cake, pizza base",
+  eggs: "egg in any form — omelette, scrambled, boiled, fried, mayo, cake/cookies with egg",
+  nuts: "cashew, almond, walnut, pistachio, hazelnut, brazil nut, pecan, mixed-nut garnishes",
+  peanuts: "peanut, groundnut, peanut butter, satay sauce, peanut chikki, groundnut oil",
+  soy: "tofu, soy milk, soy sauce, edamame, tempeh, soya chunks, soy protein",
+  shellfish: "prawn, shrimp, crab, lobster, oyster, scallop, clam",
+  fish: "fish of any kind, including tuna, salmon, sardine, fish sauce, fish curry",
+  sesame: "til/sesame seeds, tahini, sesame oil, gajak, til-laddu, sesame garnishes",
+  mustard: "mustard seeds/rai, mustard oil, mustard sauce, kasundi",
+};
+
+type AiGenerateParams = {
+  query: string;
+  region: string;
+  audience: string;
+  childAge?: number;
+  // Full diet profile — replaces the old isVeg boolean.
+  dietType?: string;       // "veg", "non_veg", "vegan", "eggetarian", "pescatarian", "jain", "no_preference"
+  allergies?: string;      // comma-separated: "dairy,gluten,eggs,nuts,peanuts,soy,shellfish,sesame"
+  foodStyle?: string;      // "indian", "asian", "western", "middle_eastern", "mixed"
+  subCuisine?: string;     // "north_indian", "south_indian", etc (when foodStyle="indian")
+  language?: Lang;
+  country?: string;
+};
+
+function buildAiGeneratePrompt(params: AiGenerateParams): string {
+  const { query, region, audience, childAge, dietType, allergies, foodStyle, subCuisine, language = "en", country } = params;
+
   const audience_line = audience === "parent_healthy"
-    ? "The meal is for an adult parent (healthy, nutritious, low-calorie)."
+    ? "The meal is for an adult parent (healthy, nutritious, appropriate calories)."
     : childAge != null
-    ? `The meal is for a child aged ${childAge} years (kid-friendly tiffin/snack/meal).`
+    ? `The meal is for a child aged ${childAge} years (kid-friendly, age-appropriate).`
     : "The meal is for a school-age child (kid-friendly tiffin or meal).";
 
-  const veg_line = isVeg === true
-    ? "All meals must be strictly vegetarian (no egg, no meat, no fish)."
-    : isVeg === false
-    ? "You may include non-vegetarian options where natural."
-    : "Mix of vegetarian and non-vegetarian is fine.";
+  // Full diet constraint — use dietType if provided, fall back to isVeg-style
+  const ft = (dietType ?? "veg").toLowerCase().replace(/-/g, "_");
+  const dietLine =
+    ft === "vegan"
+      ? "DIET: VEGAN — strictly NO animal products. Absolutely no meat, no fish, no dairy (no milk/curd/paneer/cheese/butter/ghee/yoghurt), no eggs, no honey."
+    : ft === "jain"
+      ? "DIET: JAIN VEGETARIAN — no meat, no fish, no eggs. ALSO no onion, no garlic, no potato, no carrot, no radish, no beetroot, no underground/root vegetables."
+    : ft === "eggetarian"
+      ? "DIET: EGGETARIAN — eggs are OK; no meat or fish."
+    : ft === "pescatarian"
+      ? "DIET: PESCATARIAN — fish and seafood are OK; no other meat."
+    : (ft === "non_veg" || ft === "nonveg" || ft === "no_preference")
+      ? "DIET: NON-VEGETARIAN — meat, fish, eggs all OK (unless restricted by allergies)."
+    : "DIET: VEGETARIAN — no meat, no fish. Eggs and dairy are OK unless restricted by allergies.";
 
-  // Handle multi-cuisine (comma-separated from onboarding multi-select)
-  const cuisines = parseCuisines(region);
+  // Allergy block with full expansion
+  const allergyDetail = (() => {
+    const raw = (allergies ?? "").trim();
+    if (!raw) return "";
+    const list = raw.split(/[,;]/).map((s) => s.trim().toLowerCase()).filter(Boolean);
+    if (list.length === 0) return "";
+    const lines = list.map((a) => {
+      const expansion = ALLERGY_EXPANSION_MEALS[a] ?? `any form of ${a}`;
+      return `  • ${a.toUpperCase()} allergy → MUST NOT contain: ${expansion}`;
+    });
+    return `\nALLERGIES (SAFETY-CRITICAL — not even a trace or garnish):\n${lines.join("\n")}`;
+  })();
+
+  // Cuisine style
+  const effectiveRegion = (() => {
+    if (foodStyle && foodStyle !== "indian") return foodStyle;
+    if (foodStyle === "indian" && subCuisine) return subCuisine;
+    return region;
+  })();
+  const cuisines = parseCuisines(effectiveRegion);
   const primaryLabel = buildCuisineLabel(cuisines[0] ?? "pan_indian");
   const secondaryCuisineContext = cuisines[1]
-    ? `\nSecondary cuisine preference: ${buildCuisineLabel(cuisines[1])} — blend elements from both where natural.`
+    ? `\nSecondary cuisine: ${buildCuisineLabel(cuisines[1])} — blend elements where natural.`
     : "";
   const countryContext = country
-    ? `\nUser country: ${country}. Prefer ingredients readily available in that country. Keep portion sizes and cooking methods appropriate for local kitchens.`
+    ? `\nUser country: ${country}. Prefer ingredients common in that country.`
     : "";
 
-  return `You are Amy, an AI assistant for the parenting app AmyNest. Generate 5 meal recipes based on the parent's request.
+  return `You are Amy, an AI cooking assistant for the parenting app AmyNest. Generate 5 personalised meal recipes.
 
 Parent's request: "${query}"
 Primary cuisine: ${primaryLabel}${secondaryCuisineContext}${countryContext}
 ${audience_line}
-${veg_line}
+${dietLine}${allergyDetail}
 
-IMPORTANT:
-- Output ONLY a valid JSON object with a "meals" array — no markdown, no extra text, no code fences.
+CRITICAL RULES:
+- Output ONLY a valid JSON object with a "meals" array — no markdown, no extra text.
 - Generate exactly 5 meals.
+- EVERY meal MUST strictly comply with the diet and allergy rules above — no exceptions, not even in garnishes or minor ingredients.
+- Use the cuisine style above — do NOT default to generic Indian food if another cuisine is specified.
 - Each meal must match the parent's request as closely as possible.
-- Use the cuisine style above — do NOT default to Indian meals if a different cuisine is specified.
 - Use real, practical recipes with ingredients commonly available locally.
 
 OUTPUT FORMAT:
@@ -366,19 +426,19 @@ OUTPUT FORMAT:
       "isVeg": true
     }
   ],
-  "amyMessage": "A short 1-line tip or encouragement for the parent about these meals."
+  "amyMessage": "A short 1-line personalised tip about these meals."
 }
 
 RULES:
-- title: max 60 chars, real meal name
+- title: max 60 chars, real specific meal name
 - emoji: a single relevant food emoji
-- ingredients: 4-8 items, include rough quantities (e.g. "1 cup rice", "2 tbsp oil")
-- steps: 3-6 clear, concise steps (max 200 chars each)
+- ingredients: 4-8 items with rough quantities (e.g. "1 cup rice", "2 tbsp oil")
+- steps: 3-6 clear concise steps (max 200 chars each)
 - prepMinutes: realistic integer (5-45)
 - calories: realistic integer per serving (80-700)
 - tags: 1-4 lowercase tags from: healthy, quick, veg, non-veg, protein, sweet, spicy, light, heavy, kids, tiffin
-- isVeg: boolean
-- amyMessage: 1 sentence of encouragement or tip, max 120 chars${langDirective(language, ["title", "ingredients", "steps", "amyMessage"])}`;
+- isVeg: boolean (true only if strictly no meat/fish/eggs)
+- amyMessage: 1 sentence, max 120 chars${langDirective(language, ["title", "ingredients", "steps", "amyMessage"])}`;
 }
 
 router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> => {
@@ -391,33 +451,69 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
   const queryRaw = String(req.body?.query ?? "").trim().slice(0, 300);
   const query = queryRaw.length > 0 ? queryRaw : "quick healthy tiffin for kids";
 
-  // Support comma-separated multi-cuisine (e.g. "north_indian,western" from onboarding multi-select)
-  const regionRaw = String(req.body?.region ?? "pan_indian").toLowerCase().trim();
+  const audienceRaw = String(req.body?.audience ?? "").toLowerCase().trim();
+  const audience = audienceRaw === "parent_healthy" ? "parent_healthy" : "kids_tiffin";
+
+  const language = normalizeLanguage(req.body?.language);
+
+  // ── Load full diet profile from DB server-side ───────────────────────────
+  // The frontend only sends basic hints (region, country, childAge, isVeg).
+  // We override with the real child + parent profile stored in the database so
+  // the AI gets the actual dietType, allergies, foodStyle, and subCuisine.
+  const [children, parentProfiles] = await Promise.all([
+    db.select().from(childrenTable).where(eq(childrenTable.userId, userId)),
+    db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId)),
+  ]);
+
+  const pp = parentProfiles[0] as typeof parentProfilesTable.$inferSelect & {
+    dietType?: string; foodStyle?: string; subCuisine?: string; allergies?: string;
+  } | undefined;
+  const child = children[0] as typeof childrenTable.$inferSelect & {
+    dietType?: string; foodStyle?: string; subCuisine?: string; allergies?: string;
+  } | undefined;
+
+  // Diet type resolution: child.dietType → pp.dietType → pp.foodType → child.foodType → body fallback
+  let dietType: string =
+    (child as any)?.dietType ||
+    (pp as any)?.dietType ||
+    pp?.foodType ||
+    child?.foodType ||
+    (req.body?.isVeg === true || req.body?.isVeg === "true" ? "veg" : "no_preference");
+
+  // Allergies: child overrides parent; both come from DB, not the frontend
+  const allergies: string =
+    (child as any)?.allergies ||
+    (pp as any)?.allergies ||
+    "";
+
+  // Food style & sub-cuisine from DB
+  const foodStyle: string | undefined =
+    (child as any)?.foodStyle ?? (pp as any)?.foodStyle ?? undefined;
+  const subCuisine: string | undefined =
+    (child as any)?.subCuisine ?? (pp as any)?.subCuisine ?? undefined;
+
+  // Region: DB profile wins over frontend hint
+  const regionRaw = String(pp?.region ?? req.body?.region ?? "pan_indian").toLowerCase().trim();
   const region = parseCuisines(regionRaw)
     .filter((c) => ALLOWED_REGIONS.has(c))
     .join(",") || "pan_indian";
 
-  const audienceRaw = String(req.body?.audience ?? "").toLowerCase().trim();
-  const audience = audienceRaw === "parent_healthy" ? "parent_healthy" : "kids_tiffin";
+  // Country: frontend hint (ISO code)
+  const country = typeof req.body?.country === "string" ? req.body.country.toUpperCase().slice(0, 3) : undefined;
 
-  let childAge: number | undefined = undefined;
-  if (req.body?.childAge != null && req.body.childAge !== "") {
+  // Child age: DB first, then frontend hint
+  let childAge: number | undefined = child?.age != null ? Math.max(0, Math.min(MAX_AGE, Math.floor(Number(child.age)))) : undefined;
+  if (childAge == null && req.body?.childAge != null) {
     const n = Number(req.body.childAge);
     if (Number.isFinite(n)) childAge = Math.max(0, Math.min(MAX_AGE, Math.floor(n)));
   }
 
-  const isVegParam = req.body?.isVeg;
-  const isVeg = isVegParam === true || isVegParam === "true" ? true
-    : isVegParam === false || isVegParam === "false" ? false
-    : undefined;
-
-  const language = normalizeLanguage(req.body?.language);
-  const country = typeof req.body?.country === "string" ? req.body.country.toUpperCase().slice(0, 3) : undefined;
+  req.log.info({ dietType, allergies, foodStyle, subCuisine, region, childAge }, "[meals/ai-generate] resolved diet context");
 
   try {
     const { openai } = await import("@workspace/integrations-openai-ai-server");
 
-    const prompt = buildAiGeneratePrompt(query, region, audience, childAge, isVeg, language, country);
+    const prompt = buildAiGeneratePrompt({ query, region, audience, childAge, dietType, allergies, foodStyle, subCuisine, language, country });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -491,7 +587,8 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
         .map((t) => String(t).toLowerCase().trim().slice(0, 20))
         .filter((t) => SAFE_TAGS.has(t));
       const isVegMeal = o.isVeg === true || o.isVeg === "true"
-        || tags.includes("veg") || (isVeg === true);
+        || tags.includes("veg")
+        || (dietType === "veg" || dietType === "vegan" || dietType === "jain");
 
       const bgGradient = AI_GENERATE_GRADIENTS[idx % AI_GENERATE_GRADIENTS.length] as [string, string];
       const id = slugify(title) + "-" + idx;
