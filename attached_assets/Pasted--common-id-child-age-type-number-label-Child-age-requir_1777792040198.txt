@@ -1,0 +1,41 @@
+{
+  "common": [
+    { "id": "child_age", "type": "number", "label": "Child age", "required": true },
+    { "id": "severity", "type": "slider", "label": "How serious is this?", "range": [1,5] },
+    { "id": "frequency", "type": "select", "options": ["Daily","Few times/week","Rare"] }
+  ],
+
+  "tantrums": [
+    { "id": "location", "type": "select", "options": ["Home","Public","School"] },
+    { "id": "trigger", "type": "select", "options": ["Denied request","Hunger","Screen removal","Tiredness"] },
+    { "id": "duration", "type": "select", "options": ["<5 min","5–15 min",">15 min"] },
+    { "id": "parent_response", "type": "select", "options": ["Ignore","Scold","Give in","Distract"] }
+  ],
+
+  "screen_addiction": [
+    { "id": "daily_time", "type": "select", "options": ["<1 hr","1–3 hr",">3 hr"] },
+    { "id": "content_type", "type": "select", "options": ["YouTube","Games","Shorts"] },
+    { "id": "usage_time", "type": "select", "options": ["Meals","Sleep time","Free time"] },
+    { "id": "reaction_remove", "type": "select", "options": ["Calm","Angry","Tantrum"] }
+  ],
+
+  "fussy_eating": [
+    { "id": "food_type", "type": "multi", "options": ["Vegetables","Fruits","New food"] },
+    { "id": "meal_duration", "type": "select", "options": ["<15 min","15–30 min",">30 min"] },
+    { "id": "snacks", "type": "select", "options": ["Low","Medium","High"] }
+  ],
+
+  "sleep": [
+    { "id": "bedtime", "type": "time" },
+    { "id": "wake_time", "type": "time" },
+    { "id": "night_waking", "type": "select", "options": ["None","1–2","3+"] },
+    { "id": "sleep_environment", "type": "select", "options": ["Dark quiet","TV on","Parent present"] }
+  ],
+
+  "parent_burnout": [
+    { "id": "sleep_hours", "type": "select", "options": ["<5","5–7","7+"] },
+    { "id": "stress_level", "type": "slider", "range": [1,5] },
+    { "id": "support", "type": "select", "options": ["None","Some","Strong"] },
+    { "id": "me_time", "type": "select", "options": ["None","Occasional","Daily"] }
+  ]
+}
