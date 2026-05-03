@@ -1192,120 +1192,23 @@ type AnchorOpts = {
   fridgeItems?: string;
   customRecipes?: CustomRecipeEntry[];
   region?: Region;
-  // Food preference context — used to filter meal options so vegan/jain/
-  // allergic kids don't get suggested forbidden items (milk, egg, paneer, etc.)
-  foodType?: string;
-  allergies?: string | null;
 };
 
-// Drop options that contain forbidden ingredients for the child's diet/allergies.
-// Returns a filtered array — may be shorter than input. Caller should fall back
-// gracefully if the result is too small to display.
-function filterOptionsByDiet(
-  options: string[],
-  foodType?: string,
-  allergies?: string | null,
-): string[] {
-  const ft = (foodType ?? "vegetarian").toLowerCase().replace(/-/g, "_");
-  const isVegan = ft === "vegan";
-  const isVeg = ft === "veg" || ft === "vegetarian" || ft === "lacto_vegetarian"
-    || ft === "jain" || isVegan;
-  const isJain = ft === "jain";
-
-  // Forbidden substrings (lowercase). Word-boundary-ish matching via includes
-  // is good enough for short option phrases like "Banana + milk + toast".
-  const veganForbidden = [
-    "milk", "curd", "yoghurt", "yogurt", "paneer", "ghee", "butter",
-    "cheese", "egg", "honey", "mayo", "cream",
-  ];
-  const vegForbidden = ["egg", "chicken", "fish", "mutton", "meat", "prawn", "bacon"];
-  const jainForbidden = ["onion", "garlic", "potato", "carrot", "radish", "beetroot"];
-
-  const allergyList = (allergies ?? "")
-    .split(/[,;]/)
-    .map((s) => s.trim().toLowerCase())
-    .filter((s) => s.length >= 3);
-
-  return options.filter((opt) => {
-    const lower = opt.toLowerCase();
-    if (isVegan && veganForbidden.some((f) => lower.includes(f))) return false;
-    if (isVeg && !isVegan && vegForbidden.some((f) => lower.includes(f))) return false;
-    if (isJain && jainForbidden.some((f) => lower.includes(f))) return false;
-    if (allergyList.some((a) => lower.includes(a))) return false;
-    return true;
-  });
-}
-
-// Build a diet-safe `Options:` note for a meal slot. Prefers AI-generated notes
-// (already diet-constrained by the prompt) when they exist and pass the diet
-// filter. Falls back to a filtered template bank only if needed.
-function dietSafeOptionsNote(
-  existingNotes: string | undefined,
-  templateBank: readonly string[],
-  opts: AnchorOpts,
-  vegSafeBackup: readonly string[] = [],
-): string {
-  // 1. Preserve AI-generated notes when they look like a valid options list.
-  if (existingNotes && existingNotes.startsWith("Options:")) {
-    const parsed = existingNotes
-      .replace("Options:", "")
-      .split("|")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const safe = filterOptionsByDiet(parsed, opts.foodType, opts.allergies);
-    if (safe.length >= 2) return `Options: ${safe.slice(0, 4).join(" | ")}`;
-  }
-  // 2. Fall back to filtered template bank.
-  const filtered = filterOptionsByDiet([...templateBank], opts.foodType, opts.allergies);
-  if (filtered.length >= 2) return `Options: ${filtered.slice(0, 4).join(" | ")}`;
-  // 3. Use vegan/jain-safe backup bank when primary bank is too restrictive.
-  const backup = filterOptionsByDiet([...vegSafeBackup, ...templateBank], opts.foodType, opts.allergies);
-  if (backup.length >= 1) return `Options: ${backup.slice(0, 4).join(" | ")}`;
-  // 4. Absolute last resort — original bank (better than empty).
-  return `Options: ${templateBank.slice(0, 4).join(" | ")}`;
-}
-
-// Vegan/allergy-safe backup banks for the three school-day meal slots.
-// Used when the primary template bank gets filtered down to nothing.
-const QUICK_BREAKFAST_VEGAN_BACKUP = [
-  "Oats with banana + plant milk",
-  "Peanut butter toast + fruit",
-  "Poha (no veggies needed)",
-  "Upma (oil only)",
-  "Idli with coconut chutney",
-  "Aloo paratha (no ghee)",
-];
-const TIFFIN_VEGAN_BACKUP = [
-  "Veg sandwich + fruit",
-  "Aloo paratha roll + pickle",
-  "Idli + chutney",
-  "Pasta salad cup",
-  "Peanut butter & jam roll + fruit",
-  "Vegetable pulao + lemon wedge",
-];
-const DRUNCH_VEGAN_BACKUP = [
-  "Bhel puri + fruit",
-  "Idli + chutney",
-  "Fruit chaat + nuts",
-  "Veg sandwich + juice",
-  "Hummus pita + carrot sticks",
-  "Sprouts chaat + fruit",
-];
-
-// Light/quick options good for a 15-min "before school" meal — used both as a
-// suggestion bank and as a baseline for the Quick Meal Before School notes.
-const QUICK_BEFORE_SCHOOL_OPTIONS = [
-  "Banana + milk + toast",
-  "Idli with chutney",
-  "Poha (no veggies needed)",
-  "Boiled egg + toast",
-  "Paratha roll-up",
-  "Cornflakes with milk",
-  "Upma (quick)",
-];
+// Meal slots inserted by the anchor pass start with empty notes — the route
+// handler then runs an AI enrichment pass that fills personalized, diet-aware
+// "Options: …" lists. Existing notes (from the main AI generation) are
+// preserved as-is and never overwritten by hardcoded text.
+const EMPTY_MEAL_NOTES = "";
 
 // Apply the school-aware meal-window contract. We work directly on item array
 // (mutating it) because callers always re-sort + dedupe afterwards.
+//
+// IMPORTANT: this pass does NOT generate any meal option text. All meal slot
+// `notes` are either (a) preserved verbatim from the AI's generation, or
+// (b) left empty for newly-inserted slots. The route handler runs an AI
+// enrichment pass (`enrichMealOptionsWithAi`) after anchoring to fill in
+// personalized, diet-aware "Options: …" lists. This is intentional — we never
+// want hardcoded meal text contradicting the child's diet/allergy profile.
 function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleItem[] {
   const { hasSchool, schoolStartMins, schoolEndMins, ageGroup } = opts;
   const out = [...items];
@@ -1321,15 +1224,12 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
     const bf = out[bfIdx];
     if (hasSchool) {
       // Quick Meal Before School — 15 min, anchored 15 min before school start.
-      // Force the notes to a light/quick options bank so the meal type matches
-      // the time budget (no heavy dishes that take 30+ min to eat).
+      // Preserve the AI-generated notes verbatim; they were produced under the
+      // child's diet/allergy/cuisine constraints in the main prompt.
       const target = Math.max(0, schoolStartMins - 15);
       bf.activity = "Quick Meal Before School";
       bf.duration = 15;
       setItemTime(bf, target);
-      // Preserve AI-generated notes (already diet-constrained by prompt) when
-      // valid; otherwise fall back to a diet-filtered template bank.
-      bf.notes = dietSafeOptionsNote(bf.notes, QUICK_BEFORE_SCHOOL_OPTIONS, opts, QUICK_BREAKFAST_VEGAN_BACKUP);
     } else {
       // Non-school: anchor breakfast 8:00–9:00 AM if reachable
       const target = clamp(timeToMins(bf.time), 8 * 60, 9 * 60);
@@ -1337,12 +1237,14 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
     }
   } else if (hasSchool) {
     // No breakfast at all — insert Quick Meal Before School so the kid eats.
+    // Notes are intentionally empty; the AI enrichment pass will fill them
+    // with 4 personalized, diet-aware options.
     out.push({
       time: minsToTime(Math.max(0, schoolStartMins - 15)),
       activity: "Quick Meal Before School",
       duration: 15,
       category: "meal",
-      notes: dietSafeOptionsNote(undefined, QUICK_BEFORE_SCHOOL_OPTIONS, opts, QUICK_BREAKFAST_VEGAN_BACKUP),
+      notes: EMPTY_MEAL_NOTES,
       status: "pending",
     });
   }
@@ -1356,12 +1258,7 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
         activity: "Tiffin",
         duration: 15,
         category: "tiffin",
-        notes: dietSafeOptionsNote(
-          undefined,
-          ["Veg sandwich + fruit", "Aloo paratha roll + yoghurt", "Idli + chutney", "Pasta salad cup"],
-          opts,
-          TIFFIN_VEGAN_BACKUP,
-        ),
+        notes: EMPTY_MEAL_NOTES,
         status: "pending",
       });
     }
@@ -1403,24 +1300,15 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
     const target = clamp(cur, 17 * 60, 18 * 60);
     setItemTime(it, target);
     it.duration = Math.max(it.duration, 20);
-    it.notes = dietSafeOptionsNote(
-      it.notes,
-      ["Cheese sandwich + milk", "Idli + chutney", "Fruit chaat + nuts", "Paneer wrap"],
-      opts,
-      DRUNCH_VEGAN_BACKUP,
-    );
+    // Preserve AI-generated notes; do not overwrite with hardcoded text.
   } else {
+    // Inserted slot — leave notes empty for the AI enrichment pass to fill.
     out.push({
       time: minsToTime(17 * 60 + 30),
       activity: "Drunch",
       duration: 25,
       category: "meal",
-      notes: dietSafeOptionsNote(
-        undefined,
-        ["Cheese sandwich + milk", "Idli + chutney", "Fruit chaat + nuts", "Paneer wrap"],
-        opts,
-        DRUNCH_VEGAN_BACKUP,
-      ),
+      notes: EMPTY_MEAL_NOTES,
       status: "pending",
     });
   }
@@ -1519,11 +1407,27 @@ function attachMealMetadata(
 }
 
 // Public entry: run the v2 post-processing on a generated routine.
-export function applyRoutineV2(items: ScheduleItem[], opts: AnchorOpts): ScheduleItem[] {
-  const anchored = anchorMealWindows(items, opts);
-  const tagged = attachMealMetadata(anchored, opts.ageGroup, opts.fridgeItems, opts.customRecipes, opts.region);
-  // Sort by time so any anchored insertions land in the right place.
+// Phase A — anchor meal windows (insert/rename/retime meal slots) WITHOUT
+// generating any meal option text. Newly-inserted slots get notes = "" so the
+// route handler can run AI enrichment to fill them with personalized options.
+export function anchorMealSlots(items: ScheduleItem[], opts: AnchorOpts): ScheduleItem[] {
+  return anchorMealWindows(items, opts);
+}
+
+// Phase B — attach recipes/nutrition/dedup based on whatever notes are now
+// present on each meal slot (after Phase A + optional AI enrichment).
+export function attachMealRecipesAndMetadata(items: ScheduleItem[], opts: AnchorOpts): ScheduleItem[] {
+  const tagged = attachMealMetadata(items, opts.ageGroup, opts.fridgeItems, opts.customRecipes, opts.region);
   return [...tagged].sort((a, b) => timeToMins(a.time) - timeToMins(b.time));
+}
+
+// Backward-compat wrapper — runs anchor + recipe-attach in a single sync call.
+// Used by routine-templates.test.ts and the legacy rule-based generator. Does
+// NOT do AI meal-option enrichment; for that, use anchorMealSlots() →
+// enrichMealOptionsWithAi() → attachMealRecipesAndMetadata() in sequence.
+export function applyRoutineV2(items: ScheduleItem[], opts: AnchorOpts): ScheduleItem[] {
+  const anchored = anchorMealSlots(items, opts);
+  return attachMealRecipesAndMetadata(anchored, opts);
 }
 
 // ─── Main Generator ───────────────────────────────────────────────────────────

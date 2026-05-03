@@ -26,7 +26,7 @@ import {
   GenerateRoutineResponse,
   GenerateInsightsResponse,
 } from "@workspace/api-zod";
-import { generateRuleBasedRoutine, generateRuleBasedInsights, generatePartialRoutine, timeToMins, minsToTime, applyRoutineV2, type AgeGroup, type Region, type ScheduleItem } from "../lib/routine-templates.js";
+import { generateRuleBasedRoutine, generateRuleBasedInsights, generatePartialRoutine, timeToMins, minsToTime, applyRoutineV2, anchorMealSlots, attachMealRecipesAndMetadata, type AgeGroup, type Region, type ScheduleItem } from "../lib/routine-templates.js";
 import { enforceSchoolBlock as enforceSchoolBlockUtil, reAnchorToWakeTime as reAnchorToWakeTimeUtil, type AiRoutineItem } from "../lib/ai-routine-utils.js";
 import { type CaregiverKey, type WeatherOutdoor, applyWeatherAdjustment } from "@workspace/family-routine";
 
@@ -252,6 +252,170 @@ Do NOT suggest finger painting, building blocks, pretend play, action songs, sen
   return `AGE-BAND: unknown\nActivities must be age-appropriate. Balance play, learning, family time, and rest.`;
 }
 
+// ─── AI Meal-option enrichment ─────────────────────────────────────────────
+// Walks anchored items, finds meal/tiffin slots whose `notes` are missing or
+// don't have a 4-option "Options: A | B | C | D" list, and asks OpenAI to
+// generate fresh, personalized, diet/allergy/cuisine-aware options for them
+// in a SINGLE batch call. Best-effort: if the OpenAI response is missing or
+// malformed (e.g. test mock returns a routine instead of {slots:[…]}), the
+// items are returned unchanged.
+type EnrichCtx = {
+  foodType: string;
+  allergies: string | null;
+  foodStyle: string | null;
+  subCuisine: string | null;
+  region: string | null;
+  ageGroup: AgeGroup;
+};
+
+// Structural shape — accepts both the real OpenAI SDK and the test mock.
+// We only call .chat.completions.create with a small subset of params, so a
+// loose signature avoids the SDK's strict union types for messages/response_format.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type OpenAiClient = { chat: { completions: { create: (p: any) => Promise<{ choices: Array<{ message: { content: string | null } }> }> } } };
+
+const ALLERGY_EXPANSION: Record<string, string> = {
+  dairy: "milk, curd/dahi, paneer, cheese, butter, ghee, yoghurt/yogurt, cream, lassi, mayonnaise (dairy-based), kheer",
+  gluten: "wheat, maida, atta, bread, roti/chapati, paratha, naan, pasta, noodles, semolina/suji/rava, sandwich, biscuits, cake, pizza base",
+  eggs: "egg in any form, omelette, scrambled egg, boiled egg, mayonnaise, egg-based cake/biscuits/pancakes/waffles",
+  nuts: "cashew, almond, walnut, pistachio, hazelnut, brazil nut, pecan, mixed-nut garnishes",
+  peanuts: "peanut, groundnut, peanut butter, satay sauce, peanut chikki",
+  soy: "tofu, soy milk, soy sauce, edamame, tempeh, soya chunks, soy protein",
+  shellfish: "prawn, shrimp, crab, lobster, oyster, scallop",
+  fish: "fish of any kind, including curries/fries with fish",
+  sesame: "til, tahini, sesame oil, sesame seeds, gajak, til-laddu",
+  mustard: "mustard seeds (rai), mustard oil, kasundi",
+};
+
+function isValidOptionsNote(notes: string | undefined): boolean {
+  if (!notes || !notes.startsWith("Options:")) return false;
+  const opts = notes.replace("Options:", "").split("|").map((s) => s.trim()).filter(Boolean);
+  return opts.length >= 4;
+}
+
+export async function enrichMealOptionsWithAi(
+  items: ScheduleItem[],
+  ctx: EnrichCtx,
+  openai: OpenAiClient,
+): Promise<ScheduleItem[]> {
+  // Identify slots that need fresh AI options.
+  const targets: Array<{ idx: number; activity: string; time: string; isQuickBefore: boolean; isTiffin: boolean; isDrunch: boolean }> = [];
+  items.forEach((it, idx) => {
+    const cat = (it.category ?? "").toLowerCase();
+    if (cat !== "meal" && cat !== "tiffin") return;
+    if (isValidOptionsNote(it.notes)) return;
+    targets.push({
+      idx,
+      activity: it.activity,
+      time: it.time,
+      isQuickBefore: /quick meal before school/i.test(it.activity),
+      isTiffin: cat === "tiffin",
+      isDrunch: /drunch/i.test(it.activity),
+    });
+  });
+  if (targets.length === 0) return items;
+
+  // Diet description
+  const ft = (ctx.foodType ?? "vegetarian").toLowerCase().replace(/-/g, "_");
+  const dietLine =
+    ft === "vegan" ? "VEGAN — strictly NO animal products: no meat, no fish, no dairy (no milk/curd/paneer/cheese/butter/ghee/yoghurt), no eggs, no honey"
+    : ft === "jain" ? "JAIN VEGETARIAN — no meat/fish/eggs, AND no onion, no garlic, no potato, no carrot, no radish, no beetroot, no underground/root vegetables"
+    : ft === "eggetarian" ? "EGGETARIAN — eggs OK, no meat or fish"
+    : ft === "pescatarian" ? "PESCATARIAN — fish/seafood OK, no other meat"
+    : (ft === "non_veg" || ft === "nonveg" || ft === "no_preference") ? "NON-VEGETARIAN — meat, fish, eggs all OK unless allergic"
+    : "VEGETARIAN — no meat or fish; eggs and dairy OK unless allergic";
+
+  // Allergy expansion
+  const allergyDetail = (() => {
+    const raw = (ctx.allergies ?? "").trim();
+    if (!raw) return "ALLERGIES: none reported.";
+    const list = raw.split(/[,;]/).map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const lines = list.map((a) => {
+      const expansion = ALLERGY_EXPANSION[a] ?? `any form of ${a}`;
+      return `  • ${a.toUpperCase()} → MUST avoid: ${expansion}`;
+    });
+    return `ALLERGIES (SAFETY-CRITICAL — never include even trace amounts):\n${lines.join("\n")}`;
+  })();
+
+  // Cuisine/style description
+  const styleLine = (() => {
+    const fs = (ctx.foodStyle ?? "").toLowerCase();
+    if (!fs) return "Indian (general)";
+    if (fs === "indian") {
+      const sc = ctx.subCuisine?.replace(/_/g, " ");
+      return sc ? `${sc} Indian (authentic dishes from this region)` : "Indian (varied regions)";
+    }
+    if (fs === "asian") return "Asian — Chinese / Thai / Japanese / Korean style (stir-fries, noodles, fried rice, dumplings, sushi rolls, bibimbap)";
+    if (fs === "western") return "Western / Continental (pasta, sandwiches, wraps, salads, grilled items)";
+    if (fs === "middle_eastern" || fs === "middle eastern") return "Middle Eastern (hummus, shawarma, falafel, pita, rice dishes, grilled meats)";
+    if (fs === "mixed") return "Mixed / Globally inspired (variety from multiple cuisines)";
+    return fs;
+  })();
+
+  // Build slot descriptions with constraints
+  const slotsList = targets.map((t, i) => {
+    const constraint =
+      t.isQuickBefore ? " — QUICK 15-min breakfast (must be ready in <10 min, light, easy to eat fast before school)"
+      : t.isTiffin ? " — SCHOOL LUNCHBOX (must travel well at room temperature, finger-friendly, no soggy items, kid will eat alone)"
+      : t.isDrunch ? " — EARLY-EVENING LIGHT MEAL (between snack and dinner, satisfying but not heavy)"
+      : "";
+    return `${i + 1}. "${t.activity}" at ${t.time}${constraint}`;
+  }).join("\n");
+
+  const prompt = `You are a child nutrition expert generating PERSONALIZED meal options for a single child.
+
+CHILD PROFILE:
+- Age band: ${ctx.ageGroup}
+- Diet: ${dietLine}
+- Cuisine style: ${styleLine}
+${allergyDetail}
+
+TASK: For EACH meal slot listed below, generate EXACTLY 4 unique, specific dish names that:
+1. Are AUTHENTIC ${styleLine} cuisine — DO NOT default to generic Indian food if a non-Indian style is specified.
+2. Strictly comply with the diet rules above (no forbidden category in any form).
+3. Contain ZERO of the listed allergens — not as main ingredient, not as side, not as garnish, not as cooking medium.
+4. Are age-appropriate and time-appropriate for the slot's constraints noted in parentheses.
+5. Are CONCISE: 3–6 words each, format like "Dish name + side". Use real dish names, not categories.
+6. Within a single slot, the 4 options must be VARIED (different base ingredients, not 4 versions of the same dish).
+
+MEAL SLOTS:
+${slotsList}
+
+Respond with STRICT JSON ONLY (no markdown, no commentary):
+{
+  "slots": [
+    { "options": ["Dish 1", "Dish 2", "Dish 3", "Dish 4"] }
+  ]
+}
+The "slots" array MUST have exactly ${targets.length} entries in the same order as the slots above. Each "options" array MUST have exactly 4 strings.`;
+
+  let parsed: { slots?: Array<{ options?: unknown }> } = {};
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "system", content: prompt }],
+      response_format: { type: "json_object" },
+      max_completion_tokens: 1200,
+    });
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    parsed = JSON.parse(raw);
+  } catch {
+    return items; // best-effort: return unchanged on any failure
+  }
+
+  const slots = Array.isArray(parsed.slots) ? parsed.slots : [];
+  return items.map((it, idx) => {
+    const slotPos = targets.findIndex((t) => t.idx === idx);
+    if (slotPos === -1) return it;
+    const slot = slots[slotPos];
+    const opts = slot && Array.isArray((slot as { options?: unknown }).options)
+      ? ((slot as { options: unknown[] }).options.map((s) => String(s).trim()).filter(Boolean))
+      : [];
+    if (opts.length < 4) return it;
+    return { ...it, notes: `Options: ${opts.slice(0, 4).join(" | ")}` };
+  });
+}
+
 // ─── AI Routine Generation helper ──────────────────────────────────────────
 // Exported for testing — pass `openaiClient` to inject a mock; omit for production.
 export async function generateAiRoutine(params: {
@@ -402,7 +566,7 @@ CRITICAL RULES — follow ALL exactly:
 - 12–16 activities covering wake-up to sleep. Include breakfast, lunch, dinner, and at least one snack.
 - Include at least 2 outdoor/play activities and 1–2 family bonding activities.
 - Activities must match the child's age group and mood.
-- MEAL NOTES FORMAT — for EVERY meal, snack, tiffin, and drunch block, the "notes" field MUST start with "Options: " and list 3–4 concrete dish names separated by " | " (pipe with spaces). Example: "Options: Poha with peanuts | Vegetable upma | Aloo paratha with curd | Idli with sambar". Each option must be a complete, specific dish — NOT a generic category like "breakfast" or "snack". Every option in the list MUST respect the child's diet, allergies, and food style described below.
+- MEAL NOTES FORMAT — MANDATORY for EVERY meal, snack, tiffin, and drunch block. The "notes" field MUST start with "Options: " and list EXACTLY 4 specific dish names separated by " | " (pipe with surrounding spaces). Example: "Options: Poha with peanuts | Vegetable upma | Aloo paratha with curd | Idli with sambar". Each option must be a complete, concrete dish (3–6 words) — NOT a generic category like "breakfast" or "snack". EVERY option in the list MUST respect the child's diet, allergies, and food style described below — never include any forbidden ingredient even as a minor component.
 ${buildDietConstraintBlock(params.foodType)}
 ${params.allergies ? `
 ALLERGY CONSTRAINT — SAFETY-CRITICAL (HARD RULE — non-negotiable):
@@ -478,10 +642,14 @@ NO-SCHOOL RULES — today is a school-free day:
     params.childClass,
   );
 
-  // Routine v2 post-processing: school-aware meal anchors, dedup, recipe + nutrition.
+  // Routine v2 post-processing: split into 3 phases so we can run an AI meal
+  // enrichment pass between anchor and recipe attach.
+  //   Phase A: anchorMealSlots — insert/rename/retime meal slots (notes empty)
+  //   Phase B: enrichMealOptionsWithAi — fill personalized 4-option lists
+  //   Phase C: attachMealRecipesAndMetadata — recipes/nutrition from notes
   // The local RoutineItem and ScheduleItem are structurally compatible (same
   // required fields + optional v2 fields), so a direct array cast is safe.
-  const v2Items = applyRoutineV2(finalItems as ScheduleItem[], {
+  const v2Opts = {
     hasSchool: params.hasSchool,
     schoolStartMins: timeToMins(params.schoolStartTime),
     schoolEndMins: timeToMins(params.schoolEndTime),
@@ -489,11 +657,17 @@ NO-SCHOOL RULES — today is a school-free day:
     fridgeItems: params.fridgeItems,
     customRecipes: params.customRecipes,
     region: params.region as Region | undefined,
-    // Forward diet preferences so meal slot options get filtered to remove
-    // forbidden ingredients (vegan/jain) and child-specific allergens.
+  };
+  const anchored = anchorMealSlots(finalItems as ScheduleItem[], v2Opts);
+  const enriched = await enrichMealOptionsWithAi(anchored, {
     foodType: params.foodType,
     allergies: params.allergies ?? null,
-  });
+    foodStyle: params.foodStyle ?? null,
+    subCuisine: params.subCuisine ?? null,
+    region: params.region ?? null,
+    ageGroup: params.ageGroup,
+  }, openai);
+  const v2Items = attachMealRecipesAndMetadata(enriched, v2Opts);
 
   const weatherAdjusted = applyWeatherAdjustment(
     v2Items as RoutineItem[],
