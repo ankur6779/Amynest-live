@@ -21,6 +21,9 @@
     },
     {
       "path": "../../lib/integrations-openai-ai-react"
+    },
+    {
+      "path": "../../lib/coach-topic-questions"
     }
   ]
 }

@@ -92,6 +92,7 @@
     "@workspace/event-prep": "workspace:*",
     "@workspace/family-routine": "workspace:*",
     "@workspace/infant-hub": "workspace:*",
+    "@workspace/coach-topic-questions": "workspace:*",
     "@workspace/infant-problems": "workspace:*",
     "@workspace/life-skills": "workspace:*",
     "@workspace/morning-flow": "workspace:*",
