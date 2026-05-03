@@ -1027,7 +1027,17 @@
       "goal_toast_title": "🎯 Daily goal complete!",
       "goal_toast_body": "You crushed today's study target.",
       "perfect_toast_title": "🏆 Perfect score!",
-      "perfect_toast_body": "{{topic}} cleared with no mistakes."
+      "perfect_toast_body": "{{topic}} cleared with no mistakes.",
+      "todays_plan": "Today's Plan",
+      "todays_plan_subtitle": "Picked just for {{name}} — weak spots first.",
+      "todays_plan_empty": "Nothing planned today. Pick any subject below to keep learning.",
+      "plan_difficulty_easy": "Easy",
+      "plan_difficulty_medium": "Medium",
+      "plan_difficulty_hard": "Hard",
+      "plan_source_weak": "Recap",
+      "plan_source_fresh": "New",
+      "plan_completion": "{{pct}}% done today",
+      "plan_open": "Open"
     },
     "onboarding": {
       "intro_greeting": "Hi {{name}}! 👋 I'm Amy, your parenting coach. Let me quickly set up your profile — it'll take about 2 minutes!",

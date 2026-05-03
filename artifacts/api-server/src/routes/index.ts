@@ -40,6 +40,7 @@ import cryInsightRouter from "./cryInsight";
 import sleepPredictRouter from "./sleepPredict";
 import vaccinationsRouter from "./vaccinations";
 import parentTasksRouter from "./parent-tasks";
+import smartStudyRouter from "./smart-study";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -103,5 +104,6 @@ router.use(cryInsightRouter);
 router.use(sleepPredictRouter);
 router.use(vaccinationsRouter);
 router.use(parentTasksRouter);
+router.use(smartStudyRouter);
 
 export default router;

@@ -58,3 +58,4 @@ export * from "./vaccination_logs";
 export * from "./parent_task_completions";
 export * from "./daily_puzzle_progress";
 export * from "./life_skills_progress";
+export * from "./child_learning_progress";

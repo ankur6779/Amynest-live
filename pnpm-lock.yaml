@@ -470,6 +470,9 @@ importers:
       '@workspace/integrations-openai-ai-server':
         specifier: workspace:*
         version: link:../../lib/integrations-openai-ai-server
+      '@workspace/study-zone':
+        specifier: workspace:*
+        version: link:../../lib/study-zone
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7

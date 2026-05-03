@@ -1027,7 +1027,17 @@
       "goal_toast_title": "🎯 दैनिक लक्ष्य पूरा!",
       "goal_toast_body": "आपने आज का अध्ययन लक्ष्य पूरा किया।",
       "perfect_toast_title": "🏆 पूर्ण स्कोर!",
-      "perfect_toast_body": "{{topic}} बिना किसी गलती के पूरा हुआ।"
+      "perfect_toast_body": "{{topic}} बिना किसी गलती के पूरा हुआ।",
+      "todays_plan": "आज की योजना",
+      "todays_plan_subtitle": "{{name}} के लिए चुना गया — कमज़ोर हिस्से पहले।",
+      "todays_plan_empty": "आज कुछ तय नहीं है। नीचे कोई भी विषय चुनें।",
+      "plan_difficulty_easy": "आसान",
+      "plan_difficulty_medium": "मध्यम",
+      "plan_difficulty_hard": "कठिन",
+      "plan_source_weak": "दोहराव",
+      "plan_source_fresh": "नया",
+      "plan_completion": "{{pct}}% आज पूरा",
+      "plan_open": "खोलें"
     },
     "onboarding": {
       "intro_greeting": "नमस्ते {{name}}! 👋 मैं Amy हूँ, आपकी पैरेंटिंग कोच। मुझे जल्दी से आपकी प्रोफ़ाइल सेट अप करने दें — इसमें लगभग 2 मिनट लगेंगे!",

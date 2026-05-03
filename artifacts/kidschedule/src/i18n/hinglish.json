@@ -1027,7 +1027,17 @@
       "goal_toast_title": "🎯 Daily goal complete!",
       "goal_toast_body": "Aapne aaj ka study target zabardast tareeke se poora kiya.",
       "perfect_toast_title": "🏆 Perfect score!",
-      "perfect_toast_body": "{{topic}} bina kisi galti ke clear hua."
+      "perfect_toast_body": "{{topic}} bina kisi galti ke clear hua.",
+      "todays_plan": "Aaj ka Plan",
+      "todays_plan_subtitle": "{{name}} ke liye chuna gaya — kamzor topics pehle.",
+      "todays_plan_empty": "Aaj kuch plan nahi hai. Neeche koi bhi subject choose karo.",
+      "plan_difficulty_easy": "Easy",
+      "plan_difficulty_medium": "Medium",
+      "plan_difficulty_hard": "Hard",
+      "plan_source_weak": "Recap",
+      "plan_source_fresh": "New",
+      "plan_completion": "{{pct}}% aaj complete",
+      "plan_open": "Open"
     },
     "onboarding": {
       "intro_greeting": "Hi {{name}}! 👋 Main Amy hoon, aapki parenting coach. Chaliye jaldi se aapka Profile set up karte hain — isme lagbhag 2 minute lagenge!",

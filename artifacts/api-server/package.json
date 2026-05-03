@@ -19,6 +19,7 @@
     "@workspace/db": "workspace:*",
     "@workspace/infant-hub": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",
+    "@workspace/study-zone": "workspace:*",
     "cookie-parser": "^1.4.7",
     "cors": "^2",
     "drizzle-orm": "catalog:",
