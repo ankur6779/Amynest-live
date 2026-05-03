@@ -9,13 +9,55 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Sparkles, Calendar, User, Clock, GraduationCap, Car, Refrigerator, School, Briefcase, Heart, Star, Users, CheckCircle2, ChevronDown, ChevronUp, AlertTriangle, ExternalLink, RefreshCw, Home, Building2, UserCheck, Zap, Brain } from "lucide-react";
+import { ArrowLeft, Sparkles, Calendar, User, Clock, GraduationCap, Car, Refrigerator, School, Star, Users, CheckCircle2, ChevronDown, ChevronUp, AlertTriangle, ExternalLink, RefreshCw, UserCheck, Zap, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { format } from "date-fns";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
-import { HANDLER_TYPES, type HandlerKey, getHandlerInfo, simplifyForHandler, buildSyncSuggestions, computeFamilyPoints, pickSharedActivities, appendHandlerToPlans, buildFamilyChildGeneratePayload, type FRFamilyResult } from "@workspace/family-routine";
+import { HANDLER_TYPES, type HandlerKey, simplifyForHandler, buildSyncSuggestions, computeFamilyPoints, pickSharedActivities, appendHandlerToPlans, type FRFamilyResult } from "@workspace/family-routine";
+
+// Mirrors the `weatherOutdoor` enum in the regenerated GenerateRoutineBody
+// schema (see lib/api-zod/src/generated/types/generateRoutineBodyWeatherOutdoor.ts).
+type WeatherOutdoorChoice = "yes" | "no" | "limited";
+
+// Caregiver tone notes (refreshed wording matching the new server-side spec).
+// Looked up by HandlerKey instead of using the lib's getHandlerInfo().note so
+// we can localise without touching the shared mobile lib.
+const CAREGIVER_NOTE_KEYS: Record<HandlerKey, string> = {
+  mom: "pages.routines.generate.caregiver_note_mom",
+  dad: "pages.routines.generate.caregiver_note_dad",
+  both: "pages.routines.generate.caregiver_note_both",
+  grandparent: "pages.routines.generate.caregiver_note_grandparent",
+  babysitter: "pages.routines.generate.caregiver_note_babysitter",
+};
+
+// ── Open-Meteo → WeatherOutdoor mapping ──────────────────────────────────
+// WMO weather codes: https://open-meteo.com/en/docs (current.weather_code)
+// 0 clear, 1-3 mainly clear/partly cloudy/overcast, 45/48 fog,
+// 51-57 drizzle, 61-67 rain, 71-77 snow, 80-82 rain showers,
+// 85-86 snow showers, 95/96/99 thunderstorm.
+function mapOpenMeteoToWeatherOutdoor(d: {
+  temperature_2m?: number;
+  precipitation?: number;
+  wind_speed_10m?: number;
+  weather_code?: number;
+}): WeatherOutdoorChoice {
+  const code = d.weather_code ?? 0;
+  const temp = d.temperature_2m ?? 22;
+  const precip = d.precipitation ?? 0;
+  const wind = d.wind_speed_10m ?? 0;
+  // Storms / heavy rain / snow → no outdoor
+  if (code >= 95 || (code >= 71 && code <= 77) || (code >= 80 && code <= 86) || (code >= 61 && code <= 67) || precip >= 2 || wind >= 40 || temp >= 40 || temp <= 0) {
+    return "no";
+  }
+  // Light rain / drizzle / fog / mild precipitation / hot or cold edges → limited
+  if ((code >= 51 && code <= 57) || code === 45 || code === 48 || precip > 0 || temp >= 35 || temp <= 5 || wind >= 25) {
+    return "limited";
+  }
+  // Otherwise (clear, mainly clear, partly cloudy, overcast, calm) → yes
+  return "yes";
+}
 type MoodOption = {
   value: "happy" | "angry" | "lazy" | "normal";
   label: string;
@@ -84,51 +126,6 @@ type FamilyResult = {
   child: ChildType;
   routine: GeneratedRoutine;
 };
-
-// ---- Parent Availability Types ----
-type WorkType = "work_from_home" | "work_from_office" | "homemaker";
-type ParentAvailEntry = {
-  role: string;
-  workType: WorkType | null;
-  isWorking: boolean | null;
-  workHours: string;
-};
-type ParentAvailData = {
-  p1: ParentAvailEntry;
-  p2: ParentAvailEntry | null;
-  hasSecondParent: boolean;
-};
-const DEFAULT_P1: ParentAvailEntry = {
-  role: "Mother",
-  workType: null,
-  isWorking: null,
-  workHours: ""
-};
-const DEFAULT_P2: ParentAvailEntry = {
-  role: "Father",
-  workType: null,
-  isWorking: null,
-  workHours: ""
-};
-const AVAIL_KEY = (date: string) => `amynest_parent_avail_${date}`;
-function loadAvailability(date: string): ParentAvailData {
-  try {
-    const raw = localStorage.getItem(AVAIL_KEY(date));
-    if (raw) return JSON.parse(raw) as ParentAvailData;
-  } catch {}
-  return {
-    p1: {
-      ...DEFAULT_P1
-    },
-    p2: null,
-    hasSecondParent: false
-  };
-}
-function saveAvailability(date: string, data: ParentAvailData): void {
-  try {
-    localStorage.setItem(AVAIL_KEY(date), JSON.stringify(data));
-  } catch {}
-}
 
 // ─── Wake-time helpers (localStorage, no backend) ─────────────────────────────
 const WAKE_KEY = (childId: number, date: string) => `amynest_wake_${childId}_${date}`;
@@ -209,171 +206,145 @@ function shiftRoutineItems(items: RoutineItem[], defaultWake: string, actualWake
 function isEssentialTask(activity: string, category: string): boolean {
   return /brush|breakfast|lunch|dinner|snack|meal|eat|morning|wake|bath|hygiene|toilet|tiffin/i.test(activity) || ["meal", "hygiene", "tiffin", "morning"].includes((category ?? "").toLowerCase());
 }
-function parentStatusLabel(entry: ParentAvailEntry): string {
-  if (!entry.workType) return "Not set";
-  if (entry.workType === "homemaker") return "Free all day 🏠";
-  if (entry.isWorking === true) return entry.workHours ? `Busy (${entry.workHours}) 💼` : "Busy today 💼";
-  if (entry.isWorking === false) return "Holiday — free all day 🎉";
-  return "Work schedule not answered";
-}
-function isParentAvailComplete(entry: ParentAvailEntry): boolean {
-  if (!entry.workType) return false;
-  if (entry.workType === "homemaker") return true;
-  return entry.isWorking !== null;
-}
-
-// ---- ParentAvailSection Component ----
-const WORK_TYPE_OPTIONS: {
-  value: WorkType;
-  label: string;
-  icon: React.ReactNode;
-  hint: string;
-}[] = [{
-  value: "work_from_home",
-  label: "Work from Home",
-  icon: <Home className="h-4 w-4" />,
-  hint: "Remote worker"
-}, {
-  value: "work_from_office",
-  label: "Work from Office",
-  icon: <Building2 className="h-4 w-4" />,
-  hint: "Office commute"
-}, {
-  value: "homemaker",
-  label: "Homemaker",
-  icon: <Heart className="h-4 w-4" />,
-  hint: "At home all day"
-}];
-function ParentEntryForm({
-  entry,
-  onChange,
-  label
-}: {
-  entry: ParentAvailEntry;
-  onChange: (e: ParentAvailEntry) => void;
-  label: string;
-}) {
-  const {
-    t
-  } = useTranslation();
-  const needsWorkingDayQ = entry.workType === "work_from_home" || entry.workType === "work_from_office";
-  return <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-4">
-      {/* Work type */}
-      <div className="space-y-2">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t("pages.routines.generate.work_type")}</p>
-        <div className="grid grid-cols-3 gap-2">
-          {WORK_TYPE_OPTIONS.map(opt => <button key={opt.value} onClick={() => onChange({
-          ...entry,
-          workType: opt.value,
-          isWorking: opt.value === "homemaker" ? null : entry.isWorking,
-          workHours: ""
-        })} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 text-xs font-bold transition-all ${entry.workType === opt.value ? "bg-primary/10 border-primary text-primary" : "bg-card border-border hover:border-primary/30 text-foreground"}`}>
-              {opt.icon}
-              <span className="text-center leading-tight">{opt.label}</span>
-            </button>)}
-        </div>
-      </div>
-
-      {/* Conditional: is today a working day? */}
-      {needsWorkingDayQ && <div className="space-y-2">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t("pages.routines.generate.is_today_a_working_day")}</p>
-          <div className="flex gap-2">
-            {([{
-          label: "💼 Yes, working",
-          val: true
-        }, {
-          label: "🎉 Holiday / Off",
-          val: false
-        }] as const).map(({
-          label: l,
-          val
-        }) => <button key={String(val)} onClick={() => onChange({
-          ...entry,
-          isWorking: val
-        })} className={`flex-1 py-2.5 px-3 rounded-xl font-bold border-2 transition-all text-xs ${entry.isWorking === val ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:border-primary/40"}`}>
-                {l}
-              </button>)}
-          </div>
-          {entry.isWorking === true && <div className="bg-muted border border-border rounded-xl p-3 text-xs text-primary">
-              {t("pages.routines.generate.amy_ai_will_assign_independent_or_babysitter_tasks_during_wo")}
-            </div>}
-          {entry.isWorking === false && <div className="bg-muted border border-border rounded-xl p-3 text-xs text-primary">
-              {t("pages.routines.generate.great_the_ai_will_add_plenty_of_parent_child_activities_toda")}
-            </div>}
-        </div>}
-
-      {/* Conditional: working hours input */}
-      {needsWorkingDayQ && entry.isWorking === true && <div className="space-y-2">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t("pages.routines.generate.working_hours")} <span className="font-normal">{t("pages.routines.generate.optional")}</span></p>
-          <div className="flex items-center bg-card border-2 border-border rounded-xl px-3 py-2 focus-within:border-primary transition-all gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-            <input type="text" value={entry.workHours} onChange={e => onChange({
-          ...entry,
-          workHours: e.target.value
-        })} placeholder="e.g. 9:00 AM – 6:00 PM" className="bg-transparent border-none outline-none text-sm text-foreground w-full" />
-          </div>
-          <p className="text-[10px] text-muted-foreground">{t("pages.routines.generate.amy_ai_will_use_these_exact_hours_to_plan_tasks_correctly")}</p>
-        </div>}
-
-      {/* Homemaker info */}
-      {entry.workType === "homemaker" && <div className="bg-muted border border-border rounded-xl p-3 text-xs text-primary">
-          {t("pages.routines.generate.as_a_homemaker_you_re_free_all_day_amy_ai_will_include_more_")}
-        </div>}
-    </div>;
-}
-function ParentAvailSection({
+// ── WeatherSelector ──────────────────────────────────────────────────────
+// Yes/No/Limited control + browser-geolocation auto-detect that calls
+// Open-Meteo (free, keyless) and maps the response into the contract enum.
+// Permission denial / offline / timeout → silently leaves the manual toggle
+// usable; never throws on the page.
+function WeatherSelector({
   stepNum,
-  avail,
-  onChange,
-  date
+  value,
+  onChange
 }: {
   stepNum: number;
-  avail: ParentAvailData;
-  onChange: (a: ParentAvailData) => void;
-  date: string;
+  value: WeatherOutdoorChoice;
+  onChange: (v: WeatherOutdoorChoice) => void;
 }) {
   const {
     t
   } = useTranslation();
-  const p1Complete = isParentAvailComplete(avail.p1);
-
-  // Status badge for summary
-  const p1Status = avail.p1.workType ? avail.p1.workType === "homemaker" ? "free" : avail.p1.isWorking === true ? "busy" : avail.p1.isWorking === false ? "free" : "pending" : "pending";
-  const statusColor = {
-    busy: "bg-muted text-primary border-border",
-    free: "bg-muted text-primary border-border",
-    pending: "bg-muted text-muted-foreground border-border"
+  const [detecting, setDetecting] = useState(false);
+  const [detectError, setDetectError] = useState<string | null>(null);
+  const [detectedHint, setDetectedHint] = useState<string | null>(null);
+  const handleAutoDetect = () => {
+    setDetectError(null);
+    setDetectedHint(null);
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setDetectError(t("pages.routines.generate.weather_detect_unavailable", {
+        defaultValue: "Auto-detect not supported on this browser."
+      }));
+      return;
+    }
+    setDetecting(true);
+    navigator.geolocation.getCurrentPosition(async pos => {
+      try {
+        const lat = pos.coords.latitude.toFixed(4);
+        const lon = pos.coords.longitude.toFixed(4);
+        // Open-Meteo: no API key, no auth, free tier.
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,wind_speed_10m,weather_code`;
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(url, {
+          signal: ctrl.signal
+        });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error("weather_failed");
+        const json = (await res.json()) as {
+          current?: {
+            temperature_2m?: number;
+            precipitation?: number;
+            wind_speed_10m?: number;
+            weather_code?: number;
+          };
+        };
+        const next = mapOpenMeteoToWeatherOutdoor(json.current ?? {});
+        onChange(next);
+        const t2 = json.current?.temperature_2m;
+        setDetectedHint(typeof t2 === "number" ? `${Math.round(t2)}°C` : null);
+      } catch {
+        setDetectError(t("pages.routines.generate.weather_detect_failed", {
+          defaultValue: "Couldn't read weather. Pick manually below."
+        }));
+      } finally {
+        setDetecting(false);
+      }
+    }, () => {
+      setDetecting(false);
+      setDetectError(t("pages.routines.generate.weather_detect_denied", {
+        defaultValue: "Location permission denied. Pick manually below."
+      }));
+    }, {
+      enableHighAccuracy: false,
+      timeout: 8000,
+      maximumAge: 600000
+    });
   };
+  const options: {
+    val: WeatherOutdoorChoice;
+    label: string;
+    emoji: string;
+    hint: string;
+  }[] = [{
+    val: "yes",
+    label: t("pages.routines.generate.weather_yes", {
+      defaultValue: "Yes"
+    }),
+    emoji: "☀️",
+    hint: t("pages.routines.generate.weather_yes_hint", {
+      defaultValue: "Outdoor play OK"
+    })
+  }, {
+    val: "limited",
+    label: t("pages.routines.generate.weather_limited", {
+      defaultValue: "Limited"
+    }),
+    emoji: "⛅",
+    hint: t("pages.routines.generate.weather_limited_hint", {
+      defaultValue: "Short outdoor + indoor backup"
+    })
+  }, {
+    val: "no",
+    label: t("pages.routines.generate.weather_no", {
+      defaultValue: "No"
+    }),
+    emoji: "🌧️",
+    hint: t("pages.routines.generate.weather_no_hint", {
+      defaultValue: "Stay indoors"
+    })
+  }];
   return <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepNum}</div>
-          <Label className="text-base sm:text-lg font-bold flex items-center gap-2 flex-wrap">
-            <UserCheck className="h-5 w-5 text-primary" />
-            {t("pages.routines.generate.your_schedule_for")}{" "}
-            <span className="text-primary font-bold">
-              {new Date(date + "T00:00:00").toLocaleDateString(undefined, {
-              weekday: "short",
-              month: "short",
-              day: "numeric"
+          <Label className="text-base sm:text-lg font-bold flex items-center gap-2">
+            <span className="text-xl">🌤️</span>
+            {t("pages.routines.generate.weather_prompt", {
+              defaultValue: "Can the child go outdoor today?"
             })}
-            </span>
           </Label>
         </div>
-        {/* Status summary */}
-        {p1Complete && <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${statusColor[p1Status as "busy" | "free" | "pending"]}`}>
-              {p1Status === "busy" ? "Busy" : "Free"}
-            </span>
-          </div>}
+        <button type="button" onClick={handleAutoDetect} disabled={detecting} className="text-xs font-bold px-3 py-1.5 rounded-full bg-muted border border-border text-primary hover:bg-primary/10 transition-colors disabled:opacity-50">
+          {detecting ? t("pages.routines.generate.weather_detecting", {
+            defaultValue: "Detecting…"
+          }) : `📍 ${t("pages.routines.generate.weather_auto_detect", {
+            defaultValue: "Auto-detect"
+          })}`}
+        </button>
       </div>
-
-      {/* Single caregiver schedule (role / second-parent removed — handler card above
-          already says who is taking care, so we only need work-availability here). */}
-      <ParentEntryForm entry={avail.p1} label="Today" onChange={e => onChange({
-      ...avail,
-      p1: e
-    })} />
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        {options.map(o => {
+          const active = value === o.val;
+          return <button key={o.val} type="button" onClick={() => onChange(o.val)} className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all text-center ${active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card text-foreground border-border hover:border-primary/40"}`}>
+              <span className="text-2xl leading-none">{o.emoji}</span>
+              <span className="text-sm font-bold leading-tight">{o.label}</span>
+              <span className={`text-[10px] leading-tight ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{o.hint}</span>
+            </button>;
+        })}
+      </div>
+      {detectedHint && !detectError && <p className="text-[11px] text-muted-foreground">📍 {t("pages.routines.generate.weather_detected_at", {
+        defaultValue: "Auto-detected from your location"
+      })} · {detectedHint}</p>}
+      {detectError && <p className="text-[11px] text-muted-foreground">{detectError}</p>}
     </div>;
 }
 function ToggleGroup({
@@ -552,15 +523,12 @@ export default function RoutineGenerate() {
   const [fridgeItems, setFridgeItems] = useState("");
   const [mood, setMood] = useState<"happy" | "angry" | "lazy" | "normal">("normal");
 
-  // Per-date parent availability
-  const [parentAvail, setParentAvail] = useState<ParentAvailData>(() => loadAvailability(format(new Date(), "yyyy-MM-dd")));
-
-  // Outdoor-weather signal sent to the routine generator (yes/no/limited).
-  // Defaults to "yes" so existing flows without the picker behave as before.
-  const [weatherOutdoor, setWeatherOutdoor] = useState<"yes" | "no" | "limited">("yes");
-
-  // Handler type — who is taking care of the kids today
+  // Caregiver — who is handling the child today (sent as `caregiver` field).
   const [handlerType, setHandlerType] = useState<HandlerKey>("mom");
+
+  // Per-generation weather signal (sent as `weatherOutdoor`).
+  // Not persisted — fresh choice each visit, defaults to "yes".
+  const [weatherOutdoor, setWeatherOutdoor] = useState<WeatherOutdoorChoice>("yes");
 
   // Family mode
   const [familyChildSettings, setFamilyChildSettings] = useState<Record<number, {
@@ -568,9 +536,6 @@ export default function RoutineGenerate() {
     selected: boolean;
   }>>({});
   const [familyDate, setFamilyDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [familyParentAvail, setFamilyParentAvail] = useState<ParentAvailData>(() => loadAvailability(format(new Date(), "yyyy-MM-dd")));
-  // Family-mode outdoor-weather signal (yes/no/limited).
-  const [familyWeatherOutdoor, setFamilyWeatherOutdoor] = useState<"yes" | "no" | "limited">("yes");
   const [familySpecialPlans, setFamilySpecialPlans] = useState("");
   const [familyFridgeItems, setFamilyFridgeItems] = useState("");
   const [familyProgress, setFamilyProgress] = useState<{
@@ -641,21 +606,14 @@ export default function RoutineGenerate() {
   const createMutation = useCreateRoutine();
   const [isAiGenerating, setIsAiGenerating] = useState(false);
 
-  // Load/save single-mode parent availability per date
+  // Single-child auto-select — when the parent only has one child registered,
+  // skip the picker step and preselect that child so the wizard doesn't show
+  // an empty step. Multi-child families still see the existing chooser.
   useEffect(() => {
-    setParentAvail(loadAvailability(date));
-  }, [date]);
-  useEffect(() => {
-    saveAvailability(date, parentAvail);
-  }, [date, parentAvail]);
-
-  // Load/save family-mode parent availability per date
-  useEffect(() => {
-    setFamilyParentAvail(loadAvailability(familyDate));
-  }, [familyDate]);
-  useEffect(() => {
-    saveAvailability(familyDate, familyParentAvail);
-  }, [familyDate, familyParentAvail]);
+    if (children && children.length === 1 && selectedChild === null) {
+      setSelectedChild(children[0].id);
+    }
+  }, [children, selectedChild]);
 
   // Auto-detect weekends for single mode
   useEffect(() => {
@@ -769,21 +727,6 @@ export default function RoutineGenerate() {
     }
   }, [children]);
 
-  // Build parent avail payload for mutation
-  function buildParentAvailPayload(avail: ParentAvailData) {
-    const p1 = avail.p1;
-    const p2 = avail.hasSecondParent ? avail.p2 : null;
-    return {
-      parent1Role: p1.role || undefined,
-      parent1WorkType: p1.workType || undefined,
-      parent1IsWorking: p1.workType !== "homemaker" && p1.isWorking !== null ? p1.isWorking : undefined,
-      parent1WorkHours: p1.workType !== "homemaker" && p1.isWorking ? p1.workHours || undefined : undefined,
-      parent2Role: p2?.role || undefined,
-      parent2WorkType: p2?.workType || undefined,
-      parent2IsWorking: p2 && p2.workType !== "homemaker" && p2.isWorking !== null ? p2.isWorking : undefined,
-      parent2WorkHours: p2 && p2.workType !== "homemaker" && p2.isWorking ? p2.workHours || undefined : undefined
-    };
-  }
   const isGenerating = generateMutation.isPending || createMutation.isPending;
   const selectedChildData = children?.find(c => c.id === selectedChild) as ChildType | undefined;
 
@@ -955,7 +898,7 @@ export default function RoutineGenerate() {
         });
       }
     });
-  }, [generateMutation, overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, parentAvail, parentRegion, handlePostGenerate, toast]);
+  }, [generateMutation, overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, handlePostGenerate, toast, t]);
 
   // ── Core generate (AI) ─────────────────────────────────────────────────────
   const proceedAiGenerate = React.useCallback(async (forceOverride: boolean, wakeTime: string | null) => {
@@ -1019,7 +962,7 @@ export default function RoutineGenerate() {
     } finally {
       setIsAiGenerating(false);
     }
-  }, [overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, parentAvail, parentRegion, authFetch, handlePostGenerate, toast]);
+  }, [overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, authFetch, handlePostGenerate, toast, t]);
 
   // ── Wake-up confirmation gate ──────────────────────────────────────────────
   const triggerWithWakeCheck = React.useCallback((type: "standard" | "ai", forceOverride: boolean) => {
@@ -1156,22 +1099,21 @@ export default function RoutineGenerate() {
       try {
         const generated = await new Promise<GeneratedRoutine>((resolve, reject) => {
           generateMutation.mutate({
-            // Server now derives bonding/handler tone from `caregiver` and
-            // outdoor swaps from `weatherOutdoor`. Old parent1*/parent2*
-            // fields would be silently dropped, so we send the new fields
-            // directly instead of reusing the legacy helper.
+            // Inline payload — context-aware contract takes caregiver +
+            // weatherOutdoor instead of the legacy parent1*/parent2* fields.
             data: {
-              ...buildFamilyChildGeneratePayload({
-                child,
-                date: familyDate,
-                hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
-                specialPlans: appendHandlerToPlans(familySpecialPlans, handlerType),
-                fridgeItems: familyFridgeItems,
-                region: parentRegion,
-                parentAvail: familyParentAvail
-              }),
+              childId: child.id,
+              date: familyDate,
+              hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
+              specialPlans: appendHandlerToPlans(familySpecialPlans, handlerType),
+              fridgeItems: familyFridgeItems.trim() || undefined,
+              age: child.age,
+              wakeTime: (child as ChildType).wakeUpTime,
+              schoolStart: (child as ChildType).schoolStartTime,
+              schoolEnd: (child as ChildType).schoolEndTime,
+              region: parentRegion,
               caregiver: handlerType,
-              weatherOutdoor: familyWeatherOutdoor
+              weatherOutdoor
             } as never
           }, {
             onSuccess: data => resolve(data as GeneratedRoutine),
@@ -1266,6 +1208,12 @@ export default function RoutineGenerate() {
       setLocation("/routines");
     }
   };
+  // Hide the single-mode child picker (and renumber subsequent steps)
+  // when the parent only has one child registered.
+  const multiChild = (children?.length ?? 0) > 1;
+  const stepOffset = multiChild ? 0 : 1;
+  const stepN = (n: number) => n - stepOffset;
+
   const isGeneratingFamily = !!familyProgress;
   const familySelectedCount = Object.values(familyChildSettings).filter(s => s.selected).length;
   const familyReadyCount = Object.entries(familyChildSettings).filter(([, s]) => s.selected && s.hasSchool !== null).length;
@@ -1307,7 +1255,9 @@ export default function RoutineGenerate() {
                 </button>;
           })}
           </div>
-          <p className="text-xs text-muted-foreground mt-2.5">{getHandlerInfo(handlerType).note}</p>
+          <p className="text-xs text-muted-foreground mt-2.5">{t(CAREGIVER_NOTE_KEYS[handlerType], {
+            defaultValue: ""
+          })}</p>
         </CardContent>
       </Card>
 
@@ -1348,8 +1298,8 @@ export default function RoutineGenerate() {
             </Card> : <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card mt-4">
               <CardContent className="p-6 sm:p-8 space-y-8">
 
-                {/* Step 1 — Select Child */}
-                <div className="space-y-4">
+                {/* Step 1 — Select Child (hidden when only 1 child registered) */}
+                {multiChild && <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">1</div>
                     <Label className="text-lg font-bold">{t("pages.routines.generate.who_is_this_schedule_for")}</Label>
@@ -1408,7 +1358,7 @@ export default function RoutineGenerate() {
                       </div>
 
                     </>}
-                </div>
+                </div>}
 
                 {/* Parenting Hub promo — shown after child is selected */}
                 {selectedChildData && <Link href="/parenting-hub">
@@ -1432,7 +1382,7 @@ export default function RoutineGenerate() {
                 {/* Step 2 — Date */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">2</div>
+                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(2)}</div>
                     <Label className="text-lg font-bold">{t("pages.routines.generate.which_day")}</Label>
                   </div>
                   <div className="flex gap-3 max-w-sm">
@@ -1505,7 +1455,7 @@ export default function RoutineGenerate() {
                 {/* Step 3 — School today? (age-aware) */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">3</div>
+                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(3)}</div>
                     <Label className="text-lg font-bold flex items-center gap-2">
                       <School className="h-5 w-5 text-primary" />
                       {selectedChildAgeGroup === "infant" ? "Care Mode" : selectedChildAgeGroup === "toddler" ? "Learning Mode" : "Is there school on this day?"}
@@ -1556,32 +1506,13 @@ export default function RoutineGenerate() {
                     </>}
                 </div>
 
-                {/* Step 4 — Outdoor weather for this date */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">4</div>
-                    <Label className="text-lg font-bold">Is the weather okay for outdoor play?</Label>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {([
-                      { value: "yes", label: "Yes", emoji: "☀️", hint: "Outdoor play OK" },
-                      { value: "limited", label: "Limited", emoji: "⛅", hint: "Short outdoor only" },
-                      { value: "no", label: "No", emoji: "🌧️", hint: "Indoor alternatives" }
-                    ] as const).map(opt => {
-                      const active = weatherOutdoor === opt.value;
-                      return <button key={opt.value} type="button" onClick={() => setWeatherOutdoor(opt.value)} className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border-2 font-bold transition-all text-sm ${active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card text-foreground border-border hover:border-primary/40"}`}>
-                          <span className="text-xl leading-none">{opt.emoji}</span>
-                          <span>{opt.label}</span>
-                          <span className={`text-[10px] font-normal ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.hint}</span>
-                        </button>;
-                    })}
-                  </div>
-                </div>
+                {/* Step 4 — Outdoor weather signal */}
+                <WeatherSelector stepNum={stepN(4)} value={weatherOutdoor} onChange={setWeatherOutdoor} />
 
                 {/* Step 5 — Special plans */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">5</div>
+                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(5)}</div>
                     <Label className="text-lg font-bold flex items-center gap-2">
                       <Star className="h-5 w-5 text-primary" />
                       {t("pages.routines.generate.any_special_plans_today")} <span className="text-sm font-normal text-muted-foreground">{t("pages.routines.generate.optional_2")}</span>
@@ -1594,7 +1525,7 @@ export default function RoutineGenerate() {
                 {/* Step 6 — Fridge Items */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">6</div>
+                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(6)}</div>
                     <Label className="text-lg font-bold">{t("pages.routines.generate.what_s_in_your_fridge")} <span className="text-sm font-normal text-muted-foreground">{t("pages.routines.generate.optional_3")}</span></Label>
                   </div>
                   <div className="relative">
@@ -1607,7 +1538,7 @@ export default function RoutineGenerate() {
                 {/* Mood Selector */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">7</div>
+                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(7)}</div>
                     <Label className="text-lg font-bold">{t("pages.routines.generate.how_is_your_child_feeling_today")}</Label>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1978,27 +1909,8 @@ export default function RoutineGenerate() {
                   </div>
                 </div>
 
-                {/* Step 3 — Outdoor weather for this date */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">3</div>
-                    <Label className="text-lg font-bold">Is the weather okay for outdoor play?</Label>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {([
-                      { value: "yes", label: "Yes", emoji: "☀️", hint: "Outdoor play OK" },
-                      { value: "limited", label: "Limited", emoji: "⛅", hint: "Short outdoor only" },
-                      { value: "no", label: "No", emoji: "🌧️", hint: "Indoor alternatives" }
-                    ] as const).map(opt => {
-                      const active = familyWeatherOutdoor === opt.value;
-                      return <button key={opt.value} type="button" onClick={() => setFamilyWeatherOutdoor(opt.value)} className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border-2 font-bold transition-all text-sm ${active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card text-foreground border-border hover:border-primary/40"}`}>
-                          <span className="text-xl leading-none">{opt.emoji}</span>
-                          <span>{opt.label}</span>
-                          <span className={`text-[10px] font-normal ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.hint}</span>
-                        </button>;
-                    })}
-                  </div>
-                </div>
+                {/* Step 3 — Outdoor weather signal */}
+                <WeatherSelector stepNum={3} value={weatherOutdoor} onChange={setWeatherOutdoor} />
 
                 {/* Step 4 — Special plans */}
                 <div className="space-y-4">
