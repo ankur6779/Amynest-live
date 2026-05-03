@@ -38,6 +38,10 @@ interface CoachInput {
   language?: "en" | "hi" | "hinglish";
   triggers?: string[];
   routine?: string;
+  // Topic-specific answers from coachTopicQuestions.json. Free-form key
+  // → value (string or string[]) blob — forwarded into the AI prompt
+  // and included in the cache key so different inputs cache separately.
+  topicAnswers?: Record<string, string | string[]>;
 }
 
 // ─── Config ──────────────────────────────────────────────────────────────
@@ -66,13 +70,77 @@ const norm = (s: unknown): string =>
 const clip = (s: unknown, max: number): string =>
   typeof s === "string" ? s.trim().slice(0, max) : "";
 
+function normTopicAnswers(ta?: Record<string, string | string[]>): string {
+  if (!ta) return "";
+  const keys = Object.keys(ta).sort();
+  const parts: string[] = [];
+  for (const k of keys) {
+    const v = ta[k];
+    const valStr = Array.isArray(v)
+      ? v.map(norm).filter(Boolean).sort().join(",")
+      : norm(v);
+    if (!valStr) continue;
+    parts.push(`${norm(k)}=${valStr}`);
+  }
+  return parts.join("|");
+}
+
 function buildCacheKey(input: CoachInput): string {
   const triggers = (input.triggers ?? []).map(norm).filter(Boolean).sort().join("-");
   // Namespace is part of the raw key so a version bump (v2 → v3) produces a
   // completely different cacheKey — old rows can never be served to the new schema.
   const lang = input.language === "hi" || input.language === "hinglish" ? input.language : "en";
-  const raw = `${NAMESPACE}_${lang}_${norm(input.goal)}_${norm(input.ageGroup)}_${norm(input.severity)}_${triggers}_${norm(input.routine)}`;
+  const ta = normTopicAnswers(input.topicAnswers);
+  const raw = `${NAMESPACE}_${lang}_${norm(input.goal)}_${norm(input.ageGroup)}_${norm(input.severity)}_${triggers}_${norm(input.routine)}_${ta}`;
   return createHash("sha1").update(raw).digest("hex");
+}
+
+/**
+ * Parse / sanitise a raw `topicAnswers` value off the request body. Drops
+ * non-string values, trims, and caps both keys and values so the prompt
+ * and cache key cannot be abused with megabyte-scale junk.
+ */
+function parseTopicAnswers(raw: unknown): Record<string, string | string[]> | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const out: Record<string, string | string[]> = {};
+  let count = 0;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (count >= 30) break;
+    const key = clip(k, 60);
+    if (!key) continue;
+    if (typeof v === "string") {
+      const val = clip(v, 200);
+      if (!val) continue;
+      out[key] = val;
+      count++;
+    } else if (Array.isArray(v)) {
+      const arr = v.filter((x): x is string => typeof x === "string").slice(0, 12).map((x) => clip(x, 100)).filter(Boolean);
+      if (arr.length === 0) continue;
+      out[key] = arr;
+      count++;
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * Render `topicAnswers` as a human-readable block to inject into the AI
+ * user prompt. Returns an empty string when there are no entries so the
+ * prompt structure stays identical for unmapped topics.
+ */
+function renderTopicAnswersBlock(ta?: Record<string, string | string[]>): string {
+  if (!ta) return "";
+  const lines: string[] = [];
+  for (const [k, v] of Object.entries(ta)) {
+    const label = String(k).replace(/^common_/, "").replace(/_/g, " ");
+    const valStr = Array.isArray(v)
+      ? v.filter((x) => typeof x === "string" && x.length > 0).map((x) => clip(x, 80)).join(", ")
+      : clip(v, 200);
+    if (!valStr) continue;
+    lines.push(`- ${label}: ${valStr}`);
+  }
+  if (lines.length === 0) return "";
+  return `\nTopic-specific context (parent's answers — use these to tailor every win):\n${lines.join("\n")}\n`;
 }
 
 const isStr = (v: unknown): v is string =>
@@ -704,6 +772,7 @@ router.post("/ai-coach", aiUsageGate, async (req, res): Promise<void> => {
       ? raw.triggers.filter((t): t is string => typeof t === "string").slice(0, 8).map((t) => clip(t, 50))
       : [],
     routine: clip(raw.routine, 200) || "Inconsistent",
+    topicAnswers: parseTopicAnswers(raw.topicAnswers),
   };
 
   const cacheKey = buildCacheKey(input);
@@ -759,7 +828,7 @@ Child age group: ${input.ageGroup} years
 Severity: ${input.severity}
 Common triggers: ${triggers}
 Current routine/approach: ${input.routine}
-
+${renderTopicAnswersBlock(input.topicAnswers)}
 Return ONLY valid JSON in this EXACT shape:
 {
   "title": "Empathetic title naming the goal in 4-6 words",
@@ -791,6 +860,7 @@ STRICT RULES:
 - Reference at least 5 different researchers/principles across the 12 wins
 - "deep_explanation" must be 6-8 lines of substantive science, not generic
 - Every win MUST include a "science_reference" naming a real researcher, theory, study, or guideline body (AAP/WHO/CDC/NIH/RCPCH etc.). Generic phrases like "research shows" are NOT acceptable — name the source.
+- When the parent has provided topic-specific context above, weave those specifics into the wins (examples, micro_tasks, mistake_to_avoid) so the plan feels personalised — not generic.
 - Output ONLY the JSON object — no other text
 
 ━━━ AGE-STAGE DEVELOPMENTAL BRIEF (${input.ageGroup}) ━━━
@@ -871,6 +941,7 @@ router.post("/ai-coach/stream", aiUsageGate, async (req, res): Promise<void> => 
       ? raw.triggers.filter((t): t is string => typeof t === "string").slice(0, 8).map((t) => clip(t, 50))
       : [],
     routine: clip(raw.routine, 200) || "Inconsistent",
+    topicAnswers: parseTopicAnswers(raw.topicAnswers),
   };
 
   const cacheKey = buildCacheKey(input);

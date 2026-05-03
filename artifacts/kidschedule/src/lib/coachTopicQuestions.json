@@ -1,0 +1,260 @@
+{
+  "meta": {
+    "version": "1.0",
+    "totalTopics": 52
+  },
+
+  "common": [
+    { "id": "child_age", "type": "number" },
+    { "id": "severity", "type": "slider", "range": [1,5] },
+    { "id": "frequency", "type": "select", "options": ["Daily","Weekly","Rare"] }
+  ],
+
+  "topics": {
+
+    "tantrums": [
+      { "id": "trigger", "type": "select", "options": ["Denied","Hunger","Tired"] },
+      { "id": "location", "type": "select", "options": ["Home","Public"] }
+    ],
+
+    "aggression": [
+      { "id": "behavior", "type": "select", "options": ["Hitting","Throwing","Shouting"] },
+      { "id": "target", "type": "select", "options": ["Parents","Peers","Siblings"] }
+    ],
+
+    "defiance": [
+      { "id": "response", "type": "select", "options": ["Ignore","Argue","Refuse"] },
+      { "id": "instruction_type", "type": "select", "options": ["Simple","Complex"] }
+    ],
+
+    "emotional_regulation": [
+      { "id": "emotion_type", "type": "select", "options": ["Anger","Fear","Sadness"] },
+      { "id": "recovery_time", "type": "select", "options": ["Fast","Slow"] }
+    ],
+
+    "separation_anxiety": [
+      { "id": "situation", "type": "select", "options": ["School","Home","Sleep"] },
+      { "id": "reaction", "type": "select", "options": ["Crying","Clinging"] }
+    ],
+
+    "screen_balance": [
+      { "id": "daily_usage", "type": "select", "options": ["<1h","1-3h",">3h"] },
+      { "id": "device", "type": "select", "options": ["Mobile","TV","Tablet"] }
+    ],
+
+    "mobile_addiction": [
+      { "id": "usage_time", "type": "select", "options": ["Meals","Sleep","Anytime"] },
+      { "id": "withdrawal", "type": "select", "options": ["Mild","Severe"] }
+    ],
+
+    "focus_span": [
+      { "id": "duration", "type": "select", "options": ["<5min","5-15","15+"] },
+      { "id": "distractions", "type": "multi", "options": ["Noise","Screens","People"] }
+    ],
+
+    "youtube_overuse": [
+      { "id": "content_type", "type": "select", "options": ["Shorts","Cartoons"] },
+      { "id": "control", "type": "select", "options": ["Parental","None"] }
+    ],
+
+    "instant_gratification": [
+      { "id": "behavior", "type": "select", "options": ["Demanding","Impatient"] },
+      { "id": "delay_tolerance", "type": "select", "options": ["Low","Medium","High"] }
+    ],
+
+    "independent_eating": [
+      { "id": "dependency", "type": "select", "options": ["Full","Partial"] },
+      { "id": "motor_skill", "type": "select", "options": ["Good","Weak"] }
+    ],
+
+    "fussy_eating": [
+      { "id": "food_refusal", "type": "multi", "options": ["Veg","Fruits","New"] },
+      { "id": "meal_time", "type": "select", "options": ["<15","15-30",">30"] }
+    ],
+
+    "junk_food": [
+      { "id": "frequency_junk", "type": "select", "options": ["Daily","Weekly"] },
+      { "id": "craving_trigger", "type": "select", "options": ["Ads","Habit"] }
+    ],
+
+    "meal_behavior": [
+      { "id": "behavior", "type": "select", "options": ["Messy","Refusal"] },
+      { "id": "family_meal", "type": "boolean" }
+    ],
+
+    "sleep_pattern": [
+      { "id": "bedtime", "type": "time" },
+      { "id": "wake_time", "type": "time" }
+    ],
+
+    "bedtime_resistance": [
+      { "id": "delay_reason", "type": "select", "options": ["Play","Screen"] },
+      { "id": "routine_exist", "type": "boolean" }
+    ],
+
+    "night_waking": [
+      { "id": "frequency", "type": "select", "options": ["1-2","3+"] },
+      { "id": "cause", "type": "select", "options": ["Hunger","Fear"] }
+    ],
+
+    "late_sleeping": [
+      { "id": "sleep_time", "type": "time" },
+      { "id": "screen_before_sleep", "type": "boolean" }
+    ],
+
+    "concentration": [
+      { "id": "focus_duration", "type": "select", "options": ["Short","Medium","Long"] },
+      { "id": "task_type", "type": "select", "options": ["Study","Play"] }
+    ],
+
+    "study_discipline": [
+      { "id": "routine", "type": "boolean" },
+      { "id": "motivation", "type": "select", "options": ["Low","High"] }
+    ],
+
+    "learning_interest": [
+      { "id": "interest_level", "type": "slider", "range": [1,5] },
+      { "id": "preferred_subject", "type": "text" }
+    ],
+
+    "homework_resistance": [
+      { "id": "reason", "type": "select", "options": ["Bored","Difficult"] },
+      { "id": "parent_help", "type": "boolean" }
+    ],
+
+    "growth_mindset": [
+      { "id": "failure_response", "type": "select", "options": ["Quit","Retry"] },
+      { "id": "confidence", "type": "slider", "range": [1,5] }
+    ],
+
+    "infant_sleep": [
+      { "id": "nap_count", "type": "select", "options": ["2","3","4+"] },
+      { "id": "feeding_type", "type": "select", "options": ["Breast","Formula"] }
+    ],
+
+    "infant_crying": [
+      { "id": "trigger", "type": "select", "options": ["Hunger","Gas","Sleep"] },
+      { "id": "duration", "type": "select", "options": ["Short","Long"] }
+    ],
+
+    "grandparent_interference": [
+      { "id": "conflict_type", "type": "select", "options": ["Rules","Food"] },
+      { "id": "frequency", "type": "select", "options": ["Occasional","Frequent"] }
+    ],
+
+    "parent_alignment": [
+      { "id": "disagreement_area", "type": "select", "options": ["Discipline","Routine"] },
+      { "id": "communication", "type": "select", "options": ["Good","Poor"] }
+    ],
+
+    "working_parent_guilt": [
+      { "id": "time_with_child", "type": "select", "options": ["Low","Medium","High"] },
+      { "id": "guilt_level", "type": "slider", "range": [1,5] }
+    ],
+
+    "family_rules": [
+      { "id": "rules_defined", "type": "boolean" },
+      { "id": "consistency", "type": "select", "options": ["Low","High"] }
+    ],
+
+    "toddler_tantrums": [
+      { "id": "trigger", "type": "select", "options": ["Denied","Attention"] },
+      { "id": "intensity", "type": "slider", "range": [1,5] }
+    ],
+
+    "biting_hitting": [
+      { "id": "frequency", "type": "select", "options": ["Rare","Frequent"] },
+      { "id": "target", "type": "select", "options": ["Peers","Parents"] }
+    ],
+
+    "no_phase": [
+      { "id": "frequency_no", "type": "select", "options": ["Occasional","Always"] },
+      { "id": "context", "type": "select", "options": ["Home","Public"] }
+    ],
+
+    "public_meltdown": [
+      { "id": "trigger", "type": "select", "options": ["Crowd","Denial"] },
+      { "id": "duration", "type": "select", "options": ["Short","Long"] }
+    ],
+
+    "whining": [
+      { "id": "frequency", "type": "select", "options": ["Low","High"] },
+      { "id": "cause", "type": "select", "options": ["Attention","Habit"] }
+    ],
+
+    "potty_training": [
+      { "id": "readiness", "type": "select", "options": ["Ready","Not ready"] },
+      { "id": "accidents", "type": "select", "options": ["Rare","Frequent"] }
+    ],
+
+    "self_dressing": [
+      { "id": "skill_level", "type": "select", "options": ["Beginner","Independent"] },
+      { "id": "interest", "type": "select", "options": ["Low","High"] }
+    ],
+
+    "sibling_rivalry": [
+      { "id": "conflict_frequency", "type": "select", "options": ["Occasional","Frequent"] },
+      { "id": "trigger", "type": "select", "options": ["Attention","Toys"] }
+    ],
+
+    "sharing": [
+      { "id": "sharing_level", "type": "select", "options": ["Low","Medium","High"] },
+      { "id": "conflict", "type": "boolean" }
+    ],
+
+    "new_baby_adjustment": [
+      { "id": "reaction", "type": "select", "options": ["Jealous","Curious"] },
+      { "id": "attention_shift", "type": "select", "options": ["High","Low"] }
+    ],
+
+    "travel": [
+      { "id": "distance", "type": "select", "options": ["Short","Long"] },
+      { "id": "child_behavior", "type": "select", "options": ["Calm","Restless"] }
+    ],
+
+    "doctor_visit": [
+      { "id": "fear_level", "type": "slider", "range": [1,5] },
+      { "id": "previous_experience", "type": "select", "options": ["Good","Bad"] }
+    ],
+
+    "daycare_transition": [
+      { "id": "adjustment", "type": "select", "options": ["Easy","Difficult"] },
+      { "id": "crying", "type": "boolean" }
+    ],
+
+    "moving_home": [
+      { "id": "stress_level", "type": "slider", "range": [1,5] },
+      { "id": "support", "type": "select", "options": ["Low","High"] }
+    ],
+
+    "child_obesity": [
+      { "id": "activity_level", "type": "select", "options": ["Low","High"] },
+      { "id": "diet_quality", "type": "select", "options": ["Poor","Balanced"] }
+    ],
+
+    "immunity": [
+      { "id": "illness_frequency", "type": "select", "options": ["Rare","Frequent"] },
+      { "id": "nutrition", "type": "select", "options": ["Poor","Good"] }
+    ],
+
+    "dental": [
+      { "id": "brushing", "type": "select", "options": ["Once","Twice"] },
+      { "id": "sugar_intake", "type": "select", "options": ["Low","High"] }
+    ],
+
+    "burnout": [
+      { "id": "energy_level", "type": "slider", "range": [1,5] },
+      { "id": "support", "type": "select", "options": ["None","Good"] }
+    ],
+
+    "parent_sleep": [
+      { "id": "sleep_hours", "type": "select", "options": ["<5","5-7","7+"] },
+      { "id": "interruptions", "type": "select", "options": ["Low","High"] }
+    ],
+
+    "overwhelm": [
+      { "id": "stress_level", "type": "slider", "range": [1,5] },
+      { "id": "task_load", "type": "select", "options": ["Low","High"] }
+    ]
+  }
+}

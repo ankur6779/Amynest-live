@@ -8,6 +8,7 @@ import { usePaywall } from "@/contexts/paywall-context";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
+import { getTopicQuestions } from "@/lib/coachTopicQuestions";
 
 // ─── Goals (categorized) ───────────────────────────────────────────────────
 interface GoalItem {
@@ -499,23 +500,29 @@ GOAL_CATEGORIES.forEach(cat => {
 // ─── Question definitions ──────────────────────────────────────────────────
 type QuestionType = "single" | "multi";
 interface Question {
-  id: "ageGroup" | "severity" | "triggers" | "routine" | "goalRefinement";
+  id: string;
   prompt: string;
   type: QuestionType;
   options: string[];
 }
 const COMMON_TRIGGERS = ["Hunger or tiredness", "Transitions or changes", "Being told 'no'", "Boredom", "Sibling conflict", "School/social stress", "Inconsistent rules", "Sensory overload"];
-const QUESTIONS: Question[] = [{
+// Generic fallback question set — used for topics that don't have a custom
+// schema in coachTopicQuestions.json. The first two questions (ageGroup,
+// severity) are ALSO prepended to every topic-specific flow so we always
+// collect those baseline signals.
+const AGE_QUESTION: Question = {
   id: "ageGroup",
   prompt: "What's your child's age?",
   type: "single",
-  options: ["2–4 years", "5–7 years", "8–10 years", "10+ years (tween/teen)"]
-}, {
+  options: ["2–4 years", "5–7 years", "8–10 years", "10+ years (tween/teen)"],
+};
+const SEVERITY_QUESTION: Question = {
   id: "severity",
   prompt: "How challenging is it right now?",
   type: "single",
-  options: ["Mild – occasional", "Moderate – frequent", "Severe – daily struggle"]
-}, {
+  options: ["Mild – occasional", "Moderate – frequent", "Severe – daily struggle"],
+};
+const GENERIC_QUESTIONS: Question[] = [AGE_QUESTION, SEVERITY_QUESTION, {
   id: "triggers",
   prompt: "What triggers it most? (pick any)",
   type: "multi",
@@ -531,6 +538,10 @@ const QUESTIONS: Question[] = [{
   type: "single",
   options: ["Reduce frequency", "Stay calm myself", "Build my child's skills", "Long-term healthy pattern"]
 }];
+
+// Reserved keys handled directly by the existing payload — never sent in
+// the freeform `topicAnswers` blob to the server.
+const RESERVED_ANSWER_KEYS = new Set(["ageGroup", "severity", "triggers", "routine", "goalRefinement"]);
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 export interface Win {
@@ -765,6 +776,15 @@ export default function AICoachPage() {
   };
 
   // ─── Question handlers
+  // Topic-specific question list (when goalId maps to a topic in
+  // coachTopicQuestions.json). For mapped topics we ask: ageGroup +
+  // severity + topic-specific questions. For unmapped topics we fall
+  // back to the original 5-generic-question flow.
+  const QUESTIONS = useMemo<Question[]>(() => {
+    const topicQs = goalId ? getTopicQuestions(goalId) : null;
+    if (!topicQs || topicQs.length === 0) return GENERIC_QUESTIONS;
+    return [AGE_QUESTION, SEVERITY_QUESTION, ...topicQs];
+  }, [goalId]);
   const currentQ = QUESTIONS[qIndex];
   const currentAnswer = currentQ ? answers[currentQ.id] : undefined;
   const isAnswered = currentQ?.type === "multi" ? Array.isArray(currentAnswer) && currentAnswer.length > 0 : typeof currentAnswer === "string" && currentAnswer.length > 0;
@@ -822,13 +842,24 @@ export default function AICoachPage() {
       "Moderate – frequent": "moderate",
       "Severe – daily struggle": "severe"
     };
+    // Anything beyond the reserved generic keys is treated as a free-form
+    // topic-specific answer and forwarded to the server as `topicAnswers`.
+    const topicAnswers: Record<string, string | string[]> = {};
+    for (const [k, v] of Object.entries(answers)) {
+      if (RESERVED_ANSWER_KEYS.has(k)) continue;
+      if (v === undefined || v === null) continue;
+      if (typeof v === "string" && v.length === 0) continue;
+      if (Array.isArray(v) && v.length === 0) continue;
+      topicAnswers[k] = v;
+    }
     const payload = {
       goal: goalId,
       ageGroup: ageMap[answers.ageGroup as string] ?? answers.ageGroup as string ?? "5-7",
       severity: sevMap[answers.severity as string] ?? "moderate",
       triggers: answers.triggers as string[] ?? [],
       routine: answers.routine as string ?? "",
-      goalRefinement: answers.goalRefinement as string ?? ""
+      goalRefinement: answers.goalRefinement as string ?? "",
+      topicAnswers
     };
     lastPayloadRef.current = {
       goal: payload.goal,
