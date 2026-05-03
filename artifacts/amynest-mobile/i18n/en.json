@@ -1706,6 +1706,10 @@
       "select_child_school": "Please select at least one child and set their school status.",
       "family_generate_failed": "Failed to generate routine for {{name}}",
       "family_save_failed": "Failed to save routine for {{name}}",
+      "family_existing_title": "Replace existing routines?",
+      "family_existing_confirm": "{{names}} already have a routine for {{date}}. Replace?",
+      "family_existing_cancel": "Cancel",
+      "family_existing_replace": "Replace",
       "family_saved": "✨ Saved {{count}} routine!",
       "family_saved_plural": "✨ Saved {{count}} routines!"
     },

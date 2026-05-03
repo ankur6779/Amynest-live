@@ -15,7 +15,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { format } from "date-fns";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
-import { HANDLER_TYPES, type HandlerKey, getHandlerInfo, simplifyForHandler, buildSyncSuggestions, computeFamilyPoints, pickSharedActivities, appendHandlerToPlans, type FRFamilyResult } from "@workspace/family-routine";
+import { HANDLER_TYPES, type HandlerKey, getHandlerInfo, simplifyForHandler, buildSyncSuggestions, computeFamilyPoints, pickSharedActivities, appendHandlerToPlans, buildFamilyChildGeneratePayload, type FRFamilyResult } from "@workspace/family-routine";
 type MoodOption = {
   value: "happy" | "angry" | "lazy" | "normal";
   label: string;
@@ -1117,6 +1117,37 @@ export default function RoutineGenerate() {
       });
       return;
     }
+
+    // Family-mode existing-routine override gate (parity with single-mode).
+    // Check each selected child for an existing routine on the chosen date,
+    // then ask the parent once before regenerating + replacing them all.
+    try {
+      const checks = await Promise.all(selectedChildren.map(async c => {
+        try {
+          const r = await authFetch(getApiUrl(`/api/routines/check?childId=${c.id}&date=${familyDate}`));
+          if (!r.ok) return null;
+          const data = await r.json() as { exists?: boolean };
+          return data?.exists ? c : null;
+        } catch {
+          return null;
+        }
+      }));
+      const conflicts = checks.filter((c): c is ChildType => !!c);
+      if (conflicts.length > 0) {
+        const names = conflicts.map(c => c.name).join(", ");
+        const confirmMsg = t("toasts.routines_generate.family_existing_confirm", {
+          names,
+          date: familyDate,
+          defaultValue: `${names} already have a routine for ${familyDate}. Replace?`
+        });
+        // eslint-disable-next-line no-alert
+        if (!window.confirm(confirmMsg)) return;
+      }
+    } catch {
+      // If the check itself fails we don't block generation — the save-all
+      // step uses override:true so any stale routine will still be replaced.
+    }
+
     setFamilyResults(null);
     const results: FamilyResult[] = [];
     for (let i = 0; i < selectedChildren.length; i++) {
@@ -1129,20 +1160,16 @@ export default function RoutineGenerate() {
       try {
         const generated = await new Promise<GeneratedRoutine>((resolve, reject) => {
           generateMutation.mutate({
-            data: {
-              childId: child.id,
+            // Shared helper keeps web ↔ mobile family payloads in lockstep.
+            data: buildFamilyChildGeneratePayload({
+              child,
               date: familyDate,
               hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
               specialPlans: appendHandlerToPlans(familySpecialPlans, handlerType),
-              fridgeItems: familyFridgeItems.trim() || undefined,
-              // Parity with mobile: forward per-child profile + region overrides
-              age: child.age,
-              wakeTime: child.wakeUpTime ?? undefined,
-              schoolStart: child.schoolStartTime ?? undefined,
-              schoolEnd: child.schoolEndTime ?? undefined,
-              region: parentRegion ?? undefined,
-              ...buildParentAvailPayload(familyParentAvail)
-            }
+              fridgeItems: familyFridgeItems,
+              region: parentRegion,
+              parentAvail: familyParentAvail
+            }) as never
           }, {
             onSuccess: data => resolve(data as GeneratedRoutine),
             onError: reject

@@ -528,6 +528,10 @@
       "select_child_school": "Kripya kam se kam ek bachha select karein aur unki school status set karein.",
       "family_generate_failed": "{{name}} ke liye routine generate nahi ho saka",
       "family_save_failed": "{{name}} ke liye routine save nahi ho saka",
+      "family_existing_title": "Existing routines replace karein?",
+      "family_existing_confirm": "{{names}} ki pehle se hi {{date}} ke liye routine hai. Replace karein?",
+      "family_existing_cancel": "Cancel",
+      "family_existing_replace": "Replace",
       "family_saved": "✨ {{count}} routine save hua!",
       "family_saved_plural": "✨ {{count}} routines save hue!"
     },
