@@ -96,6 +96,7 @@ const TRAVEL_OPTS = [
 // the religious or cultural restriction when generating meals.
 const FOOD_OPTIONS = [
   { label: "🥦 Vegetarian",        value: "veg",        foodType: "veg",     note: "" },
+  { label: "🌱 Vegan",             value: "vegan",      foodType: "veg",     note: "Vegan — strictly no animal products including dairy and eggs" },
   { label: "🥚 Eggetarian",        value: "eggetarian", foodType: "veg",     note: "Eggetarian — eggs are OK, no meat or fish" },
   { label: "🍗 Non-Vegetarian",    value: "non_veg",    foodType: "non_veg", note: "" },
   { label: "🙏 Jain (Pure Veg)",   value: "jain",       foodType: "veg",     note: "Jain diet — strictly no onion, garlic, root vegetables (potato, carrot, radish, beetroot)" },
@@ -261,6 +262,7 @@ export default function OnboardingPage() {
   const [textInput, setTextInput] = useState("");
   const [selected, setSelected] = useState("");
   const [dobInput, setDobInput] = useState("");
+  const [regionDrillDown, setRegionDrillDown] = useState(false);
 
   const [children, setChildren] = useState<ChildData[]>([]);
   const [curr, setCurr] = useState<Partial<ChildData>>({});
@@ -977,22 +979,36 @@ export default function OnboardingPage() {
       }
 
       case "parent-region": {
-        const regionOpts = [
-          { label: t("screens.onboarding.region_pan_indian"), value: "pan_indian" },
-          { label: t("screens.onboarding.region_north"), value: "north_indian" },
-          { label: t("screens.onboarding.region_south"), value: "south_indian" },
-          { label: t("screens.onboarding.region_bengali"), value: "bengali" },
-          { label: t("screens.onboarding.region_gujarati"), value: "gujarati" },
-          { label: t("screens.onboarding.region_maharashtrian"), value: "maharashtrian" },
-          { label: t("screens.onboarding.region_punjabi"), value: "punjabi" },
-          { label: t("screens.onboarding.region_global"), value: "global" },
+        const globalOpts = [
+          { label: t("screens.onboarding.region_western"),        value: "western" },
+          { label: t("screens.onboarding.region_asian"),          value: "asian" },
+          { label: t("screens.onboarding.region_middle_eastern"), value: "middle_eastern" },
+          { label: t("screens.onboarding.region_plant_based"),    value: "vegetarian" },
+          { label: t("screens.onboarding.region_mixed"),          value: "mixed" },
+          { label: t("screens.onboarding.region_indian_cuisine"), value: "indian" },
         ];
+        const indianOpts = [
+          { label: t("screens.onboarding.region_north"),          value: "north_indian" },
+          { label: t("screens.onboarding.region_south"),          value: "south_indian" },
+          { label: t("screens.onboarding.region_gujarati"),       value: "gujarati" },
+          { label: t("screens.onboarding.region_maharashtrian"),  value: "maharashtrian" },
+          { label: t("screens.onboarding.region_punjabi"),        value: "punjabi" },
+          { label: t("screens.onboarding.region_bengali"),        value: "bengali" },
+          { label: t("screens.onboarding.region_mixed_indian"),   value: "pan_indian" },
+        ];
+        const opts = regionDrillDown ? indianOpts : globalOpts;
         return (
           <div className="grid grid-cols-2 gap-2">
-            {regionOpts.map((opt) => (
+            {opts.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => {
+                  if (!regionDrillDown && opt.value === "indian") {
+                    setRegionDrillDown(true);
+                    setMessages((m) => [...m, { role: "amy", text: t("screens.onboarding.region_indian_drilldown") }]);
+                    return;
+                  }
+                  setRegionDrillDown(false);
                   setParent((p) => ({ ...p, region: opt.value }));
                   userReplies(opt.label, "parent-mobile", t("screens.onboarding.mobile_question"));
                 }}

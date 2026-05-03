@@ -1,0 +1,149 @@
+Upgrade the onboarding “Cuisine Preference” module to a GLOBAL-FIRST adaptive system.
+
+GOAL:
+Make the app feel native to users in USA, UK, UAE, etc. Avoid India-only perception while still supporting Indian users.
+
+---
+
+### 1. DETECT USER REGION
+
+Use:
+- Device locale (en-US, en-GB, en-IN, etc.)
+- OR ask: “Where are you based?”
+
+Store:
+user.country
+user.region
+
+---
+
+### 2. FIRST SCREEN (GLOBAL UI)
+
+Title:
+“What kind of food does your family usually prefer?”
+
+Subtitle:
+“We’ll personalize meals, routines & suggestions”
+
+OPTIONS (PRIMARY – GLOBAL):
+- Western / Continental
+- Asian (Chinese, Thai, Japanese)
+- Middle Eastern
+- Vegetarian / Plant-based
+- Mixed / Flexible
+- Indian Cuisine 🇮🇳
+
+👉 IMPORTANT:
+- Indian should be ONE option (not default)
+- No Indian states shown initially
+
+---
+
+### 3. SECOND STEP (DYNAMIC DRILL-DOWN)
+
+If user selects:
+
+#### 🇮🇳 Indian Cuisine:
+Show:
+- North Indian
+- South Indian
+- Gujarati
+- Maharashtrian
+- Punjabi
+- Bengali
+- Mixed Indian
+
+#### 🇺🇸 Western:
+- American
+- Italian
+- Mediterranean
+- Mexican
+- Mixed Western
+
+#### 🌏 Asian:
+- Chinese
+- Thai
+- Japanese
+- Korean
+
+#### 🌍 Middle Eastern:
+- Arabic
+- Turkish
+- Lebanese
+
+---
+
+### 4. SMART AUTO-SUGGEST (IMPORTANT)
+
+Based on country:
+
+IF USA:
+Default highlight:
+- Western
+- Mixed
+
+IF UK:
+- Western
+- Indian (secondary)
+
+IF UAE:
+- Middle Eastern
+- Indian
+
+IF India:
+- Indian (expanded directly)
+
+---
+
+### 5. UI DESIGN INSTRUCTIONS
+
+- Use flags/icons for cuisines
+- Card-based selection (2 per row)
+- Soft animations (hover glow / tap bounce)
+- Highlight “Recommended for you”
+
+---
+
+### 6. COPY IMPROVEMENT
+
+Instead of:
+“Select your regional cuisine”
+
+Use:
+“Choose your family’s food style”
+
+---
+
+### 7. DATA STRUCTURE
+
+{
+  "user_cuisine_primary": "Western",
+  "user_cuisine_secondary": ["Italian", "Mexican"],
+  "region": "US"
+}
+
+---
+
+### 8. FUTURE PERSONALIZATION
+
+Use cuisine for:
+- Meal plans
+- Routine suggestions
+- Snack ideas
+- AI recommendations
+
+---
+
+### 9. AVOID (CRITICAL)
+
+❌ Showing only Indian states first  
+❌ Default India selection globally  
+❌ Overwhelming options on first screen  
+
+---
+
+### 10. SUCCESS CRITERIA
+
+- US user feels local
+- Indian user still feels personalized
+- Clean, modern, global UX
