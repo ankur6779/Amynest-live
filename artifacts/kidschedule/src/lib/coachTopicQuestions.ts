@@ -83,6 +83,180 @@ function humanizeId(id: string): string {
   return cleaned;
 }
 
+export type CoachLanguage = "en" | "hi" | "hinglish";
+
+const PROMPT_OVERRIDES_EN: Record<string, string> = {
+  trigger: "What is the main trigger?",
+  location: "Where does this happen?",
+  behavior: "Which behaviour is most common?",
+  target: "Who is it directed at?",
+  response: "How does the child react?",
+  instruction_type: "For what kind of instructions?",
+  emotion_type: "Which emotion comes up the most?",
+  recovery_time: "How long to calm down?",
+  situation: "In which situation does it happen?",
+  reaction: "What is the reaction like?",
+  daily_usage: "How much daily screen time?",
+  device: "Which device the most?",
+  usage_time: "When does the child use it?",
+  withdrawal: "Reaction when phone is taken away?",
+  duration: "How long does it last?",
+  distractions: "What causes distractions? (multi)",
+  content_type: "What does the child watch?",
+  control: "Are parental controls on?",
+  delay_tolerance: "Can the child wait?",
+  dependency: "How dependent is the child?",
+  motor_skill: "Hand / spoon use?",
+  food_refusal: "Which foods are refused? (multi)",
+  meal_time: "How long for one meal?",
+  frequency_junk: "How often junk food?",
+  craving_trigger: "Main reason for cravings?",
+  family_meal: "Eats with the family?",
+  bedtime: "What is the sleep time?",
+  wake_time: "What is the wake-up time?",
+  delay_reason: "Reason for bedtime delay?",
+  routine_exist: "Is the bedtime routine fixed?",
+  cause: "What is the main cause?",
+  sleep_time: "When does the child usually sleep?",
+  screen_before_sleep: "Screen before sleep?",
+  focus_duration: "Usual focus span?",
+  task_type: "In which task does focus drop?",
+  routine: "Is the study routine fixed?",
+  motivation: "How is the motivation level?",
+  interest_level: "Interest in learning (1=Low, 5=High)?",
+  preferred_subject: "Favourite subject?",
+  reason: "What is the main reason?",
+  parent_help: "Do you help?",
+  failure_response: "Reaction on failing?",
+  confidence: "Confidence level (1=Low, 5=High)?",
+  nap_count: "How many naps in a day?",
+  feeding_type: "Feeding type?",
+  conflict_type: "Conflict about what?",
+  frequency: "How often does this happen?",
+  disagreement_area: "Disagreement is about what?",
+  communication: "How is communication?",
+  time_with_child: "Time with the child?",
+  guilt_level: "Guilt level (1=Low, 5=High)?",
+  rules_defined: "Are family rules clear?",
+  consistency: "Consistency in rules?",
+  intensity: "Intensity (1=Low, 5=High)?",
+  frequency_no: "When does the child say 'no'?",
+  context: "In what context?",
+  readiness: "Potty training readiness?",
+  accidents: "How many accidents?",
+  skill_level: "Self-dressing skill?",
+  interest: "Interested in it?",
+  conflict_frequency: "How often is there conflict?",
+  sharing_level: "Can the child share?",
+  conflict: "Is there conflict?",
+  attention_shift: "Where is your attention going?",
+  distance: "Travel distance?",
+  child_behavior: "Behaviour during travel?",
+  fear_level: "Fear level (1=Low, 5=High)?",
+  previous_experience: "How was the previous experience?",
+  adjustment: "How was the adjustment?",
+  crying: "Cries when going to daycare?",
+  stress_level: "Stress level (1=Low, 5=High)?",
+  support: "Support system?",
+  activity_level: "Physical activity?",
+  diet_quality: "Diet quality?",
+  illness_frequency: "How often falls ill?",
+  nutrition: "How is nutrition?",
+  brushing: "How often brushing?",
+  sugar_intake: "Sugar intake?",
+  energy_level: "Energy level (1=Low, 5=High)?",
+  sleep_hours: "How many hours do you sleep?",
+  interruptions: "Sleep interruptions?",
+  task_load: "How much task load?",
+  common_frequency: "How often does this happen?",
+};
+
+const PROMPT_OVERRIDES_HI: Record<string, string> = {
+  trigger: "मुख्य ट्रिगर क्या होता है?",
+  location: "यह कहाँ होता है?",
+  behavior: "कौन सा व्यवहार सबसे आम है?",
+  target: "किस पर निकलता है?",
+  response: "बच्चा कैसे प्रतिक्रिया करता है?",
+  instruction_type: "किस तरह के निर्देशों में?",
+  emotion_type: "कौन सी भावना सबसे ज़्यादा आती है?",
+  recovery_time: "शांत होने में कितना समय?",
+  situation: "किस स्थिति में होता है?",
+  reaction: "प्रतिक्रिया कैसी होती है?",
+  daily_usage: "रोज़ाना स्क्रीन टाइम कितना?",
+  device: "कौन सा डिवाइस सबसे ज़्यादा?",
+  usage_time: "कब इस्तेमाल करता है?",
+  withdrawal: "फ़ोन हटाने पर प्रतिक्रिया?",
+  duration: "कितनी देर चलता है?",
+  distractions: "क्या ध्यान भटकाता है? (एकाधिक)",
+  content_type: "क्या देखता है?",
+  control: "पैरेंटल कंट्रोल है?",
+  delay_tolerance: "इंतज़ार कर पाता है?",
+  dependency: "कितना निर्भर है?",
+  motor_skill: "हाथ/चम्मच का इस्तेमाल कैसा?",
+  food_refusal: "कौन सी चीज़ मना करता है? (एकाधिक)",
+  meal_time: "एक खाने में कितना समय?",
+  frequency_junk: "जंक फ़ूड कितनी बार?",
+  craving_trigger: "क्रेविंग का मुख्य कारण?",
+  family_meal: "परिवार के साथ खाता है?",
+  bedtime: "सोने का समय क्या है?",
+  wake_time: "उठने का समय क्या है?",
+  delay_reason: "सोने में देरी का कारण?",
+  routine_exist: "सोने की दिनचर्या तय है?",
+  cause: "मुख्य कारण क्या है?",
+  sleep_time: "अक्सर कब सोता है?",
+  screen_before_sleep: "सोने से पहले स्क्रीन?",
+  focus_duration: "सामान्यतः फ़ोकस अवधि?",
+  task_type: "किस काम में फ़ोकस कम होता है?",
+  routine: "पढ़ाई की दिनचर्या तय है?",
+  motivation: "प्रेरणा का स्तर कैसा है?",
+  interest_level: "सीखने में रुचि (1=कम, 5=ज़्यादा)?",
+  preferred_subject: "पसंदीदा विषय?",
+  reason: "मुख्य कारण क्या?",
+  parent_help: "क्या आप मदद करते हैं?",
+  failure_response: "असफल होने पर प्रतिक्रिया?",
+  confidence: "आत्मविश्वास का स्तर (1=कम, 5=ज़्यादा)?",
+  nap_count: "दिन में कितनी झपकी?",
+  feeding_type: "फ़ीडिंग का प्रकार?",
+  conflict_type: "किस बात पर टकराव?",
+  frequency: "यह कितनी बार होता है?",
+  disagreement_area: "असहमति किस बात पर?",
+  communication: "संवाद कैसा है?",
+  time_with_child: "बच्चे के साथ समय?",
+  guilt_level: "अपराधबोध का स्तर (1=कम, 5=ज़्यादा)?",
+  rules_defined: "परिवार के नियम स्पष्ट हैं?",
+  consistency: "नियमों में निरंतरता?",
+  intensity: "तीव्रता (1=कम, 5=ज़्यादा)?",
+  frequency_no: "'नहीं' कब कहता है?",
+  context: "किस संदर्भ में?",
+  readiness: "पॉटी ट्रेनिंग की तैयारी?",
+  accidents: "कितनी बार दुर्घटना?",
+  skill_level: "अपने आप कपड़े पहनने का कौशल?",
+  interest: "इसमें रुचि है?",
+  conflict_frequency: "टकराव कितनी बार?",
+  sharing_level: "साझा कर पाता है?",
+  conflict: "टकराव होता है?",
+  attention_shift: "आपका ध्यान किस पर?",
+  distance: "यात्रा की दूरी?",
+  child_behavior: "यात्रा के समय व्यवहार?",
+  fear_level: "डर का स्तर (1=कम, 5=ज़्यादा)?",
+  previous_experience: "पिछला अनुभव कैसा था?",
+  adjustment: "अनुकूलन कैसा हुआ?",
+  crying: "डेकेयर जाते समय रोता है?",
+  stress_level: "तनाव का स्तर (1=कम, 5=ज़्यादा)?",
+  support: "सहायता प्रणाली?",
+  activity_level: "शारीरिक गतिविधि?",
+  diet_quality: "आहार की गुणवत्ता?",
+  illness_frequency: "कितनी बार बीमार?",
+  nutrition: "पोषण कैसा?",
+  brushing: "ब्रश कितनी बार?",
+  sugar_intake: "चीनी का सेवन?",
+  energy_level: "ऊर्जा का स्तर (1=कम, 5=ज़्यादा)?",
+  sleep_hours: "आप कितने घंटे सोते हैं?",
+  interruptions: "नींद में रुकावट?",
+  task_load: "कार्यभार कितना?",
+  common_frequency: "यह कितनी बार होता है?",
+};
+
 const PROMPT_OVERRIDES: Record<string, string> = {
   trigger: "Main trigger kya hota hai?",
   location: "Yeh kahaan hota hai?",
@@ -169,28 +343,50 @@ const PROMPT_OVERRIDES: Record<string, string> = {
   common_frequency: "Yeh kitni baar hota hai?",
 };
 
-function sliderOptions(range: [number, number]): string[] {
+function pickPromptMap(lang: CoachLanguage): Record<string, string> {
+  if (lang === "en") return PROMPT_OVERRIDES_EN;
+  if (lang === "hi") return PROMPT_OVERRIDES_HI;
+  return PROMPT_OVERRIDES;
+}
+
+const SLIDER_LABELS: Record<CoachLanguage, { low: string; high: string }> = {
+  en: { low: "Low", high: "High" },
+  hi: { low: "कम", high: "ज़्यादा" },
+  hinglish: { low: "Low", high: "High" },
+};
+
+function sliderOptions(range: [number, number], lang: CoachLanguage): string[] {
   const [min, max] = range;
+  const labels = SLIDER_LABELS[lang];
   const out: string[] = [];
   for (let i = min; i <= max; i++) {
-    if (i === min) out.push(`${i} (Low)`);
-    else if (i === max) out.push(`${i} (High)`);
+    if (i === min) out.push(`${i} (${labels.low})`);
+    else if (i === max) out.push(`${i} (${labels.high})`);
     else out.push(String(i));
   }
   return out;
 }
 
-const TIME_BUCKETS = [
-  "Before 8 PM",
-  "8–9 PM",
-  "9–10 PM",
-  "10–11 PM",
-  "After 11 PM",
-];
+const TIME_BUCKETS: Record<CoachLanguage, string[]> = {
+  en: ["Before 8 PM", "8–9 PM", "9–10 PM", "10–11 PM", "After 11 PM"],
+  hi: ["रात 8 बजे से पहले", "8–9 बजे", "9–10 बजे", "10–11 बजे", "रात 11 के बाद"],
+  hinglish: ["Before 8 PM", "8–9 PM", "9–10 PM", "10–11 PM", "After 11 PM"],
+};
 
-function adaptQuestion(raw: RawQuestion, idPrefix = ""): AdaptedQuestion | null {
+const YES_NO: Record<CoachLanguage, [string, string]> = {
+  en: ["Yes", "No"],
+  hi: ["हाँ", "नहीं"],
+  hinglish: ["Yes", "No"],
+};
+
+function adaptQuestion(
+  raw: RawQuestion,
+  lang: CoachLanguage,
+  idPrefix = "",
+): AdaptedQuestion | null {
   const id = idPrefix + raw.id;
-  const prompt = PROMPT_OVERRIDES[id] ?? PROMPT_OVERRIDES[raw.id] ?? `${humanizeId(raw.id)}?`;
+  const promptMap = pickPromptMap(lang);
+  const prompt = promptMap[id] ?? promptMap[raw.id] ?? `${humanizeId(raw.id)}?`;
 
   if (raw.type === "select") {
     if (!raw.options || raw.options.length === 0) return null;
@@ -201,17 +397,25 @@ function adaptQuestion(raw: RawQuestion, idPrefix = ""): AdaptedQuestion | null 
     return { id, prompt, type: "multi", options: raw.options };
   }
   if (raw.type === "boolean") {
-    return { id, prompt, type: "single", options: ["Yes", "No"] };
+    return { id, prompt, type: "single", options: [...YES_NO[lang]] };
   }
   if (raw.type === "slider") {
     const range = raw.range ?? [1, 5];
-    return { id, prompt, type: "single", options: sliderOptions(range) };
+    return { id, prompt, type: "single", options: sliderOptions(range, lang) };
   }
   if (raw.type === "time") {
-    return { id, prompt, type: "single", options: TIME_BUCKETS };
+    return { id, prompt, type: "single", options: [...TIME_BUCKETS[lang]] };
   }
   // Skip text and number — no UI support and child_age is already covered by ageGroup.
   return null;
+}
+
+function normaliseLanguage(lang: string | undefined): CoachLanguage {
+  if (lang === "en" || lang === "hi" || lang === "hinglish") return lang;
+  // i18next sometimes returns "en-US" etc.
+  if (lang?.startsWith("hi")) return "hi";
+  if (lang?.startsWith("en")) return "en";
+  return "hinglish";
 }
 
 /**
@@ -222,25 +426,29 @@ function adaptQuestion(raw: RawQuestion, idPrefix = ""): AdaptedQuestion | null 
  * generic upstream questions in ai-coach.tsx. We only inject the JSON's
  * `frequency` from `common` and the topic's own questions.
  */
-export function getTopicQuestions(goalId: string): AdaptedQuestion[] | null {
+export function getTopicQuestions(
+  goalId: string,
+  language?: string,
+): AdaptedQuestion[] | null {
   const topicKey = GOAL_TO_TOPIC[goalId];
   if (!topicKey) return null;
   const raws = data.topics[topicKey];
   if (!raws || raws.length === 0) return null;
 
+  const lang = normaliseLanguage(language);
   const out: AdaptedQuestion[] = [];
 
   // Add the common `frequency` question (skip child_age and severity — already
   // covered by the existing ageGroup and severity questions).
   for (const c of data.common) {
     if (c.id === "child_age" || c.id === "severity") continue;
-    const adapted = adaptQuestion(c, "common_");
+    const adapted = adaptQuestion(c, lang, "common_");
     if (adapted) out.push(adapted);
   }
 
   // Add topic-specific questions.
   for (const q of raws) {
-    const adapted = adaptQuestion(q);
+    const adapted = adaptQuestion(q, lang);
     if (adapted) out.push(adapted);
   }
 
