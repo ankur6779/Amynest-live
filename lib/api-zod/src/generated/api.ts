@@ -879,6 +879,9 @@ export const GetParentProfileResponse = zod.object({
   foodType: zod.string(),
   allergies: zod.string().nullish(),
   region: zod.string(),
+  dietType: zod.string().nullish(),
+  foodStyle: zod.string().nullish(),
+  subCuisine: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -906,6 +909,9 @@ export const UpsertParentProfileBody = zod.object({
   foodType: zod.string().optional(),
   allergies: zod.string().nullish(),
   region: zod.string().optional(),
+  dietType: zod.string().nullish(),
+  foodStyle: zod.string().nullish(),
+  subCuisine: zod.string().nullish(),
 });
 
 export const UpsertParentProfileResponse = zod.object({
@@ -930,6 +936,9 @@ export const UpsertParentProfileResponse = zod.object({
   foodType: zod.string(),
   allergies: zod.string().nullish(),
   region: zod.string(),
+  dietType: zod.string().nullish(),
+  foodStyle: zod.string().nullish(),
+  subCuisine: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });

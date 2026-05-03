@@ -291,6 +291,9 @@ export interface GetParentProfileResponse {
   foodType: string;
   allergies?: string | null;
   region: string;
+  dietType?: string | null;
+  foodStyle?: string | null;
+  subCuisine?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -307,6 +310,9 @@ export interface UpsertParentProfileBody {
   foodType?: string;
   allergies?: string | null;
   region?: string;
+  dietType?: string | null;
+  foodStyle?: string | null;
+  subCuisine?: string | null;
 }
 
 export interface GetRecipeBody {

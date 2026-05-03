@@ -31,9 +31,9 @@ export function MealRecipeCard({
   const {
     t
   } = useTranslation();
-  if (!recipe && !nutrition) return null;
   const [open, setOpen] = useState(defaultOpen);
   const contentId = useId();
+  if (!recipe && !nutrition) return null;
   return <div className="mt-2 rounded-xl border border-border bg-muted p-2.5" data-testid="meal-recipe-card" data-state={open ? "open" : "closed"}>
       <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls={contentId} className="cursor-pointer text-xs font-bold text-primary flex items-center gap-1.5 w-full text-left">
         <ChefHat className="h-3 w-3" /> {t("components.meal_recipe_card.recipe_nutrition")}

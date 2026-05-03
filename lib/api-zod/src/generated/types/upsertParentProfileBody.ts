@@ -19,4 +19,7 @@ export interface UpsertParentProfileBody {
   foodType?: string;
   allergies?: string | null;
   region?: string;
+  dietType?: string | null;
+  foodStyle?: string | null;
+  subCuisine?: string | null;
 }
