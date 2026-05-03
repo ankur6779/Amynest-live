@@ -623,13 +623,13 @@ exports[`ParentCommandCenter — JSX snapshots > fullscreen dashboard (open) ren
           </button>
         </div>
         <div
-          data-testid="learning-insights-loading"
+          data-testid="learning-insights-empty"
         >
           <span>
             LEARNING INSIGHTS
           </span>
           <span>
-            Loading…
+             hasn't tried Smart Study yet. Once they answer a few questions you'll see weak topics and accuracy trends here.
           </span>
         </div>
         <div>

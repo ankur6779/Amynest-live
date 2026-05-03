@@ -62,6 +62,7 @@ const SLEEP_CYCLE: AdaptiveSleepQuality[] = ["poor", "ok", "good"];
  */
 export default function ParentCommandCenter({ child }: { child: Child }) {
   const c = useColors();
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -133,7 +134,6 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
       const d = new Date();
       setNowMins(d.getHours() * 60 + d.getMinutes());
     }, 60_000);
-    const { t } = useTranslation();
     return () => clearInterval(id);
   }, [open]);
 
@@ -296,6 +296,7 @@ function CommandCenterDashboard(props: DashboardProps) {
     result, onClose, onSimplify, onUpdateItems, onLogBehavior, onOpenRoutine, updating,
   } = props;
   const c = useColors();
+  const { t } = useTranslation();
   const { overview, insights, actions, parentStatus, timeline, suggestions } = result;
 
   const [activePanel, setActivePanel] = useState<
@@ -834,6 +835,7 @@ function ActionPanel({
   steps: string[];
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const palettes = {
     rose:    { border: "rgba(244,114,182,0.45)", bg: "rgba(244,114,182,0.10)" },
     indigo:  { border: "rgba(129,140,248,0.45)", bg: "rgba(129,140,248,0.10)" },
@@ -873,6 +875,7 @@ function PlayPickerPanel({
   onPick: (idea: PlayIdea) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <View
       testID="play-picker-panel"
@@ -941,6 +944,7 @@ const pp = StyleSheet.create({
 });
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
+  const { t } = useTranslation();
   return (
     <View style={d.empty} testID="command-center-empty">
       <Text style={d.emptyEmoji}>🪄</Text>
@@ -967,10 +971,11 @@ function SwipeableTimelineRow({
   onComplete: () => void;
   onSkip: () => void;
 }) {
-  const t = step;
+  const { t } = useTranslation();
+  const s = step;
   const translateX = useRef(new Animated.Value(0)).current;
-  const skipped = t.status === "skipped";
-  const completed = t.status === "completed";
+  const skipped = s.status === "skipped";
+  const completed = s.status === "completed";
   const interactive = !skipped && !completed;
 
   const responder = useRef(
@@ -999,11 +1004,11 @@ function SwipeableTimelineRow({
 
   return (
     <Animated.View
-      testID={t.current ? "timeline-current" : t.next ? "timeline-next" : undefined}
+      testID={s.current ? "timeline-current" : s.next ? "timeline-next" : undefined}
       style={[
         d.tlRow,
-        t.current && d.tlRowCurrent,
-        t.next && !t.current && d.tlRowNext,
+        s.current && d.tlRowCurrent,
+        s.next && !s.current && d.tlRowNext,
         completed && { opacity: 0.6 },
         skipped && { opacity: 0.4 },
         { transform: [{ translateX }] },
@@ -1011,15 +1016,15 @@ function SwipeableTimelineRow({
       {...responder.panHandlers}
     >
       <View style={{ width: 56 }}>
-        <Text style={d.tlTime}>{t.time}</Text>
-        <Text style={d.tlDur}>{t.duration}m</Text>
+        <Text style={d.tlTime}>{s.time}</Text>
+        <Text style={d.tlDur}>{s.duration}m</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={[d.tlActivity, skipped && { textDecorationLine: "line-through" }]} numberOfLines={1}>
-          {t.activity}
+          {s.activity}
         </Text>
         <Text style={d.tlMeta} numberOfLines={1}>
-          {t.current ? "Now" : t.next ? "Up next" : t.category || ""}
+          {s.current ? "Now" : s.next ? "Up next" : s.category || ""}
         </Text>
       </View>
       {completed ? (
@@ -1035,16 +1040,16 @@ function SwipeableTimelineRow({
           <Pressable
             onPress={onSkip}
             style={({ pressed }) => [d.skipBtn, pressed && { opacity: 0.85 }]}
-            testID={`skip-step-${t.index}`}
-            accessibilityLabel={`Skip ${t.activity}`}
+            testID={`skip-step-${s.index}`}
+            accessibilityLabel={`Skip ${s.activity}`}
           >
             <Text style={d.skipBtnText}>{t("components.parent_command_center.skip")}</Text>
           </Pressable>
           <Pressable
             onPress={onComplete}
             style={({ pressed }) => [d.doneBtn, pressed && { opacity: 0.85 }]}
-            testID={`complete-step-${t.index}`}
-            accessibilityLabel={`Mark ${t.activity} done`}
+            testID={`complete-step-${s.index}`}
+            accessibilityLabel={`Mark ${s.activity} done`}
           >
             <Ionicons name="checkmark" size={11} color={palette.emerald400} />
             <Text style={d.doneBtnText}>{t("components.parent_command_center.done")}</Text>
@@ -1067,6 +1072,7 @@ function TimedActivityPanel({
   onCancel: () => void;
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const totalSeconds = activity.minutes * 60;
   const [remaining, setRemaining] = useState(totalSeconds);
   const [running, setRunning] = useState(true);

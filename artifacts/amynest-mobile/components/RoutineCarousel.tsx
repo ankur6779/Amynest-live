@@ -43,6 +43,7 @@ function TaskCard({
   onContinue?: () => void;
   index: number;
 }) {
+  const { t } = useTranslation();
   const scale = useSharedValue(1);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const c = useColors();
@@ -95,7 +96,6 @@ function TaskCard({
     </>
   );
 
-  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeIn.duration(400).delay(index * 60)}>
       <View
