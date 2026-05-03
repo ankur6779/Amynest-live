@@ -48,7 +48,12 @@ function loadAllScannableFiles() {
 
 const NO_DEFER = process.env.AUDIT_NO_DEFER === "1";
 
-const TEXT_NODE_RE = />([^<>{}\n]{3,})</g;
+// Match JSX text nodes only: `>text<` where the opening `>` is the close
+// of a JSX tag (so NOT preceded by `=`, `!`, `<`, or `>` — which would
+// indicate `=>`, `>=`, `<=`, `!=`, `>>`, etc.) and the closing `<` starts
+// another JSX token (`</...` or `<Letter`). This avoids matching across
+// TS generics (`Promise<Foo>`) and comparison operators (`a > 2 && b <= 5`).
+const TEXT_NODE_RE = /(?<![=!<>])>([^<>{}\n]{3,})<(?=[/A-Za-z])/g;
 const PROP_RE = /\s(?:placeholder|accessibilityLabel|title|alt)\s*=\s*"([^"\n]{3,})"/g;
 const HAS_ENGLISH_RE = /[A-Za-z]{3,}/;
 

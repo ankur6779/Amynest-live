@@ -757,7 +757,11 @@
       "section_most_planned": "Sabse zyada planned activities",
       "section_day_of_week": "Hafte ke din ki activity",
       "ask_amy_title": "Amy se poochein kis par focus karein",
-      "ask_amy_sub": "Apne data se personalised read-out paayein"
+      "ask_amy_sub": "Apne data se personalised read-out paayein",
+      "abacus_this_week": "Is hafte Abacus",
+      "abacus_next_up": "Aage kya",
+      "abacus_points": "Points",
+      "abacus_levels": "Levels"
     },
     "kids_control_center": {
       "back": "Wapas",
@@ -2267,7 +2271,8 @@
       "done_with_my_child": "Done with my child",
       "today_s_timeline": "TODAY'S TIMELINE",
       "create_today_s_routine": "Create today's routine",
-      "open_today_s_routine": "Open today's routine"
+      "open_today_s_routine": "Open today's routine",
+      "learning_insights": "LEARNING INSIGHTS"
     },
     "parenting_articles": {
       "close_article": "Close article",
@@ -2294,7 +2299,8 @@
     "phonics_test_runner": {
       "go_back": "Go back",
       "sounds_to_revisit": "Sounds to revisit",
-      "back_to_phonics_tests": "Back to Phonics Tests"
+      "back_to_phonics_tests": "Back to Phonics Tests",
+      "undo": "Undo"
     },
     "premium_splash": {
       "meet": "MEET",

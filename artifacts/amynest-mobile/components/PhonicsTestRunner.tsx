@@ -605,6 +605,7 @@ function BuildWordPanel({
   feedback: "correct" | "wrong" | null;
   onResult: (ok: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const target = (question.prompt.meta?.targetWord ?? "").toLowerCase();
   const pool = question.prompt.meta?.letterPool ?? [];
@@ -697,7 +698,7 @@ function BuildWordPanel({
           style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 6 }}
         >
           <Ionicons name="chevron-back" size={14} color={theme.text.secondary} />
-          <Text style={{ color: theme.text.secondary, fontSize: 12, fontWeight: "700" }}>Undo</Text>
+          <Text style={{ color: theme.text.secondary, fontSize: 12, fontWeight: "700" }}>{t("components.phonics_test_runner.undo")}</Text>
         </TouchableOpacity>
       )}
     </View>
