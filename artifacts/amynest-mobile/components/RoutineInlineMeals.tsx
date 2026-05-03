@@ -56,6 +56,7 @@ export default function RoutineInlineMeals({
   isVeg,
   instanceIndex = 0,
 }: Props) {
+  const { t } = useTranslation();
   const [meals, setMeals] = useState<RankedMeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [openMeal, setOpenMeal] = useState<RankedMeal | null>(null);
@@ -179,6 +180,7 @@ function MiniCard({ meal, onPress }: { meal: RankedMeal; onPress: () => void }) 
 
 // ─── Recipe Sheet ────────────────────────────────────────────────────────────
 function RecipeSheet({ meal, onClose }: { meal: RankedMeal; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     // Outer Pressable = scrim / backdrop
     <Pressable style={styles.recipeScrim} onPress={onClose}>

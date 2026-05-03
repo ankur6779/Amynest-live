@@ -1798,6 +1798,7 @@ function GenerateProgressOverlay({
   familyProgress: { current: number; total: number; currentName: string } | null;
   aiMode?: boolean;
 }) {
+  const { t } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
   const barAnim = useRef(new Animated.Value(0)).current;
   const isFamily = !!familyProgress;

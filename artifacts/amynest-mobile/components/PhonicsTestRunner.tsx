@@ -95,6 +95,7 @@ type Phase =
 export function PhonicsTestRunner({
   childId, childName, testType, gameMode = "hear_tap", onCompleted, onCancel,
 }: PhonicsTestRunnerProps) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const authFetch = useAuthFetch();
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
@@ -707,6 +708,7 @@ function BuildWordPanel({
 // ─── Result view ─────────────────────────────────────────────────────────────
 
 function ResultView({ data, childName, onDone }: { data: SubmitResponse; childName: string; onDone: () => void }) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const { breakdown, weakConcepts, insight } = data;
   const accuracy = breakdown.accuracyPct;

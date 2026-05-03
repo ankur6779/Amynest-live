@@ -114,6 +114,7 @@ export function DailyPuzzle({
    */
   childId?: number;
 }) {
+  const { t } = useTranslation();
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
   const group = ageMonthsToGroup(ageMonths);

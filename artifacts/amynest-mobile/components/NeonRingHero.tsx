@@ -10,6 +10,7 @@ const INNER = 136;
 const OFFSET = (OUTER - INNER) / 2;
 
 export default function NeonRingHero() {
+  const { t } = useTranslation();
   const spinAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(1)).current;

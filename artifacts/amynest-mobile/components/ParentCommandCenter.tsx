@@ -1231,7 +1231,7 @@ function LearningInsightsSection({ childId }: { childId: number }) {
                 : acc >= 80
                 ? palette.emerald400
                 : acc < 60
-                ? palette.rose400
+                ? brand.rose400
                 : palette.amber400;
             return (
               <View

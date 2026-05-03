@@ -68,6 +68,7 @@ const AGE_EMOJIS: Record<AgeBucket, string> = {
 const AGE_ORDER: AgeBucket[] = ["0-2", "2-4", "5-7", "8-10", "10+"];
 
 export default function AudioLessonsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { theme } = useTheme();

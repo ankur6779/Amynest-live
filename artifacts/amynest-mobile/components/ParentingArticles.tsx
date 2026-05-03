@@ -101,6 +101,7 @@ function SectionListenBtn({
 
 // ─── Article modal ─────────────────────────────────────────────────────────
 function ArticleModal({ article, onClose }: { article: Article; onClose: () => void }) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const c = useColors();
   const hero = getArticleHero(article.category);
@@ -337,6 +338,7 @@ function ArticleModal({ article, onClose }: { article: Article; onClose: () => v
 
 // ─── Article card (collapsed list item) ───────────────────────────────────
 function ArticleCard({ article, onPress }: { article: Article; onPress: () => void }) {
+  const { t } = useTranslation();
   const c = useColors();
   return (
     <Pressable
@@ -388,6 +390,7 @@ export interface ParentingArticlesProps {
 }
 
 export function ParentingArticles({ childAgeMonths }: ParentingArticlesProps) {
+  const { t } = useTranslation();
   const c = useColors();
   const [activeArticle, setActiveArticle] = useState<Article | null>(null);
   const [activeCategory, setActiveCategory] = useState<ArticleCategory | null>(null);

@@ -163,6 +163,7 @@ export default function PtmPrepScreen() {
 
 // ─── Sub-components ────────────────────────────────────────────────────────
 function PrepareStage({ session, setSession, colors }: any) {
+  const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [customText, setCustomText] = useState("");
   const cats: PtmCategory[] = ["academic", "behavior", "social", "custom"];
@@ -243,6 +244,7 @@ function PrepareStage({ session, setSession, colors }: any) {
 }
 
 function AttendStage({ session, setSession, colors }: any) {
+  const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const selected = session.questions.filter((q: any) => q.selected);
   const fields: [keyof PtmSession["notes"], string, string][] = [
@@ -310,6 +312,7 @@ function AttendStage({ session, setSession, colors }: any) {
 }
 
 function ActStage({ session, setSession, amyHint, onComplete, colors }: any) {
+  const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [manualText, setManualText] = useState("");
 

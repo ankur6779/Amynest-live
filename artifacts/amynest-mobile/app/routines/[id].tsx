@@ -1580,6 +1580,7 @@ function AmyAISuggests({
   delayedCount?: number;
   adjustedCount?: number;
 }) {
+  const { t } = useTranslation();
   const fallback = useMemo(() => {
     if (stats.total === 0) return "Add a few activities and I'll help you optimize the day.";
     if (stats.pct === 100) return `Incredible work — every activity in "${title}" is done. Time to celebrate!`;
@@ -1618,6 +1619,7 @@ function AmyAISuggests({
 }
 
 function ItemCard({ item, seed = 0 }: { item: RoutineItem; seed?: number }) {
+  const { t } = useTranslation();
   const c = useColors();
   const catKey = item.category?.toLowerCase() ?? "default";
   const rawColor = CATEGORY_COLORS[catKey] ?? CATEGORY_COLORS.default;
