@@ -116,11 +116,12 @@ export function NavDrawer() {
   const initials = displayName.slice(0, 2).toUpperCase();
   const tierLabel = isPremium ? "SMART PARENT" : "FREE PLAN";
 
+  const { t } = useTranslation();
+
   if (!isOpen) {
     return null;
   }
 
-  const { t } = useTranslation();
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {/* Backdrop */}

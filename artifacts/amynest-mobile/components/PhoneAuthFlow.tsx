@@ -32,7 +32,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const phoneFull = `+91${phone.replace(/\D/g, "")}`;
 
   useEffect(() => {
-    const { t } = useTranslation();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };

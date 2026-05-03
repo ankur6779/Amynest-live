@@ -128,7 +128,6 @@ export function PhonicsTestRunner({
         }
       }
     })();
-    const { t } = useTranslation();
     return () => { cancelled = true; };
   }, [authFetch, childId, testType, gameMode]);
 

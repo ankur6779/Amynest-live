@@ -193,7 +193,6 @@ export function DailyPuzzle({
       // see the same puzzle ordering.
       void persist(st);
     })();
-    const { t } = useTranslation();
     return () => {
       cancelled = true;
     };

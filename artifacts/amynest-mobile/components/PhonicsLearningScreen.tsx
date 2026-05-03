@@ -356,11 +356,11 @@ function PracticeSoundsCard({
   progress: { practiced: Record<string, number>; mastered: Record<string, true> }; // i18n-ok: type signature
   onPlay: (id: string, contentId?: number) => void;
 }) {
+  const { t } = useTranslation();
   if (items.length === 0) return null;
   const hasLongForm = items.some(
     (i) => i.type === "sentence" || i.type === "story",
   );
-  const { t } = useTranslation();
 
   return (
     <View style={styles.card} testID="phonics-practice-sounds">

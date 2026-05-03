@@ -36,7 +36,6 @@ export default function SlideToComplete({ onComplete, disabled = false, label = 
 
   const completeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    const { t } = useTranslation();
     return () => {
       if (completeTimer.current) clearTimeout(completeTimer.current);
     };

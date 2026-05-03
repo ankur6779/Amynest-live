@@ -169,6 +169,7 @@ export default function RoutineItemModal({
     setRecipeLoading(false);
   };
 
+  const { t } = useTranslation();
   if (!item) return null;
   const status = (item.status ?? "pending") as ItemStatus;
   const isPending = status === "pending";
@@ -183,7 +184,6 @@ export default function RoutineItemModal({
   const heroSeed = (item.activity?.length ?? 0) + (item.time?.length ?? 0);
   const heroImg = getActivityImage(item.category ?? "", item.activity ?? "", heroSeed);
 
-  const { t } = useTranslation();
   return (
     <Modal
       visible={visible}
