@@ -1,0 +1,222 @@
+Upgrade Amy Coach input system to be fully dynamic, context-aware, and challenge-specific.
+
+GOAL:
+Replace generic inputs with adaptive questionnaires that change based on selected topic/subtopic.
+
+--------------------------------------------------
+1) CORE PRINCIPLE (IMPORTANT)
+--------------------------------------------------
+
+DO NOT use same inputs for all topics.
+
+Each challenge must have:
+- its own input schema
+- its own question flow
+
+--------------------------------------------------
+2) INPUT ENGINE STRUCTURE
+--------------------------------------------------
+
+Create:
+
+{
+  topic: "tantrums",
+  inputs: [
+    { question: "", type: "", options: [] }
+  ]
+}
+
+--------------------------------------------------
+3) GLOBAL BASE INPUT (ALWAYS ASK)
+--------------------------------------------------
+
+- Child age
+- Parent type (mother/father/both)
+- Frequency of issue (daily/weekly/rare)
+- Severity level (low/medium/high)
+
+--------------------------------------------------
+4) TOPIC-SPECIFIC INPUTS (CORE UPGRADE)
+--------------------------------------------------
+
+Example:
+
+### 🧠 Manage Tantrums
+
+Ask:
+- When do tantrums happen? (home/public/school)
+- Trigger? (denial/hunger/screen removal)
+- Duration? (<5 min / 5–15 / >15)
+- Parent reaction? (ignore/shout/give in)
+
+---
+
+### 📱 Screen Addiction
+
+Ask:
+- Daily screen time?
+- Type of content? (YouTube/games/shorts)
+- When used? (meals/sleep time/free time)
+- Resistance when removed? (low/high)
+
+---
+
+### 🍽️ Fussy Eating
+
+Ask:
+- Foods refused?
+- Mealtime duration?
+- Eats alone or with family?
+- Snacks frequency?
+
+---
+
+### 😴 Sleep Issues
+
+Ask:
+- Bedtime?
+- Wake time?
+- Night waking frequency?
+- Sleep environment?
+
+---
+
+### 👶 Infant (0–2 yrs)
+
+Ask:
+- Feeding type (breast/formula)
+- Sleep pattern
+- Crying triggers
+- Nap frequency
+
+---
+
+### 👨‍👩‍👧 Parenting Conflict
+
+Ask:
+- Who disagrees? (mother/father/grandparents)
+- Frequency of conflict?
+- Topic of disagreement?
+- Child reaction?
+
+---
+
+### 💛 Parent Burnout
+
+Ask:
+- Sleep hours?
+- Stress level?
+- Support system?
+- Time for self?
+
+--------------------------------------------------
+5) INPUT TYPES
+--------------------------------------------------
+
+Use:
+
+- Multiple choice (fast)
+- Slider (intensity)
+- Toggle (yes/no)
+- Optional text (advanced)
+
+--------------------------------------------------
+6) SMART QUESTION FLOW (VERY IMPORTANT)
+--------------------------------------------------
+
+Dynamic flow:
+
+If user selects:
+"high severity"
+
+→ ask deeper questions
+
+If:
+"low severity"
+
+→ skip advanced questions
+
+--------------------------------------------------
+7) UX DESIGN (MOBILE FIRST)
+--------------------------------------------------
+
+- One question per screen
+- Progress bar (step 1/5)
+- Large buttons
+- Minimal typing
+
+--------------------------------------------------
+8) OUTPUT PERSONALIZATION ENGINE
+--------------------------------------------------
+
+Generate output using:
+
+- inputs
+- topic rules
+- severity level
+
+Example:
+
+Input:
+tantrum + public + high severity
+
+Output:
+→ public calming strategy
+→ prevention tips
+→ parent behavior correction
+
+--------------------------------------------------
+9) CONTEXT MEMORY
+--------------------------------------------------
+
+Store:
+
+- past inputs
+- child profile
+
+Use for:
+- better future suggestions
+
+--------------------------------------------------
+10) QUICK ACTION RESULT
+--------------------------------------------------
+
+After inputs:
+
+Show:
+
+- "What to do now"
+- "What to avoid"
+- "7-day plan"
+
+--------------------------------------------------
+11) AI PROMPT INTEGRATION
+--------------------------------------------------
+
+Pass structured input:
+
+{
+  age: 4,
+  issue: "tantrum",
+  trigger: "screen removal",
+  severity: "high"
+}
+
+Generate:
+- step-by-step solution
+- scripts for parents
+
+--------------------------------------------------
+12) WEB + MOBILE SUPPORT
+--------------------------------------------------
+
+- Same logic
+- Responsive UI
+- Sync data
+
+--------------------------------------------------
+DELIVERABLE:
+- Dynamic input system
+- Topic-specific questions
+- Personalized outputs
+- Better engagement
