@@ -1321,22 +1321,22 @@
       "subtitle_mobile": "Sections ke beech swipe karein",
       "eyebrow": "EXPERT-CURATED",
       "no_child_title": "Shuru karne ke liye bachcha add karein",
-      "no_child_desc": "Personalized tips, articles aur activities tab unlock hote hain jab Amy aapke bachche ko jaan jaati hai.",
+      "no_child_desc": "Personalized tips, articles aur activities tab unlock hote hain jab Amy aapke bachhe ko jaan jaati hai.",
       "add_child": "Bachcha Add karein",
       "personalised_for": "Inke liye taiyaar",
       "ask_amy": "Amy se poochein",
       "tab_aria": "{{heading}} tab",
       "today_empty": {
-        "title": "Aaj ka routine nahi hai",
-        "desc": "Ek personalised plan banaye aur Amy is list ko sync rakhegi.",
-        "cta": "Aaj ka routine banaye"
+        "title": "Aaj ke liye koi routine nahi hai",
+        "desc": "Ek personalised plan banayein — Amy is list ko apne aap update karti rahegi.",
+        "cta": "Aaj ka routine banayein"
       },
-      "today_regen": "Naya routine banaye",
+      "today_regen": "Naya routine banayein",
       "section_for_child": "{{name}} ke liye · age {{age}}",
-      "section_empty": "{{name}} ke liye is section me abhi kuch nahi hai — phir se check karte rahein!"
+      "section_empty": "{{name}} ke liye is section mein abhi kuch nahi hai — thodi der baad dekhiye!"
     },
     "badges": {
-      "try_free": "Free Try karein",
+      "try_free": "Free try karein",
       "premium": "Premium",
       "premium_feature": "Premium feature",
       "premium_feature_aria": "Premium feature — upgrade ke liye tap karein",
@@ -1353,7 +1353,7 @@
       "today": {
         "label": "Aaj",
         "heading": "Aaj ka Plan",
-        "description": "Har step pura karte hi 'Done' tap karein"
+        "description": "Har step pura karte hi ‘Done’ tap karein"
       },
       "zones": {
         "label": "Zones",
@@ -1361,9 +1361,9 @@
         "description": "Curated parent tools aur quick actions"
       },
       "modules": {
-        "label": "Sikhein",
+        "label": "Seekhein",
         "heading": "Learning Modules",
-        "description": "Aapke bachche ki age ke liye practice + content"
+        "description": "Aapke bachhe ki age ke liye practice + content"
       },
       "activities": {
         "label": "Karein",
@@ -1377,41 +1377,41 @@
     "amy": {
       "title": "Amy AI se Poochein",
       "desc": "Warm, practical parenting advice — turant",
-      "lead": "Topic par tap karein aur Amy aapko warm, practical parenting advice turant degi.",
+      "lead": "Koi bhi topic tap karein — Amy aapko warm, practical parenting advice turant degi.",
       "lead_short": "Topic chunein — Amy reply karegi.",
       "ask_anything": "Amy se kuch bhi poochein",
       "prompts": {
         "sleep": {
           "label": "Neend ki problem",
-          "prompt": "Mere bachche ko sone mein dikkat ho rahi hai. Mujhe kya karna chahiye?"
+          "prompt": "Mere bachhe ko sone mein dikkat ho rahi hai. Mujhe kya karna chahiye?"
         },
         "tantrums": {
-          "label": "Tantrums",
-          "prompt": "Mera bachcha baar-baar tantrum karta hai. Main kaise handle karoon?"
+          "label": "Bachhe ke nakhre",
+          "prompt": "Mera bachha baar-baar nakhre karta hai. Main isse kaise handle karoon?"
         },
         "picky_eating": {
           "label": "Khaane mein nakhre",
-          "prompt": "Mera bachcha picky eater hai. Kaun si strategies madad kar sakti hain?"
+          "prompt": "Mera bachha khaane mein bahut nakhre karta hai. Kaun si tarkeebein kaam aa sakti hain?"
         },
         "school_anxiety": {
           "label": "School ka dar",
-          "prompt": "Mera bachcha school jaane se anxious hota hai. Main kaise help karoon?"
+          "prompt": "Mera bachha school jaane se ghabrata hai. Main uski kaise help karoon?"
         },
         "screen_time": {
           "label": "Screen time",
-          "prompt": "Mere bachche ki age ke liye kitna screen time sahi hai?"
+          "prompt": "Mere bachhe ki age ke liye kitna screen time sahi hai?"
         },
         "language": {
-          "label": "Language development",
-          "prompt": "Main apne bachche ki language aur speech development ko kaise support karoon?"
+          "label": "Bhasha aur bolchaal",
+          "prompt": "Main apne bachhe ki bhasha aur bolne ki skill ko behtar karne mein kaise help karoon?"
         },
         "picky": {
-          "label": "Picky eating",
-          "prompt": "Mera bachcha picky eater hai. Kaunsi strategies help karengi?"
+          "label": "Khaane mein nakhre",
+          "prompt": "Mera bachha picky eater hai. Kaun si tarkeebein kaam aa sakti hain?"
         },
         "school": {
-          "label": "School anxiety",
-          "prompt": "Mere bachhe ko school jaane ki chinta hai. Main kaise help karoon?"
+          "label": "School ka dar",
+          "prompt": "Mere bachhe ko school jaane se ghabrahat hoti hai. Main kaise help karoon?"
         },
         "screen": {
           "label": "Screen time",
@@ -1422,27 +1422,27 @@
     },
     "emotional": {
       "title": "Emotional Support",
-      "desc": "Parenting easy nahi hai. Amy yahan aapki sunne aur help karne ke liye hai — bina judgment ke.",
+      "desc": "Parenting easy nahi hai. Amy yahan aapki sunne aur help karne ke liye hai — bina kisi judgment ke.",
       "cards": {
         "overwhelmed": {
-          "title": "Main overwhelmed feel kar raha/rahi hoon",
+          "title": "Mere upar bahut kuch ho raha hai",
           "subtitle": "Theek hai. Aap akele nahi hain.",
-          "prompt": "Main parent ke roop mein bilkul overwhelmed feel kar raha/rahi hoon. Main behtar feel karne ke liye kya karoon?"
+          "prompt": "Ek parent ke roop mein mujhe lag raha hai sab kuch sambhalna bahut bhaari pad raha hai. Behtar feel karne ke liye main kya karoon?"
         },
         "child_anxious": {
-          "title": "Mera bachcha anxious lagta hai",
-          "subtitle": "Hum milkar iska solution nikaalte hain.",
-          "prompt": "Mera bachcha bahut baar anxious aur worried lagta hai. Main uski help kaise karoon?"
+          "title": "Mera bachha pareshan sa lagta hai",
+          "subtitle": "Hum milkar iska hal nikaalte hain.",
+          "prompt": "Mera bachha aksar pareshan aur worried lagta hai. Main uski help kaise karoon?"
         },
         "struggling_connect": {
-          "title": "Hume connect karne mein dikkat ho rahi hai",
-          "subtitle": "Chote steps bada farak la sakte hain.",
-          "prompt": "Mujhe lagta hai mera bachcha aur main theek se connect nahi ho pa rahe. Hum stronger bond kaise banaayein?"
+          "title": "Hum theek se connect nahi ho pa rahe",
+          "subtitle": "Chote-chote kadam bhi bada farak la sakte hain.",
+          "prompt": "Mujhe lagta hai mere aur bachhe ke beech pehle jaisi baat nahi ho rahi. Hum stronger bond kaise banayein?"
         },
         "need_break": {
-          "title": "Mujhe parenting se thoda break chahiye",
-          "subtitle": "Apna khayal rakhna bhi achchi parenting hai.",
-          "prompt": "Main ek parent hoon jise apne liye thoda time chahiye. Main apni wellbeing ka kaise khayal rakhoon?"
+          "title": "Mujhe thoda break chahiye",
+          "subtitle": "Apna khayal rakhna bhi achhi parenting ka hissa hai.",
+          "prompt": "Main ek parent hoon jise apne liye thoda time chahiye. Apni health aur mann ka khayal kaise rakhoon?"
         }
       }
     },
@@ -1465,7 +1465,7 @@
         "suffix": " confidence"
       },
       "suggestions_title": "Aap kya kar sakte hain",
-      "footer": "Pichle {{days}} din · {{logs}} logs · {{routines}} routines ke base par",
+      "footer": "Pichhle {{days}} din · {{logs}} logs · {{routines}} routines ke base par",
       "footer_short": "{{days}}d · {{logs}} logs · {{routines}} routines"
     },
     "event_prep": {
@@ -1481,41 +1481,41 @@
     },
     "smart_study": {
       "title": "Smart Study Zone",
-      "desc_html": "<strong>Nursery se Class 10</strong> tak adaptive learning. Chote bachchon ke liye tap-and-listen, bade bachchon ke liye short notes aur practice — Amy aasaan bhasha mein samjhati hai.",
-      "desc_plain": "Nursery se Class 10 tak adaptive learning. Chote bachchon ke liye tap-and-listen, bade bachchon ke liye short notes aur practice — Amy aasaan bhasha mein samjhati hai.",
+      "desc_html": "<strong>Nursery se Class 10</strong> tak adaptive learning. Chote bachhon ke liye tap-and-listen, bade bachhon ke liye short notes aur practice — Amy aasaan bhasha mein samjhati hai.",
+      "desc_plain": "Nursery se Class 10 tak adaptive learning. Chote bachhon ke liye tap-and-listen, bade bachhon ke liye short notes aur practice — Amy aasaan bhasha mein samjhati hai.",
       "cta": "Smart Study Zone kholein",
       "badges": {
-        "play": "👶 Khel & Sikh",
+        "play": "👶 Khel & Seekh",
         "junior": "📘 Class 1–5",
         "senior": "📊 Class 6–10"
       }
     },
     "stage_milestones": {
       "title": "{{band}} par {{name}} ko kya pasand aayega",
-      "description": "{{range}} par aane wale development moments ki ek jhalak — hum aapke bachche ke saath badhte hain.",
-      "cta": "Amy se poochein {{name}} ko dheere-dheere kaise prepare karein"
+      "description": "{{range}} par aane wale development moments ki ek jhalak — hum aapke bachhe ke saath badhte hain.",
+      "cta": "Amy se poochein — {{name}} ko iske liye dheere-dheere kaise prepare karein"
     },
     "graduation": {
       "title": "{{name}} ne pura Parent Hub unlock kar liya hai",
-      "desc": "Har feature ab unke stage ke liye taiyaar hai — bas consistent rahein, baaki sab hisse mein hai."
+      "desc": "Har feature ab unke stage ke liye taiyaar hai — bas yun hi consistent rahein, baaki sab apne aap hoga."
     },
     "age_sections": {
       "skill_focus": {
-        "title": "{{name}} ke liye aaj ke main skills",
-        "desc": "Aaj ke liye age-appropriate development activities",
-        "footer": "✨ AI {{name}} ka routine banate samay in focus areas ko shaamil karegi"
+        "title": "{{name}} ke liye aaj focus karne wale skills",
+        "desc": "Aaj ke liye age ke hisaab se development activities",
+        "footer": "✨ {{name}} ka routine banate samay Amy in focus areas ko shaamil karegi"
       },
       "story": {
         "title": "{{name}} ke liye Story Time",
-        "desc": "Age-appropriate moral stories",
-        "read_aloud": "Zor se padhein",
+        "desc": "Age ke hisaab se chhoti, achhi seekh wali kahaaniyaan",
+        "read_aloud": "Zor se sunayein",
         "stop": "Rokein",
-        "moral_label": "💡 Kahaani ka saar",
-        "footer": "📚 Aaj raat {{name}} ko ye kahaani sunaayein — ek pyaara bedtime moment"
+        "moral_label": "💡 Kahaani ki seekh",
+        "footer": "📚 Aaj raat {{name}} ko ye kahaani sunayein — ek pyaara bedtime moment"
       },
       "parent_tasks": {
-        "title": "Aapke Parent Tasks",
-        "desc": "Aaj {{name}} ke liye aap jo kar sakte hain",
+        "title": "Aapke chhote kaam",
+        "desc": "Aaj {{name}} ke liye jo aap kar sakte hain",
         "done_counter": "{{done}}/{{total}} done",
         "celebration": "🌟 Shaandaar! Aaj aap star parent hain!"
       }
@@ -1523,13 +1523,13 @@
     "tiles": {
       "articles": {
         "title": "Parenting Articles",
-        "desc": "Research-based, age ke hisab se reading",
-        "empty": "Matched articles dekhne ke liye bachcha add karein."
+        "desc": "Research-based, age ke hisaab se reading",
+        "empty": "Matched articles dekhne ke liye bachha add karein."
       },
       "tips": {
         "title": "Daily Tips",
         "desc": "Amy AI aaj ke best tips choose karti hai",
-        "empty": "Daily tips unlock karne ke liye bachcha add karein."
+        "empty": "Daily tips unlock karne ke liye bachha add karein."
       },
       "ptm-prep": {
         "title": "🧾 PTM Prep Assistant",
@@ -1549,7 +1549,7 @@
       },
       "kids-control-center": {
         "title": "Kids Control Center",
-        "sublabel": "Smart control · safe child experience",
+        "sublabel": "Smart control · bachhe ke liye safe experience",
         "soon": "SOON 🚀"
       },
       "meals": {
@@ -1567,7 +1567,7 @@
       "activities": {
         "title": "Activities & Learning",
         "desc": "Games, audio lessons aur bahut kuch",
-        "lead": "Aapke bachhe ki age group ke liye Amy ki educational activities."
+        "lead": "Aapke bachhe ki age group ke liye Amy ki chuni hui educational activities."
       },
       "story-hub": {
         "title": "🎬 Kids Story Hub",
@@ -1583,8 +1583,8 @@
       },
       "facts": {
         "title": "✨ Amazing Facts",
-        "desc": "Curious kids ke liye mind-blowing facts",
-        "empty": "Age-matched facts unlock karne ke liye bachcha add karein."
+        "desc": "Curious bachhon ke liye mind-blowing facts",
+        "empty": "Age-matched facts unlock karne ke liye bachha add karein."
       },
       "life-skills": {
         "title": "🧭 Life Skills Mode",
@@ -1597,17 +1597,17 @@
       "smart-math-tricks": {
         "title": "🧮 Smart Math Tricks",
         "desc": "Mental math shortcuts jo bachhon ko sach mein pasand aate hain",
-        "empty": "Smart math tricks unlock karne ke liye bachcha add karein."
+        "empty": "Smart math tricks unlock karne ke liye bachha add karein."
       },
       "coloring-books": {
         "title": "🎨 Coloring Books",
-        "desc": "Print-ready coloring pages, daily refresh hoti hain",
-        "empty": "Coloring books unlock karne ke liye bachcha add karein."
+        "desc": "Print-ready coloring pages, daily refresh hote hain",
+        "empty": "Coloring books unlock karne ke liye bachha add karein."
       },
       "fun-sheets": {
         "title": "📄 Fun Sheets",
         "desc": "Activity sheets, mazes aur puzzles",
-        "empty": "Fun sheets unlock karne ke liye bachcha add karein."
+        "empty": "Fun sheets unlock karne ke liye bachha add karein."
       },
       "skills-focus": {
         "title": "🎯 Skills to Focus This Week",
@@ -1633,12 +1633,12 @@
       },
       "audio_lessons": {
         "title": "Amy Audio Lessons",
-        "desc": "3–5 min parenting lessons · hands-free"
+        "desc": "3–5 min parenting lessons · haath khaali rakh ke sunein"
       }
     },
     "tips_fallbacks": [
-      "Catch them being good — behavior ko zor se naam dein.",
-      "Power struggles kam karne ke liye do acceptable choices dein.",
+      "Jab bachha kuch achha kare, usi waqt seedha bolein — “Tumne abhi ye achha kiya!”",
+      "Zid aur bahas se bachne ke liye do aasaan choices dein — dono aapko manzoor hon.",
       "Routine pakka karne ke liye sone se pehle 10 min saath padhein."
     ],
     "nutrition_tags": [
@@ -1648,35 +1648,35 @@
       "Family mode"
     ],
     "locked": {
-      "label": "Continue karne ke liye unlock karein",
+      "label": "Aage badhne ke liye unlock karein",
       "cta": "Premium Unlock karein"
     },
     "emotional_cards": {
       "overwhelmed": {
-        "title": "Main overwhelmed feel kar raha/rahi hoon",
-        "subtitle": "It's okay. Aap akele nahi hain.",
-        "prompt": "Main parent ke roop mein completely overwhelmed feel kar raha/rahi hoon. Better feel karne ke liye kya karoon?"
+        "title": "Mere upar bahut kuch ho raha hai",
+        "subtitle": "Theek hai. Aap akele nahi hain.",
+        "prompt": "Ek parent ke roop mein mujhe lag raha hai sab kuch sambhalna bahut bhaari pad raha hai. Behtar feel karne ke liye main kya karoon?"
       },
       "anxious": {
-        "title": "Mera bachcha anxious lagta hai",
-        "subtitle": "Chaliye milkar isse solve karein.",
-        "prompt": "Mera bachcha bahut anxious aur worried lagta hai. Main uski kaise help karoon?"
+        "title": "Mera bachha pareshan sa lagta hai",
+        "subtitle": "Chaliye milkar iska hal nikaalte hain.",
+        "prompt": "Mera bachha aksar pareshan aur worried lagta hai. Main uski help kaise karoon?"
       },
       "connect": {
-        "title": "Hum connect karne mein struggle kar rahe hain",
-        "subtitle": "Chote kadam bada farak la sakte hain.",
-        "prompt": "Mujhe lagta hai mera bachcha aur main acche se connect nahi ho rahe. Hum stronger bond kaise banayein?"
+        "title": "Hum theek se connect nahi ho pa rahe",
+        "subtitle": "Chote-chote kadam bhi bada farak la sakte hain.",
+        "prompt": "Mujhe lagta hai mere aur bachhe ke beech pehle jaisi baat nahi ho rahi. Hum stronger bond kaise banayein?"
       },
       "break": {
-        "title": "Mujhe parenting break chahiye",
-        "subtitle": "Self-care good parenting ka hissa hai.",
-        "prompt": "Main ek parent hoon jise apne liye time chahiye. Apni wellbeing ka khayal kaise rakhoon?"
+        "title": "Mujhe thoda break chahiye",
+        "subtitle": "Self-care achhi parenting ka hi hissa hai.",
+        "prompt": "Main ek parent hoon jise apne liye thoda time chahiye. Apni wellbeing ka khayal kaise rakhoon?"
       }
     },
     "emotional_footer": {
-      "lead": "Parenting mushkil hai. Amy yahan hai sunne aur help karne ke liye — bina judgment ke.",
-      "reassure_title": "Aap jitna sochte ho usse better kar rahe ho 💜",
-      "reassure_body": "Research dikhata hai ki aap information aur support dhoondh rahe ho — yeh fact aapko average se better parent banata hai. Worry khud love ka proof hai."
+      "lead": "Parenting mushkil hai. Amy yahan hai sunne aur help karne ke liye — bina kisi judgment ke.",
+      "reassure_title": "Aap jitna sochte hain, usse behtar kar rahe hain 💜",
+      "reassure_body": "Research dikhati hai ki aap information aur support dhoondh rahe hain — yahi baat aapko average se behtar parent banati hai. Aapki worry hi aapke pyaar ka proof hai."
     },
     "empty": {
       "heading": "Shuru karne ke liye bachcha add karein",
@@ -1684,11 +1684,11 @@
       "cta": "Bachcha Add karein"
     },
     "headers": {
-      "previewing": "Previewing",
-      "coming_next": "Coming Up Next",
+      "previewing": "Preview ho raha hai",
+      "coming_next": "Aage aa raha hai",
       "explore_next": "{{name}} ke liye next stage explore karein",
-      "previewing_age": "Age {{label}} preview ho rahi hai · reset karne ke liye \"Now\" tap karein",
-      "preview_intro": "Dekho {{name}} ke bade hone par aage kya aane wala hai",
+      "previewing_age": "Age {{label}} ka preview ho raha hai · reset karne ke liye \"Now\" tap karein",
+      "preview_intro": "Dekhein {{name}} ke bade hone par aage kya aane wala hai",
       "aria_current_band": "Current age band {{label}}, preview reset karne ke liye tap karein",
       "aria_preview_band": "Age {{label}} content preview karein",
       "now_pill": " · Abhi",
