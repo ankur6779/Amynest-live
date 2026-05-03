@@ -17,6 +17,7 @@ import {
 import { absoluteStreamUrl } from "@/services/storiesApi";
 import { useColors } from "@/hooks/useColors";
 import { ACCENT_PINK, brand, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 const BATCH = 6;
 
@@ -57,6 +58,7 @@ function ReelVideoItem({
     }
   }, [isActive]);
 
+  const { t } = useTranslation();
   return (
     <View style={{ width, height, backgroundColor: "#000" }}>
       {!errored ? (
@@ -69,13 +71,13 @@ function ReelVideoItem({
       ) : (
         <View style={[StyleSheet.absoluteFill, itemStyles.errorBox]}>
           <Ionicons name="alert-circle-outline" size={48} color="#fff" />
-          <Text style={itemStyles.errorText}>Couldn't play this video</Text>
+          <Text style={itemStyles.errorText}>{t("components.art_craft_reels.couldn_t_play_this_video")}</Text>
         </View>
       )}
       {/* Bottom title bar */}
       <View style={itemStyles.titleBar} pointerEvents="none">
         <Text numberOfLines={2} style={itemStyles.title}>{displayName}</Text>
-        <Text style={itemStyles.swipeHint}>Swipe up / down to browse</Text>
+        <Text style={itemStyles.swipeHint}>{t("components.art_craft_reels.swipe_up_down_to_browse")}</Text>
       </View>
     </View>
   );
@@ -304,7 +306,7 @@ export function ArtCraftReels() {
     return (
       <View style={s.center}>
         <ActivityIndicator color={ACCENT_PINK} />
-        <Text style={s.dim}>Loading videos…</Text>
+        <Text style={s.dim}>{t("components.art_craft_reels.loading_videos")}</Text>
       </View>
     );
   }
@@ -317,7 +319,7 @@ export function ArtCraftReels() {
           onPress={() => { initRef.current = false; loadMore(0, true); }}
           style={s.retryBtn}
         >
-          <Text style={s.retryText}>Try again</Text>
+          <Text style={s.retryText}>{t("components.art_craft_reels.try_again")}</Text>
         </Pressable>
       </View>
     );
@@ -326,7 +328,7 @@ export function ArtCraftReels() {
   if (videos.length === 0) {
     return (
       <View style={s.center}>
-        <Text style={s.dim}>No videos available right now.</Text>
+        <Text style={s.dim}>{t("components.art_craft_reels.no_videos_available_right_now")}</Text>
       </View>
     );
   }
@@ -344,7 +346,7 @@ export function ArtCraftReels() {
       )}
 
       <View style={{ gap: 10 }}>
-        <Text style={s.lead}>🎨 Tap any video · swipe up/down to browse all</Text>
+        <Text style={s.lead}>{t("components.art_craft_reels.tap_any_video_swipe_up_down_to_browse_al")}</Text>
         <View style={s.grid}>
           {videos.map((v, index) => (
             <ReelTile
@@ -367,7 +369,7 @@ export function ArtCraftReels() {
             ) : (
               <>
                 <Ionicons name="arrow-down-circle" size={16} color="#fff" />
-                <Text style={s.loadMoreText}>Load more videos</Text>
+                <Text style={s.loadMoreText}>{t("components.art_craft_reels.load_more_videos")}</Text>
               </>
             )}
           </Pressable>

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -221,7 +222,7 @@ function TodaysActivityCard({
 }: {
   dailyItems: DisplayPhonicsItem[];
   focus: string;
-  progress: { practiced: Record<string, number>; mastered: Record<string, true> };
+  progress: { practiced: Record<string, number>; mastered: Record<string, true> }; // i18n-ok: type signature
   onPlay: (id: string, contentId?: number) => void;
   onToggleMastered: (id: string, contentId?: number) => void;
 }) {
@@ -230,6 +231,7 @@ function TodaysActivityCard({
     () => pickTodaysItem(dailyItems, tick),
     [dailyItems, tick],
   );
+  const { t } = useTranslation();
   if (!todaysItem) return null;
   const playCount = progress.practiced[todaysItem.id] ?? 0;
   const isMastered = !!progress.mastered[todaysItem.id];
@@ -247,7 +249,7 @@ function TodaysActivityCard({
           <Ionicons name="sparkles" size={18} color="#fff" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>Today's Activity</Text>
+          <Text style={styles.cardTitle}>{t("components.phonics_learning.todays_activity")}</Text>
           <Text style={styles.cardSub}>
             {todaysItem.type === "story" ? "Story time" : focus}
           </Text>
@@ -255,7 +257,7 @@ function TodaysActivityCard({
         <Pressable
           onPress={() => setTick((t) => t + 1)}
           hitSlop={10}
-          accessibilityLabel="Pick another sound"
+          accessibilityLabel={t("components.phonics_learning.pick_another_sound")}
           style={styles.refreshBtn}
         >
           <Ionicons name="refresh" size={18} color="#fff" />
@@ -351,13 +353,14 @@ function PracticeSoundsCard({
   onPlay,
 }: {
   items: DisplayPhonicsItem[];
-  progress: { practiced: Record<string, number>; mastered: Record<string, true> };
+  progress: { practiced: Record<string, number>; mastered: Record<string, true> }; // i18n-ok: type signature
   onPlay: (id: string, contentId?: number) => void;
 }) {
   if (items.length === 0) return null;
   const hasLongForm = items.some(
     (i) => i.type === "sentence" || i.type === "story",
   );
+  const { t } = useTranslation();
 
   return (
     <View style={styles.card} testID="phonics-practice-sounds">
@@ -366,8 +369,8 @@ function PracticeSoundsCard({
           <Ionicons name="book" size={16} color="#fff" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>Practice Sounds</Text>
-          <Text style={styles.cardSub}>Tap any tile to hear the sound</Text>
+          <Text style={styles.cardTitle}>{t("components.phonics_learning.practice_sounds")}</Text>
+          <Text style={styles.cardSub}>{t("components.phonics_learning.tap_any_tile_to_hear_the_sound")}</Text>
         </View>
         <View style={styles.countBadge}>
           <Text style={styles.countBadgeText}>
@@ -549,6 +552,7 @@ export default function PhonicsLearningScreen() {
   const params = useLocalSearchParams<{ childId?: string }>();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
 
   const [children, setChildren] = useState<Child[] | null>(null);
@@ -621,7 +625,7 @@ export default function PhonicsLearningScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="chevron-back" size={26} color="#fff" />
         </Pressable>
-        <Text style={styles.headerTitle}>🔤 Phonics Learning</Text>
+        <Text style={styles.headerTitle}>{t("components.phonics_learning.header_title")}</Text>
         <View style={{ width: 26 }} />
       </View>
 

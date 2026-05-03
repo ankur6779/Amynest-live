@@ -189,52 +189,52 @@ export default function RecipesScreen() {
             Name it to match meals in routines — e.g. "Idli" will match any routine meal containing "Idli".
           </Text>
 
-          <Text style={s.fieldLabel}>Recipe Name *</Text>
+          <Text style={s.fieldLabel}>{t("screens.recipes.recipe_name")}</Text>
           <TextInput
             style={s.input}
             value={form.name}
             onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
-            placeholder="e.g. Idli, Paneer Paratha, Egg Bhurji"
+            placeholder={t("screens.recipes.e_g_idli_paneer_paratha_egg_bhurji")}
             placeholderTextColor={c.textMuted}
             maxLength={100}
           />
 
           <View style={{ flexDirection: "row", gap: 10 }}>
             <View style={{ flex: 1 }}>
-              <Text style={s.fieldLabel}>Prep Time</Text>
+              <Text style={s.fieldLabel}>{t("screens.recipes.prep_time")}</Text>
               <TextInput
                 style={s.input}
                 value={form.prepTime}
                 onChangeText={(v) => setForm((f) => ({ ...f, prepTime: v }))}
-                placeholder="10 min"
+                placeholder={t("screens.recipes.10_min")}
                 placeholderTextColor={c.textMuted}
                 maxLength={60}
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.fieldLabel}>Cook Time</Text>
+              <Text style={s.fieldLabel}>{t("screens.recipes.cook_time")}</Text>
               <TextInput
                 style={s.input}
                 value={form.cookTime}
                 onChangeText={(v) => setForm((f) => ({ ...f, cookTime: v }))}
-                placeholder="15 min"
+                placeholder={t("screens.recipes.15_min")}
                 placeholderTextColor={c.textMuted}
                 maxLength={60}
               />
             </View>
           </View>
 
-          <Text style={s.fieldLabel}>Servings</Text>
+          <Text style={s.fieldLabel}>{t("screens.recipes.servings")}</Text>
           <TextInput
             style={s.input}
             value={form.servings}
             onChangeText={(v) => setForm((f) => ({ ...f, servings: v }))}
-            placeholder="1 child"
+            placeholder={t("screens.recipes.1_child")}
             placeholderTextColor={c.textMuted}
             maxLength={60}
           />
 
-          <Text style={s.fieldLabel}>Ingredients * (one per line)</Text>
+          <Text style={s.fieldLabel}>{t("screens.recipes.ingredients_one_per_line")}</Text>
           <TextInput
             style={[s.input, s.multiline]}
             value={form.ingredients}
@@ -246,7 +246,7 @@ export default function RecipesScreen() {
             textAlignVertical="top"
           />
 
-          <Text style={s.fieldLabel}>Steps * (one per line)</Text>
+          <Text style={s.fieldLabel}>{t("screens.recipes.steps_one_per_line")}</Text>
           <TextInput
             style={[s.input, s.multiline]}
             value={form.steps}
@@ -258,12 +258,12 @@ export default function RecipesScreen() {
             textAlignVertical="top"
           />
 
-          <Text style={s.fieldLabel}>Parent Tip (optional)</Text>
+          <Text style={s.fieldLabel}>{t("screens.recipes.parent_tip_optional")}</Text>
           <TextInput
             style={s.input}
             value={form.tip}
             onChangeText={(v) => setForm((f) => ({ ...f, tip: v }))}
-            placeholder="e.g. Add ghee for extra flavour"
+            placeholder={t("screens.recipes.e_g_add_ghee_for_extra_flavour")}
             placeholderTextColor={c.textMuted}
             maxLength={300}
           />
@@ -299,7 +299,7 @@ export default function RecipesScreen() {
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
           <Ionicons name="arrow-back" size={22} color={c.foreground} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>My Recipes</Text>
+        <Text style={s.headerTitle}>{t("screens.recipes.my_recipes")}</Text>
         <TouchableOpacity onPress={openAdd} style={s.addBtn} hitSlop={8}>
           <Ionicons name="add" size={22} color="#fff" />
         </TouchableOpacity>
@@ -320,12 +320,12 @@ export default function RecipesScreen() {
         {!isLoading && recipes.length === 0 && (
           <View style={s.emptyBox}>
             <MaterialCommunityIcons name="chef-hat" size={40} color={palette.orange500} />
-            <Text style={s.emptyTitle}>No recipes saved yet</Text>
+            <Text style={s.emptyTitle}>{t("screens.recipes.no_recipes_saved_yet")}</Text>
             <Text style={s.emptySubtitle}>
               Add your family's favourite recipes and they'll appear automatically in routines when the meal name matches.
             </Text>
             <TouchableOpacity style={s.saveBtn} activeOpacity={0.85} onPress={openAdd}>
-              <Text style={s.saveBtnText}>Add your first recipe</Text>
+              <Text style={s.saveBtnText}>{t("screens.recipes.add_your_first_recipe")}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -360,7 +360,7 @@ export default function RecipesScreen() {
                 onPress={() => openEdit(recipe)}
               >
                 <Ionicons name="pencil" size={14} color={palette.indigo500} />
-                <Text style={s.editBtnText}>Edit</Text>
+                <Text style={s.editBtnText}>{t("screens.recipes.edit")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={s.deleteBtn}
@@ -368,7 +368,7 @@ export default function RecipesScreen() {
                 onPress={() => confirmDelete(recipe)}
               >
                 <Ionicons name="trash-outline" size={14} color={palette.red600} />
-                <Text style={s.deleteBtnText}>Delete</Text>
+                <Text style={s.deleteBtnText}>{t("screens.recipes.delete")}</Text>
               </TouchableOpacity>
             </View>
           </View>

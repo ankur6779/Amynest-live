@@ -108,7 +108,7 @@ export default function SignUpScreen() {
                   style={styles.input}
                   value={firstName}
                   onChangeText={setFirstName}
-                  placeholder="Your first name"
+                  placeholder={t("screens.sign_up.your_first_name")}
                   placeholderTextColor="rgba(200,180,255,0.28)"
                   autoComplete="given-name"
                   onFocus={() => setFocusedField("name")}
@@ -129,7 +129,7 @@ export default function SignUpScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder={t("screens.sign_up.you_example_com")}
                   placeholderTextColor="rgba(200,180,255,0.28)"
                   onFocus={() => setFocusedField("email")}
                   onBlur={() => setFocusedField(null)}
@@ -147,7 +147,7 @@ export default function SignUpScreen() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPass}
-                  placeholder="Min. 8 characters"
+                  placeholder={t("screens.sign_up.min_8_characters")}
                   placeholderTextColor="rgba(200,180,255,0.28)"
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
@@ -187,7 +187,7 @@ export default function SignUpScreen() {
             </View>
           </View>
 
-          <Text style={styles.tagline}>Where Smart Parenting Begins</Text>
+          <Text style={styles.tagline}>{t("screens.sign_up.where_smart_parenting_begins")}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>

@@ -23,6 +23,7 @@ import { MobileRecipeCard } from "./MobileRecipeCard";
 import { useColors } from "@/hooks/useColors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { getActivityImage } from "@/lib/activity-images";
+import { useTranslation } from "react-i18next";
 
 type Recipe = {
   name: string;
@@ -182,6 +183,7 @@ export default function RoutineItemModal({
   const heroSeed = (item.activity?.length ?? 0) + (item.time?.length ?? 0);
   const heroImg = getActivityImage(item.category ?? "", item.activity ?? "", heroSeed);
 
+  const { t } = useTranslation();
   return (
     <Modal
       visible={visible}
@@ -202,7 +204,7 @@ export default function RoutineItemModal({
             <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
               <LinearGradient colors={[palette.orange400, palette.rose500] as const} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
                 <View style={s.handle} />
-                <TouchableOpacity onPress={closeRecipe} style={s.closeBtn} activeOpacity={0.85} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close recipe">
+                <TouchableOpacity onPress={closeRecipe} style={s.closeBtn} activeOpacity={0.85} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("components.routine_item_modal.close_recipe")}>
                   <Ionicons name="close" size={20} color="#fff" />
                 </TouchableOpacity>
                 <View style={s.heroIconWrap}>
@@ -217,7 +219,7 @@ export default function RoutineItemModal({
                 {recipeLoading && (
                   <View style={{ alignItems: "center", paddingVertical: 24, gap: 10 }}>
                     <ActivityIndicator color={palette.orange500} />
-                    <Text style={[s.notesText, { textAlign: "center" }]}>Generating recipe…</Text>
+                    <Text style={[s.notesText, { textAlign: "center" }]}>{t("components.routine_item_modal.generating_recipe")}</Text>
                   </View>
                 )}
 
@@ -234,22 +236,22 @@ export default function RoutineItemModal({
                       <View style={[s.statBox, { backgroundColor: "rgba(251,146,60,0.12)" }]}>
                         <Ionicons name="timer-outline" size={16} color={palette.orange500} />
                         <Text style={s.statValue}>{recipe.prepTime}</Text>
-                        <Text style={s.statLabel}>Prep</Text>
+                        <Text style={s.statLabel}>{t("components.routine_item_modal.prep")}</Text>
                       </View>
                       <View style={[s.statBox, { backgroundColor: "rgba(244,63,94,0.12)" }]}>
                         <Ionicons name="flame-outline" size={16} color={palette.rose500} />
                         <Text style={s.statValue}>{recipe.cookTime}</Text>
-                        <Text style={s.statLabel}>Cook</Text>
+                        <Text style={s.statLabel}>{t("components.routine_item_modal.cook")}</Text>
                       </View>
                       <View style={[s.statBox, { backgroundColor: "rgba(16,185,129,0.12)" }]}>
                         <Ionicons name="people-outline" size={16} color={palette.emerald500} />
                         <Text style={s.statValue}>{recipe.servings}</Text>
-                        <Text style={s.statLabel}>Serves</Text>
+                        <Text style={s.statLabel}>{t("components.routine_item_modal.serves")}</Text>
                       </View>
                     </View>
 
                     <View>
-                      <Text style={s.sectionLabel}>Ingredients</Text>
+                      <Text style={s.sectionLabel}>{t("components.routine_item_modal.ingredients")}</Text>
                       <View style={{ marginTop: 6, gap: 6 }}>
                         {(recipe.ingredients ?? []).map((ing, i) => (
                           <View key={i} style={{ flexDirection: "row", gap: 8 }}>
@@ -261,7 +263,7 @@ export default function RoutineItemModal({
                     </View>
 
                     <View>
-                      <Text style={s.sectionLabel}>Instructions</Text>
+                      <Text style={s.sectionLabel}>{t("components.routine_item_modal.instructions")}</Text>
                       <View style={{ marginTop: 8, gap: 12 }}>
                         {(recipe.steps ?? []).map((st) => (
                           <View key={st.step} style={{ flexDirection: "row", gap: 10 }}>
@@ -276,7 +278,7 @@ export default function RoutineItemModal({
 
                     {recipe.tips ? (
                       <View style={s.tipBox}>
-                        <Text style={s.tipLabel}>💡 Parent tip</Text>
+                        <Text style={s.tipLabel}>{t("components.routine_item_modal.parent_tip")}</Text>
                         <Text style={s.tipText}>{recipe.tips}</Text>
                       </View>
                     ) : null}
@@ -284,7 +286,7 @@ export default function RoutineItemModal({
                 )}
 
                 <TouchableOpacity onPress={closeRecipe} activeOpacity={0.85} style={s.closeFooter}>
-                  <Text style={s.closeFooterText}>Back</Text>
+                  <Text style={s.closeFooterText}>{t("components.routine_item_modal.back")}</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -298,7 +300,7 @@ export default function RoutineItemModal({
                 style={s.closeBtn}
                 activeOpacity={0.85}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t("components.routine_item_modal.close")}
                 hitSlop={8}
               >
                 <Ionicons name="close" size={20} color="#fff" />
@@ -381,7 +383,7 @@ export default function RoutineItemModal({
 
               {isMealOptions ? (
                 <View style={{ gap: 8 }}>
-                  <Text style={s.sectionLabel}>🍽️ Today's meal options</Text>
+                  <Text style={s.sectionLabel}>{t("components.routine_item_modal.today_s_meal_options")}</Text>
                   <View style={s.optionsWrap}>
                     {mealOpts.map((opt, oi) => (
                       <TouchableOpacity
@@ -397,11 +399,11 @@ export default function RoutineItemModal({
                       </TouchableOpacity>
                     ))}
                   </View>
-                  <Text style={s.optionHint}>Tap a meal to view its recipe</Text>
+                  <Text style={s.optionHint}>{t("components.routine_item_modal.tap_a_meal_to_view_its_recipe")}</Text>
                 </View>
               ) : item.notes ? (
                 <View style={s.notesBox}>
-                  <Text style={s.sectionLabel}>📋 Instructions</Text>
+                  <Text style={s.sectionLabel}>{t("components.routine_item_modal.instructions_2")}</Text>
                   <Text style={s.notesText}>{item.notes}</Text>
                 </View>
               ) : null}
@@ -416,7 +418,7 @@ export default function RoutineItemModal({
                       style={[s.secondaryBtn, { backgroundColor: c.statusWarningBg, borderColor: c.statusWarningBorder }]}
                     >
                       <Ionicons name="time" size={16} color={c.statusWarningText} />
-                      <Text style={[s.secondaryText, { color: c.statusWarningText }]}>Delay +15m</Text>
+                      <Text style={[s.secondaryText, { color: c.statusWarningText }]}>{t("components.routine_item_modal.delay_15m")}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={onSkip}
@@ -424,7 +426,7 @@ export default function RoutineItemModal({
                       style={[s.secondaryBtn, { backgroundColor: c.calloutBg, borderColor: c.glassBorder }]}
                     >
                       <MaterialCommunityIcons name="skip-next" size={16} color={c.textBody} />
-                      <Text style={[s.secondaryText, { color: c.textBody }]}>Skip</Text>
+                      <Text style={[s.secondaryText, { color: c.textBody }]}>{t("components.routine_item_modal.skip")}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -433,12 +435,12 @@ export default function RoutineItemModal({
               {isInteractive && !isPending && (
                 <TouchableOpacity onPress={onReopen} activeOpacity={0.85} style={s.reopenBtn}>
                   <Ionicons name="arrow-undo" size={16} color={c.foreground} />
-                  <Text style={s.reopenText}>Mark as pending again</Text>
+                  <Text style={s.reopenText}>{t("components.routine_item_modal.mark_as_pending_again")}</Text>
                 </TouchableOpacity>
               )}
 
               <TouchableOpacity onPress={onClose} activeOpacity={0.85} style={s.closeFooter}>
-                <Text style={s.closeFooterText}>Close</Text>
+                <Text style={s.closeFooterText}>{t("components.routine_item_modal.close")}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

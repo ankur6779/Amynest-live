@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { brand, palette, ACCENT_PINK, BRAND_GRADIENT } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 import {
   computeCommandCenter,
   pickPlayIdeas,
@@ -132,6 +133,7 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
       const d = new Date();
       setNowMins(d.getHours() * 60 + d.getMinutes());
     }, 60_000);
+    const { t } = useTranslation();
     return () => clearInterval(id);
   }, [open]);
 
@@ -227,7 +229,7 @@ export default function ParentCommandCenter({ child }: { child: Child }) {
         </View>
         <View style={styles.openPill}>
           <LinearGradient colors={BRAND_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFillObject} />
-          <Text style={styles.openPillText}>Open</Text>
+          <Text style={styles.openPillText}>{t("components.parent_command_center.open")}</Text>
           <Ionicons name="arrow-forward" size={11} color="#fff" />
         </View>
       </Pressable>
@@ -281,9 +283,9 @@ type DashboardProps = {
   persistSleep: (s: AdaptiveSleepQuality) => void;
   result: CommandCenterResult;
   onClose: () => void;
-  onSimplify: (items: AdaptiveItem[]) => Promise<unknown>;
-  onUpdateItems: (items: AdaptiveItem[]) => Promise<unknown>;
-  onLogBehavior: (behavior: string, type: "positive" | "negative" | "neutral") => Promise<unknown>;
+  onSimplify: (items: AdaptiveItem[]) =>{t("components.parent_command_center.promise")}<unknown>;
+  onUpdateItems: (items: AdaptiveItem[]) =>{t("components.parent_command_center.promise")}<unknown>;
+  onLogBehavior: (behavior: string, type: "positive" | "negative" | "neutral") =>{t("components.parent_command_center.promise")}<unknown>;
   onOpenRoutine: () => void;
   updating: boolean;
 };
@@ -511,12 +513,12 @@ function CommandCenterDashboard(props: DashboardProps) {
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             {todayRoutine?.id ? (
-              <Pressable onPress={onOpenRoutine} style={d.routineBtn} accessibilityLabel="Open today's routine">
-                <Text style={d.routineBtnText}>Open routine</Text>
+              <Pressable onPress={onOpenRoutine} style={d.routineBtn} accessibilityLabel={t("components.parent_command_center.open_today_s_routine")}>
+                <Text style={d.routineBtnText}>{t("components.parent_command_center.open_routine")}</Text>
                 <Ionicons name="arrow-forward" size={11} color={brand.violetMist} />
               </Pressable>
             ) : null}
-            <Pressable onPress={onClose} style={d.closeBtn} accessibilityLabel="Close" testID="command-center-close">
+            <Pressable onPress={onClose} style={d.closeBtn} accessibilityLabel={t("components.parent_command_center.close")} testID="command-center-close">
               <Ionicons name="close" size={18} color="#fff" />
             </Pressable>
           </View>
@@ -551,7 +553,7 @@ function CommandCenterDashboard(props: DashboardProps) {
         {/* Auto-suggestion chips */}
         {suggestions.length > 0 && (
           <View style={d.suggestionRow} testID="suggestion-row">
-            <Text style={d.suggestionTag}>TRY NEXT</Text>
+            <Text style={d.suggestionTag}>{t("components.parent_command_center.try_next")}</Text>
             {suggestions.map((s) => (
               <Pressable
                 key={s.id}
@@ -575,7 +577,7 @@ function CommandCenterDashboard(props: DashboardProps) {
             {/* Today timeline (with swipe-to-skip + undo) */}
             <View style={d.section} testID="timeline-section">
               <View style={d.sectionHead}>
-                <Text style={d.sectionTitle}>TODAY'S TIMELINE</Text>
+                <Text style={d.sectionTitle}>{t("components.parent_command_center.today_s_timeline")}</Text>
                 <Text style={d.sectionMeta}>
                   {timeline.filter((t) => t.status === "completed").length}/{timeline.length} complete
                 </Text>
@@ -600,7 +602,7 @@ function CommandCenterDashboard(props: DashboardProps) {
                 <Text style={[d.sectionTitle, { color: palette.emerald400 }]}>
                   QUICK CONNECTION IDEAS
                 </Text>
-                <Text style={d.sectionMeta}>Tap to start a timer</Text>
+                <Text style={d.sectionMeta}>{t("components.parent_command_center.tap_to_start_a_timer")}</Text>
               </View>
               <View style={d.actionGrid}>
                 {quickActivities.map((q) => {
@@ -650,7 +652,7 @@ function CommandCenterDashboard(props: DashboardProps) {
                     ) : null}
                     <Text style={d.actionEmoji}>{a.emoji}</Text>
                     <Text style={[d.actionLabel, isPrimary ? { color: "#fff" } : { color: c.foreground }]}>{a.label}</Text>
-                    {isPrimary ? <Text style={d.actionTopBadge}>TOP</Text> : null}
+                    {isPrimary ? <Text style={d.actionTopBadge}>{t("components.parent_command_center.top")}</Text> : null}
                   </Pressable>
                 );
               })}
@@ -663,7 +665,7 @@ function CommandCenterDashboard(props: DashboardProps) {
           <ActionPanel
             tone="rose"
             iconName="heart"
-            title="Calming tools — try in order"
+            title={t("components.parent_command_center.calming_tools_try_in_order")}
             steps={[
               "Breathe slowly 4-4-6 with them for 60 seconds.",
               "Offer a tight hug + soft voice (no questions).",
@@ -676,7 +678,7 @@ function CommandCenterDashboard(props: DashboardProps) {
           <ActionPanel
             tone="indigo"
             iconName="moon"
-            title="Wind-down plan for tonight"
+            title={t("components.parent_command_center.wind_down_plan_for_tonight")}
             steps={[
               "Dim lights 30 min before bedtime; no screens after.",
               "Warm bath/face wash + same lullaby every night.",
@@ -730,7 +732,7 @@ function CommandCenterDashboard(props: DashboardProps) {
                   ins.tone === "info" && { borderColor: brand.purple500 + "55", backgroundColor: "rgba(168,85,247,0.10)" },
                 ]}
               >
-                <Text style={d.insightTag}>✨ AMY AI INSIGHT</Text>
+                <Text style={d.insightTag}>{t("components.parent_command_center.amy_ai_insight")}</Text>
                 <Text style={d.insightWhat}>{ins.what}</Text>
                 <Text style={d.insightWhy}>{ins.why}</Text>
                 <Text style={d.insightAction}><Text style={{ fontWeight: "900" }}>→ </Text>{ins.action}</Text>
@@ -756,9 +758,9 @@ function CommandCenterDashboard(props: DashboardProps) {
               }}
               style={({ pressed }) => [d.toastUndo, pressed && { opacity: 0.85 }]}
               testID="command-center-toast-undo"
-              accessibilityLabel="Undo skip"
+              accessibilityLabel={t("components.parent_command_center.undo_skip")}
             >
-              <Text style={d.toastUndoText}>UNDO</Text>
+              <Text style={d.toastUndoText}>{t("components.parent_command_center.undo")}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -854,9 +856,9 @@ function ActionPanel({
           </View>
         ))}
       </View>
-      <Pressable onPress={onDone} style={d.panelDone} accessibilityLabel="Done">
+      <Pressable onPress={onDone} style={d.panelDone} accessibilityLabel={t("components.parent_command_center.done")}>
         <Ionicons name="happy" size={13} color="#0a0820" /* audit-ok: dark neon dashboard backdrop */ />
-        <Text style={d.panelDoneText}>Done</Text>
+        <Text style={d.panelDoneText}>{t("components.parent_command_center.done")}</Text>
       </Pressable>
     </View>
   );
@@ -881,10 +883,10 @@ function PlayPickerPanel({
           <View style={d.panelIcon}>
             <Ionicons name="dice" size={14} color="#fff" />
           </View>
-          <Text style={d.panelTitle}>Pick a 10-min play — tap to start</Text>
+          <Text style={d.panelTitle}>{t("components.parent_command_center.pick_a_10_min_play_tap_to_start")}</Text>
         </View>
-        <Pressable onPress={onClose} testID="play-picker-close" accessibilityLabel="Close play picker">
-          <Text style={{ fontSize: 11, fontWeight: "800", color: "rgba(255,255,255,0.7)" }}>Close</Text>
+        <Pressable onPress={onClose} testID="play-picker-close" accessibilityLabel={t("components.parent_command_center.close_play_picker")}>
+          <Text style={{ fontSize: 11, fontWeight: "800", color: "rgba(255,255,255,0.7)" }}>{t("components.parent_command_center.close")}</Text>
         </Pressable>
       </View>
       <View style={{ gap: 8, marginTop: 8 }}>
@@ -902,7 +904,7 @@ function PlayPickerPanel({
               <Text style={pp.desc} numberOfLines={2}>{idea.description}</Text>
             </View>
             <View style={pp.startPill}>
-              <Text style={pp.startPillText}>Start</Text>
+              <Text style={pp.startPillText}>{t("components.parent_command_center.start")}</Text>
               <Ionicons name="arrow-forward" size={11} color="#0a0820" /* audit-ok: dark neon dashboard backdrop */ />
             </View>
           </Pressable>
@@ -942,12 +944,12 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <View style={d.empty} testID="command-center-empty">
       <Text style={d.emptyEmoji}>🪄</Text>
-      <Text style={d.emptyTitle}>No routine for today yet</Text>
-      <Text style={d.emptySub}>Generate one to unlock the timeline + smart suggestions.</Text>
-      <Pressable onPress={onCreate} style={d.emptyBtn} accessibilityLabel="Create today's routine">
+      <Text style={d.emptyTitle}>{t("components.parent_command_center.no_routine_for_today_yet")}</Text>
+      <Text style={d.emptySub}>{t("components.parent_command_center.generate_one_to_unlock_the_timeline_smar")}</Text>
+      <Pressable onPress={onCreate} style={d.emptyBtn} accessibilityLabel={t("components.parent_command_center.create_today_s_routine")}>
         <LinearGradient colors={BRAND_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFillObject} />
         <Ionicons name="sparkles" size={12} color="#fff" />
-        <Text style={d.emptyBtnText}>Create today's routine</Text>
+        <Text style={d.emptyBtnText}>{t("components.parent_command_center.create_today_s_routine")}</Text>
       </Pressable>
     </View>
   );
@@ -1022,11 +1024,11 @@ function SwipeableTimelineRow({
       </View>
       {completed ? (
         <View style={d.donePill}>
-          <Text style={d.donePillText}>DONE</Text>
+          <Text style={d.donePillText}>{t("components.parent_command_center.done_2")}</Text>
         </View>
       ) : skipped ? (
         <View style={[d.donePill, { backgroundColor: "rgba(255,255,255,0.10)", borderColor: "rgba(255,255,255,0.20)" }]}>
-          <Text style={[d.donePillText, { color: "rgba(255,255,255,0.7)" }]}>SKIPPED</Text>
+          <Text style={[d.donePillText, { color: "rgba(255,255,255,0.7)" }]}>{t("components.parent_command_center.skipped")}</Text>
         </View>
       ) : (
         <View style={{ flexDirection: "row", gap: 6 }}>
@@ -1036,7 +1038,7 @@ function SwipeableTimelineRow({
             testID={`skip-step-${t.index}`}
             accessibilityLabel={`Skip ${t.activity}`}
           >
-            <Text style={d.skipBtnText}>Skip</Text>
+            <Text style={d.skipBtnText}>{t("components.parent_command_center.skip")}</Text>
           </Pressable>
           <Pressable
             onPress={onComplete}
@@ -1045,7 +1047,7 @@ function SwipeableTimelineRow({
             accessibilityLabel={`Mark ${t.activity} done`}
           >
             <Ionicons name="checkmark" size={11} color={palette.emerald400} />
-            <Text style={d.doneBtnText}>Done</Text>
+            <Text style={d.doneBtnText}>{t("components.parent_command_center.done")}</Text>
           </Pressable>
         </View>
       )}
@@ -1099,8 +1101,8 @@ function TimedActivityPanel({
           </View>
           <Text style={d.panelTitle}>{activity.emoji} {activity.label}</Text>
         </View>
-        <Pressable onPress={onCancel} testID={`timed-cancel-${activity.id}`} accessibilityLabel="Close">
-          <Text style={{ fontSize: 11, fontWeight: "800", color: "rgba(255,255,255,0.7)" }}>Close</Text>
+        <Pressable onPress={onCancel} testID={`timed-cancel-${activity.id}`} accessibilityLabel={t("components.parent_command_center.close")}>
+          <Text style={{ fontSize: 11, fontWeight: "800", color: "rgba(255,255,255,0.7)" }}>{t("components.parent_command_center.close")}</Text>
         </Pressable>
       </View>
       <View style={d.timerBox}>
@@ -1122,10 +1124,10 @@ function TimedActivityPanel({
           onPress={onDone}
           style={({ pressed }) => [d.panelDone, pressed && { opacity: 0.85 }]}
           testID={`timed-done-${activity.id}`}
-          accessibilityLabel="Done with my child"
+          accessibilityLabel={t("components.parent_command_center.done_with_my_child")}
         >
           <Ionicons name="happy" size={13} color="#0a0820" /* audit-ok: dark neon dashboard backdrop */ />
-          <Text style={d.panelDoneText}>Done with my child</Text>
+          <Text style={d.panelDoneText}>{t("components.parent_command_center.done_with_my_child")}</Text>
         </Pressable>
       </View>
     </View>

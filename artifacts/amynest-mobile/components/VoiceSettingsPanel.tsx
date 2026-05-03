@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { brand } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
+import { useTranslation } from "react-i18next";
 
 export const VOICE_KEY = "amynest.voice_settings.v1";
 
@@ -116,6 +117,7 @@ function VoicePreviewButton({ voice }: { voice: ElevenLabsVoice }) {
     }
   }, [speaking, loading, speak, stop, voice.previewText]);
 
+  const { t } = useTranslation();
   return (
     <Pressable onPress={handlePress} hitSlop={8} style={styles.playBtn}>
       {loading ? (
@@ -148,7 +150,7 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={[styles.sheet, { backgroundColor: c.card, borderColor: c.border }]} onPress={(e) => e.stopPropagation()}>
           <View style={styles.header}>
-            <Text style={[styles.title, { color: c.foreground }]}>🎙 Voice Settings</Text>
+            <Text style={[styles.title, { color: c.foreground }]}>{t("components.voice_settings_panel.voice_settings")}</Text>
             <Pressable onPress={onClose} hitSlop={10}>
               <Ionicons name="close" size={22} color={c.foreground} />
             </Pressable>
@@ -156,7 +158,7 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
 
           <ScrollView style={{ maxHeight: 480 }} contentContainerStyle={{ paddingBottom: 8 }}>
             {/* Enable toggle */}
-            <Text style={[styles.sectionLabel, { color: c.mutedForeground }]}>READ-ALOUD</Text>
+            <Text style={[styles.sectionLabel, { color: c.mutedForeground }]}>{t("components.voice_settings_panel.read_aloud")}</Text>
             <Pressable
               onPress={() => update({ enabled: !settings.enabled })}
               style={[styles.toggleRow, { backgroundColor: c.muted, borderColor: c.border }]}
@@ -177,7 +179,7 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
             {settings.enabled && (
               <>
                 {/* Language */}
-                <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>LANGUAGE</Text>
+                <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>{t("components.voice_settings_panel.language")}</Text>
                 <View style={styles.rowGap}>
                   {(["en-IN", "hi-IN"] as VoiceLang[]).map((lang) => {
                     const active = settings.lang === lang;
@@ -196,7 +198,7 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
                 </View>
 
                 {/* Gender */}
-                <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>VOICE GENDER</Text>
+                <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>{t("components.voice_settings_panel.voice_gender")}</Text>
                 <View style={styles.rowGap}>
                   {(["female", "male"] as VoiceGender[]).map((g) => {
                     const active = settings.gender === g;
@@ -215,7 +217,7 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
                 </View>
 
                 {/* ElevenLabs voice list */}
-                <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>VOICE</Text>
+                <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>{t("components.voice_settings_panel.voice")}</Text>
                 <View style={[styles.voiceList, { borderColor: c.border }]}>
                   {filtered.map((v) => (
                     <View key={v.id} style={styles.voiceRow}>
@@ -234,7 +236,7 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
             )}
           </ScrollView>
 
-          <Text style={[styles.footer, { color: c.mutedForeground }]}>Powered by ElevenLabs AI 🎙</Text>
+          <Text style={[styles.footer, { color: c.mutedForeground }]}>{t("components.voice_settings_panel.powered_by_elevenlabs_ai")}</Text>
         </Pressable>
       </Pressable>
     </Modal>

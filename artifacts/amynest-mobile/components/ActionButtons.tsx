@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -38,6 +39,7 @@ function PressBtn({
   const scale = useSharedValue(1);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
+  const { t } = useTranslation();
   return (
     <AnimatedPressable
       onPressIn={() => {
@@ -73,7 +75,7 @@ export default function ActionButtons({ onAction, disabled }: Props) {
         bg={palette.emerald50}
         onPress={() => onAction("worked")}
         testID="action-worked"
-        accessibilityLabel="Mark this win as worked"
+        accessibilityLabel={t("components.action_buttons.mark_this_win_as_worked")}
       />
       <PressBtn
         label="Partially"
@@ -82,7 +84,7 @@ export default function ActionButtons({ onAction, disabled }: Props) {
         bg={palette.amber50}
         onPress={() => onAction("partial")}
         testID="action-partial"
-        accessibilityLabel="Mark this win as partially worked"
+        accessibilityLabel={t("components.action_buttons.mark_this_win_as_partially_worked")}
       />
       <PressBtn
         label="Not yet"
@@ -91,7 +93,7 @@ export default function ActionButtons({ onAction, disabled }: Props) {
         bg={palette.red50}
         onPress={() => onAction("not_worked")}
         testID="action-not-worked"
-        accessibilityLabel="This did not work, give me more options"
+        accessibilityLabel={t("components.action_buttons.this_did_not_work_give_me_more_options")}
       />
     </View>
   );

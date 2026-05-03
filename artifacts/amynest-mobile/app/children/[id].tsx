@@ -78,7 +78,7 @@ export default function ChildDetailScreen() {
 
   const { data: child, isLoading } = useQuery<Child>({
     queryKey: ["child", id],
-    queryFn: () => authFetch(`/api/children/${id}`).then(r => r.json()) as Promise<Child>,
+    queryFn: () => authFetch(`/api/children/${id}`).then(r =>{t("screens.children_id.r_json_as_promise")}<Child>,
     enabled: !!id && id !== "new",
   });
 
@@ -235,7 +235,7 @@ export default function ChildDetailScreen() {
                 activeOpacity={0.85}
                 style={[styles.photoCircle, { backgroundColor: colors.secondary, borderColor: colors.border }]}
                 accessibilityRole="button"
-                accessibilityLabel="Change child photo"
+                accessibilityLabel={t("screens.children_id.change_child_photo")}
                 testID="child-photo-picker"
               >
                 {photoUrl ? (
@@ -254,7 +254,7 @@ export default function ChildDetailScreen() {
               </TouchableOpacity>
               {photoUrl && (
                 <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setPhotoUrl(null); }}>
-                  <Text style={[styles.photoHint, { color: palette.red500 }]}>Remove photo</Text>
+                  <Text style={[styles.photoHint, { color: palette.red500 }]}>{t("screens.children_id.remove_photo")}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -263,7 +263,7 @@ export default function ChildDetailScreen() {
             <Field label="Date of Birth (YYYY-MM-DD)" value={dob} onChange={setDob} colors={colors} keyboardType="numeric" />
 
             <View style={styles.switchRow}>
-              <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>School Going</Text>
+              <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{t("screens.children_id.school_going")}</Text>
               <TouchableOpacity
                 style={[styles.toggle, { backgroundColor: isSchool ? colors.primary : colors.muted }]}
                 onPress={() => { setIsSchool(!isSchool); Haptics.selectionAsync(); }}
@@ -304,7 +304,7 @@ export default function ChildDetailScreen() {
             <Field label="Wake Up Time (HH:MM)" value={wakeUp} onChange={setWakeUp} colors={colors} placeholder="07:00" />
             <Field label="Sleep Time (HH:MM)" value={sleep} onChange={setSleep} colors={colors} placeholder="21:00" />
 
-            <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>Food Type</Text>
+            <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>{t("screens.children_id.food_type")}</Text>
             <View style={styles.chipRow}>
               {FOOD_TYPES.map(f => (
                 <TouchableOpacity key={f.value}
@@ -315,7 +315,7 @@ export default function ChildDetailScreen() {
               ))}
             </View>
 
-            <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>Travel Mode</Text>
+            <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>{t("screens.children_id.travel_mode")}</Text>
             <View style={styles.chipRow}>
               {TRAVEL_MODES.map(t => (
                 <TouchableOpacity key={t.value}
@@ -331,7 +331,7 @@ export default function ChildDetailScreen() {
                 value={travelModeOther}
                 onChange={setTravelModeOther}
                 colors={colors}
-                placeholder="e.g. Bus, Auto, Cycle"
+                placeholder={t("screens.children_id.e_g_bus_auto_cycle")}
               />
             )}
 
@@ -343,7 +343,7 @@ export default function ChildDetailScreen() {
                 style={[styles.chip, { backgroundColor: babysitterId === null ? colors.primary : colors.card, borderColor: babysitterId === null ? colors.primary : colors.border }]}
                 onPress={() => { setBabysitterId(null); Haptics.selectionAsync(); }}
               >
-                <Text style={[styles.chipText, { color: babysitterId === null ? "#fff" : colors.foreground }]}>None</Text>
+                <Text style={[styles.chipText, { color: babysitterId === null ? "#fff" : colors.foreground }]}>{t("screens.children_id.none")}</Text>
               </TouchableOpacity>
               {babysitters.map((b) => (
                 <TouchableOpacity key={b.id}
@@ -362,7 +362,7 @@ export default function ChildDetailScreen() {
           </View>
         ) : (
           <View style={styles.infoSection}>
-            <InfoCard title="Daily Schedule" colors={colors}>
+            <InfoCard title={t("screens.children_id.daily_schedule")} colors={colors}>
               <InfoRow icon="sunny-outline" label="Wake Up" value={child?.wakeUpTime ?? "—"} colors={colors} />
               <InfoRow icon="moon-outline" label="Sleep" value={child?.sleepTime ?? "—"} colors={colors} />
               {child?.isSchoolGoing && (
@@ -385,7 +385,7 @@ export default function ChildDetailScreen() {
                 </>
               )}
             </InfoCard>
-            <InfoCard title="Preferences" colors={colors}>
+            <InfoCard title={t("screens.children_id.preferences")} colors={colors}>
               <InfoRow icon="restaurant-outline" label="Food" value={child?.foodType === "non_veg" ? "Non-Vegetarian" : "Vegetarian"} colors={colors} />
               <InfoRow
                 icon="car-outline"
@@ -409,7 +409,7 @@ export default function ChildDetailScreen() {
           testID="delete-child-btn"
         >
           <Ionicons name="trash-outline" size={18} color={palette.red500} />
-          <Text style={styles.deleteBtnText}>Remove Child</Text>
+          <Text style={styles.deleteBtnText}>{t("screens.children_id.remove_child")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>

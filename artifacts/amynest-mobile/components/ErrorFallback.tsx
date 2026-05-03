@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 export type ErrorFallbackProps = {
   error: Error;
@@ -48,12 +49,13 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
     default: "monospace",
   });
 
+  const { t } = useTranslation();
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {__DEV__ ? (
         <Pressable
           onPress={() => setIsModalVisible(true)}
-          accessibilityLabel="View error details"
+          accessibilityLabel={t("components.error_fallback.view_error_details")}
           accessibilityRole="button"
           style={({ pressed }) => [
             styles.topButton,
@@ -124,7 +126,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                 </Text>
                 <Pressable
                   onPress={() => setIsModalVisible(false)}
-                  accessibilityLabel="Close error details"
+                  accessibilityLabel={t("components.error_fallback.close_error_details")}
                   accessibilityRole="button"
                   style={({ pressed }) => [
                     styles.closeButton,

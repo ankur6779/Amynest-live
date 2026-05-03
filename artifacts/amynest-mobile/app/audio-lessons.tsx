@@ -143,7 +143,7 @@ export default function AudioLessonsScreen() {
           <Ionicons name="chevron-back" size={20} color={brand.violet300} />
         </TouchableOpacity>
         <Ionicons name="headset" size={20} color={brand.violet300} style={{ marginRight: 6 }} />
-        <Text style={styles.headerTitle}>Amy Audio Lessons</Text>
+        <Text style={styles.headerTitle}>{t("screens.audio_lessons.amy_audio_lessons")}</Text>
       </View>
 
       <ScrollView

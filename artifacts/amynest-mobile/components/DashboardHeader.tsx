@@ -6,6 +6,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { brand } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 import { useSubscriptionStore, selectIsPremium } from "@/store/useSubscriptionStore";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   parentName: string;
@@ -16,6 +17,7 @@ type Props = {
 export default function DashboardHeader({ parentName, childName, onProfilePress }: Props) {
   const c = useColors();
   const isPremium = useSubscriptionStore(selectIsPremium);
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInDown.duration(500)} style={styles.row}>
       <View style={{ flex: 1 }}>
@@ -29,7 +31,7 @@ export default function DashboardHeader({ parentName, childName, onProfilePress 
               style={styles.badge}
             >
               <Ionicons name="sparkles" size={10} color="#fff" />
-              <Text style={styles.badgeText}>Smart Parent</Text>
+              <Text style={styles.badgeText}>{t("components.dashboard_header.smart_parent")}</Text>
             </LinearGradient>
           )}
         </View>
@@ -40,7 +42,7 @@ export default function DashboardHeader({ parentName, childName, onProfilePress 
       <Pressable
         onPress={onProfilePress}
         accessibilityRole="button"
-        accessibilityLabel="Open profile"
+        accessibilityLabel={t("components.dashboard_header.open_profile")}
         hitSlop={8}
       >
         <LinearGradient

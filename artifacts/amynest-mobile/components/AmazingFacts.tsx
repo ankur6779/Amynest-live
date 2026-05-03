@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 type AgeGroup = "infant" | "toddler" | "preschool" | "early_school" | "pre_teen";
 type FactCategory = "animal" | "science" | "gk";
@@ -106,7 +107,8 @@ export function AmazingFacts({ ageMonths = 60 }: { ageMonths?: number }) {
   useEffect(() => { setIdx(0); }, [category, ageMonths]);
 
   if (filtered.length === 0) {
-    return <Text style={s.dim}>No facts available right now.</Text>;
+    const { t } = useTranslation();
+    return <Text style={s.dim}>{t("components.amazing_facts.no_facts_available_right_now")}</Text>;
   }
 
   const fact = filtered[Math.min(idx, filtered.length - 1)];
@@ -144,7 +146,7 @@ export function AmazingFacts({ ageMonths = 60 }: { ageMonths?: number }) {
 
       <Pressable onPress={next} style={s.nextBtn}>
         <Ionicons name="refresh" size={14} color="#fff" />
-        <Text style={s.nextText}>Show another fact</Text>
+        <Text style={s.nextText}>{t("components.amazing_facts.show_another_fact")}</Text>
       </Pressable>
     </View>
   );

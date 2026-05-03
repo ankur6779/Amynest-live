@@ -194,17 +194,17 @@ export default function PaywallScreen() {
             onPress={() => router.back()}
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={t("screens.paywall.back")}
             style={styles.backBtn}
           >
             <Ionicons name="arrow-back" size={20} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t("screens.paywall.back")}</Text>
           </Pressable>
           <Pressable
             onPress={() => router.back()}
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel={t("screens.paywall.close")}
             style={styles.closeBtn}
           >
             <Ionicons name="close" size={22} color="rgba(255,255,255,0.85)" />
@@ -344,7 +344,7 @@ export default function PaywallScreen() {
             <>
               <View style={styles.orDivider}>
                 <View style={styles.orLine} />
-                <Text style={styles.orText}>or choose an alternative</Text>
+                <Text style={styles.orText}>{t("screens.paywall.or_choose_an_alternative")}</Text>
                 <View style={styles.orLine} />
               </View>
               <Pressable
@@ -356,10 +356,10 @@ export default function PaywallScreen() {
                   (submitting || plans.length === 0) && { opacity: 0.6 },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Alternative billing: Pay with UPI or Card via Razorpay"
+                accessibilityLabel={t("screens.paywall.alternative_billing_pay_with_upi_or_card")}
               >
                 <Ionicons name="flash" size={16} color="#fff" />
-                <Text style={styles.secondaryText}>Pay via UPI / Card (Alternative)</Text>
+                <Text style={styles.secondaryText}>{t("screens.paywall.pay_via_upi_card_alternative")}</Text>
               </Pressable>
             </>
           )}
@@ -386,15 +386,15 @@ export default function PaywallScreen() {
           <View style={styles.trustRow}>
             <View style={styles.trustItem}>
               <Ionicons name="people" size={14} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.trustText}>10,000+ parents</Text>
+              <Text style={styles.trustText}>{t("screens.paywall.10_000_parents")}</Text>
             </View>
             <View style={styles.trustItem}>
               <Ionicons name="lock-closed" size={14} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.trustText}>Cancel anytime</Text>
+              <Text style={styles.trustText}>{t("screens.paywall.cancel_anytime")}</Text>
             </View>
             <View style={styles.trustItem}>
               <Ionicons name="shield-checkmark" size={14} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.trustText}>Secure payment</Text>
+              <Text style={styles.trustText}>{t("screens.paywall.secure_payment")}</Text>
             </View>
           </View>
 
@@ -403,9 +403,9 @@ export default function PaywallScreen() {
             hitSlop={8}
             style={styles.maybeBtn}
             accessibilityRole="button"
-            accessibilityLabel="Maybe Later"
+            accessibilityLabel={t("screens.paywall.maybe_later")}
           >
-            <Text style={styles.maybeText}>Maybe Later</Text>
+            <Text style={styles.maybeText}>{t("screens.paywall.maybe_later")}</Text>
           </Pressable>
 
           <Text style={styles.footer}>

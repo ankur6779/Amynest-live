@@ -12,6 +12,7 @@ import { useColors } from "@/hooks/useColors";
 import { brand, brandAlpha, palette } from "@/constants/colors";
 import TiffinFeedbackPanel, { loadHistoryAsync as loadTiffinHistoryAsync } from "@/components/TiffinFeedbackPanel";
 import { getLearningSignals, type TiffinHistory } from "@workspace/tiffin-feedback";
+import { useTranslation } from "react-i18next";
 
 type MealTag = "Healthy" | "Quick" | "Protein" | "Veg" | "Non-Veg" | "Sweet";
 
@@ -103,6 +104,7 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
         setChildAge(Number(children[0].age));
       }
     });
+    const { t } = useTranslation();
     return () => { cancelled = true; };
   }, []);
 
@@ -179,8 +181,8 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
             <Text style={styles.iconBadgeText}>🍱</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title} numberOfLines={1}>Smart Tiffin & Meal Suggestions</Text>
-            <Text style={styles.subtitle} numberOfLines={1}>Personalised by region, fridge & age</Text>
+            <Text style={styles.title} numberOfLines={1}>{t("components.smart_meal_suggestions.smart_tiffin_meal_suggestions")}</Text>
+            <Text style={styles.subtitle} numberOfLines={1}>{t("components.smart_meal_suggestions.personalised_by_region_fridge_age")}</Text>
           </View>
         </View>
         <View style={styles.audienceToggle}>
@@ -188,13 +190,13 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
             onPress={() => setAudience("kids_tiffin")}
             style={[styles.audPill, audience === "kids_tiffin" && styles.audPillActive]}
           >
-            <Text style={[styles.audPillText, audience === "kids_tiffin" && styles.audPillTextActive]}>Kids</Text>
+            <Text style={[styles.audPillText, audience === "kids_tiffin" && styles.audPillTextActive]}>{t("components.smart_meal_suggestions.kids")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setAudience("parent_healthy")}
             style={[styles.audPill, audience === "parent_healthy" && styles.audPillActive]}
           >
-            <Text style={[styles.audPillText, audience === "parent_healthy" && styles.audPillTextActive]}>Parent</Text>
+            <Text style={[styles.audPillText, audience === "parent_healthy" && styles.audPillTextActive]}>{t("components.smart_meal_suggestions.parent")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -219,20 +221,20 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
 
       {/* Fridge input */}
       <View style={{ paddingHorizontal: 14, marginTop: 10 }}>
-        <Text style={styles.sectionLabel}>What's in your fridge? (optional)</Text>
+        <Text style={styles.sectionLabel}>{t("components.smart_meal_suggestions.what_s_in_your_fridge_optional")}</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <TextInput
             value={fridgeInput}
             onChangeText={setFridgeInput}
             onSubmitEditing={() => addFridgeItem(fridgeInput)}
-            placeholder="e.g. paneer"
+            placeholder={t("components.smart_meal_suggestions.e_g_paneer")}
             placeholderTextColor={colors.textFaint}
             style={styles.input}
             returnKeyType="done"
           />
           <TouchableOpacity onPress={() => addFridgeItem(fridgeInput)} style={styles.addBtn}>
             <Ionicons name="add" size={16} color="#fff" />
-            <Text style={styles.addBtnText}>Add</Text>
+            <Text style={styles.addBtnText}>{t("components.smart_meal_suggestions.add")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -273,7 +275,7 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
             style={styles.findBtnGrad}
           >
             <Ionicons name="search" size={15} color="#FFFFFF" />
-            <Text style={styles.findBtnText}>🔍 Find What I Can Cook</Text>
+            <Text style={styles.findBtnText}>{t("components.smart_meal_suggestions.find_what_i_can_cook")}</Text>
             <Ionicons name="sparkles" size={13} color="rgba(255,255,255,0.8)" />
           </LinearGradient>
         </TouchableOpacity>
@@ -305,7 +307,7 @@ export default function SmartMealSuggestions({ region: regionProp, childAge: age
             ))}
           </ScrollView>
         ) : (
-          <Text style={styles.emptyText}>No meals found. Try removing a fridge item.</Text>
+          <Text style={styles.emptyText}>{t("components.smart_meal_suggestions.no_meals_found_try_removing_a_fridge_ite")}</Text>
         )}
       </View>
 
@@ -436,16 +438,16 @@ function RecipeModal({
               </TouchableOpacity>
               <View style={styles.voiceToggle}>
                 <TouchableOpacity onPress={() => switchVoice("female")} style={[styles.voicePill, voicePref === "female" && styles.voicePillActive]}>
-                  <Text style={[styles.voicePillText, voicePref === "female" && styles.voicePillTextActive]}>♀ Female</Text>
+                  <Text style={[styles.voicePillText, voicePref === "female" && styles.voicePillTextActive]}>{t("components.smart_meal_suggestions.female")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => switchVoice("male")} style={[styles.voicePill, voicePref === "male" && styles.voicePillActive]}>
-                  <Text style={[styles.voicePillText, voicePref === "male" && styles.voicePillTextActive]}>♂ Male</Text>
+                  <Text style={[styles.voicePillText, voicePref === "male" && styles.voicePillTextActive]}>{t("components.smart_meal_suggestions.male")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Ingredients */}
-            <Text style={styles.modalSectionLabel}>🛒  Ingredients</Text>
+            <Text style={styles.modalSectionLabel}>{t("components.smart_meal_suggestions.ingredients")}</Text>
             <View style={styles.tagRow}>
               {meal.ingredients.map(ing => {
                 const matched = meal.matchedIngredients.some(m => ing.includes(m) || m.includes(ing));
@@ -460,7 +462,7 @@ function RecipeModal({
             </View>
 
             {/* Steps */}
-            <Text style={styles.modalSectionLabel}>👨‍🍳  Steps</Text>
+            <Text style={styles.modalSectionLabel}>{t("components.smart_meal_suggestions.steps")}</Text>
             <View style={{ gap: 10 }}>
               {meal.steps.map((step, i) => (
                 <View key={i} style={{ flexDirection: "row", gap: 10 }}>

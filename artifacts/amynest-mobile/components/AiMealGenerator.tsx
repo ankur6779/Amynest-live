@@ -28,6 +28,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { brand, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 interface AiMeal {
   id: string;
@@ -135,6 +136,7 @@ export default function AiMealGenerator({
     setOpenMeal(null);
   }, []);
 
+  const { t } = useTranslation();
   return (
     <View style={styles.wrapper}>
       {/* Header */}
@@ -144,8 +146,8 @@ export default function AiMealGenerator({
             <Ionicons name="sparkles" size={16} color={brand.violet400} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Generate with Amy AI</Text>
-            <Text style={styles.headerSub}>Type what you want to cook</Text>
+            <Text style={styles.headerTitle}>{t("components.ai_meal_generator.generate_with_amy_ai")}</Text>
+            <Text style={styles.headerSub}>{t("components.ai_meal_generator.type_what_you_want_to_cook")}</Text>
           </View>
         </View>
       </View>
@@ -157,7 +159,7 @@ export default function AiMealGenerator({
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="e.g. quick protein tiffin without onion"
+              placeholder={t("components.ai_meal_generator.e_g_quick_protein_tiffin_without_onion")}
               placeholderTextColor="rgba(255,255,255,0.3)"
               style={styles.input}
               returnKeyType="go"
@@ -206,7 +208,7 @@ export default function AiMealGenerator({
             ) : (
               <>
                 <Ionicons name="sparkles" size={15} color="#FFFFFF" />
-                <Text style={styles.generateBtnText}>Generate with Amy AI</Text>
+                <Text style={styles.generateBtnText}>{t("components.ai_meal_generator.generate_with_amy_ai")}</Text>
               </>
             )}
           </LinearGradient>
@@ -248,7 +250,7 @@ export default function AiMealGenerator({
           <Ionicons name="alert-circle-outline" size={20} color={palette.red400} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={() => handleGenerate()} style={styles.retryBtn} activeOpacity={0.8}>
-            <Text style={styles.retryBtnText}>Retry</Text>
+            <Text style={styles.retryBtnText}>{t("components.ai_meal_generator.retry")}</Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -271,7 +273,7 @@ export default function AiMealGenerator({
 
       {/* No results */}
       {!loading && hasGenerated && result && result.meals.length === 0 && !error ? (
-        <Text style={styles.emptyText}>No recipes generated. Try a different description.</Text>
+        <Text style={styles.emptyText}>{t("components.ai_meal_generator.no_recipes_generated_try_a_different_des")}</Text>
       ) : null}
 
       {/* Recipe bottom sheet */}
@@ -375,7 +377,7 @@ function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
               )}
               {meal.isVeg && (
                 <View style={[styles.sheetTag, { backgroundColor: "rgba(34,197,94,0.2)" }]}>
-                  <Text style={[styles.sheetTagText, { color: palette.green600 }]}>🌿 Veg</Text>
+                  <Text style={[styles.sheetTagText, { color: palette.green600 }]}>{t("components.ai_meal_generator.veg")}</Text>
                 </View>
               )}
             </View>
@@ -391,7 +393,7 @@ function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
             </View>
 
             {/* Ingredients */}
-            <Text style={styles.sectionLabel}>🛒  Ingredients</Text>
+            <Text style={styles.sectionLabel}>{t("components.ai_meal_generator.ingredients")}</Text>
             <View style={styles.ingRow}>
               {meal.ingredients.map((ing) => (
                 <View key={ing} style={styles.ingChip}>
@@ -401,7 +403,7 @@ function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
             </View>
 
             {/* Steps */}
-            <Text style={styles.sectionLabel}>👨‍🍳  Steps</Text>
+            <Text style={styles.sectionLabel}>{t("components.ai_meal_generator.steps")}</Text>
             <View style={{ gap: 10 }}>
               {meal.steps.map((step, i) => (
                 <View key={i} style={styles.stepRow}>

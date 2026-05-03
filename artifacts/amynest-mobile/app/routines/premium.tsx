@@ -39,6 +39,7 @@ import AppDataStatusBanner from "@/components/AppDataStatusBanner";
 import { useAppStore } from "@/store/useAppStore";
 import colors, { brand, brandAlpha } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const SIDE_PAD = (SCREEN_W - CARD_W) / 2;
@@ -208,6 +209,7 @@ export default function PremiumRoutineScreen() {
     [],
   );
 
+  const { t } = useTranslation();
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -232,14 +234,14 @@ export default function PremiumRoutineScreen() {
               activeOpacity={0.7}
               testID="premium-back"
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={t("screens.routines_premium.go_back")}
               accessibilityHint="Returns to the previous screen"
             >
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
             <View style={styles.headerCenter}>
-              <Text style={styles.eyebrow}>TODAY'S ROUTINES</Text>
-              <Text style={styles.headerTitle}>Daily Rhythm</Text>
+              <Text style={styles.eyebrow}>{t("screens.routines_premium.today_s_routines")}</Text>
+              <Text style={styles.headerTitle}>{t("screens.routines_premium.daily_rhythm")}</Text>
             </View>
             <View style={styles.progressPill}>
               <Text style={styles.progressPillText}>{Math.round(progress * 100)}%</Text>
@@ -304,7 +306,7 @@ export default function PremiumRoutineScreen() {
           style={[styles.footerHint, { paddingBottom: insets.bottom + 12 }]}
         >
           <Ionicons name="hand-left-outline" size={14} color="rgba(255,255,255,0.55)" />
-          <Text style={styles.footerHintText}>Swipe cards · Tap for details</Text>
+          <Text style={styles.footerHintText}>{t("screens.routines_premium.swipe_cards_tap_for_details")}</Text>
         </Animated.View>
 
         {/* BOTTOM SHEET */}
@@ -342,7 +344,7 @@ export default function PremiumRoutineScreen() {
 
               <Text style={styles.sheetDesc}>{activeRoutine.description}</Text>
 
-              <Text style={styles.sheetSection}>STEPS</Text>
+              <Text style={styles.sheetSection}>{t("screens.routines_premium.steps")}</Text>
               {activeRoutine.steps.map((step, i) => (
                 <View key={i} style={styles.stepRow}>
                   <View style={styles.stepNum}>

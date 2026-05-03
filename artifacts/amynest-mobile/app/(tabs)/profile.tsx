@@ -109,14 +109,14 @@ export default function ProfileScreen() {
 
   const { data: children = [] } = useQuery<Child[]>({
     queryKey: ["children"],
-    queryFn: () => authFetch("/api/children").then(r => r.json()) as Promise<Child[]>,
+    queryFn: () => authFetch("/api/children").then(r =>{t("screens.tabs_profile.r_json_as_promise")}<Child[]>,
   });
 
   // ─── Notification preferences ─────────────────────────────────────────
   type NotifPrefs = { emailNotificationsEnabled: boolean; lastWeeklyRecapSentAt: string | null };
   const { data: notifPrefs } = useQuery<NotifPrefs>({
     queryKey: ["notification-preferences"],
-    queryFn: async () => authFetch("/api/notifications/preferences").then(r => r.json()) as Promise<NotifPrefs>,
+    queryFn: async () => authFetch("/api/notifications/preferences").then(r =>{t("screens.tabs_profile.r_json_as_promise")}<NotifPrefs>,
   });
   const togglePrefMut = useMutation({
     mutationFn: async (enabled: boolean) => {
@@ -362,9 +362,9 @@ export default function ProfileScreen() {
           <View style={{ flex: 1 }}>
             <View style={styles.eyebrowRow}>
               <Ionicons name="person-circle" size={12} color={brand.purple500} />
-              <Text style={styles.eyebrow}>YOUR PARENT PROFILE</Text>
+              <Text style={styles.eyebrow}>{t("screens.tabs_profile.your_parent_profile")}</Text>
             </View>
-            <Text style={[styles.headerTitle, { color: colors.foreground }]}>My Parent Profile</Text>
+            <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t("screens.tabs_profile.my_parent_profile")}</Text>
             <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
               Helps Amy AI build smarter routines for your child.
             </Text>
@@ -413,16 +413,16 @@ export default function ProfileScreen() {
         </View>
 
         {/* Personal Info */}
-        <Section title="Personal Info" subtitle="Basic details about you and your role" colors={colors}>
+        <Section title={t("screens.tabs_profile.personal_info")} subtitle="Basic details about you and your role" colors={colors}>
           <Field label="Your Name" colors={colors}>
             <TextInput
               style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
               value={name}
               onChangeText={setName}
-              placeholder="e.g. Ayesha, Sarah, Ahmed…"
+              placeholder={t("screens.tabs_profile.e_g_ayesha_sarah_ahmed")}
               placeholderTextColor={colors.mutedForeground}
             />
-            <Text style={[styles.hint, { color: colors.mutedForeground }]}>This name appears in your dashboard greeting.</Text>
+            <Text style={[styles.hint, { color: colors.mutedForeground }]}>{t("screens.tabs_profile.this_name_appears_in_your_dashboard_gree")}</Text>
           </Field>
 
           <Field label="Role" colors={colors}>
@@ -446,7 +446,7 @@ export default function ProfileScreen() {
         </Section>
 
         {/* Work Schedule */}
-        <Section title="Work Schedule" subtitle="Amy AI uses this to assign tasks when you're free or busy" colors={colors}>
+        <Section title={t("screens.tabs_profile.work_schedule")} subtitle="Amy AI uses this to assign tasks when you're free or busy" colors={colors}>
           <Field label="Work Type" colors={colors}>
             <ChipPicker options={WORK_TYPES} value={workType} onChange={setWorkType} colors={colors} />
           </Field>
@@ -465,14 +465,14 @@ export default function ProfileScreen() {
 
         {/* Free Slots */}
         <Section
-          title="Free / Available Slots"
+          title={t("screens.tabs_profile.free_available_slots")}
           subtitle="Times during the day you're free for your child"
           icon="time-outline"
           colors={colors}
           headerRight={
             <TouchableOpacity onPress={addFreeSlot} style={[styles.smallBtn, { borderColor: colors.border }]}>
               <Ionicons name="add" size={14} color={colors.primary} />
-              <Text style={[styles.smallBtnText, { color: colors.primary }]}>Add Slot</Text>
+              <Text style={[styles.smallBtnText, { color: colors.primary }]}>{t("screens.tabs_profile.add_slot")}</Text>
             </TouchableOpacity>
           }
         >
@@ -498,7 +498,7 @@ export default function ProfileScreen() {
 
         {/* Food Preferences */}
         <Section
-          title="Food Preferences"
+          title={t("screens.tabs_profile.food_preferences")}
           subtitle="Used by Amy AI to suggest appropriate meals"
           icon="restaurant-outline"
           colors={colors}
@@ -521,7 +521,7 @@ export default function ProfileScreen() {
               ]}
               value={allergies}
               onChangeText={setAllergies}
-              placeholder="e.g. peanuts, shellfish, dairy, gluten…"
+              placeholder={t("screens.tabs_profile.e_g_peanuts_shellfish_dairy_gluten")}
               placeholderTextColor={colors.mutedForeground}
               multiline
               numberOfLines={3}
@@ -544,21 +544,21 @@ export default function ProfileScreen() {
           ) : (
             <>
               <Ionicons name="save-outline" size={16} color="#fff" />
-              <Text style={styles.saveText}>Save Profile</Text>
+              <Text style={styles.saveText}>{t("screens.tabs_profile.save_profile")}</Text>
             </>
           )}
         </TouchableOpacity>
 
         {/* Notifications */}
         <Section
-          title="Notifications"
+          title={t("screens.tabs_profile.notifications")}
           subtitle="Choose what AmyNest sends you"
           icon="mail-unread-outline"
           colors={colors}
         >
           <View style={styles.toggleRow}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[styles.toggleLabel, { color: colors.foreground }]}>Weekly recap email</Text>
+              <Text style={[styles.toggleLabel, { color: colors.foreground }]}>{t("screens.tabs_profile.weekly_recap_email")}</Text>
               <Text style={[styles.toggleHint, { color: colors.mutedForeground }]}>
                 Every Sunday morning — a quick summary of routines, moments, and one thing to try next week.
               </Text>
@@ -601,14 +601,14 @@ export default function ProfileScreen() {
             style={[styles.smallActionBtn, { borderColor: colors.primary, marginTop: 8 }]}
           >
             <Ionicons name="notifications-outline" size={14} color={colors.primary} />
-            <Text style={[styles.smallActionText, { color: colors.primary }]}>Push notification settings</Text>
+            <Text style={[styles.smallActionText, { color: colors.primary }]}>{t("screens.tabs_profile.push_notification_settings")}</Text>
             <Ionicons name="chevron-forward" size={12} color={colors.primary} style={{ marginLeft: "auto" }} />
           </TouchableOpacity>
         </Section>
 
         {/* Language */}
         <Section
-          title="App Language"
+          title={t("screens.tabs_profile.app_language")}
           subtitle="Choose the language for all content"
           icon="language-outline"
           colors={colors}
@@ -643,7 +643,7 @@ export default function ProfileScreen() {
                     {lang.native}
                   </Text>
                   {active && (
-                    <Text style={{ fontSize: 10, color: brand.primary, marginTop: 2 }}>✓ Active</Text>
+                    <Text style={{ fontSize: 10, color: brand.primary, marginTop: 2 }}>{t("screens.tabs_profile.active")}</Text>
                   )}
                 </TouchableOpacity>
               );
@@ -660,7 +660,7 @@ export default function ProfileScreen() {
           }}
         >
           <Ionicons name="restaurant-outline" size={20} color={palette.orange500} />
-          <Text style={[styles.logoutText, { color: palette.orange500 }]}>My Recipes</Text>
+          <Text style={[styles.logoutText, { color: palette.orange500 }]}>{t("screens.tabs_profile.my_recipes")}</Text>
           <Ionicons name="chevron-forward" size={16} color={palette.orange500} style={{ marginLeft: "auto" }} />
         </TouchableOpacity>
 
@@ -673,7 +673,7 @@ export default function ProfileScreen() {
           }}
         >
           <Ionicons name="gift" size={20} color={brand.purple500} />
-          <Text style={[styles.logoutText, { color: brand.purple500 }]}>Invite & Earn Premium</Text>
+          <Text style={[styles.logoutText, { color: brand.purple500 }]}>{t("screens.tabs_profile.invite_earn_premium")}</Text>
           <Ionicons name="chevron-forward" size={16} color={brand.purple500} style={{ marginLeft: "auto" }} />
         </TouchableOpacity>
 
@@ -682,7 +682,7 @@ export default function ProfileScreen() {
           onPress={handleContactUs}
         >
           <Ionicons name="mail-outline" size={20} color={colors.primary} />
-          <Text style={[styles.logoutText, { color: colors.foreground }]}>Contact Us</Text>
+          <Text style={[styles.logoutText, { color: colors.foreground }]}>{t("screens.tabs_profile.contact_us")}</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
         </TouchableOpacity>
 
@@ -692,7 +692,7 @@ export default function ProfileScreen() {
           testID="privacy-policy-link"
         >
           <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
-          <Text style={[styles.logoutText, { color: colors.foreground }]}>Privacy Policy</Text>
+          <Text style={[styles.logoutText, { color: colors.foreground }]}>{t("screens.tabs_profile.privacy_policy")}</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
         </TouchableOpacity>
 
@@ -702,7 +702,7 @@ export default function ProfileScreen() {
           onPress={handleLogout}
         >
           <Ionicons name="log-out-outline" size={20} color={palette.red500} />
-          <Text style={styles.logoutText}>Sign Out</Text>
+          <Text style={styles.logoutText}>{t("screens.tabs_profile.sign_out")}</Text>
         </TouchableOpacity>
 
         {/* Delete account — destructive, separated by extra spacing */}
@@ -732,7 +732,7 @@ export default function ProfileScreen() {
             }}
           >
             <Ionicons name="color-palette-outline" size={18} color={colors.mutedForeground} />
-            <Text style={[styles.devToolsText, { color: colors.mutedForeground }]}>Developer Tools</Text>
+            <Text style={[styles.devToolsText, { color: colors.mutedForeground }]}>{t("screens.tabs_profile.developer_tools")}</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
           </TouchableOpacity>
         )}

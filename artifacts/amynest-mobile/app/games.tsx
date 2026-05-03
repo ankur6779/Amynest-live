@@ -247,7 +247,7 @@ function TargetTapGame({ onFinish }: { onFinish: (s: number, t: number) => void 
       const t: Target = { id: ++idRef.current, x: 10 + Math.random() * 72, y: 10 + Math.random() * 72, born: Date.now() };
       setTargets(a => [...a, t]); totalRef.current += 1; setTotal(totalRef.current);
     }, SPAWN_MS);
-    const clean = setInterval(() => { const now = Date.now(); setTargets(a => a.filter(t => now - t.born < LIFE_MS)); }, 200);
+    const clean = setInterval(() => { const now = Date.now(); setTargets(a => a.filter(t =>{t("screens.games.now_t_born")}< LIFE_MS)); }, 200);
     return () => { clearInterval(tick); clearInterval(spawn); clearInterval(clean); };
   }, []);
 

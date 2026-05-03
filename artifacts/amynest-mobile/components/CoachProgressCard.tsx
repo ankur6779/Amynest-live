@@ -13,6 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { brand, gradients } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -56,6 +57,7 @@ export default function CoachProgressCard({
     setTrackWidth(e.nativeEvent.layout.width);
   };
 
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInDown.duration(500).delay(delay)} style={styles.cardWrap}>
       <LinearGradient
@@ -72,7 +74,7 @@ export default function CoachProgressCard({
             <Ionicons name="sparkles" size={18} color="#fff" />
           </LinearGradient>
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>AMY COACH</Text>
+            <Text style={styles.label}>{t("components.coach_progress_card.amy_coach")}</Text>
             <Text style={[styles.step, { color: c.textStrong }]}>Step {index} of {total}</Text>
           </View>
           <View style={styles.percentPill}>
@@ -107,7 +109,7 @@ export default function CoachProgressCard({
             onContinue();
           }}
           accessibilityRole="button"
-          accessibilityLabel="Continue Amy coaching"
+          accessibilityLabel={t("components.coach_progress_card.continue_amy_coaching")}
           style={[styles.cta, style]}
         >
           <LinearGradient
@@ -116,7 +118,7 @@ export default function CoachProgressCard({
             end={{ x: 1, y: 0 }}
             style={styles.ctaGrad}
           >
-            <Text style={styles.ctaText}>Continue Coaching</Text>
+            <Text style={styles.ctaText}>{t("components.coach_progress_card.continue_coaching")}</Text>
             <Ionicons name="arrow-forward" size={16} color="#fff" />
           </LinearGradient>
         </AnimatedPressable>

@@ -82,7 +82,7 @@ export default function ProgressScreen() {
           <StatCard icon="trophy" color={brand.violet400} label="Milestones" value={stats.milestones} sub="all time" />
         </View>
 
-        <Text style={styles.sectionTitle}>Insights</Text>
+        <Text style={styles.sectionTitle}>{t("screens.progress.insights")}</Text>
         {insights.map((i, idx) => (
           <View key={idx} style={styles.insightCard}>
             <View style={[styles.insightIconWrap, { backgroundColor: i.color + "30", borderColor: i.color }]}>
@@ -99,8 +99,8 @@ export default function ProgressScreen() {
           <LinearGradient colors={[brand.purple500, brand.pink500]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyCtaGrad}>
             <Ionicons name="analytics" size={20} color="#fff" />
             <View style={{ flex: 1 }}>
-              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>View full insights</Text>
-              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, marginTop: 2 }}>Week-over-week trends, per-child breakdown & more</Text>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("screens.progress.view_full_insights")}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, marginTop: 2 }}>{t("screens.progress.week_over_week_trends_per_child_breakdow")}</Text>
             </View>
             <Ionicons name="arrow-forward" size={18} color="#fff" />
           </LinearGradient>
@@ -110,8 +110,8 @@ export default function ProgressScreen() {
           <LinearGradient colors={[colors.light.primary, colors.light.accent]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.askAmyCtaGrad}>
             <MaterialCommunityIcons name="brain" size={20} color="#fff" />
             <View style={{ flex: 1 }}>
-              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>Ask Amy about your progress</Text>
-              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, marginTop: 2 }}>Get a personalized weekly read-out</Text>
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("screens.progress.ask_amy_about_your_progress")}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, marginTop: 2 }}>{t("screens.progress.get_a_personalized_weekly_read_out")}</Text>
             </View>
             <Ionicons name="arrow-forward" size={18} color="#fff" />
           </LinearGradient>

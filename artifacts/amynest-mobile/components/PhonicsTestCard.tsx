@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { brand } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 interface PhonicsTestCardProps {
   childId?: number;
@@ -26,6 +27,7 @@ export function PhonicsTestCard({ childId, onPress, testID = "card-phonics-test"
     }
   };
 
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={handlePress}
@@ -52,7 +54,7 @@ export function PhonicsTestCard({ childId, onPress, testID = "card-phonics-test"
             <Ionicons name="school" size={20} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>🔤 Phonics Test</Text>
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("components.phonics_test_card.phonics_test")}</Text>
             <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>
               Daily 5Q · Weekly 20Q · age-tuned
             </Text>

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { brand, ACCENT_PINK, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -200,6 +201,7 @@ export default function PremiumSplash({ onFinish }: Props) {
       });
     }, 2400);
 
+    const { t } = useTranslation();
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -324,8 +326,8 @@ export default function PremiumSplash({ onFinish }: Props) {
             { opacity: logoOpacity, transform: [{ scale: logoScale }] },
           ]}
         >
-          <Text style={styles.meetLabel}>MEET</Text>
-          <Text style={styles.amyLabel}>AMY</Text>
+          <Text style={styles.meetLabel}>{t("components.premium_splash.meet")}</Text>
+          <Text style={styles.amyLabel}>{t("components.premium_splash.amy")}</Text>
         </Animated.View>
 
         {/* Logo inside gradient ring border */}
@@ -385,7 +387,7 @@ export default function PremiumSplash({ onFinish }: Props) {
 
       {/* Bottom brand mark */}
       <View style={styles.bottom}>
-        <Text style={styles.bottomText}>Powered by AmyNest AI</Text>
+        <Text style={styles.bottomText}>{t("components.premium_splash.powered_by_amynest_ai")}</Text>
       </View>
     </Animated.View>
   );

@@ -4,6 +4,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { brand, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 import {
   WEB_HUB_TILES,
   WEB_SECTION_2_TILES,
@@ -76,13 +77,14 @@ export function HubDebugOverlay({
     section2Diff.extraOnMobile.length +
     section2Diff.missingOnMobile.length;
 
+  const { t } = useTranslation();
   return (
     <>
       <Pressable
         onPress={() => setOpen(true)}
         style={styles.fab}
         testID="hub-debug-fab"
-        accessibilityLabel="Open Hub debug overlay"
+        accessibilityLabel={t("components.hub_debug_overlay.open_hub_debug_overlay")}
       >
         <Ionicons name="bug" size={20} color="#fff" />
         {totalIssues > 0 && (
@@ -96,7 +98,7 @@ export function HubDebugOverlay({
         <View style={styles.backdrop}>
           <View style={styles.sheet}>
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>🐞 Hub Debug — Mobile vs Web</Text>
+              <Text style={styles.headerTitle}>{t("components.hub_debug_overlay.hub_debug_mobile_vs_web")}</Text>
               <Pressable onPress={() => setOpen(false)} testID="hub-debug-close">
                 <Ionicons name="close" size={22} color="#fff" />
               </Pressable>
@@ -118,18 +120,18 @@ export function HubDebugOverlay({
                 {section1Diff.missingOnMobile.length === 0 &&
                  section1Diff.extraOnMobile.length === 0 &&
                  section1Diff.orderMismatches.length === 0 ? (
-                  <Text style={styles.ok}>✓ Section 1 matches web exactly.</Text>
+                  <Text style={styles.ok}>{t("components.hub_debug_overlay.section_1_matches_web_exactly")}</Text>
                 ) : (
                   <>
                     {section1Diff.missingOnMobile.length > 0 && (
-                      <DiffList title="Missing on mobile (web has, mobile doesn't)" tone="warn" ids={section1Diff.missingOnMobile} />
+                      <DiffList title={t("components.hub_debug_overlay.missing_on_mobile_web_has_mobile_doesn_t")} tone="warn" ids={section1Diff.missingOnMobile} />
                     )}
                     {section1Diff.extraOnMobile.length > 0 && (
-                      <DiffList title="Extra on mobile (mobile has, web doesn't)" tone="bad" ids={section1Diff.extraOnMobile} />
+                      <DiffList title={t("components.hub_debug_overlay.extra_on_mobile_mobile_has_web_doesn_t")} tone="bad" ids={section1Diff.extraOnMobile} />
                     )}
                     {section1Diff.orderMismatches.length > 0 && (
                       <View style={{ gap: 4 }}>
-                        <Text style={styles.diffTitleBad}>Order mismatches:</Text>
+                        <Text style={styles.diffTitleBad}>{t("components.hub_debug_overlay.order_mismatches")}</Text>
                         {section1Diff.orderMismatches.map((m) => (
                           <Text key={m.id} style={styles.diffItem}>
                             • <Text style={styles.bold}>{m.id}</Text> — web idx {m.webIndex}, mobile idx {m.mobileIndex}
@@ -154,14 +156,14 @@ export function HubDebugOverlay({
                 <Block label={`Section 2 — mobile renders ${mobileSection2Ids.length}, web renders ${webShowsSection2 ? webSection2Ids.length : 0}`}>
                   {section2Diff.missingOnMobile.length === 0 &&
                    section2Diff.extraOnMobile.length === 0 ? (
-                    <Text style={styles.ok}>✓ Section 2 contents match.</Text>
+                    <Text style={styles.ok}>{t("components.hub_debug_overlay.section_2_contents_match")}</Text>
                   ) : (
                     <>
                       {section2Diff.missingOnMobile.length > 0 && (
-                        <DiffList title="Missing on mobile" tone="warn" ids={section2Diff.missingOnMobile} />
+                        <DiffList title={t("components.hub_debug_overlay.missing_on_mobile")} tone="warn" ids={section2Diff.missingOnMobile} />
                       )}
                       {section2Diff.extraOnMobile.length > 0 && (
-                        <DiffList title="Extra on mobile" tone="bad" ids={section2Diff.extraOnMobile} />
+                        <DiffList title={t("components.hub_debug_overlay.extra_on_mobile")} tone="bad" ids={section2Diff.extraOnMobile} />
                       )}
                     </>
                   )}

@@ -10,6 +10,7 @@ import {
 } from "@workspace/tiffin-feedback";
 import { useColors } from "@/hooks/useColors";
 import { palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 const STORAGE_KEY = "amynest.tiffin_feedback.v1";
 
@@ -74,14 +75,15 @@ export default function TiffinFeedbackPanel({ pickableMeals, onChange }: Props) 
     onChange(next);
   };
 
+  const { t } = useTranslation();
   return (
     <View style={styles.wrap}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.iconBadge}><Text style={{ fontSize: 16 }}>🍱</Text></View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Today's Tiffin Feedback</Text>
-          <Text style={styles.subtitle}>Helps Amy learn what your child loves</Text>
+          <Text style={styles.title}>{t("components.tiffin_feedback_panel.today_s_tiffin_feedback")}</Text>
+          <Text style={styles.subtitle}>{t("components.tiffin_feedback_panel.helps_amy_learn_what_your_child_loves")}</Text>
         </View>
         {summary.totalRated > 0 ? (
           <View style={styles.eatenPill}>
@@ -99,14 +101,14 @@ export default function TiffinFeedbackPanel({ pickableMeals, onChange }: Props) 
             </Text>
             <TouchableOpacity onPress={undoToday} hitSlop={8} style={styles.undoBtn}>
               <Ionicons name="trash-outline" size={11} color={palette.slate400} />
-              <Text style={styles.undoText}>Undo</Text>
+              <Text style={styles.undoText}>{t("components.tiffin_feedback_panel.undo")}</Text>
             </TouchableOpacity>
           </View>
         ) : pickableMeals.length === 0 ? (
-          <Text style={styles.italicMuted}>Suggestions are loading — pick what you packed once they appear.</Text>
+          <Text style={styles.italicMuted}>{t("components.tiffin_feedback_panel.suggestions_are_loading_pick_what_you_pa")}</Text>
         ) : (
           <>
-            <Text style={styles.promptText}>How was today's tiffin?</Text>
+            <Text style={styles.promptText}>{t("components.tiffin_feedback_panel.how_was_today_s_tiffin")}</Text>
             <TouchableOpacity onPress={() => setPickerOpen(true)} style={styles.picker} activeOpacity={0.85}>
               <Text style={styles.pickerText} numberOfLines={1}>
                 {pickedMeal ? `${pickedMeal.emoji ?? ""} ${pickedMeal.title}` : "Choose a meal"}
@@ -148,7 +150,7 @@ export default function TiffinFeedbackPanel({ pickableMeals, onChange }: Props) 
 
         {summary.topLiked.length > 0 ? (
           <View style={{ marginTop: 12 }}>
-            <Text style={styles.sectionLabel}>❤  Top Liked Foods</Text>
+            <Text style={styles.sectionLabel}>{t("components.tiffin_feedback_panel.top_liked_foods")}</Text>
             <View style={styles.chipRow}>
               {summary.topLiked.map(m => (
                 <View key={m.mealId} style={styles.likedChip}>
@@ -165,7 +167,7 @@ export default function TiffinFeedbackPanel({ pickableMeals, onChange }: Props) 
       <Modal visible={pickerOpen} transparent animationType="fade" onRequestClose={() => setPickerOpen(false)}>
         <Pressable style={styles.modalBack} onPress={() => setPickerOpen(false)}>
           <Pressable style={styles.modalSheet} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Which meal?</Text>
+            <Text style={styles.modalTitle}>{t("components.tiffin_feedback_panel.which_meal")}</Text>
             <ScrollView style={{ maxHeight: 320 }}>
               {pickableMeals.map(m => {
                 const active = m.id === pickedMealId;

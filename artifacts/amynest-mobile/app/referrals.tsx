@@ -170,7 +170,7 @@ function GiftTokenItem({ token, onCopy, copiedCode }: { token: GiftToken; onCopy
 
 // ─── Redeem Gift Section ──────────────────────────────────────────────────────
 
-function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) => Promise<{ bonusDays: number }> }) {
+function RedeemGiftCard({ onRedeem }: { onRedeem: (code: string) =>{t("screens.referrals.promise")}<{ bonusDays: number }> }) {
   const colors = useColors();
   const { t } = useTranslation();
   const [code, setCode] = useState("");

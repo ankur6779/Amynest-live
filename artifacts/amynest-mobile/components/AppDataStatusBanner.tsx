@@ -5,6 +5,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { useNetworkStore, selectIsOnline } from "@/store/useNetworkStore";
 import { brand } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 function formatRelative(ts: number | null): string {
   if (!ts) return "";
@@ -30,6 +31,7 @@ export default function AppDataStatusBanner() {
   const c = useColors();
 
   if (!isOnline) {
+    const { t } = useTranslation();
     return (
       <View style={[styles.banner, { backgroundColor: c.statusWarningBg, borderColor: c.statusWarningBorder }]}>
         <Ionicons name="cloud-offline" size={14} color={c.statusWarningText} />
@@ -62,7 +64,7 @@ export default function AppDataStatusBanner() {
           Unable to load data. Tap retry.
         </Text>
         <Pressable onPress={() => void refresh()} hitSlop={8} style={[styles.retryBtn, { backgroundColor: c.destructive }]}>
-          <Text style={styles.retryText}>Retry</Text>
+          <Text style={styles.retryText}>{t("components.app_data_status_banner.retry")}</Text>
         </Pressable>
       </View>
     );
@@ -72,7 +74,7 @@ export default function AppDataStatusBanner() {
     return (
       <View style={[styles.banner, { backgroundColor: c.glass, borderColor: c.glassBorder }]}>
         <ActivityIndicator size="small" color={brand.violet600} />
-        <Text style={[styles.mutedText, { color: c.textSubtle }]}>Refreshing…</Text>
+        <Text style={[styles.mutedText, { color: c.textSubtle }]}>{t("components.app_data_status_banner.refreshing")}</Text>
       </View>
     );
   }
@@ -86,7 +88,7 @@ export default function AppDataStatusBanner() {
           color={c.textSubtle}
         />
         <Text style={[styles.mutedText, { color: c.textSubtle }]}>{formatRelative(lastUpdated)}</Text>
-        {error ? <Text style={[styles.softErr, { color: c.statusErrorText }]}>· offline</Text> : null}
+        {error ? <Text style={[styles.softErr, { color: c.statusErrorText }]}>{t("components.app_data_status_banner.offline")}</Text> : null}
       </View>
     );
   }

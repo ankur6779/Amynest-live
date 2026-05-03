@@ -257,8 +257,8 @@ export default function BehaviorScreen() {
           <Ionicons name="happy" size={18} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Behavior Tracker</Text>
-          <Text style={styles.headerSubtitle}>Log moments — Amy spots the patterns</Text>
+          <Text style={styles.headerTitle}>{t("screens.behavior.behavior_tracker")}</Text>
+          <Text style={styles.headerSubtitle}>{t("screens.behavior.log_moments_amy_spots_the_patterns")}</Text>
         </View>
         <LangToggle lang={lang} setLang={setLang} />
       </View>
@@ -291,7 +291,7 @@ export default function BehaviorScreen() {
               </LockedBlock>
             );
           })}
-          {children.length === 0 && <Text style={{ color: c.textDim, fontSize: 13 }}>Add a child to start tracking</Text>}
+          {children.length === 0 && <Text style={{ color: c.textDim, fontSize: 13 }}>{t("screens.behavior.add_a_child_to_start_tracking")}</Text>}
         </ScrollView>
 
         {/* Per-child quick stat cards (free users see only the first; the rest are paywalled) */}
@@ -305,7 +305,7 @@ export default function BehaviorScreen() {
               const card = (
                 <View style={[styles.childStatCard, { borderColor: c.border }]}>
                   <Text style={[styles.childStatName, { color: c.text }]} numberOfLines={1}>{child.name}</Text>
-                  <Text style={[styles.childStatLabel, { color: c.textMuted }]}>Today</Text>
+                  <Text style={[styles.childStatLabel, { color: c.textMuted }]}>{t("screens.behavior.today")}</Text>
                   <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
                     <Text style={{ fontSize: 11, fontWeight: "800", color: palette.emerald500 }}>😊 {childPos}</Text>
                     <Text style={{ fontSize: 11, fontWeight: "800", color: palette.red500 }}>😡 {childNeg}</Text>
@@ -502,7 +502,7 @@ export default function BehaviorScreen() {
               pressed && { opacity: 0.85 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="View full behavior history"
+            accessibilityLabel={t("screens.behavior.view_full_behavior_history")}
           >
             <Ionicons name="time-outline" size={14} color={palette.sky500} />
             <Text style={{ color: palette.sky500, fontSize: 12.5, fontWeight: "800" }}>

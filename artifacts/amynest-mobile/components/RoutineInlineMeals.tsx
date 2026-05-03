@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { brand, palette } from "@/constants/colors";
 import { API_BASE_URL } from "@/constants/api";
+import { useTranslation } from "react-i18next";
 
 interface RankedMeal {
   id: string;
@@ -89,6 +90,7 @@ export default function RoutineInlineMeals({
         if (!cancelled) setLoading(false);
       }
     })();
+    const { t } = useTranslation();
     return () => { cancelled = true; };
   }, [region, audience, childAge, isVeg, instanceIndex]);
 
@@ -97,7 +99,7 @@ export default function RoutineInlineMeals({
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerEmoji}>🤖</Text>
-        <Text style={styles.headerText}>Amy AI Meal Suggestions</Text>
+        <Text style={styles.headerText}>{t("components.routine_inline_meals.amy_ai_meal_suggestions")}</Text>
       </View>
 
       {/* Cards */}
@@ -108,7 +110,7 @@ export default function RoutineInlineMeals({
           ))}
         </View>
       ) : meals.length === 0 ? (
-        <Text style={styles.emptyText}>No suggestions available.</Text>
+        <Text style={styles.emptyText}>{t("components.routine_inline_meals.no_suggestions_available")}</Text>
       ) : (
         <ScrollView
           horizontal
@@ -227,7 +229,7 @@ function RecipeSheet({ meal, onClose }: { meal: RankedMeal; onClose: () => void 
             </View>
 
             {/* Ingredients */}
-            <Text style={styles.sectionLabel}>Ingredients</Text>
+            <Text style={styles.sectionLabel}>{t("components.routine_inline_meals.ingredients")}</Text>
             <View style={styles.ingredientsRow}>
               {meal.ingredients.map(ing => (
                 <View key={ing} style={styles.ingChip}>
@@ -237,7 +239,7 @@ function RecipeSheet({ meal, onClose }: { meal: RankedMeal; onClose: () => void 
             </View>
 
             {/* Steps */}
-            <Text style={styles.sectionLabel}>Steps</Text>
+            <Text style={styles.sectionLabel}>{t("components.routine_inline_meals.steps")}</Text>
             {meal.steps.map((step, index) => (
               <View key={index} style={styles.stepRow}>
                 <View style={styles.stepNum}>

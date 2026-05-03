@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { brand, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 const THRESHOLD = 100;
 const COMPLETE_COLOR = palette.green500;
@@ -66,7 +67,7 @@ export default function SwipeableCard({
         : r;
       tx.value = elastic;
       const past = Math.abs(elastic) > THRESHOLD;
-      const allowed = (r > 0 && !disableSwipeRight) || (r < 0 && !disableSwipeLeft);
+      const allowed = (r > 0 && !disableSwipeRight) || (r < 0 && !disableSwipeLeft); // i18n-ok: code expression
       if (past && allowed && !crossed.value) {
         crossed.value = true;
         runOnJS(hImpact)();
@@ -180,6 +181,7 @@ export default function SwipeableCard({
     ],
   }));
 
+  const { t } = useTranslation();
   return (
     <Animated.View style={[styles.outer, containerStyle]}>
       {/* Reveal backdrops */}

@@ -11,6 +11,7 @@ import Animated, {
 import ProgressRing from "./ProgressRing";
 import { brand, brandAlpha } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -33,6 +34,7 @@ export default function ChildCard({
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const c = useColors();
 
+  const { t } = useTranslation();
   return (
     <Animated.View
       entering={FadeInDown.duration(550).delay(80)}
@@ -46,7 +48,7 @@ export default function ChildCard({
               <Text style={styles.ageText}>{ageGroup}</Text>
             </View>
             <Text style={[styles.childName, { color: c.textStrong }]}>{childName}</Text>
-            <Text style={[styles.focusLabel, { color: c.textFaint }]}>Current focus</Text>
+            <Text style={[styles.focusLabel, { color: c.textFaint }]}>{t("components.child_card.current_focus")}</Text>
             <Text style={[styles.focusGoal, { color: c.textBody }]} numberOfLines={2}>{focusGoal}</Text>
           </View>
 
@@ -76,7 +78,7 @@ export default function ChildCard({
           accessibilityRole="button"
           accessibilityLabel={`Continue plan for ${childName}`}
         >
-          <Text style={styles.ctaText}>Continue Plan</Text>
+          <Text style={styles.ctaText}>{t("components.child_card.continue_plan")}</Text>
           <Ionicons name="arrow-forward" size={16} color="#fff" />
         </AnimatedPressable>
       </View>

@@ -189,7 +189,7 @@ function ChildrenStrip({ children, onManage, onAdd }: { children: Child[]; onMan
         ))}
         <TouchableOpacity onPress={onAdd} style={[childStripStyles.addTile, { borderColor: brandAlpha.violet600_20 }]}>
           <Text style={{ fontSize: 20 }}>➕</Text>
-          <Text style={[childStripStyles.addLabel, { color: c.mutedForeground }]}>Add child</Text>
+          <Text style={[childStripStyles.addLabel, { color: c.mutedForeground }]}>{t("screens.tabs_index.add_child")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -244,7 +244,7 @@ function StreakCard({ streak, onPress }: { streak: number; onPress: () => void }
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
           <Text style={[streakStyles.num, { color: c.foreground }]}>{streak}</Text>
-          <Text style={[streakStyles.unit, { color: c.mutedForeground }]}>DAY STREAK</Text>
+          <Text style={[streakStyles.unit, { color: c.mutedForeground }]}>{t("screens.tabs_index.day_streak")}</Text>
         </View>
         <Text style={[streakStyles.sub, { color: c.mutedForeground }]}>
           {streak === 0 ? "Start today!" : streak >= 3 ? "You're on a roll!" : "Keep going!"}
@@ -359,7 +359,7 @@ function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: 
     suggestions.push({ emoji: "🌟", text: "Amazing progress today! Consider a small reward to celebrate." });
   }
 
-  if (hour >= 15 && hour <= 17) {
+  if (hour >{t("screens.tabs_index.15_hour")}<= 17) {
     suggestions.push({ emoji: "❤️", text: "Good time for a 15-min bonding activity — a quick walk or board game goes a long way." });
   }
 
@@ -379,11 +379,11 @@ function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: 
     <View style={[amyStyles.wrap, { borderColor: brandAlpha.violet600_18 }]}>
       <View style={[amyStyles.header, { borderBottomColor: brandAlpha.violet600_15 }]}>
         <Text style={amyStyles.amyEmoji}>🤖</Text>
-        <Text style={[amyStyles.headerText, { color: c.foreground }]}>Amy AI Suggests</Text>
+        <Text style={[amyStyles.headerText, { color: c.foreground }]}>{t("screens.tabs_index.amy_ai_suggests")}</Text>
       </View>
       <View style={amyStyles.body}>
         {display.length === 0 ? (
-          <Text style={[amyStyles.allGood, { color: c.mutedForeground }]}>All looking good today!</Text>
+          <Text style={[amyStyles.allGood, { color: c.mutedForeground }]}>{t("screens.tabs_index.all_looking_good_today")}</Text>
         ) : (
           display.map((s, i) => (
             <View key={i} style={[amyStyles.tip, { borderColor: brandAlpha.violet600_12, backgroundColor: "rgba(255,255,255,0.04)" }]}>
@@ -447,7 +447,7 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
     <View style={[scoreStyles.card, { borderColor: brandAlpha.violet600_15, backgroundColor: c.surface ?? "rgba(255,255,255,0.04)" }]}>
       <View style={scoreStyles.header}>
         <Ionicons name="trophy-outline" size={16} color={brand.violet500} />
-        <Text style={[scoreStyles.headerText, { color: c.foreground }]}>Parent Score</Text>
+        <Text style={[scoreStyles.headerText, { color: c.foreground }]}>{t("screens.tabs_index.parent_score")}</Text>
       </View>
       <View style={scoreStyles.body}>
         <View style={[scoreStyles.gradeBadge, { backgroundColor: brandAlpha.violet600_12, borderColor: brandAlpha.violet600_18 }]}>
@@ -463,14 +463,14 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
       </View>
       <View style={scoreStyles.bars}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-          <Text style={[scoreStyles.barLabel, { color: c.mutedForeground }]}>Completion</Text>
+          <Text style={[scoreStyles.barLabel, { color: c.mutedForeground }]}>{t("screens.tabs_index.completion")}</Text>
           <Text style={[scoreStyles.barValue, { color: c.foreground }]}>{completionRate}%</Text>
         </View>
         <View style={[scoreStyles.track, { backgroundColor: brandAlpha.violet600_12 }]}>
           <View style={[scoreStyles.fill, { width: `${completionRate}%` as any, backgroundColor: brand.violet500 }]} />
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4, marginTop: 10 }}>
-          <Text style={[scoreStyles.barLabel, { color: c.mutedForeground }]}>Days active</Text>
+          <Text style={[scoreStyles.barLabel, { color: c.mutedForeground }]}>{t("screens.tabs_index.days_active")}</Text>
           <Text style={[scoreStyles.barValue, { color: c.foreground }]}>{daysActive}/7</Text>
         </View>
         <View style={[scoreStyles.track, { backgroundColor: brandAlpha.violet600_12 }]}>
@@ -479,7 +479,7 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
       </View>
       {score < 60 && (
         <View style={[scoreStyles.hint, { borderColor: brandAlpha.violet600_12, backgroundColor: brandAlpha.violet600_04 }]}>
-          <Text style={[{ fontSize: 12, color: c.mutedForeground }]}>💡 Complete 5+ tasks per day to boost your score!</Text>
+          <Text style={[{ fontSize: 12, color: c.mutedForeground }]}>{t("screens.tabs_index.complete_5_tasks_per_day_to_boost_your_s")}</Text>
         </View>
       )}
     </View>
@@ -526,7 +526,7 @@ function RecentRoutinesList({
     return (
       <View style={[recentStyles.card, recentStyles.empty, { borderColor: brandAlpha.violet600_15, borderStyle: "dashed" }]}>
         <Ionicons name="calendar-outline" size={28} color={brand.violet300} />
-        <Text style={[recentStyles.emptyText, { color: c.mutedForeground }]}>No routines yet</Text>
+        <Text style={[recentStyles.emptyText, { color: c.mutedForeground }]}>{t("screens.tabs_index.no_routines_yet")}</Text>
       </View>
     );
   }
@@ -599,7 +599,7 @@ function BehaviorHighlights({ stats, loading }: { stats: BehaviorStat[]; loading
   if (stats.length === 0) {
     return (
       <View style={[behaviorStyles.card, behaviorStyles.empty, { borderColor: brandAlpha.violet600_15, borderStyle: "dashed" }]}>
-        <Text style={[{ fontSize: 13, fontWeight: "500" }, { color: c.mutedForeground }]}>No behavior logged yet</Text>
+        <Text style={[{ fontSize: 13, fontWeight: "500" }, { color: c.mutedForeground }]}>{t("screens.tabs_index.no_behavior_logged_yet")}</Text>
       </View>
     );
   }
@@ -675,12 +675,12 @@ function RewardsCard({ onViewAll }: { onViewAll: () => void }) {
       <View style={rewardsStyles.header}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Ionicons name="trophy-outline" size={16} color={brand.violet600} />
-          <Text style={[rewardsStyles.headerText, { color: c.foreground }]}>Rewards & Points</Text>
+          <Text style={[rewardsStyles.headerText, { color: c.foreground }]}>{t("screens.tabs_index.rewards_points")}</Text>
         </View>
         <View style={rewardsStyles.pointsBadge}>
           <Ionicons name="star" size={12} color={brand.violet500} />
           <Text style={rewardsStyles.pointsNum}>{points}</Text>
-          <Text style={rewardsStyles.pointsPts}>pts</Text>
+          <Text style={rewardsStyles.pointsPts}>{t("screens.tabs_index.pts")}</Text>
         </View>
       </View>
 
@@ -693,7 +693,7 @@ function RewardsCard({ onViewAll }: { onViewAll: () => void }) {
 
         {badges.length > 0 ? (
           <View style={{ marginBottom: 14 }}>
-            <Text style={[rewardsStyles.subLabel, { color: c.mutedForeground }]}>BADGES EARNED</Text>
+            <Text style={[rewardsStyles.subLabel, { color: c.mutedForeground }]}>{t("screens.tabs_index.badges_earned")}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
               {badges.map((b) => (
                 <View key={b.id} style={rewardsStyles.badgePill}>
@@ -708,7 +708,7 @@ function RewardsCard({ onViewAll }: { onViewAll: () => void }) {
           </Text>
         )}
 
-        <Text style={[rewardsStyles.subLabel, { color: c.mutedForeground }]}>REWARD STORE</Text>
+        <Text style={[rewardsStyles.subLabel, { color: c.mutedForeground }]}>{t("screens.tabs_index.reward_store")}</Text>
         <View style={{ gap: 8, marginTop: 6 }}>
           {rewards.slice(0, 3).map((r) => (
             <View key={r.id} style={[rewardsStyles.rewardRow, { borderColor: brandAlpha.violet600_12, backgroundColor: brandAlpha.violet600_04 }]}>
@@ -722,14 +722,14 @@ function RewardsCard({ onViewAll }: { onViewAll: () => void }) {
                 style={[rewardsStyles.redeemBtn, points >= r.cost ? rewardsStyles.redeemBtnActive : rewardsStyles.redeemBtnDisabled]}
                 activeOpacity={0.8}
               >
-                <Text style={[rewardsStyles.redeemBtnText, points < r.cost && { color: c.mutedForeground }]}>Redeem</Text>
+                <Text style={[rewardsStyles.redeemBtnText, points < r.cost && { color: c.mutedForeground }]}>{t("screens.tabs_index.redeem")}</Text>
               </TouchableOpacity>
             </View>
           ))}
         </View>
 
         <TouchableOpacity onPress={onViewAll} style={rewardsStyles.viewAll} activeOpacity={0.7}>
-          <Text style={rewardsStyles.viewAllText}>View All Rewards →</Text>
+          <Text style={rewardsStyles.viewAllText}>{t("screens.tabs_index.view_all_rewards")}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -788,11 +788,11 @@ function OnboardingScreen({ displayName, onGetStarted, onExploreHub }: {
         end={{ x: 1, y: 1 }}
         style={onboardStyles.hero}
       >
-        <Text style={onboardStyles.heroEyebrow}>Meet Amy AI</Text>
+        <Text style={onboardStyles.heroEyebrow}>{t("screens.tabs_index.meet_amy_ai")}</Text>
         <Text style={onboardStyles.heroTitle}>
           👋 Hi{displayName ? `, ${displayName}` : ""} 😊
         </Text>
-        <Text style={onboardStyles.heroSub}>I'm Amy — your smart parenting partner ❤️</Text>
+        <Text style={onboardStyles.heroSub}>{t("screens.tabs_index.i_m_amy_your_smart_parenting_partner")}</Text>
         <Text style={onboardStyles.heroDesc}>
           Create personalised routines, track progress, and make parenting easier — one day at a time.
         </Text>
@@ -821,7 +821,7 @@ function OnboardingScreen({ displayName, onGetStarted, onExploreHub }: {
         <TouchableOpacity onPress={onGetStarted} activeOpacity={0.85}>
           <LinearGradient colors={[brand.violet600, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={onboardStyles.primaryCta}>
             <Ionicons name="sparkles" size={18} color="#fff" />
-            <Text style={onboardStyles.primaryCtaText}>✨ Experience Now</Text>
+            <Text style={onboardStyles.primaryCtaText}>{t("screens.tabs_index.experience_now")}</Text>
           </LinearGradient>
         </TouchableOpacity>
         <TouchableOpacity
@@ -829,7 +829,7 @@ function OnboardingScreen({ displayName, onGetStarted, onExploreHub }: {
           activeOpacity={0.85}
           style={[onboardStyles.secondaryCta, { borderColor: brandAlpha.violet600_25 }]}
         >
-          <Text style={[onboardStyles.secondaryCtaText, { color: c.foreground }]}>📖 Explore Parenting Hub</Text>
+          <Text style={[onboardStyles.secondaryCtaText, { color: c.foreground }]}>{t("screens.tabs_index.explore_parenting_hub")}</Text>
         </TouchableOpacity>
       </View>
       <Text style={[onboardStyles.footer, { color: c.mutedForeground }]}>

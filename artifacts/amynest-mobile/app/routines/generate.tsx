@@ -686,8 +686,8 @@ export default function GenerateRoutineScreen() {
         <Stack.Screen options={{ title: "Generate Routine" }} />
         <View style={styles.emptyWrap}>
           <Text style={{ fontSize: 48, marginBottom: 12 }}>👶</Text>
-          <Text style={styles.emptyTitle}>Add a child first</Text>
-          <Text style={styles.emptySub}>Amy needs to know about your child before she can plan their day.</Text>
+          <Text style={styles.emptyTitle}>{t("screens.routines_generate.add_a_child_first")}</Text>
+          <Text style={styles.emptySub}>{t("screens.routines_generate.amy_needs_to_know_about_your_child_befor")}</Text>
           <TouchableOpacity
             onPress={() => router.replace("/children/new" as never)}
             activeOpacity={0.9}
@@ -695,7 +695,7 @@ export default function GenerateRoutineScreen() {
           >
             <LinearGradient colors={[brand.purple500, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtn}>
               <Ionicons name="person-add" size={16} color="#fff" />
-              <Text style={styles.primaryBtnText}>Add child</Text>
+              <Text style={styles.primaryBtnText}>{t("screens.routines_generate.add_child")}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -715,8 +715,8 @@ export default function GenerateRoutineScreen() {
         {/* Hero */}
         <LinearGradient colors={["rgba(123,63,242,0.22)", "rgba(255,78,205,0.18)"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.hero}>
           <View style={styles.heroIcon}><Ionicons name="sparkles" size={20} color="#fff" /></View>
-          <Text style={styles.heroTitle}>Plan your child's day</Text>
-          <Text style={styles.heroSub}>Amy will build a smart, age-appropriate routine in seconds.</Text>
+          <Text style={styles.heroTitle}>{t("screens.routines_generate.plan_your_child_s_day")}</Text>
+          <Text style={styles.heroSub}>{t("screens.routines_generate.amy_will_build_a_smart_age_appropriate_r")}</Text>
         </LinearGradient>
 
         {/* Mode toggle: Single vs Family (only when more than 1 child) */}
@@ -1266,7 +1266,7 @@ function SingleModeBody(props: {
       </View>
 
       {/* School toggle */}
-      <Text style={styles.sectionLabel}>School day?</Text>
+      <Text style={styles.sectionLabel}>{t("screens.routines_generate.school_day")}</Text>
       <View style={styles.chipsRow}>
         {[
           { label: "🎒 Yes, school", value: true },
@@ -1286,11 +1286,11 @@ function SingleModeBody(props: {
         })}
       </View>
 
-      <Text style={styles.sectionLabel}>Anything special today? <Text style={styles.optional}>(optional)</Text></Text>
+      <Text style={styles.sectionLabel}>{t("screens.routines_generate.anything_special_today")}<Text style={styles.optional}>{t("screens.routines_generate.optional")}</Text></Text>
       <TextInput
         value={specialPlans}
         onChangeText={setSpecialPlans}
-        placeholder="e.g. doctor visit at 4pm, birthday party, swimming class…"
+        placeholder={t("screens.routines_generate.e_g_doctor_visit_at_4pm_birthday_party_s")}
         placeholderTextColor={colors.textFaint}
         style={styles.textarea}
         multiline
@@ -1298,11 +1298,11 @@ function SingleModeBody(props: {
         textAlignVertical="top"
       />
 
-      <Text style={styles.sectionLabel}>Food items at home <Text style={styles.optional}>(optional)</Text></Text>
+      <Text style={styles.sectionLabel}>{t("screens.routines_generate.food_items_at_home")}<Text style={styles.optional}>{t("screens.routines_generate.optional")}</Text></Text>
       <TextInput
         value={fridgeItems}
         onChangeText={setFridgeItems}
-        placeholder="e.g. paneer, tomato, eggs, spinach, leftover dal…"
+        placeholder={t("screens.routines_generate.e_g_paneer_tomato_eggs_spinach_leftover")}
         placeholderTextColor={colors.textFaint}
         style={styles.textarea}
         multiline
@@ -1417,22 +1417,22 @@ function FamilyModeBody(props: {
       </View>
       <Text style={styles.handlerNote}>{getHandlerInfo(handlerType).note}</Text>
 
-      <Text style={styles.sectionLabel}>{t("routines_generate.family_special_plans", { defaultValue: "Anything special today?" })} <Text style={styles.optional}>(optional)</Text></Text>
+      <Text style={styles.sectionLabel}>{t("routines_generate.family_special_plans", { defaultValue: "Anything special today?" })} <Text style={styles.optional}>{t("screens.routines_generate.optional")}</Text></Text>
       <TextInput
         value={specialPlans}
         onChangeText={setSpecialPlans}
-        placeholder="e.g. family outing, doctor visit, party…"
+        placeholder={t("screens.routines_generate.e_g_family_outing_doctor_visit_party")}
         placeholderTextColor={colors.textFaint}
         style={styles.textarea}
         multiline
         numberOfLines={3}
         textAlignVertical="top"
       />
-      <Text style={styles.sectionLabel}>{t("routines_generate.family_fridge", { defaultValue: "Food items at home" })} <Text style={styles.optional}>(optional)</Text></Text>
+      <Text style={styles.sectionLabel}>{t("routines_generate.family_fridge", { defaultValue: "Food items at home" })} <Text style={styles.optional}>{t("screens.routines_generate.optional")}</Text></Text>
       <TextInput
         value={fridgeItems}
         onChangeText={setFridgeItems}
-        placeholder="e.g. paneer, tomato, eggs…"
+        placeholder={t("screens.routines_generate.e_g_paneer_tomato_eggs")}
         placeholderTextColor={colors.textFaint}
         style={styles.textarea}
         multiline
@@ -1475,7 +1475,7 @@ function ParentAvailEntryCard({
       <TextInput
         value={entry.role}
         onChangeText={(v) => onChange({ role: v })}
-        placeholder="Mother, Father, Caregiver…"
+        placeholder={t("screens.routines_generate.mother_father_caregiver")}
         placeholderTextColor={colors.textFaint}
         style={styles.smallInput}
       />
@@ -1716,7 +1716,7 @@ function GenerateProgressOverlay({
             ? <View style={[styles.progressBarFill, { width: familyPct }]} />
             : <Animated.View style={[styles.progressBarFill, { width: singleWidth }]} />}
         </View>
-        <Text style={styles.progressHint}>This usually takes a few seconds.</Text>
+        <Text style={styles.progressHint}>{t("screens.routines_generate.this_usually_takes_a_few_seconds")}</Text>
       </View>
     </View>
   );

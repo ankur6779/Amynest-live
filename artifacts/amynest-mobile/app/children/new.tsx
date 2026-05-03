@@ -140,7 +140,7 @@ export default function NewChildScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: botPad + 32, paddingTop: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.title, { color: colors.foreground }]}>Add Child</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>{t("screens.children_new.add_child")}</Text>
 
         {/* Photo picker */}
         <View style={styles.photoBlock}>
@@ -150,7 +150,7 @@ export default function NewChildScreen() {
             activeOpacity={0.85}
             style={[styles.photoCircle, { backgroundColor: colors.secondary, borderColor: colors.border }]}
             accessibilityRole="button"
-            accessibilityLabel="Add child photo"
+            accessibilityLabel={t("screens.children_new.add_child_photo")}
             testID="child-photo-picker"
           >
             {photoUrl ? (
@@ -173,11 +173,11 @@ export default function NewChildScreen() {
         </View>
 
         <View style={styles.formSection}>
-          <Field label="Child's Name *" value={name} onChange={setName} colors={colors} placeholder="Enter name" />
+          <Field label="Child's Name *" value={name} onChange={setName} colors={colors} placeholder={t("screens.children_new.enter_name")} />
           <Field label="Date of Birth (YYYY-MM-DD)" value={dob} onChange={setDob} colors={colors} placeholder="e.g. 2020-05-15" keyboardType="numeric" />
 
           <View style={styles.switchRow}>
-            <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>School Going</Text>
+            <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{t("screens.children_new.school_going")}</Text>
             <TouchableOpacity
               style={[styles.toggle, { backgroundColor: isSchool ? colors.primary : colors.muted }]}
               onPress={() => { setIsSchool(!isSchool); Haptics.selectionAsync(); }}
@@ -218,7 +218,7 @@ export default function NewChildScreen() {
           <Field label="Wake Up Time (HH:MM)" value={wakeUp} onChange={setWakeUp} colors={colors} placeholder="07:00" />
           <Field label="Sleep Time (HH:MM)" value={sleep} onChange={setSleep} colors={colors} placeholder="21:00" />
 
-          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>Food Preference</Text>
+          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>{t("screens.children_new.food_preference")}</Text>
           <View style={styles.chipRow}>
             {FOOD_TYPES.map(f => (
               <TouchableOpacity key={f.value}
@@ -237,7 +237,7 @@ export default function NewChildScreen() {
               style={[styles.chip, { backgroundColor: babysitterId === null ? colors.primary : colors.card, borderColor: babysitterId === null ? colors.primary : colors.border }]}
               onPress={() => { setBabysitterId(null); Haptics.selectionAsync(); }}
             >
-              <Text style={[styles.chipText, { color: babysitterId === null ? "#fff" : colors.foreground }]}>None</Text>
+              <Text style={[styles.chipText, { color: babysitterId === null ? "#fff" : colors.foreground }]}>{t("screens.children_new.none")}</Text>
             </TouchableOpacity>
             {babysitters.map((b) => (
               <TouchableOpacity key={b.id}
@@ -264,7 +264,7 @@ export default function NewChildScreen() {
           {saving ? <ActivityIndicator color="#fff" size="small" /> : (
             <>
               <Ionicons name="checkmark" size={20} color="#fff" />
-              <Text style={styles.saveBtnText}>Add Child</Text>
+              <Text style={styles.saveBtnText}>{t("screens.children_new.add_child")}</Text>
             </>
           )}
         </TouchableOpacity>

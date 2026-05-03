@@ -141,8 +141,8 @@ export default function BehaviorHistoryScreen() {
             <Ionicons name="chevron-back" size={22} color={c.text} />
           </Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.headerTitle, { color: c.text }]}>Behavior History</Text>
-            <Text style={[styles.headerSub, { color: c.textMuted }]}>Last 90 days</Text>
+            <Text style={[styles.headerTitle, { color: c.text }]}>{t("screens.behavior_history.behavior_history")}</Text>
+            <Text style={[styles.headerSub, { color: c.textMuted }]}>{t("screens.behavior_history.last_90_days")}</Text>
           </View>
         </View>
 
@@ -196,7 +196,7 @@ export default function BehaviorHistoryScreen() {
         ) : grouped.length === 0 ? (
           <View style={styles.center}>
             <Ionicons name="document-text-outline" size={42} color={c.textSubtle} />
-            <Text style={[styles.emptyTitle, { color: c.text }]}>No history yet</Text>
+            <Text style={[styles.emptyTitle, { color: c.text }]}>{t("screens.behavior_history.no_history_yet")}</Text>
             <Text style={[styles.emptySub, { color: c.textMuted }]}>
               Log behaviors from the Behavior tab — they'll show up here.
             </Text>

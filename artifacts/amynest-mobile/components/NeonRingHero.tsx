@@ -3,6 +3,7 @@ import { View, Text, Animated, Easing, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from "react-native-svg";
 import { brand } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 const OUTER = 170;
 const INNER = 136;
@@ -87,6 +88,7 @@ export default function NeonRingHero() {
     glowLoop.start();
     amyGlowLoop.start();
 
+    const { t } = useTranslation();
     return () => {
       spinLoop.stop();
       pulseLoop.stop();
@@ -136,7 +138,7 @@ export default function NeonRingHero() {
 
         {/* Inner dark circle */}
         <View style={styles.innerCircle}>
-          <Text style={styles.meetText}>Meet</Text>
+          <Text style={styles.meetText}>{t("components.neon_ring_hero.meet")}</Text>
 
           {/* Gradient "AMY" using SVG — opacity + subtle scale pulse on ~3.2s loop */}
           <Animated.View style={{ opacity: amyGlowAnim, transform: [{ scale: amyScale }] }}>

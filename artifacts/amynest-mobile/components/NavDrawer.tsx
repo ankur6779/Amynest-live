@@ -20,6 +20,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useSubscriptionStore, selectIsPremium } from "@/store/useSubscriptionStore";
 import { brand } from "@/constants/colors";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 const DRAWER_WIDTH = 280;
 
@@ -119,6 +120,7 @@ export function NavDrawer() {
     return null;
   }
 
+  const { t } = useTranslation();
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {/* Backdrop */}
@@ -211,7 +213,7 @@ export function NavDrawer() {
               color="rgba(255,255,255,0.75)"
               style={styles.navIcon}
             />
-            <Text style={styles.navLabel}>Dark mode</Text>
+            <Text style={styles.navLabel}>{t("components.nav_drawer.dark_mode")}</Text>
             <Switch
               value={mode === "dark"}
               onValueChange={() => {
@@ -230,7 +232,7 @@ export function NavDrawer() {
             onPress={handleSignOut}
           >
             <Ionicons name="log-out-outline" size={18} color="rgba(255,100,100,0.85)" style={styles.navIcon} />
-            <Text style={[styles.navLabel, { color: "rgba(255,120,120,0.9)" }]}>Sign out</Text>
+            <Text style={[styles.navLabel, { color: "rgba(255,120,120,0.9)" }]}>{t("components.nav_drawer.sign_out")}</Text>
           </Pressable>
         </View>
       </Animated.View>

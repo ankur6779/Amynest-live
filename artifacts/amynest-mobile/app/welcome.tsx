@@ -204,11 +204,11 @@ export default function WelcomeScreen() {
           <View style={styles.nav}>
             <View style={styles.navBrand}>
               <Text style={styles.navBrandText}>
-                <Text style={styles.navBrandAmy}>Amy</Text>
-                <Text style={styles.navBrandNest}>Nest</Text>
+                <Text style={styles.navBrandAmy}>{t("screens.welcome.amy")}</Text>
+                <Text style={styles.navBrandNest}>{t("screens.welcome.nest")}</Text>
                 <Text style={styles.navBrandAi}> AI</Text>
               </Text>
-              <Text style={styles.navBrandTag}>Where Smart Parenting Starts</Text>
+              <Text style={styles.navBrandTag}>{t("screens.welcome.where_smart_parenting_starts")}</Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               {/* Language picker pill */}
@@ -234,7 +234,7 @@ export default function WelcomeScreen() {
             <Pressable style={styles.langOverlay} onPress={() => setLangOpen(false)}>
               <View style={styles.langSheet}>
                 <View style={styles.langSheetHandle} />
-                <Text style={styles.langSheetTitle}>Choose Language</Text>
+                <Text style={styles.langSheetTitle}>{t("screens.welcome.choose_language")}</Text>
                 {SUPPORTED_LANGUAGES.map((lang) => {
                   const active = lang.code === i18n.language;
                   return (
@@ -303,7 +303,7 @@ export default function WelcomeScreen() {
               <TouchableOpacity activeOpacity={0.7} style={{ marginTop: 14 }} testID="link-sign-in-hero">
                 <Text style={styles.signInLine}>
                   Already a Smart Parent?{" "}
-                  <Text style={styles.signInLineEmphasis}>Kindly Sign In</Text>
+                  <Text style={styles.signInLineEmphasis}>{t("screens.welcome.kindly_sign_in")}</Text>
                 </Text>
               </TouchableOpacity>
             </Link>
@@ -374,7 +374,7 @@ export default function WelcomeScreen() {
                 </LinearGradient>
                 <View style={styles.coachHeaderText}>
                   <View style={styles.coachTitleRow}>
-                    <Text style={styles.coachTitle}>Amy Coach</Text>
+                    <Text style={styles.coachTitle}>{t("screens.welcome.amy_coach")}</Text>
                     <LinearGradient
                       colors={[brand.purple500, brand.pink500] as const}
                       start={{ x: 0, y: 0 }}
@@ -409,13 +409,13 @@ export default function WelcomeScreen() {
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-                    <Text style={styles.kidsCCTitle}>Kids Control Center</Text>
+                    <Text style={styles.kidsCCTitle}>{t("screens.welcome.kids_control_center")}</Text>
                     <LinearGradient
                       colors={[brand.violet600, ACCENT_PINK]}
                       start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                       style={styles.comingSoonPill}
                     >
-                      <Text style={styles.comingSoonText}>Coming Soon</Text>
+                      <Text style={styles.comingSoonText}>{t("screens.welcome.coming_soon")}</Text>
                     </LinearGradient>
                   </View>
                   <Text style={styles.kidsCCDesc}>
@@ -470,10 +470,10 @@ export default function WelcomeScreen() {
           <View style={styles.sectionWrap}>
             <View style={styles.eyebrow}>
               <Ionicons name="sparkles" size={11} color={palette.cyan400} />
-              <Text style={styles.eyebrowText}>Everything in One App</Text>
+              <Text style={styles.eyebrowText}>{t("screens.welcome.everything_in_one_app")}</Text>
             </View>
-            <Text style={styles.sectionTitle}>14+ Science-Backed Tools</Text>
-            <Text style={styles.sectionSub}>From newborns to teens — every feature grounded in child psychology, AAP guidelines, and developmental research.</Text>
+            <Text style={styles.sectionTitle}>{t("screens.welcome.14_science_backed_tools")}</Text>
+            <Text style={styles.sectionSub}>{t("screens.welcome.from_newborns_to_teens_every_feature_gro")}</Text>
 
             <View style={styles.featuresGrid}>
               {ALL_FEATURES.map((f) => (
@@ -509,11 +509,11 @@ export default function WelcomeScreen() {
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={[styles.cta, { minWidth: 240, paddingVertical: 14 }]}
               >
-                <Text style={[styles.ctaText, { fontSize: 15 }]}>Unlock All Features Free</Text>
+                <Text style={[styles.ctaText, { fontSize: 15 }]}>{t("screens.welcome.unlock_all_features_free")}</Text>
                 <Ionicons name="arrow-forward" size={18} color="#fff" />
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={styles.smallNote}>Free plan included · Upgrade anytime</Text>
+            <Text style={styles.smallNote}>{t("screens.welcome.free_plan_included_upgrade_anytime")}</Text>
           </View>
 
           {/* HOW IT WORKS */}
@@ -553,10 +553,10 @@ export default function WelcomeScreen() {
           <View style={styles.sectionWrap}>
             <View style={styles.eyebrow}>
               <Ionicons name="heart" size={11} color={brand.pink400} />
-              <Text style={styles.eyebrowText}>Parent Stories</Text>
+              <Text style={styles.eyebrowText}>{t("screens.welcome.parent_stories")}</Text>
             </View>
-            <Text style={styles.sectionTitle}>Real Parents, Real Results</Text>
-            <Text style={styles.sectionSub}>Thousands of families use AmyNest every day to raise happier, calmer, more confident kids.</Text>
+            <Text style={styles.sectionTitle}>{t("screens.welcome.real_parents_real_results")}</Text>
+            <Text style={styles.sectionSub}>{t("screens.welcome.thousands_of_families_use_amynest_every")}</Text>
 
             {TESTIMONIALS.map((t) => (
               <View key={t.name} style={styles.testimonialCard}>
@@ -636,12 +636,12 @@ export default function WelcomeScreen() {
           <View style={styles.footer}>
             <View style={styles.footerBrand}>
               <Text style={styles.footerBrandText}>
-                <Text style={styles.navBrandAmy}>Amy</Text>
-                <Text style={styles.navBrandNest}>Nest</Text>
+                <Text style={styles.navBrandAmy}>{t("screens.welcome.amy")}</Text>
+                <Text style={styles.navBrandNest}>{t("screens.welcome.nest")}</Text>
                 <Text style={styles.navBrandAi}> AI</Text>
               </Text>
             </View>
-            <Text style={styles.footerTag}>Where Smart Parenting Starts</Text>
+            <Text style={styles.footerTag}>{t("screens.welcome.where_smart_parenting_starts")}</Text>
           </View>
         </ScrollView>
       </LinearGradient>

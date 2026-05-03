@@ -12,6 +12,7 @@ import {
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ACCENT_PINK, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 const DAILY_LIMIT = 5;
 const PAGE_SIZE = 8;
@@ -122,10 +123,11 @@ export function PrintableWorksheets() {
   }, [limitReached, mode]);
 
   if (loading) {
+    const { t } = useTranslation();
     return (
       <View style={s.center}>
         <ActivityIndicator color={ACCENT_PINK} />
-        <Text style={s.dim}>Loading worksheets…</Text>
+        <Text style={s.dim}>{t("components.printable_worksheets.loading_worksheets")}</Text>
       </View>
     );
   }
@@ -134,7 +136,7 @@ export function PrintableWorksheets() {
       <View style={s.center}>
         <Text style={s.errText}>⚠ {error}</Text>
         <Pressable onPress={load} style={s.retryBtn}>
-          <Text style={s.retryText}>Try again</Text>
+          <Text style={s.retryText}>{t("components.printable_worksheets.try_again")}</Text>
         </Pressable>
       </View>
     );
@@ -166,7 +168,7 @@ export function PrintableWorksheets() {
         <TextInput
           value={query}
           onChangeText={(t) => { setQuery(t); setPage(1); }}
-          placeholder="Search worksheets…"
+          placeholder={t("components.printable_worksheets.search_worksheets")}
           placeholderTextColor={c.textDim}
           style={s.searchInput}
         />
@@ -189,8 +191,8 @@ export function PrintableWorksheets() {
       {allDownloaded ? (
         <View style={s.empty}>
           <Text style={{ fontSize: 36 }}>🎉</Text>
-          <Text style={s.emptyTitle}>All worksheets viewed</Text>
-          <Text style={s.emptyDesc}>You've gone through the whole collection. New worksheets added regularly!</Text>
+          <Text style={s.emptyTitle}>{t("components.printable_worksheets.all_worksheets_viewed")}</Text>
+          <Text style={s.emptyDesc}>{t("components.printable_worksheets.you_ve_gone_through_the_whole_collection")}</Text>
         </View>
       ) : filtered.length === 0 ? (
         <View style={s.empty}>
@@ -211,7 +213,7 @@ export function PrintableWorksheets() {
                 onPress={() => setPage(cur - 1)}
                 style={[s.pageBtn, cur === 1 && s.pageBtnDisabled]}
               >
-                <Text style={s.pageBtnText}>← Prev</Text>
+                <Text style={s.pageBtnText}>{t("components.printable_worksheets.prev")}</Text>
               </Pressable>
               <Text style={s.pageInfo}>{cur} / {totalPages}</Text>
               <Pressable
@@ -219,7 +221,7 @@ export function PrintableWorksheets() {
                 onPress={() => setPage(cur + 1)}
                 style={[s.pageBtn, cur === totalPages && s.pageBtnDisabled]}
               >
-                <Text style={s.pageBtnText}>Next →</Text>
+                <Text style={s.pageBtnText}>{t("components.printable_worksheets.next")}</Text>
               </Pressable>
             </View>
           )}
@@ -231,7 +233,7 @@ export function PrintableWorksheets() {
 
 function WorksheetCard({
   worksheet, disabled, onOpen, styles: s,
-}: { worksheet: Worksheet; disabled: boolean; onOpen: () => void; styles: ReturnType<typeof makeStyles> }) {
+}: { worksheet: Worksheet; disabled: boolean; onOpen: () =>{t("components.printable_worksheets.void_styles_returntype")}<typeof makeStyles> }) {
   const displayName = worksheet.name.replace(/\.[^.]+$/, "").replace(/_/g, " ");
   const isPdf = worksheet.fileType === "pdf";
   const ext = isPdf ? "PDF" : worksheet.mimeType === "image/png" ? "PNG" : "JPG";
