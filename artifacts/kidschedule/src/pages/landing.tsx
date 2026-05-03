@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical } from "lucide-react";
+import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical, Calculator } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
@@ -46,6 +46,31 @@ const SECONDARY_FEATURES = [{
   titleKey: "landing.feature_ai_title",
   descKey: "landing.feature_ai_desc",
   gradient: "linear-gradient(135deg,hsl(var(--brand-yellow-300)),hsl(var(--brand-orange-500)))"
+}];
+const NEW_HUB_FEATURES = [{
+  icon: Baby,
+  titleKey: "landing.new_infant_title",
+  descKey: "landing.new_infant_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-blue-400)),hsl(var(--brand-indigo-500)))",
+  glow: "rgba(99,102,241,0.45)"
+}, {
+  icon: Calculator,
+  titleKey: "landing.new_abacus_title",
+  descKey: "landing.new_abacus_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-red-500)))",
+  glow: "rgba(245,158,11,0.45)"
+}, {
+  icon: FileText,
+  titleKey: "landing.new_funsheets_title",
+  descKey: "landing.new_funsheets_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-emerald-500)))",
+  glow: "rgba(16,185,129,0.45)"
+}, {
+  icon: Palette,
+  titleKey: "landing.new_coloring_title",
+  descKey: "landing.new_coloring_desc",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-orange-500)))",
+  glow: "rgba(236,72,153,0.45)"
 }];
 const STEPS = [{
   icon: Target,
@@ -107,9 +132,19 @@ const ALL_FEATURES = [{
   badge: "New"
 }, {
   icon: Baby,
-  title: "Infant Sleep Tracker",
-  desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.",
+  titleKey: "landing.new_infant_title",
+  descKey: "landing.new_infant_desc",
+  title: "Infant Parenting Hub",
+  desc: "Pediatrician-aligned guidance on sleep, feeding, milestones and daily care for babies under 12 months.",
   gradient: "linear-gradient(135deg,hsl(var(--brand-blue-400)),hsl(var(--brand-indigo-500)))",
+  badge: "New"
+}, {
+  icon: Calculator,
+  titleKey: "landing.new_abacus_title",
+  descKey: "landing.new_abacus_desc",
+  title: "Abacus Zone",
+  desc: "Step-by-step abacus lessons that build mental math and concentration — perfect for ages 5–12.",
+  gradient: "linear-gradient(135deg,hsl(var(--brand-amber-500)),hsl(var(--brand-red-500)))",
   badge: "New"
 }, {
   icon: Video,
@@ -137,16 +172,20 @@ const ALL_FEATURES = [{
   badge: null
 }, {
   icon: Palette,
-  title: "Art & Craft Reels",
-  desc: "Step-by-step activity videos that stimulate creativity and fine motor development in young children.",
+  titleKey: "landing.new_coloring_title",
+  descKey: "landing.new_coloring_desc",
+  title: "Coloring Sheets",
+  desc: "Curated coloring books to build focus, fine motor skills and creative expression — print at home or color in-app.",
   gradient: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-orange-500)))",
-  badge: null
+  badge: "New"
 }, {
   icon: FileText,
-  title: "Printable Worksheets",
-  desc: "Age-appropriate worksheets for learning, colouring, and motor skill development — printable anytime.",
+  titleKey: "landing.new_funsheets_title",
+  descKey: "landing.new_funsheets_desc",
+  title: "Fun Sheets",
+  desc: "Printable activity sheets — mazes, dot-to-dot, tracing and logic puzzles your child can finish today.",
   gradient: "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-emerald-500)))",
-  badge: null
+  badge: "New"
 }, {
   icon: Puzzle,
   title: "Daily Brain Puzzles",
@@ -663,6 +702,61 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* WHAT'S NEW IN PARENT HUB */}
+      <section className="relative z-10 px-5 pb-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10 md:mb-12 amy-fade-up">
+            <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white" style={{
+            background: "linear-gradient(135deg,rgba(236,72,153,0.22),rgba(168,85,247,0.18))",
+            border: "1px solid rgba(236,72,153,0.4)",
+            boxShadow: "0 6px 20px rgba(236,72,153,0.25)"
+          }}>
+              <Sparkles className="h-3 w-3" />
+              {t("landing.whats_new_eyebrow")}
+            </div>
+            <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
+              {t("landing.whats_new_heading")}
+            </h2>
+            <p className="text-white/65 text-base max-w-xl mx-auto leading-relaxed">
+              {t("landing.whats_new_sub")}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+            {NEW_HUB_FEATURES.map(({
+            icon: Icon,
+            titleKey,
+            descKey,
+            gradient,
+            glow
+          }) => {
+            return <div key={titleKey} className="amy-glass-card amy-fade-up rounded-3xl p-5 md:p-6 flex flex-col gap-4 relative overflow-hidden" style={{
+              borderColor: "rgba(236,72,153,0.25)"
+            }}>
+                  <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{
+                background: "linear-gradient(135deg,hsl(var(--brand-pink-500)),hsl(var(--brand-purple-500)))",
+                boxShadow: "0 4px 14px rgba(236,72,153,0.45)"
+              }}>
+                    {t("landing.new_badge")}
+                  </span>
+                  <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl flex items-center justify-center shrink-0" style={{
+                background: gradient,
+                boxShadow: `0 10px 28px ${glow}`
+              }}>
+                    <Icon className="h-6 w-6 md:h-7 md:w-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-quicksand font-bold text-base md:text-lg text-white mb-1.5">
+                      {t(titleKey)}
+                    </h3>
+                    <p className="text-white/65 text-xs md:text-sm leading-relaxed">{t(descKey)}</p>
+                  </div>
+                </div>;
+          })}
+          </div>
+        </div>
+      </section>
+
       {/* ALL FEATURES MEGA GRID */}
       <section className="relative z-10 px-5 pb-20">
         <div className="max-w-6xl mx-auto">
@@ -684,13 +778,15 @@ export default function LandingPage() {
             icon: Icon,
             title,
             desc,
+            titleKey,
+            descKey,
             gradient,
             badge
           }) => <div key={title} className="amy-feature-card rounded-2xl p-5 md:p-6 flex flex-col gap-3 relative overflow-hidden">
                 {badge && <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{
               background: badge === "New" ? "linear-gradient(135deg,hsl(var(--brand-cyan-500)),hsl(var(--brand-blue-500)))" : "linear-gradient(135deg,hsl(var(--brand-orange-500)),hsl(var(--brand-red-500)))"
             }}>
-                    {badge}
+                    {badge === "New" ? t("landing.new_badge") : badge}
                   </span>}
                 <div className="flex items-start gap-3">
                   <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{
@@ -700,8 +796,8 @@ export default function LandingPage() {
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-quicksand font-bold text-base text-white mb-1">{title}</h3>
-                    <p className="text-white/60 text-xs md:text-sm leading-relaxed">{desc}</p>
+                    <h3 className="font-quicksand font-bold text-base text-white mb-1">{titleKey ? t(titleKey) : title}</h3>
+                    <p className="text-white/60 text-xs md:text-sm leading-relaxed">{descKey ? t(descKey) : desc}</p>
                   </div>
                 </div>
               </div>)}

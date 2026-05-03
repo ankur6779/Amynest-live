@@ -366,7 +366,19 @@
     "final_cta_heading": "Your child deserves a plan that actually works.",
     "final_cta_sub": "Join 12,000+ families using research-backed parenting plans to raise calmer, smarter, more confident kids — completely free.",
     "final_cta_btn": "Get My Free Parenting Plan",
-    "footer_tagline": "Where Smart Parenting Begins"
+    "footer_tagline": "Where Smart Parenting Begins",
+    "new_badge": "New",
+    "whats_new_eyebrow": "Just Added to Parent Hub",
+    "whats_new_heading": "What's New in Parent Hub",
+    "whats_new_sub": "Four brand-new zones for every age — from infant care to abacus mastery, from coloring fun to printable worksheets.",
+    "new_infant_title": "Infant Parenting Hub",
+    "new_infant_desc": "Pediatrician-aligned guidance on sleep, feeding, milestones and daily care for babies under 12 months.",
+    "new_abacus_title": "Abacus Zone",
+    "new_abacus_desc": "Step-by-step abacus lessons that build mental math and concentration — perfect for ages 5–12.",
+    "new_funsheets_title": "Fun Sheets",
+    "new_funsheets_desc": "Printable activity sheets — mazes, dot-to-dot, tracing and logic puzzles your child can finish today.",
+    "new_coloring_title": "Coloring Sheets",
+    "new_coloring_desc": "Curated coloring books to build focus, fine motor skills and creative expression — print at home or color in-app."
   },
   "infant_hub": {
     "title": "Infant & Toddler Hub",
