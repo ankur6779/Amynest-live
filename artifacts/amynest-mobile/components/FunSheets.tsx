@@ -36,6 +36,7 @@ export function FunSheets({
   childId: number;
   childName: string;
 }) {
+  const { t } = useTranslation();
   const c = useColors();
   const { mode } = useTheme();
   const styles = useMemo(() => makeStyles(c), [c]);
@@ -82,7 +83,6 @@ export function FunSheets({
   useEffect(() => {
     const ctrl = new AbortController();
     void fetchPage(page, ctrl.signal);
-    const { t } = useTranslation();
     return () => ctrl.abort();
   }, [fetchPage, page]);
 

@@ -62,7 +62,7 @@ export default function CoachCard({ win, total, topInset, bottomInset, onAction 
   const c = useColors();
   const { mode } = useTheme();
   const isDark = mode === "dark";
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // ─── Read-aloud (ElevenLabs, Hindi + English, GCS-cached) ─────────────────
   // Default the listen language to the parent's UI language; they can flip
