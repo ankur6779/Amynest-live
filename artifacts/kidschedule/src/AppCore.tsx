@@ -29,6 +29,7 @@ import SignUpPage from "@/pages/sign-up";
 const PrivacyPolicyPage = lazy(() => import("@/pages/privacy"));
 const TermsOfServicePage = lazy(() => import("@/pages/terms"));
 const DeleteAccountPage = lazy(() => import("@/pages/delete-account"));
+const BillingDisputePage = lazy(() => import("@/pages/billing-dispute"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const ChildrenList = lazy(() => import("@/pages/children/index"));
 const ChildForm = lazy(() => import("@/pages/children/form"));
@@ -216,6 +217,7 @@ function AppRoutes() {
           <Route path="/privacy" component={PrivacyPolicyPage} />
           <Route path="/terms" component={TermsOfServicePage} />
           <Route path="/delete-account" component={DeleteAccountPage} />
+          <Route path="/billing-dispute" component={BillingDisputePage} />
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/onboarding">
