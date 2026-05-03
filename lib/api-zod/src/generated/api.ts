@@ -867,6 +867,57 @@ export const AskAssistantResponse = zod.object({
 });
 
 /**
+ * @summary Structured tutor reply (teach / practice / quiz / doubt)
+ */
+export const AiTutorChatBody = zod.object({
+  childId: zod.number().nullish(),
+  childAge: zod
+    .number()
+    .nullish()
+    .describe(
+      "Child age in years. Server prefers a stored child record; this is a fallback when no childId is sent.",
+    ),
+  mode: zod.enum(["teach", "practice", "quiz", "doubt"]),
+  subject: zod.enum(["math", "english", "gk", "logic", "general"]),
+  topic: zod.string().nullish(),
+  message: zod.string(),
+  history: zod
+    .array(
+      zod
+        .object({
+          role: zod.enum(["user", "tutor"]),
+          text: zod.string(),
+        })
+        .describe(
+          "A prior turn in the tutor conversation. Used by the server to keep context across messages.",
+        ),
+    )
+    .optional()
+    .describe(
+      "Up to the last few turns of this conversation (oldest first), used as model context.",
+    ),
+});
+
+export const AiTutorChatResponse = zod.object({
+  reply: zod.object({
+    type: zod.enum(["teach", "practice", "quiz", "doubt"]),
+    content: zod.string(),
+    examples: zod.array(zod.string()),
+    question: zod.string().nullish(),
+    options: zod.array(zod.string()),
+    answer: zod
+      .union([zod.number(), zod.string(), zod.null()])
+      .optional()
+      .describe(
+        "Index into `options` for MCQs, a short string for fill-ins, or null when there is no auto-check.",
+      ),
+  }),
+  cached: zod.boolean().optional(),
+  ageBand: zod.string().optional(),
+  mode: zod.string().optional(),
+});
+
+/**
  * @summary List Parent Task completions for a child (optionally filtered by date)
  */
 export const ListParentTaskCompletionsQueryParams = zod.object({

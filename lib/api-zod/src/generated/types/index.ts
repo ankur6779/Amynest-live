@@ -6,6 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./aiTutorChatBody";
+export * from "./aiTutorChatBodyMode";
+export * from "./aiTutorChatBodySubject";
+export * from "./aiTutorChatResponse";
+export * from "./aiTutorReply";
+export * from "./aiTutorReplyType";
+export * from "./aiTutorTurn";
+export * from "./aiTutorTurnRole";
 export * from "./askAssistantBody";
 export * from "./askAssistantResponse";
 export * from "./babysitterSchema";

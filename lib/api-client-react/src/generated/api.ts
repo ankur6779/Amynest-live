@@ -17,6 +17,8 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AiTutorChatBody,
+  AiTutorChatResponse,
   AskAssistantBody,
   AskAssistantResponse,
   BabysitterSchema,
@@ -2326,6 +2328,92 @@ export const useAskAssistant = <
   TContext
 > => {
   return useMutation(getAskAssistantMutationOptions(options));
+};
+
+/**
+ * @summary Structured tutor reply (teach / practice / quiz / doubt)
+ */
+export const getAiTutorChatUrl = () => {
+  return `/api/ai-tutor/chat`;
+};
+
+export const aiTutorChat = async (
+  aiTutorChatBody: AiTutorChatBody,
+  options?: RequestInit,
+): Promise<AiTutorChatResponse> => {
+  return customFetch<AiTutorChatResponse>(getAiTutorChatUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(aiTutorChatBody),
+  });
+};
+
+export const getAiTutorChatMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiTutorChat>>,
+    TError,
+    { data: BodyType<AiTutorChatBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof aiTutorChat>>,
+  TError,
+  { data: BodyType<AiTutorChatBody> },
+  TContext
+> => {
+  const mutationKey = ["aiTutorChat"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof aiTutorChat>>,
+    { data: BodyType<AiTutorChatBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return aiTutorChat(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AiTutorChatMutationResult = NonNullable<
+  Awaited<ReturnType<typeof aiTutorChat>>
+>;
+export type AiTutorChatMutationBody = BodyType<AiTutorChatBody>;
+export type AiTutorChatMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Structured tutor reply (teach / practice / quiz / doubt)
+ */
+export const useAiTutorChat = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiTutorChat>>,
+    TError,
+    { data: BodyType<AiTutorChatBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof aiTutorChat>>,
+  TError,
+  { data: BodyType<AiTutorChatBody> },
+  TContext
+> => {
+  return useMutation(getAiTutorChatMutationOptions(options));
 };
 
 /**
