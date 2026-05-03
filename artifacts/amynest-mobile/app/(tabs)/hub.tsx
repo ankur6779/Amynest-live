@@ -33,6 +33,7 @@ import AiMealGenerator from "@/components/AiMealGenerator";
 import ParentCommandCenter from "@/components/ParentCommandCenter";
 import { PhonicsTestCard } from "@/components/PhonicsTestCard";
 import { SmartMathTricks } from "@/components/SmartMathTricks";
+import { AbacusZone } from "@/components/AbacusZone";
 import { ColoringBooks } from "@/components/ColoringBooks";
 import { FunSheets } from "@/components/FunSheets";
 import { SkillsFocus } from "@/components/SkillsFocus";
@@ -1290,6 +1291,42 @@ export default function HubScreen() {
                   <SmartMathTricks childName={effective.name} childAgeYears={effective.age} />
                 ) : (
                   <Text style={styles.sectionLead}>{t("parent_hub.tiles.smart-math-tricks.empty")}</Text>
+                )}
+              </Section>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
+            id: "abacus",
+            ageBands: HUB_CONTENT_AGE_BANDS["abacus"],
+            node: (
+              <View style={tileW("abacus")}>
+              <LockedBlock
+                reason="hub_locked"
+                locked={hubUsage.isFeatureLocked("hub_abacus")}
+                label="Unlock to continue" // audit-ok: brand CTA, matches other LockedBlock copy
+                cta="Unlock Premium"
+              >
+              <Section
+                id="abacus"
+                icon={<MaterialCommunityIcons name="abacus" size={20} color="#fff" />}
+                accent={[palette.amber500, palette.rose500]}
+                title="🧮 Abacus PRO Zone" // audit-ok: brand product name, intentional EN-only
+                desc="Learn the soroban — beads, brain & speed math"
+                open={openSection === "abacus"}
+                onToggle={() => setOpenSection(s => s === "abacus" ? null : "abacus")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_abacus")}
+                tryFree={tryFreeFor("hub_abacus")}
+              >
+                {effective ? (
+                  <AbacusZone
+                    childId={effective.id}
+                    childName={effective.name}
+                    ageYears={effective.age}
+                  />
+                ) : (
+                  <Text style={styles.sectionLead}>Add a child to unlock the abacus zone.{/* audit-ok: empty-state copy, EN-only fallback */}</Text>
                 )}
               </Section>
               </LockedBlock>

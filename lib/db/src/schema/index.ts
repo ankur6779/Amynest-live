@@ -43,6 +43,7 @@ export * from "./phonics_content";
 export * from "./phonics_progress";
 export * from "./phonics_downloads";
 export * from "./phonics_test_results";
+export * from "./abacus_progress";
 export * from "./coloring_downloads";
 export * from "./funsheet_downloads";
 export * from "./story_content";

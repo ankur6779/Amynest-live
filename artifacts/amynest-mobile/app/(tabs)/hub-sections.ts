@@ -83,6 +83,7 @@ export const TILE_SECTION_MAP: Readonly<Record<string, Exclude<SectionKey, "toda
   // Learning Modules — academic + practice content.
   phonics: "modules",
   "smart-math-tricks": "modules",
+  abacus: "modules",
   "story-hub": "modules",
   "ptm-prep": "modules",
   "smart-study": "modules",

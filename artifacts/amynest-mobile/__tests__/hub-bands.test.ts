@@ -92,14 +92,16 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
   // `smart-math-tricks`, `coloring-books`, `fun-sheets`.
   // Inventory updated for #197: added `skills-focus`, `daily-story`,
   // `daily-puzzle` (web-parity tiles ported from kidschedule's dashboard).
-  it("contains the expected 26 tiles", () => {
+  // Inventory updated for #214: added `abacus` (Abacus PRO Zone, ages 4–10).
+  it("contains the expected 27 tiles", () => {
     const expectedIds = [
       // Always-current
       "amy", "articles", "tips", "emotional", "activities", "art-craft",
       "nutrition", "meal-suggestions",
       // Band-restricted (web parity)
-      "story-hub", "phonics", "smart-math-tricks", "ptm-prep", "smart-study",
-      "event-prep", "olympiad", "life-skills", "coloring-books", "fun-sheets",
+      "story-hub", "phonics", "smart-math-tricks", "abacus", "ptm-prep",
+      "smart-study", "event-prep", "olympiad", "life-skills",
+      "coloring-books", "fun-sheets",
       // Mobile-only extras
       "morning-flow", "kids-control-center", "meals", "worksheets", "facts",
       // Task #197 web-parity additions
@@ -107,7 +109,7 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
     ].sort();
     const actualIds = Object.keys(HUB_CONTENT_AGE_BANDS).sort();
     expect(actualIds).toEqual(expectedIds);
-    expect(actualIds.length).toBe(26);
+    expect(actualIds.length).toBe(27);
   });
 
   // Locks expected tile membership for two representative bands. This catches
@@ -140,8 +142,8 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
       "amy", "articles", "tips", "emotional", "activities", "art-craft",
       "nutrition", "meal-suggestions",
       // Band-restricted that include band 4
-      "ptm-prep", "smart-study", "event-prep", "olympiad", "life-skills",
-      "coloring-books", "fun-sheets",
+      "abacus", "ptm-prep", "smart-study", "event-prep", "olympiad",
+      "life-skills", "coloring-books", "fun-sheets",
       // Mobile-only extras that include band 4
       "morning-flow", "kids-control-center", "meals", "worksheets", "facts",
       // Task #197 web-parity additions that include band 4

@@ -45,6 +45,7 @@ export const HUB_CONTENT_AGE_BANDS: Record<string, readonly number[]> = {
   "story-hub":           [0, 1, 2, 3],          // web: 0-2, 2-4, 4-6, 6-8
   phonics:               [1, 2],                // web: 2-4, 4-6 + 12-72m
   "smart-math-tricks":   [2, 3],                // web: 4-6, 6-8
+  abacus:                [2, 3, 4],             // web: 4-6, 6-8, 8-10
   "ptm-prep":            [2, 3, 4, 5, 6],       // web: 4-6..12-15 + 36-216m
   "smart-study":         [2, 3, 4, 5, 6],       // web: 4-6..12-15 + 36-204m
   "event-prep":          [2, 3, 4, 5, 6],       // web: 4-6..12-15 + 36-180m

@@ -34,6 +34,9 @@ export const WEB_HUB_TILES: readonly WebHubTile[] = [
   // Smart Math Tricks — top of grid for ages 4–8
   { id: "smart-math-tricks", title: "Smart Math Tricks",  bands: ["4-6", "6-8"] },
 
+  // Abacus PRO Zone — ages 4–10 (#214)
+  { id: "abacus", title: "Abacus PRO Zone", bands: ["4-6", "6-8", "8-10"] },
+
   // Always-current grid
   { id: "amy",       title: "Ask Amy AI",          bands: "all" },
   { id: "articles",  title: "Parenting Articles",  bands: "all" },
