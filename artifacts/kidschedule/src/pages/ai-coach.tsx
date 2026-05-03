@@ -781,10 +781,10 @@ export default function AICoachPage() {
   // severity + topic-specific questions. For unmapped topics we fall
   // back to the original 5-generic-question flow.
   const QUESTIONS = useMemo<Question[]>(() => {
-    const topicQs = goalId ? getTopicQuestions(goalId) : null;
+    const topicQs = goalId ? getTopicQuestions(goalId, i18n.language) : null;
     if (!topicQs || topicQs.length === 0) return GENERIC_QUESTIONS;
     return [AGE_QUESTION, SEVERITY_QUESTION, ...topicQs];
-  }, [goalId]);
+  }, [goalId, i18n.language]);
   const currentQ = QUESTIONS[qIndex];
   const currentAnswer = currentQ ? answers[currentQ.id] : undefined;
   const isAnswered = currentQ?.type === "multi" ? Array.isArray(currentAnswer) && currentAnswer.length > 0 : typeof currentAnswer === "string" && currentAnswer.length > 0;
