@@ -693,7 +693,7 @@ export default function RoutineDetail() {
         },
         body: JSON.stringify({
           mealName,
-          childAge: routine?.childName ? undefined : undefined
+          foodType: mealPrefs.region ?? null,
         })
       });
       if (!res.ok) throw new Error("Failed to fetch recipe");
