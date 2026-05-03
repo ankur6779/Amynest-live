@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { Layout } from "@/components/layout";
 import { Loader2, Check, Sparkles, SendHorizonal } from "lucide-react";
 
 const FEATURE_KEY = "kids_control_center";
@@ -98,8 +97,7 @@ export default function KidsControlCenterPage() {
   const canSubmit = pendingFeedback !== null && !submitting;
 
   return (
-    <Layout>
-      <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden">
         {/* Ambient glow */}
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute -top-32 -left-20 h-80 w-80 rounded-full bg-primary blur-3xl" />
@@ -293,8 +291,7 @@ export default function KidsControlCenterPage() {
             {t("screens.kids_control_center.footer")}
           </p>
         </div>
-      </div>
-    </Layout>
+    </div>
   );
 }
 
