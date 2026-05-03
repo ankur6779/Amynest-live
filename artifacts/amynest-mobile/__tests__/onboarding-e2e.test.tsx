@@ -160,6 +160,7 @@ async function fillParentTail(): Promise<void> {
   await typeAndSend("Priya");
   await clickButton("Mother");
   await clickButton("Work from Home");
+  await clickButton("Indian Cuisine 🇮🇳");
   await clickButton("North Indian");
   await typeAndSend("9876543210");
   await typeAndSend("peanuts");
