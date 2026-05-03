@@ -12,11 +12,13 @@ import {
 } from "@workspace/db";
 import {
   buildAbacusTutorPrompt,
+  getLevel,
   highestUnlockedLevel,
   isAbacusEligible,
   LEVELS,
   type LevelId,
 } from "@workspace/abacus";
+import { buildAbacusWeeklySummary } from "../services/abacusWeeklySummary";
 
 const router: IRouter = Router();
 
@@ -146,6 +148,29 @@ router.get("/abacus/progress", async (req, res): Promise<void> => {
   } catch (err) {
     logger.error(
       `abacus GET failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// ─── GET /api/abacus/weekly-summary ──────────────────────────────────────
+//
+// Per-child weekly Abacus stats for the Parent Insights view + weekly
+// recap email. Aggregates across every eligible child the user owns; safe
+// to call even when no children are eligible (returns empty arrays).
+
+router.get("/abacus/weekly-summary", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  try {
+    const summary = await buildAbacusWeeklySummary({ userId });
+    res.json(summary);
+  } catch (err) {
+    logger.error(
+      `abacus weekly-summary failed: ${err instanceof Error ? err.message : String(err)}`,
     );
     res.status(500).json({ error: "server_error" });
   }

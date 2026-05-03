@@ -74,6 +74,32 @@ type InsightsResponse = {
   behaviorTypes: { positive: number; negative: number; neutral: number; milestone: number };
 };
 
+type AbacusWeeklyChild = {
+  childId: number;
+  childName: string;
+  childAge: number | null;
+  hasProgress: boolean;
+  currentLevel: number;
+  currentLevelLabel: string;
+  highestUnlocked: number;
+  levelsCompletedTotal: number;
+  levelsCompletedThisWeek: number;
+  pointsThisWeek: number;
+  accuracyPct: number;
+  accuracyIsWeekly: boolean;
+  totalCorrect: number;
+  totalAttempts: number;
+  totalPoints: number;
+  lastActiveAt: string | null;
+  nextRecommendedAction: string;
+};
+
+type AbacusWeeklySummary = {
+  generatedAt: string;
+  children: AbacusWeeklyChild[];
+  eligibleWithoutProgress: Array<{ childId: number; childName: string; childAge: number | null }>;
+};
+
 export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -87,6 +113,18 @@ export default function InsightsScreen() {
     queryFn: async () => {
       const r = await authFetch(`/api/dashboard/insights?range=${range}`);
       if (!r.ok) throw new Error(`insights ${r.status}`);
+      return r.json();
+    },
+  });
+
+  // Abacus weekly progress is fixed to a trailing 7-day window (the abacus
+  // schema only stores per-level best scores, not a true session history),
+  // so it doesn't follow the week/month toggle.
+  const { data: abacus } = useQuery<AbacusWeeklySummary>({
+    queryKey: ["abacus-weekly-summary"],
+    queryFn: async () => {
+      const r = await authFetch(`/api/abacus/weekly-summary`);
+      if (!r.ok) throw new Error(`abacus weekly ${r.status}`);
       return r.json();
     },
   });
@@ -356,6 +394,72 @@ export default function InsightsScreen() {
               </LinearGradient>
             </Pressable>
           </>
+        )}
+
+        {/* Abacus weekly progress — rendered independently of the
+            routines/behaviour activity gate so parents whose child only
+            uses the Abacus PRO Zone still see weekly trends. */}
+        {data?.hasChildren && abacus && abacus.children.length > 0 && (
+          <Section title="Abacus this week">
+            {abacus.children.map((c) => (
+              <View key={c.childId} style={styles.abacusCard}>
+                <View style={styles.abacusHeaderRow}>
+                  <Text style={styles.abacusName}>{c.childName}</Text>
+                  <Text style={styles.abacusLevel}>
+                    Level {c.currentLevel} · {c.currentLevelLabel}
+                  </Text>
+                </View>
+                {!c.hasProgress ? (
+                  <>
+                    <Text style={styles.abacusEmpty}>
+                      No abacus sessions yet — open the Abacus PRO Zone to get started.
+                    </Text>
+                    <View style={styles.abacusNextRow}>
+                      <Ionicons name="sparkles" size={14} color={brand.purple500} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.abacusNextLabel}>Next up</Text>
+                        <Text style={styles.abacusNextText}>{c.nextRecommendedAction}</Text>
+                      </View>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View style={styles.abacusStatsRow}>
+                      <View style={styles.abacusStatBox}>
+                        <Text style={styles.abacusStatLabel}>
+                          {c.accuracyIsWeekly ? "Accuracy" : "Lifetime acc."}
+                        </Text>
+                        <Text style={styles.abacusStatValue}>{c.accuracyPct}%</Text>
+                      </View>
+                      <View style={styles.abacusStatBox}>
+                        <Text style={styles.abacusStatLabel}>Points</Text>
+                        <Text style={styles.abacusStatValue}>{c.pointsThisWeek}</Text>
+                        <Text style={styles.abacusStatSub}>this week</Text>
+                      </View>
+                      <View style={styles.abacusStatBox}>
+                        <Text style={styles.abacusStatLabel}>Levels</Text>
+                        <Text style={styles.abacusStatValue}>
+                          {c.levelsCompletedTotal}/5
+                        </Text>
+                        <Text style={styles.abacusStatSub}>
+                          {c.levelsCompletedThisWeek > 0
+                            ? `+${c.levelsCompletedThisWeek} this week`
+                            : "no new this week"}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.abacusNextRow}>
+                      <Ionicons name="sparkles" size={14} color={brand.purple500} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.abacusNextLabel}>Next up</Text>
+                        <Text style={styles.abacusNextText}>{c.nextRecommendedAction}</Text>
+                      </View>
+                    </View>
+                  </>
+                )}
+              </View>
+            ))}
+          </Section>
         )}
       </ScrollView>
     </LinearGradient>
@@ -676,4 +780,55 @@ const styles = StyleSheet.create({
 
   askAmyCta: { borderRadius: 18, overflow: "hidden", marginTop: 6 },
   askAmyCtaGrad: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
+
+  abacusCard: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    padding: 12,
+    gap: 10,
+  },
+  abacusHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  abacusName: { color: "#fff", fontSize: 14, fontWeight: "800" },
+  abacusLevel: { color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: "600" },
+  abacusEmpty: { color: "rgba(255,255,255,0.7)", fontSize: 12, lineHeight: 17 },
+  abacusStatsRow: { flexDirection: "row", gap: 8 },
+  abacusStatBox: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  abacusStatLabel: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  abacusStatValue: { color: "#fff", fontSize: 18, fontWeight: "800", marginTop: 2 },
+  abacusStatSub: { color: "rgba(255,255,255,0.45)", fontSize: 10, marginTop: 1 },
+  abacusNextRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: "rgba(124, 58, 237, 0.15)",
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  abacusNextLabel: {
+    color: brand.purple500,
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  abacusNextText: { color: "#fff", fontSize: 12, fontWeight: "700", marginTop: 2 },
 });
