@@ -1,255 +1,206 @@
 import { Link } from "wouter";
-import {
-  ArrowRight,
-  Sparkles,
-  Brain,
-  Calendar,
-  LayoutGrid,
-  MessageCircle,
-  Zap,
-  CheckCircle2,
-  Flame,
-  Smartphone,
-  Moon,
-  EarOff,
-  Utensils,
-  Target,
-  ListChecks,
-  HelpCircle,
-  ShieldCheck,
-  BookOpen,
-  Microscope,
-  TrendingUp,
-  Video,
-  Star,
-  Users,
-  Lightbulb,
-  Puzzle,
-  Palette,
-  FileText,
-  Baby,
-  GraduationCap,
-  Activity,
-  Heart,
-  Award,
-  Gamepad2,
-  BarChart3,
-  FlaskConical,
-} from "lucide-react";
+import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-
 import heroImg from "@assets/ChatGPT_Image_Apr_26,_2026,_10_19_57_PM_1777222212106.png";
 import { useTranslation } from "react-i18next";
-
-const COACH_HIGHLIGHT_KEYS = [
-  "landing.highlight_1",
-  "landing.highlight_2",
-  "landing.highlight_3",
-  "landing.highlight_4",
-];
-
-const PROBLEMS = [
-  { icon: Flame, labelKey: "landing.problem_tantrums", color: "#EF4444" },
-  { icon: Smartphone, labelKey: "landing.problem_screen", color: "#06B6D4" },
-  { icon: Moon, labelKey: "landing.problem_sleep", color: "#6366F1" },
-  { icon: EarOff, labelKey: "landing.problem_listening", color: "#F97316" },
-  { icon: Utensils, labelKey: "landing.problem_eating", color: "#EC4899" },
-  { icon: Target, labelKey: "landing.problem_focus", color: "#A855F7" },
-];
-
-const SECONDARY_FEATURES = [
-  {
-    icon: Calendar,
-    titleKey: "landing.feature_routine_title",
-    descKey: "landing.feature_routine_desc",
-    gradient: "linear-gradient(135deg,#06B6D4,#3B82F6)",
-  },
-  {
-    icon: LayoutGrid,
-    titleKey: "landing.feature_hub_title",
-    descKey: "landing.feature_hub_desc",
-    gradient: "linear-gradient(135deg,#EC4899,#F97316)",
-  },
-  {
-    icon: Zap,
-    titleKey: "landing.feature_ai_title",
-    descKey: "landing.feature_ai_desc",
-    gradient: "linear-gradient(135deg,#FFD166,#F97316)",
-  },
-];
-
-const STEPS = [
-  { icon: Target, titleKey: "landing.step1_title", descKey: "landing.step1_desc" },
-  { icon: HelpCircle, titleKey: "landing.step2_title", descKey: "landing.step2_desc" },
-  { icon: ListChecks, titleKey: "landing.step3_title", descKey: "landing.step3_desc" },
-];
-
-const TRUST_PILLARS = [
-  { icon: BookOpen,      titleKey: "landing.trust1_title", descKey: "landing.trust1_desc" },
-  { icon: FlaskConical,  titleKey: "landing.trust2_title", descKey: "landing.trust2_desc" },
-  { icon: ShieldCheck,   titleKey: "landing.trust3_title", descKey: "landing.trust3_desc" },
-];
-
-const SCIENCE_STATS = [
-  { value: "87%",  label: "calmer mornings in 2 weeks" },
-  { value: "12K+", label: "families parenting smarter" },
-  { value: "30+",  label: "research studies referenced" },
-  { value: "4.9★", label: "average parent rating" },
-];
-
-const SCIENCE_CITATIONS = [
-  "📚 Habit Loop — Charles Duhigg (2012)",
-  "🧠 Growth Mindset — Dr. Carol Dweck, Stanford",
-  "👶 AAP Screen Time Guidelines (2023)",
-  "💤 CDC Infant Sleep Standards",
-  "🎯 Positive Reinforcement — B.F. Skinner",
-  "🌱 Montessori Life Skills Framework",
-  "📊 Executive Function — Harvard Center on the Developing Child",
-  "❤️ Secure Attachment — Dr. Daniel Siegel",
-  "⚡ CPS Model — Dr. Ross Greene",
-  "🍎 SEL Framework — CASEL",
-];
-
-const ALL_FEATURES = [
-  {
-    icon: ShieldCheck,
-    title: "Kids Control Center",
-    desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.",
-    gradient: "linear-gradient(135deg,#7B3FF2,#FF4ECD)",
-    badge: "Coming Soon",
-  },
-  {
-    icon: TrendingUp,
-    title: "Behavior Tracking",
-    desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC (Antecedent-Behavior-Consequence) behavioral analysis.",
-    gradient: "linear-gradient(135deg,#10B981,#06B6D4)",
-    badge: "Popular",
-  },
-  {
-    icon: Gamepad2,
-    title: "Gaming Reward Zone",
-    desc: "Gamified milestones based on B.F. Skinner's positive reinforcement — kids earn real rewards tied to real-world achievements.",
-    gradient: "linear-gradient(135deg,#FFD166,#EF4444)",
-    badge: "New",
-  },
-  {
-    icon: Baby,
-    title: "Infant Sleep Tracker",
-    desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.",
-    gradient: "linear-gradient(135deg,#60A5FA,#6366F1)",
-    badge: "New",
-  },
-  {
-    icon: Video,
-    title: "Parenting Reels",
-    desc: "Short, expert-curated video reels on positive parenting techniques from leading child psychologists.",
-    gradient: "linear-gradient(135deg,#EC4899,#A855F7)",
-    badge: null,
-  },
-  {
-    icon: Lightbulb,
-    title: "Daily Parenting Tips",
-    desc: "Science-backed tip delivered every day — personalized to your child's age and developmental stage per Piaget's framework.",
-    gradient: "linear-gradient(135deg,#FFD166,#F97316)",
-    badge: null,
-  },
-  {
-    icon: Activity,
-    title: "Life Skills Zone",
-    desc: "Teach independence — from dressing to cooking — with Montessori-aligned milestone tracking that builds intrinsic motivation.",
-    gradient: "linear-gradient(135deg,#A855F7,#6366F1)",
-    badge: null,
-  },
-  {
-    icon: GraduationCap,
-    title: "Olympiad Zone",
-    desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14. Builds executive function.",
-    gradient: "linear-gradient(135deg,#F59E0B,#EF4444)",
-    badge: null,
-  },
-  {
-    icon: Palette,
-    title: "Art & Craft Reels",
-    desc: "Step-by-step activity videos that stimulate creativity and fine motor development in young children.",
-    gradient: "linear-gradient(135deg,#EC4899,#F97316)",
-    badge: null,
-  },
-  {
-    icon: FileText,
-    title: "Printable Worksheets",
-    desc: "Age-appropriate worksheets for learning, colouring, and motor skill development — printable anytime.",
-    gradient: "linear-gradient(135deg,#06B6D4,#10B981)",
-    badge: null,
-  },
-  {
-    icon: Puzzle,
-    title: "Daily Brain Puzzles",
-    desc: "Brain-boosting puzzles tailored to your child's cognitive stage — builds logic, creativity and working memory.",
-    gradient: "linear-gradient(135deg,#F97316,#A855F7)",
-    badge: null,
-  },
-  {
-    icon: BookOpen,
-    title: "Parenting Articles",
-    desc: "Deep-dive articles written by child development experts and child psychologists on every stage of childhood.",
-    gradient: "linear-gradient(135deg,#3B82F6,#06B6D4)",
-    badge: null,
-  },
-  {
-    icon: Users,
-    title: "Babysitter Profiles",
-    desc: "Create and share child care profiles securely. Routines, allergies, and notes — all in one safe place.",
-    gradient: "linear-gradient(135deg,#10B981,#A855F7)",
-    badge: null,
-  },
-  {
-    icon: Award,
-    title: "Parent Score & Streaks",
-    desc: "Gamified motivation keeps you consistent — earn points, build streaks, and celebrate every parenting win.",
-    gradient: "linear-gradient(135deg,#FFD166,#EF4444)",
-    badge: null,
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    name: "Priya M.",
-    location: "Mumbai, India",
-    text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. I never thought a parenting app could be this specific — it felt like talking to an actual child psychologist.",
-    avatar: "P",
-    color: "#A855F7",
-    result: "Tantrums reduced 80% in 3 weeks",
-  },
-  {
-    name: "Rahul & Kavya",
-    location: "Bangalore, India",
-    text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings. Data-driven parenting actually works — we saw the pattern in the app first.",
-    avatar: "R",
-    color: "#06B6D4",
-    result: "Identified sleep-trigger pattern in 5 days",
-  },
-  {
-    name: "Sarah K.",
-    location: "Dubai, UAE",
-    text: "Twin toddlers + infant sleep tracker + Amy's personalized CDC-aligned tips = sanity saved. The sleep schedule feature got our 6-month-old sleeping through the night in 11 days. Nothing else had worked.",
-    avatar: "S",
-    color: "#EC4899",
-    result: "Baby sleeping through the night in 11 days",
-  },
-];
-
+const COACH_HIGHLIGHT_KEYS = ["landing.highlight_1", "landing.highlight_2", "landing.highlight_3", "landing.highlight_4"];
+const PROBLEMS = [{
+  icon: Flame,
+  labelKey: "landing.problem_tantrums",
+  color: "#EF4444"
+}, {
+  icon: Smartphone,
+  labelKey: "landing.problem_screen",
+  color: "#06B6D4"
+}, {
+  icon: Moon,
+  labelKey: "landing.problem_sleep",
+  color: "#6366F1"
+}, {
+  icon: EarOff,
+  labelKey: "landing.problem_listening",
+  color: "#F97316"
+}, {
+  icon: Utensils,
+  labelKey: "landing.problem_eating",
+  color: "#EC4899"
+}, {
+  icon: Target,
+  labelKey: "landing.problem_focus",
+  color: "#A855F7"
+}];
+const SECONDARY_FEATURES = [{
+  icon: Calendar,
+  titleKey: "landing.feature_routine_title",
+  descKey: "landing.feature_routine_desc",
+  gradient: "linear-gradient(135deg,#06B6D4,#3B82F6)"
+}, {
+  icon: LayoutGrid,
+  titleKey: "landing.feature_hub_title",
+  descKey: "landing.feature_hub_desc",
+  gradient: "linear-gradient(135deg,#EC4899,#F97316)"
+}, {
+  icon: Zap,
+  titleKey: "landing.feature_ai_title",
+  descKey: "landing.feature_ai_desc",
+  gradient: "linear-gradient(135deg,#FFD166,#F97316)"
+}];
+const STEPS = [{
+  icon: Target,
+  titleKey: "landing.step1_title",
+  descKey: "landing.step1_desc"
+}, {
+  icon: HelpCircle,
+  titleKey: "landing.step2_title",
+  descKey: "landing.step2_desc"
+}, {
+  icon: ListChecks,
+  titleKey: "landing.step3_title",
+  descKey: "landing.step3_desc"
+}];
+const TRUST_PILLARS = [{
+  icon: BookOpen,
+  titleKey: "landing.trust1_title",
+  descKey: "landing.trust1_desc"
+}, {
+  icon: FlaskConical,
+  titleKey: "landing.trust2_title",
+  descKey: "landing.trust2_desc"
+}, {
+  icon: ShieldCheck,
+  titleKey: "landing.trust3_title",
+  descKey: "landing.trust3_desc"
+}];
+const SCIENCE_STATS = [{
+  value: "87%",
+  label: "calmer mornings in 2 weeks"
+}, {
+  value: "12K+",
+  label: "families parenting smarter"
+}, {
+  value: "30+",
+  label: "research studies referenced"
+}, {
+  value: "4.9★",
+  label: "average parent rating"
+}];
+const SCIENCE_CITATIONS = ["📚 Habit Loop — Charles Duhigg (2012)", "🧠 Growth Mindset — Dr. Carol Dweck, Stanford", "👶 AAP Screen Time Guidelines (2023)", "💤 CDC Infant Sleep Standards", "🎯 Positive Reinforcement — B.F. Skinner", "🌱 Montessori Life Skills Framework", "📊 Executive Function — Harvard Center on the Developing Child", "❤️ Secure Attachment — Dr. Daniel Siegel", "⚡ CPS Model — Dr. Ross Greene", "🍎 SEL Framework — CASEL"];
+const ALL_FEATURES = [{
+  icon: ShieldCheck,
+  title: "Kids Control Center",
+  desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.",
+  gradient: "linear-gradient(135deg,#7B3FF2,#FF4ECD)",
+  badge: "Coming Soon"
+}, {
+  icon: TrendingUp,
+  title: "Behavior Tracking",
+  desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC (Antecedent-Behavior-Consequence) behavioral analysis.",
+  gradient: "linear-gradient(135deg,#10B981,#06B6D4)",
+  badge: "Popular"
+}, {
+  icon: Gamepad2,
+  title: "Gaming Reward Zone",
+  desc: "Gamified milestones based on B.F. Skinner's positive reinforcement — kids earn real rewards tied to real-world achievements.",
+  gradient: "linear-gradient(135deg,#FFD166,#EF4444)",
+  badge: "New"
+}, {
+  icon: Baby,
+  title: "Infant Sleep Tracker",
+  desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.",
+  gradient: "linear-gradient(135deg,#60A5FA,#6366F1)",
+  badge: "New"
+}, {
+  icon: Video,
+  title: "Parenting Reels",
+  desc: "Short, expert-curated video reels on positive parenting techniques from leading child psychologists.",
+  gradient: "linear-gradient(135deg,#EC4899,#A855F7)",
+  badge: null
+}, {
+  icon: Lightbulb,
+  title: "Daily Parenting Tips",
+  desc: "Science-backed tip delivered every day — personalized to your child's age and developmental stage per Piaget's framework.",
+  gradient: "linear-gradient(135deg,#FFD166,#F97316)",
+  badge: null
+}, {
+  icon: Activity,
+  title: "Life Skills Zone",
+  desc: "Teach independence — from dressing to cooking — with Montessori-aligned milestone tracking that builds intrinsic motivation.",
+  gradient: "linear-gradient(135deg,#A855F7,#6366F1)",
+  badge: null
+}, {
+  icon: GraduationCap,
+  title: "Olympiad Zone",
+  desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14. Builds executive function.",
+  gradient: "linear-gradient(135deg,#F59E0B,#EF4444)",
+  badge: null
+}, {
+  icon: Palette,
+  title: "Art & Craft Reels",
+  desc: "Step-by-step activity videos that stimulate creativity and fine motor development in young children.",
+  gradient: "linear-gradient(135deg,#EC4899,#F97316)",
+  badge: null
+}, {
+  icon: FileText,
+  title: "Printable Worksheets",
+  desc: "Age-appropriate worksheets for learning, colouring, and motor skill development — printable anytime.",
+  gradient: "linear-gradient(135deg,#06B6D4,#10B981)",
+  badge: null
+}, {
+  icon: Puzzle,
+  title: "Daily Brain Puzzles",
+  desc: "Brain-boosting puzzles tailored to your child's cognitive stage — builds logic, creativity and working memory.",
+  gradient: "linear-gradient(135deg,#F97316,#A855F7)",
+  badge: null
+}, {
+  icon: BookOpen,
+  title: "Parenting Articles",
+  desc: "Deep-dive articles written by child development experts and child psychologists on every stage of childhood.",
+  gradient: "linear-gradient(135deg,#3B82F6,#06B6D4)",
+  badge: null
+}, {
+  icon: Users,
+  title: "Babysitter Profiles",
+  desc: "Create and share child care profiles securely. Routines, allergies, and notes — all in one safe place.",
+  gradient: "linear-gradient(135deg,#10B981,#A855F7)",
+  badge: null
+}, {
+  icon: Award,
+  title: "Parent Score & Streaks",
+  desc: "Gamified motivation keeps you consistent — earn points, build streaks, and celebrate every parenting win.",
+  gradient: "linear-gradient(135deg,#FFD166,#EF4444)",
+  badge: null
+}];
+const TESTIMONIALS = [{
+  name: "Priya M.",
+  location: "Mumbai, India",
+  text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. I never thought a parenting app could be this specific — it felt like talking to an actual child psychologist.",
+  avatar: "P",
+  color: "#A855F7",
+  result: "Tantrums reduced 80% in 3 weeks"
+}, {
+  name: "Rahul & Kavya",
+  location: "Bangalore, India",
+  text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings. Data-driven parenting actually works — we saw the pattern in the app first.",
+  avatar: "R",
+  color: "#06B6D4",
+  result: "Identified sleep-trigger pattern in 5 days"
+}, {
+  name: "Sarah K.",
+  location: "Dubai, UAE",
+  text: "Twin toddlers + infant sleep tracker + Amy's personalized CDC-aligned tips = sanity saved. The sleep schedule feature got our 6-month-old sleeping through the night in 11 days. Nothing else had worked.",
+  avatar: "S",
+  color: "#EC4899",
+  result: "Baby sleeping through the night in 11 days"
+}];
 export default function LandingPage() {
-  const { t } = useTranslation();
-  return (
-    <div
-      data-on-dark
-      className="min-h-screen flex flex-col overflow-x-hidden text-white relative"
-      style={{
-        background: "linear-gradient(160deg,#0f0c29 0%,#302b63 55%,#24243e 100%)",
-      }}
-    >
+  const {
+    t
+  } = useTranslation();
+  return <div data-on-dark className="min-h-screen flex flex-col overflow-x-hidden text-white relative" style={{
+    background: "linear-gradient(160deg,#0f0c29 0%,#302b63 55%,#24243e 100%)"
+  }}>
       <style>{`
         @keyframes amyFloat {
           0%, 100% { transform: translateY(0) }
@@ -429,22 +380,18 @@ export default function LandingPage() {
 
       {/* Glow blobs */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-30"
-          style={{ background: "radial-gradient(circle,#A855F7,transparent 70%)" }}
-        />
-        <div
-          className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-25"
-          style={{ background: "radial-gradient(circle,#3B82F6,transparent 70%)" }}
-        />
-        <div
-          className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle,#EC4899,transparent 70%)" }}
-        />
-        <div
-          className="absolute top-2/3 left-10 w-[300px] h-[300px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle,#06B6D4,transparent 70%)" }}
-        />
+        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-30" style={{
+        background: "radial-gradient(circle,#A855F7,transparent 70%)"
+      }} />
+        <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-25" style={{
+        background: "radial-gradient(circle,#3B82F6,transparent 70%)"
+      }} />
+        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full opacity-20" style={{
+        background: "radial-gradient(circle,#EC4899,transparent 70%)"
+      }} />
+        <div className="absolute top-2/3 left-10 w-[300px] h-[300px] rounded-full opacity-15" style={{
+        background: "radial-gradient(circle,#06B6D4,transparent 70%)"
+      }} />
       </div>
 
       {/* NAV */}
@@ -453,18 +400,15 @@ export default function LandingPage() {
           <div className="flex items-center gap-3 cursor-pointer">
             <AmyMascotLogo size={44} />
             <div className="flex flex-col leading-tight">
-              <span
-                className="font-quicksand font-black text-xl"
-                style={{
-                  background: "linear-gradient(90deg,#A855F7,#EC4899,#06B6D4)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                AmyNest AI
+              <span className="font-quicksand font-black text-xl" style={{
+              background: "linear-gradient(90deg,#A855F7,#EC4899,#06B6D4)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent"
+            }}>
+                {t("pages.landing.amynest_ai")}
               </span>
               <span className="text-[10px] text-white/45 font-medium tracking-wide">
-                Where Smart Parenting Starts
+                {t("pages.landing.where_smart_parenting_starts")}
               </span>
             </div>
           </div>
@@ -478,7 +422,7 @@ export default function LandingPage() {
           </Link>
           <Link href="/sign-up">
             <button className="amy-cta text-sm font-bold px-5 py-2 rounded-xl text-white hidden md:flex items-center gap-1.5">
-              Get Started Free <ArrowRight className="h-3.5 w-3.5" />
+              {t("pages.landing.get_started_free")} <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </Link>
         </div>
@@ -488,12 +432,9 @@ export default function LandingPage() {
       <section className="relative z-10 flex flex-col items-center text-center px-5 pt-12 pb-16">
         <div className="amy-fade-up-1 relative -mb-6 flex items-center justify-center">
           <div className="amy-hero-float">
-            <img
-              src={heroImg}
-              alt="AmyNest AI"
-              className="amy-hero-glow w-80 md:w-[560px] object-contain"
-              style={{ mixBlendMode: "screen" }}
-            />
+            <img src={heroImg} alt={t("pages.landing.amynest_ai_2")} className="amy-hero-glow w-80 md:w-[560px] object-contain" style={{
+            mixBlendMode: "screen"
+          }} />
           </div>
         </div>
 
@@ -507,10 +448,7 @@ export default function LandingPage() {
 
         <div className="amy-fade-up-4 flex flex-col sm:flex-row items-center gap-4">
           <Link href="/sign-up">
-            <button
-              className="amy-cta inline-flex items-center gap-2 text-base md:text-lg font-bold px-9 md:px-10 py-4 md:py-5 rounded-2xl text-white"
-              data-testid="button-hero-cta"
-            >
+            <button className="amy-cta inline-flex items-center gap-2 text-base md:text-lg font-bold px-9 md:px-10 py-4 md:py-5 rounded-2xl text-white" data-testid="button-hero-cta">
               {t("landing.hero_cta")}
               <ArrowRight className="h-5 w-5" />
             </button>
@@ -525,26 +463,17 @@ export default function LandingPage() {
       </section>
 
       {/* SCIENCE CITATIONS SCROLLING MARQUEE */}
-      <div
-        className="relative z-10 overflow-hidden py-3 border-y"
-        style={{
-          borderColor: "rgba(168,85,247,0.15)",
-          background: "rgba(168,85,247,0.04)",
-        }}
-      >
+      <div className="relative z-10 overflow-hidden py-3 border-y" style={{
+      borderColor: "rgba(168,85,247,0.15)",
+      background: "rgba(168,85,247,0.04)"
+    }}>
         <div className="marquee-track">
-          {[...SCIENCE_CITATIONS, ...SCIENCE_CITATIONS].map((cite, i) => (
-            <span
-              key={i}
-              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] text-white/55 font-medium whitespace-nowrap"
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
+          {[...SCIENCE_CITATIONS, ...SCIENCE_CITATIONS].map((cite, i) => <span key={i} className="shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] text-white/55 font-medium whitespace-nowrap" style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)"
+        }}>
               {cite}
-            </span>
-          ))}
+            </span>)}
         </div>
       </div>
 
@@ -565,23 +494,26 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-8">
-            {PROBLEMS.map(({ icon: Icon, labelKey, color }) => (
-              <div
-                key={labelKey}
-                className="amy-glass-card rounded-2xl p-4 md:p-5 flex items-center gap-3"
-              >
-                <div
-                  className="h-10 w-10 md:h-11 md:w-11 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: `${color}20`,
-                    border: `1px solid ${color}40`,
-                  }}
-                >
-                  <Icon className="h-5 w-5 md:h-5 md:w-5" style={{ color }} />
+            {PROBLEMS.map(({
+            icon: Icon,
+            labelKey,
+            color
+          }) => {
+            const {
+              t
+            } = useTranslation();
+            return <div key={labelKey} className="amy-glass-card rounded-2xl p-4 md:p-5 flex items-center gap-3">
+                <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl flex items-center justify-center shrink-0" style={{
+                background: `${color}20`,
+                border: `1px solid ${color}40`
+              }}>
+                  <Icon className="h-5 w-5 md:h-5 md:w-5" style={{
+                  color
+                }} />
                 </div>
                 <span className="text-white/90 text-sm md:text-base font-semibold">{t(labelKey)}</span>
-              </div>
-            ))}
+              </div>;
+          })}
           </div>
 
           <p className="text-center text-white/70 text-base md:text-lg italic">
@@ -603,28 +535,19 @@ export default function LandingPage() {
           </div>
 
           {/* Amy Coach hero card */}
-          <div
-            className="amy-glass-card rounded-3xl p-7 md:p-10 mb-5 relative overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(168,85,247,0.18) 0%, rgba(99,102,241,0.12) 60%, rgba(255,255,255,0.04) 100%)",
-              borderColor: "rgba(168,85,247,0.35)",
-            }}
-          >
-            <div
-              aria-hidden
-              className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-40 pointer-events-none"
-              style={{ background: "radial-gradient(circle,#A855F7,transparent 70%)" }}
-            />
+          <div className="amy-glass-card rounded-3xl p-7 md:p-10 mb-5 relative overflow-hidden" style={{
+          background: "linear-gradient(135deg, rgba(168,85,247,0.18) 0%, rgba(99,102,241,0.12) 60%, rgba(255,255,255,0.04) 100%)",
+          borderColor: "rgba(168,85,247,0.35)"
+        }}>
+            <div aria-hidden className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-40 pointer-events-none" style={{
+            background: "radial-gradient(circle,#A855F7,transparent 70%)"
+          }} />
             <div className="relative">
               <div className="flex flex-col md:flex-row md:items-start gap-5 md:gap-7 mb-6">
-                <div
-                  className="h-14 w-14 md:h-16 md:w-16 rounded-2xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg,#A855F7,#6366F1)",
-                    boxShadow: "0 10px 30px rgba(168,85,247,0.45)",
-                  }}
-                >
+                <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl flex items-center justify-center shrink-0" style={{
+                background: "linear-gradient(135deg,#A855F7,#6366F1)",
+                boxShadow: "0 10px 30px rgba(168,85,247,0.45)"
+              }}>
                   <Brain className="h-7 w-7 md:h-8 md:w-8 text-white" />
                 </div>
                 <div className="flex-1">
@@ -632,13 +555,10 @@ export default function LandingPage() {
                     <h3 className="font-quicksand font-bold text-xl md:text-2xl text-white">
                       {t("landing.coach_title")}
                     </h3>
-                    <span
-                      className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white"
-                      style={{
-                        background: "linear-gradient(135deg,#A855F7,#EC4899)",
-                        boxShadow: "0 4px 14px rgba(236,72,153,0.4)",
-                      }}
-                    >
+                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
+                    background: "linear-gradient(135deg,#A855F7,#EC4899)",
+                    boxShadow: "0 4px 14px rgba(236,72,153,0.4)"
+                  }}>
                       {t("landing.core_feature")}
                     </span>
                   </div>
@@ -648,107 +568,83 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                {COACH_HIGHLIGHT_KEYS.map((key) => (
-                  <div
-                    key={key}
-                    className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5"
-                    style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                    }}
-                  >
+                {COACH_HIGHLIGHT_KEYS.map(key => {
+                const {
+                  t
+                } = useTranslation();
+                return <div key={key} className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5" style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)"
+                }}>
                     <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-purple-300 shrink-0" />
                     <span className="text-white/85 text-xs md:text-sm font-medium">{t(key)}</span>
-                  </div>
-                ))}
+                  </div>;
+              })}
               </div>
             </div>
           </div>
 
           {/* Kids Control Center hero card */}
-          <div
-            className="amy-glass-card rounded-3xl p-7 md:p-10 mb-5 relative overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(123,63,242,0.18) 0%, rgba(255,78,205,0.12) 60%, rgba(255,255,255,0.04) 100%)",
-              borderColor: "rgba(123,63,242,0.35)",
-            }}
-          >
-            <div
-              aria-hidden
-              className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-35 pointer-events-none"
-              style={{ background: "radial-gradient(circle,#FF4ECD,transparent 70%)" }}
-            />
+          <div className="amy-glass-card rounded-3xl p-7 md:p-10 mb-5 relative overflow-hidden" style={{
+          background: "linear-gradient(135deg, rgba(123,63,242,0.18) 0%, rgba(255,78,205,0.12) 60%, rgba(255,255,255,0.04) 100%)",
+          borderColor: "rgba(123,63,242,0.35)"
+        }}>
+            <div aria-hidden className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-35 pointer-events-none" style={{
+            background: "radial-gradient(circle,#FF4ECD,transparent 70%)"
+          }} />
             <div className="relative">
               <div className="flex flex-col md:flex-row md:items-start gap-5 md:gap-7 mb-6">
-                <div
-                  className="h-14 w-14 md:h-16 md:w-16 rounded-2xl flex items-center justify-center shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg,#7B3FF2,#FF4ECD)",
-                    boxShadow: "0 10px 30px rgba(255,78,205,0.45)",
-                  }}
-                >
+                <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl flex items-center justify-center shrink-0" style={{
+                background: "linear-gradient(135deg,#7B3FF2,#FF4ECD)",
+                boxShadow: "0 10px 30px rgba(255,78,205,0.45)"
+              }}>
                   <ShieldCheck className="h-7 w-7 md:h-8 md:w-8 text-white" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <h3 className="font-quicksand font-bold text-xl md:text-2xl text-white">
-                      Kids Control Center
+                      {t("pages.landing.kids_control_center")}
                     </h3>
-                    <span
-                      className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white"
-                      style={{
-                        background: "linear-gradient(135deg,#7B3FF2,#FF4ECD)",
-                        boxShadow: "0 4px 14px rgba(255,78,205,0.4)",
-                      }}
-                    >
-                      Coming Soon
+                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{
+                    background: "linear-gradient(135deg,#7B3FF2,#FF4ECD)",
+                    boxShadow: "0 4px 14px rgba(255,78,205,0.4)"
+                  }}>
+                      {t("pages.landing.coming_soon")}
                     </span>
                   </div>
                   <p className="text-white/75 text-sm md:text-base leading-relaxed">
-                    A dedicated child-safe experience built on AAP's 2023 digital wellness guidelines. Screen time
-                    limits, focus mode, parent lock, and synced daily routines — all in a dashboard your child can
-                    actually use independently.
+                    {t("pages.landing.a_dedicated_child_safe_experience_built_on_aap_s_2023_digita")}
                   </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                {[
-                  "Screen Time Limits (AAP-aligned)",
-                  "Child-Safe Focus Mode",
-                  "Routine Sync with Parent App",
-                  "PIN-Protected Parent Lock",
-                ].map((feat) => (
-                  <div
-                    key={feat}
-                    className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5"
-                    style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                    }}
-                  >
+                {["Screen Time Limits (AAP-aligned)", "Child-Safe Focus Mode", "Routine Sync with Parent App", "PIN-Protected Parent Lock"].map(feat => <div key={feat} className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5" style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)"
+              }}>
                     <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-pink-300 shrink-0" />
                     <span className="text-white/85 text-xs md:text-sm font-medium">{feat}</span>
-                  </div>
-                ))}
+                  </div>)}
               </div>
             </div>
           </div>
 
           {/* Secondary feature cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
-            {SECONDARY_FEATURES.map(({ icon: Icon, titleKey, descKey, gradient }) => (
-              <div
-                key={titleKey}
-                className="amy-glass-card rounded-3xl p-5 md:p-7 flex flex-col gap-3 md:gap-4"
-              >
-                <div
-                  className="h-11 w-11 md:h-12 md:w-12 rounded-2xl flex items-center justify-center"
-                  style={{
-                    background: gradient,
-                    boxShadow: "0 8px 24px rgba(168,85,247,0.25)",
-                  }}
-                >
+            {SECONDARY_FEATURES.map(({
+            icon: Icon,
+            titleKey,
+            descKey,
+            gradient
+          }) => {
+            const {
+              t
+            } = useTranslation();
+            return <div key={titleKey} className="amy-glass-card rounded-3xl p-5 md:p-7 flex flex-col gap-3 md:gap-4">
+                <div className="h-11 w-11 md:h-12 md:w-12 rounded-2xl flex items-center justify-center" style={{
+                background: gradient,
+                boxShadow: "0 8px 24px rgba(168,85,247,0.25)"
+              }}>
                   <Icon className="h-5 w-5 md:h-6 md:w-6 text-white" />
                 </div>
                 <div>
@@ -757,8 +653,8 @@ export default function LandingPage() {
                   </h3>
                   <p className="text-white/65 text-xs md:text-sm leading-relaxed">{t(descKey)}</p>
                 </div>
-              </div>
-            ))}
+              </div>;
+          })}
           </div>
 
           {/* Mid CTA */}
@@ -767,10 +663,7 @@ export default function LandingPage() {
               {t("landing.mid_cta")}
             </p>
             <Link href="/sign-up">
-              <button
-                className="amy-cta inline-flex items-center gap-2 text-sm md:text-base font-bold px-7 md:px-8 py-3.5 md:py-4 rounded-2xl text-white"
-                data-testid="button-features-cta"
-              >
+              <button className="amy-cta inline-flex items-center gap-2 text-sm md:text-base font-bold px-7 md:px-8 py-3.5 md:py-4 rounded-2xl text-white" data-testid="button-features-cta">
                 {t("landing.mid_cta_btn")}
                 <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
               </button>
@@ -785,42 +678,34 @@ export default function LandingPage() {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
               <Sparkles className="h-3 w-3 text-cyan-300" />
-              Everything in One App
+              {t("pages.landing.everything_in_one_app")}
             </div>
             <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              14+ Science-Backed Tools in One App
+              {t("pages.landing.14_science_backed_tools_in_one_app")}
             </h2>
             <p className="text-white/60 text-base max-w-xl mx-auto">
-              From newborns to teens — every feature is grounded in child psychology, AAP guidelines, and developmental research.
+              {t("pages.landing.from_newborns_to_teens_every_feature_is_grounded_in_child_ps")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-            {ALL_FEATURES.map(({ icon: Icon, title, desc, gradient, badge }) => (
-              <div
-                key={title}
-                className="amy-feature-card rounded-2xl p-5 md:p-6 flex flex-col gap-3 relative overflow-hidden"
-              >
-                {badge && (
-                  <span
-                    className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white"
-                    style={{
-                      background: badge === "New"
-                        ? "linear-gradient(135deg,#06B6D4,#3B82F6)"
-                        : "linear-gradient(135deg,#F97316,#EF4444)",
-                    }}
-                  >
+            {ALL_FEATURES.map(({
+            icon: Icon,
+            title,
+            desc,
+            gradient,
+            badge
+          }) => <div key={title} className="amy-feature-card rounded-2xl p-5 md:p-6 flex flex-col gap-3 relative overflow-hidden">
+                {badge && <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{
+              background: badge === "New" ? "linear-gradient(135deg,#06B6D4,#3B82F6)" : "linear-gradient(135deg,#F97316,#EF4444)"
+            }}>
                     {badge}
-                  </span>
-                )}
+                  </span>}
                 <div className="flex items-start gap-3">
-                  <div
-                    className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0"
-                    style={{
-                      background: gradient,
-                      boxShadow: "0 6px 18px rgba(168,85,247,0.25)",
-                    }}
-                  >
+                  <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{
+                background: gradient,
+                boxShadow: "0 6px 18px rgba(168,85,247,0.25)"
+              }}>
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1">
@@ -828,19 +713,18 @@ export default function LandingPage() {
                     <p className="text-white/60 text-xs md:text-sm leading-relaxed">{desc}</p>
                   </div>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
 
           {/* CTA after mega grid */}
           <div className="text-center mt-12">
             <Link href="/sign-up">
               <button className="amy-cta inline-flex items-center gap-2 text-base font-bold px-8 py-4 rounded-2xl text-white">
-                Unlock All Features Free
+                {t("pages.landing.unlock_all_features_free")}
                 <ArrowRight className="h-5 w-5" />
               </button>
             </Link>
-            <p className="mt-3 text-xs text-white/40">Free plan included · Upgrade anytime</p>
+            <p className="mt-3 text-xs text-white/40">{t("pages.landing.free_plan_included_upgrade_anytime")}</p>
           </div>
         </div>
       </section>
@@ -862,35 +746,33 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
-            {STEPS.map(({ icon: Icon, titleKey, descKey }, idx) => (
-              <div
-                key={titleKey}
-                className="amy-glass-card rounded-3xl p-6 md:p-7 relative"
-              >
-                <div
-                  className="absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm font-quicksand"
-                  style={{
-                    background: "linear-gradient(135deg,#A855F7,#EC4899)",
-                    boxShadow: "0 6px 18px rgba(236,72,153,0.45)",
-                  }}
-                >
+            {STEPS.map(({
+            icon: Icon,
+            titleKey,
+            descKey
+          }, idx) => {
+            const {
+              t
+            } = useTranslation();
+            return <div key={titleKey} className="amy-glass-card rounded-3xl p-6 md:p-7 relative">
+                <div className="absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm font-quicksand" style={{
+                background: "linear-gradient(135deg,#A855F7,#EC4899)",
+                boxShadow: "0 6px 18px rgba(236,72,153,0.45)"
+              }}>
                   {idx + 1}
                 </div>
-                <div
-                  className="h-12 w-12 rounded-2xl flex items-center justify-center mb-4"
-                  style={{
-                    background: "linear-gradient(135deg,#A855F7,#6366F1)",
-                    boxShadow: "0 8px 24px rgba(168,85,247,0.3)",
-                  }}
-                >
+                <div className="h-12 w-12 rounded-2xl flex items-center justify-center mb-4" style={{
+                background: "linear-gradient(135deg,#A855F7,#6366F1)",
+                boxShadow: "0 8px 24px rgba(168,85,247,0.3)"
+              }}>
                   <Icon className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="font-quicksand font-bold text-lg md:text-xl text-white mb-2">
                   {t(titleKey)}
                 </h3>
                 <p className="text-white/65 text-sm leading-relaxed">{t(descKey)}</p>
-              </div>
-            ))}
+              </div>;
+          })}
           </div>
         </div>
       </section>
@@ -901,46 +783,44 @@ export default function LandingPage() {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-1.5 amy-glass mb-4 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
               <Heart className="h-3 w-3 text-pink-300" />
-              Parent Stories
+              {t("pages.landing.parent_stories")}
             </div>
             <h2 className="font-quicksand font-bold text-3xl md:text-4xl text-white mb-3">
-              Real Parents, Real Results
+              {t("pages.landing.real_parents_real_results")}
             </h2>
             <p className="text-white/60 text-base max-w-lg mx-auto">
-              Thousands of families use AmyNest every day to raise happier, calmer, more confident kids.
+              {t("pages.landing.thousands_of_families_use_amynest_every_day_to_raise_happier")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {TESTIMONIALS.map(({ name, location, text, avatar, color, result }) => (
-              <div key={name} className="amy-testimonial rounded-3xl p-6 flex flex-col gap-4">
+            {TESTIMONIALS.map(({
+            name,
+            location,
+            text,
+            avatar,
+            color,
+            result
+          }) => <div key={name} className="amy-testimonial rounded-3xl p-6 flex flex-col gap-4">
                 <div className="flex justify-between items-start">
                   <div className="flex">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    ))}
+                    {[1, 2, 3, 4, 5].map(s => <Star key={s} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}
                   </div>
                 </div>
                 {/* Outcome badge */}
-                <div
-                  className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full text-[10px] font-bold text-white"
-                  style={{
-                    background: `linear-gradient(135deg,${color}CC,${color}88)`,
-                    border: `1px solid ${color}44`,
-                  }}
-                >
+                <div className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full text-[10px] font-bold text-white" style={{
+              background: `linear-gradient(135deg,${color}CC,${color}88)`,
+              border: `1px solid ${color}44`
+            }}>
                   <BarChart3 className="h-3 w-3" />
                   {result}
                 </div>
                 <p className="text-white/80 text-sm leading-relaxed flex-1">"{text}"</p>
                 <div className="flex items-center gap-3">
-                  <div
-                    className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg,${color},${color}99)`,
-                      boxShadow: `0 4px 14px ${color}40`,
-                    }}
-                  >
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0" style={{
+                background: `linear-gradient(135deg,${color},${color}99)`,
+                boxShadow: `0 4px 14px ${color}40`
+              }}>
                     {avatar}
                   </div>
                   <div>
@@ -948,8 +828,7 @@ export default function LandingPage() {
                     <p className="text-white/50 text-xs">{location}</p>
                   </div>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -957,27 +836,19 @@ export default function LandingPage() {
       {/* TRUST / SCIENCE */}
       <section className="relative z-10 px-5 pb-20">
         <div className="max-w-5xl mx-auto">
-          <div
-            className="amy-glass rounded-3xl p-7 md:p-12 relative overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.10) 100%)",
-              borderColor: "rgba(168,85,247,0.25)",
-            }}
-          >
-            <div
-              aria-hidden
-              className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full opacity-30 pointer-events-none"
-              style={{ background: "radial-gradient(circle,#6366F1,transparent 70%)" }}
-            />
+          <div className="amy-glass rounded-3xl p-7 md:p-12 relative overflow-hidden" style={{
+          background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.10) 100%)",
+          borderColor: "rgba(168,85,247,0.25)"
+        }}>
+            <div aria-hidden className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full opacity-30 pointer-events-none" style={{
+            background: "radial-gradient(circle,#6366F1,transparent 70%)"
+          }} />
 
             <div className="relative text-center mb-9">
-              <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl mb-5"
-                style={{
-                  background: "linear-gradient(135deg,#6366F1,#A855F7)",
-                  boxShadow: "0 10px 30px rgba(99,102,241,0.45)",
-                }}
-              >
+              <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl mb-5" style={{
+              background: "linear-gradient(135deg,#6366F1,#A855F7)",
+              boxShadow: "0 10px 30px rgba(99,102,241,0.45)"
+            }}>
                 <ShieldCheck className="h-7 w-7 text-white" />
               </div>
               <h2 className="font-quicksand font-bold text-2xl md:text-4xl text-white leading-tight mb-3">
@@ -989,30 +860,30 @@ export default function LandingPage() {
             </div>
 
             <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-              {TRUST_PILLARS.map(({ icon: Icon, titleKey, descKey }) => (
-                <div
-                  key={titleKey}
-                  className="rounded-2xl p-5 md:p-6"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                  }}
-                >
-                  <div
-                    className="h-10 w-10 rounded-xl flex items-center justify-center mb-3"
-                    style={{
-                      background: "rgba(168,85,247,0.20)",
-                      border: "1px solid rgba(168,85,247,0.35)",
-                    }}
-                  >
+              {TRUST_PILLARS.map(({
+              icon: Icon,
+              titleKey,
+              descKey
+            }) => {
+              const {
+                t
+              } = useTranslation();
+              return <div key={titleKey} className="rounded-2xl p-5 md:p-6" style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)"
+              }}>
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-3" style={{
+                  background: "rgba(168,85,247,0.20)",
+                  border: "1px solid rgba(168,85,247,0.35)"
+                }}>
                     <Icon className="h-5 w-5 text-purple-300" />
                   </div>
                   <h3 className="font-quicksand font-bold text-base md:text-lg text-white mb-1.5">
                     {t(titleKey)}
                   </h3>
                   <p className="text-white/65 text-xs md:text-sm leading-relaxed">{t(descKey)}</p>
-                </div>
-              ))}
+                </div>;
+            })}
             </div>
           </div>
         </div>
@@ -1021,94 +892,75 @@ export default function LandingPage() {
       {/* DOWNLOAD THE APP */}
       <section className="relative z-10 px-5 pb-24">
         <div className="max-w-5xl mx-auto">
-          <div
-            className="amy-glass rounded-3xl overflow-hidden relative"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(168,85,247,0.18) 0%, rgba(99,102,241,0.14) 60%, rgba(236,72,153,0.10) 100%)",
-              borderColor: "rgba(168,85,247,0.35)",
-            }}
-          >
+          <div className="amy-glass rounded-3xl overflow-hidden relative" style={{
+          background: "linear-gradient(135deg, rgba(168,85,247,0.18) 0%, rgba(99,102,241,0.14) 60%, rgba(236,72,153,0.10) 100%)",
+          borderColor: "rgba(168,85,247,0.35)"
+        }}>
             {/* bg glow blobs */}
-            <div
-              aria-hidden
-              className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30 pointer-events-none"
-              style={{ background: "radial-gradient(circle,#A855F7,transparent 70%)" }}
-            />
-            <div
-              aria-hidden
-              className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full opacity-25 pointer-events-none"
-              style={{ background: "radial-gradient(circle,#EC4899,transparent 70%)" }}
-            />
+            <div aria-hidden className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-30 pointer-events-none" style={{
+            background: "radial-gradient(circle,#A855F7,transparent 70%)"
+          }} />
+            <div aria-hidden className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full opacity-25 pointer-events-none" style={{
+            background: "radial-gradient(circle,#EC4899,transparent 70%)"
+          }} />
 
             <div className="relative flex flex-col md:flex-row items-center gap-10 md:gap-0 px-8 py-12 md:py-14">
               {/* Left: copy + buttons */}
               <div className="flex-1 text-center md:text-left z-10">
                 <div className="inline-flex items-center gap-1.5 amy-glass mb-5 text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full text-white/80">
                   <Smartphone className="h-3 w-3 text-purple-300" />
-                  Available on iOS &amp; Android
+                  {t("pages.landing.available_on_ios_android")}
                 </div>
                 <h2 className="font-quicksand font-black text-3xl md:text-4xl text-white leading-tight mb-4">
-                  Take Amy with you{" "}
-                  <span className="amy-gradient-text">everywhere</span>
+                  {t("pages.landing.take_amy_with_you")}{" "}
+                  <span className="amy-gradient-text">{t("pages.landing.everywhere")}</span>
                 </h2>
                 <p className="text-white/65 text-base md:text-lg max-w-md leading-relaxed mb-8">
-                  Get personalised parenting guidance, AI-built routines, and behaviour
-                  insights right from your pocket — free to download.
+                  {t("pages.landing.get_personalised_parenting_guidance_ai_built_routines_and_be")}
                 </p>
 
                 {/* Store buttons */}
                 <div className="flex flex-col sm:flex-row items-center md:items-start gap-4">
                   {/* App Store — coming soon */}
-                  <div
-                    aria-label="App Store — coming soon"
-                    className="relative flex items-center gap-3 px-6 py-3.5 rounded-2xl cursor-default select-none"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      opacity: 0.85,
-                    }}
-                  >
+                  <div aria-label={t("pages.landing.app_store_coming_soon")} className="relative flex items-center gap-3 px-6 py-3.5 rounded-2xl cursor-default select-none" style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  opacity: 0.85
+                }}>
                     <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 fill-white/70" aria-hidden>
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                     </svg>
                     <div className="text-left leading-tight">
-                      <p className="text-white/40 text-[10px] font-medium">Download on the</p>
-                      <p className="text-white/70 font-bold text-base">App Store</p>
+                      <p className="text-white/40 text-[10px] font-medium">{t("pages.landing.download_on_the")}</p>
+                      <p className="text-white/70 font-bold text-base">{t("pages.landing.app_store")}</p>
                     </div>
-                    <span
-                      className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white"
-                      style={{ background: "linear-gradient(135deg,#A855F7,#EC4899)" }}
-                    >
-                      Soon
+                    <span className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white" style={{
+                    background: "linear-gradient(135deg,#A855F7,#EC4899)"
+                  }}>
+                      {t("pages.landing.soon")}
                     </span>
                   </div>
 
                   {/* Google Play — coming soon */}
-                  <div
-                    aria-label="Google Play — coming soon"
-                    className="relative flex items-center gap-3 px-6 py-3.5 rounded-2xl cursor-default select-none"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      opacity: 0.85,
-                    }}
-                  >
+                  <div aria-label={t("pages.landing.google_play_coming_soon")} className="relative flex items-center gap-3 px-6 py-3.5 rounded-2xl cursor-default select-none" style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  opacity: 0.85
+                }}>
                     <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 opacity-70" aria-hidden>
-                      <path d="M3.18 23.76c.3.17.65.19.97.06l12.14-7.01-2.66-2.67-10.45 9.62z" fill="#EA4335"/>
-                      <path d="M22.47 10.3L19.7 8.72l-3.03 2.96 3.03 3.04 2.79-1.61c.8-.46.8-1.75-.02-2.81z" fill="#FBBC04"/>
-                      <path d="M3.18.24C2.88.4 2.69.72 2.69 1.12v21.76l10.7-10.7L3.18.24z" fill="#4285F4"/>
-                      <path d="M16.29 8.28L3.18.24C2.86.07 2.51.09 2.18.26l10.99 10.82 3.12-2.8z" fill="#34A853"/>
+                      <path d="M3.18 23.76c.3.17.65.19.97.06l12.14-7.01-2.66-2.67-10.45 9.62z" fill="#EA4335" />
+                      <path d="M22.47 10.3L19.7 8.72l-3.03 2.96 3.03 3.04 2.79-1.61c.8-.46.8-1.75-.02-2.81z" fill="#FBBC04" />
+                      <path d="M3.18.24C2.88.4 2.69.72 2.69 1.12v21.76l10.7-10.7L3.18.24z" fill="#4285F4" />
+                      <path d="M16.29 8.28L3.18.24C2.86.07 2.51.09 2.18.26l10.99 10.82 3.12-2.8z" fill="#34A853" />
                     </svg>
                     <div className="text-left leading-tight">
-                      <p className="text-white/40 text-[10px] font-medium">Get it on</p>
-                      <p className="text-white/70 font-bold text-base">Google Play</p>
+                      <p className="text-white/40 text-[10px] font-medium">{t("pages.landing.get_it_on")}</p>
+                      <p className="text-white/70 font-bold text-base">{t("pages.landing.google_play")}</p>
                     </div>
-                    <span
-                      className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white"
-                      style={{ background: "linear-gradient(135deg,#A855F7,#EC4899)" }}
-                    >
-                      Soon
+                    <span className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-white" style={{
+                    background: "linear-gradient(135deg,#A855F7,#EC4899)"
+                  }}>
+                      {t("pages.landing.soon_2")}
                     </span>
                   </div>
                 </div>
@@ -1118,20 +970,16 @@ export default function LandingPage() {
               {/* Right: phone mockup */}
               <div className="relative flex-shrink-0 flex items-end justify-center h-80 md:h-96 w-48 md:w-56">
                 {/* Phone outer frame */}
-                <div
-                  className="relative w-44 md:w-52 rounded-[2.5rem] overflow-hidden"
-                  style={{
-                    height: "92%",
-                    background: "linear-gradient(160deg,#1a1a2e,#16213e)",
-                    border: "2px solid rgba(255,255,255,0.12)",
-                    boxShadow: "0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset, 0 0 40px rgba(168,85,247,0.25)",
-                  }}
-                >
+                <div className="relative w-44 md:w-52 rounded-[2.5rem] overflow-hidden" style={{
+                height: "92%",
+                background: "linear-gradient(160deg,#1a1a2e,#16213e)",
+                border: "2px solid rgba(255,255,255,0.12)",
+                boxShadow: "0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset, 0 0 40px rgba(168,85,247,0.25)"
+              }}>
                   {/* Notch */}
-                  <div
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 rounded-b-2xl z-20"
-                    style={{ background: "#0f0c29" }}
-                  />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 rounded-b-2xl z-20" style={{
+                  background: "#0f0c29"
+                }} />
                   {/* Screen content */}
                   <div className="absolute inset-0 pt-5 px-3 pb-3 flex flex-col gap-2 overflow-hidden">
                     {/* Status bar */}
@@ -1144,85 +992,100 @@ export default function LandingPage() {
                     </div>
                     {/* App header */}
                     <div className="flex items-center gap-1.5 px-1">
-                      <div className="h-5 w-5 rounded-full flex items-center justify-center" style={{ background:"linear-gradient(135deg,#7C3AED,#EC4899)" }}>
+                      <div className="h-5 w-5 rounded-full flex items-center justify-center" style={{
+                      background: "linear-gradient(135deg,#7C3AED,#EC4899)"
+                    }}>
                         <span className="text-white text-[7px] font-black">A</span>
                       </div>
-                      <span className="text-white text-[9px] font-bold">AmyNest AI</span>
+                      <span className="text-white text-[9px] font-bold">{t("pages.landing.amynest_ai_3")}</span>
                     </div>
                     {/* Today label */}
-                    <div
-                      className="rounded-xl px-2.5 py-2"
-                      style={{ background:"rgba(168,85,247,0.18)", border:"1px solid rgba(168,85,247,0.3)" }}
-                    >
-                      <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">Today's Routine</p>
+                    <div className="rounded-xl px-2.5 py-2" style={{
+                    background: "rgba(168,85,247,0.18)",
+                    border: "1px solid rgba(168,85,247,0.3)"
+                  }}>
+                      <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">{t("pages.landing.today_s_routine")}</p>
                       <div className="flex flex-col gap-1">
-                        {[
-                          { label:"Wake up & stretch", color:"#A855F7", time:"7:00" },
-                          { label:"Breakfast time", color:"#F97316", time:"7:30" },
-                          { label:"Reading zone", color:"#06B6D4", time:"8:00" },
-                        ].map(({ label, color, time }) => (
-                          <div key={label} className="flex items-center gap-1.5">
-                            <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: color }} />
+                        {[{
+                        label: "Wake up & stretch",
+                        color: "#A855F7",
+                        time: "7:00"
+                      }, {
+                        label: "Breakfast time",
+                        color: "#F97316",
+                        time: "7:30"
+                      }, {
+                        label: "Reading zone",
+                        color: "#06B6D4",
+                        time: "8:00"
+                      }].map(({
+                        label,
+                        color,
+                        time
+                      }) => <div key={label} className="flex items-center gap-1.5">
+                            <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{
+                          background: color
+                        }} />
                             <span className="text-white/80 text-[7px] flex-1">{label}</span>
                             <span className="text-white/40 text-[7px]">{time}</span>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                     </div>
                     {/* Amy chat bubble */}
-                    <div
-                      className="rounded-xl px-2.5 py-2"
-                      style={{ background:"rgba(236,72,153,0.15)", border:"1px solid rgba(236,72,153,0.25)" }}
-                    >
-                      <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">Amy says</p>
+                    <div className="rounded-xl px-2.5 py-2" style={{
+                    background: "rgba(236,72,153,0.15)",
+                    border: "1px solid rgba(236,72,153,0.25)"
+                  }}>
+                      <p className="text-white/50 text-[7px] font-semibold uppercase tracking-wide mb-1">{t("pages.landing.amy_says")}</p>
                       <p className="text-white/75 text-[7px] leading-snug">
-                        "Great morning! Liam completed 3 tasks. Try adding a calm-down corner today."
+                        {t("pages.landing.great_morning_liam_completed_3_tasks_try_adding_a_calm_down_")}
                       </p>
                     </div>
                     {/* Stats row */}
                     <div className="grid grid-cols-2 gap-1.5">
-                      {[
-                        { label:"Streak", value:"14d", color:"#FFD166" },
-                        { label:"Score", value:"920", color:"#A855F7" },
-                      ].map(({ label, value, color }) => (
-                        <div
-                          key={label}
-                          className="rounded-xl p-2 text-center"
-                          style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)" }}
-                        >
-                          <p className="font-bold text-[10px]" style={{ color }}>{value}</p>
+                      {[{
+                      label: "Streak",
+                      value: "14d",
+                      color: "#FFD166"
+                    }, {
+                      label: "Score",
+                      value: "920",
+                      color: "#A855F7"
+                    }].map(({
+                      label,
+                      value,
+                      color
+                    }) => <div key={label} className="rounded-xl p-2 text-center" style={{
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.08)"
+                    }}>
+                          <p className="font-bold text-[10px]" style={{
+                        color
+                      }}>{value}</p>
                           <p className="text-white/45 text-[7px]">{label}</p>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                     {/* Bottom nav bar */}
-                    <div
-                      className="mt-auto rounded-2xl px-3 py-1.5 flex justify-around"
-                      style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)" }}
-                    >
-                      {[Calendar, Brain, MessageCircle, Users].map((Icon, i) => (
-                        <div key={i} className={`flex flex-col items-center gap-0.5 ${i === 0 ? "opacity-100" : "opacity-40"}`}>
+                    <div className="mt-auto rounded-2xl px-3 py-1.5 flex justify-around" style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.08)"
+                  }}>
+                      {[Calendar, Brain, MessageCircle, Users].map((Icon, i) => <div key={i} className={`flex flex-col items-center gap-0.5 ${i === 0 ? "opacity-100" : "opacity-40"}`}>
                           <Icon className="h-3 w-3 text-white" />
                           <div className={`h-0.5 w-3 rounded-full ${i === 0 ? "bg-purple-400" : "bg-transparent"}`} />
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                   </div>
                   {/* Reflective sheen */}
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 45%)",
-                    }}
-                  />
+                  <div aria-hidden className="absolute inset-0 pointer-events-none" style={{
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 45%)"
+                }} />
                 </div>
                 {/* Phone shadow */}
-                <div
-                  aria-hidden
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 h-6 rounded-full pointer-events-none"
-                  style={{ background:"rgba(168,85,247,0.3)", filter:"blur(16px)" }}
-                />
+                <div aria-hidden className="absolute bottom-0 left-1/2 -translate-x-1/2 w-36 h-6 rounded-full pointer-events-none" style={{
+                background: "rgba(168,85,247,0.3)",
+                filter: "blur(16px)"
+              }} />
               </div>
             </div>
           </div>
@@ -1236,31 +1099,27 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <AmyIcon size={38} ring />
               <div className="flex flex-col leading-tight">
-                <span
-                  className="font-quicksand font-black text-lg"
-                  style={{
-                    background: "linear-gradient(90deg,#A855F7,#EC4899,#06B6D4)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  AmyNest AI
+                <span className="font-quicksand font-black text-lg" style={{
+                background: "linear-gradient(90deg,#A855F7,#EC4899,#06B6D4)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent"
+              }}>
+                  {t("pages.landing.amynest_ai_4")}
                 </span>
                 <span className="text-[10px] text-white/40 font-medium tracking-wide">
-                  Where Smart Parenting Starts
+                  {t("pages.landing.where_smart_parenting_starts_2")}
                 </span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-6 text-xs text-white/40">
-            <Link href="/sign-up"><span className="hover:text-white/70 transition-colors cursor-pointer">Sign Up</span></Link>
-            <Link href="/sign-in"><span className="hover:text-white/70 transition-colors cursor-pointer">Sign In</span></Link>
-            <Link href="/privacy"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-privacy">Privacy Policy</span></Link>
-            <Link href="/terms"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-terms">Terms of Service</span></Link>
+            <Link href="/sign-up"><span className="hover:text-white/70 transition-colors cursor-pointer">{t("pages.landing.sign_up")}</span></Link>
+            <Link href="/sign-in"><span className="hover:text-white/70 transition-colors cursor-pointer">{t("pages.landing.sign_in")}</span></Link>
+            <Link href="/privacy"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-privacy">{t("pages.landing.privacy_policy")}</span></Link>
+            <Link href="/terms"><span className="hover:text-white/70 transition-colors cursor-pointer" data-testid="link-terms">{t("pages.landing.terms_of_service")}</span></Link>
           </div>
-          <p className="text-xs text-white/30">© 2026 AmyNest AI. All rights reserved.</p>
+          <p className="text-xs text-white/30">{t("pages.landing.2026_amynest_ai_all_rights_reserved")}</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 }

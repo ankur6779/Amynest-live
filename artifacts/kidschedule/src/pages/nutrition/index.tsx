@@ -595,7 +595,7 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NutritionHubPage() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const lang = (["en", "hi", "hinglish"].includes(i18n.language) ? i18n.language : "en") as Lang;
 
   const [activeAgeGroupId, setActiveAgeGroupId] = useState<AgeGroupId>("toddler_1_3");

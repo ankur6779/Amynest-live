@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,7 @@ const SUBJECTS: Array<{ key: Subject; label: string; emoji: string }> = [
 // ─── Page ────────────────────────────────────────────────────────────────
 
 export default function AmyAiTutorPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const authFetch = useAuthFetch();
   const { entitlements, isPremium, refresh: refreshSubscription } = useSubscription();
@@ -207,9 +209,9 @@ export default function AmyAiTutorPage() {
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 shrink-0" />
           {limitReached ? (
-            <span className="font-bold">Daily Amy AI limit reached — upgrade for unlimited.</span>
+            <span className="font-bold">{t("pages.amy_ai_tutor.daily_amy_ai_limit_reached")}</span>
           ) : isPremium ? (
-            <span>Premium — unlimited Amy AI</span>
+            <span>{t("pages.amy_ai_tutor.premium_unlimited_amy_ai")}</span>
           ) : (
             <span>{remaining} of {dailyLimit} Amy AI replies left today</span>
           )}
@@ -226,7 +228,7 @@ export default function AmyAiTutorPage() {
 
       {/* Mode + subject + topic strip */}
       <div className="flex-shrink-0 mb-3 space-y-2">
-        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Tutor mode">
+        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={t("pages.amy_ai_tutor.tutor_mode")}>
           {(Object.keys(MODE_META) as Mode[]).map((m) => {
             const meta = MODE_META[m];
             const Icon = meta.icon;
@@ -253,7 +255,7 @@ export default function AmyAiTutorPage() {
             );
           })}
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Subject">
+        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={t("pages.amy_ai_tutor.subject")}>
           {SUBJECTS.map((s) => {
             const active = subject === s.key;
             return (
@@ -281,7 +283,7 @@ export default function AmyAiTutorPage() {
           type="text"
           value={topic}
           onChange={(e) => setTopic(e.target.value.slice(0, 120))}
-          placeholder="Topic (optional) — e.g. addition, phonics letter B, water cycle"
+          placeholder={t("pages.amy_ai_tutor.topic_placeholder")}
           className="w-full text-xs px-3 py-2 rounded-full border border-border bg-card focus:outline-none focus:border-primary"
           data-testid="amy-tutor-topic"
         />
@@ -311,7 +313,7 @@ export default function AmyAiTutorPage() {
           <div className="flex items-center gap-2 text-muted-foreground text-sm" data-testid="amy-tutor-thinking">
             <AmyIcon size={28} bounce ring />
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Amy is thinking…</span>
+            <span>{t("pages.amy_ai_tutor.amy_is_thinking")}</span>
           </div>
         )}
         <div ref={bottomRef} />

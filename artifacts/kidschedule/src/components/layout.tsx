@@ -15,109 +15,173 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
-
-function SmartParentBadge({ className = "" }: { className?: string }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm ${className}`}
-      data-testid="badge-smart-parent"
-    >
+function SmartParentBadge({
+  className = ""
+}: {
+  className?: string;
+}) {
+  const {
+    t
+  } = useTranslation();
+  return <span className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm ${className}`} data-testid="badge-smart-parent">
       <Sparkles className="h-2.5 w-2.5" />
-      Smart Parent
-    </span>
-  );
+      {t("components.layout.smart_parent")}
+    </span>;
 }
-
-function ThemeToggleRow({ onToggle }: { onToggle?: () => void }) {
-  const { mode, toggleTheme } = useTheme();
-  const { t } = useTranslation();
+function ThemeToggleRow({
+  onToggle
+}: {
+  onToggle?: () => void;
+}) {
+  const {
+    mode,
+    toggleTheme
+  } = useTheme();
+  const {
+    t
+  } = useTranslation();
   const isDark = mode === "dark";
-  return (
-    <button
-      type="button"
-      onClick={() => { toggleTheme(); onToggle?.(); }}
-      data-testid="button-theme-toggle"
-      className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-    >
+  return <button type="button" onClick={() => {
+    toggleTheme();
+    onToggle?.();
+  }} data-testid="button-theme-toggle" className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
       <span className="flex items-center gap-3">
-        {isDark
-          ? <Moon className="h-5 w-5 text-violet-400" />
-          : <Sun className="h-5 w-5 text-amber-500" />}
+        {isDark ? <Moon className="h-5 w-5 text-violet-400" /> : <Sun className="h-5 w-5 text-amber-500" />}
         <span>{isDark ? t("nav.dark_mode") : t("nav.light_mode")}</span>
       </span>
-      <span
-        className={`relative h-6 w-11 rounded-full border transition-colors ${
-          isDark
-            ? "bg-violet-500/40 border-violet-400/50"
-            : "bg-slate-200 border-slate-300"
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full shadow-md transition-transform ${
-            isDark ? "translate-x-5 bg-violet-500" : "translate-x-0.5 bg-amber-500"
-          }`}
-        />
+      <span className={`relative h-6 w-11 rounded-full border transition-colors ${isDark ? "bg-violet-500/40 border-violet-400/50" : "bg-slate-200 border-slate-300"}`}>
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full shadow-md transition-transform ${isDark ? "translate-x-5 bg-violet-500" : "translate-x-0.5 bg-amber-500"}`} />
       </span>
-    </button>
-  );
+    </button>;
 }
-
 type NavItem = {
   href: string;
   labelKey: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{
+    className?: string;
+  }>;
   badge?: string;
 };
-
-const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard",           labelKey: "nav.dashboard",           icon: Home },
-  { href: "/parenting-hub",       labelKey: "nav.parenting_hub",       icon: BookOpen },
-  { href: "/amy-coach",           labelKey: "nav.amy_coach",           icon: Brain },
-  { href: "/kids-control-center", labelKey: "nav.kids_control_center", icon: Baby, badge: "Soon 🚀" },
-  { href: "/children",            labelKey: "nav.children",            icon: Users },
-  { href: "/routines",            labelKey: "nav.routines",            icon: Calendar },
-  { href: "/progress",            labelKey: "nav.progress",            icon: TrendingUp },
-  { href: "/insights",            labelKey: "nav.insights",            icon: BarChart2 },
-  { href: "/rewards",             labelKey: "nav.rewards",             icon: Trophy },
-  { href: "/behavior",            labelKey: "nav.behavior",            icon: Star },
-  { href: "/assistant",           labelKey: "nav.amy_ai",              icon: Bot },
-  { href: "/games",               labelKey: "nav.games",               icon: Gamepad2 },
-  { href: "/recipes",             labelKey: "nav.my_recipes",          icon: ChefHat },
-  { href: "/nutrition",           labelKey: "nav.nutrition_hub",       icon: Salad },
-  { href: "/parent-profile",      labelKey: "nav.profile",             icon: UserCircle },
-  { href: "/pricing",             labelKey: "nav.pricing",             icon: Sparkles },
-  { href: "/referrals",           labelKey: "nav.referrals",           icon: Gift },
-];
-
-const BOTTOM_NAV_ITEMS = [
-  { href: "/dashboard",     labelKey: "nav.dashboard",     icon: Home,     center: false },
-  { href: "/routines",      labelKey: "nav.routines",      icon: Calendar, center: false },
-  { href: "/amy-coach",     labelKey: "nav.amy_coach",     icon: Brain,    center: true  },
-  { href: "/parenting-hub", labelKey: "nav.parenting_hub", icon: BookOpen, center: false },
-];
-
-export function Layout({ children }: { children: React.ReactNode }) {
+const NAV_ITEMS: NavItem[] = [{
+  href: "/dashboard",
+  labelKey: "nav.dashboard",
+  icon: Home
+}, {
+  href: "/parenting-hub",
+  labelKey: "nav.parenting_hub",
+  icon: BookOpen
+}, {
+  href: "/amy-coach",
+  labelKey: "nav.amy_coach",
+  icon: Brain
+}, {
+  href: "/kids-control-center",
+  labelKey: "nav.kids_control_center",
+  icon: Baby,
+  badge: "Soon 🚀"
+}, {
+  href: "/children",
+  labelKey: "nav.children",
+  icon: Users
+}, {
+  href: "/routines",
+  labelKey: "nav.routines",
+  icon: Calendar
+}, {
+  href: "/progress",
+  labelKey: "nav.progress",
+  icon: TrendingUp
+}, {
+  href: "/insights",
+  labelKey: "nav.insights",
+  icon: BarChart2
+}, {
+  href: "/rewards",
+  labelKey: "nav.rewards",
+  icon: Trophy
+}, {
+  href: "/behavior",
+  labelKey: "nav.behavior",
+  icon: Star
+}, {
+  href: "/assistant",
+  labelKey: "nav.amy_ai",
+  icon: Bot
+}, {
+  href: "/games",
+  labelKey: "nav.games",
+  icon: Gamepad2
+}, {
+  href: "/recipes",
+  labelKey: "nav.my_recipes",
+  icon: ChefHat
+}, {
+  href: "/nutrition",
+  labelKey: "nav.nutrition_hub",
+  icon: Salad
+}, {
+  href: "/parent-profile",
+  labelKey: "nav.profile",
+  icon: UserCircle
+}, {
+  href: "/pricing",
+  labelKey: "nav.pricing",
+  icon: Sparkles
+}, {
+  href: "/referrals",
+  labelKey: "nav.referrals",
+  icon: Gift
+}];
+const BOTTOM_NAV_ITEMS = [{
+  href: "/dashboard",
+  labelKey: "nav.dashboard",
+  icon: Home,
+  center: false
+}, {
+  href: "/routines",
+  labelKey: "nav.routines",
+  icon: Calendar,
+  center: false
+}, {
+  href: "/amy-coach",
+  labelKey: "nav.amy_coach",
+  icon: Brain,
+  center: true
+}, {
+  href: "/parenting-hub",
+  labelKey: "nav.parenting_hub",
+  icon: BookOpen,
+  center: false
+}];
+export function Layout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
   const [location] = useLocation();
-  const { signOut } = useClerk();
-  const { user } = useUser();
-  const { t } = useTranslation();
-  const { isPremium } = useSubscription();
+  const {
+    signOut
+  } = useClerk();
+  const {
+    user
+  } = useUser();
+  const {
+    t
+  } = useTranslation();
+  const {
+    isPremium
+  } = useSubscription();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   usePushRegistration();
-
-  const initials = user
-    ? (user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? user.emailAddresses?.[0]?.emailAddress?.[0] ?? "U")
-    : "U";
-
+  const initials = user ? (user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? user.emailAddresses?.[0]?.emailAddress?.[0] ?? "U") : "U";
   const handleSignOut = () => {
     setIsSidebarOpen(false);
-    signOut({ redirectUrl: "/" });
+    signOut({
+      redirectUrl: "/"
+    });
   };
-
   const closeSidebar = () => setIsSidebarOpen(false);
-
-  return (
-    <div className="flex min-h-[100dvh] w-full flex-col bg-background">
+  return <div className="flex min-h-[100dvh] w-full flex-col bg-background">
       {/* Mobile Header — fixed so it never duplicates on Android Chrome */}
       <header className="fixed top-0 left-0 right-0 z-40 flex h-20 w-full items-center justify-between border-b bg-background px-4 md:hidden shadow-sm">
         <div className="flex items-center gap-2">
@@ -130,7 +194,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSidebarOpen(true)}>
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
+                <span className="sr-only">{t("components.layout.toggle_menu")}</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[80vw] sm:w-[350px] flex flex-col p-0">
@@ -155,29 +219,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
               {/* Nav items — scrollable */}
               <nav className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-1">
-                {NAV_ITEMS.map((item) => {
-                  const isActive = location === item.href || location.startsWith(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={closeSidebar}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-                        isActive
-                          ? "bg-primary text-primary-foreground font-medium"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
+                {NAV_ITEMS.map(item => {
+                const {
+                  t
+                } = useTranslation();
+                const isActive = location === item.href || location.startsWith(item.href);
+                return <Link key={item.href} href={item.href} onClick={closeSidebar} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                       <item.icon className="h-5 w-5 shrink-0" />
                       <span className="flex-1 truncate">{t(item.labelKey)}</span>
-                      {item.badge && (
-                        <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
+                      {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
                           {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
+                        </span>}
+                    </Link>;
+              })}
                 <div className="mt-2 pt-2 border-t">
                   <ThemeToggleRow onToggle={closeSidebar} />
                 </div>
@@ -185,10 +239,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
               {/* Sign Out — always visible at bottom */}
               <div className="shrink-0 border-t px-4 py-3">
-                <button
-                  onClick={handleSignOut}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                >
+                <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
                   <LogOut className="h-5 w-5" />
                   {t("nav.sign_out")}
                 </button>
@@ -212,28 +263,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <LanguageSwitcher />
           </div>
           <nav className="flex flex-1 flex-col gap-1 p-4">
-            {NAV_ITEMS.map((item) => {
-              const isActive = location === item.href || location.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${
-                    isActive
-                      ? "bg-primary text-primary-foreground font-medium shadow-sm"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
+            {NAV_ITEMS.map(item => {
+            const {
+              t
+            } = useTranslation();
+            const isActive = location === item.href || location.startsWith(item.href);
+            return <Link key={item.href} href={item.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <item.icon className="h-5 w-5 shrink-0" />
                   <span className="flex-1 truncate">{t(item.labelKey)}</span>
-                  {item.badge && (
-                    <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
+                  {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
                       {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+                    </span>}
+                </Link>;
+          })}
             <div className="mt-2 pt-2 border-t">
               <ThemeToggleRow />
             </div>
@@ -257,11 +299,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <span className="text-xs text-muted-foreground truncate">{user?.emailAddresses?.[0]?.emailAddress}</span>
               </div>
             </div>
-            <button
-              onClick={handleSignOut}
-              data-testid="button-sign-out"
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
+            <button onClick={handleSignOut} data-testid="button-sign-out" className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
               <LogOut className="h-4 w-4" />
               {t("nav.sign_out")}
             </button>
@@ -271,11 +309,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
           <div className="mx-auto max-w-5xl p-4 md:p-8">
-            {!["/sign-in", "/onboarding", "/notify-prompt"].some((p) => location.startsWith(p)) && (
-              <div className="mb-4">
+            {!["/sign-in", "/onboarding", "/notify-prompt"].some(p => location.startsWith(p)) && <div className="mb-4">
                 <NotificationNudgeBanner />
-              </div>
-            )}
+              </div>}
             {children}
           </div>
         </main>
@@ -288,53 +324,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
           the white text / white borders inside it on light mode. */}
       <nav data-on-dark className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-slate-900/95 backdrop-blur-xl border-t border-white/10 md:hidden pb-safe">
         <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">
-          {BOTTOM_NAV_ITEMS.map((item) => {
-            const isActive = location === item.href || location.startsWith(item.href + "/");
-
-            if (item.center) {
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="relative flex flex-col items-center justify-end -translate-y-5"
-                >
-                  <div
-                    className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-white transition-transform active:scale-90 ${
-                      isActive
-                        ? "bg-gradient-to-br from-indigo-500 to-violet-500 shadow-[0_10px_25px_rgba(99,102,241,0.55)] ring-2 ring-white/20"
-                        : "bg-gradient-to-br from-indigo-500 to-violet-500 shadow-[0_8px_20px_rgba(99,102,241,0.45)]"
-                    }`}
-                  >
+          {BOTTOM_NAV_ITEMS.map(item => {
+          const {
+            t
+          } = useTranslation();
+          const isActive = location === item.href || location.startsWith(item.href + "/");
+          if (item.center) {
+            return <Link key={item.href} href={item.href} className="relative flex flex-col items-center justify-end -translate-y-5">
+                  <div className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-white transition-transform active:scale-90 ${isActive ? "bg-gradient-to-br from-indigo-500 to-violet-500 shadow-[0_10px_25px_rgba(99,102,241,0.55)] ring-2 ring-white/20" : "bg-gradient-to-br from-indigo-500 to-violet-500 shadow-[0_8px_20px_rgba(99,102,241,0.45)]"}`}>
                     <item.icon className="h-7 w-7" />
                   </div>
                   <span className={`mt-1 text-[10px] font-semibold ${isActive ? "text-indigo-300" : "text-slate-300"}`}>
                     {t(item.labelKey)}
                   </span>
-                </Link>
-              );
-            }
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${
-                  isActive ? "text-indigo-400" : "text-slate-400"
-                }`}
-              >
+                </Link>;
+          }
+          return <Link key={item.href} href={item.href} className={`relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${isActive ? "text-indigo-400" : "text-slate-400"}`}>
                 <item.icon className={`h-5 w-5 ${isActive ? "fill-indigo-400/15" : ""}`} />
                 <span className="text-[11px] font-medium leading-none">{t(item.labelKey)}</span>
-                {isActive && (
-                  <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                )}
-              </Link>
-            );
-          })}
+                {isActive && <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-indigo-400" />}
+              </Link>;
+        })}
         </div>
       </nav>
 
       {/* Floating Amy AI assistant button */}
       <AmyFab />
-    </div>
-  );
+    </div>;
 }

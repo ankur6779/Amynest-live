@@ -6,9 +6,8 @@ import { StoryFlowPlayer } from "@/components/story-player";
 import { SubItemGate } from "@/components/sub-item-gate";
 
 // ─── Per-child index persistence ─────────────────────────────────────────────
-
+import { useTranslation } from "react-i18next";
 const FLOW_KEY = (childId: number) => `story_flow_v1_${childId}`;
-
 function readStoredIndex(childId: number, max: number): number {
   try {
     const raw = localStorage.getItem(FLOW_KEY(childId));
@@ -19,7 +18,6 @@ function readStoredIndex(childId: number, max: number): number {
     return 0;
   }
 }
-
 function writeStoredIndex(childId: number, index: number): void {
   try {
     localStorage.setItem(FLOW_KEY(childId), String(index));
@@ -45,15 +43,25 @@ interface StoryHubProps {
  *   • Errors are silently skipped after 2 s.
  *   • The next story is preloaded so playback starts quickly.
  */
-export function StoryHub({ childId, childName }: StoryHubProps) {
-  const { loading, error, data, refresh, recordProgress } = useStoriesData(childId);
+export function StoryHub({
+  childId,
+  childName
+}: StoryHubProps) {
+  const {
+    t
+  } = useTranslation();
+  const {
+    loading,
+    error,
+    data,
+    refresh,
+    recordProgress
+  } = useStoriesData(childId);
 
   // Ordered catalog: all stories sorted consistently by title.
   const stories: StoryDto[] = useMemo(() => {
     if (!data?.rows.allStories?.length) return [];
-    return [...data.rows.allStories].sort((a, b) =>
-      a.title.localeCompare(b.title),
-    );
+    return [...data.rows.allStories].sort((a, b) => a.title.localeCompare(b.title));
   }, [data]);
 
   // ── Flow state ──
@@ -64,13 +72,10 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
   const [replaySignal, setReplaySignal] = useState(0);
 
   // Wrap setFlowIndex to also persist.
-  const setFlowIndex = useCallback(
-    (idx: number) => {
-      setFlowIndex_(idx);
-      if (childId !== null) writeStoredIndex(childId, idx);
-    },
-    [childId],
-  );
+  const setFlowIndex = useCallback((idx: number) => {
+    setFlowIndex_(idx);
+    if (childId !== null) writeStoredIndex(childId, idx);
+  }, [childId]);
 
   // Restore index when child changes or stories first load.
   const restoredForChild = useRef<number | null>(null);
@@ -94,7 +99,6 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
 
   // ── Countdown management ──
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   const clearCountdown = useCallback(() => {
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
@@ -102,11 +106,10 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
     }
     setAutoAdvanceIn(null);
   }, []);
-
   const advanceToNext = useCallback(() => {
     clearCountdown();
     setReplaySignal(0);
-    setFlowIndex_((prev) => {
+    setFlowIndex_(prev => {
       const next = prev + 1;
       if (next >= stories.length) {
         // Loop: reset to 0 + show banner briefly.
@@ -119,7 +122,6 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
       return next;
     });
   }, [clearCountdown, stories.length, childId]);
-
   const startCountdown = useCallback(() => {
     clearCountdown();
     setAutoAdvanceIn(3);
@@ -147,27 +149,21 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
   }, [advanceToNext]);
 
   // Cleanup on unmount.
-  useEffect(
-    () => () => {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-    },
-    [],
-  );
-
+  useEffect(() => () => {
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+  }, []);
   const handleNext = useCallback(() => {
     clearCountdown();
     setShowLoopBanner(false);
     advanceToNext();
   }, [clearCountdown, advanceToNext]);
-
   const handleReplay = useCallback(() => {
     clearCountdown();
     setShowLoopBanner(false);
     setAutoAdvanceIn(null);
-    setReplaySignal((s) => s + 1);
+    setReplaySignal(s => s + 1);
   }, [clearCountdown]);
-
   const handleClose = useCallback(() => {
     clearCountdown();
     setIsPlaying(false);
@@ -182,81 +178,45 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
   // ── Early-return states ──
 
   if (childId === null) {
-    return (
-      <p className="rounded-lg bg-white/5 p-4 text-sm text-white/60">
-        Pick a child above to see their personalised story collection.
-      </p>
-    );
+    return <p className="rounded-lg bg-white/5 p-4 text-sm text-white/60">
+        {t("components.story_hub.pick_a_child_above_to_see_their_personalised_story_collectio")}
+      </p>;
   }
-
   if (loading && !data) {
-    return (
-      <div className="flex items-center gap-2 rounded-lg bg-white/5 p-4 text-sm text-white/70">
+    return <div className="flex items-center gap-2 rounded-lg bg-white/5 p-4 text-sm text-white/70">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading {childName ? `${childName}'s` : "the"} story collection…
-      </div>
-    );
+        {t("components.story_hub.loading")} {childName ? `${childName}'s` : "the"} {t("components.story_hub.story_collection")}
+      </div>;
   }
-
   if (error && !data) {
-    return (
-      <div className="space-y-3 rounded-lg bg-white/5 p-4">
-        <p className="text-sm text-white/80">Couldn't load stories right now.</p>
+    return <div className="space-y-3 rounded-lg bg-white/5 p-4">
+        <p className="text-sm text-white/80">{t("components.story_hub.couldn_t_load_stories_right_now")}</p>
         <Button size="sm" variant="secondary" onClick={refresh}>
           <RefreshCw className="mr-2 h-3.5 w-3.5" />
-          Retry
+          {t("components.story_hub.retry")}
         </Button>
-      </div>
-    );
+      </div>;
   }
-
   if (!stories.length) {
-    return (
-      <div className="rounded-lg bg-white/5 p-4 text-sm text-white/60">
-        No stories yet. New content is added regularly — check back soon!
-      </div>
-    );
+    return <div className="rounded-lg bg-white/5 p-4 text-sm text-white/60">
+        {t("components.story_hub.no_stories_yet_new_content_is_added_regularly_check_back_soo")}
+      </div>;
   }
 
   // ── Active player ──
   if (isPlaying && currentStory) {
-    return (
-      <div className="space-y-0" data-testid="story-hub">
+    return <div className="space-y-0" data-testid="story-hub">
         {/* Invisible preload element for the next story */}
-        {nextStory && nextStory.id !== currentStory.id && (
-          <video
-            key={`preload-${nextStory.id}`}
-            src={nextStory.streamUrl}
-            preload="auto"
-            className="hidden"
-            aria-hidden="true"
-            muted
-          />
-        )}
-        <StoryFlowPlayer
-          story={currentStory}
-          storyIndex={flowIndex}
-          totalStories={stories.length}
-          autoAdvanceIn={autoAdvanceIn}
-          showLoopBanner={showLoopBanner}
-          replaySignal={replaySignal}
-          onNext={handleNext}
-          onReplay={handleReplay}
-          onClose={handleClose}
-          onEnded={startCountdown}
-          onError={handleError}
-          onProgress={recordProgress}
-        />
-      </div>
-    );
+        {nextStory && nextStory.id !== currentStory.id && <video key={`preload-${nextStory.id}`} src={nextStory.streamUrl} preload="auto" className="hidden" aria-hidden="true" muted />}
+        <StoryFlowPlayer story={currentStory} storyIndex={flowIndex} totalStories={stories.length} autoAdvanceIn={autoAdvanceIn} showLoopBanner={showLoopBanner} replaySignal={replaySignal} onNext={handleNext} onReplay={handleReplay} onClose={handleClose} onEnded={startCountdown} onError={handleError} onProgress={recordProgress} />
+      </div>;
   }
 
   // ── Hero card (before / after playing) ──
-  return (
-    <div className="space-y-4" data-testid="story-hub">
+  return <div className="space-y-4" data-testid="story-hub">
       {/* Catalog meta */}
       <p className="text-xs text-white/50">
-        {stories.length} stories • personalised for {data?.child.name ?? childName}
+        {stories.length} {t("components.story_hub.stories_personalised_for")} {data?.child.name ?? childName}
       </p>
 
       {/* Now-playing card.
@@ -266,30 +226,16 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
           Watch button, however, are intentionally dark surfaces with
           white text in BOTH themes — they get data-on-dark so the
           safety net leaves them alone. */}
-      {currentStory && (
-        <SubItemGate sectionId="hub_story_hub" subItemId={String(currentStory.id)}>
+      {currentStory && <SubItemGate sectionId="hub_story_hub" subItemId={String(currentStory.id)}>
         <div className="overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
           {/* Thumbnail */}
           <div data-on-dark className="relative aspect-video w-full bg-black">
-            {currentStory.thumbnailUrl ? (
-              <img
-                src={currentStory.thumbnailUrl}
-                alt={currentStory.title}
-                className="h-full w-full object-cover opacity-80"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-900/60 to-pink-900/60">
+            {currentStory.thumbnailUrl ? <img src={currentStory.thumbnailUrl} alt={currentStory.title} className="h-full w-full object-cover opacity-80" /> : <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-900/60 to-pink-900/60">
                 <Film className="h-16 w-16 text-white/30" />
-              </div>
-            )}
+              </div>}
 
             {/* Play button overlay */}
-            <button
-              type="button"
-              onClick={() => setIsPlaying(true)}
-              className="absolute inset-0 flex items-center justify-center bg-black/40 transition hover:bg-black/50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/30"
-              aria-label={`Watch ${currentStory.title}`}
-            >
+            <button type="button" onClick={() => setIsPlaying(true)} className="absolute inset-0 flex items-center justify-center bg-black/40 transition hover:bg-black/50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/30" aria-label={`Watch ${currentStory.title}`}>
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-2xl transition hover:scale-105 hover:bg-white">
                 <Play className="ml-1 h-7 w-7 fill-purple-900 text-purple-900" />
               </div>
@@ -297,7 +243,7 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
 
             {/* Story counter badge */}
             <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white/80">
-              Story {flowIndex + 1} of {stories.length}
+              {t("components.story_hub.story")} {flowIndex + 1} of {stories.length}
             </span>
           </div>
 
@@ -309,18 +255,12 @@ export function StoryHub({ childId, childName }: StoryHubProps) {
                 {currentStory.category}
               </p>
             </div>
-            <Button
-              data-on-dark
-              onClick={() => setIsPlaying(true)}
-              className="shrink-0 gap-2 bg-violet-600 text-white hover:bg-violet-500"
-            >
+            <Button data-on-dark onClick={() => setIsPlaying(true)} className="shrink-0 gap-2 bg-violet-600 text-white hover:bg-violet-500">
               <Play className="h-4 w-4 fill-current" />
-              Watch
+              {t("components.story_hub.watch")}
             </Button>
           </div>
         </div>
-        </SubItemGate>
-      )}
-    </div>
-  );
+        </SubItemGate>}
+    </div>;
 }
