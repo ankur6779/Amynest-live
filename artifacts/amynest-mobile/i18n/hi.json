@@ -1706,6 +1706,10 @@
       "select_child_school": "कृपया कम से कम एक बच्चा चुनें और उनकी स्कूल स्थिति सेट करें।",
       "family_generate_failed": "{{name}} के लिए रूटीन जनरेट नहीं हो सका",
       "family_save_failed": "{{name}} के लिए रूटीन सेव नहीं हो सका",
+      "family_existing_title": "मौजूदा रूटीन बदलें?",
+      "family_existing_confirm": "{{names}} की पहले से ही {{date}} के लिए रूटीन है। बदलें?",
+      "family_existing_cancel": "रद्द करें",
+      "family_existing_replace": "बदलें",
       "family_saved": "✨ {{count}} रूटीन सेव हुआ!",
       "family_saved_plural": "✨ {{count}} रूटीन सेव हुए!"
     },

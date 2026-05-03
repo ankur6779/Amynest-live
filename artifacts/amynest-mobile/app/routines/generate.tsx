@@ -36,6 +36,7 @@ import {
   isParentAvailComplete,
   parentStatusLabel,
   buildParentAvailPayload,
+  buildFamilyChildGeneratePayload,
   AVAIL_KEY,
   WAKE_KEY,
   REGION_OPTIONS,
@@ -567,6 +568,58 @@ export default function GenerateRoutineScreen() {
       return;
     }
 
+    // Family-mode existing-routine override gate (parity with single-mode).
+    // Check each selected child for an existing routine on the chosen date,
+    // then ask the parent once before regenerating + replacing them all.
+    try {
+      const checks = await Promise.all(
+        selectedChildren.map(async (c) => {
+          try {
+            const r = await authFetch(`/api/routines/check?childId=${c.id}&date=${date}`);
+            if (!r.ok) return null;
+            const data = (await r.json()) as { exists?: boolean };
+            return data?.exists ? c : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const conflicts = checks.filter((c): c is (typeof selectedChildren)[number] => !!c);
+      if (conflicts.length > 0) {
+        const names = conflicts.map((c) => c.name).join(", ");
+        const proceed = await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            t("toasts.routines_generate.family_existing_title", {
+              defaultValue: "Replace existing routines?",
+            }),
+            t("toasts.routines_generate.family_existing_confirm", {
+              names,
+              date,
+              defaultValue: `${names} already have a routine for ${date}. Replace?`,
+            }),
+            [
+              {
+                text: t("toasts.routines_generate.family_existing_cancel", { defaultValue: "Cancel" }),
+                style: "cancel",
+                onPress: () => resolve(false),
+              },
+              {
+                text: t("toasts.routines_generate.family_existing_replace", { defaultValue: "Replace" }),
+                style: "destructive",
+                onPress: () => resolve(true),
+              },
+            ],
+            // Android: ensure tap-outside also resolves (else the loop hangs).
+            { cancelable: true, onDismiss: () => resolve(false) },
+          );
+        });
+        if (!proceed) return;
+      }
+    } catch {
+      // If the check itself fails we don't block generation — save-all
+      // uses override:true so any stale routine will still be replaced.
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setFamilyResults(null);
     const results: FRTimelineFamilyResult[] = [];
@@ -578,19 +631,18 @@ export default function GenerateRoutineScreen() {
       try {
         const res = await authFetch("/api/routines/generate", {
           method: "POST",
-          body: JSON.stringify({
-            childId: child.id,
-            date,
-            hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
-            specialPlans: appendHandlerToPlans(specialPlans, handlerType),
-            fridgeItems: fridgeItems.trim() || undefined,
-            age: child.age,
-            wakeTime: child.wakeUpTime,
-            schoolStart: child.schoolStartTime,
-            schoolEnd: child.schoolEndTime,
-            region: effectiveRegion,
-            ...buildParentAvailPayload(parentAvail),
-          }),
+          // Shared helper keeps web ↔ mobile family payloads in lockstep.
+          body: JSON.stringify(
+            buildFamilyChildGeneratePayload({
+              child,
+              date,
+              hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
+              specialPlans: appendHandlerToPlans(specialPlans, handlerType),
+              fridgeItems,
+              region: effectiveRegion,
+              parentAvail,
+            }),
+          ),
         });
 
         if (res.status === 402 || res.status === 403) {

@@ -79,6 +79,45 @@ export function buildParentAvailPayload(avail: ParentAvailData): {
   };
 }
 
+/**
+ * Build the per-child request body for `POST /routines/generate` when used
+ * inside the family (multi-child) flow. Web and mobile share this so the
+ * payload shape stays in sync — any field added to the server's
+ * GenerateRoutineBody only needs to be wired in once here.
+ *
+ * Spread the result directly into the mutation/fetch body.
+ */
+export function buildFamilyChildGeneratePayload(opts: {
+  child: {
+    id: number;
+    age: number;
+    wakeUpTime?: string | null;
+    schoolStartTime?: string | null;
+    schoolEndTime?: string | null;
+  };
+  date: string;
+  hasSchool?: boolean | null;
+  /** Already augmented with handler suffix via `appendHandlerToPlans`. */
+  specialPlans: string;
+  fridgeItems?: string;
+  region?: string | null;
+  parentAvail: ParentAvailData;
+}): Record<string, unknown> {
+  return {
+    childId: opts.child.id,
+    date: opts.date,
+    hasSchool: opts.hasSchool ?? undefined,
+    specialPlans: opts.specialPlans,
+    fridgeItems: opts.fridgeItems?.trim() || undefined,
+    age: opts.child.age,
+    wakeTime: opts.child.wakeUpTime ?? undefined,
+    schoolStart: opts.child.schoolStartTime ?? undefined,
+    schoolEnd: opts.child.schoolEndTime ?? undefined,
+    region: opts.region ?? undefined,
+    ...buildParentAvailPayload(opts.parentAvail),
+  };
+}
+
 export function isParentAvailComplete(entry: ParentAvailEntry): boolean {
   if (!entry.workType) return false;
   if (entry.workType === "homemaker") return true;
