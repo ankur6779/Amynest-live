@@ -173,9 +173,14 @@ const HEX_RE = /#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g;
 
 const BRAND_FAMILIES = [
   "violet", "purple", "pink", "fuchsia", "rose", "red", "orange",
-  "amber", "emerald", "green", "blue", "indigo", "slate", "gray",
+  "amber", "yellow", "emerald", "green", "teal", "sky", "blue",
+  "indigo", "lime", "cyan", "slate", "gray", "neutral", "zinc", "stone",
 ];
-const BRAND_PREFIXES = ["text", "bg", "border", "from", "to", "via", "ring", "shadow"];
+const BRAND_PREFIXES = [
+  "text", "bg", "border", "from", "to", "via", "ring", "shadow",
+  "fill", "stroke", "divide", "outline", "accent", "caret",
+  "decoration", "placeholder",
+];
 // Match prefix-family-shade with optional opacity (e.g. /50) and optional
 // variant prefix (hover:, dark:, etc.). Includes the leading word boundary.
 const BRAND_UTIL_RE = new RegExp(
