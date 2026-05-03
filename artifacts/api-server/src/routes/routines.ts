@@ -997,7 +997,11 @@ router.get("/routines", async (req, res): Promise<void> => {
     return;
   }
 
-  const children = await db.select().from(childrenTable).where(eq(childrenTable.userId, userId));
+  const [children, parentProfiles] = await Promise.all([
+    db.select().from(childrenTable).where(eq(childrenTable.userId, userId)),
+    db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId)),
+  ]);
+  const pp = parentProfiles[0];
   const childMap = new Map(children.map((c) => [c.id, c.name]));
   const childIds = children.map((c) => c.id);
 
@@ -1014,9 +1018,65 @@ router.get("/routines", async (req, res): Promise<void> => {
     results = [];
   }
 
+  // Auto-enrich any routine that has meal/tiffin items with empty or missing
+  // "Options: …" notes. This fixes routines generated before the AI-enrichment
+  // pipeline was added, without requiring the user to delete and regenerate.
+  // We run at most one OpenAI call per routine, fire them concurrently, and
+  // update the DB in the background so the response is not delayed.
+  const openai = await import("@workspace/integrations-openai-ai-server").then((m) => m.openai);
+
+  const needsEnrichment = (items: RoutineItem[]): boolean =>
+    items.some((it) => {
+      const cat = (it.category ?? "").toLowerCase();
+      return (cat === "meal" || cat === "tiffin") && !isValidOptionsNote(it.notes);
+    });
+
+  const buildChildEnrichCtx = (childId: number): EnrichCtx => {
+    const child = children.find((c) => c.id === childId) as (typeof childrenTable.$inferSelect & {
+      dietType?: string; foodStyle?: string; subCuisine?: string; allergies?: string;
+    }) | undefined;
+    let foodType = child?.foodType ?? "veg";
+    if ((child as any)?.dietType) foodType = (child as any).dietType;
+    else if (pp?.dietType) foodType = pp.dietType;
+    else if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
+    const foodStyle = (child as any)?.foodStyle ?? (pp as any)?.foodStyle ?? null;
+    const subCuisine = (child as any)?.subCuisine ?? (pp as any)?.subCuisine ?? null;
+    const allergies = (child as any)?.allergies ?? (pp as any)?.allergies ?? null;
+    const ageGroup = (children.find((c) => c.id === childId) as any)?.ageGroup ?? "early_school";
+    return { foodType, allergies, foodStyle, subCuisine, region: null, ageGroup };
+  };
+
+  // Fire enrichment concurrently for all routines that need it, then update DB.
+  // Each routine gets its own Promise keyed by id so we can await them per-row.
+  const enrichmentByRoutineId = new Map<number, Promise<typeof routinesTable.$inferSelect>>();
+  for (const r of results) {
+    if (!needsEnrichment(r.items as RoutineItem[])) continue;
+    enrichmentByRoutineId.set(r.id, (async () => {
+      try {
+        const ctx = buildChildEnrichCtx(r.childId);
+        const enrichedItems = await enrichMealOptionsWithAi(r.items as ScheduleItem[], ctx, openai);
+        // Only write back if something actually changed.
+        const changed = enrichedItems.some((it, i) => it.notes !== (r.items as RoutineItem[])[i]?.notes);
+        if (changed) {
+          await db.update(routinesTable).set({ items: enrichedItems }).where(eq(routinesTable.id, r.id));
+        }
+        return { ...r, items: enrichedItems };
+      } catch {
+        return r;
+      }
+    })());
+  }
+
+  const enrichedResults = await Promise.all(
+    results.map(async (r) => {
+      const job = enrichmentByRoutineId.get(r.id);
+      return job ? await job : r;
+    }),
+  );
+
   res.json(
     ListRoutinesResponse.parse(
-      results.map((r) => ({
+      enrichedResults.map((r) => ({
         ...r,
         childName: childMap.get(r.childId) ?? "Unknown",
         items: r.items as RoutineItem[],
