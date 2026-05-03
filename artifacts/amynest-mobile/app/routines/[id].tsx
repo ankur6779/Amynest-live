@@ -58,7 +58,7 @@ type RoutineItem = {
   adjusted?: boolean;
   ageBand?: "2-5" | "6-10" | "10+";
 };
-type RoutineUiPrefs = { ageBandFilter?: string | null };
+type RoutineUiPrefs = { ageBandFilter?: string | null; pushReminders?: boolean };
 type Routine = {
   id: number; childId: number; childName: string;
   date: string; title: string; items: RoutineItem[];
@@ -461,19 +461,39 @@ export default function RoutineDetailScreen() {
     }
   };
 
-  // ── Notification toggle (per-routine local reminders) ────────────────────
-  // Hydrate enabled state on mount / when the routine id changes.
+  // ── Notification toggle (per-routine reminders) ──────────────────────────
+  // Two delivery channels work together:
+  //   1. Local on-device notifications via expo-notifications (best-effort —
+  //      not available in Expo Go, can be wiped by the OS / app reinstall).
+  //   2. Server-side push reminders driven by the per-minute notification cron
+  //      (`uiPrefs.pushReminders=true` opts this routine in). Survives device
+  //      restarts, reinstalls, and works in Expo Go.
+  // Server prefs are the source of truth so the toggle hydrates from
+  // `routine.uiPrefs.pushReminders`. AsyncStorage is only used as a fast cache
+  // so the row can render with its last known state before the routine query
+  // resolves; the server value overrides once it arrives.
+  const serverPushOptedIn = routine?.uiPrefs?.pushReminders === true;
+  const serverPushAppliedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
     isNotificationsEnabled(id).then((on) => { if (!cancelled) setNotifEnabled(on); });
     return () => { cancelled = true; };
   }, [id]);
+  useEffect(() => {
+    if (!id || !routine) return;
+    if (serverPushAppliedRef.current === id) return;
+    serverPushAppliedRef.current = id;
+    setNotifEnabled(serverPushOptedIn);
+  }, [id, routine, serverPushOptedIn]);
 
-  // Re-schedule whenever items mutate (edit, delay, complete, AI regen) so
-  // the local notification queue stays in sync with what's on screen.
+  // Re-schedule local notifications whenever items mutate (edit, delay,
+  // complete, AI regen) so the on-device queue stays in sync with what's on
+  // screen. Server-side reminders re-derive from the routine each cron tick,
+  // so they don't need an explicit re-sync here.
   useEffect(() => {
     if (!id || !notifEnabled || !routine?.date || items.length === 0) return;
+    if (!notificationsAvailable()) return;
     const dateISO = String(routine.date).slice(0, 10);
     void scheduleRoutineReminders(
       id,
@@ -482,53 +502,95 @@ export default function RoutineDetailScreen() {
     );
   }, [id, notifEnabled, routine?.date, items]);
 
+  // Best-effort persist of the per-routine push opt-in to the server. The
+  // toggle stays responsive even if this fails — local notifications still
+  // fire — so we just log a warn toast on hard error.
+  const persistPushReminderPref = async (enabled: boolean): Promise<boolean> => {
+    if (!id) return false;
+    try {
+      const res = await authFetch(`/api/routines/${id}/ui-prefs`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pushReminders: enabled }),
+      });
+      if (!res.ok) throw new Error(`status=${res.status}`);
+      // Mark this routine as already reconciled so the hydration effect
+      // doesn't clobber the user's just-applied choice on the next refetch.
+      serverPushAppliedRef.current = id;
+      qc.invalidateQueries({ queryKey: ["routine", id] });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const toggleNotifications = async () => {
     if (!id || notifBusy) return;
     setMoreMenu(false);
-    if (!notificationsAvailable()) {
-      showToast(
-        t("toasts.routines_detail.notifications_unavailable", {
-          defaultValue: "Reminders need a development build (not available in Expo Go).",
-        }),
-        "warn",
-      );
-      return;
-    }
     setNotifBusy(true);
     try {
       if (notifEnabled) {
+        // Tear down both channels. Server is the durable one, so failures
+        // there matter most — we still optimistically flip the UI.
         await cancelRoutineReminders(id);
+        const ok = await persistPushReminderPref(false);
         setNotifEnabled(false);
         hapticTap();
         showToast(
-          t("toasts.routines_detail.notifications_disabled", {
-            defaultValue: "🔕 Reminders off for this routine.",
-          }),
+          ok
+            ? t("toasts.routines_detail.notifications_disabled", {
+                defaultValue: "🔕 Reminders off for this routine.",
+              })
+            : t("toasts.routines_detail.notifications_disabled_offline", {
+                defaultValue: "🔕 Reminders off (server sync will retry).",
+              }),
           "info",
         );
       } else {
-        const granted = await ensureNotificationPermission();
-        if (!granted) {
-          Alert.alert(
-            t("toasts.routines_detail.permission_denied_title", { defaultValue: "Notifications blocked" }),
-            t("toasts.routines_detail.permission_denied_body", {
-              defaultValue: "Enable notifications in Settings to get reminders before each task.",
+        // Local channel is best-effort: ask permission only when expo-
+        // notifications is loadable. Server push works regardless (Expo Go,
+        // production builds) as long as the user has registered a token.
+        const localAvailable = notificationsAvailable();
+        if (localAvailable) {
+          const granted = await ensureNotificationPermission();
+          if (!granted) {
+            Alert.alert(
+              t("toasts.routines_detail.permission_denied_title", { defaultValue: "Notifications blocked" }),
+              t("toasts.routines_detail.permission_denied_body", {
+                defaultValue: "Enable notifications in Settings to get reminders before each task.",
+              }),
+            );
+            return;
+          }
+          const dateISO = (routine?.date ?? "").slice(0, 10);
+          await scheduleRoutineReminders(
+            id,
+            dateISO,
+            items.map((i) => ({ time: i.time, activity: i.activity, status: i.status })),
+          );
+        }
+        const ok = await persistPushReminderPref(true);
+        if (!ok && !localAvailable) {
+          // Neither channel is wired up — surface the failure rather than
+          // silently leaving the user with no reminders at all.
+          showToast(
+            t("toasts.routines_detail.notifications_failed", {
+              defaultValue: "Could not enable reminders. Check your connection and try again.",
             }),
+            "warn",
           );
           return;
         }
-        const dateISO = (routine?.date ?? "").slice(0, 10);
-        await scheduleRoutineReminders(
-          id,
-          dateISO,
-          items.map((i) => ({ time: i.time, activity: i.activity, status: i.status })),
-        );
         setNotifEnabled(true);
         hapticSuccess();
         showToast(
-          t("toasts.routines_detail.notifications_enabled", {
-            defaultValue: "🔔 Reminders on — you'll be pinged 5 min before each task.",
-          }),
+          localAvailable
+            ? t("toasts.routines_detail.notifications_enabled", {
+                defaultValue: "🔔 Reminders on — you'll be pinged 5 min before each task.",
+              })
+            : t("toasts.routines_detail.notifications_enabled_server_only", {
+                defaultValue: "🔔 Reminders on — push notifications will arrive 5 min before each task.",
+              }),
           "success",
         );
       }

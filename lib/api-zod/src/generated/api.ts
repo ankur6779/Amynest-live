@@ -225,6 +225,12 @@ export const ListRoutinesResponseItem = zod.object({
         .describe(
           'Currently selected age-band filter chip, or null for \"All\".',
         ),
+      pushReminders: zod
+        .boolean()
+        .optional()
+        .describe(
+          "When true, the server-side notification cron sends a push reminder\n~5 minutes before each pending item in this routine. Independent of\nlocal on-device notifications and survives reinstall \/ Expo Go.\n",
+        ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),
   createdAt: zod.string(),
@@ -333,6 +339,12 @@ export const GetRoutineResponse = zod.object({
         .nullish()
         .describe(
           'Currently selected age-band filter chip, or null for \"All\".',
+        ),
+      pushReminders: zod
+        .boolean()
+        .optional()
+        .describe(
+          "When true, the server-side notification cron sends a push reminder\n~5 minutes before each pending item in this routine. Independent of\nlocal on-device notifications and survives reinstall \/ Expo Go.\n",
         ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),
@@ -512,6 +524,12 @@ export const GetRecentRoutinesResponseItem = zod.object({
         .describe(
           'Currently selected age-band filter chip, or null for \"All\".',
         ),
+      pushReminders: zod
+        .boolean()
+        .optional()
+        .describe(
+          "When true, the server-side notification cron sends a push reminder\n~5 minutes before each pending item in this routine. Independent of\nlocal on-device notifications and survives reinstall \/ Expo Go.\n",
+        ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),
   createdAt: zod.string(),
@@ -629,6 +647,12 @@ export const UpdateRoutineItemsResponse = zod.object({
         .describe(
           'Currently selected age-band filter chip, or null for \"All\".',
         ),
+      pushReminders: zod
+        .boolean()
+        .optional()
+        .describe(
+          "When true, the server-side notification cron sends a push reminder\n~5 minutes before each pending item in this routine. Independent of\nlocal on-device notifications and survives reinstall \/ Expo Go.\n",
+        ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),
   createdAt: zod.string(),
@@ -647,6 +671,12 @@ export const UpdateRoutineUiPrefsBody = zod
       .string()
       .nullish()
       .describe("Selected age-band filter chip, or null to clear."),
+    pushReminders: zod
+      .boolean()
+      .optional()
+      .describe(
+        "Enable or disable server-pushed per-task reminders for this routine.",
+      ),
   })
   .describe(
     "Patch payload for routine UI preferences. Only the fields included are updated.",
@@ -701,6 +731,12 @@ export const UpdateRoutineUiPrefsResponse = zod.object({
         .nullish()
         .describe(
           'Currently selected age-band filter chip, or null for \"All\".',
+        ),
+      pushReminders: zod
+        .boolean()
+        .optional()
+        .describe(
+          "When true, the server-side notification cron sends a push reminder\n~5 minutes before each pending item in this routine. Independent of\nlocal on-device notifications and survives reinstall \/ Expo Go.\n",
         ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),

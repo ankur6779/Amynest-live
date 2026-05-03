@@ -974,6 +974,12 @@ components:
           type: string
           nullable: true
           description: Currently selected age-band filter chip, or null for "All".
+        pushReminders:
+          type: boolean
+          description: |
+            When true, the server-side notification cron sends a push reminder
+            ~5 minutes before each pending item in this routine. Independent of
+            local on-device notifications and survives reinstall / Expo Go.
 
     UpdateRoutineUiPrefsBody:
       type: object
@@ -983,6 +989,9 @@ components:
           type: string
           nullable: true
           description: Selected age-band filter chip, or null to clear.
+        pushReminders:
+          type: boolean
+          description: Enable or disable server-pushed per-task reminders for this routine.
 
     CreateRoutineBody:
       type: object
