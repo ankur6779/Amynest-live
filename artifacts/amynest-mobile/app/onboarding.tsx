@@ -167,6 +167,7 @@ export default function OnboardingScreen() {
   const [children, setChildren] = useState<ChildData[]>([]);
   const [curr, setCurr] = useState<Partial<ChildData>>({});
   const [parent, setParent] = useState<Partial<ParentData>>({});
+  const [regionDrillDown, setRegionDrillDown] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const listRef = useRef<FlatList<ChatMsg>>(null);
   const stepRef = useRef<Step>("intro");
@@ -818,10 +819,11 @@ export default function OnboardingScreen() {
         );
 
       case "child-food": {
-        const foodOpts: { label: string; value: "veg" | "nonveg" | "egg" }[] = [
+        const foodOpts: { label: string; value: "veg" | "nonveg" | "egg" | "vegan" }[] = [
           { label: t("screens.onboarding_chat.food_veg"), value: "veg" },
           { label: t("screens.onboarding_chat.food_nonveg"), value: "nonveg" },
           { label: t("screens.onboarding_chat.food_egg"), value: "egg" },
+          { label: t("screens.onboarding_chat.food_vegan"), value: "vegan" },
         ];
         return (
           <View style={styles.chipGrid}>
@@ -1057,25 +1059,49 @@ export default function OnboardingScreen() {
           </View>
         );
 
-      case "parent-region":
+      case "parent-region": {
+        const globalRegionOpts = [
+          { label: t("screens.onboarding_chat.region_western"),        value: "western" },
+          { label: t("screens.onboarding_chat.region_asian"),          value: "asian" },
+          { label: t("screens.onboarding_chat.region_middle_eastern"), value: "middle_eastern" },
+          { label: t("screens.onboarding_chat.region_plant_based"),    value: "vegetarian" },
+          { label: t("screens.onboarding_chat.region_mixed"),          value: "mixed" },
+          { label: t("screens.onboarding_chat.region_indian"),         value: "indian" },
+        ];
+        const indianRegionOpts = [
+          { label: t("screens.onboarding_chat.region_north"),          value: "north_indian" },
+          { label: t("screens.onboarding_chat.region_south"),          value: "south_indian" },
+          { label: t("screens.onboarding_chat.region_gujarati"),       value: "gujarati" },
+          { label: t("screens.onboarding_chat.region_maharashtrian"),  value: "maharashtrian" },
+          { label: t("screens.onboarding_chat.region_punjabi"),        value: "punjabi" },
+          { label: t("screens.onboarding_chat.region_bengali"),        value: "bengali" },
+          { label: t("screens.onboarding_chat.region_mixed_indian"),   value: "pan_indian" },
+        ];
+        const regionOpts = regionDrillDown ? indianRegionOpts : globalRegionOpts;
         return (
           <View style={styles.chipGrid}>
-            {REGION_KEYS.map(opt => {
-              const label = t(`screens.onboarding_chat.${opt.key}`);
-              return (
-                <TouchableOpacity key={opt.value}
-                  style={[styles.chip, { backgroundColor: selected === opt.value ? PRIMARY : GLASS_BG, borderColor: selected === opt.value ? PRIMARY : GLASS_BORDER }]}
-                  onPress={() => {
-                    setSelected(opt.value); Haptics.selectionAsync();
-                    setParent(p => ({ ...p, region: opt.value }));
-                    userReplies(label, "parent-mobile", t("screens.onboarding_chat.amy_mobile_q"));
-                  }}>
-                  <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{label}</Text>
-                </TouchableOpacity>
-              );
-            })}
+            {regionOpts.map(opt => (
+              <TouchableOpacity key={opt.value}
+                style={[styles.chip, { backgroundColor: selected === opt.value ? PRIMARY : GLASS_BG, borderColor: selected === opt.value ? PRIMARY : GLASS_BORDER }]}
+                onPress={() => {
+                  if (!regionDrillDown && opt.value === "indian") {
+                    setRegionDrillDown(true);
+                    Haptics.selectionAsync();
+                    setMessages(m => [...m, { role: "amy", text: t("screens.onboarding_chat.region_indian_drilldown") }]);
+                    return;
+                  }
+                  setRegionDrillDown(false);
+                  setSelected(opt.value);
+                  Haptics.selectionAsync();
+                  setParent(p => ({ ...p, region: opt.value }));
+                  userReplies(opt.label, "parent-mobile", t("screens.onboarding_chat.amy_mobile_q"));
+                }}>
+                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         );
+      }
 
       case "parent-mobile":
         return (
