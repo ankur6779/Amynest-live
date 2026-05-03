@@ -199,9 +199,6 @@ export default function AudioLessonsPage() {
       gap: 12
     }}>
         {lessons.map((l, idx) => {
-        const {
-          t
-        } = useTranslation();
         const text = getLessonText(l, lang);
         const access = getLessonAccess(idx);
         const isLocked = access === "locked";

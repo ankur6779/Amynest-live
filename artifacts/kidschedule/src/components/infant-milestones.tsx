@@ -538,9 +538,6 @@ export function BuddyMilestonePlanner({
     return bandMilestones.find(m => m.id === expanded) ?? null;
   }, [expanded, planIds, bandMilestones]);
   const setState = useCallback((id: string, state: MState) => {
-    const {
-      t
-    } = useTranslation();
     setProgress(prev => {
       const next = {
         ...prev,

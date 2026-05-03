@@ -37,9 +37,6 @@ export default function PricingPage() {
   // Razorpay or manual grants can be cancelled from here.
   const canCancelHere = isPremium && !cancelAtPeriodEnd && !isManagedByStore;
   const onUpgrade = async () => {
-    const {
-      t
-    } = useTranslation();
     setSubmitting(true);
     setNotice(null);
     const res = await checkoutRazorpay(selected);
@@ -76,9 +73,6 @@ export default function PricingPage() {
 
         {loading ? <div className="text-center text-muted-foreground">{t("pricing.loading_plans")}</div> : <div className="grid md:grid-cols-3 gap-6">
             {plans.map(p => {
-          const {
-            t
-          } = useTranslation();
           const isSelected = p.id === selected;
           return <button key={p.id} type="button" onClick={() => setSelected(p.id)} className={["relative text-left rounded-3xl p-6 border-2 bg-white dark:bg-card transition-all hover:-translate-y-1", isSelected ? "border-border shadow-[0_16px_40px_-8px_rgba(236,72,153,0.4)]" : "border-border dark:border-border hover:border-border dark:hover:border-primary"].join(" ")} data-testid={`plan-card-${p.id}`}>
                   {p.badge && <span className="absolute -top-3 left-6 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-primary to-primary text-white">

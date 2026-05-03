@@ -37,9 +37,6 @@ function GiftTokenCard({
   const expDays = daysLeft(token.expiresAt);
   const isAvailable = token.status === "available";
   const shareGift = async () => {
-    const {
-      t
-    } = useTranslation();
     const text = t("screens.referrals.gift_share_text", {
       days: token.bonusDays,
       code: token.giftCode,
@@ -124,9 +121,6 @@ function RedeemGiftSection({
   const [errorMsg, setErrorMsg] = useState("");
   const [bonusDays] = useState(0);
   const handle = async () => {
-    const {
-      t
-    } = useTranslation();
     if (!code.trim()) return;
     setState("loading");
     setErrorMsg("");
@@ -232,9 +226,6 @@ export default function ReferralsPage() {
     } catch {/* ignore */}
   };
   const share = async () => {
-    const {
-      t
-    } = useTranslation();
     const text = t("screens.referrals.share_text", {
       code: stats.code,
       link
@@ -422,9 +413,6 @@ export default function ReferralsPage() {
             {t("screens.referrals.no_referrals")}
           </div> : <div className="space-y-2">
             {referrals.map(r => {
-          const {
-            t
-          } = useTranslation();
           return <div key={r.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-2.5">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${r.status === "paid" ? "bg-primary" : r.status === "valid" ? "bg-primary" : "bg-muted"}`} />

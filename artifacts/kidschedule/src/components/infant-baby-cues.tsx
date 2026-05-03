@@ -502,9 +502,6 @@ export function BabyCuesEngine({
             <div className="flex items-center gap-1.5">
               <p className="text-[10px] text-muted-foreground mr-1">{t("components.infant_baby_cues.helpful")}</p>
               <button onClick={() => {
-            const {
-              t
-            } = useTranslation();
             return toast({
               description: t("toasts.infant_baby_cues.helpful")
             });
@@ -512,9 +509,6 @@ export function BabyCuesEngine({
                 <ThumbsUp className="h-3.5 w-3.5" />
               </button>
               <button onClick={() => {
-            const {
-              t
-            } = useTranslation();
             return toast({
               description: t("toasts.infant_baby_cues.not_helpful")
             });
@@ -590,9 +584,6 @@ export function CommunicationCoaching({
 
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border dark:border-border">
           <button onClick={() => {
-          const {
-            t
-          } = useTranslation();
           return toast({
             description: t("toasts.infant_baby_cues.tried")
           });

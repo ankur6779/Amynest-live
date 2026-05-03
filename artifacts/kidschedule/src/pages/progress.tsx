@@ -317,9 +317,6 @@ export default function ProgressPage() {
                 <h3 className="font-quicksand font-bold text-foreground text-lg mb-4">{t("pages.progress.per_child_breakdown")}</h3>
                 <div className="space-y-4">
                   {[...childMap.entries()].map(([childName, stat]) => {
-              const {
-                t
-              } = useTranslation();
               const pct = stat.total > 0 ? Math.round(stat.completed / stat.total * 100) : 0;
               return <div key={childName}>
                         <div className="flex items-center justify-between mb-1.5">

@@ -630,9 +630,6 @@ function CommandCenterDashboard(props: DashboardProps) {
               strip above; this grid is for whole-routine moves. */}
           <section data-testid="quick-action-bar" className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {actions.filter(a => a.id !== "add-activity").map(a => {
-          const {
-            t
-          } = useTranslation();
           return <button key={a.id} type="button" data-testid={`action-${a.id}`} onClick={() => onAction(a.id)} disabled={updateItems.isPending && (a.id === "simplify-today" || a.id === "fix-routine")} className={["relative flex flex-col items-center justify-center gap-1.5 px-3 py-3.5 rounded-2xl", "border transition-all duration-200 active:scale-95 overflow-hidden", a.severity === "primary" ? "bg-gradient-to-br from-primary to-primary text-white border-transparent shadow-[0_18px_36px_-12px_rgba(168,85,247,0.8)]" : "bg-white/5 text-white border-white/15 hover:border-border hover:bg-white/10 hover:shadow-[0_0_24px_-6px_rgba(168,85,247,0.6)]", flashAction === a.id ? "scale-[1.04]" : ""].join(" ")}>
                 <span className="text-2xl" aria-hidden>
                   {a.emoji}
@@ -648,9 +645,6 @@ function CommandCenterDashboard(props: DashboardProps) {
 
       {/* In-place panels — strategic actions */}
       {activePanel === "calm" && <ActionPanel tone="rose" icon={<Heart className="h-4 w-4" />} title={t("parent_hub.command_center.calming_title")} steps={(() => {
-      const {
-        t
-      } = useTranslation();
       // Defensive: in test mocks `t(..., {returnObjects:true})` may
       // return the key string instead of an array, which would crash
       // the `<ActionPanel steps={...}>` mapping in the renderer.
@@ -663,9 +657,6 @@ function CommandCenterDashboard(props: DashboardProps) {
       logQuickWin();
     }} />}
       {activePanel === "sleep" && <ActionPanel tone="indigo" icon={<Moon className="h-4 w-4" />} title={t("parent_hub.command_center.winddown_title")} steps={(() => {
-      const {
-        t
-      } = useTranslation();
       const raw = t("parent_hub.command_center.winddown_steps", {
         returnObjects: true
       });
@@ -689,9 +680,6 @@ function CommandCenterDashboard(props: DashboardProps) {
       {/* Insights summary footer */}
       {insights.length > 0 && <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {insights.map((ins, i) => {
-        const {
-          t
-        } = useTranslation();
         return <div key={i} className={["rounded-2xl border p-3.5", ins.tone === "good" ? "border-border bg-primary" : ins.tone === "warn" ? "border-border bg-primary" : "border-border bg-primary"].join(" ")}>
               <p className="text-[10px] font-black uppercase tracking-wide text-white/70 flex items-center gap-1">
                 <Sparkles className="h-3 w-3" /> {t("components.parent_command_center.amy_ai_insight")}
@@ -961,9 +949,6 @@ function PlayPickerPanel({
       </div>
       <ul className="grid grid-cols-1 gap-2">
         {ideas.map(idea => {
-        const {
-          t
-        } = useTranslation();
         return <li key={idea.id}>
             <button type="button" data-testid={`play-idea-${idea.id}`} onClick={() => onPick(idea)} className="w-full text-left flex items-start gap-3 rounded-2xl border border-border bg-white/5 hover:bg-primary hover:border-border hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.6)] p-3 transition-all active:scale-[0.99]">
               <span className="text-2xl shrink-0" aria-hidden>{idea.emoji}</span>

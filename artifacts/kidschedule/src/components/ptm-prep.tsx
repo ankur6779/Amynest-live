@@ -213,9 +213,6 @@ function PrepareStage({
       cat,
       items
     }) => {
-      const {
-        t
-      } = useTranslation();
       return <div key={cat} className="rounded-xl border border-border bg-white/70 dark:bg-white/[0.04] p-3">
           <p className="text-[12px] font-bold mb-2 text-foreground inline-flex items-center gap-1.5">
             <span>{CATEGORY_LABELS[cat].emoji}</span> {CATEGORY_LABELS[cat].title}
@@ -225,9 +222,6 @@ function PrepareStage({
           </p>
           {items.length === 0 ? <p className="text-[11.5px] italic text-muted-foreground">{t("components.ptm_prep.no_questions_yet")}</p> : <ul className="space-y-1.5">
               {items.map(q => {
-            const {
-              t
-            } = useTranslation();
             return <li key={q.id} className="flex items-start gap-2 group">
                   <button onClick={() => setSession(s => s ? toggleQuestion(s, q.id, "selected") : s)} className="mt-0.5 shrink-0" aria-label={q.selected ? "Deselect" : "Select"} data-testid={`ptm-q-toggle-${q.id}`}>
                     {q.selected ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
@@ -290,9 +284,6 @@ function AttendStage({
           <p className="text-[12px] font-bold mb-2">{t("components.ptm_prep.tick_off_questions_you_ve_asked")}</p>
           <ul className="space-y-2">
             {selected.map(q => {
-          const {
-            t
-          } = useTranslation();
           return <li key={q.id} className="space-y-1">
                 <div className="flex items-start gap-2">
                   <button onClick={() => setSession(s => s ? toggleQuestion(s, q.id, "asked") : s)} className="mt-0.5 shrink-0" aria-label={q.asked ? "Mark not asked" : "Mark asked"} data-testid={`ptm-asked-${q.id}`}>
@@ -376,9 +367,6 @@ function ActStage({
         </div>
         {session.actions.length === 0 ? <p className="text-[11.5px] italic text-muted-foreground">{t("components.ptm_prep.add_notes_in_the_attend_step_then_come_back_here_amy_will_pu")}</p> : <ul className="space-y-1.5">
             {session.actions.map(a => {
-          const {
-            t
-          } = useTranslation();
           return <li key={a.id} className="flex items-start gap-2 group">
                 <button onClick={() => setSession(s => s ? {
               ...s,
@@ -448,9 +436,6 @@ function HistoryBlock({
       </button>
       {open && <div className="px-3 pb-3 space-y-1.5">
           {history.map(s => {
-        const {
-          t
-        } = useTranslation();
         const stats = sessionStats(s);
         const isOpen = expandedId === s.id;
         return <div key={s.id} className="rounded-lg border border-border bg-white/80 dark:bg-card">

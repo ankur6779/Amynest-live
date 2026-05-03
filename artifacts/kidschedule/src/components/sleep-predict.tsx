@@ -143,9 +143,6 @@ export function SleepPredict({
     };
   }, []);
   const refresh = useCallback(async () => {
-    const {
-      t
-    } = useTranslation();
     setLoading(true);
     try {
       const tzOffsetMin = new Date().getTimezoneOffset();
@@ -182,9 +179,6 @@ export function SleepPredict({
     void refresh();
   }, [refresh]);
   const logSleep = useCallback(async (kind: "nap" | "night") => {
-    const {
-      t
-    } = useTranslation();
     if (logging) return;
     setLogging(true);
     try {
@@ -218,9 +212,6 @@ export function SleepPredict({
     }
   }, [childId, logging, refresh, toast]);
   const logWake = useCallback(async () => {
-    const {
-      t
-    } = useTranslation();
     if (logging || !activeStartIso) return;
     setLogging(true);
     try {

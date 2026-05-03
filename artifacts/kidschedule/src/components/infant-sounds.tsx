@@ -261,9 +261,6 @@ export function WhiteNoiseLullaby({
           {/* Expanded detail card (info button on a tile) */}
           <AnimatePresence>
             {infoTileId && (() => {
-          const {
-            t
-          } = useTranslation();
           const n = NOISE_TYPES.find(x => x.id === infoTileId)!;
           return <motion.div key={infoTileId} initial={{
             opacity: 0,

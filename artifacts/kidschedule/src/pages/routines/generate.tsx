@@ -439,9 +439,6 @@ function TiffinSummaryCard({
         time,
         options
       }) => {
-        const {
-          t
-        } = useTranslation();
         return <div key={child.id} className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-border dark:border-border">
             <div className="flex items-center gap-2 mb-3">
               <div className="bg-muted text-primary rounded-full px-3 py-0.5 text-xs font-bold flex items-center gap-1">
@@ -923,9 +920,6 @@ export default function RoutineGenerate() {
         }, shouldOverride, wakeTime);
       },
       onError: (err: unknown) => {
-        const {
-          t
-        } = useTranslation();
         // Global Paywall: HTTP 402 { error: "feature_locked", feature: "routine_generate" }
         // OR legacy 403 { reason: "routine_limit_exceeded" }. Surface the paywall.
         const status = (err as {
@@ -958,9 +952,6 @@ export default function RoutineGenerate() {
 
   // ── Core generate (AI) ─────────────────────────────────────────────────────
   const proceedAiGenerate = React.useCallback(async (forceOverride: boolean, wakeTime: string | null) => {
-    const {
-      t
-    } = useTranslation();
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
     setIsAiGenerating(true);
     try {
@@ -1105,9 +1096,6 @@ export default function RoutineGenerate() {
 
   // Family mode generate — sequential
   const handleFamilyGenerate = async () => {
-    const {
-      t
-    } = useTranslation();
     if (!children) return;
     const selectedChildren = children.filter(c => familyChildSettings[c.id]?.selected && familyChildSettings[c.id]?.hasSchool !== null) as ChildType[];
     if (selectedChildren.length === 0) {
@@ -1286,9 +1274,6 @@ export default function RoutineGenerate() {
           </div>
           <div className="grid grid-cols-4 gap-2">
             {HANDLER_TYPES.map(h => {
-            const {
-              t
-            } = useTranslation();
             const active = handlerType === h.key;
             return <button key={h.key} onClick={() => setHandlerType(h.key)} className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-2xl border-2 transition-all ${active ? "shadow-sm" : "border-border bg-card hover:border-primary/40"}`} style={active ? {
               backgroundColor: h.bg,
@@ -1359,9 +1344,6 @@ export default function RoutineGenerate() {
                     {loadingChildren ? <div className="animate-pulse bg-muted h-12 w-32 rounded-xl" /> : children?.length === 0 ? <p className="text-sm text-destructive p-3 bg-destructive/10 rounded-xl w-full border border-destructive/20">
                         {t("pages.routines.generate.please_add_a_child_profile_first_to_generate_routines")}
                       </p> : children?.map(child => {
-                const {
-                  t
-                } = useTranslation();
                 return <button key={child.id} onClick={() => setSelectedChild(child.id)} className={`px-4 py-3 rounded-2xl font-bold transition-all border-2 flex items-center gap-2 ${selectedChild === child.id ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-muted"}`}>
                           <User className="h-4 w-4" />
                           {child.name}
@@ -1514,9 +1496,6 @@ export default function RoutineGenerate() {
                       {selectedChildAgeGroup === "infant" ? "Care Mode" : selectedChildAgeGroup === "toddler" ? "Learning Mode" : "Is there school on this day?"}
                     </Label>
                     {(() => {
-                  const {
-                    t
-                  } = useTranslation();
                   const d = new Date(date + "T00:00:00");
                   const day = d.getDay();
                   return (day === 0 || day === 6) && schoolQuestionRequired ? <span className="text-xs bg-muted text-primary font-bold px-2 py-0.5 rounded-full">{t("pages.routines.generate.weekend_auto_detected")}</span> : null;
@@ -1701,9 +1680,6 @@ export default function RoutineGenerate() {
 
               {/* Amy AI Suggestions */}
               {(() => {
-          const {
-            t
-          } = useTranslation();
           const suggestions = buildSyncSuggestions(familyResults as unknown as FRFamilyResult[]);
           if (suggestions.length === 0) return null;
           return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
@@ -1727,9 +1703,6 @@ export default function RoutineGenerate() {
 
               {/* Family Points */}
               {(() => {
-          const {
-            t
-          } = useTranslation();
           const fp = computeFamilyPoints(familyResults as unknown as FRFamilyResult[]);
           const totalPossible = familyResults.reduce((s, r) => s + r.routine.items.reduce((ss, i) => ss + ((i as any).rewardPoints ?? 5), 0), 0);
           return <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary">
@@ -1746,9 +1719,6 @@ export default function RoutineGenerate() {
                       </div>
                       <div className="space-y-1.5">
                         {fp.perChild.map(p => {
-                  const {
-                    t
-                  } = useTranslation();
                   return <div key={p.name} className="flex items-center justify-between text-sm bg-white/60 dark:bg-white/5 rounded-xl px-3 py-2">
                             <span className="font-bold text-primary dark:text-muted-foreground">{p.name}</span>
                             <span className="text-primary dark:text-muted-foreground font-bold">{t("family_routine.earns_pts", {
@@ -1767,9 +1737,6 @@ export default function RoutineGenerate() {
 
               {/* Shared Family Activities */}
               {(() => {
-          const {
-            t
-          } = useTranslation();
           const shared = pickSharedActivities(familyResults.map(r => ({
             id: r.child.id,
             name: r.child.name,
@@ -1784,9 +1751,6 @@ export default function RoutineGenerate() {
                       <p className="text-xs text-muted-foreground mb-3">{t("family_routine.shared_subtitle")}</p>
                       <div className="grid sm:grid-cols-3 gap-3">
                         {shared.map((a, i) => {
-                  const {
-                    t
-                  } = useTranslation();
                   return <div key={i} className="bg-muted/40 hover:bg-primary/5 rounded-2xl p-3 border border-border/50 transition-all">
                             <div className="text-2xl mb-1">{a.emoji}</div>
                             <p className="font-bold text-sm text-foreground leading-tight">{a.title}</p>
@@ -1870,9 +1834,6 @@ export default function RoutineGenerate() {
                       {t("pages.routines.generate.please_add_child_profiles_first")} <Link href="/children/new" className="underline font-bold">{t("pages.routines.generate.add_a_child")}</Link>
                     </p> : <div className="space-y-3">
                       {children?.map(child => {
-                const {
-                  t
-                } = useTranslation();
                 const settings = familyChildSettings[child.id] ?? {
                   hasSchool: null,
                   selected: true
@@ -1906,9 +1867,6 @@ export default function RoutineGenerate() {
 
                             {/* School toggle — age-aware per child */}
                             {settings.selected && (() => {
-                    const {
-                      t
-                    } = useTranslation();
                     const childGroup = getAgeGroup(child.age, (child as any).ageMonths ?? 0);
                     const notSchoolApplicable = childGroup === "infant" || childGroup === "toddler" || childGroup === "preschool" && !(child as any).isSchoolGoing;
                     if (childGroup === "infant") return <div className="px-4 pb-3">

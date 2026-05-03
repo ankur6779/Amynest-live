@@ -675,9 +675,6 @@ export function AmazingFacts({
       {/* Facts grid */}
       <div className="grid gap-3">
         {facts.map(fact => {
-        const {
-          t
-        } = useTranslation();
         const isLiked = likes.has(fact.id);
         return <Card key={fact.id} className="rounded-3xl border-border/50 overflow-hidden hover:shadow-sm transition-shadow">
               <CardContent className="p-4 flex items-start gap-3">

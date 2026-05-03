@@ -734,9 +734,6 @@ export function BabySleepAssistant({
 
         {showTips && <CardContent className="px-5 pb-5 pt-0 border-t border-border/40 space-y-3">
             {cats.map(cat => {
-          const {
-            t
-          } = useTranslation();
           const tip = getTip(cat);
           const isTried = tried.has(tip.id);
           return <div key={cat} className={`rounded-2xl border p-4 space-y-2.5 ${CAT_COLORS[cat]}`}>
@@ -822,9 +819,6 @@ export function BabySleepAssistant({
             {/* Sound grid */}
             <div className="grid grid-cols-3 gap-2">
               {SOUNDS.map(sound => {
-            const {
-              t
-            } = useTranslation();
             const isPlaying = activeSound === sound.id;
             return <button key={sound.id} onClick={() => playSound(sound.id)} className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl border-2 font-bold text-xs transition-all ${isPlaying ? "bg-primary border-primary text-white shadow-md scale-95" : `${sound.color} hover:scale-95`}`}>
                     <span className="text-2xl">{sound.emoji}</span>

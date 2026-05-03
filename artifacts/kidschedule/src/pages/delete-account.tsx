@@ -75,9 +75,6 @@ export default function DeleteAccountPage() {
           </h2>
           <div className="space-y-3">
             {IN_APP_STEPS.map((step, i) => {
-            const {
-              t
-            } = useTranslation();
             const Icon = step.icon;
             return <div key={i} className="flex items-start gap-4 rounded-xl border border-card-border bg-card px-5 py-4">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted dark:bg-primary">

@@ -119,9 +119,6 @@ function WeekCalendar({
 
       <div className="grid grid-cols-7 gap-1.5">
         {days.map((day, i) => {
-        const {
-          t
-        } = useTranslation();
         const dateStr = formatDate(day);
         const dayRoutines = routinesByDate.get(dateStr) ?? [];
         const isToday = dateStr === todayStr;
@@ -291,9 +288,6 @@ export default function RoutinesList() {
           {view === "list" && <>
               {allRoutines.length > 0 ? <div className="grid gap-4">
                   {allRoutines.map((routine, index) => {
-            const {
-              t
-            } = useTranslation();
             const isLocked = !isPremium && index >= routinesMax;
             return <LockedBlock key={routine.id} locked={isLocked} reason="routines_limit" rounded="rounded-2xl">
                         <Link href={`/routines/${routine.id}`}>

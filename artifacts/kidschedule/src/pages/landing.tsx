@@ -499,9 +499,6 @@ export default function LandingPage() {
             labelKey,
             color
           }) => {
-            const {
-              t
-            } = useTranslation();
             return <div key={labelKey} className="amy-glass-card rounded-2xl p-4 md:p-5 flex items-center gap-3">
                 <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl flex items-center justify-center shrink-0" style={{
                 background: `${color}20`,
@@ -569,9 +566,6 @@ export default function LandingPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 {COACH_HIGHLIGHT_KEYS.map(key => {
-                const {
-                  t
-                } = useTranslation();
                 return <div key={key} className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5" style={{
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.08)"
@@ -637,9 +631,6 @@ export default function LandingPage() {
             descKey,
             gradient
           }) => {
-            const {
-              t
-            } = useTranslation();
             return <div key={titleKey} className="amy-glass-card rounded-3xl p-5 md:p-7 flex flex-col gap-3 md:gap-4">
                 <div className="h-11 w-11 md:h-12 md:w-12 rounded-2xl flex items-center justify-center" style={{
                 background: gradient,
@@ -751,9 +742,6 @@ export default function LandingPage() {
             titleKey,
             descKey
           }, idx) => {
-            const {
-              t
-            } = useTranslation();
             return <div key={titleKey} className="amy-glass-card rounded-3xl p-6 md:p-7 relative">
                 <div className="absolute -top-3 -left-3 h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm font-quicksand" style={{
                 background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
@@ -865,9 +853,6 @@ export default function LandingPage() {
               titleKey,
               descKey
             }) => {
-              const {
-                t
-              } = useTranslation();
               return <div key={titleKey} className="rounded-2xl p-5 md:p-6" style={{
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.08)"

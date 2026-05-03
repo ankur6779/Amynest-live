@@ -521,9 +521,6 @@ export default function RoutineDetail() {
     }, 6000);
   };
   const handleUndo = () => {
-    const {
-      t
-    } = useTranslation();
     if (!undoSnapshot) return;
     setLocalItems(undoSnapshot);
     saveItemsMutation.mutate(undoSnapshot);
@@ -677,9 +674,6 @@ export default function RoutineDetail() {
   const copyShareMessage = () => {
     const msg = buildShareMessage();
     navigator.clipboard.writeText(msg).then(() => {
-      const {
-        t
-      } = useTranslation();
       toast({
         title: t("toasts.routines_detail.copied_title"),
         description: t("toasts.routines_detail.copied_body")
@@ -687,9 +681,6 @@ export default function RoutineDetail() {
     });
   };
   const fetchRecipe = async (mealName: string) => {
-    const {
-      t
-    } = useTranslation();
     setSelectedMeal(mealName);
     setRecipeData(null);
     setRecipeOpen(true);
@@ -786,9 +777,6 @@ export default function RoutineDetail() {
 
   // ── Partial Regenerate ───────────────────────────────────────────
   const handlePartialRegen = async () => {
-    const {
-      t
-    } = useTranslation();
     setPartialRegenLoading(true);
     try {
       const res = await authFetch(getApiUrl(`/api/routines/${routineId}/partial-regenerate`), {
@@ -819,9 +807,6 @@ export default function RoutineDetail() {
 
   // ── Add Activity ────────────────────────────────────────────────
   const handleAddActivity = async () => {
-    const {
-      t
-    } = useTranslation();
     if (!addActivityForm.name.trim()) return;
     setAddActivityLoading(true);
     try {
@@ -865,9 +850,6 @@ export default function RoutineDetail() {
 
   // ── Next-Day Generation ─────────────────────────────────────────
   const handleNextDayGen = async () => {
-    const {
-      t
-    } = useTranslation();
     if (!pendingNextDayChildId) return;
     setNextDayLoading(true);
     try {
@@ -934,9 +916,6 @@ export default function RoutineDetail() {
       id: routineId
     }, {
       onSuccess: () => {
-        const {
-          t
-        } = useTranslation();
         toast({
           title: t("toasts.routines_detail.deleted")
         });
@@ -946,9 +925,6 @@ export default function RoutineDetail() {
         setLocation("/routines");
       },
       onError: () => {
-        const {
-          t
-        } = useTranslation();
         return toast({
           title: t("toasts.routines_detail.delete_failed"),
           variant: "destructive"
@@ -958,9 +934,6 @@ export default function RoutineDetail() {
   };
   const updateItemStatus = useCallback((index: number, status: ItemStatus) => {
     setLocalItems(prev => {
-      const {
-        t
-      } = useTranslation();
       if (!prev) return prev;
       // Save snapshot for undo
       const actionLabel = status === "completed" ? "✅ Marked complete" : status === "skipped" ? "⏭ Marked skipped" : "⏱ Delayed";
@@ -1044,9 +1017,6 @@ export default function RoutineDetail() {
     });
   }, [routineId]);
   const toggleNotifications = async () => {
-    const {
-      t
-    } = useTranslation();
     if (!notifSupported) return;
     if (notificationsEnabled) {
       notifTimersRef.current.forEach(clearTimeout);
@@ -1367,9 +1337,6 @@ export default function RoutineDetail() {
             </div>
             {/* Day starts at badge — shows the first activity time (= wake time) */}
             {routine.items && routine.items.length > 0 && (() => {
-            const {
-              t
-            } = useTranslation();
             const firstTime = routine.items.find(it => it.category !== "sleep" && !/sleep|bedtime/i.test(it.activity))?.time;
             if (!firstTime) return null;
             return <div className="flex items-center gap-1.5 bg-muted text-primary border border-border px-3 py-1 rounded-full text-sm font-bold">
@@ -1467,9 +1434,6 @@ export default function RoutineDetail() {
             {t("pages.routines.detail.all")}{items.length})
           </button>
           {ageBands.map(band => {
-        const {
-          t
-        } = useTranslation();
         return <button key={band} type="button" onClick={() => setAgeBandFilter(ageBandFilter === band ? null : band)} className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${ageBandFilter === band ? "bg-primary text-white border-primary" : "bg-muted text-primary border-border hover:bg-muted dark:bg-primary dark:text-muted-foreground dark:border-primary"}`} aria-pressed={ageBandFilter === band}>
               {t("pages.routines.detail.ages_2")} {band.replace("-", "–")} ({ageBandCounts[band] ?? 0})
             </button>;
@@ -1493,9 +1457,6 @@ export default function RoutineDetail() {
           item,
           origIdx: index
         }, displayIdx) => {
-          const {
-            t
-          } = useTranslation();
           const status = item.status ?? "pending";
           const catStyle = getCategoryStyle(item.category);
           const statusStyle = STATUS_STYLES[status];

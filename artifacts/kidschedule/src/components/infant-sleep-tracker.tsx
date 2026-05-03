@@ -429,9 +429,6 @@ export function InfantSleepTracker({
               </div>
               <div className="space-y-2">
                 {form.naps.map((nap, i) => {
-              const {
-                t
-              } = useTranslation();
               return <div key={i} className="flex items-center gap-2">
                     <div className="flex-1 grid grid-cols-2 gap-2">
                       <div>
@@ -526,9 +523,6 @@ export function InfantSleepTracker({
           </button>
           {showHistory && <CardContent className="px-5 pb-5 pt-0 border-t border-border/40 space-y-2">
               {[...history].reverse().slice(0, 7).map(day => {
-          const {
-            t
-          } = useTranslation();
           return <div key={day.date} className="bg-muted/30 rounded-2xl px-4 py-3 text-xs space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-foreground">{new Date(day.date + "T12:00:00").toLocaleDateString("en-IN", {
@@ -541,9 +535,6 @@ export function InfantSleepTracker({
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-muted-foreground">
                     {day.wakeUpTime && <span>{t("components.infant_sleep_tracker.wake")} <strong className="text-foreground">{formatTime12(day.wakeUpTime)}</strong></span>}
                     {day.naps.filter(n => n.start).map((n, i) => {
-                const {
-                  t
-                } = useTranslation();
                 return <span key={i}>
                         {t("components.infant_sleep_tracker.nap_3")} {i + 1}: <strong className="text-foreground">{formatTime12(n.start)}{n.end ? `–${formatTime12(n.end)}` : ""}</strong>
                         {n.start && n.end && <span className="text-primary ml-1">({fmtDur(durMins(n.start, n.end))})</span>}

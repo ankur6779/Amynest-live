@@ -220,9 +220,6 @@ export function Layout({
               {/* Nav items — scrollable */}
               <nav className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-1">
                 {NAV_ITEMS.map(item => {
-                const {
-                  t
-                } = useTranslation();
                 const isActive = location === item.href || location.startsWith(item.href);
                 return <Link key={item.href} href={item.href} onClick={closeSidebar} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                       <item.icon className="h-5 w-5 shrink-0" />
@@ -264,9 +261,6 @@ export function Layout({
           </div>
           <nav className="flex flex-1 flex-col gap-1 p-4">
             {NAV_ITEMS.map(item => {
-            const {
-              t
-            } = useTranslation();
             const isActive = location === item.href || location.startsWith(item.href);
             return <Link key={item.href} href={item.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <item.icon className="h-5 w-5 shrink-0" />
@@ -325,9 +319,6 @@ export function Layout({
       <nav data-on-dark className="fixed bottom-0 left-0 right-0 z-40 h-[78px] bg-card backdrop-blur-xl border-t border-white/10 md:hidden pb-safe">
         <div className="relative flex h-full w-full items-end justify-around px-2 pb-2">
           {BOTTOM_NAV_ITEMS.map(item => {
-          const {
-            t
-          } = useTranslation();
           const isActive = location === item.href || location.startsWith(item.href + "/");
           if (item.center) {
             return <Link key={item.href} href={item.href} className="relative flex flex-col items-center justify-end -translate-y-5">

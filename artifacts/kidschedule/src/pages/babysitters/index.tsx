@@ -41,9 +41,6 @@ export default function BabysittersPage() {
     fetchSitters();
   }, []);
   const handleAdd = async () => {
-    const {
-      t
-    } = useTranslation();
     if (!form.name.trim()) {
       toast({
         title: t("toasts.babysitters.name_required"),
@@ -91,9 +88,6 @@ export default function BabysittersPage() {
     }
   };
   const handleDelete = async (id: number, name: string) => {
-    const {
-      t
-    } = useTranslation();
     try {
       const res = await authFetch(`/api/babysitters/${id}`, {
         method: "DELETE"

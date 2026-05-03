@@ -141,9 +141,6 @@ export default function ParentProfilePage() {
     });
   };
   const handleProfilePicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {
-      t
-    } = useTranslation();
     const file = e.target.files?.[0];
     if (!file || !user) return;
     setUploadingPic(true);
@@ -165,9 +162,6 @@ export default function ParentProfilePage() {
     }
   };
   const handleSave = async () => {
-    const {
-      t
-    } = useTranslation();
     setSaving(true);
     try {
       const token = await getToken();

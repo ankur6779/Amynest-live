@@ -253,9 +253,6 @@ export function ColoringBooks({
           {/* 2-column grid of up to 4 cards */}
           <div className="grid grid-cols-2 gap-3">
             {files.map(file => {
-          const {
-            t
-          } = useTranslation();
           const isDownloading = downloadingId === file.id;
           const showRowError = rowError?.id === file.id;
           return <Card key={file.id} data-testid={`coloring-card-${file.id}`} className="group relative overflow-hidden rounded-2xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] hover:border-border hover:shadow-[0_0_0_1px_rgba(244,63,94,0.25),0_10px_36px_-10px_rgba(244,63,94,0.30)] transition-all">

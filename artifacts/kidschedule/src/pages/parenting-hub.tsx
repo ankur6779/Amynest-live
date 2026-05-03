@@ -128,9 +128,6 @@ function AmyAISuggestionsSection() {
       </p>
       <div className="grid grid-cols-2 gap-2">
         {AMY_PROMPT_IDS.map(id => {
-        const {
-          t
-        } = useTranslation();
         const label = t(`parent_hub.amy.prompts.${id}.label`);
         const prompt = t(`parent_hub.amy.prompts.${id}.prompt`);
         return <Link key={id} href={`/assistant?q=${encodeURIComponent(prompt)}`}>
@@ -175,9 +172,6 @@ function EmotionalSupportSection() {
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {EMOTIONAL_CARD_IDS.map(id => {
-        const {
-          t
-        } = useTranslation();
         const title = t(`parent_hub.emotional_cards.${id}.title`);
         const subtitle = t(`parent_hub.emotional_cards.${id}.subtitle`);
         const prompt = t(`parent_hub.emotional_cards.${id}.prompt`);
@@ -401,9 +395,6 @@ function ChildSelectorPanel({
       {/* Child cards */}
       <div className="flex gap-3 px-3 pb-3 overflow-x-auto scrollbar-none">
         {childList.map((child: any, idx: number) => {
-        const {
-          t
-        } = useTranslation();
         const group = getAgeGroup(child.age, (child as any).ageMonths ?? 0);
         const info = getAgeGroupInfo(group);
         const isSelected = effectiveChild?.id === child.id;
@@ -527,9 +518,6 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     featured: true,
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return <HubSection id="command-center" icon={<Zap className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.command-center.title")} description={t("parent_hub.web_tiles.command-center.description")} accentClass="bg-muted dark:bg-primary" defaultOpen={false}>
           <ParentCommandCenter child={{
           id: effectiveChild.id,
@@ -554,9 +542,6 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     featured: true,
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return <HubSection id="tomorrow-forecast" icon={<Sparkles className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" defaultOpen={false}>
           <FuturePredictor childId={effectiveChild.id} />
         </HubSection>;
@@ -567,9 +552,6 @@ export default function ParentingHub() {
     id: "smart-math-tricks",
     bands: ["4-6", "6-8"] as AgeBand[],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return ageGroup ? <HubSection id="smart-math-tricks" icon={<Sparkles className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.smart-math-tricks.title")} description={t("parent_hub.web_tiles.smart-math-tricks.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary">
           <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
         </HubSection> : null;
@@ -580,9 +562,6 @@ export default function ParentingHub() {
     id: "abacus",
     bands: ["4-6", "6-8", "8-10"] as AgeBand[],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_abacus")}>
           <HubSection id="abacus" icon={<Sparkles className="h-5 w-5 text-primary" />} title={t("pages.parenting_hub.abacus_pro_zone")} // audit-ok: brand product name, intentional EN-only
         description="Learn the soroban — beads, brain & speed math" accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_abacus")} onOpen={() => hubUsage.markFeatureUsed("hub_abacus")}>
@@ -596,9 +575,6 @@ export default function ParentingHub() {
     id: "amy-ai",
     alwaysCurrent: true,
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return <HubSection id="amy-ai" icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary">
           <AmyAISuggestionsSection />
         </HubSection>;
@@ -607,9 +583,6 @@ export default function ParentingHub() {
     id: "articles",
     alwaysCurrent: true,
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_articles")}>
           <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-muted dark:bg-primary" tryFree={tryFreeFor("hub_articles")} onOpen={() => hubUsage.markFeatureUsed("hub_articles")}>
             <ParentingArticles childAgeMonths={totalAgeMonths} />
@@ -620,9 +593,6 @@ export default function ParentingHub() {
     id: "daily-tips",
     alwaysCurrent: true,
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_tips")}>
           <HubSection id="daily-tips" icon={<Sparkles className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-muted dark:bg-primary" tryFree={tryFreeFor("hub_tips")} onOpen={() => hubUsage.markFeatureUsed("hub_tips")}>
             <DailyTips ageGroup={ageGroup} childName={effectiveChild.name} />
@@ -633,9 +603,6 @@ export default function ParentingHub() {
     id: "emotional",
     alwaysCurrent: true,
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_emotional")}>
           <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-muted dark:bg-primary" tryFree={tryFreeFor("hub_emotional")} onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}>
             <EmotionalSupportSection />
@@ -646,9 +613,6 @@ export default function ParentingHub() {
     id: "activities",
     alwaysCurrent: true,
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_activities")}>
           <HubSection id="activities" icon={<Palette className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} accentClass="bg-muted dark:bg-primary" tryFree={tryFreeFor("hub_activities")} onOpen={() => hubUsage.markFeatureUsed("hub_activities")}>
             <ActivitiesSection ageGroup={ageGroup} effectiveChild={effectiveChild} totalAgeMonths={totalAgeMonths} />
@@ -661,9 +625,6 @@ export default function ParentingHub() {
     id: "art-craft",
     alwaysCurrent: true,
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_art_craft")}>
           <HubSection id="art-craft" icon={<Palette className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_art_craft")} onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}>
             <ArtCraftReels />
@@ -676,9 +637,6 @@ export default function ParentingHub() {
     id: "story-hub",
     bands: ["0-2", "2-4", "4-6", "6-8"],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_story_hub")}>
           <HubSection id="story-hub" icon={<Film className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.story-hub.title")} description={t("parent_hub.web_tiles.story-hub.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_story_hub")} onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}>
             <StoryHub childId={effectiveChild.id} childName={effectiveChild.name} />
@@ -689,9 +647,6 @@ export default function ParentingHub() {
     id: "phonics",
     bands: ["2-4", "4-6"],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return totalAgeMonths >= 12 && totalAgeMonths < 72 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_phonics")}>
           <HubSection id="phonics" icon={<AudioLines className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.phonics.title")} description={t("parent_hub.web_tiles.phonics.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_phonics")} onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}>
             <PhonicsLearning childId={effectiveChild.id} childName={effectiveChild.name} totalAgeMonths={totalAgeMonths} />
@@ -702,9 +657,6 @@ export default function ParentingHub() {
     id: "ptm-prep",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return totalAgeMonths >= 36 && totalAgeMonths < 216 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_ptm_prep")}>
           <HubSection id="ptm-prep" icon={<ClipboardList className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_ptm_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}>
             <PtmPrepAssistant child={{
@@ -719,9 +671,6 @@ export default function ParentingHub() {
     id: "smart-study",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return totalAgeMonths >= 36 && totalAgeMonths < 204 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_smart_study")}>
           <HubSection id="smart-study" icon={<GraduationCap className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.smart-study.title")} description={t("parent_hub.web_tiles.smart-study.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_smart_study")} onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}>
             <SmartStudyZone />
@@ -732,9 +681,6 @@ export default function ParentingHub() {
     id: "event-prep",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return totalAgeMonths >= 36 && totalAgeMonths < 180 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_event_prep")}>
           <HubSection id="event-prep" icon={<Sparkles className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_event_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}>
             <EventPrepCard />
@@ -745,9 +691,6 @@ export default function ParentingHub() {
     id: "olympiad",
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return totalAgeMonths >= 36 && totalAgeMonths < 192 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_olympiad")}>
           <HubSection id="olympiad" icon={<Trophy className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.olympiad.title")} description={t("parent_hub.web_tiles.olympiad.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_olympiad")} onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}>
             <OlympiadZone child={{
@@ -762,9 +705,6 @@ export default function ParentingHub() {
     id: "life-skills",
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return totalAgeMonths >= 24 && totalAgeMonths < 192 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_life_skills")}>
           <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_life_skills")} onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}>
             <LifeSkillsZone child={{
@@ -783,9 +723,6 @@ export default function ParentingHub() {
     id: "coloring-books",
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_coloring_books")}>
           <HubSection id="coloring-books" icon={<Palette className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}>
             <ColoringBooks childId={effectiveChild.id} childName={effectiveChild.name} />
@@ -800,9 +737,6 @@ export default function ParentingHub() {
     id: "fun-sheets",
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
-      const {
-        t
-      } = useTranslation();
       return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_fun_sheets")}>
           <HubSection id="fun-sheets" icon={<FileDown className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} accentClass="bg-gradient-to-br from-muted dark:from-primary to-muted dark:to-primary" tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}>
             <FunSheets childId={effectiveChild.id} childName={effectiveChild.name} />
@@ -853,9 +787,6 @@ export default function ParentingHub() {
               <ExploreNextHeader childName={effectiveChild.name} band={nextBand} />
               <div data-testid="section-2-previews" className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start pt-2">
                 {SECTION_2_PREVIEW_TILES.map(tile => {
-            const {
-              t
-            } = useTranslation();
             return <ComingNextWrapper key={tile.id} band={nextBand}>
                     <PreviewHubCard id={tile.id} icon={tile.icon} title={t(`parent_hub.web_tiles_preview.${tile.id}.title`)} description={t(`parent_hub.web_tiles_preview.${tile.id}.description`)} accentClass={tile.accentClass} />
                   </ComingNextWrapper>;

@@ -102,16 +102,13 @@ export function TargetTapGame({
       overflow: "hidden",
       touchAction: "manipulation"
     }}>
-        {targets.map(t => {
-        const {
-          t: tFn
-        } = useTranslation();
-        const age = Date.now() - t.bornAt;
+        {targets.map(tg => {
+        const age = Date.now() - tg.bornAt;
         const scale = 1 - Math.min(0.4, age / LIFE_MS * 0.4);
-        return <button key={t.id} onClick={() => onTap(t.id)} style={{
+        return <button key={tg.id} onClick={() => onTap(tg.id)} style={{
           position: "absolute",
-          left: `${t.x}%`,
-          top: `${t.y}%`,
+          left: `${tg.x}%`,
+          top: `${tg.y}%`,
           transform: `translate(-50%,-50%) scale(${scale})`,
           width: 52,
           height: 52,
@@ -121,7 +118,7 @@ export function TargetTapGame({
           cursor: "pointer",
           boxShadow: "0 0 14px rgba(251,191,36,0.6)",
           transition: "transform 0.1s"
-        }} aria-label={tFn("components.games.target_tap.tap_target")} />;
+        }} aria-label={t("components.games.target_tap.tap_target")} />;
       })}
         {targets.length === 0 && timeLeft > 0 && <div style={{
         position: "absolute",

@@ -233,9 +233,6 @@ export function CryInsight({
   // ─── Submit context + (optional) audio stats ────────────────────────────────
   const submit = useCallback(async (audioStats: AudioStats, durationMs: number) => {
     const {
-      t
-    } = useTranslation();
-    const {
       default: i18nInstance
     } = await import("@/i18n");
     const body = {
@@ -279,9 +276,6 @@ export function CryInsight({
 
   // ─── Start recording ────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {
-    const {
-      t
-    } = useTranslation();
     if (recording || analysing) return;
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       toast({
