@@ -321,12 +321,11 @@ export default function OnboardingPage() {
     setStep("saving");
     setMessages((m) => [...m, { role: "amy", text: t("screens.onboarding.saving_message") }]);
 
-    try {
-      // Save all children sequentially. isOnboarding=true bypasses the
-      // free-tier 1-child cap so every child entered here gets stored.
-      for (const child of children) {
-        const goalsParts = ["balanced-routine"];
-        if (child.dietNote) goalsParts.unshift(child.dietNote);
+    // ── Step 1: Save each child independently — failures are logged, never abort ──
+    for (const child of children) {
+      const goalsParts = ["balanced-routine"];
+      if (child.dietNote) goalsParts.unshift(child.dietNote);
+      try {
         const res = await authFetch("/api/children", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -351,9 +350,14 @@ export default function OnboardingPage() {
           const err = await res.json().catch(() => ({}));
           console.error(`Failed to save child "${child.name}":`, err);
         }
+      } catch (e) {
+        console.error(`Network error saving child "${child.name}":`, e);
       }
+    }
 
-      const parentBody: any = {
+    // ── Step 2: Save parent profile independently — failure doesn't abort ──
+    try {
+      const parentBody: Record<string, unknown> = {
         name: parent.name || "",
         role: (parent.role || "mother").toLowerCase(),
         workType: parent.workType || "work_from_home",
@@ -361,13 +365,17 @@ export default function OnboardingPage() {
       };
       if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
       if (parent.allergies) parentBody.allergies = parent.allergies;
-
       await authFetch("/api/parent-profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parentBody),
       });
+    } catch (e) {
+      console.error("Failed to save parent profile:", e);
+    }
 
+    // ── Step 3: Mark onboarding complete — ALWAYS runs, ALWAYS sets local state ──
+    try {
       await authFetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -378,12 +386,14 @@ export default function OnboardingPage() {
           onboardingComplete: true,
         }),
       });
-
-      localStorage.setItem("onboardingComplete", "true");
-      queryClient.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
-    } catch (err) {
-      console.error("Onboarding save error:", err);
+    } catch (e) {
+      console.error("Failed to post onboarding completion:", e);
     }
+
+    // Always mark complete locally — regardless of any individual API failure.
+    // AppCore also uses this cache entry so the redirect guard sees it immediately.
+    localStorage.setItem("onboardingComplete", "true");
+    queryClient.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
 
     setTimeout(() => setStep("done"), 600);
   }

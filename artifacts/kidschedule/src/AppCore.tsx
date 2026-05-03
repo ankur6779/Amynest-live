@@ -95,8 +95,10 @@ function useOnboardingStatus() {
     queryFn: async () => {
       const res = await authFetch("/api/onboarding");
       if (!res.ok) {
-        localStorage.removeItem("onboardingComplete");
-        return { onboardingComplete: false, profileComplete: false };
+        // API temporarily unavailable — trust the localStorage cache rather than
+        // clearing it and sending the user back to onboarding unnecessarily.
+        const cached = localStorage.getItem("onboardingComplete") === "true";
+        return { onboardingComplete: cached, profileComplete: cached };
       }
       const data = await res.json() as { onboardingComplete: boolean; profileComplete: boolean };
       if (data.onboardingComplete) {
