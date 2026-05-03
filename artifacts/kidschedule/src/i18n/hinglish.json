@@ -3512,7 +3512,8 @@
         "activities": "activities",
         "no_routines_yet": "Abhi tak koi routines nahi",
         "let_the_ai_build_a_perfect_day_for_your_child_based_on_their": "AI ko aapke child ke goals aur school times ke basis par uske liye ek perfect day banane dein.",
-        "generate_first_routine": "Pehla routine generate karein"
+        "generate_first_routine": "Pehla routine generate karein",
+        "generate_child_routine": "Child ki routine banao"
       }
     },
     "sign_in": {
