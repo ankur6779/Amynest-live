@@ -63,7 +63,6 @@ export function SmartMealSuggestions() {
   const [audience, setAudience] = useState<Audience>("kids_tiffin");
   const [region, setRegion] = useState<string>("pan_indian");
   const [country, setCountry] = useState<string | undefined>(undefined);
-  const [isVeg, setIsVeg] = useState<boolean | undefined>(undefined);
   const [childAge, setChildAge] = useState<number | undefined>(undefined);
   const [query, setQuery] = useState("");
   const [meals, setMeals] = useState<AiMeal[]>([]);
@@ -82,7 +81,6 @@ export function SmartMealSuggestions() {
       if (cancelled) return;
       if (profile?.region) setRegion(profile.region);
       if (profile?.country) setCountry(String(profile.country).toUpperCase());
-      if (profile?.foodType === "veg") setIsVeg(true);
       if (Array.isArray(children) && children[0]?.age != null) {
         setChildAge(Number(children[0].age));
       }
@@ -113,7 +111,6 @@ export function SmartMealSuggestions() {
           country,
           audience,
           childAge: audience === "kids_tiffin" ? childAge : undefined,
-          isVeg,
           language: i18nInstance.language || "en"
         })
       });
