@@ -16,8 +16,20 @@ import {
   type PhonicsInsight,
   type PhonicsProgressMap,
 } from "@/hooks/use-phonics-data";
-import { type PhonicsLevel } from "@/lib/phonics-content";
+import {
+  PHONICS_LEVELS,
+  type PhonicsAgeGroup,
+  type PhonicsLevel,
+} from "@/lib/phonics-content";
 import { cn } from "@/lib/utils";
+
+const PHONICS_STAGE_ORDER: PhonicsAgeGroup[] = [
+  "12_24m",
+  "2_3y",
+  "3_4y",
+  "4_5y",
+  "5_6y",
+];
 
 // ─── Today's Activity helpers ────────────────────────────────────────────────
 
@@ -160,8 +172,29 @@ export function PhonicsLearning({
   childName,
   totalAgeMonths,
 }: PhonicsLearningProps) {
-  const data = usePhonicsData(childId, totalAgeMonths);
-  const { level, loading, items, dailyItems, progress, insights, recordPlay, toggleMastered } = data;
+  // Stage selector — parents asked to browse ALL 5 stages, not just the
+  // child's age-derived default. `null` means "use my child's natural stage";
+  // any other value is a manual override the API + hook respect.
+  const [stageOverride, setStageOverride] = useState<PhonicsAgeGroup | null>(
+    null,
+  );
+  // Reset the override whenever the parent switches to a different child —
+  // otherwise stage stickiness leaks across siblings (architect flag).
+  useEffect(() => {
+    setStageOverride(null);
+  }, [childId]);
+  const data = usePhonicsData(childId, totalAgeMonths, stageOverride);
+  const {
+    level,
+    defaultLevel,
+    loading,
+    items,
+    dailyItems,
+    progress,
+    insights,
+    recordPlay,
+    toggleMastered,
+  } = data;
 
   // Out-of-range fallback
   if (!level) {
@@ -199,6 +232,15 @@ export function PhonicsLearning({
   return (
     <div className="space-y-4">
       <PersonalizationBadge level={level} childName={childName} />
+      <StageSelector
+        active={level.ageGroup}
+        defaultStage={defaultLevel?.ageGroup ?? null}
+        onSelect={(g) => {
+          // Tapping the child's natural stage clears the override so the URL
+          // (and any future deep-link) behaves predictably.
+          setStageOverride(g === defaultLevel?.ageGroup ? null : g);
+        }}
+      />
       <SubItemGate sectionId="hub_phonics" subItemId="phonics_test">
         <PhonicsTest
           childId={childId}
@@ -242,6 +284,69 @@ export function PhonicsLearning({
           insights={insights}
         />
       </SubItemGate>
+    </div>
+  );
+}
+
+// ─── Stage selector — horizontal scroll across all 5 phonics stages ─────────
+//
+// Renders a pill row of every stage. The child's natural (age-derived) stage
+// is highlighted with a "Yours" pip; the currently-active stage (which may
+// be an override) gets the filled style. Parents can tap any pill to
+// preview that stage's content; the API + hook honour the override.
+
+function StageSelector({
+  active,
+  defaultStage,
+  onSelect,
+}: {
+  active: PhonicsAgeGroup;
+  defaultStage: PhonicsAgeGroup | null;
+  onSelect: (g: PhonicsAgeGroup) => void;
+}) {
+  return (
+    <div
+      className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin"
+      role="tablist"
+      aria-label="Phonics stage"
+      data-testid="phonics-stage-selector"
+    >
+      {PHONICS_STAGE_ORDER.map((g) => {
+        const lvl = PHONICS_LEVELS[g];
+        const isActive = g === active;
+        const isDefault = g === defaultStage;
+        return (
+          <button
+            key={g}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            data-testid={`phonics-stage-pill-${g}`}
+            onClick={() => onSelect(g)}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors",
+              isActive
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-card text-foreground/80 border-border hover:border-primary/40 hover:bg-primary/5",
+            )}
+          >
+            <span aria-hidden="true">{lvl.emoji}</span>
+            <span>{lvl.shortLabel}</span>
+            {isDefault && (
+              <span
+                className={cn(
+                  "ml-0.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                  isActive
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-primary/10 text-primary",
+                )}
+              >
+                Yours
+              </span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }

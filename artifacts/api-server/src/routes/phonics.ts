@@ -161,6 +161,15 @@ function buildInsights(
 
 const GetQuery = z.object({
   childId: z.coerce.number().int().positive(),
+  /**
+   * Optional override — if present, returns content for this stage instead
+   * of the child's age-based default. Used by the parent-facing stage
+   * selector ("show me Blending even though my kid is 2"). Progress and
+   * insights are still scoped per child, so switching stages never
+   * pollutes the child's mastery record (the POST /progress route still
+   * enforces age-tier match — see architect fix #4).
+   */
+  ageGroup: z.enum(AGE_GROUPS).optional(),
 });
 
 router.get("/phonics", async (req, res): Promise<void> => {
@@ -175,7 +184,7 @@ router.get("/phonics", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
     return;
   }
-  const { childId } = parsed.data;
+  const { childId, ageGroup: ageGroupOverride } = parsed.data;
 
   try {
     const child = await loadOwnedChild(childId, userId);
@@ -185,7 +194,10 @@ router.get("/phonics", async (req, res): Promise<void> => {
     }
 
     const totalMonths = (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
-    const ageGroup = ageGroupForMonths(totalMonths);
+    const childAgeGroup = ageGroupForMonths(totalMonths);
+    // Caller can override the stage to browse other levels; child's natural
+    // stage is still returned as `defaultAgeGroup` so the UI can highlight it.
+    const ageGroup = ageGroupOverride ?? childAgeGroup;
     if (!ageGroup) {
       // Out of range (under 12m or 6+) — return empty session so client can
       // gracefully gate the UI without an error toast.
@@ -233,6 +245,7 @@ router.get("/phonics", async (req, res): Promise<void> => {
 
     res.json({
       ageGroup,
+      defaultAgeGroup: childAgeGroup,
       child: { id: child.id, name: child.name },
       // All items in the age group (frontend uses this for the grid + tracker).
       items: allItems,

@@ -39,6 +39,7 @@ const BehaviorTracker = lazy(() => import("@/pages/behavior/index"));
 const ParentProfile = lazy(() => import("@/pages/parent-profile"));
 const BabysittersPage = lazy(() => import("@/pages/babysitters/index"));
 const AssistantPage = lazy(() => import("@/pages/assistant"));
+const AmyAiTutorPage = lazy(() => import("@/pages/amy-ai-tutor"));
 const ProgressPage = lazy(() => import("@/pages/progress"));
 const ParentingHub = lazy(() => import("@/pages/parenting-hub"));
 const KidsControlCenterPage = lazy(() => import("@/pages/kids-control-center"));
@@ -261,6 +262,9 @@ function AppRoutes() {
           </Route>
           <Route path="/assistant">
             {() => <ProtectedRoute component={AssistantPage} />}
+          </Route>
+          <Route path="/amy-ai-tutor">
+            {() => <ProtectedRoute component={AmyAiTutorPage} />}
           </Route>
           <Route path="/progress">
             {() => <ProtectedRoute component={ProgressPage} />}

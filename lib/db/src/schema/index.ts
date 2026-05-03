@@ -57,3 +57,4 @@ export * from "./spelling_tournaments";
 export * from "./vaccination_logs";
 export * from "./parent_task_completions";
 export * from "./daily_puzzle_progress";
+export * from "./life_skills_progress";
