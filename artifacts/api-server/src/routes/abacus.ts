@@ -1,12 +1,13 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 import {
   db,
   childrenTable,
   abacusProgressTable,
+  referralsTable,
   type AbacusBestScores,
 } from "@workspace/db";
 import {
@@ -18,6 +19,21 @@ import {
 } from "@workspace/abacus";
 
 const router: IRouter = Router();
+
+/**
+ * Returns the start (Monday 00:00 UTC) of the leaderboard week containing
+ * `now`. We pin to UTC so users in different timezones see the same window
+ * roll over at the same moment — important for "weekly" social mechanics.
+ */
+function currentWeekStartUtc(now: Date = new Date()): Date {
+  const d = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+  // getUTCDay(): 0 = Sun … 6 = Sat. Convert to 0 = Mon … 6 = Sun.
+  const dow = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - dow);
+  return d;
+}
 
 /** Verify the child belongs to the authenticated user. Returns row or null.
  *  Mirrors the helper used in `phonics.ts` so auth behaviour is consistent
@@ -262,13 +278,21 @@ router.post("/abacus/progress", async (req, res): Promise<void> => {
       return;
     }
 
-    // log_session
+    // log_session — also accumulates weekly leaderboard points. If the
+    // child's stored `weekStartedAt` is older than the current week, we
+    // start a fresh window from `body.totalPoints`; otherwise we add to
+    // the existing weekly bucket. Done as a single SQL CASE to avoid a
+    // read-modify-write race when two sessions land in the same instant.
+    const weekStart = currentWeekStartUtc();
+    const weekStartSql = sql`${weekStart.toISOString()}::timestamptz`;
     const [updated] = await db
       .update(abacusProgressTable)
       .set({
         totalCorrect: sql`${abacusProgressTable.totalCorrect} + ${body.totalCorrect}`,
         totalAttempts: sql`${abacusProgressTable.totalAttempts} + ${body.totalAttempts}`,
         totalPoints: sql`${abacusProgressTable.totalPoints} + ${body.totalPoints}`,
+        weeklyPoints: sql`CASE WHEN ${abacusProgressTable.weekStartedAt} < ${weekStartSql} THEN ${body.totalPoints} ELSE ${abacusProgressTable.weeklyPoints} + ${body.totalPoints} END`,
+        weekStartedAt: sql`CASE WHEN ${abacusProgressTable.weekStartedAt} < ${weekStartSql} THEN ${weekStartSql} ELSE ${abacusProgressTable.weekStartedAt} END`,
         updatedAt: now,
       })
       .where(eq(abacusProgressTable.childId, body.childId))
@@ -348,6 +372,129 @@ router.post("/abacus/tutor", async (req, res): Promise<void> => {
   } catch (err) {
     logger.error(
       `abacus tutor failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// ─── GET /api/abacus/leaderboard?childId=123 ─────────────────────────────
+//
+// Returns a weekly leaderboard scoped to the requesting user's "family"
+// pool — defined as: themselves + their referrer + every user they've
+// referred (regardless of referral status). Each user contributes ALL of
+// their children's abacus scores. The leaderboard auto-resets every
+// Monday 00:00 UTC: any row whose `weekStartedAt` is older than the
+// current week boundary is treated as 0 weekly points without a write.
+//
+// Response: { weekStart, top: [{rank,name,points,childId,isMe}], me: {rank,points,total} }
+// `me` is included separately because the requesting child may rank
+// outside the top 5 — the UI shows both the leader strip + the child's
+// own rank pill.
+
+const LeaderboardQuery = z.object({
+  childId: z.coerce.number().int().positive(),
+  limit: z.coerce.number().int().min(1).max(20).optional().default(5),
+});
+
+router.get("/abacus/leaderboard", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const parsed = LeaderboardQuery.safeParse(req.query);
+  if (!parsed.success) {
+    res
+      .status(400)
+      .json({ error: "invalid_query", issues: parsed.error.flatten() });
+    return;
+  }
+  const { childId, limit } = parsed.data;
+
+  try {
+    const child = await loadOwnedChild(childId, userId);
+    if (!child) {
+      res.status(404).json({ error: "child_not_found" });
+      return;
+    }
+
+    // Build the family/referral pool of userIds.
+    const refRows = await db
+      .select({
+        referrerUserId: referralsTable.referrerUserId,
+        referredUserId: referralsTable.referredUserId,
+      })
+      .from(referralsTable)
+      .where(
+        or(
+          eq(referralsTable.referrerUserId, userId),
+          eq(referralsTable.referredUserId, userId),
+        ),
+      );
+
+    const pool = new Set<string>([userId]);
+    for (const r of refRows) {
+      pool.add(r.referrerUserId);
+      pool.add(r.referredUserId);
+    }
+    const poolIds = Array.from(pool);
+
+    const weekStart = currentWeekStartUtc();
+    const weekStartIso = weekStart.toISOString();
+
+    // Pull every child in the pool with their effective weekly score.
+    // The CASE expression handles auto-reset on read so stale rows from
+    // last week silently contribute 0 until their next `log_session`.
+    // COALESCE both the weekly points and the tie-breaker `totalPoints`
+    // because the LEFT JOIN yields NULLs for children who have never
+    // played. Without this, Postgres' `ORDER BY ... DESC` puts NULLs
+    // FIRST and unplayed children would rank above real scorers.
+    const effectivePoints = sql<number>`CASE WHEN ${abacusProgressTable.weekStartedAt} IS NULL OR ${abacusProgressTable.weekStartedAt} < ${weekStartIso}::timestamptz THEN 0 ELSE COALESCE(${abacusProgressTable.weeklyPoints}, 0) END`;
+    const tiebreakTotal = sql<number>`COALESCE(${abacusProgressTable.totalPoints}, 0)`;
+
+    const rows = await db
+      .select({
+        childId: childrenTable.id,
+        name: childrenTable.name,
+        userId: childrenTable.userId,
+        points: effectivePoints,
+        totalPoints: tiebreakTotal,
+      })
+      .from(childrenTable)
+      .leftJoin(
+        abacusProgressTable,
+        eq(abacusProgressTable.childId, childrenTable.id),
+      )
+      .where(inArray(childrenTable.userId, poolIds))
+      .orderBy(desc(effectivePoints), desc(tiebreakTotal));
+
+    // Materialise rank using points-then-totalPoints ordering. Children
+    // without a progress row yet show as 0 / 0 so the strip still feels
+    // alive when only the requester has played this week.
+    const ranked = rows.map((r, i) => ({
+      rank: i + 1,
+      childId: r.childId,
+      name: r.name,
+      points: Number(r.points ?? 0),
+      isMe: r.childId === childId,
+    }));
+
+    const me = ranked.find((r) => r.isMe) ?? {
+      rank: ranked.length + 1,
+      childId,
+      name: child.name,
+      points: 0,
+      isMe: true,
+    };
+
+    res.json({
+      weekStart: weekStartIso,
+      top: ranked.slice(0, limit),
+      me: { rank: me.rank, points: me.points, total: ranked.length },
+    });
+  } catch (err) {
+    logger.error(
+      `abacus leaderboard failed: ${err instanceof Error ? err.message : String(err)}`,
     );
     res.status(500).json({ error: "server_error" });
   }

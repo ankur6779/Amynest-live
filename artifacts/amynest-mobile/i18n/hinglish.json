@@ -1283,7 +1283,12 @@
       "level_addition": "Add",
       "level_subtraction": "Subtract",
       "level_multidigit": "Bade numbers",
-      "level_mental": "Mental"
+      "level_mental": "Mental",
+      "weekly_leaderboard": "Weekly leaderboard",
+      "your_rank": "{{total}} mein se #{{rank}}",
+      "no_scores_yet": "Is hafte abhi koi score nahi — pehle bano!",
+      "you": "tum",
+      "pts": "pts"
     }
   },
   "routines_generate": {
