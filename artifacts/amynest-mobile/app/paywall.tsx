@@ -189,7 +189,13 @@ export default function PaywallScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { reason } = useLocalSearchParams<{ reason?: string }>();
-  const copy = REASON_COPY[reason ?? "feature"] ?? REASON_COPY.feature;
+  const reasonKey = reason ?? "feature";
+  const baseCopy = REASON_COPY[reasonKey] ?? REASON_COPY.feature;
+  const copy = {
+    icon: baseCopy.icon,
+    title: t(`screens.paywall.reasons.${reasonKey}.title`, { defaultValue: baseCopy.title }),
+    subtitle: t(`screens.paywall.reasons.${reasonKey}.subtitle`, { defaultValue: baseCopy.subtitle }),
+  };
 
   const plans = useSubscriptionStore((s) => s.plans);
   const ent = useSubscriptionStore((s) => s.entitlements);
