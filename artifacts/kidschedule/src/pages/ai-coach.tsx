@@ -2140,15 +2140,12 @@ function WinCard({
           {win.objective}
         </p>
 
-        {/* DURATION + LISTEN (Amy reads this win aloud) — placed near the
-            top so parents can hit play and follow along while reading.
-            Mirrors mobile CoachCard.tsx, which renders the listen row
-            immediately under the title. */}
+        {/* DURATION chip — own row */}
         <div style={{
         display: "flex",
         gap: 6,
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: 10,
         flexWrap: "wrap"
       }}>
           <span style={{
@@ -2161,6 +2158,36 @@ function WinCard({
           border: "1px solid rgba(139,92,246,0.3)"
         }}>
             ⏱ {win.duration}
+          </span>
+        </div>
+
+        {/* READ ALOUD — own dedicated, prominent row so parents see it on
+            every win. Mirrors mobile CoachCard.tsx but with a label so it
+            isn't mistaken for a chip. */}
+        <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        marginBottom: 18,
+        padding: "10px 12px",
+        borderRadius: 12,
+        background: "rgba(139,92,246,0.10)",
+        border: "1px solid rgba(167,139,250,0.30)",
+        flexWrap: "wrap"
+      }}>
+          <span style={{
+          fontSize: 11.5,
+          fontWeight: 800,
+          letterSpacing: 0.6,
+          color: "hsl(var(--brand-violet-200))",
+          textTransform: "uppercase",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6
+        }}>
+            <Volume2 size={13} />
+            {t("pages.ai_coach.read_this_win_aloud")}
           </span>
           <ListenButton win={win} />
         </div>
