@@ -3,7 +3,7 @@ import { getAuth } from "../lib/auth";
 import { and, desc, eq } from "drizzle-orm";
 import { db, userAiMessagesTable } from "@workspace/db";
 import { GetRecipeBody, GetRecipeResponse, AskAssistantBody, AskAssistantResponse } from "@workspace/api-zod";
-import { findRecipe } from "../lib/recipe-database.js";
+import { recipeFor } from "../lib/meal-recipes.js";
 import { getParentingAdvice } from "../lib/parenting-faq.js";
 import { aiUsageGate } from "../middlewares/aiUsageGate.js";
 
@@ -49,6 +49,9 @@ async function trimUserHistory(userId: string): Promise<void> {
 }
 
 // Rule-based recipe lookup — zero API cost
+// Uses recipeFor() which has comprehensive regex matching for Indian + global
+// meal names. The older findRecipe() had only ~15 keywords + a hash-based
+// random fallback that returned wrong recipes for most meal chip names.
 router.post("/ai/recipe", async (req, res): Promise<void> => {
   const parsed = GetRecipeBody.safeParse(req.body);
   if (!parsed.success) {
@@ -57,7 +60,20 @@ router.post("/ai/recipe", async (req, res): Promise<void> => {
   }
 
   const { mealName, foodType } = parsed.data;
-  const recipe = findRecipe(mealName, foodType ?? "veg");
+  // foodType is passed as the region hint (e.g. "north_indian", "south_indian")
+  // when the caller knows the user's cuisine preference; falls back to global
+  // keyword matching when absent.
+  const mr = recipeFor(mealName, foodType ?? undefined);
+
+  const recipe = {
+    name: mealName,
+    prepTime: mr.prepTime,
+    cookTime: mr.cookTime,
+    servings: mr.servings,
+    ingredients: mr.ingredients,
+    steps: mr.steps.map((instruction, i) => ({ step: i + 1, instruction })),
+    tips: mr.tip,
+  };
 
   res.json(GetRecipeResponse.parse(recipe));
 });
