@@ -42,6 +42,24 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
+// Override `generateChallenge` (only) so the Challenge mode emits a
+// deterministic 5-question batch whose answer is 0 — i.e. the empty
+// abacus already matches the answer. Submitting 5 times in a row therefore
+// scores 100% and crosses the unlock threshold for Level 1 (≥70%).
+vi.mock("@workspace/abacus", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@workspace/abacus")>();
+  return {
+    ...actual,
+    generateChallenge: () =>
+      Array.from({ length: 5 }, () => ({
+        prompt: "0",
+        answer: 0,
+        rods: 1,
+        hint: "Leave the abacus at zero.",
+      })),
+  };
+});
+
 import { AbacusZone } from "./abacus-zone";
 
 function jsonResponse(body: unknown): Response {
@@ -140,6 +158,109 @@ describe("AbacusZone — Practice mode", () => {
       after = screen.getByTestId("abacus-problem").textContent;
     }
     expect(after).not.toBe(before);
+  });
+});
+
+describe("AbacusZone — Challenge mode unlocks Level 2", () => {
+  it("posts complete_level + log_session and exposes Level 2 after a 100% Level 1 run", async () => {
+    // 1) Initial GET returns a fresh Level-1 progress row.
+    // 2) After the 5 challenge submits, the component POSTs:
+    //      action=set_mode (challenge tab)
+    //      action=complete_level → server returns completedLevels=[1]
+    //      action=log_session    → ack
+    //    Subsequent GETs (none expected here) would also be JSON.
+    const initialProgress = {
+      currentLevel: 1,
+      lastMode: "learn",
+      completedLevels: [],
+      highestUnlocked: 1,
+      bestScores: {},
+      totalCorrect: 0,
+      totalAttempts: 0,
+      totalPoints: 0,
+    };
+    const calls: { url: string; body?: unknown }[] = [];
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      calls.push({ url, body });
+      if (typeof url === "string" && url.startsWith("/api/abacus/progress?")) {
+        return jsonResponse({ eligible: true, progress: initialProgress });
+      }
+      if (body?.action === "complete_level") {
+        return jsonResponse({
+          ok: true,
+          progress: {
+            ...initialProgress,
+            currentLevel: 2,
+            completedLevels: [1],
+            bestScores: {
+              "1": {
+                points: body.points,
+                accuracyPct: body.accuracyPct,
+                completedAt: new Date().toISOString(),
+              },
+            },
+          },
+          unlocked: 2,
+          newBest: true,
+        });
+      }
+      // set_mode + log_session
+      return jsonResponse({ ok: true, progress: initialProgress });
+    });
+
+    const user = userEvent.setup();
+    render(<AbacusZone childId={11} childName="Kai" ageYears={6} />);
+    await waitFor(() => screen.getByTestId("abacus-zone"));
+
+    // Switch to Challenge mode.
+    await act(async () => {
+      await user.click(screen.getByTestId("abacus-mode-challenge"));
+    });
+
+    // Submit the 5 deterministic-answer-zero questions back-to-back. The
+    // empty board already equals the expected answer, so each submit is
+    // scored as correct → 100% accuracy → Level 2 unlocks.
+    for (let i = 0; i < 5; i += 1) {
+      const submit = await screen.findByTestId("abacus-challenge-submit");
+      await act(async () => {
+        await user.click(submit);
+      });
+    }
+
+    // Completion screen renders with the unlock copy.
+    const complete = await screen.findByTestId("abacus-challenge-complete");
+    expect(complete).toBeInTheDocument();
+    expect(complete.textContent).toMatch(/level_unlocked/i);
+
+    // The unlock fetch fired with the right action + level.
+    await waitFor(() => {
+      const completeCall = calls.find(
+        (c) =>
+          (c.body as { action?: string } | undefined)?.action ===
+          "complete_level",
+      );
+      expect(completeCall).toBeTruthy();
+      const b = completeCall!.body as { level: number; accuracyPct: number };
+      expect(b.level).toBe(1);
+      expect(b.accuracyPct).toBe(100);
+    });
+    // log_session also fired so lifetime totals stay in sync.
+    await waitFor(() => {
+      expect(
+        calls.find(
+          (c) =>
+            (c.body as { action?: string } | undefined)?.action ===
+            "log_session",
+        ),
+      ).toBeTruthy();
+    });
+
+    // Level-2 chip is now enabled (no `disabled` attribute).
+    await waitFor(() => {
+      const lvl2 = screen.getByTestId("abacus-level-2") as HTMLButtonElement;
+      expect(lvl2.disabled).toBe(false);
+    });
   });
 });
 
