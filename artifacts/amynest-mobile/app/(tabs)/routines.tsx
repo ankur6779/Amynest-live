@@ -17,7 +17,6 @@ import * as Haptics from "expo-haptics";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import FuturePredictor from "@/components/FuturePredictor";
-import SmartMealSuggestions from "@/components/SmartMealSuggestions";
 import colors, { brand, palette } from "@/constants/colors";
 
 
@@ -257,10 +256,10 @@ export default function RoutinesScreen() {
           <FuturePredictor childId={effectiveChildId} variant="compact" />
         </View>
 
-        {/* 🍱 Smart Tiffin & Meal Suggestions */}
-        <View style={{ marginBottom: 16 }}>
+        {/* 🍱 Smart Tiffin & Meal Suggestions — hidden on mobile per product decision */}
+        {/* <View style={{ marginBottom: 16 }}>
           <SmartMealSuggestions />
-        </View>
+        </View> */}
 
         {/* Loading / Error / Empty */}
         {isLoading ? (

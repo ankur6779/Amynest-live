@@ -5,7 +5,6 @@ import { Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/contexts/ThemeContext";
-import SmartMealSuggestions from "@/components/SmartMealSuggestions";
 
 export default function MealsScreen() {
   const insets = useSafeAreaInsets();
@@ -21,7 +20,8 @@ export default function MealsScreen() {
       />
       <Stack.Screen options={{ title: t("screens.meals.title") }} />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}>
-        <SmartMealSuggestions />
+        {/* Smart Tiffin & Meal Suggestions hidden on mobile per product decision */}
+        {/* <SmartMealSuggestions /> */}
       </ScrollView>
     </View>
   );
