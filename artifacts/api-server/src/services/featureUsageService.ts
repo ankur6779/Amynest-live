@@ -20,6 +20,18 @@ export const PARENT_HUB_FEATURES = [
   "hub_ai_meal_generator",
   "hub_meals_tile",
   "hub_spelling",
+  "hub_phonics_learning",
+  "hub_phonics_test",
+  "hub_nutrition",
+  "hub_art_craft",
+  "hub_worksheets",
+  "hub_facts",
+  "hub_skills_focus",
+  "hub_daily_story",
+  "hub_daily_puzzle",
+  "hub_gaming_rewards",
+  "hub_rewards_shop",
+  "hub_audio_lessons",
 ] as const;
 
 export type ParentHubFeatureId = (typeof PARENT_HUB_FEATURES)[number];

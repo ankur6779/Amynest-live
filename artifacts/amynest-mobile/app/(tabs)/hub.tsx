@@ -559,6 +559,7 @@ export default function HubScreen() {
                 desc={t("parent_hub.amy.desc")}
                 open={openSection === "amy"}
                 onToggle={() => setOpenSection(s => s === "amy" ? null : "amy")}
+                tryFree={tryFreeFor("hub_amy")}
               >
                 <Text style={styles.sectionLead}>{t("parent_hub.amy.lead_short")}</Text>
                 <View style={styles.promptsGrid}>
@@ -867,7 +868,33 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS.phonics,
             node: (
               <View style={tileW("phonics-learning")}>
-                <PhonicsLearningCard childId={effective?.id} />
+                <LockedBlock
+                  reason="hub_phonics_learning"
+                  locked={hubUsage.isFeatureLocked("hub_phonics_learning")}
+                  radius={18}
+                >
+                  <View>
+                    <PhonicsLearningCard
+                      childId={effective?.id}
+                      onPress={() => {
+                        hubUsage.markFeatureUsed("hub_phonics_learning");
+                        if (effective?.id != null) {
+                          router.push({
+                            pathname: "/phonics-learning" as never,
+                            params: { childId: String(effective.id) } as never,
+                          });
+                        } else {
+                          router.push("/phonics-learning" as never);
+                        }
+                      }}
+                    />
+                    {tryFreeFor("hub_phonics_learning") ? (
+                      <View style={styles.tileBadgeOverlay} pointerEvents="none">
+                        <TryFreeBadge />
+                      </View>
+                    ) : null}
+                  </View>
+                </LockedBlock>
               </View>
             ),
           });
@@ -876,7 +903,33 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS.phonics,
             node: (
               <View style={tileW("phonics")}>
-                <PhonicsTestCard childId={effective?.id} />
+                <LockedBlock
+                  reason="hub_phonics_test"
+                  locked={hubUsage.isFeatureLocked("hub_phonics_test")}
+                  radius={18}
+                >
+                  <View>
+                    <PhonicsTestCard
+                      childId={effective?.id}
+                      onPress={() => {
+                        hubUsage.markFeatureUsed("hub_phonics_test");
+                        if (effective?.id != null) {
+                          router.push({
+                            pathname: "/phonics-test" as never,
+                            params: { childId: String(effective.id) } as never,
+                          });
+                        } else {
+                          router.push("/phonics-test" as never);
+                        }
+                      }}
+                    />
+                    {tryFreeFor("hub_phonics_test") ? (
+                      <View style={styles.tileBadgeOverlay} pointerEvents="none">
+                        <TryFreeBadge />
+                      </View>
+                    ) : null}
+                  </View>
+                </LockedBlock>
               </View>
             ),
           });
@@ -905,6 +958,7 @@ export default function HubScreen() {
                           <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.25)" }}>
                             <Text style={{ color: "#fff", fontSize: 9.5, fontWeight: "800" }}>{t("parent_hub.tiles.kids-control-center.soon")}</Text>
                           </View>
+                          {tryFreeFor("hub_kids_control_center") ? <TryFreeBadge /> : null}
                         </View>
                         <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.kids-control-center.sublabel")}</Text>
                       </View>
@@ -961,8 +1015,16 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS.nutrition,
             node: (
               <View style={tileW("nutrition")}>
+              <LockedBlock
+                reason="hub_nutrition"
+                locked={hubUsage.isFeatureLocked("hub_nutrition")}
+                radius={18}
+              >
                 <Pressable
-                  onPress={() => router.push("/nutrition" as never)}
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_nutrition");
+                    router.push("/nutrition" as never);
+                  }}
                   style={{ borderRadius: 18, overflow: "hidden" }}
                 >
                   <LinearGradient
@@ -975,7 +1037,10 @@ export default function HubScreen() {
                         <Text style={{ fontSize: 22 }}>🥗</Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.nutrition.title")}</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.nutrition.title")}</Text>
+                          {tryFreeFor("hub_nutrition") ? <TryFreeBadge /> : null}
+                        </View>
                         <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.nutrition.sublabel")}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
@@ -993,6 +1058,7 @@ export default function HubScreen() {
                     </View>
                   </LinearGradient>
                 </Pressable>
+              </LockedBlock>
               </View>
             ),
           });
@@ -1061,9 +1127,18 @@ export default function HubScreen() {
                 <Text style={styles.sectionLead}>{t("parent_hub.tiles.activities.lead")}</Text>
 
                 {/* Gaming Reward entry */}
+                <View style={{ marginTop: 4 }}>
+                <LockedBlock
+                  reason="hub_gaming_rewards"
+                  locked={hubUsage.isFeatureLocked("hub_gaming_rewards")}
+                  radius={14}
+                >
                 <Pressable
-                  onPress={() => router.push("/games" as never)}
-                  style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_gaming_rewards");
+                    router.push("/games" as never);
+                  }}
+                  style={{ borderRadius: 14, overflow: "hidden" }}
                 >
                   <LinearGradient
                     colors={[brand.violet600, brand.purple500]}
@@ -1074,17 +1149,31 @@ export default function HubScreen() {
                       <Text style={{ fontSize: 22 }}>🎮</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.gaming_reward.title")}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.gaming_reward.title")}</Text>
+                        {tryFreeFor("hub_gaming_rewards") ? <TryFreeBadge /> : null}
+                      </View>
                       <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.gaming_reward.desc")}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
                   </LinearGradient>
                 </Pressable>
+                </LockedBlock>
+                </View>
 
                 {/* Rewards Shop entry */}
+                <View style={{ marginTop: 8 }}>
+                <LockedBlock
+                  reason="hub_rewards_shop"
+                  locked={hubUsage.isFeatureLocked("hub_rewards_shop")}
+                  radius={14}
+                >
                 <Pressable
-                  onPress={() => router.push("/rewards" as never)}
-                  style={{ borderRadius: 14, overflow: "hidden", marginTop: 8 }}
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_rewards_shop");
+                    router.push("/rewards" as never);
+                  }}
+                  style={{ borderRadius: 14, overflow: "hidden" }}
                 >
                   <LinearGradient
                     colors={[palette.amber500, brand.pink500]}
@@ -1095,17 +1184,31 @@ export default function HubScreen() {
                       <Text style={{ fontSize: 22 }}>🎁</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.rewards_shop.title")}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.rewards_shop.title")}</Text>
+                        {tryFreeFor("hub_rewards_shop") ? <TryFreeBadge /> : null}
+                      </View>
                       <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.rewards_shop.desc")}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
                   </LinearGradient>
                 </Pressable>
+                </LockedBlock>
+                </View>
 
                 {/* Audio Lessons entry */}
+                <View style={{ marginTop: 8 }}>
+                <LockedBlock
+                  reason="hub_audio_lessons"
+                  locked={hubUsage.isFeatureLocked("hub_audio_lessons")}
+                  radius={14}
+                >
                 <Pressable
-                  onPress={() => router.push("/audio-lessons" as never)}
-                  style={{ borderRadius: 14, overflow: "hidden", marginTop: 8 }}
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_audio_lessons");
+                    router.push("/audio-lessons" as never);
+                  }}
+                  style={{ borderRadius: 14, overflow: "hidden" }}
                 >
                   <LinearGradient
                     colors={[palette.cyan700, palette.cyan600]}
@@ -1116,12 +1219,17 @@ export default function HubScreen() {
                       <Text style={{ fontSize: 22 }}>🎧</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.audio_lessons.title")}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.audio_lessons.title")}</Text>
+                        {tryFreeFor("hub_audio_lessons") ? <TryFreeBadge /> : null}
+                      </View>
                       <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.audio_lessons.desc")}</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
                   </LinearGradient>
                 </Pressable>
+                </LockedBlock>
+                </View>
 
               </Section>
               </LockedBlock>
@@ -1173,6 +1281,10 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS["art-craft"],
             node: (
               <View style={tileW("art-craft")}>
+              <LockedBlock
+                reason="hub_art_craft"
+                locked={hubUsage.isFeatureLocked("hub_art_craft")}
+              >
               <Section
                 id="art-craft"
                 icon={<MaterialCommunityIcons name="palette" size={20} color="#fff" />}
@@ -1182,9 +1294,12 @@ export default function HubScreen() {
                 desc={t("parent_hub.tiles.art-craft.desc")}
                 open={openSection === "art-craft"}
                 onToggle={() => setOpenSection(s => s === "art-craft" ? null : "art-craft")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}
+                tryFree={tryFreeFor("hub_art_craft")}
               >
                 <ArtCraftReels />
               </Section>
+              </LockedBlock>
               </View>
             ),
           });
@@ -1193,6 +1308,10 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS.worksheets,
             node: (
               <View style={tileW("worksheets")}>
+              <LockedBlock
+                reason="hub_worksheets"
+                locked={hubUsage.isFeatureLocked("hub_worksheets")}
+              >
               <Section
                 id="worksheets"
                 icon={<MaterialCommunityIcons name="file-document-outline" size={20} color="#fff" />}
@@ -1202,9 +1321,12 @@ export default function HubScreen() {
                 desc={t("parent_hub.tiles.worksheets.desc")}
                 open={openSection === "worksheets"}
                 onToggle={() => setOpenSection(s => s === "worksheets" ? null : "worksheets")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_worksheets")}
+                tryFree={tryFreeFor("hub_worksheets")}
               >
                 <PrintableWorksheets />
               </Section>
+              </LockedBlock>
               </View>
             ),
           });
@@ -1213,6 +1335,10 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS.facts,
             node: (
               <View style={tileW("facts")}>
+              <LockedBlock
+                reason="hub_facts"
+                locked={hubUsage.isFeatureLocked("hub_facts")}
+              >
               <Section
                 id="facts"
                 icon={<Ionicons name="sparkles" size={20} color="#fff" />}
@@ -1222,6 +1348,8 @@ export default function HubScreen() {
                 desc={t("parent_hub.tiles.facts.desc")}
                 open={openSection === "facts"}
                 onToggle={() => setOpenSection(s => s === "facts" ? null : "facts")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_facts")}
+                tryFree={tryFreeFor("hub_facts")}
               >
                 {effective ? (
                   <AmazingFacts ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)} />
@@ -1229,6 +1357,7 @@ export default function HubScreen() {
                   <Text style={styles.sectionLead}>{t("parent_hub.tiles.facts.empty")}</Text>
                 )}
               </Section>
+              </LockedBlock>
               </View>
             ),
           });
@@ -1425,6 +1554,10 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS["skills-focus"],
             node: (
               <View style={tileW("skills-focus")}>
+                <LockedBlock
+                  reason="hub_skills_focus"
+                  locked={hubUsage.isFeatureLocked("hub_skills_focus")}
+                >
                 <Section
                   id="skills-focus"
                   icon={<Ionicons name="bulb" size={20} color="#fff" />}
@@ -1434,11 +1567,14 @@ export default function HubScreen() {
                   desc={t("parent_hub.tiles.skills-focus.desc")}
                   open={openSection === "skills-focus"}
                   onToggle={() => setOpenSection(s => s === "skills-focus" ? null : "skills-focus")}
+                  onOpen={() => hubUsage.markFeatureUsed("hub_skills_focus")}
+                  tryFree={tryFreeFor("hub_skills_focus")}
                 >
                   <SkillsFocus
                     ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
                   />
                 </Section>
+                </LockedBlock>
               </View>
             ),
           });
@@ -1447,6 +1583,10 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS["daily-story"],
             node: (
               <View style={tileW("daily-story")}>
+                <LockedBlock
+                  reason="hub_daily_story"
+                  locked={hubUsage.isFeatureLocked("hub_daily_story")}
+                >
                 <Section
                   id="daily-story"
                   icon={<Ionicons name="book" size={20} color="#fff" />}
@@ -1456,11 +1596,14 @@ export default function HubScreen() {
                   desc={t("parent_hub.tiles.daily-story.desc")}
                   open={openSection === "daily-story"}
                   onToggle={() => setOpenSection(s => s === "daily-story" ? null : "daily-story")}
+                  onOpen={() => hubUsage.markFeatureUsed("hub_daily_story")}
+                  tryFree={tryFreeFor("hub_daily_story")}
                 >
                   <DailyStory
                     ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
                   />
                 </Section>
+                </LockedBlock>
               </View>
             ),
           });
@@ -1469,6 +1612,10 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS["daily-puzzle"],
             node: (
               <View style={tileW("daily-puzzle")}>
+                <LockedBlock
+                  reason="hub_daily_puzzle"
+                  locked={hubUsage.isFeatureLocked("hub_daily_puzzle")}
+                >
                 <Section
                   id="daily-puzzle"
                   icon={<Ionicons name="extension-puzzle" size={20} color="#fff" />}
@@ -1478,6 +1625,8 @@ export default function HubScreen() {
                   desc={t("parent_hub.tiles.daily-puzzle.desc")}
                   open={openSection === "daily-puzzle"}
                   onToggle={() => setOpenSection(s => s === "daily-puzzle" ? null : "daily-puzzle")}
+                  onOpen={() => hubUsage.markFeatureUsed("hub_daily_puzzle")}
+                  tryFree={tryFreeFor("hub_daily_puzzle")}
                 >
                   <DailyPuzzle
                     ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
@@ -1485,6 +1634,7 @@ export default function HubScreen() {
                     childId={effective.id}
                   />
                 </Section>
+                </LockedBlock>
               </View>
             ),
           });
@@ -1563,6 +1713,8 @@ export default function HubScreen() {
                     childName={childName}
                     ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
                     styles={styles}
+                    showTodayPlanBadge={tryFreeFor("hub_today_plan")}
+                    showParentTasksBadge={tryFreeFor("hub_parent_tasks")}
                     // Empty-state CTA must open the routine generator
                     // directly — same target the dashboard's
                     // `goToGenerate` callback uses, so the hub and
@@ -1586,15 +1738,36 @@ export default function HubScreen() {
                         {/* Featured tiles share the same HubTile chrome
                             with the `featured` variant for a slightly
                             larger press target + corner radius. */}
-                        <HubTile featured testID="hub-tile-command-center">
-                          <ParentCommandCenter child={{ id: effective.id, name: effective.name, age: effective.age }} />
-                        </HubTile>
-                        <HubTile featured testID="hub-tile-infant-hub">
-                          {renderInfantHub()}
-                        </HubTile>
-                        <HubTile featured testID="hub-tile-tomorrow-forecast">
-                          <FuturePredictor childId={effective.id} />
-                        </HubTile>
+                        <View style={{ position: "relative" }}>
+                          <HubTile featured testID="hub-tile-command-center">
+                            <ParentCommandCenter child={{ id: effective.id, name: effective.name, age: effective.age }} />
+                          </HubTile>
+                          {tryFreeFor("hub_command_center") ? (
+                            <View style={styles.tileBadgeOverlay} pointerEvents="none">
+                              <TryFreeBadge />
+                            </View>
+                          ) : null}
+                        </View>
+                        <View style={{ position: "relative" }}>
+                          <HubTile featured testID="hub-tile-infant-hub">
+                            {renderInfantHub()}
+                          </HubTile>
+                          {tryFreeFor("hub_infant_hub") ? (
+                            <View style={styles.tileBadgeOverlay} pointerEvents="none">
+                              <TryFreeBadge />
+                            </View>
+                          ) : null}
+                        </View>
+                        <View style={{ position: "relative" }}>
+                          <HubTile featured testID="hub-tile-tomorrow-forecast">
+                            <FuturePredictor childId={effective.id} />
+                          </HubTile>
+                          {tryFreeFor("hub_tomorrow_forecast") ? (
+                            <View style={styles.tileBadgeOverlay} pointerEvents="none">
+                              <TryFreeBadge />
+                            </View>
+                          ) : null}
+                        </View>
                       </>
                     }
                     tiles={buckets.zones}
@@ -1837,7 +2010,11 @@ function TodayPlanPage({
   styles,
   onGenerate,
   onContinue,
+  showTodayPlanBadge,
+  showParentTasksBadge,
 }: {
+  showTodayPlanBadge?: boolean;
+  showParentTasksBadge?: boolean;
   /** Active child id — passed through to ParentTasks so its checkbox state
    *  persists per-child per-day on the server. */
   childId: number;
@@ -1895,7 +2072,10 @@ function TodayPlanPage({
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.bandSectionHeader}>
-        <Text style={styles.bandSectionTitle}>{meta.heading}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <Text style={styles.bandSectionTitle}>{meta.heading}</Text>
+          {showTodayPlanBadge ? <TryFreeBadge /> : null}
+        </View>
         <Text style={styles.bandSectionSub}>
           {childName ? `${childName} · ${meta.description}` : meta.description}
         </Text>
@@ -1927,6 +2107,11 @@ function TodayPlanPage({
           the routine carousel showing age-matched "things YOU can do today".
           Lives inline on the Today's Plan page (not as a hub tile) so
           parents see it immediately with their child's routine. */}
+      {showParentTasksBadge ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
+          <TryFreeBadge />
+        </View>
+      ) : null}
       <ParentTasks childId={childId} ageMonths={ageMonths} childName={childName} />
 
       {tasks.length > 0 && (
@@ -2256,6 +2441,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     // for the Today's Plan quick-jump scroll-into-view (Task #191). Width // audit-ok: task ref, not a hex color
     // mirrors the single-column 100% layout used by the bucket tiles.
     tileMeasureWrap: { width: "100%" },
+    tileBadgeOverlay: { position: "absolute", top: 12, right: 12, zIndex: 10 },
     logo: { width: 40, height: 40, borderRadius: 10 },
     eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 4 },
     eyebrow: {
