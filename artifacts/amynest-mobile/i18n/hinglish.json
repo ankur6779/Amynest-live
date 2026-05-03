@@ -1360,7 +1360,65 @@
       "10_000_parents": "10,000+ parents",
       "cancel_anytime": "Kabhi bhi cancel karo",
       "secure_payment": "secure payment",
-      "maybe_later": "Baad mein sahi"
+      "maybe_later": "Baad mein sahi",
+      "reasons": {
+        "hub_phonics_learning": {
+          "title": "Phonics Learning unlock karo",
+          "subtitle": "Daily phonics lessons jo reading fluency step by step build karte hain."
+        },
+        "hub_phonics_test": {
+          "title": "Phonics Tests unlock karo",
+          "subtitle": "Adaptive phonics quizzes jo aapke bachche ki reading progress track karte hain."
+        },
+        "hub_kids_control_center": {
+          "title": "Kids Control Center unlock karo",
+          "subtitle": "Har bachche ke liye screen time, app limits aur device controls manage karo."
+        },
+        "hub_nutrition": {
+          "title": "Nutrition Coach unlock karo",
+          "subtitle": "Smart meal ideas, allergy-aware recipes aur growth-stage nutrition tips."
+        },
+        "hub_art_craft": {
+          "title": "Art & Craft unlock karo",
+          "subtitle": "Daily creative play ke liye hands-on art ideas aur craft reels."
+        },
+        "hub_worksheets": {
+          "title": "Printable Worksheets unlock karo",
+          "subtitle": "Phonics, math aur life skills par hundreds of printable worksheets."
+        },
+        "hub_facts": {
+          "title": "Amazing Facts unlock karo",
+          "subtitle": "Age-perfect daily facts jo curiosity aur baatein spark karte hain."
+        },
+        "hub_skills_focus": {
+          "title": "Is hafte ka Skills Focus unlock karo",
+          "subtitle": "Aapke bachche ki age ke hisaab se weekly skill themes aur curated activities."
+        },
+        "hub_daily_story": {
+          "title": "Daily Story unlock karo",
+          "subtitle": "Roz ek nayi age-appropriate story — bedtime ke liye perfect."
+        },
+        "hub_daily_puzzle": {
+          "title": "Daily Puzzle unlock karo",
+          "subtitle": "Logic aur focus build karne ke liye roz ek fresh brain-teaser."
+        },
+        "hub_gaming_rewards": {
+          "title": "Gaming Rewards unlock karo",
+          "subtitle": "Reward-based mini games ke saath screen time ko earned playtime mein badlo."
+        },
+        "hub_rewards_shop": {
+          "title": "Rewards Shop unlock karo",
+          "subtitle": "Bachchon ko aapke chune rewards ke liye stars redeem karne do — chores fun ho jayenge."
+        },
+        "hub_audio_lessons": {
+          "title": "Audio Lessons unlock karo",
+          "subtitle": "Calming bedtime stories, focus tracks aur guided meditations — kabhi bhi, ad-free."
+        },
+        "hub_amy": {
+          "title": "Ask Amy unlock karo",
+          "subtitle": "Unlimited parenting answers, smart prompts aur personalized guidance."
+        }
+      }
     },
     "progress": {
       "insights": "Jankari",

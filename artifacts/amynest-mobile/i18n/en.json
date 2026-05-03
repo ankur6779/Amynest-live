@@ -1360,7 +1360,65 @@
       "10_000_parents": "10,000+ parents",
       "cancel_anytime": "Cancel anytime",
       "secure_payment": "Secure payment",
-      "maybe_later": "Maybe Later"
+      "maybe_later": "Maybe Later",
+      "reasons": {
+        "hub_phonics_learning": {
+          "title": "Unlock Phonics Learning",
+          "subtitle": "Daily phonics lessons that build reading fluency, step by step."
+        },
+        "hub_phonics_test": {
+          "title": "Unlock Phonics Tests",
+          "subtitle": "Adaptive phonics quizzes that track your child's reading progress."
+        },
+        "hub_kids_control_center": {
+          "title": "Unlock Kids Control Center",
+          "subtitle": "Manage screen time, app limits & device controls for every child."
+        },
+        "hub_nutrition": {
+          "title": "Unlock Nutrition Coach",
+          "subtitle": "Smart meal ideas, allergy-aware recipes & growth-stage nutrition tips."
+        },
+        "hub_art_craft": {
+          "title": "Unlock Art & Craft",
+          "subtitle": "Hands-on art ideas and craft reels for creative play every day."
+        },
+        "hub_worksheets": {
+          "title": "Unlock Printable Worksheets",
+          "subtitle": "Hundreds of printable worksheets across phonics, math & life skills."
+        },
+        "hub_facts": {
+          "title": "Unlock Amazing Facts",
+          "subtitle": "Age-perfect daily facts that spark curiosity and conversation."
+        },
+        "hub_skills_focus": {
+          "title": "Unlock This Week's Skills Focus",
+          "subtitle": "Weekly skill themes with curated activities tailored to your child's age."
+        },
+        "hub_daily_story": {
+          "title": "Unlock the Daily Story",
+          "subtitle": "A new age-appropriate story every day — perfect for bedtime."
+        },
+        "hub_daily_puzzle": {
+          "title": "Unlock the Daily Puzzle",
+          "subtitle": "A fresh brain-teaser every day to build logic and focus."
+        },
+        "hub_gaming_rewards": {
+          "title": "Unlock Gaming Rewards",
+          "subtitle": "Turn screen time into earned playtime with reward-based mini games."
+        },
+        "hub_rewards_shop": {
+          "title": "Unlock the Rewards Shop",
+          "subtitle": "Let kids redeem stars for rewards you choose — chores made fun."
+        },
+        "hub_audio_lessons": {
+          "title": "Unlock Audio Lessons",
+          "subtitle": "Calming bedtime stories, focus tracks & guided meditations — anytime, ad-free."
+        },
+        "hub_amy": {
+          "title": "Unlock Ask Amy",
+          "subtitle": "Unlimited parenting answers, smart prompts & personalized guidance."
+        }
+      }
     },
     "progress": {
       "insights": "Insights",
