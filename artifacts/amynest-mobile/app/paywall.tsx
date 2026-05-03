@@ -76,6 +76,101 @@ const REASON_COPY: Record<
     subtitle: "All activities, Olympiad prep & life skills — unlocked on premium.",
     icon: "grid",
   },
+  hub_phonics_learning: {
+    title: "Unlock Phonics Learning",
+    subtitle: "Daily phonics lessons that build reading fluency, step by step.",
+    icon: "book",
+  },
+  hub_phonics_test: {
+    title: "Unlock Phonics Tests",
+    subtitle: "Adaptive phonics quizzes that track your child's reading progress.",
+    icon: "checkmark-circle",
+  },
+  hub_kids_control_center: {
+    title: "Unlock Kids Control Center",
+    subtitle: "Manage screen time, app limits & device controls for every child.",
+    icon: "shield-checkmark",
+  },
+  hub_nutrition: {
+    title: "Unlock Nutrition Coach",
+    subtitle: "Smart meal ideas, allergy-aware recipes & growth-stage nutrition tips.",
+    icon: "nutrition",
+  },
+  hub_art_craft: {
+    title: "Unlock Art & Craft",
+    subtitle: "Hands-on art ideas and craft reels for creative play every day.",
+    icon: "color-palette",
+  },
+  hub_worksheets: {
+    title: "Unlock Printable Worksheets",
+    subtitle: "Hundreds of printable worksheets across phonics, math & life skills.",
+    icon: "document-text",
+  },
+  hub_facts: {
+    title: "Unlock Amazing Facts",
+    subtitle: "Age-perfect daily facts that spark curiosity and conversation.",
+    icon: "sparkles",
+  },
+  hub_skills_focus: {
+    title: "Unlock This Week's Skills Focus",
+    subtitle: "Weekly skill themes with curated activities tailored to your child's age.",
+    icon: "bulb",
+  },
+  hub_daily_story: {
+    title: "Unlock the Daily Story",
+    subtitle: "A new age-appropriate story every day — perfect for bedtime.",
+    icon: "book",
+  },
+  hub_daily_puzzle: {
+    title: "Unlock the Daily Puzzle",
+    subtitle: "A fresh brain-teaser every day to build logic and focus.",
+    icon: "extension-puzzle",
+  },
+  hub_gaming_rewards: {
+    title: "Unlock Gaming Rewards",
+    subtitle: "Turn screen time into earned playtime with reward-based mini games.",
+    icon: "game-controller",
+  },
+  hub_rewards_shop: {
+    title: "Unlock the Rewards Shop",
+    subtitle: "Let kids redeem stars for rewards you choose — chores made fun.",
+    icon: "gift",
+  },
+  hub_audio_lessons: {
+    title: "Unlock Audio Lessons",
+    subtitle: "Calming bedtime stories, focus tracks & guided meditations — anytime, ad-free.",
+    icon: "headset",
+  },
+  hub_amy: {
+    title: "Unlock Ask Amy",
+    subtitle: "Unlimited parenting answers, smart prompts & personalized guidance.",
+    icon: "chatbubbles",
+  },
+  hub_command_center: {
+    title: "Unlock the Parent Command Center",
+    subtitle: "One place to see today's plan, alerts & quick parent actions.",
+    icon: "speedometer",
+  },
+  hub_infant_hub: {
+    title: "Unlock the Infant Hub",
+    subtitle: "Feeding, sleep & milestone tracking tuned for the early years.",
+    icon: "happy",
+  },
+  hub_tomorrow_forecast: {
+    title: "Unlock Tomorrow's Forecast",
+    subtitle: "A heads-up on tomorrow's mood, energy & focus windows.",
+    icon: "sunny",
+  },
+  hub_today_plan: {
+    title: "Unlock Today's Plan",
+    subtitle: "Your child's full daily routine — generated, smart, and editable.",
+    icon: "calendar",
+  },
+  hub_parent_tasks: {
+    title: "Unlock Parent Tasks for Today",
+    subtitle: "Bite-size 'things you can do today' suggestions tailored to your child's age.",
+    icon: "checkbox",
+  },
   feature: {
     title: "Unlock Full Parenting Power",
     subtitle: "Get unlimited AI, smart coaching, and premium insights.",
