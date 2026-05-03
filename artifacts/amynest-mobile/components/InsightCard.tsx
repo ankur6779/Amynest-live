@@ -10,6 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { brand } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -40,6 +41,7 @@ export default function InsightCard({
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const c = useColors();
 
+  const { t } = useTranslation();
   return (
     <AnimatedPressable
       testID={testID}
@@ -81,7 +83,7 @@ export default function InsightCard({
 
         <View style={styles.footerRow}>
           <View style={styles.readMore}>
-            <Text style={[styles.readMoreText, { color: accent[0] }]}>Read more</Text>
+            <Text style={[styles.readMoreText, { color: accent[0] }]}>{t("components.insight_card.read_more")}</Text>
             <Ionicons name="arrow-forward" size={14} color={accent[0]} />
           </View>
           <Pressable

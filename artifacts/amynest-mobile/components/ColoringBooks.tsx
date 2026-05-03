@@ -8,6 +8,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 interface ColoringFile {
   id: string;
@@ -80,6 +81,7 @@ export function ColoringBooks({
   useEffect(() => {
     const ctrl = new AbortController();
     void fetchPage(page, ctrl.signal);
+    const { t } = useTranslation();
     return () => ctrl.abort();
   }, [fetchPage, page]);
 
@@ -147,7 +149,7 @@ export function ColoringBooks({
     return (
       <View style={styles.center}>
         <ActivityIndicator color={c.primary} />
-        <Text style={styles.dim}>Loading coloring books…</Text>
+        <Text style={styles.dim}>{t("components.coloring_books.loading_coloring_books")}</Text>
       </View>
     );
   }
@@ -158,7 +160,7 @@ export function ColoringBooks({
         <Text style={styles.errorText}>{listError}</Text>
         <Pressable onPress={() => fetchPage(page)} style={styles.retryBtn}>
           <Ionicons name="refresh" size={12} color={c.foreground} />
-          <Text style={styles.retryText}>Try again</Text>
+          <Text style={styles.retryText}>{t("components.coloring_books.try_again")}</Text>
         </Pressable>
       </View>
     );
@@ -183,7 +185,7 @@ export function ColoringBooks({
       {allDone ? (
         <View style={styles.empty}>
           <Ionicons name="checkmark-circle" size={36} color={palette.emerald500} />
-          <Text style={styles.emptyTitle}>All caught up!</Text>
+          <Text style={styles.emptyTitle}>{t("components.coloring_books.all_caught_up")}</Text>
           <Text style={styles.emptyDesc}>{childName} has downloaded every coloring book in the library. We add new ones regularly — check back soon!</Text>
         </View>
       ) : (
@@ -201,7 +203,7 @@ export function ColoringBooks({
                   <View style={styles.cardActions}>
                     <Pressable onPress={() => handlePreview(file)} style={[styles.btnSecondary, { flex: 1 }]}>
                       <Ionicons name="eye" size={11} color={c.foreground} />
-                      <Text style={styles.btnSecondaryText}>Preview</Text>
+                      <Text style={styles.btnSecondaryText}>{t("components.coloring_books.preview")}</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => handleDownload(file)}
@@ -232,7 +234,7 @@ export function ColoringBooks({
                 style={[styles.pagerBtn, (!pagination.hasPrev || loading) && { opacity: 0.4 }]}
               >
                 <Ionicons name="chevron-back" size={14} color={c.foreground} />
-                <Text style={styles.pagerBtnText}>Prev</Text>
+                <Text style={styles.pagerBtnText}>{t("components.coloring_books.prev")}</Text>
               </Pressable>
               <Text style={styles.pagerInfo}>
                 Page {pagination.page + 1} of {pagination.totalPages} · {pagination.total} left
@@ -242,7 +244,7 @@ export function ColoringBooks({
                 disabled={!pagination.hasNext || loading}
                 style={[styles.pagerBtn, (!pagination.hasNext || loading) && { opacity: 0.4 }]}
               >
-                <Text style={styles.pagerBtnText}>Next</Text>
+                <Text style={styles.pagerBtnText}>{t("components.coloring_books.next")}</Text>
                 <Ionicons name="chevron-forward" size={14} color={c.foreground} />
               </Pressable>
             </View>
@@ -259,7 +261,7 @@ function ThumbnailWithFallback({ src, alt, c }: { src: string; alt: string; c: R
     return (
       <View style={{ alignItems: "center", justifyContent: "center", padding: 12 }}>
         <MaterialCommunityIcons name="palette" size={32} color={c.textDim} />
-        <Text style={{ color: c.textDim, fontWeight: "700", fontSize: 9, marginTop: 4 }}>PDF</Text>
+        <Text style={{ color: c.textDim, fontWeight: "700", fontSize: 9, marginTop: 4 }}>{t("components.coloring_books.pdf")}</Text>
       </View>
     );
   }

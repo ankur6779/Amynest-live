@@ -153,7 +153,7 @@ export default function CoachCard({ win, total, topInset, bottomInset, onAction 
                 <Pressable
                   testID="coach-listen-lang-en"
                   accessibilityRole="button"
-                  accessibilityLabel="Listen in English"
+                  accessibilityLabel={t("components.coach_card.listen_in_english")}
                   accessibilityState={{ selected: lang === "en" }}
                   onPress={() => handleLangChange("en")}
                   style={[styles.langChip, lang === "en" && { backgroundColor: brand.violet600 }]}
@@ -163,7 +163,7 @@ export default function CoachCard({ win, total, topInset, bottomInset, onAction 
                 <Pressable
                   testID="coach-listen-lang-hi"
                   accessibilityRole="button"
-                  accessibilityLabel="Listen in Hindi"
+                  accessibilityLabel={t("components.coach_card.listen_in_hindi")}
                   accessibilityState={{ selected: lang === "hi" }}
                   onPress={() => handleLangChange("hi")}
                   style={[styles.langChip, lang === "hi" && { backgroundColor: brand.violet600 }]}

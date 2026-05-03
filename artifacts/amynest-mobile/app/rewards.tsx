@@ -130,7 +130,7 @@ export default function RewardsScreen() {
         <Pressable onPress={() => router.back()} style={styles.headerBtn} hitSlop={8}>
           <Ionicons name="chevron-back" size={22} color={c.foreground} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: c.foreground }]}>Rewards</Text>
+        <Text style={[styles.headerTitle, { color: c.foreground }]}>{t("screens.rewards.rewards")}</Text>
         <View style={styles.headerBtn} />
       </View>
 
@@ -145,15 +145,15 @@ export default function RewardsScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.heroCard}
         >
-          <Text style={styles.heroLabel}>YOUR POINTS</Text>
+          <Text style={styles.heroLabel}>{t("screens.rewards.your_points")}</Text>
           <Text style={styles.heroPoints}>{points.toLocaleString()}</Text>
-          <Text style={styles.heroSub}>Earned across routines, games & behaviour 🎉</Text>
+          <Text style={styles.heroSub}>{t("screens.rewards.earned_across_routines_games_behaviour")}</Text>
         </LinearGradient>
 
         {/* Badges */}
         {badges.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: c.foreground }]}>🏆 Badges Earned</Text>
+            <Text style={[styles.sectionTitle, { color: c.foreground }]}>{t("screens.rewards.badges_earned")}</Text>
             <View style={styles.badgeRow}>
               {badges.map((b) => (
                 <View key={b.id} style={[styles.badgeChip, { backgroundColor: c.muted, borderColor: c.border }]}>
@@ -167,8 +167,8 @@ export default function RewardsScreen() {
 
         {/* Rewards shop */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: c.foreground }]}>🎁 Rewards Shop</Text>
-          <Text style={[styles.sectionSub, { color: c.mutedForeground }]}>Spend points on real-world treats</Text>
+          <Text style={[styles.sectionTitle, { color: c.foreground }]}>{t("screens.rewards.rewards_shop")}</Text>
+          <Text style={[styles.sectionSub, { color: c.mutedForeground }]}>{t("screens.rewards.spend_points_on_real_world_treats")}</Text>
           <View style={{ gap: 10, marginTop: 10 }}>
             {rewards.map((r) => {
               const affordable = points >= r.cost;
@@ -206,7 +206,7 @@ export default function RewardsScreen() {
         {/* Recent redemptions */}
         {redemptions.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: c.foreground }]}>📜 Recent Redemptions</Text>
+            <Text style={[styles.sectionTitle, { color: c.foreground }]}>{t("screens.rewards.recent_redemptions")}</Text>
             <View style={[styles.listCard, { backgroundColor: c.card, borderColor: c.border }]}>
               {redemptions.slice(0, 8).map((r, i) => (
                 <View
@@ -229,7 +229,7 @@ export default function RewardsScreen() {
         {/* Recent earnings */}
         {ledger.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: c.foreground }]}>✨ Recent Earnings</Text>
+            <Text style={[styles.sectionTitle, { color: c.foreground }]}>{t("screens.rewards.recent_earnings")}</Text>
             <View style={[styles.listCard, { backgroundColor: c.card, borderColor: c.border }]}>
               {ledger.slice(0, 8).map((e, i) => (
                 <View

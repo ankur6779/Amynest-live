@@ -84,7 +84,7 @@ export default function BabysittersScreen() {
         </LinearGradient>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>{t("babysitters.title")}</Text>
-          <Text style={styles.headerSubtitle}>Manage your trusted helpers</Text>
+          <Text style={styles.headerSubtitle}>{t("screens.babysitters.manage_your_trusted_helpers")}</Text>
         </View>
         <Pressable onPress={() => setOpen(true)} style={styles.addBtn}>
           <Ionicons name="add" size={20} color="#fff" />
@@ -96,11 +96,11 @@ export default function BabysittersScreen() {
         {!isLoading && sitters.length === 0 && (
           <View style={styles.emptyCard}>
             <MaterialCommunityIcons name="baby-face-outline" size={48} color="rgba(255,78,205,0.5)" />
-            <Text style={styles.emptyTitle}>No babysitters yet</Text>
-            <Text style={styles.emptyDesc}>Add a sitter so Amy can tailor routines for when they're on duty.</Text>
+            <Text style={styles.emptyTitle}>{t("screens.babysitters.no_babysitters_yet")}</Text>
+            <Text style={styles.emptyDesc}>{t("screens.babysitters.add_a_sitter_so_amy_can_tailor_routines")}</Text>
             <Pressable onPress={() => setOpen(true)} style={styles.primaryBtn}>
               <Ionicons name="add" size={16} color="#fff" />
-              <Text style={styles.primaryBtnText}>Add your first sitter</Text>
+              <Text style={styles.primaryBtnText}>{t("screens.babysitters.add_your_first_sitter")}</Text>
             </Pressable>
           </View>
         )}
@@ -131,20 +131,20 @@ export default function BabysittersScreen() {
           <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
           <View style={[styles.modalCard, { paddingBottom: insets.bottom + 20 }]}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Add Babysitter</Text>
+            <Text style={styles.modalTitle}>{t("screens.babysitters.add_babysitter")}</Text>
             <View style={{ gap: 12, marginTop: 8 }}>
               <View>
-                <Text style={styles.label}>Full Name *</Text>
+                <Text style={styles.label}>{t("screens.babysitters.full_name")}</Text>
                 <TextInput
                   style={styles.input}
                   value={form.name}
                   onChangeText={t => setForm(f => ({ ...f, name: t }))}
-                  placeholder="e.g. Aisha Malik"
+                  placeholder={t("screens.babysitters.e_g_aisha_malik")}
                   placeholderTextColor={c.textDim}
                 />
               </View>
               <View>
-                <Text style={styles.label}>Mobile Number</Text>
+                <Text style={styles.label}>{t("screens.babysitters.mobile_number")}</Text>
                 <TextInput
                   style={styles.input}
                   value={form.mobileNumber}
@@ -155,23 +155,23 @@ export default function BabysittersScreen() {
                 />
               </View>
               <View>
-                <Text style={styles.label}>Notes</Text>
+                <Text style={styles.label}>{t("screens.babysitters.notes")}</Text>
                 <TextInput
                   style={[styles.input, { height: 80, textAlignVertical: "top" }]}
                   value={form.notes}
                   onChangeText={t => setForm(f => ({ ...f, notes: t }))}
-                  placeholder="Special instructions, allergies, etc."
+                  placeholder={t("screens.babysitters.special_instructions_allergies_etc")}
                   placeholderTextColor={c.textDim}
                   multiline
                 />
               </View>
               <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
                 <Pressable onPress={() => setOpen(false)} style={[styles.modalBtn, styles.modalBtnCancel]}>
-                  <Text style={{ color: c.text, fontWeight: "700" }}>Cancel</Text>
+                  <Text style={{ color: c.text, fontWeight: "700" }}>{t("screens.babysitters.cancel")}</Text>
                 </Pressable>
                 <Pressable onPress={handleAdd} disabled={saving} style={[styles.modalBtn, { flex: 1 }]}>
                   <LinearGradient colors={[brand.primary, ACCENT_PINK]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.modalBtnGrad}>
-                    {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: "#fff", fontWeight: "700" }}>Add Sitter</Text>}
+                    {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: "#fff", fontWeight: "700" }}>{t("screens.babysitters.add_sitter")}</Text>}
                   </LinearGradient>
                 </Pressable>
               </View>

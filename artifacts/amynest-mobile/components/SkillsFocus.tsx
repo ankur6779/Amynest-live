@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useColors } from "@/hooks/useColors";
 import { ageMonthsToGroup, SKILL_FOCUS_BY_GROUP } from "@workspace/age-content";
+import { useTranslation } from "react-i18next";
 
 export function SkillsFocus({ ageMonths = 60 }: { ageMonths?: number }) {
   const c = useColors();
@@ -9,9 +10,10 @@ export function SkillsFocus({ ageMonths = 60 }: { ageMonths?: number }) {
   const group = ageMonthsToGroup(ageMonths);
   const skills = SKILL_FOCUS_BY_GROUP[group];
 
+  const { t } = useTranslation();
   return (
     <View style={{ gap: 10 }}>
-      <Text style={s.lead}>4 high-impact areas to focus on this week.</Text>
+      <Text style={s.lead}>{t("components.skills_focus.4_high_impact_areas_to_focus_on_this_wee")}</Text>
       {skills.map((sk) => (
         <View key={sk.skill} style={s.card}>
           <Text style={s.emoji}>{sk.emoji}</Text>

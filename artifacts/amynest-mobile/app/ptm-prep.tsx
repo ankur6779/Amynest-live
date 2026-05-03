@@ -97,11 +97,11 @@ export default function PtmPrepScreen() {
           <>
             <LinearGradient colors={[brand.violet400, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
               <Text style={{ fontSize: 28 }}>🧾</Text>
-              <Text style={styles.heroTitle}>PTM Prep Assistant</Text>
-              <Text style={styles.heroSub}>A simple Prepare → Attend → Act flow for your child's next Parent-Teacher Meeting.</Text>
+              <Text style={styles.heroTitle}>{t("screens.ptm_prep.ptm_prep_assistant")}</Text>
+              <Text style={styles.heroSub}>{t("screens.ptm_prep.a_simple_prepare_attend_act_flow_for_you")}</Text>
               <Pressable onPress={start} style={styles.heroBtn}>
                 <Ionicons name="sparkles" size={14} color={brand.violet600} />
-                <Text style={styles.heroBtnText}>Start a PTM Prep</Text>
+                <Text style={styles.heroBtnText}>{t("screens.ptm_prep.start_a_ptm_prep")}</Text>
               </Pressable>
             </LinearGradient>
             <HistoryBlock history={visibleHistory} colors={colors} onDelete={async (id) => { const next = deleteFromHistory(history, id); setHistory(next); await saveHistory(next); }} />
@@ -115,7 +115,7 @@ export default function PtmPrepScreen() {
                 <Pressable onPress={() => Alert.alert(t("alerts.ptm.discard_title"), t("alerts.ptm.discard_msg"), [
                   { text: "Cancel" }, { text: "Discard", style: "destructive", onPress: () => setSession(null) },
                 ])}>
-                  <Text style={{ fontSize: 11, color: palette.gray400 }}>🗑 Discard</Text>
+                  <Text style={{ fontSize: 11, color: palette.gray400 }}>{t("screens.ptm_prep.discard")}</Text>
                 </Pressable>
               </View>
               <View style={{ flexDirection: "row", gap: 6 }}>
@@ -180,13 +180,13 @@ function PrepareStage({ session, setSession, colors }: any) {
           <TextInput
             value={session.teacherName ?? ""}
             onChangeText={(t) => setSession((s: PtmSession | null) => s ? setMeta(s, { teacherName: t.slice(0, 60) }) : s)}
-            placeholder="Teacher's name" placeholderTextColor={colors.textMuted}
+            placeholder={t("screens.ptm_prep.teacher_s_name")} placeholderTextColor={colors.textMuted}
             style={[styles.input, { flex: 1 }]}
           />
           <TextInput
             value={session.className ?? ""}
             onChangeText={(t) => setSession((s: PtmSession | null) => s ? setMeta(s, { className: t.slice(0, 30) }) : s)}
-            placeholder="Class / grade" placeholderTextColor={colors.textMuted}
+            placeholder={t("screens.ptm_prep.class_grade")} placeholderTextColor={colors.textMuted}
             style={[styles.input, { flex: 1 }]}
           />
         </View>
@@ -201,7 +201,7 @@ function PrepareStage({ session, setSession, colors }: any) {
               <Text style={{ color: colors.textMuted, fontWeight: "500" }}>  ({items.filter((q: any) => q.selected).length}/{items.length})</Text>
             </Text>
             {items.length === 0 ? (
-              <Text style={styles.italicMuted}>No questions yet.</Text>
+              <Text style={styles.italicMuted}>{t("screens.ptm_prep.no_questions_yet")}</Text>
             ) : items.map((q: any) => (
               <View key={q.id} style={styles.qRow}>
                 <Pressable onPress={() => setSession((s: PtmSession | null) => s ? toggleQuestion(s, q.id, "selected") : s)}>
@@ -220,22 +220,22 @@ function PrepareStage({ session, setSession, colors }: any) {
       })}
 
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>✏️ Add your own question</Text>
+        <Text style={styles.sectionTitle}>{t("screens.ptm_prep.add_your_own_question")}</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <TextInput value={customText} onChangeText={setCustomText}
-            placeholder="e.g. Is my child enjoying art class?" placeholderTextColor={colors.textMuted}
+            placeholder={t("screens.ptm_prep.e_g_is_my_child_enjoying_art_class")} placeholderTextColor={colors.textMuted}
             style={[styles.input, { flex: 1 }]}
             onSubmitEditing={submit} returnKeyType="done"
           />
           <Pressable onPress={submit} style={styles.primaryBtn}>
             <Ionicons name="add" size={16} color="#fff" />
-            <Text style={styles.primaryBtnText}>Add</Text>
+            <Text style={styles.primaryBtnText}>{t("screens.ptm_prep.add")}</Text>
           </Pressable>
         </View>
       </View>
 
       <Pressable onPress={() => setSession((s: PtmSession | null) => s ? setStage(s, "attend") : s)} style={styles.advanceBtn}>
-        <Text style={styles.advanceBtnText}>I'm ready — start the meeting</Text>
+        <Text style={styles.advanceBtnText}>{t("screens.ptm_prep.i_m_ready_start_the_meeting")}</Text>
         <Ionicons name="arrow-forward" size={16} color="#fff" />
       </Pressable>
     </View>
@@ -254,7 +254,7 @@ function AttendStage({ session, setSession, colors }: any) {
   return (
     <View style={{ gap: 12 }}>
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>📋 Quick notes</Text>
+        <Text style={styles.sectionTitle}>{t("screens.ptm_prep.quick_notes")}</Text>
         {fields.map(([k, label, ph]) => (
           <View key={k} style={{ marginTop: 6 }}>
             <Text style={styles.fieldLabel}>{label}</Text>
@@ -270,7 +270,7 @@ function AttendStage({ session, setSession, colors }: any) {
 
       {selected.length > 0 && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Tick off questions you've asked</Text>
+          <Text style={styles.sectionTitle}>{t("screens.ptm_prep.tick_off_questions_you_ve_asked")}</Text>
           {selected.map((q: any) => (
             <View key={q.id} style={{ marginTop: 6 }}>
               <View style={styles.qRow}>
@@ -283,7 +283,7 @@ function AttendStage({ session, setSession, colors }: any) {
                 <TextInput
                   value={q.response ?? ""}
                   onChangeText={(t) => setSession((s: PtmSession | null) => s ? setQuestionResponse(s, q.id, t.slice(0, 200)) : s)}
-                  placeholder="What did the teacher say?" placeholderTextColor={colors.textMuted}
+                  placeholder={t("screens.ptm_prep.what_did_the_teacher_say")} placeholderTextColor={colors.textMuted}
                   style={[styles.input, { marginLeft: 26, marginTop: 4, fontSize: 12 }]}
                 />
               )}
@@ -294,14 +294,14 @@ function AttendStage({ session, setSession, colors }: any) {
 
       <View style={{ flexDirection: "row", gap: 8 }}>
         <Pressable onPress={() => setSession((s: PtmSession | null) => s ? setStage(s, "prepare") : s)} style={[styles.secondaryBtn, { flex: 1 }]}>
-          <Text style={styles.secondaryBtnText}>← Back</Text>
+          <Text style={styles.secondaryBtnText}>{t("screens.ptm_prep.back")}</Text>
         </Pressable>
         <Pressable onPress={() => setSession((s: PtmSession | null) => {
           if (!s) return s;
           const next = setStage(s, "act");
           return s.actions.length === 0 ? { ...next, actions: suggestActions(s.notes) } : next;
         })} style={[styles.advanceBtn, { flex: 1 }]}>
-          <Text style={styles.advanceBtnText}>Build action plan</Text>
+          <Text style={styles.advanceBtnText}>{t("screens.ptm_prep.build_action_plan")}</Text>
           <Ionicons name="arrow-forward" size={16} color="#fff" />
         </Pressable>
       </View>
@@ -337,11 +337,11 @@ function ActStage({ session, setSession, amyHint, onComplete, colors }: any) {
 
       <View style={styles.card}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <Text style={styles.sectionTitle}>🎯 Action plan</Text>
-          <Pressable onPress={regenerate}><Text style={styles.regenLink}>Re-generate from notes</Text></Pressable>
+          <Text style={styles.sectionTitle}>{t("screens.ptm_prep.action_plan")}</Text>
+          <Pressable onPress={regenerate}><Text style={styles.regenLink}>{t("screens.ptm_prep.re_generate_from_notes")}</Text></Pressable>
         </View>
         {session.actions.length === 0 ? (
-          <Text style={styles.italicMuted}>Add notes in the Attend step, then come back here — Amy will pull out action items for you.</Text>
+          <Text style={styles.italicMuted}>{t("screens.ptm_prep.add_notes_in_the_attend_step_then_come_b")}</Text>
         ) : session.actions.map((a: any) => (
           <View key={a.id} style={styles.qRow}>
             <Pressable onPress={() => setSession((s: PtmSession | null) => s ? { ...s, actions: toggleAction(s.actions, a.id) } : s)}>
@@ -361,17 +361,17 @@ function ActStage({ session, setSession, amyHint, onComplete, colors }: any) {
           />
           <Pressable onPress={addManual} style={styles.primaryBtn}>
             <Ionicons name="add" size={16} color="#fff" />
-            <Text style={styles.primaryBtnText}>Add</Text>
+            <Text style={styles.primaryBtnText}>{t("screens.ptm_prep.add")}</Text>
           </Pressable>
         </View>
       </View>
 
       <View style={{ flexDirection: "row", gap: 8 }}>
         <Pressable onPress={() => setSession((s: PtmSession | null) => s ? setStage(s, "attend") : s)} style={[styles.secondaryBtn, { flex: 1 }]}>
-          <Text style={styles.secondaryBtnText}>← Back</Text>
+          <Text style={styles.secondaryBtnText}>{t("screens.ptm_prep.back")}</Text>
         </Pressable>
         <Pressable onPress={onComplete} style={[styles.completeBtn, { flex: 1 }]}>
-          <Text style={styles.advanceBtnText}>Save & finish</Text>
+          <Text style={styles.advanceBtnText}>{t("screens.ptm_prep.save_finish")}</Text>
           <Ionicons name="checkmark-circle" size={16} color="#fff" />
         </Pressable>
       </View>
@@ -407,7 +407,7 @@ function HistoryBlock({ history, colors, onDelete }: { history: PtmSession[]; co
                 {s.notes.suggestions ? <NoteBlock label="Suggestions" text={s.notes.suggestions} colors={colors} /> : null}
                 {s.actions.length > 0 && (
                   <View>
-                    <Text style={styles.fieldLabel}>Actions</Text>
+                    <Text style={styles.fieldLabel}>{t("screens.ptm_prep.actions")}</Text>
                     {s.actions.map((a) => (
                       <Text key={a.id} style={[{ fontSize: 12, color: colors.text }, a.done && { textDecorationLine: "line-through", color: colors.textMuted }]}>
                         {a.done ? "✅" : "▫️"} {a.text}
@@ -418,7 +418,7 @@ function HistoryBlock({ history, colors, onDelete }: { history: PtmSession[]; co
                 <Pressable onPress={() => Alert.alert(t("alerts.ptm.delete_past_title"), "", [
                   { text: "Cancel" }, { text: "Delete", style: "destructive", onPress: () => onDelete(s.id) },
                 ])}>
-                  <Text style={{ fontSize: 11, color: palette.rose500 }}>🗑 Delete</Text>
+                  <Text style={{ fontSize: 11, color: palette.rose500 }}>{t("screens.ptm_prep.delete")}</Text>
                 </Pressable>
               </View>
             )}

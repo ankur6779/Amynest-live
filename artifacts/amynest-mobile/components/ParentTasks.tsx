@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useColors } from "@/hooks/useColors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { ageMonthsToGroup, PARENT_TASKS_BY_GROUP } from "@workspace/age-content";
+import { useTranslation } from "react-i18next";
 
 /**
  * "Things YOU can do today" companion shown directly under the routine
@@ -67,6 +68,7 @@ export function ParentTasks({
         `/api/parent-tasks?childId=${childId}&date=${dateStr}`,
       );
       if (!r.ok) return [];
+      const { t } = useTranslation();
       return (await r.json()) as Completion[];
     },
     staleTime: 60 * 1000,
@@ -153,7 +155,7 @@ export function ParentTasks({
     <View style={s.wrap}>
       <View style={s.headerRow}>
         <View style={{ flex: 1 }}>
-          <Text style={s.title}>👨‍👩‍👧 Parent Tasks for Today</Text>
+          <Text style={s.title}>{t("components.parent_tasks.parent_tasks_for_today")}</Text>
           <Text style={s.subtitle}>
             {childName
               ? `Quick ways to connect with ${childName} today`

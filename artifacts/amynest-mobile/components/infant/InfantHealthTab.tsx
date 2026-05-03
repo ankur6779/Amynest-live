@@ -136,12 +136,12 @@ export default function InfantHealthTab({ ageMonths, childId }: Props) {
               size={14}
               color={palette.emerald400}
             />
-            <Text style={styles.summaryTitle}>Vaccination tracker</Text>
+            <Text style={styles.summaryTitle}>{t("components.infant_infant_health_tab.vaccination_tracker")}</Text>
             {loading && <ActivityIndicator size="small" color={brand.violet200} />}
           </View>
           <Text style={styles.summaryLine}>
             <Text style={styles.summaryStrong}>{summary.done}</Text>
-            <Text> done · </Text>
+            <Text>{t("components.infant_infant_health_tab.done")}</Text>
             <Text style={[styles.summaryStrong, { color: palette.amber400 }]}>
               {summary.pending}
             </Text>
@@ -269,7 +269,7 @@ export default function InfantHealthTab({ ageMonths, childId }: Props) {
             </Text>
           </View>
           {VACCINATIONS.filter(
-            (v) => v.ageMonths < ageMonths && logMap[v.ageLabel] !== "done",
+            (v) =>{t("components.infant_infant_health_tab.v_agemonths")}< ageMonths && logMap[v.ageLabel] !== "done",
           ).map((v) => {
             const status = logMap[v.ageLabel];
             const busy = pendingLabel === v.ageLabel;
@@ -283,7 +283,7 @@ export default function InfantHealthTab({ ageMonths, childId }: Props) {
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                     <Text style={styles.rowAge}>{v.ageLabel}</Text>
                     {status === "missed" && (
-                      <Text style={styles.missedTag}>missed</Text>
+                      <Text style={styles.missedTag}>{t("components.infant_infant_health_tab.missed")}</Text>
                     )}
                   </View>
                   <Text style={styles.rowVax}>{v.vaccines.join(" · ")}</Text>
@@ -368,7 +368,7 @@ export default function InfantHealthTab({ ageMonths, childId }: Props) {
             />
             <Text style={styles.completedHeader}>
               {t("infant_hub.health.completed", {
-                count: VACCINATIONS.filter((v) => v.ageMonths < ageMonths).length,
+                count: VACCINATIONS.filter((v) =>{t("components.infant_infant_health_tab.v_agemonths")}< ageMonths).length,
               })}
             </Text>
           </View>

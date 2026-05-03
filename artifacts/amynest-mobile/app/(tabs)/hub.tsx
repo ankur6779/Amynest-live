@@ -1224,7 +1224,7 @@ export default function HubScreen() {
               </View>
             ),
           });
-          if (effective && effective.age >= 2 && effective.age <= 15) {
+          if (effective && effective.age >{t("screens.tabs_hub.2_effective_age")}<= 15) {
             allTiles.push({
               id: "life-skills",
               ageBands: HUB_CONTENT_AGE_BANDS["life-skills"],
@@ -1320,7 +1320,7 @@ export default function HubScreen() {
                 id="abacus"
                 icon={<MaterialCommunityIcons name="abacus" size={20} color="#fff" />}
                 accent={[palette.amber500, palette.rose500]}
-                title="🧮 Abacus PRO Zone" // audit-ok: brand product name, intentional EN-only
+                title={t("screens.tabs_hub.abacus_pro_zone")} // audit-ok: brand product name, intentional EN-only
                 desc="Learn the soroban — beads, brain & speed math"
                 open={openSection === "abacus"}
                 onToggle={() => setOpenSection(s => s === "abacus" ? null : "abacus")}

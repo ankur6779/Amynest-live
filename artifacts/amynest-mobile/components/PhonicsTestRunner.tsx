@@ -11,6 +11,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { API_BASE_URL } from "@/constants/api";
 import { brand, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 // ─── Shared types (mirror server payloads) ───────────────────────────────────
 
@@ -101,6 +102,7 @@ export function PhonicsTestRunner({ childId, childName, testType, onCompleted, o
         }
       }
     })();
+    const { t } = useTranslation();
     return () => { cancelled = true; };
   }, [authFetch, childId, testType]);
 
@@ -162,7 +164,7 @@ export function PhonicsTestRunner({ childId, childName, testType, onCompleted, o
         </Text>
         <Text style={[styles.errorMsg, { color: theme.text.secondary }]}>{phase.message}</Text>
         <TouchableOpacity onPress={onCancel} style={[styles.primaryBtn, { backgroundColor: theme.brand.primary }]}>
-          <Text style={styles.primaryBtnText}>Go back</Text>
+          <Text style={styles.primaryBtnText}>{t("components.phonics_test_runner.go_back")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -364,7 +366,7 @@ function ResultView({ data, childName, onDone }: { data: SubmitResponse; childNa
 
       {weakConcepts.length > 0 && (
         <View style={{ marginBottom: 24 }}>
-          <Text style={[styles.weakHeader, { color: theme.text.secondary }]}>Sounds to revisit</Text>
+          <Text style={[styles.weakHeader, { color: theme.text.secondary }]}>{t("components.phonics_test_runner.sounds_to_revisit")}</Text>
           <View style={styles.weakRow}>
             {weakConcepts.map((wc) => (
               <View key={wc.id} style={[styles.weakChip, { backgroundColor: theme.card.bgElevated, borderColor: theme.card.border }]}>
@@ -383,7 +385,7 @@ function ResultView({ data, childName, onDone }: { data: SubmitResponse; childNa
         activeOpacity={0.85}
       >
         <Ionicons name="arrow-back" size={18} color="#fff" />
-        <Text style={styles.primaryBtnText}>Back to Phonics Tests</Text>
+        <Text style={styles.primaryBtnText}>{t("components.phonics_test_runner.back_to_phonics_tests")}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

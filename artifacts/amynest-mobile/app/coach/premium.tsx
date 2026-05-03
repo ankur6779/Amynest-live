@@ -23,6 +23,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { type ActionResult } from "@/components/ActionButtons";
 import { brand, gradients, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 const { height: SCREEN_H } = Dimensions.get("window");
 
@@ -303,6 +304,7 @@ export default function PremiumCoachScreen() {
   // Loading → intro → cards
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("intro"), 1100);
+    const { t } = useTranslation();
     return () => clearTimeout(t1);
   }, []);
 
@@ -336,7 +338,7 @@ export default function PremiumCoachScreen() {
   // Deterministic post-append scroll: when wins length grows past pending target, scroll there
   useEffect(() => {
     if (pendingScrollTo === null) return;
-    if (pendingScrollTo >= 0 && pendingScrollTo < wins.length) {
+    if (pendingScrollTo >{t("screens.coach_premium.0_pendingscrollto")}< wins.length) {
       const id = requestAnimationFrame(() => {
         listRef.current?.scrollToIndex({ index: pendingScrollTo, animated: true });
         setPendingScrollTo(null);
@@ -413,7 +415,7 @@ export default function PremiumCoachScreen() {
             style={styles.backBtn}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="Close coach"
+            accessibilityLabel={t("screens.coach_premium.close_coach")}
           >
             <Ionicons name="close" size={22} color={c.textSubtle} />
           </TouchableOpacity>
@@ -455,8 +457,8 @@ export default function PremiumCoachScreen() {
             <View style={styles.loadingCircle}>
               <ActivityIndicator size="large" color={brand.purple500} />
             </View>
-            <Text style={[styles.loadingTitle, { color: c.textStrong }]}>Amy is thinking…</Text>
-            <Text style={[styles.loadingSub, { color: c.textSubtle }]}>Curating your personal wins</Text>
+            <Text style={[styles.loadingTitle, { color: c.textStrong }]}>{t("screens.coach_premium.amy_is_thinking")}</Text>
+            <Text style={[styles.loadingSub, { color: c.textSubtle }]}>{t("screens.coach_premium.curating_your_personal_wins")}</Text>
           </Animated.View>
         )}
 
@@ -504,7 +506,7 @@ export default function PremiumCoachScreen() {
                 animated: true,
               });
               setTimeout(() => {
-                if (info.index >= 0 && info.index < wins.length) {
+                if (info.index >= 0 && info.index < wins.length) { // i18n-ok: code expression
                   listRef.current?.scrollToIndex({ index: info.index, animated: true });
                 }
               }, 120);

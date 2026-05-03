@@ -832,7 +832,7 @@ export default function OnboardingScreen() {
             resizeMode="cover"
           />
           <View>
-            <Text style={styles.amyName}>Amy</Text>
+            <Text style={styles.amyName}>{t("screens.onboarding.amy")}</Text>
             <Text style={styles.amyStatus}>{t("screens.onboarding_chat.amy_status")}</Text>
           </View>
         </View>

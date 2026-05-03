@@ -336,7 +336,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
       <View style={styles.banner}>
         <MaterialCommunityIcons name="shield-alert" size={14} color="#fbbf24" /> {/* audit-ok: amber-400 beta-banner icon */}
         <Text style={styles.bannerText}>
-          <Text style={{ fontWeight: "800" }}>Beta · Estimate only.</Text>{"  "}
+          <Text style={{ fontWeight: "800" }}>{t("components.cry_insight.beta_estimate_only")}</Text>{"  "}
           Not a medical tool — call your pediatrician if you're worried.
         </Text>
       </View>
@@ -378,7 +378,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
 
         {/* Diaper toggle (3-state) */}
         <View style={{ marginTop: 12 }}>
-          <Text style={[styles.label, { marginBottom: 6 }]}>Diaper checked recently?</Text>
+          <Text style={[styles.label, { marginBottom: 6 }]}>{t("components.cry_insight.diaper_checked_recently")}</Text>
           <View style={{ flexDirection: "row", gap: 6 }}>
             {[
               { v: true, label: "Yes — clean", color: "#22c55e" }, // audit-ok: green-500 diaper-clean state
@@ -407,7 +407,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
 
         {/* Fever */}
         <View style={[styles.rowBetween, { marginTop: 14 }]}>
-          <Text style={styles.label}>Feels warm / has temperature?</Text>
+          <Text style={styles.label}>{t("components.cry_insight.feels_warm_has_temperature")}</Text>
           <Pressable
             onPress={() => setFever((v) => !v)}
             style={[
@@ -479,7 +479,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
             testID="analyse-no-audio"
           >
             <MaterialCommunityIcons name="creation" size={14} color={brand.purple400} />
-            <Text style={styles.skipAudioLabel}>Analyse using context only (no audio)</Text>
+            <Text style={styles.skipAudioLabel}>{t("components.cry_insight.analyse_using_context_only_no_audio")}</Text>
           </Pressable>
         )}
       </View>
@@ -488,7 +488,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
       {result && (
         <View style={styles.resultCard} testID="cry-result">
           <View style={[styles.rowBetween, { marginBottom: 10 }]}>
-            <Text style={styles.sectionKicker}>LIKELY CAUSE</Text>
+            <Text style={styles.sectionKicker}>{t("components.cry_insight.likely_cause")}</Text>
             <Pressable onPress={reset} hitSlop={8} testID="cry-reset">
               <Text style={{ color: brand.purple400, fontSize: 11, fontWeight: "700" }}>
                 Reset
@@ -518,7 +518,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
           })}
 
           <View style={styles.suggestionBox}>
-            <Text style={styles.sectionKicker}>TRY THIS</Text>
+            <Text style={styles.sectionKicker}>{t("components.cry_insight.try_this")}</Text>
             <Text style={styles.suggestionText}>{result.suggestion}</Text>
           </View>
 
@@ -526,7 +526,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
             <View style={styles.medicalBox}>
               <MaterialCommunityIcons name="alert" size={14} color="#fecaca" />{/* audit-ok: red-200 medical-flag icon */}
               <Text style={styles.medicalText}>
-                <Text style={{ fontWeight: "800" }}>Worth a check.</Text>{"  "}
+                <Text style={{ fontWeight: "800" }}>{t("components.cry_insight.worth_a_check")}</Text>{"  "}
                 If baby seems unwell or doesn't settle, call your pediatrician.
               </Text>
             </View>
@@ -537,7 +537,7 @@ export default function CryInsight({ childId, childName, ageMonths }: Props) {
       {/* History */}
       <View style={styles.historyCard}>
         <View style={[styles.rowBetween, { marginBottom: 8 }]}>
-          <Text style={styles.sectionKicker}>RECENT SESSIONS</Text>
+          <Text style={styles.sectionKicker}>{t("components.cry_insight.recent_sessions")}</Text>
           {historyLoading && <ActivityIndicator size="small" color={brand.purple400} />}
         </View>
         {history.length === 0 ? (

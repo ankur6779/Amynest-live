@@ -20,6 +20,7 @@ import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 const CATEGORIES: ArticleCategory[] = [
   "Sleep",
@@ -34,6 +35,7 @@ const CATEGORIES: ArticleCategory[] = [
 // ─── Hero banner ───────────────────────────────────────────────────────────
 function ArticleHeroBanner({ article, large = false }: { article: Article; large?: boolean }) {
   const hero = getArticleHero(article.category);
+  const { t } = useTranslation();
   return (
     <LinearGradient
       colors={[hero.gradient[0], hero.gradient[1]]}
@@ -249,7 +251,7 @@ function ArticleModal({ article, onClose }: { article: Article; onClose: () => v
               <Text style={[styles.categoryPillText, { color: hero.accent }]}>{article.category}</Text>
             </View>
           </View>
-          <Pressable onPress={onClose} hitSlop={10} style={styles.closeBtn} accessibilityLabel="Close article">
+          <Pressable onPress={onClose} hitSlop={10} style={styles.closeBtn} accessibilityLabel={t("components.parenting_articles.close_article")}>
             <Ionicons name="close" size={22} color={c.foreground} />
           </Pressable>
         </View>
@@ -369,10 +371,10 @@ function ArticleCard({ article, onPress }: { article: Article; onPress: () => vo
           {article.summary}
         </Text>
         <View style={styles.cardCtaRow}>
-          <Text style={[styles.cardCta, { color: c.primary }]}>Read article ›</Text>
+          <Text style={[styles.cardCta, { color: c.primary }]}>{t("components.parenting_articles.read_article")}</Text>
           <View style={styles.readAloudHint}>
             <Ionicons name="volume-high" size={11} color={c.mutedForeground} />
-            <Text style={[styles.cardMetaSmall, { color: c.mutedForeground }]}>Read aloud</Text>
+            <Text style={[styles.cardMetaSmall, { color: c.mutedForeground }]}>{t("components.parenting_articles.read_aloud")}</Text>
           </View>
         </View>
       </View>
@@ -413,7 +415,7 @@ export function ParentingArticles({ childAgeMonths }: ParentingArticlesProps) {
             !activeCategory ? { backgroundColor: c.primary, borderColor: c.primary } : { borderColor: c.border },
           ]}
         >
-          <Text style={[styles.chipText, { color: !activeCategory ? "#fff" : c.mutedForeground }]}>All</Text>
+          <Text style={[styles.chipText, { color: !activeCategory ? "#fff" : c.mutedForeground }]}>{t("components.parenting_articles.all")}</Text>
         </Pressable>
         {CATEGORIES.map((cat) => {
           const isActive = activeCategory === cat;

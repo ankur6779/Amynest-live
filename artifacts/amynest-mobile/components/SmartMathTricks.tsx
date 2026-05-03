@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useColors } from "@/hooks/useColors";
 import { brand, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 type TrickAge = "4-6" | "6-8";
 
@@ -239,6 +240,7 @@ export function SmartMathTricks({
       setSeenIds(st.seenIds);
       setHydrated(true);
     })();
+    const { t } = useTranslation();
     return () => { cancelled = true; };
   }, [childName]);
 
@@ -343,11 +345,11 @@ function TrickCard({
       {expanded && (
         <View style={{ padding: 12, paddingTop: 0, gap: 10 }}>
           <View style={[styles.box, { backgroundColor: `${trick.color}22`, borderColor: `${trick.color}44` }]}>
-            <Text style={[styles.boxLabel, { color: trick.color }]}>HOW IT WORKS</Text>
+            <Text style={[styles.boxLabel, { color: trick.color }]}>{t("components.smart_math_tricks.how_it_works")}</Text>
             <Text style={styles.boxBody}>{trick.trick}</Text>
           </View>
           <View style={styles.exampleBox}>
-            <Text style={styles.exampleLabel}>EXAMPLE</Text>
+            <Text style={styles.exampleLabel}>{t("components.smart_math_tricks.example")}</Text>
             <Text style={styles.exampleText}>{trick.example}</Text>
           </View>
 
@@ -360,7 +362,7 @@ function TrickCard({
               </Pressable>
               {showPractice && (
                 <Pressable onPress={() => setPracticeMode(true)} style={[styles.actionBtn, { backgroundColor: `${trick.color}22`, borderColor: `${trick.color}55` }]}>
-                  <Text style={[styles.actionText, { color: trick.color }]}>✏️ Try It</Text>
+                  <Text style={[styles.actionText, { color: trick.color }]}>{t("components.smart_math_tricks.try_it")}</Text>
                 </Pressable>
               )}
               <Pressable onPress={onStar} style={[styles.starBtn, starred && { backgroundColor: "rgba(251,191,36,0.2)", borderColor: palette.amber400 }]}>
@@ -398,7 +400,7 @@ function TrickCard({
               </View>
               {!submitted ? (
                 <Pressable onPress={handleSubmit} disabled={!selected} style={[styles.submitBtn, { backgroundColor: trick.color }, !selected && { opacity: 0.3 }]}>
-                  <Text style={styles.submitText}>Check ✓</Text>
+                  <Text style={styles.submitText}>{t("components.smart_math_tricks.check")}</Text>
                 </Pressable>
               ) : (
                 <View style={{ gap: 6 }}>
@@ -408,7 +410,7 @@ function TrickCard({
                     </Text>
                   </View>
                   <Pressable onPress={resetPractice} style={styles.backBtn}>
-                    <Text style={styles.backText}>← Back to Trick</Text>
+                    <Text style={styles.backText}>{t("components.smart_math_tricks.back_to_trick")}</Text>
                   </Pressable>
                 </View>
               )}
@@ -430,7 +432,7 @@ function TodayTab({ pool, childName, starIds, seenIds, onStar }: {
 
   return (
     <View style={{ gap: 8 }}>
-      <Text style={styles.tabHint}>2 new tricks every day ✨</Text>
+      <Text style={styles.tabHint}>{t("components.smart_math_tricks.2_new_tricks_every_day")}</Text>
       {todayTricks.map(t => (
         <TrickCard
           key={t.id}
@@ -442,7 +444,7 @@ function TodayTab({ pool, childName, starIds, seenIds, onStar }: {
           showPractice
         />
       ))}
-      <Text style={styles.footHint}>New tricks unlock tomorrow! 🌅</Text>
+      <Text style={styles.footHint}>{t("components.smart_math_tricks.new_tricks_unlock_tomorrow")}</Text>
     </View>
   );
 }
@@ -542,7 +544,7 @@ function PracticeTab({ pool, childName, onStar }: {
     return (
       <View style={{ alignItems: "center", paddingVertical: 24, gap: 12 }}>
         <Text style={{ fontSize: 56 }}>🏆</Text>
-        <Text style={[styles.qText, { fontSize: 16 }]}>Practice Complete!</Text>
+        <Text style={[styles.qText, { fontSize: 16 }]}>{t("components.smart_math_tricks.practice_complete")}</Text>
         <View style={{ flexDirection: "row", gap: 6 }}>
           {results.map((r, i) => <Text key={i} style={{ fontSize: 22 }}>{r ? "⭐" : "💔"}</Text>)}
         </View>
@@ -555,7 +557,7 @@ function PracticeTab({ pool, childName, onStar }: {
           {pct === 100 ? "🌟 Perfect! You're a math genius!" : pct >= 60 ? "👍 Great work! Keep practising!" : "💪 Keep going — you'll nail it!"}
         </Text>
         <Pressable onPress={handleRestart} style={[styles.submitBtn, { backgroundColor: palette.amber500, paddingHorizontal: 32 }]}>
-          <Text style={styles.submitText}>🔄 Try Again</Text>
+          <Text style={styles.submitText}>{t("components.smart_math_tricks.try_again")}</Text>
         </Pressable>
       </View>
     );
@@ -617,7 +619,7 @@ function PracticeTab({ pool, childName, onStar }: {
       )}
       {!submitted ? (
         <Pressable onPress={handleSubmit} disabled={!selected} style={[styles.submitBtn, { backgroundColor: palette.amber500 }, !selected && { opacity: 0.3 }]}>
-          <Text style={styles.submitText}>Check Answer ✓</Text>
+          <Text style={styles.submitText}>{t("components.smart_math_tricks.check_answer")}</Text>
         </Pressable>
       ) : (
         <Pressable onPress={handleNext} style={[styles.submitBtn, { backgroundColor: idx + 1 >= SESSION_SIZE ? palette.amber500 : palette.indigo500 }]}>

@@ -12,6 +12,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import { useEventListener } from "expo";
 import { absoluteStreamUrl, type StoryDto } from "@/services/storiesApi";
 import { brand } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   story: StoryDto | null;
@@ -88,7 +89,7 @@ export function StoryPlayer({
     if (status === "readyToPlay") {
       const resumeFrom = story.positionSec ?? 0;
       const dur = player.duration ?? Infinity;
-      if (resumeFrom > 5 && resumeFrom < dur - 5) {
+      if (resumeFrom > 5 && resumeFrom < dur - 5) { // i18n-ok: code expression
         try {
           player.currentTime = resumeFrom;
         } catch {}
@@ -141,6 +142,7 @@ export function StoryPlayer({
   const dotCount = Math.min(totalStories, 15);
   const dotIndex = storyIndex % dotCount;
 
+  const { t } = useTranslation();
   return (
     <Modal
       visible={visible}
@@ -195,8 +197,8 @@ export function StoryPlayer({
           {errored ? (
             <View style={styles.errorBox}>
               <Ionicons name="alert-circle-outline" size={40} color="#fff" />
-              <Text style={styles.errorText}>Couldn't play this story.</Text>
-              <Text style={styles.errorSubText}>Skipping automatically…</Text>
+              <Text style={styles.errorText}>{t("components.story_player.couldn_t_play_this_story")}</Text>
+              <Text style={styles.errorSubText}>{t("components.story_player.skipping_automatically")}</Text>
             </View>
           ) : sourceUrl ? (
             <VideoView
@@ -224,7 +226,7 @@ export function StoryPlayer({
             ]}
           >
             <Ionicons name="refresh" size={16} color="#fff" />
-            <Text style={styles.replayText}>Replay</Text>
+            <Text style={styles.replayText}>{t("components.story_player.replay")}</Text>
           </Pressable>
           <Pressable
             onPress={onNext}
@@ -234,7 +236,7 @@ export function StoryPlayer({
               { opacity: pressed ? 0.8 : 1 },
             ]}
           >
-            <Text style={styles.nextText}>Next</Text>
+            <Text style={styles.nextText}>{t("components.story_player.next")}</Text>
             <Ionicons name="chevron-forward" size={16} color="#fff" />
           </Pressable>
         </View>
@@ -242,7 +244,7 @@ export function StoryPlayer({
         {/* Auto-advance countdown overlay */}
         {autoAdvanceIn !== null && !showLoopBanner && (
           <View style={styles.countdownOverlay}>
-            <Text style={styles.countdownLabel}>Up next</Text>
+            <Text style={styles.countdownLabel}>{t("components.story_player.up_next")}</Text>
             <Text style={styles.countdownNum}>
               Next story in {autoAdvanceIn}s…
             </Text>
@@ -256,7 +258,7 @@ export function StoryPlayer({
                 ]}
               >
                 <Ionicons name="refresh" size={14} color="#fff" />
-                <Text style={styles.replayText}>Watch again</Text>
+                <Text style={styles.replayText}>{t("components.story_player.watch_again")}</Text>
               </Pressable>
               <Pressable
                 onPress={onNext}
@@ -267,7 +269,7 @@ export function StoryPlayer({
                 ]}
               >
                 <Ionicons name="play" size={14} color="#000" />
-                <Text style={styles.playNowText}>Play now</Text>
+                <Text style={styles.playNowText}>{t("components.story_player.play_now")}</Text>
               </Pressable>
             </View>
           </View>
@@ -277,8 +279,8 @@ export function StoryPlayer({
         {showLoopBanner && (
           <View style={styles.loopOverlay}>
             <Text style={styles.loopEmoji}>🎉</Text>
-            <Text style={styles.loopTitle}>All stories watched!</Text>
-            <Text style={styles.loopSubtitle}>Starting over…</Text>
+            <Text style={styles.loopTitle}>{t("components.story_player.all_stories_watched")}</Text>
+            <Text style={styles.loopSubtitle}>{t("components.story_player.starting_over")}</Text>
           </View>
         )}
       </View>

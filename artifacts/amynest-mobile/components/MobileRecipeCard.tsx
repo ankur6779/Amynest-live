@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
 
 export type MobileRecipe = {
   prepTime: string;
@@ -26,6 +27,7 @@ export type MobileRecipeCardProps = {
 
 export function MobileRecipeCard({ meal, recipe, nutrition }: MobileRecipeCardProps) {
   if (!recipe && !nutrition) return null;
+  const { t } = useTranslation();
   return (
     <View style={s.container} testID="mobile-recipe-card">
       <Text style={s.header} testID="mobile-recipe-header">
@@ -36,11 +38,11 @@ export function MobileRecipeCard({ meal, recipe, nutrition }: MobileRecipeCardPr
           <Text style={s.meta}>
             Prep {recipe.prepTime} · Cook {recipe.cookTime} · Serves {recipe.servings}
           </Text>
-          <Text style={s.subheading}>Ingredients</Text>
+          <Text style={s.subheading}>{t("components.mobile_recipe_card.ingredients")}</Text>
           {(recipe.ingredients ?? []).map((ing, i) => (
             <Text key={`ing-${i}`} style={s.body}>• {ing}</Text>
           ))}
-          <Text style={s.subheading}>Steps</Text>
+          <Text style={s.subheading}>{t("components.mobile_recipe_card.steps")}</Text>
           {(recipe.steps ?? []).map((st, i) => (
             <Text key={`st-${i}`} style={s.body}>{i + 1}. {st}</Text>
           ))}
@@ -51,23 +53,23 @@ export function MobileRecipeCard({ meal, recipe, nutrition }: MobileRecipeCardPr
       ) : null}
       {nutrition ? (
         <View testID="mobile-nutrition-section">
-          <Text style={s.subheading}>Nutrition (approx.)</Text>
+          <Text style={s.subheading}>{t("components.mobile_recipe_card.nutrition_approx")}</Text>
           <View style={s.macroRow}>
             <View style={s.macroBox}>
               <Text style={s.macroValue} testID="macro-calories">{nutrition.calories}</Text>
-              <Text style={s.macroLabel}>Cal</Text>
+              <Text style={s.macroLabel}>{t("components.mobile_recipe_card.cal")}</Text>
             </View>
             <View style={s.macroBox}>
               <Text style={s.macroValue} testID="macro-protein">{nutrition.protein}</Text>
-              <Text style={s.macroLabel}>Protein</Text>
+              <Text style={s.macroLabel}>{t("components.mobile_recipe_card.protein")}</Text>
             </View>
             <View style={s.macroBox}>
               <Text style={s.macroValue} testID="macro-carbs">{nutrition.carbs}</Text>
-              <Text style={s.macroLabel}>Carbs</Text>
+              <Text style={s.macroLabel}>{t("components.mobile_recipe_card.carbs")}</Text>
             </View>
             <View style={s.macroBox}>
               <Text style={s.macroValue} testID="macro-fat">{nutrition.fat}</Text>
-              <Text style={s.macroLabel}>Fat</Text>
+              <Text style={s.macroLabel}>{t("components.mobile_recipe_card.fat")}</Text>
             </View>
           </View>
           {nutrition.notes ? (

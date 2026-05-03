@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColors } from "@/hooks/useColors";
 import { palette } from "@/constants/colors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useTranslation } from "react-i18next";
 import {
   ageMonthsToGroup,
   defaultPuzzleDifficulty,
@@ -192,6 +193,7 @@ export function DailyPuzzle({
       // see the same puzzle ordering.
       void persist(st);
     })();
+    const { t } = useTranslation();
     return () => {
       cancelled = true;
     };
@@ -289,7 +291,7 @@ export function DailyPuzzle({
   }
 
   if (puzzles.length === 0) {
-    return <Text style={s.dim}>No puzzles available right now.</Text>;
+    return <Text style={s.dim}>{t("components.daily_puzzle.no_puzzles_available_right_now")}</Text>;
   }
 
   const finished = idx >= PUZZLE_PER_SESSION - 1 && results[idx] !== null;
@@ -302,20 +304,20 @@ export function DailyPuzzle({
       <View style={{ gap: 12 }}>
         <View style={s.scoreCard}>
           <Text style={s.scoreEmoji}>🎉</Text>
-          <Text style={s.scoreTitle}>Session complete!</Text>
+          <Text style={s.scoreTitle}>{t("components.daily_puzzle.session_complete")}</Text>
           <Text style={s.scoreText}>
             {score} / {total} correct · difficulty {state.difficulty}
           </Text>
         </View>
         <Pressable onPress={restart} style={s.primary}>
           <Ionicons name="refresh" size={14} color="#fff" />
-          <Text style={s.primaryText}>Start a new session</Text>
+          <Text style={s.primaryText}>{t("components.daily_puzzle.start_a_new_session")}</Text>
         </Pressable>
       </View>
     );
   }
 
-  if (!cur) return <Text style={s.dim}>No puzzle.</Text>;
+  if (!cur) return <Text style={s.dim}>{t("components.daily_puzzle.no_puzzle")}</Text>;
 
   return (
     <View style={{ gap: 12 }}>
@@ -373,11 +375,11 @@ export function DailyPuzzle({
           disabled={!selected}
           style={[s.primary, !selected && s.primaryDisabled]}
         >
-          <Text style={s.primaryText}>Submit</Text>
+          <Text style={s.primaryText}>{t("components.daily_puzzle.submit")}</Text>
         </Pressable>
       ) : (
         <Pressable onPress={next} style={s.primary}>
-          <Text style={s.primaryText}>Next →</Text>
+          <Text style={s.primaryText}>{t("components.daily_puzzle.next")}</Text>
         </Pressable>
       )}
     </View>

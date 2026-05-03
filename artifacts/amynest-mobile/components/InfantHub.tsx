@@ -343,9 +343,9 @@ export default function InfantHub({ childId, childName, ageMonths }: Props) {
         <View style={styles.cryWrap}>
           <View style={styles.cryHead}>
             <Ionicons name="alarm-outline" size={16} color={brand.purple400} />
-            <Text style={styles.cryTitle}>Sleep Prediction</Text>
+            <Text style={styles.cryTitle}>{t("components.infant_hub.sleep_prediction")}</Text>
             <View style={styles.cryBadge}>
-              <Text style={styles.cryBadgeTxt}>BETA</Text>
+              <Text style={styles.cryBadgeTxt}>{t("components.infant_hub.beta")}</Text>
             </View>
           </View>
           <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
@@ -355,9 +355,9 @@ export default function InfantHub({ childId, childName, ageMonths }: Props) {
         <View style={styles.cryWrap}>
           <View style={styles.cryHead}>
             <MaterialCommunityIcons name="ear-hearing" size={16} color={brand.purple400} />
-            <Text style={styles.cryTitle}>Cry Insight</Text>
+            <Text style={styles.cryTitle}>{t("components.infant_hub.cry_insight")}</Text>
             <View style={styles.cryBadge}>
-              <Text style={styles.cryBadgeTxt}>BETA</Text>
+              <Text style={styles.cryBadgeTxt}>{t("components.infant_hub.beta")}</Text>
             </View>
           </View>
           <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />

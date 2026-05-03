@@ -594,7 +594,7 @@ export default function CoachScreen() {
     return (
       <LinearGradient colors={ctxTheme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 12 }}>
         <ActivityIndicator size="large" color={c.primary} />
-        <Text style={{ color: c.textSubtle, fontSize: 13, fontWeight: "600" }}>Loading your plan…</Text>
+        <Text style={{ color: c.textSubtle, fontSize: 13, fontWeight: "600" }}>{t("screens.tabs_coach.loading_your_plan")}</Text>
       </LinearGradient>
     );
   }
@@ -612,7 +612,7 @@ export default function CoachScreen() {
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: botPad + 100 }}>
             <View style={styles.topBar}>
               <View style={{ width: 36 }} />
-              <Text style={styles.topTitle}>Search Goals</Text>
+              <Text style={styles.topTitle}>{t("screens.tabs_coach.search_goals")}</Text>
               <View style={{ width: 36 }} />
             </View>
 
@@ -620,7 +620,7 @@ export default function CoachScreen() {
               activeOpacity={0.9}
               onPress={() => router.push("/coach/premium" as never)}
               accessibilityRole="button"
-              accessibilityLabel="Open Amy's premium guided wins"
+              accessibilityLabel={t("screens.tabs_coach.open_amy_s_premium_guided_wins")}
               testID="open-premium-coach"
               style={{ marginTop: 12, marginBottom: 14, borderRadius: 20, overflow: "hidden" }}
             >
@@ -634,7 +634,7 @@ export default function CoachScreen() {
                   <Ionicons name="sparkles" size={22} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontSize: 15, fontWeight: "800" }}>Amy's Guided Wins</Text>
+                  <Text style={{ color: "#fff", fontSize: 15, fontWeight: "800" }}>{t("screens.tabs_coach.amy_s_guided_wins")}</Text>
                   <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12.5, marginTop: 2 }}>
                     Swipe through deep, expert-level wins
                   </Text>
@@ -648,7 +648,7 @@ export default function CoachScreen() {
               activeOpacity={0.9}
               onPress={() => { Haptics.selectionAsync(); router.push("/audio-lessons" as never); }}
               accessibilityRole="button"
-              accessibilityLabel="Open Amy Audio Lessons"
+              accessibilityLabel={t("screens.tabs_coach.open_amy_audio_lessons")}
               style={{ marginBottom: 14, borderRadius: 20, overflow: "hidden" }}
             >
               <LinearGradient
@@ -669,7 +669,7 @@ export default function CoachScreen() {
                   <Ionicons name="headset-outline" size={22} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontSize: 15, fontWeight: "800" }}>Amy Audio Lessons</Text>
+                  <Text style={{ color: "#fff", fontSize: 15, fontWeight: "800" }}>{t("screens.tabs_coach.amy_audio_lessons")}</Text>
                   <Text style={{ color: "rgba(255,255,255,0.80)", fontSize: 12.5, marginTop: 2 }}>
                     Hindi, English & Hinglish parenting lessons
                   </Text>
@@ -683,7 +683,7 @@ export default function CoachScreen() {
               <TextInput
                 value={goalSearch}
                 onChangeText={setGoalSearch}
-                placeholder="Search goals…"
+                placeholder={t("screens.tabs_coach.search_goals_2")}
                 placeholderTextColor={c.textFaint}
                 autoFocus
                 style={styles.searchInput}
@@ -707,7 +707,7 @@ export default function CoachScreen() {
                           </View>
                           {access === "try-free" && (
                             <View style={goalBadgeStyles.tryFree}>
-                              <Text style={goalBadgeStyles.tryFreeText}>✦ Try Free</Text>
+                              <Text style={goalBadgeStyles.tryFreeText}>{t("screens.tabs_coach.try_free")}</Text>
                             </View>
                           )}
                           {access === "locked" && (
@@ -736,7 +736,7 @@ export default function CoachScreen() {
             <View style={styles.topBar}>
               <TouchableOpacity onPress={() => setSelectedCategoryId(null)} style={styles.backBtn}>
                 <Ionicons name="chevron-back" size={20} color={c.textSubtle} />
-                <Text style={styles.backText}>Categories</Text>
+                <Text style={styles.backText}>{t("screens.tabs_coach.categories")}</Text>
               </TouchableOpacity>
               <View style={{ width: 36 }} />
             </View>
@@ -774,7 +774,7 @@ export default function CoachScreen() {
                       </View>
                       {access === "try-free" && (
                         <View style={goalBadgeStyles.tryFree}>
-                          <Text style={goalBadgeStyles.tryFreeText}>✦ Try Free</Text>
+                          <Text style={goalBadgeStyles.tryFreeText}>{t("screens.tabs_coach.try_free")}</Text>
                         </View>
                       )}
                       {access === "locked" && (
@@ -799,14 +799,14 @@ export default function CoachScreen() {
               <Ionicons name="sparkles" size={20} color={brand.violet600} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>Amy Coach</Text>
-              <Text style={styles.heroSub}>Pick a category — I'll build a 12-step plan</Text>
+              <Text style={styles.heroTitle}>{t("screens.tabs_coach.amy_coach")}</Text>
+              <Text style={styles.heroSub}>{t("screens.tabs_coach.pick_a_category_i_ll_build_a_12_step_pla")}</Text>
             </View>
             <TouchableOpacity
               onPress={() => { Haptics.selectionAsync(); router.push("/coach/progress" as never); }}
               activeOpacity={0.85}
               accessibilityRole="button"
-              accessibilityLabel="View my coaching progress"
+              accessibilityLabel={t("screens.tabs_coach.view_my_coaching_progress")}
               style={{
                 flexDirection: "row", alignItems: "center", gap: 4,
                 paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
@@ -814,7 +814,7 @@ export default function CoachScreen() {
               }}
             >
               <Ionicons name="bar-chart" size={14} color={brand.violet600} />
-              <Text style={{ color: brand.violet600, fontSize: 12, fontWeight: "800" }}>Progress</Text>
+              <Text style={{ color: brand.violet600, fontSize: 12, fontWeight: "800" }}>{t("screens.tabs_coach.progress")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -825,7 +825,7 @@ export default function CoachScreen() {
             activeOpacity={0.9}
             onPress={() => { Haptics.selectionAsync(); router.push("/audio-lessons" as never); }}
             accessibilityRole="button"
-            accessibilityLabel="Open Amy Audio Lessons"
+            accessibilityLabel={t("screens.tabs_coach.open_amy_audio_lessons")}
             style={{ marginBottom: 14, borderRadius: 20, overflow: "hidden" }}
           >
             <LinearGradient
@@ -846,7 +846,7 @@ export default function CoachScreen() {
                 <Ionicons name="headset-outline" size={22} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: "#fff", fontSize: 15, fontWeight: "800" }}>Amy Audio Lessons</Text>
+                <Text style={{ color: "#fff", fontSize: 15, fontWeight: "800" }}>{t("screens.tabs_coach.amy_audio_lessons")}</Text>
                 <Text style={{ color: "rgba(255,255,255,0.80)", fontSize: 12.5, marginTop: 2 }}>
                   Hindi, English & Hinglish parenting lessons
                 </Text>
@@ -860,7 +860,7 @@ export default function CoachScreen() {
             <TextInput
               value={goalSearch}
               onChangeText={setGoalSearch}
-              placeholder="Search all goals…"
+              placeholder={t("screens.tabs_coach.search_all_goals")}
               placeholderTextColor={c.textFaint}
               style={styles.searchInput}
             />
@@ -913,7 +913,7 @@ export default function CoachScreen() {
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: botPad + 120 }}>
           <TouchableOpacity onPress={handleBackQ} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={20} color={c.textSubtle} />
-            <Text style={[styles.backText, { color: c.textSubtle }]}>Back</Text>
+            <Text style={[styles.backText, { color: c.textSubtle }]}>{t("screens.tabs_coach.back")}</Text>
           </TouchableOpacity>
 
           <View style={{ marginTop: 18 }}>
@@ -936,7 +936,7 @@ export default function CoachScreen() {
 
           <Text style={[styles.qPrompt, { color: c.text }]}>{currentQ.prompt}</Text>
           {currentQ.type === "multi" && (
-            <Text style={[styles.qHint, { color: c.textMuted }]}>Pick any that apply</Text>
+            <Text style={[styles.qHint, { color: c.textMuted }]}>{t("screens.tabs_coach.pick_any_that_apply")}</Text>
           )}
 
           <View style={{ gap: 8, marginTop: 16 }}>
@@ -1001,7 +1001,7 @@ export default function CoachScreen() {
             onPress={() => setPhase("goals")}
             style={{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 999, backgroundColor: brandAlpha.violet500_25 }}
           >
-            <Text style={{ color: brand.violetMist, fontWeight: "700" }}>← Back to topics</Text>
+            <Text style={{ color: brand.violetMist, fontWeight: "700" }}>{t("screens.tabs_coach.back_to_topics")}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -1025,7 +1025,7 @@ export default function CoachScreen() {
             style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 4 }}
           >
             <Ionicons name="chevron-back" size={18} color="rgba(255,255,255,0.7)" />
-            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Back</Text>
+            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>{t("screens.tabs_coach.back")}</Text>
           </TouchableOpacity>
 
           {/* Hero card */}
@@ -1173,7 +1173,7 @@ export default function CoachScreen() {
           <View style={styles.loaderIcon}>
             <Ionicons name="sparkles" size={48} color="#fff" />
           </View>
-          <Text style={styles.loaderTitle}>Building your plan…</Text>
+          <Text style={styles.loaderTitle}>{t("screens.tabs_coach.building_your_plan")}</Text>
           <Text style={styles.loaderSub}>
             Analysing your answers and crafting 12 deep, research-backed wins for {selectedGoal?.title.toLowerCase()}. Takes ~10 seconds.
           </Text>
@@ -1249,7 +1249,7 @@ export default function CoachScreen() {
         {extending && (
           <View style={styles.extBanner}>
             <ActivityIndicator size="small" color="#fff" />
-            <Text style={styles.extBannerText}>Loading 3 new strategies for you…</Text>
+            <Text style={styles.extBannerText}>{t("screens.tabs_coach.loading_3_new_strategies_for_you")}</Text>
           </View>
         )}
 
@@ -1277,7 +1277,7 @@ export default function CoachScreen() {
                   style={[styles.prevBtn, activeIdx === 0 && { opacity: 0.4 }]}
                 >
                   <Ionicons name="arrow-back" size={14} color={brand.violet700} />
-                  <Text style={styles.prevBtnText}>Prev</Text>
+                  <Text style={styles.prevBtnText}>{t("screens.tabs_coach.prev")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => goToCard(Math.min(plan.wins.length - 1, activeIdx + 1))}
@@ -1290,7 +1290,7 @@ export default function CoachScreen() {
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={styles.nextBtn}
                   >
-                    <Text style={styles.nextBtnText}>Next</Text>
+                    <Text style={styles.nextBtnText}>{t("screens.tabs_coach.next")}</Text>
                     <Ionicons name="arrow-forward" size={14} color="#fff" />
                   </LinearGradient>
                 </TouchableOpacity>
@@ -1341,11 +1341,11 @@ function WinCard({
 
         {isFirst && planTitle && (
           <View style={styles.planHeaderBox}>
-            <Text style={styles.planHeaderEyebrow}>YOUR PLAN</Text>
+            <Text style={styles.planHeaderEyebrow}>{t("screens.tabs_coach.your_plan")}</Text>
             <Text style={styles.planHeaderTitle}>{planTitle}</Text>
             {planRootCause ? (
               <View style={styles.rootCauseBox}>
-                <Text style={styles.rootCauseEyebrow}>🧠 ROOT CAUSE</Text>
+                <Text style={styles.rootCauseEyebrow}>{t("screens.tabs_coach.root_cause")}</Text>
                 <Text style={styles.rootCauseText}>{planRootCause}</Text>
               </View>
             ) : null}
@@ -1358,13 +1358,13 @@ function WinCard({
 
         {w.deep_explanation ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionEyebrow, { color: "#4338CA" /* audit-ok: semantic indigo callout "why this works" */ }]}>🔬 WHY THIS WORKS</Text>
+            <Text style={[styles.sectionEyebrow, { color: "#4338CA" /* audit-ok: semantic indigo callout "why this works" */ }]}>{t("screens.tabs_coach.why_this_works")}</Text>
             <Text style={styles.sectionBody}>{w.deep_explanation}</Text>
           </View>
         ) : null}
 
         <View style={styles.section}>
-          <Text style={[styles.sectionEyebrow, { color: brand.violet600 }]}>✅ DO THIS</Text>
+          <Text style={[styles.sectionEyebrow, { color: brand.violet600 }]}>{t("screens.tabs_coach.do_this")}</Text>
           <View style={{ gap: 10, marginTop: 4 }}>
             {w.actions.map((a, i) => (
               <View key={i} style={styles.actionRow}>
@@ -1383,14 +1383,14 @@ function WinCard({
 
         {w.example ? (
           <View style={[styles.section, { backgroundColor: "rgba(220,252,231,0.8)", borderColor: "rgba(34,197,94,0.35)" }]}>
-            <Text style={[styles.sectionEyebrow, { color: "#15803D" /* audit-ok: semantic success-green eyebrow */ }]}>💬 REAL EXAMPLE</Text>
+            <Text style={[styles.sectionEyebrow, { color: "#15803D" /* audit-ok: semantic success-green eyebrow */ }]}>{t("screens.tabs_coach.real_example")}</Text>
             <Text style={[styles.sectionBody, { color: "#14532D" /* audit-ok: semantic success-green dark body */, fontStyle: "italic" }]}>{w.example}</Text>
           </View>
         ) : null}
 
         {w.mistake_to_avoid ? (
           <View style={[styles.section, { backgroundColor: "rgba(254,226,226,0.7)", borderColor: "rgba(248,113,113,0.4)" }]}>
-            <Text style={[styles.sectionEyebrow, { color: "#B91C1C" /* audit-ok: semantic danger-red eyebrow */ }]}>⚠️ MISTAKE TO AVOID</Text>
+            <Text style={[styles.sectionEyebrow, { color: "#B91C1C" /* audit-ok: semantic danger-red eyebrow */ }]}>{t("screens.tabs_coach.mistake_to_avoid")}</Text>
             <Text style={[styles.sectionBody, { color: "#7F1D1D" /* audit-ok: semantic danger-red dark body */ }]}>{w.mistake_to_avoid}</Text>
           </View>
         ) : null}
@@ -1400,7 +1400,7 @@ function WinCard({
             colors={["rgba(167,139,250,0.18)", "rgba(236,72,153,0.15)"]}
             style={styles.microTaskBox}
           >
-            <Text style={styles.microTaskEyebrow}>🎯 DO THIS TODAY (under 5 min)</Text>
+            <Text style={styles.microTaskEyebrow}>{t("screens.tabs_coach.do_this_today_under_5_min")}</Text>
             <Text style={styles.microTaskBody}>{w.micro_task}</Text>
           </LinearGradient>
         ) : null}
@@ -1417,7 +1417,7 @@ function WinCard({
 
         {/* Feedback */}
         <View style={styles.feedbackBox}>
-          <Text style={styles.feedbackTitle}>How did this win go?</Text>
+          <Text style={styles.feedbackTitle}>{t("screens.tabs_coach.how_did_this_win_go")}</Text>
           <View style={{ flexDirection: "row", gap: 6 }}>
             {([
               // audit-block-ignore-start: feedback button semantic color triplet — green/amber/red status, no theme tokens
@@ -1451,7 +1451,7 @@ function WinCard({
 
         {currentFeedback === "no" && (
           <View style={[styles.section, { backgroundColor: "rgba(254,243,199,0.7)", borderColor: "rgba(245,158,11,0.4)", marginTop: 10 }]}>
-            <Text style={[styles.sectionEyebrow, { color: "#92400E" /* audit-ok: semantic amber-dark eyebrow */ }]}>💛 EXTRA SUPPORT ADDED</Text>
+            <Text style={[styles.sectionEyebrow, { color: "#92400E" /* audit-ok: semantic amber-dark eyebrow */ }]}>{t("screens.tabs_coach.extra_support_added")}</Text>
             <Text style={[styles.sectionBody, { color: "#78350F" /* audit-ok: semantic amber-dark body */ }]}>
               I've added 3 fresh strategies at the end of your plan — different angles to try. Tap Next to reach them.
             </Text>

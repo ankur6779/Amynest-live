@@ -12,6 +12,7 @@ import Animated, {
 import type { RoutineTask } from "@/contexts/ProgressContext";
 import { ACCENT_PINK, brand, gradients, palette } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "react-i18next";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -82,18 +83,19 @@ function TaskCard({
         {isDone ? (
           <View style={[styles.statusPill, { backgroundColor: `${palette.emerald500}18` }]}>
             <Ionicons name="checkmark-circle" size={12} color={palette.emerald500} />
-            <Text style={[styles.statusText, { color: palette.emerald500 }]}>Completed</Text>
+            <Text style={[styles.statusText, { color: palette.emerald500 }]}>{t("components.routine_carousel.completed")}</Text>
           </View>
         ) : (
           <View style={[styles.statusPill, { backgroundColor: `${brand.purple500}18` }]}>
             <Ionicons name="ellipse-outline" size={11} color={brand.purple500} />
-            <Text style={[styles.statusText, { color: brand.purple500 }]}>Pending</Text>
+            <Text style={[styles.statusText, { color: brand.purple500 }]}>{t("components.routine_carousel.pending")}</Text>
           </View>
         )}
       </View>
     </>
   );
 
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeIn.duration(400).delay(index * 60)}>
       <View

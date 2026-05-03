@@ -13,6 +13,7 @@ import { firebaseAuth } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brandAlpha, brand } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 type Step = "idle" | "phone" | "sending" | "otp" | "verifying";
 
@@ -31,6 +32,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const phoneFull = `+91${phone.replace(/\D/g, "")}`;
 
   useEffect(() => {
+    const { t } = useTranslation();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -85,7 +87,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
         // reCAPTCHA internally.  Passing no verifier is the correct approach.
         result = await (signInWithPhoneNumber as unknown as (
           auth: Auth, phone: string
-        ) => Promise<ConfirmationResult>)(firebaseAuth, phoneFull);
+        ) =>{t("components.phone_auth_flow.promise")}<ConfirmationResult>)(firebaseAuth, phoneFull);
       }
 
       confirmRef.current = result;
@@ -132,7 +134,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
           testID="phone-auth-btn"
         >
           <Ionicons name="phone-portrait-outline" size={20} color={brand.violet400} />
-          <Text style={s.btnText}>Continue with Phone</Text>
+          <Text style={s.btnText}>{t("components.phone_auth_flow.continue_with_phone")}</Text>
         </TouchableOpacity>
       </>
     );
@@ -144,7 +146,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
       <>
         {Platform.OS === "web" && <div id="recaptcha-container" />}
         <View style={s.wrap}>
-          <Text style={s.stepLabel}>Enter your mobile number</Text>
+          <Text style={s.stepLabel}>{t("components.phone_auth_flow.enter_your_mobile_number")}</Text>
           <View style={s.phoneRow}>
             <View style={s.countryCode}>
               <Text style={s.countryCodeText}>+91</Text>
@@ -162,7 +164,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
           </View>
           <View style={s.rowBtns}>
             <TouchableOpacity style={s.cancelBtn} onPress={() => { setStep("idle"); setPhone(""); }}>
-              <Text style={s.cancelText}>Cancel</Text>
+              <Text style={s.cancelText}>{t("components.phone_auth_flow.cancel")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={s.sendBtnWrap}
@@ -176,7 +178,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
               >
                 {step === "sending"
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={s.sendBtnText}>Send OTP</Text>
+                  : <Text style={s.sendBtnText}>{t("components.phone_auth_flow.send_otp")}</Text>
                 }
               </LinearGradient>
             </TouchableOpacity>
@@ -190,7 +192,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
     const canVerify = otp.length === 6 && step !== "verifying";
     return (
       <View style={s.wrap}>
-        <Text style={s.stepLabel}>Enter OTP sent to</Text>
+        <Text style={s.stepLabel}>{t("components.phone_auth_flow.enter_otp_sent_to")}</Text>
         <Text style={s.phoneDisplay}>{phoneFull}</Text>
         <TextInput
           style={s.otpInput}
@@ -215,7 +217,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
           >
             {step === "verifying"
               ? <ActivityIndicator size="small" color="#fff" />
-              : <Text style={s.sendBtnText}>Verify & Sign In</Text>
+              : <Text style={s.sendBtnText}>{t("components.phone_auth_flow.verify_sign_in")}</Text>
             }
           </LinearGradient>
         </TouchableOpacity>
@@ -224,12 +226,12 @@ export default function PhoneAuthFlow({ onError }: Props) {
             ? <Text style={s.resendTimer}>Resend OTP in {resendTimer}s</Text>
             : (
               <TouchableOpacity onPress={() => sendOtp(true)}>
-                <Text style={s.resendLink}>Resend OTP</Text>
+                <Text style={s.resendLink}>{t("components.phone_auth_flow.resend_otp")}</Text>
               </TouchableOpacity>
             )
           }
           <TouchableOpacity onPress={() => { setStep("phone"); setOtp(""); }}>
-            <Text style={s.changePhone}>Change number</Text>
+            <Text style={s.changePhone}>{t("components.phone_auth_flow.change_number")}</Text>
           </TouchableOpacity>
         </View>
       </View>

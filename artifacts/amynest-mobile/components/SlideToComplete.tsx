@@ -10,6 +10,7 @@ import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 const KNOB = 44;
 const PADDING = 4;
@@ -35,6 +36,7 @@ export default function SlideToComplete({ onComplete, disabled = false, label = 
 
   const completeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    const { t } = useTranslation();
     return () => {
       if (completeTimer.current) clearTimeout(completeTimer.current);
     };
@@ -99,7 +101,7 @@ export default function SlideToComplete({ onComplete, disabled = false, label = 
       </Animated.View>
 
       <Animated.View style={[s.labelWrap, successStyle]} pointerEvents="none">
-        <Text style={s.successLabel}>✅ Release to complete!</Text>
+        <Text style={s.successLabel}>{t("components.slide_to_complete.release_to_complete")}</Text>
       </Animated.View>
 
       <GestureDetector gesture={pan}>

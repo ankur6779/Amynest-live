@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { brand, palette } from "@/constants/colors";
 import { getDailyStoryPool, type DailyStory as Story } from "@workspace/age-content";
+import { useTranslation } from "react-i18next";
 
 const CAT_COLOR: Record<Story["category"], string> = {
   moral: brand.purple500,
@@ -26,6 +27,7 @@ export function DailyStory({ ageMonths = 36 }: { ageMonths?: number }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (pool.length === 0) {
+    const { t } = useTranslation();
     return (
       <Text style={s.dim}>
         No stories available yet for this age. Try the Story Hub for video stories.
@@ -70,7 +72,7 @@ export function DailyStory({ ageMonths = 36 }: { ageMonths?: number }) {
           <View style={s.expanded}>
             <Text style={s.story}>"{story.story}"</Text>
             <View style={[s.moralBox, { backgroundColor: color + "14", borderColor: color + "33" }]}>
-              <Text style={[s.moralLabel, { color }]}>💡 Moral of the Story</Text>
+              <Text style={[s.moralLabel, { color }]}>{t("components.daily_story.moral_of_the_story")}</Text>
               <Text style={s.moralText}>{story.moral}</Text>
             </View>
           </View>
@@ -94,7 +96,7 @@ export function DailyStory({ ageMonths = 36 }: { ageMonths?: number }) {
       {renderCard(featured, true)}
       {rest.length > 0 && (
         <>
-          <Text style={s.subhead}>More for today</Text>
+          <Text style={s.subhead}>{t("components.daily_story.more_for_today")}</Text>
           {rest.map((st) => renderCard(st, false))}
         </>
       )}
@@ -106,7 +108,7 @@ export function DailyStory({ ageMonths = 36 }: { ageMonths?: number }) {
         style={s.shuffle}
       >
         <Ionicons name="shuffle" size={14} color="#fff" />
-        <Text style={s.shuffleText}>Show another featured</Text>
+        <Text style={s.shuffleText}>{t("components.daily_story.show_another_featured")}</Text>
       </Pressable>
     </View>
   );

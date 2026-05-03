@@ -992,7 +992,8 @@
       "color_green": "Green",
       "color_yellow": "Yellow",
       "color_purple": "Purple",
-      "color_orange": "Orange"
+      "color_orange": "Orange",
+      "now_t_born": "now - t.born"
     },
     "onboarding_chat": {
       "amy_intro": "Hi {{name}}! I'm Amy, your parenting coach. Let me set up your profile — it'll take about 2 minutes!",
@@ -1240,7 +1241,8 @@
       "status_available": "AVAILABLE",
       "status_redeemed": "REDEEMED",
       "status_expired": "EXPIRED",
-      "status_used": "USED"
+      "status_used": "USED",
+      "promise": "Promise"
     },
     "abacus": {
       "loading": "Loading abacus…",
@@ -1289,6 +1291,329 @@
       "no_scores_yet": "No scores yet this week — be the first!",
       "you": "you",
       "pts": "pts"
+    },
+    "audio_lessons": {
+      "amy_audio_lessons": "Amy Audio Lessons"
+    },
+    "babysitters": {
+      "manage_your_trusted_helpers": "Manage your trusted helpers",
+      "no_babysitters_yet": "No babysitters yet",
+      "add_your_first_sitter": "Add your first sitter",
+      "add_babysitter": "Add Babysitter",
+      "full_name": "Full Name *",
+      "e_g_aisha_malik": "e.g. Aisha Malik",
+      "mobile_number": "Mobile Number",
+      "notes": "Notes",
+      "special_instructions_allergies_etc": "Special instructions, allergies, etc.",
+      "cancel": "Cancel",
+      "add_sitter": "Add Sitter",
+      "add_a_sitter_so_amy_can_tailor_routines": "Add a sitter so Amy can tailor routines for when they're on duty."
+    },
+    "behavior_history": {
+      "behavior_history": "Behavior History",
+      "last_90_days": "Last 90 days",
+      "no_history_yet": "No history yet"
+    },
+    "behavior": {
+      "behavior_tracker": "Behavior Tracker",
+      "log_moments_amy_spots_the_patterns": "Log moments — Amy spots the patterns",
+      "add_a_child_to_start_tracking": "Add a child to start tracking",
+      "today": "Today",
+      "view_full_behavior_history": "View full behavior history"
+    },
+    "children_id": {
+      "r_json_as_promise": "r.json()) as Promise",
+      "change_child_photo": "Change child photo",
+      "remove_photo": "Remove photo",
+      "school_going": "School Going",
+      "food_type": "Food Type",
+      "travel_mode": "Travel Mode",
+      "e_g_bus_auto_cycle": "e.g. Bus, Auto, Cycle",
+      "none": "None",
+      "daily_schedule": "Daily Schedule",
+      "preferences": "Preferences",
+      "remove_child": "Remove Child"
+    },
+    "children_new": {
+      "add_child": "Add Child",
+      "add_child_photo": "Add child photo",
+      "enter_name": "Enter name",
+      "school_going": "School Going",
+      "food_preference": "Food Preference",
+      "none": "None"
+    },
+    "coach_premium": {
+      "close_coach": "Close coach",
+      "amy_is_thinking": "Amy is thinking…",
+      "curating_your_personal_wins": "Curating your personal wins"
+    },
+    "onboarding": {
+      "amy": "Amy"
+    },
+    "paywall": {
+      "back": "Back",
+      "close": "Close",
+      "or_choose_an_alternative": "or choose an alternative",
+      "alternative_billing_pay_with_upi_or_card": "Alternative billing: Pay with UPI or Card via Razorpay",
+      "pay_via_upi_card_alternative": "Pay via UPI / Card (Alternative)",
+      "10_000_parents": "10,000+ parents",
+      "cancel_anytime": "Cancel anytime",
+      "secure_payment": "Secure payment",
+      "maybe_later": "Maybe Later"
+    },
+    "progress": {
+      "insights": "Insights",
+      "view_full_insights": "View full insights",
+      "week_over_week_trends_per_child_breakdow": "Week-over-week trends, per-child breakdown & more",
+      "ask_amy_about_your_progress": "Ask Amy about your progress",
+      "get_a_personalized_weekly_read_out": "Get a personalized weekly read-out"
+    },
+    "ptm_prep": {
+      "ptm_prep_assistant": "PTM Prep Assistant",
+      "start_a_ptm_prep": "Start a PTM Prep",
+      "discard": "🗑 Discard",
+      "class_grade": "Class / grade",
+      "no_questions_yet": "No questions yet.",
+      "add_your_own_question": "✏️ Add your own question",
+      "e_g_is_my_child_enjoying_art_class": "e.g. Is my child enjoying art class?",
+      "add": "Add",
+      "quick_notes": "📋 Quick notes",
+      "what_did_the_teacher_say": "What did the teacher say?",
+      "back": "← Back",
+      "build_action_plan": "Build action plan",
+      "action_plan": "🎯 Action plan",
+      "re_generate_from_notes": "Re-generate from notes",
+      "add_notes_in_the_attend_step_then_come_b": "Add notes in the Attend step, then come back here — Amy will pull out action items for you.",
+      "save_finish": "Save & finish",
+      "actions": "Actions",
+      "delete": "🗑 Delete",
+      "a_simple_prepare_attend_act_flow_for_you": "A simple Prepare → Attend → Act flow for your child's next Parent-Teacher Meeting.",
+      "i_m_ready_start_the_meeting": "I'm ready — start the meeting",
+      "tick_off_questions_you_ve_asked": "Tick off questions you've asked",
+      "teacher_s_name": "Teacher's name"
+    },
+    "recipes": {
+      "recipe_name": "Recipe Name *",
+      "e_g_idli_paneer_paratha_egg_bhurji": "e.g. Idli, Paneer Paratha, Egg Bhurji",
+      "prep_time": "Prep Time",
+      "10_min": "10 min",
+      "cook_time": "Cook Time",
+      "15_min": "15 min",
+      "servings": "Servings",
+      "1_child": "1 child",
+      "ingredients_one_per_line": "Ingredients * (one per line)",
+      "steps_one_per_line": "Steps * (one per line)",
+      "parent_tip_optional": "Parent Tip (optional)",
+      "e_g_add_ghee_for_extra_flavour": "e.g. Add ghee for extra flavour",
+      "my_recipes": "My Recipes",
+      "no_recipes_saved_yet": "No recipes saved yet",
+      "add_your_first_recipe": "Add your first recipe",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "rewards": {
+      "rewards": "Rewards",
+      "your_points": "YOUR POINTS",
+      "earned_across_routines_games_behaviour": "Earned across routines, games & behaviour 🎉",
+      "badges_earned": "🏆 Badges Earned",
+      "rewards_shop": "🎁 Rewards Shop",
+      "spend_points_on_real_world_treats": "Spend points on real-world treats",
+      "recent_redemptions": "📜 Recent Redemptions",
+      "recent_earnings": "✨ Recent Earnings"
+    },
+    "routines_generate": {
+      "add_a_child_first": "Add a child first",
+      "amy_needs_to_know_about_your_child_befor": "Amy needs to know about your child before she can plan their day.",
+      "add_child": "Add child",
+      "amy_will_build_a_smart_age_appropriate_r": "Amy will build a smart, age-appropriate routine in seconds.",
+      "school_day": "School day?",
+      "anything_special_today": "Anything special today?",
+      "optional": "(optional)",
+      "e_g_doctor_visit_at_4pm_birthday_party_s": "e.g. doctor visit at 4pm, birthday party, swimming class…",
+      "food_items_at_home": "Food items at home",
+      "e_g_paneer_tomato_eggs_spinach_leftover": "e.g. paneer, tomato, eggs, spinach, leftover dal…",
+      "e_g_family_outing_doctor_visit_party": "e.g. family outing, doctor visit, party…",
+      "e_g_paneer_tomato_eggs": "e.g. paneer, tomato, eggs…",
+      "mother_father_caregiver": "Mother, Father, Caregiver…",
+      "this_usually_takes_a_few_seconds": "This usually takes a few seconds.",
+      "plan_your_child_s_day": "Plan your child's day"
+    },
+    "routines_id": {
+      "r_json_as_promise": "r.json()) as Promise",
+      "routine": "Routine",
+      "routine_not_found": "Routine not found",
+      "mood": "Mood:",
+      "sleep": "Sleep:",
+      "activities": "ACTIVITIES",
+      "add": "Add",
+      "swipe_to_skip_swipe_to_complete": "← Swipe to skip   •   Swipe to complete →",
+      "daily_summary": "Daily Summary",
+      "for_tomorrow": "FOR TOMORROW",
+      "undo": "UNDO",
+      "delay_smart_cascade": "DELAY (smart cascade)",
+      "cancel": "Cancel",
+      "edit_activity": "Edit activity",
+      "activity": "Activity",
+      "activity_name": "Activity name",
+      "time_e_g_7_30_am": "Time (e.g. 7:30 AM)",
+      "duration_minutes": "Duration (minutes)",
+      "changes_to_time_or_duration_will_smart_s": "Changes to time or duration will smart-shift later activities and protect bedtime.",
+      "save": "Save",
+      "add_activity": "Add activity",
+      "ai_will_fit_it_into_the_schedule_and_adj": "AI will fit it into the schedule and adjust the rest of the day.",
+      "e_g_piano_practice": "e.g. Piano practice",
+      "routine_actions": "Routine actions",
+      "delete_routine": "Delete routine?",
+      "this_will_permanently_remove_this_routin": "This will permanently remove this routine and all its tasks.",
+      "delete": "Delete",
+      "regenerating_with_ai": "Regenerating with AI…",
+      "amy_ai_suggests": "AMY AI SUGGESTS",
+      "delayed": "⏱ Delayed"
+    },
+    "routines_premium": {
+      "go_back": "Go back",
+      "daily_rhythm": "Daily Rhythm",
+      "swipe_cards_tap_for_details": "Swipe cards · Tap for details",
+      "steps": "STEPS",
+      "today_s_routines": "TODAY'S ROUTINES"
+    },
+    "sign_in": {
+      "check_your_inbox": "Check your inbox",
+      "back_to_sign_in": "Back to Sign in",
+      "reset_password": "Reset password",
+      "you_example_com": "you@example.com",
+      "send_reset_link": "Send reset link",
+      "forgot_password": "Forgot password?",
+      "where_smart_parenting_begins": "Where Smart Parenting Begins",
+      "enter_your_email_and_we_ll_send_you_a_re": "Enter your email and we'll send you a reset link."
+    },
+    "sign_up": {
+      "your_first_name": "Your first name",
+      "you_example_com": "you@example.com",
+      "min_8_characters": "Min. 8 characters",
+      "where_smart_parenting_begins": "Where Smart Parenting Begins"
+    },
+    "tabs_coach": {
+      "loading_your_plan": "Loading your plan…",
+      "search_goals": "Search Goals",
+      "open_amy_audio_lessons": "Open Amy Audio Lessons",
+      "amy_audio_lessons": "Amy Audio Lessons",
+      "search_goals_2": "Search goals…",
+      "try_free": "✦ Try Free",
+      "categories": "Categories",
+      "amy_coach": "Amy Coach",
+      "view_my_coaching_progress": "View my coaching progress",
+      "progress": "Progress",
+      "search_all_goals": "Search all goals…",
+      "back": "Back",
+      "pick_any_that_apply": "Pick any that apply",
+      "back_to_topics": "← Back to topics",
+      "building_your_plan": "Building your plan…",
+      "loading_3_new_strategies_for_you": "Loading 3 new strategies for you…",
+      "prev": "Prev",
+      "next": "Next",
+      "your_plan": "YOUR PLAN",
+      "root_cause": "🧠 ROOT CAUSE",
+      "why_this_works": "🔬 WHY THIS WORKS",
+      "do_this": "✅ DO THIS",
+      "real_example": "💬 REAL EXAMPLE",
+      "mistake_to_avoid": "⚠️ MISTAKE TO AVOID",
+      "do_this_today_under_5_min": "🎯 DO THIS TODAY (under 5 min)",
+      "how_did_this_win_go": "How did this win go?",
+      "extra_support_added": "💛 EXTRA SUPPORT ADDED",
+      "amy_s_guided_wins": "Amy's Guided Wins",
+      "pick_a_category_i_ll_build_a_12_step_pla": "Pick a category — I'll build a 12-step plan",
+      "open_amy_s_premium_guided_wins": "Open Amy's premium guided wins"
+    },
+    "tabs_hub": {
+      "2_effective_age": "= 2 && effective.age",
+      "abacus_pro_zone": "🧮 Abacus PRO Zone"
+    },
+    "tabs_index": {
+      "add_child": "Add child",
+      "day_streak": "DAY STREAK",
+      "15_hour": "= 15 && hour",
+      "amy_ai_suggests": "Amy AI Suggests",
+      "all_looking_good_today": "All looking good today!",
+      "parent_score": "Parent Score",
+      "completion": "Completion",
+      "days_active": "Days active",
+      "complete_5_tasks_per_day_to_boost_your_s": "💡 Complete 5+ tasks per day to boost your score!",
+      "no_routines_yet": "No routines yet",
+      "no_behavior_logged_yet": "No behavior logged yet",
+      "rewards_points": "Rewards & Points",
+      "pts": "pts",
+      "badges_earned": "BADGES EARNED",
+      "reward_store": "REWARD STORE",
+      "redeem": "Redeem",
+      "view_all_rewards": "View All Rewards →",
+      "meet_amy_ai": "Meet Amy AI",
+      "experience_now": "✨ Experience Now",
+      "explore_parenting_hub": "📖 Explore Parenting Hub",
+      "i_m_amy_your_smart_parenting_partner": "I'm Amy — your smart parenting partner ❤️"
+    },
+    "tabs_profile": {
+      "r_json_as_promise": "r.json()) as Promise",
+      "your_parent_profile": "YOUR PARENT PROFILE",
+      "my_parent_profile": "My Parent Profile",
+      "personal_info": "Personal Info",
+      "e_g_ayesha_sarah_ahmed": "e.g. Ayesha, Sarah, Ahmed…",
+      "this_name_appears_in_your_dashboard_gree": "This name appears in your dashboard greeting.",
+      "work_schedule": "Work Schedule",
+      "free_available_slots": "Free / Available Slots",
+      "add_slot": "Add Slot",
+      "food_preferences": "Food Preferences",
+      "e_g_peanuts_shellfish_dairy_gluten": "e.g. peanuts, shellfish, dairy, gluten…",
+      "save_profile": "Save Profile",
+      "notifications": "Notifications",
+      "weekly_recap_email": "Weekly recap email",
+      "push_notification_settings": "Push notification settings",
+      "app_language": "App Language",
+      "active": "✓ Active",
+      "my_recipes": "My Recipes",
+      "invite_earn_premium": "Invite & Earn Premium",
+      "contact_us": "Contact Us",
+      "privacy_policy": "Privacy Policy",
+      "sign_out": "Sign Out",
+      "developer_tools": "Developer Tools"
+    },
+    "tabs_routines": {
+      "r_json_as_promise": "r.json()) as Promise",
+      "your_day_planned": "YOUR DAY, PLANNED",
+      "routines": "Routines",
+      "daily_schedules_generated_by_ai": "Daily schedules generated by AI",
+      "open_premium_routines_view": "Open premium routines view",
+      "premium": "Premium",
+      "generate": "Generate",
+      "failed_to_load_routines": "Failed to load routines",
+      "retry": "Retry",
+      "add": "+ add",
+      "no_routines_yet": "No routines yet",
+      "generate_first_routine": "Generate First Routine",
+      "this_week_s_routines": "THIS WEEK'S ROUTINES"
+    },
+    "welcome": {
+      "amy": "Amy",
+      "nest": "Nest",
+      "where_smart_parenting_starts": "Where Smart Parenting Starts",
+      "choose_language": "Choose Language",
+      "kindly_sign_in": "Kindly Sign In",
+      "amy_coach": "Amy Coach",
+      "kids_control_center": "Kids Control Center",
+      "coming_soon": "Coming Soon",
+      "everything_in_one_app": "Everything in One App",
+      "14_science_backed_tools": "14+ Science-Backed Tools",
+      "from_newborns_to_teens_every_feature_gro": "From newborns to teens — every feature grounded in child psychology, AAP guidelines, and developmental research.",
+      "unlock_all_features_free": "Unlock All Features Free",
+      "free_plan_included_upgrade_anytime": "Free plan included · Upgrade anytime",
+      "parent_stories": "Parent Stories",
+      "real_parents_real_results": "Real Parents, Real Results",
+      "thousands_of_families_use_amynest_every": "Thousands of families use AmyNest every day to raise happier, calmer, more confident kids."
+    },
+    "notifications_settings": {
+      "open_system_notification_settings": "Open system notification settings",
+      "recent_deliveries": "Recent deliveries",
+      "loading": "Loading…"
     }
   },
   "routines_generate": {
@@ -1771,6 +2096,342 @@
       "aria_preview_band": "Preview age {{label}} content",
       "now_pill": " · Now",
       "for_age_band": "For Age {{label}}"
+    }
+  },
+  "components": {
+    "action_buttons": {
+      "mark_this_win_as_worked": "Mark this win as worked",
+      "mark_this_win_as_partially_worked": "Mark this win as partially worked",
+      "this_did_not_work_give_me_more_options": "This did not work, give me more options"
+    },
+    "ai_meal_generator": {
+      "generate_with_amy_ai": "Generate with Amy AI",
+      "type_what_you_want_to_cook": "Type what you want to cook",
+      "e_g_quick_protein_tiffin_without_onion": "e.g. quick protein tiffin without onion",
+      "retry": "Retry",
+      "no_recipes_generated_try_a_different_des": "No recipes generated. Try a different description.",
+      "veg": "🌿 Veg",
+      "ingredients": "🛒  Ingredients",
+      "steps": "👨‍🍳  Steps"
+    },
+    "amazing_facts": {
+      "no_facts_available_right_now": "No facts available right now.",
+      "show_another_fact": "Show another fact"
+    },
+    "app_data_status_banner": {
+      "retry": "Retry",
+      "refreshing": "Refreshing…",
+      "offline": "· offline"
+    },
+    "art_craft_reels": {
+      "swipe_up_down_to_browse": "Swipe up / down to browse",
+      "loading_videos": "Loading videos…",
+      "try_again": "Try again",
+      "no_videos_available_right_now": "No videos available right now.",
+      "tap_any_video_swipe_up_down_to_browse_al": "🎨 Tap any video · swipe up/down to browse all",
+      "load_more_videos": "Load more videos",
+      "couldn_t_play_this_video": "Couldn't play this video"
+    },
+    "child_card": {
+      "current_focus": "Current focus",
+      "continue_plan": "Continue Plan"
+    },
+    "coach_card": {
+      "listen_in_english": "Listen in English",
+      "listen_in_hindi": "Listen in Hindi"
+    },
+    "coach_progress_card": {
+      "amy_coach": "AMY COACH",
+      "continue_amy_coaching": "Continue Amy coaching",
+      "continue_coaching": "Continue Coaching"
+    },
+    "coloring_books": {
+      "loading_coloring_books": "Loading coloring books…",
+      "try_again": "Try again",
+      "all_caught_up": "All caught up!",
+      "preview": "Preview",
+      "prev": "Prev",
+      "next": "Next",
+      "pdf": "PDF"
+    },
+    "cry_insight": {
+      "beta_estimate_only": "Beta · Estimate only.",
+      "diaper_checked_recently": "Diaper checked recently?",
+      "feels_warm_has_temperature": "Feels warm / has temperature?",
+      "analyse_using_context_only_no_audio": "Analyse using context only (no audio)",
+      "likely_cause": "LIKELY CAUSE",
+      "try_this": "TRY THIS",
+      "worth_a_check": "Worth a check.",
+      "recent_sessions": "RECENT SESSIONS"
+    },
+    "daily_puzzle": {
+      "no_puzzles_available_right_now": "No puzzles available right now.",
+      "session_complete": "Session complete!",
+      "start_a_new_session": "Start a new session",
+      "no_puzzle": "No puzzle.",
+      "submit": "Submit",
+      "next": "Next →"
+    },
+    "daily_story": {
+      "moral_of_the_story": "💡 Moral of the Story",
+      "more_for_today": "More for today",
+      "show_another_featured": "Show another featured"
+    },
+    "dashboard_header": {
+      "smart_parent": "Smart Parent",
+      "open_profile": "Open profile"
+    },
+    "error_fallback": {
+      "view_error_details": "View error details",
+      "close_error_details": "Close error details"
+    },
+    "event_prep_generator_sheet": {
+      "amy_ai_generator": "✨ Amy AI Generator",
+      "any_surprise_me": "Any / Surprise me",
+      "other_ideas": "OTHER IDEAS",
+      "low_cost": "💸 Low cost",
+      "materials": "🧰 Materials",
+      "quick_steps": "📋 Quick steps",
+      "speech": "🎤 Speech",
+      "open_full_guide": "Open full guide",
+      "tell_me_a_few_things_and_i_ll_suggest_th": "Tell me a few things and I'll suggest the perfect idea ❤️"
+    },
+    "fun_sheets": {
+      "try_again": "Try again",
+      "all_caught_up": "All caught up!",
+      "view": "View",
+      "prev": "Prev",
+      "next": "Next",
+      "pdf": "PDF"
+    },
+    "hub_debug_overlay": {
+      "open_hub_debug_overlay": "Open Hub debug overlay",
+      "hub_debug_mobile_vs_web": "🐞 Hub Debug — Mobile vs Web",
+      "section_1_matches_web_exactly": "✓ Section 1 matches web exactly.",
+      "order_mismatches": "Order mismatches:",
+      "section_2_contents_match": "✓ Section 2 contents match.",
+      "missing_on_mobile": "Missing on mobile",
+      "extra_on_mobile": "Extra on mobile",
+      "missing_on_mobile_web_has_mobile_doesn_t": "Missing on mobile (web has, mobile doesn't)",
+      "extra_on_mobile_mobile_has_web_doesn_t": "Extra on mobile (mobile has, web doesn't)"
+    },
+    "infant_hub": {
+      "sleep_prediction": "Sleep Prediction",
+      "beta": "BETA",
+      "cry_insight": "Cry Insight"
+    },
+    "infant_infant_health_tab": {
+      "vaccination_tracker": "Vaccination tracker",
+      "done": "done ·",
+      "v_agemonths": "v.ageMonths",
+      "missed": "missed"
+    },
+    "insight_card": {
+      "read_more": "Read more"
+    },
+    "life_skills_zone": {
+      "loading": "Loading…"
+    },
+    "mobile_recipe_card": {
+      "ingredients": "Ingredients",
+      "steps": "Steps",
+      "nutrition_approx": "Nutrition (approx.)",
+      "cal": "Cal",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fat": "Fat"
+    },
+    "nav_drawer": {
+      "dark_mode": "Dark mode",
+      "sign_out": "Sign out"
+    },
+    "neon_ring_hero": {
+      "meet": "Meet"
+    },
+    "parent_command_center": {
+      "open": "Open",
+      "promise": "Promise",
+      "open_routine": "Open routine",
+      "close": "Close",
+      "try_next": "TRY NEXT",
+      "tap_to_start_a_timer": "Tap to start a timer",
+      "top": "TOP",
+      "calming_tools_try_in_order": "Calming tools — try in order",
+      "wind_down_plan_for_tonight": "Wind-down plan for tonight",
+      "amy_ai_insight": "✨ AMY AI INSIGHT",
+      "undo_skip": "Undo skip",
+      "undo": "UNDO",
+      "done": "Done",
+      "pick_a_10_min_play_tap_to_start": "Pick a 10-min play — tap to start",
+      "close_play_picker": "Close play picker",
+      "start": "Start",
+      "no_routine_for_today_yet": "No routine for today yet",
+      "generate_one_to_unlock_the_timeline_smar": "Generate one to unlock the timeline + smart suggestions.",
+      "done_2": "DONE",
+      "skipped": "SKIPPED",
+      "skip": "Skip",
+      "done_with_my_child": "Done with my child",
+      "today_s_timeline": "TODAY'S TIMELINE",
+      "create_today_s_routine": "Create today's routine",
+      "open_today_s_routine": "Open today's routine"
+    },
+    "parenting_articles": {
+      "close_article": "Close article",
+      "read_article": "Read article ›",
+      "read_aloud": "Read aloud",
+      "all": "All"
+    },
+    "parent_tasks": {
+      "parent_tasks_for_today": "👨‍👩‍👧 Parent Tasks for Today"
+    },
+    "phone_auth_flow": {
+      "promise": "Promise",
+      "continue_with_phone": "Continue with Phone",
+      "enter_your_mobile_number": "Enter your mobile number",
+      "cancel": "Cancel",
+      "send_otp": "Send OTP",
+      "enter_otp_sent_to": "Enter OTP sent to",
+      "verify_sign_in": "Verify & Sign In",
+      "resend_otp": "Resend OTP",
+      "change_number": "Change number"
+    },
+    "phonics_test_card": {
+      "phonics_test": "🔤 Phonics Test"
+    },
+    "phonics_test_runner": {
+      "go_back": "Go back",
+      "sounds_to_revisit": "Sounds to revisit",
+      "back_to_phonics_tests": "Back to Phonics Tests"
+    },
+    "premium_splash": {
+      "meet": "MEET",
+      "amy": "AMY",
+      "powered_by_amynest_ai": "Powered by AmyNest AI"
+    },
+    "printable_worksheets": {
+      "loading_worksheets": "Loading worksheets…",
+      "try_again": "Try again",
+      "search_worksheets": "Search worksheets…",
+      "all_worksheets_viewed": "All worksheets viewed",
+      "prev": "← Prev",
+      "next": "Next →",
+      "void_styles_returntype": "void; styles: ReturnType",
+      "you_ve_gone_through_the_whole_collection": "You've gone through the whole collection. New worksheets added regularly!"
+    },
+    "profile_lock_screen": {
+      "meet_amy_ai": "MEET AMY AI",
+      "your_smart_parenting_partner": "Your Smart Parenting Partner ✨",
+      "unlock_everything_in_2_steps": "Unlock everything in 2 steps",
+      "add_child_profile_step_1": "👶  Add Child Profile — Step 1",
+      "add_parent_profile_step_2": "👤  Add Parent Profile — Step 2",
+      "works_for_ages_0_15_science_backed_paren": "Works for ages 0–15 · Science-backed parenting plans"
+    },
+    "routine_carousel": {
+      "completed": "Completed",
+      "pending": "Pending"
+    },
+    "routine_inline_meals": {
+      "amy_ai_meal_suggestions": "Amy AI Meal Suggestions",
+      "no_suggestions_available": "No suggestions available.",
+      "ingredients": "Ingredients",
+      "steps": "Steps"
+    },
+    "routine_item_modal": {
+      "close_recipe": "Close recipe",
+      "generating_recipe": "Generating recipe…",
+      "prep": "Prep",
+      "cook": "Cook",
+      "serves": "Serves",
+      "ingredients": "Ingredients",
+      "instructions": "Instructions",
+      "parent_tip": "💡 Parent tip",
+      "back": "Back",
+      "close": "Close",
+      "tap_a_meal_to_view_its_recipe": "Tap a meal to view its recipe",
+      "instructions_2": "📋 Instructions",
+      "delay_15m": "Delay +15m",
+      "skip": "Skip",
+      "mark_as_pending_again": "Mark as pending again",
+      "today_s_meal_options": "🍽️ Today's meal options"
+    },
+    "skills_focus": {
+      "4_high_impact_areas_to_focus_on_this_wee": "4 high-impact areas to focus on this week."
+    },
+    "sleep_predict": {
+      "beta_guidance_only": "Beta · Guidance only.",
+      "loading_prediction": "Loading prediction…",
+      "pressure": "pressure",
+      "start_wind_down_now": "Start wind-down now",
+      "log_sleep": "LOG SLEEP",
+      "nap_started": "Nap started",
+      "bedtime": "Bedtime",
+      "refresh": "Refresh"
+    },
+    "slide_to_complete": {
+      "release_to_complete": "✅ Release to complete!"
+    },
+    "smart_math_tricks": {
+      "how_it_works": "HOW IT WORKS",
+      "example": "EXAMPLE",
+      "try_it": "✏️ Try It",
+      "check": "Check ✓",
+      "back_to_trick": "← Back to Trick",
+      "2_new_tricks_every_day": "2 new tricks every day ✨",
+      "new_tricks_unlock_tomorrow": "New tricks unlock tomorrow! 🌅",
+      "practice_complete": "Practice Complete!",
+      "try_again": "🔄 Try Again",
+      "check_answer": "Check Answer ✓"
+    },
+    "smart_meal_suggestions": {
+      "smart_tiffin_meal_suggestions": "Smart Tiffin & Meal Suggestions",
+      "personalised_by_region_fridge_age": "Personalised by region, fridge & age",
+      "kids": "Kids",
+      "parent": "Parent",
+      "e_g_paneer": "e.g. paneer",
+      "add": "Add",
+      "find_what_i_can_cook": "🔍 Find What I Can Cook",
+      "no_meals_found_try_removing_a_fridge_ite": "No meals found. Try removing a fridge item.",
+      "female": "♀ Female",
+      "male": "♂ Male",
+      "ingredients": "🛒  Ingredients",
+      "steps": "👨‍🍳  Steps",
+      "what_s_in_your_fridge_optional": "What's in your fridge? (optional)"
+    },
+    "story_player": {
+      "skipping_automatically": "Skipping automatically…",
+      "replay": "Replay",
+      "next": "Next",
+      "up_next": "Up next",
+      "watch_again": "Watch again",
+      "play_now": "Play now",
+      "all_stories_watched": "All stories watched!",
+      "starting_over": "Starting over…",
+      "couldn_t_play_this_story": "Couldn't play this story."
+    },
+    "swipeable_card": {},
+    "tiffin_feedback_panel": {
+      "helps_amy_learn_what_your_child_loves": "Helps Amy learn what your child loves",
+      "undo": "Undo",
+      "suggestions_are_loading_pick_what_you_pa": "Suggestions are loading — pick what you packed once they appear.",
+      "top_liked_foods": "❤  Top Liked Foods",
+      "which_meal": "Which meal?",
+      "today_s_tiffin_feedback": "Today's Tiffin Feedback",
+      "how_was_today_s_tiffin": "How was today's tiffin?"
+    },
+    "voice_settings_panel": {
+      "voice_settings": "🎙 Voice Settings",
+      "read_aloud": "READ-ALOUD",
+      "language": "LANGUAGE",
+      "voice_gender": "VOICE GENDER",
+      "voice": "VOICE",
+      "powered_by_elevenlabs_ai": "Powered by ElevenLabs AI 🎙"
+    },
+    "phonics_learning": {
+      "todays_activity": "Today’s Activity",
+      "pick_another_sound": "Pick another sound",
+      "practice_sounds": "Practice Sounds",
+      "tap_any_tile_to_hear_the_sound": "Tap any tile to hear the sound",
+      "header_title": "🔤 Phonics Learning"
     }
   }
 }

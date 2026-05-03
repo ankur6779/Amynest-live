@@ -992,7 +992,8 @@
       "color_green": "हरा",
       "color_yellow": "पीला",
       "color_purple": "बैंगनी",
-      "color_orange": "नारंगी"
+      "color_orange": "नारंगी",
+      "now_t_born": "अब - t.born"
     },
     "onboarding_chat": {
       "amy_intro": "नमस्ते {{name}}! मैं Amy हूँ, आपकी पेरेंटिंग कोच। चलिए आपकी प्रोफ़ाइल सेट करते हैं — लगभग 2 मिनट लगेंगे!",
@@ -1240,7 +1241,8 @@
       "status_available": "उपलब्ध",
       "status_redeemed": "इस्तेमाल हुआ",
       "status_expired": "समाप्त",
-      "status_used": "उपयोग किया"
+      "status_used": "उपयोग किया",
+      "promise": "वचन"
     },
     "abacus": {
       "loading": "अबेकस लोड हो रहा है…",
@@ -1289,6 +1291,329 @@
       "no_scores_yet": "इस हफ़्ते अभी कोई स्कोर नहीं — पहले बनो!",
       "you": "तुम",
       "pts": "अंक"
+    },
+    "audio_lessons": {
+      "amy_audio_lessons": "एमी ऑडियो पाठ"
+    },
+    "babysitters": {
+      "manage_your_trusted_helpers": "अपने भरोसेमंद helpers को manage करें",
+      "no_babysitters_yet": "अभी कोई babysitter नहीं है",
+      "add_your_first_sitter": "अपना पहला sitter जोड़ें",
+      "add_babysitter": "Babysitter जोड़ें",
+      "full_name": "पूरा नाम *",
+      "e_g_aisha_malik": "उदाहरण: आयशा मलिक",
+      "mobile_number": "मोबाइल नंबर",
+      "notes": "नोट्स",
+      "special_instructions_allergies_etc": "विशेष निर्देश, एलर्जी, आदि।",
+      "cancel": "रद्द करें",
+      "add_sitter": "Sitter जोड़ें",
+      "add_a_sitter_so_amy_can_tailor_routines": "एक sitter जोड़ें ताकि Amy उनकी ड्यूटी के समय के लिए routines customize कर सके।"
+    },
+    "behavior_history": {
+      "behavior_history": "व्यवहार इतिहास",
+      "last_90_days": "पिछले 90 दिन",
+      "no_history_yet": "अभी कोई history नहीं है"
+    },
+    "behavior": {
+      "behavior_tracker": "व्यवहार ट्रैकर",
+      "log_moments_amy_spots_the_patterns": "पल log करें — Amy patterns पहचानती है",
+      "add_a_child_to_start_tracking": "tracking शुरू करने के लिए बच्चा जोड़ें",
+      "today": "आज",
+      "view_full_behavior_history": "पूरी Behavior History देखें"
+    },
+    "children_id": {
+      "r_json_as_promise": "r.json()) के रूप में वचन",
+      "change_child_photo": "बच्चे की फ़ोटो बदलें",
+      "remove_photo": "फ़ोटो हटाएं",
+      "school_going": "स्कूल जा रहा है",
+      "food_type": "खाने का प्रकार",
+      "travel_mode": "यात्रा मोड",
+      "e_g_bus_auto_cycle": "उदाहरण: बस, ऑटो, साइकिल",
+      "none": "कोई नहीं",
+      "daily_schedule": "दैनिक कार्यक्रम",
+      "preferences": "पसंद",
+      "remove_child": "बच्चे को हटाएं"
+    },
+    "children_new": {
+      "add_child": "बच्चा जोड़ें",
+      "add_child_photo": "बच्चे की फोटो जोड़ें",
+      "enter_name": "नाम दर्ज करें",
+      "school_going": "स्कूल जा रहा है",
+      "food_preference": "खाने की पसंद",
+      "none": "कोई नहीं"
+    },
+    "coach_premium": {
+      "close_coach": "Coach बंद करें",
+      "amy_is_thinking": "Amy सोच रही है…",
+      "curating_your_personal_wins": "आपकी निजी उपलब्धियाँ तैयार की जा रही हैं"
+    },
+    "onboarding": {
+      "amy": "एमी"
+    },
+    "paywall": {
+      "back": "पीछे",
+      "close": "बंद करें",
+      "or_choose_an_alternative": "या कोई दूसरा विकल्प चुनें",
+      "alternative_billing_pay_with_upi_or_card": "वैकल्पिक भुगतान: Razorpay के ज़रिए UPI या Card से भुगतान करें",
+      "pay_via_upi_card_alternative": "UPI / Card से भुगतान करें (वैकल्पिक)",
+      "10_000_parents": "10,000+ माता-पिता",
+      "cancel_anytime": "कभी भी रद्द करें",
+      "secure_payment": "सुरक्षित भुगतान",
+      "maybe_later": "शायद बाद में"
+    },
+    "progress": {
+      "insights": "जानकारी",
+      "view_full_insights": "पूरी जानकारी देखें",
+      "week_over_week_trends_per_child_breakdow": "हर हफ़्ते के ट्रेंड, हर बच्चे का विश्लेषण और भी बहुत कुछ",
+      "ask_amy_about_your_progress": "Amy से अपनी प्रगति के बारे में पूछें",
+      "get_a_personalized_weekly_read_out": "हर हफ़्ते का पर्सनलाइज़्ड सारांश पाएं"
+    },
+    "ptm_prep": {
+      "ptm_prep_assistant": "PTM तैयारी सहायक",
+      "start_a_ptm_prep": "PTM Prep शुरू करें",
+      "discard": "🗑 हटाएं",
+      "class_grade": "कक्षा / ग्रेड",
+      "no_questions_yet": "अभी कोई सवाल नहीं।",
+      "add_your_own_question": "✏️ अपना सवाल जोड़ें",
+      "e_g_is_my_child_enjoying_art_class": "जैसे: क्या मेरा बच्चा आर्ट क्लास में खुश है?",
+      "add": "जोड़ें",
+      "quick_notes": "📋 त्वरित नोट्स",
+      "what_did_the_teacher_say": "टीचर ने क्या कहा?",
+      "back": "← पीछे",
+      "build_action_plan": "एक्शन प्लान बनाएं",
+      "action_plan": "🎯 कार्रवाई योजना",
+      "re_generate_from_notes": "नोट्स से फिर से बनाएं",
+      "add_notes_in_the_attend_step_then_come_b": "Attend स्टेप में नोट्स जोड़ें, फिर यहाँ वापस आएं — Amy आपके लिए action items निकाल देगी।",
+      "save_finish": "Save करें & खत्म करें",
+      "actions": "क्रियाएँ",
+      "delete": "🗑 हटाएं",
+      "a_simple_prepare_attend_act_flow_for_you": "आपके बच्चे की अगली Parent-Teacher Meeting के लिए एक आसान Prepare → Attend → Act flow।",
+      "i_m_ready_start_the_meeting": "मैं तैयार हूँ — मीटिंग शुरू करें",
+      "tick_off_questions_you_ve_asked": "जो सवाल पूछ लिए हों उन्हें टिक करें",
+      "teacher_s_name": "टीचर का नाम"
+    },
+    "recipes": {
+      "recipe_name": "रेसिपी का नाम *",
+      "e_g_idli_paneer_paratha_egg_bhurji": "जैसे कि: इडली, पनीर पराठा, एग भुर्जी",
+      "prep_time": "तैयारी का समय",
+      "10_min": "10 मिनट",
+      "cook_time": "पकाने का समय",
+      "15_min": "15 मिनट",
+      "servings": "सेर्विंग्स",
+      "1_child": "1 बच्चा",
+      "ingredients_one_per_line": "सामग्री * (एक प्रति पंक्ति)",
+      "steps_one_per_line": "चरण * (एक प्रति पंक्ति)",
+      "parent_tip_optional": "माता-पिता की टिप (वैकल्पिक)",
+      "e_g_add_ghee_for_extra_flavour": "जैसे: ज़्यादा स्वाद के लिए घी डालें",
+      "my_recipes": "मेरी रेसिपी",
+      "no_recipes_saved_yet": "अभी तक कोई रेसिपी सेव नहीं हुई",
+      "add_your_first_recipe": "अपनी पहली रेसिपी जोड़ें",
+      "edit": "संपादित करें",
+      "delete": "हटाएँ"
+    },
+    "rewards": {
+      "rewards": "इनाम",
+      "your_points": "आपके अंक",
+      "earned_across_routines_games_behaviour": "routines, games और behaviour से कमाए 🎉",
+      "badges_earned": "🏆 अर्जित बैज",
+      "rewards_shop": "🎁 इनामों की दुकान",
+      "spend_points_on_real_world_treats": "असली दुनिया के treats पर points खर्च करें",
+      "recent_redemptions": "📜 हाल की रिडेम्प्शन",
+      "recent_earnings": "✨ हाल की कमाई"
+    },
+    "routines_generate": {
+      "add_a_child_first": "पहले एक बच्चा जोड़ें",
+      "amy_needs_to_know_about_your_child_befor": "Amy आपके बच्चे के दिन की planning करने से पहले उनके बारे में जानना चाहती है।",
+      "add_child": "बच्चा जोड़ें",
+      "amy_will_build_a_smart_age_appropriate_r": "Amy कुछ ही सेकंड में एक smart, उम्र के अनुसार routine बनाएगी।",
+      "school_day": "स्कूल का दिन है?",
+      "anything_special_today": "आज कुछ खास है?",
+      "optional": "(वैकल्पिक)",
+      "e_g_doctor_visit_at_4pm_birthday_party_s": "जैसे कि: डॉक्टर की विजिट 4 बजे, जन्मदिन की पार्टी, स्विमिंग क्लास...",
+      "food_items_at_home": "घर में उपलब्ध खाने की चीज़ें",
+      "e_g_paneer_tomato_eggs_spinach_leftover": "जैसे पनीर, टमाटर, अंडे, पालक, बचा हुआ दाल…",
+      "e_g_family_outing_doctor_visit_party": "जैसे कि: फैमिली आउटिंग, डॉक्टर की विजिट, पार्टी...",
+      "e_g_paneer_tomato_eggs": "जैसे पनीर, टमाटर, अंडे…",
+      "mother_father_caregiver": "माँ, पिता, देखभाल करने वाला...",
+      "this_usually_takes_a_few_seconds": "इसमें आमतौर पर कुछ सेकंड लगते हैं।",
+      "plan_your_child_s_day": "अपने बच्चे का दिन plan करें"
+    },
+    "routines_id": {
+      "r_json_as_promise": "r.json()) को वायदे के रूप में",
+      "routine": "रूटीन",
+      "routine_not_found": "Routine नहीं मिली",
+      "mood": "मन: ",
+      "sleep": "नींद: ",
+      "activities": "गतिविधियाँ",
+      "add": "जोड़ें",
+      "swipe_to_skip_swipe_to_complete": "← छोड़ने के लिए swipe करें   •   पूरा करने के लिए swipe करें →",
+      "daily_summary": "दैनिक सारांश",
+      "for_tomorrow": "कल के लिए",
+      "undo": "पूर्ववत करें",
+      "delay_smart_cascade": "डिले (स्मार्ट कैसकेड)",
+      "cancel": "रद्द करें",
+      "edit_activity": "Activity edit करें",
+      "activity": "गतिविधि",
+      "activity_name": "Activity का नाम",
+      "time_e_g_7_30_am": "समय (जैसे 7:30 AM)",
+      "duration_minutes": "अवधि (मिनट)",
+      "changes_to_time_or_duration_will_smart_s": "समय या अवधि में बदलाव बाद की activities को smart-shift करेगा और सोने का समय सुरक्षित रखेगा।",
+      "save": "सहेजें",
+      "add_activity": "Activity add करें",
+      "ai_will_fit_it_into_the_schedule_and_adj": "AI इसे schedule में fit करेगा और बाकी दिन को adjust करेगा।",
+      "e_g_piano_practice": "जैसे Piano practice",
+      "routine_actions": "रूटीन क्रियाएं",
+      "delete_routine": "Routine delete करें?",
+      "this_will_permanently_remove_this_routin": "यह इस routine और उसके सभी tasks को हमेशा के लिए हटा देगा।",
+      "delete": "हटाएं",
+      "regenerating_with_ai": "AI से दोबारा बना रहे हैं…",
+      "amy_ai_suggests": "AMY AI सुझाव देता है",
+      "delayed": "⏱ देरी"
+    },
+    "routines_premium": {
+      "go_back": "वापस जाएँ",
+      "daily_rhythm": "दैनिक रिदम",
+      "swipe_cards_tap_for_details": "कार्ड स्वाइप करें · विवरण के लिए टैप करें",
+      "steps": "कदम",
+      "today_s_routines": "आज के रूटीन"
+    },
+    "sign_in": {
+      "check_your_inbox": "अपना इनबॉक्स देखें",
+      "back_to_sign_in": "साइन इन पर वापस जाएं",
+      "reset_password": "पासवर्ड रीसेट करें",
+      "you_example_com": "आप@example.com",
+      "send_reset_link": "रीसेट लिंक भेजें",
+      "forgot_password": "पासवर्ड भूल गए?",
+      "where_smart_parenting_begins": "जहाँ Smart Parenting की शुरुआत होती है",
+      "enter_your_email_and_we_ll_send_you_a_re": "अपना email डालें और हम आपको एक reset link भेजेंगे।"
+    },
+    "sign_up": {
+      "your_first_name": "आपका पहला नाम",
+      "you_example_com": "आप@example.com",
+      "min_8_characters": "कम से कम 8 वर्ण",
+      "where_smart_parenting_begins": "जहाँ Smart Parenting की शुरुआत होती है"
+    },
+    "tabs_coach": {
+      "loading_your_plan": "आपका plan लोड हो रहा है…",
+      "search_goals": "Goals खोजें",
+      "open_amy_audio_lessons": "Amy Audio Lessons खोलें",
+      "amy_audio_lessons": "Amy ऑडियो पाठ",
+      "search_goals_2": "Goals खोजें…",
+      "try_free": "✦ मुफ़्त में आज़माएं",
+      "categories": "श्रेणियाँ",
+      "amy_coach": "Amy कोच",
+      "view_my_coaching_progress": "मेरी coaching progress देखें",
+      "progress": "प्रगति",
+      "search_all_goals": "सभी goals खोजें…",
+      "back": "वापस",
+      "pick_any_that_apply": "जो भी लागू हो वो चुनें",
+      "back_to_topics": "← Topics पर वापस जाएं",
+      "building_your_plan": "आपका plan बन रहा है…",
+      "loading_3_new_strategies_for_you": "आपके लिए 3 नई strategies लोड हो रही हैं…",
+      "prev": "पिछला",
+      "next": "अगला",
+      "your_plan": "आपका PLAN",
+      "root_cause": "🧠 मूल कारण",
+      "why_this_works": "🔬 यह क्यों काम करता है",
+      "do_this": "✅ यह करें",
+      "real_example": "💬 असली उदाहरण",
+      "mistake_to_avoid": "⚠️ यह गलती न करें",
+      "do_this_today_under_5_min": "🎯 आज यह करें (5 मिनट से कम)",
+      "how_did_this_win_go": "यह जीत कैसी रही?",
+      "extra_support_added": "💛 अतिरिक्त सहायता जोड़ी गई",
+      "amy_s_guided_wins": "Amy की Guided Wins",
+      "pick_a_category_i_ll_build_a_12_step_pla": "एक category चुनें — मैं 12-step plan बनाऊंगी",
+      "open_amy_s_premium_guided_wins": "Amy की premium guided wins खोलें"
+    },
+    "tabs_hub": {
+      "2_effective_age": "= 2 && प्रभावी.उम्र",
+      "abacus_pro_zone": "🧮 अबेकस PRO ज़ोन"
+    },
+    "tabs_index": {
+      "add_child": "बच्चा जोड़ें",
+      "day_streak": "डे स्ट्रीक",
+      "15_hour": "= 15 && घंटा",
+      "amy_ai_suggests": "एमी एआई सुझाव देता है",
+      "all_looking_good_today": "आज सब कुछ बढ़िया है!",
+      "parent_score": "माता-पिता का स्कोर",
+      "completion": "पूर्णता",
+      "days_active": "सक्रिय दिन",
+      "complete_5_tasks_per_day_to_boost_your_s": "💡 अपना score बढ़ाने के लिए रोज़ 5+ tasks पूरे करें!",
+      "no_routines_yet": "अभी कोई routine नहीं है",
+      "no_behavior_logged_yet": "अभी कोई behavior दर्ज नहीं किया गया",
+      "rewards_points": "इनाम और अंक",
+      "pts": "अंक",
+      "badges_earned": "कमाए गए बैज",
+      "reward_store": "इनाम का स्टोर",
+      "redeem": "Redeem करें",
+      "view_all_rewards": "सभी Rewards देखें →",
+      "meet_amy_ai": "Amy AI से मिलें",
+      "experience_now": "✨ अभी अनुभव करें",
+      "explore_parenting_hub": "📖 Parenting Hub एक्सप्लोर करें",
+      "i_m_amy_your_smart_parenting_partner": "मैं Amy हूँ — आपकी स्मार्ट पेरेंटिंग पार्टनर ❤️"
+    },
+    "tabs_profile": {
+      "r_json_as_promise": "r.json()) को वादा के रूप में",
+      "your_parent_profile": "आपका माता-पिता प्रोफ़ाइल",
+      "my_parent_profile": "मेरा माता-पिता प्रोफ़ाइल",
+      "personal_info": "व्यक्तिगत जानकारी",
+      "e_g_ayesha_sarah_ahmed": "जैसे कि आयशा, सारा, अहमद...",
+      "this_name_appears_in_your_dashboard_gree": "यह नाम आपके डैशबोर्ड की ग्रीटिंग में दिखता है।",
+      "work_schedule": "कार्य शेड्यूल",
+      "free_available_slots": "फ्री / उपलब्ध स्लॉट",
+      "add_slot": "स्लॉट जोड़ें",
+      "food_preferences": "खाने की पसंद",
+      "e_g_peanuts_shellfish_dairy_gluten": "जैसे कि मूँगफली, शेलफिश, डेयरी, ग्लूटेन...",
+      "save_profile": "प्रोफ़ाइल Save करें",
+      "notifications": "सूचनाएँ",
+      "weekly_recap_email": "साप्ताहिक पुनर्कथन ईमेल",
+      "push_notification_settings": "पुश सूचना सेटिंग्स",
+      "app_language": "ऐप की भाषा",
+      "active": "✓ सक्रिय",
+      "my_recipes": "मेरे रेसिपी",
+      "invite_earn_premium": "Invite करें और Premium कमाएं",
+      "contact_us": "हमसे संपर्क करें",
+      "privacy_policy": "गोपनीयता नीति",
+      "sign_out": "Sign Out करें",
+      "developer_tools": "डेवलपर उपकरण"
+    },
+    "tabs_routines": {
+      "r_json_as_promise": "r.json()) को प्रॉमिस के रूप में",
+      "your_day_planned": "आपका दिन, योजनाबद्ध",
+      "routines": "रूटीन",
+      "daily_schedules_generated_by_ai": "AI द्वारा बनाए गए daily schedules",
+      "open_premium_routines_view": "Premium routines view खोलें",
+      "premium": "प्रीमियम",
+      "generate": "Generate करें",
+      "failed_to_load_routines": "Routines लोड नहीं हो सकीं",
+      "retry": "दोबारा कोशिश करें",
+      "add": "+ जोड़ें",
+      "no_routines_yet": "अभी कोई routine नहीं है",
+      "generate_first_routine": "पहली Routine Generate करें",
+      "this_week_s_routines": "इस हफ़्ते की ROUTINES"
+    },
+    "welcome": {
+      "amy": "एमी",
+      "nest": "नेस्ट",
+      "where_smart_parenting_starts": "जहाँ समझदार parenting की शुरुआत होती है",
+      "choose_language": "भाषा चुनें",
+      "kindly_sign_in": "कृपया Sign In करें",
+      "amy_coach": "एमी कोच",
+      "kids_control_center": "बच्चों का कंट्रोल सेंटर",
+      "coming_soon": "जल्द ही आ रहा है",
+      "everything_in_one_app": "सब कुछ एक ऐप में",
+      "14_science_backed_tools": "14+ विज्ञान आधारित उपकरण",
+      "from_newborns_to_teens_every_feature_gro": "नवजात से किशोरावस्था तक — हर फ़ीचर बाल मनोविज्ञान, AAP गाइडलाइन्स और विकासात्मक शोध पर आधारित है।",
+      "unlock_all_features_free": "सभी फ़ीचर्स मुफ़्त में अनलॉक करें",
+      "free_plan_included_upgrade_anytime": "Free plan शामिल है · कभी भी Upgrade करें",
+      "parent_stories": "पैरेंट स्टोरीज़",
+      "real_parents_real_results": "सच्चे पैरेंट, सच्चे परिणाम",
+      "thousands_of_families_use_amynest_every": "हज़ारों परिवार हर दिन AmyNest का उपयोग करके अपने बच्चों को खुशहाल, शांत और आत्मविश्वासी बना रहे हैं।"
+    },
+    "notifications_settings": {
+      "open_system_notification_settings": "सिस्टम नोटिफिकेशन सेटिंग्स खोलें",
+      "recent_deliveries": "हाल की डिलिवरियाँ",
+      "loading": "लोड हो रहा है…"
     }
   },
   "routines_generate": {
@@ -1771,6 +2096,342 @@
       "aria_preview_band": "उम्र {{label}} का कंटेंट प्रीव्यू करें",
       "now_pill": " · अभी",
       "for_age_band": "उम्र {{label}} के लिए"
+    }
+  },
+  "components": {
+    "action_buttons": {
+      "mark_this_win_as_worked": "इस जीत को कामयाब के रूप में मार्क करें",
+      "mark_this_win_as_partially_worked": "इस जीत को आंशिक रूप से कामयाब के रूप में मार्क करें",
+      "this_did_not_work_give_me_more_options": "यह काम नहीं आया, मुझे और विकल्प दें"
+    },
+    "ai_meal_generator": {
+      "generate_with_amy_ai": "Amy AI से जनरेट करें",
+      "type_what_you_want_to_cook": "आप क्या बनाना चाहते हैं, लिखें",
+      "e_g_quick_protein_tiffin_without_onion": "जैसे: प्याज के बिना क्विक प्रोटीन टिफ़िन",
+      "retry": "फिर से कोशिश करें",
+      "no_recipes_generated_try_a_different_des": "कोई रेसिपी नहीं बनी। एक अलग विवरण आजमाएँ।",
+      "veg": "🌿 शाकाहारी",
+      "ingredients": "🛒  सामग्री",
+      "steps": "👨‍🍳  कदम"
+    },
+    "amazing_facts": {
+      "no_facts_available_right_now": "अभी कोई तथ्य उपलब्ध नहीं है।",
+      "show_another_fact": "एक और तथ्य दिखाएँ"
+    },
+    "app_data_status_banner": {
+      "retry": "फिर से प्रयास करें",
+      "refreshing": "रिफ्रेश हो रहा है…",
+      "offline": "· ऑफ़लाइन"
+    },
+    "art_craft_reels": {
+      "swipe_up_down_to_browse": "ब्राउज़ करने के लिए ऊपर / नीचे स्वाइप करें",
+      "loading_videos": "वीडियो लोड हो रहा है…",
+      "try_again": "फिर से कोशिश करें",
+      "no_videos_available_right_now": "अभी कोई वीडियो उपलब्ध नहीं है।",
+      "tap_any_video_swipe_up_down_to_browse_al": "🎨 किसी भी वीडियो पर टैप करें · सभी ब्राउज़ करने के लिए ऊपर/नीचे स्वाइप करें",
+      "load_more_videos": "और वीडियो लोड करें",
+      "couldn_t_play_this_video": "यह वीडियो नहीं चला"
+    },
+    "child_card": {
+      "current_focus": "वर्तमान फोकस",
+      "continue_plan": "योजना जारी रखें"
+    },
+    "coach_card": {
+      "listen_in_english": "अंग्रेज़ी में सुनें",
+      "listen_in_hindi": "हिंदी में सुनें"
+    },
+    "coach_progress_card": {
+      "amy_coach": "एमी कोच",
+      "continue_amy_coaching": "एमी कोचिंग जारी रखें",
+      "continue_coaching": "कोचिंग जारी रखें"
+    },
+    "coloring_books": {
+      "loading_coloring_books": "रंग भरने की किताबें लोड हो रही हैं…",
+      "try_again": "फिर से कोशिश करें",
+      "all_caught_up": "सब कुछ मिल गया!",
+      "preview": "पूर्वावलोकन",
+      "prev": "पिछला",
+      "next": "अगला",
+      "pdf": "पीडीएफ"
+    },
+    "cry_insight": {
+      "beta_estimate_only": "बीटा · केवल अनुमान।",
+      "diaper_checked_recently": "क्या डायपर हाल ही में चेक किया गया?",
+      "feels_warm_has_temperature": "गरम लग रहा है / बुखार है?",
+      "analyse_using_context_only_no_audio": "केवल संदर्भ का उपयोग करके विश्लेषण करें (कोई ऑडियो नहीं)",
+      "likely_cause": "संभावित कारण",
+      "try_this": "यह प्रयास करें",
+      "worth_a_check": "चेक करने लायक।",
+      "recent_sessions": "हाल की सत्र"
+    },
+    "daily_puzzle": {
+      "no_puzzles_available_right_now": "अभी कोई पहेली उपलब्ध नहीं है।",
+      "session_complete": "सत्र पूरा!",
+      "start_a_new_session": "एक नया सत्र शुरू करें",
+      "no_puzzle": "कोई पहेली नहीं।",
+      "submit": "सबमिट करें",
+      "next": "अगला →"
+    },
+    "daily_story": {
+      "moral_of_the_story": "💡 कहानी का नैतिक",
+      "more_for_today": "आज के लिए और",
+      "show_another_featured": "एक और विशेषता दिखाएं"
+    },
+    "dashboard_header": {
+      "smart_parent": "स्मार्ट पेरेंट",
+      "open_profile": "प्रोफ़ाइल खोलें"
+    },
+    "error_fallback": {
+      "view_error_details": "त्रुटि विवरण देखें",
+      "close_error_details": "त्रुटि विवरण बंद करें"
+    },
+    "event_prep_generator_sheet": {
+      "amy_ai_generator": "✨ एमी एआई जनरेटर",
+      "any_surprise_me": "कोई / मुझे सरप्राइज करें",
+      "other_ideas": "अन्य विचार",
+      "low_cost": "💸 कम लागत",
+      "materials": "🧰 सामग्री",
+      "quick_steps": "📋 त्वरित कदम",
+      "speech": "🎤 भाषण",
+      "open_full_guide": "पूर्ण गाइड खोलें",
+      "tell_me_a_few_things_and_i_ll_suggest_th": "मुझे कुछ चीज़ें बताएं और मैं सही विचार सुझाऊंगा ❤️"
+    },
+    "fun_sheets": {
+      "try_again": "फिर से कोशिश करें",
+      "all_caught_up": "सब कुछ पक्का!",
+      "view": "देखें",
+      "prev": "पिछला",
+      "next": "अगला",
+      "pdf": "पीडीएफ"
+    },
+    "hub_debug_overlay": {
+      "open_hub_debug_overlay": "हब डिबग ओवरले खोलें",
+      "hub_debug_mobile_vs_web": "🐞 हब डिबग - मोबाइल बनाम वेब",
+      "section_1_matches_web_exactly": "✓ सेक्शन 1 वेब से बिल्कुल मेल खाता है।",
+      "order_mismatches": "ऑर्डर मेल नहीं खाता:",
+      "section_2_contents_match": "✓ सेक्शन 2 की सामग्री मेल खाती है।",
+      "missing_on_mobile": "मोबाइल पर गायब",
+      "extra_on_mobile": "मोबाइल पर अतिरिक्त",
+      "missing_on_mobile_web_has_mobile_doesn_t": "मोबाइल पर गायब (वेब पर है, मोबाइल पर नहीं)",
+      "extra_on_mobile_mobile_has_web_doesn_t": "मोबाइल पर अतिरिक्त (मोबाइल पर है, वेब पर नहीं)"
+    },
+    "infant_hub": {
+      "sleep_prediction": "नींद की भविष्यवाणी",
+      "beta": "बीटा",
+      "cry_insight": "रोने की जानकारी"
+    },
+    "infant_infant_health_tab": {
+      "vaccination_tracker": "वैक्सीनेशन ट्रैकर",
+      "done": "पूर्ण ·",
+      "v_agemonths": "v.आयुमहीने",
+      "missed": "छूट गया"
+    },
+    "insight_card": {
+      "read_more": "और पढ़ें"
+    },
+    "life_skills_zone": {
+      "loading": "लोड हो रहा है…"
+    },
+    "mobile_recipe_card": {
+      "ingredients": "सामग्री",
+      "steps": "चरण",
+      "nutrition_approx": "पोषण (लगभग)",
+      "cal": "कैलोरी",
+      "protein": "प्रोटीन",
+      "carbs": "कार्ब्स",
+      "fat": "वसा"
+    },
+    "nav_drawer": {
+      "dark_mode": "डार्क मोड",
+      "sign_out": "साइन आउट"
+    },
+    "neon_ring_hero": {
+      "meet": "मिलें"
+    },
+    "parent_command_center": {
+      "open": "खोलें",
+      "promise": "वादा",
+      "open_routine": "खोलें रूटीन",
+      "close": "बंद करें",
+      "try_next": "अगला आजमाएं",
+      "tap_to_start_a_timer": "टैप करके टाइमर शुरू करें",
+      "top": "सर्वोच्च",
+      "calming_tools_try_in_order": "शांत करने वाले उपकरण — क्रम में आजमाएँ",
+      "wind_down_plan_for_tonight": "आज रात के लिए वाइंड-डाउन प्लान",
+      "amy_ai_insight": "✨ एमी एआई अंतर्दृष्टि",
+      "undo_skip": "स्किप वापस करें",
+      "undo": "पूर्ववत करें",
+      "done": "हो गया",
+      "pick_a_10_min_play_tap_to_start": "10-मिनट का खेल चुनें — शुरू करने के लिए टैप करें",
+      "close_play_picker": "प्ले पिकर बंद करें",
+      "start": "शुरू करें",
+      "no_routine_for_today_yet": "आज के लिए कोई रूटीन नहीं अभी",
+      "generate_one_to_unlock_the_timeline_smar": "एक उत्पन्न करें ताकि समयरेखा + स्मार्ट सुझाव अनलॉक हो सके।",
+      "done_2": "हो गया",
+      "skipped": "छोड़ा गया",
+      "skip": "छोड़ें",
+      "done_with_my_child": "अपने बच्चे के साथ हो गया",
+      "today_s_timeline": "आज की टाइमलाइन",
+      "create_today_s_routine": "आज की दिनचर्या बनाएँ",
+      "open_today_s_routine": "आज की दिनचर्या खोलें"
+    },
+    "parenting_articles": {
+      "close_article": "लेख बंद करें",
+      "read_article": "लेख पढ़ें ›",
+      "read_aloud": "उच्चारण करें",
+      "all": "सभी"
+    },
+    "parent_tasks": {
+      "parent_tasks_for_today": "👨‍👩‍👧 आज के माता-पिता के कार्य"
+    },
+    "phone_auth_flow": {
+      "promise": "वादा",
+      "continue_with_phone": "फोन से जारी रखें",
+      "enter_your_mobile_number": "अपना मोबाइल नंबर डालें",
+      "cancel": "रद्द करें",
+      "send_otp": "OTP भेजें",
+      "enter_otp_sent_to": "OTP डालें जो भेजा गया है",
+      "verify_sign_in": "सत्यापित करें & साइन इन करें",
+      "resend_otp": "OTP फिर से भेजें",
+      "change_number": "नंबर बदलें"
+    },
+    "phonics_test_card": {
+      "phonics_test": "🔤 फोनीक्स टेस्ट"
+    },
+    "phonics_test_runner": {
+      "go_back": "वापस जाएं",
+      "sounds_to_revisit": "फिर से सुनने के लिए ध्वनियाँ",
+      "back_to_phonics_tests": "फोनीक्स टेस्ट में वापस जाएं"
+    },
+    "premium_splash": {
+      "meet": "मिलें",
+      "amy": "एमी",
+      "powered_by_amynest_ai": "एमीनेस्ट एआई द्वारा संचालित"
+    },
+    "printable_worksheets": {
+      "loading_worksheets": "वर्कशीट लोड हो रही हैं…",
+      "try_again": "फिर से प्रयास करें",
+      "search_worksheets": "वर्कशीट खोजें…",
+      "all_worksheets_viewed": "सभी वर्कशीट देखी गई",
+      "prev": "← पूर्व",
+      "next": "अगला →",
+      "void_styles_returntype": "अविराम; शैलियाँ: ReturnType",
+      "you_ve_gone_through_the_whole_collection": "आपने पूरी कलेक्शन देख ली है। नई वर्कशीट नियमित रूप से जोड़ी जा रही हैं!"
+    },
+    "profile_lock_screen": {
+      "meet_amy_ai": "मिलें एमी एआई",
+      "your_smart_parenting_partner": "आपका स्मार्ट पेरेंटिंग पार्टनर ✨",
+      "unlock_everything_in_2_steps": "2 स्टेप्स में सब कुछ अनलॉक करें",
+      "add_child_profile_step_1": "👶  बच्चे की प्रोफ़ाइल जोड़ें — चरण 1",
+      "add_parent_profile_step_2": "👤  माता-पिता की प्रोफ़ाइल जोड़ें — चरण 2",
+      "works_for_ages_0_15_science_backed_paren": "0–15 वर्ष के बच्चों के लिए काम करता है · विज्ञान-सिद्ध पालन-पोषण योजनाएँ"
+    },
+    "routine_carousel": {
+      "completed": "पूर्ण",
+      "pending": "लंबित"
+    },
+    "routine_inline_meals": {
+      "amy_ai_meal_suggestions": "एमी एआई भोजन सुझाव",
+      "no_suggestions_available": "कोई सुझाव उपलब्ध नहीं है।",
+      "ingredients": "सामग्री",
+      "steps": "चरण"
+    },
+    "routine_item_modal": {
+      "close_recipe": "पकवान बंद करें",
+      "generating_recipe": "पकवान तैयार कर रहा है…",
+      "prep": "तैयारी",
+      "cook": "पकाएं",
+      "serves": "सेवाएँ",
+      "ingredients": "सामग्री",
+      "instructions": "निर्देश",
+      "parent_tip": "💡 माता-पिता की टिप",
+      "back": "वापस",
+      "close": "बंद करें",
+      "tap_a_meal_to_view_its_recipe": "पकवान देखने के लिए टैप करें",
+      "instructions_2": "📋 निर्देश",
+      "delay_15m": "देरी +15म",
+      "skip": "छोड़ें",
+      "mark_as_pending_again": "फिर से लंबित के रूप में चिह्नित करें",
+      "today_s_meal_options": "🍽️ आज के भोजन के विकल्प"
+    },
+    "skills_focus": {
+      "4_high_impact_areas_to_focus_on_this_wee": "इस सप्ताह ध्यान देने के लिए 4 उच्च-प्रभाव क्षेत्र।"
+    },
+    "sleep_predict": {
+      "beta_guidance_only": "बीटा · केवल मार्गदर्शन।",
+      "loading_prediction": "भविष्यवाणी लोड हो रही है…",
+      "pressure": "दबाव",
+      "start_wind_down_now": "अब शिथिल होना शुरू करें",
+      "log_sleep": "नींद दर्ज करें",
+      "nap_started": "नैप शुरू हुआ",
+      "bedtime": "सोने का समय",
+      "refresh": "रिफ्रेश"
+    },
+    "slide_to_complete": {
+      "release_to_complete": "✅ पूरा करने के लिए छोड़ें!"
+    },
+    "smart_math_tricks": {
+      "how_it_works": "यह कैसे काम करता है",
+      "example": "उदाहरण",
+      "try_it": "✏️ इसे आज़माएँ",
+      "check": "जांचें ✓",
+      "back_to_trick": "← ट्रिक पर वापस",
+      "2_new_tricks_every_day": "हर दिन 2 नए ट्रिक्स ✨",
+      "new_tricks_unlock_tomorrow": "नए ट्रिक्स कल अनलॉक होंगे! 🌅",
+      "practice_complete": "अभ्यास पूरा!",
+      "try_again": "🔄 फिर से आज़माएँ",
+      "check_answer": "जवाब जांचें ✓"
+    },
+    "smart_meal_suggestions": {
+      "smart_tiffin_meal_suggestions": "स्मार्ट टिफिन और भोजन सुझाव",
+      "personalised_by_region_fridge_age": "क्षेत्र, फ्रिज और उम्र के अनुसार व्यक्तिगत",
+      "kids": "बच्चे",
+      "parent": "अभिभावक",
+      "e_g_paneer": "जैसे कि पनीर",
+      "add": "जोड़ें",
+      "find_what_i_can_cook": "🔍 मैं क्या बना सकता हूँ खोजें",
+      "no_meals_found_try_removing_a_fridge_ite": "कोई भोजन नहीं मिला। कृपया एक फ्रिज आइटम हटाने का प्रयास करें।",
+      "female": "♀ महिला",
+      "male": "♂ पुरुष",
+      "ingredients": "🛒  सामग्री",
+      "steps": "👨‍🍳  चरण",
+      "what_s_in_your_fridge_optional": "आपके फ्रिज में क्या है? (ऐच्छिक)"
+    },
+    "story_player": {
+      "skipping_automatically": "स्वतः छोड़ना…",
+      "replay": "दोबारा चलाएँ",
+      "next": "आगे",
+      "up_next": "अगला",
+      "watch_again": "फिर से देखें",
+      "play_now": "अभी खेलें",
+      "all_stories_watched": "सभी कहानियाँ देखी जा चुकी हैं!",
+      "starting_over": "फिर से शुरू कर रहे हैं…",
+      "couldn_t_play_this_story": "यह कहानी नहीं खेला जा सका।"
+    },
+    "swipeable_card": {},
+    "tiffin_feedback_panel": {
+      "helps_amy_learn_what_your_child_loves": "ऐमी को यह जानने में मदद करता है कि आपके बच्चे को क्या पसंद है",
+      "undo": "पूर्ववत करें",
+      "suggestions_are_loading_pick_what_you_pa": "सुझाव लोड हो रहे हैं - जब वे दिखें तो जो आपने पैक किया है उसे चुनें।",
+      "top_liked_foods": "❤  सबसे पसंदीदा खाद्य पदार्थ",
+      "which_meal": "कौन सा खाना?",
+      "today_s_tiffin_feedback": "आज का टिफिन फीडबैक",
+      "how_was_today_s_tiffin": "आज का टिफिन कैसा था?"
+    },
+    "voice_settings_panel": {
+      "voice_settings": "🎙 स्वरों की सेटिंग",
+      "read_aloud": "पढ़ें तेज़",
+      "language": "भाषा",
+      "voice_gender": "स्वर का लिंग",
+      "voice": "स्वर",
+      "powered_by_elevenlabs_ai": "ElevenLabs AI द्वारा संचालित 🎙"
+    },
+    "phonics_learning": {
+      "todays_activity": "आज की गतिविधि",
+      "pick_another_sound": "दूसरी ध्वनि चुनें",
+      "practice_sounds": "ध्वनियाँ अभ्यास करें",
+      "tap_any_tile_to_hear_the_sound": "ध्वनि सुनने के लिए किसी भी टाइल पर टैप करें",
+      "header_title": "🔤 फ़ोनिक्स सीखें"
     }
   }
 }

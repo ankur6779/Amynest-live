@@ -992,7 +992,8 @@
       "color_green": "Hara",
       "color_yellow": "Peela",
       "color_purple": "Baingani",
-      "color_orange": "Narangi"
+      "color_orange": "Narangi",
+      "now_t_born": "ab - t.born"
     },
     "onboarding_chat": {
       "amy_intro": "Hi {{name}}! Main Amy hoon, aapki parenting coach. Chaliye aapka profile set up karte hain — isme lagbhag 2 minutes lagenge!",
@@ -1240,7 +1241,8 @@
       "status_available": "AVAILABLE",
       "status_redeemed": "REDEEMED",
       "status_expired": "EXPIRED",
-      "status_used": "USED"
+      "status_used": "USED",
+      "promise": "vachan"
     },
     "abacus": {
       "loading": "Abacus load ho raha hai…",
@@ -1289,6 +1291,329 @@
       "no_scores_yet": "Is hafte abhi koi score nahi — pehle bano!",
       "you": "tum",
       "pts": "pts"
+    },
+    "audio_lessons": {
+      "amy_audio_lessons": "Amy audio lessons"
+    },
+    "babysitters": {
+      "manage_your_trusted_helpers": "Apne trusted helpers ko manage karo",
+      "no_babysitters_yet": "Abhi koi babysitter nahi hai",
+      "add_your_first_sitter": "Apna pehla sitter add karo",
+      "add_babysitter": "Babysitter Add Karo",
+      "full_name": "poora naam *",
+      "e_g_aisha_malik": "udaharan: Aisha Malik",
+      "mobile_number": "mobile number",
+      "notes": "notes",
+      "special_instructions_allergies_etc": "vishesh nirdesh, allergy, etc.",
+      "cancel": "cancel",
+      "add_sitter": "Sitter Add Karo",
+      "add_a_sitter_so_amy_can_tailor_routines": "Ek sitter add karo taaki Amy unki duty ke time ke liye routines tailor kar sake."
+    },
+    "behavior_history": {
+      "behavior_history": "vyavhaar itihas",
+      "last_90_days": "pichle 90 din",
+      "no_history_yet": "Abhi koi history nahi hai"
+    },
+    "behavior": {
+      "behavior_tracker": "vyavhaar tracker",
+      "log_moments_amy_spots_the_patterns": "Moments log karo — Amy patterns dhundh leti hai",
+      "add_a_child_to_start_tracking": "Tracking shuru karne ke liye ek child add karo",
+      "today": "Aaj",
+      "view_full_behavior_history": "Full behavior history dekho"
+    },
+    "children_id": {
+      "r_json_as_promise": "r.json()) ke roop mein vachan",
+      "change_child_photo": "Child ki photo change karo",
+      "remove_photo": "Photo remove karo",
+      "school_going": "school ja raha hai",
+      "food_type": "khane ka prakar",
+      "travel_mode": "yatra mode",
+      "e_g_bus_auto_cycle": "udaharan: Bus, Auto, Cycle",
+      "none": "koi nahi",
+      "daily_schedule": "dainik karyakram",
+      "preferences": "pasand",
+      "remove_child": "Child hatao"
+    },
+    "children_new": {
+      "add_child": "Child add karo",
+      "add_child_photo": "Child ki photo add karo",
+      "enter_name": "Naam likho",
+      "school_going": "school ja raha hai",
+      "food_preference": "khane ki pasand",
+      "none": "koi nahi"
+    },
+    "coach_premium": {
+      "close_coach": "Coach band karo",
+      "amy_is_thinking": "Amy soch rahi hai…",
+      "curating_your_personal_wins": "Tumhari personal wins curate ho rahi hain"
+    },
+    "onboarding": {
+      "amy": "Amy"
+    },
+    "paywall": {
+      "back": "back",
+      "close": "close",
+      "or_choose_an_alternative": "ya koi alternative choose karo",
+      "alternative_billing_pay_with_upi_or_card": "Alternative billing: Razorpay se UPI ya Card se pay karo",
+      "pay_via_upi_card_alternative": "UPI / Card se pay karo (Alternative)",
+      "10_000_parents": "10,000+ parents",
+      "cancel_anytime": "Kabhi bhi cancel karo",
+      "secure_payment": "secure payment",
+      "maybe_later": "Baad mein sahi"
+    },
+    "progress": {
+      "insights": "Jankari",
+      "view_full_insights": "Full insights dekho",
+      "week_over_week_trends_per_child_breakdow": "Week-over-week trends, har child ka breakdown & aur bahut kuch",
+      "ask_amy_about_your_progress": "Amy se apni progress ke baare mein poocho",
+      "get_a_personalized_weekly_read_out": "Personalized weekly read-out pao"
+    },
+    "ptm_prep": {
+      "ptm_prep_assistant": "PTM taiyari assistant",
+      "start_a_ptm_prep": "PTM Prep shuru karein",
+      "discard": "🗑 Discard karein",
+      "class_grade": "Class / grade",
+      "no_questions_yet": "Abhi koi questions nahi.",
+      "add_your_own_question": "✏️ Apna question add karein",
+      "e_g_is_my_child_enjoying_art_class": "e.g. Kya mera child art class enjoy kar raha hai?",
+      "add": "Add karein",
+      "quick_notes": "📋 Quick notes",
+      "what_did_the_teacher_say": "Teacher ne kya kaha?",
+      "back": "← Peeche",
+      "build_action_plan": "Action plan banao",
+      "action_plan": "🎯 Action plan",
+      "re_generate_from_notes": "Notes se re-generate karein",
+      "add_notes_in_the_attend_step_then_come_b": "Attend step mein notes add karo, phir yahan wapas aao — Amy tumhare liye action items nikaal degi.",
+      "save_finish": "Save & finish karein",
+      "actions": "Actions",
+      "delete": "🗑 Delete karein",
+      "a_simple_prepare_attend_act_flow_for_you": "Aapke child ki next Parent-Teacher Meeting ke liye ek simple Prepare → Attend → Act flow.",
+      "i_m_ready_start_the_meeting": "Main ready hoon — meeting shuru karein",
+      "tick_off_questions_you_ve_asked": "Jo questions pooch liye unhe tick off karein",
+      "teacher_s_name": "Teacher ka naam"
+    },
+    "recipes": {
+      "recipe_name": "Recipe Name *",
+      "e_g_idli_paneer_paratha_egg_bhurji": "e.g. Idli, Paneer Paratha, Egg Bhurji",
+      "prep_time": "Prep Time",
+      "10_min": "10 min",
+      "cook_time": "Cook Time",
+      "15_min": "15 min",
+      "servings": "Servings",
+      "1_child": "1 child",
+      "ingredients_one_per_line": "Ingredients * (ek per line)",
+      "steps_one_per_line": "Steps * (ek per line)",
+      "parent_tip_optional": "Parent Tip (optional)",
+      "e_g_add_ghee_for_extra_flavour": "e.g. extra flavour ke liye ghee add karo",
+      "my_recipes": "My Recipes",
+      "no_recipes_saved_yet": "Abhi tak koi recipe save nahi hui",
+      "add_your_first_recipe": "Apni pehli recipe add karo",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "rewards": {
+      "rewards": "Rewards",
+      "your_points": "YOUR POINTS",
+      "earned_across_routines_games_behaviour": "Routines, games & behaviour se kamaaye 🎉",
+      "badges_earned": "🏆 Badges Earned",
+      "rewards_shop": "🎁 Rewards Shop",
+      "spend_points_on_real_world_treats": "Real-world treats pe points spend karo",
+      "recent_redemptions": "📜 Recent Redemptions",
+      "recent_earnings": "✨ Recent Earnings"
+    },
+    "routines_generate": {
+      "add_a_child_first": "Pehle ek child add karo",
+      "amy_needs_to_know_about_your_child_befor": "Amy ko aapke child ke baare mein jaanna hai tabhi wo unka din plan kar sakti hai.",
+      "add_child": "Child add karo",
+      "amy_will_build_a_smart_age_appropriate_r": "Amy seconds mein ek smart, age-appropriate routine bana degi.",
+      "school_day": "School day hai?",
+      "anything_special_today": "Aaj kuch special hai?",
+      "optional": "(optional)",
+      "e_g_doctor_visit_at_4pm_birthday_party_s": "e.g. doctor visit at 4pm, birthday party, swimming class…",
+      "food_items_at_home": "Ghar mein jo food items hain",
+      "e_g_paneer_tomato_eggs_spinach_leftover": "e.g. paneer, tamatar, eggs, palak, bacha hua dal…",
+      "e_g_family_outing_doctor_visit_party": "e.g. family outing, doctor visit, party…",
+      "e_g_paneer_tomato_eggs": "e.g. paneer, tamatar, eggs…",
+      "mother_father_caregiver": "Mother, Father, Caregiver…",
+      "this_usually_takes_a_few_seconds": "Isme usually kuch seconds lagte hain.",
+      "plan_your_child_s_day": "Apne bachche ka din plan karein"
+    },
+    "routines_id": {
+      "r_json_as_promise": "r.json()) ko promise ke roop mein",
+      "routine": "Routine",
+      "routine_not_found": "Routine nahi mili",
+      "mood": "Mood: ",
+      "sleep": "Sleep: ",
+      "activities": "Activities",
+      "add": "Add",
+      "swipe_to_skip_swipe_to_complete": "← Skip karne ke liye swipe karein   •   Complete karne ke liye swipe karein →",
+      "daily_summary": "Daily Summary",
+      "for_tomorrow": "KAL KE LIYE",
+      "undo": "UNDO",
+      "delay_smart_cascade": "DELAY (smart cascade)",
+      "cancel": "Cancel",
+      "edit_activity": "Activity edit karein",
+      "activity": "Activity",
+      "activity_name": "Activity ka naam",
+      "time_e_g_7_30_am": "Time (jaise 7:30 AM)",
+      "duration_minutes": "Duration (minutes)",
+      "changes_to_time_or_duration_will_smart_s": "Time ya duration mein changes baad ki activities ko smart-shift karega aur bedtime protect karega.",
+      "save": "Save",
+      "add_activity": "Activity add karein",
+      "ai_will_fit_it_into_the_schedule_and_adj": "AI ise schedule mein fit karega aur baaki din ko adjust karega.",
+      "e_g_piano_practice": "jaise Piano practice",
+      "routine_actions": "Routine actions",
+      "delete_routine": "Routine delete karein?",
+      "this_will_permanently_remove_this_routin": "Yeh is routine aur uske saare tasks ko permanently remove kar dega.",
+      "delete": "Delete",
+      "regenerating_with_ai": "AI se dobara bana rahe hain…",
+      "amy_ai_suggests": "AMY AI SUGGESTS",
+      "delayed": "⏱ Delayed"
+    },
+    "routines_premium": {
+      "go_back": "Wapas jao",
+      "daily_rhythm": "Daily Rhythm",
+      "swipe_cards_tap_for_details": "Swipe cards · details ke liye tap karo",
+      "steps": "STEPS",
+      "today_s_routines": "TODAY'S ROUTINES"
+    },
+    "sign_in": {
+      "check_your_inbox": "Apna inbox check karo",
+      "back_to_sign_in": "Back to Sign in",
+      "reset_password": "Password reset karo",
+      "you_example_com": "you@example.com",
+      "send_reset_link": "Reset link bhejo",
+      "forgot_password": "Password bhool gaye?",
+      "where_smart_parenting_begins": "Jahan Smart Parenting shuru hoti hai",
+      "enter_your_email_and_we_ll_send_you_a_re": "Apna email daalo aur hum tumhe ek reset link bhejenge."
+    },
+    "sign_up": {
+      "your_first_name": "Tumhara first name",
+      "you_example_com": "you@example.com",
+      "min_8_characters": "Min. 8 characters",
+      "where_smart_parenting_begins": "Jahan Smart Parenting shuru hoti hai"
+    },
+    "tabs_coach": {
+      "loading_your_plan": "Tumhara plan load ho raha hai…",
+      "search_goals": "Goals search karo",
+      "open_amy_audio_lessons": "Amy Audio Lessons kholo",
+      "amy_audio_lessons": "Amy Audio Lessons",
+      "search_goals_2": "Goals search karo…",
+      "try_free": "✦ Try Free karo",
+      "categories": "Categories",
+      "amy_coach": "Amy Coach",
+      "view_my_coaching_progress": "Meri coaching progress dekho",
+      "progress": "Progress",
+      "search_all_goals": "Saare goals search karo…",
+      "back": "Back",
+      "pick_any_that_apply": "Jo bhi apply ho wo pick karo",
+      "back_to_topics": "← Topics par wapas jao",
+      "building_your_plan": "Tumhara plan ban raha hai…",
+      "loading_3_new_strategies_for_you": "Tumhare liye 3 naye strategies load ho rahe hain…",
+      "prev": "Prev",
+      "next": "Agla",
+      "your_plan": "TUMHARA PLAN",
+      "root_cause": "🧠 Root Cause",
+      "why_this_works": "🔬 YEH KYU KAAM KARTA HAI",
+      "do_this": "✅ YEH KARO",
+      "real_example": "💬 Real Example",
+      "mistake_to_avoid": "⚠️ YEH GALTI MAT KARO",
+      "do_this_today_under_5_min": "🎯 DO THIS TODAY (5 min se kam)",
+      "how_did_this_win_go": "Yeh win kaisi rahi?",
+      "extra_support_added": "💛 Extra Support Added",
+      "amy_s_guided_wins": "Amy ki Guided Wins",
+      "pick_a_category_i_ll_build_a_12_step_pla": "Ek category chuno — main 12-step plan banaungi",
+      "open_amy_s_premium_guided_wins": "Amy ki premium guided wins kholo"
+    },
+    "tabs_hub": {
+      "2_effective_age": "= 2 && effective.age",
+      "abacus_pro_zone": "🧮 Abacus PRO Zone"
+    },
+    "tabs_index": {
+      "add_child": "Child add karo",
+      "day_streak": "Day Streak",
+      "15_hour": "= 15 && hour",
+      "amy_ai_suggests": "Amy AI suggests",
+      "all_looking_good_today": "Aaj sab kuch achha lag raha hai!",
+      "parent_score": "Parent Score",
+      "completion": "Completion",
+      "days_active": "Active days",
+      "complete_5_tasks_per_day_to_boost_your_s": "💡 Score badhane ke liye roz 5+ tasks complete karo!",
+      "no_routines_yet": "Abhi koi routine nahi hai",
+      "no_behavior_logged_yet": "Abhi koi behavior log nahi hua",
+      "rewards_points": "Rewards & Points",
+      "pts": "pts",
+      "badges_earned": "BADGES EARNED",
+      "reward_store": "REWARD STORE",
+      "redeem": "Redeem karo",
+      "view_all_rewards": "Saare Rewards dekho →",
+      "meet_amy_ai": "Amy AI se milo",
+      "experience_now": "✨ Experience Now",
+      "explore_parenting_hub": "📖 Parenting Hub explore karo",
+      "i_m_amy_your_smart_parenting_partner": "Main Amy hoon — aapki smart parenting partner ❤️"
+    },
+    "tabs_profile": {
+      "r_json_as_promise": "r.json()) as Promise",
+      "your_parent_profile": "YOUR PARENT PROFILE",
+      "my_parent_profile": "My Parent Profile",
+      "personal_info": "Personal Info",
+      "e_g_ayesha_sarah_ahmed": "e.g. Ayesha, Sarah, Ahmed...",
+      "this_name_appears_in_your_dashboard_gree": "Yeh naam aapke dashboard greeting mein dikhta hai.",
+      "work_schedule": "Work Schedule",
+      "free_available_slots": "Free / Available Slots",
+      "add_slot": "Add Slot",
+      "food_preferences": "Food Preferences",
+      "e_g_peanuts_shellfish_dairy_gluten": "e.g. peanuts, shellfish, dairy, gluten...",
+      "save_profile": "Profile Save karo",
+      "notifications": "Notifications",
+      "weekly_recap_email": "Weekly recap email",
+      "push_notification_settings": "Push notification settings",
+      "app_language": "App Language",
+      "active": "✓ Active",
+      "my_recipes": "Mere recipes",
+      "invite_earn_premium": "Invite karo & Premium Earn karo",
+      "contact_us": "Contact karo humse",
+      "privacy_policy": "Gopniyata niti",
+      "sign_out": "Sign Out karo",
+      "developer_tools": "Developer tools"
+    },
+    "tabs_routines": {
+      "r_json_as_promise": "r.json()) ko promise ke roop mein",
+      "your_day_planned": "TUMHARA DIN, PLANNED",
+      "routines": "Routines",
+      "daily_schedules_generated_by_ai": "AI se generate hue daily schedules",
+      "open_premium_routines_view": "Premium routines view kholo",
+      "premium": "Premium",
+      "generate": "Generate karo",
+      "failed_to_load_routines": "Routines load nahi hui",
+      "retry": "Retry karo",
+      "add": "+ add karo",
+      "no_routines_yet": "Abhi koi routine nahi hai",
+      "generate_first_routine": "Pehli Routine Generate karo",
+      "this_week_s_routines": "IS HAFTE KI ROUTINES"
+    },
+    "welcome": {
+      "amy": "Amy",
+      "nest": "Nest",
+      "where_smart_parenting_starts": "Jahan Smart Parenting shuru hoti hai",
+      "choose_language": "Language choose karo",
+      "kindly_sign_in": "Please Sign In karo",
+      "amy_coach": "Amy Coach",
+      "kids_control_center": "Bachchon ka Control Center",
+      "coming_soon": "Jald hi aa raha hai",
+      "everything_in_one_app": "Sab kuch ek app mein",
+      "14_science_backed_tools": "14+ science-backed tools",
+      "from_newborns_to_teens_every_feature_gro": "Newborns se teens tak — har feature child psychology, AAP guidelines aur developmental research pe based hai.",
+      "unlock_all_features_free": "Unlock karo sab features free mein",
+      "free_plan_included_upgrade_anytime": "Free plan included · Upgrade karo kabhi bhi",
+      "parent_stories": "Parent stories",
+      "real_parents_real_results": "Real parents, real results",
+      "thousands_of_families_use_amynest_every": "Hazaaron families har roz AmyNest use karti hain apne bachon ko happier, calmer aur confident banane ke liye."
+    },
+    "notifications_settings": {
+      "open_system_notification_settings": "System notification settings kholein",
+      "recent_deliveries": "Haal ki deliveries",
+      "loading": "Loading ho raha hai…"
     }
   },
   "routines_generate": {
@@ -1771,6 +2096,342 @@
       "aria_preview_band": "Age {{label}} content preview karein",
       "now_pill": " · Abhi",
       "for_age_band": "Age {{label}} ke liye"
+    }
+  },
+  "components": {
+    "action_buttons": {
+      "mark_this_win_as_worked": "Is win ko worked mark karo",
+      "mark_this_win_as_partially_worked": "Is win ko partially worked mark karo",
+      "this_did_not_work_give_me_more_options": "Yeh kaam nahi aaya, mujhe aur options do"
+    },
+    "ai_meal_generator": {
+      "generate_with_amy_ai": "Generate karo Amy AI se",
+      "type_what_you_want_to_cook": "Type karo kya banana chahte ho",
+      "e_g_quick_protein_tiffin_without_onion": "Jaise: pyaz ke bina quick protein tiffin",
+      "retry": "Retry karo",
+      "no_recipes_generated_try_a_different_des": "Koi recipe nahi bani. Ek alag description aazmaao.",
+      "veg": "🌿 Veg",
+      "ingredients": "🛒 Ingredients",
+      "steps": "👨‍🍳 Steps"
+    },
+    "amazing_facts": {
+      "no_facts_available_right_now": "Abhi koi fact available nahi hai.",
+      "show_another_fact": "Ek aur fact dikhao"
+    },
+    "app_data_status_banner": {
+      "retry": "Try again",
+      "refreshing": "Refreshing ho raha hai…",
+      "offline": "· offline"
+    },
+    "art_craft_reels": {
+      "swipe_up_down_to_browse": "Browse karne ke liye upar / neeche swipe karo",
+      "loading_videos": "Loading videos ho raha hai…",
+      "try_again": "Phir se koshish karein",
+      "no_videos_available_right_now": "Abhi koi video available nahi hai.",
+      "tap_any_video_swipe_up_down_to_browse_al": "🎨 Kisi bhi video par tap karo · sab browse karne ke liye upar/neeche swipe karo",
+      "load_more_videos": "Aur videos load karein",
+      "couldn_t_play_this_video": "Yeh video nahi chala"
+    },
+    "child_card": {
+      "current_focus": "Vartaman focus",
+      "continue_plan": "Yojana jaari rakhein"
+    },
+    "coach_card": {
+      "listen_in_english": "English mein sunen",
+      "listen_in_hindi": "Hindi mein sunen"
+    },
+    "coach_progress_card": {
+      "amy_coach": "AMY COACH",
+      "continue_amy_coaching": "Amy coaching jaari rakhein",
+      "continue_coaching": "Coaching jaari rakhein"
+    },
+    "coloring_books": {
+      "loading_coloring_books": "Loading coloring books ho rahi hain…",
+      "try_again": "Phir se koshish karein",
+      "all_caught_up": "Sab kuch mil gaya!",
+      "preview": "Purvavalokan",
+      "prev": "Pichla",
+      "next": "Agla",
+      "pdf": "PDF"
+    },
+    "cry_insight": {
+      "beta_estimate_only": "Beta · Keval anuman.",
+      "diaper_checked_recently": "Kya diaper haal hi mein check kiya gaya?",
+      "feels_warm_has_temperature": "Garam lag raha hai / bukhar hai?",
+      "analyse_using_context_only_no_audio": "Keval sandarbh ka upyog karke vishleshan karein (koi audio nahi)",
+      "likely_cause": "Sambhavit kaaran",
+      "try_this": "Yeh prayas karein",
+      "worth_a_check": "Check karne layak.",
+      "recent_sessions": "Haal ki sessions"
+    },
+    "daily_puzzle": {
+      "no_puzzles_available_right_now": "Abhi koi puzzle available nahi hai.",
+      "session_complete": "Session poora!",
+      "start_a_new_session": "Ek naya session shuru karein",
+      "no_puzzle": "Koi puzzle nahi.",
+      "submit": "Submit karein",
+      "next": "Agla →"
+    },
+    "daily_story": {
+      "moral_of_the_story": "💡 Kahani ka naitik",
+      "more_for_today": "Aaj ke liye aur",
+      "show_another_featured": "Ek aur featured dikhayein"
+    },
+    "dashboard_header": {
+      "smart_parent": "Smart Parent",
+      "open_profile": "Profile kholen"
+    },
+    "error_fallback": {
+      "view_error_details": "Error details dekhein",
+      "close_error_details": "Error details band karein"
+    },
+    "event_prep_generator_sheet": {
+      "amy_ai_generator": "✨ Amy AI Generator",
+      "any_surprise_me": "Koi / Mujhe surprise karein",
+      "other_ideas": "Other ideas",
+      "low_cost": "💸 Low cost",
+      "materials": "🧰 Materials",
+      "quick_steps": "📋 Quick steps",
+      "speech": "🎤 Speech",
+      "open_full_guide": "Purn guide kholen",
+      "tell_me_a_few_things_and_i_ll_suggest_th": "Mujhe kuch cheezein bataein aur main sahi vichar sujhaunga ❤️"
+    },
+    "fun_sheets": {
+      "try_again": "Phir se koshish karein",
+      "all_caught_up": "Sab kuch pakka!",
+      "view": "Dekhna",
+      "prev": "Pichla",
+      "next": "Agla",
+      "pdf": "PDF"
+    },
+    "hub_debug_overlay": {
+      "open_hub_debug_overlay": "Hub debug overlay kholna",
+      "hub_debug_mobile_vs_web": "🐞 Hub Debug - Mobile vs Web",
+      "section_1_matches_web_exactly": "✓ Section 1 web se bilkul milta hai.",
+      "order_mismatches": "Order mil nahi raha:",
+      "section_2_contents_match": "✓ Section 2 ki samagri milti hai.",
+      "missing_on_mobile": "Mobile pe gayab",
+      "extra_on_mobile": "Mobile pe extra",
+      "missing_on_mobile_web_has_mobile_doesn_t": "Mobile pe gayab (web par hai, mobile par nahi)",
+      "extra_on_mobile_mobile_has_web_doesn_t": "Mobile pe extra (mobile pe hai, web pe nahi)"
+    },
+    "infant_hub": {
+      "sleep_prediction": "Sleep prediction",
+      "beta": "BETA",
+      "cry_insight": "Cry insight"
+    },
+    "infant_infant_health_tab": {
+      "vaccination_tracker": "Vaccination tracker",
+      "done": "Done ·",
+      "v_agemonths": "v.ageMonths",
+      "missed": "Missed"
+    },
+    "insight_card": {
+      "read_more": "Aur padhna"
+    },
+    "life_skills_zone": {
+      "loading": "Load ho raha hai…"
+    },
+    "mobile_recipe_card": {
+      "ingredients": "Samaagri",
+      "steps": "Charan",
+      "nutrition_approx": "Poshan (lagbhag)",
+      "cal": "Calorie",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fat": "Vasa"
+    },
+    "nav_drawer": {
+      "dark_mode": "Dark mode",
+      "sign_out": "Sign out"
+    },
+    "neon_ring_hero": {
+      "meet": "Milenge"
+    },
+    "parent_command_center": {
+      "open": "Kholo",
+      "promise": "Vaada",
+      "open_routine": "Kholo routine",
+      "close": "Band karo",
+      "try_next": "Agla aazmaaye",
+      "tap_to_start_a_timer": "Tap karke timer shuru karo",
+      "top": "Top",
+      "calming_tools_try_in_order": "Shaant karne wale tools — kram mein aazmaao",
+      "wind_down_plan_for_tonight": "Aaj raat ke liye wind-down plan",
+      "amy_ai_insight": "✨ AMY AI INSIGHT",
+      "undo_skip": "Skip wapas karo",
+      "undo": "Pooch vapasi kare",
+      "done": "Ho gaya",
+      "pick_a_10_min_play_tap_to_start": "10-min ka play chuno — shuru karne ke liye tap karo",
+      "close_play_picker": "Play picker band karo",
+      "start": "Shuru karo",
+      "no_routine_for_today_yet": "Aaj ke liye koi routine nahi abhi",
+      "generate_one_to_unlock_the_timeline_smar": "Ek generate karo taaki timeline + smart suggestions unlock ho sake.",
+      "done_2": "Ho gaya",
+      "skipped": "SKIPPED",
+      "skip": "Skip",
+      "done_with_my_child": "Done with my child",
+      "today_s_timeline": "TODAY'S TIMELINE",
+      "create_today_s_routine": "Create today's routine",
+      "open_today_s_routine": "Open today's routine"
+    },
+    "parenting_articles": {
+      "close_article": "Close article",
+      "read_article": "Read article ›",
+      "read_aloud": "Read aloud",
+      "all": "All"
+    },
+    "parent_tasks": {
+      "parent_tasks_for_today": "👨‍👩‍👧 Parent Tasks for Today"
+    },
+    "phone_auth_flow": {
+      "promise": "Promise",
+      "continue_with_phone": "Continue with Phone",
+      "enter_your_mobile_number": "Enter your mobile number",
+      "cancel": "Cancel",
+      "send_otp": "Send OTP",
+      "enter_otp_sent_to": "Enter OTP sent to",
+      "verify_sign_in": "Verify & Sign In",
+      "resend_otp": "Resend OTP",
+      "change_number": "Change number"
+    },
+    "phonics_test_card": {
+      "phonics_test": "🔤 Phonics Test"
+    },
+    "phonics_test_runner": {
+      "go_back": "Go back",
+      "sounds_to_revisit": "Sounds to revisit",
+      "back_to_phonics_tests": "Back to Phonics Tests"
+    },
+    "premium_splash": {
+      "meet": "MEET",
+      "amy": "AMY",
+      "powered_by_amynest_ai": "Powered by AmyNest AI"
+    },
+    "printable_worksheets": {
+      "loading_worksheets": "Loading worksheets…",
+      "try_again": "Try again",
+      "search_worksheets": "Search worksheets…",
+      "all_worksheets_viewed": "All worksheets viewed",
+      "prev": "← Prev",
+      "next": "Next →",
+      "void_styles_returntype": "void; styles: ReturnType",
+      "you_ve_gone_through_the_whole_collection": "You've gone through the whole collection. New worksheets added regularly!"
+    },
+    "profile_lock_screen": {
+      "meet_amy_ai": "MEET AMY AI",
+      "your_smart_parenting_partner": "Your Smart Parenting Partner ✨",
+      "unlock_everything_in_2_steps": "Unlock everything in 2 steps",
+      "add_child_profile_step_1": "👶  Add Child Profile — Step 1",
+      "add_parent_profile_step_2": "👤  Add Parent Profile — Step 2",
+      "works_for_ages_0_15_science_backed_paren": "0–15 saal ke bachchon ke liye kaam karta hai · Science-backed parenting plans"
+    },
+    "routine_carousel": {
+      "completed": "Completed",
+      "pending": "Pending"
+    },
+    "routine_inline_meals": {
+      "amy_ai_meal_suggestions": "Amy AI Meal Suggestions",
+      "no_suggestions_available": "No suggestions available.",
+      "ingredients": "Ingredients",
+      "steps": "Steps"
+    },
+    "routine_item_modal": {
+      "close_recipe": "Close recipe",
+      "generating_recipe": "Generating recipe…",
+      "prep": "Prep",
+      "cook": "Cook",
+      "serves": "Serves",
+      "ingredients": "Ingredients",
+      "instructions": "Instructions",
+      "parent_tip": "💡 Parent tip",
+      "back": "Back",
+      "close": "Close",
+      "tap_a_meal_to_view_its_recipe": "Tap a meal to view its recipe",
+      "instructions_2": "📋 Instructions",
+      "delay_15m": "Delay +15m",
+      "skip": "Skip",
+      "mark_as_pending_again": "Mark as pending again",
+      "today_s_meal_options": "🍽️ Today's meal options"
+    },
+    "skills_focus": {
+      "4_high_impact_areas_to_focus_on_this_wee": "4 high-impact areas to focus on this week."
+    },
+    "sleep_predict": {
+      "beta_guidance_only": "Beta · Guidance only.",
+      "loading_prediction": "Loading prediction…",
+      "pressure": "pressure",
+      "start_wind_down_now": "Start wind-down now",
+      "log_sleep": "LOG SLEEP",
+      "nap_started": "Nap started",
+      "bedtime": "Sone ka samay",
+      "refresh": "Refresh"
+    },
+    "slide_to_complete": {
+      "release_to_complete": "✅ Poora karne ke liye chhoden!"
+    },
+    "smart_math_tricks": {
+      "how_it_works": "Yeh kaise kaam karta hai",
+      "example": "Udaharan",
+      "try_it": "✏️ Ise aazmaein",
+      "check": "Check ✓",
+      "back_to_trick": "← Trick par wapas",
+      "2_new_tricks_every_day": "Har din 2 naye tricks ✨",
+      "new_tricks_unlock_tomorrow": "Naye tricks kal unlock honge! 🌅",
+      "practice_complete": "Abhyaas poora!",
+      "try_again": "🔄 Phir se aazmaein",
+      "check_answer": "Jawab check karein ✓"
+    },
+    "smart_meal_suggestions": {
+      "smart_tiffin_meal_suggestions": "Smart Tiffin aur bhojan sujhav",
+      "personalised_by_region_fridge_age": "Kshetra, fridge aur umra ke anusaar vyaktigat",
+      "kids": "Bachche",
+      "parent": "Abhibhavak",
+      "e_g_paneer": "Jaise ki paneer",
+      "add": "Add",
+      "find_what_i_can_cook": "🔍 Main kya bana sakta hoon khojein",
+      "no_meals_found_try_removing_a_fridge_ite": "Koi bhojan nahi mila. Kripya ek fridge item hataane ka prayas karein.",
+      "female": "♀ Mahila",
+      "male": "♂ Purush",
+      "ingredients": "🛒 Ingredients",
+      "steps": "👨‍🍳 Steps",
+      "what_s_in_your_fridge_optional": "Aapke fridge mein kya hai? (Optional)"
+    },
+    "story_player": {
+      "skipping_automatically": "Automatically skip karna...",
+      "replay": "Replay",
+      "next": "Next",
+      "up_next": "Agla",
+      "watch_again": "Phir se dekhein",
+      "play_now": "Abhi khelein",
+      "all_stories_watched": "Sabhi kahaniyan dekhi ja chuki hain!",
+      "starting_over": "Phir se shuru kar rahe hain…",
+      "couldn_t_play_this_story": "Yeh kahani nahi khela ja saka."
+    },
+    "swipeable_card": {},
+    "tiffin_feedback_panel": {
+      "helps_amy_learn_what_your_child_loves": "Amy ko yeh jaanne mein madad karta hai ki aapke bacche ko kya pasand hai",
+      "undo": "Paurvat karein",
+      "suggestions_are_loading_pick_what_you_pa": "Sujhav load ho rahe hain - jab ve dikhein to jo aapne pack kiya hai use chunen.",
+      "top_liked_foods": "❤  Sabse pasandida khadya padarth",
+      "which_meal": "Kaun sa khana?",
+      "today_s_tiffin_feedback": "Aaj ka Tiffin feedback",
+      "how_was_today_s_tiffin": "Aaj ka Tiffin kaisa tha?"
+    },
+    "voice_settings_panel": {
+      "voice_settings": "🎙 Swaron ki setting",
+      "read_aloud": "Padhein tez",
+      "language": "Bhasha",
+      "voice_gender": "Svar ka ling",
+      "voice": "Svar",
+      "powered_by_elevenlabs_ai": "ElevenLabs AI dwara sanchalit 🎙"
+    },
+    "phonics_learning": {
+      "todays_activity": "Aaj ki Activity",
+      "pick_another_sound": "Doosri sound chuno",
+      "practice_sounds": "Sounds Practice karo",
+      "tap_any_tile_to_hear_the_sound": "Sound sunne ke liye kisi bhi tile par tap karo",
+      "header_title": "🔤 Phonics Learning"
     }
   }
 }

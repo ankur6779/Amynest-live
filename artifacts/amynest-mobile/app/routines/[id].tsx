@@ -258,7 +258,7 @@ export default function RoutineDetailScreen() {
 
   const { data: routine, isLoading } = useQuery<Routine>({
     queryKey: ["routine", id],
-    queryFn: () => authFetch(`/api/routines/${id}`).then(r => r.json()) as Promise<Routine>,
+    queryFn: () => authFetch(`/api/routines/${id}`).then(r =>{t("screens.routines_id.r_json_as_promise")}<Routine>,
     enabled: !!id,
   });
 
@@ -942,7 +942,7 @@ export default function RoutineDetailScreen() {
           <Ionicons name="chevron-back" size={22} color={c.foreground} />
         </TouchableOpacity>
         <View style={{ flex: 1, alignItems: "center" }}>
-          <Text style={[styles.headerTitle, { color: c.foreground }]} numberOfLines={1}>Routine</Text>
+          <Text style={[styles.headerTitle, { color: c.foreground }]} numberOfLines={1}>{t("screens.routines_id.routine")}</Text>
         </View>
         <TouchableOpacity
           onPress={toggleVoice}
@@ -976,7 +976,7 @@ export default function RoutineDetailScreen() {
       ) : !routine ? (
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={40} color="rgba(255,255,255,0.4)" />
-          <Text style={styles.emptyText}>Routine not found</Text>
+          <Text style={styles.emptyText}>{t("screens.routines_id.routine_not_found")}</Text>
         </View>
       ) : (
         <FlatList
@@ -1037,7 +1037,7 @@ export default function RoutineDetailScreen() {
                     HOW IS {(routine.childName || "YOUR CHILD").toUpperCase()} TODAY?
                   </Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.6)", alignSelf: "center", marginRight: 2 }}>Mood:</Text>
+                    <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.6)", alignSelf: "center", marginRight: 2 }}>{t("screens.routines_id.mood")}</Text>
                     {(["low", "neutral", "active"] as AdaptiveMood[]).map((m) => {
                       const active = todayMood === m;
                       return (
@@ -1059,7 +1059,7 @@ export default function RoutineDetailScreen() {
                     })}
                   </View>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.6)", alignSelf: "center", marginRight: 2 }}>Sleep:</Text>
+                    <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.6)", alignSelf: "center", marginRight: 2 }}>{t("screens.routines_id.sleep")}</Text>
                     {(["poor", "ok", "good"] as AdaptiveSleepQuality[]).map((s) => {
                       const active = todaySleep === s;
                       return (
@@ -1092,11 +1092,11 @@ export default function RoutineDetailScreen() {
               />
 
               <View style={styles.activitiesHeaderRow}>
-                <Text style={styles.sectionTitle}>ACTIVITIES</Text>
+                <Text style={styles.sectionTitle}>{t("screens.routines_id.activities")}</Text>
                 <TouchableOpacity onPress={() => setAddOpen(true)} style={styles.addBtn} activeOpacity={0.85}>
                   <LinearGradient colors={[brand.primary, ACCENT_PINK /* audit-ok: accent pink gradient end-stop */]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtnGrad}>
                     <Ionicons name="add" size={14} color="#FFFFFF" />
-                    <Text style={styles.addBtnText}>Add</Text>
+                    <Text style={styles.addBtnText}>{t("screens.routines_id.add")}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -1142,7 +1142,7 @@ export default function RoutineDetailScreen() {
                 </ScrollView>
               )}
 
-              <Text style={styles.swipeHint}>← Swipe to skip   •   Swipe to complete →</Text>
+              <Text style={styles.swipeHint}>{t("screens.routines_id.swipe_to_skip_swipe_to_complete")}</Text>
             </View>
           }
           ListEmptyComponent={
@@ -1160,7 +1160,7 @@ export default function RoutineDetailScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                     <Ionicons name="sparkles" size={14} color={brand.violet400} />
-                    <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 14 }}>Daily Summary</Text>
+                    <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 14 }}>{t("screens.routines_id.daily_summary")}</Text>
                   </View>
                   <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: "rgba(167,139,250,0.18)" }}>
                     <Text style={{ color: brand.violet300, fontWeight: "800", fontSize: 11 }}>{adaptive.summary.completionPct}% done</Text>
@@ -1182,7 +1182,7 @@ export default function RoutineDetailScreen() {
                 <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 10, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.04)" }}>
                   <Text style={{ fontSize: 14 }}>💡</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 9, fontWeight: "800", letterSpacing: 0.4 }}>FOR TOMORROW</Text>
+                    <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 9, fontWeight: "800", letterSpacing: 0.4 }}>{t("screens.routines_id.for_tomorrow")}</Text>
                     <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600", marginTop: 2, lineHeight: 18 }}>
                       {adaptive.summary.tomorrowTip}
                     </Text>
@@ -1272,7 +1272,7 @@ export default function RoutineDetailScreen() {
             <Ionicons name="time-outline" size={16} color="rgba(255,255,255,0.85)" />
             <Text style={styles.undoText} numberOfLines={1}>{undoLabel}</Text>
             <TouchableOpacity onPress={handleUndo} style={styles.undoBtn} activeOpacity={0.8}>
-              <Text style={styles.undoBtnText}>UNDO</Text>
+              <Text style={styles.undoBtnText}>{t("screens.routines_id.undo")}</Text>
             </TouchableOpacity>
           </BlurView>
         </View>
@@ -1331,7 +1331,7 @@ export default function RoutineDetailScreen() {
                   onPress={() => setItemStatus(actionItem, "completed")}
                   active={items[actionItem]?.status === "completed"} />
 
-                <Text style={styles.subHeader}>DELAY (smart cascade)</Text>
+                <Text style={styles.subHeader}>{t("screens.routines_id.delay_smart_cascade")}</Text>
                 <View style={styles.delayRow}>
                   {[15, 30, 60].map(m => (
                     <TouchableOpacity key={m} style={styles.delayBtn} onPress={() => delayItem(actionItem, m)} activeOpacity={0.8}>
@@ -1356,7 +1356,7 @@ export default function RoutineDetailScreen() {
                   onPress={() => deleteItem(actionItem)} />
 
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => setActionItem(null)} activeOpacity={0.7}>
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                  <Text style={styles.cancelBtnText}>{t("screens.routines_id.cancel")}</Text>
                 </TouchableOpacity>
               </ScrollView>
             )}
@@ -1369,26 +1369,26 @@ export default function RoutineDetailScreen() {
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <Pressable style={styles.modalScrim} onPress={() => setEditIndex(null)}>
             <Pressable style={[styles.editCard, { backgroundColor: c.card }]} onPress={e => e.stopPropagation()}>
-              <Text style={[styles.editTitle, { color: c.foreground }]}>Edit activity</Text>
-              <Text style={styles.editLabel}>Activity</Text>
+              <Text style={[styles.editTitle, { color: c.foreground }]}>{t("screens.routines_id.edit_activity")}</Text>
+              <Text style={styles.editLabel}>{t("screens.routines_id.activity")}</Text>
               <TextInput style={[styles.input, { color: c.foreground }]} value={editForm.activity}
                 onChangeText={v => setEditForm({ ...editForm, activity: v })}
-                placeholder="Activity name" placeholderTextColor={c.textFaint} />
-              <Text style={styles.editLabel}>Time (e.g. 7:30 AM)</Text>
+                placeholder={t("screens.routines_id.activity_name")} placeholderTextColor={c.textFaint} />
+              <Text style={styles.editLabel}>{t("screens.routines_id.time_e_g_7_30_am")}</Text>
               <TextInput style={[styles.input, { color: c.foreground }]} value={editForm.time}
                 onChangeText={v => setEditForm({ ...editForm, time: v })}
                 placeholder="7:30 AM" placeholderTextColor={c.textFaint} />
-              <Text style={styles.editLabel}>Duration (minutes)</Text>
+              <Text style={styles.editLabel}>{t("screens.routines_id.duration_minutes")}</Text>
               <TextInput style={[styles.input, { color: c.foreground }]} value={editForm.duration}
                 onChangeText={v => setEditForm({ ...editForm, duration: v.replace(/[^0-9]/g, "") })}
                 keyboardType="number-pad" placeholder="30" placeholderTextColor={c.textFaint} />
-              <Text style={styles.helper}>Changes to time or duration will smart-shift later activities and protect bedtime.</Text>
+              <Text style={styles.helper}>{t("screens.routines_id.changes_to_time_or_duration_will_smart_s")}</Text>
               <View style={styles.confirmBtns}>
                 <TouchableOpacity style={[styles.confirmBtn, styles.confirmCancel]} onPress={() => setEditIndex(null)} activeOpacity={0.8}>
-                  <Text style={styles.confirmCancelText}>Cancel</Text>
+                  <Text style={styles.confirmCancelText}>{t("screens.routines_id.cancel")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.confirmBtn, styles.confirmPrimary]} onPress={saveEdit} activeOpacity={0.8}>
-                  <Text style={styles.confirmPrimaryText}>Save</Text>
+                  <Text style={styles.confirmPrimaryText}>{t("screens.routines_id.save")}</Text>
                 </TouchableOpacity>
               </View>
             </Pressable>
@@ -1404,24 +1404,24 @@ export default function RoutineDetailScreen() {
               <View style={styles.addIconCircle}>
                 <Ionicons name="sparkles" size={20} color="#FFFFFF" />
               </View>
-              <Text style={[styles.editTitle, { color: c.foreground }]}>Add activity</Text>
-              <Text style={styles.helper}>AI will fit it into the schedule and adjust the rest of the day.</Text>
-              <Text style={styles.editLabel}>Activity name</Text>
+              <Text style={[styles.editTitle, { color: c.foreground }]}>{t("screens.routines_id.add_activity")}</Text>
+              <Text style={styles.helper}>{t("screens.routines_id.ai_will_fit_it_into_the_schedule_and_adj")}</Text>
+              <Text style={styles.editLabel}>{t("screens.routines_id.activity_name")}</Text>
               <TextInput style={[styles.input, { color: c.foreground }]} value={addForm.name}
                 onChangeText={v => setAddForm({ ...addForm, name: v })}
-                placeholder="e.g. Piano practice" placeholderTextColor={c.textFaint} />
-              <Text style={styles.editLabel}>Duration (minutes)</Text>
+                placeholder={t("screens.routines_id.e_g_piano_practice")} placeholderTextColor={c.textFaint} />
+              <Text style={styles.editLabel}>{t("screens.routines_id.duration_minutes")}</Text>
               <TextInput style={[styles.input, { color: c.foreground }]} value={addForm.duration}
                 onChangeText={v => setAddForm({ ...addForm, duration: v.replace(/[^0-9]/g, "") })}
                 keyboardType="number-pad" placeholder="30" placeholderTextColor={c.textFaint} />
               <View style={styles.confirmBtns}>
                 <TouchableOpacity style={[styles.confirmBtn, styles.confirmCancel]} onPress={() => setAddOpen(false)} activeOpacity={0.8} disabled={addLoading}>
-                  <Text style={styles.confirmCancelText}>Cancel</Text>
+                  <Text style={styles.confirmCancelText}>{t("screens.routines_id.cancel")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.confirmBtn, styles.confirmPrimary]} onPress={addActivity} activeOpacity={0.8} disabled={addLoading || !addForm.name.trim()}>
                   {addLoading
                     ? <ActivityIndicator size="small" color="#FFFFFF" />
-                    : <Text style={styles.confirmPrimaryText}>Add</Text>}
+                    : <Text style={styles.confirmPrimaryText}>{t("screens.routines_id.add")}</Text>}
                 </TouchableOpacity>
               </View>
             </Pressable>
@@ -1434,7 +1434,7 @@ export default function RoutineDetailScreen() {
         <Pressable style={styles.modalScrim} onPress={() => setMoreMenu(false)}>
           <Pressable style={[styles.actionSheet, { backgroundColor: c.card }]} onPress={e => e.stopPropagation()}>
             <View style={styles.actionHandle} />
-            <Text style={[styles.actionTitle, { color: c.foreground }]}>Routine actions</Text>
+            <Text style={[styles.actionTitle, { color: c.foreground }]}>{t("screens.routines_id.routine_actions")}</Text>
             <ActionRow icon="sparkles" iconColor={brand.primary} label={regenLoading ? "Regenerating…" : "Regenerate day with AI"}
               onPress={partialRegen} />
             <ActionRow
@@ -1448,7 +1448,7 @@ export default function RoutineDetailScreen() {
             <ActionRow icon="share-outline" iconColor={palette.emerald500} label="Share routine" onPress={shareRoutine} />
             <ActionRow icon="trash-outline" iconColor={c.accent} label="Delete routine" onPress={confirmDelete} />
             <TouchableOpacity style={styles.cancelBtn} onPress={() => setMoreMenu(false)} activeOpacity={0.7}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={styles.cancelBtnText}>{t("screens.routines_id.cancel")}</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
@@ -1459,15 +1459,15 @@ export default function RoutineDetailScreen() {
         <Pressable style={styles.modalScrim} onPress={() => setShowDelete(false)}>
           <Pressable style={[styles.confirmCard, { backgroundColor: c.card }]} onPress={e => e.stopPropagation()}>
             <MaterialCommunityIcons name="trash-can-outline" size={36} color={c.accent} />
-            <Text style={[styles.confirmTitle, { color: c.foreground }]}>Delete routine?</Text>
-            <Text style={styles.confirmBody}>This will permanently remove this routine and all its tasks.</Text>
+            <Text style={[styles.confirmTitle, { color: c.foreground }]}>{t("screens.routines_id.delete_routine")}</Text>
+            <Text style={styles.confirmBody}>{t("screens.routines_id.this_will_permanently_remove_this_routin")}</Text>
             <View style={styles.confirmBtns}>
               <TouchableOpacity style={[styles.confirmBtn, styles.confirmCancel]} onPress={() => setShowDelete(false)} activeOpacity={0.8}>
-                <Text style={styles.confirmCancelText}>Cancel</Text>
+                <Text style={styles.confirmCancelText}>{t("screens.routines_id.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: c.accent }]}
                 onPress={() => { setShowDelete(false); deleteMut.mutate(); }} activeOpacity={0.8}>
-                <Text style={styles.confirmDeleteText}>Delete</Text>
+                <Text style={styles.confirmDeleteText}>{t("screens.routines_id.delete")}</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -1479,7 +1479,7 @@ export default function RoutineDetailScreen() {
         <View style={styles.fullOverlay} pointerEvents="auto">
           <BlurView intensity={Platform.OS === "android" ? 80 : 50} tint="dark" style={styles.fullOverlayInner}>
             <ActivityIndicator size="large" color={c.accent} />
-            <Text style={styles.regenText}>Regenerating with AI…</Text>
+            <Text style={styles.regenText}>{t("screens.routines_id.regenerating_with_ai")}</Text>
           </BlurView>
         </View>
       )}
@@ -1534,7 +1534,7 @@ function AmyAISuggests({
         <Ionicons name="sparkles" size={18} color={brand.violet400} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.aiLabel}>AMY AI SUGGESTS</Text>
+        <Text style={styles.aiLabel}>{t("screens.routines_id.amy_ai_suggests")}</Text>
         <Text style={styles.aiText}>{tip}</Text>
         {(delayedCount > 0 || adjustedCount > 0) && (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
@@ -1614,7 +1614,7 @@ function ItemCard({ item, seed = 0 }: { item: RoutineItem; seed?: number }) {
         )}
         {item.notes && !isDone && <Text style={[styles.notesText, { color: c.textSubtle }]} numberOfLines={1}>{item.notes}</Text>}
         {isSkipped && item.skipReason && <Text style={[styles.skipReason, { color: c.textDim }]} numberOfLines={1}>⏭ {item.skipReason}</Text>}
-        {isDelayed && <Text style={styles.delayedTag}>⏱ Delayed</Text>}
+        {isDelayed && <Text style={styles.delayedTag}>{t("screens.routines_id.delayed")}</Text>}
       </View>
       {isSchool ? (
         // School time is protected — no checkbox, just a labelled icon

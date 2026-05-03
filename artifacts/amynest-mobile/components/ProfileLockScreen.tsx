@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import colors, { brand, palette } from "@/constants/colors";
+import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -28,6 +29,7 @@ export function ProfileLockScreen({ sectionName }: { sectionName?: string }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const { t } = useTranslation();
   return (
     <LinearGradient
       colors={["#0f0c29", "#1a1560", "#24243e"]} // audit-ok: deep purple-navy lock screen gradient
@@ -47,8 +49,8 @@ export function ProfileLockScreen({ sectionName }: { sectionName?: string }) {
               resizeMode="cover"
             />
           </View>
-          <Text style={styles.tag}>MEET AMY AI</Text>
-          <Text style={styles.title}>Your Smart Parenting Partner ✨</Text>
+          <Text style={styles.tag}>{t("components.profile_lock_screen.meet_amy_ai")}</Text>
+          <Text style={styles.title}>{t("components.profile_lock_screen.your_smart_parenting_partner")}</Text>
           <Text style={styles.subtitle}>
             Set up your profile to unlock personalized routines, progress tracking, and much more.
           </Text>
@@ -88,7 +90,7 @@ export function ProfileLockScreen({ sectionName }: { sectionName?: string }) {
         {/* ── Divider ──────────────────────────────────── */}
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>Unlock everything in 2 steps</Text>
+          <Text style={styles.dividerText}>{t("components.profile_lock_screen.unlock_everything_in_2_steps")}</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -105,7 +107,7 @@ export function ProfileLockScreen({ sectionName }: { sectionName?: string }) {
               end={{ x: 1, y: 1 }}
               style={styles.primaryBtn}
             >
-              <Text style={styles.primaryBtnText}>👶  Add Child Profile — Step 1</Text>
+              <Text style={styles.primaryBtnText}>{t("components.profile_lock_screen.add_child_profile_step_1")}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -114,11 +116,11 @@ export function ProfileLockScreen({ sectionName }: { sectionName?: string }) {
             activeOpacity={0.85}
             style={styles.secondaryBtn}
           >
-            <Text style={styles.secondaryBtnText}>👤  Add Parent Profile — Step 2</Text>
+            <Text style={styles.secondaryBtnText}>{t("components.profile_lock_screen.add_parent_profile_step_2")}</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.footnote}>Works for ages 0–15 · Science-backed parenting plans</Text>
+        <Text style={styles.footnote}>{t("components.profile_lock_screen.works_for_ages_0_15_science_backed_paren")}</Text>
       </ScrollView>
     </LinearGradient>
   );

@@ -227,7 +227,7 @@ export default function SleepPredict({ childId, childName, ageMonths }: Props) {
       <View style={styles.disclaimer}>
         <Ionicons name="shield-half" size={14} color={brand.purple400} />
         <Text style={styles.disclaimerText}>
-          <Text style={styles.disclaimerStrong}>Beta · Guidance only.</Text>{" "}
+          <Text style={styles.disclaimerStrong}>{t("components.sleep_predict.beta_guidance_only")}</Text>{" "}
           {data?.disclaimer ??
             "This is a guidance system based on sleep patterns, not medical advice."}
         </Text>
@@ -245,7 +245,7 @@ export default function SleepPredict({ childId, childName, ageMonths }: Props) {
       {loading && !data ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator size="small" color={brand.purple400} />
-          <Text style={styles.loadingText}>Loading prediction…</Text>
+          <Text style={styles.loadingText}>{t("components.sleep_predict.loading_prediction")}</Text>
         </View>
       ) : prediction ? (
         <>
@@ -271,7 +271,7 @@ export default function SleepPredict({ childId, childName, ageMonths }: Props) {
                   <Text style={[styles.ringValue, { color: ringColor }]}>
                     {prediction.sleepPressure}
                   </Text>
-                  <Text style={styles.ringSuffix}>pressure</Text>
+                  <Text style={styles.ringSuffix}>{t("components.sleep_predict.pressure")}</Text>
                 </View>
               </View>
 
@@ -315,7 +315,7 @@ export default function SleepPredict({ childId, childName, ageMonths }: Props) {
             >
               <View style={styles.winddownHead}>
                 <MaterialCommunityIcons name="weather-night" size={14} color={brand.purple400} />
-                <Text style={styles.winddownTitle}>Start wind-down now</Text>
+                <Text style={styles.winddownTitle}>{t("components.sleep_predict.start_wind_down_now")}</Text>
               </View>
               {WINDDOWN_TIPS.map((t) => (
                 <View key={t} style={styles.tipRow}>
@@ -355,7 +355,7 @@ export default function SleepPredict({ childId, childName, ageMonths }: Props) {
 
       {/* Log buttons */}
       <View style={styles.logBlock}>
-        <Text style={styles.kicker}>LOG SLEEP</Text>
+        <Text style={styles.kicker}>{t("components.sleep_predict.log_sleep")}</Text>
         {activeStartIso ? (
           <Pressable
             onPress={logWake}
@@ -385,7 +385,7 @@ export default function SleepPredict({ childId, childName, ageMonths }: Props) {
               ) : (
                 <MaterialCommunityIcons name="bed" size={16} color="#fff" />
               )}
-              <Text style={styles.btnText}>Nap started</Text>
+              <Text style={styles.btnText}>{t("components.sleep_predict.nap_started")}</Text>
             </Pressable>
             <Pressable
               onPress={() => logSleep("night")}
@@ -398,7 +398,7 @@ export default function SleepPredict({ childId, childName, ageMonths }: Props) {
               ) : (
                 <Ionicons name="moon" size={16} color="#fff" />
               )}
-              <Text style={styles.btnText}>Bedtime</Text>
+              <Text style={styles.btnText}>{t("components.sleep_predict.bedtime")}</Text>
             </Pressable>
           </View>
         )}
@@ -409,7 +409,7 @@ export default function SleepPredict({ childId, childName, ageMonths }: Props) {
           testID="refresh-btn"
         >
           <Ionicons name="refresh" size={12} color={brand.purple400} />
-          <Text style={styles.refreshText}>Refresh</Text>
+          <Text style={styles.refreshText}>{t("components.sleep_predict.refresh")}</Text>
         </Pressable>
       </View>
 

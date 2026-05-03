@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { brand } from "@/constants/colors";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
+import { useTranslation } from "react-i18next";
 import {
   EVENT_OCCASIONS, generateEventIdea,
   type AgeBand, type CostBudget, type EventOccasionId,
@@ -75,14 +76,15 @@ export function EventPrepGeneratorSheet({ visible, onClose, onOpenCharacter }: P
 
   const openCharacter = (id: string) => { onClose(); onOpenCharacter(id); };
 
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
       <SafeAreaView style={{ flex: 1, backgroundColor: "#fdf2f8" /* audit-ok: rose-50 product theme bg */ }}>
         {/* Header */}
         <View style={S.header}>
           <View style={{ flex: 1 }}>
-            <Text style={S.headerTitle}>✨ Amy AI Generator</Text>
-            <Text style={S.headerSub}>Tell me a few things and I'll suggest the perfect idea ❤️</Text>
+            <Text style={S.headerTitle}>{t("components.event_prep_generator_sheet.amy_ai_generator")}</Text>
+            <Text style={S.headerSub}>{t("components.event_prep_generator_sheet.tell_me_a_few_things_and_i_ll_suggest_th")}</Text>
           </View>
           <Pressable onPress={onClose} hitSlop={10}>
             <Ionicons name="close" size={24} color="#374151" /* audit-ok: gray-700 close icon for event-prep sheet */ />
@@ -92,7 +94,7 @@ export function EventPrepGeneratorSheet({ visible, onClose, onOpenCharacter }: P
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 64, gap: 14 }}>
           <Field label="Event">
             <ChipRow>
-              <Chip active={event === "any"} onPress={() => setEvent("any")}>Any / Surprise me</Chip>
+              <Chip active={event === "any"} onPress={() => setEvent("any")}>{t("components.event_prep_generator_sheet.any_surprise_me")}</Chip>
               {EVENT_OCCASIONS.map((c) => (
                 <Chip key={c.id} active={event === c.id} onPress={() => setEvent(c.id)}>
                   {c.emoji} {c.title}
@@ -137,7 +139,7 @@ export function EventPrepGeneratorSheet({ visible, onClose, onOpenCharacter }: P
               <IdeaCard idea={result.ideas[0]} highlight speakingId={speakingId} onSpeak={handleSpeak} onOpenFull={() => openCharacter(result.ideas[0].character.id)} />
 
               {result.ideas.length > 1 && (
-                <Text style={S.altHead}>OTHER IDEAS</Text>
+                <Text style={S.altHead}>{t("components.event_prep_generator_sheet.other_ideas")}</Text>
               )}
               {result.ideas.slice(1).map((alt) => (
                 <IdeaCard key={alt.character.id} idea={alt} speakingId={speakingId} onSpeak={handleSpeak} onOpenFull={() => openCharacter(alt.character.id)} />
@@ -173,19 +175,19 @@ function IdeaCard({
         <View style={S.pillRow}>
           <View style={S.pill}><Ionicons name="time-outline" size={10} color="#fff" /><Text style={S.pillText}>{c.timeMinutes} min</Text></View>
           <View style={S.pill}><Text style={S.pillText}>{c.difficulty}</Text></View>
-          {c.lowCost && <View style={S.pill}><Text style={S.pillText}>💸 Low cost</Text></View>}
+          {c.lowCost && <View style={S.pill}><Text style={S.pillText}>{t("components.event_prep_generator_sheet.low_cost")}</Text></View>}
           <View style={S.pillDark}><Text style={S.pillText}>{idea.template}</Text></View>
         </View>
       </LinearGradient>
       <View style={S.cardBody}>
         <Text style={S.reason}>{idea.reason}</Text>
-        <Text style={S.bodyHead}>🧰 Materials</Text>
+        <Text style={S.bodyHead}>{t("components.event_prep_generator_sheet.materials")}</Text>
         {c.materials.slice(0, 4).map((m, i) => (
           <View key={i} style={S.bullet}><Text style={S.bulletDot}>•</Text><Text style={S.bulletText}>{m}</Text></View>
         ))}
         {c.materials.length > 4 && <Text style={S.more}>+ {c.materials.length - 4} more…</Text>}
 
-        <Text style={[S.bodyHead, { marginTop: 8 }]}>📋 Quick steps</Text>
+        <Text style={[S.bodyHead, { marginTop: 8 }]}>{t("components.event_prep_generator_sheet.quick_steps")}</Text>
         {c.steps.slice(0, 3).map((s, i) => (
           <View key={i} style={S.bullet}><Text style={S.bulletDot}>{i + 1}.</Text><Text style={S.bulletText}>{s}</Text></View>
         ))}
@@ -193,7 +195,7 @@ function IdeaCard({
 
         <View style={S.speechBox}>
           <View style={S.speechHead}>
-            <Text style={S.bodyHead}>🎤 Speech</Text>
+            <Text style={S.bodyHead}>{t("components.event_prep_generator_sheet.speech")}</Text>
             <Pressable onPress={() => onSpeak(c.id, idea.speech)} style={S.playBtn}>
               <Ionicons name={speakingId === c.id ? "volume-mute" : "volume-high"} size={12} color="#fff" />
               <Text style={S.playText}>{speakingId === c.id ? "Stop" : "Play"}</Text>
@@ -203,7 +205,7 @@ function IdeaCard({
         </View>
 
         <Pressable onPress={onOpenFull} style={S.openBtn}>
-          <Text style={S.openBtnText}>Open full guide</Text>
+          <Text style={S.openBtnText}>{t("components.event_prep_generator_sheet.open_full_guide")}</Text>
         </Pressable>
       </View>
     </View>

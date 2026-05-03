@@ -88,7 +88,7 @@ export default function SignInScreen() {
           </View>
           <View style={styles.card}>
             <Text style={styles.sentEmoji}>📬</Text>
-            <Text style={styles.title}>Check your inbox</Text>
+            <Text style={styles.title}>{t("screens.sign_in.check_your_inbox")}</Text>
             <Text style={styles.subtitle}>
               We've sent a reset link to{"\n"}
               <Text style={styles.resetEmailHighlight}>{resetEmail}</Text>
@@ -104,7 +104,7 @@ export default function SignInScreen() {
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.primaryBtn}
               >
-                <Text style={styles.primaryBtnText}>Back to Sign in</Text>
+                <Text style={styles.primaryBtnText}>{t("screens.sign_in.back_to_sign_in")}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -133,8 +133,8 @@ export default function SignInScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.title}>Reset password</Text>
-              <Text style={styles.subtitle}>Enter your email and we'll send you a reset link.</Text>
+              <Text style={styles.title}>{t("screens.sign_in.reset_password")}</Text>
+              <Text style={styles.subtitle}>{t("screens.sign_in.enter_your_email_and_we_ll_send_you_a_re")}</Text>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("auth.email")}</Text>
@@ -147,7 +147,7 @@ export default function SignInScreen() {
                     autoCapitalize="none"
                     keyboardType="email-address"
                     autoComplete="email"
-                    placeholder="you@example.com"
+                    placeholder={t("screens.sign_in.you_example_com")}
                     placeholderTextColor="rgba(200,180,255,0.28)"
                     onFocus={() => setResetFocused(true)}
                     onBlur={() => setResetFocused(false)}
@@ -178,14 +178,14 @@ export default function SignInScreen() {
                 >
                   {resetLoading
                     ? <ActivityIndicator size="small" color="#fff" />
-                    : <Text style={styles.primaryBtnText}>Send reset link</Text>
+                    : <Text style={styles.primaryBtnText}>{t("screens.sign_in.send_reset_link")}</Text>
                   }
                 </LinearGradient>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => setMode("signin")} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={14} color="rgba(200,180,255,0.55)" style={{ marginRight: 4 }} />
-                <Text style={styles.backBtnText}>Back to Sign in</Text>
+                <Text style={styles.backBtnText}>{t("screens.sign_in.back_to_sign_in")}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -246,7 +246,7 @@ export default function SignInScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder={t("screens.sign_in.you_example_com")}
                   placeholderTextColor="rgba(200,180,255,0.28)"
                   onFocus={() => setFocusedField("email")}
                   onBlur={() => setFocusedField(null)}
@@ -260,7 +260,7 @@ export default function SignInScreen() {
               <View style={styles.passwordLabelRow}>
                 <Text style={styles.label}>{t("auth.password")}</Text>
                 <TouchableOpacity onPress={openReset} hitSlop={8} testID="forgot-password-btn">
-                  <Text style={styles.forgotLink}>Forgot password?</Text>
+                  <Text style={styles.forgotLink}>{t("screens.sign_in.forgot_password")}</Text>
                 </TouchableOpacity>
               </View>
               <View style={[styles.inputWrap, focusedField === "password" && styles.inputWrapFocused]}>
@@ -313,7 +313,7 @@ export default function SignInScreen() {
             </View>
           </View>
 
-          <Text style={styles.tagline}>Where Smart Parenting Begins</Text>
+          <Text style={styles.tagline}>{t("screens.sign_in.where_smart_parenting_begins")}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
