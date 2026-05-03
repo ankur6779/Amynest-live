@@ -3124,6 +3124,9 @@
       "allergies_foods_to_avoid": "Allergies / Foods to Avoid",
       "e_g_peanuts_shellfish_dairy_gluten": "e.g. peanuts, shellfish, dairy, gluten...",
       "list_any_food_allergies_or_ingredients_to_avoid_in_amy_ai_ge": "List any food allergies or ingredients to avoid in Amy AI-generated meal suggestions.",
+      "food_style": "Food Style",
+      "food_restrictions_allergies": "Food Restrictions / Allergies",
+      "other_restrictions_placeholder": "Other restrictions, e.g. peanuts, shellfish, sesame...",
       "notification_settings": "Notification Settings"
     },
     "pricing": {

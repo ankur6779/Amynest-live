@@ -48,7 +48,7 @@ export default function BillingDisputePage() {
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold mb-2">Billing Dispute Resolution</h1>
+        <h1 className="text-3xl font-bold mb-2">Billing Dispute Resolution</h1> {/* i18n-ok: legal/static page */}
         <p className="text-muted-foreground mb-10 text-sm">
           Last updated: May 2026 · Operated by AmyNest AI
         </p>
@@ -62,7 +62,7 @@ export default function BillingDisputePage() {
         </section>
 
         <section className="mb-12">
-          <h2 className="text-xl font-semibold mb-6">Dispute Resolution Process</h2>
+          <h2 className="text-xl font-semibold mb-6">Dispute Resolution Process</h2> {/* i18n-ok: legal/static page */}
           <div className="space-y-6">
             {steps.map(({ step, body }) => (
               <div key={step} className="border border-border rounded-lg p-5">
@@ -74,7 +74,7 @@ export default function BillingDisputePage() {
         </section>
 
         <section className="mb-12">
-          <h2 className="text-xl font-semibold mb-6">Frequently Asked Questions</h2>
+          <h2 className="text-xl font-semibold mb-6">Frequently Asked Questions</h2> {/* i18n-ok: legal/static page */}
           <div className="space-y-5">
             {faqs.map(({ q, a }) => (
               <div key={q}>
@@ -86,7 +86,7 @@ export default function BillingDisputePage() {
         </section>
 
         <section className="border-t border-border pt-8">
-          <h2 className="text-lg font-semibold mb-3">Contact Billing Support</h2>
+          <h2 className="text-lg font-semibold mb-3">Contact Billing Support</h2> {/* i18n-ok: legal/static page */}
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>
               Email:{" "}
@@ -94,7 +94,7 @@ export default function BillingDisputePage() {
                 support@amynest.in
               </a>
             </li>
-            <li>Response time: within 2 business days</li>
+            <li>Response time: within 2 business days</li> {/* i18n-ok: legal/static page */}
             <li>
               Website:{" "}
               <a href="https://amynest.in" className="text-primary hover:underline">

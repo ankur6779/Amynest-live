@@ -3124,6 +3124,9 @@
       "allergies_foods_to_avoid": "एलर्जी / जिन खाद्य पदार्थों से बचना है",
       "e_g_peanuts_shellfish_dairy_gluten": "उदा. मूंगफली, शेलफिश, डेयरी, ग्लूटेन...",
       "list_any_food_allergies_or_ingredients_to_avoid_in_amy_ai_ge": "Amy AI द्वारा जनरेट किए गए मील सुझावों में जिन भी खाने की एलर्जी या सामग्री से बचना है, उन्हें लिखें।",
+      "food_style": "खाने का स्टाइल",
+      "food_restrictions_allergies": "खाद्य प्रतिबंध / एलर्जी",
+      "other_restrictions_placeholder": "अन्य प्रतिबंध, जैसे मूंगफली, शेलफिश, तिल...",
       "notification_settings": "नोटिफिकेशन सेटिंग्स"
     },
     "pricing": {

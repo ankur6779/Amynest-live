@@ -1230,6 +1230,15 @@ components:
           nullable: true
         region:
           type: string
+        dietType:
+          type: string
+          nullable: true
+        foodStyle:
+          type: string
+          nullable: true
+        subCuisine:
+          type: string
+          nullable: true
         createdAt:
           type: string
         updatedAt:
@@ -1277,6 +1286,15 @@ components:
           nullable: true
         region:
           type: string
+        dietType:
+          type: string
+          nullable: true
+        foodStyle:
+          type: string
+          nullable: true
+        subCuisine:
+          type: string
+          nullable: true
 
     GetRecipeBody:
       type: object
