@@ -926,8 +926,8 @@ function ExploreNextHeader({
   } = useTranslation();
   return <div className="pt-6">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary dark:text-muted-foreground">{t("parent_hub.headers.section2_next")}</span>
-        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1 border-border dark:border-border text-primary dark:text-muted-foreground">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/80">{t("parent_hub.headers.section2_next")}</span>
+        <Badge variant="outline" className="rounded-full px-2.5 py-0 h-5 font-semibold text-[10px] gap-1 border-border text-primary">
           {bandLabel(band)}
         </Badge>
       </div>

@@ -126,20 +126,20 @@ export function ParentCommandCenter({
           <ProgressRing pct={overview.routineCompletionPct} size={56} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              <p className="font-quicksand font-bold text-[14px] leading-tight text-foreground truncate">
+              <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
+              <p className="font-quicksand font-bold text-[14px] leading-tight text-primary-foreground truncate">
                 {child.name}{t("components.parent_command_center.s_command_center")}
               </p>
             </div>
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-              <span className="font-bold text-foreground/90">{overview.statusEmoji} {overview.statusLabel}</span>
+            <p className="text-[11px] text-primary-foreground/80 truncate mt-0.5">
+              <span className="font-bold text-primary-foreground">{overview.statusEmoji} {overview.statusLabel}</span>
               {suggestions.length > 0 && <> · {suggestions[0].emoji} {suggestions[0].label}</>}
             </p>
-            <p className="text-[10.5px] text-muted-foreground mt-0.5 truncate">
+            <p className="text-[10.5px] text-primary-foreground/80 mt-0.5 truncate">
               {overview.routineCompletedTasks}/{overview.routineTotalTasks} {t("components.parent_command_center.done")} {MOOD_LABEL[overview.mood]} · {SLEEP_LABEL[overview.sleepQuality]}
             </p>
           </div>
-          <span className={["shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5", "bg-gradient-to-r from-primary to-primary text-white", "text-[11px] font-bold shadow-[0_8px_24px_-8px_rgba(168,85,247,0.7)]", "group-hover:scale-[1.04] transition-transform"].join(" ")}>
+          <span className={["shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5", "bg-white/95 text-primary", "text-[11px] font-bold shadow-[0_8px_24px_-8px_rgba(0,0,0,0.25)]", "group-hover:scale-[1.04] transition-transform"].join(" ")}>
             {t("components.parent_command_center.open")}
             <ArrowRight className="h-3 w-3" />
           </span>
