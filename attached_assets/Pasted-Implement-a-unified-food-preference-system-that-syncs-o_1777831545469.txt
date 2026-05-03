@@ -1,0 +1,181 @@
+Implement a unified food-preference system that syncs onboarding → parent profile → child profile → routine generation → meal/tiffin engine.
+
+GOAL:
+- No duplicate inputs
+- Instant personalization
+- Consistent data across modules
+
+---
+
+### 1. ONBOARDING INPUT (CAPTURE ONCE)
+
+Collect at onboarding (parent level):
+
+- diet_type (vegetarian, vegan, non_veg, eggetarian, pescatarian, no_preference)
+- food_style (western, asian, middle_eastern, indian, mixed)
+- sub_cuisine (nullable; only if indian or specific styles)
+- allergies (array)
+
+Store as:
+parent.food_preferences
+
+---
+
+### 2. AUTO-INHERIT TO CHILD (DEFAULT)
+
+On child creation (or first login after onboarding):
+
+child.food_preferences = parent.food_preferences
+child.food_preferences.inherited = true
+child.food_preferences.customized = false
+
+---
+
+### 3. CHILD EDIT OVERRIDE (OPTIONAL)
+
+Allow edit from child profile:
+
+If user edits:
+- child.food_preferences = edited values
+- child.food_preferences.inherited = false
+- child.food_preferences.customized = true
+
+UI label:
+“Using your preferences for [Child Name]”
+CTA: [Customize for child]
+
+---
+
+### 4. INFANT SPECIAL HANDLING (0–24 months)
+
+If child_age <= 24 months:
+
+Use feeding mode instead of regular meals:
+
+- feeding_type: breastfeeding / formula / mixed / solids_stage
+- dietary filters still apply (e.g., vegetarian/vegan household)
+- generate:
+  - feeding schedule
+  - puree/soft food suggestions (age-stage based)
+
+---
+
+### 5. ROUTINE GENERATION INTEGRATION
+
+When generating routine:
+
+Use:
+child.food_preferences (fallback to parent if inherited)
+
+Include:
+
+- Breakfast / Lunch / Snack / Dinner blocks
+- School days → include “Tiffin suggestion”
+- Weather-aware adjustments (hot/cold)
+
+Example:
+IF diet_type = vegan:
+→ remove dairy, eggs, honey (optional)
+
+IF allergies include nuts:
+→ exclude nuts globally
+
+---
+
+### 6. MEAL + TIFFIN ENGINE
+
+Input:
+- child.food_preferences
+- country
+- weather_type
+- age
+
+Output:
+
+- Breakfast
+- Lunch / Tiffin (if school)
+- Snack
+- Dinner
+
+Each item:
+- kid-friendly
+- 15–20 min prep (tiffin)
+- culturally relevant
+
+---
+
+### 7. DATA MODEL (SINGLE SOURCE OF TRUTH)
+
+{
+  "parent": {
+    "food_preferences": {
+      "diet_type": "vegan",
+      "food_style": "western",
+      "sub_cuisine": null,
+      "allergies": ["gluten"]
+    }
+  },
+  "child": {
+    "food_preferences": {
+      "diet_type": "vegan",
+      "food_style": "western",
+      "sub_cuisine": null,
+      "allergies": ["gluten"],
+      "inherited": true,
+      "customized": false
+    }
+  }
+}
+
+---
+
+### 8. FALLBACK LOGIC
+
+IF child.food_preferences missing:
+→ fallback to parent.food_preferences
+
+IF both missing:
+→ use country defaults
+
+---
+
+### 9. NON-INTRUSIVE NUDGE
+
+If child preferences are inherited:
+
+Show:
+“We’re using your preferences for [Child Name].
+Customize for more accurate meal suggestions.”
+
+CTA: [Customize]
+
+Frequency:
+- max once/day
+- stop after 3 dismissals
+
+---
+
+### 10. AI PROMPT STANDARD (FOR MEALS)
+
+“Generate a daily meal plan for a [age] child in [country],
+following [diet_type] and [food_style],
+avoiding [allergies], considering [weather_type].
+Include tiffin if school day. Keep it quick and kid-friendly.”
+
+---
+
+### 11. VALIDATION RULES
+
+- No duplicate storage across modules
+- Allergies always enforced
+- Vegan = strict (no dairy/eggs)
+- Sub-cuisine only if relevant
+
+---
+
+### 12. SUCCESS CRITERIA
+
+- User enters data once
+- Child auto-personalized instantly
+- Meals/routines feel local + relevant
+- Easy override anytime

@@ -52,6 +52,12 @@ export const ListChildrenResponseItem = zod.object({
     .describe(
       'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
     ),
+  dietType: zod.string().nullish(),
+  foodStyle: zod.string().nullish(),
+  subCuisine: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  foodPrefInherited: zod.boolean().nullish(),
+  foodPrefCustomized: zod.boolean().nullish(),
   createdAt: zod.string(),
 });
 export const ListChildrenResponse = zod.array(ListChildrenResponseItem);
@@ -93,6 +99,12 @@ export const CreateChildBody = zod.object({
     .describe(
       'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
     ),
+  dietType: zod.string().nullish(),
+  foodStyle: zod.string().nullish(),
+  subCuisine: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  foodPrefInherited: zod.boolean().nullish(),
+  foodPrefCustomized: zod.boolean().nullish(),
 });
 
 /**
@@ -137,6 +149,12 @@ export const GetChildResponse = zod.object({
     .describe(
       'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
     ),
+  dietType: zod.string().nullish(),
+  foodStyle: zod.string().nullish(),
+  subCuisine: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  foodPrefInherited: zod.boolean().nullish(),
+  foodPrefCustomized: zod.boolean().nullish(),
   createdAt: zod.string(),
 });
 
@@ -181,6 +199,12 @@ export const UpdateChildBody = zod.object({
     .describe(
       'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
     ),
+  dietType: zod.string().nullish(),
+  foodStyle: zod.string().nullish(),
+  subCuisine: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  foodPrefInherited: zod.boolean().nullish(),
+  foodPrefCustomized: zod.boolean().nullish(),
 });
 
 export const updateChildResponseSchoolDaysItemMax = 7;
@@ -218,6 +242,12 @@ export const UpdateChildResponse = zod.object({
     .describe(
       'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
     ),
+  dietType: zod.string().nullish(),
+  foodStyle: zod.string().nullish(),
+  subCuisine: zod.string().nullish(),
+  allergies: zod.string().nullish(),
+  foodPrefInherited: zod.boolean().nullish(),
+  foodPrefCustomized: zod.boolean().nullish(),
   createdAt: zod.string(),
 });
 

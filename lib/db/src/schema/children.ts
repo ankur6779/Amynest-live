@@ -32,6 +32,15 @@ export const childrenTable = pgTable("children", {
   // {"flexible","irregular","short_naps"}.
   feedingType: text("feeding_type"),
   sleepPattern: text("sleep_pattern"),
+  // Unified food-preference system (spec §2, §3).
+  // If foodPrefInherited=true these fields mirror the parent's food_preferences;
+  // when the parent customizes for a specific child they flip to false/true.
+  dietType: text("diet_type"),
+  foodStyle: text("food_style"),
+  subCuisine: text("sub_cuisine"),
+  allergies: text("allergies"),
+  foodPrefInherited: boolean("food_pref_inherited").notNull().default(false),
+  foodPrefCustomized: boolean("food_pref_customized").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

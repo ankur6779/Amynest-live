@@ -517,12 +517,29 @@ export default function OnboardingPage() {
 
     // ── Step 2: Save parent profile independently — failure doesn't abort ──
     try {
+      // Derive structured food style + sub-cuisine from selectedRegions for
+      // the unified food-preference system (spec §1).
+      function deriveFoodStyleFromRegions(regions: string[]): { foodStyle: string; subCuisine: string } {
+        const indianSubs = ["north_indian", "south_indian", "gujarati", "maharashtrian", "punjabi", "bengali", "pan_indian"];
+        const sub = regions.find(r => indianSubs.includes(r));
+        if (sub) return { foodStyle: "indian", subCuisine: sub === "pan_indian" ? "" : sub };
+        if (regions.includes("indian")) return { foodStyle: "indian", subCuisine: "" };
+        if (regions.includes("western")) return { foodStyle: "western", subCuisine: "" };
+        if (regions.includes("asian")) return { foodStyle: "asian", subCuisine: "" };
+        if (regions.includes("middle_eastern")) return { foodStyle: "middle_eastern", subCuisine: "" };
+        return { foodStyle: "mixed", subCuisine: "" };
+      }
+      const allRegions = selectedRegions.length > 0 ? selectedRegions : [parent.region ?? getDefaultRegion(countryCode)];
+      const { foodStyle: derivedFoodStyle, subCuisine: derivedSubCuisine } = deriveFoodStyleFromRegions(allRegions);
+
       const parentBody: Record<string, unknown> = {
         name: parent.name || "",
         role: (parent.role || "mother").toLowerCase(),
         workType: parent.workType || "work_from_home",
         region: parent.region || selectedRegions.join(",") || getDefaultRegion(countryCode),
         country: parent.country || countryCode,
+        foodStyle: derivedFoodStyle,
+        subCuisine: derivedSubCuisine || null,
       };
       if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
       if (parent.allergies) parentBody.allergies = parent.allergies;

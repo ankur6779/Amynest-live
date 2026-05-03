@@ -764,6 +764,24 @@ components:
           type: string
           nullable: true
           description: Infant-only — sleep style captured during onboarding. One of "flexible", "irregular", "short_naps".
+        dietType:
+          type: string
+          nullable: true
+        foodStyle:
+          type: string
+          nullable: true
+        subCuisine:
+          type: string
+          nullable: true
+        allergies:
+          type: string
+          nullable: true
+        foodPrefInherited:
+          type: boolean
+          nullable: true
+        foodPrefCustomized:
+          type: boolean
+          nullable: true
         createdAt:
           type: string
       required:
@@ -836,6 +854,24 @@ components:
           type: string
           nullable: true
           description: Infant-only — sleep style captured during onboarding. One of "flexible", "irregular", "short_naps".
+        dietType:
+          type: string
+          nullable: true
+        foodStyle:
+          type: string
+          nullable: true
+        subCuisine:
+          type: string
+          nullable: true
+        allergies:
+          type: string
+          nullable: true
+        foodPrefInherited:
+          type: boolean
+          nullable: true
+        foodPrefCustomized:
+          type: boolean
+          nullable: true
       required:
         - name
         - age
@@ -899,6 +935,24 @@ components:
           type: string
           nullable: true
           description: Infant-only — sleep style captured during onboarding. One of "flexible", "irregular", "short_naps".
+        dietType:
+          type: string
+          nullable: true
+        foodStyle:
+          type: string
+          nullable: true
+        subCuisine:
+          type: string
+          nullable: true
+        allergies:
+          type: string
+          nullable: true
+        foodPrefInherited:
+          type: boolean
+          nullable: true
+        foodPrefCustomized:
+          type: boolean
+          nullable: true
 
     RoutineItem:
       type: object

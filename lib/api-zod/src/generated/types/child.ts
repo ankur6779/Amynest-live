@@ -29,5 +29,11 @@ export interface Child {
   feedingType?: string | null;
   /** Infant-only — sleep style captured during onboarding. One of "flexible", "irregular", "short_naps". */
   sleepPattern?: string | null;
+  dietType?: string | null;
+  foodStyle?: string | null;
+  subCuisine?: string | null;
+  allergies?: string | null;
+  foodPrefInherited?: boolean | null;
+  foodPrefCustomized?: boolean | null;
   createdAt: string;
 }
