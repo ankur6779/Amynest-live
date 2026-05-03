@@ -21,6 +21,7 @@ type Props = {
 };
 
 export default function PremiumSplash({ onFinish }: Props) {
+  const { t } = useTranslation();
   const containerOpacity = useRef(new Animated.Value(1)).current;
   const logoScale = useRef(new Animated.Value(0.4)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -201,7 +202,6 @@ export default function PremiumSplash({ onFinish }: Props) {
       });
     }, 2400);
 
-    const { t } = useTranslation();
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
