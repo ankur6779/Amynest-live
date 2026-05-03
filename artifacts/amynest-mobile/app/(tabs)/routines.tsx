@@ -71,6 +71,7 @@ function completionPct(items: RoutineItem[]): number {
 }
 
 export default function RoutinesScreen() {
+  const { t } = useTranslation();
   const { profileComplete, isLoading: profileLoading } = useProfileComplete();
   const { theme } = useTheme();
   const colors = useColors();
@@ -84,14 +85,14 @@ export default function RoutinesScreen() {
 
   const { data: children = [] } = useQuery<Child[]>({
     queryKey: ["children"],
-    queryFn: () => authFetch("/api/children").then(r =>{t("screens.tabs_routines.r_json_as_promise")}<Child[]>,
+    queryFn: () => authFetch("/api/children").then(r => r.json() as Promise<Child[]>),
   });
 
   const { data: routines = [], isLoading, isError, refetch } = useQuery<Routine[]>({
     queryKey: ["routines", selectedChild],
     queryFn: () => {
       const q = selectedChild ? `?childId=${selectedChild}` : "";
-      return authFetch(`/api/routines${q}`).then(r =>{t("screens.tabs_routines.r_json_as_promise")}<Routine[]>;
+      return authFetch(`/api/routines${q}`).then(r => r.json() as Promise<Routine[]>);
     },
   });
 
@@ -155,7 +156,6 @@ export default function RoutinesScreen() {
   };
 
   if (profileLoading) {
-    const { t } = useTranslation();
     return (
       <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator size="large" color={colors.primary} />

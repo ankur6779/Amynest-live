@@ -992,8 +992,7 @@
       "color_green": "Hara",
       "color_yellow": "Peela",
       "color_purple": "Baingani",
-      "color_orange": "Narangi",
-      "now_t_born": "ab - t.born"
+      "color_orange": "Narangi"
     },
     "onboarding_chat": {
       "amy_intro": "Hi {{name}}! Main Amy hoon, aapki parenting coach. Chaliye aapka profile set up karte hain — isme lagbhag 2 minutes lagenge!",
@@ -1241,8 +1240,7 @@
       "status_available": "AVAILABLE",
       "status_redeemed": "REDEEMED",
       "status_expired": "EXPIRED",
-      "status_used": "USED",
-      "promise": "vachan"
+      "status_used": "USED"
     },
     "abacus": {
       "loading": "Abacus load ho raha hai…",
@@ -1322,7 +1320,6 @@
       "view_full_behavior_history": "Full behavior history dekho"
     },
     "children_id": {
-      "r_json_as_promise": "r.json()) ke roop mein vachan",
       "change_child_photo": "Child ki photo change karo",
       "remove_photo": "Photo remove karo",
       "school_going": "school ja raha hai",
@@ -1439,7 +1436,6 @@
       "plan_your_child_s_day": "Apne bachche ka din plan karein"
     },
     "routines_id": {
-      "r_json_as_promise": "r.json()) ko promise ke roop mein",
       "routine": "Routine",
       "routine_not_found": "Routine nahi mili",
       "mood": "Mood: ",
@@ -1526,13 +1522,11 @@
       "open_amy_s_premium_guided_wins": "Amy ki premium guided wins kholo"
     },
     "tabs_hub": {
-      "2_effective_age": "= 2 && effective.age",
       "abacus_pro_zone": "🧮 Abacus PRO Zone"
     },
     "tabs_index": {
       "add_child": "Child add karo",
       "day_streak": "Day Streak",
-      "15_hour": "= 15 && hour",
       "amy_ai_suggests": "Amy AI suggests",
       "all_looking_good_today": "Aaj sab kuch achha lag raha hai!",
       "parent_score": "Parent Score",
@@ -1553,7 +1547,6 @@
       "i_m_amy_your_smart_parenting_partner": "Main Amy hoon — aapki smart parenting partner ❤️"
     },
     "tabs_profile": {
-      "r_json_as_promise": "r.json()) as Promise",
       "your_parent_profile": "YOUR PARENT PROFILE",
       "my_parent_profile": "My Parent Profile",
       "personal_info": "Personal Info",
@@ -1578,7 +1571,6 @@
       "developer_tools": "Developer tools"
     },
     "tabs_routines": {
-      "r_json_as_promise": "r.json()) ko promise ke roop mein",
       "your_day_planned": "TUMHARA DIN, PLANNED",
       "routines": "Routines",
       "daily_schedules_generated_by_ai": "AI se generate hue daily schedules",
@@ -2227,7 +2219,6 @@
     "infant_infant_health_tab": {
       "vaccination_tracker": "Vaccination tracker",
       "done": "Done ·",
-      "v_agemonths": "v.ageMonths",
       "missed": "Missed"
     },
     "insight_card": {
@@ -2254,7 +2245,6 @@
     },
     "parent_command_center": {
       "open": "Kholo",
-      "promise": "Vaada",
       "open_routine": "Kholo routine",
       "close": "Band karo",
       "try_next": "Agla aazmaaye",
@@ -2289,7 +2279,6 @@
       "parent_tasks_for_today": "👨‍👩‍👧 Parent Tasks for Today"
     },
     "phone_auth_flow": {
-      "promise": "Promise",
       "continue_with_phone": "Continue with Phone",
       "enter_your_mobile_number": "Enter your mobile number",
       "cancel": "Cancel",
@@ -2319,7 +2308,6 @@
       "all_worksheets_viewed": "All worksheets viewed",
       "prev": "← Prev",
       "next": "Next →",
-      "void_styles_returntype": "void; styles: ReturnType",
       "you_ve_gone_through_the_whole_collection": "You've gone through the whole collection. New worksheets added regularly!"
     },
     "profile_lock_screen": {

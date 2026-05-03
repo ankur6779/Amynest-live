@@ -183,6 +183,10 @@ mock.module("@workspace/db", {
     db: dbMock,
     childrenTable: CHILDREN_TABLE,
     abacusProgressTable: PROGRESS_TABLE,
+    referralsTable: {
+      referrerUserId: "referrer_user_id",
+      referredUserId: "referred_user_id",
+    },
   },
 });
 

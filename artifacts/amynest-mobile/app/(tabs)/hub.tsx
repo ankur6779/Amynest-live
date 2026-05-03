@@ -1224,7 +1224,7 @@ export default function HubScreen() {
               </View>
             ),
           });
-          if (effective && effective.age >{t("screens.tabs_hub.2_effective_age")}<= 15) {
+          if (effective && effective.age > 2 && effective.age <= 15) {
             allTiles.push({
               id: "life-skills",
               ageBands: HUB_CONTENT_AGE_BANDS["life-skills"],

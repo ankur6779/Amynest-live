@@ -233,7 +233,7 @@ export function PrintableWorksheets() {
 
 function WorksheetCard({
   worksheet, disabled, onOpen, styles: s,
-}: { worksheet: Worksheet; disabled: boolean; onOpen: () =>{t("components.printable_worksheets.void_styles_returntype")}<typeof makeStyles> }) {
+}: { worksheet: Worksheet; disabled: boolean; onOpen: () => void; styles: ReturnType<typeof makeStyles> }) {
   const displayName = worksheet.name.replace(/\.[^.]+$/, "").replace(/_/g, " ");
   const isPdf = worksheet.fileType === "pdf";
   const ext = isPdf ? "PDF" : worksheet.mimeType === "image/png" ? "PNG" : "JPG";

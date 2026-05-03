@@ -269,7 +269,7 @@ export default function InfantHealthTab({ ageMonths, childId }: Props) {
             </Text>
           </View>
           {VACCINATIONS.filter(
-            (v) =>{t("components.infant_infant_health_tab.v_agemonths")}< ageMonths && logMap[v.ageLabel] !== "done",
+            (v) => v.ageMonths < ageMonths && logMap[v.ageLabel] !== "done",
           ).map((v) => {
             const status = logMap[v.ageLabel];
             const busy = pendingLabel === v.ageLabel;
@@ -368,7 +368,7 @@ export default function InfantHealthTab({ ageMonths, childId }: Props) {
             />
             <Text style={styles.completedHeader}>
               {t("infant_hub.health.completed", {
-                count: VACCINATIONS.filter((v) =>{t("components.infant_infant_health_tab.v_agemonths")}< ageMonths).length,
+                count: VACCINATIONS.filter((v) => v.ageMonths < ageMonths).length,
               })}
             </Text>
           </View>

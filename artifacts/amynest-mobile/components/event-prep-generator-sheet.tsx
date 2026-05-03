@@ -161,6 +161,7 @@ function IdeaCard({
   onSpeak: (id: string, text: string) => void;
   onOpenFull: () => void;
 }) {
+  const { t } = useTranslation();
   const c = idea.character;
   return (
     <View style={[S.card, highlight && S.cardHighlight]}>

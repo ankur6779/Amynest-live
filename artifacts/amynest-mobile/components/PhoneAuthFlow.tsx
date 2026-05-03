@@ -87,7 +87,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
         // reCAPTCHA internally.  Passing no verifier is the correct approach.
         result = await (signInWithPhoneNumber as unknown as (
           auth: Auth, phone: string
-        ) =>{t("components.phone_auth_flow.promise")}<ConfirmationResult>)(firebaseAuth, phoneFull);
+        ) => Promise<ConfirmationResult>)(firebaseAuth, phoneFull);
       }
 
       confirmRef.current = result;
