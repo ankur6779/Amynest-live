@@ -1858,7 +1858,7 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: "100%", maxWidth: 420, borderRadius: 24, overflow: "hidden",
-    backgroundColor: "#1a1330", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)",
+    backgroundColor: "#1a1330", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)", // audit-ok: static dark modal surface on always-dark generator
   },
   modalHeader: {
     flexDirection: "row", alignItems: "center", gap: 12, padding: 18,
