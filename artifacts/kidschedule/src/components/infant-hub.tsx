@@ -223,14 +223,14 @@ function FeedingReference({
     t
   } = useTranslation();
   const feed = getFeedingGuide(ageMonths);
-  return <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3">
+  return <div className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3">
       <div className="flex items-center gap-2 mb-2">
-        <Flame className="h-4 w-4 text-primary dark:text-primary" />
-        <p className="text-xs font-bold text-primary dark:text-muted-foreground">{t("components.infant_hub.feeding_guide")}</p>
+        <Flame className="h-4 w-4 text-primary" />
+        <p className="text-xs font-bold text-primary dark:text-foreground">{t("components.infant_hub.feeding_guide")}</p>
       </div>
-      <p className="text-xs font-semibold text-primary dark:text-muted-foreground">{feed.type}</p>
-      <p className="text-xs text-primary dark:text-primary mt-0.5">{feed.freq}</p>
-      <p className="text-[11px] text-primary dark:text-primary mt-1.5 leading-snug">{feed.tip}</p>
+      <p className="text-xs font-semibold text-primary dark:text-foreground">{feed.type}</p>
+      <p className="text-xs text-primary dark:text-muted-foreground mt-0.5">{feed.freq}</p>
+      <p className="text-[11px] text-primary dark:text-muted-foreground mt-1.5 leading-snug">{feed.tip}</p>
     </div>;
 }
 
@@ -243,12 +243,12 @@ function DailyActivities({
   const band = getBand(ageMonths);
   const activities = ACTIVITIES[band] ?? [];
   return <div className="space-y-2.5">
-      {activities.map(a => <div key={a.title} className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3 flex gap-3">
+      {activities.map(a => <div key={a.title} className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3 flex gap-3">
           <span className="text-2xl leading-none shrink-0">{a.emoji}</span>
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-              <p className="font-bold text-sm text-primary dark:text-muted-foreground">{a.title}</p>
-              <span className="text-[10px] font-bold text-primary dark:text-primary ml-auto shrink-0">{a.duration}</span>
+              <p className="font-bold text-sm text-primary dark:text-foreground">{a.title}</p>
+              <span className="text-[10px] font-bold text-primary ml-auto shrink-0">{a.duration}</span>
             </div>
             <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{a.desc}</p>
           </div>
@@ -278,16 +278,16 @@ function VaxRow({
   const {
     t
   } = useTranslation();
-  const containerCls = tone === "amber" ? "rounded-lg bg-muted dark:bg-primary border border-border dark:border-border px-2 py-1.5" : "rounded-lg bg-muted dark:bg-primary border border-border dark:border-border px-2 py-1.5";
-  const labelCls = tone === "amber" ? "text-[11px] font-bold text-primary dark:text-muted-foreground" : "text-[11px] font-bold text-primary dark:text-muted-foreground";
-  const subCls = tone === "amber" ? "text-[11px] text-primary dark:text-primary" : "text-[11px] text-primary dark:text-primary";
+  const containerCls = "rounded-lg bg-muted dark:bg-card border border-border dark:border-border px-2 py-1.5";
+  const labelCls = "text-[11px] font-bold text-primary dark:text-foreground";
+  const subCls = "text-[11px] text-primary dark:text-muted-foreground";
   return <div className={`${containerCls} mb-1`} data-testid={`vax-row-${v.ageLabel}`}>
       <div className="flex items-start gap-2">
         {tone === "amber" ? <AlertTriangle className="h-3 w-3 text-primary shrink-0 mt-0.5" /> : <X className="h-3 w-3 text-primary shrink-0 mt-0.5" />}
         <div className="flex-1 min-w-0">
           <p className={labelCls}>
             {v.ageLabel}
-            {status === "missed" && <span className="ml-2 inline-block px-1 py-px rounded text-[9px] font-bold uppercase tracking-wider bg-muted text-primary dark:bg-primary dark:text-muted-foreground">
+            {status === "missed" && <span className="ml-2 inline-block px-1 py-px rounded text-[9px] font-bold uppercase tracking-wider bg-muted text-primary dark:bg-muted dark:text-foreground">
                 {t("components.infant_hub.missed")}
               </span>}
           </p>
@@ -295,11 +295,11 @@ function VaxRow({
         </div>
       </div>
       <div className="mt-1.5 flex flex-wrap gap-1.5 pl-5">
-        <button type="button" disabled={busy} onClick={() => onSet(v.ageLabel, status === "done" ? null : "done")} aria-pressed={status === "done"} data-testid={`vax-done-${v.ageLabel}`} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${status === "done" ? "bg-primary border-primary text-white" : "bg-white/60 dark:bg-white/5 border-border dark:border-primary text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary"}`}>
+        <button type="button" disabled={busy} onClick={() => onSet(v.ageLabel, status === "done" ? null : "done")} aria-pressed={status === "done"} data-testid={`vax-done-${v.ageLabel}`} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${status === "done" ? "bg-primary border-primary text-white" : "bg-white/60 dark:bg-white/5 border-border dark:border-border text-primary dark:text-foreground hover:bg-muted dark:hover:bg-white/10"}`}>
           {busy ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <CheckCircle2 className="h-2.5 w-2.5" />}
           {t("components.infant_hub.done")}
         </button>
-        <button type="button" disabled={busy} onClick={() => onSet(v.ageLabel, status === "missed" ? null : "missed")} aria-pressed={status === "missed"} data-testid={`vax-missed-${v.ageLabel}`} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${status === "missed" ? "bg-primary border-primary text-white" : "bg-white/60 dark:bg-white/5 border-border dark:border-primary text-primary dark:text-muted-foreground hover:bg-muted dark:hover:bg-primary"}`}>
+        <button type="button" disabled={busy} onClick={() => onSet(v.ageLabel, status === "missed" ? null : "missed")} aria-pressed={status === "missed"} data-testid={`vax-missed-${v.ageLabel}`} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition disabled:opacity-50 ${status === "missed" ? "bg-primary border-primary text-white" : "bg-white/60 dark:bg-white/5 border-border dark:border-border text-primary dark:text-foreground hover:bg-muted dark:hover:bg-white/10"}`}>
           {busy ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <X className="h-2.5 w-2.5" />}
           {t("components.infant_hub.missed_2")}
         </button>
@@ -403,45 +403,45 @@ function HealthCare({
   const completedPct = Math.round(summary.done / Math.max(1, summary.total) * 100);
   return <div className="space-y-3">
       {/* Vaccination status */}
-      <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3" data-testid="vax-summary">
+      <div className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3" data-testid="vax-summary">
         <div className="flex items-center gap-2 mb-2">
-          <Syringe className="h-4 w-4 text-primary dark:text-primary" />
-          <p className="text-xs font-bold text-primary dark:text-muted-foreground">
+          <Syringe className="h-4 w-4 text-primary" />
+          <p className="text-xs font-bold text-primary dark:text-foreground">
             {t("components.infant_hub.vaccination_tracker")}
           </p>
         </div>
 
         <p className="text-[11px] text-primary dark:text-muted-foreground mb-1">
-          <span className="font-bold text-primary dark:text-primary">
+          <span className="font-bold text-primary">
             {summary.done}
           </span>{" "}
           {t("components.infant_hub.completed")}{" "}
-          <span className="font-bold text-primary dark:text-primary">
+          <span className="font-bold text-primary">
             {summary.pending}
           </span>{" "}
           {t("components.infant_hub.pending_of")} {summary.total} {t("components.infant_hub.total")}
         </p>
-        <div className="h-1.5 rounded-full bg-muted dark:bg-primary overflow-hidden mb-2">
+        <div className="h-1.5 rounded-full bg-muted dark:bg-muted overflow-hidden mb-2">
           <div className="h-full rounded-full bg-primary transition-all" style={{
           width: `${completedPct}%`
         }} />
         </div>
 
         {upcoming.length > 0 && <div className="mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-primary mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1">
               {t("components.infant_hub.upcoming_due_now")}
             </p>
             {upcoming.map(v => <VaxRow key={v.ageLabel} v={v} status={logMap[v.ageLabel]} busy={pendingLabel === v.ageLabel} onSet={setStatus} tone="amber" />)}
           </div>}
 
         {overdue.length > 0 && <div className="mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-primary mb-1">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1">
               {t("components.infant_hub.pending_past_doses_to_confirm")}
             </p>
             {overdue.map(v => <VaxRow key={v.ageLabel} v={v} status={logMap[v.ageLabel]} busy={pendingLabel === v.ageLabel} onSet={setStatus} tone="rose" />)}
           </div>}
 
-        <p className="text-[10px] text-primary dark:text-primary leading-snug">
+        <p className="text-[10px] text-primary dark:text-muted-foreground leading-snug">
           {t("components.infant_hub.always_confirm_schedule_with_your_paediatrician_some_states_")}
         </p>
       </div>
@@ -476,22 +476,22 @@ function WeeklyInsight({
   } = useTranslation();
   const insight = getWeeklyInsight(childName, ageMonths);
   return <div className="space-y-3">
-      <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-4">
+      <div className="rounded-xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-4">
         <div className="flex items-center gap-2 mb-2">
-          <Star className="h-4 w-4 text-primary dark:text-primary fill-primary" />
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground">{t("components.infant_hub.this_week_s_insight")}</p>
+          <Star className="h-4 w-4 text-primary fill-primary" />
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground">{t("components.infant_hub.this_week_s_insight")}</p>
         </div>
-        <p className="font-bold text-sm text-primary dark:text-muted-foreground leading-snug mb-2">
+        <p className="font-bold text-sm text-primary dark:text-foreground leading-snug mb-2">
           {insight.headline}
         </p>
         <p className="text-[12px] text-primary dark:text-muted-foreground leading-relaxed">
           {insight.body}
         </p>
       </div>
-      <div className="rounded-xl bg-muted dark:bg-primary border border-border dark:border-border p-3 flex gap-2.5">
-        <Lightbulb className="h-4 w-4 text-primary dark:text-primary shrink-0 mt-0.5" />
+      <div className="rounded-xl bg-muted dark:bg-card border border-border dark:border-border p-3 flex gap-2.5">
+        <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-primary dark:text-primary mb-0.5">{t("components.infant_hub.try_this_week")}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-0.5">{t("components.infant_hub.try_this_week")}</p>
           <p className="text-[12px] text-primary dark:text-muted-foreground leading-snug">{insight.next}</p>
         </div>
       </div>
@@ -525,12 +525,12 @@ export function InfantHub({
   };
   return <div className="space-y-3">
       {/* ── Header card with tips ──────────────────────────────────────────── */}
-      <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted via-muted to-muted dark:from-primary dark:via-primary dark:to-primary backdrop-blur-xl overflow-hidden">
+      <Card className="rounded-3xl border-none shadow-sm bg-gradient-to-br from-muted via-muted to-muted dark:from-card dark:via-card dark:to-card backdrop-blur-xl overflow-hidden">
         <CardContent className="p-4 sm:p-5 space-y-4">
           {/* Header */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-muted-foreground mb-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-0.5">
                 👶 {t("infant_hub.title")}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -557,14 +557,14 @@ export function InfantHub({
           </div>
 
           {/* Amy AI Insight */}
-          <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-primary dark:to-primary border border-border dark:border-border p-3.5">
+          <div className="rounded-2xl bg-gradient-to-br from-muted to-muted dark:from-card dark:to-card border border-border dark:border-border p-3.5">
             <div className="flex items-center gap-2 mb-1.5">
-              <Brain className="h-4 w-4 text-primary dark:text-muted-foreground" />
-              <p className="text-xs font-bold text-primary dark:text-muted-foreground">
+              <Brain className="h-4 w-4 text-primary dark:text-foreground" />
+              <p className="text-xs font-bold text-primary dark:text-foreground">
                 {t("infant_hub.amy_suggests")}
               </p>
             </div>
-            <p className="text-sm text-primary dark:text-muted-foreground leading-snug">
+            <p className="text-sm text-primary dark:text-foreground leading-snug">
               <span className="mr-1">{insight.emoji}</span>
               {pickLang(insight, lang)}
             </p>
@@ -591,11 +591,11 @@ export function InfantHub({
               return toast({
                 description: t("infant_hub.thanks")
               });
-            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-primary transition-colors">
+            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-foreground text-xs font-bold hover:bg-muted dark:hover:bg-white/10 transition-colors">
                   <ThumbsUp className="h-3.5 w-3.5" />
                   {t("infant_hub.helpful")}
                 </button>
-                <button onClick={handleNext} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-primary transition-colors">
+                <button onClick={handleNext} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-foreground text-xs font-bold hover:bg-muted dark:hover:bg-white/10 transition-colors">
                   <RotateCcw className="h-3.5 w-3.5" />
                   {t("infant_hub.next_tip")}
                 </button>
@@ -603,7 +603,7 @@ export function InfantHub({
               return toast({
                 description: t("infant_hub.tried_logged")
               });
-            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-primary text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-primary transition-colors">
+            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted dark:bg-card text-primary dark:text-foreground text-xs font-bold hover:bg-muted dark:hover:bg-white/10 transition-colors">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {t("infant_hub.tried_this")}
                 </button>
@@ -670,19 +670,19 @@ export function InfantHub({
                 <IHSection icon={<BedDouble className="h-4 w-4" />} title={t("components.infant_hub.sleep_system")} badge="Live">
                   <div className="space-y-5">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2">{t("components.infant_hub.wake_window_tracker")}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.wake_window_tracker")}</p>
                       <WakeWindowSystem childName={childName} ageMonths={ageMonths} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2">{t("components.infant_hub.issue_detection")}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.issue_detection")}</p>
                       <SleepIssueDetector childName={childName} ageMonths={ageMonths} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2">{t("components.infant_hub.daily_routine_builder")}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.daily_routine_builder")}</p>
                       <RoutineBuilder childName={childName} ageMonths={ageMonths} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2">{t("components.infant_hub.weekly_insights")}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.weekly_insights")}</p>
                       <SleepWeeklyInsights childName={childName} ageMonths={ageMonths} />
                     </div>
                   </div>
@@ -722,14 +722,14 @@ export function InfantHub({
                 <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.parent_coaching")} badge="Interactive">
                   <div className="space-y-5">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2 flex items-center gap-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2 flex items-center gap-1">
                         <ListChecks className="h-3 w-3" />
                         {t("components.infant_hub.baby_cues_engine")}
                       </p>
                       <BabyCuesEngine childName={childName} ageMonths={ageMonths} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-primary mb-2 flex items-center gap-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2 flex items-center gap-1">
                         <MessageCircle className="h-3 w-3" />
                         {t("components.infant_hub.communication_coaching")}
                       </p>
