@@ -2,8 +2,8 @@
   "name": "AmyNest AI — Smart Parenting Coach",
   "short_name": "AmyNest AI",
   "description": "AI-powered parenting coach. Personalized routines, meal plans, and behavior coaching for your child.",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f0c29",
@@ -12,19 +12,19 @@
   "categories": ["education", "lifestyle", "kids"],
   "icons": [
     {
-      "src": "./pwa-icon-192.png",
+      "src": "/pwa-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./pwa-icon-512.png",
+      "src": "/pwa-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "./amynest-logo.png",
+      "src": "/amynest-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -32,7 +32,7 @@
   ],
   "screenshots": [
     {
-      "src": "./opengraph.jpg",
+      "src": "/opengraph.jpg",
       "sizes": "1200x630",
       "type": "image/jpeg",
       "form_factor": "wide",
@@ -44,15 +44,15 @@
       "name": "AI Coach",
       "short_name": "Coach",
       "description": "Chat with Amy, your AI parenting coach",
-      "url": "./ai-coach",
-      "icons": [{ "src": "./pwa-icon-192.png", "sizes": "192x192" }]
+      "url": "/ai-coach",
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "My Children",
       "short_name": "Children",
       "description": "Manage your child profiles",
-      "url": "./children",
-      "icons": [{ "src": "./pwa-icon-192.png", "sizes": "192x192" }]
+      "url": "/children",
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
