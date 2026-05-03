@@ -196,9 +196,6 @@ export default function ChildForm() {
     }
   }, [child, form, isEditing]);
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {
-      t
-    } = useTranslation();
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -258,9 +255,6 @@ export default function ChildForm() {
         data: payload
       }, {
         onSuccess: () => {
-          const {
-            t
-          } = useTranslation();
           toast({
             title: t("toasts.children.profile_updated")
           });
@@ -273,9 +267,6 @@ export default function ChildForm() {
           setLocation("/children");
         },
         onError: () => {
-          const {
-            t
-          } = useTranslation();
           return toast({
             title: t("toasts.children.profile_update_failed"),
             variant: "destructive"
@@ -287,9 +278,6 @@ export default function ChildForm() {
         data: payload
       }, {
         onSuccess: () => {
-          const {
-            t
-          } = useTranslation();
           toast({
             title: t("toasts.children.profile_added")
           });
@@ -298,9 +286,6 @@ export default function ChildForm() {
           window.location.href = "/dashboard";
         },
         onError: (err: any) => {
-          const {
-            t
-          } = useTranslation();
           if (err?.status === 402 && err?.data?.error === "child_limit_reached") {
             setShowUpgradePrompt(true);
           } else {
@@ -318,9 +303,6 @@ export default function ChildForm() {
       id: childId
     }, {
       onSuccess: () => {
-        const {
-          t
-        } = useTranslation();
         toast({
           title: t("toasts.children.profile_deleted")
         });
@@ -330,9 +312,6 @@ export default function ChildForm() {
         setLocation("/children");
       },
       onError: () => {
-        const {
-          t
-        } = useTranslation();
         return toast({
           title: t("toasts.children.profile_delete_failed"),
           variant: "destructive"
@@ -448,9 +427,6 @@ export default function ChildForm() {
                 <FormField control={form.control} name="name" render={({
                 field
               }) => {
-                const {
-                  t
-                } = useTranslation();
                 return <FormItem>
                     <FormLabel className="font-bold">{t("pages.children.form.child_s_name")}</FormLabel>
                     <FormControl>
@@ -467,9 +443,6 @@ export default function ChildForm() {
                 <FormField control={form.control} name="dob" render={({
                 field
               }) => {
-                const {
-                  t
-                } = useTranslation();
                 return <FormItem>
                     <FormLabel className="font-bold">{t("pages.children.form.date_of_birth")}</FormLabel>
                     <FormDescription>{t("pages.children.form.we_use_this_to_auto_detect_the_age_group_and_customize_the_r")}</FormDescription>
@@ -538,9 +511,6 @@ export default function ChildForm() {
                     <FormField control={form.control} name="childClass" render={({
                   field
                 }) => {
-                  const {
-                    t
-                  } = useTranslation();
                   return <FormItem>
                         <FormLabel className="font-bold flex items-center gap-2">
                           <GraduationCap className="h-4 w-4 text-primary" />
@@ -561,9 +531,6 @@ export default function ChildForm() {
                       <FormField control={form.control} name="schoolStartTime" render={({
                     field
                   }) => {
-                    const {
-                      t
-                    } = useTranslation();
                     return <FormItem>
                           <FormLabel className="font-bold">{t("pages.children.form.school_starts")}</FormLabel>
                           <FormControl>
@@ -575,9 +542,6 @@ export default function ChildForm() {
                       <FormField control={form.control} name="schoolEndTime" render={({
                     field
                   }) => {
-                    const {
-                      t
-                    } = useTranslation();
                     return <FormItem>
                           <FormLabel className="font-bold">{t("pages.children.form.school_ends")}</FormLabel>
                           <FormControl>
@@ -595,9 +559,6 @@ export default function ChildForm() {
                     <FormField control={form.control} name="schoolDays" render={({
                   field
                 }) => {
-                  const {
-                    t
-                  } = useTranslation();
                   const selected = (field.value ?? []) as number[];
                   const days: {
                     iso: number;
@@ -653,9 +614,6 @@ export default function ChildForm() {
                       <FormField control={form.control} name="travelMode" render={({
                     field
                   }) => {
-                    const {
-                      t
-                    } = useTranslation();
                     return <FormItem>
                           <FormLabel className="font-bold">{t("pages.children.form.travel_mode")}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value ?? "car"}>
@@ -677,9 +635,6 @@ export default function ChildForm() {
                       {travelMode === "other" && <FormField control={form.control} name="travelModeOther" render={({
                     field
                   }) => {
-                    const {
-                      t
-                    } = useTranslation();
                     return <FormItem>
                             <FormLabel className="font-bold">{t("pages.children.form.specify_travel_mode")}</FormLabel>
                             <FormControl>
@@ -699,9 +654,6 @@ export default function ChildForm() {
                   <FormField control={form.control} name="wakeUpTime" render={({
                   field
                 }) => {
-                  const {
-                    t
-                  } = useTranslation();
                   return <FormItem>
                       <FormLabel className="font-bold">{t("pages.children.form.wake_up_time")}</FormLabel>
                       <FormControl><Input type="time" className={inputClass} {...field} /></FormControl>
@@ -711,9 +663,6 @@ export default function ChildForm() {
                   <FormField control={form.control} name="sleepTime" render={({
                   field
                 }) => {
-                  const {
-                    t
-                  } = useTranslation();
                   return <FormItem>
                       <FormLabel className="font-bold">{t("pages.children.form.bedtime")}</FormLabel>
                       <FormControl><Input type="time" className={inputClass} {...field} /></FormControl>
@@ -729,9 +678,6 @@ export default function ChildForm() {
                 <FormField control={form.control} name="foodType" render={({
                 field
               }) => {
-                const {
-                  t
-                } = useTranslation();
                 return <FormItem>
                     <FormLabel className="font-bold">{t("pages.children.form.diet_type")}</FormLabel>
                     <FormDescription>{t("pages.children.form.used_for_smart_tiffin_and_meal_suggestions")}</FormDescription>
@@ -762,9 +708,6 @@ export default function ChildForm() {
                   <FormField control={form.control} name="babysitterId" render={({
                 field
               }) => {
-                const {
-                  t
-                } = useTranslation();
                 return <FormItem>
                       <FormLabel className="font-bold">{t("pages.children.form.assign_a_babysitter")} <span className="font-normal text-muted-foreground">{t("pages.children.form.optional_2")}</span></FormLabel>
                       <FormDescription>{t("pages.children.form.routines_will_be_tailored_when_a_babysitter_is_on_duty")}</FormDescription>
@@ -790,9 +733,6 @@ export default function ChildForm() {
               <FormField control={form.control} name="goals" render={({
               field
             }) => {
-              const {
-                t
-              } = useTranslation();
               return <FormItem>
                   <FormLabel className="font-bold">{t("pages.children.form.daily_goals_focus")} <span className="font-normal text-muted-foreground">{t("pages.children.form.optional_3")}</span></FormLabel>
                   <FormDescription>

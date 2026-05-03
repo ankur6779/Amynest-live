@@ -314,9 +314,6 @@ function QuizRunner({
         </div>
         <div className="space-y-2">
           {questions.map((q, i) => {
-          const {
-            t
-          } = useTranslation();
           const userAns = answers[i];
           const ok = userAns === q.correct;
           return <div key={q.id} className="rounded-lg border bg-card p-3 text-sm">
@@ -436,9 +433,6 @@ function DailyTab({
         </Card>
         <div className="space-y-2">
           {questions.map((q, i) => {
-          const {
-            t
-          } = useTranslation();
           const userAns = existingRun.answers[i];
           const ok = userAns === q.correct;
           return <div key={q.id} className="rounded-lg border bg-card p-3 text-sm">

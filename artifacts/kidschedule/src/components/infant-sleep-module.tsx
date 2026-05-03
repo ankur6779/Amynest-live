@@ -174,9 +174,6 @@ export function WakeWindowSystem({
   const isAwake = lastEvent?.type === "wake_up";
   const elapsedMin = lastEvent ? Math.floor((now - lastEvent.ts) / 60_000) : 0;
   const recordEvent = useCallback((type: SleepEvent["type"]) => {
-    const {
-      t
-    } = useTranslation();
     const next = [...log, {
       id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       type,
@@ -342,9 +339,6 @@ function TodaySnapshot({
       {open && <div className="px-3 pb-3 space-y-1.5">
           {todayEvents.length === 0 && <p className="text-[11px] text-muted-foreground text-center py-2">{t("components.infant_sleep_module.no_events_logged_today_yet")}</p>}
           {todayEvents.slice().reverse().map(e => {
-        const {
-          t
-        } = useTranslation();
         return <div key={e.id} className="flex items-center gap-2 text-[11px] rounded-lg bg-white/60 dark:bg-white/5 border border-border px-2 py-1.5">
               <span className="text-base">{e.type === "wake_up" ? "☀️" : "🌙"}</span>
               <span className="font-semibold text-foreground">{e.type === "wake_up" ? "Woke up" : "Down for sleep"}</span>
@@ -699,9 +693,6 @@ export function RoutineBuilder({
     } catch {}
   };
   const regenerate = () => {
-    const {
-      t
-    } = useTranslation();
     const fresh = generateRoutine(ageMonths);
     persist(fresh);
     toast({
@@ -716,9 +707,6 @@ export function RoutineBuilder({
     setEditActivity(item.activity);
   };
   const saveEdit = (id: string) => {
-    const {
-      t
-    } = useTranslation();
     persist(items.map(i => i.id === id ? {
       ...i,
       time: editTime,
@@ -755,9 +743,6 @@ export function RoutineBuilder({
 
       <div className="space-y-1.5">
         {items.map(item => {
-        const {
-          t
-        } = useTranslation();
         return <div key={item.id} className="rounded-xl bg-white/60 dark:bg-white/5 border border-border overflow-hidden">
             {editing === item.id ? <div className="p-3 space-y-2">
                 <input type="text" value={editTime} onChange={e => setEditTime(e.target.value)} placeholder="7:00 AM" className="w-full px-2 py-1.5 rounded-lg text-sm border border-border bg-white dark:bg-white/10 text-foreground" />

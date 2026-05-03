@@ -910,9 +910,6 @@ export function InfantMode({
           {/* Now playing / track list */}
           <div className="space-y-2">
             {LULLABY_TRACKS.map((track, i) => {
-            const {
-              t
-            } = useTranslation();
             const isPlaying = playing === track.name;
             const isCurrent = i === lullabyIndex;
             return <div key={track.name} className={`flex items-center gap-3 rounded-2xl px-4 py-2.5 border transition-all ${isCurrent ? "bg-muted dark:bg-primary border-border" : "bg-white/60 border-border dark:border-border"}`}>

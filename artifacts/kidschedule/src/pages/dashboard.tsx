@@ -144,9 +144,6 @@ function ChildrenStrip({
       </SectionLabel>
       <div className="flex gap-2.5 overflow-x-auto pb-1 snap-x snap-mandatory -mx-0.5 px-0.5 mt-2">
         {children.map((c: any, i: number) => {
-        const {
-          t
-        } = useTranslation();
         const ageMonths = c.ageMonths ?? 0;
         const group = getAgeGroup(c.age, ageMonths);
         const info = getAgeGroupInfo(group);
@@ -257,9 +254,6 @@ function NowNextTimeline({
       </div>
       <div className="p-3 space-y-1.5">
         {displayItems.map((item, idx) => {
-        const {
-          t
-        } = useTranslation();
         const isCurrent = currentIdx >= 0 && idx === 0;
         const isNext = idx === (currentIdx >= 0 ? 1 : 0);
         const completed = item.status === "completed";
@@ -570,9 +564,6 @@ function RewardsCard({
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">{t("pages.dashboard.reward_store")}</p>
           <div className="space-y-2">
             {rewards.slice(0, 4).map(r => {
-            const {
-              t
-            } = useTranslation();
             return <div key={r.id} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/50">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{r.emoji}</span>

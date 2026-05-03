@@ -129,9 +129,6 @@ export default function RecipesPage() {
       if (!res.ok) throw new Error("Failed to delete");
     },
     onSuccess: () => {
-      const {
-        t
-      } = useTranslation();
       qc.invalidateQueries({
         queryKey: ["custom-recipes"]
       });
@@ -141,9 +138,6 @@ export default function RecipesPage() {
       });
     },
     onError: () => {
-      const {
-        t
-      } = useTranslation();
       toast({
         title: t("toasts.recipes.delete_error_title"),
         description: t("toasts.recipes.delete_error_body"),
@@ -226,9 +220,6 @@ export default function RecipesPage() {
             {[1, 2, 3].map(i => <div key={i} className="h-28 rounded-2xl bg-muted animate-pulse" />)}
           </div> : <div className="grid gap-4">
             {recipes.map(recipe => {
-          const {
-            t
-          } = useTranslation();
           return <Card key={recipe.id} className="overflow-hidden border border-border dark:border-primary shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-3">

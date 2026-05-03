@@ -652,9 +652,6 @@ export default function AICoachPage() {
     if (!resumeSessionId) return;
     let cancelled = false;
     (async () => {
-      const {
-        t
-      } = useTranslation();
       try {
         const res = await authFetch(`/api/ai-coach/session/${encodeURIComponent(resumeSessionId)}`);
         if (cancelled) return;
@@ -1226,9 +1223,6 @@ export default function AICoachPage() {
 
   // ─── Share / Save
   const handleShare = async () => {
-    const {
-      t
-    } = useTranslation();
     if (!plan) return;
     const text = `${plan.title}\n\n${plan.summary}\n\nMy ${plan.wins.length} wins from AmyNest Amy Coach:\n${plan.wins.map(w => `${w.win}. ${w.title}`).join("\n")}`;
     if (navigator.share) {
@@ -1453,9 +1447,6 @@ export default function AICoachPage() {
 
         <div className="grid grid-cols-2 gap-3">
           {GOAL_CATEGORIES.map((cat, i) => {
-          const {
-            t
-          } = useTranslation();
           return <button key={cat.id} data-on-dark onClick={() => setSelectedCategoryId(cat.id)} className="relative rounded-3xl p-5 border border-border text-left backdrop-blur-md hover:border-border hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 overflow-hidden" style={{
             background: "linear-gradient(135deg,rgba(76,29,149,0.85) 0%,rgba(124,58,237,0.78) 60%,rgba(190,24,93,0.75) 100%)",
             boxShadow: "0 6px 24px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.14)",
@@ -1853,9 +1844,6 @@ export default function AICoachPage() {
 
         {/* Bottom nav */}
         {(() => {
-        const {
-          t
-        } = useTranslation();
         const currentWin = plan.wins[activeIdx];
         const hasFeedback = currentWin ? !!feedbackByWin[currentWin.win] : false;
         const atLastLoaded = activeIdx >= plan.wins.length - 1;
@@ -2610,9 +2598,6 @@ function PrintablePlan({
         </div>
 
         {plan.wins.map(w => {
-        const {
-          t
-        } = useTranslation();
         return <section key={w.win} style={{
           pageBreakInside: "avoid",
           borderLeft: "3px solid hsl(var(--brand-violet-500))",

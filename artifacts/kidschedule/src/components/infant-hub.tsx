@@ -545,9 +545,6 @@ export function InfantHub({
           {/* Glass Tabs */}
           <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
             {INFANT_CATEGORIES.map(cat => {
-            const {
-              t
-            } = useTranslation();
             const isActive = active === cat.key;
             return <button key={cat.key} onClick={() => {
               setActive(cat.key);
@@ -591,9 +588,6 @@ export function InfantHub({
               </p>
               <div className="flex flex-wrap gap-2 mt-3.5">
                 <button onClick={() => {
-              const {
-                t
-              } = useTranslation();
               return toast({
                 description: t("infant_hub.thanks")
               });
@@ -606,9 +600,6 @@ export function InfantHub({
                   {t("infant_hub.next_tip")}
                 </button>
                 <button onClick={() => {
-              const {
-                t
-              } = useTranslation();
               return toast({
                 description: t("infant_hub.tried_logged")
               });

@@ -192,9 +192,6 @@ export function DailyTips({
       {/* Cards grid — 1 col on mobile, 2 on tablet+ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {CATEGORIES.map(cat => {
-        const {
-          t
-        } = useTranslation();
         const meta = CATEGORY_META[cat];
         const tip = tips[cat];
         const cacheKey = `${tip.id}_${lang}`;

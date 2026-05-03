@@ -47,9 +47,6 @@ export default function ChildrenList() {
           <Skeleton className="h-32 w-full rounded-2xl" />
         </div> : children && children.length > 0 ? <div className="grid gap-4">
           {children.map((child, index) => {
-        const {
-          t
-        } = useTranslation();
         return <Link key={child.id} href={`/children/${child.id}`}>
               <Card className="rounded-2xl border-border/50 shadow-sm hover:border-primary/30 transition-all cursor-pointer group hover-elevate overflow-hidden" style={{
             animationDelay: `${index * 50}ms`

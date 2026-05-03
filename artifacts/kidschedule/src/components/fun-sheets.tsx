@@ -219,9 +219,6 @@ export function FunSheets({
       {!loading && !listError && files.length > 0 && <>
           <div className="grid grid-cols-2 gap-3" data-testid="funsheet-grid">
             {files.map(file => {
-          const {
-            t
-          } = useTranslation();
           const isDownloading = downloadingId === file.id;
           const thisRowError = rowError?.id === file.id ? rowError.message : null;
           const canDownload = !quotaExhausted || file.downloaded;

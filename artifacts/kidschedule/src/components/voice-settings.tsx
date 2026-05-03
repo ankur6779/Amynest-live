@@ -40,9 +40,6 @@ export function VoiceSettingsPanel({
     }
   };
   const handleToggle = () => {
-    const {
-      t
-    } = useTranslation();
     const next = !settings.enabled;
     update({
       enabled: next

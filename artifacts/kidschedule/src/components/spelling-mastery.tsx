@@ -1072,9 +1072,6 @@ function TournamentView({
             </>}
           {tournament?.rounds && tournament.rounds.length > 0 && <div className="space-y-1 max-w-sm mx-auto">
               {tournament.rounds.map(r => {
-            const {
-              t: tFn
-            } = useTranslation();
             return <div key={r.round} className="flex items-center justify-between text-xs rounded-md px-2 py-1 bg-white/70 dark:bg-white/[0.06]">
                   <span className="font-bold capitalize">
                     R{r.round} · {r.difficulty}

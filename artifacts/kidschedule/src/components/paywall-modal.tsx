@@ -156,9 +156,6 @@ export function PaywallModal() {
           {/* Plan cards */}
           <div className="grid sm:grid-cols-3 gap-3 mb-5">
             {plans.map(p => {
-            const {
-              t
-            } = useTranslation();
             const isSelected = p.id === selected;
             return <button key={p.id} type="button" onClick={() => setSelected(p.id)} className={["relative text-left rounded-2xl p-4 border-2 transition-all", isSelected ? "border-border bg-primary shadow-[0_8px_24px_rgba(255,78,205,0.35)]" : "border-white/10 bg-white/5 hover:border-white/30"].join(" ")}>
                   {p.badge && <span className="absolute -top-2.5 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-primary to-primary">

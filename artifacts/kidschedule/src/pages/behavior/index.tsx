@@ -133,9 +133,6 @@ export default function BehaviorTracker() {
   const deleteMutation = useDeleteBehaviorLog();
   const toggle = (id: string) => setOpenBlock(c => c === id ? null : id);
   function quickLog(key: QuickBehaviorKey) {
-    const {
-      t
-    } = useTranslation();
     if (!selectedChild) {
       toast({
         title: t("toasts.behavior.select_child"),
@@ -171,9 +168,6 @@ export default function BehaviorTracker() {
         });
       },
       onError: (err: unknown) => {
-        const {
-          t
-        } = useTranslation();
         const status = (err as {
           status?: number;
         })?.status;
@@ -228,9 +222,6 @@ export default function BehaviorTracker() {
         });
       },
       onError: (err: unknown) => {
-        const {
-          t
-        } = useTranslation();
         const status = (err as {
           status?: number;
         })?.status;
@@ -326,9 +317,6 @@ export default function BehaviorTracker() {
       {/* Per-child quick stat cards (free users see only the first; the rest are paywalled) */}
       {children.length > 1 && <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {children.map((c, index) => {
-        const {
-          t
-        } = useTranslation();
         const childLogsToday = allLogs.filter(l => l.childId === c.id && l.date?.slice(0, 10) === today);
         const childPos = childLogsToday.filter(l => l.type === "positive").length;
         const childNeg = childLogsToday.filter(l => l.type === "negative").length;

@@ -150,9 +150,6 @@ export default function NotificationSettingsPage() {
       qc.setQueryData(["notification-prefs"], saved);
     },
     onError: (err: Error) => {
-      const {
-        t
-      } = useTranslation();
       return toast({
         title: t("toasts.notification_settings.save_failed_title"),
         description: err.message,
@@ -197,9 +194,6 @@ export default function NotificationSettingsPage() {
       };
     },
     onSuccess: result => {
-      const {
-        t
-      } = useTranslation();
       const status = result.status ?? "unknown";
       if (status === "sent") {
         toast({
@@ -219,9 +213,6 @@ export default function NotificationSettingsPage() {
       }
     },
     onError: (err: Error) => {
-      const {
-        t
-      } = useTranslation();
       return toast({
         title: t("toasts.notification_settings.test_failed_title"),
         description: err.message,
