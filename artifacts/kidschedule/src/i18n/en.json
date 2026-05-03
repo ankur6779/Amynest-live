@@ -1183,7 +1183,22 @@
       "country_pick_popular": "Popular countries",
       "country_search_placeholder": "Search your country…",
       "country_not_found": "No country found",
-      "country_other_cuisines": "🌍 Show other cuisines"
+      "country_other_cuisines": "🌍 Show other cuisines",
+      "region_recommended": "Recommended",
+      "region_max_reached": "Max 3 cuisines selected",
+      "region_western_sub": "Pasta, salads, sandwiches",
+      "region_asian_sub": "Stir fry, noodles, sushi",
+      "region_middle_eastern_sub": "Hummus, grills, pita",
+      "region_vegetarian_sub": "Salads, legumes, whole grains",
+      "region_mixed_sub": "Variety from around the world",
+      "region_indian_sub": "Dal, roti, home meals",
+      "region_north_sub": "Dal, roti, paneer, sabzi",
+      "region_south_sub": "Idli, dosa, sambar, rice",
+      "region_gujarati_sub": "Thali, dhokla, sweet & mild",
+      "region_maharashtrian_sub": "Varan, amti, misal pav",
+      "region_punjabi_sub": "Butter chicken, paratha, lassi",
+      "region_bengali_sub": "Fish, rice, mustard gravies",
+      "region_pan_indian_sub": "Varied regional home cooking"
     },
     "abacus": {
       "loading": "Loading abacus…",

@@ -215,6 +215,58 @@ function getDefaultRegion(code: string): string {
   return "western";
 }
 
+// ─── Cuisine option types + constants ────────────────────────────────────────
+interface CuisineOption {
+  value: string;
+  labelKey: string;
+  subtextKey: string;
+  emoji: string;
+}
+
+const GLOBAL_CUISINES: CuisineOption[] = [
+  { value: "western",        labelKey: "region_western",        subtextKey: "region_western_sub",        emoji: "🥗" },
+  { value: "asian",          labelKey: "region_asian",          subtextKey: "region_asian_sub",          emoji: "🍜" },
+  { value: "middle_eastern", labelKey: "region_middle_eastern", subtextKey: "region_middle_eastern_sub", emoji: "🧆" },
+  { value: "vegetarian",     labelKey: "region_plant_based",    subtextKey: "region_vegetarian_sub",     emoji: "🌱" },
+  { value: "mixed",          labelKey: "region_mixed",          subtextKey: "region_mixed_sub",          emoji: "🌍" },
+  { value: "indian",         labelKey: "region_indian_cuisine", subtextKey: "region_indian_sub",         emoji: "🍛" },
+];
+
+const INDIAN_SUBCUISINES: CuisineOption[] = [
+  { value: "north_indian",  labelKey: "region_north",         subtextKey: "region_north_sub",         emoji: "🫕" },
+  { value: "south_indian",  labelKey: "region_south",         subtextKey: "region_south_sub",         emoji: "🥘" },
+  { value: "gujarati",      labelKey: "region_gujarati",      subtextKey: "region_gujarati_sub",      emoji: "🫙" },
+  { value: "maharashtrian", labelKey: "region_maharashtrian", subtextKey: "region_maharashtrian_sub", emoji: "🍛" },
+  { value: "punjabi",       labelKey: "region_punjabi",       subtextKey: "region_punjabi_sub",       emoji: "🍗" },
+  { value: "bengali",       labelKey: "region_bengali",       subtextKey: "region_bengali_sub",       emoji: "🐟" },
+  { value: "pan_indian",    labelKey: "region_mixed_indian",  subtextKey: "region_pan_indian_sub",    emoji: "🍱" },
+];
+
+const ALL_CUISINE_MAP: Record<string, CuisineOption> = Object.fromEntries(
+  [...GLOBAL_CUISINES, ...INDIAN_SUBCUISINES].map((c) => [c.value, c])
+);
+
+function getRecommendedCuisines(code: string): string[] {
+  if (["IN", "PK", "BD", "LK", "NP"].includes(code))                                return ["north_indian", "south_indian"];
+  if (["AE", "SA", "QA", "KW", "BH", "OM"].includes(code))                         return ["middle_eastern", "indian"];
+  if (["JP", "KR", "CN", "HK", "SG", "TH", "ID", "MY", "PH", "VN"].includes(code)) return ["asian", "mixed"];
+  if (["US", "CA"].includes(code))                                                   return ["western", "mixed"];
+  if (["GB", "AU", "NZ", "IE"].includes(code))                                       return ["western", "asian"];
+  return ["western", "mixed"];
+}
+
+function getOrderedCuisines(code: string): CuisineOption[] {
+  const isSouthAsian = ["IN", "PK", "BD", "LK", "NP"].includes(code);
+  const recommended = getRecommendedCuisines(code);
+  const allOptions = isSouthAsian
+    ? [...INDIAN_SUBCUISINES, ...GLOBAL_CUISINES.filter((c) => c.value !== "indian")]
+    : GLOBAL_CUISINES;
+  return [
+    ...allOptions.filter((c) => recommended.includes(c.value)),
+    ...allOptions.filter((c) => !recommended.includes(c.value)),
+  ];
+}
+
 // ─── Infant-specific options ─────────────────────────────────────────────────
 const FEEDING_OPTS = [
   "🤱 Breastfeeding",
@@ -370,6 +422,7 @@ export default function OnboardingPage() {
   const [selected, setSelected] = useState("");
   const [dobInput, setDobInput] = useState("");
   const [regionDrillDown, setRegionDrillDown] = useState(false);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [countryCode, setCountryCode] = useState("IN");
   const [countryName, setCountryName] = useState("India");
   const [detectedCountry, setDetectedCountry] = useState<{ code: string; name: string } | "loading" | null>("loading");
@@ -468,7 +521,7 @@ export default function OnboardingPage() {
         name: parent.name || "",
         role: (parent.role || "mother").toLowerCase(),
         workType: parent.workType || "work_from_home",
-        region: parent.region || "pan_indian",
+        region: parent.region || selectedRegions.join(",") || getDefaultRegion(countryCode),
         country: parent.country || countryCode,
       };
       if (parent.mobileNumber) parentBody.mobileNumber = parent.mobileNumber;
@@ -554,13 +607,11 @@ export default function OnboardingPage() {
     setCountryName(name);
     setShowCountryPicker(false);
     setCountrySearch("");
-    // Pre-select Indian drilldown for South Asian users
-    if (["IN", "PK", "BD", "LK", "NP"].includes(code)) {
-      setRegionDrillDown(true);
-    } else {
-      setRegionDrillDown(false);
-    }
-    setParent((p) => ({ ...p, country: code, region: getDefaultRegion(code) }));
+    setRegionDrillDown(false);
+    // Pre-seed recommended cuisines so user sees them highlighted (but not locked in)
+    const recs = getRecommendedCuisines(code);
+    setSelectedRegions(recs.slice(0, 1));
+    setParent((p) => ({ ...p, country: code }));
     amySays(t("screens.onboarding.child_name_after_country"), 300);
     setTimeout(() => setStep("child-name"), 1300);
   }
@@ -1311,56 +1362,108 @@ export default function OnboardingPage() {
       }
 
       case "parent-region": {
-        const globalOpts = [
-          { label: t("screens.onboarding.region_western"),        value: "western" },
-          { label: t("screens.onboarding.region_asian"),          value: "asian" },
-          { label: t("screens.onboarding.region_middle_eastern"), value: "middle_eastern" },
-          { label: t("screens.onboarding.region_plant_based"),    value: "vegetarian" },
-          { label: t("screens.onboarding.region_mixed"),          value: "mixed" },
-          { label: t("screens.onboarding.region_indian_cuisine"), value: "indian" },
-        ];
-        const indianOpts = [
-          { label: t("screens.onboarding.region_north"),          value: "north_indian" },
-          { label: t("screens.onboarding.region_south"),          value: "south_indian" },
-          { label: t("screens.onboarding.region_gujarati"),       value: "gujarati" },
-          { label: t("screens.onboarding.region_maharashtrian"),  value: "maharashtrian" },
-          { label: t("screens.onboarding.region_punjabi"),        value: "punjabi" },
-          { label: t("screens.onboarding.region_bengali"),        value: "bengali" },
-          { label: t("screens.onboarding.region_mixed_indian"),   value: "pan_indian" },
-        ];
-        const opts = regionDrillDown ? indianOpts : globalOpts;
+        const recommended = getRecommendedCuisines(countryCode);
+        const cuisines = getOrderedCuisines(countryCode);
+        const maxReached = selectedRegions.length >= 3;
+        const toggleRegion = (value: string) => {
+          setSelectedRegions((prev) => {
+            if (prev.includes(value)) return prev.filter((v) => v !== value);
+            if (prev.length >= 3) return prev;
+            return [...prev, value];
+          });
+        };
         return (
-          <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-2 gap-2">
-              {opts.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    if (!regionDrillDown && opt.value === "indian") {
-                      setRegionDrillDown(true);
-                      setMessages((m) => [...m, { role: "amy", text: t("screens.onboarding.region_indian_drilldown") }]);
-                      return;
-                    }
-                    setRegionDrillDown(false);
-                    setParent((p) => ({ ...p, region: opt.value }));
-                    userReplies(opt.label, "parent-mobile", t("screens.onboarding.mobile_question"));
-                  }}
-                  className="py-3.5 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
-                  style={CHIP_DARK}
-                >
-                  {opt.label}
-                </button>
-              ))}
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
+              {cuisines.map((c) => {
+                const isSelected = selectedRegions.includes(c.value);
+                const isRec = recommended.includes(c.value);
+                return (
+                  <button
+                    key={c.value}
+                    onClick={() => toggleRegion(c.value)}
+                    disabled={maxReached && !isSelected}
+                    className="relative flex flex-col items-start p-3.5 rounded-2xl text-left border active:scale-95"
+                    style={{
+                      background: isSelected ? GRAD : "rgba(255,255,255,0.06)",
+                      border: isSelected
+                        ? "1.5px solid transparent"
+                        : isRec
+                        ? "1.5px solid rgba(168,85,247,0.50)"
+                        : "1.5px solid rgba(255,255,255,0.12)",
+                      opacity: maxReached && !isSelected ? 0.45 : 1,
+                      boxShadow: isSelected ? "0 0 18px rgba(168,85,247,0.35)" : undefined,
+                      transition: "background 0.18s, box-shadow 0.18s, opacity 0.18s, transform 0.1s",
+                    }}
+                  >
+                    {isRec && (
+                      <span
+                        className="absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-tight"
+                        style={{
+                          background: isSelected ? "rgba(255,255,255,0.22)" : "rgba(168,85,247,0.18)",
+                          color: isSelected ? "#fff" : "#c084fc",
+                          border: "1px solid rgba(168,85,247,0.38)",
+                        }}
+                      >
+                        ★ {t("screens.onboarding.region_recommended")}
+                      </span>
+                    )}
+                    <span className="text-xl mb-1 leading-none">{c.emoji}</span>
+                    <span className="text-sm font-semibold text-white leading-tight pr-2">
+                      {t(`screens.onboarding.${c.labelKey}`)}
+                    </span>
+                    <span
+                      className="text-[11px] mt-0.5 leading-tight"
+                      style={{ color: "rgba(255,255,255,0.58)" }}
+                    >
+                      {t(`screens.onboarding.${c.subtextKey}`)}
+                    </span>
+                    {isSelected && (
+                      <span
+                        className="absolute bottom-2 right-2 text-xs font-bold"
+                        style={{ color: "rgba(255,255,255,0.85)" }}
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            {regionDrillDown && (
-              <button
-                onClick={() => setRegionDrillDown(false)}
-                className="text-xs self-center mt-1"
-                style={{ color: "rgba(255,255,255,0.55)" }}
-              >
-                {t("screens.onboarding.country_other_cuisines")}
-              </button>
+            {maxReached && (
+              <p className="text-center text-xs" style={{ color: "rgba(255,255,255,0.48)" }}>
+                {t("screens.onboarding.region_max_reached")}
+              </p>
             )}
+            <button
+              onClick={() => {
+                const regionStr =
+                  selectedRegions.length > 0
+                    ? selectedRegions.join(",")
+                    : getDefaultRegion(countryCode);
+                setParent((p) => ({ ...p, region: regionStr }));
+                const labels = selectedRegions
+                  .map((v) => {
+                    const found = ALL_CUISINE_MAP[v];
+                    return found ? t(`screens.onboarding.${found.labelKey}`) : v;
+                  })
+                  .join(", ");
+                userReplies(
+                  labels || regionStr,
+                  "parent-mobile",
+                  t("screens.onboarding.mobile_question"),
+                );
+              }}
+              disabled={selectedRegions.length === 0}
+              className="w-full py-3 rounded-2xl font-semibold transition-all duration-200 active:scale-95"
+              style={{
+                background: selectedRegions.length > 0 ? GRAD : "rgba(255,255,255,0.10)",
+                color: "#fff",
+                opacity: selectedRegions.length > 0 ? 1 : 0.5,
+              }}
+            >
+              {t("screens.onboarding.continue")}
+            </button>
           </div>
         );
       }
