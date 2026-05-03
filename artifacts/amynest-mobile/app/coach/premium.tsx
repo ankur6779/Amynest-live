@@ -285,6 +285,7 @@ const EXTRA_WINS: Omit<CoachWin, "index" | "accent">[] = [
 ];
 
 export default function PremiumCoachScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();

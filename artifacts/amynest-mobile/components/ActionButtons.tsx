@@ -66,6 +66,7 @@ function PressBtn({
 }
 
 export default function ActionButtons({ onAction, disabled }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={[styles.row, disabled && { opacity: 0.5 }]} pointerEvents={disabled ? "none" : "auto"}>
       <PressBtn

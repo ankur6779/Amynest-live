@@ -22,6 +22,7 @@ interface Props {
 }
 
 export default function SlideToComplete({ onComplete, disabled = false, label = "Slide to complete" }: Props) {
+  const { t } = useTranslation();
   const c = useColors();
   const { mode } = useTheme();
   const s = useMemo(() => makeStyles(c, mode), [c, mode]);

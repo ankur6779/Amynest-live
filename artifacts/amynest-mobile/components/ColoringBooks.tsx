@@ -256,6 +256,7 @@ export function ColoringBooks({
 }
 
 function ThumbnailWithFallback({ src, alt, c }: { src: string; alt: string; c: ReturnType<typeof useColors> }) {
+  const { t } = useTranslation();
   const [errored, setErrored] = useState(false);
   if (errored) {
     return (

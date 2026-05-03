@@ -256,6 +256,7 @@ const playerStyles = StyleSheet.create({
 // ─── Main tile-grid component ──────────────────────────────────────────────
 
 export function ArtCraftReels() {
+  const { t } = useTranslation();
   const c = useColors();
   const s = useMemo(() => makeStyles(c), [c]);
 

@@ -87,7 +87,7 @@ interface Props {
 }
 
 export function LifeSkillsZone({ child }: Props) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fallbackLang = detectLang(i18n.language);
   const [loaded, setLoaded] = useState(false);
   const [stats, setStatsState] = useState<ChildLifeSkillStats>(() => emptyStats(fallbackLang));

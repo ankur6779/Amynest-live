@@ -22,6 +22,7 @@ interface Props {
 }
 
 export default function PhoneAuthFlow({ onError }: Props) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>("idle");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
