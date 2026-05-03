@@ -1192,7 +1192,105 @@ type AnchorOpts = {
   fridgeItems?: string;
   customRecipes?: CustomRecipeEntry[];
   region?: Region;
+  // Food preference context — used to filter meal options so vegan/jain/
+  // allergic kids don't get suggested forbidden items (milk, egg, paneer, etc.)
+  foodType?: string;
+  allergies?: string | null;
 };
+
+// Drop options that contain forbidden ingredients for the child's diet/allergies.
+// Returns a filtered array — may be shorter than input. Caller should fall back
+// gracefully if the result is too small to display.
+function filterOptionsByDiet(
+  options: string[],
+  foodType?: string,
+  allergies?: string | null,
+): string[] {
+  const ft = (foodType ?? "vegetarian").toLowerCase().replace(/-/g, "_");
+  const isVegan = ft === "vegan";
+  const isVeg = ft === "veg" || ft === "vegetarian" || ft === "lacto_vegetarian"
+    || ft === "jain" || isVegan;
+  const isJain = ft === "jain";
+
+  // Forbidden substrings (lowercase). Word-boundary-ish matching via includes
+  // is good enough for short option phrases like "Banana + milk + toast".
+  const veganForbidden = [
+    "milk", "curd", "yoghurt", "yogurt", "paneer", "ghee", "butter",
+    "cheese", "egg", "honey", "mayo", "cream",
+  ];
+  const vegForbidden = ["egg", "chicken", "fish", "mutton", "meat", "prawn", "bacon"];
+  const jainForbidden = ["onion", "garlic", "potato", "carrot", "radish", "beetroot"];
+
+  const allergyList = (allergies ?? "")
+    .split(/[,;]/)
+    .map((s) => s.trim().toLowerCase())
+    .filter((s) => s.length >= 3);
+
+  return options.filter((opt) => {
+    const lower = opt.toLowerCase();
+    if (isVegan && veganForbidden.some((f) => lower.includes(f))) return false;
+    if (isVeg && !isVegan && vegForbidden.some((f) => lower.includes(f))) return false;
+    if (isJain && jainForbidden.some((f) => lower.includes(f))) return false;
+    if (allergyList.some((a) => lower.includes(a))) return false;
+    return true;
+  });
+}
+
+// Build a diet-safe `Options:` note for a meal slot. Prefers AI-generated notes
+// (already diet-constrained by the prompt) when they exist and pass the diet
+// filter. Falls back to a filtered template bank only if needed.
+function dietSafeOptionsNote(
+  existingNotes: string | undefined,
+  templateBank: readonly string[],
+  opts: AnchorOpts,
+  vegSafeBackup: readonly string[] = [],
+): string {
+  // 1. Preserve AI-generated notes when they look like a valid options list.
+  if (existingNotes && existingNotes.startsWith("Options:")) {
+    const parsed = existingNotes
+      .replace("Options:", "")
+      .split("|")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const safe = filterOptionsByDiet(parsed, opts.foodType, opts.allergies);
+    if (safe.length >= 2) return `Options: ${safe.slice(0, 4).join(" | ")}`;
+  }
+  // 2. Fall back to filtered template bank.
+  const filtered = filterOptionsByDiet([...templateBank], opts.foodType, opts.allergies);
+  if (filtered.length >= 2) return `Options: ${filtered.slice(0, 4).join(" | ")}`;
+  // 3. Use vegan/jain-safe backup bank when primary bank is too restrictive.
+  const backup = filterOptionsByDiet([...vegSafeBackup, ...templateBank], opts.foodType, opts.allergies);
+  if (backup.length >= 1) return `Options: ${backup.slice(0, 4).join(" | ")}`;
+  // 4. Absolute last resort — original bank (better than empty).
+  return `Options: ${templateBank.slice(0, 4).join(" | ")}`;
+}
+
+// Vegan/allergy-safe backup banks for the three school-day meal slots.
+// Used when the primary template bank gets filtered down to nothing.
+const QUICK_BREAKFAST_VEGAN_BACKUP = [
+  "Oats with banana + plant milk",
+  "Peanut butter toast + fruit",
+  "Poha (no veggies needed)",
+  "Upma (oil only)",
+  "Idli with coconut chutney",
+  "Aloo paratha (no ghee)",
+];
+const TIFFIN_VEGAN_BACKUP = [
+  "Veg sandwich + fruit",
+  "Aloo paratha roll + pickle",
+  "Idli + chutney",
+  "Pasta salad cup",
+  "Peanut butter & jam roll + fruit",
+  "Vegetable pulao + lemon wedge",
+];
+const DRUNCH_VEGAN_BACKUP = [
+  "Bhel puri + fruit",
+  "Idli + chutney",
+  "Fruit chaat + nuts",
+  "Veg sandwich + juice",
+  "Hummus pita + carrot sticks",
+  "Sprouts chaat + fruit",
+];
 
 // Light/quick options good for a 15-min "before school" meal — used both as a
 // suggestion bank and as a baseline for the Quick Meal Before School notes.
@@ -1229,7 +1327,9 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
       bf.activity = "Quick Meal Before School";
       bf.duration = 15;
       setItemTime(bf, target);
-      bf.notes = `Options: ${QUICK_BEFORE_SCHOOL_OPTIONS.slice(0, 4).join(" | ")}`;
+      // Preserve AI-generated notes (already diet-constrained by prompt) when
+      // valid; otherwise fall back to a diet-filtered template bank.
+      bf.notes = dietSafeOptionsNote(bf.notes, QUICK_BEFORE_SCHOOL_OPTIONS, opts, QUICK_BREAKFAST_VEGAN_BACKUP);
     } else {
       // Non-school: anchor breakfast 8:00–9:00 AM if reachable
       const target = clamp(timeToMins(bf.time), 8 * 60, 9 * 60);
@@ -1242,7 +1342,7 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
       activity: "Quick Meal Before School",
       duration: 15,
       category: "meal",
-      notes: `Options: ${QUICK_BEFORE_SCHOOL_OPTIONS.slice(0, 4).join(" | ")}`,
+      notes: dietSafeOptionsNote(undefined, QUICK_BEFORE_SCHOOL_OPTIONS, opts, QUICK_BREAKFAST_VEGAN_BACKUP),
       status: "pending",
     });
   }
@@ -1256,7 +1356,12 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
         activity: "Tiffin",
         duration: 15,
         category: "tiffin",
-        notes: "Options: Veg sandwich + fruit | Aloo paratha roll + yoghurt | Idli + chutney | Pasta salad cup",
+        notes: dietSafeOptionsNote(
+          undefined,
+          ["Veg sandwich + fruit", "Aloo paratha roll + yoghurt", "Idli + chutney", "Pasta salad cup"],
+          opts,
+          TIFFIN_VEGAN_BACKUP,
+        ),
         status: "pending",
       });
     }
@@ -1298,16 +1403,24 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
     const target = clamp(cur, 17 * 60, 18 * 60);
     setItemTime(it, target);
     it.duration = Math.max(it.duration, 20);
-    if (!it.notes || !it.notes.startsWith("Options:")) {
-      it.notes = "Options: Cheese sandwich + milk | Idli + chutney | Fruit chaat + nuts | Paneer wrap";
-    }
+    it.notes = dietSafeOptionsNote(
+      it.notes,
+      ["Cheese sandwich + milk", "Idli + chutney", "Fruit chaat + nuts", "Paneer wrap"],
+      opts,
+      DRUNCH_VEGAN_BACKUP,
+    );
   } else {
     out.push({
       time: minsToTime(17 * 60 + 30),
       activity: "Drunch",
       duration: 25,
       category: "meal",
-      notes: "Options: Cheese sandwich + milk | Idli + chutney | Fruit chaat + nuts | Paneer wrap",
+      notes: dietSafeOptionsNote(
+        undefined,
+        ["Cheese sandwich + milk", "Idli + chutney", "Fruit chaat + nuts", "Paneer wrap"],
+        opts,
+        DRUNCH_VEGAN_BACKUP,
+      ),
       status: "pending",
     });
   }
