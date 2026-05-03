@@ -415,6 +415,13 @@
       "save_error_title": "Error",
       "save_error_body": "Could not save profile."
     },
+    "notification_settings_page": {
+      "cat_routine_item_title": "Per-task reminders",
+      "cat_routine_item_desc": "A heads-up about 5 minutes before each routine item.",
+      "recent_deliveries": "Recent deliveries",
+      "history_loading": "Loading…",
+      "history_empty": "Nothing has been delivered yet. Send a test from any category above to confirm your device is receiving notifications."
+    },
     "notification_settings": {
       "save_failed_title": "Could not save",
       "test_sent_title": "Test sent",
