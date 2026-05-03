@@ -689,7 +689,12 @@
       "completion_rate": "Completion rate",
       "section_highlights": "Highlights",
       "ask_amy_title": "Amy se in insights ke baare mein poochein",
-      "ask_amy_sub": "Apne data ke based personalised parenting advice paayein"
+      "ask_amy_sub": "Apne data ke based personalised parenting advice paayein",
+      "stat_points": "Points",
+      "stat_points_this_week": "is hafte",
+      "stat_levels": "Levels",
+      "stat_levels_new_this_week": "+{{count}} is hafte",
+      "stat_levels_no_new_this_week": "is hafte koi naya nahi"
     },
     "kids_control_center": {
       "coming_soon_badge": "Coming Soon 🚀",

@@ -349,19 +349,19 @@ export default function InsightsPage() {
                           <p className="text-lg font-extrabold text-foreground">{c.accuracyPct}%</p>
                         </div>
                         <div className="bg-muted/50 rounded-lg px-3 py-2">
-                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">Points</p>
+                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">{t("screens.insights.stat_points")}</p>
                           <p className="text-lg font-extrabold text-foreground">{c.pointsThisWeek}</p>
-                          <p className="text-[10px] text-muted-foreground">this week</p>
+                          <p className="text-[10px] text-muted-foreground">{t("screens.insights.stat_points_this_week")}</p>
                         </div>
                         <div className="bg-muted/50 rounded-lg px-3 py-2">
-                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">Levels</p>
+                          <p className="text-[11px] text-muted-foreground uppercase font-semibold">{t("screens.insights.stat_levels")}</p>
                           <p className="text-lg font-extrabold text-foreground">
                             {c.levelsCompletedTotal}/5
                           </p>
                           <p className="text-[10px] text-muted-foreground">
                             {c.levelsCompletedThisWeek > 0
-                              ? `+${c.levelsCompletedThisWeek} this week`
-                              : "no new this week"}
+                              ? t("screens.insights.stat_levels_new_this_week", { count: c.levelsCompletedThisWeek })
+                              : t("screens.insights.stat_levels_no_new_this_week")}
                           </p>
                         </div>
                       </div>

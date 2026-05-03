@@ -240,11 +240,11 @@ function TodaysPlanSection({
   if (loading || !plan) return null;
 
   return (
-    <Card className="rounded-2xl mb-3 border-indigo-200 dark:border-indigo-800">
+    <Card className="rounded-2xl mb-3 border-[hsl(var(--brand-indigo-300))] dark:border-[hsl(var(--brand-indigo-800))]">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-1">
           <div className="font-quicksand text-lg font-bold text-foreground flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-indigo-500" />
+            <Sparkles className="h-4 w-4 text-[hsl(var(--brand-indigo-500))]" />
             {t("screens.study.todays_plan")}
           </div>
           <div className="text-xs text-muted-foreground">
@@ -275,16 +275,16 @@ function TodaysPlanSection({
                     <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
                       <span>{it.subjectTitle}</span>
                       <span>·</span>
-                      <span className="px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                      <span className="px-1.5 py-0.5 rounded bg-[hsl(var(--brand-indigo-100))] dark:bg-[hsl(var(--brand-indigo-950))] text-[hsl(var(--brand-indigo-700))] dark:text-[hsl(var(--brand-indigo-300))]">
                         {t(`screens.study.plan_difficulty_${it.difficulty}`)}
                       </span>
-                      <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                      <span className="px-1.5 py-0.5 rounded bg-[hsl(var(--brand-amber-100))] dark:bg-[hsl(var(--brand-amber-900))] text-[hsl(var(--brand-amber-700))] dark:text-[hsl(var(--brand-amber-300))]">
                         {t(`screens.study.plan_source_${it.source}`)}
                       </span>
                     </div>
                   </div>
                   {done ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <CheckCircle2 className="h-5 w-5 text-[hsl(var(--brand-emerald-500))]" />
                   ) : (
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
                   )}

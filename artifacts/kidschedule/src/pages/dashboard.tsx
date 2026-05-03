@@ -697,7 +697,7 @@ function OnboardingScreen({
           </button>
         </Link>
         <Link href="/life-skills">
-          <button className="w-full h-12 rounded-2xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-900 dark:text-emerald-100 font-bold text-sm hover:bg-emerald-100/70 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+          <button className="w-full h-12 rounded-2xl border-2 border-[hsl(var(--brand-emerald-400))] dark:border-[hsl(var(--brand-emerald-700))] bg-[hsl(var(--brand-emerald-100)/0.5)] dark:bg-[hsl(var(--brand-emerald-800)/0.2)] text-[hsl(var(--brand-emerald-800))] dark:text-[hsl(var(--brand-emerald-100))] font-bold text-sm hover:bg-[hsl(var(--brand-emerald-100)/0.7)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
             🧭 Life Skills Mode
           </button>
         </Link>

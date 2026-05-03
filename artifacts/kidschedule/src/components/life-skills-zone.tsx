@@ -244,7 +244,7 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
     <div className="space-y-3">
       {/* Header strip */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-        <Compass className="h-3.5 w-3.5 text-emerald-500" />
+        <Compass className="h-3.5 w-3.5 text-[hsl(var(--brand-emerald-500))]" />
         <span>
           {ageBandLabel(ageBand as LifeSkillAgeBand, lang)} · {totalPoints} {uiLabel("points", lang)}
         </span>
@@ -263,10 +263,10 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
       </div>
 
       {/* Streak fire + weekly bar */}
-      <Card className="border-amber-200 dark:border-amber-800">
+      <Card className="border-[hsl(var(--brand-amber-200))] dark:border-[hsl(var(--brand-amber-800))]">
         <CardContent className="p-3">
           <div className="flex items-center gap-2 text-sm font-bold">
-            <Flame className="h-4 w-4 text-amber-500" />
+            <Flame className="h-4 w-4 text-[hsl(var(--brand-amber-500))]" />
             <span>
               {data.streak.current} {uiLabel("dayStreak", lang)}
             </span>
@@ -280,7 +280,7 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
                 key={d.date}
                 className={`h-6 rounded-sm border ${
                   d.completed
-                    ? "bg-emerald-500/80 border-emerald-600"
+                    ? "bg-[hsl(var(--brand-emerald-500)/0.8)] border-[hsl(var(--brand-emerald-600))]"
                     : "bg-muted/50 border-muted"
                 }`}
                 title={d.date}
@@ -295,8 +295,8 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
       <div>
         <p className="font-quicksand font-bold text-sm mb-2">{uiLabel("todayTitle", lang)}</p>
         {data.tasks.length > 0 && remainingTasks.length === 0 && (
-          <Card className="bg-emerald-50/80 dark:bg-emerald-900/20 border-emerald-300">
-            <CardContent className="p-3 text-sm text-center text-emerald-900 dark:text-emerald-100">
+          <Card className="bg-[hsl(var(--brand-emerald-100)/0.8)] dark:bg-[hsl(var(--brand-emerald-800)/0.2)] border-[hsl(var(--brand-emerald-400))]">
+            <CardContent className="p-3 text-sm text-center text-[hsl(var(--brand-emerald-800))] dark:text-[hsl(var(--brand-emerald-100))]">
               ✅ {uiLabel("noneToday", lang)}
             </CardContent>
           </Card>
@@ -318,12 +318,12 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
                             {task.title[lang]}
                           </p>
                           {isDone && (
-                            <span className="text-[10px] font-bold text-emerald-600">
+                            <span className="text-[10px] font-bold text-[hsl(var(--brand-emerald-600))]">
                               ✓ {uiLabel("done", lang)}
                             </span>
                           )}
                           {isSkipped && (
-                            <span className="text-[10px] font-bold text-amber-600">
+                            <span className="text-[10px] font-bold text-[hsl(var(--brand-amber-600))]">
                               — {uiLabel("skipped", lang)}
                             </span>
                           )}
@@ -338,15 +338,15 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
                           <span className="rounded-full bg-muted px-2 py-0.5">
                             {DIFFICULTY_LABEL[task.difficulty][lang]}
                           </span>
-                          <span className="rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-2 py-0.5">
+                          <span className="rounded-full bg-[hsl(var(--brand-amber-100))] dark:bg-[hsl(var(--brand-amber-900)/0.4)] text-[hsl(var(--brand-amber-800))] dark:text-[hsl(var(--brand-amber-200))] px-2 py-0.5">
                             +{POINTS_BY_DIFFICULTY[task.difficulty]} {uiLabel("points", lang)}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="rounded-lg bg-blue-50/70 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-2 flex gap-1.5 text-xs">
-                      <Lightbulb className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
+                    <div className="rounded-lg bg-[hsl(var(--brand-blue-100)/0.7)] dark:bg-[hsl(var(--brand-blue-600)/0.2)] border border-[hsl(var(--brand-blue-300))] dark:border-[hsl(var(--brand-blue-600))] p-2 flex gap-1.5 text-xs">
+                      <Lightbulb className="h-3.5 w-3.5 text-[hsl(var(--brand-blue-600))] shrink-0 mt-0.5" />
                       <p>
                         <span className="font-semibold">{uiLabel("parentTip", lang)}: </span>
                         {task.parentTip[lang]}
@@ -377,14 +377,14 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
       </div>
 
       {/* Role-play scenarios */}
-      <Card className="border-violet-200 dark:border-violet-800">
+      <Card className="border-[hsl(var(--brand-violet-200))] dark:border-[hsl(var(--brand-violet-800))]">
         <CardContent className="p-3">
           <button
             type="button"
             onClick={() => setShowRolePlay((v) => !v)}
             className="flex items-center gap-2 w-full text-left"
           >
-            <Drama className="h-4 w-4 text-violet-600" />
+            <Drama className="h-4 w-4 text-[hsl(var(--brand-violet-600))]" />
             <span className="font-quicksand font-bold text-sm flex-1">
               {t("pages.life_skills_page.role_play_title")}
             </span>
@@ -442,10 +442,10 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
       </Card>
 
       {/* Amy AI Insight */}
-      <Card className="border-purple-200 dark:border-purple-800">
+      <Card className="border-[hsl(var(--brand-purple-300))] dark:border-[hsl(var(--brand-purple-700))]">
         <CardContent className="p-4">
           <div className="flex items-start gap-2">
-            <Sparkles className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+            <Sparkles className="h-4 w-4 text-[hsl(var(--brand-purple-600))] shrink-0 mt-0.5" />
             <div>
               <p className="font-quicksand font-bold text-sm">{uiLabel("amyInsight", lang)}</p>
               <p className="text-xs text-muted-foreground mt-1">
