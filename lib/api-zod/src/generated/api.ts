@@ -40,6 +40,18 @@ export const ListChildrenResponseItem = zod.object({
   goals: zod.string(),
   babysitterId: zod.number().nullish(),
   photoUrl: zod.string().nullish(),
+  feedingType: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — how the baby is fed. One of \"breastfeeding\", \"formula\", \"mixed\".',
+    ),
+  sleepPattern: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
+    ),
   createdAt: zod.string(),
 });
 export const ListChildrenResponse = zod.array(ListChildrenResponseItem);
@@ -69,6 +81,18 @@ export const CreateChildBody = zod.object({
   goals: zod.string(),
   babysitterId: zod.number().nullish(),
   photoUrl: zod.string().nullish(),
+  feedingType: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — how the baby is fed. One of \"breastfeeding\", \"formula\", \"mixed\".',
+    ),
+  sleepPattern: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
+    ),
 });
 
 /**
@@ -101,6 +125,18 @@ export const GetChildResponse = zod.object({
   goals: zod.string(),
   babysitterId: zod.number().nullish(),
   photoUrl: zod.string().nullish(),
+  feedingType: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — how the baby is fed. One of \"breastfeeding\", \"formula\", \"mixed\".',
+    ),
+  sleepPattern: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
+    ),
   createdAt: zod.string(),
 });
 
@@ -133,6 +169,18 @@ export const UpdateChildBody = zod.object({
   goals: zod.string().optional(),
   babysitterId: zod.number().nullish(),
   photoUrl: zod.string().nullish(),
+  feedingType: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — how the baby is fed. One of \"breastfeeding\", \"formula\", \"mixed\".',
+    ),
+  sleepPattern: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
+    ),
 });
 
 export const updateChildResponseSchoolDaysItemMax = 7;
@@ -158,6 +206,18 @@ export const UpdateChildResponse = zod.object({
   goals: zod.string(),
   babysitterId: zod.number().nullish(),
   photoUrl: zod.string().nullish(),
+  feedingType: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — how the baby is fed. One of \"breastfeeding\", \"formula\", \"mixed\".',
+    ),
+  sleepPattern: zod
+    .string()
+    .nullish()
+    .describe(
+      'Infant-only — sleep style captured during onboarding. One of \"flexible\", \"irregular\", \"short_naps\".',
+    ),
   createdAt: zod.string(),
 });
 

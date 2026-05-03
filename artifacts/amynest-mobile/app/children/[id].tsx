@@ -28,7 +28,27 @@ type Child = {
   wakeUpTime: string; sleepTime: string; foodType?: string; goals: string;
   travelMode?: string; travelModeOther?: string | null;
   photoUrl?: string | null; babysitterId?: number | null;
+  feedingType?: string | null;
+  sleepPattern?: string | null;
 };
+
+const FEEDING_TYPES: { label: string; value: string }[] = [
+  { label: "Breastfeeding", value: "breastfeeding" },
+  { label: "Formula", value: "formula" },
+  { label: "Both", value: "mixed" },
+];
+const INFANT_SLEEP_PATTERNS: { label: string; value: string }[] = [
+  { label: "Flexible", value: "flexible" },
+  { label: "Irregular", value: "irregular" },
+  { label: "Short naps", value: "short_naps" },
+];
+
+function feedingLabel(value?: string | null): string {
+  return FEEDING_TYPES.find(f => f.value === value)?.label ?? "—";
+}
+function sleepPatternLabel(value?: string | null): string {
+  return INFANT_SLEEP_PATTERNS.find(p => p.value === value)?.label ?? "—";
+}
 
 const WEEKDAYS: { iso: number; short: string }[] = [
   { iso: 1, short: "Mon" }, { iso: 2, short: "Tue" }, { iso: 3, short: "Wed" },
@@ -75,6 +95,8 @@ export default function ChildDetailScreen() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [babysitterId, setBabysitterId] = useState<number | null>(null);
   const [pickingPhoto, setPickingPhoto] = useState(false);
+  const [feedingType, setFeedingType] = useState<string | null>(null);
+  const [sleepPattern, setSleepPattern] = useState<string | null>(null);
 
   const { data: child, isLoading } = useQuery<Child>({
     queryKey: ["child", id],
@@ -109,8 +131,15 @@ export default function ChildDetailScreen() {
       setGoals(child.goals ?? "balanced-routine");
       setPhotoUrl(child.photoUrl ?? null);
       setBabysitterId(child.babysitterId ?? null);
+      setFeedingType(child.feedingType ?? null);
+      setSleepPattern(child.sleepPattern ?? null);
     }
   }, [child]);
+
+  // Total age in months — used to gate the infant-only feeding & sleep fields
+  // (mirrors the cutoff used by the routine engine: < 12 months = infant).
+  const totalMonths = (child?.age ?? 0) * 12 + (child?.ageMonths ?? 0);
+  const isInfant = totalMonths < 12;
 
   const handlePickPhoto = async () => {
     try {
@@ -153,6 +182,8 @@ export default function ChildDetailScreen() {
           travelModeOther: travelMode === "other" ? travelModeOther.trim() || null : null,
           goals,
           photoUrl, babysitterId,
+          feedingType: isInfant ? feedingType : null,
+          sleepPattern: isInfant ? sleepPattern : null,
         }),
       });
       qc.invalidateQueries({ queryKey: ["children"] });
@@ -359,6 +390,47 @@ export default function ChildDetailScreen() {
                 Add babysitters from the Babysitters tab to assign them here.
               </Text>
             )}
+
+            {isInfant && (
+              <>
+                <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>
+                  Feeding Type
+                </Text>
+                <View style={styles.chipRow}>
+                  {FEEDING_TYPES.map((f) => {
+                    const on = feedingType === f.value;
+                    return (
+                      <TouchableOpacity key={f.value}
+                        style={[styles.chip, { backgroundColor: on ? colors.primary : colors.card, borderColor: on ? colors.primary : colors.border }]}
+                        onPress={() => { setFeedingType(on ? null : f.value); Haptics.selectionAsync(); }}
+                      >
+                        <Text style={[styles.chipText, { color: on ? "#fff" : colors.foreground }]}>{f.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>
+                  Sleep Pattern
+                </Text>
+                <View style={styles.chipRow}>
+                  {INFANT_SLEEP_PATTERNS.map((p) => {
+                    const on = sleepPattern === p.value;
+                    return (
+                      <TouchableOpacity key={p.value}
+                        style={[styles.chip, { backgroundColor: on ? colors.primary : colors.card, borderColor: on ? colors.primary : colors.border }]}
+                        onPress={() => { setSleepPattern(on ? null : p.value); Haptics.selectionAsync(); }}
+                      >
+                        <Text style={[styles.chipText, { color: on ? "#fff" : colors.foreground }]}>{p.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
+                  Helps Amy AI tune feeding sessions and nap blocks for your infant's daily routine.
+                </Text>
+              </>
+            )}
           </View>
         ) : (
           <View style={styles.infoSection}>
@@ -400,6 +472,12 @@ export default function ChildDetailScreen() {
                 colors={colors}
               />
             </InfoCard>
+            {isInfant && (
+              <InfoCard title="Infant Care" colors={colors}>
+                <InfoRow icon="nutrition-outline" label="Feeding" value={feedingLabel(child?.feedingType)} colors={colors} />
+                <InfoRow icon="bed-outline" label="Sleep Pattern" value={sleepPatternLabel(child?.sleepPattern)} colors={colors} />
+              </InfoCard>
+            )}
           </View>
         )}
 
