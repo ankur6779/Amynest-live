@@ -1270,7 +1270,7 @@ const styles = StyleSheet.create({
   chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, borderWidth: 2, borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "#13102e", flexDirection: "row", alignItems: "baseline", gap: 6,
+    backgroundColor: "#13102e", flexDirection: "row", alignItems: "baseline", gap: 6, // audit-ok: static dark-surface chip on the always-dark routine generator
   },
   chipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
   chipText: { fontSize: 14, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
@@ -1347,7 +1347,7 @@ const styles = StyleSheet.create({
 
   toggleChip: {
     flex: 1, paddingVertical: 12, borderRadius: 14, borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#13102e", alignItems: "center",
+    borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#13102e", alignItems: "center", // audit-ok: static dark surface (matches dark.card token)
   },
   toggleChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
   toggleChipText: { fontSize: 13, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
@@ -1359,7 +1359,7 @@ const styles = StyleSheet.create({
 
   optional: { fontWeight: "500", color: "rgba(255,255,255,0.45)", fontSize: 12 },
   textarea: {
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#13102e",
+    borderWidth: 2, borderColor: "rgba(255,255,255,0.08)", backgroundColor: "#13102e", // audit-ok: static dark textarea on always-dark generator
     borderRadius: 14, padding: 12, fontSize: 14, color: "#FFFFFF", minHeight: 88,
   },
   primaryBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, borderRadius: 16 },
@@ -1421,7 +1421,7 @@ const styles = StyleSheet.create({
 
   progressOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15,15,25,0.78)", alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
   progressCard: {
-    width: "100%", maxWidth: 360, backgroundColor: "#1A1530", borderRadius: 24, padding: 28,
+    width: "100%", maxWidth: 360, backgroundColor: "#1A1530", borderRadius: 24, padding: 28, // audit-ok: static dark progress card on always-dark generator
     alignItems: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
   },
   progressIconWrap: { width: 64, height: 64, borderRadius: 18, alignItems: "center", justifyContent: "center", marginBottom: 16 },
