@@ -1,7 +1,7 @@
-import React, {   useState, useEffect, useRef, useCallback } from "react";
+import React, {   useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
-  Platform, ActivityIndicator, KeyboardAvoidingView, Alert, Image, Modal,
+  Platform, ActivityIndicator, KeyboardAvoidingView, Image, Modal, Animated, Easing,
 } from "react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
@@ -11,26 +11,55 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
+// `expo-device` is loaded lazily so unit tests that import this screen
+// don't pull in the native module graph (which fails under JSDOM).
+let Device: typeof import("expo-device") | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, global-require
+  Device = require("expo-device") as typeof import("expo-device");
+} catch {
+  Device = null;
+}
 import { brand, palette, brandExtended } from "@/constants/colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 
+// expo-notifications is unavailable in Expo Go (SDK 53+) for remote push.
+// Permission APIs work even in Expo Go, but we still guard the require so a
+// missing native module never crashes the JS bundle.
+let Notifications: typeof import("expo-notifications") | null = null;
+if (Platform.OS !== "web") {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Notifications = require("expo-notifications") as typeof import("expo-notifications");
+  } catch {
+    Notifications = null;
+  }
+}
+
 type ChatRole = "amy" | "user";
 type ChatMsg = { id: string; role: ChatRole; text: string };
+type AgeGroup = "infant" | "toddler" | "kid";
 type Step =
   | "intro" | "child-name" | "child-dob" | "child-school" | "child-class"
   | "child-school-start" | "child-school-end" | "child-school-days"
   | "child-wake" | "child-sleep"
-  | "child-food" | "add-more" | "parent-name" | "parent-role" | "parent-work"
+  | "child-food" | "child-diet-notes"
+  | "infant-feeding" | "infant-sleep"
+  | "add-more" | "parent-name" | "parent-role" | "parent-work"
   | "parent-region" | "parent-mobile" | "parent-allergies"
-  | "saving" | "save-error" | "done";
+  | "saving" | "save-error" | "done" | "notifications";
 
 type ChildData = {
   name: string; dob: string; age: number; ageMonths: number;
+  ageGroup: AgeGroup;
   isSchoolGoing: boolean; childClass: string;
   schoolStartTime: string; schoolEndTime: string;
   schoolDays: number[] | null; // ISO weekdays (1=Mon..7=Sun); null when not school-going
   wakeUpTime: string; sleepTime: string; foodType: string;
+  dietNote: string;
+  feedingType?: string;
+  sleepPattern?: string;
 };
 type ParentData = { name: string; role: string; workType: string; region: string; mobileNumber?: string; allergies?: string };
 
@@ -69,8 +98,37 @@ const WORK_TYPE_KEYS: { key: string; value: string }[] = [
   { key: "work_wfh", value: "work_from_home" },
   { key: "work_office", value: "office" },
   { key: "work_not_working", value: "not_working" },
-  { key: "work_homemaker", value: "homemaker" },
 ];
+const FEEDING_KEYS: { key: string; value: string }[] = [
+  { key: "feeding_breast", value: "breastfeeding" },
+  { key: "feeding_formula", value: "formula" },
+  { key: "feeding_both", value: "mixed" },
+];
+const INFANT_SLEEP_KEYS: { key: string; value: string }[] = [
+  { key: "sleep_flexible", value: "flexible" },
+  { key: "sleep_irregular", value: "irregular" },
+  { key: "sleep_short", value: "short_naps" },
+];
+
+// Step ordering used to drive the top progress bar. Mirrors the web flow:
+// each branch (school-age vs infant) has its own denominator that covers
+// every step the user will actually see, so the bar grows smoothly all the
+// way to "Saving" without jumping when crossing from child → parent.
+const PARENT_TAIL: Step[] = [
+  "add-more", "parent-name", "parent-role", "parent-work",
+  "parent-region", "parent-mobile", "parent-allergies",
+];
+const STANDARD_ORDER: Step[] = [
+  "child-name", "child-dob", "child-school", "child-class",
+  "child-school-start", "child-school-end", "child-school-days",
+  "child-wake", "child-sleep", "child-food", "child-diet-notes",
+  ...PARENT_TAIL,
+];
+const INFANT_ORDER: Step[] = [
+  "child-name", "child-dob", "infant-feeding", "infant-sleep",
+  ...PARENT_TAIL,
+];
+const INFANT_ONLY: Step[] = ["infant-feeding", "infant-sleep"];
 
 const REGION_KEYS: { key: string; value: string }[] = [
   { key: "region_pan", value: "pan_indian" },
@@ -109,8 +167,57 @@ export default function OnboardingScreen() {
   const [children, setChildren] = useState<ChildData[]>([]);
   const [curr, setCurr] = useState<Partial<ChildData>>({});
   const [parent, setParent] = useState<Partial<ParentData>>({});
+  const [notifLoading, setNotifLoading] = useState(false);
   const listRef = useRef<FlatList<ChatMsg>>(null);
   const stepRef = useRef<Step>("intro");
+
+  // Progress bar — mirrors web. Steps inside the infant branch use the
+  // shorter denominator, all other steps use the standard flow length.
+  const { progressCurrent, progressTotal } = useMemo(() => {
+    // Once the user picks an infant DOB, all later steps (parent flow
+    // included) advance against the shorter infant denominator so the bar
+    // never visually jumps backwards mid-flow.
+    const inInfantBranch =
+      INFANT_ONLY.includes(step) ||
+      (curr.ageGroup === "infant") ||
+      (children.length > 0 && children.every(c => c.ageGroup === "infant"));
+    const order = inInfantBranch ? INFANT_ORDER : STANDARD_ORDER;
+    const idx = order.indexOf(step);
+    return {
+      progressCurrent: idx >= 0 ? idx + 1 : 0,
+      progressTotal: order.length,
+    };
+  }, [step, curr.ageGroup, children]);
+  const progressPct = progressTotal > 0
+    ? Math.max(4, Math.min(100, Math.round((progressCurrent / progressTotal) * 100)))
+    : 0;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progressPct,
+      duration: 280,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [progressPct, progressAnim]);
+
+  // Animated typing indicator — three dots that pulse in sequence.
+  const dotA = useRef(new Animated.Value(0.35)).current;
+  const dotB = useRef(new Animated.Value(0.35)).current;
+  const dotC = useRef(new Animated.Value(0.35)).current;
+  useEffect(() => {
+    if (!typing) return;
+    const make = (val: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(val, { toValue: 1, duration: 360, delay, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          Animated.timing(val, { toValue: 0.35, duration: 360, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        ]),
+      );
+    const loop = Animated.parallel([make(dotA, 0), make(dotB, 140), make(dotC, 280)]);
+    loop.start();
+    return () => loop.stop();
+  }, [typing, dotA, dotB, dotC]);
 
   const addMsg = useCallback((role: ChatRole, text: string) => {
     setMessages(m => [{ id: genId(), role, text }, ...m]);
@@ -153,6 +260,8 @@ export default function OnboardingScreen() {
 
     try {
       for (const child of finalChildren) {
+        const dietNote = (child.dietNote || "").trim();
+        const goals = dietNote ? `${dietNote}|balanced-routine` : "balanced-routine";
         const res = await authFetch("/api/children", {
           method: "POST",
           body: JSON.stringify({
@@ -167,7 +276,8 @@ export default function OnboardingScreen() {
             sleepTime: child.sleepTime || "21:00",
             travelMode: "car",
             foodType: child.foodType || "veg",
-            goals: "balanced-routine",
+            goals,
+            isOnboarding: true,
           }),
         });
         if (!res.ok) throw new Error(`Failed to create child: ${res.status}`);
@@ -248,9 +358,29 @@ export default function OnboardingScreen() {
         <Text style={styles.doneTitle}>{t("screens.onboarding_chat.done_title")}</Text>
         <Text style={styles.doneSub}>{t("screens.onboarding_chat.done_sub", { name: children[0]?.name ?? t("screens.onboarding_chat.done_default_name") })}</Text>
         <TouchableOpacity
-          onPress={() => {
+          onPress={async () => {
             qc.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
-            router.replace("/(tabs)");
+            // Mirror web: only show the dedicated notifications step if the
+            // user has not yet made a permission decision. Skip straight to
+            // the dashboard when permission is already granted/denied or the
+            // platform has no notifications module.
+            let shouldAsk = true;
+            try {
+              if (!Notifications || Platform.OS === "web" || !Device || !Device.isDevice) {
+                shouldAsk = false;
+              } else {
+                const settings = await Notifications.getPermissionsAsync();
+                if (settings.granted || settings.status === "denied") shouldAsk = false;
+              }
+            } catch {
+              shouldAsk = false;
+            }
+            if (shouldAsk) {
+              stepRef.current = "notifications";
+              setStep("notifications");
+            } else {
+              router.replace("/(tabs)");
+            }
           }}
           activeOpacity={0.9}
           style={styles.doneBtnWrap}
@@ -262,9 +392,103 @@ export default function OnboardingScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.doneBtn}
           >
-            <Text style={styles.doneBtnText}>{t("screens.onboarding_chat.go_dashboard")}</Text>
+            <Text style={styles.doneBtnText}>{t("screens.onboarding_chat.btn_continue")}</Text>
             <Ionicons name="arrow-forward" size={18} color="#fff" />
           </LinearGradient>
+        </TouchableOpacity>
+      </LinearGradient>
+    );
+  }
+
+  if (step === "notifications") {
+    const goDashboard = () => {
+      qc.setQueryData(["onboarding-status"], { onboardingComplete: true, profileComplete: true });
+      router.replace("/(tabs)");
+    };
+    const requestPush = async () => {
+      if (notifLoading) return;
+      setNotifLoading(true);
+      try {
+        if (!Notifications || Platform.OS === "web" || !Device || !Device.isDevice) {
+          goDashboard();
+          return;
+        }
+        if (Platform.OS === "android") {
+          try {
+            await Notifications.setNotificationChannelAsync("default", {
+              name: "Default",
+              importance: Notifications.AndroidImportance.DEFAULT,
+              sound: "default",
+              vibrationPattern: [0, 250, 250, 250],
+              lightColor: brand.purple500,
+            });
+          } catch { /* best-effort */ }
+        }
+        await Notifications.requestPermissionsAsync();
+      } catch {
+        // Permission flow failed — still continue to the dashboard so the
+        // user is never stuck on the notifications step.
+      } finally {
+        setNotifLoading(false);
+        goDashboard();
+      }
+    };
+    return (
+      <LinearGradient
+        colors={["#0a061a", "#120a2e", "#050010"]} // audit-ok: intentional dark bg / custom color
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={[styles.doneContainer, { paddingTop: topPad, paddingBottom: botPad }]}
+      >
+        <View style={[styles.amyBigBubble, { backgroundColor: brand.purple500 }]}>
+          <Ionicons name="notifications" size={36} color="#fff" />
+        </View>
+        <Text style={styles.doneTitle}>{t("screens.onboarding_chat.notif_title")}</Text>
+        <Text style={styles.doneSub}>{t("screens.onboarding_chat.notif_subtitle")}</Text>
+        <View style={styles.notifBenefits}>
+          {[
+            "notif_benefit_routines",
+            "notif_benefit_bedtime",
+            "notif_benefit_meals",
+          ].map(key => (
+            <View key={key} style={styles.notifBenefitRow}>
+              <Ionicons name="checkmark-circle" size={18} color={palette.emerald500} />
+              <Text style={styles.notifBenefitText}>{t(`screens.onboarding_chat.${key}`)}</Text>
+            </View>
+          ))}
+        </View>
+        <TouchableOpacity
+          onPress={requestPush}
+          activeOpacity={0.9}
+          disabled={notifLoading}
+          style={[styles.doneBtnWrap, notifLoading && { opacity: 0.7 }]}
+          testID="notif-allow-btn"
+        >
+          <LinearGradient
+            colors={[brand.purple500, brand.pink500]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.doneBtn}
+          >
+            {notifLoading
+              ? <ActivityIndicator color="#fff" />
+              : <Ionicons name="notifications" size={18} color="#fff" />}
+            <Text style={styles.doneBtnText}>
+              {notifLoading
+                ? t("screens.onboarding_chat.notif_enabling")
+                : t("screens.onboarding_chat.notif_allow")}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={goDashboard}
+          activeOpacity={0.7}
+          style={{ paddingVertical: 12, paddingHorizontal: 16 }}
+          testID="notif-skip-btn"
+        >
+          <Text style={{ color: TEXT_MUTED, fontSize: 14, fontFamily: "Inter_500Medium" }}>
+            {t("screens.onboarding_chat.notif_skip")}
+          </Text>
         </TouchableOpacity>
       </LinearGradient>
     );
@@ -407,8 +631,21 @@ export default function OnboardingScreen() {
               onPress={() => {
                 const dob = formatDob(dobDate);
                 const { years, months } = dobToAge(dob);
-                setCurr(c => ({ ...c, dob, age: years, ageMonths: months }));
-                userReplies(dob, "child-school", t("screens.onboarding_chat.amy_school_q", { name: curr.name }));
+                const ageGroup: AgeGroup = years < 2 ? "infant" : years < 5 ? "toddler" : "kid";
+                setCurr(c => ({ ...c, dob, age: years, ageMonths: months, ageGroup }));
+                if (ageGroup === "infant") {
+                  userReplies(
+                    dob,
+                    "infant-feeding",
+                    t("screens.onboarding_chat.infant_dob_reply", { name: curr.name }),
+                  );
+                } else {
+                  userReplies(
+                    dob,
+                    "child-school",
+                    t("screens.onboarding_chat.amy_school_q", { name: curr.name }),
+                  );
+                }
               }}
             >
               <Text style={styles.confirmBtnText}>{t("screens.onboarding_chat.btn_confirm")}</Text>
@@ -591,10 +828,8 @@ export default function OnboardingScreen() {
                 style={[styles.chip, { backgroundColor: selected === opt.label ? PRIMARY : GLASS_BG, borderColor: selected === opt.label ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(opt.label); Haptics.selectionAsync();
-                  const finishedChild = { ...curr, foodType: opt.value } as ChildData;
-                  setChildren(cs => [...cs, finishedChild]);
-                  setCurr({});
-                  userReplies(opt.label, "add-more", t("screens.onboarding_chat.amy_more_q"));
+                  setCurr(c => ({ ...c, foodType: opt.value }));
+                  userReplies(opt.label, "child-diet-notes", t("screens.onboarding_chat.amy_diet_notes_q"));
                 }}>
                 <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{opt.label}</Text>
               </TouchableOpacity>
@@ -602,6 +837,127 @@ export default function OnboardingScreen() {
           </View>
         );
       }
+
+      case "child-diet-notes":
+        return (
+          <View style={{ gap: 8 }}>
+            <View style={styles.inputRow}>
+              <TextInput
+                style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
+                value={textInput}
+                onChangeText={setTextInput}
+                placeholder={t("screens.onboarding_chat.ph_diet_notes")}
+                placeholderTextColor={TEXT_MUTED}
+                autoFocus
+                returnKeyType="send"
+                onSubmitEditing={() => {
+                  const note = textInput.trim();
+                  if (!note) return;
+                  const finishedChild = { ...curr, dietNote: note } as ChildData;
+                  setChildren(cs => [...cs, finishedChild]);
+                  setCurr({});
+                  userReplies(note, "add-more", t("screens.onboarding_chat.amy_more_q"));
+                }}
+              />
+              <TouchableOpacity
+                style={[styles.sendBtn, { backgroundColor: PRIMARY }]}
+                onPress={() => {
+                  const note = textInput.trim();
+                  if (!note) return;
+                  const finishedChild = { ...curr, dietNote: note } as ChildData;
+                  setChildren(cs => [...cs, finishedChild]);
+                  setCurr({});
+                  userReplies(note, "add-more", t("screens.onboarding_chat.amy_more_q"));
+                }}
+              >
+                <Ionicons name="arrow-forward" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                const finishedChild = { ...curr, dietNote: "" } as ChildData;
+                setChildren(cs => [...cs, finishedChild]);
+                setCurr({});
+                userReplies(t("screens.onboarding_chat.no_diet_notes_reply"), "add-more", t("screens.onboarding_chat.amy_more_q"));
+              }}
+              style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12 }}
+            >
+              <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{t("screens.onboarding_chat.skip_diet_notes")}</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case "infant-feeding":
+        return (
+          <View style={{ gap: 8 }}>
+            <View style={styles.chipGrid}>
+              {FEEDING_KEYS.map(opt => {
+                const label = t(`screens.onboarding_chat.${opt.key}`);
+                return (
+                  <TouchableOpacity key={opt.value}
+                    style={[styles.chip, { backgroundColor: selected === opt.value ? PRIMARY : GLASS_BG, borderColor: selected === opt.value ? PRIMARY : GLASS_BORDER }]}
+                    onPress={() => {
+                      setSelected(opt.value); Haptics.selectionAsync();
+                      setCurr(c => ({ ...c, feedingType: opt.value }));
+                      userReplies(
+                        label,
+                        "infant-sleep",
+                        t("screens.onboarding_chat.feeding_reply", { name: curr.name }),
+                      );
+                    }}>
+                    <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <TouchableOpacity
+              onPress={() => userReplies(
+                t("screens.onboarding_chat.skip_feeding_label"),
+                "infant-sleep",
+                t("screens.onboarding_chat.skip_sleep_reply", { name: curr.name }),
+              )}
+              style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12 }}
+            >
+              <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{t("screens.onboarding_chat.skip_feeding")}</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case "infant-sleep":
+        return (
+          <View style={{ gap: 8 }}>
+            <View style={styles.chipGrid}>
+              {INFANT_SLEEP_KEYS.map(opt => {
+                const label = t(`screens.onboarding_chat.${opt.key}`);
+                return (
+                  <TouchableOpacity key={opt.value}
+                    style={[styles.chip, { backgroundColor: selected === opt.value ? PRIMARY : GLASS_BG, borderColor: selected === opt.value ? PRIMARY : GLASS_BORDER }]}
+                    onPress={() => {
+                      setSelected(opt.value); Haptics.selectionAsync();
+                      const finishedChild = {
+                        ...curr,
+                        sleepPattern: opt.value,
+                        isSchoolGoing: false,
+                        childClass: "",
+                        schoolStartTime: "09:00",
+                        schoolEndTime: "15:00",
+                        schoolDays: null,
+                        wakeUpTime: "07:00",
+                        sleepTime: "21:00",
+                        foodType: "veg",
+                        dietNote: "",
+                      } as ChildData;
+                      setChildren(cs => [...cs, finishedChild]);
+                      setCurr({});
+                      userReplies(label, "add-more", t("screens.onboarding_chat.amy_more_q"));
+                    }}>
+                    <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        );
 
       case "add-more": {
         const addMoreOpts: { label: string; isYes: boolean }[] = [
@@ -831,11 +1187,38 @@ export default function OnboardingScreen() {
             style={styles.amyAvatar}
             resizeMode="cover"
           />
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.amyName}>{t("screens.onboarding.amy")}</Text>
             <Text style={styles.amyStatus}>{t("screens.onboarding_chat.amy_status")}</Text>
           </View>
+          {progressTotal > 0 && progressCurrent > 0 ? (
+            <Text style={styles.progressLabel}>
+              {t("screens.onboarding_chat.progress_label", { current: progressCurrent, total: progressTotal })}
+            </Text>
+          ) : null}
         </View>
+        {progressTotal > 0 ? (
+          <View style={styles.progressTrack} accessibilityRole="progressbar">
+            <Animated.View
+              style={[
+                styles.progressFill,
+                {
+                  width: progressAnim.interpolate({
+                    inputRange: [0, 100],
+                    outputRange: ["0%", "100%"],
+                  }),
+                },
+              ]}
+            >
+              <LinearGradient
+                colors={[brand.purple500, brand.pink500]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFill}
+              />
+            </Animated.View>
+          </View>
+        ) : null}
       </View>
 
       <FlatList
@@ -854,9 +1237,9 @@ export default function OnboardingScreen() {
                 resizeMode="cover"
               />
               <View style={[styles.typingBubble, styles.bubbleAmy]}>
-                <View style={[styles.dot, { backgroundColor: PRIMARY }]} />
-                <View style={[styles.dot, { backgroundColor: PRIMARY }]} />
-                <View style={[styles.dot, { backgroundColor: PRIMARY }]} />
+                <Animated.View style={[styles.dot, { backgroundColor: PRIMARY, opacity: dotA, transform: [{ scale: dotA.interpolate({ inputRange: [0.35, 1], outputRange: [0.8, 1.15] }) }] }]} />
+                <Animated.View style={[styles.dot, { backgroundColor: PRIMARY, opacity: dotB, transform: [{ scale: dotB.interpolate({ inputRange: [0.35, 1], outputRange: [0.8, 1.15] }) }] }]} />
+                <Animated.View style={[styles.dot, { backgroundColor: PRIMARY, opacity: dotC, transform: [{ scale: dotC.interpolate({ inputRange: [0.35, 1], outputRange: [0.8, 1.15] }) }] }]} />
               </View>
             </View>
           ) : null
@@ -925,4 +1308,16 @@ const styles = StyleSheet.create({
   doneBtnWrap: { borderRadius: 16, overflow: "hidden", marginTop: 8 },
   doneBtn: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 28, paddingVertical: 16 },
   doneBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16, letterSpacing: 0.1 },
+  progressLabel: { fontSize: 11, fontFamily: "Inter_500Medium", color: "rgba(200,180,255,0.65)", marginLeft: 8 },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    overflow: "hidden",
+    marginTop: 10,
+  },
+  progressFill: { height: 4, borderRadius: 2, overflow: "hidden" },
+  notifBenefits: { gap: 10, marginTop: 8, marginBottom: 8, alignSelf: "stretch" },
+  notifBenefitRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  notifBenefitText: { color: "rgba(255,255,255,0.85)", fontSize: 14, fontFamily: "Inter_500Medium", flex: 1 },
 });
