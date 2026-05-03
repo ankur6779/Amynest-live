@@ -1135,6 +1135,12 @@ export default function RoutineGenerate() {
               hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
               specialPlans: appendHandlerToPlans(familySpecialPlans, handlerType),
               fridgeItems: familyFridgeItems.trim() || undefined,
+              // Parity with mobile: forward per-child profile + region overrides
+              age: child.age,
+              wakeTime: child.wakeUpTime ?? undefined,
+              schoolStart: child.schoolStartTime ?? undefined,
+              schoolEnd: child.schoolEndTime ?? undefined,
+              region: parentRegion ?? undefined,
               ...buildParentAvailPayload(familyParentAvail)
             }
           }, {
@@ -1199,7 +1205,10 @@ export default function RoutineGenerate() {
               childId: child.id,
               date: familyDate,
               title: routine.title,
-              items: routine.items as never
+              items: routine.items as never,
+              // Parity with mobile family save-all: replace any existing routine
+              // for the same child+date instead of failing with conflict.
+              override: true
             }
           }, {
             onSuccess: () => {
