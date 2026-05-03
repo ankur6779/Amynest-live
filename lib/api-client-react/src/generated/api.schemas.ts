@@ -297,6 +297,83 @@ export interface AskAssistantResponse {
   answer: string;
 }
 
+export type AiTutorTurnRole =
+  (typeof AiTutorTurnRole)[keyof typeof AiTutorTurnRole];
+
+export const AiTutorTurnRole = {
+  user: "user",
+  tutor: "tutor",
+} as const;
+
+/**
+ * A prior turn in the tutor conversation. Used by the server to keep context across messages.
+ */
+export interface AiTutorTurn {
+  role: AiTutorTurnRole;
+  text: string;
+}
+
+export type AiTutorChatBodyMode =
+  (typeof AiTutorChatBodyMode)[keyof typeof AiTutorChatBodyMode];
+
+export const AiTutorChatBodyMode = {
+  teach: "teach",
+  practice: "practice",
+  quiz: "quiz",
+  doubt: "doubt",
+} as const;
+
+export type AiTutorChatBodySubject =
+  (typeof AiTutorChatBodySubject)[keyof typeof AiTutorChatBodySubject];
+
+export const AiTutorChatBodySubject = {
+  math: "math",
+  english: "english",
+  gk: "gk",
+  logic: "logic",
+  general: "general",
+} as const;
+
+export interface AiTutorChatBody {
+  childId?: number | null;
+  /** Child age in years. Server prefers a stored child record; this is a fallback when no childId is sent. */
+  childAge?: number | null;
+  mode: AiTutorChatBodyMode;
+  subject: AiTutorChatBodySubject;
+  topic?: string | null;
+  message: string;
+  /** Up to the last few turns of this conversation (oldest first), used as model context. */
+  history?: AiTutorTurn[];
+}
+
+export type AiTutorReplyType =
+  (typeof AiTutorReplyType)[keyof typeof AiTutorReplyType];
+
+export const AiTutorReplyType = {
+  teach: "teach",
+  practice: "practice",
+  quiz: "quiz",
+  doubt: "doubt",
+} as const;
+
+export interface AiTutorReply {
+  type: AiTutorReplyType;
+  content: string;
+  examples: string[];
+  /** @nullable */
+  question?: string | null;
+  options: string[];
+  /** Index into `options` for MCQs, a short string for fill-ins, or null when there is no auto-check. */
+  answer?: number | string | null;
+}
+
+export interface AiTutorChatResponse {
+  reply: AiTutorReply;
+  cached?: boolean;
+  ageBand?: string;
+  mode?: string;
+}
+
 export interface BehaviorLog {
   id: number;
   childId: number;

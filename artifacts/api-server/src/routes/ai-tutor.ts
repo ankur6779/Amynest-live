@@ -61,7 +61,9 @@ function ageBandFromMonths(totalMonths: number): AgeBand {
 // ─── Validation ──────────────────────────────────────────────────────────
 
 const ChatBody = z.object({
-  childId: z.number().int().positive().optional(),
+  childId: z.number().int().positive().nullish(),
+  /** Fallback when the caller doesn't have a stored child record (e.g. first-run). */
+  childAge: z.number().int().min(1).max(18).nullish(),
   mode: z.enum(MODES).default("teach"),
   /** Subject hint — "math", "english", "gk", "logic", "general". */
   subject: z
@@ -73,6 +75,16 @@ const ChatBody = z.object({
   message: z.string().trim().min(1).max(800),
   /** Optional override; otherwise derived from child's age. */
   ageBand: z.enum(AGE_BANDS).optional(),
+  /** Up to the last few turns of this conversation, oldest first. */
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["user", "tutor"]),
+        text: z.string().trim().min(1).max(2000),
+      }),
+    )
+    .max(10)
+    .optional(),
 });
 
 const TutorJsonSchema = z.object({
@@ -214,7 +226,7 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
   // Load child if provided so we can derive an age-band default + name.
   let childName: string | null = null;
   let derivedAgeBand: AgeBand | null = null;
-  if (body.childId !== undefined) {
+  if (body.childId != null) {
     const child = await loadOwnedChild(body.childId, userId);
     if (!child) {
       res.status(404).json({ error: "child_not_found" });
@@ -223,6 +235,8 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
     childName = child.name ?? null;
     const totalMonths = (child.age ?? 0) * 12 + (child.ageMonths ?? 0);
     derivedAgeBand = ageBandFromMonths(totalMonths);
+  } else if (body.childAge != null) {
+    derivedAgeBand = ageBandFromMonths(body.childAge * 12);
   }
   const ageBand: AgeBand = body.ageBand ?? derivedAgeBand ?? "5-7";
   const topic = body.topic ?? "";
@@ -265,6 +279,10 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
   let usedFallback = false;
   let reply: TutorJson;
   try {
+    const historyMessages = (body.history ?? []).slice(-6).map((h) => ({
+      role: (h.role === "tutor" ? "assistant" : "user") as "assistant" | "user",
+      content: h.text,
+    }));
     const completion = await openai.chat.completions.create({
       model: MODEL,
       messages: [
@@ -278,6 +296,7 @@ router.post("/ai-tutor/chat", aiUsageGate, async (req, res): Promise<void> => {
             childName,
           }),
         },
+        ...historyMessages,
         { role: "user", content: body.message },
       ],
       response_format: { type: "json_object" },

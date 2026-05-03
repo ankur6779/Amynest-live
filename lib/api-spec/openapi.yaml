@@ -510,6 +510,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/AskAssistantResponse"
 
+  /ai-tutor/chat:
+    post:
+      operationId: aiTutorChat
+      tags: [ai]
+      summary: Structured tutor reply (teach / practice / quiz / doubt)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiTutorChatBody"
+      responses:
+        "200":
+          description: Tutor reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiTutorChatResponse"
+
   /parent-tasks:
     get:
       operationId: listParentTaskCompletions
@@ -1223,6 +1242,94 @@ components:
           type: string
       required:
         - answer
+
+    AiTutorTurn:
+      type: object
+      description: A prior turn in the tutor conversation. Used by the server to keep context across messages.
+      properties:
+        role:
+          type: string
+          enum: [user, tutor]
+        text:
+          type: string
+      required:
+        - role
+        - text
+
+    AiTutorChatBody:
+      type: object
+      properties:
+        childId:
+          type: integer
+          nullable: true
+        childAge:
+          type: integer
+          nullable: true
+          description: Child age in years. Server prefers a stored child record; this is a fallback when no childId is sent.
+        mode:
+          type: string
+          enum: [teach, practice, quiz, doubt]
+        subject:
+          type: string
+          enum: [math, english, gk, logic, general]
+        topic:
+          type: string
+          nullable: true
+        message:
+          type: string
+        history:
+          type: array
+          description: Up to the last few turns of this conversation (oldest first), used as model context.
+          items:
+            $ref: "#/components/schemas/AiTutorTurn"
+      required:
+        - mode
+        - subject
+        - message
+
+    AiTutorReply:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [teach, practice, quiz, doubt]
+        content:
+          type: string
+        examples:
+          type: array
+          items:
+            type: string
+        question:
+          type: ["string", "null"]
+        options:
+          type: array
+          items:
+            type: string
+        answer:
+          description: Index into `options` for MCQs, a short string for fill-ins, or null when there is no auto-check.
+          oneOf:
+            - type: integer
+            - type: string
+            - type: "null"
+      required:
+        - type
+        - content
+        - examples
+        - options
+
+    AiTutorChatResponse:
+      type: object
+      properties:
+        reply:
+          $ref: "#/components/schemas/AiTutorReply"
+        cached:
+          type: boolean
+        ageBand:
+          type: string
+        mode:
+          type: string
+      required:
+        - reply
 
     BehaviorLog:
       type: object
