@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Modal,
+  Pressable,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
@@ -44,6 +46,11 @@ import {
   extractTiffinSummary,
   buildCombinedTimeline,
   type FRTimelineFamilyResult,
+  shiftRoutineItems,
+  isEssentialTask,
+  parseDisplayTime,
+  inputToDisplay,
+  displayToInput,
 } from "@workspace/family-routine";
 
 type Child = {
@@ -114,6 +121,30 @@ export default function GenerateRoutineScreen() {
   const [fridgeItems, setFridgeItems] = useState<string>("");
   const [handlerType, setHandlerType] = useState<HandlerKey>("mom");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+
+  // ── Existing routine check (debounced) ──────────────────────────────────
+  const [existingRoutine, setExistingRoutine] = useState<{ exists: boolean; routineId?: number } | null>(null);
+  const [overrideMode, setOverrideMode] = useState(false);
+  const checkDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const checkRequestIdRef = useRef(0);
+
+  // ── Wake-up confirmation system ─────────────────────────────────────────
+  const [showWakeConfirm, setShowWakeConfirm] = useState(false);
+  const [wakeAnswer, setWakeAnswer] = useState<"yes" | "no" | null>(null);
+  const [wakeInputValue, setWakeInputValue] = useState("07:00");
+  const [confirmedWakeTime, setConfirmedWakeTime] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ type: "standard" | "ai"; forceOverride: boolean } | null>(null);
+
+  // ── Past essential task check (after generating today) ──────────────────
+  type PendingRoutineSave = {
+    generatedData: { title: string; items: any[] };
+    shouldOverride: boolean | undefined;
+  };
+  const [showTaskCheck, setShowTaskCheck] = useState(false);
+  const [pendingRoutineSave, setPendingRoutineSave] = useState<PendingRoutineSave | null>(null);
+  const [pastEssentialTasks, setPastEssentialTasks] = useState<{ idx: number; item: any }[]>([]);
+  const [taskCheckMap, setTaskCheckMap] = useState<Record<number, boolean>>({});
 
   // ── Region picker (overrides parent profile when set) ───────────────────
   const [region, setRegion] = useState<RegionValue | null>(null);
@@ -218,6 +249,39 @@ export default function GenerateRoutineScreen() {
 
   const isFormValid = selectedChild != null;
 
+  // ── Check for existing routine when child + date both selected ──────────
+  useEffect(() => {
+    if (selectedChild == null || !date) {
+      setExistingRoutine(null);
+      setOverrideMode(false);
+      return;
+    }
+    if (checkDebounceRef.current) clearTimeout(checkDebounceRef.current);
+    const reqId = ++checkRequestIdRef.current;
+    checkDebounceRef.current = setTimeout(() => {
+      authFetch(`/api/routines/check?childId=${selectedChild}&date=${date}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: any) => {
+          // Guard against stale responses after child/date changed mid-flight
+          if (reqId !== checkRequestIdRef.current) return;
+          setExistingRoutine(data ?? null);
+          if (data?.exists) setOverrideMode(false);
+        })
+        .catch(() => {
+          if (reqId !== checkRequestIdRef.current) return;
+          setExistingRoutine(null);
+        });
+    }, 400);
+    return () => {
+      if (checkDebounceRef.current) clearTimeout(checkDebounceRef.current);
+    };
+  }, [selectedChild, date, authFetch]);
+
+  // Reset confirmed wake time when child or date changes (mirrors web)
+  useEffect(() => {
+    setConfirmedWakeTime(null);
+  }, [selectedChild, date]);
+
   // ── Parent avail mutators ───────────────────────────────────────────────
   const updateP1 = useCallback((patch: Partial<ParentAvailEntry>) => {
     setParentAvail((prev) => ({ ...prev, p1: { ...prev.p1, ...patch } }));
@@ -239,85 +303,251 @@ export default function GenerateRoutineScreen() {
     });
   }, []);
 
-  // ── Single-mode generate ────────────────────────────────────────────────
-  const onGenerate = async () => {
-    if (!isFormValid || isGenerating) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setIsGenerating(true);
+  // ── Today helper ───────────────────────────────────────────────────────
+  const todayKey = useMemo(() => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }, []);
 
-    // Read the child's previously confirmed wake time for `today` so the
-    // server can shift the day if the child slept in. Same key shape as web.
-    let wakeOverride: string | undefined;
+  // ── Core save helper ───────────────────────────────────────────────────
+  const saveGeneratedRoutine = useCallback(async (data: { title: string; items: any[] }, shouldOverride: boolean | undefined) => {
     try {
-      if (selectedChild != null) {
-        const stored = await AsyncStorage.getItem(WAKE_KEY(selectedChild, date));
-        if (stored && /^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(stored)) wakeOverride = stored;
-      }
-    } catch { /* ignore */ }
-
-    try {
-      const genRes = await authFetch("/api/routines/generate", {
-        method: "POST",
-        body: JSON.stringify({
-          childId: selectedChild,
-          date,
-          hasSchool: hasSchool ?? undefined,
-          specialPlans: appendHandlerToPlans(specialPlans, handlerType),
-          fridgeItems: fridgeItems.trim() || undefined,
-          mood: mood !== "normal" ? mood : undefined,
-          age: selectedChildData?.age,
-          wakeTime: wakeOverride ?? selectedChildData?.wakeUpTime,
-          schoolStart: selectedChildData?.schoolStartTime,
-          schoolEnd: selectedChildData?.schoolEndTime,
-          region: effectiveRegion,
-          ...buildParentAvailPayload(parentAvail),
-        }),
-      });
-      if (genRes.status === 402 || genRes.status === 403) {
-        const body = (await genRes.json().catch(() => null)) as { reason?: string; error?: string; feature?: string } | null;
-        const isFeatureLocked = genRes.status === 402 && (body?.error === "feature_locked" || body?.feature === "routine_generate");
-        const isLegacyLimit = genRes.status === 403 && body?.reason === "routine_limit_exceeded";
-        if (isFeatureLocked || isLegacyLimit) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          router.push({ pathname: "/paywall", params: { reason: "routines_limit" } });
-          return;
-        }
-      }
-      if (!genRes.ok) throw new Error("Generate failed");
-      const generated = (await genRes.json()) as { title: string; items: any[] };
-
-      const simplifiedItems = simplifyForHandler(generated.items as any, handlerType);
-
       const saveRes = await authFetch("/api/routines", {
         method: "POST",
         body: JSON.stringify({
           childId: selectedChild,
           date,
-          title: generated.title,
-          items: simplifiedItems,
-          override: true,
+          title: data.title,
+          items: data.items,
+          override: shouldOverride,
         }),
       });
+      if (saveRes.status === 402 || saveRes.status === 403) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        router.push({ pathname: "/paywall", params: { reason: "routines_limit" } });
+        return;
+      }
       if (!saveRes.ok) throw new Error("Save failed");
       const saved = (await saveRes.json()) as { id: number };
-
       queryClient.invalidateQueries({ queryKey: ["routines"] });
       queryClient.invalidateQueries({ queryKey: ["routines-all"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-recent-routines"] });
-
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace(`/routines/${saved.id}` as never);
-    } catch (e) {
+    } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        t("toasts.routines_generate.save_failed_title", { defaultValue: "Couldn't save routine" }),
+        t("toasts.routines_generate.save_failed_body", { defaultValue: "Amy ran into an issue. Please try again in a moment." }),
+      );
+    }
+  }, [authFetch, selectedChild, date, queryClient, router, t]);
+
+  // ── Post-generate: adjust for today (past tasks + wake shift) ──────────
+  const handlePostGenerate = useCallback((generatedData: { title: string; items: any[] }, shouldOverride: boolean | undefined, wakeTime: string | null) => {
+    const isToday = date === todayKey;
+    const childDefaultWake = selectedChildData?.wakeUpTime ?? "7:00 AM";
+    let adjustedItems = [...generatedData.items];
+
+    // 1. Shift by actual wake time if different from default
+    if (isToday && wakeTime && wakeTime !== childDefaultWake) {
+      adjustedItems = shiftRoutineItems(adjustedItems as any, childDefaultWake, wakeTime) as any[];
+    }
+
+    // 2. For today: identify past tasks; auto-complete non-essentials; queue essentials
+    if (isToday) {
+      const now = new Date();
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const essentials: { idx: number; item: any }[] = [];
+      adjustedItems = adjustedItems.map((item, idx) => {
+        const itemMins = parseDisplayTime(item.time);
+        if (itemMins < 0 || itemMins >= nowMins) return item; // future
+        if (item.category === "sleep") return item; // never auto-touch sleep
+        if (isEssentialTask(item.activity, item.category)) {
+          essentials.push({ idx, item: { ...item } });
+          return item; // resolved by task check dialog
+        }
+        return { ...item, status: "completed" };
+      });
+      const adjustedData = { title: generatedData.title, items: adjustedItems };
+      if (essentials.length > 0) {
+        setPastEssentialTasks(essentials);
+        setTaskCheckMap(Object.fromEntries(essentials.map(({ idx }) => [idx, true])));
+        setPendingRoutineSave({ generatedData: adjustedData, shouldOverride });
+        setShowTaskCheck(true);
+        return;
+      }
+      void saveGeneratedRoutine(adjustedData, shouldOverride);
+    } else {
+      void saveGeneratedRoutine({ title: generatedData.title, items: adjustedItems }, shouldOverride);
+    }
+  }, [date, todayKey, selectedChildData, saveGeneratedRoutine]);
+
+  // ── Common payload builder ─────────────────────────────────────────────
+  const buildGeneratePayload = useCallback((wakeTime: string | null) => ({
+    childId: selectedChild,
+    date,
+    hasSchool: hasSchool ?? undefined,
+    specialPlans: appendHandlerToPlans(specialPlans, handlerType),
+    fridgeItems: fridgeItems.trim() || undefined,
+    mood: mood !== "normal" ? mood : undefined,
+    age: selectedChildData?.age,
+    wakeTime: wakeTime ?? selectedChildData?.wakeUpTime,
+    schoolStart: selectedChildData?.schoolStartTime,
+    schoolEnd: selectedChildData?.schoolEndTime,
+    region: effectiveRegion,
+    ...buildParentAvailPayload(parentAvail),
+  }), [selectedChild, date, hasSchool, specialPlans, handlerType, fridgeItems, mood, selectedChildData, effectiveRegion, parentAvail]);
+
+  // ── Handle paywall response shared helper ──────────────────────────────
+  const handlePaywallResponse = useCallback(async (res: Response): Promise<boolean> => {
+    if (res.status !== 402 && res.status !== 403) return false;
+    const body = (await res.json().catch(() => null)) as { reason?: string; error?: string; feature?: string } | null;
+    const isFeatureLocked = res.status === 402 && (body?.error === "feature_locked" || body?.feature === "routine_generate");
+    const isLegacyLimit = res.status === 403 && body?.reason === "routine_limit_exceeded";
+    if (isFeatureLocked || isLegacyLimit) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      router.push({ pathname: "/paywall", params: { reason: "routines_limit" } });
+      return true;
+    }
+    return false;
+  }, [router]);
+
+  // ── Core generate (rule-based) ─────────────────────────────────────────
+  const proceedGenerate = useCallback(async (forceOverride: boolean, wakeTime: string | null) => {
+    const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsGenerating(true);
+    try {
+      const res = await authFetch("/api/routines/generate", {
+        method: "POST",
+        body: JSON.stringify(buildGeneratePayload(wakeTime)),
+      });
+      if (await handlePaywallResponse(res)) return;
+      if (!res.ok) throw new Error("Generate failed");
+      const generated = (await res.json()) as { title: string; items: any[] };
+      const simplified = simplifyForHandler(generated.items as any, handlerType) as any[];
+      handlePostGenerate({ title: generated.title, items: simplified }, shouldOverride, wakeTime);
+    } catch {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         t("toasts.routines_generate.save_failed_title", { defaultValue: "Couldn't generate routine" }),
-        t("toasts.routines_generate.save_failed_body", { defaultValue: "Amy ran into an issue. Please try again in a moment." }),
+        t("toasts.routines_generate.generate_failed", { defaultValue: "Failed to generate routine" }),
       );
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [overrideMode, existingRoutine, authFetch, buildGeneratePayload, handlePaywallResponse, handlerType, handlePostGenerate, t]);
+
+  // ── Core generate (AI) ─────────────────────────────────────────────────
+  const proceedAiGenerate = useCallback(async (forceOverride: boolean, wakeTime: string | null) => {
+    const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsAiGenerating(true);
+    try {
+      const res = await authFetch("/api/routines/generate-ai", {
+        method: "POST",
+        body: JSON.stringify(buildGeneratePayload(wakeTime)),
+      });
+      if (await handlePaywallResponse(res)) return;
+      if (!res.ok) throw new Error("AI generate failed");
+      const generated = (await res.json()) as { title: string; items: any[] };
+      const simplified = simplifyForHandler(generated.items as any, handlerType) as any[];
+      handlePostGenerate({ title: generated.title, items: simplified }, shouldOverride, wakeTime);
+    } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        t("toasts.routines_generate.save_failed_title", { defaultValue: "Couldn't generate routine" }),
+        t("toasts.routines_generate.generate_failed", { defaultValue: "Failed to generate routine" }),
+      );
+    } finally {
+      setIsAiGenerating(false);
+    }
+  }, [overrideMode, existingRoutine, authFetch, buildGeneratePayload, handlePaywallResponse, handlerType, handlePostGenerate, t]);
+
+  // ── Wake-check entry point ─────────────────────────────────────────────
+  const triggerWithWakeCheck = useCallback(async (type: "standard" | "ai", forceOverride: boolean) => {
+    const isToday = date === todayKey;
+    if (!isToday || selectedChild == null) {
+      if (type === "standard") void proceedGenerate(forceOverride, null);
+      else void proceedAiGenerate(forceOverride, null);
+      return;
+    }
+    if (confirmedWakeTime) {
+      if (type === "standard") void proceedGenerate(forceOverride, confirmedWakeTime);
+      else void proceedAiGenerate(forceOverride, confirmedWakeTime);
+      return;
+    }
+    // Check stored wake time for child+date — if present, skip dialog
+    try {
+      const stored = await AsyncStorage.getItem(WAKE_KEY(selectedChild, date));
+      if (stored && /^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(stored)) {
+        setConfirmedWakeTime(stored);
+        if (type === "standard") void proceedGenerate(forceOverride, stored);
+        else void proceedAiGenerate(forceOverride, stored);
+        return;
+      }
+    } catch { /* ignore */ }
+    // Open wake-confirm dialog
+    setPendingAction({ type, forceOverride });
+    setWakeAnswer(null);
+    const def = selectedChildData?.wakeUpTime ?? "7:00 AM";
+    setWakeInputValue(displayToInput(def));
+    setShowWakeConfirm(true);
+  }, [date, todayKey, selectedChild, confirmedWakeTime, selectedChildData, proceedGenerate, proceedAiGenerate]);
+
+  const handleWakeConfirmSubmit = useCallback(async () => {
+    if (wakeAnswer === null) return;
+    const childDefaultWake = selectedChildData?.wakeUpTime ?? "7:00 AM";
+    const finalWakeTime = wakeAnswer === "yes"
+      ? childDefaultWake
+      : (inputToDisplay(wakeInputValue) || childDefaultWake);
+    setConfirmedWakeTime(finalWakeTime);
+    // Persist for later sessions (mirrors web's localStorage behavior)
+    if (selectedChild != null) {
+      AsyncStorage.setItem(WAKE_KEY(selectedChild, date), finalWakeTime).catch(() => {});
+    }
+    setShowWakeConfirm(false);
+    if (pendingAction?.type === "standard") void proceedGenerate(pendingAction.forceOverride, finalWakeTime);
+    else if (pendingAction?.type === "ai") void proceedAiGenerate(pendingAction.forceOverride, finalWakeTime);
+    setPendingAction(null);
+  }, [wakeAnswer, wakeInputValue, selectedChildData, selectedChild, date, pendingAction, proceedGenerate, proceedAiGenerate]);
+
+  const handleTaskCheckDone = useCallback(() => {
+    if (!pendingRoutineSave) {
+      setShowTaskCheck(false);
+      return;
+    }
+    const finalItems = pendingRoutineSave.generatedData.items.map((item: any, idx: number) => {
+      if (idx in taskCheckMap) {
+        return { ...item, status: taskCheckMap[idx] ? "completed" : "skipped" };
+      }
+      return item;
+    });
+    setShowTaskCheck(false);
+    void saveGeneratedRoutine(
+      { title: pendingRoutineSave.generatedData.title, items: finalItems },
+      pendingRoutineSave.shouldOverride,
+    );
+    setPendingRoutineSave(null);
+  }, [pendingRoutineSave, taskCheckMap, saveGeneratedRoutine]);
+
+  // ── Public entry points (button handlers) ──────────────────────────────
+  const handleGenerate = useCallback((forceOverride = false) => {
+    if (!isFormValid || isGenerating || isAiGenerating) return;
+    if (existingRoutine?.exists && !forceOverride && !overrideMode) return;
+    void triggerWithWakeCheck("standard", forceOverride);
+  }, [isFormValid, isGenerating, isAiGenerating, existingRoutine, overrideMode, triggerWithWakeCheck]);
+
+  const handleAiGenerate = useCallback((forceOverride = false) => {
+    if (!isFormValid || isGenerating || isAiGenerating) return;
+    if (existingRoutine?.exists && !forceOverride && !overrideMode) return;
+    void triggerWithWakeCheck("ai", forceOverride);
+  }, [isFormValid, isGenerating, isAiGenerating, existingRoutine, overrideMode, triggerWithWakeCheck]);
 
   // ── Family-mode generate (sequential) ──────────────────────────────────
   const handleFamilyGenerate = async () => {
@@ -629,25 +859,84 @@ export default function GenerateRoutineScreen() {
           />
         )}
 
+        {/* Existing routine banner — surfaces override gate (mirrors web) */}
+        {mode === "single" && existingRoutine?.exists && !overrideMode && (
+          <View style={styles.existingBanner}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Ionicons name="information-circle" size={18} color={brand.purple500} />
+              <Text style={styles.existingBannerTitle}>
+                {t("routines_generate.existing_title", { defaultValue: "A routine already exists for this day" })}
+              </Text>
+            </View>
+            <Text style={styles.existingBannerBody}>
+              {t("routines_generate.existing_body", { defaultValue: "Open it, or replace it with a new one." })}
+            </Text>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  if (existingRoutine.routineId) router.push(`/routines/${existingRoutine.routineId}` as never);
+                }}
+                activeOpacity={0.85}
+                style={[styles.existingBtn, { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.18)" }]}
+              >
+                <Text style={[styles.existingBtnText, { color: "rgba(255,255,255,0.92)" }]}>
+                  {t("routines_generate.open_existing", { defaultValue: "Open existing" })}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => { Haptics.selectionAsync(); setOverrideMode(true); }}
+                activeOpacity={0.85}
+                style={[styles.existingBtn, { backgroundColor: brand.purple500, borderColor: brand.purple500 }]}
+              >
+                <Text style={[styles.existingBtnText, { color: "#fff" }]}>
+                  {t("routines_generate.replace_existing", { defaultValue: "Replace it" })}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Generate button */}
         {mode === "single" ? (
-          <TouchableOpacity
-            onPress={onGenerate}
-            disabled={!isFormValid || isGenerating}
-            activeOpacity={0.9}
-            style={{ marginTop: 24, opacity: isFormValid && !isGenerating ? 1 : 0.6 }}
-          >
-            <LinearGradient colors={[brand.purple500, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtn}>
-              {isGenerating
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Ionicons name="sparkles" size={18} color="#fff" />}
-              <Text style={styles.primaryBtnText}>
+          <>
+            <TouchableOpacity
+              onPress={() => handleGenerate(false)}
+              disabled={!isFormValid || isGenerating || isAiGenerating || (existingRoutine?.exists && !overrideMode)}
+              activeOpacity={0.9}
+              style={{ marginTop: 24, opacity: (isFormValid && !isGenerating && !isAiGenerating && !(existingRoutine?.exists && !overrideMode)) ? 1 : 0.6 }}
+            >
+              <LinearGradient colors={[brand.purple500, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtn}>
                 {isGenerating
-                  ? t("routines_generate.generating", { defaultValue: "Amy is planning…" })
-                  : t("routines_generate.generate_btn", { defaultValue: "Generate with Amy" })}
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Ionicons name="sparkles" size={18} color="#fff" />}
+                <Text style={styles.primaryBtnText}>
+                  {isGenerating
+                    ? t("routines_generate.generating", { defaultValue: "Amy is planning…" })
+                    : overrideMode
+                      ? t("routines_generate.replace_btn", { defaultValue: "Replace with new routine" })
+                      : t("routines_generate.generate_btn", { defaultValue: "Generate with Amy" })}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Smart Amy AI button — uses /routines/generate-ai */}
+            <TouchableOpacity
+              onPress={() => handleAiGenerate(false)}
+              disabled={!isFormValid || isGenerating || isAiGenerating || (existingRoutine?.exists && !overrideMode)}
+              activeOpacity={0.9}
+              style={[styles.aiBtn, { opacity: (isFormValid && !isGenerating && !isAiGenerating && !(existingRoutine?.exists && !overrideMode)) ? 1 : 0.6 }]}
+            >
+              {isAiGenerating
+                ? <ActivityIndicator color={brand.purple500} size="small" />
+                : <Ionicons name="flash" size={16} color={brand.purple500} />}
+              <Text style={styles.aiBtnText}>
+                {isAiGenerating
+                  ? t("routines_generate.amy_thinking", { defaultValue: "Amy AI is thinking…" })
+                  : t("routines_generate.smart_ai_btn", { defaultValue: "Smart Amy AI Routine" })}
               </Text>
-            </LinearGradient>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </>
         ) : (
           <TouchableOpacity
             onPress={handleFamilyGenerate}
@@ -689,12 +978,189 @@ export default function GenerateRoutineScreen() {
         </Text>
       </ScrollView>
 
-      {(isGenerating || isGeneratingFamily) && (
+      {(isGenerating || isAiGenerating || isGeneratingFamily) && (
         <GenerateProgressOverlay
           childName={isGeneratingFamily ? (familyProgress?.currentName ?? "") : (selectedChildData?.name ?? "your child")}
           familyProgress={familyProgress}
+          aiMode={isAiGenerating}
         />
       )}
+
+      {/* ── Wake-up Confirmation Modal ────────────────────────────────────── */}
+      <Modal visible={showWakeConfirm} transparent animationType="fade" onRequestClose={() => { setShowWakeConfirm(false); setPendingAction(null); }}>
+        <Pressable style={styles.modalBackdrop} onPress={() => { setShowWakeConfirm(false); setPendingAction(null); }}>
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={[brand.purple500, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalHeader}>
+              <Text style={{ fontSize: 28 }}>⏰</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalHeaderTitle}>
+                  {t("routines_generate.good_morning", { defaultValue: "Good morning!" })}
+                </Text>
+                <Text style={styles.modalHeaderSubtitle}>
+                  {t("routines_generate.lets_personalise", { defaultValue: "Let's personalise today's routine." })}
+                </Text>
+              </View>
+            </LinearGradient>
+            <View style={{ padding: 18, gap: 16 }}>
+              <View>
+                <Text style={styles.modalQuestion}>
+                  {t("routines_generate.wake_question", {
+                    name: selectedChildData?.name ?? "your child",
+                    defaultValue: `Did ${selectedChildData?.name ?? "your child"} wake up at their usual time?`,
+                  })}
+                </Text>
+                <Text style={styles.modalDefaultWake}>
+                  {selectedChildData?.wakeUpTime ?? "7:00 AM"}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <TouchableOpacity
+                  onPress={() => { Haptics.selectionAsync(); setWakeAnswer("yes"); }}
+                  activeOpacity={0.85}
+                  style={[styles.wakeChoice, wakeAnswer === "yes" && { backgroundColor: brand.purple500, borderColor: brand.purple500 }]}
+                >
+                  <Text style={{ fontSize: 22 }}>✅</Text>
+                  <Text style={[styles.wakeChoiceText, wakeAnswer === "yes" && { color: "#fff" }]}>
+                    {t("routines_generate.wake_yes", { defaultValue: "Yes, on time" })}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => { Haptics.selectionAsync(); setWakeAnswer("no"); }}
+                  activeOpacity={0.85}
+                  style={[styles.wakeChoice, wakeAnswer === "no" && { backgroundColor: brand.purple500, borderColor: brand.purple500 }]}
+                >
+                  <Text style={{ fontSize: 22 }}>⏱️</Text>
+                  <Text style={[styles.wakeChoiceText, wakeAnswer === "no" && { color: "#fff" }]}>
+                    {t("routines_generate.wake_no", { defaultValue: "No, different time" })}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {wakeAnswer === "no" && (
+                <View style={{ gap: 6 }}>
+                  <Text style={styles.modalLabel}>
+                    {t("routines_generate.enter_actual_wake", { defaultValue: "Enter today's actual wake-up time" })}
+                  </Text>
+                  <View style={styles.timeInputRow}>
+                    <Ionicons name="time-outline" size={16} color={brand.purple500} />
+                    <TextInput
+                      value={wakeInputValue}
+                      onChangeText={setWakeInputValue}
+                      placeholder="07:00"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      style={styles.timeInput}
+                      keyboardType="numbers-and-punctuation"
+                    />
+                    <Text style={{ color: brand.purple500, fontWeight: "800", fontSize: 13 }}>
+                      {/^\d{1,2}:\d{2}$/.test(wakeInputValue) ? inputToDisplay(wakeInputValue) : ""}
+                    </Text>
+                  </View>
+                  <Text style={styles.modalHint}>
+                    {t("routines_generate.wake_shift_hint", { defaultValue: "The routine will shift to start from this time." })}
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity
+                onPress={handleWakeConfirmSubmit}
+                disabled={wakeAnswer === null || (wakeAnswer === "no" && !wakeInputValue)}
+                activeOpacity={0.9}
+                style={{ opacity: wakeAnswer === null || (wakeAnswer === "no" && !wakeInputValue) ? 0.55 : 1 }}
+              >
+                <LinearGradient colors={[brand.purple500, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtn}>
+                  <Ionicons name="sparkles" size={16} color="#fff" />
+                  <Text style={styles.primaryBtnText}>
+                    {wakeAnswer === "yes"
+                      ? t("routines_generate.wake_submit_yes", { defaultValue: "Great! Generate Routine" })
+                      : t("routines_generate.wake_submit_no", { defaultValue: "Adjust & Generate" })}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setShowWakeConfirm(false); setPendingAction(null); }} activeOpacity={0.7}>
+                <Text style={styles.modalCancel}>{t("routines_generate.cancel", { defaultValue: "Cancel" })}</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ── Past Essential Task Check Modal ───────────────────────────────── */}
+      <Modal visible={showTaskCheck} transparent animationType="fade" onRequestClose={() => {
+        // Dismiss = save as-is so user is not stuck with hidden pending state
+        setShowTaskCheck(false);
+        if (pendingRoutineSave) void saveGeneratedRoutine(pendingRoutineSave.generatedData, pendingRoutineSave.shouldOverride);
+        setPendingRoutineSave(null);
+      }}>
+        <Pressable style={styles.modalBackdrop} onPress={() => {
+          setShowTaskCheck(false);
+          if (pendingRoutineSave) void saveGeneratedRoutine(pendingRoutineSave.generatedData, pendingRoutineSave.shouldOverride);
+          setPendingRoutineSave(null);
+        }}>
+          <Pressable style={[styles.modalCard, { maxHeight: "85%" }]} onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={[brand.purple500, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalHeader}>
+              <Text style={{ fontSize: 28 }}>✅</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalHeaderTitle}>
+                  {t("routines_generate.morning_checkin", { defaultValue: "Morning check-in" })}
+                </Text>
+                <Text style={styles.modalHeaderSubtitle}>
+                  {t("routines_generate.mark_done", { defaultValue: "Mark what's already been done." })}
+                </Text>
+              </View>
+            </LinearGradient>
+            <ScrollView style={{ maxHeight: 320 }} contentContainerStyle={{ padding: 18, gap: 12 }}>
+              <Text style={styles.modalHint}>
+                {t("routines_generate.checkin_hint", {
+                  name: selectedChildData?.name ?? "your child",
+                  defaultValue: `These activities should have happened before now. Did ${selectedChildData?.name ?? "your child"} complete them?`,
+                })}
+              </Text>
+              {pastEssentialTasks.map(({ idx, item }) => {
+                const done = !!taskCheckMap[idx];
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => { Haptics.selectionAsync(); setTaskCheckMap((prev) => ({ ...prev, [idx]: !prev[idx] })); }}
+                    activeOpacity={0.85}
+                    style={[styles.taskRow, done && { borderColor: brand.purple500 }]}
+                  >
+                    <Text style={{ fontSize: 18 }}>{done ? "✅" : "❌"}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.taskRowTitle} numberOfLines={1}>{item.activity}</Text>
+                      <Text style={styles.taskRowMeta}>{item.time} · {item.duration}m</Text>
+                    </View>
+                    <Text style={[styles.taskRowStatus, { color: done ? brand.purple500 : "rgba(255,255,255,0.55)" }]}>
+                      {done
+                        ? t("routines_generate.task_done", { defaultValue: "Done" })
+                        : t("routines_generate.task_missed", { defaultValue: "Missed" })}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              <Text style={[styles.modalHint, { textAlign: "center" }]}>
+                {t("routines_generate.tap_toggle_hint", { defaultValue: "Tap to toggle. Missed tasks will be marked as skipped." })}
+              </Text>
+            </ScrollView>
+            <View style={{ padding: 18, paddingTop: 0, gap: 8 }}>
+              <TouchableOpacity onPress={handleTaskCheckDone} activeOpacity={0.9}>
+                <LinearGradient colors={[brand.purple500, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtn}>
+                  <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                  <Text style={styles.primaryBtnText}>
+                    {t("routines_generate.save_view_routine", { defaultValue: "Save & View Routine" })}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => {
+                setShowTaskCheck(false);
+                if (pendingRoutineSave) void saveGeneratedRoutine(pendingRoutineSave.generatedData, pendingRoutineSave.shouldOverride);
+                setPendingRoutineSave(null);
+              }} activeOpacity={0.7}>
+                <Text style={styles.modalCancel}>
+                  {t("routines_generate.skip_checkin", { defaultValue: "Skip check-in & save as is" })}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -1198,9 +1664,11 @@ const GENERATE_STEPS = [
 function GenerateProgressOverlay({
   childName,
   familyProgress,
+  aiMode = false,
 }: {
   childName: string;
   familyProgress: { current: number; total: number; currentName: string } | null;
+  aiMode?: boolean;
 }) {
   const [stepIndex, setStepIndex] = useState(0);
   const barAnim = useRef(new Animated.Value(0)).current;
@@ -1364,6 +1832,70 @@ const styles = StyleSheet.create({
   },
   primaryBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, borderRadius: 16 },
   primaryBtnText: { color: "#fff", fontSize: 15, fontWeight: "800" },
+  aiBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 14, borderRadius: 14, marginTop: 10,
+    borderWidth: 2, borderColor: "rgba(167,139,250,0.55)",
+    backgroundColor: "rgba(167,139,250,0.10)",
+  },
+  aiBtnText: { color: brand.purple500, fontSize: 14, fontWeight: "800" },
+  existingBanner: {
+    marginTop: 16, padding: 14, borderRadius: 16,
+    backgroundColor: "rgba(167,139,250,0.10)",
+    borderWidth: 2, borderColor: "rgba(167,139,250,0.45)",
+    gap: 6,
+  },
+  existingBannerTitle: { fontSize: 14, fontWeight: "800", color: "rgba(255,255,255,0.95)", flex: 1 },
+  existingBannerBody: { fontSize: 12, color: "rgba(255,255,255,0.65)" },
+  existingBtn: {
+    flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
+    alignItems: "center", justifyContent: "center",
+  },
+  existingBtnText: { fontSize: 13, fontWeight: "700" },
+  modalBackdrop: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center", justifyContent: "center", padding: 16,
+  },
+  modalCard: {
+    width: "100%", maxWidth: 420, borderRadius: 24, overflow: "hidden",
+    backgroundColor: "#1a1330", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)",
+  },
+  modalHeader: {
+    flexDirection: "row", alignItems: "center", gap: 12, padding: 18,
+  },
+  modalHeaderTitle: { color: "#fff", fontSize: 16, fontWeight: "800" },
+  modalHeaderSubtitle: { color: "rgba(255,255,255,0.78)", fontSize: 12, marginTop: 2 },
+  modalQuestion: { color: "rgba(255,255,255,0.95)", fontSize: 15, fontWeight: "700" },
+  modalDefaultWake: { color: brand.purple500, fontSize: 22, fontWeight: "900", marginTop: 4 },
+  modalLabel: { color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700" },
+  modalHint: { color: "rgba(255,255,255,0.55)", fontSize: 11 },
+  modalCancel: { color: "rgba(255,255,255,0.55)", fontSize: 12, textAlign: "center", paddingVertical: 4 },
+  wakeChoice: {
+    flex: 1, alignItems: "center", justifyContent: "center", gap: 6,
+    paddingVertical: 14, borderRadius: 16,
+    borderWidth: 2, borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  wakeChoiceText: { fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.92)" },
+  timeInputRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingHorizontal: 14, paddingVertical: 12, borderRadius: 14,
+    borderWidth: 2, borderColor: "rgba(167,139,250,0.55)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  timeInput: {
+    flex: 1, color: "#fff", fontSize: 16, fontWeight: "800",
+    padding: 0,
+  },
+  taskRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    padding: 12, borderRadius: 14, borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  taskRowTitle: { color: "rgba(255,255,255,0.95)", fontSize: 13, fontWeight: "800" },
+  taskRowMeta: { color: "rgba(255,255,255,0.55)", fontSize: 11, marginTop: 2 },
+  taskRowStatus: { fontSize: 11, fontWeight: "800" },
   secondaryBtn: {
     paddingVertical: 16, borderRadius: 16, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
