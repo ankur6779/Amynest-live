@@ -8,7 +8,7 @@ import { usePaywall } from "@/contexts/paywall-context";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, Search, Check, ChevronLeft, RotateCcw, BarChart3, Share2, Bookmark, Brain, Heart, Printer, Volume2, VolumeX, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INFANT_PROBLEMS, isInfantProblemId, getInfantProblem, pickLang as pickInfLang } from "@workspace/infant-problems";
-import { getTopicQuestions } from "@/lib/coachTopicQuestions";
+import { getTopicQuestions } from "@workspace/coach-topic-questions";
 
 // ─── Goals (categorized) ───────────────────────────────────────────────────
 interface GoalItem {

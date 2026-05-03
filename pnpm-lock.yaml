@@ -199,6 +199,9 @@ importers:
       '@workspace/behavior-tracker':
         specifier: workspace:*
         version: link:../../lib/behavior-tracker
+      '@workspace/coach-topic-questions':
+        specifier: workspace:*
+        version: link:../../lib/coach-topic-questions
       '@workspace/event-prep':
         specifier: workspace:*
         version: link:../../lib/event-prep
@@ -576,6 +579,9 @@ importers:
       '@workspace/behavior-tracker':
         specifier: workspace:*
         version: link:../../lib/behavior-tracker
+      '@workspace/coach-topic-questions':
+        specifier: workspace:*
+        version: link:../../lib/coach-topic-questions
       '@workspace/event-prep':
         specifier: workspace:*
         version: link:../../lib/event-prep
@@ -1239,6 +1245,8 @@ importers:
   lib/audio-lessons: {}
 
   lib/behavior-tracker: {}
+
+  lib/coach-topic-questions: {}
 
   lib/db:
     dependencies:

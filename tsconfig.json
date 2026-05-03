@@ -23,6 +23,9 @@
     },
     {
       "path": "./lib/parenting-articles"
+    },
+    {
+      "path": "./lib/coach-topic-questions"
     }
   ]
 }

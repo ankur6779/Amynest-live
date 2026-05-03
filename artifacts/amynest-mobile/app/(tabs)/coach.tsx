@@ -20,6 +20,7 @@ import { useSectionUsage } from "@/hooks/useSectionUsage";
 import { useTranslation } from "react-i18next";
 import colors, { brand, brandAlpha } from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
+import { getTopicQuestions } from "@workspace/coach-topic-questions";
 import {
   INFANT_PROBLEMS,
   isInfantProblemId,
@@ -39,9 +40,13 @@ interface Plan { title: string; root_cause: string; summary: string; wins: Win[]
 type Phase = "goals" | "questions" | "loading" | "result" | "infantProblem" | "resuming";
 type Feedback = "yes" | "somewhat" | "no";
 type Question = {
-  id: "ageGroup" | "severity" | "triggers" | "routine" | "goalRefinement";
+  id: string;
   prompt: string; type: "single" | "multi"; options: string[];
 };
+
+// Reserved keys handled directly by the existing payload — never sent in
+// the freeform `topicAnswers` blob to the server.
+const RESERVED_ANSWER_KEYS = new Set(["ageGroup", "severity", "triggers", "routine", "goalRefinement"]);
 
 // ─── Goals (categorized) — mirrors web ────────────────────────────────────
 // Dark-theme card gradient pairs — all rgba so they layer naturally over the
@@ -243,9 +248,11 @@ const COMMON_TRIGGERS = [
   "Hunger or tiredness", "Transitions or changes", "Being told 'no'", "Boredom",
   "Sibling conflict", "School/social stress", "Inconsistent rules", "Sensory overload",
 ];
-const QUESTIONS: Question[] = [
-  { id: "ageGroup",       prompt: "What's your child's age?",          type: "single", options: ["2–4 years", "5–7 years", "8–10 years", "10+ years (tween/teen)"] },
-  { id: "severity",       prompt: "How challenging is it right now?",  type: "single", options: ["Mild – occasional", "Moderate – frequent", "Severe – daily struggle"] },
+const AGE_QUESTION: Question = { id: "ageGroup", prompt: "What's your child's age?", type: "single", options: ["2–4 years", "5–7 years", "8–10 years", "10+ years (tween/teen)"] };
+const SEVERITY_QUESTION: Question = { id: "severity", prompt: "How challenging is it right now?", type: "single", options: ["Mild – occasional", "Moderate – frequent", "Severe – daily struggle"] };
+const GENERIC_QUESTIONS: Question[] = [
+  AGE_QUESTION,
+  SEVERITY_QUESTION,
   { id: "triggers",       prompt: "What triggers it most? (pick any)", type: "multi",  options: COMMON_TRIGGERS },
   { id: "routine",        prompt: "What's your current approach?",     type: "single", options: ["No clear routine yet", "I try but it's inconsistent", "Strict rules, lots of pushback", "Trying gentle parenting", "Just starting to figure it out"] },
   { id: "goalRefinement", prompt: "What matters most to you?",         type: "single", options: ["Reduce frequency", "Stay calm myself", "Build my child's skills", "Long-term healthy pattern"] },
@@ -405,6 +412,12 @@ export default function CoachScreen() {
     setPhase("questions");
   };
 
+  const QUESTIONS = useMemo<Question[]>(() => {
+    const topicQs = goalId ? getTopicQuestions(goalId, i18n.language) : null;
+    if (!topicQs || topicQs.length === 0) return GENERIC_QUESTIONS;
+    return [AGE_QUESTION, SEVERITY_QUESTION, ...topicQs];
+  }, [goalId, i18n.language]);
+
   const currentQ = QUESTIONS[qIndex];
   const currentAnswer = currentQ ? answers[currentQ.id] : undefined;
   const isAnswered = currentQ?.type === "multi"
@@ -444,6 +457,14 @@ export default function CoachScreen() {
       "Adult (parent self-care)": "adult",
     };
     const sevMap: Record<string, string> = { "Mild – occasional": "mild", "Moderate – frequent": "moderate", "Severe – daily struggle": "severe" };
+    const topicAnswers: Record<string, string | string[]> = {};
+    for (const [k, v] of Object.entries(answers)) {
+      if (RESERVED_ANSWER_KEYS.has(k)) continue;
+      if (v === undefined || v === null) continue;
+      if (typeof v === "string" && v.length === 0) continue;
+      if (Array.isArray(v) && v.length === 0) continue;
+      topicAnswers[k] = v;
+    }
     const payload = {
       goal: goalId,
       ageGroup: ageMap[answers.ageGroup as string] ?? (answers.ageGroup as string) ?? "5-7",
@@ -451,6 +472,7 @@ export default function CoachScreen() {
       triggers: (answers.triggers as string[]) ?? [],
       routine: (answers.routine as string) ?? "",
       goalRefinement: (answers.goalRefinement as string) ?? "",
+      topicAnswers,
     };
     lastPayloadRef.current = {
       goal: payload.goal, ageGroup: payload.ageGroup, severity: payload.severity,
