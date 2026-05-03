@@ -277,6 +277,8 @@ export default function OnboardingScreen() {
             travelMode: "car",
             foodType: child.foodType || "veg",
             goals,
+            feedingType: child.feedingType ?? null,
+            sleepPattern: child.sleepPattern ?? null,
             isOnboarding: true,
           }),
         });

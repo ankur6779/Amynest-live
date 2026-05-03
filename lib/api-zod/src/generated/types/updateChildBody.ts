@@ -24,4 +24,8 @@ export interface UpdateChildBody {
   goals?: string;
   babysitterId?: number | null;
   photoUrl?: string | null;
+  /** Infant-only — how the baby is fed. One of "breastfeeding", "formula", "mixed". */
+  feedingType?: string | null;
+  /** Infant-only — sleep style captured during onboarding. One of "flexible", "irregular", "short_naps". */
+  sleepPattern?: string | null;
 }

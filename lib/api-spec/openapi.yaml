@@ -756,6 +756,14 @@ components:
         photoUrl:
           type: string
           nullable: true
+        feedingType:
+          type: string
+          nullable: true
+          description: Infant-only — how the baby is fed. One of "breastfeeding", "formula", "mixed".
+        sleepPattern:
+          type: string
+          nullable: true
+          description: Infant-only — sleep style captured during onboarding. One of "flexible", "irregular", "short_naps".
         createdAt:
           type: string
       required:
@@ -820,6 +828,14 @@ components:
         photoUrl:
           type: string
           nullable: true
+        feedingType:
+          type: string
+          nullable: true
+          description: Infant-only — how the baby is fed. One of "breastfeeding", "formula", "mixed".
+        sleepPattern:
+          type: string
+          nullable: true
+          description: Infant-only — sleep style captured during onboarding. One of "flexible", "irregular", "short_naps".
       required:
         - name
         - age
@@ -875,6 +891,14 @@ components:
         photoUrl:
           type: string
           nullable: true
+        feedingType:
+          type: string
+          nullable: true
+          description: Infant-only — how the baby is fed. One of "breastfeeding", "formula", "mixed".
+        sleepPattern:
+          type: string
+          nullable: true
+          description: Infant-only — sleep style captured during onboarding. One of "flexible", "irregular", "short_naps".
 
     RoutineItem:
       type: object

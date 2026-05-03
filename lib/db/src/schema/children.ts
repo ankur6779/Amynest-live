@@ -25,6 +25,13 @@ export const childrenTable = pgTable("children", {
   goals: text("goals").notNull(),
   babysitterId: integer("babysitter_id"),
   photoUrl: text("photo_url"),
+  // Infant-only fields (captured during onboarding for children < 12 months).
+  // Nullable for older children and legacy rows. Values mirror the keys used
+  // on the mobile/web onboarding chat: feedingType ∈
+  // {"breastfeeding","formula","mixed"}, sleepPattern ∈
+  // {"flexible","irregular","short_naps"}.
+  feedingType: text("feeding_type"),
+  sleepPattern: text("sleep_pattern"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
