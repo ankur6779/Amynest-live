@@ -42,8 +42,18 @@ function loadVoicePref(): "female" | "male" {
   }
 }
 const PLACEHOLDER_QUERIES: Record<Audience, string[]> = {
-  kids_tiffin: ["Quick tiffin for school morning using paneer", "Healthy snack for 6-year-old with egg and bread", "Veg lunch ideas for toddler under 20 minutes", "High-protein breakfast for kids without milk"],
-  parent_healthy: ["High-protein breakfast under 300 calories", "Light dinner for weight loss with vegetables", "Quick healthy lunch with leftover rice and dal", "Low-carb snack ideas for evening"]
+  kids_tiffin: [
+    "Quick tiffin for school morning",
+    "Healthy snack for a 6-year-old, ready in 20 minutes",
+    "Veg lunch ideas for a toddler",
+    "High-protein breakfast for kids without milk",
+  ],
+  parent_healthy: [
+    "High-protein breakfast under 300 calories",
+    "Light dinner for weight loss with vegetables",
+    "Quick healthy lunch using what's in the fridge",
+    "Low-carb evening snack ideas",
+  ]
 };
 export function SmartMealSuggestions() {
   const {
@@ -52,6 +62,7 @@ export function SmartMealSuggestions() {
   const authFetch = useAuthFetch();
   const [audience, setAudience] = useState<Audience>("kids_tiffin");
   const [region, setRegion] = useState<string>("pan_indian");
+  const [country, setCountry] = useState<string | undefined>(undefined);
   const [isVeg, setIsVeg] = useState<boolean | undefined>(undefined);
   const [childAge, setChildAge] = useState<number | undefined>(undefined);
   const [query, setQuery] = useState("");
@@ -70,6 +81,7 @@ export function SmartMealSuggestions() {
     Promise.all([authFetch("/api/parent-profile").then(r => r.ok ? r.json() : null).catch(() => null), authFetch("/api/children").then(r => r.ok ? r.json() : null).catch(() => null)]).then(([profile, children]) => {
       if (cancelled) return;
       if (profile?.region) setRegion(profile.region);
+      if (profile?.country) setCountry(String(profile.country).toUpperCase());
       if (profile?.foodType === "veg") setIsVeg(true);
       if (Array.isArray(children) && children[0]?.age != null) {
         setChildAge(Number(children[0].age));
@@ -98,6 +110,7 @@ export function SmartMealSuggestions() {
         body: JSON.stringify({
           query: effectiveQuery,
           region,
+          country,
           audience,
           childAge: audience === "kids_tiffin" ? childAge : undefined,
           isVeg,

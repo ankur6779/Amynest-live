@@ -192,6 +192,7 @@ export async function generateAiRoutine(params: {
   hasSchool: boolean;
   foodType: string;
   region?: string;
+  country?: string;
   mood: string;
   specialPlans?: string;
   fridgeItems?: string;
@@ -250,17 +251,36 @@ ${params.hasSchool ? `- School hours: ${params.schoolStartTime} to ${params.scho
 - Wake up: ${params.wakeUpTime}
 - Bedtime: ${params.sleepTime}
 - Diet: ${params.foodType === "non_veg" ? "Non-Vegetarian" : "Vegetarian"}
-- Regional cuisine: ${
-    params.region === "north_indian" ? "North Indian (Delhi/UP/Punjabi-influenced — parathas, dal makhani, chole, rajma, sabzis)"
-    : params.region === "south_indian" ? "South Indian (Tamil/Karnataka/Andhra/Kerala — idli, dosa, sambar, rasam, curd rice, appam)"
-    : params.region === "bengali" ? "Bengali (Kolkata/West Bengal — bhaat, macher jhol, luchi, kosha mangsho, mishti doi)"
-    : params.region === "gujarati" ? "Gujarati (thepla, dhokla, khandvi, undhiyu, dal-bhaat, kadhi)"
-    : params.region === "maharashtrian" ? "Maharashtrian (poha, vada pav, misal, varan-bhaat, bhakri, kolhapuri)"
-    : params.region === "punjabi" ? "Punjabi (parathas, sarson saag with makki roti, butter chicken, dal makhani, chole bhature)"
-    : params.region === "global" ? "Global / Continental (pancakes, sandwiches, pasta, salads, grilled items — Western style)"
-    : "Pan-Indian (mixed Indian cuisine — varied across regions)"
-  }
-- IMPORTANT: All meal suggestions (breakfast, lunch, dinner, snacks, tiffin) MUST be from the regional cuisine above. Do not mix in dishes from other regions.
+- ${(() => {
+    // Parse comma-separated multi-cuisine (e.g. "north_indian,western")
+    const cuisines = (params.region ?? "pan_indian").split(",").map((s: string) => s.trim()).filter(Boolean);
+    const primary = cuisines[0] ?? "pan_indian";
+    const secondary = cuisines[1];
+    const labelOf = (r: string): string => {
+      const MAP: Record<string, string> = {
+        north_indian: "North Indian (Delhi/UP/Punjabi — parathas, dal makhani, chole, rajma, sabzis)",
+        south_indian: "South Indian (Tamil/Karnataka/Andhra/Kerala — idli, dosa, sambar, rasam, curd rice, appam)",
+        bengali: "Bengali (Kolkata/West Bengal — bhaat, macher jhol, luchi, kosha mangsho, mishti doi)",
+        gujarati: "Gujarati (thepla, dhokla, khandvi, undhiyu, dal-bhaat, kadhi)",
+        maharashtrian: "Maharashtrian (poha, vada pav, misal, varan-bhaat, bhakri, kolhapuri)",
+        punjabi: "Punjabi (parathas, sarson saag, butter chicken, dal makhani, chole bhature)",
+        pan_indian: "Pan-Indian (mixed Indian cuisine — varied across regions)",
+        indian: "Indian Cuisine (dal, roti, rice, curry — varied Indian regions)",
+        global: "Global / Continental (pancakes, sandwiches, pasta, salads, grilled items)",
+        western: "Western / Continental (pasta, sandwiches, wraps, salads, scrambled eggs, grilled chicken)",
+        asian: "Asian (stir fry, noodles, fried rice, dumplings, sushi — Chinese/Thai/Japanese style)",
+        middle_eastern: "Middle Eastern (hummus, shawarma, falafel, grilled meats, pita, rice dishes)",
+        vegetarian: "Plant-based / Vegetarian (salads, legumes, grains, tofu, roasted vegetables)",
+        mixed: "Mixed / Flexible (variety from multiple cuisines — balanced, globally inspired meals)",
+      };
+      return MAP[r] ?? r;
+    };
+    const countryNote = params.country ? ` (family is based in ${params.country})` : "";
+    const primaryLine = `Primary cuisine: ${labelOf(primary)}${countryNote}`;
+    const secondaryLine = secondary ? `\n- Secondary cuisine: ${labelOf(secondary)} — blend elements naturally where appropriate` : "";
+    return primaryLine + secondaryLine;
+  })()}
+- IMPORTANT: All meal suggestions (breakfast, lunch, dinner, snacks, tiffin) MUST match the primary cuisine above. Do not default to Indian food if a non-Indian cuisine is specified.
 - Age-appropriate meal rules (MANDATORY — every meal item MUST follow these rules before anything else):
 ${mealGuidance}
 - Mood today: ${params.mood}
@@ -587,11 +607,10 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
 
   let foodType = (child as any).foodType ?? "veg";
   let region: string = parsed.data.region ?? "pan_indian";
-  if (userId) {
-    const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
-    if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
-    if (!parsed.data.region && pp?.region) region = pp.region;
-  }
+  const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
+  if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
+  if (!parsed.data.region && pp?.region) region = pp.region;
+
   // Optional overrides for AI generation
   const effWakeUp = parsed.data.wakeTime ?? child.wakeUpTime;
   const effSchoolStart = parsed.data.schoolStart ?? child.schoolStartTime;
@@ -614,6 +633,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       hasSchool: isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool),
       foodType,
       region,
+      country: (pp as Record<string, unknown>)?.country as string | undefined,
       mood: mood ?? "normal",
       specialPlans,
       fridgeItems,

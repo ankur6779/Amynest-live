@@ -9,7 +9,34 @@ const router: IRouter = Router();
 const ALLOWED_REGIONS: ReadonlySet<string> = new Set<MealRegion>([
   "north_indian", "south_indian", "bengali", "gujarati",
   "maharashtrian", "punjabi", "pan_indian", "global",
+  "western", "asian", "middle_eastern", "vegetarian", "mixed", "indian",
 ]);
+
+/** Human-readable cuisine description for prompts */
+function buildCuisineLabel(region: string): string {
+  const MAP: Record<string, string> = {
+    north_indian:   "North Indian (Delhi/UP/Punjabi — parathas, dal makhani, chole, rajma, sabzis)",
+    south_indian:   "South Indian (Tamil/Karnataka/Andhra — idli, dosa, sambar, rasam, curd rice)",
+    bengali:        "Bengali (rice, macher jhol, luchi, kosha mangsho, mishti doi)",
+    gujarati:       "Gujarati (thepla, dhokla, khandvi, undhiyu, dal-bhaat, kadhi)",
+    maharashtrian:  "Maharashtrian (poha, vada pav, misal, varan-bhaat, bhakri)",
+    punjabi:        "Punjabi (parathas, chole bhature, dal makhani, butter chicken, lassi)",
+    pan_indian:     "Pan-Indian (mixed Indian — varied regions)",
+    indian:         "Indian Cuisine (dal, roti, rice, curry — varied regions)",
+    global:         "Global / Continental (pancakes, sandwiches, pasta, salads, grilled items)",
+    western:        "Western / Continental (pasta, sandwiches, wraps, salads, grilled chicken, eggs)",
+    asian:          "Asian (stir fry, noodles, fried rice, dumplings, sushi — Chinese/Thai/Japanese)",
+    middle_eastern: "Middle Eastern (hummus, shawarma, falafel, grilled meats, pita, tabbouleh)",
+    vegetarian:     "Plant-based / Vegetarian (salads, legumes, grains, tofu, roasted veggies)",
+    mixed:          "Mixed / Flexible (variety from multiple cuisines — balanced selection)",
+  };
+  return MAP[region] ?? region;
+}
+
+/** Parse a potentially comma-separated multi-cuisine string into ordered list */
+function parseCuisines(raw: string): string[] {
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
 
 const MAX_FRIDGE_ITEMS = 30;
 const MAX_ITEM_LEN = 24;
@@ -87,6 +114,9 @@ const REGION_LABEL: Record<string, string> = {
   north: "north", south: "south", west: "west", east: "east", all: "all",
   north_indian: "north", south_indian: "south", maharashtrian: "west",
   gujarati: "west", bengali: "east", punjabi: "north", pan_indian: "all", global: "all",
+  // Global cuisine regions (multi-select onboarding)
+  western: "western", asian: "asian", middle_eastern: "middle_eastern",
+  vegetarian: "vegetarian", mixed: "all", indian: "all",
 };
 
 const ALLOWED_TYPES = new Set(["breakfast", "lunch", "snack", "tiffin"]);
@@ -108,12 +138,19 @@ function langDirective(language: Lang, fields: string[] = []): string {
   return "";
 }
 
-function buildMealPrompt(count: number, region: string, type: string, isVeg?: boolean, language: Lang = "en"): string {
+function buildMealPrompt(count: number, region: string, type: string, isVeg?: boolean, language: Lang = "en", country?: string): string {
   const vegLine = isVeg === true
     ? "\n- All meals must be strictly vegetarian (no egg, no meat)."
     : isVeg === false
     ? "\n- Include non-vegetarian options where natural."
     : "";
+
+  const cuisines = parseCuisines(region);
+  const primaryLabel = buildCuisineLabel(cuisines[0] ?? "pan_indian");
+  const secondaryLine = cuisines[1]
+    ? `\n- You may blend elements from secondary cuisine: ${buildCuisineLabel(cuisines[1])}`
+    : "";
+  const countryLine = country ? `\n- User country: ${country} — prefer ingredients common in that country` : "";
 
   return `Generate meal dataset for a parenting app "AmyNest".
 
@@ -121,12 +158,12 @@ IMPORTANT:
 - Output ONLY valid JSON array
 - No extra text, no markdown, no code fences
 - Keep recipes simple and practical
-- Use Indian meals (region-based)
-- Ingredients should be common household items${vegLine}${langDirective(language, ["title", "ingredients", "steps"])}
+- Primary cuisine style: ${primaryLabel}${secondaryLine}${countryLine}
+- Ingredients should be common household items available locally${vegLine}${langDirective(language, ["title", "ingredients", "steps"])}
 
 INPUT:
 Meal Count: ${count}
-Region: ${region} (north / south / west / all)
+Cuisine: ${primaryLabel}
 Meal Type: ${type} (breakfast / lunch / snack / tiffin)
 
 OUTPUT FORMAT:
@@ -134,7 +171,7 @@ OUTPUT FORMAT:
   {
     "title": "Meal Name",
     "type": "${type}",
-    "region": "${region}",
+    "region": "${cuisines[0] ?? region}",
     "ingredients": ["ingredient1", "ingredient2"],
     "time": "10 min",
     "calories": 200,
@@ -148,7 +185,7 @@ OUTPUT FORMAT:
 ]
 
 RULES:
-- Use real Indian meals only
+- Use real, practical meals suited to the cuisine style above
 - Keep steps max 5
 - Ingredients max 7
 - Time under 30 min
@@ -278,7 +315,7 @@ function parsePrepMinutes(time: string): number {
   return Math.min(120, Math.max(5, n));
 }
 
-function buildAiGeneratePrompt(query: string, region: string, audience: string, childAge?: number, isVeg?: boolean, language: Lang = "en"): string {
+function buildAiGeneratePrompt(query: string, region: string, audience: string, childAge?: number, isVeg?: boolean, language: Lang = "en", country?: string): string {
   const audience_line = audience === "parent_healthy"
     ? "The meal is for an adult parent (healthy, nutritious, low-calorie)."
     : childAge != null
@@ -291,10 +328,20 @@ function buildAiGeneratePrompt(query: string, region: string, audience: string, 
     ? "You may include non-vegetarian options where natural."
     : "Mix of vegetarian and non-vegetarian is fine.";
 
+  // Handle multi-cuisine (comma-separated from onboarding multi-select)
+  const cuisines = parseCuisines(region);
+  const primaryLabel = buildCuisineLabel(cuisines[0] ?? "pan_indian");
+  const secondaryCuisineContext = cuisines[1]
+    ? `\nSecondary cuisine preference: ${buildCuisineLabel(cuisines[1])} — blend elements from both where natural.`
+    : "";
+  const countryContext = country
+    ? `\nUser country: ${country}. Prefer ingredients readily available in that country. Keep portion sizes and cooking methods appropriate for local kitchens.`
+    : "";
+
   return `You are Amy, an AI assistant for the parenting app AmyNest. Generate 5 meal recipes based on the parent's request.
 
 Parent's request: "${query}"
-Region: ${region}
+Primary cuisine: ${primaryLabel}${secondaryCuisineContext}${countryContext}
 ${audience_line}
 ${veg_line}
 
@@ -302,7 +349,8 @@ IMPORTANT:
 - Output ONLY a valid JSON object with a "meals" array — no markdown, no extra text, no code fences.
 - Generate exactly 5 meals.
 - Each meal must match the parent's request as closely as possible.
-- Use real, practical recipes with common Indian household ingredients.
+- Use the cuisine style above — do NOT default to Indian meals if a different cuisine is specified.
+- Use real, practical recipes with ingredients commonly available locally.
 
 OUTPUT FORMAT:
 {
@@ -343,8 +391,11 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
   const queryRaw = String(req.body?.query ?? "").trim().slice(0, 300);
   const query = queryRaw.length > 0 ? queryRaw : "quick healthy tiffin for kids";
 
-  const regionInput = String(req.body?.region ?? "pan_indian").toLowerCase().trim();
-  const region = ALLOWED_REGIONS.has(regionInput) ? regionInput : "pan_indian";
+  // Support comma-separated multi-cuisine (e.g. "north_indian,western" from onboarding multi-select)
+  const regionRaw = String(req.body?.region ?? "pan_indian").toLowerCase().trim();
+  const region = parseCuisines(regionRaw)
+    .filter((c) => ALLOWED_REGIONS.has(c))
+    .join(",") || "pan_indian";
 
   const audienceRaw = String(req.body?.audience ?? "").toLowerCase().trim();
   const audience = audienceRaw === "parent_healthy" ? "parent_healthy" : "kids_tiffin";
@@ -361,11 +412,12 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
     : undefined;
 
   const language = normalizeLanguage(req.body?.language);
+  const country = typeof req.body?.country === "string" ? req.body.country.toUpperCase().slice(0, 3) : undefined;
 
   try {
     const { openai } = await import("@workspace/integrations-openai-ai-server");
 
-    const prompt = buildAiGeneratePrompt(query, region, audience, childAge, isVeg, language);
+    const prompt = buildAiGeneratePrompt(query, region, audience, childAge, isVeg, language, country);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",

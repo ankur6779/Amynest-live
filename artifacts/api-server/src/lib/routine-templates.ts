@@ -64,7 +64,13 @@ export type Region =
   | "maharashtrian"
   | "punjabi"
   | "global"
-  | "pan_indian";
+  | "pan_indian"
+  | "western"
+  | "asian"
+  | "middle_eastern"
+  | "vegetarian"
+  | "mixed"
+  | "indian";
 
 export const REGION_LABELS: Record<Region, string> = {
   north_indian: "North Indian",
@@ -75,6 +81,12 @@ export const REGION_LABELS: Record<Region, string> = {
   punjabi: "Punjabi",
   global: "Global / Continental",
   pan_indian: "Pan-Indian (Mixed)",
+  western: "Western / Continental",
+  asian: "Asian (Chinese, Thai, Japanese)",
+  middle_eastern: "Middle Eastern",
+  vegetarian: "Plant-based / Vegetarian",
+  mixed: "Mixed / Flexible",
+  indian: "Indian Cuisine",
 };
 
 export type RoutineParams = {
@@ -355,7 +367,7 @@ const PAN_INDIAN_MEALS: Record<MealKey, string[]> = {
   ],
 };
 
-const REGIONAL_MEALS: Record<Exclude<Region, "pan_indian">, RegionMeals> = {
+const REGIONAL_MEALS: Partial<Record<Exclude<Region, "pan_indian">, RegionMeals>> = {
   north_indian: {
     VEG_BREAKFAST: [
       "Aloo paratha with curd | Stuffed paratha with butter | Bedmi puri with aloo sabzi",
@@ -823,7 +835,11 @@ const REGIONAL_MEALS: Record<Exclude<Region, "pan_indian">, RegionMeals> = {
 function mealsFor(region: Region | undefined, key: MealKey): string[] {
   const r: Region = region ?? "pan_indian";
   if (r === "pan_indian") return PAN_INDIAN_MEALS[key];
-  return REGIONAL_MEALS[r][key] ?? PAN_INDIAN_MEALS[key];
+  const bank = REGIONAL_MEALS[r];
+  if (bank) return bank[key] ?? PAN_INDIAN_MEALS[key];
+  // Global cuisine fallbacks: use global bank for western/mixed, pan_indian otherwise
+  const globalFallback: RegionMeals | undefined = REGIONAL_MEALS["global"];
+  return (globalFallback?.[key]) ?? PAN_INDIAN_MEALS[key];
 }
 
 // ─── Activity Pools per Age Group ─────────────────────────────────────────────

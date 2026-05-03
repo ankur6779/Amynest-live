@@ -35,6 +35,7 @@ interface AiGenerateResult {
 }
 interface Props {
   region?: string;
+  country?: string;
   audience?: "kids_tiffin" | "parent_healthy";
   childAge?: number;
   isVeg?: boolean;
@@ -53,6 +54,7 @@ function buildDefaultQuery(audience: "kids_tiffin" | "parent_healthy", mealType?
 }
 export function RoutineInlineMeals({
   region = "pan_indian",
+  country,
   audience = "kids_tiffin",
   childAge,
   isVeg,
@@ -84,6 +86,7 @@ export function RoutineInlineMeals({
           body: JSON.stringify({
             query,
             region,
+            country,
             audience,
             childAge,
             isVeg,

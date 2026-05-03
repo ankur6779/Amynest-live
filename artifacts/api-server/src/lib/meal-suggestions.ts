@@ -10,7 +10,13 @@ export type MealRegion =
   | "maharashtrian"
   | "punjabi"
   | "pan_indian"
-  | "global";
+  | "global"
+  | "western"
+  | "asian"
+  | "middle_eastern"
+  | "vegetarian"
+  | "mixed"
+  | "indian";
 
 export type MealCategory = "kids_tiffin" | "parent_healthy";
 
