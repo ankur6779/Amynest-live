@@ -1,0 +1,146 @@
+Upgrade the existing Routine Generator with context-aware inputs and logic WITHOUT breaking current system.
+
+GOAL:
+Make routines adaptive based on weather, caregiver, and child profile.
+
+--------------------------------------------------
+1) WEATHER-AWARE ROUTINE (NEW LAYER)
+--------------------------------------------------
+
+Add weather detection:
+
+Priority:
+1. Auto detect (API using location)
+2. Fallback → ask user:
+   "Can child go outdoor today?"
+   Options:
+   - Yes
+   - No
+   - Limited
+
+Logic:
+
+IF outdoor = "No":
+- Replace outdoor activities with:
+   • indoor play
+   • puzzles
+   • creative activities
+
+IF outdoor = "Limited":
+- Reduce outdoor duration
+- Add backup indoor option
+
+IF outdoor = "Yes":
+- Keep normal routine
+
+--------------------------------------------------
+2) CAREGIVER-BASED ROUTINE (IMPORTANT)
+--------------------------------------------------
+
+Add field:
+
+"Who is handling the child today?"
+
+Options:
+- Mother
+- Father
+- Both
+- Grandparent
+- Babysitter
+
+--------------------------------------------------
+3) CAREGIVER LOGIC ENGINE
+--------------------------------------------------
+
+Customize routine tone + activities:
+
+IF Mother:
+- Balanced + nurturing + learning mix
+
+IF Father:
+- Activity-based + play-heavy
+
+IF Both:
+- Structured + shared tasks
+
+IF Grandparent:
+- Slow pace + storytelling + traditional play
+
+IF Babysitter:
+- Simple + safe + easy-to-follow tasks
+
+--------------------------------------------------
+4) REMOVE OLD INPUT (IMPORTANT)
+--------------------------------------------------
+
+Remove completely:
+- "Your Schedule"
+- "Working parent" logic
+
+Ensure:
+- No dependency on parent schedule
+
+--------------------------------------------------
+5) SINGLE CHILD AUTO SELECTION
+--------------------------------------------------
+
+Logic:
+
+IF user_profile.children_count == 1:
+- Auto assign child
+- Skip child selection step
+
+IF multiple children:
+- Ask selection
+
+--------------------------------------------------
+6) ROUTINE ADAPTATION FLOW
+--------------------------------------------------
+
+New flow:
+
+Input →
+Base Routine →
+Weather Adjustment →
+Caregiver Adjustment →
+Final Routine
+
+--------------------------------------------------
+7) ACTIVITY REPLACEMENT ENGINE
+--------------------------------------------------
+
+Example:
+
+Outdoor activity:
+"Park play"
+
+IF weather = No:
+→ Replace with:
+"Indoor obstacle play"
+
+--------------------------------------------------
+8) UI CHANGES (MOBILE + WEB)
+--------------------------------------------------
+
+Add:
+
+- Caregiver selector (icons)
+- Weather toggle (Yes/No/Limited)
+
+Remove:
+- Schedule input section
+
+--------------------------------------------------
+9) PERFORMANCE
+--------------------------------------------------
+
+- Keep generation fast
+- Do not re-fetch full routine
+- Only adjust layers
+
+--------------------------------------------------
+DELIVERABLE:
+- Weather-aware routine
+- Caregiver-based personalization
+- Simplified inputs
+- Auto child selection
