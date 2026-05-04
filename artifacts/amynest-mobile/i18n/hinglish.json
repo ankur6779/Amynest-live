@@ -178,7 +178,9 @@
     "tutor_right_on": "Bilkul Sahi!",
     "tutor_answer_is": "Sahi jawab hai: {{answer}}",
     "tutor_error_title": "Amy reply nahi de payi",
-    "tutor_error_body": "Kripya ek pal mein phir try karein."
+    "tutor_error_body": "Kripya ek pal mein phir try karein.",
+    "listen": "Suno",
+    "stop": "Roko"
   },
   "pricing": {
     "title": "Puri Parenting Power Unlock Karein",
@@ -1653,7 +1655,9 @@
       "extra_support_added": "💛 Extra Support Added",
       "amy_s_guided_wins": "Amy ki Guided Wins",
       "pick_a_category_i_ll_build_a_12_step_pla": "Ek category chuno — main 12-step plan banaungi",
-      "open_amy_s_premium_guided_wins": "Amy ki premium guided wins kholo"
+      "open_amy_s_premium_guided_wins": "Amy ki premium guided wins kholo",
+      "listen": "Suno",
+      "stop": "Roko"
     },
     "tabs_hub": {
       "abacus_pro_zone": "🧮 Abacus PRO Zone"

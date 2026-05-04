@@ -5,11 +5,13 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Platform, FlatList, TextInput, Share,
   useWindowDimensions, NativeSyntheticEvent, NativeScrollEvent,
+  Animated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useTheme } from "@/contexts/ThemeContext";
 import { paletteFor } from "@/lib/theme";
 import * as Haptics from "expo-haptics";
@@ -287,6 +289,7 @@ export default function CoachScreen() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [feedbackByWin, setFeedbackByWin] = useState<Record<number, Feedback>>({});
   const [extending, setExtending] = useState(false);
+  const [revealedCount, setRevealedCount] = useState(0);
 
   const scrollerRef = useRef<FlatList<Win>>(null);
   const lastPayloadRef = useRef<{ goal: string; ageGroup: string; severity: string; triggers: string[]; routine: string; } | null>(null);
@@ -313,6 +316,13 @@ export default function CoachScreen() {
 
   const { t, i18n } = useTranslation();
 
+  // ─── Progressive win reveal: cascade each card in 350 ms steps ──────────
+  useEffect(() => {
+    if (!plan || phase !== "result" || revealedCount === 0 || revealedCount >= plan.wins.length) return;
+    const timer = setTimeout(() => setRevealedCount((c) => c + 1), 350);
+    return () => clearTimeout(timer);
+  }, [revealedCount, plan, phase]);
+
   // ─── Resume session: detect ?resume=<sessionId>, load plan + feedback ────
   useEffect(() => {
     if (!resumeSessionId) return;
@@ -337,6 +347,7 @@ export default function CoachScreen() {
         }
 
         setPlan(data.plan);
+        setRevealedCount(data.plan.wins.length); // reveal all at once for resumed sessions
         setSessionId(data.sessionId);
         setGoalId(data.goalId);
         setFeedbackByWin(restoredFeedbacks);
@@ -497,6 +508,7 @@ export default function CoachScreen() {
       setPlan(data.plan);
       originalWinCountRef.current = data.plan.wins.length;
       setSessionId(data.sessionId);
+      setRevealedCount(1);
       setPhase("result");
       // Free allowance is consumed only on a successful topic completion.
       if (!coachUsage.isPremium) coachUsage.markBlockUsed("completed");
@@ -506,8 +518,17 @@ export default function CoachScreen() {
   };
 
   const goToCard = useCallback((i: number) => {
-    scrollerRef.current?.scrollToIndex({ index: i, animated: true });
+    // 1. Reveal up to i (synchronous state enqueue — React will re-render before the timeout fires).
+    setRevealedCount((c) => Math.max(c, i + 1));
+    // 2. Update the active-index indicator immediately so dots/buttons reflect intent.
     setActiveIdx(i);
+    // 3. Defer scroll to the next event-loop tick so React has applied the new slice
+    //    before FlatList receives scrollToIndex.  Without this delay, scrollToIndex
+    //    would fire against the stale (shorter) data array and produce an out-of-range
+    //    warning / no-op scroll.
+    setTimeout(() => {
+      scrollerRef.current?.scrollToIndex({ index: i, animated: true });
+    }, 0);
   }, []);
 
   const onScrollerMomentum = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -572,7 +593,14 @@ export default function CoachScreen() {
       void useSubscriptionStore.getState().refresh();
       const data = (await res.json()) as { wins: Win[] };
       if (Array.isArray(data.wins) && data.wins.length > 0) {
-        setPlan((p) => p ? { ...p, wins: [...p.wins, ...data.wins] } : p);
+        setPlan((p) => {
+          if (!p) return p;
+          const merged = [...p.wins, ...data.wins];
+          // Immediately reveal all wins (including extensions) so goToCard can
+          // safely scroll to the new index without hitting an out-of-range slice.
+          setRevealedCount(merged.length);
+          return { ...p, wins: merged };
+        });
         setTimeout(() => goToCard(nextIdx), 80);
       }
     } catch { /* silent */ } finally {
@@ -589,7 +617,7 @@ export default function CoachScreen() {
   const handleStartOver = () => {
     setPhase("goals"); setGoalId(""); setAnswers({}); setPlan(null);
     originalWinCountRef.current = 0; setSessionId(""); setActiveIdx(0);
-    setFeedbackByWin({}); lastPayloadRef.current = null;
+    setFeedbackByWin({}); lastPayloadRef.current = null; setRevealedCount(0);
   };
 
   const topPad = insets.top + (Platform.OS === "web" ? 16 : 0);
@@ -1232,10 +1260,14 @@ export default function CoachScreen() {
         <View style={styles.dotsRow}>
           {plan.wins.map((_, i) => (
             <TouchableOpacity
-              key={i} onPress={() => goToCard(i)}
+              key={i} onPress={() => i < revealedCount ? goToCard(i) : null}
               style={[
                 styles.dot,
-                { backgroundColor: i <= activeIdx ? brand.violet500 : brandAlpha.violet500_20 },
+                {
+                  backgroundColor: i >= revealedCount
+                    ? "rgba(255,255,255,0.06)"
+                    : i <= activeIdx ? brand.violet500 : brandAlpha.violet500_20,
+                },
               ]}
             />
           ))}
@@ -1244,13 +1276,20 @@ export default function CoachScreen() {
         {/* Card pager */}
         <FlatList
           ref={scrollerRef}
-          data={plan.wins}
+          data={plan.wins.slice(0, Math.max(1, revealedCount))}
           keyExtractor={(w, i) => `${w.win}-${i}`}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={onScrollerMomentum}
           getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
+          onScrollToIndexFailed={({ index }) => {
+            // Safety net: retry scroll after a short delay in case the slice
+            // hadn't applied yet on the first attempt.
+            setTimeout(() => {
+              scrollerRef.current?.scrollToIndex({ index, animated: true });
+            }, 100);
+          }}
           renderItem={({ item: w, index: i }) => (
             <WinCard
               w={w}
@@ -1345,7 +1384,37 @@ function WinCard({
     ? ["#1B1B3A", "#241640", "#0B0B1A"] // audit-ok: always-dark win-card background gradient
     : ["#0B0B1A", "#14142B", "#1B1B3A"]; // audit-ok: always-dark win-card background gradient
 
+  // Slide-in animation on mount (each card reveals progressively)
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(24)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
+    ]).start();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // TTS
+  const { speak, stop, speaking, loading: ttsLoading } = useAmyVoice();
+  const ttsActiveRef = useRef(false);
+  const winText = [w.title, w.objective, w.micro_task].filter(Boolean).join(". ");
+  const handleListen = () => {
+    if (ttsActiveRef.current && (speaking || ttsLoading)) {
+      stop();
+      ttsActiveRef.current = false;
+    } else {
+      ttsActiveRef.current = true;
+      void speak(winText);
+    }
+  };
+  // When speaking stops naturally, reset ref
+  useEffect(() => {
+    if (!speaking && !ttsLoading) ttsActiveRef.current = false;
+  }, [speaking, ttsLoading]);
+
   return (
+    <Animated.View style={{ width, height: "100%", opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
     <LinearGradient colors={cardColors} style={{ width, height: "100%" }}>
       <ScrollView
         contentContainerStyle={{ paddingTop: 84, paddingBottom: 140, paddingHorizontal: 22 }}
@@ -1432,6 +1501,27 @@ function WinCard({
           <View style={styles.durationChip}>
             <Text style={styles.durationChipText}>⏱ {w.duration}</Text>
           </View>
+          {/* Listen button */}
+          <TouchableOpacity
+            onPress={handleListen}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel={(speaking || ttsLoading) ? t("screens.tabs_coach.stop") : t("screens.tabs_coach.listen")}
+            style={styles.winListenBtn}
+          >
+            {ttsLoading ? (
+              <ActivityIndicator size="small" color={brand.violet600} />
+            ) : (
+              <Ionicons
+                name={(speaking) ? "stop-circle-outline" : "volume-medium-outline"}
+                size={14}
+                color={brand.violet600}
+              />
+            )}
+            <Text style={styles.winListenBtnText}>
+              {(speaking || ttsLoading) ? t("screens.tabs_coach.stop") : t("screens.tabs_coach.listen")}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {w.science_reference ? (
@@ -1493,6 +1583,7 @@ function WinCard({
         )}
       </ScrollView>
     </LinearGradient>
+    </Animated.View>
   );
 }
 
@@ -1659,6 +1750,8 @@ const styles = StyleSheet.create({
 
   durationChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: brandAlpha.violet500_12 },
   durationChipText: { fontSize: 11, color: brand.violet700, fontFamily: "Inter_700Bold" },
+  winListenBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: brandAlpha.violet500_12, borderWidth: 1, borderColor: brandAlpha.violet500_25 },
+  winListenBtnText: { fontSize: 11, color: brand.violet700, fontFamily: "Inter_700Bold" },
 
   scienceRef: {
     fontSize: 11, color: "rgba(255,255,255,0.6)", lineHeight: 17, marginBottom: 14,

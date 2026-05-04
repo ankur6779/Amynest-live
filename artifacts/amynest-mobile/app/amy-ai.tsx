@@ -10,6 +10,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "@/contexts/ThemeContext";
 import AiQuotaBanner from "@/components/AiQuotaBanner";
@@ -54,13 +55,18 @@ const SUGGESTED_QUESTION_KEYS = [
 const PREFS_KEY = (childId: number | string | null | undefined) =>
   `amynest:amy-tutor-prefs:${childId ?? "default"}`;
 
+const CHAT_KEY = (childId: number | string | null | undefined) =>
+  `amynest:amy-tutor-chat:${childId ?? "default"}`;
+
 // ─── Screen ───────────────────────────────────────────────────────────────
 
 export default function AmyAIScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const authFetch = useAuthFetch();
-  const params = useLocalSearchParams<{ q?: string }>();
+  const params = useLocalSearchParams<{ q?: string; childId?: string }>();
+  // childId can be passed as a route param to scope the session to a specific child.
+  // Falls back to the primary child from the API.
   const { theme } = useTheme();
   const { t, i18n } = useTranslation();
 
@@ -70,7 +76,11 @@ export default function AmyAIScreen() {
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [loading, setLoading] = useState(false);
+  const [chatLoaded, setChatLoaded] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  const tts = useAmyVoice();
+  const [activeTtsTurnId, setActiveTtsTurnId] = useState<string | null>(null);
 
   const { data: childrenData } = useQuery<Array<{ id?: number; name?: string; age?: number | null }>>({
     queryKey: ["children-for-amy-tutor"],
@@ -80,26 +90,49 @@ export default function AmyAIScreen() {
     },
     staleTime: 60_000,
   });
-  const primaryChild = Array.isArray(childrenData) && childrenData.length > 0 ? childrenData[0] : null;
+  // If a childId param is provided (e.g. navigating from a child-specific context),
+  // use that child; otherwise fall back to the first (primary) child.
+  const paramChildId = params.childId ? Number(params.childId) : null;
+  const primaryChild = Array.isArray(childrenData) && childrenData.length > 0
+    ? (paramChildId != null
+        ? (childrenData.find((c) => c.id === paramChildId) ?? childrenData[0])
+        : childrenData[0])
+    : null;
   const childKey = primaryChild?.id ?? null;
 
-  // Load persisted mode/subject for this child
+  // Load persisted mode/subject and chat history for this child
   useEffect(() => {
     let cancelled = false;
+    setChatLoaded(false);
+    setTurns([]);
+    setActiveTtsTurnId(null);
+    tts.stop();
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(PREFS_KEY(childKey));
-        if (!raw || cancelled) return;
-        const parsed = JSON.parse(raw) as { mode?: Mode; subject?: Subject; topic?: string };
-        if (parsed.mode && MODES.includes(parsed.mode)) setMode(parsed.mode);
-        if (parsed.subject && SUBJECTS.includes(parsed.subject)) setSubject(parsed.subject);
-        if (typeof parsed.topic === "string") setTopic(parsed.topic);
-      } catch { /* ignore */ }
+        const [rawPrefs, rawChat] = await Promise.all([
+          AsyncStorage.getItem(PREFS_KEY(childKey)),
+          AsyncStorage.getItem(CHAT_KEY(childKey)),
+        ]);
+        if (cancelled) return;
+        if (rawPrefs) {
+          const parsed = JSON.parse(rawPrefs) as { mode?: Mode; subject?: Subject; topic?: string };
+          if (parsed.mode && MODES.includes(parsed.mode)) setMode(parsed.mode);
+          if (parsed.subject && SUBJECTS.includes(parsed.subject)) setSubject(parsed.subject);
+          if (typeof parsed.topic === "string") setTopic(parsed.topic);
+        }
+        if (rawChat) {
+          const parsedChat = JSON.parse(rawChat) as Turn[];
+          if (Array.isArray(parsedChat)) setTurns(parsedChat);
+        }
+      } catch { /* ignore */ } finally {
+        if (!cancelled) setChatLoaded(true);
+      }
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [childKey]);
 
-  // Persist on change (debounced via timeout)
+  // Persist prefs on change (debounced via timeout)
   useEffect(() => {
     const id = setTimeout(() => {
       AsyncStorage.setItem(
@@ -109,6 +142,16 @@ export default function AmyAIScreen() {
     }, 300);
     return () => clearTimeout(id);
   }, [childKey, mode, subject, topic]);
+
+  // Persist chat turns per child (debounced, max 50 turns)
+  useEffect(() => {
+    if (!chatLoaded) return; // don't overwrite stored history before it's loaded
+    const id = setTimeout(() => {
+      const toSave = turns.slice(-50);
+      AsyncStorage.setItem(CHAT_KEY(childKey), JSON.stringify(toSave)).catch(() => {});
+    }, 500);
+    return () => clearTimeout(id);
+  }, [childKey, turns, chatLoaded]);
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -195,14 +238,27 @@ export default function AmyAIScreen() {
     );
   };
 
-  const isEmpty = turns.length === 0 && !loading;
+  const isEmpty = turns.length === 0 && !loading && chatLoaded;
   const canClear = turns.length > 0 && !loading;
 
   const clearChat = () => {
     if (!canClear) return;
+    tts.stop();
+    setActiveTtsTurnId(null);
     setTurns([]);
     setInput("");
+    AsyncStorage.removeItem(CHAT_KEY(childKey)).catch(() => {});
   };
+
+  const handleTtsListen = useCallback((turnId: string, text: string) => {
+    if (activeTtsTurnId === turnId && (tts.speaking || tts.loading)) {
+      tts.stop();
+      setActiveTtsTurnId(null);
+    } else {
+      setActiveTtsTurnId(turnId);
+      void tts.speak(text);
+    }
+  }, [activeTtsTurnId, tts]);
 
   return (
     <LinearGradient colors={theme.gradient} style={{ flex: 1 }}>
@@ -325,7 +381,15 @@ export default function AmyAIScreen() {
           )}
 
           {turns.map((turn) => (
-            <TurnView key={turn.id} turn={turn} onPickOption={pickOption} />
+            <TurnView
+              key={turn.id}
+              turn={turn}
+              onPickOption={pickOption}
+              onListen={handleTtsListen}
+              ttsActiveId={activeTtsTurnId}
+              ttsLoading={tts.loading}
+              ttsSpeaking={tts.speaking}
+            />
           ))}
 
           {loading && <TypingBubble label={t("ai.thinking")} />}
@@ -365,9 +429,17 @@ export default function AmyAIScreen() {
 function TurnView({
   turn,
   onPickOption,
+  onListen,
+  ttsActiveId,
+  ttsLoading,
+  ttsSpeaking,
 }: {
   turn: Turn;
   onPickOption: (turnId: string, optIdx: number) => void;
+  onListen: (turnId: string, text: string) => void;
+  ttsActiveId: string | null;
+  ttsLoading: boolean;
+  ttsSpeaking: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -401,12 +473,37 @@ function TurnView({
       : null;
   const picked = turn.pickedIndex;
 
+  const isThisTtsActive = ttsActiveId === turn.id;
+  const ttsText = [reply.content, reply.question].filter(Boolean).join(" ").trim();
+
   return (
     <View style={[styles.bubbleRow, styles.bubbleRowLeft]}>
       <LinearGradient colors={[brand.primary, ACCENT_PINK]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.avatarSm}>
         <MaterialCommunityIcons name="brain" size={14} color="#fff" />
       </LinearGradient>
       <View style={[styles.bubble, styles.bubbleAmy, { gap: 10 }]}>
+        {/* Listen button row */}
+        {ttsText.length > 0 && (
+          <Pressable
+            onPress={() => onListen(turn.id, ttsText)}
+            style={({ pressed }) => [styles.listenBtn, pressed && { opacity: 0.6 }]}
+            accessibilityLabel={isThisTtsActive && (ttsSpeaking || ttsLoading) ? t("ai.stop") : t("ai.listen")}
+            accessibilityRole="button"
+          >
+            {isThisTtsActive && ttsLoading ? (
+              <ActivityIndicator size="small" color="rgba(167,139,250,0.9)" />
+            ) : (
+              <Ionicons
+                name={isThisTtsActive && ttsSpeaking ? "stop-circle-outline" : "volume-medium-outline"}
+                size={14}
+                color="rgba(167,139,250,0.9)"
+              />
+            )}
+            <Text style={styles.listenBtnText}>
+              {isThisTtsActive && (ttsSpeaking || ttsLoading) ? t("ai.stop") : t("ai.listen")}
+            </Text>
+          </Pressable>
+        )}
         {reply.content ? <MarkdownText text={reply.content} /> : null}
 
         {reply.examples.length > 0 && (
@@ -629,6 +726,9 @@ const styles = StyleSheet.create({
   suggestionText: { color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "500" },
 
   typingDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.85)" },
+
+  listenBtn: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: "rgba(167,139,250,0.10)", borderWidth: 1, borderColor: "rgba(167,139,250,0.30)" },
+  listenBtnText: { color: "rgba(167,139,250,0.9)", fontSize: 11, fontWeight: "700" },
 
   inputBar: { flexDirection: "row", alignItems: "flex-end", gap: 10, paddingHorizontal: 14, paddingTop: 10, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.06)", backgroundColor: "rgba(11,11,26,0.7)" },
   input: { flex: 1, color: "#fff", fontSize: 15, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", maxHeight: 120 },
