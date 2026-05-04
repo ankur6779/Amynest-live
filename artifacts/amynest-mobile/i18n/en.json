@@ -1945,7 +1945,9 @@
       },
       "today_regen": "Generate a new routine",
       "section_for_child": "For {{name}} · age {{age}}",
-      "section_empty": "Nothing in this section for {{name}} just yet — keep checking back!"
+      "section_empty": "Nothing in this section for {{name}} just yet — keep checking back!",
+      "viewing": "Viewing",
+      "generate_routine_cta": "Generate Daily Routine"
     },
     "badges": {
       "try_free": "Try Free",
@@ -2307,7 +2309,12 @@
       "for_age_band": "For Age {{label}}",
       "viewing": "VIEWING",
       "select_child": "SELECT CHILD",
-      "current_child": "YOUR CHILD"
+      "current_child": "YOUR CHILD",
+      "section1_for": "FOR",
+      "for_child": "For {{name}}",
+      "personalised": "Personalised for {{name}}",
+      "section2_next": "EXPLORE NEXT",
+      "explore_blurb": "Coming soon as {{name}} grows"
     }
   },
   "components": {

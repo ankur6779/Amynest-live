@@ -53,6 +53,7 @@ export function HubDebugOverlay({
   devMode = false,
 }: HubDebugOverlayProps) {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"diff" | "ui">("diff");
 
   const webBand = useMemo(() => bandIndexToWebLabel(currentBand), [currentBand]);
   const webTiles = useMemo(
@@ -103,102 +104,127 @@ export function HubDebugOverlay({
           <View style={styles.sheet}>
             <View style={styles.header}>
               <Text style={styles.headerTitle}>{t("components.hub_debug_overlay.hub_debug_mobile_vs_web")}</Text>
-              <Pressable onPress={() => setOpen(false)} testID="hub-debug-close">
-                <Ionicons name="close" size={22} color="#fff" />
-              </Pressable>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Pressable
+                  onPress={() => setTab("diff")}
+                  style={[styles.tabPill, tab === "diff" && styles.tabPillActive]}
+                >
+                  <Text style={[styles.tabPillText, tab === "diff" && styles.tabPillTextActive]}>Tile Diff</Text>{/* i18n-ok: developer debug overlay label — not user-facing */}
+                </Pressable>
+                <Pressable
+                  onPress={() => setTab("ui")}
+                  style={[styles.tabPill, tab === "ui" && styles.tabPillActive]}
+                >
+                  <Text style={[styles.tabPillText, tab === "ui" && styles.tabPillTextActive]}>UI Design</Text>{/* i18n-ok: developer debug overlay label — not user-facing */}
+                </Pressable>
+                <Pressable onPress={() => setOpen(false)} testID="hub-debug-close">
+                  <Ionicons name="close" size={22} color="#fff" />
+                </Pressable>
+              </View>
             </View>
 
-            <ScrollView contentContainerStyle={{ padding: 14, gap: 14 }}>
-              <Block label="Session">
-                <Row k="Mode" v={devMode ? "DevMode (7-tap)" : "__DEV__ build"} good={true} />
-              </Block>
+            {tab === "diff" ? (
+              <ScrollView contentContainerStyle={{ padding: 14, gap: 14 }}>
+                <Block label="Session">
+                  <Row k="Mode" v={devMode ? "DevMode (7-tap)" : "__DEV__ build"} good={true} />
+                </Block>
 
-              <Block label="Active child">
-                <Row k="Name" v={childName} />
-                <Row k="Age" v={`${ageMonths} months`} />
-                <Row k="Band" v={`${currentBand} (${webBand})`} />
-              </Block>
+                <Block label="Active child">
+                  <Row k="Name" v={childName} />
+                  <Row k="Age" v={`${ageMonths} months`} />
+                  <Row k="Band" v={`${currentBand} (${webBand})`} />
+                </Block>
 
-              <Block label="UI Design — web parity checklist">
-                <Check label="Child selector: gradient avatar cards with initials" done />
-                <Check label="Child selector: purple border glow on selected card" done />
-                <Check label="Child selector: VIEWING chip on selected card" done />
-                <Check label="Child selector: visible for all family sizes (≥1 child)" done />
-                <Check label="Section accordion: flat muted glass icon box (no gradient)" done />
-                <Check label="Section accordion: purple open-state border glow" done />
-                <Check label="Section chevron: brand.primary (purple) when open" done />
-                <Check label="Logo: 7-tap dev-mode toggle with DEV badge overlay" done />
-                <Check label="Debug overlay: accessible in production via 7-tap" done />
-                <Check label="WEB_SECTION_2_TILES synced to 10 tiles (added smart-math-tricks, abacus)" done />
-                <Check label="phonics-learning added to MOBILE_ONLY_EXTRAS (no false positives)" done />
-                <Check label="Section 2 (infant 0-24m): synced tile count matches web" />
-                <Check label="Section 1 order: verify tile order matches web sequence" />
-              </Block>
+                <Block label="Section 2 visibility">
+                  <Row k="Web rule" v={webShowsSection2 ? "SHOW" : "HIDE"} good={webShowsSection2 === mobileShowsSection2} />
+                  <Row k="Mobile" v={mobileShowsSection2 ? "SHOW" : "HIDE"} good={webShowsSection2 === mobileShowsSection2} />
+                </Block>
 
-              <Block label="Section 2 visibility">
-                <Row k="Web rule" v={webShowsSection2 ? "SHOW" : "HIDE"} good={webShowsSection2 === mobileShowsSection2} />
-                <Row k="Mobile" v={mobileShowsSection2 ? "SHOW" : "HIDE"} good={webShowsSection2 === mobileShowsSection2} />
-              </Block>
-
-              <Block label={`Section 1 — mobile renders ${mobileSection1Ids.length}, web renders ${webTileIds.length}`}>
-                {section1Diff.missingOnMobile.length === 0 &&
-                 section1Diff.extraOnMobile.length === 0 &&
-                 section1Diff.orderMismatches.length === 0 ? (
-                  <Text style={styles.ok}>{t("components.hub_debug_overlay.section_1_matches_web_exactly")}</Text>
-                ) : (
-                  <>
-                    {section1Diff.missingOnMobile.length > 0 && (
-                      <DiffList title={t("components.hub_debug_overlay.missing_on_mobile_web_has_mobile_doesn_t")} tone="warn" ids={section1Diff.missingOnMobile} />
-                    )}
-                    {section1Diff.extraOnMobile.length > 0 && (
-                      <DiffList title={t("components.hub_debug_overlay.extra_on_mobile_mobile_has_web_doesn_t")} tone="bad" ids={section1Diff.extraOnMobile} />
-                    )}
-                    {section1Diff.orderMismatches.length > 0 && (
-                      <View style={{ gap: 4 }}>
-                        <Text style={styles.diffTitleBad}>{t("components.hub_debug_overlay.order_mismatches")}</Text>
-                        {section1Diff.orderMismatches.map((m) => (
-                          <Text key={m.id} style={styles.diffItem}>
-                            • <Text style={styles.bold}>{m.id}</Text> — web idx {m.webIndex}, mobile idx {m.mobileIndex}
-                          </Text>
-                        ))}
-                      </View>
-                    )}
-                  </>
-                )}
-              </Block>
-
-              <Block label="Section 1 — render order">
-                <SideBySide
-                  leftTitle="Mobile (current)"
-                  leftItems={mobileSection1Ids}
-                  rightTitle="Web (reference)"
-                  rightItems={webTileIds}
-                />
-              </Block>
-
-              {(mobileShowsSection2 || webShowsSection2) && (
-                <Block label={`Section 2 — mobile renders ${mobileSection2Ids.length}, web renders ${webShowsSection2 ? webSection2Ids.length : 0}`}>
-                  {section2Diff.missingOnMobile.length === 0 &&
-                   section2Diff.extraOnMobile.length === 0 ? (
-                    <Text style={styles.ok}>{t("components.hub_debug_overlay.section_2_contents_match")}</Text>
+                <Block label={`Section 1 — mobile renders ${mobileSection1Ids.length}, web renders ${webTileIds.length}`}>
+                  {section1Diff.missingOnMobile.length === 0 &&
+                   section1Diff.extraOnMobile.length === 0 &&
+                   section1Diff.orderMismatches.length === 0 ? (
+                    <Text style={styles.ok}>{t("components.hub_debug_overlay.section_1_matches_web_exactly")}</Text>
                   ) : (
                     <>
-                      {section2Diff.missingOnMobile.length > 0 && (
-                        <DiffList title={t("components.hub_debug_overlay.missing_on_mobile")} tone="warn" ids={section2Diff.missingOnMobile} />
+                      {section1Diff.missingOnMobile.length > 0 && (
+                        <DiffList title={t("components.hub_debug_overlay.missing_on_mobile_web_has_mobile_doesn_t")} tone="warn" ids={section1Diff.missingOnMobile} />
                       )}
-                      {section2Diff.extraOnMobile.length > 0 && (
-                        <DiffList title={t("components.hub_debug_overlay.extra_on_mobile")} tone="bad" ids={section2Diff.extraOnMobile} />
+                      {section1Diff.extraOnMobile.length > 0 && (
+                        <DiffList title={t("components.hub_debug_overlay.extra_on_mobile_mobile_has_web_doesn_t")} tone="bad" ids={section1Diff.extraOnMobile} />
+                      )}
+                      {section1Diff.orderMismatches.length > 0 && (
+                        <View style={{ gap: 4 }}>
+                          <Text style={styles.diffTitleBad}>{t("components.hub_debug_overlay.order_mismatches")}</Text>
+                          {section1Diff.orderMismatches.map((m) => (
+                            <Text key={m.id} style={styles.diffItem}>
+                              • <Text style={styles.bold}>{m.id}</Text> — web idx {m.webIndex}, mobile idx {m.mobileIndex}
+                            </Text>
+                          ))}
+                        </View>
                       )}
                     </>
                   )}
                 </Block>
-              )}
 
-              <Text style={styles.footnote}>
-                Reference: lib/hubWebReference.ts — keep in sync with
-                artifacts/kidschedule/src/pages/parenting-hub.tsx when web changes.
-              </Text>
-            </ScrollView>
+                <Block label="Section 1 — render order">
+                  <SideBySide
+                    leftTitle="Mobile (current)"
+                    leftItems={mobileSection1Ids}
+                    rightTitle="Web (reference)"
+                    rightItems={webTileIds}
+                  />
+                </Block>
+
+                {(mobileShowsSection2 || webShowsSection2) && (
+                  <Block label={`Section 2 — mobile renders ${mobileSection2Ids.length}, web renders ${webShowsSection2 ? webSection2Ids.length : 0}`}>
+                    {section2Diff.missingOnMobile.length === 0 &&
+                     section2Diff.extraOnMobile.length === 0 ? (
+                      <Text style={styles.ok}>{t("components.hub_debug_overlay.section_2_contents_match")}</Text>
+                    ) : (
+                      <>
+                        {section2Diff.missingOnMobile.length > 0 && (
+                          <DiffList title={t("components.hub_debug_overlay.missing_on_mobile")} tone="warn" ids={section2Diff.missingOnMobile} />
+                        )}
+                        {section2Diff.extraOnMobile.length > 0 && (
+                          <DiffList title={t("components.hub_debug_overlay.extra_on_mobile")} tone="bad" ids={section2Diff.extraOnMobile} />
+                        )}
+                      </>
+                    )}
+                  </Block>
+                )}
+
+                <Text style={styles.footnote}>
+                  Reference: lib/hubWebReference.ts — keep in sync with
+                  artifacts/kidschedule/src/pages/parenting-hub.tsx when web changes.
+                </Text>
+              </ScrollView>
+            ) : (
+              <ScrollView contentContainerStyle={{ padding: 14, gap: 14 }}>
+                <Block label="UI Design Parity Checklist">
+                  {([
+                    ["Child Selector — tall gradient-avatar cards", true],
+                    ["Child Selector — checkmark + Viewing chip on active", true],
+                    ["Section accordion — flat glass icon box (no gradient)", true],
+                    ["Section accordion — purple open-state border glow", true],
+                    ["Section accordion — purple chevron when open", true],
+                    ["ForYou header — eyebrow + band badge + For [Name] title", true],
+                    ["ExploreNext header — eyebrow + band badge + subtitle", true],
+                    ["Bottom CTA — Generate Daily Routine button", true],
+                    ["Dev mode — 7-tap logo toggle + Alert + DEV badge", true],
+                    ["HubDebugOverlay — available in non-DEV builds via devMode", true],
+                  ] as [string, boolean][]).map(([label, done]) => (
+                    <View key={label} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
+                      <Text style={done ? styles.ok : styles.diffTitleBad}>{done ? "✅" : "❌"}</Text>
+                      <Text style={styles.rowVal}>{label}</Text>
+                    </View>
+                  ))}
+                </Block>
+                <Text style={styles.footnote}>
+                  Reference: artifacts/kidschedule/src/pages/parenting-hub.tsx
+                </Text>
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>
@@ -340,6 +366,18 @@ const styles = StyleSheet.create({
   sideCellMatch: { color: palette.emerald400 },
 
   footnote: { color: "rgba(255,255,255,0.45)", fontSize: 10, marginTop: 4 },
+
+  tabPill: {
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
+  },
+  tabPillActive: {
+    backgroundColor: brand.violet600,
+    borderColor: brand.violet600,
+  },
+  tabPillText: { color: "rgba(255,255,255,0.70)", fontSize: 11, fontWeight: "700" },
+  tabPillTextActive: { color: "#fff" },
 });
 
 export default HubDebugOverlay;

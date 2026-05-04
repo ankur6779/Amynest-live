@@ -1945,7 +1945,9 @@
       },
       "today_regen": "नया रूटीन बनाएँ",
       "section_for_child": "{{name}} के लिए · उम्र {{age}}",
-      "section_empty": "{{name}} के लिए इस सेक्शन में अभी कुछ नहीं है — थोड़ी देर बाद देखिए!"
+      "section_empty": "{{name}} के लिए इस सेक्शन में अभी कुछ नहीं है — थोड़ी देर बाद देखिए!",
+      "viewing": "देख रहे हैं",
+      "generate_routine_cta": "दैनिक दिनचर्या बनाएं"
     },
     "badges": {
       "try_free": "फ्री में आज़माएँ",
@@ -2307,7 +2309,12 @@
       "for_age_band": "उम्र {{label}} के लिए",
       "viewing": "देख रहे हैं",
       "select_child": "बच्चा चुनें",
-      "current_child": "आपका बच्चा"
+      "current_child": "आपका बच्चा",
+      "section1_for": "के लिए",
+      "for_child": "{{name}} के लिए",
+      "personalised": "{{name}} के लिए व्यक्तिगत",
+      "section2_next": "आगे जानें",
+      "explore_blurb": "{{name}} के बड़े होने पर जल्द आएगा"
     }
   },
   "components": {

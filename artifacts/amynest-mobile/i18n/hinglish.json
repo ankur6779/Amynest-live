@@ -1945,7 +1945,9 @@
       },
       "today_regen": "Naya routine banayein",
       "section_for_child": "{{name}} ke liye · age {{age}}",
-      "section_empty": "{{name}} ke liye is section mein abhi kuch nahi hai — thodi der baad dekhiye!"
+      "section_empty": "{{name}} ke liye is section mein abhi kuch nahi hai — thodi der baad dekhiye!",
+      "viewing": "Dekh rahe hain",
+      "generate_routine_cta": "Daily Routine banao"
     },
     "badges": {
       "try_free": "Free try karein",
@@ -2307,7 +2309,12 @@
       "for_age_band": "Age {{label}} ke liye",
       "viewing": "Dekh rahe hain",
       "select_child": "Bachcha select karein",
-      "current_child": "Aapka bachcha"
+      "current_child": "Aapka bachcha",
+      "section1_for": "KE LIYE",
+      "for_child": "{{name}} ke liye",
+      "personalised": "{{name}} ke liye personalised",
+      "section2_next": "EXPLORE NEXT",
+      "explore_blurb": "{{name}} ke bade hone par aayega"
     }
   },
   "components": {
