@@ -15,6 +15,7 @@ import {
 import { useSegments } from "expo-router";
 import { useDebugMode } from "@/contexts/DebugContext";
 import { apiLogger, type ApiLogEntry } from "@/lib/apiLogger";
+import { getCrashLog, clearCrashLog, type CrashEntry } from "@/utils/crashReporter";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -27,7 +28,7 @@ import { BRAND } from "@/constants/brand";
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
 
-type Tab   = "logs" | "state" | "colors" | "parity";
+type Tab   = "logs" | "state" | "colors" | "parity" | "crashes";
 type Phase = "all" | "onboarding" | "routine" | "amy" | "hub" | "profile" | "food";
 
 interface ChildProfile {
@@ -257,6 +258,7 @@ export function DebugPanel() {
   const [activePhase, setActivePhase] = useState<Phase>("all");
   const [entries,     setEntries]     = useState<ApiLogEntry[]>([]);
   const [pushing,     setPushing]     = useState(false);
+  const [crashes,     setCrashes]     = useState<CrashEntry[]>([]);
 
   const segments   = useSegments();
   const screenName = formatScreenName(segments as string[]);
@@ -270,6 +272,10 @@ export function DebugPanel() {
     setEntries([...apiLogger.getEntries()]);
     return apiLogger.subscribe((e) => setEntries([...e]));
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "crashes") setCrashes([...getCrashLog()]);
+  }, [activeTab]);
 
   // ── Derived ──────────────────────────────────────────────────────────────────
 
@@ -437,10 +443,11 @@ export function DebugPanel() {
             <View style={s.tabs}>
               {(
                 [
-                  ["logs",   `Logs ${filteredEntries.length}`],
-                  ["state",  "State"],
-                  ["colors", "Colors"],
-                  ["parity", "Parity"],
+                  ["logs",    `Logs ${filteredEntries.length}`],
+                  ["state",   "State"],
+                  ["colors",  "Colors"],
+                  ["parity",  "Parity"],
+                  ["crashes", crashes.length > 0 ? `💥 Crashes ${crashes.length}` : "Crashes"],
                 ] as [Tab, string][]
               ).map(([tab, label]) => (
                 <TouchableOpacity
@@ -697,6 +704,49 @@ export function DebugPanel() {
                       {JSON.stringify(parityResult, null, 2)}
                     </Text>
                   </View>
+                </View>
+              )}
+
+              {/* ── CRASHES TAB ── */}
+              {activeTab === "crashes" && (
+                <View style={s.section}>
+                  <SectionHeader title="CAUGHT CRASHES & REJECTIONS" />
+                  {crashes.length === 0 ? (
+                    <Text style={s.emptyText}>No crashes recorded. 🎉</Text>
+                  ) : (
+                    crashes.map((c) => (
+                      <View key={c.id} style={s.crashRow}>
+                        <View style={s.crashHeader}>
+                          <Text style={[s.crashBadge, c.isFatal && s.crashBadgeFatal]}>
+                            {c.isFatal ? "FATAL" : "NON-FATAL"}
+                          </Text>
+                          <Text style={s.crashTime}>
+                            {new Date(c.timestamp).toLocaleTimeString()}
+                          </Text>
+                        </View>
+                        <Text style={s.crashMessage} numberOfLines={3}>{c.message}</Text>
+                        {c.stack ? (
+                          <Text style={s.crashStack} numberOfLines={6}>{c.stack}</Text>
+                        ) : null}
+                        {Object.keys(c.context).length > 0 ? (
+                          <Text style={s.crashContext}>
+                            {JSON.stringify(c.context)}
+                          </Text>
+                        ) : null}
+                      </View>
+                    ))
+                  )}
+                  {crashes.length > 0 && (
+                    <TouchableOpacity
+                      style={s.clearBtn}
+                      onPress={async () => {
+                        await clearCrashLog();
+                        setCrashes([]);
+                      }}
+                    >
+                      <Text style={s.clearBtnText}>🗑 Clear Crash Log</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
 
@@ -1023,5 +1073,51 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   clearBtnText: { color: "#f87171", fontSize: 12 }, // audit-ok: debug-only dev overlay
+
+  crashRow: {
+    backgroundColor: "#1a1030", // audit-ok: debug-only dev overlay
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#f8717130", // audit-ok: debug-only dev overlay
+  },
+  crashHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  crashBadge: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#fbbf24",        // audit-ok: debug-only dev overlay
+    backgroundColor: "#fbbf2420", // audit-ok: debug-only dev overlay
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  crashBadgeFatal: {
+    color: "#f87171",        // audit-ok: debug-only dev overlay
+    backgroundColor: "#f8717120", // audit-ok: debug-only dev overlay
+  },
+  crashTime: { color: "#6b7280", fontSize: 11 }, // audit-ok: debug-only dev overlay
+  crashMessage: {
+    color: "#fca5a5",        // audit-ok: debug-only dev overlay
+    fontSize: 12,
+    fontFamily: "monospace",
+    marginBottom: 4,
+  },
+  crashStack: {
+    color: "#6b7280",        // audit-ok: debug-only dev overlay
+    fontSize: 10,
+    fontFamily: "monospace",
+    marginBottom: 4,
+  },
+  crashContext: {
+    color: "#4b5563",        // audit-ok: debug-only dev overlay
+    fontSize: 10,
+    fontFamily: "monospace",
+  },
 });
 // i18n-ignore-end
