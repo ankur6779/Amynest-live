@@ -176,6 +176,10 @@ export default function HubScreen() {
   // Single-scroll deep-link support: main scroll ref + per-tile y-cache
   const mainScrollRef = useRef<ScrollView>(null);
   const tileYRef = useRef<Record<string, number>>({});
+  // Y offset of the section1 grid View within the ScrollView content.
+  // Tile onLayout values are relative to this container, so we add it
+  // when storing absolute scroll positions in tileYRef.
+  const section1GridYRef = useRef<number>(0);
 
   // Dev-mode activation: 7 quick taps on the logo toggles DebugContext, which
   // persists to AsyncStorage and shows both the HubDebugOverlay and the global
@@ -1712,13 +1716,19 @@ export default function HubScreen() {
 
                 {/* Band tiles in web-matching order */}
                 {section1.length > 0 && (
-                  <View style={[styles.sectionsGrid, { marginTop: 8 }]}>
+                  <View
+                    style={[styles.sectionsGrid, { marginTop: 8 }]}
+                    onLayout={(e) => {
+                      section1GridYRef.current = e.nativeEvent.layout.y;
+                    }}
+                  >
                     {section1.map((t) => (
                       <View
                         key={t.id}
                         style={styles.tileMeasureWrap}
                         onLayout={(e) => {
-                          tileYRef.current[t.id] = e.nativeEvent.layout.y;
+                          tileYRef.current[t.id] =
+                            section1GridYRef.current + e.nativeEvent.layout.y;
                         }}
                       >
                         <HubTile
