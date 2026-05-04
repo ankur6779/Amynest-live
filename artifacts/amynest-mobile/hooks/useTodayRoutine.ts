@@ -66,6 +66,8 @@ export interface UseTodayRoutineResult {
   tasks: RoutineTask[];
   isLoading: boolean;
   isRefetching: boolean;
+  /** Timestamp (ms) of the last successful routines fetch; 0 if never fetched. */
+  dataUpdatedAt: number;
   refetch: () => Promise<unknown>;
   /** Toggle a task by its synthetic id (`t-<routineId>-<idx>`). */
   onToggle: (taskId: string) => void;
@@ -85,6 +87,7 @@ export function useTodayRoutine(
     data: routines = [],
     isLoading,
     isRefetching,
+    dataUpdatedAt,
     refetch,
   } = useQuery<Routine[]>({
     queryKey: ["routines"],
@@ -191,6 +194,7 @@ export function useTodayRoutine(
     tasks,
     isLoading,
     isRefetching,
+    dataUpdatedAt,
     refetch,
     onToggle,
     taskIdToItemIndex,
