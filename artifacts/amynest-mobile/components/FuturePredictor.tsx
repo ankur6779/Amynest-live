@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
@@ -62,6 +62,9 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
   const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(c, mode), [c, mode]);
 
+  // Default collapsed — user must tap to expand
+  const [collapsed, setCollapsed] = useState(true);
+
   const { data, isLoading, isError, refetch, isFetching } = useQuery<Prediction>({
     queryKey: ["future-predictor", childId ?? null],
     queryFn: async () => {
@@ -88,6 +91,43 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
 
   if (isError || !data) return null;
 
+  // ── Collapsed preview card ────────────────────────────────────────────────
+  if (collapsed) {
+    return (
+      <Pressable
+        onPress={() => setCollapsed(false)}
+        style={({ pressed }) => [{ opacity: pressed ? 0.88 : 1 }]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: false }}
+      >
+        <LinearGradient
+          colors={["rgba(168,85,247,0.18)", "rgba(236,72,153,0.16)", "rgba(245,158,11,0.14)"]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={[styles.card, styles.cardCollapsed]}
+        >
+          <View style={styles.headerRow}>
+            <LinearGradient
+              colors={[brand.amber400, ACCENT_PINK, brand.purple500]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={styles.iconRing}
+            >
+              <Text style={{ fontSize: 18 }}>🔮</Text>
+            </LinearGradient>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Ionicons name="sparkles" size={13} color={brand.purple400} />
+                <Text style={styles.title}>{t("parent_hub.predictor.title")}</Text>
+              </View>
+              <Text style={styles.previewHint}>Tap to view tomorrow's insights</Text>
+            </View>
+            <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.55)" />
+          </View>
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
+  // ── Expanded full card ────────────────────────────────────────────────────
   const indicators: Array<{ key: string; title: string; ind: Indicator }> = [
     { key: "mood",   title: t("parent_hub.predictor.indicators.mood").toUpperCase(),   ind: data.mood },
     { key: "energy", title: t("parent_hub.predictor.indicators.energy").toUpperCase(), ind: data.energy },
@@ -101,8 +141,13 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
       start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={styles.card}
     >
-      {/* Header */}
-      <View style={styles.headerRow}>
+      {/* Header — tapping collapses back */}
+      <Pressable
+        onPress={() => setCollapsed(true)}
+        style={styles.headerRow}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: true }}
+      >
         <LinearGradient
           colors={[brand.amber400, ACCENT_PINK, brand.purple500]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
@@ -121,20 +166,23 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
               : t("parent_hub.predictor.family_forecast")} · {data.forDate}
           </Text>
         </View>
-        <Pressable
-          onPress={() => refetch()}
-          disabled={isFetching}
-          style={styles.refreshBtn}
-          accessibilityLabel={t("parent_hub.predictor.refresh_aria")}
-        >
-          <Ionicons
-            name="refresh"
-            size={14}
-            color="#fff"
-            style={isFetching ? { opacity: 0.5 } : undefined}
-          />
-        </Pressable>
-      </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Pressable
+            onPress={(e) => { e.stopPropagation?.(); refetch(); }}
+            disabled={isFetching}
+            style={styles.refreshBtn}
+            accessibilityLabel={t("parent_hub.predictor.refresh_aria")}
+          >
+            <Ionicons
+              name="refresh"
+              size={14}
+              color="#fff"
+              style={isFetching ? { opacity: 0.5 } : undefined}
+            />
+          </Pressable>
+          <Ionicons name="chevron-up" size={16} color="rgba(255,255,255,0.55)" />
+        </View>
+      </Pressable>
 
       {/* Amy message — message text comes from the AI backend (out of scope) */}
       <Text style={styles.message}>"{data.message}"</Text>
@@ -222,6 +270,9 @@ function makeStyles(c: any, mode: "light" | "dark") {
       borderWidth: 1.5,
       borderColor: "rgba(168,85,247,0.4)",
     },
+    cardCollapsed: {
+      gap: 0,
+    },
     cardLoading: {
       borderRadius: 22,
       padding: 18,
@@ -240,6 +291,7 @@ function makeStyles(c: any, mode: "light" | "dark") {
     },
     title: { color: lightText, fontWeight: "800", fontSize: 14 },
     subtitle: { color: lightSubtle, fontSize: 11, marginTop: 1 },
+    previewHint: { color: lightSubtle, fontSize: 12, marginTop: 2, fontStyle: "italic" },
     refreshBtn: {
       width: 30, height: 30, borderRadius: 15,
       alignItems: "center", justifyContent: "center",

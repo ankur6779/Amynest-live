@@ -93,11 +93,11 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
   // Inventory updated for #197: added `skills-focus`, `daily-story`,
   // `daily-puzzle` (web-parity tiles ported from kidschedule's dashboard).
   // Inventory updated for #214: added `abacus` (Abacus PRO Zone, ages 4–10).
-  it("contains the expected 28 tiles", () => {
+  it("contains the expected 26 tiles", () => {
     const expectedIds = [
       // Always-current
       "amy", "articles", "tips", "emotional", "activities", "art-craft",
-      "nutrition", "meal-suggestions",
+      // Note: "nutrition" moved to NavDrawer; "meal-suggestions" moved to Routines tab
       // Band-restricted (web parity)
       "story-hub", "phonics", "smart-math-tricks", "abacus", "ptm-prep",
       "smart-study", "event-prep", "olympiad", "life-skills",
@@ -111,7 +111,7 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
     ].sort();
     const actualIds = Object.keys(HUB_CONTENT_AGE_BANDS).sort();
     expect(actualIds).toEqual(expectedIds);
-    expect(actualIds.length).toBe(28);
+    expect(actualIds.length).toBe(26);
   });
 
   // Locks expected tile membership for two representative bands. This catches
@@ -123,7 +123,7 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
     const expected = [
       // All-current always render here
       "amy", "articles", "tips", "emotional", "activities", "art-craft",
-      "nutrition", "meal-suggestions",
+      // Note: nutrition → NavDrawer; meal-suggestions → Routines tab
       // Band-restricted that include band 0
       "story-hub",
       // Mobile-only AmazingFacts now extends to the InfantHub band (0–2y)
@@ -144,7 +144,7 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
     const expected = [
       // All-current
       "amy", "articles", "tips", "emotional", "activities", "art-craft",
-      "nutrition", "meal-suggestions",
+      // Note: nutrition → NavDrawer; meal-suggestions → Routines tab
       // Band-restricted that include band 4
       "abacus", "ptm-prep", "smart-study", "event-prep", "olympiad",
       "life-skills", "coloring-books", "fun-sheets",

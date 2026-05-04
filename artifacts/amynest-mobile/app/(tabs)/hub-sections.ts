@@ -101,8 +101,6 @@ export const TILE_SECTION_MAP: Readonly<Record<string, Exclude<SectionKey, "toda
   "life-skills": "activities",
   "morning-flow": "activities",
   meals: "activities",
-  "meal-suggestions": "activities",
-  nutrition: "activities",
   "daily-story": "activities",
   "daily-puzzle": "activities",
   "infant-parenting": "activities",

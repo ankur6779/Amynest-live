@@ -1,0 +1,165 @@
+Upgrade mobile app UI and navigation with the following structural and UX improvements.
+
+GOAL:
+- Cleaner Parent Hub
+- Better feature discoverability
+- More modern, colorful UI
+- Logical feature placement
+
+---
+
+### 1. AMY AI - TOMORROW’S FORECAST (FIX)
+
+Current issue:
+- Section is always expanded
+
+Fix:
+- Default state = collapsed
+- Expand only on user tap
+
+Add:
+- Smooth expand/collapse animation
+- Show preview line:
+  “Tap to view tomorrow’s insights”
+
+---
+
+### 2. MOVE NUTRITION HUB
+
+Remove from:
+❌ Parent Hub
+
+Add to:
+✔ Burger Menu (Navigation drawer)
+
+Label:
+“Nutrition Hub”
+
+Position:
+- Below Parenting Hub
+- Above Settings
+
+---
+
+### 3. MOVE “AMY AI MEAL SUGGESTION”
+
+Remove from:
+❌ Parent Hub
+
+Add to:
+✔ Routine section
+
+Placement inside Routine:
+- After “Daily Routine Blocks”
+
+Label:
+“🍽️ Meal Suggestions for Today”
+
+Use:
+- child.food_preferences
+- country
+- weather
+
+---
+
+### 4. RENAME SECTION
+
+Change:
+❌ “Baby Parenting Guide”
+
+To:
+✔ “Infant Parenting”
+
+Apply everywhere:
+- Titles
+- Navigation
+- Headers
+
+---
+
+### 5. MAKE TILES COLORFUL (IMPORTANT UX UPGRADE)
+
+Current:
+- Dark + same color tiles
+
+Upgrade:
+
+Each tile gets:
+- Soft gradient background
+- Icon color variation
+- Subtle glow
+
+Example color themes:
+
+- Sleep → Blue gradient
+- Nutrition → Green gradient
+- Behavior → Orange gradient
+- Learning → Purple gradient
+- Infant Parenting → Pink / Peach gradient
+
+---
+
+### 6. TILE UI SPEC
+
+- Rounded corners (16–20px)
+- Gradient background
+- Icon + title + short subtitle
+
+Example:
+
+“Improve Sleep 😴  
+Better routines for healthy sleep”
+
+---
+
+### 7. HOVER / TAP EFFECT
+
+Add:
+- Slight scale (1.03)
+- Glow highlight
+- Smooth transition (200ms)
+
+---
+
+### 8. PARENT HUB CLEANUP
+
+After changes, Parent Hub should contain:
+
+✔ Core sections only:
+- Behavior
+- Sleep
+- Learning
+- Routine insights
+
+❌ Remove:
+- Nutrition Hub
+- Meal Suggestion
+
+---
+
+### 9. BURGER MENU STRUCTURE
+
+Menu order:
+
+1. Dashboard
+2. Routines
+3. Parenting Hub
+4. Nutrition Hub ⭐ (new position)
+5. Settings
+
+---
+
+### 10. VISUAL CONSISTENCY
+
+- Keep dark theme base
+- Use neon/soft glow accents
+- Maintain Amy AI branding
+
+---
+
+### 11. SUCCESS CRITERIA
+
+- Parent Hub looks clean (no clutter)
+- Meals tied to Routine (logical flow)
+- Navigation improved
+- UI feels modern + colorful
