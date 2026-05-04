@@ -262,7 +262,7 @@ const statStyles = StyleSheet.create({
 function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: number }) {
   const { t } = useTranslation();
   const c = useColors();
-  const todayStr = formatYMD(new Date());
+  const todayStr = new Date().toISOString().slice(0, 10);
   const todayRoutines = routines.filter((r) => r.date.slice(0, 10) === todayStr);
   const allItems = todayRoutines.flatMap((r) => r.items);
   const total = allItems.length;
@@ -280,7 +280,7 @@ function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: 
     suggestions.push({ emoji: "🌟", text: "Amazing progress today! Consider a small reward to celebrate." });
   }
 
-  if (hour > 15 && hour <= 17) {
+  if (hour >= 15 && hour <= 17) {
     suggestions.push({ emoji: "❤️", text: "Good time for a 15-min bonding activity — a quick walk or board game goes a long way." });
   }
 
@@ -810,7 +810,7 @@ export default function DashboardScreen() {
     todaysRoutine,
     tasks,
     isLoading: loadingRoutines,
-    isRefetching,
+    dataUpdatedAt: routinesUpdatedAt,
     refetch: refetchRoutines,
     onToggle,
     taskIdToItemIndex,
@@ -824,7 +824,11 @@ export default function DashboardScreen() {
   });
 
   // ── Dashboard summary ─────────────────────────────────────────────────────
-  const { data: summary = null, isLoading: loadingSummary } = useQuery<DashboardSummary>({
+  const {
+    data: summary = null,
+    isLoading: loadingSummary,
+    dataUpdatedAt: summaryUpdatedAt,
+  } = useQuery<DashboardSummary>({
     queryKey: ["dashboard-summary"],
     queryFn: () => authFetch("/api/dashboard/summary").then((r) => r.ok ? r.json() : null),
     enabled: !!profileComplete,
@@ -832,7 +836,10 @@ export default function DashboardScreen() {
   });
 
   // ── Recent routines ───────────────────────────────────────────────────────
-  const { data: recentRoutines = [], isLoading: loadingRecent } = useQuery<Routine[]>({
+  const {
+    data: recentRoutines = [],
+    isLoading: loadingRecent,
+  } = useQuery<Routine[]>({
     queryKey: ["dashboard-recent-routines"],
     queryFn: () => authFetch("/api/dashboard/recent-routines").then((r) => r.ok ? r.json() : []),
     enabled: !!profileComplete,
@@ -840,22 +847,37 @@ export default function DashboardScreen() {
   });
 
   // ── Behavior stats ────────────────────────────────────────────────────────
-  const { data: behaviorStats = [], isLoading: loadingBehavior } = useQuery<BehaviorStat[]>({
+  const {
+    data: behaviorStats = [],
+    isLoading: loadingBehavior,
+    dataUpdatedAt: behaviorUpdatedAt,
+  } = useQuery<BehaviorStat[]>({
     queryKey: ["dashboard-behavior-stats"],
     queryFn: () => authFetch("/api/dashboard/behavior-stats").then((r) => r.ok ? r.json() : []),
     enabled: !!profileComplete,
     refetchInterval: 30_000,
   });
 
+  // ── Last successful sync timestamp (matches web: max across all queries) ──
+  const lastUpdated = Math.max(summaryUpdatedAt ?? 0, routinesUpdatedAt ?? 0, behaviorUpdatedAt ?? 0);
+
+  // ── Dedicated manual-refresh state (isolated from 30s background polling) ─
+  const [manualRefreshing, setManualRefreshing] = useState(false);
+
   // ── Refetch all on pull-to-refresh ────────────────────────────────────────
   const refetch = useCallback(async () => {
-    await Promise.all([
-      refetchRoutines(),
-      qc.invalidateQueries({ queryKey: ["children"] }),
-      qc.invalidateQueries({ queryKey: ["dashboard-summary"] }),
-      qc.invalidateQueries({ queryKey: ["dashboard-recent-routines"] }),
-      qc.invalidateQueries({ queryKey: ["dashboard-behavior-stats"] }),
-    ]);
+    setManualRefreshing(true);
+    try {
+      await Promise.all([
+        refetchRoutines(),
+        qc.invalidateQueries({ queryKey: ["children"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard-summary"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard-recent-routines"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard-behavior-stats"] }),
+      ]);
+    } finally {
+      setManualRefreshing(false);
+    }
   }, [refetchRoutines, qc]);
 
   const streak = useMemo(() => computeStreak(routines), [routines]);
@@ -911,7 +933,7 @@ export default function DashboardScreen() {
         contentContainerStyle={{ paddingTop: topPad + 16, paddingBottom: botPad + 100 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.primary} />
+          <RefreshControl refreshing={manualRefreshing} onRefresh={refetch} tintColor={c.primary} />
         }
       >
         {/* ── Hero Greeting ─────────────────────────────────────────── */}
@@ -932,6 +954,15 @@ export default function DashboardScreen() {
           <Text style={[mainStyles.sub, { color: c.mutedForeground }]}>
             {todaysRoutine ? `${t("dashboard.planned_for_you")} ❤️` : `${t("dashboard.setup_first")} 🌟`}
           </Text>
+          {lastUpdated > 0 && (
+            <View style={mainStyles.syncRow}>
+              <View style={mainStyles.syncDot} />
+              <Text style={mainStyles.syncLabel}>
+                {t("dashboard.live")}{" "}
+                {new Date(lastUpdated).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* ── Children Strip ────────────────────────────────────────── */}
@@ -951,7 +982,7 @@ export default function DashboardScreen() {
           </Text>
         </View>
 
-        {loadingRoutines ? (
+        {loadingRoutines || manualRefreshing ? (
           <View style={mainStyles.loaderRow}>
             <ActivityIndicator color={c.primary} />
           </View>
@@ -991,7 +1022,7 @@ export default function DashboardScreen() {
           <SectionHeader label="At a Glance" />
         </View>
         <StreakCard streak={streak} onPress={() => router.push("/progress" as never)} />
-        <StatsGrid summary={summary} loading={loadingSummary} />
+        <StatsGrid summary={summary} loading={loadingSummary || manualRefreshing} />
 
         {/* ── Coaching ──────────────────────────────────────────────── */}
         <View style={{ marginBottom: 14 }}>
@@ -1010,7 +1041,7 @@ export default function DashboardScreen() {
         </View>
         <RecentRoutinesList
           routines={recentRoutines}
-          loading={loadingRecent}
+          loading={loadingRecent || manualRefreshing}
           onPress={(id) => router.push({ pathname: "/routines/[id]", params: { id: String(id) } })}
         />
 
@@ -1022,7 +1053,7 @@ export default function DashboardScreen() {
             onAction={() => router.push("/behavior" as never)}
           />
         </View>
-        <BehaviorHighlights stats={behaviorStats} loading={loadingBehavior} />
+        <BehaviorHighlights stats={behaviorStats} loading={loadingBehavior || manualRefreshing} />
 
         {/* ── Rewards ───────────────────────────────────────────────── */}
         <View style={{ marginTop: 16, marginBottom: 14 }}>
@@ -1068,6 +1099,21 @@ const mainStyles = StyleSheet.create({
   dateLabel: { fontSize: 10, fontWeight: "700", letterSpacing: 0.2, color: brand.purple500 },
   title: { fontSize: 22, fontWeight: "800", letterSpacing: -0.3, marginBottom: 4 },
   sub: { fontSize: 13.5, fontWeight: "500" },
+  syncRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 8,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(0,0,0,0.25)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  syncDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: brand.purple500 },
+  syncLabel: { fontSize: 10, fontWeight: "600", color: brand.purple500, letterSpacing: 0.3 },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
