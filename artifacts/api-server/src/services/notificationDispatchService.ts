@@ -280,6 +280,46 @@ async function sendFcmWebPush(
 }
 
 /**
+ * Send via Firebase Admin to a native Android FCM token (KidSchedule TWA/WebView wrapper).
+ * Uses `android` notification config — native tokens silently drop `webpush` messages.
+ * channelId "default" matches the channel registered in KidScheduleFcmService.kt.
+ */
+async function sendFcmAndroidPush(
+  token: string,
+  input: DispatchInput,
+): Promise<void> {
+  await getMessaging(adminApp()).send({
+    token,
+    notification: {
+      title: input.title,
+      body: input.body,
+    },
+    android: {
+      notification: {
+        icon: "ic_notification",
+        color: "#6C63FF",
+        channelId: "default",
+        // Opens MainActivity (the TWA/WebView launcher) when the user taps the
+        // system-tray notification. FCM resolves this to the activity registered
+        // with android.intent.action.MAIN in AndroidManifest.xml, passing the
+        // data payload (including deepLink) as Intent extras so MainActivity
+        // can navigate the WebView to the correct route.
+        clickAction: "android.intent.action.MAIN",
+      },
+    },
+    data: {
+      category: input.category,
+      deepLink: input.deepLink ?? "",
+      ...(input.data
+        ? Object.fromEntries(
+            Object.entries(input.data).map(([k, v]) => [k, String(v)]),
+          )
+        : {}),
+    },
+  });
+}
+
+/**
  * Main entry point. Validates against prefs/cap/quiet hours/dedup, then
  * sends the notification to every registered Expo push token (mobile) and
  * every FCM web push token (browser) for the user.
@@ -303,15 +343,18 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   const expoTokens = tokens.filter((t) => Expo.isExpoPushToken(t.token));
   // FCM tokens come from two sources, both routed through Firebase Admin:
   //   - platform "web"     → browser web push via service worker (FCM JS SDK)
+  //                          must use `webpush` config
   //   - platform "android" → native FCM token from KidSchedule TWA wrapper
   //                          (registered via PushBridge.kt → /api/push/register)
-  const webTokens = tokens.filter(
-    (t) =>
-      !Expo.isExpoPushToken(t.token) &&
-      (t.platform === "web" || t.platform === "android"),
+  //                          must use `android` config — webpush is silently dropped
+  const webFcmTokens = tokens.filter(
+    (t) => !Expo.isExpoPushToken(t.token) && t.platform === "web",
+  );
+  const androidFcmTokens = tokens.filter(
+    (t) => !Expo.isExpoPushToken(t.token) && t.platform === "android",
   );
 
-  if (expoTokens.length === 0 && webTokens.length === 0) {
+  if (expoTokens.length === 0 && webFcmTokens.length === 0 && androidFcmTokens.length === 0) {
     await logEvent(input, "no_tokens", "no_valid_tokens");
     return { status: "no_tokens", reason: "no_valid_tokens" };
   }
@@ -339,6 +382,8 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   let expoFail = 0;
   let webOk = 0;
   let webFail = 0;
+  let androidOk = 0;
+  let androidFail = 0;
 
   // ── Expo (mobile) ──────────────────────────────────────────────────────────
   if (expoTokens.length > 0) {
@@ -395,10 +440,10 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     }
   }
 
-  // ── FCM web push (browser) ─────────────────────────────────────────────────
-  if (webTokens.length > 0) {
+  // ── FCM web push (browser / PWA) ───────────────────────────────────────────
+  if (webFcmTokens.length > 0) {
     const results = await Promise.allSettled(
-      webTokens.map(async (t) => {
+      webFcmTokens.map(async (t) => {
         try {
           await sendFcmWebPush(t.token, input);
           return true;
@@ -420,27 +465,58 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     }
   }
 
-  const platform =
-    expoTokens.length > 0 && webTokens.length > 0
-      ? "expo+web"
-      : expoTokens.length > 0
-        ? "expo"
-        : "web";
+  // ── FCM Android push (KidSchedule native TWA wrapper) ──────────────────────
+  if (androidFcmTokens.length > 0) {
+    const results = await Promise.allSettled(
+      androidFcmTokens.map(async (t) => {
+        try {
+          await sendFcmAndroidPush(t.token, input);
+          return true;
+        } catch (err) {
+          if (isFcmInvalidTokenError(err)) {
+            await pruneInvalidToken(t.token, "fcm:unregistered");
+          }
+          logger.error(
+            { err, userId: input.userId, token: t.token.slice(0, 20) },
+            "FCM android push failed",
+          );
+          return false;
+        }
+      }),
+    );
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value) androidOk++;
+      else androidFail++;
+    }
+  }
+
+  // Build a platform label reflecting every active send path.
+  const platformParts: string[] = [];
+  if (expoTokens.length > 0) platformParts.push("expo");
+  if (webFcmTokens.length > 0) platformParts.push("web");
+  if (androidFcmTokens.length > 0) platformParts.push("android");
+  const platform = platformParts.join("+") || "unknown";
 
   // If every token attempt failed, surface that as "failed" instead of
   // pretending the notification went out — diagnostics and the recent-
   // deliveries UI rely on this status to show the correct icon and to
   // help users understand why their device went quiet.
-  const totalOk = expoOk + webOk;
-  const totalFail = expoFail + webFail;
+  const totalOk = expoOk + webOk + androidOk;
+  const totalFail = expoFail + webFail + androidFail;
   if (totalOk === 0 && totalFail > 0) {
-    await logEvent(input, "failed", `all_tokens_failed:expo=${expoFail},web=${webFail}`, platform);
+    await logEvent(
+      input,
+      "failed",
+      `all_tokens_failed:expo=${expoFail},web=${webFail},android=${androidFail}`,
+      platform,
+    );
     logger.warn(
       {
         userId: input.userId,
         category: input.category,
         expoFail,
         webFail,
+        androidFail,
       },
       "Notification dispatch: all tokens failed",
     );
@@ -456,6 +532,8 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
       expoFail,
       webOk,
       webFail,
+      androidOk,
+      androidFail,
     },
     "Notification dispatched",
   );

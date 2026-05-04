@@ -95,15 +95,6 @@ function getChildInitials(name: string): string {
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
-const AVATAR_GRADIENTS: [string, string][] = [
-  [brand.violet600, brand.purple500],
-  [brand.indigo500, brand.violet500],
-  [brand.purple500, brand.pink500],
-  [brand.rose400, ACCENT_PINK],
-  [brand.amber400, brand.rose400],
-  [brand.sky300, brand.indigo500],
-];
-
 // Stable identifiers used for i18n key lookup. Emojis stay co-located with
 // the data while the user-visible label / prompt text is resolved at render
 // time via `useAmyPrompts()` / `useEmotionalCards()` so a language switch
