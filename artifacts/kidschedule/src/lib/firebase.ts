@@ -53,6 +53,26 @@ void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
 export async function getWebPushToken(vapidKey: string): Promise<string> {
   const { getMessaging, getToken } = await import("firebase/messaging");
 
+  // Trim whitespace/newlines that can sneak in when a secret is copy-pasted.
+  // Also strip any base64 padding chars (=) — PushManager expects base64url
+  // without padding. Standard base64 chars (+, /) are converted to their
+  // base64url equivalents (-, _) so they survive the browser's decoding step.
+  const cleanKey = vapidKey
+    .trim()
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  // A valid Firebase VAPID public key is an uncompressed EC point = 65 bytes.
+  // 65 bytes base64url-encoded (no padding) = 87 characters.
+  // Anything wildly outside that range is definitely wrong.
+  if (cleanKey.length < 80 || cleanKey.length > 92) {
+    throw new Error(
+      `VAPID key length looks wrong (${cleanKey.length} chars, expected ~87). ` +
+        "Copy the Web Push certificate key from Firebase Console → Project Settings → Cloud Messaging.",
+    );
+  }
+
   const basePath = (import.meta.env.BASE_URL as string).replace(/\/$/, "");
   const swUrl = `${basePath}/firebase-messaging-sw.js`;
 
@@ -76,7 +96,7 @@ export async function getWebPushToken(vapidKey: string): Promise<string> {
 
   const messaging = getMessaging(firebaseApp);
   const token = await getToken(messaging, {
-    vapidKey,
+    vapidKey: cleanKey,
     serviceWorkerRegistration: swReg,
   });
 
