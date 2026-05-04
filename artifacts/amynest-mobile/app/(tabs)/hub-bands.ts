@@ -72,6 +72,12 @@ export const HUB_CONTENT_AGE_BANDS: Record<string, readonly number[]> = {
   "skills-focus":        [1, 2, 3, 4, 5, 6],
   "daily-story":         [1, 2, 3, 4, 5, 6],
   "daily-puzzle":        [1, 2, 3, 4, 5, 6],
+
+  // Infant Parenting Guide — mobile-only Activities tile shown ONLY for
+  // 0–24 month children (band 0). Mirrors the web's Activities section
+  // which renders InfantMode for infants. Desktop equivalent is the
+  // infant-specific subsection inside Activities > Baby Activities.
+  "infant-parenting":    [0],
 };
 
 // Per-tile age-month bounds, mirroring the totalAgeMonths gates in the web

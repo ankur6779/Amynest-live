@@ -21,6 +21,8 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LifeSkillsZone } from "@/components/LifeSkillsZone";
 import InfantHub from "@/components/InfantHub";
+import InfantSleepHelpers from "@/components/infant/InfantSleepHelpers";
+import InfantFeedingReference from "@/components/infant/InfantFeedingReference";
 import { ParentingArticles } from "@/components/ParentingArticles";
 import { ArtCraftReels } from "@/components/ArtCraftReels";
 import { PrintableWorksheets } from "@/components/PrintableWorksheets";
@@ -302,17 +304,15 @@ export default function HubScreen() {
   // page). They are NOT part of the partitioned grid because they are
   // singletons (one Command Center, one InfantHub, one FuturePredictor)
   // and live above the grid in the same page.
+  // Infant Hub featured card — shown ONLY when the SELECTED child is < 24 months.
+  // Previously had a fallback that found any infant child in the family; that
+  // caused 2+ year old children to see infant content. Now we strictly gate on
+  // the currently selected child's age, matching web behaviour.
   const renderInfantHub = (): React.ReactNode => {
-    const selMonths = effective ? effective.age * 12 + (effective.ageMonths ?? 0) : -1;
-    const target = isInfantHubAge(selMonths)
-      ? effective
-      : children
-          .map(c => ({ child: c, months: c.age * 12 + (c.ageMonths ?? 0) }))
-          .filter(x => isInfantHubAge(x.months))
-          .sort((a, b) => a.months - b.months)[0]?.child;
-    if (!target) return null;
-    const m = target.age * 12 + (target.ageMonths ?? 0);
-    return <InfantHub childId={target.id} childName={target.name} ageMonths={m} />;
+    if (!effective) return null;
+    const selMonths = effective.age * 12 + (effective.ageMonths ?? 0);
+    if (!isInfantHubAge(selMonths)) return null;
+    return <InfantHub childId={effective.id} childName={effective.name} ageMonths={selMonths} />;
   };
 
   return (
@@ -1130,6 +1130,56 @@ export default function HubScreen() {
               </LockedBlock>
             ),
           });
+          // ── Infant Parenting Guide (band 0 only) ─────────────────────────
+          // Mirrors the web's Activities > InfantMode surface. Only renders
+          // for children < 24 months (band 0). Contains sleep helpers and
+          // feeding reference — the two most-accessed infant care sections.
+          allTiles.push({
+            id: "infant-parenting",
+            ageBands: HUB_CONTENT_AGE_BANDS["infant-parenting"],
+            node: (
+              <View style={tileW("infant-parenting")}>
+              <LockedBlock
+                reason="hub_infant_parenting"
+                locked={hubUsage.isFeatureLocked("hub_infant_parenting")}
+              >
+              <Section
+                id="infant-parenting"
+                emoji="👶"
+                icon={<Ionicons name="heart" size={20} color="#fff" />}
+                accent={[brand.rose400, brand.pink500]}
+                title={t("parent_hub.tiles.infant-parenting.title")}
+                desc={t("parent_hub.tiles.infant-parenting.desc")}
+                open={openSection === "infant-parenting"}
+                onToggle={() => setOpenSection(s => s === "infant-parenting" ? null : "infant-parenting")}
+                onOpen={() => hubUsage.markFeatureUsed("hub_infant_parenting")}
+                tryFree={tryFreeFor("hub_infant_parenting")}
+              >
+                <Text style={styles.sectionLead}>{t("parent_hub.tiles.infant-parenting.lead")}</Text>
+
+                {/* Sleep Helpers */}
+                <View style={{ marginTop: 10 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <Text style={{ fontSize: 16 }}>🛏</Text>
+                    <Text style={{ color: brand.violet200, fontWeight: "800", fontSize: 13 }}>{t("parent_hub.tiles.infant-parenting.sleep_title")}</Text>
+                  </View>
+                  <InfantSleepHelpers ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)} />
+                </View>
+
+                {/* Feeding Reference */}
+                <View style={{ marginTop: 14 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <Text style={{ fontSize: 16 }}>🍼</Text>
+                    <Text style={{ color: brand.violet200, fontWeight: "800", fontSize: 13 }}>{t("parent_hub.tiles.infant-parenting.feeding_title")}</Text>
+                  </View>
+                  <InfantFeedingReference ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)} />
+                </View>
+              </Section>
+              </LockedBlock>
+              </View>
+            ),
+          });
+
           allTiles.push({
             id: "story-hub",
             ageBands: HUB_CONTENT_AGE_BANDS["story-hub"],

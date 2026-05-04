@@ -124,6 +124,11 @@ export const MOBILE_ONLY_EXTRAS: ReadonlySet<string> = new Set([
   // additional learning card with its own route). The web only has one
   // `phonics` tile, so the second mobile card is a documented extra.
   "phonics-learning",
+  // Infant Parenting Guide — mobile-only Activities tile (band 0 only).
+  // Web equivalent: InfantMode inside the Activities HubSection for infants.
+  // Mobile surfaces this as a standalone tile so parents can directly access
+  // sleep, feeding and care guidance without opening the full InfantHub card.
+  "infant-parenting",
 ]);
 
 /**

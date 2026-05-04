@@ -2234,6 +2234,13 @@
       "daily-puzzle": {
         "title": "🧩 Daily Puzzle",
         "desc": "Roz 5 adaptive brain puzzles"
+      },
+      "infant-parenting": {
+        "title": "Baby Parenting Guide",
+        "desc": "Neend · Feeding · Baby Care",
+        "lead": "Aapke baby ke pehle 2 saal ke liye age-matched guidance.",
+        "sleep_title": "Sleep aur Soothing Helpers",
+        "feeding_title": "Feeding Reference"
       }
     },
     "tiles_activity": {
