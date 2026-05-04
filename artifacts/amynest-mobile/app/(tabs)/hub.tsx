@@ -84,12 +84,12 @@ type Child = { id: number; name: string; age: number; ageMonths?: number };
 // time via `useAmyPrompts()` / `useEmotionalCards()` so a language switch
 // re-renders these chips immediately.
 const AMY_PROMPT_KEYS = [
-  { key: "sleep",          emoji: "😴" },
-  { key: "tantrums",       emoji: "😤" },
-  { key: "picky_eating",   emoji: "🥦" },
-  { key: "school_anxiety", emoji: "📚" },
-  { key: "screen_time",    emoji: "📱" },
-  { key: "language",       emoji: "💬" },
+  { key: "sleep",          emoji: "📚" },
+  { key: "tantrums",       emoji: "🎯" },
+  { key: "picky_eating",   emoji: "📖" },
+  { key: "school_anxiety", emoji: "🔢" },
+  { key: "screen_time",    emoji: "🌟" },
+  { key: "language",       emoji: "✏️" },
 ] as const;
 
 const EMOTIONAL_KEYS = [

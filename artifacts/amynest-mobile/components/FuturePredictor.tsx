@@ -127,7 +127,7 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
                 <Ionicons name="sparkles" size={13} color={brand.purple400} />
                 <Text style={styles.title}>{t("parent_hub.predictor.title")}</Text>
               </View>
-              <Text style={styles.previewHint}>Tap to view tomorrow's insights</Text>
+              <Text style={styles.previewHint}>{t("parent_hub.predictor.tap_to_view")}</Text>
             </View>
             <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.55)" />
           </View>
