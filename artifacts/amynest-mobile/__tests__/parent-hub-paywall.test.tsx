@@ -7,13 +7,14 @@
  * overlays the tile and a tap routes the parent to `/paywall` with the
  * matching `reason`.
  *
- * This test covers the three invariants from the task brief:
- *   1. Each section (Today / Zones / Modules / Activities) shows a TRY FREE
- *      badge on at least one tile while the feature is unused for a free
- *      user.
- *   2. Once a feature has been used the badge disappears, and tapping the
- *      now-locked tile routes to `/paywall` with the correct `reason`
- *      query param.
+ * Phase 5 removed the 4-section pager — the hub is now a single scrollable
+ * surface so all tiles render simultaneously. Tests that previously navigated
+ * between tab sections (today / zones / modules / activities) now check the
+ * whole rendered hub in one pass.
+ *
+ * This test covers three invariants:
+ *   1. TRY FREE badges appear on the single-scroll hub for a fresh free user.
+ *   2. Once a feature is marked used (or user is premium) the badge disappears.
  *   3. The PaywallScreen REASON_COPY map carries an entry for every
  *      per-tile reason key the hub passes through `<LockedBlock reason=…>`.
  */
@@ -34,11 +35,7 @@ import {
   act,
   fireEvent,
 } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-import { __flatListTestState } from "../__mocks__/react-native";
-import { SECTION_KEYS } from "@/app/(tabs)/hub-sections";
 
 // ─── Mocks (must precede HubScreen import) ───────────────────────────────────
 
@@ -189,6 +186,9 @@ import HubScreen from "@/app/(tabs)/hub";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// CHILD is 6 years old → band "6-8" → articles, amy, emotional, activities,
+// art-craft, life-skills, olympiad, ptm-prep, smart-study, event-prep, etc.
+// all render and carry TryFreeBadge / LockedBlock wiring.
 const CHILD = { id: 101, name: "Aarav", age: 6, ageMonths: 0 };
 
 function makeChildrenResponse(children: typeof CHILD[]) {
@@ -210,22 +210,10 @@ function renderHub() {
   );
 }
 
-async function gotoSection(key: (typeof SECTION_KEYS)[number]) {
-  const user = userEvent.setup();
-  await user.click(screen.getByTestId(`hub-tab-${key}`));
-  await waitFor(() =>
-    expect(screen.getByTestId(`hub-tab-${key}`)).toHaveAttribute(
-      "aria-selected",
-      "true",
-    ),
-  );
-}
-
 beforeEach(() => {
   mockAuthFetch.mockReset();
   mockMarkFeatureUsed.mockReset();
   mockRouterPush.mockReset();
-  __flatListTestState.reset();
   mockUsageState = { isPremium: false, used: new Set(), locked: new Set() };
   mockAuthFetch.mockImplementation(async (url: string) => {
     if (url === "/api/children") return makeChildrenResponse([CHILD]);
@@ -240,74 +228,44 @@ afterEach(() => {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe("Parent Hub paywall flow — TRY FREE badges", () => {
-  it("shows at least one TRY FREE badge per section for a fresh free user", async () => {
+  it("shows TRY FREE badges on the single-scroll hub for a fresh free user", async () => {
+    // The hub is now one scrollable surface — all tiles render simultaneously.
+    // A free user with no feature usage should see at least one badge.
     renderHub();
-    await waitFor(() => {
-      expect(screen.getByTestId("hub-tab-today")).toBeInTheDocument();
-    });
-
-    // Today — the page header renders a TryFreeBadge alongside Today's Plan.
-    await gotoSection("today");
-    await waitFor(() => {
-      expect(screen.getAllByTestId("try-free-badge").length).toBeGreaterThan(0);
-    });
-
-    // Zones — Ask Amy / Articles / Tips / Emotional all expose badges.
-    await gotoSection("zones");
-    await waitFor(() => {
-      expect(screen.getAllByTestId("try-free-badge").length).toBeGreaterThan(0);
-    });
-
-    // Modules — academic tiles (phonics / smart-study / olympiad / …).
-    await gotoSection("modules");
-    await waitFor(() => {
-      expect(screen.getAllByTestId("try-free-badge").length).toBeGreaterThan(0);
-    });
-
-    // Activities — art-craft / activities / facts / morning-flow / ….
-    await gotoSection("activities");
     await waitFor(() => {
       expect(screen.getAllByTestId("try-free-badge").length).toBeGreaterThan(0);
     });
   });
 
-  it("hides every TRY FREE badge once the feature is marked used", async () => {
-    // Premium users never see the badge — fastest way to assert the negative
-    // path globally without enumerating every featureId in the hub.
+  it("hides every TRY FREE badge for a premium user", async () => {
     mockUsageState.isPremium = true;
     renderHub();
+    // Wait for the children query to complete so tiles are rendered.
     await waitFor(() => {
-      expect(screen.getByTestId("hub-tab-today")).toBeInTheDocument();
+      expect(mockAuthFetch).toHaveBeenCalledWith("/api/children");
     });
-
-    for (const key of SECTION_KEYS) {
-      await gotoSection(key);
-      // Allow any pending re-renders to flush before asserting absence.
-      await act(async () => {
-        await Promise.resolve();
-      });
-      expect(screen.queryAllByTestId("try-free-badge")).toHaveLength(0);
-    }
+    // Flush async state updates (data arrival → tile render).
+    await act(async () => {
+      await new Promise<void>((r) => setTimeout(r, 0));
+    });
+    expect(screen.queryAllByTestId("try-free-badge")).toHaveLength(0);
   });
 });
 
 describe("Parent Hub paywall flow — locked tile routes to /paywall", () => {
   it("opens /paywall with the matching reason when a locked tile is tapped", async () => {
-    // Lock a representative tile from EACH section that has a wrapping
-    // `<LockedBlock>` (Today's Plan only renders a badge — there is no
-    // LockedBlock around it — so it isn't included here). The reasons
-    // below mirror what `app/(tabs)/hub.tsx` actually passes through
-    // `<LockedBlock reason=…>` for each tile.
-    // Tile age-band gating: CHILD is 6y → band 3 (6–8). The chosen tile
-    // ids must be in the band map for that band, otherwise the IIFE in
-    // hub.tsx skips them entirely and no LockedBlock is rendered.
-    //   - hub_articles      → bands [0..6] ✓
-    //   - hub_skills_focus  → bands [1..6] ✓
-    //   - hub_art_craft     → bands [0..6] ✓
+    // Lock a representative tile from each logical area of the hub that has
+    // a wrapping `<LockedBlock>`. The hub is a single scroll so all three
+    // locked tiles render simultaneously without any tab navigation.
+    //
+    // Band check: CHILD is 6y → band "6-8".
+    //   - hub_articles      → articles tile, bands [0..6] ✓
+    //   - hub_skills_focus  → skills-focus tile, bands [1..6] ✓
+    //   - hub_art_craft     → art-craft tile, bands [0..6] ✓
     mockUsageState.locked = new Set([
-      "hub_articles",      // Zones — LockedBlock(reason=hub_locked)
-      "hub_skills_focus",  // Modules — LockedBlock(reason=hub_skills_focus)
-      "hub_art_craft",     // Activities — LockedBlock(reason=hub_art_craft)
+      "hub_articles",     // LockedBlock(reason="hub_locked")
+      "hub_skills_focus", // LockedBlock(reason="hub_skills_focus")
+      "hub_art_craft",    // LockedBlock(reason="hub_art_craft")
     ]);
     mockUsageState.used = new Set([
       "hub_articles",
@@ -316,38 +274,16 @@ describe("Parent Hub paywall flow — locked tile routes to /paywall", () => {
     ]);
 
     renderHub();
-    await waitFor(() => {
-      expect(screen.getByTestId("hub-tab-zones")).toBeInTheDocument();
-    });
 
-    // Each locked tile renders a `<PremiumBadge testID="premium-badge">`
-    // sibling to its full-cover Pressable overlay; both fire the same
-    // `goPaywall` handler. Clicking every premium-badge on the page is the
-    // simplest way to drive every LockedBlock through the navigation path
-    // without depending on the i18n-resolved aria-label of the overlay.
-    const clickAllLocked = () => {
-      for (const badge of screen.getAllByTestId("premium-badge")) {
-        fireEvent.click(badge);
-      }
-      return mockRouterPush.mock.calls.map(([arg]) => arg);
-    };
-
-    // Zones — Articles tile uses reason "hub_locked".
-    // Also asserts the "badge disappears after first use" requirement for
-    // free users: hub_articles is `used` + `locked` here (i.e. free user who
-    // already consumed their one free open), so its TryFreeBadge must be
-    // gone even though the user is non-premium. Counting badges before vs.
-    // after locking would require two renders; instead we assert that the
-    // total badge count in Zones is strictly less than the count we'd see
-    // with no usage marked (covered in the first test), AND that no badge
-    // co-exists with the locked-block overlay on the same tile.
-    await gotoSection("zones");
+    // All locked tiles render on the single-scroll surface — wait for any
+    // LockedBlock to appear (real component, not mocked).
     await waitFor(() => {
       expect(screen.getAllByTestId("locked-block").length).toBeGreaterThan(0);
     });
+
     // Free-user "used" tiles must not emit a TryFreeBadge inside their
     // LockedBlock subtree. The LockedBlock children are the original tile
-    // — if `tryFreeFor` returned truthy, the Section would render a badge
+    // — if `tryFreeFor` returned truthy, the section would render a badge
     // beneath the lock overlay. Walking each locked-block confirms none do.
     for (const block of screen.getAllByTestId("locked-block")) {
       const badgesInside = block.querySelectorAll(
@@ -355,29 +291,24 @@ describe("Parent Hub paywall flow — locked tile routes to /paywall", () => {
       );
       expect(badgesInside.length).toBe(0);
     }
-    expect(clickAllLocked()).toContainEqual({
+
+    // Click every premium-badge on the page and collect the navigation calls.
+    for (const badge of screen.getAllByTestId("premium-badge")) {
+      fireEvent.click(badge);
+    }
+    const routes = mockRouterPush.mock.calls.map(([arg]) => arg);
+
+    // All three locked tiles should have routed to /paywall with their
+    // respective reason strings in a single render pass.
+    expect(routes).toContainEqual({
       pathname: "/paywall",
       params: { reason: "hub_locked" },
     });
-
-    // Modules — Skills Focus tile uses reason hub_skills_focus
-    mockRouterPush.mockClear();
-    await gotoSection("modules");
-    await waitFor(() => {
-      expect(screen.getAllByTestId("locked-block").length).toBeGreaterThan(0);
-    });
-    expect(clickAllLocked()).toContainEqual({
+    expect(routes).toContainEqual({
       pathname: "/paywall",
       params: { reason: "hub_skills_focus" },
     });
-
-    // Activities — Art & Craft tile uses reason hub_art_craft
-    mockRouterPush.mockClear();
-    await gotoSection("activities");
-    await waitFor(() => {
-      expect(screen.getAllByTestId("locked-block").length).toBeGreaterThan(0);
-    });
-    expect(clickAllLocked()).toContainEqual({
+    expect(routes).toContainEqual({
       pathname: "/paywall",
       params: { reason: "hub_art_craft" },
     });

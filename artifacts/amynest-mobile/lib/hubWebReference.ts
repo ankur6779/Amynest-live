@@ -119,6 +119,11 @@ export const MOBILE_ONLY_EXTRAS: ReadonlySet<string> = new Set([
   "skills-focus",
   "daily-story",
   "daily-puzzle",
+  // Mobile splits "Phonics Learning" into two tiles: `phonics` (the web-
+  // mapped tile for the practice/test card) and `phonics-learning` (an
+  // additional learning card with its own route). The web only has one
+  // `phonics` tile, so the second mobile card is a documented extra.
+  "phonics-learning",
 ]);
 
 /**
