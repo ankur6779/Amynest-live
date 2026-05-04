@@ -319,6 +319,19 @@ export default function StudyScreen() {
             />
           }
         >
+          {/* Spelling Mastery quick-access banner */}
+          <Pressable
+            onPress={() => router.push("/spelling" as never)}
+            style={({ pressed }) => [styles.spellingBanner, pressed && { opacity: 0.85 }]}
+          >
+            <Text style={{ fontSize: 22 }}>🔤</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.spellingBannerTitle}>Spelling Mastery</Text>
+              <Text style={styles.spellingBannerSub}>Learn, practice & compete</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={brand.primary} />
+          </Pressable>
+
           {/* Completion card */}
           <View style={styles.completionCard}>
             <View style={styles.completionHeader}>
@@ -593,4 +606,17 @@ const styles = StyleSheet.create({
     backgroundColor: brand.primary,
   },
   itemActionText: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  spellingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(139,92,246,0.35)",
+  },
+  spellingBannerTitle: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  spellingBannerSub: { color: "rgba(255,255,255,0.75)", fontSize: 12, marginTop: 2 },
 });

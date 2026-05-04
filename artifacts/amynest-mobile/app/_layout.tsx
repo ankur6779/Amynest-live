@@ -232,7 +232,8 @@ function RootLayoutNav() {
         name="routines/[id]"
         options={{ headerShown: false }}
       />
-      <Stack.Screen name="games"          options={{ headerShown: false }} />
+      <Stack.Screen name="games"           options={{ headerShown: false }} />
+      <Stack.Screen name="spelling"        options={{ headerShown: false }} />
       <Stack.Screen name="audio-lessons"  options={{ headerShown: false }} />
       <Stack.Screen
         name="referrals"
