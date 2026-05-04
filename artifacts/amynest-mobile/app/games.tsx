@@ -692,7 +692,7 @@ const FILL_COLORS = [
   { id: "g", color: "#22c55e" }, // audit-ok: game fill green
   { id: "b", color: "#3b82f6" }, // audit-ok: game fill blue
   { id: "y", color: "#eab308" }, // audit-ok: game fill yellow
-  { id: "p", color: "#a855f7" }, // audit-ok: game fill purple
+  { id: "p", color: palette.purple500 },
 ];
 const FILL_TARGET: Record<number, string> = {
   0:"r", 1:"b", 2:"g", 3:"r",
