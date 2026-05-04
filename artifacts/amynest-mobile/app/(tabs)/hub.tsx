@@ -412,7 +412,7 @@ export default function HubScreen() {
                   >
                     {isSel && (
                       <View style={styles.childCardCheck}>
-                        <Ionicons name="checkmark-circle" size={16} color={brand.primary} />
+                        <Ionicons name="checkmark-circle" size={12} color={brand.primary} />
                       </View>
                     )}
                     <LinearGradient
@@ -1937,19 +1937,19 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     },
     childSelectorHeader: {
       flexDirection: "row", alignItems: "center", gap: 6,
-      paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4,
+      paddingHorizontal: 12, paddingTop: 6, paddingBottom: 2,
     },
     childSelectorLabel: {
-      color: c.textMuted, fontSize: 10, fontWeight: "800",
+      color: c.textMuted, fontSize: 9, fontWeight: "800",
       letterSpacing: 0.9, textTransform: "uppercase",
     },
     childSelectorRow: {
-      flexDirection: "row", gap: 8,
-      paddingHorizontal: 10, paddingBottom: 8, paddingTop: 2,
+      flexDirection: "row", gap: 6,
+      paddingHorizontal: 8, paddingBottom: 6, paddingTop: 0,
     },
     childCard: {
-      minWidth: 62, alignItems: "center", gap: 3,
-      paddingHorizontal: 8, paddingVertical: 7, borderRadius: 12,
+      minWidth: 54, alignItems: "center", gap: 2,
+      paddingHorizontal: 6, paddingVertical: 5, borderRadius: 10,
       backgroundColor: isLight ? "rgba(255,255,255,0.50)" : "rgba(255,255,255,0.03)",
       borderWidth: 2, borderColor: glassBorder,
       position: "relative",
@@ -1963,29 +1963,29 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       shadowOffset: { width: 0, height: 4 },
       elevation: 4,
     },
-    childCardCheck: { position: "absolute", top: 5, right: 5 },
+    childCardCheck: { position: "absolute", top: 3, right: 3 },
     childAvatar: {
-      width: 36, height: 36, borderRadius: 18,
+      width: 28, height: 28, borderRadius: 14,
       alignItems: "center", justifyContent: "center",
     },
     childAvatarSel: {
       shadowColor: brand.primary,
       shadowOpacity: 0.40,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 3 },
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
     },
-    childAvatarText: { color: "#fff", fontWeight: "800", fontSize: 13, letterSpacing: -0.3 },
-    childCardInfo: { alignItems: "center", gap: 1 },
-    childCardName: { color: c.foreground, fontWeight: "700", fontSize: 12, textAlign: "center" },
+    childAvatarText: { color: "#fff", fontWeight: "800", fontSize: 10, letterSpacing: -0.3 },
+    childCardInfo: { alignItems: "center", gap: 0 },
+    childCardName: { color: c.foreground, fontWeight: "700", fontSize: 10, textAlign: "center" },
     childCardNameSel: { color: brand.primary },
-    childCardAge: { color: c.textMuted, fontSize: 10, textAlign: "center" },
+    childCardAge: { color: c.textMuted, fontSize: 9, textAlign: "center" },
     viewingChip: {
-      paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999,
+      paddingHorizontal: 5, paddingVertical: 1, borderRadius: 999,
       backgroundColor: brandAlpha.purple500_15,
     },
     viewingChipText: {
-      color: brand.primary, fontSize: 8, fontWeight: "800",
-      letterSpacing: 0.8, textTransform: "uppercase",
+      color: brand.primary, fontSize: 7, fontWeight: "800",
+      letterSpacing: 0.6, textTransform: "uppercase",
     },
 
     // ── Dev badge on logo (7-tap toggle) ────────────────────────────────────
@@ -2026,21 +2026,21 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       shadowOffset: { width: 0, height: 10 },
       elevation: 8,
     },
-    sectionHeader: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
+    sectionHeader: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10 },
     sectionIcon: {
-      width: 44, height: 44, borderRadius: 14,
+      width: 36, height: 36, borderRadius: 10,
       alignItems: "center", justifyContent: "center",
       backgroundColor: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.08)",
       borderWidth: 1,
       borderColor: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.12)",
     },
-    sectionTitle: { color: c.foreground, fontWeight: "800", fontSize: 15 },
-    sectionDesc: { color: c.textMuted, fontSize: 11, marginTop: 2 },
+    sectionTitle: { color: c.foreground, fontWeight: "800", fontSize: 13 },
+    sectionDesc: { color: c.textMuted, fontSize: 10, marginTop: 1 },
     sectionBody: {
-      padding: 14, paddingTop: 8,
+      padding: 10, paddingTop: 6,
       borderTopWidth: 1, borderTopColor: innerDivider,
       backgroundColor: glassBgSoft,
-      gap: 10,
+      gap: 8,
     },
     chevWrap: {
       width: 26, height: 26, borderRadius: 13,

@@ -169,6 +169,11 @@ function FloatingTabBar({ state, navigation }: any) {
 
   const allRoutes = state.routes as Array<{ key: string; name: string }>;
 
+  // Hide the tab bar entirely when the hub screen is active — the hub is a
+  // full-screen experience and the bar overlaps content.
+  const currentRouteName = allRoutes[state.index]?.name;
+  if (currentRouteName === "hub") return null;
+
   const makeHandlers = (route: { key: string; name: string }, focused: boolean) => ({
     onPress: () => {
       const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
