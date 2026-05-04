@@ -15,6 +15,10 @@ import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { palette } from "@/constants/colors";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const CHAT_KEY = (childId: number | string | null | undefined) =>
+  `amynest:amy-tutor-chat:${childId ?? "default"}`;
 
 type Colors = ReturnType<typeof useColors>;
 
@@ -194,6 +198,25 @@ export default function ChildDetailScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleClearTutorHistory = () => {
+    const childName = child?.name ?? t("ai.tutor_badge");
+    Alert.alert(
+      t("ai.clear_confirm_title"),
+      t("ai.clear_confirm_body", { name: childName }),
+      [
+        { text: t("ai.clear_confirm_cancel"), style: "cancel" },
+        {
+          text: t("ai.clear_confirm_yes"),
+          style: "destructive",
+          onPress: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            AsyncStorage.removeItem(CHAT_KEY(id)).catch(() => {});
+          },
+        },
+      ],
+    );
   };
 
   const handleDelete = () => {
@@ -482,6 +505,15 @@ export default function ChildDetailScreen() {
         )}
 
         <TouchableOpacity
+          style={[styles.clearHistoryBtn, { backgroundColor: colors.secondary, borderColor: colors.border }]}
+          onPress={handleClearTutorHistory}
+          testID="clear-tutor-history-btn"
+        >
+          <Ionicons name="refresh-outline" size={18} color={colors.primary} />
+          <Text style={[styles.clearHistoryBtnText, { color: colors.primary }]}>{t("ai.clear_chat")}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.deleteBtn, { backgroundColor: palette.red50, borderColor: palette.rose200 }]}
           onPress={handleDelete}
           testID="delete-child-btn"
@@ -570,6 +602,8 @@ const styles = StyleSheet.create({
   },
   infoLabel: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
   infoValue: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  clearHistoryBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1, marginBottom: 10 },
+  clearHistoryBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   deleteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1 },
   deleteBtnText: { color: palette.red500, fontSize: 15, fontFamily: "Inter_600SemiBold" },
   photoCircle: {
