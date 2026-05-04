@@ -178,7 +178,9 @@
     "tutor_right_on": "Right on!",
     "tutor_answer_is": "The answer is: {{answer}}",
     "tutor_error_title": "Amy couldn't reply",
-    "tutor_error_body": "Try again in a moment."
+    "tutor_error_body": "Try again in a moment.",
+    "listen": "Listen",
+    "stop": "Stop"
   },
   "pricing": {
     "title": "Unlock Full Parenting Power",
@@ -1653,7 +1655,9 @@
       "extra_support_added": "💛 EXTRA SUPPORT ADDED",
       "amy_s_guided_wins": "Amy's Guided Wins",
       "pick_a_category_i_ll_build_a_12_step_pla": "Pick a category — I'll build a 12-step plan",
-      "open_amy_s_premium_guided_wins": "Open Amy's premium guided wins"
+      "open_amy_s_premium_guided_wins": "Open Amy's premium guided wins",
+      "listen": "Listen",
+      "stop": "Stop"
     },
     "tabs_hub": {
       "abacus_pro_zone": "🧮 Abacus PRO Zone"

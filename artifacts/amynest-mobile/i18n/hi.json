@@ -178,7 +178,9 @@
     "tutor_right_on": "बिल्कुल सही!",
     "tutor_answer_is": "सही जवाब है: {{answer}}",
     "tutor_error_title": "ऐमी जवाब नहीं दे सकीं",
-    "tutor_error_body": "कृपया एक पल में फिर कोशिश करें।"
+    "tutor_error_body": "कृपया एक पल में फिर कोशिश करें।",
+    "listen": "सुनें",
+    "stop": "रोकें"
   },
   "pricing": {
     "title": "पूरी पैरेंटिंग शक्ति अनलॉक करें",
@@ -1653,7 +1655,9 @@
       "extra_support_added": "💛 अतिरिक्त सहायता जोड़ी गई",
       "amy_s_guided_wins": "Amy की Guided Wins",
       "pick_a_category_i_ll_build_a_12_step_pla": "एक category चुनें — मैं 12-step plan बनाऊंगी",
-      "open_amy_s_premium_guided_wins": "Amy की premium guided wins खोलें"
+      "open_amy_s_premium_guided_wins": "Amy की premium guided wins खोलें",
+      "listen": "सुनें",
+      "stop": "रोकें"
     },
     "tabs_hub": {
       "abacus_pro_zone": "🧮 अबेकस PRO ज़ोन"
