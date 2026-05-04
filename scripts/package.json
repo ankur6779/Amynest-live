@@ -6,6 +6,7 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "audit:parent-hub-i18n": "tsx ./src/audit-parent-hub-i18n.ts",
+    "watch:openapi": "tsx ./src/watch-openapi.ts",
     "typecheck": "pnpm run audit:parent-hub-i18n && tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
