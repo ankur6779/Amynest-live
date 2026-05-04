@@ -520,7 +520,7 @@ function MentalMode({ level }: { level: LevelId }) {
 }
 
 function TutorMode({ childId, level }: { childId: number; level: LevelId }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const c = useColors();
   const authFetch = useAuthFetch();
   const amy = useAmyVoice();
@@ -535,13 +535,12 @@ function TutorMode({ childId, level }: { childId: number; level: LevelId }) {
     setErr(null);
     setReply("");
     try {
-      const lang = (i18n.language as string) || "en";
       const res = await authFetch("/api/abacus/tutor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           childId, level,
-          language: lang === "hi" ? "hi" : lang === "hinglish" ? "hinglish" : "en",
+          language: "en",
           question: question.trim(),
         }),
       });

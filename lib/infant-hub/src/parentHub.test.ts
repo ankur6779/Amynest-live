@@ -279,10 +279,9 @@ describe("NOISE + LULLABIES", () => {
     assert.equal(getNoiseAgeTip(20).band, "12–24 months");
   });
 
-  it("ships at least one EN, one HI, one Hinglish lullaby", () => {
+  it("ships at least one English lullaby", () => {
     const langs = new Set(LULLABIES.map((l) => l.lang));
     assert.ok(langs.has("en"));
-    assert.ok(langs.has("hi"));
-    assert.ok(langs.has("hin"));
+    assert.equal(langs.size, 1, "all lullabies should be English-only");
   });
 });

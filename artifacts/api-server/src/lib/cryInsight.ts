@@ -245,32 +245,17 @@ export function pickTopTwo(
   return [ranked[0]!, ranked[1]!];
 }
 
-type CryLang = "en" | "hi" | "hinglish";
+type CryLang = "en";
 
-const SUGGESTIONS: Record<CryLang, Record<CryCause, string>> = {
-  en: {
-    hunger: "Try a feed — start with breast or bottle and watch for rooting.",
-    sleepy: "Dim lights, swaddle if age-appropriate, and start your wind-down routine.",
-    discomfort: "Check the diaper, burp the baby, and look for tight clothing or a wedged limb.",
-    pain: "Hold and soothe; check temperature and look for any obvious injury or irritation.",
-  },
-  hi: {
-    hunger: "एक फीड कराएँ — स्तन या बोतल से शुरू करें और रूटिंग देखें।",
-    sleepy: "रोशनी कम करें, उम्र के अनुसार स्वैडल करें, और सोने की रूटीन शुरू करें।",
-    discomfort: "डायपर देखें, बच्चे को डकार दिलाएँ, और तंग कपड़े या फँसे अंग की जाँच करें।",
-    pain: "गोद में लें और शांत करें; तापमान देखें और किसी भी चोट या जलन की जाँच करें।",
-  },
-  hinglish: {
-    hunger: "Ek feed try karein — breast ya bottle se start karein aur rooting dekhein.",
-    sleepy: "Lights dim karein, age-appropriate ho to swaddle karein, aur wind-down routine shuru karein.",
-    discomfort: "Diaper check karein, baby ko burp karayein, aur tight kapde ya phanse limb dekhein.",
-    pain: "God mein lein aur soothe karein; temperature check karein aur koi injury ya irritation dekhein.",
-  },
+const SUGGESTIONS: Record<CryCause, string> = {
+  hunger: "Try a feed — start with breast or bottle and watch for rooting.",
+  sleepy: "Dim lights, swaddle if age-appropriate, and start your wind-down routine.",
+  discomfort: "Check the diaper, burp the baby, and look for tight clothing or a wedged limb.",
+  pain: "Hold and soothe; check temperature and look for any obvious injury or irritation.",
 };
 
-export function getActionSuggestion(cause: CryCause, language: CryLang = "en"): string {
-  const langKey: CryLang = language === "hi" ? "hi" : language === "hinglish" ? "hinglish" : "en";
-  return SUGGESTIONS[langKey][cause];
+export function getActionSuggestion(cause: CryCause, _language: CryLang = "en"): string {
+  return SUGGESTIONS[cause];
 }
 
 /**
@@ -299,7 +284,7 @@ export function shouldSuggestMedicalCheck(
 export function analyseCry(
   audioStats: AudioStats,
   context: CryContext,
-  language: CryLang = "en",
+  _language: CryLang = "en",
 ): CryInsightResult {
   const audioScores = scoreFromAudio(audioStats);
   const contextScores = scoreFromContext(context);
@@ -309,7 +294,7 @@ export function analyseCry(
     primary,
     secondary,
     breakdown,
-    suggestion: getActionSuggestion(primary.cause, language),
+    suggestion: getActionSuggestion(primary.cause, "en"),
     medicalFlag: shouldSuggestMedicalCheck(audioStats, context),
   };
 }

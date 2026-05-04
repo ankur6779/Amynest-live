@@ -11,7 +11,6 @@ import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useTheme } from "@/contexts/theme-context";
 import { useTranslation } from "react-i18next";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
@@ -189,7 +188,6 @@ export function Layout({
           <AmyMascotLogo size={34} />
         </div>
         <div className="flex items-center gap-2">
-          <LanguageSwitcher compact />
           <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSidebarOpen(true)}>
@@ -257,8 +255,7 @@ export function Layout({
             <AmyMascotLogo size={42} />
           </div>
           <div className="px-4 pt-3">
-            <LanguageSwitcher />
-          </div>
+            </div>
           <nav className="flex flex-1 flex-col gap-1 p-4">
             {NAV_ITEMS.map(item => {
             const isActive = location === item.href || location.startsWith(item.href);

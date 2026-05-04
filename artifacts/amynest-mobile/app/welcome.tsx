@@ -9,8 +9,6 @@ import {
   Platform,
   ScrollView,
   Image,
-  Modal,
-  Pressable,
 } from "react-native";
 import { useRouter, Link } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,7 +16,6 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { SUPPORTED_LANGUAGES, setLanguage, type LanguageCode } from "@/i18n";
 import colors, { brand, brandAlpha, ACCENT_PINK, palette, brandExtended } from "@/constants/colors";
 import { BRAND } from "@/constants/brand";
 
@@ -143,9 +140,6 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
-  const [langOpen, setLangOpen] = useState(false);
-  const currentLang = SUPPORTED_LANGUAGES.find(l => l.code === i18n.language) ?? SUPPORTED_LANGUAGES[0];
-
   const floatY = useRef(new Animated.Value(0)).current;
   const colorAnim = useRef(new Animated.Value(0)).current;
   const fadeIn = useRef(new Animated.Value(0)).current;
@@ -229,16 +223,6 @@ export default function WelcomeScreen() {
               <Text style={styles.navBrandTag}>{t("screens.welcome.where_smart_parenting_starts")}</Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              {/* Language picker pill */}
-              <TouchableOpacity
-                onPress={() => setLangOpen(true)}
-                activeOpacity={0.8}
-                style={styles.langPill}
-                testID="welcome-lang-btn"
-              >
-                <Ionicons name="globe-outline" size={13} color="rgba(196,181,253,0.9)" />
-                <Text style={styles.langPillText}>{currentLang.native}</Text>
-              </TouchableOpacity>
               <Link href="/sign-in" asChild>
                 <TouchableOpacity testID="link-sign-in" activeOpacity={0.7}>
                   <Text style={styles.navSignIn}>{t("landing.nav_sign_in")}</Text>
@@ -246,36 +230,6 @@ export default function WelcomeScreen() {
               </Link>
             </View>
           </View>
-
-          {/* Language selection modal */}
-          <Modal visible={langOpen} transparent animationType="fade" onRequestClose={() => setLangOpen(false)}>
-            <Pressable style={styles.langOverlay} onPress={() => setLangOpen(false)}>
-              <View style={styles.langSheet}>
-                <View style={styles.langSheetHandle} />
-                <Text style={styles.langSheetTitle}>{t("screens.welcome.choose_language")}</Text>
-                {SUPPORTED_LANGUAGES.map((lang) => {
-                  const active = lang.code === i18n.language;
-                  return (
-                    <TouchableOpacity
-                      key={lang.code}
-                      onPress={() => {
-                        setLanguage(lang.code as LanguageCode);
-                        if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setLangOpen(false);
-                      }}
-                      activeOpacity={0.8}
-                      style={[styles.langOption, active && styles.langOptionActive]}
-                    >
-                      <Text style={[styles.langOptionText, active && styles.langOptionTextActive]}>
-                        {lang.native}
-                      </Text>
-                      {active && <Ionicons name="checkmark" size={16} color={brand.violet400} />}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </Pressable>
-          </Modal>
 
           {/* HERO */}
           <Animated.View style={[styles.hero, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>

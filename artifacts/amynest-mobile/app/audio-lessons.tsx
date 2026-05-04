@@ -20,12 +20,10 @@ import {
   getLessonText,
   type Lesson as SharedLesson,
   type AgeBucket,
-  type LangCode,
+
 } from "@workspace/audio-lessons";
 
-// Hindi Amy voice — Anjura (Calm & Warm Hindi Female) via eleven_multilingual_v2.
-const AMY_VOICE_HINDI    = "TllHtNijgXBd45uTSCS7"; // Anjura — Indian Hindi Female
-const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
+const AMY_VOICE_ENGLISH = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K — Indian English Female
 
 function formatTime(secs: number): string {
   const s = Math.round(secs);
@@ -56,12 +54,12 @@ function getTitle(l: Lesson, lang: string): string {
 
 
 // ── Age bucket labels ──────────────────────────────────────────────────────
-const AGE_LABELS: Record<AgeBucket, Record<LangCode, string>> = {
-  "0-2":  { en: "0–2 yrs", hi: "0–2 साल", hinglish: "0–2 saal" },
-  "2-4":  { en: "2–4 yrs", hi: "2–4 साल", hinglish: "2–4 saal" },
-  "5-7":  { en: "5–7 yrs", hi: "5–7 साल", hinglish: "5–7 saal" },
-  "8-10": { en: "8–10 yrs", hi: "8–10 साल", hinglish: "8–10 saal" },
-  "10+":  { en: "10+ yrs", hi: "10+ साल", hinglish: "10+ saal" },
+const AGE_LABELS: Record<AgeBucket, string> = {
+  "0-2":  "0–2 yrs",
+  "2-4":  "2–4 yrs",
+  "5-7":  "5–7 yrs",
+  "8-10": "8–10 yrs",
+  "10+":  "10+ yrs",
 };
 const AGE_EMOJIS: Record<AgeBucket, string> = {
   "0-2": "👶", "2-4": "🧒", "5-7": "🎨", "8-10": "📚", "10+": "🎒",
@@ -73,14 +71,13 @@ export default function AudioLessonsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { theme } = useTheme();
-  const { i18n } = useTranslation();
-  const lang = i18n.language;
+  const lang = "en";
 
   const [selectedAge, setSelectedAge] = useState<AgeBucket>("2-4");
   const [openLesson, setOpenLesson] = useState<Lesson | null>(null);
   const [unlocking, setUnlocking] = useState(false);
   const lessons = useMemo(() => LESSONS.filter(l => l.age === selectedAge), [selectedAge]);
-  const amy = useAmyVoice({ voiceId: AMY_VOICE_HINDI, modelId: MODEL_MULTILINGUAL });
+  const amy = useAmyVoice({ voiceId: AMY_VOICE_ENGLISH });
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const authFetch = useAuthFetch();
   const refreshSub = useSubscriptionStore((s) => s.refresh);
@@ -131,11 +128,7 @@ export default function AudioLessonsScreen() {
     ]).start();
   };
 
-  const introText = lang === "hi"
-    ? `हाथ भरे हैं? ${BRAND.aiName} आपको बच्चे की उम्र के हिसाब से जरूरी parenting topics समझाएगी। हर lesson 3–5 मिनट का है।`
-    : lang === "hinglish"
-    ? `Haath bhare hain? ${BRAND.aiName} aapko bacche ki umra ke hisaab se important topics samjhayegi. Har lesson 3–5 minute ka hai.`
-    : `Hands full? Let ${BRAND.aiName} talk you through the most important parenting topics for your child's age. Each lesson is 3–5 minutes.`;
+  const introText = `Hands full? Let ${BRAND.aiName} talk you through the most important parenting topics for your child's age. Each lesson is 3–5 minutes.`;
 
   return (
     <LinearGradient colors={["#0f0c29", "#1a1040", "#0c1220"]} style={{ flex: 1 }}> // audit-ok: intentional dark bg / custom color
@@ -159,7 +152,7 @@ export default function AudioLessonsScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.agePills} style={{ marginBottom: 20 }}>
           {AGE_ORDER.map(key => {
             const active = key === selectedAge;
-            const label = `${AGE_EMOJIS[key]} ${AGE_LABELS[key][lang as LangCode] ?? AGE_LABELS[key].en}`;
+            const label = `${AGE_EMOJIS[key]} ${AGE_LABELS[key]}`;
             return (
               <TouchableOpacity
                 key={key}
@@ -209,11 +202,7 @@ export default function AudioLessonsScreen() {
                   {/* TTS error */}
                   {amy.error && (
                     <Text style={styles.errorText}>
-                      {lang === "hi"
-                        ? `${BRAND.aiName} की आवाज़ अभी नहीं चल पा रही। थोड़ी देर बाद try करें।`
-                        : lang === "hinglish"
-                        ? `${BRAND.aiName} ki awaaz load nahi ho payi. Thodi der baad try karein.`
-                        : `Couldn't load ${BRAND.aiName}'s voice. Please try again shortly.`}
+                      {`Couldn't load ${BRAND.aiName}'s voice. Please try again shortly.`}
                     </Text>
                   )}
 
@@ -247,7 +236,7 @@ export default function AudioLessonsScreen() {
                           if (amy.speaking || amy.loading) {
                             amy.stop();
                           } else {
-                            void amy.speak(getScript(lesson, "hi"));
+                            void amy.speak(getScript(lesson, "en"));
                           }
                         }}
                         style={styles.playBtn}

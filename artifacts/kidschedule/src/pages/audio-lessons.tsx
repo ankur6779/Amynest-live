@@ -9,9 +9,8 @@ import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 
-// Hindi Amy voice — Anjura (Calm & Warm Hindi Female) via eleven_multilingual_v2.
-const VOICE_AMY_HINDI = "TllHtNijgXBd45uTSCS7"; // Anjura — Indian Hindi Female
-const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
+const VOICE_AMY_EN = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K — Indian English Female
+const MODEL_EN = "eleven_turbo_v2_5";
 const AGE_ORDER: AgeBucket[] = ["0-2", "2-4", "5-7", "8-10", "10+"];
 const RESUME_KEY = "amynest_audio_resume_v1";
 type ResumeMap = Record<string, number>;
@@ -28,8 +27,8 @@ export default function AudioLessonsPage() {
   const [age, setAge] = useState<AgeBucket>("2-4");
   const [open, setOpen] = useState<Lesson | null>(null);
   const [unlocking, setUnlocking] = useState(false);
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
+  const { t } = useTranslation();
+  const lang = "en";
   const authFetch = useAuthFetch();
   const {
     openPaywall
@@ -158,7 +157,7 @@ export default function AudioLessonsPage() {
         lineHeight: 1.55,
         margin: 0
       }}>
-          {lang === "hi" ? "हाथ भरे हैं? Amy आपको आपके बच्चे की उम्र के हिसाब से सबसे जरूरी parenting topics समझाएगी। हर lesson 3–5 मिनट का है।" : lang === "hinglish" ? "Haath bhare hain? Amy aapko bacche ki umra ke hisaab se important parenting topics samjhayegi. Har lesson 3–5 minute ka hai." : "Hands full? Let Amy talk you through the most important parenting topics for your child's age group. Each lesson is 3–5 minutes. Tap any lesson to listen."}
+          {"Hands full? Let Amy talk you through the most important parenting topics for your child's age group. Each lesson is 3–5 minutes. Tap any lesson to listen."}
         </p>
       </div>
 
@@ -336,24 +335,23 @@ export default function AudioLessonsPage() {
         color: "#a99fd9",
         padding: 30
       }}>
-            {lang === "hi" ? "इस आयु वर्ग के लिए जल्द और lessons आएंगे।" : lang === "hinglish" ? "Is age group ke liye aur lessons jald aayenge." : "More lessons for this age group coming soon."}
+            {"More lessons for this age group coming soon."}
           </div>}
       </div>
 
-      {open && <PlayerSheet lesson={open} lang={lang} onClose={() => setOpen(null)} />}
+      {open && <PlayerSheet lesson={open} onClose={() => setOpen(null)} />}
     </div>;
 }
 
 // ─── Player ─────────────────────────────────────────────────────────
 function PlayerSheet({
   lesson,
-  lang,
   onClose
 }: {
   lesson: Lesson;
-  lang: string;
   onClose: () => void;
 }) {
+  const lang = "en";
   const {
     t
   } = useTranslation();
@@ -361,12 +359,6 @@ function PlayerSheet({
   const [paragraphIdx, setParagraphIdx] = useState(0);
   const [rate, setRate] = useState<number>(1);
 
-  // Both the displayed transcript AND the spoken audio follow the user's
-  // selected language. `eleven_multilingual_v2` with the Anjura voice handles
-  // English, Hindi (Devanagari) and Hinglish (romanized) cleanly with the
-  // same warm Indian-female timbre. If we ever add a paragraph index that's
-  // mid-lesson when the user swaps language, the index stays valid because
-  // every lesson has the same paragraph count across languages.
   const text = useMemo(() => getLessonText(lesson, lang), [lesson, lang]);
   const paragraphs = text.paragraphs;
 
@@ -388,8 +380,8 @@ function PlayerSheet({
     speak,
     stop
   } = useAmyVoice({
-    voiceId: VOICE_AMY_HINDI,
-    modelId: MODEL_MULTILINGUAL,
+    voiceId: VOICE_AMY_EN,
+    modelId: MODEL_EN,
     playbackRate: rate,
     onFinished: handleFinished
   });
@@ -408,7 +400,7 @@ function PlayerSheet({
     saveResume(r);
   }, [lesson.id, paragraphIdx]);
 
-  // Drive playback: when `playing` flips on (or paragraph/lang changes
+  // Drive playback: when `playing` flips on (or paragraph changes
   // while playing) start a fresh synth; when it flips off, stop.
   useEffect(() => {
     if (!playing) {
@@ -502,7 +494,7 @@ function PlayerSheet({
         fontSize: 13,
         marginBottom: 12
       }}>
-            {lang === "hi" ? "Amy की आवाज़ अभी नहीं चल पा रही। कुछ देर बाद try करें — आप नीचे lesson पढ़ भी सकते हैं।" : lang === "hinglish" ? "Amy ki awaaz abhi load nahi ho payi. Thodi der baad try karein — aap neeche lesson padh bhi sakte hain." : "Couldn't load Amy's voice right now. Please try again in a moment — you can still read the lesson below."}
+            {"Couldn't load Amy's voice right now. Please try again in a moment — you can still read the lesson below."}
           </div>}
 
         {/* Progress dots */}
@@ -545,7 +537,7 @@ function PlayerSheet({
           fontWeight: 700,
           color: "hsl(var(--brand-violet-300))"
         }}>
-            {lang === "hi" ? "पूरा transcript दिखाएं" : lang === "hinglish" ? "Poora transcript dikhayein" : "Show full transcript"}
+            {"Show full transcript"}
           </summary>
           <div style={{
           marginTop: 10,
@@ -641,7 +633,7 @@ function PlayerSheet({
           color: "#a99fd9",
           marginRight: 6
         }}>
-            {lang === "hi" ? "गति" : lang === "hinglish" ? "Speed" : "Speed"}
+            {"Speed"}
           </span>
           {[0.85, 1, 1.15, 1.3, 1.5].map(r => <button key={r} onClick={() => setRate(r)} style={{
           fontSize: 11,
@@ -661,7 +653,7 @@ function PlayerSheet({
         color: "#7a749b",
         textAlign: "center"
       }}>
-          {lang === "hi" ? "Amy की natural आवाज़। Jump करने के लिए transcript में paragraph tap करें।" : lang === "hinglish" ? "Amy ki natural awaaz. Jump karne ke liye transcript mein paragraph tap karein." : "Narrated by Amy. Tap a paragraph in the transcript to jump to it."}
+          {"Narrated by Amy. Tap a paragraph in the transcript to jump to it."}
         </div>
       </div>
     </div>;

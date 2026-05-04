@@ -493,8 +493,6 @@ export interface BehaviorStat {
 
 export interface LifeSkillLocalizedText {
   en: string;
-  hi: string;
-  hinglish: string;
 }
 
 export type LifeSkillTaskAgeBand =

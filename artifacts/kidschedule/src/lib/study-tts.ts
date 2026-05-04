@@ -8,13 +8,8 @@ import { getAuth } from "firebase/auth";
 const VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv";
 // English Indian Male — Karthik
 const VOICE_EN_MALE   = "oaz5NvoRIhcJystOASAA";
-// Hindi Female — Anjura
-const VOICE_HI_FEMALE = "TllHtNijgXBd45uTSCS7";
-// Hindi Male — Rahul S
-const VOICE_HI_MALE   = "2cdvnKJ5TZi631y5PN1s";
 
 const MODEL_EN = "eleven_turbo_v2_5";
-const MODEL_HI = "eleven_multilingual_v2";
 
 // ─── Audio singleton ─────────────────────────────────────────
 
@@ -49,19 +44,9 @@ export async function speak(
 
   stopSpeaking();
 
-  const isHindi = (opts?.lang ?? "").startsWith("hi") || /[\u0900-\u097F]/.test(trimmed);
   const isMale  = opts?.gender === "male";
-
-  let voiceId: string;
-  let modelId: string;
-
-  if (isHindi) {
-    voiceId = isMale ? VOICE_HI_MALE : VOICE_HI_FEMALE;
-    modelId = MODEL_HI;
-  } else {
-    voiceId = isMale ? VOICE_EN_MALE : VOICE_EN_FEMALE;
-    modelId = MODEL_EN;
-  }
+  const voiceId = isMale ? VOICE_EN_MALE : VOICE_EN_FEMALE;
+  const modelId = MODEL_EN;
 
   try {
     const token = await getAuth().currentUser?.getIdToken().catch(() => undefined);

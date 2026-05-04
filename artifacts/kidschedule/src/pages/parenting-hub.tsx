@@ -33,7 +33,6 @@ import { PrintableWorksheets } from "@/components/printable-worksheets";
 import { DailyTips } from "@/components/daily-tips";
 import { ParentingArticles } from "@/components/parenting-articles";
 import { AmyIcon } from "@/components/amy-icon";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { FuturePredictor } from "@/components/future-predictor";
 import { ParentCommandCenter } from "@/components/parent-command-center";
 import { LockedBlock } from "@/components/locked-block";
@@ -967,10 +966,6 @@ function PageHeader() {
           {t("hub.subtitle")}
         </p>
       </div>
-      {/* Inline language toggle so caregivers can switch English / Hindi /
-          Hinglish without leaving the Parent Hub. Mirrors the mobile
-          `LanguageRow` placement in artifacts/amynest-mobile/app/(tabs)/hub.tsx. */}
-      <LanguageSwitcher compact />
       <Link href="/assistant">
         <button className="shrink-0 flex items-center gap-2 bg-gradient-to-br from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card rounded-2xl px-3 py-2 border border-border hover:border-primary/40 transition-all">
           <AmyIcon size={24} bounce />

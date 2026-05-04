@@ -128,10 +128,6 @@ function slugify(text) {
 
 // Load existing en.json so we can reuse keys that already match
 const en = JSON.parse(fs.readFileSync(path.join(I18N_DIR, "en.json"), "utf8"));
-const hi = JSON.parse(fs.readFileSync(path.join(I18N_DIR, "hi.json"), "utf8"));
-const hg = JSON.parse(
-  fs.readFileSync(path.join(I18N_DIR, "hinglish.json"), "utf8")
-);
 
 function getDeep(obj, dottedKey) {
   const parts = dottedKey.split(".");
@@ -169,8 +165,6 @@ function ensureKey(ns, text) {
     const existing = getDeep(en, key);
     if (existing === undefined) {
       setDeep(en, key, text);
-      setDeep(hi, key, text);
-      setDeep(hg, key, text);
       newKeys[key] = text;
       return key;
     }
@@ -547,18 +541,10 @@ if (require.main === module) {
     results.push(processFile(rel));
   }
 
-  // Save updated locale files (English and stub HI/HG)
+  // Save updated locale file (English only)
   fs.writeFileSync(
     path.join(I18N_DIR, "en.json"),
     JSON.stringify(en, null, 2) + "\n"
-  );
-  fs.writeFileSync(
-    path.join(I18N_DIR, "hi.json"),
-    JSON.stringify(hi, null, 2) + "\n"
-  );
-  fs.writeFileSync(
-    path.join(I18N_DIR, "hinglish.json"),
-    JSON.stringify(hg, null, 2) + "\n"
   );
 
   fs.writeFileSync(

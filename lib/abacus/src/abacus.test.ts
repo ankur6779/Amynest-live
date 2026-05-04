@@ -272,22 +272,15 @@ describe("age + tutor helpers", () => {
     assert.equal(isAbacusEligible(11), false);
   });
 
-  it("buildAbacusTutorPrompt: language affects system prompt", () => {
-    const en = buildAbacusTutorPrompt({
+  it("buildAbacusTutorPrompt: system prompt is English-only", () => {
+    const result = buildAbacusTutorPrompt({
       level: 2 as LevelId,
       ageYears: 6,
       language: "en",
       question: "How do I add 7?",
     });
-    const hi = buildAbacusTutorPrompt({
-      level: 2 as LevelId,
-      ageYears: 6,
-      language: "hi",
-      question: "How do I add 7?",
-    });
-    assert.match(en.system, /clear, simple English/);
-    assert.match(hi.system, /Hindi/);
-    assert.equal(en.user, "How do I add 7?");
+    assert.match(result.system, /clear, simple English/);
+    assert.equal(result.user, "How do I add 7?");
   });
 
   it("buildAbacusTutorPrompt: caps user message length", () => {

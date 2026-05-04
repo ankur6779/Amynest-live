@@ -12,10 +12,6 @@ const ELEVENLABS_VOICES: Record<VoiceLang, Record<VoiceGender, string>> = {
     female: "Ananya K (Indian English)",
     male: "Karthik (Indian English)"
   },
-  hi: {
-    female: "Anjura (Hindi)",
-    male: "Rahul S (Hindi)"
-  }
 };
 export function VoiceSettingsPanel({
   onToggle
@@ -77,11 +73,9 @@ export function VoiceSettingsPanel({
                 {t("components.voice_settings.language")}
               </p>
               <div className="flex gap-2">
-                {(["en", "hi"] as VoiceLang[]).map(lang => <button key={lang} onClick={() => update({
-              lang
-            })} className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${settings.lang === lang ? "bg-primary text-white border-primary" : "bg-white text-primary dark:text-muted-foreground border-border dark:border-border hover:border-border dark:bg-transparent"}`}>
-                    {lang === "en" ? "🇬🇧 English" : "🇮🇳 Hindi"}
-                  </button>)}
+                <button className="flex-1 py-2 rounded-xl text-xs font-bold border-2 bg-primary text-white border-primary">
+                  🇬🇧 English
+                </button>
               </div>
             </div>
 

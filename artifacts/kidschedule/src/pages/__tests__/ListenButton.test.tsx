@@ -1,12 +1,11 @@
 /**
- * Coach ListenButton — EN/HI toggle contract.
+ * Coach ListenButton — English-only voice contract.
  *
  * The button must:
- *   1. Render an EN | HI chip pair plus the speaker button.
- *   2. Default to the parent's i18n language.
- *   3. Pass the matching ElevenLabs voiceId + modelId to useAmyVoice when
- *      Listen is tapped, switching to the Hindi voice when HI is selected.
- *   4. Stop in-flight playback when the lang chip flips mid-sentence.
+ *   1. Render the Listen button.
+ *   2. Always use the English voice (Ananya K, eleven_turbo_v2_5).
+ *   3. Speak the full win text when Listen is tapped.
+ *   4. Stop in-flight playback when tapped again.
  *
  * The audio cache itself (GCS, content-addressed) is owned by the server and
  * verified by the api-server tests — here we only lock down the client-side
@@ -65,14 +64,12 @@ beforeEach(() => {
 });
 
 describe("ListenButton (Coach)", () => {
-  it("renders EN/HI chips and the Listen button", () => {
+  it("renders the Listen button", () => {
     render(<ListenButton win={sampleWin} />);
-    expect(screen.getByTestId("coach-listen-lang-en")).toBeInTheDocument();
-    expect(screen.getByTestId("coach-listen-lang-hi")).toBeInTheDocument();
     expect(screen.getByTestId("coach-listen-btn")).toBeInTheDocument();
   });
 
-  it("defaults to the English voice and pronounces the win when Listen is tapped", async () => {
+  it("uses the English voice and pronounces the win when Listen is tapped", async () => {
     const user = userEvent.setup();
     render(<ListenButton win={sampleWin} />);
 
@@ -86,25 +83,12 @@ describe("ListenButton (Coach)", () => {
     expect(spoken).toContain("Sit at eye level");
   });
 
-  it("switches to the Hindi voice + multilingual model when HI is selected", async () => {
-    const user = userEvent.setup();
-    render(<ListenButton win={sampleWin} />);
-
-    await user.click(screen.getByTestId("coach-listen-lang-hi"));
-    // The new render after lang change must request the Hindi voice contract.
-    expect(lastVoiceOpts?.voiceId).toBe("TllHtNijgXBd45uTSCS7");
-    expect(lastVoiceOpts?.modelId).toBe("eleven_multilingual_v2");
-
-    await user.click(screen.getByTestId("coach-listen-btn"));
-    expect(speakMock).toHaveBeenCalledTimes(1);
-  });
-
-  it("stops in-flight playback when the parent flips EN ↔ HI mid-sentence", async () => {
+  it("stops in-flight playback when tapped during playback", async () => {
     mockState.speaking = true;
     const user = userEvent.setup();
     render(<ListenButton win={sampleWin} />);
 
-    await user.click(screen.getByTestId("coach-listen-lang-hi"));
+    await user.click(screen.getByTestId("coach-listen-btn"));
     expect(stopMock).toHaveBeenCalled();
   });
 });

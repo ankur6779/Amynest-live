@@ -151,8 +151,6 @@ router.post("/ai/assistant-ai", aiUsageGate, async (req, res): Promise<void> => 
 
   const { userId } = getAuth(req);
   const { question, childName, childAge } = parsed.data;
-  const langRaw = typeof req.body?.language === "string" ? req.body.language.toLowerCase().split("-")[0] : "en";
-  const language: "en" | "hi" | "hinglish" = langRaw === "hi" ? "hi" : langRaw === "hinglish" ? "hinglish" : "en";
 
   // Optional conversation history — last few turns from the client (low-budget cap)
   type ChatTurn = { role: "user" | "assistant"; content: string };
@@ -169,13 +167,6 @@ router.post("/ai/assistant-ai", aiUsageGate, async (req, res): Promise<void> => 
 
   try {
     const { openai } = await import("@workspace/integrations-openai-ai-server");
-
-    const langDirective =
-      language === "hi"
-        ? "\nIMPORTANT: Respond ENTIRELY in Hindi (Devanagari script). Use natural, warm conversational Hindi. Do not mix English."
-        : language === "hinglish"
-        ? "\nIMPORTANT: Respond in Hinglish — Roman-script Hindi mixed naturally with common English words (e.g. 'Aapke bachche ke liye routine set karna important hai'). Keep it warm and conversational."
-        : "";
 
     const childLine = childName
       ? `\nThe parent's child is ${childName}${childAge ? `, age ${childAge}` : ""}. Use the name naturally when it adds warmth — do not force it into every sentence.`
@@ -197,7 +188,7 @@ ANSWER QUALITY
 - Never refuse a normal parenting question. Never add medical/legal disclaimers unless the topic is genuinely safety-critical (medication, self-harm, abuse) — then briefly suggest a professional and continue helping.
 
 LENGTH
-- Default: 60–180 words. Match the parent's energy — short question gets a short answer.${childLine}${langDirective}`;
+- Default: 60–180 words. Match the parent's energy — short question gets a short answer.${childLine}`;
 
     const userTurn = `${question}`;
 
@@ -259,7 +250,6 @@ LENGTH
 router.post("/ai/rewrite-tip", async (req, res): Promise<void> => {
   const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 400) : "";
   const childName = typeof req.body?.childName === "string" ? req.body.childName.slice(0, 60) : "";
-  const language = req.body?.language === "hi" ? "hi" : "en";
 
   if (!text) {
     res.status(400).json({ error: "text required" });
@@ -275,9 +265,7 @@ router.post("/ai/rewrite-tip", async (req, res): Promise<void> => {
   try {
     const { openai } = await import("@workspace/integrations-openai-ai-server");
 
-    const systemPrompt = language === "hi"
-      ? `आप एक गर्मजोशी भरे पेरेंटिंग कोच हैं। दी गई सलाह को बच्चे के नाम के साथ व्यक्तिगत बनाकर एक छोटे, गर्म वाक्य में बदलें। अधिकतम 30 शब्द। केवल वाक्य लौटाएँ — कोई उद्धरण, कोई व्याख्या नहीं।`
-      : `You are a warm parenting coach. Rewrite the given tip as one short, warm sentence personalized with the child's name. Maximum 30 words. Return only the sentence — no quotes, no explanation.`;
+    const systemPrompt = `You are a warm parenting coach. Rewrite the given tip as one short, warm sentence personalized with the child's name. Maximum 30 words. Return only the sentence — no quotes, no explanation.`;
 
     const userPrompt = childName
       ? `Child name: ${childName}\nTip: ${text}`
@@ -297,9 +285,7 @@ router.post("/ai/rewrite-tip", async (req, res): Promise<void> => {
     res.json({ rewritten: cap(cleaned || text) });
   } catch {
     // Graceful fallback — return original tip prefixed with name
-    const fallback = childName
-      ? (language === "hi" ? `${childName} के लिए — ${text}` : `For ${childName} — ${text}`)
-      : text;
+    const fallback = childName ? `For ${childName} — ${text}` : text;
     res.json({ rewritten: cap(fallback) });
   }
 });

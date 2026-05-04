@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { ThumbsUp, RefreshCw, Sparkles, Languages } from "lucide-react";
-import { PARENTING_TIPS, CATEGORY_META, type TipCategory, type TipEntry, type TipLang } from "@/lib/parenting-tips-data";
+import { useMemo, useState } from "react";
+import { ThumbsUp, RefreshCw, Sparkles } from "lucide-react";
+import { PARENTING_TIPS, CATEGORY_META, type TipCategory, type TipEntry } from "@/lib/parenting-tips-data";
 import type { AgeGroup } from "@/lib/age-groups";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
@@ -32,8 +32,7 @@ function hashStr(s: string): number {
 function pickTip(pool: TipEntry[], ageGroup: AgeGroup, category: TipCategory, salt: number): TipEntry {
   if (pool.length === 0) return {
     id: "fallback",
-    en: "Spend a quiet moment together.",
-    hi: "एक शांत पल साथ बिताएँ।"
+    en: "Spend a quiet moment together."
   };
   const shownKey = `amynest_tips_shown_${ageGroup}_${category}`;
   let shown = lsGet<string[]>(shownKey, []);
@@ -70,8 +69,7 @@ export function DailyTips({
   const {
     t
   } = useTranslation();
-  const initialLang: TipLang = lsGet<TipLang>("amynest_tips_lang", "en");
-  const [lang, setLang] = useState<TipLang>(initialLang);
+  const lang = "en" as const;
   const [salts, setSalts] = useState<Record<TipCategory, number>>({
     tip: 0,
     health: 0,
@@ -79,19 +77,10 @@ export function DailyTips({
     guidance: 0
   });
   const [helpful, setHelpful] = useState<Record<string, boolean>>(() => lsGet<Record<string, boolean>>(`amynest_tips_helpful_${todayKey()}`, {}));
-  const [aiCache, setAiCache] = useState<Record<string, string>>(() => lsGet<Record<string, string>>(`amynest_tip_ai_cache_${todayKey()}_${lang}`, {}));
+  const [aiCache, setAiCache] = useState<Record<string, string>>(() => lsGet<Record<string, string>>(`amynest_tip_ai_cache_${todayKey()}_en`, {}));
   const [aiUsed, setAiUsed] = useState<number>(getAICount());
   const [busyId, setBusyId] = useState<string | null>(null);
   const authFetch = useAuthFetch();
-
-  // Persist language preference
-  useEffect(() => {
-    lsSet("amynest_tips_lang", lang);
-  }, [lang]);
-  // Reload AI cache when language flips
-  useEffect(() => {
-    setAiCache(lsGet<Record<string, string>>(`amynest_tip_ai_cache_${todayKey()}_${lang}`, {}));
-  }, [lang]);
   const tips = useMemo(() => {
     const out: Record<TipCategory, TipEntry> = {} as any;
     for (const c of CATEGORIES) {
@@ -132,7 +121,7 @@ export function DailyTips({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          text: tip[lang],
+          text: tip.en,
           childName,
           language: lang
         })
@@ -148,7 +137,7 @@ export function DailyTips({
           [cacheKey]: rewritten
         };
         setAiCache(next);
-        lsSet(`amynest_tip_ai_cache_${todayKey()}_${lang}`, next);
+        lsSet(`amynest_tip_ai_cache_${todayKey()}_en`, next);
         bumpAICount();
         setAiUsed(getAICount());
       }
@@ -158,20 +147,13 @@ export function DailyTips({
       setBusyId(null);
     }
   };
-  const ui = lang === "hi" ? {
-    title: "आज की पेरेंटिंग सलाह",
-    subtitle: `${childName} के लिए`,
-    helpful: "उपयोगी",
-    next: "अगली सलाह",
-    personalize: "व्यक्तिगत बनाएँ",
-    aiLeft: (n: number) => `Amy AI शेष: ${n}`
-  } : {
+  const ui = {
     title: "Today's Parenting Cards",
     subtitle: `Personalised for ${childName}`,
     helpful: "Helpful",
     next: "Next Tip",
     personalize: "Personalize",
-    aiLeft: (n: number) => `Amy AI left: ${n}`
+    aiLeft: (n: number) => `Amy AI left: ${n}`,
   };
   return <section className="space-y-3">
       {/* Header */}
@@ -183,10 +165,6 @@ export function DailyTips({
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">{ui.subtitle}</p>
         </div>
-        <button onClick={() => setLang(lang === "en" ? "hi" : "en")} className="shrink-0 inline-flex items-center gap-1.5 rounded-full border-2 border-border bg-card px-3 py-1.5 text-xs font-bold hover:border-primary/50 transition-colors" aria-label={t("components.daily_tips.toggle_language")}>
-          <Languages className="h-3.5 w-3.5" />
-          {lang === "en" ? "हिंदी" : "English"}
-        </button>
       </div>
 
       {/* Cards grid — 1 col on mobile, 2 on tablet+ */}
@@ -195,7 +173,7 @@ export function DailyTips({
         const meta = CATEGORY_META[cat];
         const tip = tips[cat];
         const cacheKey = `${tip.id}_${lang}`;
-        const text = aiCache[cacheKey] ?? tip[lang];
+        const text = aiCache[cacheKey] ?? tip.en;
         const isPersonalized = Boolean(aiCache[cacheKey]);
         const liked = Boolean(helpful[tip.id]);
         const isBusy = busyId === tip.id;

@@ -44,42 +44,20 @@ interface LifeSkillsZoneProps {
   child: { id: string | number; name: string; age: number };
 }
 
-function detectLang(i18nLang: string | undefined): LifeSkillLang {
-  if (!i18nLang) return "en";
-  const l = i18nLang.toLowerCase();
-  if (l === "hinglish" || l.includes("hing") || l === "in-en") return "hinglish";
-  if (l === "hi" || l.startsWith("hi-") || l.startsWith("hi_")) return "hi";
-  return "en";
-}
 
 function todayISO(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const LANG_STORAGE_KEY = (childId: string | number) => `lifeskills:lang:${childId}`;
 const SKIP_STORAGE_KEY = (childId: string | number, date: string) =>
   `lifeskills:skip:${childId}:${date}`;
 
 export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
-  const { i18n, t } = useTranslation();
-  const fallbackLang = detectLang(i18n.language);
+  const { t } = useTranslation();
+  const lang: LifeSkillLang = "en";
   const childIdNum = typeof child.id === "number" ? child.id : Number(child.id);
   const qc = useQueryClient();
-
-  // Language persists per-child so caregivers don't reset it on every visit.
-  const [lang, setLang] = useState<LifeSkillLang>(() => {
-    if (typeof window === "undefined") return fallbackLang;
-    try {
-      const raw = localStorage.getItem(LANG_STORAGE_KEY(child.id));
-      if (raw === "en" || raw === "hi" || raw === "hinglish") return raw;
-    } catch { /* noop */ }
-    return fallbackLang;
-  });
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try { localStorage.setItem(LANG_STORAGE_KEY(child.id), lang); } catch { /* noop */ }
-  }, [child.id, lang]);
 
   const ageBand = ageBandForLifeSkills(child.age);
 
@@ -133,7 +111,7 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
           completed: false,
         };
       }),
-    };
+    } as LifeSkillsTodayResponse;
   }, [ageBand, child.id]);
 
   const data: LifeSkillsTodayResponse = todayQuery.data ?? localFallback;
@@ -199,8 +177,6 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
     }
   };
 
-  const langs: LifeSkillLang[] = ["en", "hi", "hinglish"];
-
   // Derive a per-category points tally from how many of today's tasks are
   // done so the existing progress bars + insight have data to chew on.
   const byCategory = useMemo(() => {
@@ -247,18 +223,6 @@ export function LifeSkillsZone({ child }: LifeSkillsZoneProps) {
         <Compass className="h-3.5 w-3.5 text-[hsl(var(--brand-emerald-500))]" />
         <span>
           {ageBandLabel(ageBand as LifeSkillAgeBand, lang)} · {totalPoints} {uiLabel("points", lang)}
-        </span>
-        <span className="ml-auto inline-flex items-center gap-1 rounded-full border px-1 py-0.5">
-          <Languages className="h-3 w-3" />
-          {langs.map((l) => (
-            <button
-              key={l}
-              onClick={() => setLang(l)}
-              className={`px-1.5 rounded-full text-[11px] ${lang === l ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-            >
-              {l === "en" ? "EN" : l === "hi" ? "हिं" : "Hng"}
-            </button>
-          ))}
         </span>
       </div>
 

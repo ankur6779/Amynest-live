@@ -213,7 +213,7 @@ function CommandCenterDashboard(props: DashboardProps) {
     msg: string;
     undo?: () => void;
   } | null>(null);
-  const toastTimer = useRef<number | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = (msg: string, undo?: () => void) => {
     setToast({
       msg,
