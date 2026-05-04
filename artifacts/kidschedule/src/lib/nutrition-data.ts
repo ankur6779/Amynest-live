@@ -8,15 +8,12 @@ export type AgeGroupId =
 export type AgeGroup = {
   id: AgeGroupId;
   label: string;
-  labelHi: string;
-  labelHinglish: string;
   emoji: string;
   colorClass: string;       // Tailwind bg color (card bg)
   textClass: string;        // Tailwind text color
   borderClass: string;      // Tailwind border color
   badgeBg: string;
   description: string;
-  descriptionHi: string;
   keyFocus: string[];       // Nutrition priorities for this age
 };
 
@@ -24,127 +21,100 @@ export const AGE_GROUPS: AgeGroup[] = [
   {
     id: "infant_0_6",
     label: "0–6 Months",
-    labelHi: "0–6 महीने",
-    labelHinglish: "0–6 Mahine",
     emoji: "🍼",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     badgeBg: "bg-muted",
     description: "Breast milk is the only food needed. WHO recommends exclusive breastfeeding for 6 months.",
-    descriptionHi: "इस उम्र में केवल माँ का दूध जरूरी है। WHO 6 महीने तक सिर्फ स्तनपान की सलाह देता है।",
     keyFocus: ["Exclusive breastfeeding", "Vitamin D supplementation", "Iron stores from birth"],
   },
   {
     id: "infant_6_12",
     label: "6–12 Months",
-    labelHi: "6–12 महीने",
-    labelHinglish: "6–12 Mahine",
     emoji: "🥣",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     badgeBg: "bg-muted",
     description: "Introduce complementary foods at 6 months while continuing breastfeeding. Focus on iron-rich foods.",
-    descriptionHi: "6 महीने में ठोस आहार शुरू करें। स्तनपान जारी रखें और आयरन युक्त खाना दें।",
     keyFocus: ["Iron-rich first foods", "Zinc", "Complementary feeding", "No salt/sugar"],
   },
   {
     id: "toddler_1_3",
     label: "1–3 Years",
-    labelHi: "1–3 साल",
-    labelHinglish: "1–3 Saal",
     emoji: "🧒",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     badgeBg: "bg-muted",
     description: "Rapid brain development phase. Needs diverse foods 5–6 times a day in small portions.",
-    descriptionHi: "मस्तिष्क विकास की तेज अवस्था। दिन में 5–6 बार छोटे-छोटे भोजन दें।",
     keyFocus: ["Healthy fats (brain)", "Calcium for bones", "Iron", "Vitamin A", "Diverse diet"],
   },
   {
     id: "preschool_3_6",
     label: "3–6 Years",
-    labelHi: "3–6 साल",
-    labelHinglish: "3–6 Saal",
     emoji: "🎒",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     badgeBg: "bg-muted",
     description: "Energy needs increase with activity. Establish healthy food habits early. Avoid junk food.",
-    descriptionHi: "इस उम्र में खाने की आदतें बनती हैं। जंक फूड से बचें और पोषण की आदत डालें।",
     keyFocus: ["Energy (carbs + protein)", "Calcium", "Vitamin C for immunity", "Fiber"],
   },
   {
     id: "school_6_10",
     label: "6–10 Years",
-    labelHi: "6–10 साल",
-    labelHinglish: "6–10 Saal",
     emoji: "📚",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     badgeBg: "bg-muted",
     description: "School age needs focus on brain fuel and immunity. Regular meals improve concentration.",
-    descriptionHi: "स्कूल उम्र में मस्तिष्क ईंधन और इम्युनिटी पर ध्यान दें। नाश्ता जरूरी है।",
     keyFocus: ["B vitamins (brain)", "Iron (concentration)", "Calcium (bones)", "Breakfast daily"],
   },
   {
     id: "preteen_10_15",
     label: "10–15 Years",
-    labelHi: "10–15 साल",
-    labelHinglish: "10–15 Saal",
     emoji: "🌱",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     badgeBg: "bg-muted",
     description: "Puberty — highest calcium and iron needs. Girls need extra iron. Avoid crash diets.",
-    descriptionHi: "किशोरावस्था में कैल्शियम और आयरन की सबसे ज्यादा जरूरत। लड़कियों को अतिरिक्त आयरन चाहिए।",
     keyFocus: ["Calcium (peak bone mass)", "Iron (girls)", "Protein (muscle)", "Zinc"],
   },
   {
     id: "adult",
     label: "Adults",
-    labelHi: "वयस्क",
-    labelHinglish: "Adults (18+ Saal)",
     emoji: "👨‍👩",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     badgeBg: "bg-muted",
     description: "Balanced diet for sustained energy. Focus on fiber, antioxidants, and healthy fats.",
-    descriptionHi: "संतुलित आहार से ऊर्जा बनाए रखें। फाइबर, एंटीऑक्सिडेंट और स्वस्थ वसा लें।",
     keyFocus: ["Balanced macros", "Vitamin D", "B12 (vegetarians)", "Fiber", "Hydration"],
   },
   {
     id: "pregnancy",
     label: "Pregnancy",
-    labelHi: "गर्भावस्था",
-    labelHinglish: "Pregnancy",
     emoji: "🤰",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     badgeBg: "bg-muted",
     description: "Critical 1,000-day window. Extra calories, folic acid, iron, and calcium essential.",
-    descriptionHi: "पहले 1000 दिन बहुत महत्वपूर्ण हैं। अतिरिक्त फोलिक एसिड, आयरन और कैल्शियम जरूरी है।",
     keyFocus: ["Folic acid (neural tube)", "Iron (anemia)", "Calcium", "Omega-3 (brain)", "Iodine"],
   },
   {
     id: "postpartum",
     label: "Postpartum",
-    labelHi: "प्रसवोत्तर",
-    labelHinglish: "Postpartum (Delivery ke Baad)",
     emoji: "🤱",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     badgeBg: "bg-muted",
     description: "Recovery + breastfeeding needs extra calories, protein, and iron. Stay hydrated.",
-    descriptionHi: "स्तनपान के दौरान अतिरिक्त कैलोरी, प्रोटीन और आयरन जरूरी है। खूब पानी पिएं।",
     keyFocus: ["Protein (milk production)", "Iron (recovery)", "Calcium", "Omega-3", "Hydration"],
   },
 ];
@@ -153,7 +123,6 @@ export const AGE_GROUPS: AgeGroup[] = [
 
 export type FoodSource = {
   name: string;
-  nameHi: string;
   emoji: string;
   type: "veg" | "nonveg" | "both";
   serving: string;
@@ -169,19 +138,14 @@ export type DailyNeed = {
 export type Nutrient = {
   id: string;
   name: string;
-  nameHi: string;
-  nameHinglish: string;
   emoji: string;
   colorClass: string;
   textClass: string;
   borderClass: string;
   tagline: string;
-  taglineHi: string;
   benefits: string[];
-  benefitsHi: string[];
   sources: FoodSource[];
   deficiencySymptoms: string[];
-  deficiencyHi: string[];
   dailyNeeds: Record<AgeGroupId, DailyNeed>;
 };
 
@@ -189,14 +153,11 @@ export const NUTRIENTS: Nutrient[] = [
   {
     id: "protein",
     name: "Protein",
-    nameHi: "प्रोटीन",
-    nameHinglish: "Protein",
     emoji: "💪",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     tagline: "Building block of life",
-    taglineHi: "जीवन की नींव",
     benefits: [
       "Builds and repairs muscles and tissues",
       "Supports immune system (antibodies)",
@@ -204,23 +165,17 @@ export const NUTRIENTS: Nutrient[] = [
       "Essential for child growth and development",
       "Provides energy (4 kcal/g)",
     ],
-    benefitsHi: [
-      "मांसपेशियों और ऊतकों का निर्माण करता है",
-      "प्रतिरक्षा प्रणाली को मजबूत करता है",
-      "एंजाइम और हार्मोन बनाता है",
-      "बच्चों की वृद्धि के लिए आवश्यक",
-    ],
     sources: [
-      { name: "Dal (Lentils)", nameHi: "दाल", emoji: "🫘", type: "veg", serving: "1 katori (100g cooked)", amount: "8–9g" },
-      { name: "Paneer", nameHi: "पनीर", emoji: "🧀", type: "veg", serving: "100g", amount: "18g" },
-      { name: "Eggs", nameHi: "अंडे", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "12g" },
-      { name: "Chicken", nameHi: "चिकन", emoji: "🍗", type: "nonveg", serving: "100g cooked", amount: "25–27g" },
-      { name: "Soybean/Tofu", nameHi: "सोया/टोफू", emoji: "🫘", type: "veg", serving: "100g", amount: "17g" },
-      { name: "Milk", nameHi: "दूध", emoji: "🥛", type: "veg", serving: "1 glass (200ml)", amount: "6.5g" },
-      { name: "Curd (Dahi)", nameHi: "दही", emoji: "🍶", type: "veg", serving: "1 katori (100g)", amount: "3.5g" },
-      { name: "Fish", nameHi: "मछली", emoji: "🐟", type: "nonveg", serving: "100g cooked", amount: "20–22g" },
-      { name: "Rajma / Chole", nameHi: "राजमा/छोले", emoji: "🫘", type: "veg", serving: "1 katori", amount: "8g" },
-      { name: "Groundnuts", nameHi: "मूंगफली", emoji: "🥜", type: "veg", serving: "30g", amount: "7.5g" },
+      { name: "Dal (Lentils)", emoji: "🫘", type: "veg", serving: "1 katori (100g cooked)", amount: "8–9g" },
+      { name: "Paneer", emoji: "🧀", type: "veg", serving: "100g", amount: "18g" },
+      { name: "Eggs", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "12g" },
+      { name: "Chicken", emoji: "🍗", type: "nonveg", serving: "100g cooked", amount: "25–27g" },
+      { name: "Soybean/Tofu", emoji: "🫘", type: "veg", serving: "100g", amount: "17g" },
+      { name: "Milk", emoji: "🥛", type: "veg", serving: "1 glass (200ml)", amount: "6.5g" },
+      { name: "Curd (Dahi)", emoji: "🍶", type: "veg", serving: "1 katori (100g)", amount: "3.5g" },
+      { name: "Fish", emoji: "🐟", type: "nonveg", serving: "100g cooked", amount: "20–22g" },
+      { name: "Rajma / Chole", emoji: "🫘", type: "veg", serving: "1 katori", amount: "8g" },
+      { name: "Groundnuts", emoji: "🥜", type: "veg", serving: "30g", amount: "7.5g" },
     ],
     deficiencySymptoms: [
       "Slow growth in children (stunting)",
@@ -229,12 +184,6 @@ export const NUTRIENTS: Nutrient[] = [
       "Muscle weakness and fatigue",
       "Oedema (fluid swelling) in severe cases",
       "Delayed wound healing",
-    ],
-    deficiencyHi: [
-      "बच्चों में धीमी वृद्धि",
-      "बार-बार संक्रमण / कमजोर इम्युनिटी",
-      "बालों का झड़ना और नाखून टूटना",
-      "मांसपेशियों की कमजोरी",
     ],
     dailyNeeds: {
       infant_0_6:    { amount: "~9.1", unit: "g/day", note: "From breast milk" },
@@ -251,14 +200,11 @@ export const NUTRIENTS: Nutrient[] = [
   {
     id: "iron",
     name: "Iron",
-    nameHi: "आयरन (लौह)",
-    nameHinglish: "Iron",
     emoji: "🩸",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     tagline: "Carries oxygen to every cell",
-    taglineHi: "हर कोशिका में ऑक्सीजन पहुंचाता है",
     benefits: [
       "Forms haemoglobin — carries oxygen in blood",
       "Essential for cognitive development in children",
@@ -266,23 +212,17 @@ export const NUTRIENTS: Nutrient[] = [
       "Critical for brain development in infants",
       "Supports muscle function",
     ],
-    benefitsHi: [
-      "हीमोग्लोबिन बनाता है — खून में ऑक्सीजन लाता है",
-      "बच्चों के मानसिक विकास के लिए जरूरी",
-      "ऊर्जा उत्पादन में मदद करता है",
-      "शिशुओं के मस्तिष्क विकास के लिए महत्वपूर्ण",
-    ],
     sources: [
-      { name: "Ragi (Finger Millet)", nameHi: "रागी", emoji: "🌾", type: "veg", serving: "100g", amount: "3.9mg" },
-      { name: "Spinach (Palak)", nameHi: "पालक", emoji: "🌿", type: "veg", serving: "1 katori cooked", amount: "3.5mg" },
-      { name: "Liver (Mutton/Chicken)", nameHi: "कलेजी", emoji: "🍖", type: "nonveg", serving: "50g", amount: "5–6mg" },
-      { name: "Rajma (Kidney Beans)", nameHi: "राजमा", emoji: "🫘", type: "veg", serving: "1 katori cooked", amount: "3mg" },
-      { name: "Sesame Seeds (Til)", nameHi: "तिल", emoji: "🌱", type: "veg", serving: "1 tbsp", amount: "1.3mg" },
-      { name: "Dates (Khajoor)", nameHi: "खजूर", emoji: "🌴", type: "veg", serving: "3 dates", amount: "1.2mg" },
-      { name: "Chicken / Mutton", nameHi: "चिकन/मटन", emoji: "🍗", type: "nonveg", serving: "100g", amount: "1.5–2.5mg" },
-      { name: "Jaggery (Gud)", nameHi: "गुड़", emoji: "🍯", type: "veg", serving: "10g piece", amount: "1.1mg" },
-      { name: "Pumpkin Seeds", nameHi: "कद्दू के बीज", emoji: "🎃", type: "veg", serving: "30g", amount: "2.5mg" },
-      { name: "Fortified Cereals", nameHi: "फोर्टिफाइड अनाज", emoji: "🌾", type: "veg", serving: "1 bowl", amount: "4–8mg" },
+      { name: "Ragi (Finger Millet)", emoji: "🌾", type: "veg", serving: "100g", amount: "3.9mg" },
+      { name: "Spinach (Palak)", emoji: "🌿", type: "veg", serving: "1 katori cooked", amount: "3.5mg" },
+      { name: "Liver (Mutton/Chicken)", emoji: "🍖", type: "nonveg", serving: "50g", amount: "5–6mg" },
+      { name: "Rajma (Kidney Beans)", emoji: "🫘", type: "veg", serving: "1 katori cooked", amount: "3mg" },
+      { name: "Sesame Seeds (Til)", emoji: "🌱", type: "veg", serving: "1 tbsp", amount: "1.3mg" },
+      { name: "Dates (Khajoor)", emoji: "🌴", type: "veg", serving: "3 dates", amount: "1.2mg" },
+      { name: "Chicken / Mutton", emoji: "🍗", type: "nonveg", serving: "100g", amount: "1.5–2.5mg" },
+      { name: "Jaggery (Gud)", emoji: "🍯", type: "veg", serving: "10g piece", amount: "1.1mg" },
+      { name: "Pumpkin Seeds", emoji: "🎃", type: "veg", serving: "30g", amount: "2.5mg" },
+      { name: "Fortified Cereals", emoji: "🌾", type: "veg", serving: "1 bowl", amount: "4–8mg" },
     ],
     deficiencySymptoms: [
       "Iron-deficiency anaemia — pale skin, fatigue",
@@ -291,12 +231,6 @@ export const NUTRIENTS: Nutrient[] = [
       "Frequent infections",
       "Cold hands/feet, headache, dizziness",
       "Pica (craving for non-food items) in children",
-    ],
-    deficiencyHi: [
-      "एनीमिया — पीली त्वचा, थकान",
-      "बच्चों में ध्यान और सीखने की समस्या",
-      "परिश्रम पर सांस फूलना",
-      "बार-बार संक्रमण",
     ],
     dailyNeeds: {
       infant_0_6:    { amount: "0.27", unit: "mg/day", note: "Provided by breast milk; AI level" },
@@ -313,14 +247,11 @@ export const NUTRIENTS: Nutrient[] = [
   {
     id: "calcium",
     name: "Calcium",
-    nameHi: "कैल्शियम",
-    nameHinglish: "Calcium",
     emoji: "🦴",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     tagline: "For strong bones and teeth",
-    taglineHi: "मजबूत हड्डियाँ और दांतों के लिए",
     benefits: [
       "Builds and maintains strong bones and teeth",
       "Enables muscle contraction (including heart)",
@@ -328,23 +259,17 @@ export const NUTRIENTS: Nutrient[] = [
       "Supports blood clotting",
       "Peak bone mass built by age 25 — childhood matters!",
     ],
-    benefitsHi: [
-      "हड्डियाँ और दांत मजबूत बनाता है",
-      "मांसपेशियों के संकुचन में मदद करता है",
-      "तंत्रिका संकेतों के लिए आवश्यक",
-      "25 साल तक हड्डी घनत्व बनाना जरूरी",
-    ],
     sources: [
-      { name: "Milk", nameHi: "दूध", emoji: "🥛", type: "veg", serving: "1 glass (200ml)", amount: "240mg" },
-      { name: "Paneer", nameHi: "पनीर", emoji: "🧀", type: "veg", serving: "50g", amount: "190mg" },
-      { name: "Ragi (Finger Millet)", nameHi: "रागी", emoji: "🌾", type: "veg", serving: "100g", amount: "344mg" },
-      { name: "Curd (Dahi)", nameHi: "दही", emoji: "🍶", type: "veg", serving: "200g", amount: "240mg" },
-      { name: "Sesame Seeds (Til)", nameHi: "तिल", emoji: "🌱", type: "veg", serving: "1 tbsp", amount: "88mg" },
-      { name: "Drumstick Leaves (Sahjan)", nameHi: "सहजन के पत्ते", emoji: "🌿", type: "veg", serving: "100g", amount: "440mg" },
-      { name: "Amaranth (Rajgira)", nameHi: "राजगिरा", emoji: "🌾", type: "veg", serving: "100g", amount: "267mg" },
-      { name: "Fish with Bones (sardines)", nameHi: "छोटी मछली", emoji: "🐟", type: "nonveg", serving: "85g", amount: "325mg" },
-      { name: "Figs (Anjeer)", nameHi: "अंजीर", emoji: "🌸", type: "veg", serving: "2 dried figs", amount: "55mg" },
-      { name: "Almonds", nameHi: "बादाम", emoji: "🫘", type: "veg", serving: "30g (≈23)", amount: "76mg" },
+      { name: "Milk", emoji: "🥛", type: "veg", serving: "1 glass (200ml)", amount: "240mg" },
+      { name: "Paneer", emoji: "🧀", type: "veg", serving: "50g", amount: "190mg" },
+      { name: "Ragi (Finger Millet)", emoji: "🌾", type: "veg", serving: "100g", amount: "344mg" },
+      { name: "Curd (Dahi)", emoji: "🍶", type: "veg", serving: "200g", amount: "240mg" },
+      { name: "Sesame Seeds (Til)", emoji: "🌱", type: "veg", serving: "1 tbsp", amount: "88mg" },
+      { name: "Drumstick Leaves (Sahjan)", emoji: "🌿", type: "veg", serving: "100g", amount: "440mg" },
+      { name: "Amaranth (Rajgira)", emoji: "🌾", type: "veg", serving: "100g", amount: "267mg" },
+      { name: "Fish with Bones (sardines)", emoji: "🐟", type: "nonveg", serving: "85g", amount: "325mg" },
+      { name: "Figs (Anjeer)", emoji: "🌸", type: "veg", serving: "2 dried figs", amount: "55mg" },
+      { name: "Almonds", emoji: "🫘", type: "veg", serving: "30g (≈23)", amount: "76mg" },
     ],
     deficiencySymptoms: [
       "Rickets in children — bow legs, soft skull",
@@ -353,12 +278,6 @@ export const NUTRIENTS: Nutrient[] = [
       "Dental problems — weak teeth",
       "Delayed teething in infants",
       "Numbness/tingling in hands and feet",
-    ],
-    deficiencyHi: [
-      "बच्चों में रिकेट्स — टेढ़े पैर, मुलायम खोपड़ी",
-      "वयस्कों में ऑस्टियोपोरोसिस",
-      "मांसपेशियों में ऐंठन",
-      "दांतों की समस्याएं",
     ],
     dailyNeeds: {
       infant_0_6:    { amount: "300", unit: "mg/day", note: "From breast milk" },
@@ -375,14 +294,11 @@ export const NUTRIENTS: Nutrient[] = [
   {
     id: "vitamin_a",
     name: "Vitamin A",
-    nameHi: "विटामिन A",
-    nameHinglish: "Vitamin A",
     emoji: "👁️",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     tagline: "For vision, growth & immunity",
-    taglineHi: "दृष्टि, विकास और इम्युनिटी के लिए",
     benefits: [
       "Essential for vision — especially night vision",
       "Supports skin and mucous membrane health",
@@ -390,21 +306,16 @@ export const NUTRIENTS: Nutrient[] = [
       "Protects against respiratory and GI infections",
       "Antioxidant properties",
     ],
-    benefitsHi: [
-      "दृष्टि के लिए — विशेषकर रात में देखने के लिए",
-      "त्वचा और श्लेष्मा झिल्ली को स्वस्थ रखता है",
-      "बच्चों की वृद्धि और इम्युनिटी के लिए",
-    ],
     sources: [
-      { name: "Carrot", nameHi: "गाजर", emoji: "🥕", type: "veg", serving: "1 medium (60g)", amount: "500mcg RAE" },
-      { name: "Sweet Potato", nameHi: "शकरकंद", emoji: "🍠", type: "veg", serving: "100g baked", amount: "960mcg RAE" },
-      { name: "Spinach (Palak)", nameHi: "पालक", emoji: "🌿", type: "veg", serving: "100g cooked", amount: "524mcg RAE" },
-      { name: "Pumpkin", nameHi: "कद्दू", emoji: "🎃", type: "veg", serving: "100g cooked", amount: "400mcg RAE" },
-      { name: "Eggs (yolk)", nameHi: "अंडे", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "80mcg RAE" },
-      { name: "Liver", nameHi: "कलेजी", emoji: "🍖", type: "nonveg", serving: "25g", amount: "1500mcg RAE" },
-      { name: "Mango", nameHi: "आम", emoji: "🥭", type: "veg", serving: "100g", amount: "38mcg RAE" },
-      { name: "Papaya", nameHi: "पपीता", emoji: "🍈", type: "veg", serving: "100g", amount: "47mcg RAE" },
-      { name: "Whole Milk / Ghee", nameHi: "दूध/घी", emoji: "🥛", type: "veg", serving: "1 tsp ghee", amount: "13mcg RAE" },
+      { name: "Carrot", emoji: "🥕", type: "veg", serving: "1 medium (60g)", amount: "500mcg RAE" },
+      { name: "Sweet Potato", emoji: "🍠", type: "veg", serving: "100g baked", amount: "960mcg RAE" },
+      { name: "Spinach (Palak)", emoji: "🌿", type: "veg", serving: "100g cooked", amount: "524mcg RAE" },
+      { name: "Pumpkin", emoji: "🎃", type: "veg", serving: "100g cooked", amount: "400mcg RAE" },
+      { name: "Eggs (yolk)", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "80mcg RAE" },
+      { name: "Liver", emoji: "🍖", type: "nonveg", serving: "25g", amount: "1500mcg RAE" },
+      { name: "Mango", emoji: "🥭", type: "veg", serving: "100g", amount: "38mcg RAE" },
+      { name: "Papaya", emoji: "🍈", type: "veg", serving: "100g", amount: "47mcg RAE" },
+      { name: "Whole Milk / Ghee", emoji: "🥛", type: "veg", serving: "1 tsp ghee", amount: "13mcg RAE" },
     ],
     deficiencySymptoms: [
       "Night blindness (early sign) — can't see in dim light",
@@ -412,12 +323,6 @@ export const NUTRIENTS: Nutrient[] = [
       "Increased susceptibility to infections",
       "Dry, rough skin and hair",
       "Poor growth in children",
-    ],
-    deficiencyHi: [
-      "रतौंधी — रात में दिखना बंद",
-      "जीरोफ्थाल्मिया — आंखें सूखना",
-      "बार-बार संक्रमण होना",
-      "बच्चों में खराब विकास",
     ],
     dailyNeeds: {
       infant_0_6:    { amount: "400", unit: "mcg RAE/day" },
@@ -434,14 +339,11 @@ export const NUTRIENTS: Nutrient[] = [
   {
     id: "vitamin_c",
     name: "Vitamin C",
-    nameHi: "विटामिन C",
-    nameHinglish: "Vitamin C",
     emoji: "🍋",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     tagline: "Immunity shield & iron booster",
-    taglineHi: "इम्युनिटी और आयरन अवशोषण के लिए",
     benefits: [
       "Powerful antioxidant — fights free radicals",
       "Boosts iron absorption from plant sources (pair with dal/spinach!)",
@@ -449,21 +351,15 @@ export const NUTRIENTS: Nutrient[] = [
       "Supports immune cell function",
       "Reduces duration of common cold",
     ],
-    benefitsHi: [
-      "शक्तिशाली एंटीऑक्सिडेंट",
-      "पौधों से आयरन अवशोषण बढ़ाता है",
-      "कोलेजन निर्माण — त्वचा, जोड़ और घाव भरना",
-      "इम्युनिटी सेल फंक्शन को सपोर्ट करता है",
-    ],
     sources: [
-      { name: "Amla (Indian Gooseberry)", nameHi: "आँवला", emoji: "🍏", type: "veg", serving: "1 amla (50g)", amount: "300mg" },
-      { name: "Guava", nameHi: "अमरूद", emoji: "🍐", type: "veg", serving: "1 medium (100g)", amount: "228mg" },
-      { name: "Bell Pepper (Shimla Mirch)", nameHi: "शिमला मिर्च", emoji: "🫑", type: "veg", serving: "50g", amount: "95mg" },
-      { name: "Lemon / Lime", nameHi: "नींबू", emoji: "🍋", type: "veg", serving: "juice of 1 lemon", amount: "30mg" },
-      { name: "Orange / Mosambi", nameHi: "संतरा", emoji: "🍊", type: "veg", serving: "1 medium", amount: "70mg" },
-      { name: "Tomato", nameHi: "टमाटर", emoji: "🍅", type: "veg", serving: "1 medium (100g)", amount: "23mg" },
-      { name: "Papaya", nameHi: "पपीता", emoji: "🍈", type: "veg", serving: "100g", amount: "62mg" },
-      { name: "Raw Mango / Kachha Aam", nameHi: "कच्चा आम", emoji: "🥭", type: "veg", serving: "50g", amount: "28mg" },
+      { name: "Amla (Indian Gooseberry)", emoji: "🍏", type: "veg", serving: "1 amla (50g)", amount: "300mg" },
+      { name: "Guava", emoji: "🍐", type: "veg", serving: "1 medium (100g)", amount: "228mg" },
+      { name: "Bell Pepper (Shimla Mirch)", emoji: "🫑", type: "veg", serving: "50g", amount: "95mg" },
+      { name: "Lemon / Lime", emoji: "🍋", type: "veg", serving: "juice of 1 lemon", amount: "30mg" },
+      { name: "Orange / Mosambi", emoji: "🍊", type: "veg", serving: "1 medium", amount: "70mg" },
+      { name: "Tomato", emoji: "🍅", type: "veg", serving: "1 medium (100g)", amount: "23mg" },
+      { name: "Papaya", emoji: "🍈", type: "veg", serving: "100g", amount: "62mg" },
+      { name: "Raw Mango / Kachha Aam", emoji: "🥭", type: "veg", serving: "50g", amount: "28mg" },
     ],
     deficiencySymptoms: [
       "Scurvy — bleeding gums, loose teeth",
@@ -471,12 +367,6 @@ export const NUTRIENTS: Nutrient[] = [
       "Bruising easily",
       "Fatigue and irritability",
       "Poor iron absorption leading to anaemia",
-    ],
-    deficiencyHi: [
-      "स्कर्वी — मसूड़ों से खून",
-      "घाव देर से भरना",
-      "जल्दी नील पड़ना",
-      "थकान और चिड़चिड़ापन",
     ],
     dailyNeeds: {
       infant_0_6:    { amount: "40", unit: "mg/day", note: "From breast milk" },
@@ -493,14 +383,11 @@ export const NUTRIENTS: Nutrient[] = [
   {
     id: "vitamin_d",
     name: "Vitamin D",
-    nameHi: "विटामिन D",
-    nameHinglish: "Vitamin D",
     emoji: "☀️",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     tagline: "The sunshine vitamin",
-    taglineHi: "धूप विटामिन",
     benefits: [
       "Enables calcium absorption from the gut",
       "Essential for bone mineralisation (prevents rickets)",
@@ -508,19 +395,13 @@ export const NUTRIENTS: Nutrient[] = [
       "Linked to mood regulation and mental health",
       "Muscle strength and nerve function",
     ],
-    benefitsHi: [
-      "कैल्शियम अवशोषण में मदद करता है",
-      "हड्डियों के निर्माण के लिए (रिकेट्स रोकता है)",
-      "इम्युनिटी को नियंत्रित करता है",
-      "मानसिक स्वास्थ्य और मनोदशा से जुड़ा है",
-    ],
     sources: [
-      { name: "Sunlight (15–20 min/day)", nameHi: "धूप (15–20 मिनट)", emoji: "☀️", type: "veg", serving: "Face + arms exposed", amount: "Primary source" },
-      { name: "Fish (Salmon, Tuna)", nameHi: "मछली", emoji: "🐟", type: "nonveg", serving: "85g", amount: "400–600 IU" },
-      { name: "Eggs (yolk)", nameHi: "अंडे", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "80–100 IU" },
-      { name: "Fortified Milk", nameHi: "फोर्टिफाइड दूध", emoji: "🥛", type: "veg", serving: "1 glass", amount: "100 IU" },
-      { name: "Fortified Cereals", nameHi: "फोर्टिफाइड अनाज", emoji: "🌾", type: "veg", serving: "1 bowl", amount: "40–100 IU" },
-      { name: "Mushroom (sun-exposed)", nameHi: "धूप में सुखाए मशरूम", emoji: "🍄", type: "veg", serving: "100g", amount: "200–400 IU" },
+      { name: "Sunlight (15–20 min/day)", emoji: "☀️", type: "veg", serving: "Face + arms exposed", amount: "Primary source" },
+      { name: "Fish (Salmon, Tuna)", emoji: "🐟", type: "nonveg", serving: "85g", amount: "400–600 IU" },
+      { name: "Eggs (yolk)", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "80–100 IU" },
+      { name: "Fortified Milk", emoji: "🥛", type: "veg", serving: "1 glass", amount: "100 IU" },
+      { name: "Fortified Cereals", emoji: "🌾", type: "veg", serving: "1 bowl", amount: "40–100 IU" },
+      { name: "Mushroom (sun-exposed)", emoji: "🍄", type: "veg", serving: "100g", amount: "200–400 IU" },
     ],
     deficiencySymptoms: [
       "Rickets in children — soft bones, bowed legs",
@@ -529,12 +410,6 @@ export const NUTRIENTS: Nutrient[] = [
       "Depression and mood changes",
       "Frequent respiratory infections",
       "India: up to 70% of children and adults are deficient!",
-    ],
-    deficiencyHi: [
-      "बच्चों में रिकेट्स",
-      "वयस्कों में हड्डी दर्द",
-      "मांसपेशियों की कमजोरी",
-      "भारत में 70% लोग कमजोर हैं!",
     ],
     dailyNeeds: {
       infant_0_6:    { amount: "400", unit: "IU/day", note: "Supplement drops recommended by IAP" },
@@ -551,14 +426,11 @@ export const NUTRIENTS: Nutrient[] = [
   {
     id: "vitamin_b",
     name: "B Vitamins",
-    nameHi: "विटामिन B समूह",
-    nameHinglish: "B Vitamins",
     emoji: "⚡",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     tagline: "Energy metabolism & brain power",
-    taglineHi: "ऊर्जा और मस्तिष्क शक्ति",
     benefits: [
       "B1 (Thiamine): carbohydrate energy conversion",
       "B2 (Riboflavin): fat and protein metabolism",
@@ -567,20 +439,14 @@ export const NUTRIENTS: Nutrient[] = [
       "B9 (Folate): cell division, crucial in pregnancy",
       "Collectively support nerve function and energy",
     ],
-    benefitsHi: [
-      "B1: कार्बोहाइड्रेट से ऊर्जा",
-      "B6: मस्तिष्क विकास और इम्युनिटी",
-      "B9: गर्भावस्था में महत्वपूर्ण — न्यूरल ट्यूब रक्षा",
-      "तंत्रिका कार्य और ऊर्जा उत्पादन",
-    ],
     sources: [
-      { name: "Whole Grains (Atta, Brown Rice)", nameHi: "साबुत अनाज", emoji: "🌾", type: "veg", serving: "2 roti", amount: "B1: 0.3mg, B3: 2mg" },
-      { name: "Dal / Legumes", nameHi: "दाल", emoji: "🫘", type: "veg", serving: "1 katori", amount: "Folate: 130mcg, B6: 0.2mg" },
-      { name: "Green Leafy Vegetables", nameHi: "हरी पत्तेदार सब्जियाँ", emoji: "🥬", type: "veg", serving: "1 katori", amount: "Folate: 100–200mcg" },
-      { name: "Eggs", nameHi: "अंडे", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "B2: 0.5mg, B6: 0.2mg" },
-      { name: "Chicken / Fish", nameHi: "चिकन/मछली", emoji: "🍗", type: "nonveg", serving: "100g", amount: "B3: 8–14mg, B6: 0.6mg" },
-      { name: "Groundnuts (Mungfali)", nameHi: "मूंगफली", emoji: "🥜", type: "veg", serving: "30g", amount: "B3: 3.8mg, Folate: 68mcg" },
-      { name: "Banana", nameHi: "केला", emoji: "🍌", type: "veg", serving: "1 medium", amount: "B6: 0.4mg" },
+      { name: "Whole Grains (Atta, Brown Rice)", emoji: "🌾", type: "veg", serving: "2 roti", amount: "B1: 0.3mg, B3: 2mg" },
+      { name: "Dal / Legumes", emoji: "🫘", type: "veg", serving: "1 katori", amount: "Folate: 130mcg, B6: 0.2mg" },
+      { name: "Green Leafy Vegetables", emoji: "🥬", type: "veg", serving: "1 katori", amount: "Folate: 100–200mcg" },
+      { name: "Eggs", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "B2: 0.5mg, B6: 0.2mg" },
+      { name: "Chicken / Fish", emoji: "🍗", type: "nonveg", serving: "100g", amount: "B3: 8–14mg, B6: 0.6mg" },
+      { name: "Groundnuts (Mungfali)", emoji: "🥜", type: "veg", serving: "30g", amount: "B3: 3.8mg, Folate: 68mcg" },
+      { name: "Banana", emoji: "🍌", type: "veg", serving: "1 medium", amount: "B6: 0.4mg" },
     ],
     deficiencySymptoms: [
       "B1: Beriberi — nerve/heart damage",
@@ -588,11 +454,6 @@ export const NUTRIENTS: Nutrient[] = [
       "B3: Pellagra — dermatitis, diarrhoea, dementia",
       "B6: Irritability, depression, anaemia",
       "B9: Neural tube defects in newborns (folate deficiency during pregnancy)",
-    ],
-    deficiencyHi: [
-      "B1: बेरीबेरी",
-      "B3: पेलाग्रा",
-      "B9: गर्भावस्था में कमी से शिशु में जन्म दोष",
     ],
     dailyNeeds: {
       infant_0_6:    { amount: "0.2 / 0.3 / 2 / 0.4mcg", unit: "B1/B2/B3/B6", note: "From breast milk" },
@@ -609,14 +470,11 @@ export const NUTRIENTS: Nutrient[] = [
   {
     id: "vitamin_b12",
     name: "Vitamin B12",
-    nameHi: "विटामिन B12",
-    nameHinglish: "Vitamin B12",
     emoji: "🔴",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     tagline: "Nerve health & red blood cells",
-    taglineHi: "तंत्रिका स्वास्थ्य और लाल रक्त कोशिकाएं",
     benefits: [
       "Forms and maintains the myelin sheath protecting nerves",
       "Produces red blood cells (prevents megaloblastic anaemia)",
@@ -624,20 +482,14 @@ export const NUTRIENTS: Nutrient[] = [
       "Supports brain function and mood",
       "Critical for vegan/vegetarian families (animal-only source)",
     ],
-    benefitsHi: [
-      "नसों की सुरक्षा करती है",
-      "लाल रक्त कोशिकाएं बनाती है",
-      "मस्तिष्क कार्य में मदद करती है",
-      "शाकाहारी परिवारों के लिए सप्लीमेंट जरूरी",
-    ],
     sources: [
-      { name: "Meat / Chicken", nameHi: "मांस/चिकन", emoji: "🍗", type: "nonveg", serving: "100g", amount: "1–2.5mcg" },
-      { name: "Fish / Shellfish", nameHi: "मछली", emoji: "🐟", type: "nonveg", serving: "85g", amount: "2–15mcg" },
-      { name: "Eggs", nameHi: "अंडे", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "1.2mcg" },
-      { name: "Milk", nameHi: "दूध", emoji: "🥛", type: "veg", serving: "1 glass (200ml)", amount: "0.9mcg" },
-      { name: "Curd (Dahi)", nameHi: "दही", emoji: "🍶", type: "veg", serving: "200g", amount: "1.1mcg" },
-      { name: "Paneer / Cheese", nameHi: "पनीर/पनीर", emoji: "🧀", type: "veg", serving: "50g", amount: "0.5mcg" },
-      { name: "Fortified Foods / Supplements", nameHi: "फोर्टिफाइड फूड/सप्लीमेंट", emoji: "💊", type: "veg", serving: "1 tablet", amount: "2.4mcg+" },
+      { name: "Meat / Chicken", emoji: "🍗", type: "nonveg", serving: "100g", amount: "1–2.5mcg" },
+      { name: "Fish / Shellfish", emoji: "🐟", type: "nonveg", serving: "85g", amount: "2–15mcg" },
+      { name: "Eggs", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "1.2mcg" },
+      { name: "Milk", emoji: "🥛", type: "veg", serving: "1 glass (200ml)", amount: "0.9mcg" },
+      { name: "Curd (Dahi)", emoji: "🍶", type: "veg", serving: "200g", amount: "1.1mcg" },
+      { name: "Paneer / Cheese", emoji: "🧀", type: "veg", serving: "50g", amount: "0.5mcg" },
+      { name: "Fortified Foods / Supplements", emoji: "💊", type: "veg", serving: "1 tablet", amount: "2.4mcg+" },
     ],
     deficiencySymptoms: [
       "Megaloblastic anaemia — large, immature red cells",
@@ -646,12 +498,6 @@ export const NUTRIENTS: Nutrient[] = [
       "Developmental delay in infants (of B12-deficient mothers)",
       "Depression, fatigue, irritability",
       "Very common in Indian vegetarians — up to 40–70%!",
-    ],
-    deficiencyHi: [
-      "मेगालोब्लास्टिक एनीमिया",
-      "हाथ-पैरों में झनझनाहट",
-      "याददाश्त की समस्या",
-      "भारत के 40–70% शाकाहारियों में कमी!",
     ],
     dailyNeeds: {
       infant_0_6:    { amount: "0.4", unit: "mcg/day", note: "From breast milk" },
@@ -668,14 +514,11 @@ export const NUTRIENTS: Nutrient[] = [
   {
     id: "vitamin_k",
     name: "Vitamin K",
-    nameHi: "विटामिन K",
-    nameHinglish: "Vitamin K",
     emoji: "🩹",
     colorClass: "bg-muted",
     textClass: "text-foreground",
     borderClass: "border-border",
     tagline: "Blood clotting & bone strength",
-    taglineHi: "रक्त का थक्का और हड्डी की मजबूती",
     benefits: [
       "Activates clotting proteins — stops bleeding",
       "Supports bone protein (osteocalcin) synthesis",
@@ -683,31 +526,20 @@ export const NUTRIENTS: Nutrient[] = [
       "May protect heart health",
       "Given as injection at birth to prevent haemorrhagic disease",
     ],
-    benefitsHi: [
-      "खून का थक्का जमाने में मदद करता है",
-      "हड्डी प्रोटीन का निर्माण करता है",
-      "K2 कैल्शियम को हड्डियों तक पहुंचाता है",
-      "जन्म पर इंजेक्शन से शिशु में रक्तस्राव रोकता है",
-    ],
     sources: [
-      { name: "Green Leafy Vegetables (Palak, Methi)", nameHi: "हरी सब्जियाँ (पालक, मेथी)", emoji: "🥬", type: "veg", serving: "100g cooked", amount: "400–500mcg" },
-      { name: "Broccoli", nameHi: "ब्रोकली", emoji: "🥦", type: "veg", serving: "100g", amount: "101mcg" },
-      { name: "Soybean Oil / Mustard Oil", nameHi: "सरसों का तेल", emoji: "🛢️", type: "veg", serving: "1 tbsp", amount: "10mcg" },
-      { name: "Natto (fermented soy, K2)", nameHi: "नाटो", emoji: "🫘", type: "veg", serving: "40g", amount: "380mcg K2" },
-      { name: "Egg Yolk (K2)", nameHi: "अंडे की जर्दी", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "5mcg K2" },
-      { name: "Aged Cheese (K2)", nameHi: "पुराना पनीर", emoji: "🧀", type: "veg", serving: "30g", amount: "10mcg K2" },
-      { name: "Curry Leaves (Kadi Patta)", nameHi: "करी पत्ता", emoji: "🌿", type: "veg", serving: "10 leaves", amount: "21mcg" },
+      { name: "Green Leafy Vegetables (Palak, Methi)", emoji: "🥬", type: "veg", serving: "100g cooked", amount: "400–500mcg" },
+      { name: "Broccoli", emoji: "🥦", type: "veg", serving: "100g", amount: "101mcg" },
+      { name: "Soybean Oil / Mustard Oil", emoji: "🛢️", type: "veg", serving: "1 tbsp", amount: "10mcg" },
+      { name: "Natto (fermented soy, K2)", emoji: "🫘", type: "veg", serving: "40g", amount: "380mcg K2" },
+      { name: "Egg Yolk (K2)", emoji: "🥚", type: "nonveg", serving: "2 eggs", amount: "5mcg K2" },
+      { name: "Aged Cheese (K2)", emoji: "🧀", type: "veg", serving: "30g", amount: "10mcg K2" },
+      { name: "Curry Leaves (Kadi Patta)", emoji: "🌿", type: "veg", serving: "10 leaves", amount: "21mcg" },
     ],
     deficiencySymptoms: [
       "Easy bruising and prolonged bleeding",
       "Haemorrhagic disease of the newborn (if not given at birth)",
       "Osteoporosis — weak bones",
       "Heavy menstrual bleeding",
-    ],
-    deficiencyHi: [
-      "आसान नील और लंबे समय तक खून बहना",
-      "नवजात शिशु में रक्तस्रावी रोग",
-      "ऑस्टियोपोरोसिस",
     ],
     dailyNeeds: {
       infant_0_6:    { amount: "2", unit: "mcg/day", note: "Injection given at birth" },
@@ -741,9 +573,7 @@ export type DayPlan = {
 
 export type AgeGroupPlan = {
   ageCategory: string;          // display label
-  ageCategoryHi: string;
   portionNote: string;
-  portionNoteHi: string;
   applies: AgeGroupId[];        // which age groups use this plan
   days: DayPlan[];
 };
@@ -751,9 +581,7 @@ export type AgeGroupPlan = {
 export const MEAL_PLANS: AgeGroupPlan[] = [
   {
     ageCategory: "Infants (6–12 months)",
-    ageCategoryHi: "शिशु (6–12 महीने)",
     portionNote: "Start with 2–3 tsp, gradually increase to 3–4 tbsp per meal. Always continue breastfeeding.",
-    portionNoteHi: "2–3 चम्मच से शुरू करें, धीरे-धीरे 3–4 बड़े चम्मच तक बढ़ाएं। स्तनपान जारी रखें।",
     applies: ["infant_6_12"],
     days: [
       { day: "Monday", veg: { breakfast: "Breast milk / formula", lunch: "Mashed moong dal khichdi (rice + moong + ghee)", snack: "Mashed banana", dinner: "Ragi porridge with breast milk" }, nonVeg: { breakfast: "Breast milk / formula", lunch: "Mashed moong dal khichdi", snack: "Mashed papaya", dinner: "Pureed chicken + rice" } },
@@ -767,9 +595,7 @@ export const MEAL_PLANS: AgeGroupPlan[] = [
   },
   {
     ageCategory: "Toddlers & Preschool (1–6 years)",
-    ageCategoryHi: "छोटे बच्चे (1–6 साल)",
     portionNote: "Small portions 5–6 times a day. 1 small katori per item. No whole nuts or hard pieces. Low salt/sugar.",
-    portionNoteHi: "दिन में 5–6 बार छोटे हिस्से। प्रत्येक आइटम के लिए 1 छोटी कटोरी। पूरे मेवे या कठोर टुकड़े न दें।",
     applies: ["toddler_1_3", "preschool_3_6"],
     days: [
       { day: "Monday", veg: { breakfast: "Ragi dosa + coconut chutney + 1 glass milk", midMorning: "Banana / seasonal fruit", lunch: "Rice + dal + sabzi (bhindi) + ghee + curd", snack: "Peanut butter toast or chikki", dinner: "Chapati + palak dal + warm milk" }, nonVeg: { breakfast: "Egg paratha + milk", midMorning: "Fruit", lunch: "Rice + dal + chicken curry (boneless)", snack: "Boiled egg + fruit", dinner: "Chapati + chicken soup" } },
@@ -783,9 +609,7 @@ export const MEAL_PLANS: AgeGroupPlan[] = [
   },
   {
     ageCategory: "School Age (6–15 years)",
-    ageCategoryHi: "स्कूली बच्चे (6–15 साल)",
     portionNote: "Regular adult-sized portions. 3 main meals + 1–2 snacks. Breakfast is non-negotiable for concentration.",
-    portionNoteHi: "नियमित वयस्क आकार के हिस्से। 3 मुख्य भोजन + 1–2 नाश्ते। नाश्ता जरूरी है।",
     applies: ["school_6_10", "preteen_10_15"],
     days: [
       { day: "Monday", veg: { breakfast: "2 parathas + dahi + glass of milk", lunch: "Rice + dal + sabzi + roti + salad", snack: "Sprout chaat + amla juice", dinner: "Roti + paneer sabzi + dal + salad" }, nonVeg: { breakfast: "2 egg parathas + milk", lunch: "Rice + dal + chicken curry + salad", snack: "Boiled egg + fruit", dinner: "Roti + chicken curry + dal" } },
@@ -799,9 +623,7 @@ export const MEAL_PLANS: AgeGroupPlan[] = [
   },
   {
     ageCategory: "Adults, Pregnancy & Postpartum",
-    ageCategoryHi: "वयस्क, गर्भवती और प्रसवोत्तर",
     portionNote: "Balanced plate: 50% veg, 25% grains, 25% protein. Pregnant: +300–500 kcal/day. Breastfeeding: +500 kcal/day.",
-    portionNoteHi: "संतुलित थाली: 50% सब्जी, 25% अनाज, 25% प्रोटीन। गर्भावस्था: +300–500 kcal/day।",
     applies: ["adult", "pregnancy", "postpartum"],
     days: [
       { day: "Monday", veg: { breakfast: "Moong dal chilla + dahi + fruits + tea/coffee", lunch: "2 roti + dal + sabzi + salad + dahi + ghee", snack: "Roasted chana + amla / orange", dinner: "2 roti + paneer sabzi + dal + salad" }, nonVeg: { breakfast: "2 egg omelette + toast + fruits + milk", lunch: "Rice + chicken curry + dal + salad", snack: "Boiled egg + fruit / nuts", dinner: "2 roti + chicken curry + dal + sabzi" } },
@@ -819,7 +641,6 @@ export const MEAL_PLANS: AgeGroupPlan[] = [
 
 export type FamilyPortionRow = {
   food: string;
-  foodHi: string;
   emoji: string;
   infant: string;
   toddler: string;
@@ -830,15 +651,15 @@ export type FamilyPortionRow = {
 };
 
 export const FAMILY_PORTIONS: FamilyPortionRow[] = [
-  { food: "Rice (cooked)", foodHi: "चावल (पका हुआ)", emoji: "🍚", infant: "2–3 tbsp", toddler: "¼ katori", schoolChild: "1 katori", teen: "1.5 katori", adult: "1 katori", pregnant: "1.5 katori" },
-  { food: "Roti / Chapati", foodHi: "रोटी/चपाती", emoji: "🫓", infant: "Tiny soft pieces", toddler: "½–1 small", schoolChild: "2 medium", teen: "3 medium", adult: "2–3 medium", pregnant: "3 medium" },
-  { food: "Dal (cooked)", foodHi: "दाल", emoji: "🫘", infant: "2–4 tbsp", toddler: "½ katori", schoolChild: "1 katori", teen: "1.5 katori", adult: "1 katori", pregnant: "1.5 katori" },
-  { food: "Vegetables / Sabzi", foodHi: "सब्जी", emoji: "🥗", infant: "2–3 tbsp (soft/mashed)", toddler: "½ katori soft", schoolChild: "1 katori", teen: "1–1.5 katori", adult: "2 katori (half plate)", pregnant: "2 katori" },
-  { food: "Milk / Dahi", foodHi: "दूध/दही", emoji: "🥛", infant: "Breast milk (primary)", toddler: "150–200ml milk", schoolChild: "200–300ml", teen: "300–400ml", adult: "200ml", pregnant: "400ml+" },
-  { food: "Dal / Paneer / Egg", foodHi: "दाल/पनीर/अंडा", emoji: "🥚", infant: "Pureed, 2 tbsp", toddler: "25–30g paneer / ½ egg", schoolChild: "50g paneer / 1 egg", teen: "75g / 2 eggs", adult: "75–100g", pregnant: "100g+" },
-  { food: "Fruit", foodHi: "फल", emoji: "🍎", infant: "Puree, 2–3 tbsp", toddler: "¼–½ small fruit", schoolChild: "1 medium fruit", teen: "1–2 fruits", adult: "1–2 fruits", pregnant: "2 fruits" },
-  { food: "Ghee / Oil", foodHi: "घी/तेल", emoji: "🫙", infant: "½ tsp in food", toddler: "½–1 tsp", schoolChild: "1–1.5 tsp", teen: "1.5–2 tsp", adult: "3–4 tsp/day total", pregnant: "3–4 tsp/day" },
-  { food: "Water", foodHi: "पानी", emoji: "💧", infant: "No plain water <6m; sips 6–12m", toddler: "600–800ml", schoolChild: "1–1.5 L", teen: "1.5–2 L", adult: "2–2.5 L", pregnant: "2.5–3 L" },
+  { food: "Rice (cooked)", emoji: "🍚", infant: "2–3 tbsp", toddler: "¼ katori", schoolChild: "1 katori", teen: "1.5 katori", adult: "1 katori", pregnant: "1.5 katori" },
+  { food: "Roti / Chapati", emoji: "🫓", infant: "Tiny soft pieces", toddler: "½–1 small", schoolChild: "2 medium", teen: "3 medium", adult: "2–3 medium", pregnant: "3 medium" },
+  { food: "Dal (cooked)", emoji: "🫘", infant: "2–4 tbsp", toddler: "½ katori", schoolChild: "1 katori", teen: "1.5 katori", adult: "1 katori", pregnant: "1.5 katori" },
+  { food: "Vegetables / Sabzi", emoji: "🥗", infant: "2–3 tbsp (soft/mashed)", toddler: "½ katori soft", schoolChild: "1 katori", teen: "1–1.5 katori", adult: "2 katori (half plate)", pregnant: "2 katori" },
+  { food: "Milk / Dahi", emoji: "🥛", infant: "Breast milk (primary)", toddler: "150–200ml milk", schoolChild: "200–300ml", teen: "300–400ml", adult: "200ml", pregnant: "400ml+" },
+  { food: "Dal / Paneer / Egg", emoji: "🥚", infant: "Pureed, 2 tbsp", toddler: "25–30g paneer / ½ egg", schoolChild: "50g paneer / 1 egg", teen: "75g / 2 eggs", adult: "75–100g", pregnant: "100g+" },
+  { food: "Fruit", emoji: "🍎", infant: "Puree, 2–3 tbsp", toddler: "¼–½ small fruit", schoolChild: "1 medium fruit", teen: "1–2 fruits", adult: "1–2 fruits", pregnant: "2 fruits" },
+  { food: "Ghee / Oil", emoji: "🫙", infant: "½ tsp in food", toddler: "½–1 tsp", schoolChild: "1–1.5 tsp", teen: "1.5–2 tsp", adult: "3–4 tsp/day total", pregnant: "3–4 tsp/day" },
+  { food: "Water", emoji: "💧", infant: "No plain water <6m; sips 6–12m", toddler: "600–800ml", schoolChild: "1–1.5 L", teen: "1.5–2 L", adult: "2–2.5 L", pregnant: "2.5–3 L" },
 ];
 
 // ─── Medical Disclaimer & References ─────────────────────────────────────────
