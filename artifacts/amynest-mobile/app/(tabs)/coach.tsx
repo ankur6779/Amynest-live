@@ -1259,16 +1259,11 @@ export default function CoachScreen() {
         {/* Progress dots */}
         <View style={styles.dotsRow}>
           {plan.wins.map((_, i) => (
-            <TouchableOpacity
-              key={i} onPress={() => i < revealedCount ? goToCard(i) : null}
-              style={[
-                styles.dot,
-                {
-                  backgroundColor: i >= revealedCount
-                    ? "rgba(255,255,255,0.06)"
-                    : i <= activeIdx ? brand.violet500 : brandAlpha.violet500_20,
-                },
-              ]}
+            <AnimatedDot
+              key={i}
+              isRevealed={i < revealedCount}
+              isActive={i <= activeIdx}
+              onPress={() => i < revealedCount ? goToCard(i) : undefined}
             />
           ))}
         </View>
@@ -1422,6 +1417,55 @@ function TypingIndicator({ label }: { label: string }) {
         {label}
       </Text>
     </View>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ANIMATED DOT — scale-pops when its card first reveals
+// ═══════════════════════════════════════════════════════════════════════════
+function AnimatedDot({
+  isRevealed,
+  isActive,
+  onPress,
+}: {
+  isRevealed: boolean;
+  isActive: boolean;
+  onPress: () => void;
+}) {
+  const scaleY = useRef(new Animated.Value(1)).current;
+  const prevRevealedRef = useRef(isRevealed);
+
+  useEffect(() => {
+    if (!prevRevealedRef.current && isRevealed) {
+      scaleY.setValue(2.4);
+      Animated.spring(scaleY, {
+        toValue: 1,
+        friction: 3,
+        tension: 180,
+        useNativeDriver: true,
+      }).start();
+    }
+    prevRevealedRef.current = isRevealed;
+  }, [isRevealed, scaleY]);
+
+  const bgColor = !isRevealed
+    ? "rgba(255,255,255,0.06)"
+    : isActive
+    ? brand.violet500
+    : brandAlpha.violet500_20;
+
+  return (
+    <TouchableOpacity onPress={onPress} style={{ flex: 1 }}>
+      <Animated.View
+        style={{
+          flex: 1,
+          height: 3,
+          borderRadius: 2,
+          backgroundColor: bgColor,
+          transform: [{ scaleY }],
+        }}
+      />
+    </TouchableOpacity>
   );
 }
 
