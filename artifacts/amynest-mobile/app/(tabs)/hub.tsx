@@ -41,8 +41,6 @@ import { DailyPuzzle } from "@/components/DailyPuzzle";
 import { HubDebugOverlay } from "@/components/HubDebugOverlay";
 import { useDebugMode } from "@/contexts/DebugContext";
 import { HubTile } from "@/components/HubTile";
-import RoutineCarousel from "@/components/RoutineCarousel";
-import { useTodayRoutine } from "@/hooks/useTodayRoutine";
 import { isInfantHubAge } from "@workspace/infant-hub";
 import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, HUB_TILE_AGE_MONTHS, partitionTilesByBand } from "./hub-bands";
 export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, HUB_TILE_AGE_MONTHS, partitionTilesByBand };
@@ -158,7 +156,7 @@ export default function HubScreen() {
   const emotionalCards = useEmotionalCards();
   const resolveAgeGroup = useAgeGroupLabel();
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [openSection, setOpenSection] = useState<string | null>("amy");
+  const [openSection, setOpenSection] = useState<string | null>(null);
   // Lazy-load Section 2 ("Explore") so the primary band content paints first.
   // Reset on child switch so the deferred render happens fresh per child.
   const [showExplore, setShowExplore] = useState(false);
@@ -166,20 +164,8 @@ export default function HubScreen() {
   // shown in full opacity (un-dimmed) and we scroll to it. Tapping the current
   // band chip clears it and returns to the default 2-section view.
   const [previewBand, setPreviewBand] = useState<number | null>(null);
-  // Tile id to highlight after a Today's Plan quick-jump (Task #191). // audit-ok: task ref, not a hex color
-  // Cleared by `triggerHighlight` after ~2.4s, or cancelled if the parent
-  // jumps to a different tile in the meantime.
-  const [highlightedTileId, setHighlightedTileId] = useState<string | null>(null);
-  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const groupRefs = useRef<Record<number, View | null>>({});
-
-  // Single-scroll deep-link support: main scroll ref + per-tile y-cache
   const mainScrollRef = useRef<ScrollView>(null);
-  const tileYRef = useRef<Record<string, number>>({});
-  // Y offset of the section1 grid View within the ScrollView content.
-  // Tile onLayout values are relative to this container, so we add it
-  // when storing absolute scroll positions in tileYRef.
-  const section1GridYRef = useRef<number>(0);
 
   // Dev-mode activation: 7 quick taps on the logo toggles DebugContext, which
   // persists to AsyncStorage and shows both the HubDebugOverlay and the global
@@ -188,48 +174,6 @@ export default function HubScreen() {
   const logoTapCount = useRef(0);
   const logoTapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const maybeScrollToTile = useCallback((tileId: string) => {
-    const y = tileYRef.current[tileId];
-    if (y == null) return;
-    mainScrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
-  }, []);
-
-  // Briefly mark a tile as highlighted so the SectionPage can scroll to it
-  // and HubTile draws a fading accent ring. Re-triggering with a new tile
-  // cancels the previous timer so the ring follows the latest jump.
-  const triggerHighlight = useCallback((tileId: string | null) => {
-    if (highlightTimerRef.current) {
-      clearTimeout(highlightTimerRef.current);
-      highlightTimerRef.current = null;
-    }
-    setHighlightedTileId(tileId);
-    if (tileId) {
-      highlightTimerRef.current = setTimeout(() => {
-        setHighlightedTileId((cur) => (cur === tileId ? null : cur));
-        highlightTimerRef.current = null;
-      }, 2400);
-    }
-  }, []);
-
-  // Clear any pending highlight timer on unmount so we don't `setState`
-  // on an unmounted screen if the user navigates away mid-fade.
-  useEffect(() => {
-    return () => {
-      if (highlightTimerRef.current) {
-        clearTimeout(highlightTimerRef.current);
-        highlightTimerRef.current = null;
-      }
-    };
-  }, []);
-
-  // Today's Plan → quick-jump: highlight the tile and scroll to it.
-  const onContinueFromTodayPlan = useCallback(
-    (tileId: string) => {
-      triggerHighlight(tileId);
-      setTimeout(() => maybeScrollToTile(tileId), 50);
-    },
-    [triggerHighlight, maybeScrollToTile],
-  );
 
   // First-Time Free + Preview Lock — every Parent Hub feature is usable ONCE
   // for free (server-tracked). After that, free users see a locked overlay;
@@ -1666,18 +1610,6 @@ export default function HubScreen() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
               >
-                {/* Today's Plan — inline at the top of the single scroll */}
-                <TodayPlanInline
-                  childId={effective.id}
-                  childName={childName}
-                  ageMonths={childAgeMonths}
-                  styles={styles}
-                  showTodayPlanBadge={tryFreeFor("hub_today_plan")}
-                  showParentTasksBadge={tryFreeFor("hub_parent_tasks")}
-                  onGenerate={() => router.push("/routines/generate" as never)}
-                  onContinue={onContinueFromTodayPlan}
-                />
-
                 {/* Featured tiles */}
                 <View style={[styles.sectionsGrid, { marginTop: 8 }]}>
                   <View style={{ position: "relative" }}>
@@ -1716,28 +1648,11 @@ export default function HubScreen() {
 
                 {/* Band tiles in web-matching order */}
                 {section1.length > 0 && (
-                  <View
-                    style={[styles.sectionsGrid, { marginTop: 8 }]}
-                    onLayout={(e) => {
-                      section1GridYRef.current = e.nativeEvent.layout.y;
-                    }}
-                  >
+                  <View style={[styles.sectionsGrid, { marginTop: 8 }]}>
                     {section1.map((t) => (
-                      <View
-                        key={t.id}
-                        style={styles.tileMeasureWrap}
-                        onLayout={(e) => {
-                          tileYRef.current[t.id] =
-                            section1GridYRef.current + e.nativeEvent.layout.y;
-                        }}
-                      >
-                        <HubTile
-                          testID={`hub-tile-${t.id}`}
-                          highlighted={highlightedTileId === t.id}
-                        >
-                          {t.node}
-                        </HubTile>
-                      </View>
+                      <HubTile key={t.id} testID={`hub-tile-${t.id}`}>
+                        {t.node}
+                      </HubTile>
                     ))}
                   </View>
                 )}
@@ -1785,106 +1700,6 @@ export default function HubScreen() {
 
 type HubStyles = ReturnType<typeof makeStyles>;
 
-function TodayPlanInline({
-  childId,
-  childName,
-  ageMonths,
-  styles,
-  onGenerate,
-  onContinue,
-  showTodayPlanBadge,
-  showParentTasksBadge,
-}: {
-  showTodayPlanBadge?: boolean;
-  showParentTasksBadge?: boolean;
-  childId: number;
-  childName: string;
-  ageMonths: number;
-  styles: HubStyles;
-  onGenerate: () => void;
-  onContinue?: (tileId: string) => void;
-}) {
-  const router = useRouter();
-  const { t } = useTranslation();
-  const { tasks, todaysRoutine, isLoading, onToggle, taskIdToItemIndex } =
-    useTodayRoutine();
-
-  const onPressCard = useCallback(
-    (taskId: string) => {
-      if (!todaysRoutine) return;
-      const idx = taskIdToItemIndex(taskId);
-      const params: Record<string, string> = {};
-      if (idx != null) params.highlight = String(idx);
-      router.push({
-        pathname: "/routines/[id]",
-        params: { id: String(todaysRoutine.id), ...params },
-      });
-    },
-    [todaysRoutine, taskIdToItemIndex, router],
-  );
-
-  const onContinueTask = useCallback(
-    (taskId: string) => {
-      if (!onContinue) return;
-      const task = tasks.find((task) => task.id === taskId);
-      if (task?.relatedTileId) onContinue(task.relatedTileId);
-    },
-    [tasks, onContinue],
-  );
-
-  const heading = t("parent_hub.sections_meta.today.heading");
-  const description = t("parent_hub.sections_meta.today.description");
-
-  return (
-    <View>
-      <View style={styles.bandSectionHeader}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <Text style={styles.bandSectionTitle}>{heading}</Text>
-          {showTodayPlanBadge ? <TryFreeBadge /> : null}
-        </View>
-        <Text style={styles.bandSectionSub}>
-          {childName ? `${childName} · ${description}` : description}
-        </Text>
-      </View>
-
-      {isLoading ? (
-        <View style={{ paddingVertical: 32, alignItems: "center" }}>
-          <ActivityIndicator color={ACCENT_PINK} />
-        </View>
-      ) : tasks.length > 0 ? (
-        <RoutineCarousel
-          tasks={tasks}
-          onToggle={onToggle}
-          onPressCard={onPressCard}
-          onContinue={onContinue ? onContinueTask : undefined}
-        />
-      ) : (
-        <View style={styles.emptyCard}>
-          <MaterialCommunityIcons name="calendar-outline" size={40} color={ACCENT_PINK} />
-          <Text style={styles.emptyTitle}>{t("parent_hub.shell.today_empty.title")}</Text>
-          <Text style={styles.emptyDesc}>{t("parent_hub.shell.today_empty.desc")}</Text>
-          <Pressable onPress={onGenerate} style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnText}>{t("parent_hub.shell.today_empty.cta")}</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {showParentTasksBadge ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
-          <TryFreeBadge />
-        </View>
-      ) : null}
-      <ParentTasks childId={childId} ageMonths={ageMonths} childName={childName} />
-
-      {tasks.length > 0 && (
-        <Pressable onPress={onGenerate} style={styles.bottomCta}>
-          <Ionicons name="calendar" size={16} color={ACCENT_PINK} />
-          <Text style={styles.bottomCtaText}>{t("parent_hub.shell.today_regen")}</Text>
-        </Pressable>
-      )}
-    </View>
-  );
-}
 
 function ExploreNextStageBlock({
   childName,
@@ -2090,9 +1905,6 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
   return StyleSheet.create({
     headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     sectionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, alignItems: "flex-start" },
-    // Wrapper around each tile so we can capture its y-offset via onLayout
-    // for the Today's Plan quick-jump scroll-into-view (Task #191). Width // audit-ok: task ref, not a hex color
-    // mirrors the single-column 100% layout used by the bucket tiles.
     tileMeasureWrap: { width: "100%" },
     tileBadgeOverlay: { position: "absolute", top: 12, right: 12, zIndex: 10 },
     logo: { width: 40, height: 40, borderRadius: 10 },
@@ -2132,12 +1944,12 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       letterSpacing: 0.9, textTransform: "uppercase",
     },
     childSelectorRow: {
-      flexDirection: "row", gap: 10,
-      paddingHorizontal: 12, paddingBottom: 12, paddingTop: 2,
+      flexDirection: "row", gap: 8,
+      paddingHorizontal: 10, paddingBottom: 8, paddingTop: 2,
     },
     childCard: {
-      minWidth: 84, alignItems: "center", gap: 5,
-      paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14,
+      minWidth: 62, alignItems: "center", gap: 3,
+      paddingHorizontal: 8, paddingVertical: 7, borderRadius: 12,
       backgroundColor: isLight ? "rgba(255,255,255,0.50)" : "rgba(255,255,255,0.03)",
       borderWidth: 2, borderColor: glassBorder,
       position: "relative",
@@ -2153,7 +1965,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     },
     childCardCheck: { position: "absolute", top: 5, right: 5 },
     childAvatar: {
-      width: 48, height: 48, borderRadius: 24,
+      width: 36, height: 36, borderRadius: 18,
       alignItems: "center", justifyContent: "center",
     },
     childAvatarSel: {
@@ -2162,7 +1974,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       shadowRadius: 8,
       shadowOffset: { width: 0, height: 3 },
     },
-    childAvatarText: { color: "#fff", fontWeight: "800", fontSize: 16, letterSpacing: -0.3 },
+    childAvatarText: { color: "#fff", fontWeight: "800", fontSize: 13, letterSpacing: -0.3 },
     childCardInfo: { alignItems: "center", gap: 1 },
     childCardName: { color: c.foreground, fontWeight: "700", fontSize: 12, textAlign: "center" },
     childCardNameSel: { color: brand.primary },

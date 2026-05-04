@@ -332,6 +332,7 @@ export default function NotificationSettingsPage() {
                 <Smartphone className="w-5 h-5 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
+                {/* i18n-ok: push test feature label — debug/settings tool, intentionally untranslated */}
                 <div className="font-semibold text-white">Test Push Notification</div>
                 <div className="text-sm text-muted-foreground mt-1">
                   Send a test notification to all your registered devices right now. Bypasses quiet hours, daily limits, and category settings so you can always verify delivery.
