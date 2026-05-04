@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   AGE_GROUPS, NUTRIENTS, MEAL_PLANS, FAMILY_PORTIONS,
   MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient,
@@ -19,7 +18,6 @@ import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = "nutrients" | "meals" | "family" | "score";
-type Lang = "en";
 
 // ─── Language helper ─────────────────────────────────────────────────────────
 function l(en: string): string {
@@ -50,13 +48,12 @@ function scoreLabel(s: number) {
 
 // ─── NutrientDetailDialog ────────────────────────────────────────────────────
 function NutrientDetailDialog({
-  nutrient, ageGroupId, open, onClose, lang,
+  nutrient, ageGroupId, open, onClose,
 }: {
   nutrient: Nutrient | null;
   ageGroupId: AgeGroupId;
   open: boolean;
   onClose: () => void;
-  lang: Lang;
 }) {
   if (!nutrient) return null;
   const need = nutrient.dailyNeeds[ageGroupId];
@@ -160,11 +157,10 @@ function NutrientDetailDialog({
 }
 
 // ─── Nutrient Card ────────────────────────────────────────────────────────────
-function NutrientCard({ nutrient, ageGroupId, onClick, lang }: {
+function NutrientCard({ nutrient, ageGroupId, onClick }: {
   nutrient: Nutrient;
   ageGroupId: AgeGroupId;
   onClick: () => void;
-  lang: Lang;
 }) {
   const need = nutrient.dailyNeeds[ageGroupId];
   return (
@@ -194,7 +190,7 @@ function NutrientCard({ nutrient, ageGroupId, onClick, lang }: {
 }
 
 // ─── Meal Plan Section ────────────────────────────────────────────────────────
-function MealPlanSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; lang: Lang }) {
+function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
   const plan = MEAL_PLANS.find(p => p.applies.includes(ageGroupId));
   const [dayIdx, setDayIdx] = useState(0);
   const [isVeg, setIsVeg] = useState(true);
@@ -297,7 +293,7 @@ function MealPlanSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; lang: L
 }
 
 // ─── Family Mode ──────────────────────────────────────────────────────────────
-function FamilyModeSection({ lang }: { lang: Lang }) {
+function FamilyModeSection() {
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 rounded-xl bg-muted border border-border p-4">
@@ -356,7 +352,7 @@ function FamilyModeSection({ lang }: { lang: Lang }) {
 }
 
 // ─── Nutrition Score Section ──────────────────────────────────────────────────
-function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; lang: Lang }) {
+function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
   const ageGroup = AGE_GROUPS.find(a => a.id === ageGroupId)!;
 
   const [checkList, setCheckList] = useState<Record<string, boolean>>({});
@@ -470,9 +466,6 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NutritionHubPage() {
-  const { t } = useTranslation();
-  const lang: Lang = "en";
-
   const [activeAgeGroupId, setActiveAgeGroupId] = useState<AgeGroupId>("toddler_1_3");
   const [activeTab, setActiveTab] = useState<Tab>("nutrients");
   const [selectedNutrient, setSelectedNutrient] = useState<Nutrient | null>(null);
@@ -602,7 +595,6 @@ export default function NutritionHubPage() {
                       key={n.id}
                       nutrient={n}
                       ageGroupId={activeAgeGroupId}
-                      lang={lang}
                       onClick={() => { setSelectedNutrient(n); setDialogOpen(true); }}
                     />
                   ))}
@@ -621,7 +613,7 @@ export default function NutritionHubPage() {
                     {l("Age-appropriate Indian meals for every day of the week. Toggle Veg / Non-Veg.")}
                   </p>
                 </div>
-                <MealPlanSection ageGroupId={activeAgeGroupId} lang={lang} />
+                <MealPlanSection ageGroupId={activeAgeGroupId} />
               </div>
             )}
 
@@ -636,13 +628,13 @@ export default function NutritionHubPage() {
                     {l("Same Indian meal — different portions for each family member by age. Cook once, serve smart!")}
                   </p>
                 </div>
-                <FamilyModeSection lang={lang} />
+                <FamilyModeSection />
               </div>
             )}
 
             {/* Score */}
             {activeTab === "score" && (
-              <NutritionScoreSection ageGroupId={activeAgeGroupId} lang={lang} />
+              <NutritionScoreSection ageGroupId={activeAgeGroupId} />
             )}
           </CardContent>
         </Card>
@@ -703,7 +695,6 @@ export default function NutritionHubPage() {
       <NutrientDetailDialog
         nutrient={selectedNutrient}
         ageGroupId={activeAgeGroupId}
-        lang={lang}
         open={dialogOpen}
         onClose={() => { setDialogOpen(false); setSelectedNutrient(null); }}
       />
