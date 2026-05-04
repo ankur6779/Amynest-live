@@ -35,14 +35,21 @@ function firebaseSwPlugin() {
         process.env.VITE_FIREBASE_API_KEY ??
         process.env.FIREBASE_API_KEY ??
         "";
-      const authDomain =
-        process.env.VITE_FIREBASE_AUTH_DOMAIN ??
-        process.env.FIREBASE_AUTH_DOMAIN ??
-        "";
       const projectId =
         process.env.VITE_FIREBASE_PROJECT_ID ??
         process.env.FIREBASE_PROJECT_ID ??
         "";
+      const rawAuthDomain =
+        process.env.VITE_FIREBASE_AUTH_DOMAIN ??
+        process.env.FIREBASE_AUTH_DOMAIN ??
+        "";
+      // Mirror the same fallback used in src/lib/firebase.ts: if the env var
+      // doesn't look like a domain (e.g. an appId was mistakenly set there),
+      // fall back to the standard Firebase auth domain for the project.
+      const authDomain =
+        rawAuthDomain && rawAuthDomain.includes(".")
+          ? rawAuthDomain
+          : `${projectId}.firebaseapp.com`;
       const appId =
         process.env.VITE_FIREBASE_APP_ID ?? process.env.FIREBASE_APP_ID ?? "";
       const messagingSenderId =
