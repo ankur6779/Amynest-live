@@ -21,8 +21,6 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LifeSkillsZone } from "@/components/LifeSkillsZone";
 import InfantHub from "@/components/InfantHub";
-import InfantSleepHelpers from "@/components/infant/InfantSleepHelpers";
-import InfantFeedingReference from "@/components/infant/InfantFeedingReference";
 import { ParentingArticles } from "@/components/ParentingArticles";
 import { ArtCraftReels } from "@/components/ArtCraftReels";
 import { PrintableWorksheets } from "@/components/PrintableWorksheets";
@@ -300,20 +298,10 @@ export default function HubScreen() {
     debugFeaturedIds.push("tomorrow-forecast");
   }
 
-  // Build the featured-tile nodes (rendered inside the Recommended Zones
-  // page). They are NOT part of the partitioned grid because they are
-  // singletons (one Command Center, one InfantHub, one FuturePredictor)
-  // and live above the grid in the same page.
-  // Infant Hub featured card — shown ONLY when the SELECTED child is < 24 months.
-  // Previously had a fallback that found any infant child in the family; that
-  // caused 2+ year old children to see infant content. Now we strictly gate on
-  // the currently selected child's age, matching web behaviour.
-  const renderInfantHub = (): React.ReactNode => {
-    if (!effective) return null;
-    const selMonths = effective.age * 12 + (effective.ageMonths ?? 0);
-    if (!isInfantHubAge(selMonths)) return null;
-    return <InfantHub childId={effective.id} childName={effective.name} ageMonths={selMonths} />;
-  };
+  // Featured-tile nodes (rendered inside the Recommended Zones page).
+  // Command Center and FuturePredictor are singletons rendered above the grid.
+  // InfantHub content now lives inside the "Baby Parenting Guide" Activities tile
+  // (infant-parenting, band 0 only) so there is no separate featured card.
 
   return (
     <LinearGradient colors={theme.gradient} style={{ flex: 1 }}>
@@ -1155,25 +1143,11 @@ export default function HubScreen() {
                 onOpen={() => hubUsage.markFeatureUsed("hub_infant_parenting")}
                 tryFree={tryFreeFor("hub_infant_parenting")}
               >
-                <Text style={styles.sectionLead}>{t("parent_hub.tiles.infant-parenting.lead")}</Text>
-
-                {/* Sleep Helpers */}
-                <View style={{ marginTop: 10 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                    <Text style={{ fontSize: 16 }}>🛏</Text>
-                    <Text style={{ color: brand.violet200, fontWeight: "800", fontSize: 13 }}>{t("parent_hub.tiles.infant-parenting.sleep_title")}</Text>
-                  </View>
-                  <InfantSleepHelpers ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)} />
-                </View>
-
-                {/* Feeding Reference */}
-                <View style={{ marginTop: 14 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                    <Text style={{ fontSize: 16 }}>🍼</Text>
-                    <Text style={{ color: brand.violet200, fontWeight: "800", fontSize: 13 }}>{t("parent_hub.tiles.infant-parenting.feeding_title")}</Text>
-                  </View>
-                  <InfantFeedingReference ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)} />
-                </View>
+                <InfantHub
+                  childId={effective.id}
+                  childName={effective.name}
+                  ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
+                />
               </Section>
               </LockedBlock>
               </View>
@@ -1646,18 +1620,6 @@ export default function HubScreen() {
                       </View>
                     ) : null}
                   </View>
-                  {renderInfantHub() !== null && (
-                    <View style={{ position: "relative" }}>
-                      <HubTile featured testID="hub-tile-infant-hub">
-                        {renderInfantHub()}
-                      </HubTile>
-                      {tryFreeFor("hub_infant_hub") ? (
-                        <View style={styles.tileBadgeOverlay} pointerEvents="none">
-                          <TryFreeBadge />
-                        </View>
-                      ) : null}
-                    </View>
-                  )}
                   <View style={{ position: "relative" }}>
                     <HubTile featured testID="hub-tile-tomorrow-forecast">
                       <FuturePredictor childId={effective.id} />
