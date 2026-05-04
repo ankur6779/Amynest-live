@@ -122,8 +122,8 @@
     "facts_sub": "Surprising things about your child's mind"
   },
   "ai": {
-    "ask_amy": "Ask Amy AI",
-    "welcome_msg": "Hi! I'm Amy 💜 your AI parenting coach. Ask me anything — sleep, tantrums, picky eating, school worries. I'm here.",
+    "ask_amy": "Amy Teacher",
+    "welcome_msg": "Hi! I'm Amy 💜 your AI teaching coach. Ask me anything — homework help, study tips, reading, math struggles, school motivation. I'm here.",
     "type_message": "Type a message…",
     "send": "Send",
     "quota_remaining": "{{remaining}} of {{limit}} free Amy AI messages remaining",
@@ -1987,50 +1987,50 @@
       "cta_activities": "Go to Activities"
     },
     "amy": {
-      "title": "Ask Amy AI",
-      "desc": "Warm, practical parenting advice — instantly",
-      "lead": "Tap a topic and Amy will give you warm, practical parenting advice — instantly.",
-      "lead_short": "Tap a topic and Amy will reply.",
-      "ask_anything": "Ask Amy anything",
+      "title": "Amy Teacher",
+      "desc": "Smart learning tips & study help — instantly",
+      "lead": "Tap a topic and Amy will give you practical teaching tips and learning strategies — instantly.",
+      "lead_short": "Tap a topic and Amy Teacher will reply.",
+      "ask_anything": "Ask Amy Teacher anything",
       "prompts": {
         "sleep": {
-          "label": "Sleep problems",
-          "prompt": "My child is having trouble sleeping. What should I do?"
+          "label": "Homework help",
+          "prompt": "My child struggles with homework and resists sitting down to study. What are the best ways to help them study effectively without fights?"
         },
         "tantrums": {
-          "label": "Tantrums",
-          "prompt": "My child is having frequent tantrums. How should I handle this?"
+          "label": "Focus & attention",
+          "prompt": "My child can't concentrate while studying and gets easily distracted. What strategies can help improve their focus and attention span?"
         },
         "picky_eating": {
-          "label": "Picky eating",
-          "prompt": "My child is a picky eater. What strategies can help?"
+          "label": "Reading skills",
+          "prompt": "How can I help my child improve their reading and comprehension skills at home? Any tips for making reading fun?"
         },
         "school_anxiety": {
-          "label": "School anxiety",
-          "prompt": "My child is anxious about going to school. How can I help?"
+          "label": "Math struggles",
+          "prompt": "My child finds math very difficult and gets anxious about it. How can I make math more approachable and build their confidence?"
         },
         "screen_time": {
-          "label": "Screen time",
-          "prompt": "How much screen time is appropriate for my child's age?"
+          "label": "School motivation",
+          "prompt": "My child has lost interest in school and studying. How can I reignite their motivation and make learning exciting again?"
         },
         "language": {
-          "label": "Language",
-          "prompt": "How can I support my child's language and speech development?"
+          "label": "Exam preparation",
+          "prompt": "How should I help my child prepare for upcoming exams in a structured way without causing too much stress or anxiety?"
         },
         "picky": {
-          "label": "Picky eating",
-          "prompt": "My child is a picky eater. What strategies can help?"
+          "label": "Reading skills",
+          "prompt": "How can I help my child improve their reading and comprehension skills at home? Any tips for making reading fun?"
         },
         "school": {
-          "label": "School anxiety",
-          "prompt": "My child is anxious about going to school. How can I help?"
+          "label": "Math struggles",
+          "prompt": "My child finds math very difficult and gets anxious about it. How can I make math more approachable and build their confidence?"
         },
         "screen": {
-          "label": "Screen time",
-          "prompt": "How much screen time is appropriate for my child's age?"
+          "label": "School motivation",
+          "prompt": "My child has lost interest in school and studying. How can I reignite their motivation and make learning exciting again?"
         }
       },
-      "cta": "Ask Amy anything"
+      "cta": "Ask Amy Teacher anything"
     },
     "emotional": {
       "title": "Emotional Support",
@@ -2061,6 +2061,7 @@
     "predictor": {
       "loading": "Amy is thinking about tomorrow…",
       "title": "Amy AI · Tomorrow's Forecast",
+      "tap_to_view": "Tap to view tomorrow's insights",
       "family_forecast": "Family forecast",
       "for_child": "For {{name}}",
       "refresh_aria": "Refresh prediction",

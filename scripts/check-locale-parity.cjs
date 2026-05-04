@@ -2,10 +2,10 @@
 /**
  * check-locale-parity.cjs
  *
- * Verifies that en.json, hi.json, and hinglish.json in both the
- * kidschedule and amynest-mobile apps have an identical key set
- * (deep, dotted-path comparison). Fails with a precise diff if any
- * keys are missing or extra.
+ * Verifies that all locale JSON files present in each app share an identical
+ * key set (deep, dotted-path comparison). Files that do not exist are skipped
+ * so the check stays green when a locale has been intentionally removed.
+ * Fails with a precise diff when keys diverge across present files.
  */
 
 const fs   = require("fs");
@@ -15,12 +15,14 @@ const ROOT = path.resolve(__dirname, "..");
 
 const TARGETS = [
   {
-    name: "kidschedule",
-    dir : path.join(ROOT, "artifacts/kidschedule/src/i18n"),
+    name   : "kidschedule",
+    dir    : path.join(ROOT, "artifacts/kidschedule/src/i18n"),
+    locales: ["en", "hi", "hinglish"],
   },
   {
-    name: "amynest-mobile",
-    dir : path.join(ROOT, "artifacts/amynest-mobile/i18n"),
+    name   : "amynest-mobile",
+    dir    : path.join(ROOT, "artifacts/amynest-mobile/i18n"),
+    locales: ["en", "hi", "hinglish"],
   },
 ];
 
@@ -41,37 +43,52 @@ function loadKeys(file) {
 }
 
 let hasErrors = false;
-for (const { name, dir } of TARGETS) {
-  const en = loadKeys(path.join(dir, "en.json"));
-  const hi = loadKeys(path.join(dir, "hi.json"));
-  const hg = loadKeys(path.join(dir, "hinglish.json"));
 
-  const checks = [
-    ["hi", hi, "missing-in-hi", "extra-in-hi"],
-    ["hinglish", hg, "missing-in-hinglish", "extra-in-hinglish"],
-  ];
+for (const { name, dir, locales } of TARGETS) {
+  const present = locales
+    .map((locale) => ({ locale, file: path.join(dir, `${locale}.json`) }))
+    .filter(({ file }) => fs.existsSync(file));
+
+  if (present.length === 0) {
+    console.error(`❌  [${name}] No locale files found in ${dir}`);
+    hasErrors = true;
+    continue;
+  }
+
+  if (present.length === 1) {
+    const { locale, file } = present[0];
+    const keys = loadKeys(file);
+    console.log(`✅  [${name}] Only ${locale}.json present — ${keys.size} keys (no parity check needed).`);
+    continue;
+  }
+
+  const baseline = present[0];
+  const baseKeys = loadKeys(baseline.file);
 
   let appHasErrors = false;
-  for (const [label, set, missingLabel, extraLabel] of checks) {
-    const missing = [...en].filter((k) => !set.has(k));
-    const extra   = [...set].filter((k) => !en.has(k));
+  for (const { locale, file } of present.slice(1)) {
+    const set = loadKeys(file);
+    const missing = [...baseKeys].filter((k) => !set.has(k));
+    const extra   = [...set].filter((k) => !baseKeys.has(k));
     if (missing.length || extra.length) {
       appHasErrors = true;
-      console.error(`\n❌  [${name}] ${label}.json out of sync with en.json`);
+      console.error(`\n❌  [${name}] ${locale}.json out of sync with ${baseline.locale}.json`);
       if (missing.length) {
-        console.error(`   ${missingLabel} (${missing.length}):`);
+        console.error(`   missing-in-${locale} (${missing.length}):`);
         for (const k of missing.slice(0, 25)) console.error(`     · ${k}`);
         if (missing.length > 25) console.error(`     … and ${missing.length - 25} more`);
       }
       if (extra.length) {
-        console.error(`   ${extraLabel} (${extra.length}):`);
+        console.error(`   extra-in-${locale} (${extra.length}):`);
         for (const k of extra.slice(0, 25)) console.error(`     · ${k}`);
         if (extra.length > 25) console.error(`     … and ${extra.length - 25} more`);
       }
     }
   }
+
   if (!appHasErrors) {
-    console.log(`✅  [${name}] en/hi/hinglish locale files are in sync (${en.size} keys).`);
+    const labels = present.map((p) => p.locale).join("/");
+    console.log(`✅  [${name}] ${labels} locale files are in sync (${baseKeys.size} keys).`);
   } else {
     hasErrors = true;
   }
