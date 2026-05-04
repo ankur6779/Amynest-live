@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, Monitor, CheckCircle2, XCircle, Loader2, HelpCircle, Send, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getNativePushBridge } from "@/lib/native-push-bridge";
 type Prefs = {
   routineEnabled: boolean;
   routineItemEnabled: boolean;
@@ -74,15 +75,39 @@ const CATEGORIES: CategoryDef[] = [{
   testCategory: "good_night"
 }];
 function WebPushCard() {
-  const {
-    t
-  } = useTranslation();
-  const {
-    status,
-    enable,
-    disable,
-    refreshRegistration,
-  } = useWebPush();
+  const { t } = useTranslation();
+  const { status, enable, disable } = useWebPush();
+
+  // In the native AmyNest app (TWA/WebView) the OS-level FCM push is
+  // managed by the native bridge — web push APIs are not available.
+  // Show a "managed by app" status card instead of the browser push UI.
+  const native = getNativePushBridge();
+  if (native) {
+    const nativePerm = native.getPermissionStatus();
+    const nativeGranted = nativePerm === "granted";
+    const nativeDenied = nativePerm === "denied";
+    const NativeIcon = nativeGranted ? CheckCircle2 : nativeDenied ? XCircle : Bell;
+    const nativeColor = nativeGranted ? "text-primary" : nativeDenied ? "text-destructive" : "text-muted-foreground";
+    return (
+      <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
+        <CardContent className="flex items-start gap-4 p-4">
+          <div className="w-10 h-10 rounded-lg bg-primary border border-border flex items-center justify-center shrink-0">
+            <NativeIcon className={`w-5 h-5 ${nativeColor}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-white">App Notifications</div>
+            <div className="text-sm text-muted-foreground mt-1">
+              Notifications are managed directly by the AmyNest app via Firebase.
+            </div>
+            <div className="text-xs mt-1 font-medium" style={{ color: nativeGranted ? "hsl(var(--brand-green-500))" : nativeDenied ? "hsl(var(--brand-red-500))" : "hsl(var(--muted-foreground))" }}>
+              {nativeGranted ? "Active — notifications enabled" : nativeDenied ? "Blocked — enable in Phone Settings → Apps → KidSchedule → Notifications" : "Not yet enabled — open the app to allow notifications"}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const isIos = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const label = status === "granted" ? "Enabled" : status === "denied" ? "Blocked in browser" : status === "unsupported" ? (isIos ? "Not supported on iOS Safari" : "Not supported in this browser") : status === "requesting" ? "Requesting permission…" : status === "error" ? "Setup failed — try again" : "Not enabled";
   const Icon = status === "granted" ? CheckCircle2 : status === "denied" || status === "error" ? XCircle : status === "requesting" ? Loader2 : Monitor;
