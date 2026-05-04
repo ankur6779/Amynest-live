@@ -33,6 +33,15 @@ export interface DispatchInput {
    * Skip the daily cap check. Reserved for critical messages — none today.
    */
   bypassDailyCap?: boolean;
+  /**
+   * Skip the quiet-hours gate. For explicit user-initiated test sends only.
+   */
+  bypassQuietHours?: boolean;
+  /**
+   * Skip the per-category enablement check. For explicit user-initiated
+   * test sends so the delivery test always fires even if the category is off.
+   */
+  bypassCategoryCheck?: boolean;
 }
 
 export type DispatchStatus = "sent" | "throttled" | "failed" | "duplicate" | "no_tokens";
@@ -327,7 +336,7 @@ async function sendFcmAndroidPush(
 export async function dispatchNotification(input: DispatchInput): Promise<DispatchResult> {
   const prefs = await getOrCreatePreferences(input.userId);
 
-  if (!categoryEnabled(prefs, input.category)) {
+  if (!input.bypassCategoryCheck && !categoryEnabled(prefs, input.category)) {
     await logEvent(input, "throttled", "category_disabled");
     return { status: "throttled", reason: "category_disabled" };
   }
@@ -372,7 +381,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     }
   }
 
-  if (inQuietHours(prefs)) {
+  if (!input.bypassQuietHours && inQuietHours(prefs)) {
     await logEvent(input, "throttled", "quiet_hours");
     return { status: "throttled", reason: "quiet_hours" };
   }

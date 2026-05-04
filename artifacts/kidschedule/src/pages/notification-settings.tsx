@@ -7,7 +7,7 @@ import { useWebPush } from "@/hooks/use-web-push";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, Monitor, CheckCircle2, XCircle, Loader2, HelpCircle } from "lucide-react";
+import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, Monitor, CheckCircle2, XCircle, Loader2, HelpCircle, Send, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 type Prefs = {
   routineEnabled: boolean;
@@ -202,6 +202,47 @@ export default function NotificationSettingsPage() {
       return r.json();
     }
   });
+  const testDelivery = useMutation({
+    mutationFn: async () => {
+      const r = await authFetch("/api/notifications/test", {
+        method: "POST",
+        body: JSON.stringify({ category: "insights" }),
+      });
+      if (!r.ok) throw new Error(`Server error ${r.status}`);
+      return (await r.json()) as { status?: string; reason?: string };
+    },
+    onSuccess: (result) => {
+      const status = result.status ?? "unknown";
+      if (status === "sent") {
+        toast({
+          title: "Test notification sent!",
+          description:
+            "Check your Android system tray — it should appear within a few seconds.",
+        });
+      } else if (status === "no_tokens") {
+        toast({
+          title: "No device registered",
+          description:
+            "Open KidSchedule on your Android phone first, then try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Not sent",
+          description: `${status}${result.reason ? ` — ${result.reason}` : ""}`,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (err: Error) => {
+      return toast({
+        title: "Could not send test",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const test = useMutation({
     mutationFn: async (category: CategoryDef["testCategory"]) => {
       const r = await authFetch("/api/notifications/test", {
@@ -279,6 +320,45 @@ export default function NotificationSettingsPage() {
         </h2>
         <div className="mb-6">
           <WebPushCard />
+        </div>
+
+        <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
+          Test Delivery
+        </h2>
+        <div className="mb-6">
+          <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
+            <CardContent className="flex items-start gap-4 p-4">
+              <div className="w-10 h-10 rounded-lg bg-primary border border-border flex items-center justify-center shrink-0">
+                <Smartphone className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-white">Test Push Notification</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Send a test notification to all your registered devices right now. Bypasses quiet hours, daily limits, and category settings so you can always verify delivery.
+                  Check your Android system tray to confirm it arrived.
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-3 gap-2 bg-primary hover:bg-primary/80 text-white border border-border"
+                  onClick={() => testDelivery.mutate()}
+                  disabled={testDelivery.isPending}
+                >
+                  {testDelivery.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Sending…
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Send Test Now
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
