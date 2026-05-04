@@ -72,6 +72,10 @@ args = "test-mobile-tts-buttons"
 task = "workflow.run"
 args = "test-mobile-full"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "codegen-sync"
+
 [[workflows.workflow]]
 name = "test-routine-meals"
 author = "agent"
@@ -222,6 +226,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "pnpm --filter @workspace/amynest-mobile test"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "codegen-sync"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm run typecheck:libs"
 
 [workflows.workflow.metadata]
 isValidation = true
