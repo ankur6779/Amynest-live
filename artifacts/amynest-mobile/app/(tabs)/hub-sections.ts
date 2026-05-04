@@ -196,15 +196,18 @@ export function tileIdToSection(
   return TILE_SECTION_MAP[tileId] ?? null;
 }
 
-/** Friendly label for a section's quick-jump CTA ("Open in Modules" etc.).
+/** Friendly label for a section's quick-jump CTA ("Go to Learn" etc.).
+ *  Wording is intentionally short and scroll-friendly — the single-scroll hub
+ *  keeps all tiles visible so "Open in …" (which implied a tab-jump) no longer
+ *  makes sense. "Go to …" tells parents they will scroll to the tile.
  *  ⚠ English-only fallback — prefer `useSectionCtaLabel` inside React.
  *  Kept as a pure function so non-React callers (tests, helpers) still work. */
 export function sectionCtaLabel(
   section: Exclude<SectionKey, "today">,
 ): string {
-  if (section === "modules") return "Open in Modules";
-  if (section === "activities") return "Open in Activities";
-  return "Open in Zones";
+  if (section === "modules") return "Go to Learn";
+  if (section === "activities") return "Go to Activities";
+  return "Go to Zones";
 }
 
 /**

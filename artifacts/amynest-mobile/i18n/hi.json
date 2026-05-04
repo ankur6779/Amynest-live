@@ -1984,9 +1984,9 @@
         "heading": "गतिविधियाँ",
         "description": "खेल, लाइफ़ स्किल्स और खाना — सब एक जगह"
       },
-      "cta_zones": "ज़ोन में खोलें",
-      "cta_modules": "मॉड्यूल में खोलें",
-      "cta_activities": "गतिविधियों में खोलें"
+      "cta_zones": "Zones पर जाएं",
+      "cta_modules": "Learn पर जाएं",
+      "cta_activities": "Activities पर जाएं"
     },
     "amy": {
       "title": "Amy AI से पूछें",
