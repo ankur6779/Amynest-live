@@ -664,8 +664,8 @@ describe("tileIdToSection", () => {
 
 describe("sectionCtaLabel", () => {
   it("returns user-facing labels for each grid section", () => {
-    expect(sectionCtaLabel("modules")).toBe("Open in Modules");
-    expect(sectionCtaLabel("activities")).toBe("Open in Activities");
-    expect(sectionCtaLabel("zones")).toBe("Open in Zones");
+    expect(sectionCtaLabel("modules")).toBe("Go to Learn");
+    expect(sectionCtaLabel("activities")).toBe("Go to Activities");
+    expect(sectionCtaLabel("zones")).toBe("Go to Zones");
   });
 });

@@ -1984,9 +1984,9 @@
         "heading": "Activities",
         "description": "Hands-on play, life skills & food"
       },
-      "cta_zones": "Open in Zones",
-      "cta_modules": "Open in Modules",
-      "cta_activities": "Open in Activities"
+      "cta_zones": "Go to Zones",
+      "cta_modules": "Go to Learn",
+      "cta_activities": "Go to Activities"
     },
     "amy": {
       "title": "Ask Amy AI",
