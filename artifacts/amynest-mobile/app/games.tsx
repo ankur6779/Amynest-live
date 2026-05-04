@@ -397,6 +397,475 @@ function OddOneOutGame({ onFinish }: { onFinish: (s: number, t: number) => void 
   );
 }
 
+// ─── Card Flip Match ────────────────────────────────────────────────
+const CF_EMOJIS = ["🦊","🐬","🌈","🍕","🚀","🎸","🦋","🍓","🐙","🏆","⚡","🎭"];
+function buildCardFlipBoard() {
+  const pairs = CF_EMOJIS.slice(0, 6);
+  return [...pairs, ...pairs].map((e, i) => ({ id: i, emoji: e, flipped: false, matched: false }))
+    .sort(() => Math.random() - 0.5);
+}
+type CFCard = { id: number; emoji: string; flipped: boolean; matched: boolean };
+function CardFlipGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
+  const [cards, setCards] = useState<CFCard[]>(() => buildCardFlipBoard());
+  const [selected, setSelected] = useState<number[]>([]);
+  const [matches, setMatches] = useState(0);
+  const [moves, setMoves] = useState(0);
+  const lockRef = useRef(false);
+  const TOTAL_PAIRS = 6;
+
+  const onTap = (idx: number) => {
+    if (lockRef.current || cards[idx]!.flipped || cards[idx]!.matched) return;
+    const next = cards.map((c, i) => i === idx ? { ...c, flipped: true } : c);
+    const newSel = [...selected, idx];
+    setCards(next);
+    setSelected(newSel);
+    if (newSel.length === 2) {
+      lockRef.current = true;
+      setMoves(m => m + 1);
+      const [a, b] = newSel;
+      const match = next[a!]!.emoji === next[b!]!.emoji;
+      setTimeout(() => {
+        setCards(c => c.map((card, i) => {
+          if (i === a || i === b) return match ? { ...card, matched: true, flipped: true } : { ...card, flipped: false };
+          return card;
+        }));
+        const newMatches = match ? matches + 1 : matches;
+        setMatches(newMatches);
+        setSelected([]);
+        lockRef.current = false;
+        if (match && newMatches >= TOTAL_PAIRS) {
+          const score = Math.max(1, TOTAL_PAIRS - Math.max(0, moves + 1 - TOTAL_PAIRS));
+          onFinish(score, TOTAL_PAIRS);
+        }
+      }, 800);
+    }
+  };
+
+  const CELL = (SW - 60) / 4 - 6;
+  return (
+    <View style={gs.gameWrap}>
+      <Text style={gs.gameMeta}>{t("screens.games.cf_hint", { matches, total: TOTAL_PAIRS, moves: moves })}</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center", marginVertical: 10 }}>
+        {cards.map((c, i) => (
+          <TouchableOpacity key={c.id} onPress={() => onTap(i)} activeOpacity={0.85}
+            style={[{ width: CELL, height: CELL, borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+              c.matched ? { backgroundColor: "rgba(34,197,94,0.25)", borderColor: palette.green500 }
+                : c.flipped ? { backgroundColor: "rgba(167,139,250,0.25)", borderColor: brand.violet300 }
+                : { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(139,92,246,0.35)" }]}>
+            <Text style={{ fontSize: c.flipped || c.matched ? CELL * 0.45 : 22 }}>{c.flipped || c.matched ? c.emoji : "❓"}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score: matches })}</Text>
+    </View>
+  );
+}
+
+// ─── Sequence Memory ────────────────────────────────────────────────
+const SM_PADS = [
+  { id: "r", color: "#ef4444" },   // audit-ok: game accent red
+  { id: "g", color: "#22c55e" },   // audit-ok: game accent green
+  { id: "b", color: "#3b82f6" },   // audit-ok: game accent blue
+  { id: "y", color: "#eab308" },   // audit-ok: game accent yellow
+];
+function SequenceMemoryGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
+  const TOTAL = 5;
+  const [seq, setSeq] = useState<string[]>([]);
+  const [phase, setPhase] = useState<"show" | "input" | "result">("show");
+  const [showIdx, setShowIdx] = useState(-1);
+  const [inputSeq, setInputSeq] = useState<string[]>([]);
+  const [round, setRound] = useState(1);
+  const [score, setScore] = useState(0);
+  const [lit, setLit] = useState<string | null>(null);
+
+  const runShow = useCallback((sequence: string[]) => {
+    setPhase("show");
+    setShowIdx(-1);
+    let i = 0;
+    const iv = setInterval(() => {
+      if (i >= sequence.length) { clearInterval(iv); setPhase("input"); setShowIdx(-1); return; }
+      setShowIdx(i);
+      setLit(sequence[i]!);
+      setTimeout(() => setLit(null), 500);
+      i++;
+    }, 750);
+  }, []);
+
+  useEffect(() => {
+    const newSeq = Array.from({ length: round + 1 }, () => SM_PADS[Math.floor(Math.random() * 4)]!.id);
+    setSeq(newSeq);
+    setInputSeq([]);
+    setTimeout(() => runShow(newSeq), 500);
+  }, [round, runShow]);
+
+  const onPress = (id: string) => {
+    if (phase !== "input") return;
+    if (Platform.OS !== "web") Haptics.impactAsync();
+    const next = [...inputSeq, id];
+    setInputSeq(next);
+    const pos = next.length - 1;
+    if (seq[pos] !== id) {
+      setPhase("result");
+      if (round > TOTAL) onFinish(score, TOTAL);
+      else setTimeout(() => { setRound(r => r + 1); }, 1200);
+      return;
+    }
+    if (next.length === seq.length) {
+      const newScore = score + 1;
+      setScore(newScore);
+      setPhase("result");
+      if (round >= TOTAL) { onFinish(newScore, TOTAL); return; }
+      setTimeout(() => { setRound(r => r + 1); }, 1000);
+    }
+  };
+
+  const PAD = (SW - 80) / 2 - 6;
+  return (
+    <View style={gs.gameWrap}>
+      <Text style={gs.gameMeta}>{t("screens.games.sm_round", { round: Math.min(round, TOTAL), total: TOTAL })}</Text>
+      <Text style={[gs.cmHint, { marginVertical: 8 }]}>
+        {phase === "show" ? t("screens.games.sm_watch") : phase === "input" ? t("screens.games.sm_repeat") : ""}
+      </Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center", marginVertical: 8 }}>
+        {SM_PADS.map(p => (
+          <TouchableOpacity key={p.id} onPress={() => onPress(p.id)} disabled={phase !== "input"} activeOpacity={0.75}
+            style={{ width: PAD, height: PAD, borderRadius: 18, backgroundColor: p.color,
+              opacity: lit === p.id ? 1 : phase === "input" ? 0.75 : 0.35,
+              transform: [{ scale: lit === p.id ? 1.08 : 1 }],
+              shadowColor: lit === p.id ? p.color : "transparent", shadowOpacity: 0.9, shadowRadius: 16, elevation: lit === p.id ? 10 : 0 }} />
+        ))}
+      </View>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score })}</Text>
+    </View>
+  );
+}
+
+// ─── Maze Escape ────────────────────────────────────────────────────
+const MAZE_SIZE = 5;
+type MazeCell = 0 | 1; // 0=open, 1=wall
+function buildMaze(): MazeCell[][] {
+  const walls: MazeCell[][] = [
+    [0,1,0,0,0],
+    [0,1,0,1,0],
+    [0,0,0,1,0],
+    [1,1,0,0,0],
+    [0,0,0,1,0],
+  ];
+  return walls;
+}
+function MazeEscapeGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
+  const maze = useMemo(() => buildMaze(), []);
+  const [pos, setPos] = useState<[number, number]>([0, 0]);
+  const [moves, setMoves] = useState(0);
+  const [won, setWon] = useState(false);
+  const GOAL: [number, number] = [4, 4];
+  const CELL = Math.min(52, (SW - 80) / MAZE_SIZE);
+
+  const move = (dr: number, dc: number) => {
+    if (won) return;
+    const [r, c] = pos;
+    const nr = r + dr, nc = c + dc;
+    if (nr < 0 || nr >= MAZE_SIZE || nc < 0 || nc >= MAZE_SIZE) return;
+    if (maze[nr]![nc] === 1) { if (Platform.OS !== "web") Haptics.impactAsync(); return; }
+    setPos([nr, nc]);
+    setMoves(m => m + 1);
+    if (nr === GOAL[0] && nc === GOAL[1]) {
+      setWon(true);
+      const score = Math.max(1, 10 - Math.floor(moves / 3));
+      setTimeout(() => onFinish(score, 10), 800);
+    }
+  };
+
+  const DPAD_BTN_SIZE = 52;
+  return (
+    <View style={gs.gameWrap}>
+      <Text style={gs.gameMeta}>{t("screens.games.maze_hint")}</Text>
+      <View style={{ flexDirection: "column", gap: 2, marginVertical: 12, alignItems: "center" }}>
+        {maze.map((row, r) => (
+          <View key={r} style={{ flexDirection: "row", gap: 2 }}>
+            {row.map((cell, c) => {
+              const isPlayer = pos[0] === r && pos[1] === c;
+              const isGoal = GOAL[0] === r && GOAL[1] === c;
+              const bg = cell === 1 ? "rgba(139,92,246,0.55)"
+                : isPlayer ? palette.amber400
+                : isGoal ? palette.green500
+                : "rgba(255,255,255,0.05)";
+              return (
+                <View key={c} style={{ width: CELL, height: CELL, borderRadius: 6, backgroundColor: bg, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(139,92,246,0.3)" }}>
+                  {isPlayer && <Text style={{ fontSize: CELL * 0.55 }}>🔵</Text>}
+                  {isGoal && !isPlayer && <Text style={{ fontSize: CELL * 0.55 }}>🏁</Text>}
+                </View>
+              );
+            })}
+          </View>
+        ))}
+      </View>
+      <View style={{ gap: 6, alignItems: "center" }}>
+        <TouchableOpacity onPress={() => move(-1, 0)} style={{ width: DPAD_BTN_SIZE, height: DPAD_BTN_SIZE, borderRadius: 12, backgroundColor: "rgba(167,139,250,0.2)", alignItems: "center", justifyContent: "center" }}>
+          <Ionicons name="chevron-up" size={24} color={brand.violet300} />
+        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 6 }}>
+          <TouchableOpacity onPress={() => move(0, -1)} style={{ width: DPAD_BTN_SIZE, height: DPAD_BTN_SIZE, borderRadius: 12, backgroundColor: "rgba(167,139,250,0.2)", alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="chevron-back" size={24} color={brand.violet300} />
+          </TouchableOpacity>
+          <View style={{ width: DPAD_BTN_SIZE, height: DPAD_BTN_SIZE }} />
+          <TouchableOpacity onPress={() => move(0, 1)} style={{ width: DPAD_BTN_SIZE, height: DPAD_BTN_SIZE, borderRadius: 12, backgroundColor: "rgba(167,139,250,0.2)", alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="chevron-forward" size={24} color={brand.violet300} />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={() => move(1, 0)} style={{ width: DPAD_BTN_SIZE, height: DPAD_BTN_SIZE, borderRadius: 12, backgroundColor: "rgba(167,139,250,0.2)", alignItems: "center", justifyContent: "center" }}>
+          <Ionicons name="chevron-down" size={24} color={brand.violet300} />
+        </TouchableOpacity>
+      </View>
+      <Text style={gs.scoreLabel}>{t("screens.games.maze_moves", { moves })}</Text>
+    </View>
+  );
+}
+
+// ─── Shape Matching ────────────────────────────────────────────────
+const SHAPE_ITEMS = [
+  { emoji: "🔴", label: "Circle" }, { emoji: "🔷", label: "Diamond" },
+  { emoji: "⭐", label: "Star" },   { emoji: "🔺", label: "Triangle" },
+  { emoji: "⬛", label: "Square" }, { emoji: "🌙", label: "Crescent" },
+];
+function ShapeMatchingGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
+  const TOTAL = 6;
+  const order = useMemo(() => [...SHAPE_ITEMS].sort(() => Math.random() - 0.5), []);
+  const [idx, setIdx] = useState(0);
+  const [score, setScore] = useState(0);
+  const [picked, setPicked] = useState<string | null>(null);
+  const current = order[idx]!;
+  const shuffled = useMemo(
+    () => SHAPE_ITEMS.map(s => s.label).sort(() => Math.random() - 0.5),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [idx],
+  );
+
+  const onPick = (label: string) => {
+    if (picked !== null) return;
+    setPicked(label);
+    const ok = label === current.label;
+    const newScore = ok ? score + 1 : score;
+    if (ok) setScore(newScore);
+    if (Platform.OS !== "web") Haptics.impactAsync();
+    setTimeout(() => {
+      setPicked(null);
+      if (idx + 1 >= TOTAL) onFinish(newScore, TOTAL);
+      else setIdx(i => i + 1);
+    }, 900);
+  };
+
+  return (
+    <View style={gs.gameWrap}>
+      <Text style={gs.gameMeta}>{t("screens.games.sm_shape_q", { idx: idx + 1, total: TOTAL })}</Text>
+      <Text style={{ fontSize: 72, marginVertical: 16 }}>{current.emoji}</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+        {shuffled.map((lbl) => {
+          const isCorrect = lbl === current.label;
+          const isPicked = picked === lbl;
+          const bg = picked !== null
+            ? isCorrect ? "rgba(34,197,94,0.28)" : isPicked ? "rgba(239,68,68,0.22)" : "rgba(255,255,255,0.06)"
+            : "rgba(255,255,255,0.08)";
+          const border = picked !== null
+            ? isCorrect ? palette.green500 : isPicked ? palette.red500 : "rgba(139,92,246,0.35)"
+            : "rgba(139,92,246,0.35)";
+          return (
+            <TouchableOpacity key={lbl} onPress={() => onPick(lbl)} disabled={picked !== null} activeOpacity={0.8}
+              style={{ paddingHorizontal: 18, paddingVertical: 12, borderRadius: 12, backgroundColor: bg, borderWidth: 1, borderColor: border, minWidth: (SW - 80) / 2 - 10, alignItems: "center" }}>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>{lbl}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score })}</Text>
+    </View>
+  );
+}
+
+// ─── Color Fill ────────────────────────────────────────────────────
+const FILL_COLORS = [
+  { id: "r", color: "#ef4444" }, // audit-ok: game fill red
+  { id: "g", color: "#22c55e" }, // audit-ok: game fill green
+  { id: "b", color: "#3b82f6" }, // audit-ok: game fill blue
+  { id: "y", color: "#eab308" }, // audit-ok: game fill yellow
+  { id: "p", color: "#a855f7" }, // audit-ok: game fill purple
+];
+const FILL_TARGET: Record<number, string> = {
+  0:"r", 1:"b", 2:"g", 3:"r",
+  4:"g", 5:"y", 6:"r", 7:"b",
+  8:"b", 9:"r", 10:"g", 11:"y",
+  12:"y", 13:"g", 14:"b", 15:"r",
+};
+function ColorFillGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
+  const CELLS = 16;
+  const [grid, setGrid] = useState<(string | null)[]>(Array(CELLS).fill(null));
+  const [selected, setSelected] = useState("r");
+  const [filled, setFilled] = useState(0);
+  const CELL = (SW - 80) / 4 - 6;
+
+  const fillCell = (i: number) => {
+    if (grid[i] !== null) return;
+    const newGrid = [...grid]; newGrid[i] = selected;
+    setGrid(newGrid);
+    const newFilled = filled + 1;
+    setFilled(newFilled);
+    if (newFilled >= CELLS) {
+      const correct = newGrid.filter((c, i) => c === FILL_TARGET[i]).length;
+      setTimeout(() => onFinish(correct, CELLS), 500);
+    }
+  };
+
+  return (
+    <View style={gs.gameWrap}>
+      <Text style={gs.gameMeta}>{t("screens.games.cf_fill_hint")}</Text>
+      <View style={{ flexDirection: "row", gap: 10, marginVertical: 10 }}>
+        {FILL_COLORS.map(fc => (
+          <TouchableOpacity key={fc.id} onPress={() => setSelected(fc.id)} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: fc.color, borderWidth: selected === fc.id ? 3 : 1, borderColor: selected === fc.id ? "#fff" : "transparent" }} />
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5, justifyContent: "center" }}>
+        {grid.map((cell, i) => (
+          <TouchableOpacity key={i} onPress={() => fillCell(i)} disabled={cell !== null} activeOpacity={0.8}
+            style={{ width: CELL, height: CELL, borderRadius: 8, backgroundColor: cell ? FILL_COLORS.find(f => f.id === cell)?.color ?? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(139,92,246,0.3)" }} />
+        ))}
+      </View>
+      <Text style={gs.scoreLabel}>{t("screens.games.cf_progress", { done: filled, total: CELLS })}</Text>
+    </View>
+  );
+}
+
+// ─── Hidden Objects ────────────────────────────────────────────────
+const HO_POOL = ["🦁","🐧","🦊","🐬","🦋","🌺","🍎","🚀","⭐","🌙","🎸","🎭","🍕","🎯","🏆","🎪","🦄","🐝","🌈","🎠"];
+function buildHiddenBoard() {
+  const shuffled = [...HO_POOL].sort(() => Math.random() - 0.5).slice(0, 20);
+  const targets = shuffled.slice(0, 4);
+  return { items: shuffled, targets };
+}
+function HiddenObjectsGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
+  const { items, targets } = useMemo(() => buildHiddenBoard(), []);
+  const [found, setFound] = useState<Set<string>>(() => new Set());
+  const [tapped, setTapped] = useState<Set<number>>(() => new Set());
+
+  const onTap = (idx: number, emoji: string) => {
+    if (tapped.has(idx)) return;
+    setTapped(prev => { const n = new Set(prev); n.add(idx); return n; });
+    if (targets.includes(emoji) && !found.has(emoji)) {
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const newFound = new Set(found); newFound.add(emoji);
+      setFound(newFound);
+      if (newFound.size >= targets.length) {
+        setTimeout(() => onFinish(targets.length, targets.length), 600);
+      }
+    } else {
+      if (Platform.OS !== "web") Haptics.impactAsync();
+    }
+  };
+
+  const CELL = (SW - 60) / 5 - 6;
+  return (
+    <View style={gs.gameWrap}>
+      <Text style={gs.gameMeta}>{t("screens.games.ho_find")}</Text>
+      <View style={{ flexDirection: "row", gap: 10, marginVertical: 8, justifyContent: "center" }}>
+        {targets.map(e => (
+          <View key={e} style={{ alignItems: "center", gap: 2 }}>
+            <Text style={{ fontSize: 22, opacity: found.has(e) ? 0.35 : 1 }}>{e}</Text>
+            {found.has(e) && <Text style={{ fontSize: 10, color: palette.green500 }}>✓</Text>}
+          </View>
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5, justifyContent: "center", marginTop: 6 }}>
+        {items.map((emoji, i) => {
+          const isFound = tapped.has(i) && targets.includes(emoji);
+          const isMiss  = tapped.has(i) && !targets.includes(emoji);
+          return (
+            <TouchableOpacity key={i} onPress={() => onTap(i, emoji)} disabled={tapped.has(i)} activeOpacity={0.75}
+              style={{ width: CELL, height: CELL, borderRadius: 10, alignItems: "center", justifyContent: "center",
+                backgroundColor: isFound ? "rgba(34,197,94,0.22)" : isMiss ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)",
+                borderWidth: 1, borderColor: isFound ? palette.green500 : "rgba(139,92,246,0.3)" }}>
+              <Text style={{ fontSize: CELL * 0.48 }}>{emoji}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+      <Text style={gs.scoreLabel}>{t("screens.games.ho_score", { found: found.size, total: targets.length })}</Text>
+    </View>
+  );
+}
+
+// ─── Spot the Difference ────────────────────────────────────────────
+const STD_EMOJIS = ["🦁","🐧","🦊","🐬","🦋","🌺","🍎","🚀","⭐","🌙","🎸","🎭","🍕","🎯","🏆","🎪"];
+function buildSTDBoards() {
+  const base = [...STD_EMOJIS].sort(() => Math.random() - 0.5);
+  const modified = [...base];
+  const diffIndices = new Set<number>();
+  while (diffIndices.size < 3) diffIndices.add(Math.floor(Math.random() * 16));
+  const pool = STD_EMOJIS.filter(e => !base.includes(e));
+  let pi = 0;
+  diffIndices.forEach(i => { modified[i] = pool[pi % pool.length]!; pi++; });
+  return { board1: base, board2: modified, diffs: diffIndices };
+}
+function SpotTheDifferenceGame({ onFinish }: { onFinish: (s: number, t: number) => void }) {
+  const { t } = useTranslation();
+  const { board1, board2, diffs } = useMemo(() => buildSTDBoards(), []);
+  const [found, setFound] = useState<Set<number>>(() => new Set());
+  const [wrong, setWrong] = useState<Set<number>>(() => new Set());
+  const TOTAL = diffs.size;
+
+  const onTapB2 = (idx: number) => {
+    if (found.has(idx) || wrong.has(idx)) return;
+    if (diffs.has(idx)) {
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const nf = new Set(found); nf.add(idx); setFound(nf);
+      if (nf.size >= TOTAL) setTimeout(() => onFinish(TOTAL, TOTAL), 600);
+    } else {
+      if (Platform.OS !== "web") Haptics.impactAsync();
+      const nw = new Set(wrong); nw.add(idx); setWrong(nw);
+    }
+  };
+
+  const CELL = (SW - 76) / 2 / 4 - 4;
+  const renderGrid = (board: string[], tappable: boolean) => (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3, width: (CELL + 3) * 4 - 3 }}>
+      {board.map((emoji, i) => {
+        const isFoundHere = found.has(i);
+        const isWrong = tappable && wrong.has(i);
+        return (
+          <TouchableOpacity key={i} onPress={tappable ? () => onTapB2(i) : undefined}
+            disabled={!tappable || found.has(i) || wrong.has(i)} activeOpacity={0.8}
+            style={{ width: CELL, height: CELL, borderRadius: 6, alignItems: "center", justifyContent: "center",
+              backgroundColor: isFoundHere ? "rgba(34,197,94,0.25)" : isWrong ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.06)",
+              borderWidth: 1, borderColor: isFoundHere ? palette.green500 : isWrong ? palette.red500 : "rgba(139,92,246,0.25)" }}>
+            <Text style={{ fontSize: CELL * 0.52 }}>{emoji}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+
+  return (
+    <View style={gs.gameWrap}>
+      <Text style={gs.gameMeta}>{t("screens.games.std_hint", { found: found.size, total: TOTAL })}</Text>
+      <View style={{ flexDirection: "row", gap: 10, marginTop: 10, justifyContent: "center" }}>
+        <View style={{ alignItems: "center", gap: 4 }}>
+          <Text style={[gs.gameMeta, { fontWeight: "700" }]}>{t("screens.games.std_pic1")}</Text>
+          {renderGrid(board1, false)}
+        </View>
+        <View style={{ alignItems: "center", gap: 4 }}>
+          <Text style={[gs.gameMeta, { fontWeight: "700" }]}>{t("screens.games.std_pic2")}</Text>
+          {renderGrid(board2, true)}
+        </View>
+      </View>
+      <Text style={gs.scoreLabel}>{t("screens.games.score_label", { score: found.size })}</Text>
+    </View>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // GAME MODAL
 // ═══════════════════════════════════════════════════════════════════
@@ -431,15 +900,21 @@ function GameModal({ game, onClose, onResult }: { game: GameDef; onClose: () => 
           <ScrollView showsVerticalScrollIndicator={false}>
             {!done ? (
               <>
-                {game.id === "speed-math"        && <SpeedMathGame onFinish={finish} />}
-                {game.id === "number-match"       && <NumberMatchGame onFinish={finish} />}
-                {game.id === "find-mistake"       && <FindMistakeGame onFinish={finish} />}
-                {game.id === "color-memory"       && <ColorMemoryGame onFinish={finish} />}
-                {game.id === "target-tap"         && <TargetTapGame onFinish={finish} />}
-                {game.id === "what-should-you-do" && <BehaviorChoiceGame onFinish={finish} />}
-                {game.id === "pattern-match"      && <PatternMatchGame onFinish={finish} />}
-                {game.id === "odd-one-out"        && <OddOneOutGame onFinish={finish} />}
-                {game.id === "card-flip"          && <NumberMatchGame onFinish={finish} />}
+                {game.id === "speed-math"           && <SpeedMathGame onFinish={finish} />}
+                {game.id === "number-match"        && <NumberMatchGame onFinish={finish} />}
+                {game.id === "find-mistake"        && <FindMistakeGame onFinish={finish} />}
+                {game.id === "color-memory"        && <ColorMemoryGame onFinish={finish} />}
+                {game.id === "target-tap"          && <TargetTapGame onFinish={finish} />}
+                {game.id === "what-should-you-do"  && <BehaviorChoiceGame onFinish={finish} />}
+                {game.id === "pattern-match"       && <PatternMatchGame onFinish={finish} />}
+                {game.id === "odd-one-out"         && <OddOneOutGame onFinish={finish} />}
+                {game.id === "card-flip"           && <CardFlipGame onFinish={finish} />}
+                {game.id === "sequence-memory"     && <SequenceMemoryGame onFinish={finish} />}
+                {game.id === "maze-escape"         && <MazeEscapeGame onFinish={finish} />}
+                {game.id === "shape-matching"      && <ShapeMatchingGame onFinish={finish} />}
+                {game.id === "color-fill"          && <ColorFillGame onFinish={finish} />}
+                {game.id === "hidden-objects"      && <HiddenObjectsGame onFinish={finish} />}
+                {game.id === "spot-the-difference" && <SpotTheDifferenceGame onFinish={finish} />}
               </>
             ) : (
               <View style={gs.gameWrap}>

@@ -35,9 +35,13 @@ export const GAMES: GameDef[] = [
   { id: "target-tap",     title: "Target Tap",       category: "action",   emoji: "🎯", blurb: "Tap targets before they vanish.",          unlockCost: 50, rewardMin: 5, rewardMax: 15, status: "ready", ageHint: "5+" },
   // Behavior (USP)
   { id: "what-should-you-do", title: "What Should You Do?", category: "behavior", emoji: "💛", blurb: "Pick the kind, smart choice in real situations.", unlockCost: 50, rewardMin: 8, rewardMax: 15, status: "ready", ageHint: "6+" },
-  // Coming soon
-  { id: "maze-escape",    title: "Maze Escape",      category: "action",   emoji: "🗺️", blurb: "Guide the dot out of the maze.",          unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "soon" },
-  { id: "color-fill",     title: "Color Fill",       category: "creativity",emoji: "🖍️", blurb: "Fill the picture with the right colours.",unlockCost: 60, rewardMin: 5, rewardMax: 12, status: "soon" },
+  // Action & Creativity (newly implemented)
+  { id: "maze-escape",         title: "Maze Escape",         category: "action",      emoji: "🗺️", blurb: "Guide the dot out of the maze.",            unlockCost: 60, rewardMin: 5,  rewardMax: 12, status: "ready", ageHint: "5+" },
+  { id: "color-fill",          title: "Color Fill",          category: "creativity",  emoji: "🖍️", blurb: "Fill the picture with the right colours.",  unlockCost: 60, rewardMin: 5,  rewardMax: 12, status: "ready", ageHint: "4+" },
+  { id: "sequence-memory",     title: "Sequence Memory",     category: "memory",      emoji: "🔮", blurb: "Remember and repeat the colour sequence.",  unlockCost: 60, rewardMin: 5,  rewardMax: 15, status: "ready", ageHint: "4+" },
+  { id: "shape-matching",      title: "Shape Matching",      category: "brain",       emoji: "🔷", blurb: "Match each shape to its correct label.",    unlockCost: 50, rewardMin: 5,  rewardMax: 15, status: "ready", ageHint: "4+" },
+  { id: "hidden-objects",      title: "Hidden Objects",      category: "focus",       emoji: "🔎", blurb: "Find the hidden items in the scene.",       unlockCost: 50, rewardMin: 5,  rewardMax: 15, status: "ready", ageHint: "4+" },
+  { id: "spot-the-difference", title: "Spot the Difference", category: "focus",       emoji: "👀", blurb: "Find what changed between two pictures.",  unlockCost: 60, rewardMin: 8,  rewardMax: 15, status: "ready", ageHint: "5+" },
 ];
 
 export const CATEGORY_LABEL: Record<GameCategory, string> = {
