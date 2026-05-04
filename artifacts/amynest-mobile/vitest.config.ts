@@ -27,6 +27,7 @@ export default defineConfig({
       "expo-linear-gradient": path.resolve(import.meta.dirname, "./__mocks__/expo-linear-gradient.tsx"),
       "react-native-reanimated": path.resolve(import.meta.dirname, "./__mocks__/react-native-reanimated.tsx"),
       "expo-audio": path.resolve(import.meta.dirname, "./__mocks__/expo-audio.tsx"),
+      "@react-native-community/slider": path.resolve(import.meta.dirname, "./__mocks__/@react-native-community/slider.tsx"),
     },
     extensions: [".ts", ".tsx", ".js", ".jsx"],
   },
