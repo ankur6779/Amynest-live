@@ -29,7 +29,7 @@ export const notificationPreferencesTable = pgTable("notification_preferences", 
   timezone: text("timezone").notNull().default("Asia/Kolkata"),
   quietHoursStart: text("quiet_hours_start").notNull().default("22:00"),
   quietHoursEnd: text("quiet_hours_end").notNull().default("07:00"),
-  dailyCap: integer("daily_cap").notNull().default(4),
+  dailyCap: integer("daily_cap").notNull().default(10),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
