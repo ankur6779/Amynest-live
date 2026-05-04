@@ -92,27 +92,44 @@ const KIDS_CC_BULLETS = [
   "PIN-Protected Parent Lock",
 ];
 
-const ALL_FEATURES: {
+const NEW_HUB_FEATURES: {
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  desc: string;
+  titleKey: string;
+  descKey: string;
+  gradient: readonly [string, string];
+  glow: string;
+}[] = [
+  { icon: "heart-circle", titleKey: "landing.new_infant_title", descKey: "landing.new_infant_desc", gradient: [palette.blue400, palette.indigo500] as const, glow: "rgba(99,102,241,0.45)" },
+  { icon: "calculator", titleKey: "landing.new_abacus_title", descKey: "landing.new_abacus_desc", gradient: [palette.amber500, palette.red500] as const, glow: "rgba(245,158,11,0.45)" },
+  { icon: "document-text", titleKey: "landing.new_funsheets_title", descKey: "landing.new_funsheets_desc", gradient: [palette.cyan500, palette.emerald500] as const, glow: "rgba(16,185,129,0.45)" },
+  { icon: "color-palette", titleKey: "landing.new_coloring_title", descKey: "landing.new_coloring_desc", gradient: [brand.pink500, palette.orange500] as const, glow: "rgba(236,72,153,0.45)" },
+];
+
+const ALL_FEATURES: {
+  id: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  title?: string;
+  desc?: string;
+  titleKey?: string;
+  descKey?: string;
   gradient: readonly [string, string];
   badge: string | null;
 }[] = [
-  { icon: "shield-checkmark", title: "Kids Control Center", desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.", gradient: [brand.violet600, ACCENT_PINK], badge: "Coming Soon" },
-  { icon: "stats-chart", title: "Behavior Tracking", desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC behavioral analysis.", gradient: [palette.emerald500, palette.cyan500], badge: "Popular" },
-  { icon: "game-controller", title: "Gaming Reward Zone", desc: "Gamified milestones — kids earn real rewards tied to real-world achievements.", gradient: [brandExtended.gold, palette.red500], badge: "New" },
-  { icon: "moon", title: "Infant Sleep Tracker", desc: "Track feeding, sleep windows and wake cycles for babies under 12 months — calibrated to CDC safe sleep guidelines.", gradient: [palette.blue400, palette.indigo500], badge: "New" },
-  { icon: "play-circle", title: "Parenting Reels", desc: "Short, expert-curated video reels on positive parenting techniques.", gradient: [brand.pink500, brand.purple500], badge: null },
-  { icon: "bulb", title: "Daily Parenting Tips", desc: "Science-backed tip daily — personalized to your child's age per Piaget's framework.", gradient: [brandExtended.gold, palette.orange500], badge: null },
-  { icon: "accessibility", title: "Life Skills Zone", desc: "Teach independence with Montessori-aligned milestone tracking.", gradient: [brand.purple500, palette.indigo500], badge: null },
-  { icon: "medal", title: "Olympiad Zone", desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14.", gradient: [palette.amber500, palette.red500], badge: null },
-  { icon: "color-palette", title: "Art & Craft Reels", desc: "Step-by-step activity videos that stimulate creativity and fine motor development.", gradient: [brand.pink500, palette.orange500], badge: null },
-  { icon: "document-text", title: "Printable Worksheets", desc: "Age-appropriate worksheets for learning, colouring, and motor skill development.", gradient: [palette.cyan500, palette.emerald500], badge: null },
-  { icon: "grid", title: "Daily Brain Puzzles", desc: "Brain-boosting puzzles tailored to your child's cognitive stage.", gradient: [palette.orange500, brand.purple500], badge: null },
-  { icon: "book", title: "Parenting Articles", desc: "Deep-dive articles by child development experts on every stage of childhood.", gradient: [palette.blue500, palette.cyan500], badge: null },
-  { icon: "people", title: "Babysitter Profiles", desc: "Create and share child care profiles securely. Routines, allergies, notes — all in one place.", gradient: [palette.emerald500, brand.purple500], badge: null },
-  { icon: "trophy", title: "Parent Score & Streaks", desc: "Gamified motivation — earn points, build streaks, and celebrate every parenting win.", gradient: [brandExtended.gold, palette.red500], badge: null },
+  { id: "kcc", icon: "shield-checkmark", title: "Kids Control Center", desc: "Child-safe UI with screen time limits, focus mode & parent lock — built on AAP's 2023 digital wellness guidelines. Coming soon.", gradient: [brand.violet600, ACCENT_PINK], badge: "Coming Soon" },
+  { id: "bt", icon: "stats-chart", title: "Behavior Tracking", desc: "Log daily behaviors, spot patterns, and track improvement over time. Grounded in ABC behavioral analysis.", gradient: [palette.emerald500, palette.cyan500], badge: "Popular" },
+  { id: "grz", icon: "game-controller", title: "Gaming Reward Zone", desc: "Gamified milestones based on positive reinforcement — kids earn real rewards tied to real-world achievements.", gradient: [brandExtended.gold, palette.red500], badge: "New" },
+  { id: "iph", icon: "heart-circle", titleKey: "landing.new_infant_title", descKey: "landing.new_infant_desc", gradient: [palette.blue400, palette.indigo500], badge: "New" },
+  { id: "az", icon: "calculator", titleKey: "landing.new_abacus_title", descKey: "landing.new_abacus_desc", gradient: [palette.amber500, palette.red500], badge: "New" },
+  { id: "pr", icon: "play-circle", title: "Parenting Reels", desc: "Short, expert-curated video reels on positive parenting techniques from leading child psychologists.", gradient: [brand.pink500, brand.purple500], badge: null },
+  { id: "dpt", icon: "bulb", title: "Daily Parenting Tips", desc: "Science-backed tip delivered every day — personalized to your child's age per Piaget's framework.", gradient: [brandExtended.gold, palette.orange500], badge: null },
+  { id: "lsz", icon: "accessibility", title: "Life Skills Zone", desc: "Teach independence — from dressing to cooking — with Montessori-aligned milestone tracking.", gradient: [brand.purple500, palette.indigo500], badge: null },
+  { id: "oz", icon: "medal", title: "Olympiad Zone", desc: "Cognitive skill-building puzzles aligned with school Olympiad levels for kids aged 4–14.", gradient: [palette.amber500, palette.red500], badge: null },
+  { id: "cs", icon: "color-palette", titleKey: "landing.new_coloring_title", descKey: "landing.new_coloring_desc", gradient: [brand.pink500, palette.orange500], badge: "New" },
+  { id: "fs", icon: "document-text", titleKey: "landing.new_funsheets_title", descKey: "landing.new_funsheets_desc", gradient: [palette.cyan500, palette.emerald500], badge: "New" },
+  { id: "dbp", icon: "grid", title: "Daily Brain Puzzles", desc: "Brain-boosting puzzles tailored to your child's cognitive stage — builds logic, creativity and working memory.", gradient: [palette.orange500, brand.purple500], badge: null },
+  { id: "pa", icon: "book", title: "Parenting Articles", desc: "Deep-dive articles by child development experts on every stage of childhood.", gradient: [palette.blue500, palette.cyan500], badge: null },
+  { id: "bp", icon: "people", title: "Babysitter Profiles", desc: "Create and share child care profiles securely. Routines, allergies, and notes — all in one safe place.", gradient: [palette.emerald500, brand.purple500], badge: null },
+  { id: "pss", icon: "trophy", title: "Parent Score & Streaks", desc: "Gamified motivation — earn points, build streaks, and celebrate every parenting win.", gradient: [brandExtended.gold, palette.red500], badge: null },
 ];
 
 const TESTIMONIALS = [
@@ -466,6 +483,56 @@ export default function WelcomeScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* WHAT'S NEW IN PARENT HUB */}
+          <View style={styles.sectionWrap}>
+            <View style={styles.eyebrow}>
+              <Ionicons name="star" size={11} color={palette.amber400} />
+              <Text style={styles.eyebrowText}>{t("landing.whats_new_eyebrow")}</Text>
+            </View>
+            <Text style={styles.sectionTitle}>{t("landing.whats_new_heading")}</Text>
+            <Text style={styles.sectionSub}>{t("landing.whats_new_sub")}</Text>
+
+            <View style={{ gap: 12, marginTop: 16 }}>
+              {NEW_HUB_FEATURES.map((nf) => (
+                <View
+                  key={nf.titleKey}
+                  style={{
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.1)",
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                    padding: 16,
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: 14,
+                    shadowColor: nf.glow,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.5,
+                    shadowRadius: 12,
+                    elevation: 4,
+                  }}
+                >
+                  <LinearGradient
+                    colors={nf.gradient}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={styles.featureIcon}
+                  >
+                    <Ionicons name={nf.icon} size={18} color="#fff" />
+                  </LinearGradient>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      <Text style={[styles.featureTitle, { marginBottom: 0 }]}>{t(nf.titleKey)}</Text>
+                      <View style={[styles.featureBadge, { backgroundColor: palette.cyan700, marginTop: 0 }]}>
+                        <Text style={styles.featureBadgeText}>{t("landing.new_badge")}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.featureDesc}>{t(nf.descKey)}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
           {/* ALL FEATURES MEGA GRID */}
           <View style={styles.sectionWrap}>
             <View style={styles.eyebrow}>
@@ -477,13 +544,13 @@ export default function WelcomeScreen() {
 
             <View style={styles.featuresGrid}>
               {ALL_FEATURES.map((f) => (
-                <View key={f.title} style={styles.featureCard}>
+                <View key={f.id} style={styles.featureCard}>
                   {f.badge && (
                     <View style={[
                       styles.featureBadge,
                       { backgroundColor: f.badge === "New" ? palette.cyan700 : f.badge === "Popular" ? brand.violet600 : palette.orange800 },
                     ]}>
-                      <Text style={styles.featureBadgeText}>{f.badge}</Text>
+                      <Text style={styles.featureBadgeText}>{f.badge === "New" ? t("landing.new_badge") : f.badge}</Text>
                     </View>
                   )}
                   <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
@@ -495,8 +562,8 @@ export default function WelcomeScreen() {
                       <Ionicons name={f.icon} size={18} color="#fff" />
                     </LinearGradient>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.featureTitle}>{f.title}</Text>
-                      <Text style={styles.featureDesc}>{f.desc}</Text>
+                      <Text style={styles.featureTitle}>{f.titleKey ? t(f.titleKey) : f.title}</Text>
+                      <Text style={styles.featureDesc}>{f.descKey ? t(f.descKey) : f.desc}</Text>
                     </View>
                   </View>
                 </View>
