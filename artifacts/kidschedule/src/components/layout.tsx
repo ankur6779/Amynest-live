@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
+import { NotificationPromptModal } from "@/components/notification-prompt-modal";
 function SmartParentBadge({
   className = ""
 }: {
@@ -307,6 +308,13 @@ export function Layout({
           </div>
         </main>
       </div>
+
+      {/* Notification enable prompt — shown as a bottom-sheet modal ~1.8s
+          after the user opens the app if permission has not been granted yet.
+          Snoozes for 3 days on dismiss. Banner above handles denied/reconnect. */}
+      {!["/sign-in", "/onboarding"].some(p => location.startsWith(p)) && (
+        <NotificationPromptModal />
+      )}
 
       {/* Mobile Bottom Nav — premium 4-tab with center-raised Amy Coach.
           data-on-dark: this nav is intentionally a dark slate surface in
