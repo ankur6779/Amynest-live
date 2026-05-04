@@ -1273,6 +1273,11 @@ export default function CoachScreen() {
           ))}
         </View>
 
+        {/* Typing indicator — visible while cards are still cascading in */}
+        {revealedCount < plan.wins.length && (
+          <TypingIndicator label={t("screens.tabs_coach.generating_wins")} />
+        )}
+
         {/* Card pager */}
         <FlatList
           ref={scrollerRef}
@@ -1364,6 +1369,60 @@ export default function CoachScreen() {
   }
 
   return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPING INDICATOR
+// ═══════════════════════════════════════════════════════════════════════════
+function TypingIndicator({ label }: { label: string }) {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const bounce = (val: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(val, { toValue: -5, duration: 260, useNativeDriver: true }),
+          Animated.timing(val, { toValue: 0,  duration: 260, useNativeDriver: true }),
+          Animated.delay(480 - delay),
+        ]),
+      );
+    const a1 = bounce(dot1, 0);
+    const a2 = bounce(dot2, 160);
+    const a3 = bounce(dot3, 320);
+    a1.start(); a2.start(); a3.start();
+    return () => { a1.stop(); a2.stop(); a3.stop(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <View style={{
+      alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6,
+      backgroundColor: "rgba(139,92,246,0.12)",
+      borderWidth: 1, borderColor: "rgba(139,92,246,0.28)",
+      paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999,
+      marginBottom: 6,
+    }}>
+      {[dot1, dot2, dot3].map((d, i) => (
+        <Animated.View
+          key={i}
+          style={{
+            width: 6, height: 6, borderRadius: 3,
+            backgroundColor: brand.violet500,
+            transform: [{ translateY: d }],
+          }}
+        />
+      ))}
+      <Text style={{
+        color: "rgba(139,92,246,0.85)", fontSize: 11,
+        fontFamily: "Inter_700Bold", letterSpacing: 0.4, marginLeft: 2,
+      }}>
+        {label}
+      </Text>
+    </View>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
