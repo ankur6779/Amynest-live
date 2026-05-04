@@ -180,7 +180,11 @@
     "tutor_error_title": "Amy reply nahi de payi",
     "tutor_error_body": "Kripya ek pal mein phir try karein.",
     "listen": "Suno",
-    "stop": "Roko"
+    "stop": "Roko",
+    "clear_confirm_title": "Chat Clear Karein?",
+    "clear_confirm_body": "Kya aap sure hain? Isse {{name}} ka poora chat history mit jayega.",
+    "clear_confirm_yes": "Clear Karein",
+    "clear_confirm_cancel": "Raddh Karein"
   },
   "pricing": {
     "title": "Puri Parenting Power Unlock Karein",

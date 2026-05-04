@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Animated,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Animated, Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -243,11 +243,25 @@ export default function AmyAIScreen() {
 
   const clearChat = () => {
     if (!canClear) return;
-    tts.stop();
-    setActiveTtsTurnId(null);
-    setTurns([]);
-    setInput("");
-    AsyncStorage.removeItem(CHAT_KEY(childKey)).catch(() => {});
+    const childName = primaryChild?.name ?? t("ai.tutor_badge");
+    Alert.alert(
+      t("ai.clear_confirm_title"),
+      t("ai.clear_confirm_body", { name: childName }),
+      [
+        { text: t("ai.clear_confirm_cancel"), style: "cancel" },
+        {
+          text: t("ai.clear_confirm_yes"),
+          style: "destructive",
+          onPress: () => {
+            tts.stop();
+            setActiveTtsTurnId(null);
+            setTurns([]);
+            setInput("");
+            AsyncStorage.removeItem(CHAT_KEY(childKey)).catch(() => {});
+          },
+        },
+      ],
+    );
   };
 
   const handleTtsListen = useCallback((turnId: string, text: string) => {

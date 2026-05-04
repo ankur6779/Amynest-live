@@ -180,7 +180,11 @@
     "tutor_error_title": "ऐमी जवाब नहीं दे सकीं",
     "tutor_error_body": "कृपया एक पल में फिर कोशिश करें।",
     "listen": "सुनें",
-    "stop": "रोकें"
+    "stop": "रोकें",
+    "clear_confirm_title": "चैट मिटाएं?",
+    "clear_confirm_body": "क्या आप निश्चित हैं? इससे {{name}} का पूरा चैट इतिहास मिट जाएगा।",
+    "clear_confirm_yes": "मिटाएं",
+    "clear_confirm_cancel": "रद्द करें"
   },
   "pricing": {
     "title": "पूरी पैरेंटिंग शक्ति अनलॉक करें",

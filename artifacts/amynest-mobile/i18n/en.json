@@ -180,7 +180,11 @@
     "tutor_error_title": "Amy couldn't reply",
     "tutor_error_body": "Try again in a moment.",
     "listen": "Listen",
-    "stop": "Stop"
+    "stop": "Stop",
+    "clear_confirm_title": "Clear Chat?",
+    "clear_confirm_body": "Are you sure? This will erase all of {{name}}'s chat history.",
+    "clear_confirm_yes": "Clear",
+    "clear_confirm_cancel": "Cancel"
   },
   "pricing": {
     "title": "Unlock Full Parenting Power",
