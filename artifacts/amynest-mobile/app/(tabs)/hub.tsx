@@ -54,6 +54,7 @@ import LockedBlock from "@/components/LockedBlock";
 import TryFreeBadge from "@/components/TryFreeBadge";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import colors, { brand, brandAlpha, ACCENT_PINK, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useColors } from "@/hooks/useColors";
 
 const LOGO = require("../../assets/images/amynest-logo.png");
@@ -378,7 +379,7 @@ export default function HubScreen() {
         }}
       >
         <View style={styles.headerRow}>
-          <Pressable onPress={handleLogoTap} accessibilityRole="button" accessibilityLabel="AmyNest logo" /* audit-ok — brand name, not translatable prose */>
+          <Pressable onPress={handleLogoTap} accessibilityRole="button" accessibilityLabel={BRAND.logoA11yLabel}>
             <View>
               <Image source={LOGO} style={styles.logo} resizeMode="contain" />
               {debugMode && (
