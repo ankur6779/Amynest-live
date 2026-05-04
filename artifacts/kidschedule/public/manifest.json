@@ -10,6 +10,7 @@
   "theme_color": "#A855F7",
   "lang": "en",
   "categories": ["education", "lifestyle", "kids"],
+  "gcm_sender_id": "573340015027",
   "icons": [
     {
       "src": "/pwa-icon-192.png",

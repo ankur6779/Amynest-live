@@ -82,7 +82,8 @@ function WebPushCard() {
     enable,
     disable
   } = useWebPush();
-  const label = status === "granted" ? "Enabled" : status === "denied" ? "Blocked in browser" : status === "unsupported" ? "Not supported in this browser" : status === "requesting" ? "Requesting permission…" : status === "error" ? "Setup failed — try again" : "Not enabled";
+  const isIos = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const label = status === "granted" ? "Enabled" : status === "denied" ? "Blocked in browser" : status === "unsupported" ? (isIos ? "Not supported on iOS Safari" : "Not supported in this browser") : status === "requesting" ? "Requesting permission…" : status === "error" ? "Setup failed — try again" : "Not enabled";
   const Icon = status === "granted" ? CheckCircle2 : status === "denied" || status === "error" ? XCircle : status === "requesting" ? Loader2 : Monitor;
   const iconColor = status === "granted" ? "text-primary" : status === "denied" || status === "error" ? "text-primary" : "text-muted-foreground";
   return <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
@@ -96,6 +97,25 @@ function WebPushCard() {
             {t("pages.notification_settings.receive_amynest_alerts_directly_in_this_browser_even_when_th")}
           </div>
           <div className="text-xs text-muted-foreground mt-1">{label}</div>
+          {status === "unsupported" && (
+            <div className="mt-2 text-xs text-muted-foreground space-y-1 leading-relaxed">
+              {isIos ? (
+                <p>
+                  iOS notifications require iOS 16.4+ with the app{" "}
+                  <span className="text-white font-medium">added to your Home Screen</span>{" "}
+                  first. Open this page in Safari → tap{" "}
+                  <span className="text-white font-medium">Share → Add to Home Screen</span>,
+                  then re-open from the Home Screen icon.
+                </p>
+              ) : (
+                <p>
+                  For notifications, please open this page in{" "}
+                  <span className="text-white font-medium">Google Chrome</span> or another
+                  Chromium-based browser (Edge, Brave). Samsung Internet may not support web push.
+                </p>
+              )}
+            </div>
+          )}
           {status !== "unsupported" && <div className="flex gap-2 mt-2">
               {status !== "granted" && <Button type="button" size="sm" variant="ghost" className="h-7 text-muted-foreground hover:text-white hover:bg-primary" onClick={enable} disabled={status === "requesting" || status === "denied"}>
                   {status === "requesting" ? "Enabling…" : "Enable"}
