@@ -67,18 +67,6 @@ export function VoiceSettingsPanel({
               </button>
             </div>
 
-            {/* Language toggle */}
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                {t("components.voice_settings.language")}
-              </p>
-              <div className="flex gap-2">
-                <button className="flex-1 py-2 rounded-xl text-xs font-bold border-2 bg-primary text-white border-primary">
-                  🇬🇧 English
-                </button>
-              </div>
-            </div>
-
             {/* Gender toggle */}
             <div>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">

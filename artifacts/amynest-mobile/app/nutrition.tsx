@@ -186,12 +186,6 @@ function NutrientDetail({
                 <Text key={i} style={{ color: palette.rose700, fontSize: 12, marginBottom: 4 }}>⚠ {d}</Text>
               ))}
             </View>
-            <View style={[styles.hindiBox, { backgroundColor: palette.amber50, borderColor: palette.yellow200 }]}>
-              <Text style={{ fontSize: 11, fontWeight: "700", color: palette.amber800, marginBottom: 4 }}>{t("screens.nutrition.deficiency_hi_label")}</Text>
-              {nutrient.deficiencyHi.map((d, i) => (
-                <Text key={i} style={{ fontSize: 12, color: palette.yellow700 }}>• {d}</Text>
-              ))}
-            </View>
           </View>
 
           {/* Source */}
@@ -938,11 +932,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     marginBottom: 8,
-  },
-  hindiBox: {
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
   },
   tableRow: {
     flexDirection: "row",

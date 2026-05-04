@@ -41,7 +41,6 @@
     "audio_lessons": "Audio Lessons",
     "profile": "My Profile",
     "pricing": "Pricing",
-    "language": "Language",
     "dark_mode": "Dark mode",
     "light_mode": "Light mode",
     "sign_out": "Sign out"
@@ -1194,7 +1193,6 @@
       "benefits_title": "✅ Benefits · फायदे",
       "sources_title": "🥗 Indian Food Sources · भारतीय स्रोत",
       "deficiency_title": "⚠️ Deficiency Signs · कमी के लक्षण",
-      "deficiency_hi_label": "हिंदी में लक्षण:",
       "veg_badge": "VEG",
       "nonveg_badge": "NON-VEG",
       "source_footer": "📚 Source: ICMR-NIN Nutrient Requirements for Indians (2020) & WHO Guidelines",
@@ -2363,8 +2361,7 @@
       "continue_plan": "Continue Plan"
     },
     "coach_card": {
-      "listen_in_english": "Listen in English",
-      "listen_in_hindi": "Listen in Hindi"
+      "listen_in_english": "Listen in English"
     },
     "coach_progress_card": {
       "amy_coach": "AMY COACH",
@@ -2657,7 +2654,6 @@
     "voice_settings_panel": {
       "voice_settings": "🎙 Voice Settings",
       "read_aloud": "READ-ALOUD",
-      "language": "LANGUAGE",
       "voice_gender": "VOICE GENDER",
       "voice": "VOICE",
       "powered_by_elevenlabs_ai": "Powered by ElevenLabs AI 🎙"

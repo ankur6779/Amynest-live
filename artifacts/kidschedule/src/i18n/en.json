@@ -46,7 +46,6 @@
     "kids_control_center": "Kids Control",
     "pricing": "Pricing",
     "referrals": "Referrals",
-    "language": "Language",
     "dark_mode": "Dark mode",
     "light_mode": "Light mode",
     "sign_out": "Sign out"
@@ -2026,7 +2025,6 @@
       "at_bedtime_for_a_meaningful_connection_moment": "at bedtime for a meaningful connection moment"
     },
     "daily_tips": {
-      "toggle_language": "Toggle language",
       "amy_ai": "Amy AI"
     },
     "event_prep_generator": {
