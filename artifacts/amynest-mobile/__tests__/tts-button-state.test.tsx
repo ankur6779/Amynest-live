@@ -20,9 +20,12 @@ import { render, screen, fireEvent, waitFor, act, cleanup } from "@testing-libra
 // simulate different speaking / loading states without re-importing the mock.
 const ttsSpeak = vi.fn();
 const ttsStop = vi.fn();
-const ttsState: { speaking: boolean; loading: boolean } = {
+const ttsSeekTo = vi.fn();
+const ttsState: { speaking: boolean; loading: boolean; currentTime: number; duration: number } = {
   speaking: false,
   loading: false,
+  currentTime: 0,
+  duration: 0,
 };
 
 vi.mock("@/hooks/useAmyVoice", () => ({
@@ -32,9 +35,9 @@ vi.mock("@/hooks/useAmyVoice", () => ({
     speaking: ttsState.speaking,
     loading: ttsState.loading,
     error: null,
-    currentTime: 0,
-    duration: 0,
-    seekTo: vi.fn(),
+    currentTime: ttsState.currentTime,
+    duration: ttsState.duration,
+    seekTo: ttsSeekTo,
   }),
 }));
 
@@ -65,6 +68,34 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
   },
 }));
 
+// ─── TtsSlider mock ───────────────────────────────────────────────────────
+// Replaces the native View-based slider with a plain <input type="range"> so
+// fireEvent.change can trigger onValueChange in the jsdom test environment.
+vi.mock("@/components/TtsSlider", () => ({
+  TtsSlider: ({
+    value,
+    minimumValue,
+    maximumValue,
+    onValueChange,
+    testID,
+  }: {
+    value?: number;
+    minimumValue?: number;
+    maximumValue?: number;
+    onValueChange?: (v: number) => void;
+    testID?: string;
+  }) =>
+    React.createElement("input", {
+      type: "range",
+      value: String(value ?? 0),
+      min: String(minimumValue ?? 0),
+      max: String(maximumValue ?? 1),
+      "data-testid": testID,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+        onValueChange?.(Number(e.target.value)),
+    }),
+}));
+
 // ─── Amy AI / TurnView mocks ───────────────────────────────────────────────
 // (TurnView uses useTranslation + expo-linear-gradient + @expo/vector-icons;
 //  all resolved via vitest.config.ts aliases — no extra mocks needed.)
@@ -73,7 +104,7 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
 const mockAuthFetch = vi.fn();
 vi.mock("@/hooks/useAuthFetch", () => ({ useAuthFetch: () => mockAuthFetch }));
 
-const mockUseLocalSearchParams = vi.fn<[], Record<string, string>>(() => ({}));
+const mockUseLocalSearchParams = vi.fn(() => ({}) as Record<string, string>);
 vi.mock("expo-router", () => ({
   useRouter: () => ({ push: vi.fn(), back: vi.fn(), replace: vi.fn() }),
   useLocalSearchParams: () => mockUseLocalSearchParams(),
@@ -137,7 +168,7 @@ type TutorTurn = {
   id: string;
   role: "tutor";
   reply: {
-    type: string;
+    type: "teach" | "practice" | "quiz" | "doubt";
     content: string;
     examples: string[];
     question: string | null;
@@ -201,8 +232,11 @@ describe("TurnView TTS button (amy-ai.tsx)", () => {
   beforeEach(() => {
     ttsSpeak.mockReset();
     ttsStop.mockReset();
+    ttsSeekTo.mockReset();
     ttsState.speaking = false;
     ttsState.loading = false;
+    ttsState.currentTime = 0;
+    ttsState.duration = 0;
     cleanup();
   });
 
@@ -213,6 +247,7 @@ describe("TurnView TTS button (amy-ai.tsx)", () => {
     ttsSpeaking: boolean,
     ttsLoading: boolean,
     onListen = vi.fn(),
+    seekProps: { currentTime?: number; duration?: number; seekTo?: (seconds: number) => void } = {},
   ) {
     const turn = makeTutorTurn(content, question ?? undefined);
     return render(
@@ -223,6 +258,9 @@ describe("TurnView TTS button (amy-ai.tsx)", () => {
         ttsActiveId={ttsActiveId}
         ttsLoading={ttsLoading}
         ttsSpeaking={ttsSpeaking}
+        currentTime={seekProps.currentTime ?? 0}
+        duration={seekProps.duration ?? 0}
+        seekTo={seekProps.seekTo ?? vi.fn()}
       />,
     );
   }
@@ -310,6 +348,86 @@ describe("TurnView TTS button (amy-ai.tsx)", () => {
     // whether to call tts.stop() or tts.speak() based on activeTtsTurnId.
     expect(onListen).toHaveBeenCalledTimes(1);
     expect(onListen).toHaveBeenCalledWith("turn-abc", expect.any(String));
+  });
+
+  // ── Seek bar tests ────────────────────────────────────────────────────────
+
+  it("does not show the seek bar when the turn is idle", () => {
+    renderTurnView("Some content.", null, null, false, false);
+    expect(screen.queryByTestId("tts-seek-bar")).not.toBeInTheDocument();
+  });
+
+  it("does not show the seek bar when a different turn is active", () => {
+    renderTurnView("Some content.", null, "other-turn-id", true, false);
+    expect(screen.queryByTestId("tts-seek-bar")).not.toBeInTheDocument();
+  });
+
+  it("shows the seek bar when this turn is active and speaking", () => {
+    renderTurnView("Some content.", null, "turn-abc", true, false);
+    expect(screen.getByTestId("tts-seek-bar")).toBeInTheDocument();
+  });
+
+  it("shows the seek bar when this turn is active and ttsLoading", () => {
+    renderTurnView("Some content.", null, "turn-abc", false, true);
+    expect(screen.getByTestId("tts-seek-bar")).toBeInTheDocument();
+  });
+
+  it("renders currentTime label formatted as m:ss when the seek bar is shown", () => {
+    renderTurnView("Some content.", null, "turn-abc", true, false, vi.fn(), {
+      currentTime: 65,
+      duration: 120,
+    });
+    // 65 seconds → "1:05"
+    expect(screen.getByTestId("tts-current-time")).toHaveTextContent("1:05");
+  });
+
+  it("renders duration label formatted as m:ss when the seek bar is shown", () => {
+    renderTurnView("Some content.", null, "turn-abc", true, false, vi.fn(), {
+      currentTime: 0,
+      duration: 125,
+    });
+    // 125 seconds → "2:05"
+    expect(screen.getByTestId("tts-duration")).toHaveTextContent("2:05");
+  });
+
+  it("renders both time labels as 0:00 when currentTime and duration are 0", () => {
+    renderTurnView("Some content.", null, "turn-abc", true, false, vi.fn(), {
+      currentTime: 0,
+      duration: 0,
+    });
+    const timeLabels = screen.getAllByTestId(/tts-(current-time|duration)/);
+    timeLabels.forEach((label) => {
+      expect(label).toHaveTextContent("0:00");
+    });
+  });
+
+  it("calls seekTo with the slider value when the seek bar is scrubbed", () => {
+    const seekTo = vi.fn();
+    renderTurnView("Some content.", null, "turn-abc", true, false, vi.fn(), {
+      currentTime: 10,
+      duration: 90,
+      seekTo,
+    });
+
+    const slider = screen.getByTestId("tts-slider");
+    fireEvent.change(slider, { target: { value: "45" } });
+
+    expect(seekTo).toHaveBeenCalledTimes(1);
+    expect(seekTo).toHaveBeenCalledWith(45);
+  });
+
+  it("calls seekTo with 0 when the slider is moved to the start", () => {
+    const seekTo = vi.fn();
+    renderTurnView("Some content.", null, "turn-abc", true, false, vi.fn(), {
+      currentTime: 30,
+      duration: 60,
+      seekTo,
+    });
+
+    const slider = screen.getByTestId("tts-slider");
+    fireEvent.change(slider, { target: { value: "0" } });
+
+    expect(seekTo).toHaveBeenCalledWith(0);
   });
 });
 

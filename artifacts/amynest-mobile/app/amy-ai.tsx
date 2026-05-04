@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, ActivityIndicator, Animated, Alert,
 } from "react-native";
+import { TtsSlider } from "@/components/TtsSlider";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -403,6 +404,9 @@ export default function AmyAIScreen() {
               ttsActiveId={activeTtsTurnId}
               ttsLoading={tts.loading}
               ttsSpeaking={tts.speaking}
+              currentTime={tts.currentTime}
+              duration={tts.duration}
+              seekTo={tts.seekTo}
             />
           ))}
 
@@ -440,6 +444,14 @@ export default function AmyAIScreen() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────
 
+/** Formats a duration in seconds to "m:ss" (e.g. 65 → "1:05"). */
+function formatTime(seconds: number): string {
+  const s = Math.floor(Math.max(0, seconds));
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${String(sec).padStart(2, "0")}`;
+}
+
 export function TurnView({
   turn,
   onPickOption,
@@ -447,6 +459,9 @@ export function TurnView({
   ttsActiveId,
   ttsLoading,
   ttsSpeaking,
+  currentTime = 0,
+  duration = 0,
+  seekTo,
 }: {
   turn: Turn;
   onPickOption: (turnId: string, optIdx: number) => void;
@@ -454,6 +469,9 @@ export function TurnView({
   ttsActiveId: string | null;
   ttsLoading: boolean;
   ttsSpeaking: boolean;
+  currentTime?: number;
+  duration?: number;
+  seekTo?: (seconds: number) => void;
 }) {
   const { t } = useTranslation();
 
@@ -517,6 +535,28 @@ export function TurnView({
               {isThisTtsActive && (ttsSpeaking || ttsLoading) ? t("ai.stop") : t("ai.listen")}
             </Text>
           </Pressable>
+        )}
+        {/* Seek bar — shown when this turn is the active TTS turn */}
+        {isThisTtsActive && (ttsSpeaking || ttsLoading) && (
+          <View style={styles.seekBar} testID="tts-seek-bar">
+            <Text style={styles.seekTime} testID="tts-current-time">
+              {formatTime(currentTime)}
+            </Text>
+            <TtsSlider
+              style={styles.seekSlider}
+              minimumValue={0}
+              maximumValue={Math.max(duration, 1)}
+              value={currentTime}
+              onValueChange={(v: number) => seekTo?.(v)}
+              minimumTrackTintColor="rgba(167,139,250,0.9)"
+              maximumTrackTintColor="rgba(255,255,255,0.2)"
+              thumbTintColor="rgba(167,139,250,0.9)"
+              testID="tts-slider"
+            />
+            <Text style={styles.seekTime} testID="tts-duration">
+              {formatTime(duration)}
+            </Text>
+          </View>
         )}
         {reply.content ? <MarkdownText text={reply.content} /> : null}
 
@@ -743,6 +783,10 @@ const styles = StyleSheet.create({
 
   listenBtn: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: "rgba(167,139,250,0.10)", borderWidth: 1, borderColor: "rgba(167,139,250,0.30)" },
   listenBtnText: { color: "rgba(167,139,250,0.9)", fontSize: 11, fontWeight: "700" },
+
+  seekBar: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  seekSlider: { flex: 1, height: 20 },
+  seekTime: { color: "rgba(167,139,250,0.85)", fontSize: 10, fontWeight: "600", minWidth: 28, textAlign: "center" },
 
   inputBar: { flexDirection: "row", alignItems: "flex-end", gap: 10, paddingHorizontal: 14, paddingTop: 10, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.06)", backgroundColor: "rgba(11,11,26,0.7)" },
   input: { flex: 1, color: "#fff", fontSize: 15, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", maxHeight: 120 },
