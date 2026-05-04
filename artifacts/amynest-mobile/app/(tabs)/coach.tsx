@@ -21,6 +21,7 @@ import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { useSectionUsage } from "@/hooks/useSectionUsage";
 import { useTranslation } from "react-i18next";
 import colors, { brand, brandAlpha } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useColors } from "@/hooks/useColors";
 import { getTopicQuestions } from "@workspace/coach-topic-questions";
 import {
@@ -610,7 +611,7 @@ export default function CoachScreen() {
 
   const handleShare = async () => {
     if (!plan) return;
-    const text = `${plan.title}\n\n${plan.summary}\n\nMy ${plan.wins.length} wins from AmyNest Amy Coach:\n${plan.wins.map((w) => `${w.win}. ${w.title}`).join("\n")}`;
+    const text = `${plan.title}\n\n${plan.summary}\n\nMy ${plan.wins.length} wins from ${BRAND.appName} ${BRAND.aiName} Coach:\n${plan.wins.map((w) => `${w.win}. ${w.title}`).join("\n")}`;
     try { await Share.share({ title: plan.title, message: text }); } catch {}
   };
 
@@ -632,7 +633,7 @@ export default function CoachScreen() {
   }
 
   if (!profileComplete) {
-    return <ProfileLockScreen sectionName="Amy Coach" />;
+    return <ProfileLockScreen sectionName={`${BRAND.aiName} Coach`} />;
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -1196,7 +1197,7 @@ export default function CoachScreen() {
               <Text style={{
                 color: "rgba(255,255,255,0.5)", fontSize: 11, marginTop: 4,
               }}>
-                I'm here to help ❤️ — Amy
+                {`I'm here to help ❤️ — ${BRAND.aiName}`}
               </Text>
             </View>
           </LinearGradient>

@@ -18,6 +18,7 @@ import { getLocales } from "expo-localization";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import type { Plan } from "@/services/subscriptionApi";
 import { brand, ACCENT_PINK, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { presentRCPaywall } from "@/lib/revenuecat";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -27,13 +28,13 @@ const REASON_COPY: Record<
   { title: string; subtitle: string; icon: IconName }
 > = {
   ai_quota: {
-    title: "Unlock unlimited Amy AI",
+    title: `Unlock unlimited ${BRAND.aiName} AI`,
     subtitle: "You've used today's free queries. Go premium for unlimited support.",
     icon: "chatbubbles",
   },
   personalized_coaching: {
     title: "Unlock Personalized Coaching",
-    subtitle: "Amy adapts to your child and gives you smart, tailored next steps.",
+    subtitle: `${BRAND.aiName} adapts to your child and gives you smart, tailored next steps.`,
     icon: "school",
   },
   premium_insight: {
@@ -58,7 +59,7 @@ const REASON_COPY: Record<
   },
   behavior_locked: {
     title: "Unlock unlimited Behavior Logs",
-    subtitle: "Free plan includes 1 log. Upgrade to track every win, tantrum & pattern Amy spots.",
+    subtitle: `Free plan includes 1 log. Upgrade to track every win, tantrum & pattern ${BRAND.aiName} spots.`,
     icon: "bar-chart",
   },
   child_locked: {
@@ -67,7 +68,7 @@ const REASON_COPY: Record<
     icon: "people",
   },
   coach_locked: {
-    title: "Unlock Amy Coach",
+    title: `Unlock ${BRAND.aiName} Coach`,
     subtitle: "Get personalized 10–12 step plans for tantrums, screen time, focus & more.",
     icon: "school",
   },
@@ -142,7 +143,7 @@ const REASON_COPY: Record<
     icon: "headset",
   },
   hub_amy: {
-    title: "Unlock Ask Amy",
+    title: "Unlock Ask " + BRAND.aiName,
     subtitle: "Unlimited parenting answers, smart prompts & personalized guidance.",
     icon: "chatbubbles",
   },

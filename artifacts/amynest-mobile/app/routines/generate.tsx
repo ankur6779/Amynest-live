@@ -27,6 +27,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import {
   HANDLER_TYPES,
   type HandlerKey,
@@ -324,7 +325,7 @@ export default function GenerateRoutineScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         t("toasts.routines_generate.save_failed_title", { defaultValue: "Couldn't save routine" }),
-        t("toasts.routines_generate.save_failed_body", { defaultValue: "Amy ran into an issue. Please try again in a moment." }),
+        t("toasts.routines_generate.save_failed_body", { defaultValue: `${BRAND.aiName} ran into an issue. Please try again in a moment.` }),
       );
     }
   }, [authFetch, selectedChild, date, queryClient, router, t]);
@@ -808,7 +809,7 @@ export default function GenerateRoutineScreen() {
         {/* Region picker */}
         <Text style={styles.sectionLabel}>{t("routines_generate.region_label", { defaultValue: "Cuisine region (optional)" })}</Text>
         <Text style={[styles.optional, { marginTop: -4, marginBottom: 8 }]}>
-          {t("routines_generate.region_hint", { defaultValue: "Amy uses this to suggest meals. Falls back to your profile region." })}
+          {t("routines_generate.region_hint", { defaultValue: `${BRAND.aiName} uses this to suggest meals. Falls back to your profile region.` })}
         </Text>
         <View style={styles.chipsRow}>
           {REGION_OPTIONS.map((opt) => {
@@ -834,7 +835,7 @@ export default function GenerateRoutineScreen() {
           {t("routines_generate.weather_prompt", { defaultValue: "Can the kids go outdoor today?" })}
         </Text>
         <Text style={[styles.optional, { marginTop: -4, marginBottom: 8 }]}>
-          {t("routines_generate.weather_hint", { defaultValue: "Helps Amy plan outdoor vs indoor activities." })}
+          {t("routines_generate.weather_hint", { defaultValue: `Helps ${BRAND.aiName} plan outdoor vs indoor activities.` })}
         </Text>
         <View style={[styles.chipsRow, { marginBottom: 8 }]}>
           {(["yes", "limited", "no"] as const).map((v) => {
@@ -959,10 +960,10 @@ export default function GenerateRoutineScreen() {
                   : <Ionicons name="sparkles" size={18} color="#fff" />}
                 <Text style={styles.primaryBtnText}>
                   {isGenerating
-                    ? t("routines_generate.generating", { defaultValue: "Amy is planning…" })
+                    ? t("routines_generate.generating", { defaultValue: `${BRAND.aiName} is planning…` })
                     : overrideMode
                       ? t("routines_generate.replace_btn", { defaultValue: "Replace with new routine" })
-                      : t("routines_generate.generate_btn", { defaultValue: "Generate with Amy" })}
+                      : t("routines_generate.generate_btn", { defaultValue: `Generate with ${BRAND.aiName}` })}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -979,8 +980,8 @@ export default function GenerateRoutineScreen() {
                 : <Ionicons name="flash" size={16} color={brand.purple500} />}
               <Text style={styles.aiBtnText}>
                 {isAiGenerating
-                  ? t("routines_generate.amy_thinking", { defaultValue: "Amy AI is thinking…" })
-                  : t("routines_generate.smart_ai_btn", { defaultValue: "Smart Amy AI Routine" })}
+                  ? t("routines_generate.amy_thinking", { defaultValue: `${BRAND.aiName} AI is thinking…` })
+                  : t("routines_generate.smart_ai_btn", { defaultValue: `Smart ${BRAND.aiName} AI Routine` })}
               </Text>
             </TouchableOpacity>
           </>
@@ -997,7 +998,7 @@ export default function GenerateRoutineScreen() {
                 : <Ionicons name="people" size={18} color="#fff" />}
               <Text style={styles.primaryBtnText}>
                 {isGeneratingFamily
-                  ? t("routines_generate.family_generating", { defaultValue: "Amy is planning…" })
+                  ? t("routines_generate.family_generating", { defaultValue: `${BRAND.aiName} is planning…` })
                   : t("routines_generate.family_generate_btn", {
                       count: familySelectedCount,
                       defaultValue: `Generate for ${familySelectedCount} kid${familySelectedCount === 1 ? "" : "s"}`,
@@ -1021,8 +1022,8 @@ export default function GenerateRoutineScreen() {
 
         <Text style={styles.footerHint}>
           {mode === "single"
-            ? `Amy will replace any existing routine for ${selectedChildData?.name ?? "this child"} on ${formatDate(date)}.`
-            : t("routines_generate.family_footer", { defaultValue: "Amy will plan one routine per selected child." })}
+            ? `${BRAND.aiName} will replace any existing routine for ${selectedChildData?.name ?? "this child"} on ${formatDate(date)}.`
+            : t("routines_generate.family_footer", { defaultValue: `${BRAND.aiName} will plan one routine per selected child.` })}
         </Text>
       </ScrollView>
 
@@ -1501,11 +1502,11 @@ function FamilyModeBody(props: {
 
 // ─── Caregiver helper-note copy (mirrors web spec wording) ───────────────
 const CAREGIVER_NOTE_FALLBACKS: Record<HandlerKey, string> = {
-  mom: "Amy will plan nurturing, gentle activities.",
-  dad: "Amy will add active, energetic play.",
-  both: "Amy will create a structured, balanced day.",
-  grandparent: "Amy will lean on storytelling and slow-paced moments.",
-  babysitter: "Amy will keep activities simple and safe.",
+  mom: `${BRAND.aiName} will plan nurturing, gentle activities.`,
+  dad: `${BRAND.aiName} will add active, energetic play.`,
+  both: `${BRAND.aiName} will create a structured, balanced day.`,
+  grandparent: `${BRAND.aiName} will lean on storytelling and slow-paced moments.`,
+  babysitter: `${BRAND.aiName} will keep activities simple and safe.`,
 };
 
 // ─── Family results preview (editable) ──────────────────────────────────
@@ -1786,7 +1787,7 @@ const GENERATE_STEPS = [
   { icon: "person-outline" as const, label: "Reading {name}'s profile…" },
   { icon: "color-palette-outline" as const, label: "Picking the right activities…" },
   { icon: "time-outline" as const, label: "Optimising the schedule…" },
-  { icon: "sparkles-outline" as const, label: "Adding Amy's finishing touches…" },
+  { icon: "sparkles-outline" as const, label: `Adding ${BRAND.aiName}'s finishing touches…` },
 ];
 
 function GenerateProgressOverlay({
@@ -1835,7 +1836,7 @@ function GenerateProgressOverlay({
           <Ionicons name={step.icon} size={28} color="#fff" />
         </LinearGradient>
         <Text style={styles.progressTitle}>
-          {isFamily ? `Building ${familyProgress?.currentName}'s routine` : "Amy is planning"}
+          {isFamily ? `Building ${familyProgress?.currentName}'s routine` : `${BRAND.aiName} is planning`}
         </Text>
         <Text style={styles.progressStep}>
           {isFamily ? `${familyProgress?.current} of ${familyProgress?.total} children` : label}

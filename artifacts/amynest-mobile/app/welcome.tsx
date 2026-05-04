@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { SUPPORTED_LANGUAGES, setLanguage, type LanguageCode } from "@/i18n";
 import colors, { brand, brandAlpha, ACCENT_PINK, palette, brandExtended } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 
 const LOGO = require("../assets/images/amynest-logo.png");
 
@@ -133,9 +134,9 @@ const ALL_FEATURES: {
 ];
 
 const TESTIMONIALS = [
-  { name: "Priya M.", location: "Mumbai, India", text: "Amy built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. It felt like talking to an actual child psychologist.", avatar: "P", color: brand.purple500, result: "Tantrums reduced 80% in 3 weeks" },
+  { name: "Priya M.", location: "Mumbai, India", text: `${BRAND.aiName} built us a 12-step plan for tantrums. In 3 weeks, meltdowns went from daily to maybe twice a week. It felt like talking to an actual child psychologist.`, avatar: "P", color: brand.purple500, result: "Tantrums reduced 80% in 3 weeks" },
   { name: "Rahul & Kavya", location: "Bangalore, India", text: "The behavior tracker revealed our daughter gets difficult after 9 PM. We shifted her dinner by 30 mins and it completely changed our evenings.", avatar: "R", color: palette.cyan500, result: "Identified pattern in 5 days" },
-  { name: "Sarah K.", location: "Dubai, UAE", text: "Twin toddlers + infant sleep tracker + Amy's CDC-aligned tips = sanity saved. Got our 6-month-old sleeping through the night in 11 days.", avatar: "S", color: brand.pink500, result: "Sleeping through night in 11 days" },
+  { name: "Sarah K.", location: "Dubai, UAE", text: `Twin toddlers + infant sleep tracker + ${BRAND.aiName}'s CDC-aligned tips = sanity saved. Got our 6-month-old sleeping through the night in 11 days.`, avatar: "S", color: brand.pink500, result: "Sleeping through night in 11 days" },
 ];
 
 export default function WelcomeScreen() {

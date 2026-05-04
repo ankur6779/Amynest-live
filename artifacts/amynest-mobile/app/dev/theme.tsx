@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import colors, { brand, brandAlpha, gradients, ACCENT_PINK } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 
 
 type ColorMode = "light" | "dark";
@@ -32,8 +33,8 @@ const USAGE_HINTS: Record<string, string> = {
   destructiveForeground: "Text on destructive",
   border: "Dividers, borders",
   input: "Input fields",
-  amyGradientStart: "Amy gradient start",
-  amyGradientEnd: "Amy gradient end",
+  amyGradientStart: `${BRAND.aiName} gradient start`,
+  amyGradientEnd: `${BRAND.aiName} gradient end`,
   glass: "Glass morphism surface",
   glassBorder: "Glass morphism border",
   glow: "Primary glow",

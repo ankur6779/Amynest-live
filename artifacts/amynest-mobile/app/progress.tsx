@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
 import colors, { brand, ACCENT_PINK, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 
 type Routine = { id: number; childId: number; childName?: string; title?: string; createdAt: string; activities?: any[] };
 type Behavior = { id: number; type: string; date: string };
@@ -53,7 +54,7 @@ export default function ProgressScreen() {
     if (stats.routinesThisWeek >= 3) out.push({ icon: "trophy", color: palette.amber400, title: "Routine champion", text: `${stats.routinesThisWeek} routines created this week — consistency builds calm.` });
     if (stats.positiveRate >= 70) out.push({ icon: "heart", color: ACCENT_PINK, title: "Positive momentum", text: `${stats.positiveRate}% of logged moments were wins. Keep noticing the good.` });
     if (stats.milestones > 0) out.push({ icon: "star", color: brand.violet400, title: "Milestones tracked", text: `${stats.milestones} milestone${stats.milestones>1?"s":""} captured. Memories your future self will thank you for.` });
-    if (out.length === 0 && !loadingR) out.push({ icon: "compass", color: palette.emerald400, title: "Just getting started", text: "Add a few routines and behavior moments — Amy will surface insights from your data." });
+    if (out.length === 0 && !loadingR) out.push({ icon: "compass", color: palette.emerald400, title: "Just getting started", text: `Add a few routines and behavior moments — ${BRAND.aiName} will surface insights from your data.` });
     return out;
   }, [stats, loadingR]);
 

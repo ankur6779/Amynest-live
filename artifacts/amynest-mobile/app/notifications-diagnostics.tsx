@@ -18,6 +18,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, brandExtended } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 
 type DiagToken = {
   id: number;
@@ -78,7 +79,7 @@ function categoryLabel(cat: string): string {
     case "routine": return "Routine reminders";
     case "routine_item": return "Per-task reminder";
     case "nutrition": return "Nutrition";
-    case "insights": return "Amy AI insights";
+    case "insights": return `${BRAND.aiName} AI insights`;
     case "weekly": return "Weekly report";
     case "engagement": return "Friendly nudge";
     case "good_night": return "Good night";
@@ -177,7 +178,7 @@ export default function NotificationDiagnosticsScreen() {
                     almost always why nothing arrives.
                   </Text>
                   <Text style={[styles.metaText, { marginTop: 8 }]}>
-                    Open AmyNest and grant notification permission, or enable
+                    Open {BRAND.appName} and grant notification permission, or enable
                     browser notifications on the web.
                   </Text>
                 </>
@@ -234,7 +235,7 @@ export default function NotificationDiagnosticsScreen() {
                 ]}
               >
                 {data.inQuietHours
-                  ? "You're currently inside quiet hours, so AmyNest won't send any push notifications until quiet hours end."
+                  ? `You're currently inside quiet hours, so ${BRAND.appName} won't send any push notifications until quiet hours end.`
                   : "You're outside quiet hours — notifications can be delivered now."}
               </Text>
               <Text style={[styles.metaText, { marginTop: 8 }]}>
@@ -332,7 +333,7 @@ export default function NotificationDiagnosticsScreen() {
 
             <Text style={styles.footnote}>
               Still missing notifications? Check your phone's system settings to
-              make sure AmyNest is allowed to show notifications and isn't
+              make sure {BRAND.appName} is allowed to show notifications and isn't
               muted by Focus / Do Not Disturb.
             </Text>
           </>

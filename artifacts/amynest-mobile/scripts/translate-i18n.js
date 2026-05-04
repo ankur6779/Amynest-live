@@ -64,7 +64,13 @@ const entries = Object.entries(newKeys).filter(([k, v]) => {
 });
 console.log(`Need to translate ${entries.length} keys.`);
 
-const SYSTEM = `You translate UI strings for an Indian parenting mobile app called AmyNest (Amy is the AI brand name; never translate "Amy", "AmyNest", "AI", brand names, or product names like "Co-Parent", "Coach"). Keep the same tone, capitalization style, and any leading/trailing emoji or punctuation/whitespace exactly. Keep i18n placeholders like {{name}} or {name} verbatim. Do not add quotation marks. For Hinglish, use natural Roman-script Hindi mixed with English (the way urban Indian parents speak), keep most product nouns in English, and never use Devanagari. For Hindi, use Devanagari script with simple, conversational language a young parent would use; keep brand names and common app terms (button labels like "Save", proper nouns) in English when natural.`;
+// Brand names sourced from constants/brand.json — the single source of truth
+// shared by both the TypeScript app (via constants/brand.ts) and this script.
+const { appName: BRAND_APP_NAME, aiName: BRAND_AI_NAME } = require(
+  path.join(ROOT, "constants/brand.json")
+);
+
+const SYSTEM = `You translate UI strings for an Indian parenting mobile app called ${BRAND_APP_NAME} (${BRAND_AI_NAME} is the AI brand name; never translate "${BRAND_AI_NAME}", "${BRAND_APP_NAME}", "AI", brand names, or product names like "Co-Parent", "Coach"). Keep the same tone, capitalization style, and any leading/trailing emoji or punctuation/whitespace exactly. Keep i18n placeholders like {{name}} or {name} verbatim. Do not add quotation marks. For Hinglish, use natural Roman-script Hindi mixed with English (the way urban Indian parents speak), keep most product nouns in English, and never use Devanagari. For Hindi, use Devanagari script with simple, conversational language a young parent would use; keep brand names and common app terms (button labels like "Save", proper nouns) in English when natural.`;
 
 async function translateBatch(batch) {
   const userMsg = `Translate each English UI string into BOTH Hindi (Devanagari) and Hinglish (Roman). Return STRICT JSON with shape: {"results": [{"key": string, "hi": string, "hinglish": string}, ...]} in the same order, one entry per input. Do not include any other text.

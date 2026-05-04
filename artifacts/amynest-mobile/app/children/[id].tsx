@@ -14,6 +14,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -450,7 +451,7 @@ export default function ChildDetailScreen() {
                   })}
                 </View>
                 <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-                  Helps Amy AI tune feeding sessions and nap blocks for your infant's daily routine.
+                  Helps {BRAND.aiName} AI tune feeding sessions and nap blocks for your infant's daily routine.
                 </Text>
               </>
             )}

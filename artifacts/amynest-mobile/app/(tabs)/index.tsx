@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, brandAlpha } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
@@ -697,7 +698,7 @@ function OnboardingScreen({ displayName, onGetStarted, onExploreHub }: {
   const c = useColors();
   const { theme } = useTheme();
   const features = [
-    { emoji: "🧠", label: "Amy AI Routine Generator", desc: "Smart daily schedules tailored to your child's age and needs." },
+    { emoji: "🧠", label: `${BRAND.aiName} AI Routine Generator`, desc: "Smart daily schedules tailored to your child's age and needs." },
     { emoji: "📊", label: "Progress Tracking", desc: "Monitor growth, streaks, and milestones in one beautiful view." },
     { emoji: "🎯", label: "Daily Activities", desc: "Age-based activities that build skills while keeping kids engaged." },
     { emoji: "🧩", label: "Learning & Phonics", desc: "Adaptive daily tests that grow harder as your child levels up." },

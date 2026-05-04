@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, brandExtended, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import * as Haptics from "expo-haptics";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
@@ -131,10 +132,10 @@ export default function AudioLessonsScreen() {
   };
 
   const introText = lang === "hi"
-    ? "हाथ भरे हैं? Amy आपको बच्चे की उम्र के हिसाब से जरूरी parenting topics समझाएगी। हर lesson 3–5 मिनट का है।"
+    ? `हाथ भरे हैं? ${BRAND.aiName} आपको बच्चे की उम्र के हिसाब से जरूरी parenting topics समझाएगी। हर lesson 3–5 मिनट का है।`
     : lang === "hinglish"
-    ? "Haath bhare hain? Amy aapko bacche ki umra ke hisaab se important topics samjhayegi. Har lesson 3–5 minute ka hai."
-    : "Hands full? Let Amy talk you through the most important parenting topics for your child's age. Each lesson is 3–5 minutes.";
+    ? `Haath bhare hain? ${BRAND.aiName} aapko bacche ki umra ke hisaab se important topics samjhayegi. Har lesson 3–5 minute ka hai.`
+    : `Hands full? Let ${BRAND.aiName} talk you through the most important parenting topics for your child's age. Each lesson is 3–5 minutes.`;
 
   return (
     <LinearGradient colors={["#0f0c29", "#1a1040", "#0c1220"]} style={{ flex: 1 }}> // audit-ok: intentional dark bg / custom color
@@ -209,10 +210,10 @@ export default function AudioLessonsScreen() {
                   {amy.error && (
                     <Text style={styles.errorText}>
                       {lang === "hi"
-                        ? "Amy की आवाज़ अभी नहीं चल पा रही। थोड़ी देर बाद try करें।"
+                        ? `${BRAND.aiName} की आवाज़ अभी नहीं चल पा रही। थोड़ी देर बाद try करें।`
                         : lang === "hinglish"
-                        ? "Amy ki awaaz load nahi ho payi. Thodi der baad try karein."
-                        : "Couldn't load Amy's voice. Please try again shortly."}
+                        ? `${BRAND.aiName} ki awaaz load nahi ho payi. Thodi der baad try karein.`
+                        : `Couldn't load ${BRAND.aiName}'s voice. Please try again shortly.`}
                     </Text>
                   )}
 

@@ -20,6 +20,7 @@ import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useTranslation } from "react-i18next";
 
 const CATEGORIES: ArticleCategory[] = [
@@ -326,7 +327,7 @@ function ArticleModal({ article, onClose }: { article: Article; onClose: () => v
 
             {/* Disclaimer */}
             <Text style={[styles.disclaimer, { color: c.mutedForeground }]}>
-              Amy AI articles are curated from evidence-based child development research. Always
+              {BRAND.aiName} AI articles are curated from evidence-based child development research. Always
               consult your paediatrician for medical concerns.
             </Text>
           </View>

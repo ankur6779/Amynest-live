@@ -26,6 +26,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import SwipeableCard from "@/components/SwipeableCard";
 import RoutineItemModal from "@/components/RoutineItemModal";
 import colors, { brand, brandAlpha, ACCENT_PINK, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { CATEGORY_ICON_PAIRS } from "@/constants/categoryIcons";
 import { useColors } from "@/hooks/useColors";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
@@ -630,7 +631,7 @@ export default function RoutineDetailScreen() {
       "📋 ROUTINE:",
       ...items.map(i => `• ${i.time} — ${i.activity} (${i.duration} min)${i.notes ? `\n  💡 ${i.notes}` : ""}`),
       "",
-      "— Sent via AmyNest",
+      `— Sent via ${BRAND.appName}`,
     ];
     const msg = lines.join("\n");
     try {
@@ -987,7 +988,7 @@ export default function RoutineDetailScreen() {
     setItems(adaptive.items as RoutineItem[]);
     saveMut.mutate(adaptive.items as RoutineItem[]);
     if (adaptive.simplified) {
-      showToast(`⚡ Amy AI simplified ${adaptive.summary.adjusted} task${adaptive.summary.adjusted > 1 ? "s" : ""}`, "warn");
+      showToast(`⚡ ${BRAND.aiName} AI simplified ${adaptive.summary.adjusted} task${adaptive.summary.adjusted > 1 ? "s" : ""}`, "warn");
     }
   }, [adaptive.changed, dateMode, id]);
 
