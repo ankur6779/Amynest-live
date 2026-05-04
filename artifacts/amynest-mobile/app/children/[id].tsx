@@ -472,7 +472,7 @@ export default function ChildDetailScreen() {
                 colors={colors}
               />
             </InfoCard>
-            {isInfant && (
+            {isInfant && ( // i18n-ok: Infant Care — technical section label
               <InfoCard title="Infant Care" colors={colors}>
                 <InfoRow icon="nutrition-outline" label="Feeding" value={feedingLabel(child?.feedingType)} colors={colors} />
                 <InfoRow icon="bed-outline" label="Sleep Pattern" value={sleepPatternLabel(child?.sleepPattern)} colors={colors} />

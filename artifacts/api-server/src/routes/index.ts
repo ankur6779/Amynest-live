@@ -42,6 +42,7 @@ import vaccinationsRouter from "./vaccinations";
 import parentTasksRouter from "./parent-tasks";
 import smartStudyRouter from "./smart-study";
 import lifeSkillsRouter from "./life-skills";
+import debugRouter from "./debug";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -111,5 +112,6 @@ router.use(vaccinationsRouter);
 router.use(parentTasksRouter);
 router.use(smartStudyRouter);
 router.use(lifeSkillsRouter);
+router.use(debugRouter);
 
 export default router;

@@ -26,6 +26,8 @@ import { useNotificationDeepLink } from "@/hooks/useNotificationDeepLink";
 import "@/i18n";
 import { brand } from "@/constants/colors";
 import { initCrashReporter } from "@/utils/crashReporter";
+import { DebugProvider } from "@/contexts/DebugContext";
+import { DebugPanel } from "@/components/DebugPanel";
 
 SplashScreen.preventAutoHideAsync();
 WebBrowser.maybeCompleteAuthSession();
@@ -274,9 +276,12 @@ export default function RootLayout() {
               <ProgressProvider>
                 <GestureHandlerRootView style={{ flex: 1 }}>
                   <KeyboardProvider>
+                    <DebugProvider>
                     <AuthGate>
                       <RootLayoutNav />
+                      <DebugPanel />
                     </AuthGate>
+                    </DebugProvider>
                   </KeyboardProvider>
                 </GestureHandlerRootView>
               </ProgressProvider>

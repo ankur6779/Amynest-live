@@ -61,6 +61,7 @@ The system is a monorepo utilizing pnpm, Node.js 24, and TypeScript 5.9. The fro
 - **Smart Tiffin & Meal Suggestions:** Local-only meal recommender with rule-based ranking and regional datasets.
 - **Nutrition Hub:** Module with age-group-specific nutrient library, weekly Indian meal plans, and a daily nutrition score checklist.
 - **AmyNest Mobile App:** Expo React Native app for iOS and Android, mirroring web functionalities, including a WebView wrapper for Android with native FCM integration.
+- **Debug & Parity System:** Cross-platform debug overlay for comparing Web vs Mobile. Includes a global DEBUG_MODE toggle (URL param `?debug=1` or localStorage on web; AsyncStorage on mobile), floating DebugPanel with real-time API call ring buffer, "Push to Server" button to POST snapshots to `/api/debug/log`, and a parity report page at `/debug-parity` that diffs feature flags and API call patterns between platforms. DB table: `debug_logs`. API endpoints: `POST /api/debug/log`, `GET /api/debug/parity`, `DELETE /api/debug/logs`.
 - **TTS / Read Aloud:** Uses ElevenLabs "Amy" voice with content-hashed caching for meal recipe read-aloud.
 - **Paywall System:** Features in the Parent Hub are gated with "first-time free" access, then locked behind a paywall.
 - **Referral System:** Users receive unique referral codes for bonus premium time.
