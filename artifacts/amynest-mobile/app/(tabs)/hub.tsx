@@ -95,6 +95,15 @@ function getChildInitials(name: string): string {
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
+const AVATAR_GRADIENTS: [string, string][] = [
+  [brand.violet600, brand.purple500],
+  [brand.indigo500, brand.violet500],
+  [brand.purple500, brand.pink500],
+  [brand.rose400, ACCENT_PINK],
+  [brand.amber400, brand.rose400],
+  [brand.sky300, brand.indigo500],
+];
+
 // Stable identifiers used for i18n key lookup. Emojis stay co-located with
 // the data while the user-visible label / prompt text is resolved at render
 // time via `useAmyPrompts()` / `useEmotionalCards()` so a language switch
@@ -1832,6 +1841,9 @@ export default function HubScreen() {
                     sectionKey="zones"
                     childName={childName}
                     bandLabel={HUB_AGE_BANDS[currentBand].label}
+                    ageGroupEmoji={grp?.emoji}
+                    ageGroupLabel={grp?.label}
+                    onGenerateRoutine={() => router.push("/routines/generate" as never)}
                     styles={styles}
                     highlightedTileId={highlightedTileId}
                     leadingNodes={
@@ -1881,6 +1893,9 @@ export default function HubScreen() {
                     sectionKey="modules"
                     childName={childName}
                     bandLabel={HUB_AGE_BANDS[currentBand].label}
+                    ageGroupEmoji={grp?.emoji}
+                    ageGroupLabel={grp?.label}
+                    onGenerateRoutine={() => router.push("/routines/generate" as never)}
                     styles={styles}
                     highlightedTileId={highlightedTileId}
                     tiles={buckets.modules}
@@ -1893,6 +1908,9 @@ export default function HubScreen() {
                   sectionKey="activities"
                   childName={childName}
                   bandLabel={HUB_AGE_BANDS[currentBand].label}
+                  ageGroupEmoji={grp?.emoji}
+                  ageGroupLabel={grp?.label}
+                  onGenerateRoutine={() => router.push("/routines/generate" as never)}
                   styles={styles}
                   highlightedTileId={highlightedTileId}
                   tiles={buckets.activities}
@@ -2230,15 +2248,22 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
   sectionKey,
   childName,
   bandLabel,
+  ageGroupEmoji,
+  ageGroupLabel,
   tiles,
   leadingNodes,
   trailingNodes,
   styles,
   highlightedTileId,
+  onGenerateRoutine,
 }: {
   sectionKey: Exclude<SectionKey, "today">;
   childName: string;
   bandLabel: string;
+  /** Age-group emoji (e.g. "🎨") — used in the ForYou header. */
+  ageGroupEmoji?: string;
+  /** Age-group label (e.g. "Preschool") — used in the ForYou header. */
+  ageGroupLabel?: string;
   tiles: readonly T[];
   leadingNodes?: React.ReactNode;
   trailingNodes?: React.ReactNode;
@@ -2249,6 +2274,8 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
    * Mismatched ids (the tile lives on another page) are ignored.
    */
   highlightedTileId?: string | null;
+  /** Called when the user taps the "Generate Daily Routine" bottom CTA. */
+  onGenerateRoutine?: () => void;
 }) {
   const { t } = useTranslation();
   const sectionMeta = useSectionMeta();
@@ -2289,14 +2316,29 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
       nestedScrollEnabled
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.bandSectionHeader}>
-        <Text style={styles.bandSectionTitle}>{meta.heading}</Text>
-        <Text style={styles.bandSectionSub}>
-          {childName
-            ? t("parent_hub.shell.section_for_child", { name: childName, age: bandLabel })
-            : meta.description}
-        </Text>
-      </View>
+      {childName ? (
+        <View style={styles.bandSectionHeader}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <Text style={styles.eyebrow}>{t("parent_hub.headers.section1_for")}</Text>
+            <View style={styles.bandBadgePill}>
+              <Text style={styles.bandBadgePillText}>{bandLabel}</Text>
+            </View>
+          </View>
+          <Text style={styles.bandSectionTitle}>
+            {t("parent_hub.headers.for_child", { name: childName })}
+            {ageGroupEmoji ? `  ${ageGroupEmoji}` : ""}
+            {ageGroupLabel ? `  ${ageGroupLabel}` : ""}
+          </Text>
+          <Text style={styles.bandSectionSub}>
+            {t("parent_hub.headers.personalised", { name: childName })}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.bandSectionHeader}>
+          <Text style={styles.bandSectionTitle}>{meta.heading}</Text>
+          <Text style={styles.bandSectionSub}>{meta.description}</Text>
+        </View>
+      )}
 
       {leadingNodes}
 
@@ -2338,6 +2380,14 @@ function SectionPage<T extends { id: string; node: React.ReactNode }>({
       )}
 
       {trailingNodes}
+
+      {onGenerateRoutine && (
+        <Pressable onPress={onGenerateRoutine} style={styles.bottomCta}>
+          <Ionicons name="calendar-outline" size={16} color={brand.primary} />
+          <Text style={styles.bottomCtaText}>{t("parent_hub.shell.generate_routine_cta")}</Text>
+          <Ionicons name="arrow-forward" size={14} color={brand.primary} />
+        </Pressable>
+      )}
     </ScrollView>
   );
 }
@@ -2367,11 +2417,19 @@ function ExploreNextStageBlock({
   return (
     <View style={styles.exploreSection}>
       <View style={styles.bandSectionHeader}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <Text style={styles.eyebrow}>{t("parent_hub.headers.section2_next")}</Text>
+          {nearestFutureBand !== null && (
+            <View style={styles.bandBadgePill}>
+              <Text style={styles.bandBadgePillText}>{HUB_AGE_BANDS[nearestFutureBand].label}</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.bandSectionTitle}>{t("parent_hub.headers.explore_next", { name: childName })}</Text>
         <Text style={styles.bandSectionSub}>
           {previewBand !== null
             ? t("parent_hub.headers.previewing_age", { label: HUB_AGE_BANDS[previewBand].label })
-            : t("parent_hub.headers.preview_intro", { name: childName })}
+            : t("parent_hub.headers.explore_blurb", { name: childName })}
         </Text>
       </View>
 
@@ -2654,7 +2712,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       elevation: 2,
     },
     sectionOpen: {
-      borderColor: brandAlpha.purple500_60,
+      borderColor: isLight ? brandAlpha.purple500_60 : brandAlpha.purple500_40,
       backgroundColor: glassBgOpen,
       shadowColor: brand.purple500,
       shadowOpacity: isLight ? 0.25 : 0.45,
@@ -2666,8 +2724,9 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     sectionIcon: {
       width: 44, height: 44, borderRadius: 14,
       alignItems: "center", justifyContent: "center",
-      borderWidth: 1, borderColor: glassBorder,
-      backgroundColor: isLight ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.07)",
+      backgroundColor: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.08)",
+      borderWidth: 1,
+      borderColor: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.12)",
     },
     sectionTitle: { color: c.foreground, fontWeight: "800", fontSize: 15 },
     sectionDesc: { color: c.textMuted, fontSize: 11, marginTop: 2 },
@@ -2731,10 +2790,17 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     },
 
     bottomCta: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12 },
-    bottomCtaText: { color: ACCENT_PINK, fontWeight: "700" },
+    bottomCtaText: { color: brand.primary, fontWeight: "700" },
+
+    bandBadgePill: {
+      paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: 1,
+      borderColor: isLight ? "rgba(15,23,42,0.15)" : "rgba(255,255,255,0.20)",
+      backgroundColor: isLight ? "rgba(15,23,42,0.05)" : "rgba(255,255,255,0.08)",
+    },
+    bandBadgePillText: { color: c.textMuted, fontSize: 10, fontWeight: "600" },
 
     // 2-section age-band layout: section/group headers and Explore styling.
-    bandSectionHeader: { gap: 2, marginTop: 4, marginBottom: 4 },
+    bandSectionHeader: { gap: 4, marginTop: 4, marginBottom: 8 },
     bandSectionTitle: { color: c.foreground, fontSize: 18, fontWeight: "800", letterSpacing: -0.2 },
     bandSectionSub: { color: c.textMuted, fontSize: 12 },
 
