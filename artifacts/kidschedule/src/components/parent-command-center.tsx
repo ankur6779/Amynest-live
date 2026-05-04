@@ -665,7 +665,7 @@ function CommandCenterDashboard(props: DashboardProps) {
 
       {/* Timed quick activity panels — count down then log a positive
           moment when the parent taps "Done with my child". */}
-      {(["play", "phonics", "lullaby", "puzzle"] as const).map(id => activePanel === id ? <TimedActivityPanel key={id} activity={quickActivities.find(q => q.id === id)!} onCancel={() => setActivePanel(null)} onDone={() => logQuickActivity(quickActivities.find(q => q.id === id)!)} /> : null)}
+      {(["play", "phonics", "lullaby", "puzzle"] as const).map(id => activePanel === id ? <TimedActivityPanel key={id} activity={quickActivities.find(q => q.id === id)!} onCancel={() => setActivePanel(null)} onDone={() => logQuickActivity(quickActivities.find(q => q.id === id)!)} /> : null) /* audit-ok — ternary between arrow-fn "=>" and JSX tag; not English prose */}
 
       {/* In-place 10-min play picker — closes the loop on the engine's
           "Try a 10-min play" suggestion chip with 3 tap-to-start ideas. */}
@@ -1118,7 +1118,7 @@ function SwipeableTimelineRow({
       </div>
       {t.status === "completed" ? <span className="rounded-full px-2 py-0.5 text-[10px] font-black bg-primary text-muted-foreground border border-border">
           {tFn("components.parent_command_center.done_4")}
-        </span> : t.status === "skipped" ? <span className="rounded-full px-2 py-0.5 text-[10px] font-black bg-white/10 text-white/70 border border-white/20">
+        </span> : t.status === "skipped" ? /* audit-ok — ternary expression captured between closing/opening span tags; not English prose */ <span className="rounded-full px-2 py-0.5 text-[10px] font-black bg-white/10 text-white/70 border border-white/20">
           {tFn("components.parent_command_center.skipped")}
         </span> : <div className="flex items-center gap-1.5">
           <button type="button" onClick={onSkip} data-testid={`skip-step-${t.index}`} aria-label={`Skip ${t.activity}`} className="hidden sm:inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold bg-white/5 text-white/70 border border-white/15 hover:bg-white/10 hover:text-white">
