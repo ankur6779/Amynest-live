@@ -105,12 +105,6 @@ export const MOBILE_ONLY_EXTRAS: ReadonlySet<string> = new Set([
   // it, but it remains its own tile rather than being nested inside
   // InfantHub.
   "facts",
-  // AI Meal Suggestions mini-card (web exposes this through the Activities
-  // and meal generator surfaces instead).
-  "meal-suggestions",
-  // Mobile keeps a standalone always-current Nutrition tile (web wraps
-  // nutrition into the Activities tile).
-  "nutrition",
   // Task #197 — these surfaces exist on web inside the kidschedule
   // dashboard (age-based-sections / daily-story-section / daily-puzzle),
   // not as parenting-hub tiles. We host them as hub tiles on mobile to

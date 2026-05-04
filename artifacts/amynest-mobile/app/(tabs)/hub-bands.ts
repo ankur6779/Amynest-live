@@ -38,9 +38,6 @@ export const HUB_CONTENT_AGE_BANDS: Record<string, readonly number[]> = {
   emotional:             [0, 1, 2, 3, 4, 5, 6],
   activities:            [0, 1, 2, 3, 4, 5, 6],
   "art-craft":           [0, 1, 2, 3, 4, 5, 6],
-  nutrition:             [0, 1, 2, 3, 4, 5, 6], // mobile-only
-  "meal-suggestions":    [0, 1, 2, 3, 4, 5, 6], // mobile-only
-
   // Band-restricted (web tiles with explicit `bands: [...]`).
   "story-hub":           [0, 1, 2, 3],          // web: 0-2, 2-4, 4-6, 6-8
   phonics:               [1, 2],                // web: 2-4, 4-6 + 12-72m

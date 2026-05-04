@@ -892,58 +892,8 @@ export default function HubScreen() {
               </View>
             ),
           });
-          allTiles.push({
-            id: "nutrition",
-            ageBands: HUB_CONTENT_AGE_BANDS.nutrition,
-            node: (
-              <View style={tileW("nutrition")}>
-              <LockedBlock
-                reason="hub_nutrition"
-                locked={hubUsage.isFeatureLocked("hub_nutrition")}
-                radius={18}
-              >
-                <Pressable
-                  onPress={() => {
-                    hubUsage.markFeatureUsed("hub_nutrition");
-                    router.push("/nutrition" as never);
-                  }}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
-                >
-                  <LinearGradient
-                    colors={[brand.violet600, palette.indigo600]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
-                  >
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ fontSize: 22 }}>🥗</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.nutrition.title")}</Text>
-                          {tryFreeFor("hub_nutrition") ? <TryFreeBadge /> : null}
-                        </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.nutrition.sublabel")}</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
-                    </View>
-                    <View style={{ flexDirection: "row", gap: 6 }}>
-                      {(() => {
-                        const raw = t("parent_hub.nutrition_tags", { returnObjects: true });
-                        const list = Array.isArray(raw) ? (raw as string[]) : [];
-                        return list.map(tag => (
-                          <View key={tag} style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
-                            <Text style={{ color: "#fff", fontSize: 9, fontWeight: "600" }}>{tag}</Text>
-                          </View>
-                        ));
-                      })()}
-                    </View>
-                  </LinearGradient>
-                </Pressable>
-              </LockedBlock>
-              </View>
-            ),
-          });
+          // Nutrition Hub tile removed from Parent Hub — accessible via the
+          // burger menu (NavDrawer) under "Nutrition Hub" directly.
           allTiles.push({
             id: "event-prep",
             ageBands: HUB_CONTENT_AGE_BANDS["event-prep"],
@@ -1307,33 +1257,9 @@ export default function HubScreen() {
               ),
             });
           }
-          allTiles.push({
-            id: "meal-suggestions",
-            ageBands: HUB_CONTENT_AGE_BANDS["meal-suggestions"],
-            node: (
-              <View style={tileW("meal-suggestions")}>
-              <LockedBlock
-                reason="hub_locked"
-                locked={hubUsage.isFeatureLocked("hub_ai_meal_generator")}
-              >
-              <Section
-                id="meal-suggestions"
-                icon={<MaterialCommunityIcons name="food" size={20} color="#fff" />}
-                emoji="🍱"
-                accent={[palette.emerald500, palette.lime500]}
-                title={t("parent_hub.tiles.meal-suggestions.title")}
-                desc={t("parent_hub.tiles.meal-suggestions.desc")}
-                open={openSection === "meal-suggestions"}
-                onToggle={() => setOpenSection(s => s === "meal-suggestions" ? null : "meal-suggestions")}
-                onOpen={() => hubUsage.markFeatureUsed("hub_ai_meal_generator")}
-                tryFree={tryFreeFor("hub_ai_meal_generator")}
-              >
-                <AiMealGenerator childAge={effective?.age} />
-              </Section>
-              </LockedBlock>
-              </View>
-            ),
-          });
+          // Meal Suggestions tile removed from Parent Hub — now lives in the
+          // Routines tab (after Daily Routine Blocks), matching the logical
+          // flow where parents plan meals alongside their child's daily routine.
           allTiles.push({
             id: "smart-math-tricks",
             ageBands: HUB_CONTENT_AGE_BANDS["smart-math-tricks"],
@@ -1811,7 +1737,7 @@ function ExploreNextStageBlock({
 }
 
 function Section({
-  id, icon, emoji, accent: _accent, title, desc, open, onToggle, onOpen, tryFree = false, children,
+  id, icon, emoji, accent, title, desc, open, onToggle, onOpen, tryFree = false, children,
 }: {
   id: string;
   icon: React.ReactNode;
@@ -1820,9 +1746,8 @@ function Section({
    *  visually distinct and avoid blank squares on platforms where the
    *  vector-icons font fails to load (e.g. some Android WebView builds). */
   emoji?: string;
-  /** Accent gradient kept in the prop signature for caller compatibility.
-   *  The icon box now uses a flat muted glass background (web-parity) so
-   *  this value is intentionally unused in the render output. */
+  /** Accent gradient used for the icon box background. Each tile passes its
+   *  own unique color pair so tiles are visually distinct and colorful. */
   accent: [string, string];
   title: string;
   desc: string;
@@ -1854,9 +1779,14 @@ function Section({
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
       >
-        <View style={styles.sectionIcon}>
-          {emoji ? <Text style={{ fontSize: 24 }}>{emoji}</Text> : icon}
-        </View>
+        <LinearGradient
+          colors={[accent[0], accent[1]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.sectionIcon}
+        >
+          {emoji ? <Text style={{ fontSize: 20 }}>{emoji}</Text> : icon}
+        </LinearGradient>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <Text style={styles.sectionTitle}>{title}</Text>
@@ -2009,9 +1939,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     sectionIcon: {
       width: 42, height: 42, borderRadius: 12,
       alignItems: "center", justifyContent: "center",
-      backgroundColor: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.08)",
-      borderWidth: 1,
-      borderColor: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.12)",
+      overflow: "hidden",
     },
     sectionTitle: { color: c.foreground, fontWeight: "800", fontSize: 15 },
     sectionDesc: { color: c.textMuted, fontSize: 12, marginTop: 2 },

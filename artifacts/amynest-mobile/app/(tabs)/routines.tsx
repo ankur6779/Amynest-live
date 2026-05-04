@@ -17,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import FuturePredictor from "@/components/FuturePredictor";
+import AiMealGenerator from "@/components/AiMealGenerator";
 import colors, { brand, palette } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 
@@ -258,10 +259,11 @@ export default function RoutinesScreen() {
           <FuturePredictor childId={effectiveChildId} variant="compact" />
         </View>
 
-        {/* 🍱 Smart Tiffin & Meal Suggestions — hidden on mobile per product decision */}
-        {/* <View style={{ marginBottom: 16 }}>
-          <SmartMealSuggestions />
-        </View> */}
+        {/* 🍱 Meal Suggestions — surfaced here so meal planning flows naturally
+            with the daily routine. Previously this lived in Parent Hub. */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+          <AiMealGenerator />
+        </View>
 
         {/* Loading / Error / Empty */}
         {isLoading ? (

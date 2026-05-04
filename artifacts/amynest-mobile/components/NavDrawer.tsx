@@ -35,23 +35,26 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { id: "dashboard",     label: "Dashboard",      icon: "home-outline",           route: "/(tabs)/" },
-  { id: "hub",           label: "Parenting Hub",  icon: "book-outline",           route: "/(tabs)/hub" },
-  { id: "coach",         label: `${BRAND.aiName} Coach`,      icon: "sparkles-outline",       route: "/(tabs)/coach" },
-  { id: "kids-control",  label: "Kids Control",   icon: "shield-checkmark-outline", route: "/kids-control-center" },
-  { id: "children",      label: "Children",       icon: "people-outline",         route: "/children" },
-  { id: "routines",      label: "Routines",       icon: "calendar-outline",       route: "/(tabs)/routines" },
-  { id: "progress",      label: "Progress",       icon: "trending-up-outline",    route: "/progress" },
-  { id: "insights",      label: "Insights",       icon: "bar-chart-outline",      route: "/insights" },
-  { id: "rewards",       label: "Rewards",        icon: "star-outline",           route: "/rewards" },
-  { id: "behavior",      label: "Behavior",       icon: "heart-outline",          route: "/behavior" },
+  // Primary navigation — ordered per product spec
+  { id: "dashboard",     label: "Dashboard",      icon: "home-outline",                route: "/(tabs)/" },
+  { id: "routines",      label: "Routines",       icon: "calendar-outline",            route: "/(tabs)/routines" },
+  { id: "hub",           label: "Parenting Hub",  icon: "book-outline",                route: "/(tabs)/hub" },
+  { id: "nutrition",     label: "Nutrition Hub",  icon: "nutrition-outline",           route: "/nutrition" },
+  // Secondary navigation
+  { id: "coach",         label: `${BRAND.aiName} Coach`,      icon: "sparkles-outline",            route: "/(tabs)/coach" },
+  { id: "progress",      label: "Progress",       icon: "trending-up-outline",         route: "/progress" },
+  { id: "insights",      label: "Insights",       icon: "bar-chart-outline",           route: "/insights" },
+  { id: "behavior",      label: "Behavior",       icon: "heart-outline",               route: "/behavior" },
+  { id: "kids-control",  label: "Kids Control",   icon: "shield-checkmark-outline",    route: "/kids-control-center" },
+  { id: "children",      label: "Children",       icon: "people-outline",              route: "/children" },
+  { id: "rewards",       label: "Rewards",        icon: "star-outline",                route: "/rewards" },
   { id: "amy-ai",        label: `${BRAND.aiName} AI`,         icon: "chatbubble-ellipses-outline", route: "/amy-ai" },
-  { id: "games",         label: "Gaming Reward",  icon: "game-controller-outline", route: "/games" },
-  { id: "recipes",       label: "My Recipes",     icon: "restaurant-outline",     route: "/recipes" },
-  { id: "nutrition",     label: "Nutrition Hub",  icon: "nutrition-outline",      route: "/nutrition" },
-  { id: "profile",       label: "My Profile",     icon: "person-outline",         route: "/(tabs)/profile" },
-  { id: "pricing",       label: "Pricing",        icon: "pricetag-outline",       route: "/paywall" },
-  { id: "referrals",     label: "Referrals",      icon: "share-social-outline",   route: "/referrals" },
+  { id: "games",         label: "Gaming Reward",  icon: "game-controller-outline",     route: "/games" },
+  { id: "recipes",       label: "My Recipes",     icon: "restaurant-outline",          route: "/recipes" },
+  // Settings-area
+  { id: "profile",       label: "My Profile",     icon: "person-outline",              route: "/(tabs)/profile" },
+  { id: "pricing",       label: "Pricing",        icon: "pricetag-outline",            route: "/paywall" },
+  { id: "referrals",     label: "Referrals",      icon: "share-social-outline",        route: "/referrals" },
 ];
 
 export function NavDrawer() {
