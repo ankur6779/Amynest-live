@@ -320,10 +320,10 @@ export default function HubScreen() {
       {/* Sticky header above the swipeable pager */}
       <View
         style={{
-          paddingTop: insets.top + 16,
+          paddingTop: insets.top + 6,
           paddingHorizontal: 16,
-          paddingBottom: 8,
-          gap: 12,
+          paddingBottom: 4,
+          gap: 8,
         }}
       >
         <View style={styles.headerRow}>
@@ -339,10 +339,6 @@ export default function HubScreen() {
             </View>
           </Pressable>
           <View style={{ flex: 1 }}>
-            <View style={styles.eyebrowRow}>
-              <Ionicons name="sparkles" size={11} color={brand.purple500} />
-              <Text style={styles.eyebrow}>{t("parent_hub.shell.eyebrow")}</Text>
-            </View>
             <Text style={styles.title}>{t("parent_hub.shell.title")}</Text>
             <Text style={styles.subtitle}>{t("parent_hub.shell.subtitle_mobile")}</Text>
           </View>
@@ -356,11 +352,6 @@ export default function HubScreen() {
             </LinearGradient>
           </Pressable>
         </View>
-
-        {/* Inline language switcher so caregivers can toggle English / Hindi /
-            Hinglish without leaving the Parent Hub. Reuses the shared
-            `LanguageRow` modal already used in onboarding & settings. */}
-        <LanguageRow />
 
         {isLoading && (
           <View style={{ paddingVertical: 40, alignItems: "center" }}>
@@ -379,12 +370,10 @@ export default function HubScreen() {
           </View>
         )}
 
-        {/* Child selector — web-parity rich avatar cards.
-            Each card shows a gradient avatar with initials, name, and age-group
-            label. The selected card gains a purple border glow + checkmark icon
-            + "VIEWING" pill, matching the web ChildSelectorPanel design.
-            Visible for any number of children (including single-child families)
-            so caregivers always see who content is personalised for. */}
+        {/* Child selector — horizontal pill chips.
+            Each chip: gradient avatar (left) + name & age-group label (right).
+            Selected chip gets a purple border + checkmark icon. Min 52px height
+            satisfies the iOS/Android 44px minimum touch-target requirement. */}
         {children.length > 0 && (
           <View style={styles.childSelectorWrap}>
             <View style={styles.childSelectorHeader}>
@@ -410,11 +399,6 @@ export default function HubScreen() {
                     onPress={() => setSelectedId(ch.id)}
                     style={[styles.childCard, isSel && styles.childCardSel]}
                   >
-                    {isSel && (
-                      <View style={styles.childCardCheck}>
-                        <Ionicons name="checkmark-circle" size={12} color={brand.primary} />
-                      </View>
-                    )}
                     <LinearGradient
                       colors={grad}
                       start={{ x: 0, y: 0 }}
@@ -435,9 +419,7 @@ export default function HubScreen() {
                       </Text>
                     </View>
                     {isSel && (
-                      <View style={styles.viewingChip}>
-                        <Text style={styles.viewingChipText}>{t("parent_hub.headers.viewing")}</Text>
-                      </View>
+                      <Ionicons name="checkmark-circle" size={16} color={brand.primary} />
                     )}
                   </Pressable>
                 );
@@ -445,19 +427,6 @@ export default function HubScreen() {
             </ScrollView>
           </View>
         )}
-
-        {effective && grp && (
-          <View style={styles.agePillRow}>
-            <View style={styles.agePill}>
-              <Text style={{ color: brand.amber400, fontWeight: "700" }}>{grp.emoji} {grp.label}</Text>
-            </View>
-            <Text style={styles.personalised}>
-              {t("parent_hub.shell.personalised_for")}{" "}
-              <Text style={{ color: "#fff", fontWeight: "700" }}>{effective.name}</Text>
-            </Text>
-          </View>
-        )}
-
 
       </View>
 
@@ -1610,8 +1579,13 @@ export default function HubScreen() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
               >
+                {/* Language switcher — moved into scroll content so it doesn't
+                    eat sticky header space. Caregivers can still toggle at any
+                    time without leaving the hub. */}
+                <LanguageRow />
+
                 {/* Featured tiles */}
-                <View style={[styles.sectionsGrid, { marginTop: 8 }]}>
+                <View style={[styles.sectionsGrid, { marginTop: 4 }]}>
                   <View style={{ position: "relative" }}>
                     <HubTile featured testID="hub-tile-command-center">
                       <ParentCommandCenter child={{ id: effective.id, name: effective.name, age: effective.age }} />
@@ -1915,8 +1889,8 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       letterSpacing: 1.4,
       color: brand.purple500,
     },
-    title: { color: c.foreground, fontSize: 24, fontWeight: "800", letterSpacing: -0.4 },
-    subtitle: { color: c.textMuted, fontSize: 12, marginTop: 2 },
+    title: { color: c.foreground, fontSize: 20, fontWeight: "800", letterSpacing: -0.3 },
+    subtitle: { color: c.textMuted, fontSize: 11, marginTop: 1 },
     askAmyBtn: { borderRadius: 999, overflow: "hidden" },
     askAmyGrad: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 8 },
     askAmyText: { color: "#fff", fontWeight: "700", fontSize: 12 },
@@ -1930,29 +1904,29 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     primaryBtn: { backgroundColor: brand.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 999, marginTop: 8 },
     primaryBtnText: { color: "#fff", fontWeight: "700" },
 
-    // ── Child selector rich avatar cards (web ChildSelectorPanel parity) ──────
+    // ── Child selector horizontal pill chips ─────────────────────────────────
     childSelectorWrap: {
       borderRadius: 16, overflow: "hidden",
       backgroundColor: glassBg, borderWidth: 1, borderColor: glassBorder,
     },
     childSelectorHeader: {
       flexDirection: "row", alignItems: "center", gap: 6,
-      paddingHorizontal: 12, paddingTop: 6, paddingBottom: 2,
+      paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4,
     },
     childSelectorLabel: {
-      color: c.textMuted, fontSize: 9, fontWeight: "800",
-      letterSpacing: 0.9, textTransform: "uppercase",
+      color: c.textMuted, fontSize: 10, fontWeight: "800",
+      letterSpacing: 0.8, textTransform: "uppercase",
     },
     childSelectorRow: {
-      flexDirection: "row", gap: 6,
-      paddingHorizontal: 8, paddingBottom: 6, paddingTop: 0,
+      flexDirection: "row", gap: 8,
+      paddingHorizontal: 10, paddingBottom: 10, paddingTop: 2,
     },
     childCard: {
-      minWidth: 54, alignItems: "center", gap: 2,
-      paddingHorizontal: 6, paddingVertical: 5, borderRadius: 10,
-      backgroundColor: isLight ? "rgba(255,255,255,0.50)" : "rgba(255,255,255,0.03)",
+      flexDirection: "row", alignItems: "center", gap: 10,
+      minWidth: 120, minHeight: 52,
+      paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14,
+      backgroundColor: isLight ? "rgba(255,255,255,0.50)" : "rgba(255,255,255,0.05)",
       borderWidth: 2, borderColor: glassBorder,
-      position: "relative",
     },
     childCardSel: {
       backgroundColor: brandAlpha.purple500_10,
@@ -1963,9 +1937,8 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       shadowOffset: { width: 0, height: 4 },
       elevation: 4,
     },
-    childCardCheck: { position: "absolute", top: 3, right: 3 },
     childAvatar: {
-      width: 28, height: 28, borderRadius: 14,
+      width: 38, height: 38, borderRadius: 19,
       alignItems: "center", justifyContent: "center",
     },
     childAvatarSel: {
@@ -1974,21 +1947,13 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       shadowRadius: 6,
       shadowOffset: { width: 0, height: 2 },
     },
-    childAvatarText: { color: "#fff", fontWeight: "800", fontSize: 10, letterSpacing: -0.3 },
-    childCardInfo: { alignItems: "center", gap: 0 },
-    childCardName: { color: c.foreground, fontWeight: "700", fontSize: 10, textAlign: "center" },
+    childAvatarText: { color: "#fff", fontWeight: "800", fontSize: 13, letterSpacing: -0.3 },
+    childCardInfo: { flex: 1, gap: 2 },
+    childCardName: { color: c.foreground, fontWeight: "700", fontSize: 13 },
     childCardNameSel: { color: brand.primary },
-    childCardAge: { color: c.textMuted, fontSize: 9, textAlign: "center" },
-    viewingChip: {
-      paddingHorizontal: 5, paddingVertical: 1, borderRadius: 999,
-      backgroundColor: brandAlpha.purple500_15,
-    },
-    viewingChipText: {
-      color: brand.primary, fontSize: 7, fontWeight: "800",
-      letterSpacing: 0.6, textTransform: "uppercase",
-    },
+    childCardAge: { color: c.textMuted, fontSize: 11 },
 
-    // ── Dev badge on logo (7-tap toggle) ────────────────────────────────────
+    // ── Dev badge on logo (7-tap toggle) ─────────────────────────────────── // audit-ok: not a hex color
     devBadge: {
       position: "absolute", bottom: -4, right: -4,
       backgroundColor: brand.rose400,
@@ -2026,39 +1991,44 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       shadowOffset: { width: 0, height: 10 },
       elevation: 8,
     },
-    sectionHeader: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10 },
+    sectionHeader: {
+      flexDirection: "row", alignItems: "center", gap: 12,
+      paddingHorizontal: 14, paddingVertical: 14,
+      minHeight: 64,
+    },
     sectionIcon: {
-      width: 36, height: 36, borderRadius: 10,
+      width: 42, height: 42, borderRadius: 12,
       alignItems: "center", justifyContent: "center",
       backgroundColor: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.08)",
       borderWidth: 1,
       borderColor: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.12)",
     },
-    sectionTitle: { color: c.foreground, fontWeight: "800", fontSize: 13 },
-    sectionDesc: { color: c.textMuted, fontSize: 10, marginTop: 1 },
+    sectionTitle: { color: c.foreground, fontWeight: "800", fontSize: 15 },
+    sectionDesc: { color: c.textMuted, fontSize: 12, marginTop: 2 },
     sectionBody: {
-      padding: 10, paddingTop: 6,
+      padding: 14, paddingTop: 10,
       borderTopWidth: 1, borderTopColor: innerDivider,
       backgroundColor: glassBgSoft,
-      gap: 8,
+      gap: 10,
     },
     chevWrap: {
-      width: 26, height: 26, borderRadius: 13,
+      width: 30, height: 30, borderRadius: 15,
       alignItems: "center", justifyContent: "center",
       borderWidth: 1, borderColor: glassBorder,
       backgroundColor: glassBgSoft,
     },
     chevWrapOpen: { borderColor: brandAlpha.purple500_60, backgroundColor: brandAlpha.purple500_15 },
-    sectionLead: { color: c.textBody, fontSize: 13 },
+    sectionLead: { color: c.textBody, fontSize: 14, lineHeight: 20 },
 
-    promptsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    promptsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
     promptChip: {
-      flexDirection: "row", alignItems: "center", gap: 8,
-      paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14,
+      flexDirection: "row", alignItems: "center", gap: 10,
+      paddingHorizontal: 14, paddingVertical: 13, borderRadius: 14,
       backgroundColor: glassBg, borderWidth: 1, borderColor: glassBorder,
       flexBasis: "48%", flexGrow: 1,
+      minHeight: 52,
     },
-    promptLabel: { color: c.foreground, fontWeight: "600", fontSize: 12 },
+    promptLabel: { color: c.foreground, fontWeight: "600", fontSize: 13 },
     askAmyFull: {
       marginTop: 4, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
       paddingVertical: 12, borderRadius: 14, backgroundColor: "rgba(123,63,242,0.25)",
