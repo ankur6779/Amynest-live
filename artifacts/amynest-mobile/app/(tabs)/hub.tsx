@@ -42,6 +42,7 @@ import { DailyStory } from "@/components/DailyStory";
 import { ParentTasks } from "@/components/ParentTasks";
 import { DailyPuzzle } from "@/components/DailyPuzzle";
 import { HubDebugOverlay } from "@/components/HubDebugOverlay";
+import { useDebugMode } from "@/contexts/DebugContext";
 import { HubTile } from "@/components/HubTile";
 import RoutineCarousel from "@/components/RoutineCarousel";
 import { useTodayRoutine } from "@/hooks/useTodayRoutine";
@@ -200,10 +201,10 @@ export default function HubScreen() {
   const pageWidth = Math.max(0, windowWidth);
   const pagerRef = useRef<FlatList<SectionKey>>(null);
   const [activeSection, setActiveSection] = useState<SectionKey>("today");
-  // Dev-mode activation: 7 quick taps on the logo toggles a persistent
-  // AsyncStorage flag that shows HubDebugOverlay in non-__DEV__ builds too,
-  // giving testers on production builds access to the tile diff inspector.
-  const [devMode, setDevMode] = useState(false);
+  // Dev-mode activation: 7 quick taps on the logo toggles DebugContext, which
+  // persists to AsyncStorage and shows both the HubDebugOverlay and the global
+  // DebugPanel. Single source of truth — no local devMode state needed.
+  const { debugMode, toggle: toggleDebugMode } = useDebugMode();
   const logoTapCount = useRef(0);
   const logoTapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Live horizontal scroll offset (Animated.Value) — drives both the
@@ -384,33 +385,23 @@ export default function HubScreen() {
     setPreviewBand(band);
   };
 
-  // Restore persisted dev-mode state on mount. Async, so devMode may flip
-  // on the second frame — acceptable for a developer-only feature.
-  useEffect(() => {
-    AsyncStorage.getItem("amynest:devMode")
-      .then((val) => { if (val === "1") setDevMode(true); })
-      .catch(() => {});
-  }, []);
-
   // 7-tap logo tap-counter: each tap within a 1.5 s window increments the
-  // counter; on reaching 7 the flag toggles and is persisted to AsyncStorage.
-  // Works in all build types (debug and release) so testers can access the
-  // HubDebugOverlay without a custom build.
+  // counter; on reaching 7 it calls toggleDebugMode() from DebugContext,
+  // which handles AsyncStorage persistence. Works in all build types
+  // (debug and release) so testers can access overlays without a custom build.
   const handleLogoTap = useCallback(() => {
     logoTapCount.current += 1;
     if (logoTapTimeout.current) clearTimeout(logoTapTimeout.current);
     if (logoTapCount.current >= 7) {
       logoTapCount.current = 0;
-      const next = !devMode;
-      setDevMode(next);
-      AsyncStorage.setItem("amynest:devMode", next ? "1" : "0").catch(() => {});
+      toggleDebugMode();
     } else {
       logoTapTimeout.current = setTimeout(() => {
         logoTapCount.current = 0;
         logoTapTimeout.current = null;
       }, 1500);
     }
-  }, [devMode]);
+  }, [toggleDebugMode]);
 
   const askAmy = (q: string) => {
     router.push({ pathname: "/amy-ai", params: { q } });
@@ -501,7 +492,7 @@ export default function HubScreen() {
           <Pressable onPress={handleLogoTap} accessibilityRole="button" accessibilityLabel="AmyNest logo">
             <View>
               <Image source={LOGO} style={styles.logo} resizeMode="contain" />
-              {devMode && (
+              {debugMode && (
                 <View style={styles.devBadge}>
                   {/* i18n-ok: developer mode indicator — not user-facing, intentionally not translated */}
                   <Text style={styles.devBadgeText}>DEV</Text>
@@ -1984,7 +1975,7 @@ export default function HubScreen() {
           for the active child. Mounted as ScrollView sibling so it floats
           over content. Reads debugSnapshot which the IIFE above populates
           synchronously during this same render pass. */}
-      {(__DEV__ || devMode) && effective && (
+      {(__DEV__ || debugMode) && effective && (
         <HubDebugOverlay
           mobileSection1Ids={debugSnapshot.section1Ids}
           mobileSection2Ids={debugSnapshot.section2Ids}
@@ -1992,7 +1983,7 @@ export default function HubScreen() {
           currentBand={currentBand}
           ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
           childName={childName}
-          devMode={devMode}
+          devMode={debugMode}
         />
       )}
     </LinearGradient>

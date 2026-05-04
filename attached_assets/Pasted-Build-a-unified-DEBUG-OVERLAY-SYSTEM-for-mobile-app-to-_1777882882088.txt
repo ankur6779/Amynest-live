@@ -1,0 +1,235 @@
+Build a unified DEBUG OVERLAY SYSTEM for mobile app to audit:
+
+1. Functional behavior
+2. UI consistency
+3. Color usage
+4. Mobile vs Web parity
+
+GOAL:
+Ensure pixel-perfect UI + exact logic match with web app.
+
+---
+
+### 1. GLOBAL DEBUG MODE
+
+Create:
+
+DEBUG_MODE = true
+
+When enabled:
+- Show overlay on ALL screens
+- Enable logging + comparison
+
+---
+
+### 2. DEBUG OVERLAY UI
+
+Floating panel (top-right / draggable):
+
+Sections:
+
+[FUNCTIONAL]
+- Screen Name
+- API Endpoint
+- Request Payload
+- Response Data
+- Execution Time
+
+[STATE]
+- Country
+- Cuisine
+- Diet Type
+- Child Age
+
+[UI AUDIT]
+- Font Size
+- Font Weight
+- Spacing
+- Component Count
+
+[COLOR AUDIT]
+- Background color
+- Primary color
+- Button color
+- Text color
+
+---
+
+### 3. MOBILE vs WEB COMPARISON ENGINE
+
+Add function:
+
+compareState(mobile, web)
+
+Return:
+
+{
+  "logic_match": true/false,
+  "ui_match": true/false,
+  "color_match": true/false,
+  "content_match": true/false
+}
+
+---
+
+### 4. COLOR AUDIT SYSTEM
+
+Extract colors from UI components:
+
+- background
+- buttons
+- text
+- cards
+
+Compare with web design tokens:
+
+Example:
+
+{
+  "mobile": "#FFFFFF",
+  "web": "#F8F8F8",
+  "status": "mismatch"
+}
+
+Highlight mismatch in red.
+
+---
+
+### 5. UI STRUCTURE VALIDATION
+
+Check:
+
+- Missing components
+- Extra components
+- Order mismatch
+
+Example:
+
+mobile: [header, card, button]
+web:    [header, button]
+
+→ mismatch detected
+
+---
+
+### 6. FUNCTIONAL DEBUG LOGGER
+
+Log:
+
+- API calls
+- Inputs
+- Outputs
+
+Example:
+
+POST /generate-meal
+
+Input:
+{country: "US", cuisine: "Western"}
+
+Output:
+{meal: "pasta"}
+
+---
+
+### 7. CONTENT COMPARISON
+
+Check:
+
+- text content
+- order
+- labels
+
+---
+
+### 8. VISUAL DIFF (OPTIONAL)
+
+Capture UI snapshot:
+- mobile screenshot
+- web screenshot
+
+Highlight:
+- spacing differences
+- alignment issues
+
+---
+
+### 9. ERROR HIGHLIGHT
+
+If mismatch:
+
+Show:
+
+⚠️ Logic mismatch  
+⚠️ Color mismatch  
+⚠️ Missing UI element  
+
+---
+
+### 10. DEBUG PANEL COLORS
+
+Use:
+
+- Green = OK
+- Yellow = Warning
+- Red = Error
+
+---
+
+### 11. PERFORMANCE METRICS
+
+Show:
+
+- API time (ms)
+- render time
+- load time
+
+---
+
+### 12. PHASE FILTER
+
+Allow debug filtering:
+
+- onboarding
+- routine page full till routine generate with Logic and API calls
+- Amy Coach (Full till wins generate and Amy audio lessoon)
+- Parenting Hub all content ( Infant and 2+ Years)
+- Child and Parent Profile
+Profile
+-Food Preference 
+-Other API calls
+
+
+---
+
+### 13. TOGGLE CONTROLS
+
+Buttons:
+
+- Hide / Show overlay
+- Export logs
+- Compare now
+
+---
+
+### 14. LOG STORAGE
+
+Store:
+
+debug_logs = [
+  {
+    screen: "Meal",
+    issue: "color mismatch",
+    mobile: "#FFF",
+    web: "#EEE"
+  }
+]
+
+---
+
+### 15. SUCCESS CRITERIA
+
+- All screens show debug overlay
+- Mobile matches web logic
+- UI consistent
+- Colors consistent
