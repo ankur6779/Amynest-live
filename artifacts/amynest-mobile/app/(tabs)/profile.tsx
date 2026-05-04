@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, brandAlpha, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -284,7 +285,7 @@ export default function ProfileScreen() {
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete Account?",
-      "This permanently deletes your account, children, routines, behaviors and all AmyNest data. This cannot be undone.",
+      `This permanently deletes your account, children, routines, behaviors and all ${BRAND.appName} data. This cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -293,7 +294,7 @@ export default function ProfileScreen() {
           onPress: () => {
             Alert.alert(
               "Final confirmation",
-              "Tap 'Yes, delete everything' to permanently erase your AmyNest account.",
+              `Tap 'Yes, delete everything' to permanently erase your ${BRAND.appName} account.`,
               [
                 { text: "Cancel", style: "cancel" },
                 {
@@ -326,7 +327,7 @@ export default function ProfileScreen() {
 
   const handleContactUs = async () => {
     Haptics.selectionAsync();
-    const subject = encodeURIComponent("AmyNest Support");
+    const subject = encodeURIComponent(`${BRAND.appName} Support`);
     const body = encodeURIComponent("");
     const url = `mailto:Support@amynest.in?subject=${subject}&body=${body}`;
     const canOpen = await Linking.canOpenURL(url);
@@ -366,7 +367,7 @@ export default function ProfileScreen() {
             </View>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t("screens.tabs_profile.my_parent_profile")}</Text>
             <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-              Helps Amy AI build smarter routines for your child.
+              Helps {BRAND.aiName} AI build smarter routines for your child.
             </Text>
           </View>
         </View>
@@ -446,7 +447,7 @@ export default function ProfileScreen() {
         </Section>
 
         {/* Work Schedule */}
-        <Section title={t("screens.tabs_profile.work_schedule")} subtitle="Amy AI uses this to assign tasks when you're free or busy" colors={colors}>
+        <Section title={t("screens.tabs_profile.work_schedule")} subtitle={`${BRAND.aiName} AI uses this to assign tasks when you're free or busy`} colors={colors}>
           <Field label="Work Type" colors={colors}>
             <ChipPicker options={WORK_TYPES} value={workType} onChange={setWorkType} colors={colors} />
           </Field>
@@ -499,7 +500,7 @@ export default function ProfileScreen() {
         {/* Food Preferences */}
         <Section
           title={t("screens.tabs_profile.food_preferences")}
-          subtitle="Used by Amy AI to suggest appropriate meals"
+          subtitle={`Used by ${BRAND.aiName} AI to suggest appropriate meals`}
           icon="restaurant-outline"
           colors={colors}
         >
@@ -509,7 +510,7 @@ export default function ProfileScreen() {
           <Field label="Regional Cuisine" colors={colors}>
             <ChipPicker options={REGIONS} value={region} onChange={setRegion} colors={colors} />
             <Text style={[styles.hint, { color: colors.mutedForeground }]}>
-              Amy AI tailors meal suggestions to your regional cuisine.
+              {BRAND.aiName} AI tailors meal suggestions to your regional cuisine.
             </Text>
           </Field>
           <Field label="Allergies / Foods to Avoid" colors={colors}>
@@ -552,7 +553,7 @@ export default function ProfileScreen() {
         {/* Notifications */}
         <Section
           title={t("screens.tabs_profile.notifications")}
-          subtitle="Choose what AmyNest sends you"
+          subtitle={`Choose what ${BRAND.appName} sends you`}
           icon="mail-unread-outline"
           colors={colors}
         >

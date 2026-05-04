@@ -12,12 +12,13 @@ import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import colors, { brand, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const FEATURES = [
-  { emoji: "🧠", label: "Amy AI Routines", desc: "Smart daily schedules for your child's age.", glow: brand.indigo500, grad: [brand.indigo500, palette.indigo600] as [string, string] },
+  { emoji: "🧠", label: `${BRAND.aiName} AI Routines`, desc: "Smart daily schedules for your child's age.", glow: brand.indigo500, grad: [brand.indigo500, palette.indigo600] as [string, string] },
   { emoji: "📊", label: "Progress Tracking", desc: "Streaks, milestones & growth in one view.", glow: palette.emerald500, grad: [palette.emerald500, palette.emerald600] as [string, string] },
   { emoji: "🎯", label: "Daily Activities", desc: "Age-based activities to keep kids engaged.", glow: palette.amber500, grad: [palette.amber500, palette.amber600] as [string, string] },
   { emoji: "🏆", label: "Behavior Tracker", desc: "Reward positive habits and celebrate wins.", glow: brand.violet500, grad: [brand.violet500, brand.violet600] as [string, string] },

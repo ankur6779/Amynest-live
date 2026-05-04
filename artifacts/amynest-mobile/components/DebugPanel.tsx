@@ -23,6 +23,7 @@ import {
   WEB_SEMANTIC_COLORS,
 } from "@/lib/compareState";
 import { brand } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ const PHASE_LABELS: Record<Phase, string> = {
   all:        "All",
   onboarding: "Onboarding",
   routine:    "Routine",
-  amy:        "Amy",
+  amy:        BRAND.aiName,
   hub:        "Hub",
   profile:    "Profile",
   food:       "Food",
@@ -348,14 +349,14 @@ export function DebugPanel() {
         `[${e.method}] ${e.status ?? "ERR"} ${e.endpoint.replace(/^https?:\/\/[^/]+/, "").slice(0, 60)} ${e.responseTime ?? "?"}ms @${e.screen}`,
     );
     const text = [
-      `AmyNest Debug Log — ${new Date().toISOString()}`,
+      `${BRAND.appName} Debug Log — ${new Date().toISOString()}`,
       `Screen: ${screenName} | Session: ${sessionId.current}`,
       `Errors: ${perfStats.errors} | Avg: ${perfStats.avg}ms | Slow (>1s): ${perfStats.slow}`,
       "",
       ...lines,
     ].join("\n");
     try {
-      await Share.share({ message: text, title: "AmyNest Debug Log" });
+      await Share.share({ message: text, title: `${BRAND.appName} Debug Log` });
     } catch {
       /* user dismissed */
     }
@@ -388,7 +389,7 @@ export function DebugPanel() {
 
             {/* ── Header ── */}
             <View style={s.header}>
-              <Text style={s.headerTitle}>🔬 Amy Debug</Text>
+              <Text style={s.headerTitle}>🔬 {BRAND.aiName} Debug</Text>
               <View style={s.headerActions}>
                 <TouchableOpacity onPress={disable} style={s.offBtn}>
                   <Text style={s.offBtnText}>OFF</Text>
@@ -574,7 +575,7 @@ export function DebugPanel() {
 
                   <SectionHeader title="WEB REFERENCE TOKENS" />
                   <Text style={s.colorDisclaimer}>
-                    AmyNest (mobile) uses a purple brand; KidSchedule (web) uses an orange brand.
+                    {BRAND.appName} (mobile) uses a purple brand; KidSchedule (web) uses an orange brand.
                     Primary/accent divergence is intentional — not a bug.
                   </Text>
                   {Object.entries(WEB_TOKEN_REF).map(([key, { hex, label }]) => (

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { brand, ACCENT_PINK, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
@@ -364,7 +365,7 @@ export default function PremiumSplash({ onFinish }: Props) {
             { opacity: titleOpacity, transform: [{ translateY: titleTranslate }] },
           ]}
         >
-          AmyNest <Text style={styles.titleAccent}>AI</Text>
+          {BRAND.appName} <Text style={styles.titleAccent}>AI</Text>
         </Animated.Text>
 
         {/* Subtitle */}

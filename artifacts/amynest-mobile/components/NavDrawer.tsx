@@ -19,6 +19,7 @@ import { useUser, useAuth } from "@/lib/firebase-auth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useSubscriptionStore, selectIsPremium } from "@/store/useSubscriptionStore";
 import { brand } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -36,7 +37,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard",     label: "Dashboard",      icon: "home-outline",           route: "/(tabs)/" },
   { id: "hub",           label: "Parenting Hub",  icon: "book-outline",           route: "/(tabs)/hub" },
-  { id: "coach",         label: "Amy Coach",      icon: "sparkles-outline",       route: "/(tabs)/coach" },
+  { id: "coach",         label: `${BRAND.aiName} Coach`,      icon: "sparkles-outline",       route: "/(tabs)/coach" },
   { id: "kids-control",  label: "Kids Control",   icon: "shield-checkmark-outline", route: "/kids-control-center" },
   { id: "children",      label: "Children",       icon: "people-outline",         route: "/children" },
   { id: "routines",      label: "Routines",       icon: "calendar-outline",       route: "/(tabs)/routines" },
@@ -44,7 +45,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "insights",      label: "Insights",       icon: "bar-chart-outline",      route: "/insights" },
   { id: "rewards",       label: "Rewards",        icon: "star-outline",           route: "/rewards" },
   { id: "behavior",      label: "Behavior",       icon: "heart-outline",          route: "/behavior" },
-  { id: "amy-ai",        label: "Amy AI",         icon: "chatbubble-ellipses-outline", route: "/amy-ai" },
+  { id: "amy-ai",        label: `${BRAND.aiName} AI`,         icon: "chatbubble-ellipses-outline", route: "/amy-ai" },
   { id: "games",         label: "Gaming Reward",  icon: "game-controller-outline", route: "/games" },
   { id: "recipes",       label: "My Recipes",     icon: "restaurant-outline",     route: "/recipes" },
   { id: "nutrition",     label: "Nutrition Hub",  icon: "nutrition-outline",      route: "/nutrition" },

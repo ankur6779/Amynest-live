@@ -22,6 +22,7 @@ import AppDataStatusBanner from "@/components/AppDataStatusBanner";
 import { useAppStore } from "@/store/useAppStore";
 import { type ActionResult } from "@/components/ActionButtons";
 import { brand, gradients, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useColors } from "@/hooks/useColors";
 import { useTranslation } from "react-i18next";
 
@@ -300,7 +301,7 @@ export default function PremiumCoachScreen() {
   const listRef = useRef<FlatList<CoachWin>>(null);
 
   const introFull =
-    "Hi, I'm Amy. I've put together your first 5 wins. Try them in order. If something doesn't land, tap 'Not yet' and I'll bring more.";
+    `Hi, I'm ${BRAND.aiName}. I've put together your first 5 wins. Try them in order. If something doesn't land, tap 'Not yet' and I'll bring more.`;
 
   // Loading → intro → cards
   useEffect(() => {

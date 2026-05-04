@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTheme } from "@/contexts/ThemeContext";
 import colors, { brand, brandAlpha, ACCENT_PINK, palette } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useColors } from "@/hooks/useColors";
 import {
   QUICK_BEHAVIORS, QUICK_BEHAVIOR_KEYS, TRIGGERS, TRIGGER_KEYS,
@@ -515,7 +516,7 @@ export default function BehaviorScreen() {
         <Block
           icon={<LinearGradient colors={[palette.orange500, palette.yellow500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.iconGrad}><Ionicons name="sparkles" size={18} color="#fff" /></LinearGradient>}
           title={L.solutions}
-          subtitle="Amy's proven tips per situation"
+          subtitle={`${BRAND.aiName}'s proven tips per situation`}
           open={openBlock === "solutions"}
           onToggle={() => toggle("solutions")}
           accentColor={palette.orange500}

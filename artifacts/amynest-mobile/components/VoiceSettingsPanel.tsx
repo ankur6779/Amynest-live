@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { brand } from "@/constants/colors";
+import { BRAND } from "@/constants/brand";
 import { useColors } from "@/hooks/useColors";
 import { useAmyVoice } from "@/hooks/useAmyVoice";
 import { useTranslation } from "react-i18next";
@@ -170,7 +171,7 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
                 color={settings.enabled ? brand.violet500 : c.mutedForeground}
               />
               <Text style={[styles.toggleLabel, { color: c.foreground }]}>
-                {settings.enabled ? "On — Amy will speak the current task" : "Off"}
+                {settings.enabled ? `On — ${BRAND.aiName} will speak the current task` : "Off"}
               </Text>
               <View style={[styles.switch, { backgroundColor: settings.enabled ? brand.violet500 : c.border }]}>
                 <View style={[styles.switchThumb, { transform: [{ translateX: settings.enabled ? 18 : 0 }] }]} />

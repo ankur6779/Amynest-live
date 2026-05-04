@@ -15,6 +15,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AiMealGenerator from "./AiMealGenerator";
+import { BRAND } from "@/constants/brand";
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -98,7 +99,7 @@ describe("AiMealGenerator – input rendering", () => {
     expect(input).toBeInTheDocument();
   });
 
-  it("renders the Generate with Amy AI button", () => {
+  it(`renders the Generate with ${BRAND.aiName} AI button`, () => {
     render(<AiMealGenerator />);
     expect(screen.getByTestId("ai-meal-generate-btn")).toBeInTheDocument();
   });
@@ -187,7 +188,7 @@ describe("AiMealGenerator – success: recipe cards", () => {
     expect(screen.getByText("Vegetable Poha")).toBeInTheDocument();
   });
 
-  it("shows Amy's message alongside the cards", async () => {
+  it(`shows ${BRAND.aiName}'s message alongside the cards`, async () => {
     mockAuthFetch.mockResolvedValue(makeSuccessResponse());
 
     render(<AiMealGenerator />);
