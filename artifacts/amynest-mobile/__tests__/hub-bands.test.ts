@@ -93,7 +93,7 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
   // Inventory updated for #197: added `skills-focus`, `daily-story`,
   // `daily-puzzle` (web-parity tiles ported from kidschedule's dashboard).
   // Inventory updated for #214: added `abacus` (Abacus PRO Zone, ages 4–10).
-  it("contains the expected 27 tiles", () => {
+  it("contains the expected 28 tiles", () => {
     const expectedIds = [
       // Always-current
       "amy", "articles", "tips", "emotional", "activities", "art-craft",
@@ -106,10 +106,12 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
       "morning-flow", "kids-control-center", "meals", "worksheets", "facts",
       // Task #197 web-parity additions
       "skills-focus", "daily-story", "daily-puzzle",
+      // Infant Parenting Guide (band 0 only) — mirrors web Activities > InfantMode
+      "infant-parenting",
     ].sort();
     const actualIds = Object.keys(HUB_CONTENT_AGE_BANDS).sort();
     expect(actualIds).toEqual(expectedIds);
-    expect(actualIds.length).toBe(27);
+    expect(actualIds.length).toBe(28);
   });
 
   // Locks expected tile membership for two representative bands. This catches
@@ -127,6 +129,8 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
       // Mobile-only AmazingFacts now extends to the InfantHub band (0–2y)
       // — task #196.
       "facts",
+      // Infant Parenting Guide — mobile-only, band 0 only (mirrors web InfantMode)
+      "infant-parenting",
     ].sort();
     const section1Ids = Object.entries(HUB_CONTENT_AGE_BANDS)
       .filter(([, bands]) => bands.includes(band))
