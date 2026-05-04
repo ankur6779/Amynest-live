@@ -16,7 +16,6 @@ import {
   getNotificationHistory,
   getOrCreatePreferences,
 } from "../services/notificationDispatchService";
-import { contentBuilders } from "../services/notificationContentBuilder";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -274,10 +273,11 @@ const TestSchema = z.object({
 /**
  * POST /api/notifications/test
  * Body: { category: NotificationCategory }
- * Sends the personalized notification for that category to the current user
- * immediately, bypassing nothing else (still respects quiet hours / cap /
- * dedup so it behaves like a real send). Useful for the in-app "Send test"
- * button on the settings screen.
+ * Sends a self-service delivery test to every registered device for the
+ * current user. Bypasses quiet hours, daily cap, and category-enabled gate so
+ * that parents can always confirm their device is set up correctly regardless
+ * of time or preferences. Uses a hardcoded title/body so it never fails due to
+ * missing personalized content.
  */
 router.post("/notifications/test", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
@@ -291,24 +291,20 @@ router.post("/notifications/test", async (req, res): Promise<void> => {
     return;
   }
   const category: NotificationCategory = parsed.data.category;
-  const prefs = await getOrCreatePreferences(userId);
-  const builder = contentBuilders[category];
-  const built = await builder(userId, prefs.timezone);
-  if (!built) {
-    res.status(400).json({ error: "No content available for this category yet" });
-    return;
-  }
-  // For test sends we append a salt to the dedupKey so users can fire it
-  // multiple times in a row to verify the integration.
-  const dedupKey = `${built.dedupKey}:test:${Date.now()}`;
+  // Include Date.now() so the same user can fire it multiple times in a row
+  // without hitting the dedup window.
+  const dedupKey = `test:${userId}:${category}:${Date.now()}`;
   const result = await dispatchNotification({
     userId,
     category,
-    title: built.title,
-    body: built.body,
-    deepLink: built.deepLink,
-    data: { ...built.data, test: true },
+    title: "KidSchedule — test notification",
+    body: "Your device is set up correctly and receiving notifications.",
+    deepLink: "/notification-settings",
+    data: { test: true },
     dedupKey,
+    bypassDailyCap: true,
+    bypassQuietHours: true,
+    bypassCategoryCheck: true,
   });
   logger.info({ userId, category, result }, "Test notification dispatched");
   res.json(result);
