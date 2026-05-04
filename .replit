@@ -236,10 +236,10 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pnpm run typecheck:libs"
+args = "pnpm --filter @workspace/scripts run watch:openapi"
 
 [workflows.workflow.metadata]
-isValidation = true
+outputType = "console"
 
 [agent]
 stack = "PNPM_WORKSPACE"
