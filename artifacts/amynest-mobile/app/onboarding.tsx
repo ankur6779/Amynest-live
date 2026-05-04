@@ -44,7 +44,6 @@ type Step =
   | "intro" | "child-name" | "child-dob" | "child-school" | "child-class"
   | "child-school-start" | "child-school-end" | "child-school-days"
   | "child-wake" | "child-sleep"
-  | "child-food" | "child-diet-notes"
   | "infant-feeding" | "infant-sleep"
   | "add-more" | "parent-name" | "parent-role" | "parent-work"
   | "parent-region" | "parent-mobile" | "parent-allergies"
@@ -121,7 +120,7 @@ const PARENT_TAIL: Step[] = [
 const STANDARD_ORDER: Step[] = [
   "child-name", "child-dob", "child-school", "child-class",
   "child-school-start", "child-school-end", "child-school-days",
-  "child-wake", "child-sleep", "child-food", "child-diet-notes",
+  "child-wake", "child-sleep",
   ...PARENT_TAIL,
 ];
 const INFANT_ORDER: Step[] = [
@@ -809,85 +808,20 @@ export default function OnboardingScreen() {
                 style={[styles.chip, { backgroundColor: selected === time ? PRIMARY : GLASS_BG, borderColor: selected === time ? PRIMARY : GLASS_BORDER }]}
                 onPress={() => {
                   setSelected(time); Haptics.selectionAsync();
-                  setCurr(c => ({ ...c, sleepTime: to24h(time) }));
-                  userReplies(time, "child-food", t("screens.onboarding_chat.amy_food_q", { name: curr.name }));
+                  const finishedChild = {
+                    ...curr,
+                    sleepTime: to24h(time),
+                    foodType: "veg",
+                    dietNote: "",
+                    ageGroup: curr.ageGroup ?? "kid",
+                  } as ChildData;
+                  setChildren(cs => [...cs, finishedChild]);
+                  setCurr({});
+                  userReplies(time, "add-more", t("screens.onboarding_chat.amy_more_q"));
                 }}>
                 <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{time}</Text>
               </TouchableOpacity>
             ))}
-          </View>
-        );
-
-      case "child-food": {
-        const foodOpts: { label: string; value: "veg" | "nonveg" | "egg" | "vegan" }[] = [
-          { label: t("screens.onboarding_chat.food_veg"), value: "veg" },
-          { label: t("screens.onboarding_chat.food_nonveg"), value: "nonveg" },
-          { label: t("screens.onboarding_chat.food_egg"), value: "egg" },
-          { label: t("screens.onboarding_chat.food_vegan"), value: "vegan" },
-        ];
-        return (
-          <View style={styles.chipGrid}>
-            {foodOpts.map(opt => (
-              <TouchableOpacity key={opt.value}
-                style={[styles.chip, { backgroundColor: selected === opt.label ? PRIMARY : GLASS_BG, borderColor: selected === opt.label ? PRIMARY : GLASS_BORDER }]}
-                onPress={() => {
-                  setSelected(opt.label); Haptics.selectionAsync();
-                  setCurr(c => ({ ...c, foodType: opt.value }));
-                  userReplies(opt.label, "child-diet-notes", t("screens.onboarding_chat.amy_diet_notes_q"));
-                }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        );
-      }
-
-      case "child-diet-notes":
-        return (
-          <View style={{ gap: 8 }}>
-            <View style={styles.inputRow}>
-              <TextInput
-                style={[styles.textInput, { color: TEXT_ON_DARK, borderColor: GLASS_BORDER, backgroundColor: GLASS_BG }]}
-                value={textInput}
-                onChangeText={setTextInput}
-                placeholder={t("screens.onboarding_chat.ph_diet_notes")}
-                placeholderTextColor={TEXT_MUTED}
-                autoFocus
-                returnKeyType="send"
-                onSubmitEditing={() => {
-                  const note = textInput.trim();
-                  if (!note) return;
-                  const finishedChild = { ...curr, dietNote: note } as ChildData;
-                  setChildren(cs => [...cs, finishedChild]);
-                  setCurr({});
-                  userReplies(note, "add-more", t("screens.onboarding_chat.amy_more_q"));
-                }}
-              />
-              <TouchableOpacity
-                style={[styles.sendBtn, { backgroundColor: PRIMARY }]}
-                onPress={() => {
-                  const note = textInput.trim();
-                  if (!note) return;
-                  const finishedChild = { ...curr, dietNote: note } as ChildData;
-                  setChildren(cs => [...cs, finishedChild]);
-                  setCurr({});
-                  userReplies(note, "add-more", t("screens.onboarding_chat.amy_more_q"));
-                }}
-              >
-                <Ionicons name="arrow-forward" size={18} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                const finishedChild = { ...curr, dietNote: "" } as ChildData;
-                setChildren(cs => [...cs, finishedChild]);
-                setCurr({});
-                userReplies(t("screens.onboarding_chat.no_diet_notes_reply"), "add-more", t("screens.onboarding_chat.amy_more_q"));
-              }}
-              style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12 }}
-            >
-              <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{t("screens.onboarding_chat.skip_diet_notes")}</Text>
-            </TouchableOpacity>
           </View>
         );
 
@@ -1087,7 +1021,7 @@ export default function OnboardingScreen() {
                   if (!regionDrillDown && opt.value === "indian") {
                     setRegionDrillDown(true);
                     Haptics.selectionAsync();
-                    setMessages(m => [...m, { role: "amy", text: t("screens.onboarding_chat.region_indian_drilldown") }]);
+                    setMessages(m => [...m, { id: Date.now().toString(), role: "amy", text: t("screens.onboarding_chat.region_indian_drilldown") }]);
                     return;
                   }
                   setRegionDrillDown(false);

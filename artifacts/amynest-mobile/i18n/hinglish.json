@@ -885,7 +885,15 @@
       "slide2_title": "Routines jo adapt karti hain",
       "slide2_body": "Amy ko apne bachche ke baare mein ek baar batayein. Woh har din sahi schedule banati hai — aur jab zindagi mein badlav aata hai, to use adjust bhi karti hai.",
       "slide3_title": "Gentle reminders",
-      "slide3_body": "Optional nudges aapki family ko bina pushy lage track par rakhte hain. Control aapke haath mein rehta hai."
+      "slide3_body": "Optional nudges aapki family ko bina pushy lage track par rakhte hain. Control aapke haath mein rehta hai.",
+      "slide4_title": "Abacus PRO Zone",
+      "slide4_body": "Step-by-step abacus lessons jo mental math aur concentration banate hain — 5–12 saal ke bachon ke liye perfect.",
+      "slide5_title": "Infant Hub",
+      "slide5_body": "Aapke baby ki neend, feeding, milestones aur daily care ke liye pediatrician-aligned guidance.",
+      "slide6_title": "Fun Sheets",
+      "slide6_body": "Print karne wali activity sheets — mazes, dot-to-dot, tracing, aur logic puzzles jo aaj hi complete ho sakti hain.",
+      "slide7_title": "Coloring Books",
+      "slide7_body": "Creative coloring books jo focus, fine motor skills aur creative expression banati hain."
     },
     "phonics_test": {
       "title": "Phonics Test",
@@ -1228,7 +1236,9 @@
       "toast_goal": "🎯 Daily goal complete!",
       "toast_perfect": "🏆 Perfect score!",
       "alert_title": "Smart Study Zone",
-      "xp_popup": "+{{amount}} XP ⭐"
+      "xp_popup": "+{{amount}} XP ⭐",
+      "spelling_banner_title": "Spelling Mastery",
+      "spelling_banner_sub": "Seekhein, practice karein & compete karein"
     },
     "referrals": {
       "screen_title": "Invite & Earn",
