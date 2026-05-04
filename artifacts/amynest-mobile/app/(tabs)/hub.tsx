@@ -1773,12 +1773,23 @@ function Section({
   };
   return (
     <View style={[styles.section, open && styles.sectionOpen]}>
+      {/* Full-card accent gradient — gives every tile a unique color,
+          matching the visual style of the full-bleed nav tiles.
+          Clipped by overflow:hidden + borderRadius on the parent. */}
+      <LinearGradient
+        colors={[`${accent[0]}72`, `${accent[1]}40`, `${accent[0]}08`]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
       <Pressable
         onPress={handlePress}
         style={({ pressed }) => [styles.sectionHeader, pressed && { opacity: 0.85 }]}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
       >
+        {/* Icon box — solid accent so it pops against the tinted background */}
         <LinearGradient
           colors={[accent[0], accent[1]]}
           start={{ x: 0, y: 0 }}
@@ -1798,7 +1809,7 @@ function Section({
           <Ionicons
             name={open ? "chevron-up" : "chevron-down"}
             size={14}
-            color={open ? brand.primary : (mode === "light" ? c.textBody : "rgba(255,255,255,0.65)")}
+            color={open ? brand.primary : c.mutedForeground}
           />
         </View>
       </Pressable>
