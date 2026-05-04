@@ -11,6 +11,9 @@ export default defineConfig({
     pool: "forks",
     fileParallelism: false,
     maxWorkers: 1,
+    env: {
+      EXPO_PUBLIC_DOMAIN: "test.amynest.local",
+    },
     typecheck: {
       tsconfig: "./tsconfig.test.json",
     },
@@ -23,6 +26,7 @@ export default defineConfig({
       "@expo/vector-icons": path.resolve(import.meta.dirname, "./__mocks__/@expo/vector-icons.tsx"),
       "expo-linear-gradient": path.resolve(import.meta.dirname, "./__mocks__/expo-linear-gradient.tsx"),
       "react-native-reanimated": path.resolve(import.meta.dirname, "./__mocks__/react-native-reanimated.tsx"),
+      "expo-audio": path.resolve(import.meta.dirname, "./__mocks__/expo-audio.tsx"),
     },
     extensions: [".ts", ".tsx", ".js", ".jsx"],
   },
