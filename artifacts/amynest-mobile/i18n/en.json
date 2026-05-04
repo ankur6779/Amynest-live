@@ -2304,7 +2304,10 @@
       "aria_current_band": "Current age band {{label}}, tap to reset preview",
       "aria_preview_band": "Preview age {{label}} content",
       "now_pill": " · Now",
-      "for_age_band": "For Age {{label}}"
+      "for_age_band": "For Age {{label}}",
+      "viewing": "VIEWING",
+      "select_child": "SELECT CHILD",
+      "current_child": "YOUR CHILD"
     }
   },
   "components": {

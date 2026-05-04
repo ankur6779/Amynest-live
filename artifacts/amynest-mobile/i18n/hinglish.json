@@ -2304,7 +2304,10 @@
       "aria_current_band": "Current age band {{label}}, preview reset karne ke liye tap karein",
       "aria_preview_band": "Age {{label}} content preview karein",
       "now_pill": " · Abhi",
-      "for_age_band": "Age {{label}} ke liye"
+      "for_age_band": "Age {{label}} ke liye",
+      "viewing": "Dekh rahe hain",
+      "select_child": "Bachcha select karein",
+      "current_child": "Aapka bachcha"
     }
   },
   "components": {
