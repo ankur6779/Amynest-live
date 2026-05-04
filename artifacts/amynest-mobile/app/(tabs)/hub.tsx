@@ -378,8 +378,7 @@ export default function HubScreen() {
         }}
       >
         <View style={styles.headerRow}>
-          {/* i18n-ok: "AmyNest logo" is a brand name — intentionally not translated */}
-          <Pressable onPress={handleLogoTap} accessibilityRole="button" accessibilityLabel="AmyNest logo">
+          <Pressable onPress={handleLogoTap} accessibilityRole="button" accessibilityLabel="AmyNest logo" /* audit-ok — brand name, not translatable prose */>
             <View>
               <Image source={LOGO} style={styles.logo} resizeMode="contain" />
               {debugMode && (
