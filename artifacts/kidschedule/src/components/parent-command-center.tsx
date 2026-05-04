@@ -101,8 +101,8 @@ export function ParentCommandCenter({
       const d = new Date();
       setNowMins(d.getHours() * 60 + d.getMinutes());
     };
-    const id = window.setInterval(tick, 60_000);
-    return () => window.clearInterval(id);
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
   }, [open]);
   const result = useMemo(() => computeCommandCenter({
     childName: child.name,
@@ -219,8 +219,8 @@ function CommandCenterDashboard(props: DashboardProps) {
       msg,
       undo
     });
-    if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(null), undo ? 4500 : 2400);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), undo ? 4500 : 2400);
   };
   const burst = () => setConfettiKey(k => k + 1);
   const shake = () => setShakeKey(k => k + 1);
@@ -342,7 +342,7 @@ function CommandCenterDashboard(props: DashboardProps) {
   }
   function flash(id: CommandActionId) {
     setFlashAction(id);
-    window.setTimeout(() => setFlashAction(null), 400);
+    setTimeout(() => setFlashAction(null), 400);
   }
   async function onAction(id: CommandActionId) {
     flash(id);
@@ -1035,10 +1035,10 @@ function ShakeOverlay() {
     const root = document.querySelector('[data-testid="command-center-dashboard"]') as HTMLElement | null;
     if (!root) return;
     root.style.animation = "cc-shake 0.45s cubic-bezier(.36,.07,.19,.97) both";
-    const id = window.setTimeout(() => {
+    const id = setTimeout(() => {
       root.style.animation = "";
     }, 500);
-    return () => window.clearTimeout(id);
+    return () => clearTimeout(id);
   }, []);
   return <style>{`@keyframes cc-shake {
       10%, 90% { transform: translate3d(-1px, 0, 0); }
