@@ -55,6 +55,32 @@ vi.mock("@tanstack/react-query", () => ({
   useQuery: (opts: any) => mockUseQuery(opts),
 }));
 
+// useAmyVoice imports expo-audio which requires native expo-modules-core globals
+// that are not available in jsdom. Mock the hook so the full module graph does
+// not need a native bridge.
+vi.mock("@/hooks/useAmyVoice", () => ({
+  useAmyVoice: () => ({
+    speak: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn(),
+    speaking: false,
+    loading: false,
+    error: null,
+    currentTime: 0,
+    duration: 0,
+    seekTo: vi.fn(),
+  }),
+}));
+
+// AsyncStorage is used in useEffect to load / persist chat history.
+// Stub it so the async effects resolve cleanly in jsdom.
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn().mockResolvedValue(null),
+    setItem: vi.fn().mockResolvedValue(undefined),
+    removeItem: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 import AmyAIScreen from "@/app/amy-ai";
 
 function makeJsonResponse(body: unknown, status = 200): Response {
@@ -73,14 +99,18 @@ describe("Amy AI tutor screen", () => {
     });
   });
 
-  it("renders mode strip + subject chips + empty state", () => {
+  it("renders mode strip + subject chips + empty state", async () => {
     const { container } = render(<AmyAIScreen />);
+    // Mode strip and subject chips render synchronously
     expect(screen.getByText("ai.mode_teach")).toBeInTheDocument();
     expect(screen.getByText("ai.mode_practice")).toBeInTheDocument();
     expect(screen.getByText("ai.mode_quiz")).toBeInTheDocument();
     expect(screen.getByText("ai.mode_doubt")).toBeInTheDocument();
     expect(screen.getByText("ai.subject_math")).toBeInTheDocument();
-    expect(screen.getByText("ai.tutor_empty_heading")).toBeInTheDocument();
+    // The empty state only shows after the chat-history async load (chatLoaded=true)
+    await waitFor(() =>
+      expect(screen.getByText("ai.tutor_empty_heading")).toBeInTheDocument(),
+    );
     expect(container.firstChild).toMatchSnapshot();
   });
 
