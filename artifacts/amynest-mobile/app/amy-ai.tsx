@@ -440,7 +440,7 @@ export default function AmyAIScreen() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────
 
-function TurnView({
+export function TurnView({
   turn,
   onPickOption,
   onListen,

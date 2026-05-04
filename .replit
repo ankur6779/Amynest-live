@@ -64,6 +64,14 @@ args = "locale-parity-audit"
 task = "workflow.run"
 args = "mobile-lint-react-hooks"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "test-mobile-tts-buttons"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "test-mobile-full"
+
 [[workflows.workflow]]
 name = "test-routine-meals"
 author = "agent"
@@ -192,6 +200,28 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "pnpm --filter @workspace/amynest-mobile run lint"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "test-mobile-tts-buttons"
+author = "agent"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/amynest-mobile exec vitest run --config vitest.config.ts __tests__/tts-button-state.test.tsx"
+
+[[workflows.workflow]]
+name = "test-mobile-full"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/amynest-mobile test"
 
 [workflows.workflow.metadata]
 isValidation = true

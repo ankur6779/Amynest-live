@@ -187,6 +187,18 @@ exports[`Amy AI tutor screen > renders a QUIZ reply with options and grades the 
           />
         </div>
         <div>
+          <button
+            aria-label="ai.listen"
+            role="button"
+          >
+            <span
+              data-icon="volume-medium-outline"
+              style="font-size: 14px; color: rgba(167, 139, 250, 0.9);"
+            />
+            <span>
+              ai.listen
+            </span>
+          </button>
           <div>
             <div>
               <span>
@@ -454,6 +466,18 @@ exports[`Amy AI tutor screen > renders a structured TEACH reply with example chi
           />
         </div>
         <div>
+          <button
+            aria-label="ai.listen"
+            role="button"
+          >
+            <span
+              data-icon="volume-medium-outline"
+              style="font-size: 14px; color: rgba(167, 139, 250, 0.9);"
+            />
+            <span>
+              ai.listen
+            </span>
+          </button>
           <div>
             <div>
               <span>
