@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useCallback } from "react";
+import { loggedFetch } from "@/lib/api-logger";
 
 export function useAuthFetch() {
   const { getToken } = useAuth();
@@ -11,7 +12,8 @@ export function useAuthFetch() {
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
-      return fetch(input, { ...init, headers });
+      const initWithHeaders = { ...init, headers };
+      return loggedFetch(input, initWithHeaders, (inp, ini) => fetch(inp, ini));
     },
     [getToken],
   );

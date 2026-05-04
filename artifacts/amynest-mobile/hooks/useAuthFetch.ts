@@ -1,6 +1,7 @@
 import { useAuth } from "@/lib/firebase-auth";
 import { useCallback } from "react";
 import { API_BASE_URL } from "@/constants/api";
+import { loggedFetch } from "@/lib/apiLogger";
 
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 3;
@@ -39,17 +40,15 @@ export function useAuthFetch() {
     async (path: string, init: RequestInit = {}): Promise<Response> => {
       const url = `${API_BASE_URL}${path}`;
 
-      const doFetch = async (attempt: number): Promise<Response> => {
-        // Always force a fresh token — Clerk session tokens expire after 60s.
-        // Onboarding chat can take 2+ minutes, so cached tokens are often stale.
+      // Build headers + call loggedFetch (logs to in-memory ring buffer for DebugPanel).
+      // On 401/403 retries, getToken(skipCache:true) forces a fresh token before each attempt.
+      const doAttempt = async (): Promise<Response> => {
         let token: string | null = null;
         try {
           token = await getToken({ skipCache: true });
         } catch {
           token = null;
         }
-
-        // Fallback: try the cached token if a fresh fetch failed (e.g. offline).
         if (!token) {
           try {
             token = await getToken();
@@ -65,10 +64,8 @@ export function useAuthFetch() {
           headers.set("Authorization", `Bearer ${token}`);
         }
 
-        return fetchWithTimeout(
-          url,
-          { ...init, headers },
-          REQUEST_TIMEOUT_MS,
+        return loggedFetch(url, { ...init, headers }, (u, ini) =>
+          fetchWithTimeout(u as string, ini, REQUEST_TIMEOUT_MS),
         );
       };
 
@@ -77,15 +74,12 @@ export function useAuthFetch() {
 
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
-          const res = await doFetch(attempt);
+          const res = await doAttempt();
           lastRes = res;
 
-          // Retry only on auth failures (401/403) while signed in — these are
-          // almost always stale-token races. All other status codes return
-          // immediately so callers can handle 402/404/etc.
+          // Retry on auth failures only — almost always a stale-token race.
           if ((res.status === 401 || res.status === 403) && isSignedIn) {
             if (attempt < MAX_ATTEMPTS) {
-              // Brief backoff so Clerk has time to refresh internally.
               await new Promise((r) => setTimeout(r, 300 * attempt));
               continue;
             }
@@ -105,9 +99,9 @@ export function useAuthFetch() {
         throw new Error(`Network request failed after ${MAX_ATTEMPTS} attempts: ${msg}`);
       }
 
-      // Pass through expected non-2xx responses that callers handle explicitly:
+      // Pass through expected non-2xx that callers handle:
       //   404 → resource missing
-      //   402 → Global Paywall feature_locked (callers route to /paywall)
+      //   402 → feature_locked / paywall
       if (!lastRes.ok && lastRes.status !== 404 && lastRes.status !== 402) {
         const body = await safeReadBody(lastRes);
         const detail = body ? ` — ${body}` : "";

@@ -99,6 +99,7 @@ function WebPushCard() {
           <div className="text-xs text-muted-foreground mt-1">{label}</div>
           {status === "unsupported" && (
             <div className="mt-2 text-xs text-muted-foreground space-y-1 leading-relaxed">
+              {/* // i18n-ignore-start */}
               {isIos ? (
                 <p>
                   iOS notifications require iOS 16.4+ with the app{" "}
@@ -114,6 +115,7 @@ function WebPushCard() {
                   Chromium-based browser (Edge, Brave). Samsung Internet may not support web push.
                 </p>
               )}
+              {/* // i18n-ignore-end */}
             </div>
           )}
           {status !== "unsupported" && <div className="flex gap-2 mt-2">

@@ -62,8 +62,11 @@ const RewardsPage = lazy(() => import("@/pages/rewards"));
 const NotificationSettingsPage = lazy(() => import("@/pages/notification-settings"));
 const NotificationDiagnosticsPage = lazy(() => import("@/pages/notification-diagnostics"));
 const NotifyPromptPage = lazy(() => import("@/pages/notify-prompt"));
+const DebugParityPage = lazy(() => import("@/pages/debug-parity"));
 
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
+import { DebugProvider } from "@/contexts/debug-context";
+import { DebugPanel } from "@/components/debug-panel";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
 import { PaywallProvider } from "@/contexts/paywall-context";
 import { PaywallModal } from "@/components/paywall-modal";
@@ -209,6 +212,7 @@ function AppRoutes() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
+          <DebugProvider>
           <PaywallProvider>
             <ReactMountMarker />
             <FirebaseAuthBootstrap />
@@ -328,13 +332,16 @@ function AppRoutes() {
           <Route path="/rewards">
             {() => <ProtectedRoute component={RewardsPage} />}
           </Route>
+          <Route path="/debug-parity" component={DebugParityPage} />
           <Route component={NotFound} />
             </Switch>
             </Suspense>
             <PaywallModal />
             <SubscriptionEventBridge />
             <Toaster />
+            <DebugPanel />
           </PaywallProvider>
+          </DebugProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
