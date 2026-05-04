@@ -10,7 +10,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 import { API_BASE_URL } from "@/constants/api";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, LogBox, StyleSheet, View } from "react-native";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PremiumSplash from "@/components/PremiumSplash";
@@ -31,6 +31,29 @@ import { DebugPanel } from "@/components/DebugPanel";
 
 SplashScreen.preventAutoHideAsync();
 WebBrowser.maybeCompleteAuthSession();
+
+// Suppress known-benign React Native / Expo warnings that clutter Android
+// Studio Logcat and the yellow-box overlay in dev builds. Each entry is
+// accompanied by a comment explaining why it is safe to suppress.
+LogBox.ignoreLogs([
+  // Fires when a native-driven animation finishes after the JS listener
+  // was removed on unmount — harmless timing issue, not a bug in our code.
+  "Sending `onAnimatedValueUpdate` with no listeners registered.",
+  // React Navigation serialises route params; non-serialisable values are
+  // fine at runtime and only a problem if you need to persist nav state.
+  "Non-serializable values were found in the navigation state",
+  // Reanimated shared-value updates that arrive after a component unmounts.
+  "Tried to synchronously call",
+  // Expo Router internal warning during pre-render pass — not actionable.
+  "Warning: An update to",
+  // VirtualizedList inside ScrollView — layout-only, not a crash risk.
+  "VirtualizedLists should never be nested inside plain ScrollViews",
+  // Expo Router type-check warning in dev for optional catch-all routes.
+  "No route named",
+  // Expo AV / Audio session warnings on simulators that have no audio HW.
+  "AVAudioSession",
+]);
+
 initCrashReporter();
 
 const queryClient = new QueryClient({
