@@ -105,6 +105,7 @@ export const TILE_SECTION_MAP: Readonly<Record<string, Exclude<SectionKey, "toda
   nutrition: "activities",
   "daily-story": "activities",
   "daily-puzzle": "activities",
+  "infant-parenting": "activities",
 };
 
 /**
