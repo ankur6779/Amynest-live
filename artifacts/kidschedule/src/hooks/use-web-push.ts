@@ -11,10 +11,17 @@ export type WebPushStatus =
   | "unsupported"
   | "error";
 
-function getInitialStatus(): WebPushStatus {
-  if (typeof window === "undefined") return "unsupported";
-  if (!("Notification" in window) || !("serviceWorker" in navigator))
-    return "unsupported";
+function isSupportedBrowser(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    "Notification" in window &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window
+  );
+}
+
+function getPermissionStatus(): WebPushStatus {
+  if (!isSupportedBrowser()) return "unsupported";
   if (Notification.permission === "granted") return "granted";
   if (Notification.permission === "denied") return "denied";
   return "idle";
@@ -24,20 +31,36 @@ export function useWebPush() {
   const authFetch = useAuthFetch();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const [status, setStatus] = useState<WebPushStatus>(getInitialStatus);
+  const [status, setStatus] = useState<WebPushStatus>(getPermissionStatus);
 
-  // Keep status in sync if the user changes browser permission externally.
   useEffect(() => {
-    if (!("Notification" in window)) return;
-    setStatus(getInitialStatus());
+    const current = getPermissionStatus();
+    setStatus(current);
+
+    if (!isSupportedBrowser()) return;
+
+    // Listen for permission changes in real-time (e.g. user unblocks from OS settings).
+    let permStatus: PermissionStatus | null = null;
+    const handleChange = () => setStatus(getPermissionStatus());
+
+    navigator.permissions
+      .query({ name: "notifications" as PermissionName })
+      .then((ps) => {
+        permStatus = ps;
+        ps.addEventListener("change", handleChange);
+      })
+      .catch(() => {
+        // Permissions API not available on this browser — no live sync,
+        // status is still seeded correctly from Notification.permission above.
+      });
+
+    return () => {
+      permStatus?.removeEventListener("change", handleChange);
+    };
   }, []);
 
   const enable = useCallback(async () => {
-    if (
-      typeof window === "undefined" ||
-      !("Notification" in window) ||
-      !("serviceWorker" in navigator)
-    ) {
+    if (!isSupportedBrowser()) {
       setStatus("unsupported");
       return;
     }
@@ -83,7 +106,9 @@ export function useWebPush() {
       toast({
         title: t("toasts.use_web_push.enable_failed_title"),
         description:
-          err instanceof Error ? err.message : t("toasts.use_web_push.enable_failed_body_default"),
+          err instanceof Error
+            ? err.message
+            : t("toasts.use_web_push.enable_failed_body_default"),
         variant: "destructive",
       });
     }
@@ -98,10 +123,11 @@ export function useWebPush() {
         }
       }
     } catch {
+      /* ignore */
     }
     setStatus("idle");
     toast({ title: t("toasts.use_web_push.disabled") });
   }, [toast, t]);
 
-  return { status, enable, disable };
+  return { status, enable, disable, isSupported: isSupportedBrowser() };
 }

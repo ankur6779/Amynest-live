@@ -64,6 +64,7 @@ const NotificationDiagnosticsPage = lazy(() => import("@/pages/notification-diag
 const NotifyPromptPage = lazy(() => import("@/pages/notify-prompt"));
 
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
+import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
 import { PaywallProvider } from "@/contexts/paywall-context";
 import { PaywallModal } from "@/components/paywall-modal";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
@@ -213,6 +214,7 @@ function AppRoutes() {
             <FirebaseAuthBootstrap />
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />
+            <FcmForegroundHandler />
             <Suspense fallback={null}>
             <Switch>
           <Route path="/" component={HomeRedirect} />

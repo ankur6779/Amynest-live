@@ -42,6 +42,13 @@ void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
  * Requests an FCM web push token.
  * Registers the Firebase Messaging service worker, then calls getToken().
  * Throws if permission is not granted or if the VAPID key is missing.
+ *
+ * Key behaviours:
+ *  - updateViaCache:"none" forces the browser to check for a new SW on every
+ *    call, so users always pick up the updated SW after a re-deploy instead of
+ *    staying on a stale version for days.
+ *  - We wait for navigator.serviceWorker.ready before calling getToken() so
+ *    FCM doesn't race against a SW that is still installing/activating.
  */
 export async function getWebPushToken(vapidKey: string): Promise<string> {
   const { getMessaging, getToken } = await import("firebase/messaging");
@@ -49,9 +56,23 @@ export async function getWebPushToken(vapidKey: string): Promise<string> {
   const basePath = (import.meta.env.BASE_URL as string).replace(/\/$/, "");
   const swUrl = `${basePath}/firebase-messaging-sw.js`;
 
+  // Register (or update) the service worker.
+  // updateViaCache: "none" → always fetch a fresh copy from the network so
+  // users pick up new SW builds immediately after a deployment.
   const swReg = await navigator.serviceWorker.register(swUrl, {
     scope: `${basePath}/`,
+    updateViaCache: "none",
   });
+
+  // Trigger an update check synchronously so the browser downloads a new SW
+  // if one is available. The update runs in the background; we don't await it
+  // because the existing active SW is still good enough for this token fetch.
+  swReg.update().catch(() => {});
+
+  // Wait until a SW is active — required by FCM getToken().
+  // After skipWaiting + clients.claim in the SW install/activate handlers,
+  // this resolves quickly even right after a new deployment.
+  await navigator.serviceWorker.ready;
 
   const messaging = getMessaging(firebaseApp);
   const token = await getToken(messaging, {
