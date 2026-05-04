@@ -80,7 +80,8 @@ function WebPushCard() {
   const {
     status,
     enable,
-    disable
+    disable,
+    refreshRegistration,
   } = useWebPush();
   const isIos = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const label = status === "granted" ? "Enabled" : status === "denied" ? "Blocked in browser" : status === "unsupported" ? (isIos ? "Not supported on iOS Safari" : "Not supported in this browser") : status === "requesting" ? "Requesting permission…" : status === "error" ? "Setup failed — try again" : "Not enabled";
@@ -143,6 +144,7 @@ export default function NotificationSettingsPage() {
     toast
   } = useToast();
   const [, navigate] = useLocation();
+  const { refreshRegistration } = useWebPush();
   const {
     data,
     isLoading
@@ -204,13 +206,25 @@ export default function NotificationSettingsPage() {
   });
   const testDelivery = useMutation({
     mutationFn: async () => {
-      const r = await authFetch("/api/notifications/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: "insights" }),
-      });
-      if (!r.ok) throw new Error(`Server error ${r.status}`);
-      return (await r.json()) as { status?: string; reason?: string };
+      const attempt = async () => {
+        const r = await authFetch("/api/notifications/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category: "insights" }),
+        });
+        if (!r.ok) throw new Error(`Server error ${r.status}`);
+        return (await r.json()) as { status?: string; reason?: string };
+      };
+
+      const first = await attempt();
+      // Auto-heal: browser already has permission but token wasn't saved to DB
+      // (e.g. server was down during initial Enable). Re-register silently and
+      // retry once — no manual Disable/Enable needed.
+      if (first.status === "no_tokens" && typeof Notification !== "undefined" && Notification.permission === "granted") {
+        const ok = await refreshRegistration();
+        if (ok) return attempt();
+      }
+      return first;
     },
     onSuccess: (result) => {
       const status = result.status ?? "unknown";
@@ -224,7 +238,7 @@ export default function NotificationSettingsPage() {
         toast({
           title: "No device registered",
           description:
-            "Open KidSchedule on your Android phone first, then try again.",
+            "Browser notifications are not set up for this device. Tap 'Disable' then 'Enable' above to re-register.",
           variant: "destructive",
         });
       } else {
