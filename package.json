@@ -4,10 +4,14 @@
   "license": "MIT",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "prepare": "simple-git-hooks",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "codegen": "pnpm --filter @workspace/api-spec run codegen && pnpm run typecheck:libs"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "sh scripts/check-codegen.sh"
   },
   "private": true,
   "devDependencies": {
@@ -16,6 +20,7 @@
     "@babel/traverse": "^7.29.0",
     "@babel/types": "^7.29.0",
     "prettier": "^3.8.1",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "~5.9.2"
   },
   "dependencies": {
