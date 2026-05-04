@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
+import { useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -62,8 +63,16 @@ export default function FuturePredictor({ childId, variant = "full" }: Props) {
   const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(c, mode), [c, mode]);
 
-  // Default collapsed — user must tap to expand
+  // Default collapsed — user must tap to expand.
+  // Reset to collapsed every time the parent screen gains focus so the card
+  // starts compact on each tab visit (Expo Router tab screens don't unmount
+  // between switches, so useState alone would not reset the value).
   const [collapsed, setCollapsed] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setCollapsed(true);
+    }, [])
+  );
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery<Prediction>({
     queryKey: ["future-predictor", childId ?? null],
