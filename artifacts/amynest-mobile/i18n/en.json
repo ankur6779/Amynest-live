@@ -885,7 +885,15 @@
       "slide2_title": "Routines that adapt",
       "slide2_body": "Tell Amy about your child once. She builds the right schedule each day — and shifts it when life happens.",
       "slide3_title": "Gentle reminders",
-      "slide3_body": "Optional nudges keep your family on track without feeling pushy. You stay in control."
+      "slide3_body": "Optional nudges keep your family on track without feeling pushy. You stay in control.",
+      "slide4_title": "Abacus PRO Zone",
+      "slide4_body": "Step-by-step abacus lessons that build mental math and concentration — perfect for ages 5–12.",
+      "slide5_title": "Infant Hub",
+      "slide5_body": "Pediatrician-aligned guidance on sleep, feeding, milestones, and daily care for your baby.",
+      "slide6_title": "Fun Sheets",
+      "slide6_body": "Printable activity sheets — mazes, dot-to-dot, tracing, and logic puzzles your child can finish today.",
+      "slide7_title": "Coloring Books",
+      "slide7_body": "Creative coloring books that build focus, fine motor skills, and creative expression."
     },
     "phonics_test": {
       "title": "Phonics Test",
@@ -1228,7 +1236,9 @@
       "toast_goal": "🎯 Daily goal complete!",
       "toast_perfect": "🏆 Perfect score!",
       "alert_title": "Smart Study Zone",
-      "xp_popup": "+{{amount}} XP ⭐"
+      "xp_popup": "+{{amount}} XP ⭐",
+      "spelling_banner_title": "Spelling Mastery",
+      "spelling_banner_sub": "Learn, practice & compete"
     },
     "referrals": {
       "screen_title": "Invite & Earn",

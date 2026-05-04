@@ -151,9 +151,9 @@ function parseProgress(): { current: number; total: number } | null {
   return { current: Number(m[1]), total: Number(m[2]) };
 }
 
-// STANDARD = 11 child steps + 7 parent-tail steps = 18.
-// INFANT   = 4 child steps  + 7 parent-tail steps = 11.
-const STANDARD_TOTAL = 18;
+// STANDARD = 9 child steps + 7 parent-tail steps = 16.
+// INFANT   = 4 child steps + 7 parent-tail steps = 11.
+const STANDARD_TOTAL = 16;
 const INFANT_TOTAL = 11;
 
 async function fillParentTail(): Promise<void> {
@@ -227,8 +227,6 @@ describe("Onboarding chat — end-to-end flow", () => {
 
       await clickButton("7:00 AM");
       await clickButton("9:00 PM");
-      await clickButton("Vegetarian");
-      await typeAndSend("Jain — no onion/garlic");
 
       await clickButton("Yes, add another");
 
@@ -263,7 +261,6 @@ describe("Onboarding chat — end-to-end flow", () => {
       expect(school?.isSchoolGoing).toBe(true);
       expect(school?.childClass).toBe("LKG / KG");
       expect(school?.schoolDays).toEqual([1, 2, 3, 4, 5]);
-      expect(school?.goals).toContain("Jain");
       expect(infant?.isSchoolGoing).toBe(false);
       expect(infant?.schoolDays).toBeNull();
 
@@ -352,8 +349,6 @@ describe("Onboarding chat — end-to-end flow", () => {
       await clickButton("Continue");
       await clickButton("7:00 AM");
       await clickButton("9:00 PM");
-      await clickButton("Vegetarian");
-      await typeAndSend("none");
       await clickButton("No, continue");
       await fillParentTail();
 

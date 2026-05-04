@@ -57,6 +57,30 @@ export default function TutorialScreen() {
       body: t("screens.tutorial.slide3_body"),
       gradient: [palette.amber500, palette.red500],
     },
+    {
+      icon: "calculator-outline",
+      title: t("screens.tutorial.slide4_title"),
+      body: t("screens.tutorial.slide4_body"),
+      gradient: [palette.amber500, palette.orange500],
+    },
+    {
+      icon: "heart-outline",
+      title: t("screens.tutorial.slide5_title"),
+      body: t("screens.tutorial.slide5_body"),
+      gradient: [palette.rose500, brand.pink500],
+    },
+    {
+      icon: "document-text-outline",
+      title: t("screens.tutorial.slide6_title"),
+      body: t("screens.tutorial.slide6_body"),
+      gradient: [palette.emerald500, palette.teal500],
+    },
+    {
+      icon: "color-palette-outline",
+      title: t("screens.tutorial.slide7_title"),
+      body: t("screens.tutorial.slide7_body"),
+      gradient: [palette.indigo500, brand.violet500],
+    },
   ];
 
   const finish = async () => {

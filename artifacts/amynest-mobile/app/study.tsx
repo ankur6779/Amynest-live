@@ -326,8 +326,8 @@ export default function StudyScreen() {
           >
             <Text style={{ fontSize: 22 }}>🔤</Text>
             <View style={{ flex: 1 }}>
-              <Text style={styles.spellingBannerTitle}>Spelling Mastery</Text>
-              <Text style={styles.spellingBannerSub}>Learn, practice & compete</Text>
+              <Text style={styles.spellingBannerTitle}>{t("screens.study.spelling_banner_title")}</Text>
+              <Text style={styles.spellingBannerSub}>{t("screens.study.spelling_banner_sub")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={brand.primary} />
           </Pressable>
