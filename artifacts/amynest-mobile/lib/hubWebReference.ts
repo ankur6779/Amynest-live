@@ -58,16 +58,19 @@ export const WEB_HUB_TILES: readonly WebHubTile[] = [
 ];
 
 // Section 2 — fixed preview tiles the web renders ONLY for 0-24 month children.
-// Source: SECTION_2_PREVIEW_TILES in parenting-hub.tsx (8 tiles, in order).
+// Source: SECTION_2_PREVIEW_TILES in parenting-hub.tsx (10 tiles, in order).
+// Last synced: parenting-hub.tsx SECTION_2_PREVIEW_TILES array.
 export const WEB_SECTION_2_TILES: readonly { id: string; title: string }[] = [
-  { id: "life-skills",    title: "🧭 Life Skills Mode" },
-  { id: "olympiad",       title: "🏆 Smart Olympiad Zone" },
-  { id: "event-prep",     title: "🎉 Event Prep (School Ready)" },
-  { id: "smart-study",    title: "📚 Smart Study Zone" },
-  { id: "ptm-prep",       title: "🧾 PTM Prep Assistance" },
-  { id: "phonics",        title: "🔤 Phonics Learning" },
-  { id: "coloring-books", title: "🎨 Coloring Books" },
-  { id: "fun-sheets",     title: "📄 Fun Sheets" },
+  { id: "life-skills",       title: "🧭 Life Skills Mode" },
+  { id: "olympiad",          title: "🏆 Smart Olympiad Zone" },
+  { id: "event-prep",        title: "🎉 Event Prep (School Ready)" },
+  { id: "smart-math-tricks", title: "🔢 Smart Math Tricks" },
+  { id: "abacus",            title: "🧮 Abacus PRO Zone" },
+  { id: "smart-study",       title: "📚 Smart Study Zone" },
+  { id: "ptm-prep",          title: "🧾 PTM Prep Assistance" },
+  { id: "phonics",           title: "🔤 Phonics Learning" },
+  { id: "coloring-books",    title: "🎨 Coloring Books" },
+  { id: "fun-sheets",        title: "📄 Fun Sheets" },
 ];
 
 /**
@@ -83,6 +86,12 @@ export const WEB_SECTION_2_TILES: readonly { id: string; title: string }[] = [
 export const MOBILE_ONLY_EXTRAS: ReadonlySet<string> = new Set([
   // Mobile-only routine flow (separate from web's "Activities" tile).
   "morning-flow",
+  // phonics-learning is the full Phonics Learning interactive lesson surface
+  // on mobile. The web maps the same content under the single "phonics" tile
+  // id. Mobile keeps both "phonics" (test card) and "phonics-learning"
+  // (lesson card) to provide a richer learning flow; the extra id here
+  // prevents the dev overlay flagging phonics-learning as an unexpected extra.
+  "phonics-learning",
   // Placeholder "SOON" tile for the upcoming Kids Control Center feature.
   "kids-control-center",
   // Standalone Tiffin & Meals route on mobile (web nests this inside the

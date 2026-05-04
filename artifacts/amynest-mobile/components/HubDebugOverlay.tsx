@@ -27,18 +27,21 @@ interface HubDebugOverlayProps {
   ageMonths: number;
   /** Active child name for display. */
   childName: string;
+  /** Whether the overlay was activated via 7-tap dev-mode (vs __DEV__ build). */
+  devMode?: boolean;
 }
 
 /**
- * Floating dev-only overlay that lists, for the active child:
+ * Floating overlay that lists, for the active child:
  *  · which tiles the mobile hub is currently rendering
  *  · which tiles the website would render for the same child
  *  · the diff (extra on mobile / missing on mobile / order mismatches)
+ *  · a UI Design checklist of visual parity properties vs the web
  *
  * Pure presentational — does NOT modify the hub render. Intended to make
  * hand-fixing one-tile-at-a-time differences fast and reliable.
  *
- * Mounted only when __DEV__ is true.
+ * Mounted when __DEV__ is true OR when devMode is active (7-tap logo).
  */
 export function HubDebugOverlay({
   mobileSection1Ids,
@@ -47,6 +50,7 @@ export function HubDebugOverlay({
   currentBand,
   ageMonths,
   childName,
+  devMode = false,
 }: HubDebugOverlayProps) {
   const [open, setOpen] = useState(false);
 
@@ -82,11 +86,11 @@ export function HubDebugOverlay({
     <>
       <Pressable
         onPress={() => setOpen(true)}
-        style={styles.fab}
+        style={[styles.fab, devMode && styles.fabDevMode]}
         testID="hub-debug-fab"
         accessibilityLabel={t("components.hub_debug_overlay.open_hub_debug_overlay")}
       >
-        <Ionicons name="bug" size={20} color="#fff" />
+        <Ionicons name={devMode ? "construct" : "bug"} size={20} color="#fff" />
         {totalIssues > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{totalIssues > 99 ? "99+" : String(totalIssues)}</Text>
@@ -105,10 +109,30 @@ export function HubDebugOverlay({
             </View>
 
             <ScrollView contentContainerStyle={{ padding: 14, gap: 14 }}>
+              <Block label="Session">
+                <Row k="Mode" v={devMode ? "DevMode (7-tap)" : "__DEV__ build"} good={true} />
+              </Block>
+
               <Block label="Active child">
                 <Row k="Name" v={childName} />
                 <Row k="Age" v={`${ageMonths} months`} />
                 <Row k="Band" v={`${currentBand} (${webBand})`} />
+              </Block>
+
+              <Block label="UI Design — web parity checklist">
+                <Check label="Child selector: gradient avatar cards with initials" done />
+                <Check label="Child selector: purple border glow on selected card" done />
+                <Check label="Child selector: VIEWING chip on selected card" done />
+                <Check label="Child selector: visible for all family sizes (≥1 child)" done />
+                <Check label="Section accordion: flat muted glass icon box (no gradient)" done />
+                <Check label="Section accordion: purple open-state border glow" done />
+                <Check label="Section chevron: brand.primary (purple) when open" done />
+                <Check label="Logo: 7-tap dev-mode toggle with DEV badge overlay" done />
+                <Check label="Debug overlay: accessible in production via 7-tap" done />
+                <Check label="WEB_SECTION_2_TILES synced to 10 tiles (added smart-math-tricks, abacus)" done />
+                <Check label="phonics-learning added to MOBILE_ONLY_EXTRAS (no false positives)" done />
+                <Check label="Section 2 (infant 0-24m): synced tile count matches web" />
+                <Check label="Section 1 order: verify tile order matches web sequence" />
               </Block>
 
               <Block label="Section 2 visibility">
@@ -211,6 +235,22 @@ function DiffList({ title, tone, ids }: { title: string; tone: "warn" | "bad"; i
   );
 }
 
+function Check({ label, done = false }: { label: string; done?: boolean }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
+      <Ionicons
+        name={done ? "checkmark-circle" : "ellipse-outline"}
+        size={14}
+        color={done ? palette.emerald400 : "rgba(255,255,255,0.35)"}
+        style={{ marginTop: 1 }}
+      />
+      <Text style={{ color: done ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.45)", fontSize: 12, flex: 1 }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 function SideBySide({
   leftTitle, leftItems, rightTitle, rightItems,
 }: {
@@ -254,6 +294,9 @@ const styles = StyleSheet.create({
     shadowColor: "#000", shadowOpacity: 0.35, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10,
     elevation: 8,
     zIndex: 9999,
+  },
+  fabDevMode: {
+    backgroundColor: palette.indigo600,
   },
   badge: {
     position: "absolute", top: -4, right: -4,

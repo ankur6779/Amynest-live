@@ -2304,7 +2304,10 @@
       "aria_current_band": "मौजूदा उम्र-सीमा {{label}}, प्रीव्यू रीसेट करने के लिए टैप करें",
       "aria_preview_band": "उम्र {{label}} का कंटेंट प्रीव्यू करें",
       "now_pill": " · अभी",
-      "for_age_band": "उम्र {{label}} के लिए"
+      "for_age_band": "उम्र {{label}} के लिए",
+      "viewing": "देख रहे हैं",
+      "select_child": "बच्चा चुनें",
+      "current_child": "आपका बच्चा"
     }
   },
   "components": {

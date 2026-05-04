@@ -71,6 +71,27 @@ const SECTION_STORAGE_PREFIX = "hub.lastSection.v1";
 
 const LOGO = require("../../assets/images/amynest-logo.png");
 
+// Avatar gradient palette for child selector cards — matches web ChildSelectorPanel
+// AVATAR_COLORS, adapted to the brand gradient token system (expo-linear-gradient).
+const AVATAR_GRADIENTS: readonly [string, string][] = [
+  [brand.violet500, brand.violet600],
+  [brand.pink500, brand.rose400],
+  [brand.sky300, brand.indigo500],
+  [palette.emerald500, palette.emerald700],
+  [palette.amber500, palette.orange500],
+  [brand.rose400, brand.pink500],
+] as const;
+
+function getChildInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .toUpperCase();
+}
+
 type Child = { id: number; name: string; age: number; ageMonths?: number };
 
 // Stable identifiers used for i18n key lookup. Emojis stay co-located with
@@ -179,6 +200,12 @@ export default function HubScreen() {
   const pageWidth = Math.max(0, windowWidth);
   const pagerRef = useRef<FlatList<SectionKey>>(null);
   const [activeSection, setActiveSection] = useState<SectionKey>("today");
+  // Dev-mode activation: 7 quick taps on the logo toggles a persistent
+  // AsyncStorage flag that shows HubDebugOverlay in non-__DEV__ builds too,
+  // giving testers on production builds access to the tile diff inspector.
+  const [devMode, setDevMode] = useState(false);
+  const logoTapCount = useRef(0);
+  const logoTapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Live horizontal scroll offset (Animated.Value) — drives both the
   // tab-bar indicator translateX and the per-page opacity fade so the
   // tab UI tracks the swipe in real time, not just on momentum end.
@@ -357,6 +384,34 @@ export default function HubScreen() {
     setPreviewBand(band);
   };
 
+  // Restore persisted dev-mode state on mount. Async, so devMode may flip
+  // on the second frame — acceptable for a developer-only feature.
+  useEffect(() => {
+    AsyncStorage.getItem("amynest:devMode")
+      .then((val) => { if (val === "1") setDevMode(true); })
+      .catch(() => {});
+  }, []);
+
+  // 7-tap logo tap-counter: each tap within a 1.5 s window increments the
+  // counter; on reaching 7 the flag toggles and is persisted to AsyncStorage.
+  // Works in all build types (debug and release) so testers can access the
+  // HubDebugOverlay without a custom build.
+  const handleLogoTap = useCallback(() => {
+    logoTapCount.current += 1;
+    if (logoTapTimeout.current) clearTimeout(logoTapTimeout.current);
+    if (logoTapCount.current >= 7) {
+      logoTapCount.current = 0;
+      const next = !devMode;
+      setDevMode(next);
+      AsyncStorage.setItem("amynest:devMode", next ? "1" : "0").catch(() => {});
+    } else {
+      logoTapTimeout.current = setTimeout(() => {
+        logoTapCount.current = 0;
+        logoTapTimeout.current = null;
+      }, 1500);
+    }
+  }, [devMode]);
+
   const askAmy = (q: string) => {
     router.push({ pathname: "/amy-ai", params: { q } });
   };
@@ -442,7 +497,18 @@ export default function HubScreen() {
         }}
       >
         <View style={styles.headerRow}>
-          <Image source={LOGO} style={styles.logo} resizeMode="contain" />
+          {/* i18n-ok: "AmyNest logo" is a brand name — intentionally not translated */}
+          <Pressable onPress={handleLogoTap} accessibilityRole="button" accessibilityLabel="AmyNest logo">
+            <View>
+              <Image source={LOGO} style={styles.logo} resizeMode="contain" />
+              {devMode && (
+                <View style={styles.devBadge}>
+                  {/* i18n-ok: developer mode indicator — not user-facing, intentionally not translated */}
+                  <Text style={styles.devBadgeText}>DEV</Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
           <View style={{ flex: 1 }}>
             <View style={styles.eyebrowRow}>
               <Ionicons name="sparkles" size={11} color={brand.purple500} />
@@ -484,27 +550,71 @@ export default function HubScreen() {
           </View>
         )}
 
-        {/* Child selector */}
-        {children.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {children.map(c => {
-              const g = resolveAgeGroup(c.age, c.ageMonths ?? 0);
-              const isSel = effective?.id === c.id;
-              return (
-                <Pressable
-                  key={c.id}
-                  onPress={() => setSelectedId(c.id)}
-                  style={[styles.chip, isSel && styles.chipActive]}
-                >
-                  <Text style={{ fontSize: 18 }}>{g.emoji}</Text>
-                  <View>
-                    <Text style={[styles.chipName, isSel && { color: "#fff" }]}>{c.name}</Text>
-                    <Text style={[styles.chipAge, isSel && { color: "rgba(255,255,255,0.85)" }]}>{g.label}</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+        {/* Child selector — web-parity rich avatar cards.
+            Each card shows a gradient avatar with initials, name, and age-group
+            label. The selected card gains a purple border glow + checkmark icon
+            + "VIEWING" pill, matching the web ChildSelectorPanel design.
+            Visible for any number of children (including single-child families)
+            so caregivers always see who content is personalised for. */}
+        {children.length > 0 && (
+          <View style={styles.childSelectorWrap}>
+            <View style={styles.childSelectorHeader}>
+              <Ionicons name="people" size={13} color={brand.primary} />
+              <Text style={styles.childSelectorLabel}>
+                {children.length === 1
+                  ? t("parent_hub.headers.current_child")
+                  : t("parent_hub.headers.select_child")}
+              </Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.childSelectorRow}
+            >
+              {children.map((ch, idx) => {
+                const g = resolveAgeGroup(ch.age, ch.ageMonths ?? 0);
+                const isSel = effective?.id === ch.id;
+                const grad = AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length];
+                return (
+                  <Pressable
+                    key={ch.id}
+                    onPress={() => setSelectedId(ch.id)}
+                    style={[styles.childCard, isSel && styles.childCardSel]}
+                  >
+                    {isSel && (
+                      <View style={styles.childCardCheck}>
+                        <Ionicons name="checkmark-circle" size={16} color={brand.primary} />
+                      </View>
+                    )}
+                    <LinearGradient
+                      colors={grad}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[styles.childAvatar, isSel && styles.childAvatarSel]}
+                    >
+                      <Text style={styles.childAvatarText}>{getChildInitials(ch.name)}</Text>
+                    </LinearGradient>
+                    <View style={styles.childCardInfo}>
+                      <Text
+                        style={[styles.childCardName, isSel && styles.childCardNameSel]}
+                        numberOfLines={1}
+                      >
+                        {ch.name}
+                      </Text>
+                      <Text style={styles.childCardAge} numberOfLines={1}>
+                        {g.emoji} {g.label}
+                      </Text>
+                    </View>
+                    {isSel && (
+                      <View style={styles.viewingChip}>
+                        <Text style={styles.viewingChipText}>{t("parent_hub.headers.viewing")}</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
         )}
 
         {effective && grp && (
@@ -1874,7 +1984,7 @@ export default function HubScreen() {
           for the active child. Mounted as ScrollView sibling so it floats
           over content. Reads debugSnapshot which the IIFE above populates
           synchronously during this same render pass. */}
-      {__DEV__ && effective && (
+      {(__DEV__ || devMode) && effective && (
         <HubDebugOverlay
           mobileSection1Ids={debugSnapshot.section1Ids}
           mobileSection2Ids={debugSnapshot.section2Ids}
@@ -1882,6 +1992,7 @@ export default function HubScreen() {
           currentBand={currentBand}
           ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
           childName={childName}
+          devMode={devMode}
         />
       )}
     </LinearGradient>
@@ -2358,7 +2469,7 @@ function ExploreNextStageBlock({
 }
 
 function Section({
-  id, icon, emoji, accent, title, desc, open, onToggle, onOpen, tryFree = false, children,
+  id, icon, emoji, accent: _accent, title, desc, open, onToggle, onOpen, tryFree = false, children,
 }: {
   id: string;
   icon: React.ReactNode;
@@ -2367,6 +2478,9 @@ function Section({
    *  visually distinct and avoid blank squares on platforms where the
    *  vector-icons font fails to load (e.g. some Android WebView builds). */
   emoji?: string;
+  /** Accent gradient kept in the prop signature for caller compatibility.
+   *  The icon box now uses a flat muted glass background (web-parity) so
+   *  this value is intentionally unused in the render output. */
   accent: [string, string];
   title: string;
   desc: string;
@@ -2398,13 +2512,9 @@ function Section({
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
       >
-        <LinearGradient
-          colors={accent}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={styles.sectionIcon}
-        >
+        <View style={styles.sectionIcon}>
           {emoji ? <Text style={{ fontSize: 24 }}>{emoji}</Text> : icon}
-        </LinearGradient>
+        </View>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <Text style={styles.sectionTitle}>{title}</Text>
@@ -2416,7 +2526,7 @@ function Section({
           <Ionicons
             name={open ? "chevron-up" : "chevron-down"}
             size={14}
-            color={open ? ACCENT_PINK : (mode === "light" ? c.textBody : "rgba(255,255,255,0.65)")}
+            color={open ? brand.primary : (mode === "light" ? c.textBody : "rgba(255,255,255,0.65)")}
           />
         </View>
       </Pressable>
@@ -2465,14 +2575,71 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     primaryBtn: { backgroundColor: brand.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 999, marginTop: 8 },
     primaryBtnText: { color: "#fff", fontWeight: "700" },
 
-    chip: {
-      flexDirection: "row", alignItems: "center", gap: 8,
-      paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18,
+    // ── Child selector rich avatar cards (web ChildSelectorPanel parity) ──────
+    childSelectorWrap: {
+      borderRadius: 16, overflow: "hidden",
       backgroundColor: glassBg, borderWidth: 1, borderColor: glassBorder,
     },
-    chipActive: { backgroundColor: "rgba(123,63,242,0.4)", borderColor: ACCENT_PINK },
-    chipName: { color: c.foreground, fontWeight: "700", fontSize: 13 },
-    chipAge: { color: c.textMuted, fontSize: 10 },
+    childSelectorHeader: {
+      flexDirection: "row", alignItems: "center", gap: 6,
+      paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4,
+    },
+    childSelectorLabel: {
+      color: c.textMuted, fontSize: 10, fontWeight: "800",
+      letterSpacing: 0.9, textTransform: "uppercase",
+    },
+    childSelectorRow: {
+      flexDirection: "row", gap: 10,
+      paddingHorizontal: 12, paddingBottom: 12, paddingTop: 2,
+    },
+    childCard: {
+      minWidth: 84, alignItems: "center", gap: 5,
+      paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14,
+      backgroundColor: isLight ? "rgba(255,255,255,0.50)" : "rgba(255,255,255,0.03)",
+      borderWidth: 2, borderColor: glassBorder,
+      position: "relative",
+    },
+    childCardSel: {
+      backgroundColor: brandAlpha.purple500_10,
+      borderColor: brand.primary,
+      shadowColor: brand.purple500,
+      shadowOpacity: isLight ? 0.22 : 0.38,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    childCardCheck: { position: "absolute", top: 5, right: 5 },
+    childAvatar: {
+      width: 48, height: 48, borderRadius: 24,
+      alignItems: "center", justifyContent: "center",
+    },
+    childAvatarSel: {
+      shadowColor: brand.primary,
+      shadowOpacity: 0.40,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 3 },
+    },
+    childAvatarText: { color: "#fff", fontWeight: "800", fontSize: 16, letterSpacing: -0.3 },
+    childCardInfo: { alignItems: "center", gap: 1 },
+    childCardName: { color: c.foreground, fontWeight: "700", fontSize: 12, textAlign: "center" },
+    childCardNameSel: { color: brand.primary },
+    childCardAge: { color: c.textMuted, fontSize: 10, textAlign: "center" },
+    viewingChip: {
+      paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999,
+      backgroundColor: brandAlpha.purple500_15,
+    },
+    viewingChipText: {
+      color: brand.primary, fontSize: 8, fontWeight: "800",
+      letterSpacing: 0.8, textTransform: "uppercase",
+    },
+
+    // ── Dev badge on logo (7-tap toggle) ────────────────────────────────────
+    devBadge: {
+      position: "absolute", bottom: -4, right: -4,
+      backgroundColor: brand.rose400,
+      paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6,
+    },
+    devBadgeText: { color: "#fff", fontSize: 8, fontWeight: "900", letterSpacing: 0.5 },
 
     agePillRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
     agePill: {
@@ -2496,9 +2663,9 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       elevation: 2,
     },
     sectionOpen: {
-      borderColor: "rgba(255,78,205,0.55)",
+      borderColor: brandAlpha.purple500_60,
       backgroundColor: glassBgOpen,
-      shadowColor: ACCENT_PINK,
+      shadowColor: brand.purple500,
       shadowOpacity: isLight ? 0.25 : 0.45,
       shadowRadius: 22,
       shadowOffset: { width: 0, height: 10 },
@@ -2508,7 +2675,8 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
     sectionIcon: {
       width: 44, height: 44, borderRadius: 14,
       alignItems: "center", justifyContent: "center",
-      borderWidth: 1, borderColor: "rgba(255,255,255,0.18)",
+      borderWidth: 1, borderColor: glassBorder,
+      backgroundColor: isLight ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.07)",
     },
     sectionTitle: { color: c.foreground, fontWeight: "800", fontSize: 15 },
     sectionDesc: { color: c.textMuted, fontSize: 11, marginTop: 2 },
@@ -2524,7 +2692,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       borderWidth: 1, borderColor: glassBorder,
       backgroundColor: glassBgSoft,
     },
-    chevWrapOpen: { borderColor: "rgba(255,78,205,0.6)", backgroundColor: "rgba(255,78,205,0.12)" },
+    chevWrapOpen: { borderColor: brandAlpha.purple500_60, backgroundColor: brandAlpha.purple500_15 },
     sectionLead: { color: c.textBody, fontSize: 13 },
 
     promptsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
