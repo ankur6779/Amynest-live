@@ -195,7 +195,7 @@ export function NotificationNudgeBanner() {
     snooze();
     setDismissed(true);
   };
-  if (dismissed || state === "hidden") return null;
+  if (dismissed || state === "hidden" || state === "ask") return null;
   if (state === "denied") {
     // Recovery copy is platform-specific because the steps to re-enable
     // notifications differ a lot across surfaces (Chrome desktop is a
