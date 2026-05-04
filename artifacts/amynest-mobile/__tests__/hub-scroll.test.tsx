@@ -7,11 +7,12 @@
  * single-scroll hub surface renders its three structural layers correctly for
  * a known child profile (6-year-old, band 3 / "6-8"):
  *
- *   1. Today's Plan section appears at the top (heading or empty-state).
+ *   1. The "Today's Plan" section is NOT rendered (removed from mobile hub).
  *   2. The two mandatory featured tiles are present:
  *        hub-tile-command-center, hub-tile-tomorrow-forecast
  *   3. At least one band tile is present for the child's current age band.
- *   4. No `hub-tab-*` testIDs exist anywhere (confirms pager removal).
+ *   4. Accordion sections start collapsed (aria-expanded="false").
+ *   5. No `hub-tab-*` testIDs exist anywhere (confirms pager removal).
  *
  * Mock setup mirrors parent-hub-paywall.test.tsx so the two files stay in
  * sync when new tiles or dependencies are added to hub.tsx.
@@ -217,12 +218,28 @@ afterEach(() => {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("Single-scroll hub smoke test (6-year-old, band 6-8)", () => {
-  it("renders the Today's Plan section heading at the top of the scroll", async () => {
+  it("does NOT render a Today's Plan section (removed from mobile hub)", async () => {
     renderHub();
-    // The real i18n bundle is initialised in test-setup.ts, so the heading
-    // resolves to the English string rather than falling back to its key.
+    // Wait for the hub to finish loading children so we are not checking
+    // before async data settles.
     await waitFor(() => {
-      expect(screen.getByText("Today's Plan")).toBeInTheDocument();
+      expect(screen.getByTestId("hub-tile-command-center")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Today's Plan")).not.toBeInTheDocument();
+  });
+
+  it("renders accordion sections collapsed by default (aria-expanded=false)", async () => {
+    renderHub();
+    await waitFor(() => {
+      expect(screen.getByTestId("hub-tile-amy")).toBeInTheDocument();
+    });
+    // Every accordion toggle button should start in the collapsed state.
+    const toggleButtons = screen
+      .getAllByRole("button")
+      .filter((btn) => btn.getAttribute("aria-expanded") !== null);
+    expect(toggleButtons.length).toBeGreaterThan(0);
+    toggleButtons.forEach((btn) => {
+      expect(btn).toHaveAttribute("aria-expanded", "false");
     });
   });
 
