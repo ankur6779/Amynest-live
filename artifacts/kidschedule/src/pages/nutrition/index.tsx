@@ -22,11 +22,11 @@ type Tab = "nutrients" | "meals" | "family" | "score";
 type Lang = "en";
 
 // ─── Language helper ─────────────────────────────────────────────────────────
-function l(en: string, _hi: string, _hinglish?: string, _lang: Lang = "en"): string {
+function l(en: string): string {
   return en;
 }
 
-function lArr(en: string[], _hi: string[], _lang: Lang): string[] {
+function lArr(en: string[]): string[] {
   return en;
 }
 
@@ -41,7 +41,7 @@ function scoreBarColor(s: number) {
   if (s >= 50) return "bg-primary";
   return "bg-primary";
 }
-function scoreLabel(s: number, _lang: Lang) {
+function scoreLabel(s: number) {
   if (s >= 80) return "Excellent 🌟";
   if (s >= 60) return "Good 👍";
   if (s >= 40) return "Needs Attention ⚠️";
@@ -62,8 +62,8 @@ function NutrientDetailDialog({
   const need = nutrient.dailyNeeds[ageGroupId];
   const ageGroup = AGE_GROUPS.find(a => a.id === ageGroupId)!;
 
-  const benefitsText = lArr(nutrient.benefits, nutrient.benefitsHi, lang);
-  const deficiencyText = lArr(nutrient.deficiencySymptoms, nutrient.deficiencyHi, lang);
+  const benefitsText = lArr(nutrient.benefits);
+  const deficiencyText = lArr(nutrient.deficiencySymptoms);
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -71,7 +71,7 @@ function NutrientDetailDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <span className="text-2xl">{nutrient.emoji}</span>
-            {l(nutrient.name, nutrient.nameHi, nutrient.nameHinglish, lang)}
+            {l(nutrient.name)}
           </DialogTitle>
         </DialogHeader>
 
@@ -80,12 +80,7 @@ function NutrientDetailDialog({
           <Activity className={cn("h-5 w-5 mt-0.5 shrink-0", nutrient.textClass)} />
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
-              {l(
-                `Daily Need for ${ageGroup.label}`,
-                `${ageGroup.labelHi} के लिए दैनिक आवश्यकता`,
-                `Daily Need for ${ageGroup.labelHinglish}`,
-                lang,
-              )}
+              {l(`Daily Need for ${ageGroup.label}`)}
             </p>
             <p className={cn("text-2xl font-bold", nutrient.textClass)}>
               {need.amount} <span className="text-base font-medium">{need.unit}</span>
@@ -98,7 +93,7 @@ function NutrientDetailDialog({
         <div>
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
             <CheckCircle2 className="h-4 w-4 text-foreground" />
-            {l("Benefits", "फायदे", "Benefits", lang)}
+            {l("Benefits")}
           </h3>
           <ul className="space-y-1.5">
             {benefitsText.map((b, i) => (
@@ -114,7 +109,7 @@ function NutrientDetailDialog({
         <div>
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
             <Salad className="h-4 w-4 text-foreground" />
-            {l("Indian Food Sources", "भारतीय खाद्य स्रोत", "Indian Food Sources", lang)}
+            {l("Indian Food Sources")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {nutrient.sources.map((src, i) => (
@@ -123,7 +118,7 @@ function NutrientDetailDialog({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium truncate">
-                      {l(src.name, src.nameHi, src.name, lang)}
+                      {l(src.name)}
                     </span>
                     {src.type === "veg" ? (
                       <Leaf className="h-3 w-3 text-foreground shrink-0" />
@@ -142,7 +137,7 @@ function NutrientDetailDialog({
         <div>
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
             <AlertCircle className="h-4 w-4 text-foreground" />
-            {l("Deficiency Signs", "कमी के लक्षण", "Deficiency Signs", lang)}
+            {l("Deficiency Signs")}
           </h3>
           <div className="rounded-xl bg-muted border border-border p-3 space-y-1.5">
             {deficiencyText.map((d, i) => (
@@ -157,12 +152,7 @@ function NutrientDetailDialog({
         {/* ICMR Reference */}
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <BookOpen className="h-3 w-3" />
-          {l(
-            "Source: ICMR-NIN Nutrient Requirements for Indians (2020) & WHO Guidelines",
-            "स्रोत: ICMR-NIN पोषक तत्व आवश्यकताएं (2020) एवं WHO दिशानिर्देश",
-            "Source: ICMR-NIN (2020) & WHO Guidelines",
-            lang,
-          )}
+          {l("Source: ICMR-NIN Nutrient Requirements for Indians (2020) & WHO Guidelines")}
         </p>
       </DialogContent>
     </Dialog>
@@ -190,14 +180,14 @@ function NutrientCard({ nutrient, ageGroupId, onClick, lang }: {
         <ChevronRight className={cn("h-4 w-4 mt-1 opacity-50 group-hover:opacity-100 transition-opacity", nutrient.textClass)} />
       </div>
       <h3 className={cn("font-bold text-base", nutrient.textClass)}>
-        {l(nutrient.name, nutrient.nameHi, nutrient.nameHinglish, lang)}
+        {l(nutrient.name)}
       </h3>
       <p className="text-xs text-muted-foreground/70 italic mb-2">
-        {l(nutrient.tagline, nutrient.taglineHi, nutrient.tagline, lang)}
+        {l(nutrient.tagline)}
       </p>
       <div className={cn("rounded-lg px-2 py-1 text-xs font-semibold", "bg-background/60")}>
         <span className={nutrient.textClass}>{need.amount} {need.unit}</span>
-        <span className="text-muted-foreground"> / {l("day", "दिन", "day", lang)}</span>
+        <span className="text-muted-foreground"> / {l("day")}</span>
       </div>
     </button>
   );
@@ -214,20 +204,10 @@ function MealPlanSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; lang: L
       <div className="text-center py-12 text-muted-foreground">
         <span className="text-4xl block mb-2">🍼</span>
         <p className="font-medium">
-          {l(
-            "Exclusive breastfeeding recommended (0–6 months)",
-            "एकल स्तनपान की सलाह (0–6 महीने)",
-            "Exclusive breastfeeding recommended (0–6 months)",
-            lang,
-          )}
+          {l("Exclusive breastfeeding recommended (0–6 months)")}
         </p>
         <p className="text-sm">
-          {l(
-            "WHO recommends only breast milk for the first 6 months. No other food or water is needed.",
-            "विश्व स्वास्थ्य संगठन 6 महीने तक केवल माँ के दूध की सलाह देता है।",
-            "WHO recommends only breast milk for the first 6 months.",
-            lang,
-          )}
+          {l("WHO recommends only breast milk for the first 6 months. No other food or water is needed.")}
         </p>
       </div>
     );
@@ -237,13 +217,13 @@ function MealPlanSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; lang: L
   const meal = isVeg ? day.veg : day.nonVeg;
 
   const mealTimes = [
-    { time: `🌅 ${l("Breakfast", "नाश्ता", "Breakfast", lang)}`, key: "breakfast", color: "bg-muted border-border text-foreground" },
+    { time: `🌅 ${l("Breakfast")}`, key: "breakfast", color: "bg-muted border-border text-foreground" },
     meal.midMorning
-      ? { time: `🍎 ${l("Mid-Morning", "मध्य-सुबह", "Mid-Morning", lang)}`, key: "midMorning", color: "bg-muted border-border text-foreground" }
+      ? { time: `🍎 ${l("Mid-Morning")}`, key: "midMorning", color: "bg-muted border-border text-foreground" }
       : null,
-    { time: `🌞 ${l("Lunch", "दोपहर का खाना", "Lunch", lang)}`, key: "lunch", color: "bg-muted border-border text-foreground" },
-    { time: `🍪 ${l("Snack", "स्नैक", "Snack", lang)}`, key: "snack", color: "bg-muted border-border text-foreground" },
-    { time: `🌙 ${l("Dinner", "रात का खाना", "Dinner", lang)}`, key: "dinner", color: "bg-muted border-border text-foreground" },
+    { time: `🌞 ${l("Lunch")}`, key: "lunch", color: "bg-muted border-border text-foreground" },
+    { time: `🍪 ${l("Snack")}`, key: "snack", color: "bg-muted border-border text-foreground" },
+    { time: `🌙 ${l("Dinner")}`, key: "dinner", color: "bg-muted border-border text-foreground" },
   ];
 
   return (
@@ -252,7 +232,7 @@ function MealPlanSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; lang: L
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-bold text-lg">
-            {l(plan.ageCategory, plan.ageCategoryHi, plan.ageCategory, lang)}
+            {l(plan.ageCategory)}
           </h3>
         </div>
         {/* Veg / Non-veg toggle */}
@@ -262,14 +242,14 @@ function MealPlanSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; lang: L
             className={cn("flex items-center gap-1 px-4 py-1.5 text-sm font-medium transition-colors",
               isVeg ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}
           >
-            <Leaf className="h-3.5 w-3.5" /> {l("Veg", "शाकाहारी", "Veg", lang)}
+            <Leaf className="h-3.5 w-3.5" /> {l("Veg")}
           </button>
           <button
             onClick={() => setIsVeg(false)}
             className={cn("flex items-center gap-1 px-4 py-1.5 text-sm font-medium transition-colors",
               !isVeg ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}
           >
-            <Drumstick className="h-3.5 w-3.5" /> {l("Non-Veg", "मांसाहारी", "Non-Veg", lang)}
+            <Drumstick className="h-3.5 w-3.5" /> {l("Non-Veg")}
           </button>
         </div>
       </div>
@@ -277,8 +257,8 @@ function MealPlanSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; lang: L
       {/* Portion note */}
       <div className="rounded-xl bg-muted border border-border p-3 text-sm">
         <p className="text-foreground">
-          📏 <strong>{l("Portions:", "मात्रा:", "Portions:", lang)}</strong>{""}
-          {l(plan.portionNote, plan.portionNoteHi, plan.portionNote, lang)}
+          📏 <strong>{l("Portions:")}</strong>{""}
+          {l(plan.portionNote)}
         </p>
       </div>
 
@@ -324,20 +304,10 @@ function FamilyModeSection({ lang }: { lang: Lang }) {
         <Users className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
         <div>
           <p className="font-semibold text-foreground">
-            {l(
-              "Family Mode — One Meal, Different Portions",
-              "परिवार मोड — एक खाना, अलग-अलग हिस्से",
-              "Family Mode — One Meal, Different Portions",
-              lang,
-            )}
+            {l("Family Mode — One Meal, Different Portions")}
           </p>
           <p className="text-sm text-foreground">
-            {l(
-              "Cook one meal for the whole family and serve age-appropriate portions. No need for separate cooking!",
-              "पूरे परिवार के लिए एक खाना बनाएं और उम्र के अनुसार हिस्से परोसें। अलग खाना बनाने की जरूरत नहीं!",
-              "Cook one meal for the whole family and serve age-appropriate portions!",
-              lang,
-            )}
+            {l("Cook one meal for the whole family and serve age-appropriate portions. No need for separate cooking!")}
           </p>
         </div>
       </div>
@@ -348,14 +318,14 @@ function FamilyModeSection({ lang }: { lang: Lang }) {
           <thead>
             <tr className="bg-muted/60 border-b">
               <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground min-w-[140px]">
-                {l("Food Item", "खाद्य पदार्थ", "Food Item", lang)}
+                {l("Food Item")}
               </th>
               <th className="text-center px-3 py-2.5 font-semibold text-foreground">🍼<br /><span className="text-xs">6–12m</span></th>
               <th className="text-center px-3 py-2.5 font-semibold text-foreground">🧒<br /><span className="text-xs">1–3y</span></th>
               <th className="text-center px-3 py-2.5 font-semibold text-foreground">📚<br /><span className="text-xs">6–10y</span></th>
               <th className="text-center px-3 py-2.5 font-semibold text-foreground">🌱<br /><span className="text-xs">10–15y</span></th>
-              <th className="text-center px-3 py-2.5 font-semibold text-foreground">👨‍👩<br /><span className="text-xs">{l("Adult", "वयस्क", "Adult", lang)}</span></th>
-              <th className="text-center px-3 py-2.5 font-semibold text-foreground">🤰<br /><span className="text-xs">{l("Pregnant", "गर्भवती", "Pregnant", lang)}</span></th>
+              <th className="text-center px-3 py-2.5 font-semibold text-foreground">👨‍👩<br /><span className="text-xs">{l("Adult")}</span></th>
+              <th className="text-center px-3 py-2.5 font-semibold text-foreground">🤰<br /><span className="text-xs">{l("Pregnant")}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -364,7 +334,7 @@ function FamilyModeSection({ lang }: { lang: Lang }) {
                 <td className="px-3 py-2.5">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{row.emoji}</span>
-                    <p className="font-medium">{l(row.food, row.foodHi, row.food, lang)}</p>
+                    <p className="font-medium">{l(row.food)}</p>
                   </div>
                 </td>
                 <td className="px-3 py-2 text-center text-xs">{row.infant}</td>
@@ -379,12 +349,7 @@ function FamilyModeSection({ lang }: { lang: Lang }) {
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        {l(
-          "* Portions are approximate. Adjust based on child's appetite and hunger cues. 1 katori ≈ 150ml cup.",
-          "* मात्राएं अनुमानित हैं। बच्चे की भूख के अनुसार बदलें। 1 कटोरी ≈ 150ml।",
-          "* Portions are approximate. 1 katori ≈ 150ml cup.",
-          lang,
-        )}
+        {l("* Portions are approximate. Adjust based on child's appetite and hunger cues. 1 katori ≈ 150ml cup.")}
       </p>
     </div>
   );
@@ -399,60 +364,20 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
     setCheckList(prev => ({ ...prev, [key]: !prev[key] }));
 
   const scoreChecklist = [
-    {
-      id: "breakfast",
-      label: "Had a wholesome breakfast today",
-      labelHi: "आज पौष्टिक नाश्ता किया",
-      labelHinglish: "Aaj wholesome breakfast liya",
-    },
-    {
-      id: "protein",
-      label: "Ate a protein source (dal / egg / paneer / meat)",
-      labelHi: "प्रोटीन लिया (दाल/अंडा/पनीर/मांस)",
-      labelHinglish: "Protein liya (dal/egg/paneer/meat)",
-    },
-    {
-      id: "dairy",
-      label: "Consumed dairy or calcium source",
-      labelHi: "डेयरी या कैल्शियम स्रोत लिया",
-      labelHinglish: "Dairy ya calcium source liya",
-    },
-    {
-      id: "greens",
-      label: "Ate green leafy vegetables (palak / methi / etc)",
-      labelHi: "हरी पत्तेदार सब्जी खाई",
-      labelHinglish: "Hari sabzi khai (palak/methi)",
-    },
-    {
-      id: "fruit",
-      label: "Had at least 1 fruit today",
-      labelHi: "आज कम से कम 1 फल खाया",
-      labelHinglish: "Aaj kam se kam 1 fruit khaya",
-    },
-    {
-      id: "water",
-      label: "Drank adequate water / fluids",
-      labelHi: "पर्याप्त पानी पिया",
-      labelHinglish: "Paryapt paani piya",
-    },
-    {
-      id: "noJunk",
-      label: "Avoided junk food / packaged snacks",
-      labelHi: "जंक फूड से बचे",
-      labelHinglish: "Junk food se bacha",
-    },
-    {
-      id: "wholegrains",
-      label: "Whole grains instead of refined (atta roti vs maida)",
-      labelHi: "साबुत अनाज चुना (आटे की रोटी)",
-      labelHinglish: "Whole grains choose kiye (atta roti)",
-    },
+    { id: "breakfast",   label: "Had a wholesome breakfast today" },
+    { id: "protein",     label: "Ate a protein source (dal / egg / paneer / meat)" },
+    { id: "dairy",       label: "Consumed dairy or calcium source" },
+    { id: "greens",      label: "Ate green leafy vegetables (palak / methi / etc)" },
+    { id: "fruit",       label: "Had at least 1 fruit today" },
+    { id: "water",       label: "Drank adequate water / fluids" },
+    { id: "noJunk",      label: "Avoided junk food / packaged snacks" },
+    { id: "wholegrains", label: "Whole grains instead of refined (atta roti vs maida)" },
   ];
 
   const checked = Object.values(checkList).filter(Boolean).length;
   const score = Math.round((checked / scoreChecklist.length) * 100);
 
-  const ageLabelText = l(ageGroup.label, ageGroup.labelHi, ageGroup.labelHinglish, lang);
+  const ageLabelText = l(ageGroup.label);
 
   return (
     <div className="space-y-5">
@@ -460,20 +385,10 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
         <Trophy className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
         <div>
           <p className="font-semibold text-foreground">
-            {l(
-              `Daily Nutrition Checklist for ${ageLabelText}`,
-              `${ageLabelText} के लिए दैनिक पोषण चेकलिस्ट`,
-              `Daily Nutrition Checklist for ${ageLabelText}`,
-              lang,
-            )}
+            {l(`Daily Nutrition Checklist for ${ageLabelText}`)}
           </p>
           <p className="text-sm text-foreground">
-            {l(
-              "Check what was eaten today to get a quick nutrition score.",
-              "आज के खाने का विवरण चेक करें — त्वरित पोषण स्कोर पाएं।",
-              "Check aaj ka khaana — quick nutrition score pao.",
-              lang,
-            )}
+            {l("Check what was eaten today to get a quick nutrition score.")}
           </p>
         </div>
       </div>
@@ -482,7 +397,7 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
       <div className="rounded-2xl border bg-card p-5 flex items-center gap-5">
         <div className={cn("text-6xl font-black tabular-nums", scoreColor(score))}>{score}</div>
         <div className="flex-1 space-y-2">
-          <p className={cn("font-semibold text-lg", scoreColor(score))}>{scoreLabel(score, lang)}</p>
+          <p className={cn("font-semibold text-lg", scoreColor(score))}>{scoreLabel(score)}</p>
           <div className="h-3 rounded-full bg-muted overflow-hidden">
             <div
               className={cn("h-full rounded-full transition-all duration-500", scoreBarColor(score))}
@@ -490,12 +405,7 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            {l(
-              `${checked} of ${scoreChecklist.length} daily nutrition goals met`,
-              `${scoreChecklist.length} में से ${checked} पोषण लक्ष्य पूरे हुए`,
-              `${checked} of ${scoreChecklist.length} goals met`,
-              lang,
-            )}
+            {l(`${checked} of ${scoreChecklist.length} daily nutrition goals met`)}
           </p>
         </div>
       </div>
@@ -522,7 +432,7 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
               {checkList[item.id] && <span className="text-primary-foreground text-xs">✓</span>}
             </div>
             <p className={cn("text-sm font-medium", checkList[item.id] && "line-through text-muted-foreground")}>
-              {l(item.label, item.labelHi, item.labelHinglish, lang)}
+              {l(item.label)}
             </p>
           </button>
         ))}
@@ -532,29 +442,14 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
       {score < 80 && (
         <div className="rounded-xl bg-muted border border-border p-4">
           <p className="flex items-center gap-2 font-semibold text-foreground text-sm mb-1">
-            <Brain className="h-4 w-4" /> {l("Amy AI Nutrition Tip", "Amy AI पोषण सुझाव", "Amy AI Nutrition Tip", lang)}
+            <Brain className="h-4 w-4" /> {l("Amy AI Nutrition Tip")}
           </p>
           <p className="text-sm text-foreground">
             {score < 40
-              ? l(
-                  "Today's nutrition needs a boost! Try adding dal at lunch, a fruit snack, and a glass of milk to quickly improve your score.",
-                  "आज पोषण बेहतर करें — दाल, फल और दूध जरूर लें।",
-                  "Aaj nutrition boost karo — dal, fruit aur milk lo!",
-                  lang,
-                )
+              ? l("Today's nutrition needs a boost! Try adding dal at lunch, a fruit snack, and a glass of milk to quickly improve your score.")
               : score < 60
-              ? l(
-                  "You're on the right track! Make sure to include green leafy vegetables — palak, methi, or drumstick leaves are excellent.",
-                  "सही रास्ते पर हैं! हरी पत्तेदार सब्जी जरूर लें — पालक, मेथी उत्तम है।",
-                  "Sahi track par ho! Hari sabzi zaroor lo — palak, methi excellent hai.",
-                  lang,
-                )
-              : l(
-                  "Almost there! Swap refined snacks for a handful of roasted chana or nuts to get that final boost.",
-                  "लगभग हो गया! भुने चने या मेवे से अंतिम स्कोर बढ़ाएं।",
-                  "Almost done! Roasted chana ya nuts le lo — final boost milega.",
-                  lang,
-                )}
+              ? l("You're on the right track! Make sure to include green leafy vegetables — palak, methi, or drumstick leaves are excellent.")
+              : l("Almost there! Swap refined snacks for a handful of roasted chana or nuts to get that final boost.")}
           </p>
         </div>
       )}
@@ -562,15 +457,10 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
         <div className="rounded-xl bg-muted border border-border p-4 text-center">
           <p className="text-2xl mb-1">🌟</p>
           <p className="font-bold text-foreground">
-            {l("Outstanding nutrition day!", "शानदार पोषण दिन!", "Outstanding nutrition day!", lang)}
+            {l("Outstanding nutrition day!")}
           </p>
           <p className="text-sm text-foreground">
-            {l(
-              "Keep it up tomorrow too. Consistency is the key to health.",
-              "हर दिन यही करें — यही स्वास्थ्य की कुंजी है।",
-              "Kal bhi aisa karo. Consistency hi health ki kunji hai.",
-              lang,
-            )}
+            {l("Keep it up tomorrow too. Consistency is the key to health.")}
           </p>
         </div>
       )}
@@ -592,13 +482,13 @@ export default function NutritionHubPage() {
   const activeAgeGroup = AGE_GROUPS.find(a => a.id === activeAgeGroupId)!;
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "nutrients", label: l("Nutrient Library", "पोषक तत्व", "Nutrient Library", lang), icon: <Apple className="h-4 w-4" /> },
-    { id: "meals",    label: l("Meal Planner", "साप्ताहिक थाली", "Meal Planner", lang),    icon: <CalendarDays className="h-4 w-4" /> },
-    { id: "family",   label: l("Family Mode", "परिवार मोड", "Family Mode", lang),           icon: <Users className="h-4 w-4" /> },
-    { id: "score",    label: l("Daily Score", "दैनिक स्कोर", "Daily Score", lang),          icon: <Trophy className="h-4 w-4" /> },
+    { id: "nutrients", label: l("Nutrient Library"), icon: <Apple className="h-4 w-4" /> },
+    { id: "meals",    label: l("Meal Planner"),    icon: <CalendarDays className="h-4 w-4" /> },
+    { id: "family",   label: l("Family Mode"),           icon: <Users className="h-4 w-4" /> },
+    { id: "score",    label: l("Daily Score"),          icon: <Trophy className="h-4 w-4" /> },
   ];
 
-  const ageLabelActive = l(activeAgeGroup.label, activeAgeGroup.labelHi, activeAgeGroup.labelHinglish, lang);
+  const ageLabelActive = l(activeAgeGroup.label);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -609,22 +499,17 @@ export default function NutritionHubPage() {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-3xl">🥗</span>
             <Badge className="bg-card text-primary-foreground border-border text-xs">
-              {l("Science-backed · WHO / ICMR", "विज्ञान-आधारित · WHO / ICMR", "Science-backed · WHO / ICMR", lang)}
+              {l("Science-backed · WHO / ICMR")}
             </Badge>
           </div>
           <h1 className="text-3xl font-black tracking-tight mt-2">
-            {l("Nutrition Hub", "न्यूट्रिशन हब", "Nutrition Hub", lang)}
+            {l("Nutrition Hub")}
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {l("Poshan Ka Ghar", "पोषण का घर", "Poshan Ka Ghar", lang)}
+            {l("Poshan Ka Ghar")}
           </p>
           <p className="text-primary-foreground text-sm mt-2 max-w-xl">
-            {l(
-              "Age-specific nutrition science for your whole family — backed by ICMR-NIN & WHO guidelines.",
-              "आपके पूरे परिवार के लिए उम्र-विशिष्ट पोषण विज्ञान — ICMR-NIN और WHO दिशानिर्देशों पर आधारित।",
-              "Age-specific nutrition science for your whole family — ICMR-NIN & WHO backed.",
-              lang,
-            )}
+            {l("Age-specific nutrition science for your whole family — backed by ICMR-NIN & WHO guidelines.")}
           </p>
         </div>
       </div>
@@ -646,10 +531,10 @@ export default function NutritionHubPage() {
               >
                 <span>{ag.emoji}</span>
                 <span className="hidden sm:inline">
-                  {l(ag.label, ag.labelHi, ag.labelHinglish, lang)}
+                  {l(ag.label)}
                 </span>
                 <span className="sm:hidden">
-                  {l(ag.label, ag.labelHi, ag.labelHinglish, lang).split(" ")[0]}
+                  {l(ag.label).split(" ")[0]}
                 </span>
               </button>
             ))}
@@ -665,7 +550,7 @@ export default function NutritionHubPage() {
             <div className="flex-1 min-w-0">
               <h2 className={cn("font-bold text-xl", activeAgeGroup.textClass)}>{ageLabelActive}</h2>
               <p className="text-sm mt-2">
-                {l(activeAgeGroup.description, activeAgeGroup.descriptionHi, activeAgeGroup.description, lang)}
+                {l(activeAgeGroup.description)}
               </p>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {activeAgeGroup.keyFocus.map((f, i) => (
@@ -705,15 +590,10 @@ export default function NutritionHubPage() {
               <div className="space-y-4">
                 <div>
                   <h2 className="font-bold text-lg">
-                    {l("Nutrient Library", "पोषक तत्व पुस्तकालय", "Nutrient Library", lang)}
+                    {l("Nutrient Library")}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {l(
-                      `Tap any nutrient to see benefits, Indian food sources, and daily needs for ${ageLabelActive}.`,
-                      `किसी भी पोषक तत्व पर टैप करें — फायदे, भारतीय खाद्य स्रोत और ${ageLabelActive} के लिए दैनिक जरूरत देखें।`,
-                      `Kisi bhi nutrient par tap karo — ${ageLabelActive} ke liye details dekho.`,
-                      lang,
-                    )}
+                    {l(`Tap any nutrient to see benefits, Indian food sources, and daily needs for ${ageLabelActive}.`)}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -735,15 +615,10 @@ export default function NutritionHubPage() {
               <div className="space-y-4">
                 <div>
                   <h2 className="font-bold text-lg">
-                    {l("Weekly Indian Meal Plan", "साप्ताहिक भारतीय भोजन योजना", "Weekly Indian Meal Plan", lang)}
+                    {l("Weekly Indian Meal Plan")}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {l(
-                      "Age-appropriate Indian meals for every day of the week. Toggle Veg / Non-Veg.",
-                      "हर दिन के लिए उम्र-उपयुक्त भारतीय भोजन। शाकाहारी / मांसाहारी चुनें।",
-                      "Har din ke liye age-appropriate Indian meals. Veg/Non-Veg toggle karo.",
-                      lang,
-                    )}
+                    {l("Age-appropriate Indian meals for every day of the week. Toggle Veg / Non-Veg.")}
                   </p>
                 </div>
                 <MealPlanSection ageGroupId={activeAgeGroupId} lang={lang} />
@@ -755,15 +630,10 @@ export default function NutritionHubPage() {
               <div className="space-y-4">
                 <div>
                   <h2 className="font-bold text-lg">
-                    {l("Family Mode", "परिवार मोड", "Family Mode", lang)}
+                    {l("Family Mode")}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {l(
-                      "Same Indian meal — different portions for each family member by age. Cook once, serve smart!",
-                      "एक ही भारतीय खाना — हर परिवार के सदस्य के लिए उम्र के अनुसार अलग हिस्से। एक बार बनाएं, स्मार्ट तरीके से परोसें!",
-                      "Same Indian meal — different portions by age. Cook once, serve smart!",
-                      lang,
-                    )}
+                    {l("Same Indian meal — different portions for each family member by age. Cook once, serve smart!")}
                   </p>
                 </div>
                 <FamilyModeSection lang={lang} />
@@ -782,7 +652,7 @@ export default function NutritionHubPage() {
           <div className="flex items-start gap-2 mb-2">
             <AlertTriangle className="h-4 w-4 text-foreground mt-0.5 shrink-0" />
             <p className="font-semibold text-foreground text-sm">
-              {l("Medical Disclaimer", "चिकित्सा अस्वीकरण", "Medical Disclaimer", lang)}
+              {l("Medical Disclaimer")}
             </p>
           </div>
           <p className="text-sm text-foreground">
@@ -795,8 +665,8 @@ export default function NutritionHubPage() {
           >
             <BookOpen className="h-3 w-3" />
             {showRefs
-              ? l("Hide References", "स्रोत छुपाएं", "Hide References", lang)
-              : l("Show References", "स्रोत दिखाएं", "Show References", lang)}
+              ? l("Hide References")
+              : l("Show References")}
           </button>
           {showRefs && (
             <ol className="mt-2 space-y-1">
@@ -813,21 +683,16 @@ export default function NutritionHubPage() {
             <span className="text-2xl">📈</span>
             <div>
               <p className="font-semibold">
-                {l("Track Growth Progress", "वृद्धि प्रगति ट्रैक करें", "Track Growth Progress", lang)}
+                {l("Track Growth Progress")}
               </p>
               <p className="text-sm text-muted-foreground">
-                {l(
-                  "See height, weight & BMI trends",
-                  "ऊंचाई, वजन और BMI ट्रेंड देखें",
-                  "Height, weight & BMI trends dekho",
-                  lang,
-                )}
+                {l("See height, weight & BMI trends")}
               </p>
             </div>
           </div>
           <a href="/progress">
             <Button variant="outline" size="sm" className="shrink-0">
-              {l("View Progress", "प्रगति देखें", "View Progress", lang)}
+              {l("View Progress")}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </a>
