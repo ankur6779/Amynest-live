@@ -59,6 +59,36 @@ export function useWebPush() {
     };
   }, []);
 
+  /**
+   * Re-registers the FCM token with the server without asking for permission
+   * again. Useful when the browser already has permission but the token was
+   * never saved (e.g. the server was down during initial enable).
+   * Returns true on success, false on failure.
+   */
+  const refreshRegistration = useCallback(async (): Promise<boolean> => {
+    if (!isSupportedBrowser() || Notification.permission !== "granted") {
+      return false;
+    }
+    try {
+      const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string;
+      if (!vapidKey) return false;
+      const { getWebPushToken } = await import("@/lib/firebase");
+      const token = await getWebPushToken(vapidKey);
+      const r = await authFetch("/api/push/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          platform: "web",
+          deviceName: navigator.userAgent.slice(0, 100),
+        }),
+      });
+      return r.ok;
+    } catch {
+      return false;
+    }
+  }, [authFetch]);
+
   const enable = useCallback(async () => {
     if (!isSupportedBrowser()) {
       setStatus("unsupported");
@@ -129,5 +159,5 @@ export function useWebPush() {
     toast({ title: t("toasts.use_web_push.disabled") });
   }, [toast, t]);
 
-  return { status, enable, disable, isSupported: isSupportedBrowser() };
+  return { status, enable, disable, refreshRegistration, isSupported: isSupportedBrowser() };
 }
