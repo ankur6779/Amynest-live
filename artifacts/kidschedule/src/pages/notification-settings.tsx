@@ -206,6 +206,7 @@ export default function NotificationSettingsPage() {
     mutationFn: async () => {
       const r = await authFetch("/api/notifications/test", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category: "insights" }),
       });
       if (!r.ok) throw new Error(`Server error ${r.status}`);
@@ -247,9 +248,8 @@ export default function NotificationSettingsPage() {
     mutationFn: async (category: CategoryDef["testCategory"]) => {
       const r = await authFetch("/api/notifications/test", {
         method: "POST",
-        body: JSON.stringify({
-          category
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category }),
       });
       return (await r.json()) as {
         status?: string;
