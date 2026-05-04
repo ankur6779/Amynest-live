@@ -41,7 +41,7 @@ function formatScreenName(segments: string[]): string {
 
 function StatusChip({ status }: { status: number | null }) {
   const color =
-    status === null ? "#f87171" : status < 300 ? "#34d399" : status < 500 ? "#fbbf24" : "#f87171";
+    status === null ? "#f87171" : status < 300 ? "#34d399" : status < 500 ? "#fbbf24" : "#f87171"; // audit-ok: debug status indicator colors
   return (
     <Text style={[styles.chip, { color, borderColor: color + "40" }]}>
       {status ?? "ERR"}
@@ -220,7 +220,7 @@ export function DebugPanel() {
                   {Object.entries(computeFeatureFlags(entries)).map(([feat, active]) => (
                     <View key={feat} style={styles.featureRow}>
                       <Text style={styles.featureName}>{feat.replace(/_/g, " ")}</Text>
-                      <Text style={[styles.featureStatus, { color: active ? "#34d399" : "#ffffff30" }]}>
+                      <Text style={[styles.featureStatus, { color: active ? "#34d399" : "#ffffff30" }]}> {/* audit-ok: debug status indicator colors */}
                         {active ? "✓ used" : "—"}
                       </Text>
                     </View>
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     right: 8,
     bottom: 120,
     zIndex: 9000,
-    backgroundColor: "#3b1f7a",
+    backgroundColor: "#3b1f7a", // audit-ok: debug-only dev overlay
     borderRadius: 24,
     width: 44,
     height: 44,
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   panel: {
-    backgroundColor: "#0e0b1f",
+    backgroundColor: "#0e0b1f", // audit-ok: debug-only dev overlay
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: "90%",
@@ -313,47 +313,47 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ffffff10",
     backgroundColor: "#1e0a4040",
   },
-  headerTitle: { color: "#a78bfa", fontWeight: "700", fontSize: 14 },
+  headerTitle: { color: "#a78bfa", fontWeight: "700", fontSize: 14 }, // audit-ok: debug-only dev overlay
   headerActions: { flexDirection: "row", gap: 8, alignItems: "center" },
-  offBtn: { backgroundColor: "#1f1f1f", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  offBtnText: { color: "#f87171", fontSize: 11, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" },
+  offBtn: { backgroundColor: "#1f1f1f", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }, // audit-ok: debug-only dev overlay
+  offBtnText: { color: "#f87171", fontSize: 11, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" }, // audit-ok: debug-only dev overlay
   closeBtn: { padding: 4 },
-  closeBtnText: { color: "#9ca3af", fontSize: 16 },
+  closeBtnText: { color: "#9ca3af", fontSize: 16 }, // audit-ok: debug-only dev overlay
   infoBar: { paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#ffffff08", backgroundColor: "#00000020" },
-  screenName: { color: "#c4b5fd", fontSize: 11, fontWeight: "600" },
-  platformText: { color: "#6b7280", fontSize: 10, marginTop: 2 },
+  screenName: { color: "#c4b5fd", fontSize: 11, fontWeight: "600" }, // audit-ok: debug-only dev overlay
+  platformText: { color: "#6b7280", fontSize: 10, marginTop: 2 }, // audit-ok: debug-only dev overlay
   tabs: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#ffffff08" },
   tab: { flex: 1, paddingVertical: 8, alignItems: "center" },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: "#7c3aed" },
-  tabText: { fontSize: 11, color: "#6b7280" },
-  tabTextActive: { color: "#a78bfa", fontWeight: "600" },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: "#7c3aed" }, // audit-ok: debug-only dev overlay
+  tabText: { fontSize: 11, color: "#6b7280" }, // audit-ok: debug-only dev overlay
+  tabTextActive: { color: "#a78bfa", fontWeight: "600" }, // audit-ok: debug-only dev overlay
   content: { flex: 1, maxHeight: 400 },
-  emptyText: { color: "#6b7280", fontSize: 12, textAlign: "center", paddingVertical: 32 },
+  emptyText: { color: "#6b7280", fontSize: 12, textAlign: "center", paddingVertical: 32 }, // audit-ok: debug-only dev overlay
   apiRow: { borderBottomWidth: 1, borderBottomColor: "#ffffff08" },
   apiRowHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, gap: 6 },
-  methodText: { color: "#c4b5fd", fontSize: 10, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", width: 32 },
+  methodText: { color: "#c4b5fd", fontSize: 10, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", width: 32 }, // audit-ok: debug-only dev overlay
   endpointText: { flex: 1, color: "#ffffff80", fontSize: 10 },
-  rtText: { color: "#6b7280", fontSize: 10 },
+  rtText: { color: "#6b7280", fontSize: 10 }, // audit-ok: debug-only dev overlay
   chip: { fontSize: 10, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", borderWidth: 1, borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
   apiRowBody: { paddingHorizontal: 12, paddingBottom: 8 },
-  errorText: { color: "#f87171", fontSize: 10, marginBottom: 4 },
+  errorText: { color: "#f87171", fontSize: 10, marginBottom: 4 }, // audit-ok: debug-only dev overlay
   payloadBlock: { marginBottom: 6 },
-  payloadLabel: { color: "#6b7280", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 },
+  payloadLabel: { color: "#6b7280", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }, // audit-ok: debug-only dev overlay
   payloadText: { color: "#ffffff50", fontSize: 10, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", backgroundColor: "#00000030", borderRadius: 4, padding: 6 },
-  metaText: { color: "#4b5563", fontSize: 9, marginTop: 4 },
+  metaText: { color: "#4b5563", fontSize: 9, marginTop: 4 }, // audit-ok: debug-only dev overlay
   contextSection: { padding: 12 },
-  sectionTitle: { color: "#6b7280", fontSize: 9, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 },
+  sectionTitle: { color: "#6b7280", fontSize: 9, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }, // audit-ok: debug-only dev overlay
   featureRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: "#ffffff05" },
-  featureName: { color: "#9ca3af", fontSize: 11 },
+  featureName: { color: "#9ca3af", fontSize: 11 }, // audit-ok: debug-only dev overlay
   featureStatus: { fontSize: 10, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" },
   infoRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
-  infoLabel: { color: "#6b7280", fontSize: 10 },
-  infoValue: { color: "#d1d5db", fontSize: 10, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", flex: 1, textAlign: "right" },
+  infoLabel: { color: "#6b7280", fontSize: 10 }, // audit-ok: debug-only dev overlay
+  infoValue: { color: "#d1d5db", fontSize: 10, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", flex: 1, textAlign: "right" }, // audit-ok: debug-only dev overlay
   footer: { flexDirection: "row", gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: "#ffffff08" },
-  pushBtn: { flex: 1, backgroundColor: "#6d28d9", borderRadius: 8, paddingVertical: 10, alignItems: "center", justifyContent: "center" },
+  pushBtn: { flex: 1, backgroundColor: "#6d28d9", borderRadius: 8, paddingVertical: 10, alignItems: "center", justifyContent: "center" }, // audit-ok: debug-only dev overlay
   pushBtnDisabled: { opacity: 0.5 },
   pushBtnText: { color: "#fff", fontWeight: "600", fontSize: 13 },
-  clearBtn: { backgroundColor: "#1f1f1f", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center" },
-  clearBtnText: { color: "#f87171", fontSize: 12 },
+  clearBtn: { backgroundColor: "#1f1f1f", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center" }, // audit-ok: debug-only dev overlay
+  clearBtnText: { color: "#f87171", fontSize: 12 }, // audit-ok: debug-only dev overlay
 });
 // i18n-ignore-end
