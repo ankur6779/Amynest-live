@@ -83,7 +83,7 @@ function humanizeId(id: string): string {
   return cleaned;
 }
 
-export type CoachLanguage = "en" | "hi" | "hinglish";
+export type CoachLanguage = "en";
 
 const PROMPT_OVERRIDES_EN: Record<string, string> = {
   trigger: "What is the main trigger?",
@@ -171,91 +171,6 @@ const PROMPT_OVERRIDES_EN: Record<string, string> = {
   common_frequency: "How often does this happen?",
 };
 
-const PROMPT_OVERRIDES_HI: Record<string, string> = {
-  trigger: "मुख्य ट्रिगर क्या होता है?",
-  location: "यह कहाँ होता है?",
-  behavior: "कौन सा व्यवहार सबसे आम है?",
-  target: "किस पर निकलता है?",
-  response: "बच्चा कैसे प्रतिक्रिया करता है?",
-  instruction_type: "किस तरह के निर्देशों में?",
-  emotion_type: "कौन सी भावना सबसे ज़्यादा आती है?",
-  recovery_time: "शांत होने में कितना समय?",
-  situation: "किस स्थिति में होता है?",
-  reaction: "प्रतिक्रिया कैसी होती है?",
-  daily_usage: "रोज़ाना स्क्रीन टाइम कितना?",
-  device: "कौन सा डिवाइस सबसे ज़्यादा?",
-  usage_time: "कब इस्तेमाल करता है?",
-  withdrawal: "फ़ोन हटाने पर प्रतिक्रिया?",
-  duration: "कितनी देर चलता है?",
-  distractions: "क्या ध्यान भटकाता है? (एकाधिक)",
-  content_type: "क्या देखता है?",
-  control: "पैरेंटल कंट्रोल है?",
-  delay_tolerance: "इंतज़ार कर पाता है?",
-  dependency: "कितना निर्भर है?",
-  motor_skill: "हाथ/चम्मच का इस्तेमाल कैसा?",
-  food_refusal: "कौन सी चीज़ मना करता है? (एकाधिक)",
-  meal_time: "एक खाने में कितना समय?",
-  frequency_junk: "जंक फ़ूड कितनी बार?",
-  craving_trigger: "क्रेविंग का मुख्य कारण?",
-  family_meal: "परिवार के साथ खाता है?",
-  bedtime: "सोने का समय क्या है?",
-  wake_time: "उठने का समय क्या है?",
-  delay_reason: "सोने में देरी का कारण?",
-  routine_exist: "सोने की दिनचर्या तय है?",
-  cause: "मुख्य कारण क्या है?",
-  sleep_time: "अक्सर कब सोता है?",
-  screen_before_sleep: "सोने से पहले स्क्रीन?",
-  focus_duration: "सामान्यतः फ़ोकस अवधि?",
-  task_type: "किस काम में फ़ोकस कम होता है?",
-  routine: "पढ़ाई की दिनचर्या तय है?",
-  motivation: "प्रेरणा का स्तर कैसा है?",
-  interest_level: "सीखने में रुचि (1=कम, 5=ज़्यादा)?",
-  preferred_subject: "पसंदीदा विषय?",
-  reason: "मुख्य कारण क्या?",
-  parent_help: "क्या आप मदद करते हैं?",
-  failure_response: "असफल होने पर प्रतिक्रिया?",
-  confidence: "आत्मविश्वास का स्तर (1=कम, 5=ज़्यादा)?",
-  nap_count: "दिन में कितनी झपकी?",
-  feeding_type: "फ़ीडिंग का प्रकार?",
-  conflict_type: "किस बात पर टकराव?",
-  frequency: "यह कितनी बार होता है?",
-  disagreement_area: "असहमति किस बात पर?",
-  communication: "संवाद कैसा है?",
-  time_with_child: "बच्चे के साथ समय?",
-  guilt_level: "अपराधबोध का स्तर (1=कम, 5=ज़्यादा)?",
-  rules_defined: "परिवार के नियम स्पष्ट हैं?",
-  consistency: "नियमों में निरंतरता?",
-  intensity: "तीव्रता (1=कम, 5=ज़्यादा)?",
-  frequency_no: "'नहीं' कब कहता है?",
-  context: "किस संदर्भ में?",
-  readiness: "पॉटी ट्रेनिंग की तैयारी?",
-  accidents: "कितनी बार दुर्घटना?",
-  skill_level: "अपने आप कपड़े पहनने का कौशल?",
-  interest: "इसमें रुचि है?",
-  conflict_frequency: "टकराव कितनी बार?",
-  sharing_level: "साझा कर पाता है?",
-  conflict: "टकराव होता है?",
-  attention_shift: "आपका ध्यान किस पर?",
-  distance: "यात्रा की दूरी?",
-  child_behavior: "यात्रा के समय व्यवहार?",
-  fear_level: "डर का स्तर (1=कम, 5=ज़्यादा)?",
-  previous_experience: "पिछला अनुभव कैसा था?",
-  adjustment: "अनुकूलन कैसा हुआ?",
-  crying: "डेकेयर जाते समय रोता है?",
-  stress_level: "तनाव का स्तर (1=कम, 5=ज़्यादा)?",
-  support: "सहायता प्रणाली?",
-  activity_level: "शारीरिक गतिविधि?",
-  diet_quality: "आहार की गुणवत्ता?",
-  illness_frequency: "कितनी बार बीमार?",
-  nutrition: "पोषण कैसा?",
-  brushing: "ब्रश कितनी बार?",
-  sugar_intake: "चीनी का सेवन?",
-  energy_level: "ऊर्जा का स्तर (1=कम, 5=ज़्यादा)?",
-  sleep_hours: "आप कितने घंटे सोते हैं?",
-  interruptions: "नींद में रुकावट?",
-  task_load: "कार्यभार कितना?",
-  common_frequency: "यह कितनी बार होता है?",
-};
 
 const PROMPT_OVERRIDES: Record<string, string> = {
   trigger: "Main trigger kya hota hai?",
@@ -343,16 +258,12 @@ const PROMPT_OVERRIDES: Record<string, string> = {
   common_frequency: "Yeh kitni baar hota hai?",
 };
 
-function pickPromptMap(lang: CoachLanguage): Record<string, string> {
-  if (lang === "en") return PROMPT_OVERRIDES_EN;
-  if (lang === "hi") return PROMPT_OVERRIDES_HI;
-  return PROMPT_OVERRIDES;
+function pickPromptMap(_lang: CoachLanguage): Record<string, string> {
+  return PROMPT_OVERRIDES_EN;
 }
 
 const SLIDER_LABELS: Record<CoachLanguage, { low: string; high: string }> = {
   en: { low: "Low", high: "High" },
-  hi: { low: "कम", high: "ज़्यादा" },
-  hinglish: { low: "Low", high: "High" },
 };
 
 function sliderOptions(range: [number, number], lang: CoachLanguage): string[] {
@@ -368,15 +279,11 @@ function sliderOptions(range: [number, number], lang: CoachLanguage): string[] {
 }
 
 const TIME_BUCKETS: Record<CoachLanguage, string[]> = {
-  en: ["Before 8 PM", "8–9 PM", "9–10 PM", "10–11 PM", "After 11 PM"],
-  hi: ["रात 8 बजे से पहले", "8–9 बजे", "9–10 बजे", "10–11 बजे", "रात 11 के बाद"],
-  hinglish: ["Before 8 PM", "8–9 PM", "9–10 PM", "10–11 PM", "After 11 PM"],
+  en: ["Before 9 AM", "9–12 AM", "Noon–3 PM", "3–6 PM", "After 6 PM"],
 };
 
 const YES_NO: Record<CoachLanguage, [string, string]> = {
   en: ["Yes", "No"],
-  hi: ["हाँ", "नहीं"],
-  hinglish: ["Yes", "No"],
 };
 
 function adaptQuestion(
@@ -410,12 +317,8 @@ function adaptQuestion(
   return null;
 }
 
-function normaliseLanguage(lang: string | undefined): CoachLanguage {
-  if (lang === "en" || lang === "hi" || lang === "hinglish") return lang;
-  // i18next sometimes returns "en-US" etc.
-  if (lang?.startsWith("hi")) return "hi";
-  if (lang?.startsWith("en")) return "en";
-  return "hinglish";
+function normaliseLanguage(_lang?: string): CoachLanguage {
+  return "en";
 }
 
 /**

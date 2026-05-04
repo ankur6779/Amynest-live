@@ -341,7 +341,7 @@ router.post("/abacus/progress", async (req, res): Promise<void> => {
 const TutorBody = z.object({
   childId: z.number().int().positive(),
   level: z.number().int().min(1).max(LEVELS.length),
-  language: z.enum(["en", "hi", "hinglish"]),
+  language: z.literal("en"),
   question: z.string().min(1).max(500),
 });
 

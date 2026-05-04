@@ -52,9 +52,7 @@ const FEATURE_IDS = {
   feedingRef:    "hub_infant_feeding_ref",
 } as const;
 
-function langOf(i18nLang: string | undefined): Lang {
-  if (i18nLang?.startsWith("hi") && !i18nLang.includes("ng")) return "hi";
-  if (i18nLang === "hinglish" || i18nLang?.startsWith("hin")) return "hin";
+function langOf(_i18nLang: string | undefined): Lang {
   return "en";
 }
 

@@ -8,6 +8,4 @@
 
 export interface LifeSkillLocalizedText {
   en: string;
-  hi: string;
-  hinglish: string;
 }

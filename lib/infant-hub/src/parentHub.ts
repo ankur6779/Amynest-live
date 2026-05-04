@@ -1198,7 +1198,7 @@ export function getNoiseAgeTip(months: number): AgeNoiseTip {
 // short sine-wave melody synthesised via `audioSynth.buildMelodyWav` so
 // parents can hear the tune; the lyric stays alongside as a sing-along
 // reference.
-export type LullabyLang = "en" | "hi" | "hin";
+export type LullabyLang = "en";
 
 import { NOTE_FREQ } from "./audioSynth";
 import type { Note } from "./audioSynth";
@@ -1249,22 +1249,6 @@ const ROCK_A_BYE_NOTES: Note[] = [
   { freqHz: A4, durMs: Q }, { freqHz: G4, durMs: Q }, { freqHz: F4, durMs: Q }, { freqHz: E4, durMs: H },
 ];
 
-// "Chanda Mama Door Ke" — simple Hindi pattern (~8s).
-const CHANDA_MAMA_NOTES: Note[] = [
-  { freqHz: G4, durMs: Q }, { freqHz: A4, durMs: Q }, { freqHz: B4, durMs: Q }, { freqHz: G4, durMs: Q },
-  { freqHz: A4, durMs: Q }, { freqHz: B4, durMs: Q }, { freqHz: C5, durMs: H },
-  { freqHz: B4, durMs: Q }, { freqHz: A4, durMs: Q }, { freqHz: G4, durMs: Q }, { freqHz: F4, durMs: Q },
-  { freqHz: G4, durMs: H }, { freqHz: A4, durMs: Q }, { freqHz: G4, durMs: H },
-];
-
-// "So Ja Meri Pyari Bachhi" — gentle descending Hinglish lullaby (~8s).
-const SO_JA_NOTES: Note[] = [
-  { freqHz: A4, durMs: Q }, { freqHz: G4, durMs: Q }, { freqHz: F4, durMs: Q }, { freqHz: E4, durMs: H },
-  { freqHz: F4, durMs: Q }, { freqHz: G4, durMs: Q }, { freqHz: A4, durMs: H },
-  { freqHz: G4, durMs: Q }, { freqHz: F4, durMs: Q }, { freqHz: E4, durMs: Q }, { freqHz: D4, durMs: Q },
-  { freqHz: E4, durMs: Q }, { freqHz: F4, durMs: Q }, { freqHz: G4, durMs: H },
-];
-
 // "White Noise Dream" — a Twinkle hum (lower amplitude) over a soft pink
 // noise bed; designed to bridge the white-noise + lullaby experience.
 const WHITE_NOISE_DREAM_NOTES: Note[] = TWINKLE_NOTES.map((n) => ({ ...n }));
@@ -1282,10 +1266,4 @@ export const LULLABIES: readonly Lullaby[] = [
   { id: "rock_a_bye", emoji: "🌙", title: "Rock-a-Bye Baby", lang: "en",
     lyric: "Rock-a-bye baby, on the tree top,\nWhen the wind blows the cradle will rock.\nWhen the bough breaks the cradle will fall,\nAnd down will come baby, cradle and all.",
     melody: { notes: ROCK_A_BYE_NOTES } },
-  { id: "chanda_mama", emoji: "🌝", title: "Chanda Mama Door Ke", lang: "hi",
-    lyric: "चंदा मामा दूर के, पुए पकाए बूर के,\nआप खाएं थाली में, मुन्ने को दें प्याली में।",
-    melody: { notes: CHANDA_MAMA_NOTES } },
-  { id: "lori_so_ja", emoji: "💤", title: "So Ja Meri Pyari Bachhi", lang: "hin",
-    lyric: "So ja, so ja, meri pyari bachhi,\nNeendon ki chadar mein lipti hui,\nChand sitaron ki roshni mein,\nMaa ki lori sun ke so ja.",
-    melody: { notes: SO_JA_NOTES } },
 ];

@@ -1,6 +1,5 @@
 import { Link } from "wouter";
 import { ArrowRight, Sparkles, Brain, Calendar, LayoutGrid, MessageCircle, Zap, CheckCircle2, Flame, Smartphone, Moon, EarOff, Utensils, Target, ListChecks, HelpCircle, ShieldCheck, BookOpen, Microscope, TrendingUp, Video, Star, Users, Lightbulb, Puzzle, Palette, FileText, Baby, GraduationCap, Activity, Heart, Award, Gamepad2, BarChart3, FlaskConical, Calculator } from "lucide-react";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { AmyIcon } from "@/components/amy-icon";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import heroImg from "@assets/ChatGPT_Image_Apr_26,_2026,_10_19_57_PM_1777222212106.png";
@@ -453,7 +452,6 @@ export default function LandingPage() {
           </div>
         </Link>
         <div className="flex items-center gap-2">
-          <LanguageSwitcher />
           <Link href="/sign-in">
             <button className="text-sm font-semibold text-white/70 hover:text-white transition-colors px-3 py-1.5">
               {t("landing.nav_sign_in")}

@@ -19,17 +19,14 @@ import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = "nutrients" | "meals" | "family" | "score";
-type Lang = "en" | "hi" | "hinglish";
+type Lang = "en";
 
 // ─── Language helper ─────────────────────────────────────────────────────────
-function l(en: string, hi: string, hinglish?: string, lang: Lang = "en"): string {
-  if (lang === "hi") return hi;
-  if (lang === "hinglish") return hinglish ?? en;
+function l(en: string, _hi: string, _hinglish?: string, _lang: Lang = "en"): string {
   return en;
 }
 
-function lArr(en: string[], hi: string[], lang: Lang): string[] {
-  if (lang === "hi") return hi.length ? hi : en;
+function lArr(en: string[], _hi: string[], _lang: Lang): string[] {
   return en;
 }
 
@@ -44,19 +41,7 @@ function scoreBarColor(s: number) {
   if (s >= 50) return "bg-primary";
   return "bg-primary";
 }
-function scoreLabel(s: number, lang: Lang) {
-  if (lang === "hi") {
-    if (s >= 80) return "शानदार 🌟";
-    if (s >= 60) return "अच्छा 👍";
-    if (s >= 40) return "ध्यान दें ⚠️";
-    return "ध्यान जरूरी 🚨";
-  }
-  if (lang === "hinglish") {
-    if (s >= 80) return "Shandar 🌟";
-    if (s >= 60) return "Accha 👍";
-    if (s >= 40) return "Dhyan Do ⚠️";
-    return "Urgent Dhyan 🚨";
-  }
+function scoreLabel(s: number, _lang: Lang) {
   if (s >= 80) return "Excellent 🌟";
   if (s >= 60) return "Good 👍";
   if (s >= 40) return "Needs Attention ⚠️";
@@ -595,8 +580,8 @@ function NutritionScoreSection({ ageGroupId, lang }: { ageGroupId: AgeGroupId; l
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NutritionHubPage() {
-  const { t, i18n } = useTranslation();
-  const lang = (["en", "hi", "hinglish"].includes(i18n.language) ? i18n.language : "en") as Lang;
+  const { t } = useTranslation();
+  const lang: Lang = "en";
 
   const [activeAgeGroupId, setActiveAgeGroupId] = useState<AgeGroupId>("toddler_1_3");
   const [activeTab, setActiveTab] = useState<Tab>("nutrients");
@@ -801,7 +786,7 @@ export default function NutritionHubPage() {
             </p>
           </div>
           <p className="text-sm text-foreground">
-            {lang === "hi" ? MEDICAL_DISCLAIMER.hi : MEDICAL_DISCLAIMER.en}
+            {MEDICAL_DISCLAIMER.en}
           </p>
 
           <button

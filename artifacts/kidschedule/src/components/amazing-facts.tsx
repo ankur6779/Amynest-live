@@ -624,13 +624,12 @@ function dateSeed(date: string, childName: string): number {
 interface AmazingFactsProps {
   childName: string;
   ageGroup: AgeGroup;
-  lang?: "en" | "hi";
 }
 export function AmazingFacts({
   childName,
   ageGroup,
-  lang = "en"
 }: AmazingFactsProps) {
+  const lang = "en";
   const {
     t
   } = useTranslation();
@@ -686,9 +685,8 @@ export function AmazingFacts({
                     </Badge>
                   </div>
                   <p className="text-sm text-foreground leading-snug">
-                    {lang === "hi" ? fact.textHi : fact.text}
+                    {fact.text}
                   </p>
-                  {lang === "hi" && <p className="text-xs text-muted-foreground mt-1 leading-snug">{fact.text}</p>}
                 </div>
                 <button onClick={() => toggleLike(fact.id)} className={`flex-shrink-0 flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1.5 transition-all ${isLiked ? "bg-muted dark:bg-card text-primary dark:text-muted-foreground border border-border dark:border-border" : "bg-muted/60 text-muted-foreground hover:bg-muted dark:bg-card hover:text-primary"}`} title={t("components.amazing_facts.interesting")}>
                   <ThumbsUp className="h-3 w-3" />

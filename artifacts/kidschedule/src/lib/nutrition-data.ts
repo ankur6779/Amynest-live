@@ -845,7 +845,6 @@ export const FAMILY_PORTIONS: FamilyPortionRow[] = [
 
 export const MEDICAL_DISCLAIMER = {
   en: "This Nutrition Hub is intended for educational purposes only. The information provided is based on general scientific guidelines and is not a substitute for personalised medical or nutritional advice. Always consult a qualified paediatrician, dietitian, or physician for specific health concerns, medical conditions, or before starting any supplement. Individual requirements vary based on health status, activity level, and genetics.",
-  hi: "यह न्यूट्रिशन हब केवल शैक्षणिक उद्देश्यों के लिए है। यहाँ दी गई जानकारी सामान्य वैज्ञानिक दिशा-निर्देशों पर आधारित है और किसी डॉक्टर या पोषण विशेषज्ञ की व्यक्तिगत सलाह का विकल्प नहीं है। किसी भी स्वास्थ्य समस्या के लिए हमेशा योग्य बाल रोग विशेषज्ञ, आहार विशेषज्ञ या चिकित्सक से परामर्श करें।",
 };
 
 export const REFERENCES = [

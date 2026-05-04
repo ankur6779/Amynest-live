@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 
 export const VOICE_KEY = "amynest.voice_settings.v1";
 
-export type VoiceLang = "en-IN" | "hi-IN";
+export type VoiceLang = "en-IN";
 export type VoiceGender = "female" | "male";
 
 export interface VoiceSettings {
@@ -35,7 +35,7 @@ export async function loadVoiceSettings(): Promise<VoiceSettings> {
     const parsed = JSON.parse(raw);
     return {
       enabled: typeof parsed.enabled === "boolean" ? parsed.enabled : DEFAULTS.enabled,
-      lang: parsed.lang === "hi-IN" || parsed.lang === "en-IN" ? parsed.lang : DEFAULTS.lang,
+      lang: "en-IN",
       gender: parsed.gender === "male" ? "male" : "female",
       voiceName: null,
     };
@@ -76,22 +76,6 @@ const ELEVENLABS_VOICES: ElevenLabsVoice[] = [
     gender: "male",
     modelId: "eleven_turbo_v2_5",
     previewText: "Hi! I am Karthik, your Indian English voice.",
-  },
-  {
-    id: "TllHtNijgXBd45uTSCS7",
-    label: "Anjura",
-    lang: "hi-IN",
-    gender: "female",
-    modelId: "eleven_multilingual_v2",
-    previewText: "नमस्ते! मैं अंजुरा हूँ, आपकी हिंदी आवाज़।",
-  },
-  {
-    id: "2cdvnKJ5TZi631y5PN1s",
-    label: "Rahul S",
-    lang: "hi-IN",
-    gender: "male",
-    modelId: "eleven_multilingual_v2",
-    previewText: "नमस्ते! मैं राहुल हूँ, आपकी हिंदी आवाज़।",
   },
 ];
 
@@ -180,26 +164,6 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
 
             {settings.enabled && (
               <>
-                {/* Language */}
-                <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>{t("components.voice_settings_panel.language")}</Text>
-                <View style={styles.rowGap}>
-                  {(["en-IN", "hi-IN"] as VoiceLang[]).map((lang) => {
-                    const active = settings.lang === lang;
-                    return (
-                      <Pressable
-                        key={lang}
-                        onPress={() => update({ lang, voiceName: null })}
-                        style={[styles.chip, { borderColor: active ? brand.violet500 : c.border, backgroundColor: active ? brand.violet500 : "transparent" }]}
-                      >
-                        <Text style={[styles.chipText, { color: active ? "#fff" : c.foreground }]}>
-                          {lang === "en-IN" ? "🇬🇧 English" : "🇮🇳 Hindi"}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-
-                {/* Gender */}
                 <Text style={[styles.sectionLabel, { color: c.mutedForeground, marginTop: 16 }]}>{t("components.voice_settings_panel.voice_gender")}</Text>
                 <View style={styles.rowGap}>
                   {(["female", "male"] as VoiceGender[]).map((g) => {
@@ -226,7 +190,7 @@ export default function VoiceSettingsPanel({ visible, onClose, settings, onChang
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.voiceName, { color: c.foreground }]}>{v.label}</Text>
                         <Text style={[styles.voiceMeta, { color: c.mutedForeground }]}>
-                          {v.lang === "hi-IN" ? "Hindi · ElevenLabs AI" : "Indian English · ElevenLabs AI"}
+                          Indian English · ElevenLabs AI
                         </Text>
                       </View>
                       <VoicePreviewButton voice={v} />

@@ -80,30 +80,6 @@ function Block({
   );
 }
 
-// ─── Language Toggle ───────────────────────────────────────────────────────────
-function LangToggle({ lang, setLang }: { lang: LangKey; setLang: (l: LangKey) => void }) {
-  const c = useColors();
-  const styles = React.useMemo(() => makeStyles(c), [c]);
-  const opts: { key: LangKey; label: string }[] = [
-    { key: "en", label: "EN" },
-    { key: "hi", label: "हिं" },
-    { key: "hinglish", label: "Hng" },
-  ];
-  return (
-    <View style={styles.langRow}>
-      {opts.map((o) => (
-        <Pressable
-          key={o.key}
-          onPress={() => setLang(o.key)}
-          style={[styles.langBtn, lang === o.key && styles.langBtnActive]}
-        >
-          <Text style={[styles.langBtnText, lang === o.key && { color: "#fff" }]}>{o.label}</Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function BehaviorScreen() {
   const { t } = useTranslation();
@@ -116,7 +92,7 @@ export default function BehaviorScreen() {
   const qc = useQueryClient();
   const isPremium = useSubscriptionStore(selectIsPremium);
 
-  const [lang, setLang] = useState<LangKey>("en");
+  const lang: LangKey = "en";
   const [selectedChild, setSelectedChild] = useState<number | null>(null);
   const [pendingTrigger, setPendingTrigger] = useState<TriggerKey | null>(null);
   const [openBlock, setOpenBlock] = useState<string | null>("quick-log");
@@ -261,7 +237,6 @@ export default function BehaviorScreen() {
           <Text style={styles.headerTitle}>{t("screens.behavior.behavior_tracker")}</Text>
           <Text style={styles.headerSubtitle}>{t("screens.behavior.log_moments_amy_spots_the_patterns")}</Text>
         </View>
-        <LangToggle lang={lang} setLang={setLang} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 100, gap: 10 }} showsVerticalScrollIndicator={false}>

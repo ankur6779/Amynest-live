@@ -525,7 +525,7 @@ export function isAbacusEligible(ageYears: number): boolean {
 
 // ─── Server-side AI Tutor prompt builder ────────────────────────────────
 
-export type AbacusLang = "en" | "hi" | "hinglish";
+export type AbacusLang = "en";
 
 /**
  * Build the system prompt + user message for Amy's AI Tutor mode. Pure
@@ -539,16 +539,7 @@ export function buildAbacusTutorPrompt(input: {
   question: string;
 }): { system: string; user: string } {
   const def = getLevel(input.level);
-  const langLine =
-    input.language === "hi"
-      ? "Reply ONLY in Hindi (Devanagari script). Keep words simple — a child age " +
-        input.ageYears +
-        " should understand."
-      : input.language === "hinglish"
-      ? "Reply in Hinglish (Hindi words written in Roman script, mixed with simple English where natural). Keep words simple — a child age " +
-        input.ageYears +
-        " should understand."
-      : "Reply in clear, simple English a child age " + input.ageYears + " can follow.";
+  const langLine = "Reply in clear, simple English a child age " + input.ageYears + " can follow.";
 
   const system = [
     "You are Amy, a warm, patient Indian-style abacus tutor for kids age 4–10.",

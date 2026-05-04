@@ -136,11 +136,7 @@ router.post("/cry-insight/analyze", async (req, res): Promise<void> => {
     if (typeof v === "number" && Number.isFinite(v)) safeStats[k] = v;
   }
 
-  const langRaw = typeof body.language === "string" ? body.language.toLowerCase().split("-")[0] : "en";
-  const language: "en" | "hi" | "hinglish" =
-    langRaw === "hi" ? "hi" : langRaw === "hinglish" ? "hinglish" : "en";
-
-  const result = analyseCry(safeStats, ctx, language);
+  const result = analyseCry(safeStats, ctx, "en");
 
   // Defensive: every cause we surface must be a known one (the engine
   // guarantees this, but we still gate before writing it to a text column).

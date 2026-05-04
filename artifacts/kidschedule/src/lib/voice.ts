@@ -1,15 +1,14 @@
 // ─────────────────────────────────────────────────────────────
-// AmyNest Voice System — Hindi + English, Female / Male
+// AmyNest Voice System — English, Female / Male
 // Powered by ElevenLabs Indian voices (no browser TTS)
 // ─────────────────────────────────────────────────────────────
 
 import { getAuth } from "firebase/auth";
 
 const KEY_ENABLED = "amynest_voice_enabled";
-const KEY_LANG    = "amynest_voice_lang";   // "en" | "hi"
 const KEY_GENDER  = "amynest_voice_gender"; // "female" | "male"
 
-export type VoiceLang   = "en" | "hi";
+export type VoiceLang   = "en";
 export type VoiceGender = "female" | "male";
 
 export interface VoiceSettings {
@@ -24,20 +23,15 @@ export interface VoiceSettings {
 const VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv";
 // English Indian Male — Karthik (Indian AI Voice)
 const VOICE_EN_MALE   = "oaz5NvoRIhcJystOASAA";
-// Hindi Female — Anjura (Calm & Warm)
-const VOICE_HI_FEMALE = "TllHtNijgXBd45uTSCS7";
-// Hindi Male — Rahul S (Professional Hindi Conversational)
-const VOICE_HI_MALE   = "2cdvnKJ5TZi631y5PN1s";
 
 const MODEL_EN = "eleven_turbo_v2_5";
-const MODEL_HI = "eleven_multilingual_v2";
 
 // ─── Settings ────────────────────────────────────────────────
 
 export function getVoiceSettings(): VoiceSettings {
   return {
     enabled:   localStorage.getItem(KEY_ENABLED) === "true",
-    lang:      (localStorage.getItem(KEY_LANG) as VoiceLang)     ?? "hi",
+    lang:      "en",
     gender:    (localStorage.getItem(KEY_GENDER) as VoiceGender) ?? "female",
     voiceName: null,
   };
@@ -45,7 +39,6 @@ export function getVoiceSettings(): VoiceSettings {
 
 export function saveVoiceSettings(patch: Partial<VoiceSettings>): void {
   if (patch.enabled !== undefined) localStorage.setItem(KEY_ENABLED, patch.enabled ? "true" : "false");
-  if (patch.lang    !== undefined) localStorage.setItem(KEY_LANG, patch.lang);
   if (patch.gender  !== undefined) localStorage.setItem(KEY_GENDER, patch.gender);
 }
 
@@ -56,10 +49,7 @@ export function saveVoiceName(_name: string): void  { /* no-op */ }
 
 // ─── Voice resolution ─────────────────────────────────────────
 
-function resolveVoice(lang: VoiceLang, gender: VoiceGender): { voiceId: string; modelId: string } {
-  if (lang === "hi") {
-    return { voiceId: gender === "male" ? VOICE_HI_MALE : VOICE_HI_FEMALE, modelId: MODEL_HI };
-  }
+function resolveVoice(_lang: VoiceLang, gender: VoiceGender): { voiceId: string; modelId: string } {
   return { voiceId: gender === "male" ? VOICE_EN_MALE : VOICE_EN_FEMALE, modelId: MODEL_EN };
 }
 
@@ -138,11 +128,6 @@ export async function speak(text: string): Promise<void> {
 
 // ─── Task announcements ───────────────────────────────────────
 
-const HINDI_MSGS = [
-  (n: string, t: string) => `${n}, अब समय है ${t} का! चलो शुरू करते हैं!`,
-  (n: string, t: string) => `हाय ${n}! ${t} का समय आ गया।`,
-  (n: string, t: string) => `${n}, ${t} करने का वक़्त है! तैयार हो जाओ!`,
-];
 const ENGLISH_MSGS = [
   (n: string, t: string) => `Hey ${n}! Time for ${t}. You've got this!`,
   (n: string, t: string) => `${n}, it's ${t} time! Let's go!`,
@@ -152,7 +137,7 @@ const ENGLISH_MSGS = [
 export async function announceCurrentTask(childName: string, activity: string): Promise<void> {
   const settings = getVoiceSettings();
   if (!settings.enabled) return;
-  const msgs = settings.lang === "hi" ? HINDI_MSGS : ENGLISH_MSGS;
+  const msgs = ENGLISH_MSGS;
   const msg   = msgs[Math.floor(Math.random() * msgs.length)](childName, activity);
   await speak(msg);
 }

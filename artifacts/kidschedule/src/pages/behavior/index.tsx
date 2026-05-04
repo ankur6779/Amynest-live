@@ -50,40 +50,12 @@ function Block({
     </div>;
 }
 
-// ─── Language Toggle ───────────────────────────────────────────────────────────
-function LangToggle({
-  lang,
-  setLang
-}: {
-  lang: LangKey;
-  setLang: (l: LangKey) => void;
-}) {
-  const opts: {
-    key: LangKey;
-    label: string;
-  }[] = [{
-    key: "en",
-    label: "EN"
-  }, {
-    key: "hi",
-    label: "हिं"
-  }, {
-    key: "hinglish",
-    label: "Hng"
-  }];
-  return <div className="flex rounded-xl overflow-hidden border border-border/60 bg-white/40 dark:bg-white/5 shrink-0">
-      {opts.map(o => <button key={o.key} onClick={() => setLang(o.key)} className={["px-2.5 py-1 text-xs font-bold transition-colors", lang === o.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"].join(" ")}>
-          {o.label}
-        </button>)}
-    </div>;
-}
-
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function BehaviorTracker() {
   const {
     t
   } = useTranslation();
-  const [lang, setLang] = useState<LangKey>("en");
+  const lang: LangKey = "en";
   const [selectedChild, setSelectedChild] = useState<number | null>(null);
   const [pendingTrigger, setPendingTrigger] = useState<TriggerKey | null>(null);
   const [openBlock, setOpenBlock] = useState<string | null>("quick-log");
@@ -289,7 +261,6 @@ export default function BehaviorTracker() {
           <p className="text-sm text-muted-foreground mt-0.5">{t("pages.behavior.index.log_moments_amy_spots_the_patterns")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <LangToggle lang={lang} setLang={setLang} />
           <button onClick={() => setSituationKey("crying")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted dark:bg-card text-primary dark:text-muted-foreground text-xs font-bold hover:bg-muted dark:hover:bg-card transition-colors border border-border dark:border-primary">
             <HelpCircle className="h-3.5 w-3.5" />
             {L.situationMode}

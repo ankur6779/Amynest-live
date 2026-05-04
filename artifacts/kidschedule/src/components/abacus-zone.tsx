@@ -23,7 +23,6 @@ import {
 } from "@workspace/abacus";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
-import type { LanguageCode } from "@/i18n";
 
 // ─── Tiny WebAudio bleeps for bead taps + correct/wrong/unlock cues ────
 // Uses a single shared AudioContext lazily; no-ops in SSR or browsers
@@ -623,14 +622,13 @@ function TutorMode({ childId, level, ageYears }: { childId: number; level: Level
     setErr(null);
     setReply("");
     try {
-      const lang: LanguageCode = (i18n.language as LanguageCode) || "en";
       const res = await authFetch("/api/abacus/tutor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           childId,
           level,
-          language: lang === "hi" ? "hi" : lang === "hinglish" ? "hinglish" : "en",
+          language: "en",
           question: question.trim(),
         }),
       });

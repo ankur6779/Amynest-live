@@ -2489,10 +2489,8 @@ function WinCard({
 // keep these in sync if either side changes.
 // ═══════════════════════════════════════════════════════════════════════════
 const COACH_VOICE_EN_FEMALE = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K (Indian English)
-const COACH_VOICE_HI_FEMALE = "TllHtNijgXBd45uTSCS7"; // Anjura (Calm Hindi)
 const COACH_MODEL_EN = "eleven_turbo_v2_5";
-const COACH_MODEL_HI = "eleven_multilingual_v2";
-type CoachLang = "en" | "hi";
+type CoachLang = "en";
 export function ListenButton({
   win
 }: {
@@ -2501,15 +2499,12 @@ export function ListenButton({
   const { t, i18n } = useTranslation();
   // Default the listen language to the parent's UI language. They can
   // override per-win via the EN | HI chips next to the Listen button.
-  const initialLang: CoachLang = i18n.language?.toLowerCase().startsWith("hi") ? "hi" : "en";
+  const initialLang: CoachLang = "en";
   const [lang, setLang] = useState<CoachLang>(initialLang);
-  const voiceOpts = useMemo(() => lang === "hi" ? {
-    voiceId: COACH_VOICE_HI_FEMALE,
-    modelId: COACH_MODEL_HI
-  } : {
+  const voiceOpts = useMemo(() => ({
     voiceId: COACH_VOICE_EN_FEMALE,
     modelId: COACH_MODEL_EN
-  }, [lang]);
+  }), []);
   const {
     speak,
     stop,
@@ -2531,16 +2526,6 @@ export function ListenButton({
     }
     speak(buildText());
   };
-
-  // If the parent flips EN ↔ HI mid-playback, stop the current voice — the
-  // next tap on Listen will start fresh in the new language. We don't auto-
-  // restart because a silent voice switch is jarring and racey when the
-  // first synth is still loading.
-  const handleLangChange = (next: CoachLang) => {
-    if (next === lang) return;
-    if (speaking || loading) stop();
-    setLang(next);
-  };
   const isActive = speaking || loading;
   const langChipBase: React.CSSProperties = {
     fontSize: 10,
@@ -2557,29 +2542,6 @@ export function ListenButton({
     alignItems: "center",
     gap: 6
   }} data-testid="coach-listen-row">
-      <span role="group" aria-label={t("pages.ai_coach.read_aloud_language")} style={{
-      display: "inline-flex",
-      gap: 2,
-      padding: 2,
-      borderRadius: 8,
-      background: "rgba(124,58,237,0.10)",
-      border: "1px solid rgba(124,58,237,0.28)"
-    }}>
-        <button type="button" onClick={() => handleLangChange("en")} aria-pressed={lang === "en"} data-testid="coach-listen-lang-en" style={{
-        ...langChipBase,
-        background: lang === "en" ? "rgba(124,58,237,0.45)" : "transparent",
-        color: lang === "en" ? "hsl(var(--brand-violet-50))" : "rgba(196,181,253,0.95)"
-      }}>
-          EN
-        </button>
-        <button type="button" onClick={() => handleLangChange("hi")} aria-pressed={lang === "hi"} data-testid="coach-listen-lang-hi" style={{
-        ...langChipBase,
-        background: lang === "hi" ? "rgba(124,58,237,0.45)" : "transparent",
-        color: lang === "hi" ? "hsl(var(--brand-violet-50))" : "rgba(196,181,253,0.95)"
-      }}>
-          HI
-        </button>
-      </span>
       <button type="button" onClick={handleClick} data-testid="coach-listen-btn" style={{
       fontSize: 11,
       padding: "4px 10px",
@@ -2592,7 +2554,7 @@ export function ListenButton({
       alignItems: "center",
       gap: 5,
       cursor: "pointer"
-    }} aria-label={isActive ? "Stop listening" : `Listen to this win in ${lang === "hi" ? "Hindi" : "English"}`} title={isActive ? "Stop" : `Amy reads this aloud (${lang.toUpperCase()})`}>
+    }} aria-label={isActive ? "Stop listening" : "Listen to this win"} title={isActive ? "Stop" : "Amy reads this aloud"}>
         {isActive ? <VolumeX size={12} /> : <Volume2 size={12} />}
         {speaking ? "Stop" : loading ? "…" : "Listen"}
       </button>

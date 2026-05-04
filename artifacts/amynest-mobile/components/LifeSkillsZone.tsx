@@ -65,30 +65,21 @@ function parseStats(raw: string | null, fallbackLang: LifeSkillLang): ChildLifeS
         };
       }
     }
-    const lang: LifeSkillLang =
-      p.lang === "hi" || p.lang === "hinglish" || p.lang === "en" ? p.lang : fallbackLang;
+    const lang: LifeSkillLang = "en";
     return { totalPoints: num(p.totalPoints), byCategory, daily, lang };
   } catch {
     return def;
   }
 }
 
-function detectLang(i18nLang: string | undefined): LifeSkillLang {
-  if (!i18nLang) return "en";
-  const l = i18nLang.toLowerCase();
-  // Check hinglish FIRST — "hinglish" also startsWith "hi".
-  if (l === "hinglish" || l.includes("hing") || l === "in-en") return "hinglish";
-  if (l === "hi" || l.startsWith("hi-") || l.startsWith("hi_")) return "hi";
-  return "en";
-}
 
 interface Props {
   child: { id: string | number; name: string; age: number };
 }
 
 export function LifeSkillsZone({ child }: Props) {
-  const { t, i18n } = useTranslation();
-  const fallbackLang = detectLang(i18n.language);
+  const { t } = useTranslation();
+  const fallbackLang: LifeSkillLang = "en";
   const [loaded, setLoaded] = useState(false);
   const [stats, setStatsState] = useState<ChildLifeSkillStats>(() => emptyStats(fallbackLang));
 
@@ -119,8 +110,7 @@ export function LifeSkillsZone({ child }: Props) {
       return next;
     });
   };
-  const setLang = (lang: LifeSkillLang) => updateStats((prev) => ({ ...prev, lang }));
-  const lang = stats.lang;
+  const lang: LifeSkillLang = "en";
 
   const ageBand = ageBandForLifeSkills(child.age);
   const date = todayISO();
@@ -184,7 +174,6 @@ export function LifeSkillsZone({ child }: Props) {
     return Array.from(set);
   }, [ageBand]);
 
-  const langs: LifeSkillLang[] = ["en", "hi", "hinglish"];
 
   if (!loaded) {
     return <Text style={styles.muted}>{t("components.life_skills_zone.loading")}</Text>;
@@ -197,19 +186,6 @@ export function LifeSkillsZone({ child }: Props) {
         <Text style={styles.headerText}>
           {ageBandLabel(ageBand, lang)} · {stats.totalPoints} {uiLabel("points", lang)}
         </Text>
-        <View style={styles.langRow}>
-          {langs.map((l) => (
-            <Pressable
-              key={l}
-              onPress={() => setLang(l)}
-              style={[styles.langChip, lang === l && styles.langChipActive]}
-            >
-              <Text style={[styles.langChipText, lang === l && styles.langChipTextActive]}>
-                {l === "en" ? "EN" : l === "hi" ? "हिं" : "Hng"}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
       </View>
 
       {/* Today's tasks */}
@@ -314,11 +290,6 @@ export function LifeSkillsZone({ child }: Props) {
 const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   headerText: { color: "rgba(255,255,255,0.75)", fontSize: 12, flex: 1 },
-  langRow: { flexDirection: "row", gap: 4, padding: 2, borderRadius: 999, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" },
-  langChip: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
-  langChipActive: { backgroundColor: "rgba(123,63,242,0.55)" },
-  langChipText: { color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: "700" },
-  langChipTextActive: { color: "#fff" },
 
   sectionLabel: { color: "#fff", fontWeight: "800", fontSize: 13 },
   muted: { color: "rgba(255,255,255,0.6)", fontSize: 12 },

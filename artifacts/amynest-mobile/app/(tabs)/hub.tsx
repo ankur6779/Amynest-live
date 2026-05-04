@@ -45,7 +45,6 @@ import { isInfantHubAge } from "@workspace/infant-hub";
 import { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, HUB_TILE_AGE_MONTHS, partitionTilesByBand } from "./hub-bands";
 export { HUB_AGE_BANDS, getAgeBand, HUB_CONTENT_AGE_BANDS, HUB_TILE_AGE_MONTHS, partitionTilesByBand };
 import { useTranslation } from "react-i18next";
-import { LanguageRow } from "@/components/LanguageRow";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
@@ -1606,7 +1605,6 @@ export default function HubScreen() {
                 {/* Language switcher — moved into scroll content so it doesn't
                     eat sticky header space. Caregivers can still toggle at any
                     time without leaving the hub. */}
-                <LanguageRow />
 
                 {/* Featured tiles */}
                 <View style={[styles.sectionsGrid, { marginTop: 4 }]}>

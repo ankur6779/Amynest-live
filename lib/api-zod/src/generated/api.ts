@@ -1137,18 +1137,12 @@ export const GetLifeSkillsTodayResponse = zod.object({
       difficulty: zod.enum(["easy", "medium", "hard"]),
       title: zod.object({
         en: zod.string(),
-        hi: zod.string(),
-        hinglish: zod.string(),
       }),
       description: zod.object({
         en: zod.string(),
-        hi: zod.string(),
-        hinglish: zod.string(),
       }),
       parentTip: zod.object({
         en: zod.string(),
-        hi: zod.string(),
-        hinglish: zod.string(),
       }),
     }),
   ),
@@ -1205,23 +1199,15 @@ export const GetLifeSkillRolePlaysResponseItem = zod.object({
   ageBand: zod.enum(["toddler", "preschool", "kid", "teen"]),
   title: zod.object({
     en: zod.string(),
-    hi: zod.string(),
-    hinglish: zod.string(),
   }),
   setup: zod.object({
     en: zod.string(),
-    hi: zod.string(),
-    hinglish: zod.string(),
   }),
   childLine: zod.object({
     en: zod.string(),
-    hi: zod.string(),
-    hinglish: zod.string(),
   }),
   parentPrompt: zod.object({
     en: zod.string(),
-    hi: zod.string(),
-    hinglish: zod.string(),
   }),
 });
 export const GetLifeSkillRolePlaysResponse = zod.array(

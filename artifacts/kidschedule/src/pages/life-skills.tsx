@@ -9,9 +9,8 @@ import { Compass, ChevronLeft } from "lucide-react";
 import { LifeSkillsZone } from "@/components/life-skills-zone";
 
 export default function LifeSkillsPage() {
-  const { i18n, t } = useTranslation();
-  const lang =
-    i18n.language === "hi" ? "hi" : i18n.language?.toLowerCase().includes("hing") ? "hinglish" : "en";
+  const { t } = useTranslation();
+  const lang: "en" = "en";
   const childrenQuery = useListChildren();
   const children = useMemo(
     () => (childrenQuery.data ?? []).filter((c) => c.age >= 2 && c.age < 16),
@@ -64,7 +63,7 @@ export default function LifeSkillsPage() {
                   : "bg-background text-muted-foreground border-muted"
               }`}
             >
-              {c.name} · {ageBandLabel(ageBandForLifeSkills(c.age), lang as "en" | "hi" | "hinglish")}
+              {c.name} · {ageBandLabel(ageBandForLifeSkills(c.age), lang)}
             </button>
           ))}
         </div>

@@ -43,14 +43,12 @@ const TARGET_FILES: readonly string[] = [
   "artifacts/kidschedule/src/components/try-free-badge.tsx",
   "artifacts/kidschedule/src/components/parent-command-center.tsx",
   "artifacts/kidschedule/src/components/amy-icon.tsx",
-  "artifacts/kidschedule/src/components/language-switcher.tsx",
   "artifacts/kidschedule/src/pages/parenting-hub.tsx",
   // Mobile — amynest-mobile
   "artifacts/amynest-mobile/components/TryFreeBadge.tsx",
   "artifacts/amynest-mobile/components/PremiumBadge.tsx",
   "artifacts/amynest-mobile/components/LockedBlock.tsx",
   "artifacts/amynest-mobile/components/FuturePredictor.tsx",
-  "artifacts/amynest-mobile/components/LanguageRow.tsx",
   "artifacts/amynest-mobile/app/(tabs)/hub.tsx",
 ];
 

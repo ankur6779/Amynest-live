@@ -46,8 +46,6 @@ import {
 // ElevenLabs voice ids — kept inline; same constants used in SmartMealSuggestions.
 const VOICE_AMY_FEMALE = "QbQKfe9vgx5OsbZUvlFv"; // Ananya K — Indian English Female
 const VOICE_AMY_MALE   = "oaz5NvoRIhcJystOASAA"; // Karthik — Indian English Male
-// Multilingual model handles Hindi noticeably better than Turbo v2.5.
-const MODEL_MULTILINGUAL = "eleven_multilingual_v2";
 
 type ItemStatus = "pending" | "completed" | "skipped" | "delayed";
 
@@ -886,10 +884,8 @@ export default function RoutineDetailScreen() {
   const voiceLang = voiceSettings.lang;
   const announcedRef = useRef<string>("");
 
-  // Map persisted voice settings → ElevenLabs voice + model. Hindi uses the
-  // multilingual model; English stays on the default Turbo v2.5 (cheaper).
   const ttsVoiceId = voiceSettings.gender === "male" ? VOICE_AMY_MALE : VOICE_AMY_FEMALE;
-  const ttsModelId = voiceLang === "hi-IN" ? MODEL_MULTILINGUAL : undefined;
+  const ttsModelId = undefined;
   const { speak: speakAmy, stop: stopAmy } = useAmyVoice({
     voiceId: ttsVoiceId,
     modelId: ttsModelId,
@@ -971,9 +967,7 @@ export default function RoutineDetailScreen() {
     if (announcedRef.current === dedupKey) return;
     announcedRef.current = dedupKey;
     const childName = routine?.childName ?? "buddy";
-    const msg = voiceLang === "hi-IN"
-      ? `${childName}, अब समय है ${current.activity} का!`
-      : `Hey ${childName}, time for ${current.activity}!`;
+    const msg = `Hey ${childName}, time for ${current.activity}!`;
     void speakAmy(msg);
   }, [voiceOn, voiceLang, nowTick, items, dateMode, routine?.childName, speakAmy]);
 
