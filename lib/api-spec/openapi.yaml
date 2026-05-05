@@ -1032,6 +1032,9 @@ components:
             $ref: "#/components/schemas/RoutineItem"
         uiPrefs:
           $ref: "#/components/schemas/RoutineUiPrefs"
+        customized:
+          type: boolean
+          description: True when the user has manually edited one or more items in this routine.
         createdAt:
           type: string
       required:
@@ -1042,6 +1045,7 @@ components:
         - title
         - items
         - uiPrefs
+        - customized
         - createdAt
 
     RoutineUiPrefs:

@@ -448,6 +448,20 @@ export async function generateAiRoutine(params: {
   // onboarding and editable on the child profile.
   feedingType?: string | null;
   sleepPattern?: string | null;
+  // ── Adaptive / anti-repetition context ──────────────────────────────────
+  // Meal names from the previous day's routine. AI must NOT repeat these.
+  previousMeals?: string[];
+  // Activity categories used yesterday (e.g. "outdoor", "creative"). AI should
+  // rotate away from these to keep the routine feeling fresh.
+  previousActivities?: string[];
+  // Lightweight previous-day wellbeing snapshot. Drives schedule heaviness.
+  previousDayContext?: {
+    sleepQuality?: "good" | "poor" | "average";
+    moodScore?: "happy" | "tired" | "cranky" | "normal";
+    activityCompletion?: number;   // 0–100 % of items completed yesterday
+  };
+  // True when the date falls on Saturday or Sunday — triggers relaxed weekend mode.
+  isWeekendDay?: boolean;
   openaiClient?: {
     chat: {
       completions: {
@@ -594,7 +608,37 @@ SCHOOL RULES — non-negotiable when "School today: Yes":
 NO-SCHOOL RULES — today is a school-free day:
 - Do NOT include any "school" category activity.
 - Use the freed time for play, learning at home, family bonding, outdoor activities, or rest as appropriate to mood and age.
-`}`;
+`}${params.isWeekendDay ? `
+
+WEEKEND MODE — today is Saturday or Sunday:
+- This is a WEEKEND. The tone must be RELAXED, warm, and family-centred.
+- MANDATORY additions (at minimum 2 of these must appear):
+  • Family time block: shared meal, board game, cooking together, or a family outing.
+  • Outdoor play or nature walk (if weather allows) — unstructured, child-led.
+  • Creative activity: art, craft, building, music, gardening, or imaginative play.
+- AVOID: rigid study sessions, drills, or any activity that feels like a weekday chore.
+- Sleep and meal timings may be 15–30 min more relaxed than on school days.
+- Include one "special weekend treat" meal (e.g. pancakes, pizza night, ice cream).
+- The routine title MUST mention the day (e.g. "Riya's Saturday Fun Day" or "Sunday Chill with Arjun").
+` : ""}${params.previousDayContext ? `
+
+PREVIOUS-DAY ADAPTIVE CONTEXT — adjust today's schedule accordingly:
+${params.previousDayContext.sleepQuality === "poor" ? `- Yesterday's sleep was POOR. Keep today's schedule LIGHTER: fewer activities, more rest blocks, shorter durations. Prioritise calm over stimulation.` : ""}${params.previousDayContext.sleepQuality === "good" ? `- Yesterday's sleep was GOOD. The child is well-rested — schedule normally or slightly more actively.` : ""}${params.previousDayContext.moodScore === "cranky" || params.previousDayContext.moodScore === "tired" ? `
+- Yesterday's mood was ${params.previousDayContext.moodScore}. Today: prefer calm, self-paced activities; avoid demanding transitions or competitive play.` : ""}${params.previousDayContext.moodScore === "happy" ? `
+- Yesterday's mood was great. Continue with an engaging, balanced schedule.` : ""}${params.previousDayContext.activityCompletion !== undefined && params.previousDayContext.activityCompletion < 50 ? `
+- Only ${params.previousDayContext.activityCompletion}% of yesterday's routine was completed. Today: keep the schedule SIMPLER and shorter — fewer items, more breathing room between blocks.` : ""}${params.previousDayContext.activityCompletion !== undefined && params.previousDayContext.activityCompletion >= 80 ? `
+- ${params.previousDayContext.activityCompletion}% of yesterday's routine was completed — excellent follow-through. Today: maintain a similar density or gently increase challenge.` : ""}
+` : ""}${params.previousMeals && params.previousMeals.length > 0 ? `
+
+ANTI-REPETITION — MEAL VARIETY (CRITICAL):
+Yesterday's meals were: ${params.previousMeals.join(", ")}.
+HARD RULE: Do NOT suggest any of these meals again today — not even as one of the 4 "Options: …" alternatives. Every meal, snack, and tiffin must be a DIFFERENT dish from yesterday's list. Rotate ingredients and cooking styles to ensure genuine variety.
+` : ""}${params.previousActivities && params.previousActivities.length > 0 ? `
+
+ANTI-REPETITION — ACTIVITY ROTATION:
+Yesterday's activity categories: ${params.previousActivities.join(", ")}.
+Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the activity types. For example: if yesterday had lots of outdoor play, lean more toward creative or indoor activities today. If yesterday was mostly study-heavy, add more play and family bonding today.
+` : ""}`;
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -922,10 +966,55 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
   const effSchoolStart = parsed.data.schoolStart ?? child.schoolStartTime;
   const effSchoolEnd = parsed.data.schoolEnd ?? child.schoolEndTime;
 
-  const aiUserCustomRecipes = await db
-    .select()
-    .from(customRecipesTable)
-    .where(eq(customRecipesTable.userId, userId));
+  // ── Weekend detection ────────────────────────────────────────────────────
+  // Use local date parse to avoid timezone edge-cases (date is YYYY-MM-DD string).
+  const [yr, mo, dy] = parsed.data.date.split("-").map(Number);
+  const dow = new Date(yr, mo - 1, dy).getDay(); // 0=Sun, 6=Sat
+  const isWeekendDay = dow === 0 || dow === 6;
+
+  // ── Previous day context (anti-repetition + adaptive schedule) ───────────
+  // Build the previous date string (YYYY-MM-DD, simple arithmetic).
+  const prevDate = new Date(yr, mo - 1, dy - 1);
+  const prevDateStr = [
+    prevDate.getFullYear(),
+    String(prevDate.getMonth() + 1).padStart(2, "0"),
+    String(prevDate.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  const [aiUserCustomRecipes, prevRoutineRows] = await Promise.all([
+    db.select().from(customRecipesTable).where(eq(customRecipesTable.userId, userId)),
+    db.select({ items: routinesTable.items })
+      .from(routinesTable)
+      .where(and(eq(routinesTable.childId, parsed.data.childId), eq(routinesTable.date, prevDateStr)))
+      .limit(1),
+  ]);
+
+  // Extract yesterday's meal names and activity categories for anti-repetition.
+  let previousMeals: string[] = [];
+  let previousActivities: string[] = [];
+  if (prevRoutineRows.length > 0) {
+    const prevItems = prevRoutineRows[0].items as Array<{
+      activity?: string; category?: string; meal?: string | null;
+    }>;
+    previousMeals = prevItems
+      .filter((it) => {
+        const cat = (it.category ?? "").toLowerCase();
+        return cat === "meal" || cat === "tiffin";
+      })
+      .map((it) => it.meal || it.activity || "")
+      .filter(Boolean);
+    previousActivities = [
+      ...new Set(
+        prevItems
+          .filter((it) => {
+            const cat = (it.category ?? "").toLowerCase();
+            return cat !== "meal" && cat !== "tiffin" && cat !== "sleep";
+          })
+          .map((it) => (it.category ?? "").toLowerCase())
+          .filter(Boolean),
+      ),
+    ];
+  }
 
   try {
     const generated = await generateAiRoutine({
@@ -948,6 +1037,9 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       childClass: (child as any).childClass ?? undefined,
       date: parsed.data.date,
       caregiver,
+      isWeekendDay,
+      previousMeals: previousMeals.length > 0 ? previousMeals : undefined,
+      previousActivities: previousActivities.length > 0 ? previousActivities : undefined,
       weatherOutdoor,
       customRecipes: aiUserCustomRecipes,
       allergies: effAllergies,
@@ -1265,7 +1357,7 @@ router.patch("/routines/:id/items", async (req, res): Promise<void> => {
   }
   const [routine] = await db
     .update(routinesTable)
-    .set({ items: parsed.data.items })
+    .set({ items: parsed.data.items, customized: true })
     .where(eq(routinesTable.id, params.data.id))
     .returning();
 

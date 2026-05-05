@@ -1,4 +1,4 @@
-import { pgTable, text, integer, serial, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, serial, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -11,6 +11,9 @@ export const routinesTable = pgTable("routines", {
   // Per-routine UI preferences shared across web + mobile (e.g. ageBandFilter).
   // Defaults to an empty object so older routines deserialize cleanly.
   uiPrefs: jsonb("ui_prefs").notNull().default({}),
+  // True when a user has manually edited any item in this routine.
+  // AI generation respects overrides by not repeating customized activities.
+  customized: boolean("customized").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

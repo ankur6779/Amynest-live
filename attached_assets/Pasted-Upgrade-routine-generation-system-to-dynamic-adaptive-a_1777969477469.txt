@@ -1,0 +1,190 @@
+Upgrade routine generation system to dynamic, adaptive, and non-repetitive AI-driven engine.
+
+GOAL:
+- Auto-generate routines for all children
+- Avoid repetitive schedules
+- Adapt based on previous day + context
+- Allow full user override anytime
+
+---
+
+### 1. AUTO ROUTINE GENERATION
+
+On child creation or onboarding completion:
+
+→ Automatically generate daily routine
+
+child.routine = generated_routine
+
+No manual trigger required
+
+---
+
+### 2. DEFAULT WAKE-UP LOGIC
+
+If user has not set wake-up time:
+
+→ Use child.regular_wakeup_time as default
+
+fallback:
+→ age-based default (e.g., 7:00 AM)
+
+---
+
+### 3. DAILY VARIATION ENGINE (CRITICAL)
+
+Ensure:
+- Meals differ daily (no repetition from previous day)
+- Activities rotate (play, learning, outdoor, calm time)
+- Sleep routine stays consistent (only minor variation)
+
+RULE:
+Do not repeat same meal or activity within 2 consecutive days
+
+---
+
+### 4. ANTI-REPETITION RULE
+
+AI must ensure:
+- No “same-looking routine”
+- Slight variation in:
+  - activity timing
+  - activity type
+  - meal suggestion
+
+Goal:
+User should feel routine is fresh daily
+
+---
+
+### 5. PREVIOUS DAY CONTEXT (ADAPTIVE AI)
+
+Use:
+
+previous_day_data = {
+  mood,
+  sleep_quality,
+  activity_completion,
+  meals_taken
+}
+
+LOGIC:
+
+IF poor sleep:
+→ lighter schedule next day
+
+IF high activity:
+→ add calm/rest blocks
+
+IF meals skipped:
+→ suggest simpler meals
+
+---
+
+### 6. WEEKEND MODE (IMPORTANT)
+
+IF day = Saturday or Sunday:
+
+→ Remove:
+  - school block
+  - strict schedule
+
+→ Add:
+  - family time
+  - outdoor play
+  - creative activities
+
+Tone:
+“Flexible and relaxed routine”
+
+---
+
+### 7. USER OVERRIDE SYSTEM
+
+Allow user to:
+
+- Edit any block
+- Replace activities
+- Change timings
+
+Mark:
+
+routine.customized = true
+
+AI should respect overrides in future generations
+
+---
+
+### 8. REGENERATION LOGIC
+
+User can tap:
+“Regenerate Routine”
+
+AI must:
+- keep preferences
+- change content
+- avoid previous day duplication
+
+---
+
+### 9. INPUT DATA
+
+Use:
+
+- child_age
+- school_status
+- wakeup_time
+- country
+- weather
+- food_preferences
+- previous_day_data
+
+---
+
+### 10. OUTPUT STRUCTURE
+
+{
+  "day": "Monday",
+  "routine": [
+    {
+      "time": "07:00",
+      "activity": "Wake up & freshen up"
+    },
+    {
+      "time": "08:00",
+      "activity": "Breakfast - Oats with fruits"
+    }
+  ]
+}
+
+---
+
+### 11. PERSONALIZATION LAYER
+
+Adjust based on:
+
+- weather (rain → indoor play)
+- country (culture-based activities)
+- diet (meal suggestions)
+
+---
+
+### 12. PERFORMANCE
+
+- Generate once per day
+- Cache routine
+- Store previous day data
+
+---
+
+### 13. UX COPY
+
+“Your child’s routine adapts daily based on their needs”
+
+---
+
+### 14. SUCCESS CRITERIA
+
+- Routine feels new every day
+- Parents feel guided, not controlled
+- Fully customizable

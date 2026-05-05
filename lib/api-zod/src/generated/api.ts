@@ -323,6 +323,11 @@ export const ListRoutinesResponseItem = zod.object({
         ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),
+  customized: zod
+    .boolean()
+    .describe(
+      "True when the user has manually edited one or more items in this routine.",
+    ),
   createdAt: zod.string(),
 });
 export const ListRoutinesResponse = zod.array(ListRoutinesResponseItem);
@@ -438,6 +443,11 @@ export const GetRoutineResponse = zod.object({
         ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),
+  customized: zod
+    .boolean()
+    .describe(
+      "True when the user has manually edited one or more items in this routine.",
+    ),
   createdAt: zod.string(),
 });
 
@@ -630,6 +640,11 @@ export const GetRecentRoutinesResponseItem = zod.object({
         ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),
+  customized: zod
+    .boolean()
+    .describe(
+      "True when the user has manually edited one or more items in this routine.",
+    ),
   createdAt: zod.string(),
 });
 export const GetRecentRoutinesResponse = zod.array(
@@ -753,6 +768,11 @@ export const UpdateRoutineItemsResponse = zod.object({
         ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),
+  customized: zod
+    .boolean()
+    .describe(
+      "True when the user has manually edited one or more items in this routine.",
+    ),
   createdAt: zod.string(),
 });
 
@@ -838,6 +858,11 @@ export const UpdateRoutineUiPrefsResponse = zod.object({
         ),
     })
     .describe("Per-routine UI preferences synced across web + mobile."),
+  customized: zod
+    .boolean()
+    .describe(
+      "True when the user has manually edited one or more items in this routine.",
+    ),
   createdAt: zod.string(),
 });
 
