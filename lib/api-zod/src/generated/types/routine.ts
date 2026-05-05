@@ -16,5 +16,7 @@ export interface Routine {
   title: string;
   items: RoutineItem[];
   uiPrefs: RoutineUiPrefs;
+  /** True when the user has manually edited one or more items in this routine. */
+  customized: boolean;
   createdAt: string;
 }
