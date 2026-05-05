@@ -24,9 +24,11 @@ self.addEventListener('activate', (event) => {
 });
 
 messaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title ?? 'AmyNest';
+  // Title/body come from data (data-only messages) or notification payload.
+  const title = payload.data?.title ?? payload.notification?.title ?? 'AmyNest AI';
+  const body  = payload.data?.body  ?? payload.notification?.body  ?? '';
   const options = {
-    body: payload.notification?.body ?? '',
+    body,
     icon: '/pwa-icon-192.png',
     badge: '/pwa-icon-192.png',
     // tag deduplicates: same category replaces the previous banner instead
