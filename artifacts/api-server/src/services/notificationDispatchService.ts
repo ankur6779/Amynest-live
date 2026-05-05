@@ -263,20 +263,21 @@ async function sendFcmWebPush(
 ): Promise<void> {
   await getMessaging(adminApp()).send({
     token,
-    notification: {
-      title: input.title,
-      body: input.body,
-    },
     webpush: {
       notification: {
+        title: input.title,
+        body: input.body,
         icon: "https://amynest.in/pwa-icon-192.png",
         badge: "https://amynest.in/pwa-icon-192.png",
+        requireInteraction: false,
       },
       fcmOptions: {
         link: input.deepLink ?? "/",
       },
     },
     data: {
+      title: input.title,
+      body: input.body,
       category: input.category,
       deepLink: input.deepLink ?? "",
       ...(input.data
