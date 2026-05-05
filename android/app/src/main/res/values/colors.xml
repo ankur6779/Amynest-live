@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand indigo — matches the web app's --brand-indigo-500 token -->
+    <color name="brand_indigo">#6C63FF</color>
+    <!-- Used as the notification LED / accent colour on supported devices -->
+    <color name="notification_accent">#6C63FF</color>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AmyNest AI</string>
+    <string name="notification_channel_name">AmyNest</string>
+    <string name="notification_channel_description">Routine reminders, meal suggestions, and parenting insights</string>
+</resources>

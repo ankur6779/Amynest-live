@@ -1,0 +1,14 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# google-services.json is REQUIRED at build time but contains project
+# secrets (API keys). Add it manually after cloning — see README.md.
+app/google-services.json

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Monochrome notification icon — Android requires a flat, single-colour
+    vector drawable. The system tints it with notification_accent at runtime.
+
+    Replace this with your actual brand monogram or a simplified version of
+    the AmyNest logo. The icon should be 24dp × 24dp with ~2dp padding all
+    around (keep opaque content within the 20dp safe area).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Simple "A" monogram for AmyNest -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M12,3 L4,21 H7.5 L9.5,16 H14.5 L16.5,21 H20 L12,3 Z
+                          M10.8,13 L12,9.5 L13.2,13 Z" />
+</vector>
