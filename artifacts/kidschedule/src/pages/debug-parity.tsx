@@ -1,4 +1,5 @@
 // i18n-ignore-start — debug/dev tool: English-only by design
+// audit-block-ignore-start — debug parity page uses intentional semantic status colors (red=mismatch, green=match, amber=warning, violet=debug branding)
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, AlertTriangle, RefreshCw, Download, Trash2 } from "lucide-react";
@@ -353,4 +354,5 @@ function SummaryCard({ label, value, color }: { label: string; value: number; co
     </div>
   );
 }
+// audit-block-ignore-end
 // i18n-ignore-end

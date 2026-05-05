@@ -1,4 +1,5 @@
 // i18n-ignore-start — debug/dev tool: English-only by design
+// audit-block-ignore-start — debug panel uses intentional semantic status colors (red=error, green=success, amber=warning, violet=debug branding)
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -66,8 +67,8 @@ function computeFeatureFlags(entries: ReadonlyArray<ApiLogEntry>): Record<string
 }
 
 function statusBadge(status: number | null) {
-  if (status === null) return <span className="text-red-400 font-mono text-[10px]">ERR</span>;
-  const color = status < 300 ? "text-emerald-400" : status < 500 ? "text-amber-400" : "text-red-400";
+  if (status === null) return <span className="text-red-400 font-mono text-[10px]">ERR</span>; // audit-ok: HTTP error status indicator — red is universal
+  const color = status < 300 ? "text-emerald-400" : status < 500 ? "text-amber-400" : "text-red-400"; // audit-ok: HTTP status semantic colors (2xx=green, 4xx=amber, 5xx=red) — intentional
   return <span className={`font-mono text-[10px] ${color}`}>{status}</span>;
 }
 
@@ -363,4 +364,5 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+// audit-block-ignore-end
 // i18n-ignore-end
