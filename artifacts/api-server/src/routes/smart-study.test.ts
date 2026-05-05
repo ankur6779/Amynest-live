@@ -244,6 +244,79 @@ describe("smart-study route — daily-plan + attempt round-trip", () => {
     }
   });
 
+  it("Smart Study v2: next-questions returns shape and /attempt persists seen ids + bumps level", async () => {
+    // Smart Study v2 lives on per-(child, subject) rows where `subject` is
+    // one of the SMART_SUBJECTS ids — independent from the legacy "math"
+    // row used by /daily-plan above. Use "addition" so the level state
+    // here can't collide with the earlier weak-topic row.
+    const nq = await fetch(`${app.baseUrl}/api/smart-study/next-questions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ childId, subject: "addition", count: 3 }),
+    });
+    assert.equal(nq.status, 200);
+    const nqBody = (await nq.json()) as {
+      level: number;
+      source: "ai" | "dataset";
+      country: string;
+      questions: { id: string; q: string; options: string[]; answer: string }[];
+    };
+    assert.ok(nqBody.questions.length === 3, `expected 3 questions, got ${nqBody.questions.length}`);
+    assert.ok(nqBody.level >= 1 && nqBody.level <= 6, "level must be 1..6");
+    assert.ok(["ai", "dataset"].includes(nqBody.source));
+    for (const q of nqBody.questions) {
+      assert.ok(q.id && q.q && q.options.length >= 2 && q.options.includes(q.answer));
+    }
+
+    // Post 3 correct attempts with questionIds — should bump level by +1
+    // (3-correct streak rule) and persist all 3 ids in seenQuestionIds.
+    for (const q of nqBody.questions) {
+      const r = await fetch(`${app.baseUrl}/api/smart-study/attempt`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          childId,
+          subject: "addition",
+          topicId: "addition",
+          correct: true,
+          questionId: q.id,
+        }),
+      });
+      assert.equal(r.status, 200);
+    }
+
+    const rows = await db
+      .select()
+      .from(childLearningProgressTable)
+      .where(eq(childLearningProgressTable.userId, userId));
+    const additionRow = rows.find((r) => r.subject === "addition");
+    assert.ok(additionRow, "addition smart-study row should be persisted");
+    const seen = Array.isArray(additionRow!.seenQuestionIds)
+      ? (additionRow!.seenQuestionIds as string[])
+      : [];
+    assert.equal(seen.length, 3, `expected 3 seen ids, got ${seen.length}`);
+    for (const q of nqBody.questions) {
+      assert.ok(seen.includes(q.id), `seenQuestionIds should include ${q.id}`);
+    }
+    assert.equal(
+      additionRow!.currentLevel,
+      Math.min(nqBody.level + 1, 6),
+      "3 correct in a row should bump currentLevel by 1 (clamped to 6)",
+    );
+
+    // A second next-questions call must not return any of the now-seen ids.
+    const nq2 = await fetch(`${app.baseUrl}/api/smart-study/next-questions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ childId, subject: "addition", count: 3 }),
+    });
+    assert.equal(nq2.status, 200);
+    const nq2Body = (await nq2.json()) as { questions: { id: string }[] };
+    for (const q of nq2Body.questions) {
+      assert.ok(!seen.includes(q.id), `next batch should exclude seen id ${q.id}`);
+    }
+  });
+
   it("rejects an unknown subject with 400", async () => {
     const r = await fetch(`${app.baseUrl}/api/smart-study/attempt`, {
       method: "POST",

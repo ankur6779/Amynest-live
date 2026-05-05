@@ -1,0 +1,162 @@
+Upgrade Smart Study Zone to an adaptive, age-based, globally localized learning system.
+
+GOAL:
+- Difficulty increases with age (2–15 years)
+- Questions change dynamically (no repetition)
+- Localized content based on user country
+- AI + dataset hybrid system
+
+---
+
+### 1. AGE-BASED LEVEL SYSTEM
+
+Define levels:
+
+AGE 2–3 → Level 1 (Basic recognition)
+AGE 4–5 → Level 2 (Simple counting & logic)
+AGE 6–7 → Level 3 (Basic operations)
+AGE 8–10 → Level 4 (Intermediate math & reasoning)
+AGE 11–13 → Level 5 (Advanced concepts)
+AGE 14–15 → Level 6 (Pre-algebra & logic)
+
+---
+
+### 2. SUBJECT STRUCTURE
+
+Math:
+- Addition
+- Subtraction
+- Multiplication
+- Division
+- Fractions
+- Word Problems
+
+---
+
+### 3. DIFFICULTY PROGRESSION
+
+Example:
+
+Level 1:
+“Count apples”
+
+Level 2:
+“2 + 3 = ?”
+
+Level 3:
+“12 + 15 = ?”
+
+Level 4:
+“45 + 27 = ?”
+
+Level 5:
+“x + 5 = 12”
+
+Level 6:
+“(12 × 3) + 5 = ?”
+
+---
+
+### 4. COUNTRY LOCALIZATION
+
+Use:
+
+user.country
+
+Rules:
+
+US/UK/AU/NZ:
+→ apples, dollars, school bus, cookies
+
+India:
+→ mango, rupees, school bag
+
+UAE:
+→ dirham, dates, mall
+
+---
+
+### 5. AI QUESTION GENERATION
+
+Prompt:
+
+“Generate 5 math questions for a {age} year old child,
+difficulty level {level},
+topic {topic},
+localized for {country}.
+
+Rules:
+- simple language
+- no repetition
+- real-life examples
+- kid-friendly
+
+Output JSON:
+{
+  "questions": [
+    {
+      "question": "",
+      "options": [],
+      "answer": ""
+    }
+  ]
+}
+”
+
+---
+
+### 6. DATASET BACKUP (IMPORTANT)
+
+Use preloaded dataset (1000+ questions)
+
+If AI fails:
+→ load dataset
+
+---
+
+### 7. ANTI-REPETITION SYSTEM
+
+Track:
+
+user.question_history
+
+Avoid:
+- same question
+- same pattern
+
+---
+
+### 8. ADAPTIVE LEARNING
+
+IF child answers correct:
+→ increase difficulty
+
+IF wrong:
+→ reduce difficulty + hint
+
+---
+
+### 9. UI STRUCTURE
+
+Card format:
+
+[ Question ]
+Options (buttons)
+
+Progress bar:
+“Level 3 • 60% complete”
+
+---
+
+### 10. PERFORMANCE
+
+- Preload 10 questions
+- Cache per session
+
+---
+
+### 11. SUCCESS
+
+- Questions feel new
+- Difficulty grows naturally
+- Local feel (country-based)

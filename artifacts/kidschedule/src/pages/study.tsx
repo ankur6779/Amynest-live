@@ -6,10 +6,13 @@ import { useListChildren, getListChildrenQueryKey } from "@workspace/api-client-
 import {
   PLAY_CATEGORIES, BASIC_SUBJECTS, ADVANCED_SUBJECTS,
   resolveStudyMode, MODE_LABELS,
+  SMART_SUBJECTS,
   type StudyMode, type PlayCategory, type PlayItem,
   type SubjectPack, type StudyTopic,
   type DailyPlan, type PlanItem,
+  type SmartSubjectId,
 } from "@workspace/study-zone";
+import { AdaptiveQuestionRunner } from "@/components/adaptive-question-runner";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +46,9 @@ type View =
   | { kind: "play-cat"; childId: number; categoryId: string }
   | { kind: "study-home"; childId: number; mode: "basic" | "advanced" }
   | { kind: "study-subject"; childId: number; mode: "basic" | "advanced"; subjectId: string }
-  | { kind: "study-topic"; childId: number; mode: "basic" | "advanced"; subjectId: string; topicId: string };
+  | { kind: "study-topic"; childId: number; mode: "basic" | "advanced"; subjectId: string; topicId: string }
+  | { kind: "smart-pick"; childId: number; mode: "basic" | "advanced" }
+  | { kind: "smart-run"; childId: number; mode: "basic" | "advanced"; subjectId: SmartSubjectId };
 
 export default function StudyPage() {
   const { t } = useTranslation();
@@ -89,6 +94,10 @@ export default function StudyPage() {
     }
     if (view.kind === "study-topic") {
       setView({ kind: "study-subject", childId: view.childId, mode: view.mode, subjectId: view.subjectId });
+      return;
+    }
+    if (view.kind === "smart-pick" || view.kind === "smart-run") {
+      setView({ kind: "study-home", childId: view.childId, mode: view.mode });
       return;
     }
     navigate("/parenting-hub");
@@ -159,12 +168,34 @@ export default function StudyPage() {
               topicId: item.topicId,
             })}
           />
+          <SmartAdaptiveCta
+            onOpen={() => setView({ kind: "smart-pick", childId: view.childId, mode: view.mode })}
+          />
           <StudyHome
             mode={view.mode}
             progress={progress}
             onOpen={(subjId) => setView({ kind: "study-subject", childId: view.childId, mode: view.mode, subjectId: subjId })}
           />
         </>
+      ) : view.kind === "smart-pick" ? (
+        <SmartSubjectPicker
+          onPick={(subjectId) => setView({
+            kind: "smart-run", childId: view.childId, mode: view.mode, subjectId,
+          })}
+        />
+      ) : view.kind === "smart-run" ? (
+        (() => {
+          const meta = SMART_SUBJECTS.find((s) => s.id === view.subjectId);
+          return (
+            <AdaptiveQuestionRunner
+              childId={view.childId}
+              subject={view.subjectId}
+              subjectTitle={meta?.title ?? view.subjectId}
+              subjectEmoji={meta?.emoji ?? "✨"}
+              onExit={() => setView({ kind: "smart-pick", childId: view.childId, mode: view.mode })}
+            />
+          );
+        })()
       ) : view.kind === "study-subject" ? (
         <SubjectTopicList
           mode={view.mode}
@@ -756,6 +787,71 @@ function TopicDetail({
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// ─── Smart Adaptive Practice (Smart Study Zone v2) ───────────────────────────
+//
+// Entry tile shown on the study-home view + the subject picker grid that
+// launches the adaptive runner. Kept inline alongside the rest of the
+// study-page composition so the routing/state stays in one file.
+
+function SmartAdaptiveCta({ onOpen }: { onOpen: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Card
+      onClick={onOpen}
+      data-testid="smart-adaptive-cta"
+      className="rounded-2xl border-2 border-[hsl(var(--brand-indigo-300))] dark:border-[hsl(var(--brand-indigo-800))] bg-gradient-to-br from-[hsl(var(--brand-indigo-50))] to-[hsl(var(--brand-violet-50))] dark:from-[hsl(var(--brand-indigo-950))] dark:to-[hsl(var(--brand-violet-950))] cursor-pointer hover-elevate"
+    >
+      <CardContent className="p-4 flex items-center gap-3">
+        <div className="text-3xl">✨</div>
+        <div className="flex-1 min-w-0">
+          <div className="font-quicksand text-base font-bold text-foreground">
+            {t("screens.study.smart_adaptive_title", "Smart Adaptive Practice")}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {t("screens.study.smart_adaptive_subtitle", "AI-picked questions that match your level")}
+          </div>
+        </div>
+        <Button size="sm" className="rounded-full">
+          {t("screens.study.start", "Start")}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SmartSubjectPicker({ onPick }: { onPick: (subjectId: SmartSubjectId) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="grid gap-3">
+      <header>
+        <h2 className="font-quicksand text-xl font-bold text-foreground">
+          {t("screens.study.smart_pick_title", "Pick a topic to practice")}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {t("screens.study.smart_pick_subtitle", "Difficulty adapts as you go")}
+        </p>
+      </header>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {SMART_SUBJECTS.map((s) => (
+          <Card
+            key={s.id}
+            onClick={() => onPick(s.id as SmartSubjectId)}
+            data-testid={`smart-subject-${s.id}`}
+            className="rounded-2xl cursor-pointer hover-elevate"
+          >
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl mb-1">{s.emoji}</div>
+              <div className="font-quicksand text-sm font-bold text-foreground">
+                {s.title}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
