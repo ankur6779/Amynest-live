@@ -1009,7 +1009,7 @@ export default function RoutineDetail() {
       const timerId = setTimeout(() => {
         new Notification(`⏰ Time for: ${item.activity}`, {
           body: item.notes || `${item.duration} min · ${item.category}`,
-          icon: "/amynest-logo.png",
+          icon: "/pwa-icon-192.png",
           tag: `routine-${routineId}-${i}`
         });
       }, msUntilTask);
