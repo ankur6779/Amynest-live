@@ -117,14 +117,14 @@ export function NotificationPromptModal() {
       <div
         className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl"
         style={{
-          background: "linear-gradient(160deg, #1a1040 0%, #0f0a2e 60%, #1a1040 100%)",
+          background: "linear-gradient(160deg, #1a1040 0%, #0f0a2e 60%, #1a1040 100%)", // audit-ok: brand dark bg gradient matching onboarding/notification dark surface
           border: "1px solid rgba(139,92,246,0.3)",
         }}
       >
         <button
           onClick={handleLater}
           className="absolute top-4 right-4 p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-          aria-label="Close"
+          aria-label="Close" // i18n-ok: generic icon-only close button aria-label
         >
           <X className="w-4 h-4" />
         </button>

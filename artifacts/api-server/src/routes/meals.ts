@@ -595,4 +595,190 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
   }
 });
 
+// ─── AI 7-Day Week Plan ───────────────────────────────────────────────────────
+// POST /api/meals/week-plan
+// Body: { weather?: "hot"|"cold"|"moderate", forceRefresh?: boolean }
+// Returns: { plan: WeekPlan, generatedAt: string, cached: boolean }
+
+const WEEK_PLAN_CACHE = new Map<string, { plan: unknown; ts: number; params: string }>();
+const WEEK_PLAN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+function buildWeekPlanPrompt(opts: {
+  childAge: number;
+  country: string;
+  dietType: string;
+  foodStyle: string;
+  subCuisine: string | null;
+  allergies: string;
+  weather: string;
+}): string {
+  const { childAge, country, dietType, foodStyle, subCuisine, allergies, weather } = opts;
+
+  const ft = dietType.toLowerCase().replace(/-/g, "_");
+  const dietRule =
+    ft === "vegan"
+      ? "Vegan — NO dairy, no eggs, no honey, no meat, no fish"
+    : ft === "jain"
+      ? "Jain vegetarian — no meat, no fish, no eggs, no onion, no garlic, no root vegetables"
+    : ft === "eggetarian"
+      ? "Eggetarian — eggs OK, no meat, no fish"
+    : ft === "pescatarian"
+      ? "Pescatarian — fish/seafood OK, no other meat"
+    : (ft === "non_veg" || ft === "nonveg" || ft === "no_preference")
+      ? "Non-vegetarian — meat, fish, eggs all OK"
+    : "Vegetarian — no meat, no fish; dairy and eggs OK";
+
+  const allergyBlock = (() => {
+    const list = allergies.split(/[,;]/).map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (!list.length) return "";
+    return `ALLERGIES (NEVER include, not even as garnish): ${list.join(", ")}`;
+  })();
+
+  const weatherRule =
+    weather === "hot" ? "Weather is HOT — prefer light, hydrating, cooling meals (salads, lassi, fruits, light dals, yogurt-based dishes)" :
+    weather === "cold" ? "Weather is COLD — prefer warm, cooked, hearty meals (soups, stews, hot cereals, cooked grains)" :
+    "Weather is moderate — standard balanced meals";
+
+  const cuisineLabel = (() => {
+    if (foodStyle === "indian" && subCuisine) return buildCuisineLabel(subCuisine);
+    return buildCuisineLabel(foodStyle || "pan_indian");
+  })();
+
+  return `You are a pediatric nutrition AI. Generate a personalized 7-day meal plan.
+
+CHILD PROFILE:
+- Age: ${childAge} years old
+- Country: ${country || "India"}
+- Cuisine style: ${cuisineLabel}
+- Diet: ${dietRule}
+- ${allergyBlock ? allergyBlock + "\n- " : ""}${weatherRule}
+
+RULES:
+1. All meals must be kid-friendly, simple to prepare (≤20 min), culturally relevant to the cuisine style above
+2. STRICT diet compliance — never violate diet type or allergies, not even in garnishes
+3. Do NOT repeat the same main dish within 3 consecutive days
+4. Provide REALISTIC nutrition values based on standard serving sizes for a child aged ${childAge}
+5. Each day must have exactly 5 meals: breakfast, mid_morning, lunch, snack, dinner
+6. Output ONLY valid JSON, no extra text, no markdown fences
+
+OUTPUT FORMAT (exactly this shape):
+{
+  "week_plan": [
+    {
+      "day": "Monday",
+      "meals": {
+        "breakfast":    { "name": "...", "protein_g": 8, "carbs_g": 35, "fiber_g": 2, "calories": 220 },
+        "mid_morning":  { "name": "...", "protein_g": 3, "carbs_g": 20, "fiber_g": 1, "calories": 120 },
+        "lunch":        { "name": "...", "protein_g": 15, "carbs_g": 50, "fiber_g": 4, "calories": 380 },
+        "snack":        { "name": "...", "protein_g": 4, "carbs_g": 18, "fiber_g": 2, "calories": 150 },
+        "dinner":       { "name": "...", "protein_g": 12, "carbs_g": 45, "fiber_g": 3, "calories": 320 }
+      }
+    }
+  ]
+}
+
+Generate all 7 days (Monday through Sunday).`;
+}
+
+router.post("/meals/week-plan", requireAuth, async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Login required." });
+    return;
+  }
+
+  const weather = ["hot","cold","moderate"].includes(String(req.body?.weather ?? ""))
+    ? String(req.body.weather) as "hot"|"cold"|"moderate"
+    : "moderate";
+  const forceRefresh = req.body?.forceRefresh === true;
+
+  // Load user + child from DB
+  const [children, parentProfiles] = await Promise.all([
+    db.select().from(childrenTable).where(eq(childrenTable.userId, userId)),
+    db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId)),
+  ]);
+  const pp = parentProfiles[0];
+  const child = children[0];
+
+  const childAge = child?.age ?? 6;
+  const dietType: string = child?.dietType ?? pp?.dietType ?? pp?.foodType ?? "veg";
+  const foodStyle: string = child?.foodStyle ?? pp?.foodStyle ?? "indian";
+  const subCuisine: string | null = child?.subCuisine ?? pp?.subCuisine ?? null;
+  const allergies: string = child?.allergies ?? pp?.allergies ?? "";
+  const country = String(req.body?.country ?? "India").slice(0, 50);
+
+  const cacheKey = userId;
+  const paramsFingerprint = `${childAge}|${dietType}|${foodStyle}|${subCuisine}|${allergies}|${weather}|${country}`;
+  const cached = WEEK_PLAN_CACHE.get(cacheKey);
+  if (!forceRefresh && cached && Date.now() - cached.ts < WEEK_PLAN_TTL_MS && cached.params === paramsFingerprint) {
+    res.set("Cache-Control", "private, max-age=3600");
+    res.set("X-Cache", "HIT");
+    res.json({ plan: cached.plan, generatedAt: new Date(cached.ts).toISOString(), cached: true });
+    return;
+  }
+
+  req.log.info({ childAge, dietType, foodStyle, subCuisine, allergies, weather, country }, "[meals/week-plan] generating");
+
+  try {
+    const { openai } = await import("@workspace/integrations-openai-ai-server");
+    const prompt = buildWeekPlanPrompt({ childAge, country, dietType, foodStyle, subCuisine, allergies, weather });
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are a pediatric nutrition AI. Output ONLY strict JSON, no prose, no markdown." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 3000,
+      response_format: { type: "json_object" },
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    let parsed: unknown;
+    try { parsed = JSON.parse(raw); } catch {
+      logger.warn(`[meals/week-plan] JSON parse failed raw=${raw.slice(0, 200)}`);
+      res.status(502).json({ error: "AI returned invalid JSON. Please retry." });
+      return;
+    }
+
+    const obj = parsed as Record<string, unknown>;
+    let weekPlan = Array.isArray(obj.week_plan) ? obj.week_plan : [];
+
+    if (!weekPlan.length) {
+      logger.warn("[meals/week-plan] empty week_plan array from AI");
+      res.status(502).json({ error: "AI returned empty plan. Please retry." });
+      return;
+    }
+
+    const MEAL_KEYS = ["breakfast","mid_morning","lunch","snack","dinner"] as const;
+    // Sanitise — clamp numbers, truncate strings
+    const sanitised = DAYS.map((dayName, di) => {
+      const raw = weekPlan[di] as Record<string, unknown> | undefined ?? {};
+      const meals: Record<string, unknown> = {};
+      for (const key of MEAL_KEYS) {
+        const m = (raw.meals as Record<string, unknown> | undefined)?.[key] as Record<string, unknown> | undefined ?? {};
+        meals[key] = {
+          name:      String(m.name ?? "").slice(0, 100) || "—",
+          protein_g: Math.min(60, Math.max(0, Number(m.protein_g) || 0)),
+          carbs_g:   Math.min(150, Math.max(0, Number(m.carbs_g) || 0)),
+          fiber_g:   Math.min(20, Math.max(0, Number(m.fiber_g) || 0)),
+          calories:  Math.min(800, Math.max(50, Number(m.calories) || 200)),
+        };
+      }
+      return { day: dayName, meals };
+    });
+
+    WEEK_PLAN_CACHE.set(cacheKey, { plan: sanitised, ts: Date.now(), params: paramsFingerprint });
+    res.set("Cache-Control", "private, max-age=3600");
+    res.set("X-Cache", "MISS");
+    res.json({ plan: sanitised, generatedAt: new Date().toISOString(), cached: false });
+  } catch (err) {
+    logger.error(`[meals/week-plan] error ${String(err)}`);
+    res.status(503).json({ error: "AI service unavailable. Please retry." });
+  }
+});
+
 export default router;
