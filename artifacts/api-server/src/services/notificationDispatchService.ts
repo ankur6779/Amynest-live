@@ -269,8 +269,8 @@ async function sendFcmWebPush(
     },
     webpush: {
       notification: {
-        icon: "/pwa-icon-192.png",
-        badge: "/pwa-icon-192.png",
+        icon: "https://amynest.in/pwa-icon-192.png",
+        badge: "https://amynest.in/pwa-icon-192.png",
       },
       fcmOptions: {
         link: input.deepLink ?? "/",
