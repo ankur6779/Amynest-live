@@ -619,6 +619,57 @@ export interface LifeSkillRolePlay {
   parentPrompt: LifeSkillLocalizedText;
 }
 
+export type SmartStudyNextQuestionsRequestSubject =
+  (typeof SmartStudyNextQuestionsRequestSubject)[keyof typeof SmartStudyNextQuestionsRequestSubject];
+
+export const SmartStudyNextQuestionsRequestSubject = {
+  addition: "addition",
+  subtraction: "subtraction",
+  multiplication: "multiplication",
+  division: "division",
+  fractions: "fractions",
+  "word-problems": "word-problems",
+} as const;
+
+export interface SmartStudyNextQuestionsRequest {
+  childId: number;
+  subject: SmartStudyNextQuestionsRequestSubject;
+  /**
+   * @minimum 1
+   * @maximum 10
+   */
+  count?: number;
+  /** ISO-2 country override (IN, US, UK, AU, NZ, AE). Defaults to DEFAULT. */
+  country?: string;
+}
+
+export interface SmartStudyQuestion {
+  id: string;
+  q: string;
+  options: string[];
+  answer: string;
+  hint?: string | null;
+}
+
+export type SmartStudyNextQuestionsResponseSource =
+  (typeof SmartStudyNextQuestionsResponseSource)[keyof typeof SmartStudyNextQuestionsResponseSource];
+
+export const SmartStudyNextQuestionsResponseSource = {
+  ai: "ai",
+  dataset: "dataset",
+} as const;
+
+export interface SmartStudyNextQuestionsResponse {
+  /**
+   * @minimum 1
+   * @maximum 6
+   */
+  level: number;
+  source: SmartStudyNextQuestionsResponseSource;
+  country: string;
+  questions: SmartStudyQuestion[];
+}
+
 export interface SmartStudyInsightsWeakTopic {
   topicId: string;
   topicTitle: string;

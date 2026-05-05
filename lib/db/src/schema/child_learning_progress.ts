@@ -34,6 +34,19 @@ export const childLearningProgressTable = pgTable(
     accuracyRecent: jsonb("accuracy_recent").notNull().default([]),
     /** Topic ids the child has answered <60% on recently. */
     weakTopics: jsonb("weak_topics").notNull().default([]),
+    /**
+     * Adaptive level (1-6) for the Smart Study Zone v2 question stream.
+     * Bumped up after consecutive corrects, down after consecutive wrongs,
+     * clamped to the child's age band. Defaults to 1 — the engine seeds it
+     * from the child's age on first use.
+     */
+    currentLevel: integer("current_level").notNull().default(1),
+    /**
+     * Stable question ids the child has already seen (last ~200), used by
+     * the adaptive picker to avoid repeating any question a child has
+     * answered recently — even across sessions and devices.
+     */
+    seenQuestionIds: jsonb("seen_question_ids").notNull().default([]),
     lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

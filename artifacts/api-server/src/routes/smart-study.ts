@@ -3,6 +3,7 @@ import { z } from "zod";
 import { and, eq, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
+import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   db,
   childrenTable,
@@ -21,6 +22,14 @@ import {
   resolveStudyMode,
   BASIC_SUBJECTS,
   ADVANCED_SUBJECTS,
+  SMART_SUBJECTS,
+  bumpLevel,
+  levelForAge,
+  pickAdaptiveQuestions,
+  profileFor,
+  type Level,
+  type SmartQuestion,
+  type SmartSubjectId,
 } from "@workspace/study-zone";
 
 const router: IRouter = Router();
@@ -28,6 +37,9 @@ const router: IRouter = Router();
 const VALID_SUBJECTS = new Set<string>([
   ...BASIC_SUBJECTS.map((s) => s.id),
   ...ADVANCED_SUBJECTS.map((s) => s.id),
+  // Smart Study v2 subjects — each gets its own per-(child, subject) row so
+  // levels and seenQuestionIds stay isolated per topic.
+  ...SMART_SUBJECTS.map((s) => s.id),
 ]);
 
 // Zod shapes for the JSONB columns on `child_learning_progress`. We parse
@@ -40,6 +52,7 @@ const StoredAttemptSchema = z.object({
 });
 const StoredAttemptsSchema = z.array(StoredAttemptSchema).catch([]);
 const StoredWeakTopicsSchema = z.array(z.string()).catch([]);
+const StoredSeenIdsSchema = z.array(z.string()).catch([]);
 
 function parseAttempts(raw: unknown): { topicId: string; correct: boolean; ts: string }[] {
   return StoredAttemptsSchema.parse(Array.isArray(raw) ? raw : []);
@@ -47,6 +60,13 @@ function parseAttempts(raw: unknown): { topicId: string; correct: boolean; ts: s
 function parseWeakTopics(raw: unknown): string[] {
   return StoredWeakTopicsSchema.parse(Array.isArray(raw) ? raw : []);
 }
+function parseSeenIds(raw: unknown): string[] {
+  return StoredSeenIdsSchema.parse(Array.isArray(raw) ? raw : []);
+}
+
+const SMART_SUBJECT_IDS = new Set<string>(SMART_SUBJECTS.map((s) => s.id));
+/** Cap so the seen-set never balloons past ~200 ids (~6 KB) per row. */
+const SEEN_ID_CAP = 200;
 
 async function loadOwnedChild(childId: number, userId: string) {
   const rows = await db
@@ -154,6 +174,10 @@ const SingleAttempt = z.object({
   // so the rolling 7-day accuracy window stays accurate even if delivery
   // is delayed (offline mobile sessions). Falls back to server `now()`.
   ts: z.string().datetime().optional(),
+  // Smart Study v2: stable question id from the adaptive picker — when
+  // present, it's appended to seenQuestionIds (capped at SEEN_ID_CAP)
+  // so the same question never reappears for this child.
+  questionId: z.string().min(1).max(120).optional(),
 });
 // Clients may post one attempt or a batch (one per question). The cap
 // keeps a single request bounded — a Practice/Test session is at most
@@ -197,59 +221,104 @@ router.post("/smart-study/attempt", async (req, res): Promise<void> => {
     // Group by subject so each affected `child_learning_progress` row is
     // loaded + updated exactly once per request, regardless of how many
     // per-question attempts the client batched.
-    const bySubject = new Map<string, LearningAttempt[]>();
+    const bySubject = new Map<string, (LearningAttempt & { questionId?: string })[]>();
     for (const a of incoming) {
       const list = bySubject.get(a.subject) ?? [];
       list.push({
         topicId: a.topicId,
         correct: a.correct,
         ts: a.ts ?? new Date().toISOString(),
+        questionId: a.questionId,
       });
       bySubject.set(a.subject, list);
     }
 
     const result: { subject: string; weakTopics: string[]; attemptsCount: number }[] = [];
 
+    // Wrap each per-(child, subject) read-modify-write in a transaction with
+    // SELECT … FOR UPDATE so concurrent /attempt calls (e.g. an offline queue
+    // flush colliding with a fresh attempt) don't lose updates on
+    // accuracyRecent / seenQuestionIds / currentLevel — last-write-wins on
+    // these jsonb columns would silently corrupt the adaptive state.
     for (const [subject, attempts] of bySubject.entries()) {
-      const existing = await db
-        .select()
-        .from(childLearningProgressTable)
-        .where(
-          and(
-            eq(childLearningProgressTable.childId, childId),
-            eq(childLearningProgressTable.subject, subject),
-          ),
-        )
-        .limit(1);
-      const row: ChildLearningProgressRow | undefined = existing[0];
+      const txOut = await db.transaction(async (tx) => {
+        const existing = await tx
+          .select()
+          .from(childLearningProgressTable)
+          .where(
+            and(
+              eq(childLearningProgressTable.childId, childId),
+              eq(childLearningProgressTable.subject, subject),
+            ),
+          )
+          .for("update")
+          .limit(1);
+        const row: ChildLearningProgressRow | undefined = existing[0];
 
-      let merged = parseAttempts(row?.accuracyRecent);
-      for (const next of attempts) merged = appendAttempt(merged, next);
-      const weak = recomputeWeakTopics(
-        merged.map((a) => ({ topicId: a.topicId, correct: a.correct })),
-      );
+        let merged = parseAttempts(row?.accuracyRecent);
+        for (const next of attempts) merged = appendAttempt(merged, next);
+        const weak = recomputeWeakTopics(
+          merged.map((a) => ({ topicId: a.topicId, correct: a.correct })),
+        );
 
-      if (row) {
-        await db
-          .update(childLearningProgressTable)
-          .set({
+        // Smart Study v2: track seenQuestionIds (anti-repetition) and bump
+        // currentLevel based on the trailing correct/wrong streak.
+        const incomingForSubject = attempts;
+        const newlySeen = incomingForSubject
+          .map((a) => a.questionId)
+          .filter((id): id is string => typeof id === "string" && id.length > 0);
+        const prevSeen = parseSeenIds(row?.seenQuestionIds);
+        const seenAll = [...prevSeen, ...newlySeen];
+        const seenDeduped: string[] = [];
+        const seenSet = new Set<string>();
+        for (const id of seenAll) {
+          if (!seenSet.has(id)) { seenSet.add(id); seenDeduped.push(id); }
+        }
+        const seenCapped = seenDeduped.length > SEEN_ID_CAP
+          ? seenDeduped.slice(seenDeduped.length - SEEN_ID_CAP)
+          : seenDeduped;
+
+        const baseLevel = (row?.currentLevel ?? levelForAge(child.age ?? 0)) as Level;
+        // Streak detection over the rolling window (not just this request) —
+        // clients POST one attempt per question, so feeding only the current
+        // request would never accumulate a 3-correct streak. Last 5 entries
+        // is enough for both the 3-correct-up and 2-wrong-down rules.
+        const recentForBump = merged.slice(-5).map((a) => a.correct);
+        const nextLevel: Level = SMART_SUBJECT_IDS.has(subject)
+          ? bumpLevel({
+              currentLevel: baseLevel,
+              ageYears: child.age ?? 0,
+              recentResults: recentForBump,
+            })
+          : baseLevel;
+
+        if (row) {
+          await tx
+            .update(childLearningProgressTable)
+            .set({
+              accuracyRecent: merged,
+              weakTopics: weak,
+              seenQuestionIds: seenCapped,
+              currentLevel: nextLevel,
+              lastActiveAt: new Date(),
+              updatedAt: sql`now()`,
+            })
+            .where(eq(childLearningProgressTable.id, row.id));
+        } else {
+          await tx.insert(childLearningProgressTable).values({
+            childId,
+            userId,
+            subject,
             accuracyRecent: merged,
             weakTopics: weak,
+            seenQuestionIds: seenCapped,
+            currentLevel: nextLevel,
             lastActiveAt: new Date(),
-            updatedAt: sql`now()`,
-          })
-          .where(eq(childLearningProgressTable.id, row.id));
-      } else {
-        await db.insert(childLearningProgressTable).values({
-          childId,
-          userId,
-          subject,
-          accuracyRecent: merged,
-          weakTopics: weak,
-          lastActiveAt: new Date(),
-        });
-      }
-      result.push({ subject, weakTopics: weak, attemptsCount: merged.length });
+          });
+        }
+        return { weak, attemptsCount: merged.length };
+      });
+      result.push({ subject, weakTopics: txOut.weak, attemptsCount: txOut.attemptsCount });
     }
 
     // Back-compat: a single-attempt request returns the original flat
@@ -393,6 +462,179 @@ router.get("/smart-study/insights", async (req, res): Promise<void> => {
   } catch (err) {
     logger.error(
       `smart-study insights failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// ─── POST /api/smart-study/next-questions ────────────────────────────────────
+//
+// Smart Study Zone v2 — adaptive, country-localized, anti-repetition question
+// stream. Tries OpenAI generation first (with a tight timeout) and falls back
+// to the deterministic dataset whenever AI is slow, errors out, or returns a
+// malformed shape. Either way, the response shape is identical so the client
+// doesn't need to care which path served it.
+
+const NextQuestionsBody = z.object({
+  childId: z.number().int().positive(),
+  subject: z.enum([
+    "addition", "subtraction", "multiplication", "division", "fractions", "word-problems",
+  ]),
+  count: z.number().int().min(1).max(10).optional(),
+  /** Optional country override; falls back to "DEFAULT" (India-leaning). */
+  country: z.string().min(2).max(8).optional(),
+});
+
+const AiQuestionSchema = z.object({
+  question: z.string().min(1).max(300),
+  options: z.array(z.string().min(1).max(80)).min(2).max(6),
+  answer: z.string().min(1).max(80),
+});
+const AiResponseSchema = z.object({
+  questions: z.array(AiQuestionSchema).min(1).max(10),
+});
+
+/** Wrap a promise with a timeout; rejects with the timeout error. */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
+}
+
+async function generateWithAi(
+  level: Level,
+  subject: SmartSubjectId,
+  country: string,
+  ageYears: number,
+  count: number,
+  excludeIds: Set<string>,
+): Promise<SmartQuestion[] | null> {
+  const profile = profileFor(country);
+  const subjectMeta = SMART_SUBJECTS.find((s) => s.id === subject);
+  const topic = subjectMeta?.title ?? subject;
+  const prompt = `Generate ${count} math questions for a ${ageYears}-year-old child, difficulty level ${level} (out of 6), topic ${topic}, localized for ${profile.country}.
+
+Rules:
+- simple language a ${ageYears}-year-old understands
+- no repetition
+- use real-life examples featuring "${profile.fruit}", "${profile.treat}", and amounts in ${profile.currencyName} (${profile.currency}) where it fits
+- kid-friendly tone
+- options must be plausible distractors; the answer must exactly match one option string
+
+Output JSON exactly in this shape:
+{"questions":[{"question":"...","options":["...","..."],"answer":"..."}]}`;
+
+  try {
+    const completion = await withTimeout(
+      openai.chat.completions.create({
+        model: "gpt-5-nano",
+        messages: [
+          { role: "system", content: "You generate kid-friendly math practice questions. Always reply with valid JSON only." },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+      }),
+      4500,
+      "openai smart-study next-questions",
+    );
+    const raw = completion.choices?.[0]?.message?.content;
+    if (!raw) return null;
+    const parsed = AiResponseSchema.safeParse(JSON.parse(raw));
+    if (!parsed.success) return null;
+    const out: SmartQuestion[] = [];
+    parsed.data.questions.forEach((q, i) => {
+      if (!q.options.includes(q.answer)) return;
+      // AI ids are time-namespaced so anti-repetition still works for the
+      // session; long-term collisions are unlikely given the timestamp.
+      const id = `ai-L${level}-${subject}-${Date.now()}-${i}`;
+      if (excludeIds.has(id)) return;
+      out.push({
+        id, level, subject,
+        q: q.question,
+        options: q.options,
+        answer: q.answer,
+      });
+    });
+    return out.length > 0 ? out : null;
+  } catch (err) {
+    logger.warn(
+      `smart-study AI generation failed (falling back to dataset): ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return null;
+  }
+}
+
+router.post("/smart-study/next-questions", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const parsed = NextQuestionsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", issues: parsed.error.flatten() });
+    return;
+  }
+  const { childId, subject } = parsed.data;
+  const count = parsed.data.count ?? 5;
+  const country = parsed.data.country ?? "DEFAULT";
+
+  try {
+    const child = await loadOwnedChild(childId, userId);
+    if (!child) {
+      res.status(404).json({ error: "child_not_found" });
+      return;
+    }
+
+    // Per-(child, subject) row holds adaptive state. Smart Study v2 maps
+    // each Smart subject to its own row even though the legacy /attempt
+    // path groups everything under "math" — that keeps levels independent
+    // per subject so a strong addition kid isn't auto-bumped on fractions.
+    const existing = await db
+      .select()
+      .from(childLearningProgressTable)
+      .where(
+        and(
+          eq(childLearningProgressTable.childId, childId),
+          eq(childLearningProgressTable.subject, subject),
+        ),
+      )
+      .limit(1);
+    const row = existing[0];
+    const level = (row?.currentLevel ?? levelForAge(child.age ?? 0)) as Level;
+    const seenIds = new Set<string>(parseSeenIds(row?.seenQuestionIds));
+
+    const aiQuestions = await generateWithAi(
+      level, subject, country, child.age ?? 0, count, seenIds,
+    );
+    let questions: SmartQuestion[] = aiQuestions ?? [];
+    let source: "ai" | "dataset" = aiQuestions && aiQuestions.length >= count ? "ai" : "dataset";
+    if (questions.length < count) {
+      // Top up with dataset — guarantees we always return `count` items.
+      const need = count - questions.length;
+      const fill = pickAdaptiveQuestions({
+        level, subject, country, count: need, exclude: seenIds, seed: Date.now(),
+      });
+      questions = [...questions, ...fill];
+      if (aiQuestions && aiQuestions.length > 0) source = "ai";
+      else source = "dataset";
+    }
+
+    res.json({
+      level,
+      source,
+      country,
+      questions: questions.slice(0, count).map((q) => ({
+        id: q.id, q: q.q, options: q.options, answer: q.answer, hint: q.hint ?? null,
+      })),
+    });
+  } catch (err) {
+    logger.error(
+      `smart-study next-questions failed: ${err instanceof Error ? err.message : String(err)}`,
     );
     res.status(500).json({ error: "server_error" });
   }

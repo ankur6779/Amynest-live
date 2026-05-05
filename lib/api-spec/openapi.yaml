@@ -660,6 +660,33 @@ paths:
                 items:
                   $ref: "#/components/schemas/LifeSkillRolePlay"
 
+  /smart-study/next-questions:
+    post:
+      operationId: getSmartStudyNextQuestions
+      tags: [smart-study]
+      summary: Get an adaptive, anti-repetition batch of Smart Study questions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SmartStudyNextQuestionsRequest"
+      responses:
+        "200":
+          description: Adaptive question batch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmartStudyNextQuestionsResponse"
+        "400":
+          description: Invalid request body
+        "401":
+          description: Unauthorized
+        "404":
+          description: Child not found
+        "500":
+          description: Server error (AI + dataset both failed)
+
   /smart-study/insights:
     get:
       operationId: getSmartStudyInsights
@@ -1770,6 +1797,59 @@ components:
         parentPrompt:
           $ref: "#/components/schemas/LifeSkillLocalizedText"
       required: [id, ageBand, title, setup, childLine, parentPrompt]
+    SmartStudyNextQuestionsRequest:
+      type: object
+      properties:
+        childId:
+          type: integer
+        subject:
+          type: string
+          enum: [addition, subtraction, multiplication, division, fractions, word-problems]
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+        country:
+          type: string
+          description: ISO-2 country override (IN, US, UK, AU, NZ, AE). Defaults to DEFAULT.
+      required: [childId, subject]
+
+    SmartStudyQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+        q:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        answer:
+          type: string
+        hint:
+          type: string
+          nullable: true
+      required: [id, q, options, answer]
+
+    SmartStudyNextQuestionsResponse:
+      type: object
+      properties:
+        level:
+          type: integer
+          minimum: 1
+          maximum: 6
+        source:
+          type: string
+          enum: [ai, dataset]
+        country:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SmartStudyQuestion"
+      required: [level, source, country, questions]
+
     SmartStudyInsightsWeakTopic:
       type: object
       properties:

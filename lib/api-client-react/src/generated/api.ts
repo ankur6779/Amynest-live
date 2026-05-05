@@ -54,6 +54,8 @@ import type {
   SetLifeSkillProgressBody,
   SetParentTaskCompletionBody,
   SmartStudyInsights,
+  SmartStudyNextQuestionsRequest,
+  SmartStudyNextQuestionsResponse,
   UpdateChildBody,
   UpdateRoutineItemsBody,
   UpdateRoutineUiPrefsBody,
@@ -3001,6 +3003,96 @@ export function useGetLifeSkillRolePlays<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get an adaptive, anti-repetition batch of Smart Study questions
+ */
+export const getGetSmartStudyNextQuestionsUrl = () => {
+  return `/api/smart-study/next-questions`;
+};
+
+export const getSmartStudyNextQuestions = async (
+  smartStudyNextQuestionsRequest: SmartStudyNextQuestionsRequest,
+  options?: RequestInit,
+): Promise<SmartStudyNextQuestionsResponse> => {
+  return customFetch<SmartStudyNextQuestionsResponse>(
+    getGetSmartStudyNextQuestionsUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(smartStudyNextQuestionsRequest),
+    },
+  );
+};
+
+export const getGetSmartStudyNextQuestionsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getSmartStudyNextQuestions>>,
+    TError,
+    { data: BodyType<SmartStudyNextQuestionsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getSmartStudyNextQuestions>>,
+  TError,
+  { data: BodyType<SmartStudyNextQuestionsRequest> },
+  TContext
+> => {
+  const mutationKey = ["getSmartStudyNextQuestions"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getSmartStudyNextQuestions>>,
+    { data: BodyType<SmartStudyNextQuestionsRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return getSmartStudyNextQuestions(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetSmartStudyNextQuestionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getSmartStudyNextQuestions>>
+>;
+export type GetSmartStudyNextQuestionsMutationBody =
+  BodyType<SmartStudyNextQuestionsRequest>;
+export type GetSmartStudyNextQuestionsMutationError = ErrorType<void>;
+
+/**
+ * @summary Get an adaptive, anti-repetition batch of Smart Study questions
+ */
+export const useGetSmartStudyNextQuestions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getSmartStudyNextQuestions>>,
+    TError,
+    { data: BodyType<SmartStudyNextQuestionsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof getSmartStudyNextQuestions>>,
+  TError,
+  { data: BodyType<SmartStudyNextQuestionsRequest> },
+  TContext
+> => {
+  return useMutation(getGetSmartStudyNextQuestionsMutationOptions(options));
+};
 
 /**
  * @summary Get parent-facing Smart Study insights for a child

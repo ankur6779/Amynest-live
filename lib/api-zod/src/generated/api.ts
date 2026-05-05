@@ -1240,6 +1240,51 @@ export const GetLifeSkillRolePlaysResponse = zod.array(
 );
 
 /**
+ * @summary Get an adaptive, anti-repetition batch of Smart Study questions
+ */
+export const getSmartStudyNextQuestionsBodyCountMax = 10;
+
+export const GetSmartStudyNextQuestionsBody = zod.object({
+  childId: zod.number(),
+  subject: zod.enum([
+    "addition",
+    "subtraction",
+    "multiplication",
+    "division",
+    "fractions",
+    "word-problems",
+  ]),
+  count: zod
+    .number()
+    .min(1)
+    .max(getSmartStudyNextQuestionsBodyCountMax)
+    .optional(),
+  country: zod
+    .string()
+    .optional()
+    .describe(
+      "ISO-2 country override (IN, US, UK, AU, NZ, AE). Defaults to DEFAULT.",
+    ),
+});
+
+export const getSmartStudyNextQuestionsResponseLevelMax = 6;
+
+export const GetSmartStudyNextQuestionsResponse = zod.object({
+  level: zod.number().min(1).max(getSmartStudyNextQuestionsResponseLevelMax),
+  source: zod.enum(["ai", "dataset"]),
+  country: zod.string(),
+  questions: zod.array(
+    zod.object({
+      id: zod.string(),
+      q: zod.string(),
+      options: zod.array(zod.string()),
+      answer: zod.string(),
+      hint: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
  * @summary Get parent-facing Smart Study insights for a child
  */
 export const GetSmartStudyInsightsQueryParams = zod.object({
