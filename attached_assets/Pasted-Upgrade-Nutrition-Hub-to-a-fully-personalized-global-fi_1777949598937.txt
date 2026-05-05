@@ -1,0 +1,191 @@
+Upgrade Nutrition Hub to a fully personalized, global-first AI-driven system.
+
+GOAL:
+- Replace static Indian meal plans
+- Use user data (country, cuisine, diet, allergies)
+- Generate dynamic meal plans with nutrition breakdown
+
+---
+
+### 1. INPUT DATA (MANDATORY)
+
+Use:
+
+- user.country
+- user.food_preferences:
+    - diet_type (veg, vegan, non-veg, etc.)
+    - food_style (western, asian, indian, etc.)
+    - sub_cuisine
+    - allergies
+- child.age
+- weather_type
+
+---
+
+### 2. REMOVE STATIC CONTENT
+
+❌ Remove:
+- “Weekly Indian Meal Plan”
+- Fixed dishes like dosa, dal, etc.
+
+✔ Replace with:
+“Personalized Weekly Meal Plan”
+
+---
+
+### 3. AI MEAL GENERATION (OpenAI)
+
+Prompt:
+
+“Generate a 7-day meal plan for a [age] child in [country], 
+following [diet_type] and [food_style], 
+avoiding [allergies], considering [weather_type].
+
+Each day must include:
+- Breakfast
+- Mid-morning
+- Lunch
+- Snack
+- Dinner
+
+Each meal must include:
+- Dish name
+- Ingredients
+- Calories
+- Protein (g)
+- Carbs (g)
+- Fiber (g)
+
+Keep meals:
+- kid-friendly
+- easy to prepare
+- culturally relevant”
+
+---
+
+### 4. ALLERGY FILTER (CRITICAL)
+
+Before showing meals:
+
+IF meal contains any allergy item:
+→ REMOVE or REGENERATE meal
+
+Example:
+- If allergy = nuts → no peanut butter
+- If dairy-free → no milk/cheese
+
+---
+
+### 5. NUTRITION BREAKDOWN UI
+
+For each meal card:
+
+Show:
+
+- Calories 🔥
+- Protein 💪
+- Carbs ⚡
+- Fiber 🌿
+
+Example:
+
+“Pasta with veggies  
+Protein: 12g | Carbs: 45g | Fiber: 6g”
+
+---
+
+### 6. MEAL PLANNER CUSTOMIZATION
+
+Add controls:
+
+- Toggle:
+  Veg / Non-veg / Vegan
+
+- Change:
+  Cuisine style
+
+- “Regenerate Plan” button
+
+---
+
+### 7. LOCATION-BASED ADAPTATION
+
+IF country = US:
+→ Western meals priority
+
+IF India:
+→ Indian meals
+
+IF UAE:
+→ Mixed (Indian + Middle Eastern)
+
+---
+
+### 8. WEATHER ADAPTATION
+
+IF hot:
+→ light meals (salads, yogurt, fruits)
+
+IF cold:
+→ warm meals (soups, cooked dishes)
+
+---
+
+### 9. WEEK VIEW UI
+
+Tabs:
+Mon Tue Wed Thu Fri Sat Sun
+
+Each day expandable
+
+---
+
+### 10. SMART VARIATION
+
+- Avoid repeating same dish within 3 days
+- Rotate cuisines (if mixed selected)
+
+---
+
+### 11. FALLBACK SYSTEM
+
+IF AI fails:
+→ load cached meal plan
+
+---
+
+### 12. DATA STORAGE
+
+Save:
+
+user.meal_plan = generated_plan
+
+Cache for:
+- 24 hours
+
+---
+
+### 13. COPY UPDATE
+
+Title:
+“🌍 Your Personalized Meal Plan”
+
+Subtitle:
+“Based on your family’s food style & location”
+
+---
+
+### 14. PERFORMANCE
+
+- Generate once
+- Cache response
+- Lazy load days
+
+---
+
+### 15. SUCCESS CRITERIA
+
+- User sees local meals
+- Nutrition clearly visible
+- No allergy violations
+- Feels premium AI-driven

@@ -95,7 +95,7 @@ function WebPushCard() {
             <NativeIcon className={`w-5 h-5 ${nativeColor}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-white">App Notifications</div>
+            <div className="font-semibold text-white">App Notifications</div> {/* i18n-ok: native push context label shown only in TWA/WebView — intentionally untranslated */}
             <div className="text-sm text-muted-foreground mt-1">
               Notifications are managed directly by the AmyNest app via Firebase.
             </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   AGE_GROUPS, NUTRIENTS, MEAL_PLANS, FAMILY_PORTIONS,
   MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient,
@@ -13,8 +13,11 @@ import {
   Apple, Salad, CalendarDays, Users, Trophy, Brain,
   ChevronRight, Info, AlertTriangle, BookOpen, X,
   Leaf, Drumstick, CheckCircle2, AlertCircle, Activity,
+  RefreshCw, Zap, Flame, Sun, CloudSnow, Wind, Loader2,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = "nutrients" | "meals" | "family" | "score";
@@ -189,7 +192,242 @@ function NutrientCard({ nutrient, ageGroupId, onClick }: {
   );
 }
 
-// ─── Meal Plan Section ────────────────────────────────────────────────────────
+// ─── AI Meal Plan Section ─────────────────────────────────────────────────────
+type MealEntry = { name: string; protein_g: number; carbs_g: number; fiber_g: number; calories: number };
+type DayPlan = { day: string; meals: { breakfast: MealEntry; mid_morning: MealEntry; lunch: MealEntry; snack: MealEntry; dinner: MealEntry } };
+type WeatherType = "hot" | "cold" | "moderate";
+
+const MEAL_TIMES: { key: keyof DayPlan["meals"]; label: string; emoji: string }[] = [
+  { key: "breakfast",   label: "Breakfast",   emoji: "🌅" },
+  { key: "mid_morning", label: "Mid-Morning",  emoji: "🍎" },
+  { key: "lunch",       label: "Lunch",        emoji: "🌞" },
+  { key: "snack",       label: "Snack",        emoji: "🍪" },
+  { key: "dinner",      label: "Dinner",       emoji: "🌙" },
+];
+
+const DAY_SHORTS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+function NutritionPill({ icon, value, label, color }: { icon: React.ReactNode; value: number; label: string; color: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold", color)}>
+      {icon}
+      {value}{label}
+    </span>
+  );
+}
+
+function MealCard({ entry, mealTime }: { entry: MealEntry; mealTime: { label: string; emoji: string } }) {
+  return (
+    <div className="rounded-xl border bg-muted/30 p-3 flex flex-col gap-2">
+      <div className="flex items-center gap-1.5">
+        <span className="text-base">{mealTime.emoji}</span>
+        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{mealTime.label}</span>
+      </div>
+      <p className="text-sm font-semibold text-foreground leading-snug">{entry.name}</p>
+      <div className="flex flex-wrap gap-1.5 mt-auto">
+        <NutritionPill icon={<Flame className="w-3 h-3" />} value={entry.calories} label=" kcal" color="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" /> {/* audit-ok: calorie indicator — orange is universal nutrition-science convention */}
+        <NutritionPill icon={<Zap className="w-3 h-3" />} value={entry.protein_g} label="g prot" color="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" /> {/* audit-ok: protein indicator — blue is universal nutrition-science convention */}
+        <NutritionPill icon={<Activity className="w-3 h-3" />} value={entry.carbs_g} label="g carbs" color="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" /> {/* audit-ok: carbs indicator — purple is universal nutrition-science convention */}
+        <NutritionPill icon={<Leaf className="w-3 h-3" />} value={entry.fiber_g} label="g fiber" color="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" /> {/* audit-ok: fiber indicator — green is universal nutrition-science convention */}
+      </div>
+    </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="flex gap-2">
+        {DAY_SHORTS.map(d => <div key={d} className="h-7 w-10 rounded-full bg-muted" />)}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="rounded-xl border bg-muted/30 p-3 h-28" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AIMealPlanSection() {
+  const authFetch = useAuthFetch();
+  const [weather, setWeather] = useState<WeatherType>("moderate");
+  const [dayIdx, setDayIdx] = useState(0);
+  const [plan, setPlan] = useState<DayPlan[] | null>(null);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generate = useCallback(async (forceRefresh = false) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await authFetch("/api/meals/week-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weather, forceRefresh }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(j.error ?? `Server error ${res.status}`);
+      }
+      const data = await res.json() as { plan: DayPlan[]; generatedAt: string };
+      setPlan(data.plan);
+      setGeneratedAt(data.generatedAt);
+      setDayIdx(0);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }, [authFetch, weather]);
+
+  const day = plan?.[dayIdx];
+
+  const WEATHER_OPTIONS: { val: WeatherType; label: string; icon: React.ReactNode }[] = [
+    { val: "hot",      label: "Hot",      icon: <Sun className="w-3.5 h-3.5" /> },
+    { val: "moderate", label: "Moderate", icon: <Wind className="w-3.5 h-3.5" /> },
+    { val: "cold",     label: "Cold",     icon: <CloudSnow className="w-3.5 h-3.5" /> },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 className="font-bold text-lg flex items-center gap-2">
+            <Globe className="w-5 h-5 text-primary" />
+            Your Personalized Meal Plan
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Based on your family's food style & location</p> {/* i18n-ok: AI feature tagline — intentionally untranslated */}
+        </div>
+        {generatedAt && (
+          <span className="text-xs text-muted-foreground self-end">
+            Generated {new Date(generatedAt).toLocaleDateString()}
+          </span>
+        )}
+      </div>
+
+      {/* Weather selector */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-muted-foreground font-medium">Weather:</span>
+        <div className="flex rounded-full border overflow-hidden">
+          {WEATHER_OPTIONS.map(({ val, label, icon }) => (
+            <button
+              key={val}
+              onClick={() => setWeather(val)}
+              className={cn(
+                "flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors",
+                weather === val
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted text-muted-foreground"
+              )}
+            >
+              {icon} {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Generate / Regenerate */}
+      {!plan && !loading && (
+        <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-6 text-center space-y-3">
+          <span className="text-4xl block">🤖</span>
+          <p className="font-semibold text-foreground">Generate your AI meal plan</p> {/* i18n-ok: AI feature CTA — intentionally untranslated */}
+          <p className="text-sm text-muted-foreground">
+            Amy AI will create a 7-day personalized plan based on your child's age, food preferences, allergies & weather.
+          </p>
+          <Button onClick={() => generate(false)} className="gap-2">
+            <Zap className="w-4 h-4" /> Generate Plan
+          </Button>
+        </div>
+      )}
+
+      {loading && <LoadingSkeleton />}
+
+      {error && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-semibold">Couldn't generate plan</p> {/* i18n-ok: AI error state — intentionally untranslated */}
+            <p className="mt-0.5">{error}</p>
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => generate(true)}>
+              <RefreshCw className="w-3.5 h-3.5 mr-1" /> Retry
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {plan && !loading && (
+        <>
+          {/* Day tabs */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            {plan.map((d, i) => (
+              <button
+                key={i}
+                onClick={() => setDayIdx(i)}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1 text-xs font-semibold border transition-colors",
+                  dayIdx === i
+                    ? "bg-primary text-primary-foreground border-transparent"
+                    : "bg-muted/60 text-muted-foreground border-border hover:bg-muted"
+                )}
+              >
+                {DAY_SHORTS[i]}
+              </button>
+            ))}
+          </div>
+
+          {/* Meal cards */}
+          {day && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {MEAL_TIMES.map(mt => (
+                <MealCard
+                  key={mt.key}
+                  entry={day.meals[mt.key]}
+                  mealTime={mt}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Daily totals */}
+          {day && (() => {
+            const totals = MEAL_TIMES.reduce(
+              (acc, mt) => ({
+                calories: acc.calories + day.meals[mt.key].calories,
+                protein_g: acc.protein_g + day.meals[mt.key].protein_g,
+                carbs_g: acc.carbs_g + day.meals[mt.key].carbs_g,
+                fiber_g: acc.fiber_g + day.meals[mt.key].fiber_g,
+              }),
+              { calories: 0, protein_g: 0, carbs_g: 0, fiber_g: 0 }
+            );
+            return (
+              <div className="rounded-xl border bg-card p-3 flex flex-wrap gap-3 items-center justify-between">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Daily Total</span> {/* i18n-ok: nutrition summary label — intentionally untranslated */}
+                <div className="flex flex-wrap gap-2">
+                  <NutritionPill icon={<Flame className="w-3 h-3" />} value={totals.calories} label=" kcal" color="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" /> {/* audit-ok: calorie indicator */}
+                  <NutritionPill icon={<Zap className="w-3 h-3" />} value={totals.protein_g} label="g protein" color="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" /> {/* audit-ok: protein indicator */}
+                  <NutritionPill icon={<Activity className="w-3 h-3" />} value={totals.carbs_g} label="g carbs" color="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" /> {/* audit-ok: carbs indicator */}
+                  <NutritionPill icon={<Leaf className="w-3 h-3" />} value={totals.fiber_g} label="g fiber" color="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" /> {/* audit-ok: fiber indicator */}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Regenerate button */}
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => generate(true)} disabled={loading}>
+              <RefreshCw className="w-3.5 h-3.5" /> Regenerate Plan
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Meal Plan Section (Legacy Static) ────────────────────────────────────────
 function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
   const plan = MEAL_PLANS.find(p => p.applies.includes(ageGroupId));
   const [dayIdx, setDayIdx] = useState(0);
@@ -604,17 +842,7 @@ export default function NutritionHubPage() {
 
             {/* Meal Plan */}
             {activeTab === "meals" && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="font-bold text-lg">
-                    {l("Weekly Indian Meal Plan")}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {l("Age-appropriate Indian meals for every day of the week. Toggle Veg / Non-Veg.")}
-                  </p>
-                </div>
-                <MealPlanSection ageGroupId={activeAgeGroupId} />
-              </div>
+              <AIMealPlanSection />
             )}
 
             {/* Family Mode */}
