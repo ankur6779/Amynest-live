@@ -297,7 +297,7 @@ router.post("/notifications/test", async (req, res): Promise<void> => {
   const result = await dispatchNotification({
     userId,
     category,
-    title: "KidSchedule — test notification",
+    title: "AmyNest AI — test notification",
     body: "Your device is set up correctly and receiving notifications.",
     deepLink: "/notification-settings",
     data: { test: true },
