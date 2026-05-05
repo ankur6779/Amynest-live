@@ -39,12 +39,12 @@ const NAV_ITEMS: NavItem[] = [
   { id: "dashboard",     label: "Dashboard",      icon: "home-outline",                route: "/(tabs)/" },
   { id: "routines",      label: "Routines",       icon: "calendar-outline",            route: "/(tabs)/routines" },
   { id: "hub",           label: "Parenting Hub",  icon: "book-outline",                route: "/(tabs)/hub" },
-  { id: "nutrition",     label: "Nutrition Hub",  icon: "nutrition-outline",           route: "/nutrition" },
   // Secondary navigation
   { id: "coach",         label: `${BRAND.aiName} Coach`,      icon: "sparkles-outline",            route: "/(tabs)/coach" },
   { id: "progress",      label: "Progress",       icon: "trending-up-outline",         route: "/progress" },
   { id: "insights",      label: "Insights",       icon: "bar-chart-outline",           route: "/insights" },
   { id: "behavior",      label: "Behavior",       icon: "heart-outline",               route: "/behavior" },
+  { id: "nutrition",     label: "Nutrition Hub",  icon: "nutrition-outline",           route: "/nutrition" },
   { id: "kids-control",  label: "Kids Control",   icon: "shield-checkmark-outline",    route: "/kids-control-center" },
   { id: "children",      label: "Children",       icon: "people-outline",              route: "/children" },
   { id: "rewards",       label: "Rewards",        icon: "star-outline",                route: "/rewards" },
