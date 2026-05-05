@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AGE_GROUPS, NUTRIENTS, MEAL_PLANS, FAMILY_PORTIONS,
   MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient,
@@ -22,31 +23,12 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = "nutrients" | "meals" | "family" | "score";
 
-// ─── Language helper ─────────────────────────────────────────────────────────
-function l(en: string): string {
-  return en;
-}
-
-function lArr(en: string[]): string[] {
-  return en;
-}
-
 // ─── Score Colors ─────────────────────────────────────────────────────────────
-function scoreColor(s: number) {
-  if (s >= 80) return "text-foreground";
-  if (s >= 50) return "text-foreground";
+function scoreColor(_s: number) {
   return "text-foreground";
 }
-function scoreBarColor(s: number) {
-  if (s >= 80) return "bg-primary";
-  if (s >= 50) return "bg-primary";
+function scoreBarColor(_s: number) {
   return "bg-primary";
-}
-function scoreLabel(s: number) {
-  if (s >= 80) return "Excellent 🌟";
-  if (s >= 60) return "Good 👍";
-  if (s >= 40) return "Needs Attention ⚠️";
-  return "Critical 🚨";
 }
 
 // ─── NutrientDetailDialog ────────────────────────────────────────────────────
@@ -58,12 +40,10 @@ function NutrientDetailDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   if (!nutrient) return null;
   const need = nutrient.dailyNeeds[ageGroupId];
   const ageGroup = AGE_GROUPS.find(a => a.id === ageGroupId)!;
-
-  const benefitsText = lArr(nutrient.benefits);
-  const deficiencyText = lArr(nutrient.deficiencySymptoms);
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -71,7 +51,7 @@ function NutrientDetailDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <span className="text-2xl">{nutrient.emoji}</span>
-            {l(nutrient.name)}
+            {nutrient.name}
           </DialogTitle>
         </DialogHeader>
 
@@ -80,7 +60,7 @@ function NutrientDetailDialog({
           <Activity className={cn("h-5 w-5 mt-0.5 shrink-0", nutrient.textClass)} />
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
-              {l(`Daily Need for ${ageGroup.label}`)}
+              {t("nutrition_hub.dialog.daily_need", { age: ageGroup.label })}
             </p>
             <p className={cn("text-2xl font-bold", nutrient.textClass)}>
               {need.amount} <span className="text-base font-medium">{need.unit}</span>
@@ -93,10 +73,10 @@ function NutrientDetailDialog({
         <div>
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
             <CheckCircle2 className="h-4 w-4 text-foreground" />
-            {l("Benefits")}
+            {t("nutrition_hub.dialog.benefits")}
           </h3>
           <ul className="space-y-1.5">
-            {benefitsText.map((b, i) => (
+            {nutrient.benefits.map((b, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
                 <span className="text-foreground mt-0.5">✓</span>
                 <span>{b}</span>
@@ -109,7 +89,7 @@ function NutrientDetailDialog({
         <div>
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
             <Salad className="h-4 w-4 text-foreground" />
-            {l("Indian Food Sources")}
+            {t("nutrition_hub.dialog.food_sources")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {nutrient.sources.map((src, i) => (
@@ -117,9 +97,7 @@ function NutrientDetailDialog({
                 <span className="text-xl">{src.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium truncate">
-                      {l(src.name)}
-                    </span>
+                    <span className="text-sm font-medium truncate">{src.name}</span>
                     {src.type === "veg" ? (
                       <Leaf className="h-3 w-3 text-foreground shrink-0" />
                     ) : (
@@ -137,10 +115,10 @@ function NutrientDetailDialog({
         <div>
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
             <AlertCircle className="h-4 w-4 text-foreground" />
-            {l("Deficiency Signs")}
+            {t("nutrition_hub.dialog.deficiency_signs")}
           </h3>
           <div className="rounded-xl bg-muted border border-border p-3 space-y-1.5">
-            {deficiencyText.map((d, i) => (
+            {nutrient.deficiencySymptoms.map((d, i) => (
               <div key={i} className="flex items-start gap-2 text-sm text-foreground">
                 <span className="mt-0.5 shrink-0">⚠</span>
                 <span>{d}</span>
@@ -152,7 +130,7 @@ function NutrientDetailDialog({
         {/* ICMR Reference */}
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <BookOpen className="h-3 w-3" />
-          {l("Source: ICMR-NIN Nutrient Requirements for Indians (2020) & WHO Guidelines")}
+          {t("nutrition_hub.dialog.source_ref")}
         </p>
       </DialogContent>
     </Dialog>
@@ -165,6 +143,7 @@ function NutrientCard({ nutrient, ageGroupId, onClick }: {
   ageGroupId: AgeGroupId;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const need = nutrient.dailyNeeds[ageGroupId];
   return (
     <button
@@ -179,14 +158,14 @@ function NutrientCard({ nutrient, ageGroupId, onClick }: {
         <ChevronRight className={cn("h-4 w-4 mt-1 opacity-50 group-hover:opacity-100 transition-opacity", nutrient.textClass)} />
       </div>
       <h3 className={cn("font-bold text-base", nutrient.textClass)}>
-        {l(nutrient.name)}
+        {nutrient.name}
       </h3>
       <p className="text-xs text-muted-foreground/70 italic mb-2">
-        {l(nutrient.tagline)}
+        {nutrient.tagline}
       </p>
       <div className={cn("rounded-lg px-2 py-1 text-xs font-semibold", "bg-background/60")}>
         <span className={nutrient.textClass}>{need.amount} {need.unit}</span>
-        <span className="text-muted-foreground"> / {l("day")}</span>
+        <span className="text-muted-foreground"> / {t("nutrition_hub.day")}</span>
       </div>
     </button>
   );
@@ -197,15 +176,13 @@ type MealEntry = { name: string; protein_g: number; carbs_g: number; fiber_g: nu
 type DayPlan = { day: string; meals: { breakfast: MealEntry; mid_morning: MealEntry; lunch: MealEntry; snack: MealEntry; dinner: MealEntry } };
 type WeatherType = "hot" | "cold" | "moderate";
 
-const MEAL_TIMES: { key: keyof DayPlan["meals"]; label: string; emoji: string }[] = [
-  { key: "breakfast",   label: "Breakfast",   emoji: "🌅" },
-  { key: "mid_morning", label: "Mid-Morning",  emoji: "🍎" },
-  { key: "lunch",       label: "Lunch",        emoji: "🌞" },
-  { key: "snack",       label: "Snack",        emoji: "🍪" },
-  { key: "dinner",      label: "Dinner",       emoji: "🌙" },
+const MEAL_TIME_KEYS: { key: keyof DayPlan["meals"]; labelKey: string; emoji: string }[] = [
+  { key: "breakfast",   labelKey: "nutrition_hub.meals.breakfast",   emoji: "🌅" },
+  { key: "mid_morning", labelKey: "nutrition_hub.meals.mid_morning",  emoji: "🍎" },
+  { key: "lunch",       labelKey: "nutrition_hub.meals.lunch",        emoji: "🌞" },
+  { key: "snack",       labelKey: "nutrition_hub.meals.snack",        emoji: "🍪" },
+  { key: "dinner",      labelKey: "nutrition_hub.meals.dinner",       emoji: "🌙" },
 ];
-
-const DAY_SHORTS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 function NutritionPill({ icon, value, label, color }: { icon: React.ReactNode; value: number; label: string; color: string }) {
   return (
@@ -216,12 +193,12 @@ function NutritionPill({ icon, value, label, color }: { icon: React.ReactNode; v
   );
 }
 
-function MealCard({ entry, mealTime }: { entry: MealEntry; mealTime: { label: string; emoji: string } }) {
+function MealCard({ entry, emoji, label }: { entry: MealEntry; emoji: string; label: string }) {
   return (
     <div className="rounded-xl border bg-muted/30 p-3 flex flex-col gap-2">
       <div className="flex items-center gap-1.5">
-        <span className="text-base">{mealTime.emoji}</span>
-        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{mealTime.label}</span>
+        <span className="text-base">{emoji}</span>
+        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{label}</span>
       </div>
       <p className="text-sm font-semibold text-foreground leading-snug">{entry.name}</p>
       <div className="flex flex-wrap gap-1.5 mt-auto">
@@ -238,7 +215,7 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
       <div className="flex gap-2">
-        {DAY_SHORTS.map(d => <div key={d} className="h-7 w-10 rounded-full bg-muted" />)}
+        {[...Array(7)].map((_, i) => <div key={i} className="h-7 w-10 rounded-full bg-muted" />)}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {[...Array(5)].map((_, i) => (
@@ -250,6 +227,7 @@ function LoadingSkeleton() {
 }
 
 function AIMealPlanSection() {
+  const { t } = useTranslation();
   const authFetch = useAuthFetch();
   const [weather, setWeather] = useState<WeatherType>("moderate");
   const [dayIdx, setDayIdx] = useState(0);
@@ -285,10 +263,12 @@ function AIMealPlanSection() {
   const day = plan?.[dayIdx];
 
   const WEATHER_OPTIONS: { val: WeatherType; label: string; icon: React.ReactNode }[] = [
-    { val: "hot",      label: "Hot",      icon: <Sun className="w-3.5 h-3.5" /> },
-    { val: "moderate", label: "Moderate", icon: <Wind className="w-3.5 h-3.5" /> },
-    { val: "cold",     label: "Cold",     icon: <CloudSnow className="w-3.5 h-3.5" /> },
+    { val: "hot",      label: t("nutrition_hub.ai_plan.weather_hot"),      icon: <Sun className="w-3.5 h-3.5" /> },
+    { val: "moderate", label: t("nutrition_hub.ai_plan.weather_moderate"), icon: <Wind className="w-3.5 h-3.5" /> },
+    { val: "cold",     label: t("nutrition_hub.ai_plan.weather_cold"),     icon: <CloudSnow className="w-3.5 h-3.5" /> },
   ];
+
+  const dayShorts = t("nutrition_hub.days", { returnObjects: true }) as string[];
 
   return (
     <div className="space-y-4">
@@ -297,20 +277,20 @@ function AIMealPlanSection() {
         <div>
           <h3 className="font-bold text-lg flex items-center gap-2">
             <Globe className="w-5 h-5 text-primary" />
-            Your Personalized Meal Plan
+            {t("nutrition_hub.ai_plan.title")}
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Based on your family's food style & location</p> {/* i18n-ok: AI feature tagline — intentionally untranslated */}
+          <p className="text-xs text-muted-foreground mt-0.5">{t("nutrition_hub.ai_plan.subtitle")}</p>
         </div>
         {generatedAt && (
           <span className="text-xs text-muted-foreground self-end">
-            Generated {new Date(generatedAt).toLocaleDateString()}
+            {t("nutrition_hub.ai_plan.generated", { date: new Date(generatedAt).toLocaleDateString() })}
           </span>
         )}
       </div>
 
       {/* Weather selector */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-muted-foreground font-medium">Weather:</span>
+        <span className="text-xs text-muted-foreground font-medium">{t("nutrition_hub.ai_plan.weather_label")}</span>
         <div className="flex rounded-full border overflow-hidden">
           {WEATHER_OPTIONS.map(({ val, label, icon }) => (
             <button
@@ -333,12 +313,12 @@ function AIMealPlanSection() {
       {!plan && !loading && (
         <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-6 text-center space-y-3">
           <span className="text-4xl block">🤖</span>
-          <p className="font-semibold text-foreground">Generate your AI meal plan</p> {/* i18n-ok: AI feature CTA — intentionally untranslated */}
+          <p className="font-semibold text-foreground">{t("nutrition_hub.ai_plan.generate_cta")}</p>
           <p className="text-sm text-muted-foreground">
-            Amy AI will create a 7-day personalized plan based on your child's age, food preferences, allergies & weather.
+            {t("nutrition_hub.ai_plan.generate_desc")}
           </p>
           <Button onClick={() => generate(false)} className="gap-2">
-            <Zap className="w-4 h-4" /> Generate Plan
+            <Zap className="w-4 h-4" /> {t("nutrition_hub.ai_plan.generate_btn")}
           </Button>
         </div>
       )}
@@ -349,10 +329,10 @@ function AIMealPlanSection() {
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
           <div>
-            <p className="font-semibold">Couldn't generate plan</p> {/* i18n-ok: AI error state — intentionally untranslated */}
+            <p className="font-semibold">{t("nutrition_hub.ai_plan.error_title")}</p>
             <p className="mt-0.5">{error}</p>
             <Button variant="outline" size="sm" className="mt-2" onClick={() => generate(true)}>
-              <RefreshCw className="w-3.5 h-3.5 mr-1" /> Retry
+              <RefreshCw className="w-3.5 h-3.5 mr-1" /> {t("nutrition_hub.ai_plan.retry")}
             </Button>
           </div>
         </div>
@@ -362,7 +342,7 @@ function AIMealPlanSection() {
         <>
           {/* Day tabs */}
           <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            {plan.map((d, i) => (
+            {plan.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setDayIdx(i)}
@@ -373,7 +353,7 @@ function AIMealPlanSection() {
                     : "bg-muted/60 text-muted-foreground border-border hover:bg-muted"
                 )}
               >
-                {DAY_SHORTS[i]}
+                {Array.isArray(dayShorts) ? dayShorts[i] : ""}
               </button>
             ))}
           </div>
@@ -381,11 +361,12 @@ function AIMealPlanSection() {
           {/* Meal cards */}
           {day && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {MEAL_TIMES.map(mt => (
+              {MEAL_TIME_KEYS.map(mt => (
                 <MealCard
                   key={mt.key}
                   entry={day.meals[mt.key]}
-                  mealTime={mt}
+                  emoji={mt.emoji}
+                  label={t(mt.labelKey)}
                 />
               ))}
             </div>
@@ -393,7 +374,7 @@ function AIMealPlanSection() {
 
           {/* Daily totals */}
           {day && (() => {
-            const totals = MEAL_TIMES.reduce(
+            const totals = MEAL_TIME_KEYS.reduce(
               (acc, mt) => ({
                 calories: acc.calories + day.meals[mt.key].calories,
                 protein_g: acc.protein_g + day.meals[mt.key].protein_g,
@@ -404,7 +385,9 @@ function AIMealPlanSection() {
             );
             return (
               <div className="rounded-xl border bg-card p-3 flex flex-wrap gap-3 items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Daily Total</span> {/* i18n-ok: nutrition summary label — intentionally untranslated */}
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                  {t("nutrition_hub.ai_plan.daily_total")}
+                </span>
                 <div className="flex flex-wrap gap-2">
                   <NutritionPill icon={<Flame className="w-3 h-3" />} value={totals.calories} label=" kcal" color="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" /> {/* audit-ok: calorie indicator */}
                   <NutritionPill icon={<Zap className="w-3 h-3" />} value={totals.protein_g} label="g protein" color="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" /> {/* audit-ok: protein indicator */}
@@ -418,7 +401,7 @@ function AIMealPlanSection() {
           {/* Regenerate button */}
           <div className="flex justify-end">
             <Button variant="outline" size="sm" className="gap-2" onClick={() => generate(true)} disabled={loading}>
-              <RefreshCw className="w-3.5 h-3.5" /> Regenerate Plan
+              <RefreshCw className="w-3.5 h-3.5" /> {t("nutrition_hub.ai_plan.regenerate")}
             </Button>
           </div>
         </>
@@ -429,6 +412,7 @@ function AIMealPlanSection() {
 
 // ─── Meal Plan Section (Legacy Static) ────────────────────────────────────────
 function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
+  const { t } = useTranslation();
   const plan = MEAL_PLANS.find(p => p.applies.includes(ageGroupId));
   const [dayIdx, setDayIdx] = useState(0);
   const [isVeg, setIsVeg] = useState(true);
@@ -437,12 +421,8 @@ function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <span className="text-4xl block mb-2">🍼</span>
-        <p className="font-medium">
-          {l("Exclusive breastfeeding recommended (0–6 months)")}
-        </p>
-        <p className="text-sm">
-          {l("WHO recommends only breast milk for the first 6 months. No other food or water is needed.")}
-        </p>
+        <p className="font-medium">{t("nutrition_hub.breastfeeding.title")}</p>
+        <p className="text-sm">{t("nutrition_hub.breastfeeding.desc")}</p>
       </div>
     );
   }
@@ -451,13 +431,13 @@ function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
   const meal = isVeg ? day.veg : day.nonVeg;
 
   const mealTimes = [
-    { time: `🌅 ${l("Breakfast")}`, key: "breakfast", color: "bg-muted border-border text-foreground" },
+    { time: `🌅 ${t("nutrition_hub.meals.breakfast")}`,   key: "breakfast",  color: "bg-muted border-border text-foreground" },
     meal.midMorning
-      ? { time: `🍎 ${l("Mid-Morning")}`, key: "midMorning", color: "bg-muted border-border text-foreground" }
+      ? { time: `🍎 ${t("nutrition_hub.meals.mid_morning")}`, key: "midMorning", color: "bg-muted border-border text-foreground" }
       : null,
-    { time: `🌞 ${l("Lunch")}`, key: "lunch", color: "bg-muted border-border text-foreground" },
-    { time: `🍪 ${l("Snack")}`, key: "snack", color: "bg-muted border-border text-foreground" },
-    { time: `🌙 ${l("Dinner")}`, key: "dinner", color: "bg-muted border-border text-foreground" },
+    { time: `🌞 ${t("nutrition_hub.meals.lunch")}`,        key: "lunch",      color: "bg-muted border-border text-foreground" },
+    { time: `🍪 ${t("nutrition_hub.meals.snack")}`,        key: "snack",      color: "bg-muted border-border text-foreground" },
+    { time: `🌙 ${t("nutrition_hub.meals.dinner")}`,       key: "dinner",     color: "bg-muted border-border text-foreground" },
   ];
 
   return (
@@ -465,9 +445,7 @@ function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
       {/* Plan Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="font-bold text-lg">
-            {l(plan.ageCategory)}
-          </h3>
+          <h3 className="font-bold text-lg">{plan.ageCategory}</h3>
         </div>
         {/* Veg / Non-veg toggle */}
         <div className="flex rounded-full border overflow-hidden">
@@ -476,14 +454,14 @@ function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
             className={cn("flex items-center gap-1 px-4 py-1.5 text-sm font-medium transition-colors",
               isVeg ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}
           >
-            <Leaf className="h-3.5 w-3.5" /> {l("Veg")}
+            <Leaf className="h-3.5 w-3.5" /> {t("nutrition_hub.veg")}
           </button>
           <button
             onClick={() => setIsVeg(false)}
             className={cn("flex items-center gap-1 px-4 py-1.5 text-sm font-medium transition-colors",
               !isVeg ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground")}
           >
-            <Drumstick className="h-3.5 w-3.5" /> {l("Non-Veg")}
+            <Drumstick className="h-3.5 w-3.5" /> {t("nutrition_hub.non_veg")}
           </button>
         </div>
       </div>
@@ -491,8 +469,8 @@ function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
       {/* Portion note */}
       <div className="rounded-xl bg-muted border border-border p-3 text-sm">
         <p className="text-foreground">
-          📏 <strong>{l("Portions:")}</strong>{""}
-          {l(plan.portionNote)}
+          📏 <strong>{t("nutrition_hub.portions_label")}</strong>{" "}
+          {plan.portionNote}
         </p>
       </div>
 
@@ -532,17 +510,14 @@ function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
 
 // ─── Family Mode ──────────────────────────────────────────────────────────────
 function FamilyModeSection() {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 rounded-xl bg-muted border border-border p-4">
         <Users className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
         <div>
-          <p className="font-semibold text-foreground">
-            {l("Family Mode — One Meal, Different Portions")}
-          </p>
-          <p className="text-sm text-foreground">
-            {l("Cook one meal for the whole family and serve age-appropriate portions. No need for separate cooking!")}
-          </p>
+          <p className="font-semibold text-foreground">{t("nutrition_hub.family.section_title")}</p>
+          <p className="text-sm text-foreground">{t("nutrition_hub.family.section_desc")}</p>
         </div>
       </div>
 
@@ -552,14 +527,14 @@ function FamilyModeSection() {
           <thead>
             <tr className="bg-muted/60 border-b">
               <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground min-w-[140px]">
-                {l("Food Item")}
+                {t("nutrition_hub.family.food_item")}
               </th>
               <th className="text-center px-3 py-2.5 font-semibold text-foreground">🍼<br /><span className="text-xs">6–12m</span></th>
               <th className="text-center px-3 py-2.5 font-semibold text-foreground">🧒<br /><span className="text-xs">1–3y</span></th>
               <th className="text-center px-3 py-2.5 font-semibold text-foreground">📚<br /><span className="text-xs">6–10y</span></th>
               <th className="text-center px-3 py-2.5 font-semibold text-foreground">🌱<br /><span className="text-xs">10–15y</span></th>
-              <th className="text-center px-3 py-2.5 font-semibold text-foreground">👨‍👩<br /><span className="text-xs">{l("Adult")}</span></th>
-              <th className="text-center px-3 py-2.5 font-semibold text-foreground">🤰<br /><span className="text-xs">{l("Pregnant")}</span></th>
+              <th className="text-center px-3 py-2.5 font-semibold text-foreground">👨‍👩<br /><span className="text-xs">{t("nutrition_hub.family.adult")}</span></th>
+              <th className="text-center px-3 py-2.5 font-semibold text-foreground">🤰<br /><span className="text-xs">{t("nutrition_hub.family.pregnant")}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -568,7 +543,7 @@ function FamilyModeSection() {
                 <td className="px-3 py-2.5">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{row.emoji}</span>
-                    <p className="font-medium">{l(row.food)}</p>
+                    <p className="font-medium">{row.food}</p>
                   </div>
                 </td>
                 <td className="px-3 py-2 text-center text-xs">{row.infant}</td>
@@ -582,15 +557,14 @@ function FamilyModeSection() {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-muted-foreground">
-        {l("* Portions are approximate. Adjust based on child's appetite and hunger cues. 1 katori ≈ 150ml cup.")}
-      </p>
+      <p className="text-xs text-muted-foreground">{t("nutrition_hub.family.portions_note")}</p>
     </div>
   );
 }
 
 // ─── Nutrition Score Section ──────────────────────────────────────────────────
 function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
+  const { t } = useTranslation();
   const ageGroup = AGE_GROUPS.find(a => a.id === ageGroupId)!;
 
   const [checkList, setCheckList] = useState<Record<string, boolean>>({});
@@ -598,20 +572,24 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
     setCheckList(prev => ({ ...prev, [key]: !prev[key] }));
 
   const scoreChecklist = [
-    { id: "breakfast",   label: "Had a wholesome breakfast today" },
-    { id: "protein",     label: "Ate a protein source (dal / egg / paneer / meat)" },
-    { id: "dairy",       label: "Consumed dairy or calcium source" },
-    { id: "greens",      label: "Ate green leafy vegetables (palak / methi / etc)" },
-    { id: "fruit",       label: "Had at least 1 fruit today" },
-    { id: "water",       label: "Drank adequate water / fluids" },
-    { id: "noJunk",      label: "Avoided junk food / packaged snacks" },
-    { id: "wholegrains", label: "Whole grains instead of refined (atta roti vs maida)" },
+    { id: "breakfast",   labelKey: "nutrition_hub.score.checklist.breakfast" },
+    { id: "protein",     labelKey: "nutrition_hub.score.checklist.protein" },
+    { id: "dairy",       labelKey: "nutrition_hub.score.checklist.dairy" },
+    { id: "greens",      labelKey: "nutrition_hub.score.checklist.greens" },
+    { id: "fruit",       labelKey: "nutrition_hub.score.checklist.fruit" },
+    { id: "water",       labelKey: "nutrition_hub.score.checklist.water" },
+    { id: "noJunk",      labelKey: "nutrition_hub.score.checklist.no_junk" },
+    { id: "wholegrains", labelKey: "nutrition_hub.score.checklist.wholegrains" },
   ];
 
   const checked = Object.values(checkList).filter(Boolean).length;
   const score = Math.round((checked / scoreChecklist.length) * 100);
 
-  const ageLabelText = l(ageGroup.label);
+  const scoreLabel =
+    score >= 80 ? t("nutrition_hub.score.excellent") :
+    score >= 60 ? t("nutrition_hub.score.good") :
+    score >= 40 ? t("nutrition_hub.score.needs_attention") :
+    t("nutrition_hub.score.critical");
 
   return (
     <div className="space-y-5">
@@ -619,10 +597,10 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
         <Trophy className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
         <div>
           <p className="font-semibold text-foreground">
-            {l(`Daily Nutrition Checklist for ${ageLabelText}`)}
+            {t("nutrition_hub.score.checklist_title", { age: ageGroup.label })}
           </p>
           <p className="text-sm text-foreground">
-            {l("Check what was eaten today to get a quick nutrition score.")}
+            {t("nutrition_hub.score.checklist_subtitle")}
           </p>
         </div>
       </div>
@@ -631,7 +609,7 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
       <div className="rounded-2xl border bg-card p-5 flex items-center gap-5">
         <div className={cn("text-6xl font-black tabular-nums", scoreColor(score))}>{score}</div>
         <div className="flex-1 space-y-2">
-          <p className={cn("font-semibold text-lg", scoreColor(score))}>{scoreLabel(score)}</p>
+          <p className={cn("font-semibold text-lg", scoreColor(score))}>{scoreLabel}</p>
           <div className="h-3 rounded-full bg-muted overflow-hidden">
             <div
               className={cn("h-full rounded-full transition-all duration-500", scoreBarColor(score))}
@@ -639,7 +617,7 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            {l(`${checked} of ${scoreChecklist.length} daily nutrition goals met`)}
+            {t("nutrition_hub.score.goals_met", { checked, total: scoreChecklist.length })}
           </p>
         </div>
       </div>
@@ -666,7 +644,7 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
               {checkList[item.id] && <span className="text-primary-foreground text-xs">✓</span>}
             </div>
             <p className={cn("text-sm font-medium", checkList[item.id] && "line-through text-muted-foreground")}>
-              {l(item.label)}
+              {t(item.labelKey)}
             </p>
           </button>
         ))}
@@ -676,26 +654,22 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
       {score < 80 && (
         <div className="rounded-xl bg-muted border border-border p-4">
           <p className="flex items-center gap-2 font-semibold text-foreground text-sm mb-1">
-            <Brain className="h-4 w-4" /> {l("Amy AI Nutrition Tip")}
+            <Brain className="h-4 w-4" /> {t("nutrition_hub.score.ai_tip_title")}
           </p>
           <p className="text-sm text-foreground">
             {score < 40
-              ? l("Today's nutrition needs a boost! Try adding dal at lunch, a fruit snack, and a glass of milk to quickly improve your score.")
+              ? t("nutrition_hub.score.ai_tip_low")
               : score < 60
-              ? l("You're on the right track! Make sure to include green leafy vegetables — palak, methi, or drumstick leaves are excellent.")
-              : l("Almost there! Swap refined snacks for a handful of roasted chana or nuts to get that final boost.")}
+              ? t("nutrition_hub.score.ai_tip_mid")
+              : t("nutrition_hub.score.ai_tip_high")}
           </p>
         </div>
       )}
       {score >= 80 && (
         <div className="rounded-xl bg-muted border border-border p-4 text-center">
           <p className="text-2xl mb-1">🌟</p>
-          <p className="font-bold text-foreground">
-            {l("Outstanding nutrition day!")}
-          </p>
-          <p className="text-sm text-foreground">
-            {l("Keep it up tomorrow too. Consistency is the key to health.")}
-          </p>
+          <p className="font-bold text-foreground">{t("nutrition_hub.score.outstanding")}</p>
+          <p className="text-sm text-foreground">{t("nutrition_hub.score.keep_it_up")}</p>
         </div>
       )}
     </div>
@@ -704,6 +678,7 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NutritionHubPage() {
+  const { t } = useTranslation();
   const [activeAgeGroupId, setActiveAgeGroupId] = useState<AgeGroupId>("toddler_1_3");
   const [activeTab, setActiveTab] = useState<Tab>("nutrients");
   const [selectedNutrient, setSelectedNutrient] = useState<Nutrient | null>(null);
@@ -713,13 +688,11 @@ export default function NutritionHubPage() {
   const activeAgeGroup = AGE_GROUPS.find(a => a.id === activeAgeGroupId)!;
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "nutrients", label: l("Nutrient Library"), icon: <Apple className="h-4 w-4" /> },
-    { id: "meals",    label: l("Meal Planner"),    icon: <CalendarDays className="h-4 w-4" /> },
-    { id: "family",   label: l("Family Mode"),           icon: <Users className="h-4 w-4" /> },
-    { id: "score",    label: l("Daily Score"),          icon: <Trophy className="h-4 w-4" /> },
+    { id: "nutrients", label: t("nutrition_hub.tabs.nutrients"), icon: <Apple className="h-4 w-4" /> },
+    { id: "meals",    label: t("nutrition_hub.tabs.meals"),    icon: <CalendarDays className="h-4 w-4" /> },
+    { id: "family",   label: t("nutrition_hub.tabs.family"),   icon: <Users className="h-4 w-4" /> },
+    { id: "score",    label: t("nutrition_hub.tabs.score"),    icon: <Trophy className="h-4 w-4" /> },
   ];
-
-  const ageLabelActive = l(activeAgeGroup.label);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -730,17 +703,17 @@ export default function NutritionHubPage() {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-3xl">🥗</span>
             <Badge className="bg-card text-primary-foreground border-border text-xs">
-              {l("Science-backed · WHO / ICMR")}
+              {t("nutrition_hub.badge")}
             </Badge>
           </div>
           <h1 className="text-3xl font-black tracking-tight mt-2">
-            {l("Nutrition Hub")}
+            {t("nutrition_hub.title")}
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {l("Poshan Ka Ghar")}
+            {t("nutrition_hub.subtitle")}
           </p>
           <p className="text-primary-foreground text-sm mt-2 max-w-xl">
-            {l("Age-specific nutrition science for your whole family — backed by ICMR-NIN & WHO guidelines.")}
+            {t("nutrition_hub.description")}
           </p>
         </div>
       </div>
@@ -761,12 +734,8 @@ export default function NutritionHubPage() {
                 )}
               >
                 <span>{ag.emoji}</span>
-                <span className="hidden sm:inline">
-                  {l(ag.label)}
-                </span>
-                <span className="sm:hidden">
-                  {l(ag.label).split(" ")[0]}
-                </span>
+                <span className="hidden sm:inline">{ag.label}</span>
+                <span className="sm:hidden">{ag.label.split(" ")[0]}</span>
               </button>
             ))}
           </div>
@@ -779,10 +748,8 @@ export default function NutritionHubPage() {
           <div className="flex items-start gap-3">
             <span className="text-4xl">{activeAgeGroup.emoji}</span>
             <div className="flex-1 min-w-0">
-              <h2 className={cn("font-bold text-xl", activeAgeGroup.textClass)}>{ageLabelActive}</h2>
-              <p className="text-sm mt-2">
-                {l(activeAgeGroup.description)}
-              </p>
+              <h2 className={cn("font-bold text-xl", activeAgeGroup.textClass)}>{activeAgeGroup.label}</h2>
+              <p className="text-sm mt-2">{activeAgeGroup.description}</p>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {activeAgeGroup.keyFocus.map((f, i) => (
                   <Badge key={i} variant="outline" className={cn("text-xs", activeAgeGroup.textClass, activeAgeGroup.borderClass)}>
@@ -820,11 +787,9 @@ export default function NutritionHubPage() {
             {activeTab === "nutrients" && (
               <div className="space-y-4">
                 <div>
-                  <h2 className="font-bold text-lg">
-                    {l("Nutrient Library")}
-                  </h2>
+                  <h2 className="font-bold text-lg">{t("nutrition_hub.nutrients.title")}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {l(`Tap any nutrient to see benefits, Indian food sources, and daily needs for ${ageLabelActive}.`)}
+                    {t("nutrition_hub.nutrients.subtitle", { age: activeAgeGroup.label })}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -849,12 +814,8 @@ export default function NutritionHubPage() {
             {activeTab === "family" && (
               <div className="space-y-4">
                 <div>
-                  <h2 className="font-bold text-lg">
-                    {l("Family Mode")}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {l("Same Indian meal — different portions for each family member by age. Cook once, serve smart!")}
-                  </p>
+                  <h2 className="font-bold text-lg">{t("nutrition_hub.family.page_title")}</h2>
+                  <p className="text-sm text-muted-foreground">{t("nutrition_hub.family.page_subtitle")}</p>
                 </div>
                 <FamilyModeSection />
               </div>
@@ -871,22 +832,16 @@ export default function NutritionHubPage() {
         <div className="rounded-2xl border border-border bg-muted p-4">
           <div className="flex items-start gap-2 mb-2">
             <AlertTriangle className="h-4 w-4 text-foreground mt-0.5 shrink-0" />
-            <p className="font-semibold text-foreground text-sm">
-              {l("Medical Disclaimer")}
-            </p>
+            <p className="font-semibold text-foreground text-sm">{t("nutrition_hub.disclaimer.title")}</p>
           </div>
-          <p className="text-sm text-foreground">
-            {MEDICAL_DISCLAIMER.en}
-          </p>
+          <p className="text-sm text-foreground">{MEDICAL_DISCLAIMER.en}</p>
 
           <button
             onClick={() => setShowRefs(!showRefs)}
             className="mt-3 flex items-center gap-1 text-xs text-foreground hover:underline"
           >
             <BookOpen className="h-3 w-3" />
-            {showRefs
-              ? l("Hide References")
-              : l("Show References")}
+            {showRefs ? t("nutrition_hub.disclaimer.hide_refs") : t("nutrition_hub.disclaimer.show_refs")}
           </button>
           {showRefs && (
             <ol className="mt-2 space-y-1">
@@ -902,17 +857,13 @@ export default function NutritionHubPage() {
           <div className="flex items-center gap-3">
             <span className="text-2xl">📈</span>
             <div>
-              <p className="font-semibold">
-                {l("Track Growth Progress")}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {l("See height, weight & BMI trends")}
-              </p>
+              <p className="font-semibold">{t("nutrition_hub.growth.title")}</p>
+              <p className="text-sm text-muted-foreground">{t("nutrition_hub.growth.subtitle")}</p>
             </div>
           </div>
           <a href="/progress">
             <Button variant="outline" size="sm" className="shrink-0">
-              {l("View Progress")}
+              {t("nutrition_hub.growth.cta")}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </a>
