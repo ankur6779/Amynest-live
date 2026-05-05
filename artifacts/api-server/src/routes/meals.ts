@@ -781,4 +781,164 @@ router.post("/meals/week-plan", requireAuth, async (req, res): Promise<void> => 
   }
 });
 
+
+// ─── Family Portions ──────────────────────────────────────────────────────────
+// POST /api/meals/family-portions
+// Body: { meal_name: string, country?: string, forceRefresh?: boolean }
+// Returns: { meal, portions: { 6_12m, 1_3y, 4_8y, adult }, feeding_tip, allergy_note, cached }
+
+const FAMILY_PORTIONS_CACHE = new Map<string, { data: unknown; ts: number }>();
+const FAMILY_PORTIONS_TTL_MS = 24 * 60 * 60 * 1000;
+
+function buildFamilyPortionsPrompt(opts: {
+  mealName: string;
+  dietType: string;
+  allergies: string;
+  country: string;
+}): string {
+  const { mealName, dietType, allergies, country } = opts;
+
+  const ft = dietType.toLowerCase().replace(/-/g, "_");
+  const dietRule =
+    ft === "vegan"       ? "Vegan — NO dairy, no eggs, no honey, no meat, no fish"
+    : ft === "jain"      ? "Jain vegetarian — no meat/fish/eggs/onion/garlic/root vegetables"
+    : ft === "eggetarian"? "Eggetarian — eggs OK, no meat, no fish"
+    : ft === "pescatarian"? "Pescatarian — fish/seafood OK, no other meat"
+    : (ft === "non_veg" || ft === "nonveg" || ft === "no_preference")
+                         ? "Non-vegetarian — meat, fish, eggs all OK"
+    : "Vegetarian — no meat, no fish; dairy and eggs OK";
+
+  const allergyBlock = (() => {
+    const list = allergies.split(/[,;]/).map(s => s.trim().toLowerCase()).filter(Boolean);
+    return list.length ? `ALLERGIES (avoid completely, note any modification needed): ${list.join(", ")}` : "";
+  })();
+
+  const c = country.toLowerCase();
+  const unitInstruction =
+    c.includes("india") || c === "in"
+      ? "Use Indian measurements: katori (150ml), cup, tbsp, tsp, small bowl, handful"
+      : ["us", "usa", "united states", "canada", "australia", "uk", "england"].some(x => c.includes(x))
+      ? "Use US/Imperial measurements: cup (240ml), tablespoon, teaspoon, ounce"
+      : "Use metric measurements: grams (g), millilitres (ml), tablespoon";
+
+  return `You are a pediatric nutrition expert. Given a dish, generate age-appropriate portion sizes for a family meal.
+
+DISH: ${mealName}
+DIET: ${dietRule}
+${allergyBlock ? allergyBlock + "\n" : ""}UNITS: ${unitInstruction}
+
+Generate portions for exactly 4 age groups:
+- 6-12 months (infant): MUST be mashed or pureed, very small, no choking hazards
+- 1-3 years (toddler): small portions, soft textures, no whole nuts or hard chunks
+- 4-8 years (child): moderate portions, normal texture unless dish is hard/crunchy
+- Adult: full standard portion
+
+Rules:
+1. texture field: brief note ≤6 words describing modification needed; use null for adult or if no modification needed
+2. If the dish contains a known choking hazard for infants/toddlers, note the modification in texture
+3. If an allergy ingredient is present, put the substitution / omission note in allergy_note
+4. feeding_tip: one practical, dish-specific tip ≤15 words; null if nothing to add
+5. Output ONLY valid JSON — no prose, no markdown fences
+
+OUTPUT:
+{
+  "meal": "${mealName}",
+  "portions": {
+    "6_12m": { "amount": "...", "texture": "..." or null },
+    "1_3y":  { "amount": "...", "texture": "..." or null },
+    "4_8y":  { "amount": "...", "texture": "..." or null },
+    "adult": { "amount": "...", "texture": null }
+  },
+  "feeding_tip": "..." or null,
+  "allergy_note": "..." or null
+}`;
+}
+
+router.post("/meals/family-portions", requireAuth, async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Login required." });
+    return;
+  }
+
+  const mealName = String(req.body?.meal_name ?? "").trim().slice(0, 100);
+  if (!mealName) {
+    res.status(400).json({ error: "meal_name is required." });
+    return;
+  }
+
+  const country = String(req.body?.country ?? "India").slice(0, 50);
+  const forceRefresh = req.body?.forceRefresh === true;
+
+  const [children, parentProfiles] = await Promise.all([
+    db.select().from(childrenTable).where(eq(childrenTable.userId, userId)),
+    db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId)),
+  ]);
+  const pp = parentProfiles[0];
+  const child = children[0];
+  const dietType: string = child?.dietType ?? pp?.dietType ?? pp?.foodType ?? "veg";
+  const allergies: string = child?.allergies ?? pp?.allergies ?? "";
+
+  const cacheKey = `fp:${userId}:${mealName.toLowerCase()}:${country}:${dietType}:${allergies}`;
+  const existing = FAMILY_PORTIONS_CACHE.get(cacheKey);
+  if (!forceRefresh && existing && Date.now() - existing.ts < FAMILY_PORTIONS_TTL_MS) {
+    res.set("Cache-Control", "private, max-age=3600");
+    res.set("X-Cache", "HIT");
+    res.json({ ...(existing.data as object), cached: true });
+    return;
+  }
+
+  req.log.info({ mealName, country, dietType }, "[meals/family-portions] generating");
+
+  try {
+    const { openai } = await import("@workspace/integrations-openai-ai-server");
+    const prompt = buildFamilyPortionsPrompt({ mealName, dietType, allergies, country });
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are a pediatric nutrition expert. Output ONLY strict JSON, no prose, no markdown." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 500,
+      response_format: { type: "json_object" },
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    let parsed: unknown;
+    try { parsed = JSON.parse(raw); } catch {
+      logger.warn(`[meals/family-portions] JSON parse failed raw=${raw.slice(0, 200)}`);
+      res.status(502).json({ error: "AI returned invalid JSON. Please retry." });
+      return;
+    }
+
+    const obj = parsed as Record<string, unknown>;
+    const portions = (obj.portions ?? {}) as Record<string, Record<string, unknown>>;
+    const safeStr = (v: unknown, max: number): string | null =>
+      v && String(v).trim() ? String(v).slice(0, max) : null;
+
+    const sanitised = {
+      meal: String(obj.meal ?? mealName).slice(0, 100),
+      portions: {
+        "6_12m": { amount: String(portions["6_12m"]?.amount ?? "—").slice(0, 80), texture: safeStr(portions["6_12m"]?.texture, 60) },
+        "1_3y":  { amount: String(portions["1_3y"]?.amount  ?? "—").slice(0, 80), texture: safeStr(portions["1_3y"]?.texture,  60) },
+        "4_8y":  { amount: String(portions["4_8y"]?.amount  ?? "—").slice(0, 80), texture: safeStr(portions["4_8y"]?.texture,  60) },
+        "adult": { amount: String(portions["adult"]?.amount  ?? "—").slice(0, 80), texture: null },
+      },
+      feeding_tip:  safeStr(obj.feeding_tip,  150),
+      allergy_note: safeStr(obj.allergy_note, 250),
+    };
+
+    FAMILY_PORTIONS_CACHE.set(cacheKey, { data: sanitised, ts: Date.now() });
+    res.set("Cache-Control", "private, max-age=3600");
+    res.set("X-Cache", "MISS");
+    res.json({ ...sanitised, cached: false });
+  } catch (err) {
+    logger.error(`[meals/family-portions] error ${String(err)}`);
+    res.status(503).json({ error: "AI service unavailable. Please retry." });
+  }
+});
+
 export default router;
+

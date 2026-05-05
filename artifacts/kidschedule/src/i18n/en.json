@@ -3618,7 +3618,21 @@
       "food_item": "Food Item",
       "adult": "Adult",
       "pregnant": "Pregnant",
-      "portions_note": "* Portions are approximate. Adjust based on child's appetite and hunger cues. 1 katori ≈ 150ml cup."
+      "portions_note": "* Portions are approximate. Adjust based on child's appetite and hunger cues. 1 katori ≈ 150ml cup.",
+      "age_6_12m": "6–12 Months",
+      "age_1_3y": "1–3 Years",
+      "age_4_8y": "4–8 Years",
+      "age_adult": "Adult",
+      "enter_dish": "Enter a dish name",
+      "dish_placeholder": "e.g. Pasta, Dal Chawal, Chicken Soup…",
+      "generate_btn": "Generate Portions",
+      "use_from_planner": "Use from Meal Planner: {{meal}}",
+      "empty_hint": "Enter any dish above — AI will suggest age-appropriate portions for the whole family.",
+      "allergy_modified": "Allergy modified",
+      "smart_text": "Same meal, different portions — no separate cooking needed",
+      "feeding_tip_label": "Amy's Tip",
+      "regenerate": "Regenerate",
+      "error_retry": "Retry"
     },
     "score": {
       "checklist_title": "Daily Nutrition Checklist for {{age}}",
