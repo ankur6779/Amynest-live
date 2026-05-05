@@ -58,6 +58,22 @@
         </activity>
 
         <!--
+            FCM default notification icon and colour shown in the system tray
+            when FCM itself (not KidScheduleFcmService) displays the notification
+            (i.e. notification messages while app is killed — data-only messages
+            are always handled by KidScheduleFcmService.onMessageReceived).
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_accent" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="default" />
+
+        <!--
             KidScheduleFcmService: receives FCM messages when the app is in the
             background or killed. channelId "default" matches what the backend
             dispatch service sends in android.notification.channelId.

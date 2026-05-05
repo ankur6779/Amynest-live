@@ -272,7 +272,10 @@ async function sendFcmWebPush(
         requireInteraction: false,
       },
       fcmOptions: {
-        link: input.deepLink ?? "/",
+        // FCM requires an absolute URL — relative paths are silently ignored.
+        link: input.deepLink
+          ? `https://amynest.in${input.deepLink.startsWith("/") ? input.deepLink : `/${input.deepLink}`}`
+          : "https://amynest.in/",
       },
     },
     data: {
