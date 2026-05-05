@@ -7,15 +7,18 @@ import { useToast } from "@/hooks/use-toast";
  *
  * Background: Firebase's service worker (`onBackgroundMessage`) only fires
  * when the tab is hidden or closed. When the app is open, FCM delivers the
- * message directly to the page via `onMessage` — but it does NOT
- * automatically show a system notification (the service worker is bypassed).
- * Without this handler, foreground notifications are silently dropped.
+ * message directly to the page via `onMessage` — the service worker is
+ * bypassed and NO system notification appears automatically.
  *
- * This component subscribes to `onMessage` and surfaces each arriving FCM
- * payload as an in-app toast so the user always sees the notification
- * regardless of whether the app tab is open or in the background.
+ * Fix: on each incoming `onMessage` payload we do two things:
+ *  1. Show a real OS-level notification banner via
+ *     `serviceWorkerRegistration.showNotification()`. This produces the
+ *     same heads-up popup the user would see in background, even while the
+ *     tab is active and focused.
+ *  2. Also show an in-app toast so the notification is visible inside the
+ *     app UI (useful when the OS has suppressed banners, e.g. Focus mode).
  *
- * Rendered once at the app level (AppCore). Returns null — no UI of its own.
+ * Rendered once at the app root (AppCore). Returns null — no UI of its own.
  */
 export function FcmForegroundHandler() {
   const { isSignedIn } = useAuth();
@@ -40,6 +43,37 @@ export function FcmForegroundHandler() {
         unsubscribe = onMessage(messaging, (payload) => {
           const title = payload.notification?.title ?? "AmyNest";
           const body = payload.notification?.body ?? "";
+          const category =
+            payload.data && typeof payload.data["category"] === "string"
+              ? payload.data["category"]
+              : "amynest";
+
+          // ── 1. OS-level system notification banner ──────────────────────
+          // `onMessage` fires only in the foreground; the SW is skipped, so
+          // we must explicitly ask the active service worker registration to
+          // show the notification. This is the same call the SW makes in
+          // `onBackgroundMessage`, so the result looks identical to the user.
+          navigator.serviceWorker.ready
+            .then((reg) => {
+              // Cast to `object` so TS doesn't error on `renotify` / `badge`
+              // which are valid NotificationOptions fields in all modern
+              // browsers but missing from older lib.dom typings.
+              return reg.showNotification(title, {
+                body: body || undefined,
+                icon: "/pwa-icon-192.png",
+                badge: "/pwa-icon-192.png",
+                tag: category,
+                renotify: true,
+                data: payload.data ?? {},
+              } as object as NotificationOptions);
+            })
+            .catch(() => {
+              // Service worker not ready yet — toast fallback below still fires.
+            });
+
+          // ── 2. In-app toast ─────────────────────────────────────────────
+          // Keeps the message visible inside the UI even when the OS has
+          // suppressed banners (e.g. Do Not Disturb / Focus mode).
           toast({
             title,
             description: body || undefined,
