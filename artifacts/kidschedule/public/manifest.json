@@ -1,7 +1,7 @@
 {
-  "name": "KidSchedule — AI Routine Planner",
-  "short_name": "KidSchedule",
-  "description": "AI-powered routine planner and parenting coach. Personalized schedules, meal plans, and behavior coaching for your child.",
+  "name": "AmyNest AI — Smart Parenting Coach",
+  "short_name": "AmyNest AI",
+  "description": "AI-powered parenting coach. Personalized routines, meal plans, and behavior coaching for your child.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -31,7 +31,7 @@
       "sizes": "1200x630",
       "type": "image/jpeg",
       "form_factor": "wide",
-      "label": "KidSchedule Dashboard"
+      "label": "AmyNest AI Dashboard"
     }
   ],
   "shortcuts": [
