@@ -120,7 +120,8 @@ vi.mock("expo-notifications", () => ({
   getPermissionsAsync: vi.fn().mockResolvedValue({ status: "undetermined", granted: false }),
   requestPermissionsAsync: vi.fn().mockResolvedValue({ status: "granted", granted: true }),
   setNotificationChannelAsync: vi.fn().mockResolvedValue(undefined),
-  AndroidImportance: { DEFAULT: 3 },
+  setNotificationHandler: vi.fn(),
+  AndroidImportance: { DEFAULT: 3, HIGH: 4, MAX: 5 },
 }));
 
 vi.mock("expo-haptics", () => ({
