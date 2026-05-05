@@ -3547,5 +3547,113 @@
       "day_streak": "day streak",
       "best": "best"
     }
+  },
+  "nutrition_hub": {
+    "badge": "Science-backed · WHO / ICMR",
+    "title": "Nutrition Hub",
+    "subtitle": "Poshan Ka Ghar",
+    "description": "Age-specific nutrition science for your whole family — backed by ICMR-NIN & WHO guidelines.",
+    "day": "day",
+    "veg": "Veg",
+    "non_veg": "Non-Veg",
+    "portions_label": "Portions:",
+    "tabs": {
+      "nutrients": "Nutrient Library",
+      "meals": "Meal Planner",
+      "family": "Family Mode",
+      "score": "Daily Score"
+    },
+    "days": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
+    "meals": {
+      "breakfast": "Breakfast",
+      "mid_morning": "Mid-Morning",
+      "lunch": "Lunch",
+      "snack": "Snack",
+      "dinner": "Dinner"
+    },
+    "dialog": {
+      "daily_need": "Daily Need for {{age}}",
+      "benefits": "Benefits",
+      "food_sources": "Indian Food Sources",
+      "deficiency_signs": "Deficiency Signs",
+      "source_ref": "Source: ICMR-NIN Nutrient Requirements for Indians (2020) & WHO Guidelines"
+    },
+    "ai_plan": {
+      "title": "Your Personalized Meal Plan",
+      "subtitle": "Based on your family's food style & location",
+      "generated": "Generated {{date}}",
+      "weather_label": "Weather:",
+      "weather_hot": "Hot",
+      "weather_moderate": "Moderate",
+      "weather_cold": "Cold",
+      "generate_cta": "Generate your AI meal plan",
+      "generate_desc": "Amy AI will create a 7-day personalized plan based on your child's age, food preferences, allergies & weather.",
+      "generate_btn": "Generate Plan",
+      "error_title": "Couldn't generate plan",
+      "retry": "Retry",
+      "daily_total": "Daily Total",
+      "regenerate": "Regenerate Plan"
+    },
+    "nutrients": {
+      "title": "Nutrient Library",
+      "subtitle": "Tap any nutrient to see benefits, Indian food sources, and daily needs for {{age}}."
+    },
+    "breastfeeding": {
+      "title": "Exclusive breastfeeding recommended (0–6 months)",
+      "desc": "WHO recommends only breast milk for the first 6 months. No other food or water is needed."
+    },
+    "family": {
+      "page_title": "Family Mode",
+      "page_subtitle": "Same Indian meal — different portions for each family member by age. Cook once, serve smart!",
+      "section_title": "Family Mode — One Meal, Different Portions",
+      "section_desc": "Cook one meal for the whole family and serve age-appropriate portions. No need for separate cooking!",
+      "food_item": "Food Item",
+      "adult": "Adult",
+      "pregnant": "Pregnant",
+      "portions_note": "* Portions are approximate. Adjust based on child's appetite and hunger cues. 1 katori ≈ 150ml cup."
+    },
+    "score": {
+      "checklist_title": "Daily Nutrition Checklist for {{age}}",
+      "checklist_subtitle": "Check what was eaten today to get a quick nutrition score.",
+      "goals_met": "{{checked}} of {{total}} daily nutrition goals met",
+      "excellent": "Excellent 🌟",
+      "good": "Good 👍",
+      "needs_attention": "Needs Attention ⚠️",
+      "critical": "Critical 🚨",
+      "checklist": {
+        "breakfast": "Had a wholesome breakfast today",
+        "protein": "Ate a protein source (dal / egg / paneer / meat)",
+        "dairy": "Consumed dairy or calcium source",
+        "greens": "Ate green leafy vegetables (palak / methi / etc)",
+        "fruit": "Had at least 1 fruit today",
+        "water": "Drank adequate water / fluids",
+        "no_junk": "Avoided junk food / packaged snacks",
+        "wholegrains": "Whole grains instead of refined (atta roti vs maida)"
+      },
+      "ai_tip_title": "Amy AI Nutrition Tip",
+      "ai_tip_low": "Today's nutrition needs a boost! Try adding dal at lunch, a fruit snack, and a glass of milk to quickly improve your score.",
+      "ai_tip_mid": "You're on the right track! Make sure to include green leafy vegetables — palak, methi, or drumstick leaves are excellent.",
+      "ai_tip_high": "Almost there! Swap refined snacks for a handful of roasted chana or nuts to get that final boost.",
+      "outstanding": "Outstanding nutrition day!",
+      "keep_it_up": "Keep it up tomorrow too. Consistency is the key to health."
+    },
+    "growth": {
+      "title": "Track Growth Progress",
+      "subtitle": "See height, weight & BMI trends",
+      "cta": "View Progress"
+    },
+    "disclaimer": {
+      "title": "Medical Disclaimer",
+      "hide_refs": "Hide References",
+      "show_refs": "Show References"
+    }
   }
 }
