@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        Production: only allow HTTPS for amynest.in (standard).
+        If you want to test against a local dev server, add a debug-overrides
+        block here — never in release.
+    -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">amynest.in</domain>
+    </domain-config>
+</network-security-config>
