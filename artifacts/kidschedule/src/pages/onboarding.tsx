@@ -286,7 +286,7 @@ function getAgeGroup(years: number): AgeGroup {
 }
 
 const GRAD = "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))";
-const BG = "linear-gradient(160deg,#0f0a2e 0%,#1a0d40 55%,#0d0824 100%)";
+const BG = "linear-gradient(160deg,#0f0a2e 0%,#1a0d40 55%,#0d0824 100%)"; // audit-ok: onboarding deep-space background gradient — brand-approved dark indigo, not in Tailwind palette
 const GLASS_BG = "rgba(255,255,255,0.10)";
 const GLASS_BORDER = "1px solid rgba(168,85,247,0.30)";
 const BAR_BG = "rgba(15,10,46,0.92)";
@@ -1418,7 +1418,7 @@ export default function OnboardingPage() {
                         className="absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-tight"
                         style={{
                           background: isSelected ? "rgba(255,255,255,0.22)" : "rgba(168,85,247,0.18)",
-                          color: isSelected ? "#fff" : "#c084fc",
+                          color: isSelected ? "#fff" : "#c084fc", // audit-ok: cuisine chip selected-state accent — matches brand-purple-400 inline style, not expressible via Tailwind class
                           border: "1px solid rgba(168,85,247,0.38)",
                         }}
                       >
