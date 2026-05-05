@@ -21,6 +21,16 @@ if (!isExpoGo && Platform.OS !== "web") {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     Notifications = require("expo-notifications") as typeof import("expo-notifications");
+    // Must be called once at module-load time (before any notification arrives).
+    // Without this handler, Expo silently drops every notification while the
+    // app is in the foreground — the server shows "sent" but nothing appears.
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
   } catch {
     Notifications = null;
   }
@@ -57,7 +67,7 @@ export function usePushRegistration(): void {
         if (Platform.OS === "android") {
           await Notifications.setNotificationChannelAsync("default", {
             name: "Default",
-            importance: Notifications.AndroidImportance.DEFAULT,
+            importance: Notifications.AndroidImportance.HIGH,
             sound: "default",
             vibrationPattern: [0, 250, 250, 250],
             lightColor: "#7B3FF2",

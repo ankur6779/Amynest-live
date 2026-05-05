@@ -419,7 +419,7 @@ export default function OnboardingScreen() {
           try {
             await Notifications.setNotificationChannelAsync("default", {
               name: "Default",
-              importance: Notifications.AndroidImportance.DEFAULT,
+              importance: Notifications.AndroidImportance.HIGH,
               sound: "default",
               vibrationPattern: [0, 250, 250, 250],
               lightColor: brand.purple500,
