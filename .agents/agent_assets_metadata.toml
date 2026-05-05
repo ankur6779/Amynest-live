@@ -179,3 +179,39 @@ id = "nwwj6SfFcly6N6zo65wUE"
 uri = "file://attached_assets/generated_images/phonics_apple.png"
 type = "image"
 title = "Phonics Apple (A) — kid-friendly illustration"
+
+[[outputs]]
+id = "CJ_-oe3NYYkdgUS2SKhyS"
+uri = "file://artifacts/kidschedule/public/android-icons/ic_notification.png"
+type = "image"
+title = "ic_notification.png — Status bar icon (white monochrome)"
+
+[[outputs]]
+id = "evsJ5Q9VGMzSv3wNw05kI"
+uri = "file://artifacts/kidschedule/public/android-icons/ic_launcher_mdpi_48.png"
+type = "image"
+title = "ic_launcher — mdpi (48×48)"
+
+[[outputs]]
+id = "Zrh9Ae7MNeLYPoGz0Os9Y"
+uri = "file://artifacts/kidschedule/public/android-icons/ic_launcher_hdpi_72.png"
+type = "image"
+title = "ic_launcher — hdpi (72×72)"
+
+[[outputs]]
+id = "SCqGT7eIXR2QN3i9V_skK"
+uri = "file://artifacts/kidschedule/public/android-icons/ic_launcher_xhdpi_96.png"
+type = "image"
+title = "ic_launcher — xhdpi (96×96)"
+
+[[outputs]]
+id = "uHC53Bk1jVAycg1Ezhu4C"
+uri = "file://artifacts/kidschedule/public/android-icons/ic_launcher_xxhdpi_144.png"
+type = "image"
+title = "ic_launcher — xxhdpi (144×144)"
+
+[[outputs]]
+id = "5Flst9Hx65ZRXx9EVFOhA"
+uri = "file://artifacts/kidschedule/public/android-icons/ic_launcher_xxxhdpi_192.png"
+type = "image"
+title = "ic_launcher — xxxhdpi (192×192)"
