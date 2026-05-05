@@ -26,7 +26,11 @@ if (!isExpoGo && Platform.OS !== "web") {
     // app is in the foreground — the server shows "sent" but nothing appears.
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: true,
+        // shouldShowAlert is deprecated in expo-notifications 0.32+; use the
+        // two new fields that split foreground display into banner (heads-up)
+        // and notification-shade visibility.
+        shouldShowBanner: true,
+        shouldShowList: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
       }),
