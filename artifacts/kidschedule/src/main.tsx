@@ -19,6 +19,28 @@ const mark = (p: string) => {
 
 mark("bundle-loaded");
 
+// Register the root service worker so Chrome treats the site as a real
+// installable PWA (WebAPK) on Android. Without a SW at scope "/" that
+// has a fetch handler, "Install app" creates only a launcher shortcut
+// and push notifications appear under the "Chrome" branding instead of
+// the AmyNest app name + icon. firebase-messaging-sw.js continues to
+// handle FCM push at its own narrower scope and is unaffected.
+//
+// We skip this in development so Vite's HMR dev server isn't shadowed.
+if (
+  typeof window !== "undefined" &&
+  "serviceWorker" in navigator &&
+  import.meta.env.PROD
+) {
+  const swBase = import.meta.env.BASE_URL.replace(/\/$/, "");
+  navigator.serviceWorker
+    .register(`${swBase}/sw.js`, { scope: `${swBase}/`, updateViaCache: "none" })
+    .catch(() => {
+      // Best-effort: install criteria still met by firebase-messaging-sw.js
+      // for users who already have a WebAPK; don't crash the app.
+    });
+}
+
 const root = createRoot(document.getElementById("root")!);
 
 root.render(<App />);
