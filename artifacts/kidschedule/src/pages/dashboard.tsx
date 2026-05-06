@@ -12,6 +12,7 @@ import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
 import { getTotalPoints, getBadges, getRewards, redeemReward, type Reward } from "@/lib/rewards";
+import { AppWalkthrough } from "@/components/app-walkthrough";
 const POLL_INTERVAL_MS = 30_000;
 type RoutineItem = {
   time: string;
@@ -840,6 +841,7 @@ export default function Dashboard() {
     // audit-block-ignore-start
     <div data-on-dark className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 -mb-20 md:-mb-8 px-4 md:px-8 pt-4 md:pt-8 pb-24 md:pb-12 bg-[#0a1024] min-h-[calc(100vh-2rem)]">
       {/* audit-block-ignore-end */}
+      <AppWalkthrough />
       <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-8">
 
       {/* ── Hero Greeting ───────────────────────────────────────── */}

@@ -3673,5 +3673,32 @@
       "hide_refs": "Hide References",
       "show_refs": "Show References"
     }
+  },
+  "walkthrough": {
+    "aria_label": "App feature tour",
+    "step_of": "Step {{current}} of {{total}}",
+    "next": "Next",
+    "skip": "Skip tour",
+    "start_exploring": "Start Exploring",
+    "step1": {
+      "title": "Welcome to AmyNest! 🎉",
+      "desc": "Your AI parenting companion is ready. Here's a quick look at the key features that make everyday parenting a little easier."
+    },
+    "step2": {
+      "title": "AI-Powered Routines",
+      "desc": "Generate personalised daily schedules for your child — adapted to their age, school timings, and routine needs."
+    },
+    "step3": {
+      "title": "Parenting Hub",
+      "desc": "30+ expert tools — bedtime stories, skill activities, nutrition guides, and more — all tailored to your child's age."
+    },
+    "step4": {
+      "title": "Amy AI Coach",
+      "desc": "Get warm, practical parenting advice from Amy. From toddler tantrums to teenage milestones — she's always here."
+    },
+    "step5": {
+      "title": "Track Progress",
+      "desc": "Watch your child grow! Log behaviours, track daily streaks, and celebrate milestones together."
+    }
   }
 }
