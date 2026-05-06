@@ -596,7 +596,10 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_ptm_prep");
                     router.push({
                       pathname: "/ptm-prep" as never,
-                      params: effective ? { childId: effective.id, childName: effective.name } as never : undefined,
+                      params: {
+                        ...(effective ? { childId: effective.id, childName: effective.name } : {}),
+                        freshlyOpened: "1",
+                      } as never,
                     });
                   }}
                   style={{ borderRadius: 18, overflow: "hidden" }}
