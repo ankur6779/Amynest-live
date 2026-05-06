@@ -34,7 +34,7 @@
     "android": {
       "package": "com.amynest.ai",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#F8F7FF"
@@ -98,6 +98,7 @@
       "@react-native-community/datetimepicker",
       "expo-audio",
       "expo-localization",
+      "react-native-purchases",
       [
         "expo-build-properties",
         {
