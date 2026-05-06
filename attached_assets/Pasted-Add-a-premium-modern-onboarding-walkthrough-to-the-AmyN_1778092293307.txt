@@ -1,0 +1,66 @@
+Add a premium modern onboarding walkthrough to the AmyNest AI PWA app with smooth animations and mobile-first responsive UI.
+
+Requirements:
+
+1. Create a 3-screen onboarding flow for first-time users.
+
+Screen 1:
+Title: "Welcome to AmyNest AI"
+Subtitle: "Smart AI-powered parenting and learning platform for kids."
+Illustration idea: Happy parent and child using a tablet.
+
+Screen 2:
+Title: "Interactive Learning"
+Subtitle: "Phonics, stories, activities, and personalized learning experiences."
+Illustration idea: Kids learning with colorful educational elements.
+
+Screen 3:
+Title: "Parent Hub & AI Guidance"
+Subtitle: "Track progress, discover activities, and get AI-powered parenting support."
+Illustration idea: Parent dashboard with progress charts and AI assistant.
+
+2. UI/UX Requirements:
+- Premium modern design
+- Soft child-friendly colors
+- Rounded cards and buttons
+- Smooth slide animations
+- Mobile optimized
+- Elegant typography
+- Minimal clean layout
+- Add subtle gradients
+- Add progress indicators/dots
+- Add Skip and Next buttons
+- Final button should say "Get Started"
+
+3. Functional Requirements:
+- Show onboarding only for first-time users
+- Save onboarding completion in localStorage
+- If onboarding completed, skip directly to home screen
+- Add smooth transition animations between slides
+- Make onboarding fully responsive for Android PWA
+
+4. Technical Requirements:
+- Use React components
+- Use Framer Motion for animations if available
+- Use TailwindCSS styling
+- Keep code modular and production-ready
+- Optimize performance for mobile devices
+
+5. Accessibility:
+- Proper contrast ratio
+- Large touch-friendly buttons
+- Readable text sizes
+- Screen-reader friendly labels
+
+6. Add extra polish:
+- Floating animated background elements
+- Smooth fade + slide transitions
+- Small bounce animation on CTA buttons
+- App branding consistency with AmyNest AI
+
+7. Important:
+- Do not break existing routing or authentication flow
+- Integrate onboarding cleanly into existing app structure
+- Ensure compatibility with Android WebView/PWA wrapper
+
+Generate complete production-ready code with all required components and styling.
