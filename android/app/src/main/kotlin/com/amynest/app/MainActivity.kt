@@ -70,6 +70,11 @@ class MainActivity : AppCompatActivity() {
         }
         setContentView(webView)
 
+        // Wire the Google Play Billing bridge. The web page probes
+        // `window.AmyNestBillingNative` and uses it for in-app subscriptions
+        // (required by Play Store policy when app is distributed via Play).
+        BillingBridge.installOn(this, webView)
+
         // Wire the native push bridge. The permissionRequester lambda is called
         // when the web page sends { action: "requestPermission" }.
         pushBridge = PushBridge(

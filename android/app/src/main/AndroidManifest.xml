@@ -7,6 +7,8 @@
         The app requests this at runtime in MainActivity.
     -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Required for Google Play Billing (in-app purchases / subscriptions). -->
+    <uses-permission android:name="com.android.vending.BILLING" />
 
     <application
         android:name=".AmyNestApp"
