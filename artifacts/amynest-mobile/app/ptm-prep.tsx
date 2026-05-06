@@ -2,7 +2,7 @@ import React, {  useEffect, useMemo, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert,
 } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { brand, palette } from "@/constants/colors";
+import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 
 const STAGE_ORDER: PtmStage[] = ["prepare", "attend", "act"];
 
@@ -42,9 +43,14 @@ export default function PtmPrepScreen() {
   const colors = useColors();
   const { theme } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const params = useLocalSearchParams<{ childId?: string; childName?: string }>();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ childId?: string; childName?: string; freshlyOpened?: string }>();
   const childId = typeof params.childId === "string" ? params.childId : undefined;
   const childName = typeof params.childName === "string" ? params.childName : undefined;
+  const freshlyOpened = params.freshlyOpened === "1";
+  const { isFeatureLocked, isLoaded } = useFeatureUsage();
+  const locked = isLoaded && !freshlyOpened && isFeatureLocked("hub_ptm_prep");
+
   const [session, setSession] = useState<PtmSession | null>(null);
   const [history, setHistory] = useState<PtmSession[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -83,6 +89,47 @@ export default function PtmPrepScreen() {
     const next = archiveSession(history, session);
     setHistory(next); await saveHistory(next); setSession(null);
   };
+
+  if (locked) {
+    return (
+      <View style={styles.root}>
+        <LinearGradient colors={theme.gradient} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
+        <Stack.Screen options={{
+          headerTitle: "PTM Prep",
+          headerStyle: { backgroundColor: "#0f0c29" }, // audit-ok: intentional dark bg / custom color
+          headerTintColor: colors.foreground,
+        }} />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 20 }}>
+          <LinearGradient colors={[brand.violet500, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 24, padding: 24, alignItems: "center", gap: 12, width: "100%" }}>
+            <Text style={{ fontSize: 40 }}>🧾</Text>
+            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 20, textAlign: "center" }}>{t("screens.ptm_prep.ptm_prep_assistant")}</Text>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, textAlign: "center", lineHeight: 19 }}>
+              {t("screens.ptm_prep.a_simple_prepare_attend_act_flow_for_you")}
+            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
+              <Ionicons name="lock-closed" size={13} color="#fff" />
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>{t("parent_hub.badges.premium_feature")}</Text>
+            </View>
+          </LinearGradient>
+          <Text style={{ color: colors.textMuted, fontSize: 13, textAlign: "center", lineHeight: 19 }}>
+            {t("screens.ptm_prep.paywall_locked_desc")}
+          </Text>
+          <Pressable
+            onPress={() => router.push({ pathname: "/paywall", params: { reason: "hub_ptm_prep" } } as never)}
+            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1, width: "100%", borderRadius: 999, overflow: "hidden" })}
+          >
+            <LinearGradient colors={[brand.violet600, brand.pink500]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, paddingHorizontal: 24, borderRadius: 999 }}>
+              <Ionicons name="sparkles" size={16} color="#fff" />
+              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("screens.ptm_prep.unlock_premium")}</Text>
+            </LinearGradient>
+          </Pressable>
+          <Pressable onPress={() => router.back()}>
+            <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t("screens.ptm_prep.go_back")}</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>

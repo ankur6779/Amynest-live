@@ -1525,7 +1525,10 @@
       "a_simple_prepare_attend_act_flow_for_you": "A simple Prepare → Attend → Act flow for your child's next Parent-Teacher Meeting.",
       "i_m_ready_start_the_meeting": "I'm ready — start the meeting",
       "tick_off_questions_you_ve_asked": "Tick off questions you've asked",
-      "teacher_s_name": "Teacher's name"
+      "teacher_s_name": "Teacher's name",
+      "paywall_locked_desc": "You've used your free PTM Prep session. Upgrade to Premium to prepare for unlimited parent-teacher meetings.",
+      "unlock_premium": "Unlock Premium",
+      "go_back": "Go back"
     },
     "recipes": {
       "recipe_name": "Recipe Name *",
