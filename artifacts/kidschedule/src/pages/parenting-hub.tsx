@@ -308,10 +308,6 @@ function ActivitiesSection({
           <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-primary" />} title={t("parent_hub.subsections.amazing-facts-toddler.title")} description={t("parent_hub.subsections.amazing-facts-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
-
-          <SubSection gateSection="hub_activities" icon={<GraduationCap className="h-4 w-4 text-primary" />} title={t("parent_hub.subsections.spelling-mastery.title")} description={t("parent_hub.subsections.spelling-mastery.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">
-            <SpellingMastery childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />
-          </SubSection>
         </>}
 
       {/* ── OLDER KIDS ─────────────────────────────────────────────────── */}
@@ -338,10 +334,6 @@ function ActivitiesSection({
 
           <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-primary" />} title={t("parent_hub.subsections.amazing-facts-older.title")} description={t("parent_hub.subsections.amazing-facts-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
-          </SubSection>
-
-          <SubSection gateSection="hub_activities" icon={<GraduationCap className="h-4 w-4 text-primary" />} title={t("parent_hub.subsections.spelling-mastery-older.title")} description={t("parent_hub.subsections.spelling-mastery-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">
-            <SpellingMastery childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />
           </SubSection>
         </>}
 
@@ -673,6 +665,17 @@ export default function ParentingHub() {
       return totalAgeMonths >= 36 && totalAgeMonths < 204 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_smart_study")}>
           <HubSection id="smart-study" icon={<GraduationCap className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.smart-study.title")} description={t("parent_hub.web_tiles.smart-study.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" tryFree={tryFreeFor("hub_smart_study")} onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}>
             <SmartStudyZone />
+          </HubSection>
+        </LockedBlock> : null;
+    }
+  }, {
+    // ── Spelling Mastery — standalone tile (promoted out of Activities & Learning) ─
+    id: "spelling-mastery",
+    bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
+    render: () => {
+      return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_spelling_mastery")}>
+          <HubSection id="spelling-mastery" icon={<GraduationCap className="h-5 w-5 text-primary" />} title={t("parent_hub.web_tiles.spelling-mastery.title")} description={t("parent_hub.web_tiles.spelling-mastery.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" tryFree={tryFreeFor("hub_spelling_mastery")} onOpen={() => hubUsage.markFeatureUsed("hub_spelling_mastery")}>
+            <SpellingMastery childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock> : null;
     }
