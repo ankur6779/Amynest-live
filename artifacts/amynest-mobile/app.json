@@ -98,7 +98,6 @@
       "@react-native-community/datetimepicker",
       "expo-audio",
       "expo-localization",
-      "react-native-purchases",
       [
         "expo-build-properties",
         {
