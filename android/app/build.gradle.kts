@@ -12,8 +12,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     buildTypes {
@@ -54,8 +54,12 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.9.1")
     implementation("com.google.android.material:material:1.12.0")
 
-    // WebView (for window.AmyNestPushNative message listener)
+    // WebView (for AmyNestPushNative + AmyNestBillingNative message listeners)
     implementation("androidx.webkit:webkit:1.11.0")
+
+    // Google Play Billing via RevenueCat. Handles purchase verification and
+    // subscription state through the backend RevenueCat webhook.
+    implementation("com.revenuecat.purchases:purchases:8.10.4")
 
     // Firebase BOM — keeps all Firebase versions aligned
     implementation(platform("com.google.firebase:firebase-bom:33.3.0"))

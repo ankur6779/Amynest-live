@@ -36,24 +36,28 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
 
         // Surface the Firebase / FCM availability to runtime code. PushBridge
         // checks this before attempting to fetch an FCM token, and the WebView
         // uses it to expose / hide window.AmyNestPushNative.fcmEnabled.
         buildConfigField("boolean", "FCM_ENABLED", "$firebaseEnabled")
 
-        // Override at build time: -PwrapperUrl=https://your-deployed-site.example
+        // Production URL. Override at build time if needed:
+        // ./gradlew assembleRelease -PwrapperUrl=https://custom.example.com
         val wrapperUrl: String = (project.findProperty("wrapperUrl") as String?)
-            ?: "https://kidschedule.replit.app"
+            ?: "https://amynest.in"
         buildConfigField("String", "WRAPPER_URL", "\"$wrapperUrl\"")
 
-        // RevenueCat public Android SDK key (starts with `goog_`). Pass at
-        // build time: -PrevenueCatApiKey=goog_xxxxxxxxxxxxxxx
-        // If empty, the in-app billing bridge stays disabled and the WebView
-        // falls back to the existing web payment flow.
-        val rcKey: String = (project.findProperty("revenueCatApiKey") as String?) ?: ""
+        // RevenueCat public Android SDK key (starts with `goog_`).
+        // This is a PUBLIC client key — safe to commit. It cannot be used to
+        // read or modify subscription data server-side; all sensitive ops go
+        // through our backend webhook with REVENUECAT_WEBHOOK_SECRET.
+        // Override at build time only if targeting a different RC project:
+        // ./gradlew assembleRelease -PrevenueCatApiKey=goog_xxx
+        val rcKey: String = (project.findProperty("revenueCatApiKey") as String?)
+            ?: "goog_wswrltSsrqhqrsQrVvOPavTIzMA"
         buildConfigField("String", "REVENUECAT_API_KEY", "\"$rcKey\"")
     }
 
