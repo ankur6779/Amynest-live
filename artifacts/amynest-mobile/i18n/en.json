@@ -2476,7 +2476,8 @@
       "sign_out": "Sign out"
     },
     "neon_ring_hero": {
-      "meet": "Meet"
+      "meet": "Meet",
+      "amy": "AMY"
     },
     "parent_command_center": {
       "open": "Open",
