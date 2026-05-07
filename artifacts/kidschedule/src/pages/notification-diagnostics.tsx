@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -15,7 +16,101 @@ import {
   Moon,
   CalendarClock,
   Inbox,
+  Wifi,
 } from "lucide-react";
+import {
+  ensureNativePushReady,
+  getNativePushBridge,
+  getWrapperVersion,
+  isAmyNestWrapper,
+} from "@/lib/native-push-bridge";
+
+/**
+ * Live snapshot of the native wrapper bridge state. Refreshed every 1s
+ * and on token/permission events so the user sees the real wiring.
+ */
+type WrapperDiag = {
+  inWrapper: boolean;
+  uaHasMarker: boolean;
+  wrapperVersion: string | null;
+  bridgePresent: boolean;
+  permission: string;
+  fcmEnabled: boolean;
+  tokenPrefix: string | null;
+};
+
+function readWrapperDiag(): WrapperDiag {
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const facade = getNativePushBridge();
+  const token = facade?.getToken() ?? null;
+  return {
+    inWrapper: isAmyNestWrapper(),
+    uaHasMarker: /AmyNestAndroid/.test(ua),
+    wrapperVersion: getWrapperVersion(),
+    bridgePresent: facade !== null,
+    permission: facade?.getPermissionStatus() ?? "n/a",
+    fcmEnabled: facade?.getFcmEnabled() ?? false,
+    tokenPrefix: token ? token.slice(0, 12) : null,
+  };
+}
+
+function WrapperDiagnosticsCard() {
+  const [diag, setDiag] = useState<WrapperDiag>(readWrapperDiag);
+
+  useEffect(() => {
+    let mounted = true;
+    void ensureNativePushReady().then(() => {
+      if (mounted) setDiag(readWrapperDiag());
+    });
+    const tick = window.setInterval(() => {
+      if (mounted) setDiag(readWrapperDiag());
+    }, 1000);
+    const onEvt = () => setDiag(readWrapperDiag());
+    window.addEventListener("amynest-push-permission", onEvt);
+    window.addEventListener("amynest-push-token", onEvt);
+    return () => {
+      mounted = false;
+      window.clearInterval(tick);
+      window.removeEventListener("amynest-push-permission", onEvt);
+      window.removeEventListener("amynest-push-token", onEvt);
+    };
+  }, []);
+
+  // Hide entirely when the page is not inside the wrapper AND the UA does
+  // not claim to be the wrapper — this card is purely a wrapper diagnostic.
+  if (!diag.inWrapper && !diag.uaHasMarker) return null;
+
+  const Row = ({ label, value, ok }: { label: string; value: string; ok?: boolean }) => (
+    <div className="flex items-center justify-between py-1.5 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="flex items-center gap-1.5 font-mono text-xs text-white">
+        {ok === true && <CheckCircle2 className="w-3.5 h-3.5 text-primary" />}
+        {ok === false && <XCircle className="w-3.5 h-3.5 text-destructive" />}
+        {value}
+      </span>
+    </div>
+  );
+
+  return (
+    <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-4">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base text-white flex items-center gap-2">
+          <Wifi className="w-4 h-4 text-muted-foreground" />
+          App wrapper status
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="divide-y divide-border">
+        <Row label="Detected as AmyNest app" value={diag.inWrapper ? "yes" : "no"} ok={diag.inWrapper} />
+        <Row label="User-Agent marker" value={diag.uaHasMarker ? "AmyNestAndroid" : "missing"} ok={diag.uaHasMarker} />
+        <Row label="Document marker version" value={diag.wrapperVersion ?? "missing"} ok={diag.wrapperVersion !== null} />
+        <Row label="JS message bridge" value={diag.bridgePresent ? "live" : "not wired"} ok={diag.bridgePresent} />
+        <Row label="Notification permission" value={diag.permission} ok={diag.permission === "granted"} />
+        <Row label="FCM enabled" value={diag.fcmEnabled ? "yes" : "no"} ok={diag.fcmEnabled} />
+        <Row label="FCM token" value={diag.tokenPrefix ? `${diag.tokenPrefix}…` : "none"} ok={diag.tokenPrefix !== null} />
+      </CardContent>
+    </Card>
+  );
+}
 
 type DiagToken = {
   id: number;
@@ -178,6 +273,9 @@ export default function NotificationDiagnosticsPage() {
             {isFetching ? "Refreshing…" : "Refresh"}
           </Button>
         </div>
+
+        {/* ── Wrapper status (only visible inside the AmyNest app) ── */}
+        <WrapperDiagnosticsCard />
 
         {/* ── Devices / tokens ─────────────────────────────────────── */}
         <Card className="bg-white/[0.04] border-primary backdrop-blur-md mb-4">

@@ -13,13 +13,47 @@ private const val PREFS = "amynest_push"
 private const val KEY_TOKEN = "fcm_token"
 private const val KEY_REGISTERED = "token_registered"
 private const val KEY_PERMISSION = "notification_permission"
-private const val ALLOWED_ORIGIN = "https://amynest.in"
 private const val BRIDGE_NAME = "AmyNestPushNative"
+private const val WRAPPER_VERSION = "1.2.0"
+
+/**
+ * Allowed origins for both the message-bus and the document-start marker.
+ *
+ * We accept the apex `amynest.in`, the `www.` redirect, and any subdomain
+ * (`*.amynest.in`) so that a redirect from amynest.in → www.amynest.in
+ * (or a future staging.amynest.in) does NOT silently drop the bridge.
+ *
+ * The trailing-slash form (`https://amynest.in/`) is NOT a valid rule per
+ * the [WebViewCompat.addWebMessageListener] contract — origins are scheme +
+ * host (+ port) only. Wildcards are supported in the subdomain position via
+ * `*.host`.
+ */
+private val ALLOWED_ORIGINS: Set<String> = setOf(
+    "https://amynest.in",
+    "https://www.amynest.in",
+    "https://*.amynest.in",
+)
+
+/**
+ * Hosts that map to "this is the AmyNest web app". Used by the message-handler
+ * origin check (which receives a parsed [android.net.Uri]).
+ */
+private val ALLOWED_HOSTS: Set<String> = setOf(
+    "amynest.in",
+    "www.amynest.in",
+)
 
 /**
  * PushBridge — installs `window.AmyNestPushNative` into the WebView and
  * implements the bidirectional message-bus protocol expected by
  * `artifacts/kidschedule/src/lib/native-push-bridge.ts`.
+ *
+ * Also injects a synchronous `window.__AMYNEST_WRAPPER` marker via
+ * [WebViewCompat.addDocumentStartJavaScript] BEFORE any page script runs,
+ * so the web app can ALWAYS detect that it is inside the wrapper — even
+ * if the message-listener install fails for any reason. This is the
+ * primary fix for "Not supported in this browser" being shown inside
+ * the wrapper.
  *
  * ### Protocol (web → native, JSON-encoded strings)
  * ```
@@ -85,25 +119,71 @@ class PushBridge(
     /**
      * Wire the bridge into [webView]. Must be called **before** the first
      * [WebView.loadUrl] so the JS object is available on page load.
-     * No-ops gracefully if the device WebView is too old for
-     * [WebViewFeature.WEB_MESSAGE_LISTENER] (extremely rare on API 24+).
+     *
+     * Installs in two layers:
+     *   1. Document-start marker (`window.__AMYNEST_WRAPPER`) — runs synchronously
+     *      before any page script. Used by the web app for bulletproof wrapper
+     *      detection when the full message-bus is delayed / unavailable.
+     *   2. Message-bus listener (`window.AmyNestPushNative`) — async bridge
+     *      for FCM token + permission state.
+     *
+     * Either layer can no-op if its WebViewFeature is not supported on this
+     * device. The web app handles the partial-bridge case gracefully via
+     * `awaitNativePushBridge()` + recovery UI.
      */
     fun install(webView: WebView) {
+        // Layer 1: synchronous wrapper marker — independent of message-bus.
+        installWrapperMarker(webView)
+
+        // Layer 2: full message bus.
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-            Log.w(TAG, "WEB_MESSAGE_LISTENER not supported — push bridge not installed")
+            Log.w(TAG, "WEB_MESSAGE_LISTENER not supported — push message bus DISABLED " +
+                "(wrapper marker still installed)")
             return
         }
-        WebViewCompat.addWebMessageListener(
-            webView,
-            BRIDGE_NAME,
-            setOf(ALLOWED_ORIGIN),
-        ) { _, message, sourceOrigin, isMainFrame, proxy ->
-            if (sourceOrigin.toString() != ALLOWED_ORIGIN || !isMainFrame) return@addWebMessageListener
-            activeProxy = proxy   // keep the live proxy for out-of-band events
-            val data = message.data ?: return@addWebMessageListener
-            handleMessage(data, proxy)
+        try {
+            WebViewCompat.addWebMessageListener(
+                webView,
+                BRIDGE_NAME,
+                ALLOWED_ORIGINS,
+            ) { _, message, sourceOrigin, isMainFrame, proxy ->
+                if (!isMainFrame) {
+                    Log.w(TAG, "Ignoring message from sub-frame origin=$sourceOrigin")
+                    return@addWebMessageListener
+                }
+                val host = sourceOrigin.host
+                if (host == null || host !in ALLOWED_HOSTS) {
+                    Log.w(TAG, "Ignoring message from disallowed origin=$sourceOrigin")
+                    return@addWebMessageListener
+                }
+                activeProxy = proxy   // keep the live proxy for out-of-band events
+                val data = message.data ?: return@addWebMessageListener
+                handleMessage(data, proxy)
+            }
+            Log.d(TAG, "Push message bus installed (origins=$ALLOWED_ORIGINS)")
+        } catch (t: Throwable) {
+            Log.e(TAG, "addWebMessageListener failed — push bus DISABLED", t)
         }
-        Log.d(TAG, "Push bridge installed")
+    }
+
+    /**
+     * Inject `window.__AMYNEST_WRAPPER = "<version>"` synchronously at
+     * document_start. This is the bulletproof "are we inside the wrapper"
+     * signal the web app uses to suppress the misleading "Not supported in
+     * this browser" message and instead wait for / drive the native bridge.
+     */
+    private fun installWrapperMarker(webView: WebView) {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            Log.w(TAG, "DOCUMENT_START_SCRIPT not supported — wrapper marker NOT installed")
+            return
+        }
+        try {
+            val script = "window.__AMYNEST_WRAPPER = '$WRAPPER_VERSION';"
+            WebViewCompat.addDocumentStartJavaScript(webView, script, ALLOWED_ORIGINS)
+            Log.d(TAG, "Wrapper marker installed (version=$WRAPPER_VERSION)")
+        } catch (t: Throwable) {
+            Log.e(TAG, "addDocumentStartJavaScript failed — marker NOT installed", t)
+        }
     }
 
     // ── SharedPreferences helpers ─────────────────────────────────────────────

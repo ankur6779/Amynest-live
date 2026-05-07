@@ -157,8 +157,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Enable chrome://inspect remote debugging. The wrapper only ever loads
+        // our own first-party site over HTTPS, and the user must opt in to USB
+        // debugging on their phone before chrome://inspect can attach — so the
+        // exposure is minimal and the diagnostic value (especially for native
+        // push bridge issues) is high.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(false) // flip to true for debug builds
+            WebView.setWebContentsDebuggingEnabled(true)
         }
     }
 
