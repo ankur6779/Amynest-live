@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 15, color: brandExtended.softPurple, fontFamily: "Inter_400Regular" },
+  input: { flex: 1, fontSize: 15, color: brandExtended.softPurple, fontFamily: "Inter_400Regular", outlineWidth: 0 },
   eyeBtn: { padding: 4 },
 
   primaryBtnWrap: { marginTop: 4 },
