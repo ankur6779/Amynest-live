@@ -214,7 +214,7 @@ export default function SignInScreen() {
       <View style={styles.orb1} />
       <View style={styles.orb2} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
@@ -362,14 +362,7 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "rgba(12,6,30,0.78)",
     borderRadius: 26,
-    borderWidth: 1,
-    borderColor: brandAlpha.purple500_28,
     padding: 24,
-    shadowColor: BRAND_GRADIENT[0],
-    shadowOpacity: 0.18,
-    shadowRadius: 40,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 14,
     gap: 14,
   },
 

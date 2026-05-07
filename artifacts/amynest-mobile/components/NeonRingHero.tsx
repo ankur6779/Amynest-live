@@ -107,7 +107,7 @@ export default function NeonRingHero() {
   });
 
   return (
-    <View style={styles.wrapper}>
+    <View style={styles.wrapper} pointerEvents="none" aria-hidden>
       {/* Atmospheric outer glow */}
       <Animated.View
         style={[
