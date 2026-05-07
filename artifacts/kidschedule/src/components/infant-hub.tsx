@@ -187,28 +187,60 @@ function IHSection({
   title,
   badge,
   defaultOpen = false,
+  accentClass = "bg-gradient-to-br from-primary to-primary",
+  cardColor,
   children
 }: {
   icon: React.ReactNode;
   title: string;
   badge?: string;
   defaultOpen?: boolean;
+  /** Tailwind gradient for the icon square — must be a static string at the call site */
+  accentClass?: string;
+  /** CSS linear-gradient() string applied as inline background on the card tile */
+  cardColor?: string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  return <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/[0.04] overflow-hidden">
-      <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="shrink-0 text-primary">{icon}</span>
-          <span className="font-bold text-sm text-foreground truncate">{title}</span>
-          {badge && <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-              {badge}
-            </span>}
+  return (
+    <div
+      style={cardColor ? { background: cardColor } : undefined}
+      className={["rounded-2xl overflow-hidden transition-all duration-300",
+        cardColor ? "backdrop-blur-xl" : "bg-white/60 dark:bg-white/[0.04]",
+        "border border-white/30 dark:border-white/10",
+        open ? "shadow-[0_0_0_1px_rgba(255,255,255,0.18),0_10px_32px_-8px_rgba(0,0,0,0.35)]"
+             : "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.25)]",
+      ].join(" ")}
+    >
+      <button
+        onClick={() => setOpen(v => !v)}
+        className={["w-full flex items-center justify-between gap-3 px-4 py-4 text-left transition-colors duration-200",
+          open ? "bg-black/[0.04] dark:bg-black/[0.08]" : "hover:bg-white/10 dark:hover:bg-white/[0.04]",
+        ].join(" ")}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          {/* coloured icon square — audit-ok: intentional vibrant per-tile accent */}
+          <div className={["shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
+            "shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-white/30 dark:ring-white/10",
+            accentClass].join(" ")}>
+            <span className="text-white [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
+          </div>
+          <div className="min-w-0">
+            <span className="font-bold text-[15px] leading-snug text-foreground block truncate">{title}</span>
+            {badge && (
+              <span className="inline-block mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 dark:bg-white/10 text-foreground/80 backdrop-blur-sm">
+                {badge}
+              </span>
+            )}
+          </div>
         </div>
-        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
+        {open
+          ? <ChevronUp className="h-5 w-5 text-foreground/50 shrink-0" />
+          : <ChevronDown className="h-5 w-5 text-foreground/50 shrink-0" />}
       </button>
-      {open && <div className="px-4 pb-4">{children}</div>}
-    </div>;
+      {open && <div className="px-4 pb-4 pt-1">{children}</div>}
+    </div>
+  );
 }
 
 // ─── Feeding & Sleep Module ───────────────────────────────────────────────────
@@ -655,17 +687,20 @@ export function InfantHub({
 
             {isParentingOpen && <div className="space-y-3">
                 {/* ── 1. Weekly AI Insight ─────────────────────────────────────── */}
-                <IHSection icon={<Star className="h-4 w-4" />} title={t("components.infant_hub.weekly_insight")} badge="New" defaultOpen>
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                <IHSection icon={<Star className="h-4 w-4" />} title={t("components.infant_hub.weekly_insight")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardColor="linear-gradient(135deg,rgba(251,191,36,0.28)0%,rgba(234,179,8,0.13)100%)" badge="New" defaultOpen>
                   <WeeklyInsight childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 2. Milestone Tracker — Buddy Planner ─────────────────────────────── */}
-                <IHSection icon={<Activity className="h-4 w-4" />} title={t("components.infant_hub.milestone_buddy")} badge="Plan">
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                <IHSection icon={<Activity className="h-4 w-4" />} title={t("components.infant_hub.milestone_buddy")} accentClass="bg-gradient-to-br from-violet-400 to-purple-500" cardColor="linear-gradient(135deg,rgba(167,139,250,0.28)0%,rgba(168,85,247,0.13)100%)" badge="Plan">
                   <BuddyMilestonePlanner childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 3. Sleep System (Wake Window + Issues + Routine + Insights) ──────── */}
-                <IHSection icon={<BedDouble className="h-4 w-4" />} title={t("components.infant_hub.sleep_system")} badge="Live">
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                <IHSection icon={<BedDouble className="h-4 w-4" />} title={t("components.infant_hub.sleep_system")} accentClass="bg-gradient-to-br from-blue-400 to-indigo-500" cardColor="linear-gradient(135deg,rgba(96,165,250,0.28)0%,rgba(99,102,241,0.13)100%)" badge="Live">
                   <div className="space-y-5">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2">{t("components.infant_hub.wake_window_tracker")}</p>
@@ -687,37 +722,44 @@ export function InfantHub({
                 </IHSection>
 
                 {/* ── 4. White Noise & Lullabies ───────────────────────────────────────── */}
-                <IHSection icon={<Music2 className="h-4 w-4" />} title={t("components.infant_hub.white_noise_lullabies")}>
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                <IHSection icon={<Music2 className="h-4 w-4" />} title={t("components.infant_hub.white_noise_lullabies")} accentClass="bg-gradient-to-br from-cyan-400 to-teal-500" cardColor="linear-gradient(135deg,rgba(34,211,238,0.28)0%,rgba(20,184,166,0.13)100%)">
                   <WhiteNoiseLullaby ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 4b. Cry Insight (Beta) ─────────────────────────────────────────── */}
-                <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.cry_insight")} badge="Beta">
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.cry_insight")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardColor="linear-gradient(135deg,rgba(251,113,133,0.28)0%,rgba(236,72,153,0.13)100%)" badge="Beta">
                   <CryInsight childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 4c. Sleep Prediction (Beta) ────────────────────────────────────── */}
-                <IHSection icon={<AlarmClock className="h-4 w-4" />} title={t("components.infant_hub.sleep_prediction")} badge="Beta">
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                <IHSection icon={<AlarmClock className="h-4 w-4" />} title={t("components.infant_hub.sleep_prediction")} accentClass="bg-gradient-to-br from-orange-400 to-amber-500" cardColor="linear-gradient(135deg,rgba(251,146,60,0.28)0%,rgba(251,191,36,0.13)100%)" badge="Beta">
                   <SleepPredict childId={childId} childName={childName} ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 5. Feeding Reference ─────────────────────────────────────────────── */}
-                <IHSection icon={<Flame className="h-4 w-4" />} title={t("components.infant_hub.feeding_reference")}>
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                <IHSection icon={<Flame className="h-4 w-4" />} title={t("components.infant_hub.feeding_reference")} accentClass="bg-gradient-to-br from-red-400 to-orange-500" cardColor="linear-gradient(135deg,rgba(248,113,113,0.28)0%,rgba(249,115,22,0.13)100%)">
                   <FeedingReference ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 6. Daily Activities — only shown when there are ideas for this age── */}
-                {(ACTIVITIES[getBand(ageMonths)] ?? []).length > 0 && <IHSection icon={<Zap className="h-4 w-4" />} title={t("components.infant_hub.today_s_activities")} badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}>
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                {(ACTIVITIES[getBand(ageMonths)] ?? []).length > 0 && <IHSection icon={<Zap className="h-4 w-4" />} title={t("components.infant_hub.today_s_activities")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" cardColor="linear-gradient(135deg,rgba(52,211,153,0.28)0%,rgba(34,197,94,0.13)100%)" badge={`${(ACTIVITIES[getBand(ageMonths)] ?? []).length} idea${(ACTIVITIES[getBand(ageMonths)] ?? []).length === 1 ? "" : "s"}`}>
                     <DailyActivities ageMonths={ageMonths} />
                   </IHSection>}
 
                 {/* ── 6. Health & Care ─────────────────────────────────────────────────── */}
-                <IHSection icon={<Syringe className="h-4 w-4" />} title={t("components.infant_hub.health_care")}>
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                <IHSection icon={<Syringe className="h-4 w-4" />} title={t("components.infant_hub.health_care")} accentClass="bg-gradient-to-br from-teal-400 to-cyan-500" cardColor="linear-gradient(135deg,rgba(45,212,191,0.28)0%,rgba(34,211,238,0.13)100%)">
                   <HealthCare childId={childId} ageMonths={ageMonths} />
                 </IHSection>
 
                 {/* ── 7. Parent Coaching — Baby Cues + Communication ─────────── */}
-                <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.parent_coaching")} badge="Interactive">
+                {/* audit-ok: intentional vibrant per-tile accent gradient */}
+                <IHSection icon={<MessageCircle className="h-4 w-4" />} title={t("components.infant_hub.parent_coaching")} accentClass="bg-gradient-to-br from-purple-400 to-indigo-500" cardColor="linear-gradient(135deg,rgba(192,132,252,0.28)0%,rgba(129,140,248,0.13)100%)" badge="Interactive">
                   <div className="space-y-5">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider text-primary dark:text-foreground mb-2 flex items-center gap-1">
