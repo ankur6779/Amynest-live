@@ -12,6 +12,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { humanizeError } from "@/utils/humanizeError";
+import { API_BASE_URL } from "@/constants/api";
 import PhoneAuthFlow from "@/components/PhoneAuthFlow";
 import NeonRingHero from "@/components/NeonRingHero";
 import { BRAND_GRADIENT, BRAND_GRADIENT_DISABLED, brand, brandAlpha, brandExtended } from "@/constants/colors";
@@ -59,6 +60,16 @@ export default function SignInScreen() {
     setResetLoading(true);
     setResetError(null);
     try {
+      const checkRes = await fetch(`${API_BASE_URL}/api/auth/check-reset-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail.trim() }),
+      });
+      const checkData = (await checkRes.json()) as { exists?: boolean };
+      if (!checkData.exists) {
+        setResetError(t("screens.sign_in.reset_not_found"));
+        return;
+      }
       await sendPasswordResetEmail(firebaseAuth, resetEmail.trim());
       setMode("reset-sent");
     } catch (err: unknown) {

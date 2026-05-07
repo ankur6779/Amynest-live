@@ -43,6 +43,7 @@ import parentTasksRouter from "./parent-tasks";
 import smartStudyRouter from "./smart-study";
 import lifeSkillsRouter from "./life-skills";
 import debugRouter from "./debug";
+import authRouter from "./auth";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -58,6 +59,8 @@ router.use(subscriptionRouter);
 // Auth diagnostic endpoint must be BEFORE requireAuth so it works even when
 // the JWT is invalid/expired — that's when we need it most.
 router.use(authDebugRouter);
+// Public auth helpers (e.g. check-reset-email) — no JWT needed.
+router.use(authRouter);
 // /api/meals/suggest is pure local computation (no user data) — public.
 // /api/meals/generate has its own auth guard inside the handler.
 router.use(mealsRouter);
