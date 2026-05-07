@@ -12,7 +12,7 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
+        versionCode = 15
         versionName = "1.2.0"
     }
 
