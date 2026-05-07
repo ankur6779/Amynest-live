@@ -15,7 +15,7 @@ export const parentProfilesTable = pgTable("parent_profiles", {
   freeSlots: jsonb("free_slots").default([]),
   foodType: text("food_type").notNull().default("non_veg"),
   allergies: text("allergies"),
-  region: text("region").notNull().default("pan_indian"),
+  region: text("region").notNull().default("mixed"),
   dietType: text("diet_type"),
   foodStyle: text("food_style"),
   subCuisine: text("sub_cuisine"),

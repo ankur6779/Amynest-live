@@ -575,14 +575,39 @@ export type AgeGroupPlan = {
   ageCategory: string;          // display label
   portionNote: string;
   applies: AgeGroupId[];        // which age groups use this plan
+  cuisines: string[];           // which foodStyle values this plan matches ("indian", "western", etc.)
   days: DayPlan[];
 };
+
+/**
+ * Pick the best meal plan for a given age group + foodStyle combo.
+ * Priority: exact cuisine match → "mixed"/"global" fallback → first match by age.
+ * This ensures a US/UK user never sees Indian meal plans unless they explicitly
+ * selected Indian cuisine during onboarding.
+ */
+export function getMealPlan(
+  ageGroupId: AgeGroupId,
+  foodStyle: string | null | undefined,
+): AgeGroupPlan | undefined {
+  const style = (foodStyle ?? "mixed").toLowerCase();
+  const candidates = MEAL_PLANS.filter(p => p.applies.includes(ageGroupId));
+  if (!candidates.length) return undefined;
+  // 1. Exact cuisine match
+  const exact = candidates.find(p => p.cuisines.some(c => style.includes(c) || c.includes(style)));
+  if (exact) return exact;
+  // 2. "mixed" / "global" fallback
+  const mixed = candidates.find(p => p.cuisines.includes("mixed"));
+  if (mixed) return mixed;
+  // 3. First available (safety net)
+  return candidates[0];
+}
 
 export const MEAL_PLANS: AgeGroupPlan[] = [
   {
     ageCategory: "Infants (6–12 months)",
     portionNote: "Start with 2–3 tsp, gradually increase to 3–4 tbsp per meal. Always continue breastfeeding.",
     applies: ["infant_6_12"],
+    cuisines: ["indian", "north_indian", "south_indian", "pan_indian", "gujarati", "maharashtrian", "punjabi", "bengali"],
     days: [
       { day: "Monday", veg: { breakfast: "Breast milk / formula", lunch: "Mashed moong dal khichdi (rice + moong + ghee)", snack: "Mashed banana", dinner: "Ragi porridge with breast milk" }, nonVeg: { breakfast: "Breast milk / formula", lunch: "Mashed moong dal khichdi", snack: "Mashed papaya", dinner: "Pureed chicken + rice" } },
       { day: "Tuesday", veg: { breakfast: "Breast milk", lunch: "Mashed sweet potato + dahi", snack: "Apple puree", dinner: "Soft rice + toor dal + ghee" }, nonVeg: { breakfast: "Breast milk", lunch: "Mashed sweet potato + egg yolk", snack: "Pear puree", dinner: "Fish puree + soft rice" } },
@@ -597,6 +622,7 @@ export const MEAL_PLANS: AgeGroupPlan[] = [
     ageCategory: "Toddlers & Preschool (1–6 years)",
     portionNote: "Small portions 5–6 times a day. 1 small katori per item. No whole nuts or hard pieces. Low salt/sugar.",
     applies: ["toddler_1_3", "preschool_3_6"],
+    cuisines: ["indian", "north_indian", "south_indian", "pan_indian", "gujarati", "maharashtrian", "punjabi", "bengali"],
     days: [
       { day: "Monday", veg: { breakfast: "Ragi dosa + coconut chutney + 1 glass milk", midMorning: "Banana / seasonal fruit", lunch: "Rice + dal + sabzi (bhindi) + ghee + curd", snack: "Peanut butter toast or chikki", dinner: "Chapati + palak dal + warm milk" }, nonVeg: { breakfast: "Egg paratha + milk", midMorning: "Fruit", lunch: "Rice + dal + chicken curry (boneless)", snack: "Boiled egg + fruit", dinner: "Chapati + chicken soup" } },
       { day: "Tuesday", veg: { breakfast: "Idli (2) + sambhar + chutney", midMorning: "Dahi + banana", lunch: "Khichdi + ghee + papad + carrot salad", snack: "Ragi cookie or makhana", dinner: "Roti + toor dal + sabzi" }, nonVeg: { breakfast: "Idli + egg curry", midMorning: "Fruit", lunch: "Rice + fish curry (boneless) + dal", snack: "Egg white snack", dinner: "Roti + chicken sabzi" } },
@@ -611,6 +637,7 @@ export const MEAL_PLANS: AgeGroupPlan[] = [
     ageCategory: "School Age (6–15 years)",
     portionNote: "Regular adult-sized portions. 3 main meals + 1–2 snacks. Breakfast is non-negotiable for concentration.",
     applies: ["school_6_10", "preteen_10_15"],
+    cuisines: ["indian", "north_indian", "south_indian", "pan_indian", "gujarati", "maharashtrian", "punjabi", "bengali"],
     days: [
       { day: "Monday", veg: { breakfast: "2 parathas + dahi + glass of milk", lunch: "Rice + dal + sabzi + roti + salad", snack: "Sprout chaat + amla juice", dinner: "Roti + paneer sabzi + dal + salad" }, nonVeg: { breakfast: "2 egg parathas + milk", lunch: "Rice + dal + chicken curry + salad", snack: "Boiled egg + fruit", dinner: "Roti + chicken curry + dal" } },
       { day: "Tuesday", veg: { breakfast: "Idli (3) + sambhar + chutney + milk", lunch: "Rajma rice + curd + salad", snack: "Peanut chikki or fruit", dinner: "Roti + mixed sabzi + dal + milk" }, nonVeg: { breakfast: "Idli + egg curry + milk", lunch: "Rajma rice + fish fry", snack: "Egg sandwich", dinner: "Roti + fish curry + dal" } },
@@ -625,14 +652,78 @@ export const MEAL_PLANS: AgeGroupPlan[] = [
     ageCategory: "Adults, Pregnancy & Postpartum",
     portionNote: "Balanced plate: 50% veg, 25% grains, 25% protein. Pregnant: +300–500 kcal/day. Breastfeeding: +500 kcal/day.",
     applies: ["adult", "pregnancy", "postpartum"],
+    cuisines: ["indian", "north_indian", "south_indian", "pan_indian", "gujarati", "maharashtrian", "punjabi", "bengali"],
     days: [
       { day: "Monday", veg: { breakfast: "Moong dal chilla + dahi + fruits + tea/coffee", lunch: "2 roti + dal + sabzi + salad + dahi + ghee", snack: "Roasted chana + amla / orange", dinner: "2 roti + paneer sabzi + dal + salad" }, nonVeg: { breakfast: "2 egg omelette + toast + fruits + milk", lunch: "Rice + chicken curry + dal + salad", snack: "Boiled egg + fruit / nuts", dinner: "2 roti + chicken curry + dal + sabzi" } },
-      { day: "Tuesday", veg: { breakfast: "Idli (3–4) + sambhar + chutney + milk", lunch: "Rajma rice + curd + salad + papad + pickle", snack: "Sprout chat + nimbu pani", dinner: "Roti + mixed dal + sabzi + salad" }, nonVeg: { breakfast: "Egg paratha + fruit + milk", lunch: "Fish curry + rice + dal + salad", snack: "Tuna sandwich", dinner: "Roti + fish sabzi + dal" } },
+      { day: "Tuesday", veg: { breakfast: "Idli (3–4) + sambhar + chutney + milk", lunch: "Rajma rice + curd + salad + papad + pickle", snack: "Sprout chaat + lemon water", dinner: "Roti + mixed dal + sabzi + salad" }, nonVeg: { breakfast: "Egg paratha + fruit + milk", lunch: "Fish curry + rice + dal + salad", snack: "Tuna sandwich", dinner: "Roti + fish sabzi + dal" } },
       { day: "Wednesday", veg: { breakfast: "Poha + peanuts + dahi + fruit", lunch: "Dal + rice + aloo gobi + papad + ghee", snack: "Mixed nuts (30g) + fruit", dinner: "Roti + palak dal + sabzi" }, nonVeg: { breakfast: "Egg bhurji + toast + fruit", lunch: "Mutton curry + rice + salad", snack: "Chicken tikka + fruit", dinner: "Roti + prawn curry + sabzi" } },
-      { day: "Thursday", veg: { breakfast: "Upma + coconut chutney + milk + fruit", lunch: "Chole bhature + salad + lassi", snack: "Roasted makhana + green tea", dinner: "Roti + paneer + dal + salad" }, nonVeg: { breakfast: "2 eggs (any style) + toast + fruit", lunch: "Chicken curry + rice + salad", snack: "Egg chaat + nimbu pani", dinner: "Roti + chicken sabzi + dal" } },
+      { day: "Thursday", veg: { breakfast: "Upma + coconut chutney + milk + fruit", lunch: "Chole bhature + salad + lassi", snack: "Roasted makhana + green tea", dinner: "Roti + paneer + dal + salad" }, nonVeg: { breakfast: "2 eggs (any style) + toast + fruit", lunch: "Chicken curry + rice + salad", snack: "Egg chaat + lemon water", dinner: "Roti + chicken sabzi + dal" } },
       { day: "Friday", veg: { breakfast: "Dosa (2) + sambhar + chutney + fruit + milk", lunch: "Vegetable biryani + raita + papad + pickle", snack: "Banana + groundnut chikki or nuts", dinner: "Roti + dal makhani + sabzi" }, nonVeg: { breakfast: "Fish sandwich + fruit + milk", lunch: "Prawn biryani + raita + salad", snack: "Boiled egg + fruit", dinner: "Roti + fish curry + dal" } },
       { day: "Saturday", veg: { breakfast: "Paratha + dahi + seasonal fruit + milk", lunch: "Kadhi chawal + mixed sabzi + salad", snack: "Fruit smoothie (banana + milk + seeds)", dinner: "Roti + paneer sabzi + mixed dal" }, nonVeg: { breakfast: "Egg paratha + lassi + fruit", lunch: "Mutton curry + rice + raita", snack: "Chicken soup + nuts", dinner: "Roti + chicken curry + dal + salad" } },
-      { day: "Sunday", veg: { breakfast: "Special thali: puri + aloo sabzi + halwa + milk", lunch: "Dal + rice + sabzi + kheer + salad", snack: "Fruit chaat + nimbu pani", dinner: "Light khichdi + ghee + dahi + papad" }, nonVeg: { breakfast: "Egg paratha + special sweet + milk", lunch: "Biryani (chicken/mutton) + raita + salad", snack: "Chicken soup + fruit juice", dinner: "Light khichdi + chicken soup" } },
+      { day: "Sunday", veg: { breakfast: "Special thali: puri + aloo sabzi + halwa + milk", lunch: "Dal + rice + sabzi + kheer + salad", snack: "Fruit chaat + lemon water", dinner: "Light khichdi + ghee + dahi + papad" }, nonVeg: { breakfast: "Egg paratha + special sweet + milk", lunch: "Biryani (chicken/mutton) + raita + salad", snack: "Chicken soup + fruit juice", dinner: "Light khichdi + chicken soup" } },
+    ],
+  },
+
+  // ── Global / Western plans (for users with western, mixed, asian, middle_eastern cuisine) ──
+
+  {
+    ageCategory: "Infants (6–12 months)",
+    portionNote: "Start with 1–2 tsp, gradually increase. Breast milk or formula remains primary. Introduce one new food at a time.",
+    applies: ["infant_6_12"],
+    cuisines: ["western", "mixed", "asian", "middle_eastern", "vegetarian", "global"],
+    days: [
+      { day: "Monday", veg: { breakfast: "Breast milk / formula", lunch: "Pureed sweet potato + breast milk", snack: "Mashed banana", dinner: "Oat porridge thinned with breast milk" }, nonVeg: { breakfast: "Breast milk / formula", lunch: "Pureed sweet potato", snack: "Mashed pear", dinner: "Pureed chicken + oat porridge" } },
+      { day: "Tuesday", veg: { breakfast: "Breast milk", lunch: "Mashed avocado + soft rice cereal", snack: "Apple puree", dinner: "Carrot + pea puree" }, nonVeg: { breakfast: "Breast milk", lunch: "Mashed avocado + egg yolk", snack: "Pear puree", dinner: "Fish puree + soft rice cereal" } },
+      { day: "Wednesday", veg: { breakfast: "Breast milk", lunch: "Butternut squash puree", snack: "Banana mash", dinner: "Oat porridge + pear puree" }, nonVeg: { breakfast: "Breast milk", lunch: "Butternut squash + minced chicken", snack: "Mango puree", dinner: "Egg yolk + oat cereal" } },
+      { day: "Thursday", veg: { breakfast: "Breast milk", lunch: "Pea + potato mash", snack: "Blueberry puree (strained)", dinner: "Pumpkin + lentil mash" }, nonVeg: { breakfast: "Breast milk", lunch: "Chicken broth + soft rice", snack: "Papaya puree", dinner: "Scrambled egg (soft) + mashed pumpkin" } },
+      { day: "Friday", veg: { breakfast: "Breast milk", lunch: "Spinach + potato puree", snack: "Watermelon puree (strained)", dinner: "Oat porridge + breast milk" }, nonVeg: { breakfast: "Breast milk", lunch: "Minced fish + soft rice", snack: "Banana", dinner: "Egg yolk + oat porridge" } },
+      { day: "Saturday", veg: { breakfast: "Breast milk", lunch: "Lentil + carrot soup (pureed)", snack: "Steamed pear puree", dinner: "Rice cereal + banana porridge" }, nonVeg: { breakfast: "Breast milk", lunch: "Chicken + potato mash", snack: "Apple puree", dinner: "Fish + rice porridge" } },
+      { day: "Sunday", veg: { breakfast: "Breast milk", lunch: "Mixed vegetable puree (carrot + zucchini + pea)", snack: "Papaya / mango mash", dinner: "Plain yoghurt (full-fat) thinned with breast milk" }, nonVeg: { breakfast: "Breast milk", lunch: "Egg + vegetable puree", snack: "Strawberry puree (strained)", dinner: "Chicken + oat porridge" } },
+    ],
+  },
+  {
+    ageCategory: "Toddlers & Preschool (1–6 years)",
+    portionNote: "Small portions 5–6 times a day. No whole nuts or hard pieces. Low salt/sugar. Offer variety — don't force.",
+    applies: ["toddler_1_3", "preschool_3_6"],
+    cuisines: ["western", "mixed", "asian", "middle_eastern", "vegetarian", "global"],
+    days: [
+      { day: "Monday", veg: { breakfast: "Oatmeal with berries + warm milk", midMorning: "Banana slices", lunch: "Whole-wheat pasta + tomato sauce + grated cheese + steamed broccoli", snack: "Hummus + veggie sticks", dinner: "Lentil soup + soft bread + milk" }, nonVeg: { breakfast: "Scrambled egg + toast + milk", midMorning: "Fruit", lunch: "Chicken pasta + steamed peas", snack: "Cheese + crackers", dinner: "Fish finger + mashed potato + milk" } },
+      { day: "Tuesday", veg: { breakfast: "Pancakes + fruit + yoghurt", midMorning: "Apple slices + peanut butter", lunch: "Veggie stir-fry + soft noodles + tofu", snack: "Cheese cube + grapes", dinner: "Bean quesadilla + avocado + milk" }, nonVeg: { breakfast: "French toast + fruit + milk", midMorning: "Fruit", lunch: "Chicken noodle soup + bread roll", snack: "Boiled egg + fruit", dinner: "Mini chicken tacos + avocado" } },
+      { day: "Wednesday", veg: { breakfast: "Whole-wheat toast + peanut butter + banana + milk", midMorning: "Seasonal fruit", lunch: "Veggie omelette + toast + fruit", snack: "Yoghurt + granola", dinner: "Vegetable fried rice + edamame + milk" }, nonVeg: { breakfast: "Egg omelette + toast + milk", midMorning: "Orange", lunch: "Tuna sandwich + salad", snack: "Chicken nugget + fruit", dinner: "Egg fried rice + veggie sticks" } },
+      { day: "Thursday", veg: { breakfast: "Porridge + honey + blueberries + milk", midMorning: "Banana", lunch: "Cheese + veggie wrap + carrot sticks", snack: "Fruit smoothie", dinner: "Tomato lentil soup + crusty bread + milk" }, nonVeg: { breakfast: "Boiled egg + toast + fruit + milk", midMorning: "Fruit", lunch: "Chicken wrap + salad", snack: "Yoghurt + fruit", dinner: "Meatball soup + noodles + milk" } },
+      { day: "Friday", veg: { breakfast: "French toast + maple syrup + fruit + milk", midMorning: "Pear / apple", lunch: "Mac & cheese + peas + fruit", snack: "Veggie sticks + hummus", dinner: "Veggie pizza (soft base) + milk" }, nonVeg: { breakfast: "Egg + toast + fruit + milk", midMorning: "Banana", lunch: "Tuna melt on toast + fruit", snack: "Chicken strip + fruit", dinner: "Cheese + chicken mini pizza" } },
+      { day: "Saturday", veg: { breakfast: "Smoothie bowl (banana + yoghurt + berries)", midMorning: "Fruit", lunch: "Bean burger (soft) + sweet potato fries", snack: "Cheese + apple slices", dinner: "Creamy vegetable soup + bread + milk" }, nonVeg: { breakfast: "Mini pancakes + egg + fruit + milk", midMorning: "Banana", lunch: "Chicken burger (soft) + baked fries", snack: "Boiled egg + crackers", dinner: "Chicken noodle soup + roll" } },
+      { day: "Sunday", veg: { breakfast: "Waffles + fruit + yoghurt + milk (special)", midMorning: "Seasonal fruit", lunch: "Pasta bake + cheese + salad", snack: "Fruit salad + yoghurt", dinner: "Mild veggie curry + soft rice + milk" }, nonVeg: { breakfast: "Egg + waffle + fruit + milk", midMorning: "Seasonal fruit", lunch: "Roast chicken + mashed potato + peas (special)", snack: "Chicken soup + crackers", dinner: "Fish cake + rice + salad" } },
+    ],
+  },
+  {
+    ageCategory: "School Age (6–15 years)",
+    portionNote: "3 main meals + 1–2 snacks. Breakfast powers concentration. Balance carbs, protein, healthy fats, and colour at every meal.",
+    applies: ["school_6_10", "preteen_10_15"],
+    cuisines: ["western", "mixed", "asian", "middle_eastern", "vegetarian", "global"],
+    days: [
+      { day: "Monday", veg: { breakfast: "Whole-grain cereal + milk + banana", lunch: "Cheese & salad wrap + fruit + water", snack: "Hummus + veggie sticks + fruit", dinner: "Pasta with tomato-lentil sauce + garlic bread + salad" }, nonVeg: { breakfast: "2 scrambled eggs + toast + milk + fruit", lunch: "Chicken salad wrap + fruit", snack: "Boiled egg + crackers + fruit", dinner: "Grilled chicken + pasta + salad" } },
+      { day: "Tuesday", veg: { breakfast: "Oatmeal + honey + berries + milk", lunch: "Veggie sushi roll / Buddha bowl + fruit", snack: "Trail mix (nuts + dried fruit)", dinner: "Stir-fry tofu + brown rice + steamed greens" }, nonVeg: { breakfast: "Egg omelette + toast + milk", lunch: "Tuna wrap + salad + fruit", snack: "Cheese + apple", dinner: "Salmon + brown rice + steamed broccoli" } },
+      { day: "Wednesday", veg: { breakfast: "Peanut butter on whole-wheat toast + banana + milk", lunch: "Lentil soup + crusty roll + side salad", snack: "Yoghurt + granola", dinner: "Veggie burger + sweet potato wedges + salad" }, nonVeg: { breakfast: "French toast + fruit + milk", lunch: "Chicken noodle soup + bread roll", snack: "Chicken strip + fruit", dinner: "Beef / chicken burger + baked fries + salad" } },
+      { day: "Thursday", veg: { breakfast: "Smoothie (milk + banana + spinach + peanut butter)", lunch: "Caprese sandwich + fruit + water", snack: "Mixed nuts + fruit", dinner: "Bean & cheese burrito + guacamole + salad" }, nonVeg: { breakfast: "Egg + whole-wheat toast + milk + fruit", lunch: "Turkey / chicken sandwich + salad", snack: "Boiled egg + crackers + fruit", dinner: "Prawn stir-fry + fried rice + salad" } },
+      { day: "Friday", veg: { breakfast: "Pancakes + berries + yoghurt + milk", lunch: "Cheese & veggie pizza slice + salad", snack: "Edamame + fruit", dinner: "Veggie fried rice + tofu + miso soup" }, nonVeg: { breakfast: "Boiled egg + toast + fruit + milk", lunch: "Fish & salad wrap + fruit", snack: "Cheese + crackers + fruit", dinner: "Fish tacos + coleslaw + lime rice" } },
+      { day: "Saturday", veg: { breakfast: "Açai / smoothie bowl + granola + fruit", lunch: "Falafel wrap + salad + hummus", snack: "Fruit smoothie + nuts", dinner: "Margherita pizza + side salad + milk" }, nonVeg: { breakfast: "Weekend omelette (2 eggs + veggies) + toast + milk", lunch: "Pulled chicken wrap + salad", snack: "Chicken soup + crackers", dinner: "Grilled chicken + roast veg + mashed potato" } },
+      { day: "Sunday", veg: { breakfast: "Full veggie breakfast: eggs + beans + toast + grilled tomato + OJ", lunch: "Veggie lasagne + garlic bread + salad", snack: "Fruit platter + yoghurt dip", dinner: "Light soup + whole-grain roll + fruit" }, nonVeg: { breakfast: "Full breakfast: eggs + bacon + beans + toast + OJ (special)", lunch: "Roast chicken + roast potatoes + veg + gravy (special)", snack: "Chicken sandwich + juice", dinner: "Light chicken broth + bread + fruit" } },
+    ],
+  },
+  {
+    ageCategory: "Adults, Pregnancy & Postpartum",
+    portionNote: "Balanced plate: 50% vegetables & fruit, 25% whole grains, 25% protein. Pregnant: +300–500 kcal/day. Breastfeeding: +500 kcal/day.",
+    applies: ["adult", "pregnancy", "postpartum"],
+    cuisines: ["western", "mixed", "asian", "middle_eastern", "vegetarian", "global"],
+    days: [
+      { day: "Monday", veg: { breakfast: "Greek yoghurt + granola + berries + coffee/tea", lunch: "Lentil & roasted veg wrap + side salad", snack: "Apple + almond butter", dinner: "Tofu stir-fry + brown rice + steamed greens" }, nonVeg: { breakfast: "2 egg omelette + whole-grain toast + fruit + coffee/tea", lunch: "Grilled chicken salad + whole-grain roll", snack: "Boiled egg + fruit / nuts", dinner: "Grilled salmon + quinoa + roasted vegetables" } },
+      { day: "Tuesday", veg: { breakfast: "Overnight oats + chia seeds + banana + milk", lunch: "Falafel wrap + tabbouleh + hummus", snack: "Mixed nuts + dried fruit", dinner: "Pasta primavera + parmesan + side salad" }, nonVeg: { breakfast: "Smoked salmon + cream cheese bagel + fruit", lunch: "Chicken Caesar salad + whole-grain roll", snack: "Tuna on rice cakes", dinner: "Prawn pasta + garlic bread + salad" } },
+      { day: "Wednesday", veg: { breakfast: "Avocado toast + poached egg + coffee/tea", lunch: "Minestrone soup + crusty bread + salad", snack: "Hummus + veggie sticks", dinner: "Bean & cheese enchiladas + guacamole + salad" }, nonVeg: { breakfast: "Egg bhurji / scrambled egg + toast + fruit", lunch: "Turkey wrap + salad + fruit", snack: "Chicken strip + fruit", dinner: "Beef stir-fry + egg-fried rice + salad" } },
+      { day: "Thursday", veg: { breakfast: "Smoothie bowl (spinach + banana + protein + berries)", lunch: "Caprese salad + whole-grain bread + fruit", snack: "Cheese + whole-grain crackers", dinner: "Vegetable curry + basmati rice + naan (mild)" }, nonVeg: { breakfast: "2 eggs any style + whole-grain toast + fruit + coffee/tea", lunch: "Grilled chicken wrap + mixed greens", snack: "Egg salad on rice cakes", dinner: "Chicken tikka masala + rice + naan (mild)" } },
+      { day: "Friday", veg: { breakfast: "Pancakes + maple syrup + berries + milk", lunch: "Veggie sushi / Buddha bowl + miso soup", snack: "Banana + peanut butter", dinner: "Margherita pizza + rocket & tomato salad" }, nonVeg: { breakfast: "Smoked salmon scrambled eggs + toast + OJ", lunch: "Sushi platter + edamame + miso soup", snack: "Tuna + crackers + fruit", dinner: "Fish & chips (baked) + mushy peas + salad" } },
+      { day: "Saturday", veg: { breakfast: "Full veg breakfast: eggs + beans + grilled tomato + mushrooms + toast + OJ", lunch: "Shakshuka + crusty bread + side salad", snack: "Fruit smoothie + nuts", dinner: "Thai green curry (tofu) + jasmine rice + spring rolls" }, nonVeg: { breakfast: "Full cooked breakfast: eggs + bacon + beans + toast + OJ", lunch: "Grilled chicken + roast veg + quinoa", snack: "Chicken soup + nuts", dinner: "Thai chicken curry + jasmine rice + spring rolls" } },
+      { day: "Sunday", veg: { breakfast: "Brunch: avocado toast + eggs + fruit + coffee/tea", lunch: "Roasted veg pasta bake + garlic bread + salad", snack: "Fruit platter + yoghurt dip", dinner: "Light vegetable soup + whole-grain roll + fruit" }, nonVeg: { breakfast: "Brunch: smoked salmon + eggs + toast + fruit + coffee", lunch: "Sunday roast: chicken + roast potatoes + veg + gravy", snack: "Chicken sandwich + juice", dinner: "Light chicken broth + bread + salad" } },
     ],
   },
 ];
