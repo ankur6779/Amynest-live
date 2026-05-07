@@ -1,0 +1,301 @@
+You are a senior full-stack mobile + AI product engineer working on the AmyNest AI Native Mobile App (React Native/Expo + Firebase + Supabase + AI APIs).
+Your task is to deeply analyze the current mobile implementation, compare it with the live web app functionality, and implement the following production-grade fixes and feature parity updates carefully without breaking existing flows.
+
+IMPORTANT:
+
+* Web app is the source of truth for features, UI logic, onboarding flow, AI behavior, nutrition logic, routines, and personalization.
+* Mobile app must achieve near-complete parity with the website.
+* Maintain scalable architecture, reusable components, and optimized API calls.
+* Ensure all changes work on Android and iOS.
+* Preserve localization support and global-first logic.
+* Fix both UI and backend/business logic issues wherever required.
+* Use existing APIs/services before creating new ones.
+* Validate all edge cases.
+
+========================
+
+1. PARENT HUB FREEMIUM ISSUE
+   ========================
+   Problem:
+   Freemium restriction is not working correctly in Parent Hub.
+   Free users can repeatedly access premium sections after first use.
+
+Tasks:
+
+* Audit entire freemium access logic.
+* Check session caching, local storage, Firestore/Supabase state sync, and subscription validation.
+* Ensure usage-limited sections properly lock after free quota is consumed.
+* Add proper server-side validation to prevent bypass.
+* Ensure app restart/login refresh does not reset limits incorrectly.
+* Show upgrade CTA when limits exhausted.
+* Sync behavior with web app subscription logic.
+
+========================
+2. DAILY STORY – READ ALOUD FEATURE
+===================================
+
+Problem:
+Daily Story section does not have Read Aloud support.
+
+Tasks:
+
+* Add “Read Aloud” button in Daily Story.
+* Integrate ElevenLabs voice API.
+* Support:
+
+  * Play
+  * Pause
+  * Resume
+  * Stop
+  * Voice loading state
+* Cache generated audio for performance optimization.
+* Voice should sound child-friendly and natural.
+* Handle API failure gracefully.
+* Ensure story narration works globally.
+
+========================
+3. AMY AUDIO LESSON RESTRUCTURE
+===============================
+
+Problem:
+Amy Audio Lesson is currently showing inside Parent Hub under Activities & Learning.
+
+Tasks:
+
+* Remove Amy Audio Lesson from Parent Hub completely.
+* Move it under “Amy Coach”.
+* Update navigation, routing, permissions, and internal linking.
+* Ensure old deep links redirect correctly.
+
+========================
+4. EVENT PREP – GLOBAL LOCATION LOGIC
+=====================================
+
+Problem:
+Event Prep appears India-centric.
+
+Tasks:
+
+* Audit event recommendation logic.
+* Make recommendations globally location-aware.
+* Detect:
+
+  * Country
+  * Region
+  * Local seasonal events
+  * International festivals
+  * School calendars
+  * Cultural events
+* Ensure users from USA, UK, Canada, Australia, New Zealand, Europe etc. receive localized events.
+* India should not be default fallback unless user location is India.
+* Add fallback hierarchy:
+  User Selected Country → Device Locale → GPS/Timezone → Global Trending Events
+
+========================
+5. KIDS CONTROL CENTER RESTRUCTURE
+==================================
+
+Problem:
+Kids Control Center is incorrectly appearing inside Parent Hub.
+
+Tasks:
+
+* Remove Kids Control Center from Parent Hub pages.
+* Keep it only as a dedicated navigation menu item/page.
+* Ensure no duplicate routing exists.
+* Keep feature accessible directly from navigation.
+
+========================
+6. OLYMPIAD ZONE CHILD DETECTION BUG
+====================================
+
+Problem:
+Olympiad Zone shows “Add Child First” even when child profile already exists.
+
+Tasks:
+
+* Debug child profile validation logic.
+* Check:
+
+  * Async loading timing
+  * Context state
+  * Firestore/Supabase fetch
+  * Cached child profile mismatch
+* Ensure proper child detection before rendering empty state.
+* Add loading skeleton while validating.
+* Prevent false-negative child checks.
+
+========================
+7. SPELLING MASTERY + SMART STUDY FIX
+=====================================
+
+Problems:
+
+* Spelling Mastery is incorrectly inside Smart Study.
+* Smart Study content not loading properly in mobile app.
+* Web app already has updated implementation.
+
+Tasks:
+
+* Create separate standalone section/page for Spelling Mastery.
+* Remove it from Smart Study grouping.
+* Compare Smart Study web implementation with mobile implementation.
+* Replicate missing APIs, layouts, AI generation logic, and rendering behavior.
+* Ensure all Smart Study content loads correctly on mobile.
+* Match website UI/UX behavior closely.
+
+========================
+8. AMY TEACHER GLOBALIZATION + AUTO FLOW
+========================================
+
+Problems:
+
+* Amy Teacher feels India-centric.
+* Quiz/questions contain mostly India-related content.
+* User flow is not automated.
+
+Tasks:
+
+* Make Amy Teacher globally adaptive.
+* Content should dynamically adjust based on:
+
+  * User country
+  * Curriculum preference
+  * Language
+  * Age
+  * Educational standards
+* Reduce India-default bias unless user location is India.
+
+Flow Improvements:
+If user selects:
+Quiz → English
+Then automatically generate English quiz instantly without requiring extra prompts.
+
+Implement smart intent-driven auto generation for:
+
+* Quiz
+* Worksheets
+* Practice
+* Vocabulary
+* Reading
+* STEM
+* General Learning
+
+========================
+9. FOOD PREFERENCE + ROUTINE LOGIC PARITY
+=========================================
+
+Problem:
+Mobile app Food Preference and Routine logic are outdated compared to website.
+
+Tasks:
+
+* Compare website implementation carefully.
+* Replicate complete food preference system on mobile:
+
+  * Parent preference
+  * Child preference
+  * Allergies
+  * Diet types
+  * Restrictions
+  * AI personalization
+* Ensure Routine AI uses those preferences while generating:
+
+  * Meals
+  * Nutrition plans
+  * Suggestions
+  * Daily schedules
+
+Also:
+
+* Audit full Routine generation logic.
+* Ensure AI recommendations are personalized properly.
+* Match website logic and UX.
+
+========================
+10. NUTRITION HUB WEBSITE PARITY
+================================
+
+Problem:
+Mobile Nutrition Hub is outdated.
+
+Tasks:
+
+* Compare latest website Nutrition Hub.
+* Port all latest features/UI/components/API logic to mobile app.
+* Ensure feature parity with web version.
+* Maintain responsive native mobile optimization.
+
+========================
+11. KIDS CONTROL “COMING SOON” BADGE
+====================================
+
+Problem:
+Navigation item is missing “Coming Soon” badge.
+
+Tasks:
+
+* Add visually polished “Coming Soon” badge/tag to Kids Control navigation item.
+* Ensure responsive styling for both Android and iOS.
+
+========================
+12. MOBILE ONBOARDING PARITY + DOB/TIME FIX
+===========================================
+
+Problems:
+
+* Website onboarding updates are missing on mobile.
+* DOB and Time picker are broken in native app.
+
+Tasks:
+
+* Compare website onboarding flow step-by-step.
+* Replicate all latest onboarding updates in mobile app.
+* Fix native DOB picker issue.
+* Fix Time selection issue.
+* Ensure user can properly:
+
+  * Select DOB
+  * Select Time
+  * Continue onboarding
+* Validate Android + iOS compatibility.
+* Improve onboarding transitions and animations if missing.
+
+========================
+13. FIRST-TIME USER TOUR NOT SHOWING
+====================================
+
+Problem:
+First-time guided tour/onboarding walkthrough is not appearing in mobile app.
+
+Tasks:
+
+* Debug onboarding tour trigger logic.
+* Ensure first-time users automatically see guided walkthrough after login/signup.
+* Add persistent completion tracking.
+* Ensure returning users do not repeatedly see tour.
+* Add recovery option:
+  Settings → Replay Tour
+
+========================
+GENERAL REQUIREMENTS
+====================
+
+* Maintain production-level code quality.
+* Do not hardcode India-centric data.
+* Keep architecture modular and scalable.
+* Optimize performance and API usage.
+* Prevent unnecessary rerenders.
+* Ensure proper loading/error states everywhere.
+* Add analytics events for major interactions.
+* Verify all navigation flows.
+* Test edge cases carefully.
+* Ensure consistency between Web App and Mobile App.
+* Do full QA before finalizing changes.
+
+At the end:
+
+* Provide summary of all modified files/components.
+* Mention any deprecated logic removed.
+* Mention all backend/API changes.
+* Highlight any migration requirements if needed.
