@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
+import InfantPoemsTab from "@/components/infant/InfantPoemsTab";
 import {
   NOISE_TYPES,
   LULLABIES,
@@ -19,6 +20,7 @@ import { langOf } from "@/utils/lang";
 import VolumeSlider from "@/components/infant/VolumeSlider";
 
 type Props = { ageMonths: number };
+type SoundsTab = "noise" | "poems";
 
 /**
  * Server-tracked feature id for Try-Free gating. Mirrors the InfantHub tile
@@ -37,6 +39,7 @@ const SOUNDS_FEATURE_ID = "hub_infant_sounds";
  */
 export default function InfantSoundsTab({ ageMonths }: Props) {
   const { t, i18n } = useTranslation();
+  const [soundsTab, setSoundsTab] = useState<SoundsTab>("noise");
   const lang = langOf(i18n.language);
   const ageTip = getNoiseAgeTip(ageMonths);
   const recommended = NOISE_TYPES.filter((n) => ageTip.recommended.includes(n.id));
@@ -118,6 +121,40 @@ export default function InfantSoundsTab({ ageMonths }: Props) {
 
   return (
     <View style={{ gap: 12 }}>
+      {/* Noise / Poems tab toggle */}
+      <View style={styles.tabToggle}>
+        <Pressable
+          onPress={() => setSoundsTab("noise")}
+          style={[styles.tabBtn, soundsTab === "noise" && styles.tabBtnActive]}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: soundsTab === "noise" }}
+        >
+          <Text style={[styles.tabBtnText, soundsTab === "noise" && styles.tabBtnTextActive]}>
+            {t("infant_hub.poems.tab_noise")}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setSoundsTab("poems")}
+          style={[styles.tabBtn, soundsTab === "poems" && styles.tabBtnActive]}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: soundsTab === "poems" }}
+        >
+          <Ionicons
+            name="sparkles"
+            size={12}
+            color={soundsTab === "poems" ? "#fff" : "rgba(255,255,255,0.45)"}
+          />
+          <Text style={[styles.tabBtnText, soundsTab === "poems" && styles.tabBtnTextActive]}>
+            {t("infant_hub.poems.tab_poems")}
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* Poems tab */}
+      {soundsTab === "poems" && <InfantPoemsTab ageMonths={ageMonths} />}
+
+      {/* Noise + Lullabies tab */}
+      {soundsTab === "noise" && <>
       <View style={styles.ageTipBlock}>
         <View style={styles.ageTipHead}>
           <Ionicons name="sparkles" size={14} color={brand.amber400} />
@@ -252,6 +289,7 @@ export default function InfantSoundsTab({ ageMonths }: Props) {
           })}
         </View>
       </View>
+      </>}
     </View>
   );
 }
@@ -571,5 +609,34 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.50)",
     fontSize: 10,
     fontStyle: "italic",
+  },
+
+  // ── Noise / Poems tab toggle ──────────────────────────────────────────────
+  tabToggle: {
+    flexDirection: "row",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 999,
+    padding: 3,
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  tabBtnActive: { backgroundColor: brand.primary },
+  tabBtnText: {
+    // audit-ok: muted white on dark tab toggle background
+    color: "rgba(255,255,255,0.50)",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  tabBtnTextActive: {
+    // audit-ok: static white on active brand-primary pill
+    color: "#fff",
   },
 });

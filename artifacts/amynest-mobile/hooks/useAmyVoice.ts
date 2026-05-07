@@ -8,6 +8,12 @@ export interface UseAmyVoiceOptions {
   modelId?: string;
   /** Called when the audio finishes playing naturally (not when stop() is called). */
   onFinished?: () => void;
+  /**
+   * Playback speed multiplier (e.g. 0.85, 1, 1.15, 1.3, 1.5).
+   * Applied to the expo-audio player via `setPlaybackRate` after each `replace`.
+   * Defaults to 1 (normal speed).
+   */
+  playbackRate?: number;
 }
 
 export interface SpeakOptions {
@@ -79,7 +85,7 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
   const onFinishedRef = useRef(options.onFinished);
   onFinishedRef.current = options.onFinished;
 
-  const { voiceId, modelId } = options;
+  const { voiceId, modelId, playbackRate } = options;
 
   // True only while the player is actively playing audio we asked for.
   const speaking = requestedPlaying && status.playing;
@@ -168,6 +174,10 @@ export function useAmyVoice(options: UseAmyVoiceOptions = {}): UseAmyVoiceState 
         const fullUrl = `${API_BASE_URL}${data.audioUrl}`;
         // .replace() loads the new source AND auto-plays once buffered.
         player.replace({ uri: fullUrl });
+        // Apply playback speed if requested (default 1 = normal).
+        if (playbackRate && playbackRate !== 1) {
+          try { player.setPlaybackRate(playbackRate); } catch {}
+        }
         player.play();
         setRequestedPlaying(true);
       } catch (err) {

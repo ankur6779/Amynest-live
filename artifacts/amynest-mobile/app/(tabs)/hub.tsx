@@ -826,31 +826,40 @@ export default function HubScreen() {
             ageBands: HUB_CONTENT_AGE_BANDS["kids-control-center"],
             node: (
               <View style={tileW("kids-control-center")}>
-                <Pressable
-                  onPress={() => router.push("/kids-control-center" as never)}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
-                  testID="card-kids-control-center"
+                <LockedBlock
+                  reason="hub_kids_control_center"
+                  locked={hubUsage.isFeatureLocked("hub_kids_control_center")}
+                  radius={18}
                 >
-                  <LinearGradient
-                    colors={[brand.violet600, brand.pink500, palette.amber500]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
+                  <Pressable
+                    onPress={() => {
+                      hubUsage.markFeatureUsed("hub_kids_control_center");
+                      router.push("/kids-control-center" as never);
+                    }}
+                    style={{ borderRadius: 18, overflow: "hidden" }}
+                    testID="card-kids-control-center"
                   >
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.22)", alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ fontSize: 22 }}>👶</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.kids-control-center.title")}</Text>
-                          {tryFreeFor("hub_kids_control_center") ? <TryFreeBadge /> : null}
+                    <LinearGradient
+                      colors={[brand.violet600, brand.pink500, palette.amber500]}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                      style={{ padding: 16, gap: 8 }}
+                    >
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.22)", alignItems: "center", justifyContent: "center" }}>
+                          <Text style={{ fontSize: 22 }}>👶</Text>
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.kids-control-center.sublabel")}</Text>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.kids-control-center.title")}</Text>
+                            {tryFreeFor("hub_kids_control_center") ? <TryFreeBadge /> : null}
+                          </View>
+                          <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.kids-control-center.sublabel")}</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.85)" />
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.85)" />
-                    </View>
-                  </LinearGradient>
-                </Pressable>
+                    </LinearGradient>
+                  </Pressable>
+                </LockedBlock>
               </View>
             ),
           });
@@ -1537,26 +1546,44 @@ export default function HubScreen() {
 
                 {/* Featured tiles */}
                 <View style={[styles.sectionsGrid, { marginTop: 4 }]}>
-                  <View style={{ position: "relative" }}>
-                    <HubTile featured testID="hub-tile-command-center">
-                      <ParentCommandCenter child={{ id: effective.id, name: effective.name, age: effective.age }} />
-                    </HubTile>
-                    {tryFreeFor("hub_command_center") ? (
-                      <View style={styles.tileBadgeOverlay} pointerEvents="none">
-                        <TryFreeBadge />
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={{ position: "relative" }}>
-                    <HubTile featured testID="hub-tile-tomorrow-forecast">
-                      <FuturePredictor childId={effective.id} />
-                    </HubTile>
-                    {tryFreeFor("hub_tomorrow_forecast") ? (
-                      <View style={styles.tileBadgeOverlay} pointerEvents="none">
-                        <TryFreeBadge />
-                      </View>
-                    ) : null}
-                  </View>
+                  <LockedBlock
+                    reason="hub_command_center"
+                    locked={hubUsage.isFeatureLocked("hub_command_center")}
+                  >
+                    <View style={{ position: "relative" }}>
+                      <HubTile
+                        featured
+                        testID="hub-tile-command-center"
+                        onPress={() => hubUsage.markFeatureUsed("hub_command_center")}
+                      >
+                        <ParentCommandCenter child={{ id: effective.id, name: effective.name, age: effective.age }} />
+                      </HubTile>
+                      {tryFreeFor("hub_command_center") ? (
+                        <View style={styles.tileBadgeOverlay} pointerEvents="none">
+                          <TryFreeBadge />
+                        </View>
+                      ) : null}
+                    </View>
+                  </LockedBlock>
+                  <LockedBlock
+                    reason="hub_tomorrow_forecast"
+                    locked={hubUsage.isFeatureLocked("hub_tomorrow_forecast")}
+                  >
+                    <View style={{ position: "relative" }}>
+                      <HubTile
+                        featured
+                        testID="hub-tile-tomorrow-forecast"
+                        onPress={() => hubUsage.markFeatureUsed("hub_tomorrow_forecast")}
+                      >
+                        <FuturePredictor childId={effective.id} />
+                      </HubTile>
+                      {tryFreeFor("hub_tomorrow_forecast") ? (
+                        <View style={styles.tileBadgeOverlay} pointerEvents="none">
+                          <TryFreeBadge />
+                        </View>
+                      ) : null}
+                    </View>
+                  </LockedBlock>
                 </View>
 
                 {/* Band tiles in web-matching order */}
