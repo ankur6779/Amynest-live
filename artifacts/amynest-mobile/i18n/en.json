@@ -1616,6 +1616,9 @@
     },
     "sign_in": {
       "check_your_inbox": "Check your inbox",
+      "inbox_body_before": "We've sent a reset link to",
+      "inbox_body_after": "Check spam if you don't see it.",
+      "couldnt_send_reset": "Couldn't send reset email. Please try again.",
       "back_to_sign_in": "Back to Sign in",
       "reset_password": "Reset password",
       "you_example_com": "you@example.com",

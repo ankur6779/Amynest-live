@@ -357,6 +357,10 @@ export default function SignInPage() {
       await sendPasswordResetEmail(firebaseAuth, resetEmail.trim());
       setMode("reset-sent");
     } catch (err: any) {
+      if (err?.code === "auth/user-not-found") {
+        setMode("reset-sent");
+        return;
+      }
       setResetError(prettyAuthError(err));
     } finally {
       setResetBusy(false);
