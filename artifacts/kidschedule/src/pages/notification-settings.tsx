@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -7,9 +7,17 @@ import { useWebPush } from "@/hooks/use-web-push";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, Monitor, CheckCircle2, XCircle, Loader2, HelpCircle, Send, Smartphone } from "lucide-react";
+import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, Monitor, CheckCircle2, XCircle, Loader2, HelpCircle, Send, Smartphone, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getNativePushBridge } from "@/lib/native-push-bridge";
+import {
+  awaitNativePushBridge,
+  ensureNativePushReady,
+  getNativePushBridge,
+  isAmyNestWrapper,
+  registerNativePushToken,
+  requestNativePushPermission,
+} from "@/lib/native-push-bridge";
+import { getApiUrl } from "@/lib/api";
 type Prefs = {
   routineEnabled: boolean;
   routineItemEnabled: boolean;
@@ -74,40 +82,213 @@ const CATEGORIES: CategoryDef[] = [{
   Icon: Moon,
   testCategory: "good_night"
 }];
+/**
+ * Inside-the-wrapper state machine — drives WebPushCard rendering when
+ * the page is loaded inside the AmyNest Android WebView wrapper.
+ *
+ *   "detecting"          — wrapper detected (UA / __AMYNEST_WRAPPER marker)
+ *                          but `window.AmyNestPushNative` not wired yet.
+ *                          Showing a brief "Setting up notifications…" card
+ *                          while [awaitNativePushBridge] polls.
+ *   "ready"              — `window.AmyNestPushNative` is live; render the
+ *                          full native push card backed by the bridge.
+ *   "wrapper-no-bridge"  — wrapper detected but the bridge never appeared
+ *                          (very old WebView lacking WEB_MESSAGE_LISTENER,
+ *                          or addWebMessageListener throw). Show a recovery
+ *                          card with a Reload-app button.
+ *   "browser"            — not inside the wrapper; fall through to the
+ *                          standard browser push UI.
+ */
+type WrapperState = "detecting" | "ready" | "wrapper-no-bridge" | "browser";
+
+function initialWrapperState(): WrapperState {
+  if (typeof window === "undefined") return "browser";
+  if (getNativePushBridge()) return "ready";
+  if (isAmyNestWrapper()) return "detecting";
+  return "browser";
+}
+
 function WebPushCard() {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const authFetch = useAuthFetch();
   const { status, enable, disable } = useWebPush();
 
-  // In the native AmyNest app (TWA/WebView) the OS-level FCM push is
-  // managed by the native bridge — web push APIs are not available.
-  // Show a "managed by app" status card instead of the browser push UI.
-  const native = getNativePushBridge();
-  if (native) {
-    const nativePerm = native.getPermissionStatus();
-    const nativeGranted = nativePerm === "granted";
-    const nativeDenied = nativePerm === "denied";
-    const NativeIcon = nativeGranted ? CheckCircle2 : nativeDenied ? XCircle : Bell;
-    const nativeColor = nativeGranted ? "text-primary" : nativeDenied ? "text-destructive" : "text-muted-foreground";
+  // Wrapper-aware state machine (see [WrapperState] doc above).
+  const [wrapperState, setWrapperState] = useState<WrapperState>(initialWrapperState);
+  const [, forceTick] = useState(0);
+  const rerender = useCallback(() => forceTick((n) => n + 1), []);
+  const [enabling, setEnabling] = useState(false);
+
+  useEffect(() => {
+    if (wrapperState === "browser") return;
+    let cancelled = false;
+
+    // Hydrate the cache so subsequent renders see the real
+    // permission/token instead of the "default" placeholder.
+    void ensureNativePushReady().then(() => {
+      if (!cancelled) rerender();
+    });
+
+    if (wrapperState === "detecting") {
+      // Poll up to 8s for window.AmyNestPushNative to appear. On the rare
+      // device where the bridge never wires up, fall through to the
+      // recovery card so the user has an actionable next step.
+      void awaitNativePushBridge(8_000).then((facade) => {
+        if (cancelled) return;
+        setWrapperState(facade ? "ready" : "wrapper-no-bridge");
+      });
+    }
+
+    // Re-render on out-of-band push events (token rotation, permission grant).
+    const onEvt = () => rerender();
+    window.addEventListener("amynest-push-permission", onEvt);
+    window.addEventListener("amynest-push-token", onEvt);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("amynest-push-permission", onEvt);
+      window.removeEventListener("amynest-push-token", onEvt);
+    };
+  }, [wrapperState, rerender]);
+
+  // ── Wrapper, bridge ready: drive the native push UI ─────────────────────
+  if (wrapperState === "ready") {
+    const native = getNativePushBridge();
+    if (native) {
+      const nativePerm = native.getPermissionStatus();
+      const nativeGranted = nativePerm === "granted";
+      const nativeDenied = nativePerm === "denied";
+      const NativeIcon = nativeGranted ? CheckCircle2 : nativeDenied ? XCircle : Bell;
+      const nativeColor = nativeGranted ? "text-primary" : nativeDenied ? "text-destructive" : "text-muted-foreground";
+
+      const handleEnableNative = async () => {
+        setEnabling(true);
+        try {
+          const perm = await requestNativePushPermission(native);
+          if (perm !== "granted") {
+            toast({
+              title: t("toasts.use_web_push.blocked_title"),
+              description: t("toasts.use_web_push.blocked_body"),
+              variant: "destructive",
+            });
+            return;
+          }
+          const ok = await registerNativePushToken(authFetch, getApiUrl("/api/push/register"));
+          if (ok) {
+            toast({ title: t("toasts.use_web_push.enabled") });
+          } else {
+            toast({
+              title: t("toasts.use_web_push.enable_failed_title"),
+              description: t("toasts.use_web_push.enable_failed_body_default"),
+              variant: "destructive",
+            });
+          }
+        } finally {
+          setEnabling(false);
+        }
+      };
+
+      return (
+        <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
+          <CardContent className="flex items-start gap-4 p-4">
+            <div className="w-10 h-10 rounded-lg bg-primary border border-border flex items-center justify-center shrink-0">
+              <NativeIcon className={`w-5 h-5 ${nativeColor}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              {/* i18n-ignore-start: native-wrapper-only labels (not exposed on web) */}
+              <div className="font-semibold text-white">App Notifications</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Notifications are managed directly by the AmyNest app via Firebase.
+              </div>
+              <div className="text-xs mt-1 font-medium" style={{ color: nativeGranted ? "hsl(var(--brand-green-500))" : nativeDenied ? "hsl(var(--brand-red-500))" : "hsl(var(--muted-foreground))" }}>
+                {nativeGranted ? "Active — notifications enabled" : nativeDenied ? "Blocked — enable in Phone Settings → Apps → AmyNest → Notifications" : "Not yet enabled — tap Allow to set up notifications on this device"}
+              </div>
+              {!nativeGranted && !nativeDenied && (
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-muted-foreground hover:text-white hover:bg-primary"
+                    onClick={handleEnableNative}
+                    disabled={enabling}
+                  >
+                    {enabling ? "Enabling…" : "Allow"}
+                  </Button>
+                </div>
+              )}
+              {/* i18n-ignore-end */}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+  }
+
+  // ── Wrapper, bridge not yet ready: brief loading card ───────────────────
+  if (wrapperState === "detecting") {
     return (
       <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
         <CardContent className="flex items-start gap-4 p-4">
           <div className="w-10 h-10 rounded-lg bg-primary border border-border flex items-center justify-center shrink-0">
-            <NativeIcon className={`w-5 h-5 ${nativeColor}`} />
+            <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-white">App Notifications</div> {/* i18n-ok: native push context label shown only in TWA/WebView — intentionally untranslated */}
+            {/* i18n-ignore-start: native-wrapper-only loading label */}
+            <div className="font-semibold text-white">App Notifications</div>
             <div className="text-sm text-muted-foreground mt-1">
-              Notifications are managed directly by the AmyNest app via Firebase.
+              Setting up notifications inside the AmyNest app…
             </div>
-            <div className="text-xs mt-1 font-medium" style={{ color: nativeGranted ? "hsl(var(--brand-green-500))" : nativeDenied ? "hsl(var(--brand-red-500))" : "hsl(var(--muted-foreground))" }}>
-              {nativeGranted ? "Active — notifications enabled" : nativeDenied ? "Blocked — enable in Phone Settings → Apps → KidSchedule → Notifications" : "Not yet enabled — open the app to allow notifications"}
-            </div>
+            {/* i18n-ignore-end */}
           </div>
         </CardContent>
       </Card>
     );
   }
 
+  // ── Wrapper detected but bridge never appeared: recovery card ───────────
+  if (wrapperState === "wrapper-no-bridge") {
+    const handleReload = () => {
+      try {
+        window.location.reload();
+      } catch {
+        /* ignore */
+      }
+    };
+    return (
+      <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
+        <CardContent className="flex items-start gap-4 p-4">
+          <div className="w-10 h-10 rounded-lg bg-primary border border-border flex items-center justify-center shrink-0">
+            <XCircle className="w-5 h-5 text-destructive" />
+          </div>
+          <div className="flex-1 min-w-0">
+            {/* i18n-ignore-start: native-wrapper-only recovery label */}
+            <div className="font-semibold text-white">App Notifications</div>
+            <div className="text-sm text-muted-foreground mt-1">
+              The AmyNest app's native notification bridge could not start on
+              this device. Reload the app to try again — if the issue persists,
+              update Android System WebView from the Play Store and reopen the app.
+            </div>
+            <div className="flex gap-2 mt-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 text-muted-foreground hover:text-white hover:bg-primary"
+                onClick={handleReload}
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Reload app
+              </Button>
+            </div>
+            {/* i18n-ignore-end */}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // ── Standard browser path ───────────────────────────────────────────────
   const isIos = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const label = status === "granted" ? "Enabled" : status === "denied" ? "Blocked in browser" : status === "unsupported" ? (isIos ? "Not supported on iOS Safari" : "Not supported in this browser") : status === "requesting" ? "Requesting permission…" : status === "error" ? "Setup failed — try again" : "Not enabled";
   const Icon = status === "granted" ? CheckCircle2 : status === "denied" || status === "error" ? XCircle : status === "requesting" ? Loader2 : Monitor;

@@ -42,6 +42,14 @@ interface RawMessageBus {
 declare global {
   interface Window {
     AmyNestPushNative?: RawMessageBus;
+    /**
+     * Synchronous wrapper marker injected by the Android wrapper at
+     * document_start (see PushBridge.kt → installWrapperMarker). When this
+     * string is defined, the page is GUARANTEED to be running inside the
+     * AmyNest Android WebView wrapper — regardless of whether the async
+     * `AmyNestPushNative` message bus has been wired up yet.
+     */
+    __AMYNEST_WRAPPER?: string;
   }
 }
 
@@ -224,6 +232,91 @@ export async function ensureNativePushReady(): Promise<NativeStatus | null> {
   const bus = getRawBus();
   if (!bus) return null;
   return ensureInitialised(bus);
+}
+
+/**
+ * Synchronous, low-cost detection of "are we inside the AmyNest Android
+ * wrapper?" — checks ANY of:
+ *   1. `window.AmyNestPushNative` is wired up (full bridge ready)
+ *   2. `window.__AMYNEST_WRAPPER` marker injected at document_start (the
+ *      bulletproof signal — present even when the message-bus is delayed
+ *      or unavailable on this device)
+ *   3. `navigator.userAgent` contains the `AmyNestAndroid` token (last-
+ *      resort signal: works even on very old WebView builds where neither
+ *      WEB_MESSAGE_LISTENER nor DOCUMENT_START_SCRIPT is supported)
+ *
+ * Use this to suppress the misleading "Not supported in this browser"
+ * fallback when the page is INSIDE the wrapper — show a wrapper-aware
+ * loading / recovery state instead.
+ */
+export function isAmyNestWrapper(): boolean {
+  if (typeof window === "undefined") return false;
+  if (typeof window.AmyNestPushNative !== "undefined") return true;
+  if (typeof window.__AMYNEST_WRAPPER === "string") return true;
+  if (
+    typeof navigator !== "undefined" &&
+    /AmyNestAndroid/.test(navigator.userAgent)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Polls for `window.AmyNestPushNative` to appear within `timeoutMs`,
+ * returning the bridge facade when it does or `null` on timeout.
+ *
+ * Why polling? The native side installs the message-bus listener BEFORE
+ * `WebView.loadUrl()`, so in theory `window.AmyNestPushNative` should be
+ * present from the very first paint. In practice, on some Android devices
+ * the JS object is wired up a few hundred ms AFTER the page begins
+ * rendering — long enough for React to mount the settings page and render
+ * the "Not supported" fallback. This helper bridges that window so the
+ * settings page can wait gracefully when [isAmyNestWrapper] is true.
+ *
+ * Returns immediately (with `null`) when not inside the wrapper, so it is
+ * safe to call from any environment.
+ */
+export function awaitNativePushBridge(
+  timeoutMs = 5_000,
+): Promise<NativePushFacade | null> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(null);
+      return;
+    }
+    const immediate = getNativePushBridge();
+    if (immediate) {
+      resolve(immediate);
+      return;
+    }
+    if (!isAmyNestWrapper()) {
+      resolve(null);
+      return;
+    }
+    const start = Date.now();
+    const tick = () => {
+      const facade = getNativePushBridge();
+      if (facade) {
+        resolve(facade);
+        return;
+      }
+      if (Date.now() - start >= timeoutMs) {
+        resolve(null);
+        return;
+      }
+      window.setTimeout(tick, 200);
+    };
+    tick();
+  });
+}
+
+/** Read the wrapper version marker (or null when not in the wrapper). */
+export function getWrapperVersion(): string | null {
+  if (typeof window === "undefined") return null;
+  return typeof window.__AMYNEST_WRAPPER === "string"
+    ? window.__AMYNEST_WRAPPER
+    : null;
 }
 
 /**
