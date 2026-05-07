@@ -51,6 +51,8 @@ interface SectionProps {
   title: string;
   description: string;
   accentClass: string;
+  /** Tailwind gradient classes for the card background tile tint */
+  cardClass?: string;
   defaultOpen?: boolean;
   /** Show a small "Try Free" pill in the header (first-time-free features). */
   tryFree?: boolean;
@@ -62,6 +64,7 @@ function HubSection({
   title,
   description,
   accentClass,
+  cardClass,
   defaultOpen = false,
   tryFree = false,
   onOpen,
@@ -77,14 +80,16 @@ function HubSection({
       return next;
     });
   };
-  return <div data-section-id={id} className={["group relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
-  // Glass surface — light & dark
-  "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl", "border border-white/50 dark:border-white/10", "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]",
+  return <div data-section-id={id}
+  style={cardClass ? { background: cardClass } : undefined}
+  className={["group relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
+  cardClass ? "backdrop-blur-xl" : "bg-white/60 dark:bg-white/[0.04] backdrop-blur-xl",
+  "border border-white/20 dark:border-white/10", "shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)]",
   // Hover glow
-  "hover:border-primary/40 dark:hover:border-primary/40", "hover:shadow-[0_0_0_1px_rgba(168,85,247,0.25),0_10px_36px_-10px_rgba(168,85,247,0.35)]",
+  "hover:border-white/40 dark:hover:border-white/20", "hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_10px_36px_-10px_rgba(0,0,0,0.3)]",
   // Active (expanded) glow — stronger
-  open ? "border-primary/60 dark:border-primary/50 shadow-[0_0_0_1px_rgba(168,85,247,0.45),0_18px_50px_-12px_rgba(168,85,247,0.45)]" : ""].join(" ")}>
-      <button onClick={toggle} className={["w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left", "transition-colors duration-200", open ? "bg-primary/[0.06] dark:bg-primary/[0.08]" : "hover:bg-white/40 dark:hover:bg-white/[0.03]"].join(" ")} aria-expanded={open}>
+  open ? "border-white/30 dark:border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_18px_50px_-12px_rgba(0,0,0,0.4)]" : ""].join(" ")}>
+      <button onClick={toggle} className={["w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left", "transition-colors duration-200", open ? "bg-black/[0.06] dark:bg-black/[0.12]" : "hover:bg-white/10 dark:hover:bg-white/[0.04]"].join(" ")} aria-expanded={open}>
         <div className="flex items-center gap-3 min-w-0">
           <div className={["w-11 h-11 rounded-2xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]", "ring-1 ring-white/40 dark:ring-white/10", accentClass].join(" ")}>
             {icon}
@@ -203,6 +208,8 @@ interface SubSectionProps {
   title: string;
   description: string;
   accentClass: string;
+  /** Tailwind gradient classes for the card background */
+  cardClass?: string;
   /**
    * Optional gating: when set, wraps the entire SubSection with a
    * <SubItemGate> using the given sectionId and the SubSection's title
@@ -217,12 +224,17 @@ function SubSection({
   title,
   description,
   accentClass,
+  cardClass,
   gateSection,
   children
 }: SubSectionProps) {
   const [open, setOpen] = useState(false);
-  const inner = <div className={["relative rounded-2xl overflow-hidden transition-all duration-300 ease-out", "bg-white/50 dark:bg-white/[0.035] backdrop-blur-xl", "border border-white/60 dark:border-white/[0.08]", "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)]", open ? "border-primary/50 dark:border-primary/40 shadow-[0_0_0_1px_rgba(168,85,247,0.3),0_10px_28px_-8px_rgba(168,85,247,0.35)]" : "hover:border-primary/25 hover:shadow-[0_0_0_1px_rgba(168,85,247,0.12),0_6px_20px_-6px_rgba(168,85,247,0.18)]"].join(" ")}>
-      <button onClick={() => setOpen(v => !v)} className={["w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left", "transition-colors duration-200", open ? "bg-primary/[0.04] dark:bg-primary/[0.06]" : "hover:bg-white/40 dark:hover:bg-white/[0.025]"].join(" ")} aria-expanded={open}>
+  const inner = <div
+  style={cardClass ? { background: cardClass } : undefined}
+  className={["relative rounded-2xl overflow-hidden transition-all duration-300 ease-out",
+  cardClass ? "backdrop-blur-xl" : "bg-white/50 dark:bg-white/[0.035] backdrop-blur-xl",
+  "border border-white/20 dark:border-white/[0.08]", "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)]", open ? "border-white/30 dark:border-white/20" : "hover:border-white/30 hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.2)]"].join(" ")}>
+      <button onClick={() => setOpen(v => !v)} className={["w-full flex items-center justify-between gap-3 px-3.5 py-3 text-left", "transition-colors duration-200", open ? "bg-black/[0.05] dark:bg-black/[0.10]" : "hover:bg-white/10 dark:hover:bg-white/[0.04]"].join(" ")} aria-expanded={open}>
         <div className="flex items-center gap-2.5 min-w-0">
           <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", "shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] ring-1 ring-white/40 dark:ring-white/10", accentClass].join(" ")}>
             {icon}
@@ -270,75 +282,75 @@ function ActivitiesSection({
 
       {/* ── INFANT ─────────────────────────────────────────────────────── */}
       {isInfant && <>
-          <SubSection gateSection="hub_activities" icon={<Baby className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.baby-activities.title")} description={t("parent_hub.subsections.baby-activities.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<Baby className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.baby-activities.title")} description={t("parent_hub.subsections.baby-activities.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(244,114,182,0.26)0%,rgba(251,113,133,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <InfantMode childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly={null} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-baby.title")} description={t("parent_hub.subsections.amazing-facts-baby.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-baby.title")} description={t("parent_hub.subsections.amazing-facts-baby.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(251,191,36,0.26)0%,rgba(234,179,8,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
         </>}
 
       {/* ── TODDLER / PRESCHOOL ────────────────────────────────────────── */}
       {isToddlerOrPreschool && <>
-          <SubSection gateSection="hub_activities" icon={<Star className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-activity.title")} description={t("parent_hub.subsections.daily-activity.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<Star className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-activity.title")} description={t("parent_hub.subsections.daily-activity.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(250,204,21,0.26)0%,rgba(251,146,60,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities" icon={<Brain className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.skills-to-focus-toddler.title")} description={t("parent_hub.subsections.skills-to-focus-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<Brain className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.skills-to-focus-toddler.title")} description={t("parent_hub.subsections.skills-to-focus-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(129,140,248,0.26)0%,rgba(168,85,247,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <ToddlerPreschoolMode ageGroup={ageGroup as "toddler" | "preschool"} childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly="skill" />
           </SubSection>
 
-          <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.story-time.title")} description={t("parent_hub.subsections.story-time.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.story-time.title")} description={t("parent_hub.subsections.story-time.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(96,165,250,0.26)0%,rgba(99,102,241,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities" icon={<Gamepad2 className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.fun-and-play.title")} description={t("parent_hub.subsections.fun-and-play.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<Gamepad2 className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.fun-and-play.title")} description={t("parent_hub.subsections.fun-and-play.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(52,211,153,0.26)0%,rgba(34,197,94,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <ToddlerPreschoolMode ageGroup={ageGroup as "toddler" | "preschool"} childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly="fun" />
           </SubSection>
 
-          <SubSection gateSection="hub_activities" icon={<ScrollText className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.parent-tasks-toddler.title")} description={t("parent_hub.subsections.parent-tasks-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<ScrollText className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.parent-tasks-toddler.title")} description={t("parent_hub.subsections.parent-tasks-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(45,212,191,0.26)0%,rgba(34,211,238,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <ToddlerPreschoolMode ageGroup={ageGroup as "toddler" | "preschool"} childName={effectiveChild.name} ageYears={effectiveChild.age} ageMonths={(effectiveChild as any).ageMonths ?? 0} showOnly="task" />
           </SubSection>
 
-          {ageGroup === "preschool" && <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-pre.title")} description={t("parent_hub.subsections.daily-puzzle-pre.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          {ageGroup === "preschool" && <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-pre.title")} description={t("parent_hub.subsections.daily-puzzle-pre.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(56,189,248,0.26)0%,rgba(59,130,246,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
               <DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} />
             </SubSection>}
 
-          <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-toddler.title")} description={t("parent_hub.subsections.amazing-facts-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-toddler.title")} description={t("parent_hub.subsections.amazing-facts-toddler.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(251,191,36,0.26)0%,rgba(234,179,8,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
         </>}
 
       {/* ── OLDER KIDS ─────────────────────────────────────────────────── */}
       {isOlder && <>
-          {totalAgeMonths < 96 && <SubSection gateSection="hub_activities" icon={<Star className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-activity-older.title")} description={t("parent_hub.subsections.daily-activity-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          {totalAgeMonths < 96 && <SubSection gateSection="hub_activities" icon={<Star className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-activity-older.title")} description={t("parent_hub.subsections.daily-activity-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(250,204,21,0.26)0%,rgba(251,146,60,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
               <DailyKidsActivity childName={effectiveChild.name} ageMonths={totalAgeMonths} />
             </SubSection>}
 
-          <SubSection gateSection="hub_activities" icon={<Brain className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.skills-to-focus-older.title")} description={t("parent_hub.subsections.skills-to-focus-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<Brain className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.skills-to-focus-older.title")} description={t("parent_hub.subsections.skills-to-focus-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(129,140,248,0.26)0%,rgba(168,85,247,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <SkillFocusSection group={ageGroup} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.story-time-older.title")} description={t("parent_hub.subsections.story-time-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<BookOpen className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.story-time-older.title")} description={t("parent_hub.subsections.story-time-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(96,165,250,0.26)0%,rgba(99,102,241,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <DailyStorySection ageMonths={totalAgeMonths} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-older.title")} description={t("parent_hub.subsections.daily-puzzle-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<LayoutGrid className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.daily-puzzle-older.title")} description={t("parent_hub.subsections.daily-puzzle-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(56,189,248,0.26)0%,rgba(59,130,246,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <DailyPuzzle childName={effectiveChild.name} ageGroup={ageGroup} ageYears={effectiveChild.age} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities" icon={<ScrollText className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.parent-tasks-older.title")} description={t("parent_hub.subsections.parent-tasks-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<ScrollText className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.parent-tasks-older.title")} description={t("parent_hub.subsections.parent-tasks-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(45,212,191,0.26)0%,rgba(34,211,238,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <ParentTasksSection group={ageGroup} childName={effectiveChild.name} />
           </SubSection>
 
-          <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-older.title")} description={t("parent_hub.subsections.amazing-facts-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <SubSection gateSection="hub_activities" icon={<Lightbulb className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.amazing-facts-older.title")} description={t("parent_hub.subsections.amazing-facts-older.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(251,191,36,0.26)0%,rgba(234,179,8,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
             <AmazingFacts childName={effectiveChild.name} ageGroup={ageGroup} />
           </SubSection>
         </>}
 
       {/* ── Printable Worksheets (all age groups) ──────────────────────── */}
-      <SubSection gateSection="hub_activities" icon={<FileDown className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.printable-worksheets-all.title")} description={t("parent_hub.subsections.printable-worksheets-all.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+      <SubSection gateSection="hub_activities" icon={<FileDown className="h-4 w-4 text-white" />} title={t("parent_hub.subsections.printable-worksheets-all.title")} description={t("parent_hub.subsections.printable-worksheets-all.description")} accentClass="bg-gradient-to-br from-muted dark:from-card to-muted dark:to-card" cardClass="linear-gradient(135deg,rgba(163,230,53,0.26)0%,rgba(34,197,94,0.12)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon  // audit-ok: intentional vibrant card gradient for feature tile
         <PrintableWorksheets childAgeMonths={totalAgeMonths} />
       </SubSection>
     </div>;
@@ -509,7 +521,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     featured: true,
     render: () => {
-      return <HubSection id="command-center" icon={<Zap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.command-center.title")} description={t("parent_hub.web_tiles.command-center.description")} accentClass="bg-gradient-to-br from-indigo-500 to-violet-600" defaultOpen={false}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+      return <HubSection id="command-center" icon={<Zap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.command-center.title")} description={t("parent_hub.web_tiles.command-center.description")} accentClass="bg-gradient-to-br from-indigo-500 to-violet-600" cardClass="linear-gradient(135deg,rgba(99,102,241,0.30)0%,rgba(139,92,246,0.14)100%)" defaultOpen={false}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
           <ParentCommandCenter child={{
           id: effectiveChild.id,
           name: effectiveChild.name,
@@ -533,7 +545,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     featured: true,
     render: () => {
-      return <HubSection id="tomorrow-forecast" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")} accentClass="bg-gradient-to-br from-sky-400 to-cyan-500" defaultOpen={false}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+      return <HubSection id="tomorrow-forecast" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")} accentClass="bg-gradient-to-br from-sky-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(34,211,238,0.14)100%)" defaultOpen={false}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
           <FuturePredictor childId={effectiveChild.id} />
         </HubSection>;
     }
@@ -543,7 +555,7 @@ export default function ParentingHub() {
     id: "smart-math-tricks",
     bands: ["4-6", "6-8"] as AgeBand[],
     render: () => {
-      return ageGroup ? <HubSection id="smart-math-tricks" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-math-tricks.title")} description={t("parent_hub.web_tiles.smart-math-tricks.description")} accentClass="bg-gradient-to-br from-orange-400 to-amber-500">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+      return ageGroup ? <HubSection id="smart-math-tricks" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-math-tricks.title")} description={t("parent_hub.web_tiles.smart-math-tricks.description")} accentClass="bg-gradient-to-br from-orange-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(251,191,36,0.14)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon
           <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
         </HubSection> : null;
     }
@@ -555,7 +567,7 @@ export default function ParentingHub() {
     render: () => {
       return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_abacus")}>
           <HubSection id="abacus" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("pages.parenting_hub.abacus_pro_zone")} // audit-ok: brand product name, intentional EN-only
-        description="Learn the soroban — beads, brain & speed math" accentClass="bg-gradient-to-br from-teal-400 to-cyan-500" tryFree={tryFreeFor("hub_abacus")} onOpen={() => hubUsage.markFeatureUsed("hub_abacus")}>
+        description="Learn the soroban — beads, brain & speed math" accentClass="bg-gradient-to-br from-teal-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(45,212,191,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_abacus")} onOpen={() => hubUsage.markFeatureUsed("hub_abacus")}>  // audit-ok: intentional vibrant card gradient for feature tile
             <AbacusZone childId={effectiveChild.id} childName={effectiveChild.name} ageYears={effectiveChild.age} />
           </HubSection>
         </LockedBlock> : null;
@@ -566,7 +578,7 @@ export default function ParentingHub() {
     id: "amy-ai",
     alwaysCurrent: true,
     render: () => {
-      return <HubSection id="amy-ai" icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-violet-500 to-purple-600">  // audit-ok: intentional vibrant accent gradient for feature tile icon
+      return <HubSection id="amy-ai" icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-violet-500 to-purple-600" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)">  // audit-ok: intentional vibrant accent gradient for feature tile icon
           <AmyAISuggestionsSection />
         </HubSection>;
     }
@@ -575,7 +587,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_articles")}>
-          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" tryFree={tryFreeFor("hub_articles")} onOpen={() => hubUsage.markFeatureUsed("hub_articles")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(59,130,246,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_articles")} onOpen={() => hubUsage.markFeatureUsed("hub_articles")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <ParentingArticles childAgeMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock>;
@@ -585,7 +597,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_tips")}>
-          <HubSection id="daily-tips" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" tryFree={tryFreeFor("hub_tips")} onOpen={() => hubUsage.markFeatureUsed("hub_tips")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="daily-tips" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(234,179,8,0.14)100%)" tryFree={tryFreeFor("hub_tips")} onOpen={() => hubUsage.markFeatureUsed("hub_tips")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <DailyTips ageGroup={ageGroup} childName={effectiveChild.name} />
           </HubSection>
         </LockedBlock> : null;
@@ -595,7 +607,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_emotional")}>
-          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" tryFree={tryFreeFor("hub_emotional")} onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardClass="linear-gradient(135deg,rgba(251,113,133,0.30)0%,rgba(236,72,153,0.14)100%)" tryFree={tryFreeFor("hub_emotional")} onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <EmotionalSupportSection />
           </HubSection>
         </LockedBlock>;
@@ -605,7 +617,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_activities")}>
-          <HubSection id="activities" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" tryFree={tryFreeFor("hub_activities")} onOpen={() => hubUsage.markFeatureUsed("hub_activities")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="activities" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_activities")} onOpen={() => hubUsage.markFeatureUsed("hub_activities")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <ActivitiesSection ageGroup={ageGroup} effectiveChild={effectiveChild} totalAgeMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock> : null;
@@ -617,7 +629,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_art_craft")}>
-          <HubSection id="art-craft" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} accentClass="bg-gradient-to-br from-orange-400 to-red-500" tryFree={tryFreeFor("hub_art_craft")} onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="art-craft" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} accentClass="bg-gradient-to-br from-orange-400 to-red-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(239,68,68,0.14)100%)" tryFree={tryFreeFor("hub_art_craft")} onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <ArtCraftReels />
           </HubSection>
         </LockedBlock>;
@@ -629,7 +641,7 @@ export default function ParentingHub() {
     bands: ["0-2", "2-4", "4-6", "6-8"],
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_story_hub")}>
-          <HubSection id="story-hub" icon={<Film className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.story-hub.title")} description={t("parent_hub.web_tiles.story-hub.description")} accentClass="bg-gradient-to-br from-purple-500 to-fuchsia-600" tryFree={tryFreeFor("hub_story_hub")} onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="story-hub" icon={<Film className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.story-hub.title")} description={t("parent_hub.web_tiles.story-hub.description")} accentClass="bg-gradient-to-br from-purple-500 to-fuchsia-600" cardClass="linear-gradient(135deg,rgba(168,85,247,0.30)0%,rgba(217,70,239,0.14)100%)" tryFree={tryFreeFor("hub_story_hub")} onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <StoryHub childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
         </LockedBlock>;
@@ -639,7 +651,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6"],
     render: () => {
       return totalAgeMonths >= 12 && totalAgeMonths < 72 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_phonics")}>
-          <HubSection id="phonics" icon={<AudioLines className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.phonics.title")} description={t("parent_hub.web_tiles.phonics.description")} accentClass="bg-gradient-to-br from-sky-400 to-blue-500" tryFree={tryFreeFor("hub_phonics")} onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="phonics" icon={<AudioLines className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.phonics.title")} description={t("parent_hub.web_tiles.phonics.description")} accentClass="bg-gradient-to-br from-sky-400 to-blue-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_phonics")} onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <PhonicsLearning childId={effectiveChild.id} childName={effectiveChild.name} totalAgeMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock> : null;
@@ -649,7 +661,7 @@ export default function ParentingHub() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 36 && totalAgeMonths < 216 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_ptm_prep")}>
-          <HubSection id="ptm-prep" icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" tryFree={tryFreeFor("hub_ptm_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="ptm-prep" icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" tryFree={tryFreeFor("hub_ptm_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <PtmPrepAssistant child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -663,7 +675,7 @@ export default function ParentingHub() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 36 && totalAgeMonths < 204 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_smart_study")}>
-          <HubSection id="smart-study" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-study.title")} description={t("parent_hub.web_tiles.smart-study.description")} accentClass="bg-gradient-to-br from-indigo-400 to-blue-500" tryFree={tryFreeFor("hub_smart_study")} onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="smart-study" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-study.title")} description={t("parent_hub.web_tiles.smart-study.description")} accentClass="bg-gradient-to-br from-indigo-400 to-blue-500" cardClass="linear-gradient(135deg,rgba(129,140,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_smart_study")} onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <SmartStudyZone />
           </HubSection>
         </LockedBlock> : null;
@@ -674,7 +686,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_spelling_mastery")}>
-          <HubSection id="spelling-mastery" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.spelling-mastery.title")} description={t("parent_hub.web_tiles.spelling-mastery.description")} accentClass="bg-gradient-to-br from-green-400 to-teal-500" tryFree={tryFreeFor("hub_spelling_mastery")} onOpen={() => hubUsage.markFeatureUsed("hub_spelling_mastery")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="spelling-mastery" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.spelling-mastery.title")} description={t("parent_hub.web_tiles.spelling-mastery.description")} accentClass="bg-gradient-to-br from-green-400 to-teal-500" cardClass="linear-gradient(135deg,rgba(74,222,128,0.30)0%,rgba(45,212,191,0.14)100%)" tryFree={tryFreeFor("hub_spelling_mastery")} onOpen={() => hubUsage.markFeatureUsed("hub_spelling_mastery")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <SpellingMastery childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock> : null;
@@ -684,7 +696,7 @@ export default function ParentingHub() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 36 && totalAgeMonths < 180 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_event_prep")}>
-          <HubSection id="event-prep" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} accentClass="bg-gradient-to-br from-amber-400 to-orange-500" tryFree={tryFreeFor("hub_event_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="event-prep" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} accentClass="bg-gradient-to-br from-amber-400 to-orange-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(249,115,22,0.14)100%)" tryFree={tryFreeFor("hub_event_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <EventPrepCard />
           </HubSection>
         </LockedBlock> : null;
@@ -694,7 +706,7 @@ export default function ParentingHub() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 36 && totalAgeMonths < 192 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_olympiad")}>
-          <HubSection id="olympiad" icon={<Trophy className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.olympiad.title")} description={t("parent_hub.web_tiles.olympiad.description")} accentClass="bg-gradient-to-br from-yellow-400 to-amber-500" tryFree={tryFreeFor("hub_olympiad")} onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="olympiad" icon={<Trophy className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.olympiad.title")} description={t("parent_hub.web_tiles.olympiad.description")} accentClass="bg-gradient-to-br from-yellow-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(250,204,21,0.30)0%,rgba(245,158,11,0.14)100%)" tryFree={tryFreeFor("hub_olympiad")} onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <OlympiadZone child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -708,7 +720,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 24 && totalAgeMonths < 192 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_life_skills")}>
-          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" tryFree={tryFreeFor("hub_life_skills")} onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_life_skills")} onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <LifeSkillsZone child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -726,7 +738,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_coloring_books")}>
-          <HubSection id="coloring-books" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500" tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="coloring-books" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500" cardClass="linear-gradient(135deg,rgba(244,114,182,0.30)0%,rgba(251,113,133,0.14)100%)" tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <ColoringBooks childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
         </LockedBlock> : null;
@@ -740,7 +752,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_fun_sheets")}>
-          <HubSection id="fun-sheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} accentClass="bg-gradient-to-br from-lime-400 to-green-500" tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
+          <HubSection id="fun-sheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} accentClass="bg-gradient-to-br from-lime-400 to-green-500" cardClass="linear-gradient(135deg,rgba(163,230,53,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}>  // audit-ok: intentional vibrant accent gradient for feature tile icon
             <FunSheets childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
         </LockedBlock> : null;
