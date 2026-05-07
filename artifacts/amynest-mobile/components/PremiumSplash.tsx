@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import NeonRingHero from "@/components/NeonRingHero";
+import { brand } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 
 const { width: W, height: H } = Dimensions.get("window");
@@ -64,7 +65,7 @@ function FloatingParticle({ x, y, size, dur, delay }: { x: number; y: number; si
         height: size,
         borderRadius: size / 2,
         backgroundColor: "rgba(255,255,255,0.85)",
-        shadowColor: "#a855f7", // audit-ok: web splash-particle glow colour
+        shadowColor: brand.purple500,
         shadowOpacity: 0.7,
         shadowRadius: 3,
         shadowOffset: { width: 0, height: 0 },
