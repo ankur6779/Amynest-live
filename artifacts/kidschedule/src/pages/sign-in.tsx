@@ -354,13 +354,19 @@ export default function SignInPage() {
     setResetError(null);
     setResetBusy(true);
     try {
-      await sendPasswordResetEmail(firebaseAuth, resetEmail.trim());
-      setMode("reset-sent");
-    } catch (err: any) {
-      if (err?.code === "auth/user-not-found") {
+      const checkRes = await fetch("/api/auth/check-reset-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail.trim() }),
+      });
+      const checkData = (await checkRes.json()) as { exists?: boolean };
+      if (!checkData.exists) {
         setResetError(t("sign_in.reset_not_found"));
         return;
       }
+      await sendPasswordResetEmail(firebaseAuth, resetEmail.trim());
+      setMode("reset-sent");
+    } catch (err: any) {
       setResetError(prettyAuthError(err));
     } finally {
       setResetBusy(false);
