@@ -879,6 +879,7 @@
       "sign_up_link": "Sign up",
       "reset_title": "Reset password",
       "reset_subtitle": "Enter your email and we'll send you a reset link.",
+      "reset_not_found": "No account found with this email. Please sign up first.",
       "sending": "Sending…",
       "send_reset": "Send reset link",
       "back_to_sign_in_link": "← Back to Sign in",
