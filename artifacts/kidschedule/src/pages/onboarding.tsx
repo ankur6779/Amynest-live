@@ -423,8 +423,8 @@ export default function OnboardingPage() {
   const [dobInput, setDobInput] = useState("");
   const [regionDrillDown, setRegionDrillDown] = useState(false);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
-  const [countryCode, setCountryCode] = useState("IN");
-  const [countryName, setCountryName] = useState("India");
+  const [countryCode, setCountryCode] = useState("");
+  const [countryName, setCountryName] = useState("");
   const [detectedCountry, setDetectedCountry] = useState<{ code: string; name: string } | "loading" | null>("loading");
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");

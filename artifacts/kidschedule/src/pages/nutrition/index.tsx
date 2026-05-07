@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
-  AGE_GROUPS, NUTRIENTS, MEAL_PLANS,
+  AGE_GROUPS, NUTRIENTS, getMealPlan,
   MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient,
 } from "@/lib/nutrition-data";
 import { Card, CardContent } from "@/components/ui/card";
@@ -385,10 +386,10 @@ function AIMealPlanSection({ onMealChange }: { onMealChange?: (mealName: string)
   );
 }
 
-// ─── Meal Plan Section (Legacy Static — used for infant age groups) ────────────
-function MealPlanSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
+// ─── Meal Plan Section — cuisine-aware static weekly plans ────────────────────
+function MealPlanSection({ ageGroupId, foodStyle }: { ageGroupId: AgeGroupId; foodStyle?: string }) {
   const { t } = useTranslation();
-  const plan = MEAL_PLANS.find(p => p.applies.includes(ageGroupId));
+  const plan = getMealPlan(ageGroupId, foodStyle);
   const [dayIdx, setDayIdx] = useState(0);
   const [isVeg, setIsVeg] = useState(true);
 
@@ -781,6 +782,7 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NutritionHubPage() {
   const { t } = useTranslation();
+  const authFetch = useAuthFetch();
   const [activeAgeGroupId, setActiveAgeGroupId] = useState<AgeGroupId>("toddler_1_3");
   const [activeTab, setActiveTab] = useState<Tab>("nutrients");
   const [selectedNutrient, setSelectedNutrient] = useState<Nutrient | null>(null);
@@ -788,6 +790,19 @@ export default function NutritionHubPage() {
   const [showRefs, setShowRefs] = useState(false);
   // Shared state: last lunch meal name from AI meal planner → pre-fills Family Mode
   const [suggestedMeal, setSuggestedMeal] = useState("");
+
+  // Parent's food style — used to pick the right cuisine meal plan
+  const { data: parentProfile } = useQuery({
+    queryKey: ["parent-profile-nutrition"],
+    queryFn: async () => {
+      const res = await authFetch("/api/parent-profile");
+      if (!res.ok) return null;
+      return res.json() as Promise<{ foodStyle?: string | null; region?: string | null }>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  // Prefer foodStyle (set during onboarding), fall back to region, then "mixed"
+  const foodStyle = parentProfile?.foodStyle ?? parentProfile?.region ?? "mixed";
 
   const activeAgeGroup = AGE_GROUPS.find(a => a.id === activeAgeGroupId)!;
 

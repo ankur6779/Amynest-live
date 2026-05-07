@@ -515,8 +515,8 @@ ${params.hasSchool ? `- School hours: ${params.schoolStartTime} to ${params.scho
   })()}
 - ${(() => {
     // Parse comma-separated multi-cuisine (e.g. "north_indian,western")
-    const cuisines = (params.region ?? "pan_indian").split(",").map((s: string) => s.trim()).filter(Boolean);
-    const primary = cuisines[0] ?? "pan_indian";
+    const cuisines = (params.region ?? "mixed").split(",").map((s: string) => s.trim()).filter(Boolean);
+    const primary = cuisines[0] ?? "mixed";
     const secondary = cuisines[1];
     const labelOf = (r: string): string => {
       const MAP: Record<string, string> = {
@@ -833,7 +833,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
 
   // Food type — prefer child setting, fallback to parent profile
   let foodType = (child as any).foodType ?? "veg";
-  let region: string = parsed.data.region ?? "pan_indian";
+  let region: string = parsed.data.region ?? "mixed";
   if (userId) {
     const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
     // Prefer child-level dietType (customized) → parent dietType → legacy foodType
@@ -938,7 +938,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
 
   let foodType = (child as any).foodType ?? "veg";
-  let region: string = parsed.data.region ?? "pan_indian";
+  let region: string = parsed.data.region ?? "mixed";
   const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
   // Prefer child-level dietType (customized) → parent dietType → legacy foodType
   if ((child as any).dietType) foodType = (child as any).dietType;
