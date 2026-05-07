@@ -8,6 +8,7 @@ import {
   Easing,
   Platform,
   ScrollView,
+  Image,
 } from "react-native";
 import { useRouter, Link } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,7 +18,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import colors, { brand, brandAlpha, ACCENT_PINK, palette, brandExtended } from "@/constants/colors";
 import { BRAND } from "@/constants/brand";
-import NeonRingHero from "@/components/NeonRingHero";
+
+const LOGO = require("../assets/images/amynest-logo.png");
 
 const COACH_HIGHLIGHT_KEYS = [
   "landing.highlight_1",
@@ -138,6 +140,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
+  const floatY = useRef(new Animated.Value(0)).current;
   const colorAnim = useRef(new Animated.Value(0)).current;
   const fadeIn = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(24)).current;
@@ -145,6 +148,12 @@ export default function WelcomeScreen() {
   const [marqueeTotalW, setMarqueeTotalW] = useState(0);
 
   useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatY, { toValue: -10, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(floatY, { toValue: 0, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    ).start();
     Animated.loop(
       Animated.timing(colorAnim, { toValue: 4, duration: 4000, easing: Easing.linear, useNativeDriver: false }),
     ).start();
@@ -230,10 +239,11 @@ export default function WelcomeScreen() {
               <Text style={styles.badgeText}>{t("landing.badge")}</Text>
             </View>
 
-            {/* Slow-motion NeonRingHero — replaces floating logo */}
-            <View style={styles.heroRingWrap}>
-              <NeonRingHero size="large" slow />
-            </View>
+            {/* Floating logo — centered */}
+            <Animated.View style={[styles.bigLogoWrap, { transform: [{ translateY: floatY }] }]}>
+              <View style={styles.bigLogoGlow} />
+              <Image source={LOGO} style={styles.bigLogoImg} resizeMode="contain" />
+            </Animated.View>
 
             {/* Headline — color cycling */}
             <Animated.Text style={[styles.title, { color: titleColor }]}>
@@ -804,12 +814,22 @@ const styles = StyleSheet.create({
   },
 
   /* Logo */
-  heroRingWrap: {
+  bigLogoWrap: {
+    width: 144,
+    height: 144,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32,
-    marginTop: 8,
+    marginBottom: 28,
   },
+  bigLogoGlow: {
+    position: "absolute",
+    width: 170,
+    height: 170,
+    borderRadius: 999,
+    backgroundColor: brandAlpha.purple500_45,
+    opacity: 0.7,
+  },
+  bigLogoImg: { width: 144, height: 144, borderRadius: 999 },
 
   /* Headline */
   title: {
