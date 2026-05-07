@@ -1,7 +1,7 @@
 import React, {  useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from "react-native";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
@@ -25,19 +25,21 @@ export default function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSignUp = async () => {
+    setError(null);
     if (firstName.trim().length < 2) {
-      Alert.alert(t("alerts.signup.invalid_name_title"), t("alerts.signup.invalid_name_msg"));
+      setError(t("alerts.signup.invalid_name_msg"));
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      Alert.alert(t("alerts.signup.invalid_email_title"), t("alerts.signup.invalid_email_msg"));
+      setError(t("alerts.signup.invalid_email_msg"));
       return;
     }
     if (password.length < 8) {
-      Alert.alert(t("alerts.signup.weak_password_title"), t("alerts.signup.weak_password_msg"));
+      setError(t("alerts.signup.weak_password_msg"));
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -48,7 +50,7 @@ export default function SignUpScreen() {
         await updateProfile(cred.user, { displayName: firstName.trim() });
       } catch { /* non-fatal */ }
     } catch (err: unknown) {
-      Alert.alert(t("alerts.signup.failed_title"), humanizeError(err, t("alerts.signup.failed_default")));
+      setError(humanizeError(err, t("alerts.signup.failed_default")));
     } finally {
       setLoading(false);
     }
@@ -56,7 +58,7 @@ export default function SignUpScreen() {
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const botPad = insets.bottom + (Platform.OS === "web" ? 34 : 0);
-  const canSubmit = !loading && firstName.trim().length >= 2 && !!email && password.length >= 8;
+  const canSubmit = firstName.trim().length >= 2 && !!email && password.length >= 8;
 
   return (
     <LinearGradient
@@ -89,7 +91,7 @@ export default function SignUpScreen() {
 
             {/* Phone OTP — fastest signup */}
             <PhoneAuthFlow
-              onError={(msg) => Alert.alert(t("alerts.signup.failed_title"), msg)}
+              onError={(msg) => setError(msg)}
             />
 
             {/* Divider */}
@@ -107,7 +109,7 @@ export default function SignUpScreen() {
                 <TextInput
                   style={styles.input}
                   value={firstName}
-                  onChangeText={setFirstName}
+                  onChangeText={(v) => { setFirstName(v); setError(null); }}
                   placeholder={t("screens.sign_up.your_first_name")}
                   placeholderTextColor="rgba(200,180,255,0.28)"
                   autoComplete="given-name"
@@ -125,7 +127,7 @@ export default function SignUpScreen() {
                 <TextInput
                   style={styles.input}
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(v) => { setEmail(v); setError(null); }}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   autoComplete="email"
@@ -145,7 +147,7 @@ export default function SignUpScreen() {
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(v) => { setPassword(v); setError(null); }}
                   secureTextEntry={!showPass}
                   placeholder={t("screens.sign_up.min_8_characters")}
                   placeholderTextColor="rgba(200,180,255,0.28)"
@@ -158,15 +160,23 @@ export default function SignUpScreen() {
               </View>
             </View>
 
+            {/* Inline error */}
+            {error && (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle-outline" size={15} color={brandExtended.errorSoft} style={{ marginRight: 6 }} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
             {/* Create account */}
             <TouchableOpacity
               onPress={handleSignUp}
-              disabled={!canSubmit}
+              disabled={loading}
               activeOpacity={0.85}
               style={styles.primaryBtnWrap}
             >
               <LinearGradient
-                colors={canSubmit ? BRAND_GRADIENT : BRAND_GRADIENT_DISABLED}
+                colors={canSubmit && !loading ? BRAND_GRADIENT : BRAND_GRADIENT_DISABLED}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.primaryBtn}
               >
@@ -253,6 +263,14 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 15, color: brandExtended.softPurple, fontFamily: "Inter_400Regular", outlineWidth: 0 },
   eyeBtn: { padding: 4 },
+
+  errorBox: {
+    flexDirection: "row", alignItems: "flex-start",
+    backgroundColor: "rgba(255,60,60,0.10)",
+    borderWidth: 1, borderColor: "rgba(255,60,60,0.22)",
+    borderRadius: 12, padding: 10,
+  },
+  errorText: { flex: 1, fontSize: 13, color: brandExtended.errorSoft, fontFamily: "Inter_400Regular", lineHeight: 18 },
 
   primaryBtnWrap: { marginTop: 4 },
   primaryBtn: {

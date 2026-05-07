@@ -30,19 +30,23 @@ export default function SignInScreen() {
   const [showPass, setShowPass] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
+
   const [resetEmail, setResetEmail] = useState("");
   const [resetFocused, setResetFocused] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
 
   const handleSignIn = async () => {
-    if (!email || !password) return;
+    setError(null);
+    if (!email.trim()) { setError(t("alerts.signin.email_required")); return; }
+    if (!password) { setError(t("alerts.signin.password_required")); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLoading(true);
     try {
       await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
     } catch (err: unknown) {
-      Alert.alert(t("alerts.signin.failed_title"), humanizeError(err, t("alerts.signin.failed_default")));
+      setError(humanizeError(err, t("alerts.signin.failed_default")));
     } finally {
       setLoading(false);
     }
@@ -81,7 +85,6 @@ export default function SignInScreen() {
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const botPad = insets.bottom + (Platform.OS === "web" ? 34 : 0);
-  const canSignIn = !loading && !!email && !!password;
   const canReset = !resetLoading && !!resetEmail.trim();
 
   // ─── Reset-sent confirmation ────────────────────────────────────────────────
@@ -253,7 +256,7 @@ export default function SignInScreen() {
                 <TextInput
                   style={styles.input}
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={(v) => { setEmail(v); setError(null); }}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   autoComplete="email"
@@ -279,7 +282,7 @@ export default function SignInScreen() {
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(v) => { setPassword(v); setError(null); }}
                   secureTextEntry={!showPass}
                   autoComplete="password"
                   placeholder="••••••••"
@@ -294,16 +297,24 @@ export default function SignInScreen() {
               </View>
             </View>
 
+            {/* Inline error */}
+            {error && (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle-outline" size={15} color={brandExtended.errorSoft} style={{ marginRight: 6 }} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
             {/* Sign In */}
             <TouchableOpacity
               onPress={handleSignIn}
-              disabled={!canSignIn}
+              disabled={loading}
               activeOpacity={0.85}
               testID="sign-in-btn"
               style={styles.primaryBtnWrap}
             >
               <LinearGradient
-                colors={canSignIn ? BRAND_GRADIENT : BRAND_GRADIENT_DISABLED}
+                colors={(!!email && !!password && !loading) ? BRAND_GRADIENT : BRAND_GRADIENT_DISABLED}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.primaryBtn}
               >

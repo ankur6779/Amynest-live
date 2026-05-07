@@ -511,7 +511,9 @@
     },
     "signin": {
       "failed_title": "Sign In Failed",
-      "failed_default": "Please check your details and try again."
+      "failed_default": "Please check your details and try again.",
+      "email_required": "Please enter your email address.",
+      "password_required": "Please enter your password."
     },
     "rewards": {
       "not_enough_title": "Not enough points",
