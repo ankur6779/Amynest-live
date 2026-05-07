@@ -129,6 +129,108 @@ const INFANT_ORDER: Step[] = [
 ];
 const INFANT_ONLY: Step[] = ["infant-feeding", "infant-sleep"];
 
+/** Convert 24-h "HH:MM" → display "H:MM AM/PM" */
+function from24hDisplay(v: string): string {
+  const parts = (v || "07:00").split(":");
+  const h = parseInt(parts[0] ?? "7", 10);
+  const m = parseInt(parts[1] ?? "0", 10);
+  const period = h >= 12 ? "PM" : "AM";
+  const hr = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hr}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+/**
+ * TimePickerField — native time wheel (spinner on iOS, clock dialog on
+ * Android). Tapping the display row opens the picker; the "Confirm" button
+ * fires the callback so the parent can advance to the next step.
+ */
+function TimePickerField({
+  initial24h,
+  confirmLabel,
+  onConfirm,
+}: {
+  initial24h: string;
+  confirmLabel: string;
+  onConfirm: (display: string, time24h: string) => void;
+}) {
+  const { t } = useTranslation();
+  const initParts = (initial24h || "07:00").split(":");
+  const initD = new Date();
+  initD.setHours(parseInt(initParts[0] ?? "7", 10), parseInt(initParts[1] ?? "0", 10), 0, 0);
+
+  const [date, setDate] = useState<Date>(initD);
+  const [show, setShow] = useState(false);
+
+  function fmt24(d: Date) {
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+
+  const onDateChange = (_event: DateTimePickerEvent, picked?: Date) => {
+    if (Platform.OS === "android") setShow(false);
+    if (picked) setDate(picked);
+  };
+
+  return (
+    <View style={{ gap: 12 }}>
+      {/* Tappable display row */}
+      <TouchableOpacity
+        style={{
+          height: 52, borderRadius: 16, borderWidth: 1.5,
+          borderColor: GLASS_BORDER, backgroundColor: GLASS_BG,
+          justifyContent: "center", paddingHorizontal: 18,
+          flexDirection: "row", alignItems: "center", gap: 10,
+        }}
+        onPress={() => { Haptics.selectionAsync(); setShow(true); }}
+        activeOpacity={0.75}
+      >
+        <Ionicons name="time-outline" size={18} color={PRIMARY} />
+        <Text style={{ color: TEXT_ON_DARK, fontSize: 17, fontFamily: "Inter_600SemiBold" }}>
+          {from24hDisplay(fmt24(date))}
+        </Text>
+        <Text style={{ color: TEXT_MUTED, fontSize: 13, fontFamily: "Inter_400Regular", marginLeft: "auto" }}>
+          tap to change
+        </Text>
+      </TouchableOpacity>
+
+      {/* iOS — bottom-sheet spinner modal */}
+      {show && Platform.OS === "ios" && (
+        <Modal transparent animationType="slide">
+          <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.45)" }}>
+            <View style={{
+              backgroundColor: "rgba(18,4,45,0.97)", borderTopLeftRadius: 24, borderTopRightRadius: 24,
+              padding: 20, borderWidth: 1, borderColor: GLASS_BORDER,
+            }}>
+              <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 8 }}>
+                <TouchableOpacity onPress={() => setShow(false)}>
+                  <Text style={{ color: PRIMARY, fontSize: 16, fontFamily: "Inter_600SemiBold" }}>{t("screens.onboarding_chat.btn_done")}</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={date} mode="time" display="spinner"
+                onChange={onDateChange} style={{ height: 200 }}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Android — system dialog */}
+      {show && Platform.OS === "android" && (
+        <DateTimePicker value={date} mode="time" display="default" onChange={onDateChange} />
+      )}
+
+      {/* Confirm button */}
+      <TouchableOpacity
+        style={[{ backgroundColor: PRIMARY, borderRadius: 14, paddingVertical: 14, alignItems: "center" }]}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onConfirm(from24hDisplay(fmt24(date)), fmt24(date)); }}
+        activeOpacity={0.85}
+      >
+        <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 }}>{confirmLabel}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 const REGION_KEYS: { key: string; value: string }[] = [
   { key: "region_pan", value: "pan_indian" },
   { key: "region_north", value: "north_indian" },
@@ -706,36 +808,26 @@ export default function OnboardingScreen() {
 
       case "child-school-start":
         return (
-          <View style={styles.chipGrid}>
-            {SCHOOL_START.map(time => (
-              <TouchableOpacity key={time}
-                style={[styles.chip, { backgroundColor: selected === time ? PRIMARY : GLASS_BG, borderColor: selected === time ? PRIMARY : GLASS_BORDER }]}
-                onPress={() => {
-                  setSelected(time); Haptics.selectionAsync();
-                  setCurr(c => ({ ...c, schoolStartTime: to24h(time) }));
-                  userReplies(time, "child-school-end", t("screens.onboarding_chat.amy_school_end_q"));
-                }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{time}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TimePickerField
+            initial24h={curr.schoolStartTime ?? "08:00"}
+            confirmLabel={t("screens.onboarding_chat.btn_confirm")}
+            onConfirm={(display, time24h) => {
+              setCurr(c => ({ ...c, schoolStartTime: time24h }));
+              userReplies(display, "child-school-end", t("screens.onboarding_chat.amy_school_end_q"));
+            }}
+          />
         );
 
       case "child-school-end":
         return (
-          <View style={styles.chipGrid}>
-            {SCHOOL_END.map(time => (
-              <TouchableOpacity key={time}
-                style={[styles.chip, { backgroundColor: selected === time ? PRIMARY : GLASS_BG, borderColor: selected === time ? PRIMARY : GLASS_BORDER }]}
-                onPress={() => {
-                  setSelected(time); Haptics.selectionAsync();
-                  setCurr(c => ({ ...c, schoolEndTime: to24h(time), schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
-                  userReplies(time, "child-school-days", t("screens.onboarding_chat.amy_school_days_q", { name: curr.name }));
-                }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{time}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TimePickerField
+            initial24h={curr.schoolEndTime ?? "15:00"}
+            confirmLabel={t("screens.onboarding_chat.btn_confirm")}
+            onConfirm={(display, time24h) => {
+              setCurr(c => ({ ...c, schoolEndTime: time24h, schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
+              userReplies(display, "child-school-days", t("screens.onboarding_chat.amy_school_days_q", { name: curr.name }));
+            }}
+          />
         );
 
       case "child-school-days": {
@@ -785,44 +877,34 @@ export default function OnboardingScreen() {
 
       case "child-wake":
         return (
-          <View style={styles.chipGrid}>
-            {WAKE_OPTS.map(time => (
-              <TouchableOpacity key={time}
-                style={[styles.chip, { backgroundColor: selected === time ? PRIMARY : GLASS_BG, borderColor: selected === time ? PRIMARY : GLASS_BORDER }]}
-                onPress={() => {
-                  setSelected(time); Haptics.selectionAsync();
-                  setCurr(c => ({ ...c, wakeUpTime: to24h(time) }));
-                  userReplies(time, "child-sleep", t("screens.onboarding_chat.amy_sleep_q", { name: curr.name }));
-                }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{time}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TimePickerField
+            initial24h={curr.wakeUpTime ?? "07:00"}
+            confirmLabel={t("screens.onboarding_chat.btn_confirm")}
+            onConfirm={(display, time24h) => {
+              setCurr(c => ({ ...c, wakeUpTime: time24h }));
+              userReplies(display, "child-sleep", t("screens.onboarding_chat.amy_sleep_q", { name: curr.name }));
+            }}
+          />
         );
 
       case "child-sleep":
         return (
-          <View style={styles.chipGrid}>
-            {SLEEP_OPTS.map(time => (
-              <TouchableOpacity key={time}
-                style={[styles.chip, { backgroundColor: selected === time ? PRIMARY : GLASS_BG, borderColor: selected === time ? PRIMARY : GLASS_BORDER }]}
-                onPress={() => {
-                  setSelected(time); Haptics.selectionAsync();
-                  const finishedChild = {
-                    ...curr,
-                    sleepTime: to24h(time),
-                    foodType: "veg",
-                    dietNote: "",
-                    ageGroup: curr.ageGroup ?? "kid",
-                  } as ChildData;
-                  setChildren(cs => [...cs, finishedChild]);
-                  setCurr({});
-                  userReplies(time, "add-more", t("screens.onboarding_chat.amy_more_q"));
-                }}>
-                <Text style={[styles.chipText, { color: TEXT_ON_DARK }]}>{time}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TimePickerField
+            initial24h={curr.sleepTime ?? "21:00"}
+            confirmLabel={t("screens.onboarding_chat.btn_confirm")}
+            onConfirm={(display, time24h) => {
+              const finishedChild = {
+                ...curr,
+                sleepTime: time24h,
+                foodType: "veg",
+                dietNote: "",
+                ageGroup: curr.ageGroup ?? "kid",
+              } as ChildData;
+              setChildren(cs => [...cs, finishedChild]);
+              setCurr({});
+              userReplies(display, "add-more", t("screens.onboarding_chat.amy_more_q"));
+            }}
+          />
         );
 
       case "infant-feeding":
