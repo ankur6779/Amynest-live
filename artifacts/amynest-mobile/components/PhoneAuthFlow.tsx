@@ -268,6 +268,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: brandAlpha.purple500_60,
     paddingHorizontal: 14,
     fontSize: 16, color: "#F0E8FF", fontFamily: "Inter_400Regular", // audit-ok: very-light lavender for phone input text
+    outlineWidth: 0,
   },
 
   otpInput: {
@@ -276,6 +277,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: brandAlpha.purple500_60,
     fontSize: 28, color: "#F0E8FF", fontFamily: "Inter_700Bold", // audit-ok: very-light lavender for OTP input
     letterSpacing: 8,
+    outlineWidth: 0,
   },
 
   rowBtns: { flexDirection: "row", gap: 10 },
