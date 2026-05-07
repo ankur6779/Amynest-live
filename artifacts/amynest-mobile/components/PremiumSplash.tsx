@@ -82,8 +82,6 @@ export default function PremiumSplash({ onFinish }: Props) {
   const stageOpacity = useRef(new Animated.Value(0)).current;
   const stageTranslateY = useRef(new Animated.Value(18)).current;
   const waveScale = useRef(new Animated.Value(1)).current;
-  const taglineOpacity = useRef(new Animated.Value(0)).current;
-  const taglineTranslateY = useRef(new Animated.Value(6)).current;
 
   useEffect(() => {
     // Stage entrance — matches web stageIn: 0.9s, delay 0.15s
@@ -99,24 +97,6 @@ export default function PremiumSplash({ onFinish }: Props) {
         toValue: 0,
         duration: 900,
         delay: 150,
-        easing: Easing.out(Easing.exp),
-        useNativeDriver: true,
-      }),
-    ]);
-
-    // Tagline fade-in — matches web tagIn: 0.9s, delay 1.2s
-    const tagIn = Animated.parallel([
-      Animated.timing(taglineOpacity, {
-        toValue: 1,
-        duration: 900,
-        delay: 1200,
-        easing: Easing.out(Easing.exp),
-        useNativeDriver: true,
-      }),
-      Animated.timing(taglineTranslateY, {
-        toValue: 0,
-        duration: 900,
-        delay: 1200,
         easing: Easing.out(Easing.exp),
         useNativeDriver: true,
       }),
@@ -141,7 +121,6 @@ export default function PremiumSplash({ onFinish }: Props) {
     );
 
     stageIn.start();
-    tagIn.start();
     wavePulse.start();
 
     // Auto-dismiss after 2.8s with 0.75s fade — mirrors web splash-hide transition
@@ -159,10 +138,9 @@ export default function PremiumSplash({ onFinish }: Props) {
     return () => {
       clearTimeout(finishT);
       stageIn.stop();
-      tagIn.stop();
       wavePulse.stop();
     };
-  }, [containerOpacity, stageOpacity, stageTranslateY, waveScale, taglineOpacity, taglineTranslateY, onFinish]);
+  }, [containerOpacity, stageOpacity, stageTranslateY, waveScale, onFinish]);
 
   return (
     <Animated.View
@@ -215,24 +193,18 @@ export default function PremiumSplash({ onFinish }: Props) {
         {/* Atmospheric glow behind ring — web .splash-glow-outer */}
         <View style={styles.atmosGlow} />
 
-        {/* NeonRingHero — spinning gradient ring with MEET + AMY text (identical to web ring) */}
-        <NeonRingHero />
+        {/* NeonRingHero — scaled up for splash (sign-in uses default 170px; splash uses 220px) */}
+        <View style={styles.ringWrapper}>
+          <NeonRingHero />
+        </View>
 
         {/* Platform glow below ring — web .splash-platform blur(14px) */}
         <View style={styles.platform} />
 
-        {/* Tagline — web .splash-tagline "Where Smart Parenting Starts" */}
-        <Animated.Text
-          style={[
-            styles.tagline,
-            {
-              opacity: taglineOpacity,
-              transform: [{ translateY: taglineTranslateY }],
-            },
-          ]}
-        >
-          {t("misc.footer_tagline")}
-        </Animated.Text>
+        {/* Tagline — fades in with the stage (no separate delay) */}
+        <Text style={styles.tagline}>
+          {t("landing.footer_tagline")}
+        </Text>
       </Animated.View>
     </Animated.View>
   );
@@ -268,11 +240,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
   },
+  ringWrapper: {
+    // Scale NeonRingHero (OUTER=170) up to ~230px for splash — sign-in keeps default size
+    transform: [{ scale: 1.35 }],
+    marginVertical: 16,
+  },
   atmosGlow: {
     position: "absolute",
-    width: 380,
-    height: 380,
-    borderRadius: 190,
+    width: 420,
+    height: 420,
+    borderRadius: 210,
     backgroundColor: "rgba(120,50,220,0.11)", // audit-ok: web splash-glow-outer atmospheric purple centre
   },
   platform: {
