@@ -62,7 +62,12 @@ export default function SignInScreen() {
       await sendPasswordResetEmail(firebaseAuth, resetEmail.trim());
       setMode("reset-sent");
     } catch (err: unknown) {
-      setResetError(humanizeError(err, "Couldn't send reset email. Please try again."));
+      const code = (err as { code?: string })?.code;
+      if (code === "auth/user-not-found") {
+        setMode("reset-sent");
+        return;
+      }
+      setResetError(humanizeError(err, t("screens.sign_in.couldnt_send_reset")));
     } finally {
       setResetLoading(false);
     }
@@ -90,9 +95,9 @@ export default function SignInScreen() {
             <Text style={styles.sentEmoji}>📬</Text>
             <Text style={styles.title}>{t("screens.sign_in.check_your_inbox")}</Text>
             <Text style={styles.subtitle}>
-              We've sent a reset link to{"\n"}
+              {t("screens.sign_in.inbox_body_before")}{"\n"}
               <Text style={styles.resetEmailHighlight}>{resetEmail}</Text>
-              {"\n"}Check spam if you don't see it.
+              {"\n"}{t("screens.sign_in.inbox_body_after")}
             </Text>
             <TouchableOpacity
               onPress={() => setMode("signin")}
