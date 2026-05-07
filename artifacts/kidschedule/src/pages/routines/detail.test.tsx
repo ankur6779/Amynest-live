@@ -40,6 +40,11 @@ vi.mock("@workspace/api-client-react", () => ({
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   useMutation: (_opts: unknown) => ({ mutate: vi.fn(), isPending: false }),
+  useQuery: () => ({ data: undefined, isLoading: false, isFetched: true }),
+}));
+
+vi.mock("@/hooks/use-subscription", () => ({
+  useSubscription: () => ({ isPremium: false, entitlements: null, loading: false }),
 }));
 
 vi.mock("@/hooks/use-toast", () => ({

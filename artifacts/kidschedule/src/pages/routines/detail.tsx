@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Calendar as CalendarIcon, User, Trash2, Sparkles, Check, SkipForward, Clock, Bell, BellOff, Share2, Copy, ChefHat, Timer, Users, Pencil, Plus, RotateCcw, Moon, X, Save, BookOpen } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, User, Trash2, Sparkles, Check, SkipForward, Clock, Bell, BellOff, Share2, Copy, ChefHat, Timer, Users, Pencil, Plus, RotateCcw, Moon, X, Save, BookOpen, Lock, Crown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { getApiUrl } from "@/lib/api";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { useSubscription } from "@/hooks/use-subscription";
 import { addPoints, checkAndAwardBadges, getTotalPoints } from "@/lib/rewards";
 import { MealRecipeCard } from "@/components/MealRecipeCard";
 import { announceCurrentTask, isVoiceEnabled, getVoiceSettings } from "@/lib/voice";
@@ -431,6 +432,8 @@ export default function RoutineDetail() {
   } = useToast();
   const queryClient = useQueryClient();
   const authFetch = useAuthFetch();
+  const { isPremium, entitlements } = useSubscription();
+  const isRoutineGenerateLocked = !isPremium && (entitlements?.usage.features?.routine_generate?.locked ?? false);
   const [localItems, setLocalItems] = useState<RoutineItem[] | null>(null);
   const notifSupported = typeof window !== "undefined" && "Notification" in window;
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -869,6 +872,13 @@ export default function RoutineDetail() {
           hasSchool: !isWeekend
         })
       });
+      if (res.status === 402 || res.status === 403) {
+        setNextDayDialogOpen(false);
+        window.dispatchEvent(new CustomEvent("amynest:open-paywall", {
+          detail: { reason: "routines_limit" }
+        }));
+        return;
+      }
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
       toast({
@@ -1833,27 +1843,67 @@ export default function RoutineDetail() {
       {/* Next Day Generation Dialog */}
       <Dialog open={nextDayDialogOpen} onOpenChange={setNextDayDialogOpen}>
         <DialogContent className="rounded-2xl max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="font-quicksand flex items-center gap-2">
-              <Moon className="h-5 w-5 text-primary" />
-              {t("pages.routines.detail.great_job_today")}
-            </DialogTitle>
-            <DialogDescription className="text-sm">
-              {t("pages.routines.detail.bedtime_is_done_should_ai_generate_tomorrow_s_routine_automa")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="bg-muted border border-border rounded-xl p-3 text-sm text-primary">
-            <p className="font-medium mb-0.5">{t("pages.routines.detail.tomorrow_s_schedule_will_include")}</p>
-            <p className="text-xs text-primary">{t("pages.routines.detail.weekend_or_school_day_activities_detected_automatically")}<br />{t("pages.routines.detail.balanced_meals_play_learning_rest")}<br />{t("pages.routines.detail.ready_the_moment_you_wake_up")}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button className="flex-1 rounded-full bg-primary hover:bg-primary" onClick={handleNextDayGen} disabled={nextDayLoading}>
-              {nextDayLoading ? <><RotateCcw className="h-4 w-4 mr-2 animate-spin" />{t("pages.routines.detail.generating")}</> : <><Sparkles className="h-4 w-4 mr-2" />{t("pages.routines.detail.generate_tomorrow")}</>}
-            </Button>
-            <Button variant="outline" className="rounded-full" onClick={() => setNextDayDialogOpen(false)}>
-              {t("pages.routines.detail.later")}
-            </Button>
-          </div>
+          {isRoutineGenerateLocked ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-quicksand flex items-center gap-2">
+                  <Lock className="h-5 w-5" style={{ color: "hsl(var(--brand-amber-500))" }} />
+                  {t("pages.routines.detail.next_day_premium_title")}
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  {t("pages.routines.detail.next_day_premium_desc")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="bg-muted border border-border rounded-xl p-3 text-sm">
+                <p className="font-medium mb-1 flex items-center gap-1.5">
+                  <Crown className="h-4 w-4" style={{ color: "hsl(var(--brand-amber-500))" }} />
+                  {t("pages.routines.detail.next_day_premium_perks_title")}
+                </p>
+                <p className="text-xs text-muted-foreground">{t("pages.routines.detail.next_day_premium_perks_body")}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button className="flex-1 rounded-full bg-primary hover:bg-primary" onClick={() => {
+                  setNextDayDialogOpen(false);
+                  window.dispatchEvent(new CustomEvent("amynest:open-paywall", { detail: { reason: "routines_limit" } }));
+                }}>
+                  <Crown className="h-4 w-4 mr-2" />
+                  {t("pages.routines.detail.next_day_upgrade_btn")}
+                </Button>
+                <Button variant="outline" className="rounded-full" onClick={() => setNextDayDialogOpen(false)}>
+                  {t("pages.routines.detail.later")}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-quicksand flex items-center gap-2">
+                  <Moon className="h-5 w-5 text-primary" />
+                  {t("pages.routines.detail.great_job_today")}
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  {t("pages.routines.detail.bedtime_is_done_should_ai_generate_tomorrow_s_routine_automa")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="bg-muted border border-border rounded-xl p-3 text-sm text-primary">
+                <p className="font-medium mb-0.5">{t("pages.routines.detail.tomorrow_s_schedule_will_include")}</p>
+                <p className="text-xs text-primary">{t("pages.routines.detail.weekend_or_school_day_activities_detected_automatically")}<br />{t("pages.routines.detail.balanced_meals_play_learning_rest")}<br />{t("pages.routines.detail.ready_the_moment_you_wake_up")}</p>
+              </div>
+              {!isPremium && (
+                <p className="text-xs text-center" style={{ color: "hsl(var(--brand-amber-600))" }}>
+                  {t("pages.routines.detail.next_day_free_one_time_hint")}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button className="flex-1 rounded-full bg-primary hover:bg-primary" onClick={handleNextDayGen} disabled={nextDayLoading}>
+                  {nextDayLoading ? <><RotateCcw className="h-4 w-4 mr-2 animate-spin" />{t("pages.routines.detail.generating")}</> : <><Sparkles className="h-4 w-4 mr-2" />{t("pages.routines.detail.generate_tomorrow")}</>}
+                </Button>
+                <Button variant="outline" className="rounded-full" onClick={() => setNextDayDialogOpen(false)}>
+                  {t("pages.routines.detail.later")}
+                </Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
