@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
-  Image,
   Animated,
   Easing,
   StyleSheet,
@@ -11,251 +10,158 @@ import {
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { brand, ACCENT_PINK, palette } from "@/constants/colors";
-import { BRAND } from "@/constants/brand";
+import NeonRingHero from "@/components/NeonRingHero";
 import { useTranslation } from "react-i18next";
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+const { width: W, height: H } = Dimensions.get("window");
 
 type Props = {
   onFinish: () => void;
 };
 
+// Floating particles — mirror the web's .splash-particle elements
+const PARTICLES: {
+  x: number; y: number; size: number; dur: number; delay: number;
+}[] = [
+  { x: 0.10, y: 0.78, size: 2, dur: 3200, delay: 0 },
+  { x: 0.26, y: 0.86, size: 1, dur: 4200, delay: 600 },
+  { x: 0.44, y: 0.72, size: 2, dur: 3600, delay: 200 },
+  { x: 0.62, y: 0.90, size: 1, dur: 4600, delay: 1000 },
+  { x: 0.78, y: 0.80, size: 2, dur: 3400, delay: 400 },
+  { x: 0.90, y: 0.68, size: 1, dur: 4000, delay: 1200 },
+];
+
+function FloatingParticle({ x, y, size, dur, delay }: { x: number; y: number; size: number; dur: number; delay: number }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(opacity, { toValue: 0.8, duration: dur * 0.1, easing: Easing.linear, useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0.45, duration: dur * 0.8, easing: Easing.linear, useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0, duration: dur * 0.1, easing: Easing.linear, useNativeDriver: true }),
+          ]),
+          Animated.timing(translateY, { toValue: -(H * 0.45), duration: dur, easing: Easing.linear, useNativeDriver: true }),
+        ]),
+        Animated.timing(translateY, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity, translateY, dur, delay]);
+
+  return (
+    <Animated.View
+      style={{
+        position: "absolute",
+        left: W * x,
+        top: H * y,
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: "rgba(255,255,255,0.85)",
+        shadowColor: "#a855f7", // audit-ok: web splash-particle glow colour
+        shadowOpacity: 0.7,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 0 },
+        opacity,
+        transform: [{ translateY }],
+      }}
+    />
+  );
+}
+
 export default function PremiumSplash({ onFinish }: Props) {
   const { t } = useTranslation();
   const containerOpacity = useRef(new Animated.Value(1)).current;
-  const logoScale = useRef(new Animated.Value(0.4)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const ringScale = useRef(new Animated.Value(0.8)).current;
-  const ringOpacity = useRef(new Animated.Value(0)).current;
-  const ring2Scale = useRef(new Animated.Value(0.8)).current;
-  const ring2Opacity = useRef(new Animated.Value(0)).current;
-  const titleOpacity = useRef(new Animated.Value(0)).current;
-  const titleTranslate = useRef(new Animated.Value(14)).current;
-  const subtitleOpacity = useRef(new Animated.Value(0)).current;
-  const subtitleTranslate = useRef(new Animated.Value(10)).current;
-  const sparkle1 = useRef(new Animated.Value(0)).current;
-  const sparkle2 = useRef(new Animated.Value(0)).current;
-  const sparkle3 = useRef(new Animated.Value(0)).current;
-  const dotProgress = useRef(new Animated.Value(0)).current;
+  const stageOpacity = useRef(new Animated.Value(0)).current;
+  const stageTranslateY = useRef(new Animated.Value(18)).current;
+  const waveScale = useRef(new Animated.Value(1)).current;
+  const taglineOpacity = useRef(new Animated.Value(0)).current;
+  const taglineTranslateY = useRef(new Animated.Value(6)).current;
 
   useEffect(() => {
-    const intro = Animated.parallel([
-      Animated.spring(logoScale, {
+    // Stage entrance — matches web stageIn: 0.9s, delay 0.15s
+    const stageIn = Animated.parallel([
+      Animated.timing(stageOpacity, {
         toValue: 1,
-        friction: 6,
-        tension: 70,
+        duration: 900,
+        delay: 150,
+        easing: Easing.out(Easing.exp),
         useNativeDriver: true,
       }),
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 520,
-        easing: Easing.out(Easing.cubic),
+      Animated.timing(stageTranslateY, {
+        toValue: 0,
+        duration: 900,
+        delay: 150,
+        easing: Easing.out(Easing.exp),
         useNativeDriver: true,
       }),
     ]);
 
-    const ringPulse = Animated.loop(
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(ringOpacity, {
-            toValue: 0.55,
-            duration: 0,
-            useNativeDriver: true,
-          }),
-          Animated.parallel([
-            Animated.timing(ringScale, {
-              toValue: 1.55,
-              duration: 1800,
-              easing: Easing.out(Easing.quad),
-              useNativeDriver: true,
-            }),
-            Animated.timing(ringOpacity, {
-              toValue: 0,
-              duration: 1800,
-              easing: Easing.out(Easing.quad),
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.timing(ringScale, {
-            toValue: 0.8,
-            duration: 0,
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    );
+    // Tagline fade-in — matches web tagIn: 0.9s, delay 1.2s
+    const tagIn = Animated.parallel([
+      Animated.timing(taglineOpacity, {
+        toValue: 1,
+        duration: 900,
+        delay: 1200,
+        easing: Easing.out(Easing.exp),
+        useNativeDriver: true,
+      }),
+      Animated.timing(taglineTranslateY, {
+        toValue: 0,
+        duration: 900,
+        delay: 1200,
+        easing: Easing.out(Easing.exp),
+        useNativeDriver: true,
+      }),
+    ]);
 
-    const ringPulse2 = Animated.loop(
+    // Wave pulse — matches web wavePulse: scale 1→1.05→1, 7s total
+    const wavePulse = Animated.loop(
       Animated.sequence([
-        Animated.delay(700),
-        Animated.timing(ring2Opacity, {
-          toValue: 0.4,
-          duration: 0,
+        Animated.timing(waveScale, {
+          toValue: 1.05,
+          duration: 3500,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-        Animated.parallel([
-          Animated.timing(ring2Scale, {
-            toValue: 1.7,
-            duration: 1800,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(ring2Opacity, {
-            toValue: 0,
-            duration: 1800,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.timing(ring2Scale, {
-          toValue: 0.8,
-          duration: 0,
+        Animated.timing(waveScale, {
+          toValue: 1,
+          duration: 3500,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ])
     );
 
-    const titleIn = Animated.parallel([
-      Animated.timing(titleOpacity, {
-        toValue: 1,
-        duration: 480,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(titleTranslate, {
-        toValue: 0,
-        duration: 480,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]);
+    stageIn.start();
+    tagIn.start();
+    wavePulse.start();
 
-    const subtitleIn = Animated.parallel([
-      Animated.timing(subtitleOpacity, {
-        toValue: 1,
-        duration: 480,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(subtitleTranslate, {
-        toValue: 0,
-        duration: 480,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]);
-
-    const sparkleAnim = (val: Animated.Value, delay: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(val, {
-            toValue: 1,
-            duration: 1400,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-          Animated.timing(val, {
-            toValue: 0,
-            duration: 1400,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
-        ])
-      );
-
-    const dotsAnim = Animated.loop(
-      Animated.timing(dotProgress, {
-        toValue: 1,
-        duration: 1200,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      })
-    );
-
-    const sparkle1Loop = sparkleAnim(sparkle1, 0);
-    const sparkle2Loop = sparkleAnim(sparkle2, 400);
-    const sparkle3Loop = sparkleAnim(sparkle3, 800);
-
-    let exitAnim: Animated.CompositeAnimation | null = null;
-
-    intro.start();
-    ringPulse.start();
-    ringPulse2.start();
-    sparkle1Loop.start();
-    sparkle2Loop.start();
-    sparkle3Loop.start();
-    dotsAnim.start();
-
-    const t1 = setTimeout(() => titleIn.start(), 380);
-    const t2 = setTimeout(() => subtitleIn.start(), 720);
-
+    // Auto-dismiss after 2.8s with 0.75s fade — mirrors web splash-hide transition
     const finishT = setTimeout(() => {
-      exitAnim = Animated.timing(containerOpacity, {
+      Animated.timing(containerOpacity, {
         toValue: 0,
-        duration: 420,
-        easing: Easing.out(Easing.cubic),
+        duration: 750,
+        easing: Easing.ease,
         useNativeDriver: true,
-      });
-      exitAnim.start(({ finished }) => {
+      }).start(({ finished }) => {
         if (finished) onFinish();
       });
-    }, 2400);
+    }, 2800);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
       clearTimeout(finishT);
-      intro.stop();
-      ringPulse.stop();
-      ringPulse2.stop();
-      sparkle1Loop.stop();
-      sparkle2Loop.stop();
-      sparkle3Loop.stop();
-      dotsAnim.stop();
-      titleIn.stop();
-      subtitleIn.stop();
-      exitAnim?.stop();
+      stageIn.stop();
+      tagIn.stop();
+      wavePulse.stop();
     };
-  }, [
-    containerOpacity,
-    logoScale,
-    logoOpacity,
-    ringScale,
-    ringOpacity,
-    ring2Scale,
-    ring2Opacity,
-    titleOpacity,
-    titleTranslate,
-    subtitleOpacity,
-    subtitleTranslate,
-    sparkle1,
-    sparkle2,
-    sparkle3,
-    dotProgress,
-    onFinish,
-  ]);
-
-  const dot1Opacity = dotProgress.interpolate({
-    inputRange: [0, 0.33, 0.66, 1],
-    outputRange: [0.35, 1, 0.35, 0.35],
-  });
-  const dot2Opacity = dotProgress.interpolate({
-    inputRange: [0, 0.33, 0.66, 1],
-    outputRange: [0.35, 0.35, 1, 0.35],
-  });
-  const dot3Opacity = dotProgress.interpolate({
-    inputRange: [0, 0.33, 0.66, 1],
-    outputRange: [0.35, 0.35, 0.35, 1],
-  });
-
-  const sparkleStyle = (val: Animated.Value) => ({
-    opacity: val.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.95] }),
-    transform: [
-      { scale: val.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.15] }) },
-    ],
-  });
+  }, [containerOpacity, stageOpacity, stageTranslateY, waveScale, taglineOpacity, taglineTranslateY, onFinish]);
 
   return (
     <Animated.View
@@ -264,283 +170,125 @@ export default function PremiumSplash({ onFinish }: Props) {
         { opacity: containerOpacity, zIndex: 9999, elevation: 9999 },
       ]}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#0f0c29" translucent={Platform.OS === "android"} />{/* audit-ok: deep void-purple for PremiumSplash StatusBar */}
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="#0a061a" // audit-ok: web splash bg #0a061a exact match
+        translucent={Platform.OS === "android"}
+      />
 
-      {/* Background: dark deep-purple matching web palette */}
+      {/* ── Background — matches web splash dark gradient (see kidschedule/index.html) */}
       <LinearGradient
-        colors={["#0f0c29", "#302b63", "#24243e"]} // audit-ok: deep purple-navy premium background gradient
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={["#0a061a", "#120a2e", "#050010"]} // audit-ok: web splash gradient colours #0a061a #120a2e #050010
+        locations={[0, 0.55, 1]}
+        start={{ x: 0.12, y: 0 }}
+        end={{ x: 0.88, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Soft radial-ish overlay */}
-      <LinearGradient
-        colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0)"]}
-        start={{ x: 0.5, y: 0.2 }}
-        end={{ x: 0.5, y: 0.9 }}
-        style={StyleSheet.absoluteFillObject}
-      />
+      {/* ── Radial centre light — web: radial-gradient rgba(120,50,220,0.22) at 50% 44% */}
+      <View style={styles.radialCentre} />
 
-      {/* Floating sparkles */}
-      <Animated.View style={[styles.sparkle, { top: SCREEN_H * 0.18, left: SCREEN_W * 0.18 }, sparkleStyle(sparkle1)]}>
-        <Text style={styles.sparkleText}>✦</Text>
-      </Animated.View>
-      <Animated.View style={[styles.sparkle, { top: SCREEN_H * 0.22, right: SCREEN_W * 0.16 }, sparkleStyle(sparkle2)]}>
-        <Text style={styles.sparkleTextSm}>✦</Text>
-      </Animated.View>
-      <Animated.View style={[styles.sparkle, { bottom: SCREEN_H * 0.30, left: SCREEN_W * 0.22 }, sparkleStyle(sparkle3)]}>
-        <Text style={styles.sparkleTextSm}>✦</Text>
-      </Animated.View>
-      <Animated.View style={[styles.sparkle, { bottom: SCREEN_H * 0.34, right: SCREEN_W * 0.20 }, sparkleStyle(sparkle1)]}>
-        <Text style={styles.sparkleText}>✦</Text>
+      {/* ── Concentric wave rings — web: .splash-waves box-shadow rings, pulsing 7s */}
+      <Animated.View style={[styles.waveAnchor, { transform: [{ scale: waveScale }] }]}>
+        <View style={[styles.waveRing, { width: 160,  height: 160,  borderRadius: 80,  borderColor: "rgba(168,85,247,0.07)" }]} />
+        <View style={[styles.waveRing, { width: 340,  height: 340,  borderRadius: 170, borderColor: "rgba(168,85,247,0.05)" }]} />
+        <View style={[styles.waveRing, { width: 560,  height: 560,  borderRadius: 280, borderColor: "rgba(100,50,200,0.035)" }]} />
+        <View style={[styles.waveRing, { width: 840,  height: 840,  borderRadius: 420, borderColor: "rgba(80,30,160,0.025)" }]} />
       </Animated.View>
 
-      <View style={styles.center}>
-        {/* Pulsing rings */}
-        <Animated.View
-          style={[
-            styles.ring,
-            {
-              opacity: ringOpacity,
-              transform: [{ scale: ringScale }],
-            },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.ring,
-            {
-              opacity: ring2Opacity,
-              transform: [{ scale: ring2Scale }],
-            },
-          ]}
-        />
+      {/* ── Floating particles — web: .splash-particle float upward */}
+      {PARTICLES.map((p, i) => (
+        <FloatingParticle key={i} {...p} />
+      ))}
 
-        {/* Logo halo */}
-        <View style={styles.halo} />
+      {/* ── Stage — centered column matching web .splash-stage */}
+      <Animated.View
+        style={[
+          styles.stage,
+          {
+            opacity: stageOpacity,
+            transform: [{ translateY: stageTranslateY }],
+          },
+        ]}
+      >
+        {/* Atmospheric glow behind ring — web .splash-glow-outer */}
+        <View style={styles.atmosGlow} />
 
-        {/* "MEET AMY" branding label above logo */}
-        <Animated.View
-          style={[
-            styles.meetAmyWrapper,
-            { opacity: logoOpacity, transform: [{ scale: logoScale }] },
-          ]}
-        >
-          <Text style={styles.meetLabel}>{t("components.premium_splash.meet")}</Text>
-          <Text style={styles.amyLabel}>{t("components.premium_splash.amy")}</Text>
-        </Animated.View>
+        {/* NeonRingHero — spinning gradient ring with MEET + AMY text (identical to web ring) */}
+        <NeonRingHero />
 
-        {/* Logo inside gradient ring border */}
-        <Animated.View
-          style={{
-            opacity: logoOpacity,
-            transform: [{ scale: logoScale }],
-          }}
-        >
-          {/* Cross-platform colored glow — background-based so it renders on Android
-              (Android ignores shadowColor, only honouring elevation with a black shadow) */}
-          <View style={styles.logoGlowOuter} />
-          <View style={styles.logoGlowInner} />
-          <LinearGradient
-            colors={[brand.primary, ACCENT_PINK, "#4FC3F7"]} // audit-ok: #4FC3F7 sky-blue ring gradient endpoint
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.logoRingGradient}
-          >
-            <View style={styles.logoRingInner}>
-              <Image
-                source={require("../assets/images/amynest-logo.png")}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
-          </LinearGradient>
-        </Animated.View>
+        {/* Platform glow below ring — web .splash-platform blur(14px) */}
+        <View style={styles.platform} />
 
-        {/* Title */}
+        {/* Tagline — web .splash-tagline "Where Smart Parenting Starts" */}
         <Animated.Text
           style={[
-            styles.title,
-            { opacity: titleOpacity, transform: [{ translateY: titleTranslate }] },
+            styles.tagline,
+            {
+              opacity: taglineOpacity,
+              transform: [{ translateY: taglineTranslateY }],
+            },
           ]}
         >
-          {BRAND.appName} <Text style={styles.titleAccent}>AI</Text>
+          {t("misc.footer_tagline")}
         </Animated.Text>
-
-        {/* Subtitle */}
-        <Animated.Text
-          style={[
-            styles.subtitle,
-            { opacity: subtitleOpacity, transform: [{ translateY: subtitleTranslate }] },
-          ]}
-        >
-          Where Smart Parenting Begins
-        </Animated.Text>
-
-        {/* Loading dots */}
-        <View style={styles.dotsRow}>
-          <Animated.View style={[styles.dot, { opacity: dot1Opacity }]} />
-          <Animated.View style={[styles.dot, { opacity: dot2Opacity }]} />
-          <Animated.View style={[styles.dot, { opacity: dot3Opacity }]} />
-        </View>
-      </View>
-
-      {/* Bottom brand mark */}
-      <View style={styles.bottom}>
-        <Text style={styles.bottomText}>{t("components.premium_splash.powered_by_amynest_ai")}</Text>
-      </View>
+      </Animated.View>
     </Animated.View>
   );
 }
 
-const LOGO_SIZE = 120;
-const HALO_SIZE = 200;
-const RING_BORDER = 3;
-const RING_OUTER = LOGO_SIZE + 32;
-
 const styles = StyleSheet.create({
-  center: {
+  radialCentre: {
+    position: "absolute",
+    top: "38%",
+    left: "50%",
+    marginLeft: -170,
+    marginTop: -170,
+    width: 340,
+    height: 340,
+    borderRadius: 170,
+    backgroundColor: "rgba(120,50,220,0.15)", // audit-ok: web splash radial-gradient rgba(120,50,220,0.22)
+  },
+  waveAnchor: {
+    position: "absolute",
+    top: "44%",
+    left: "50%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  waveRing: {
+    position: "absolute",
+    borderWidth: 1,
+    backgroundColor: "transparent",
+  },
+  stage: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 24,
   },
-  halo: {
+  atmosGlow: {
     position: "absolute",
-    width: HALO_SIZE,
-    height: HALO_SIZE,
-    borderRadius: HALO_SIZE / 2,
-    backgroundColor: "rgba(123,63,242,0.12)",
-    shadowColor: brand.primary,
-    shadowOpacity: 0.5,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
+    width: 380,
+    height: 380,
+    borderRadius: 190,
+    backgroundColor: "rgba(120,50,220,0.11)", // audit-ok: web splash-glow-outer atmospheric purple centre
   },
-  ring: {
-    position: "absolute",
-    width: HALO_SIZE,
-    height: HALO_SIZE,
-    borderRadius: HALO_SIZE / 2,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.55)",
+  platform: {
+    width: 160,
+    height: 20,
+    marginTop: -4,
+    borderRadius: 80,
+    backgroundColor: "rgba(168,85,247,0.30)", // audit-ok: web splash-platform rgba(168,85,247,0.55) approximated
+    opacity: 0.6,
   },
-  meetAmyWrapper: {
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  meetLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: 4,
-    textTransform: "uppercase",
-    color: "rgba(255,255,255,0.70)",
-  },
-  amyLabel: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: 6,
-    textTransform: "uppercase",
-    color: "#FFFFFF",
-    textShadowColor: "rgba(123,63,242,0.6)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-  },
-  logoGlowOuter: {
-    position: "absolute",
-    width: RING_OUTER + 60,
-    height: RING_OUTER + 60,
-    borderRadius: (RING_OUTER + 60) / 2,
-    top: -30,
-    left: -30,
-    backgroundColor: "rgba(255,78,205,0.16)",
-  },
-  logoGlowInner: {
-    position: "absolute",
-    width: RING_OUTER + 30,
-    height: RING_OUTER + 30,
-    borderRadius: (RING_OUTER + 30) / 2,
-    top: -15,
-    left: -15,
-    backgroundColor: "rgba(123,63,242,0.20)",
-  },
-  logoRingGradient: {
-    width: RING_OUTER,
-    height: RING_OUTER,
-    borderRadius: RING_OUTER / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: ACCENT_PINK,
-    shadowOpacity: 0.55,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 18,
-  },
-  logoRingInner: {
-    width: RING_OUTER - RING_BORDER * 2,
-    height: RING_OUTER - RING_BORDER * 2,
-    borderRadius: (RING_OUTER - RING_BORDER * 2) / 2,
-    backgroundColor: "#1a1535", // audit-ok: deep-purple inner ring bg for logo ring
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logo: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-  },
-  title: {
-    marginTop: 28,
-    fontSize: 36,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-    textShadowColor: "rgba(0,0,0,0.25)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
-  },
-  titleAccent: {
-    color: "#FFE9F7", // audit-ok: near-white light-pink title accent for dark premium splash
-  },
-  subtitle: {
-    marginTop: 10,
+  tagline: {
+    marginTop: 36,
     fontSize: 15,
-    fontWeight: "500",
-    color: "rgba(255,255,255,0.88)",
-    letterSpacing: 0.3,
-  },
-  dotsRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 28,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#FFFFFF",
-  },
-  sparkle: {
-    position: "absolute",
-  },
-  sparkleText: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 22,
-  },
-  sparkleTextSm: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 14,
-  },
-  bottom: {
-    position: "absolute",
-    bottom: 36,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
-  bottomText: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 11,
-    letterSpacing: 1.5,
-    fontWeight: "600",
+    fontWeight: "400",
+    letterSpacing: 0.5,
+    color: "rgba(210,200,255,0.70)",
+    textAlign: "center",
+    fontFamily: "Inter_400Regular",
   },
 });
