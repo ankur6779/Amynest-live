@@ -1,8 +1,11 @@
 // ─── Life Skills Mode — shared data + helpers ────────────────────────────────
 // Used by both web (artifacts/kidschedule) and mobile (artifacts/amynest-mobile).
-// Pure data, no platform deps. English-only.
+// Pure data, no platform deps.
+// Languages: English (en), Hindi (hi), Hinglish (hinglish).
+// Task content is English-only; UI labels, categories, and difficulty are tri-lingual.
+// Helper `L(text, lang)` falls back to `en` when a lang key is absent.
 
-export type LifeSkillLang = "en";
+export type LifeSkillLang = "en" | "hi" | "hinglish";
 
 export type LifeSkillAgeBand = "toddler" | "preschool" | "kid" | "teen";
 
@@ -18,7 +21,17 @@ export type LifeSkillCategory =
 
 export type LifeSkillDifficulty = "easy" | "medium" | "hard";
 
-export interface LocalizedText { en: string }
+/** English is always present; hi/hinglish are optional extras. */
+export interface LocalizedText {
+  en: string;
+  hi?: string;
+  hinglish?: string;
+}
+
+/** Safe getter: returns `text[lang]` if present, else falls back to `text.en`. */
+export function L(text: LocalizedText, lang: LifeSkillLang = "en"): string {
+  return (lang !== "en" && text[lang]) ? text[lang]! : text.en;
+}
 
 export interface LifeSkillTask {
   id: string;
@@ -61,14 +74,14 @@ export const CATEGORY_EMOJI: Record<LifeSkillCategory, string> = {
 };
 
 export const CATEGORY_LABEL: Record<LifeSkillCategory, LocalizedText> = {
-  hygiene:        { en: "Hygiene" },
-  social:         { en: "Social" },
-  responsibility: { en: "Responsibility" },
-  emotional:      { en: "Emotional" },
-  money:          { en: "Money" },
-  time:           { en: "Time" },
-  self_care:      { en: "Self-care" },
-  chores:         { en: "Chores" },
+  hygiene:        { en: "Hygiene",        hi: "स्वच्छता",      hinglish: "Safai" },
+  social:         { en: "Social",         hi: "सामाजिक",       hinglish: "Social Skills" },
+  responsibility: { en: "Responsibility", hi: "जिम्मेदारी",   hinglish: "Zimmedari" },
+  emotional:      { en: "Emotional",      hi: "भावनात्मक",    hinglish: "Emotions" },
+  money:          { en: "Money",          hi: "पैसा",          hinglish: "Paisa" },
+  time:           { en: "Time",           hi: "समय",           hinglish: "Time Management" },
+  self_care:      { en: "Self-care",      hi: "स्व-देखभाल",   hinglish: "Apna Khayal" },
+  chores:         { en: "Chores",         hi: "घर के काम",    hinglish: "Ghar ke Kaam" },
 };
 
 export const POINTS_BY_DIFFICULTY: Record<LifeSkillDifficulty, number> = {
@@ -78,9 +91,9 @@ export const POINTS_BY_DIFFICULTY: Record<LifeSkillDifficulty, number> = {
 };
 
 export const DIFFICULTY_LABEL: Record<LifeSkillDifficulty, LocalizedText> = {
-  easy:   { en: "Easy" },
-  medium: { en: "Medium" },
-  hard:   { en: "Hard" },
+  easy:   { en: "Easy",   hi: "आसान",    hinglish: "Aasaan" },
+  medium: { en: "Medium", hi: "मध्यम",   hinglish: "Medium" },
+  hard:   { en: "Hard",   hi: "मुश्किल", hinglish: "Mushkil" },
 };
 
 // ─── Task bank ────────────────────────────────────────────────────────────────
@@ -261,50 +274,53 @@ export function buildAmyLifeSkillInsight(
     .filter(([, v]) => (v?.done ?? 0) + (v?.skipped ?? 0) >= 1)
     .map(([c, v]) => ({ c, done: v!.done, total: v!.done + v!.skipped }));
   if (entries.length === 0) {
-    const t: LocalizedText = {
+    return L({
       en: `${childName} hasn't started any life skill tasks yet. Tap one above to begin!`,
-    };
-    return t[lang];
+      hi: `${childName} ने अभी कोई कौशल शुरू नहीं किया। ऊपर टैप करें!`,
+      hinglish: `${childName} ne abhi koi life skill shuru nahi kiya. Upar tap karo!`,
+    }, lang);
   }
   entries.sort((a, b) => (b.done / Math.max(1, b.total)) - (a.done / Math.max(1, a.total)));
   const best = entries[0]!;
-  const bestLabel = CATEGORY_LABEL[best.c][lang];
-  const t: LocalizedText = {
+  const bestLabel = L(CATEGORY_LABEL[best.c], lang);
+  return L({
     en: `${childName} is improving in ${bestLabel} — keep up the daily practice!`,
-  };
-  return t[lang];
+    hi: `${childName} ${bestLabel} में बेहतर हो रहे हैं — रोज अभ्यास जारी रखें!`,
+    hinglish: `${childName} ${bestLabel} mein improve kar raha hai — roz practice karo!`,
+  }, lang);
 }
 
 // ─── Tiny UI dictionary used by both web + mobile components ─────────────────
 export const UI_LABELS = {
-  sectionTitle:  { en: "Life Skills Mode" },
-  sectionDesc:   { en: "Daily real-life skills for ages 2–15", },
-  todayTitle:    { en: "Today's Life Skills" },
-  markDone:      { en: "Mark Done" },
-  skip:          { en: "Skip" },
-  done:          { en: "Done" },
-  skipped:       { en: "Skipped" },
-  parentTip:     { en: "Parent Tip" },
-  amyInsight:    { en: "Amy AI Insight" },
-  category:      { en: "Category" },
-  difficulty:    { en: "Difficulty" },
-  points:        { en: "Points" },
-  totalPoints:   { en: "Total Points" },
-  progressByCat: { en: "Progress by Category" },
-  language:      { en: "Language" },
-  noneToday:     { en: "All today's skills are done. Come back tomorrow!", },
-  dayStreak:     { en: "day streak" },
-  best:          { en: "best" },
-  rolePlayTitle: { en: "Role-play this skill" },
-  show:          { en: "Show" },
-  hide:          { en: "Hide" },
-  noScenarios:   { en: "No scenarios yet." },
+  sectionTitle:  { en: "Life Skills Mode",                hi: "जीवन कौशल",               hinglish: "Life Skills Mode" },
+  sectionDesc:   { en: "Daily real-life skills for ages 2–15", hi: "2–15 उम्र के लिए दैनिक कौशल", hinglish: "Roz ke Life Skills, 2–15 saal" },
+  todayTitle:    { en: "Today's Life Skills",             hi: "आज के जीवन कौशल",         hinglish: "Aaj ke Life Skills" },
+  markDone:      { en: "Mark Done",                       hi: "पूरा किया",               hinglish: "Done Karo" },
+  skip:          { en: "Skip",                            hi: "छोड़ें",                  hinglish: "Skip Karo" },
+  done:          { en: "Done",                            hi: "हो गया",                  hinglish: "Ho Gaya" },
+  skipped:       { en: "Skipped",                         hi: "छोड़ा",                   hinglish: "Skip Kiya" },
+  parentTip:     { en: "Parent Tip",                      hi: "माता-पिता सुझाव",         hinglish: "Parent Tip" },
+  amyInsight:    { en: "Amy AI Insight",                  hi: "Amy AI सुझाव",            hinglish: "Amy ki Salah" },
+  category:      { en: "Category",                        hi: "श्रेणी",                 hinglish: "Category" },
+  difficulty:    { en: "Difficulty",                      hi: "कठिनाई",                 hinglish: "Difficulty" },
+  points:        { en: "Points",                          hi: "अंक",                     hinglish: "Points" },
+  totalPoints:   { en: "Total Points",                    hi: "कुल अंक",                hinglish: "Total Points" },
+  progressByCat: { en: "Progress by Category",            hi: "श्रेणी अनुसार प्रगति",  hinglish: "Category Progress" },
+  language:      { en: "Language",                        hi: "भाषा",                   hinglish: "Bhasha" },
+  noneToday:     { en: "All today's skills are done. Come back tomorrow!", hi: "आज के सभी कौशल पूरे हुए। कल फिर आएं!", hinglish: "Aaj ke sab skills ho gaye! Kal phir aao!" },
+  dayStreak:     { en: "day streak",                      hi: "दिन की लकीर",             hinglish: "din ka streak" },
+  best:          { en: "best",                            hi: "सर्वश्रेष्ठ",            hinglish: "best" },
+  rolePlayTitle: { en: "Role-play this skill",            hi: "इस कौशल को खेलें",       hinglish: "Iss skill ko practice karo" },
+  show:          { en: "Show",                            hi: "दिखाएं",                 hinglish: "Dikhao" },
+  hide:          { en: "Hide",                            hi: "छिपाएं",                hinglish: "Chhupao" },
+  noScenarios:   { en: "No scenarios yet.",               hi: "अभी कोई परिदृश्य नहीं।", hinglish: "Abhi koi scenario nahi." },
 } as const satisfies Record<string, LocalizedText>;
 
 export type UILabelKey = keyof typeof UI_LABELS;
 
-export function uiLabel(key: UILabelKey, _lang: LifeSkillLang = "en"): string {
-  return UI_LABELS[key].en;
+/** Returns the label in the requested language, falling back to English. */
+export function uiLabel(key: UILabelKey, lang: LifeSkillLang = "en"): string {
+  return L(UI_LABELS[key], lang);
 }
 
 // ─── Streak & weekly bar helpers ─────────────────────────────────────────────

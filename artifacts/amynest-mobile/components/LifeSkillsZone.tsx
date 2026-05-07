@@ -9,10 +9,11 @@ import {
   ageBandForLifeSkills, ageBandLabel,
   CATEGORY_EMOJI, CATEGORY_LABEL, DIFFICULTY_LABEL,
   POINTS_BY_DIFFICULTY, pickDailyLifeSkillTasks, tasksFor,
-  buildAmyLifeSkillInsight, uiLabel,
+  buildAmyLifeSkillInsight, uiLabel, L,
 } from "@workspace/life-skills";
 import { brand, brandAlpha, palette } from "@/constants/colors";
 
+// ── Types ──────────────────────────────────────────────────────────────────
 interface DailyRecord { taskIds: string[]; done: string[]; skipped: string[] }
 interface ChildLifeSkillStats {
   totalPoints: number;
@@ -65,13 +66,21 @@ function parseStats(raw: string | null, fallbackLang: LifeSkillLang): ChildLifeS
         };
       }
     }
-    const lang: LifeSkillLang = "en";
+    // Persist chosen language across sessions.
+    const savedLang = (p.lang as LifeSkillLang | undefined);
+    const lang: LifeSkillLang = (savedLang === "hi" || savedLang === "hinglish") ? savedLang : "en";
     return { totalPoints: num(p.totalPoints), byCategory, daily, lang };
   } catch {
     return def;
   }
 }
 
+// ── Language toggle config ─────────────────────────────────────────────────
+const LANG_OPTIONS: { lang: LifeSkillLang; label: string }[] = [
+  { lang: "en",       label: "EN" },
+  { lang: "hi",       label: "हिंदी" },
+  { lang: "hinglish", label: "Hinglish" },
+];
 
 interface Props {
   child: { id: string | number; name: string; age: number };
@@ -110,7 +119,13 @@ export function LifeSkillsZone({ child }: Props) {
       return next;
     });
   };
-  const lang: LifeSkillLang = "en";
+
+  // Reactive lang — persisted inside stats so it survives restarts.
+  const lang: LifeSkillLang = stats.lang ?? "en";
+
+  const setLang = (l: LifeSkillLang) => {
+    updateStats((prev) => ({ ...prev, lang: l }));
+  };
 
   const ageBand = ageBandForLifeSkills(child.age);
   const date = todayISO();
@@ -122,9 +137,6 @@ export function LifeSkillsZone({ child }: Props) {
     [ageBand, date, child.id, yesterdayPicks.join("|")],
   );
 
-  // Resolve today's locked tasks. Hardened: if persisted IDs no longer resolve
-  // (age-band changed, stale data), fall back to today's fresh picks. If only
-  // some IDs resolve, backfill from today's picks up to the target count.
   const TARGET_COUNT = 2;
   const lockedTasks = useMemo<LifeSkillTask[]>(() => {
     if (todaysTasks.length === 0) return [];
@@ -174,24 +186,43 @@ export function LifeSkillsZone({ child }: Props) {
     return Array.from(set);
   }, [ageBand]);
 
-
   if (!loaded) {
     return <Text style={styles.muted}>{t("components.life_skills_zone.loading")}</Text>;
   }
 
   return (
     <View style={{ gap: 10 }}>
-      {/* Header strip */}
+      {/* Header strip + tri-lingual toggle */}
       <View style={styles.headerRow}>
         <Text style={styles.headerText}>
           {ageBandLabel(ageBand, lang)} · {stats.totalPoints} {uiLabel("points", lang)}
         </Text>
+        {/* In-section language toggle: EN / हिंदी / Hinglish */}
+        <View style={styles.langToggle}>
+          {LANG_OPTIONS.map((opt) => (
+            <Pressable
+              key={opt.lang}
+              onPress={() => setLang(opt.lang)}
+              style={[
+                styles.langBtn,
+                lang === opt.lang && styles.langBtnActive,
+              ]}
+              accessibilityLabel={opt.label}
+            >
+              <Text style={[
+                styles.langBtnText,
+                lang === opt.lang && styles.langBtnTextActive,
+              ]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       {/* Today's tasks */}
       <Text style={styles.sectionLabel}>{uiLabel("todayTitle", lang)}</Text>
       {(() => {
-        // Banner rule (shared with web): all assigned tasks settled.
         const doneSet = stats.daily[date]?.done ?? [];
         const skipSet = stats.daily[date]?.skipped ?? [];
         const allSettled = lockedTasks.length > 0 &&
@@ -211,14 +242,15 @@ export function LifeSkillsZone({ child }: Props) {
               <Text style={{ fontSize: 22 }}>{CATEGORY_EMOJI[task.category]}</Text>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  <Text style={styles.taskTitle}>{task.title[lang]}</Text>
+                  {/* Task title: L() helper falls back to en for non-translated tasks */}
+                  <Text style={styles.taskTitle}>{L(task.title, lang)}</Text>
                   {isDone && <Text style={styles.doneTag}>✓ {uiLabel("done", lang)}</Text>}
                   {isSkipped && <Text style={styles.skipTag}>— {uiLabel("skipped", lang)}</Text>}
                 </View>
-                <Text style={styles.taskDesc}>{task.description[lang]}</Text>
+                <Text style={styles.taskDesc}>{L(task.description, lang)}</Text>
                 <View style={styles.metaRow}>
-                  <Text style={styles.metaPill}>{CATEGORY_LABEL[task.category][lang]}</Text>
-                  <Text style={styles.metaPill}>{DIFFICULTY_LABEL[task.difficulty][lang]}</Text>
+                  <Text style={styles.metaPill}>{L(CATEGORY_LABEL[task.category], lang)}</Text>
+                  <Text style={styles.metaPill}>{L(DIFFICULTY_LABEL[task.difficulty], lang)}</Text>
                   <Text style={[styles.metaPill, styles.pointPill]}>
                     +{POINTS_BY_DIFFICULTY[task.difficulty]} {uiLabel("points", lang)}
                   </Text>
@@ -230,18 +262,18 @@ export function LifeSkillsZone({ child }: Props) {
               <Ionicons name="bulb" size={14} color={brand.amber400} />
               <Text style={styles.tipText}>
                 <Text style={{ fontWeight: "700" }}>{uiLabel("parentTip", lang)}: </Text>
-                {task.parentTip[lang]}
+                {L(task.parentTip, lang)}
               </Text>
             </View>
 
             {!settled && (
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <Pressable onPress={() => handleAction(task, "done")} style={[styles.btn, styles.btnPrimary, { flex: 1 }]}>
-                  <Ionicons name="checkmark-circle" size={14} color="#fff" />
+                  <Ionicons name="checkmark-circle" size={14} color="#fff" /* audit-ok: static white on primary button */ />
                   <Text style={styles.btnPrimaryText}>{uiLabel("markDone", lang)}</Text>
                 </Pressable>
                 <Pressable onPress={() => handleAction(task, "skip")} style={[styles.btn, styles.btnGhost]}>
-                  <Ionicons name="play-skip-forward" size={14} color="rgba(255,255,255,0.85)" />
+                  <Ionicons name="play-skip-forward" size={14} color="rgba(255,255,255,0.85)" /* audit-ok: static white on ghost button */ />
                   <Text style={styles.btnGhostText}>{uiLabel("skip", lang)}</Text>
                 </Pressable>
               </View>
@@ -260,7 +292,7 @@ export function LifeSkillsZone({ child }: Props) {
           return (
             <View key={c} style={{ marginTop: 8 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                <Text style={styles.catLabel}>{CATEGORY_EMOJI[c]} {CATEGORY_LABEL[c][lang]}</Text>
+                <Text style={styles.catLabel}>{CATEGORY_EMOJI[c]} {L(CATEGORY_LABEL[c], lang)}</Text>
                 <Text style={styles.muted}>{stat.done}/{poolSize} · {pct}%</Text>
               </View>
               <View style={styles.progressTrack}>
@@ -274,7 +306,7 @@ export function LifeSkillsZone({ child }: Props) {
       {/* Amy AI Insight */}
       <View style={[styles.subCard, styles.insightCard]}>
         <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
-          <Ionicons name="sparkles" size={16} color="#C7B6FF" /> {/* audit-ok: violet-200 sparkle for life-skills insight */}
+          <Ionicons name="sparkles" size={16} color="#C7B6FF" /* audit-ok: violet-200 sparkle for life-skills insight */ />
           <View style={{ flex: 1 }}>
             <Text style={styles.sectionLabel}>{uiLabel("amyInsight", lang)}</Text>
             <Text style={[styles.muted, { marginTop: 4 }]}>
@@ -290,6 +322,33 @@ export function LifeSkillsZone({ child }: Props) {
 const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   headerText: { color: "rgba(255,255,255,0.75)", fontSize: 12, flex: 1 },
+
+  // ── Tri-lingual toggle ────────────────────────────────────────────────────
+  langToggle: {
+    flexDirection: "row",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 999,
+    padding: 3,
+  },
+  langBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  langBtnActive: {
+    backgroundColor: brand.primary,
+  },
+  langBtnText: {
+    // audit-ok: muted white on dark lang toggle background
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 10.5,
+    fontWeight: "700",
+  },
+  langBtnTextActive: {
+    // audit-ok: static white on active brand-primary pill
+    color: "#fff",
+  },
 
   sectionLabel: { color: "#fff", fontWeight: "800", fontSize: 13 },
   muted: { color: "rgba(255,255,255,0.6)", fontSize: 12 },

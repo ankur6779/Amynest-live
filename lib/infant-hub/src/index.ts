@@ -550,3 +550,100 @@ export * from "./parentHub";
 // Pure-JS WAV synth used by mobile InfantSoundsTab to play the white-noise
 // catalogue without bundling audio assets.
 export * from "./audioSynth";
+
+// ─── Infant Poems catalogue (shared with mobile InfantPoemsTab) ──────────────
+
+export type PoemAgeGroup = "0-6m" | "6-12m" | "12-24m";
+export type PoemMood = "Sleep" | "Calm" | "Learning";
+export type PoemIconName = "Moon" | "Star" | "Cloud" | "Sparkles" | "Sun" | "Heart" | "Sprout" | "Bird" | "Flower2";
+
+/** Mobile uses emoji instead of Lucide icons. */
+export const POEM_ICON_EMOJI: Record<PoemIconName, string> = {
+  Moon:     "🌙",
+  Star:     "⭐",
+  Cloud:    "☁️",
+  Sparkles: "✨",
+  Sun:      "☀️",
+  Heart:    "❤️",
+  Sprout:   "🌱",
+  Bird:     "🐦",
+  Flower2:  "🌸",
+};
+
+/** Solid hex tints for the mobile tile gradients — no CSS variable dependency. */
+export const POEM_TINT: Record<string, string> = {
+  "sleep-baby-sleep":          "#7c3aed",
+  "hush-little-cloud":         "#4f46e5",
+  "moon-and-me":               "#3730a3",
+  "tiny-tiny-star":            "#6d28d9",
+  "clap-clap-little-hands":    "#ec4899",
+  "round-and-round":           "#f97316",
+  "soft-little-bird":          "#06b6d4",
+  "pat-pat-pat":               "#f43f5e",
+  "humming-bumblebee":         "#f59e0b",
+  "one-little-star":           "#3b82f6",
+  "colours-of-the-day":        "#14b8a6",
+  "tiny-feet-walk":            "#22c55e",
+  "goodnight-little-everything":"#6366f1",
+  "kind-little-heart":         "#d946ef",
+};
+
+export interface InfantPoem {
+  id: string;
+  title: string;
+  lines: string[];
+  ageGroup: PoemAgeGroup;
+  mood: PoemMood;
+  icon: PoemIconName;
+  audioUrl?: string;
+}
+
+const POEMS_0_6M: InfantPoem[] = [
+  { id: "sleep-baby-sleep",   title: "Sleep, Baby, Sleep",   lines: ["Sleep baby sleep,","Stars are shining deep,","Moon is watching you,","Dreams will come true."],        ageGroup: "0-6m",   mood: "Sleep",    icon: "Moon" },
+  { id: "hush-little-cloud",  title: "Hush, Little Cloud",   lines: ["Hush little cloud, drift soft and slow,","Cradle the moon in its silver glow,","Whisper a story, soft as a sigh,","Rock baby gently across the sky."], ageGroup: "0-6m", mood: "Sleep", icon: "Cloud" },
+  { id: "moon-and-me",        title: "The Moon and Me",      lines: ["Moon up high, soft and bright,","Watching baby through the night,","Close your eyes, breathe so slow,","Off to dreamland we will go."],        ageGroup: "0-6m",   mood: "Calm",     icon: "Moon" },
+  { id: "tiny-tiny-star",     title: "Tiny, Tiny Star",      lines: ["Tiny tiny little star,","Watching baby from afar,","Soft and gentle, soft and slow,","Sleepy sleepy off we go."],                   ageGroup: "0-6m",   mood: "Sleep",    icon: "Star" },
+];
+const POEMS_6_12M: InfantPoem[] = [
+  { id: "clap-clap-little-hands", title: "Clap, Clap, Little Hands", lines: ["Clap clap little hands,","Smile as the music stands,","Tap tap tiny feet,","Life is soft and sweet."],            ageGroup: "6-12m",  mood: "Calm",     icon: "Sparkles" },
+  { id: "round-and-round",        title: "Round and Round",          lines: ["Round and round the gentle moon,","Baby hums a happy tune,","Up and down the soft hill goes,","Wiggle wiggle little toes."], ageGroup: "6-12m", mood: "Calm", icon: "Sun" },
+  { id: "soft-little-bird",       title: "Soft Little Bird",         lines: ["Soft little bird in the tree,","Singing sweetly just for me,","Flap flap, hop hop, tweet tweet tweet,","Music makes the day complete."], ageGroup: "6-12m", mood: "Learning", icon: "Bird" },
+  { id: "pat-pat-pat",            title: "Pat, Pat, Pat",            lines: ["Pat pat pat, on baby's back,","Gentle taps, a steady knack,","Slow and soft and warm and near,","Mama's love is always here."], ageGroup: "6-12m", mood: "Sleep", icon: "Heart" },
+  { id: "humming-bumblebee",      title: "Humming Bumblebee",        lines: ["Buzz buzz humming bumblebee,","Flying past the apple tree,","Round the flower, round the leaf,","Resting now beneath the reef."], ageGroup: "6-12m", mood: "Learning", icon: "Flower2" },
+];
+const POEMS_12_24M: InfantPoem[] = [
+  { id: "one-little-star",            title: "One Little Star",              lines: ["One little star in the sky,","Two birds flying high,","Three clouds drifting slow,","Four winds softly blow."],                                       ageGroup: "12-24m", mood: "Learning", icon: "Star" },
+  { id: "colours-of-the-day",         title: "Colours of the Day",           lines: ["Red is the apple, round and sweet,","Yellow is the sun on baby's feet,","Green is the grass beneath the tree,","Blue is the sky that hugs you and me."], ageGroup: "12-24m", mood: "Learning", icon: "Sparkles" },
+  { id: "tiny-feet-walk",             title: "Tiny Feet, Walk With Me",      lines: ["Tiny feet, walk with me,","Through the garden, past the tree,","Step step slow, step step quick,","Pick a flower, make it stick."],                  ageGroup: "12-24m", mood: "Learning", icon: "Sprout" },
+  { id: "goodnight-little-everything",title: "Goodnight, Little Everything", lines: ["Goodnight to the moon up so high,","Goodnight to the stars in the sky,","Goodnight to the wind in the tree,","Goodnight little dreamer — sleep peacefully."], ageGroup: "12-24m", mood: "Sleep", icon: "Moon" },
+  { id: "kind-little-heart",          title: "Kind Little Heart",            lines: ["Kind little heart, brave little soul,","Soft little hands that pat and roll,","Bright little eyes that learn and see,","There is no one as wonderful as thee."], ageGroup: "12-24m", mood: "Calm", icon: "Heart" },
+];
+
+export const ALL_POEMS: readonly InfantPoem[] = Object.freeze([
+  ...POEMS_0_6M, ...POEMS_6_12M, ...POEMS_12_24M,
+]);
+
+export interface PoemAgeGroupMeta {
+  id: PoemAgeGroup;
+  label: string;
+  fromMonths: number;
+  toMonths: number;
+  blurb: string;
+}
+
+export const POEM_AGE_GROUPS: readonly PoemAgeGroupMeta[] = [
+  { id: "0-6m",   label: "0–6m",   fromMonths: 0,  toMonths: 6,  blurb: "Ultra-calm sounds + very short verses" },
+  { id: "6-12m",  label: "6–12m",  fromMonths: 6,  toMonths: 12, blurb: "Rhythmic repetition for early language" },
+  { id: "12-24m", label: "12–24m", fromMonths: 12, toMonths: 24, blurb: "Simple counting and colour learning" },
+];
+
+export function getDefaultPoemAgeGroup(months: number): PoemAgeGroup {
+  for (const g of POEM_AGE_GROUPS) {
+    if (months >= g.fromMonths && months < g.toMonths) return g.id;
+  }
+  return "12-24m";
+}
+
+export function getPoemsForGroup(group: PoemAgeGroup): InfantPoem[] {
+  return ALL_POEMS.filter((p) => p.ageGroup === group);
+}

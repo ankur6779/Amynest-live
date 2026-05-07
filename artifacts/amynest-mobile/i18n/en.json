@@ -458,6 +458,24 @@
       },
       "empty": "No cues for this age window in this category."
     },
+    "poems": {
+      "tab_noise": "Sounds",
+      "tab_poems": "Poems",
+      "title": "Poems for your baby",
+      "subtitle": "Soft age-appropriate verses — tap a tile to play.",
+      "age_group_label": "Poem age groups",
+      "load_more": "Load more poems",
+      "loading": "Loading…",
+      "playing": "Playing",
+      "stop": "Stop",
+      "loop_on": "Loop on",
+      "loop_off": "Loop off",
+      "close_player": "Close poem player",
+      "play_poem": "Play poem: {{title}}",
+      "error": "Couldn't load audio. Tap play to try again.",
+      "no_poems": "More poems coming soon for this age",
+      "now_playing": "Playing"
+    },
     "sounds": {
       "recommended_label": "RECOMMENDED FOR THIS AGE",
       "other_label": "OTHER WHITE-NOISE OPTIONS",
@@ -1373,7 +1391,17 @@
       "pts": "pts"
     },
     "audio_lessons": {
-      "amy_audio_lessons": "Amy Audio Lessons"
+      "amy_audio_lessons": "Amy Audio Lessons",
+      "paragraph_of": "{{current}} of {{total}}",
+      "show_transcript": "Show full transcript",
+      "previous": "Previous paragraph",
+      "next": "Next paragraph",
+      "speed": "Speed",
+      "narrated_by_amy": "Narrated by Amy · Tap a paragraph to jump to it.",
+      "voice_error": "Couldn't load Amy's voice. You can still read the lesson below.",
+      "free_sample": "Free Sample",
+      "locked": "Premium",
+      "resume_from": "Resume from §{{n}}"
     },
     "babysitters": {
       "manage_your_trusted_helpers": "Manage your trusted helpers",
@@ -2408,7 +2436,10 @@
     "daily_story": {
       "moral_of_the_story": "💡 Moral of the Story",
       "more_for_today": "More for today",
-      "show_another_featured": "Show another featured"
+      "show_another_featured": "Show another featured",
+      "read_aloud": "Read Aloud",
+      "stop_reading": "Stop",
+      "loading_audio": "Loading…"
     },
     "dashboard_header": {
       "smart_parent": "Smart Parent",
@@ -2462,7 +2493,8 @@
       "read_more": "Read more"
     },
     "life_skills_zone": {
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "lang_toggle_label": "Language"
     },
     "mobile_recipe_card": {
       "ingredients": "Ingredients",

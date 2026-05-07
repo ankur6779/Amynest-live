@@ -32,6 +32,16 @@ export const PARENT_HUB_FEATURES = [
   "hub_gaming_rewards",
   "hub_rewards_shop",
   "hub_audio_lessons",
+  // Mobile-only tiles added for server-side first-time-free tracking
+  "hub_infant_parenting",
+  "hub_story_hub",
+  "hub_smart_math_tricks",
+  "hub_abacus",
+  "hub_coloring_books",
+  "hub_fun_sheets",
+  "hub_kids_control_center",
+  "hub_command_center",
+  "hub_tomorrow_forecast",
 ] as const;
 
 export type ParentHubFeatureId = (typeof PARENT_HUB_FEATURES)[number];
