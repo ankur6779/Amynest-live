@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Launcher foreground layer — rendered at 108dp × 108dp inside the adaptive
+    icon container. Keep visible content inside the 66dp centre safe zone.
+    White "A" monogram on a transparent background (the background layer
+    provides the brand-indigo fill).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- "A" monogram, centred in the 66dp safe zone (roughly 21–87dp band) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+          M54,22
+          L30,86 H40 L45.5,70 H62.5 L68,86 H78 L54,22 Z
+          M49,62 L54,46 L59,62 Z" />
+</vector>
