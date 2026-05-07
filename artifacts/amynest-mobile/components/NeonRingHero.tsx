@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, Animated, Easing, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from "react-native-svg";
 import { brand } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 
@@ -140,27 +139,9 @@ export default function NeonRingHero() {
         <View style={styles.innerCircle}>
           <Text style={styles.meetText}>{t("components.neon_ring_hero.meet")}</Text>
 
-          {/* Gradient "AMY" using SVG — opacity + subtle scale pulse on ~3.2s loop */}
+          {/* "AMY" — pink colour, opacity + subtle scale pulse on ~3.2s loop */}
           <Animated.View style={{ opacity: amyGlowAnim, transform: [{ scale: amyScale }] }}>
-            <Svg width={90} height={40}>
-              <Defs>
-                <SvgLinearGradient id="amyGrad" x1="0" y1="0" x2="1" y2="0">
-                  <Stop offset="0" stopColor={brand.purple500} />
-                  <Stop offset="1" stopColor={brand.pink500} />
-                </SvgLinearGradient>
-              </Defs>
-              <SvgText
-                fill="url(#amyGrad)"
-                fontSize="32"
-                fontWeight="700"
-                letterSpacing="4"
-                x="4"
-                y="33"
-                textAnchor="start"
-              >
-                AMY
-              </SvgText>
-            </Svg>
+            <Text style={styles.amyText}>{t("components.neon_ring_hero.amy")}</Text>
           </Animated.View>
         </View>
 
@@ -235,6 +216,15 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     lineHeight: 16,
     fontFamily: "Inter_400Regular",
+  },
+
+  amyText: {
+    fontSize: 32,
+    fontWeight: "700",
+    letterSpacing: 4,
+    color: brand.pink500,
+    textTransform: "uppercase",
+    fontFamily: "Inter_700Bold",
   },
 
   flareDot: {
