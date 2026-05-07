@@ -358,7 +358,7 @@ export default function SignInPage() {
       setMode("reset-sent");
     } catch (err: any) {
       if (err?.code === "auth/user-not-found") {
-        setMode("reset-sent");
+        setResetError(t("sign_in.reset_not_found"));
         return;
       }
       setResetError(prettyAuthError(err));

@@ -62,11 +62,6 @@ export default function SignInScreen() {
       await sendPasswordResetEmail(firebaseAuth, resetEmail.trim());
       setMode("reset-sent");
     } catch (err: unknown) {
-      const code = (err as { code?: string })?.code;
-      if (code === "auth/user-not-found") {
-        setMode("reset-sent");
-        return;
-      }
       setResetError(humanizeError(err, t("screens.sign_in.couldnt_send_reset")));
     } finally {
       setResetLoading(false);
