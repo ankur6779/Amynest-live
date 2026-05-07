@@ -371,6 +371,73 @@ function GridChips({ options, selected, onSelect }: { options: string[]; selecte
   );
 }
 
+/** Convert 24-h "HH:MM" → display "H:MM AM/PM" */
+function from24h(v: string): string {
+  const [h, m] = (v || "07:00").split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hr = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hr}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+/**
+ * TimeChipPicker — shows quick-select chips for common times + an
+ * "⏰ Other time…" chip that reveals a native <input type="time"> so
+ * users can pick any time they want (school at 10:30 AM, late sleepers, etc.)
+ */
+function TimeChipPicker({
+  options,
+  selected,
+  onSelect,
+  defaultValue = "07:00",
+}: {
+  options: string[];
+  selected: string;
+  onSelect: (displayStr: string) => void;
+  defaultValue?: string;
+}) {
+  const [showCustom, setShowCustom] = useState(false);
+  const [customVal, setCustomVal] = useState(defaultValue);
+
+  if (showCustom) {
+    return (
+      <div className="space-y-3">
+        <input
+          type="time"
+          value={customVal}
+          onChange={(e) => setCustomVal(e.target.value)}
+          className="w-full rounded-2xl px-4 py-3.5 text-base outline-none border"
+          style={INPUT_DARK}
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowCustom(false)}
+            className="flex-1 py-3 rounded-2xl text-sm font-semibold border active:scale-95 transition-all"
+            style={CHIP_DARK}
+          >
+            ← Back
+          </button>
+          <button
+            onClick={() => { onSelect(from24h(customVal)); setShowCustom(false); }}
+            className="flex-1 py-3 rounded-2xl text-sm font-semibold active:scale-95 transition-all"
+            style={{ background: GRAD, color: "#fff" }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o) => (
+        <Chip key={o} label={o} selected={selected === o} onClick={() => onSelect(o)} />
+      ))}
+      <Chip label="⏰ Other time…" selected={false} onClick={() => setShowCustom(true)} />
+    </div>
+  );
+}
+
 function ProgressBar({ step }: { step: Step }) {
   const { t } = useTranslation();
   // Infant path is short; standard path is longer. Both share the parent section.
@@ -1142,9 +1209,10 @@ export default function OnboardingPage() {
 
       case "child-school-start":
         return (
-          <GridChips
+          <TimeChipPicker
             options={SCHOOL_START_OPTS}
             selected={selected}
+            defaultValue={curr.schoolStartTime || "08:00"}
             onSelect={(v) => {
               setSelected(v);
               setCurr((c) => ({ ...c, schoolStartTime: to24h(v) }));
@@ -1155,9 +1223,10 @@ export default function OnboardingPage() {
 
       case "child-school-end":
         return (
-          <GridChips
+          <TimeChipPicker
             options={SCHOOL_END_OPTS}
             selected={selected}
+            defaultValue={curr.schoolEndTime || "15:00"}
             onSelect={(v) => {
               setSelected(v);
               setCurr((c) => ({ ...c, schoolEndTime: to24h(v), schoolDays: c.schoolDays ?? [1, 2, 3, 4, 5] }));
@@ -1228,9 +1297,10 @@ export default function OnboardingPage() {
 
       case "child-wake":
         return (
-          <GridChips
+          <TimeChipPicker
             options={WAKE_OPTS}
             selected={selected}
+            defaultValue={curr.wakeUpTime || "07:00"}
             onSelect={(v) => {
               setSelected(v);
               setCurr((c) => ({ ...c, wakeUpTime: to24h(v) }));
@@ -1242,9 +1312,10 @@ export default function OnboardingPage() {
 
       case "child-sleep":
         return (
-          <GridChips
+          <TimeChipPicker
             options={SLEEP_OPTS}
             selected={selected}
+            defaultValue={curr.sleepTime || "21:00"}
             onSelect={(v) => {
               setSelected(v);
               const finalChild = {

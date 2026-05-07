@@ -217,16 +217,16 @@ describe("Onboarding chat — end-to-end flow", () => {
       await clickButton("Confirm");
       await clickButton("Yes, school going");
       await clickButton("LKG / KG");
-      await clickButton("8:00 AM");
-      await clickButton("3:00 PM");
+      await clickButton("Confirm"); // school-start — accepts default time from TimePickerField
+      await clickButton("Confirm"); // school-end
       await clickButton("Continue"); // school-days defaults Mon–Fri
 
       const midProgress = parseProgress();
       expect(midProgress?.total).toBe(STANDARD_TOTAL);
       expect(midProgress?.current).toBeGreaterThan(dobProgress!.current);
 
-      await clickButton("7:00 AM");
-      await clickButton("9:00 PM");
+      await clickButton("Confirm"); // wake time
+      await clickButton("Confirm"); // sleep time
 
       await clickButton("Yes, add another");
 
@@ -344,11 +344,11 @@ describe("Onboarding chat — end-to-end flow", () => {
       await clickButton("Confirm");
       await clickButton("Yes, school going");
       await clickButton("LKG / KG");
-      await clickButton("8:00 AM");
-      await clickButton("3:00 PM");
+      await clickButton("Confirm"); // school-start
+      await clickButton("Confirm"); // school-end
       await clickButton("Continue");
-      await clickButton("7:00 AM");
-      await clickButton("9:00 PM");
+      await clickButton("Confirm"); // wake time
+      await clickButton("Confirm"); // sleep time
       await clickButton("No, continue");
       await fillParentTail();
 
