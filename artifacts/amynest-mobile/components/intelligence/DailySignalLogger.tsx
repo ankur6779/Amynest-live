@@ -3,7 +3,7 @@
  *
  * Quick mood / focus / sleep buttons (1–5) for the active child. Each tap
  * POSTs /api/child-intelligence/:childId/signal so tomorrow's routine
- * generation can adapt.
+ * generation can adapt. Each button shows emoji + descriptive label (mirrors web).
  */
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
@@ -22,6 +22,20 @@ type SignalEntry = {
   sleepQuality: number | null;
 };
 type Snapshot = { recentSignals: SignalEntry[] };
+
+/** Per-field emoji for each rating 1–5 (mirrors web FIELD_EMOJIS). */
+const FIELD_EMOJIS: Record<ScaleField, [string, string, string, string, string]> = {
+  mood:         ["😢", "😟", "😐", "😊", "😄"],
+  focusScore:   ["😵", "😕", "😐", "🎯", "🔥"],
+  sleepQuality: ["😩", "😪", "😐", "😌", "⭐"],
+};
+
+/** Selected-state accent colours per field (mirrors web FIELD_ACCENT). */
+const FIELD_ACCENT_SELECTED: Record<ScaleField, string> = {
+  mood:         "#8b5cf6", // violet-500
+  focusScore:   "#6366f1", // indigo-500
+  sleepQuality: "#0ea5e9", // sky-500
+};
 
 function todayStr(): string {
   const d = new Date();
@@ -113,37 +127,44 @@ export function DailySignalLogger({ childId: childIdProp }: { childId?: number }
 
       {(["mood", "focusScore", "sleepQuality"] as const).map((field) => {
         const cur = todays?.[field] ?? null;
+        const emojis = FIELD_EMOJIS[field];
+        const accentColor = FIELD_ACCENT_SELECTED[field];
         return (
           <View key={field} style={styles.field}>
             <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>
               {t(`intelligence.signal.fields.${field}`)}
             </Text>
             <View style={styles.scaleRow}>
-              {[1, 2, 3, 4, 5].map((n) => {
+              {([1, 2, 3, 4, 5] as const).map((n) => {
                 const on = cur === n;
+                const emoji = emojis[n - 1];
+                const label = t(`intelligence.signal.scale.${field}.${n}`);
                 return (
                   <TouchableOpacity
                     key={n}
                     onPress={() => childId && mutation.mutate({ childId, body: { [field]: n } })}
                     disabled={mutation.isPending}
                     activeOpacity={0.7}
-                    accessibilityLabel={t(`intelligence.signal.scale.${n}`)}
+                    accessibilityLabel={`${label} (${n}/5)`}
                     style={[
                       styles.scaleBtn,
                       {
-                        backgroundColor: on ? c.primary : c.muted,
-                        borderColor: on ? c.primary : c.border,
+                        backgroundColor: on ? accentColor : c.muted,
+                        borderColor: on ? accentColor : c.border,
                         opacity: mutation.isPending ? 0.6 : 1,
+                        transform: [{ scale: on ? 1.05 : 1 }],
                       },
                     ]}
                   >
+                    <Text style={styles.scaleBtnEmoji}>{emoji}</Text>
                     <Text
                       style={[
-                        styles.scaleText,
-                        { color: on ? c.primaryForeground : c.text },
+                        styles.scaleBtnLabel,
+                        { color: on ? "#fff" : c.mutedForeground },
                       ]}
+                      numberOfLines={1}
                     >
-                      {n}
+                      {label}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -166,13 +187,15 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 12, fontWeight: "700" },
   field: { gap: 6 },
   fieldLabel: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
-  scaleRow: { flexDirection: "row", gap: 6 },
+  scaleRow: { flexDirection: "row", gap: 4 },
   scaleBtn: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
+    gap: 2,
   },
-  scaleText: { fontSize: 14, fontWeight: "700" },
+  scaleBtnEmoji: { fontSize: 20, lineHeight: 24 },
+  scaleBtnLabel: { fontSize: 9, fontWeight: "700", textAlign: "center", paddingHorizontal: 2 },
 });

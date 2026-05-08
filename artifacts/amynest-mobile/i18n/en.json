@@ -283,7 +283,28 @@
         "2": "Low",
         "3": "Okay",
         "4": "Good",
-        "5": "Great"
+        "5": "Great",
+        "mood": {
+          "1": "Awful",
+          "2": "Bad",
+          "3": "Okay",
+          "4": "Good",
+          "5": "Great"
+        },
+        "focusScore": {
+          "1": "Scattered",
+          "2": "Low",
+          "3": "Okay",
+          "4": "Focused",
+          "5": "Sharp"
+        },
+        "sleepQuality": {
+          "1": "Poor",
+          "2": "Light",
+          "3": "Okay",
+          "4": "Good",
+          "5": "Great"
+        }
       }
     },
     "adaptations": {
