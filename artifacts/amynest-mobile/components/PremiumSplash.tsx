@@ -20,6 +20,7 @@ import {
   Easing,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { brand } from "@/constants/colors";
 import Svg, {
   Defs,
   LinearGradient as SvgLinearGradient,
@@ -141,7 +142,7 @@ function NeonRing({ spinAnim }: { spinAnim: Animated.Value }) {
           <Defs>
             <SvgLinearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
               <Stop offset="0%"   stopColor="#9333EA" /> {/* audit-ok: neon ring gradient purple */}
-              <Stop offset="30%"  stopColor="#EC4899" /> {/* audit-ok: neon ring gradient pink */}
+              <Stop offset="30%"  stopColor={brand.pink500} />
               <Stop offset="65%"  stopColor="#06B6D4" /> {/* audit-ok: neon ring gradient cyan */}
               <Stop offset="100%" stopColor="#9333EA" /> {/* audit-ok: neon ring gradient purple end */}
             </SvgLinearGradient>
@@ -189,8 +190,8 @@ function RainbowWordmark({ opacity }: { opacity: Animated.Value }) {
 // ─── Neon Loading Dots ─────────────────────────────────────────────────────────
 const DOT_COLORS = [
   "#9333EA", // audit-ok: purple neon dot
-  "#EC4899", // audit-ok: pink neon dot
-  "#A855F7", // audit-ok: violet neon dot
+  brand.pink500,   // pink neon dot
+  brand.purple500, // violet neon dot
   "#06B6D4", // audit-ok: cyan neon dot
 ];
 
