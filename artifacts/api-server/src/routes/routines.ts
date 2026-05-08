@@ -29,6 +29,15 @@ import {
 import { generateRuleBasedRoutine, generateRuleBasedInsights, generatePartialRoutine, timeToMins, minsToTime, applyRoutineV2, anchorMealSlots, attachMealRecipesAndMetadata, type AgeGroup, type Region, type ScheduleItem } from "../lib/routine-templates.js";
 import { enforceSchoolBlock as enforceSchoolBlockUtil, reAnchorToWakeTime as reAnchorToWakeTimeUtil, type AiRoutineItem } from "../lib/ai-routine-utils.js";
 import { type CaregiverKey, type WeatherOutdoor, applyWeatherAdjustment } from "@workspace/family-routine";
+import {
+  loadOwnedChild,
+  getChildIntelligenceSnapshot,
+  getMostRecentSignal,
+  signalToPreviousDayContext,
+  type ParentGoalCode,
+  type EnergyProfile,
+} from "../services/childIntelligenceService.js";
+import { buildAdaptations } from "../lib/routineAdaptations.js";
 
 const CAREGIVER_LABEL: Record<CaregiverKey, string> = {
   mom: "Mom",
@@ -462,6 +471,14 @@ export async function generateAiRoutine(params: {
   };
   // True when the date falls on Saturday or Sunday — triggers relaxed weekend mode.
   isWeekendDay?: boolean;
+  // ── Adaptive Family Intelligence (Phase 1) ───────────────────────────────
+  // Structured parent-selected optimization goals. Drives goal-targeted
+  // prompt sections (e.g. "Goal: improve sleep — extend wind-down before bed").
+  parentGoals?: readonly ParentGoalCode[];
+  // Derived energy profile (peak focus / low energy / calm windows). When
+  // provided AND sampleCount >= 3, the AI is told to anchor learning blocks
+  // inside the peak focus window and calmer activities in the low-energy window.
+  energyProfile?: EnergyProfile | null;
   openaiClient?: {
     chat: {
       completions: {
@@ -474,7 +491,7 @@ export async function generateAiRoutine(params: {
       };
     };
   };
-}): Promise<{ title: string; items: RoutineItem[] }> {
+}): Promise<{ title: string; items: RoutineItem[]; adaptations: string[] }> {
   const openai = params.openaiClient
     ?? (await import("@workspace/integrations-openai-ai-server")).openai;
 
@@ -628,6 +645,20 @@ ${params.previousDayContext.sleepQuality === "poor" ? `- Yesterday's sleep was P
 - Yesterday's mood was great. Continue with an engaging, balanced schedule.` : ""}${params.previousDayContext.activityCompletion !== undefined && params.previousDayContext.activityCompletion < 50 ? `
 - Only ${params.previousDayContext.activityCompletion}% of yesterday's routine was completed. Today: keep the schedule SIMPLER and shorter — fewer items, more breathing room between blocks.` : ""}${params.previousDayContext.activityCompletion !== undefined && params.previousDayContext.activityCompletion >= 80 ? `
 - ${params.previousDayContext.activityCompletion}% of yesterday's routine was completed — excellent follow-through. Today: maintain a similar density or gently increase challenge.` : ""}
+` : ""}${params.parentGoals && params.parentGoals.length > 0 ? `
+
+PARENT-SELECTED OPTIMIZATION GOALS — apply ALL that are listed:
+${(params.parentGoals as readonly string[]).includes("improve_sleep") ? "- improve_sleep: Extend the pre-bed wind-down (story / cuddle / dim-lights) by 10–15 min and remove any stimulating activity in the last hour before bedtime. End the day on a calm, predictable note." : ""}
+${(params.parentGoals as readonly string[]).includes("reduce_tantrums") ? "- reduce_tantrums: Add a short calm-down / sensory-regulation block in the early afternoon. Soften ALL transitions between high-energy and low-energy activities (insert a 5-min bridge with a gentle cue). Keep meal blocks consistent and unhurried." : ""}
+${(params.parentGoals as readonly string[]).includes("improve_focus") ? "- improve_focus: Place ONE dedicated focused-learning block (~25–40 min for school-age, ~15–20 min for preschool) inside the child's peak focus window when known. Avoid splitting study into many tiny fragments." : ""}
+${(params.parentGoals as readonly string[]).includes("reduce_screen_time") ? "- reduce_screen_time: Do NOT propose any screen-leaning activity (TV, tablet, phone, video games). Replace them with active outdoor play, hands-on creative work, or family bonding." : ""}
+${(params.parentGoals as readonly string[]).includes("increase_independence") ? "- increase_independence: Frame self-care steps (dressing, packing bag, brushing, tidying toys) as standalone activities the child does on their own. Use notes like \"Child does this independently — parent only checks at the end.\"" : ""}
+` : ""}${params.energyProfile && params.energyProfile.sampleCount >= 3 ? `
+
+ENERGY PROFILE — derived from this child's recent daily signals (HARD ANCHORS):
+${params.energyProfile.peakFocusStart && params.energyProfile.peakFocusEnd ? `- Peak focus window: ${params.energyProfile.peakFocusStart}–${params.energyProfile.peakFocusEnd}. Place the most demanding learning / study / problem-solving block here.` : ""}
+${params.energyProfile.lowEnergyStart && params.energyProfile.lowEnergyEnd ? `- Low-energy window: ${params.energyProfile.lowEnergyStart}–${params.energyProfile.lowEnergyEnd}. Schedule REST, quiet reading, sensory play, or a snack here — never demanding study or competitive play.` : ""}
+${params.energyProfile.calmWindowStart && params.energyProfile.calmWindowEnd ? `- Calm window: ${params.energyProfile.calmWindowStart}–${params.energyProfile.calmWindowEnd}. Use for wind-down, story time, family bonding before bed.` : ""}
 ` : ""}${params.previousMeals && params.previousMeals.length > 0 ? `
 
 ANTI-REPETITION — MEAL VARIETY (CRITICAL):
@@ -718,9 +749,18 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     params.weatherOutdoor,
   );
 
+  const adaptations = buildAdaptations({
+    parentGoals: params.parentGoals ?? [],
+    energyProfile: params.energyProfile ?? null,
+    previousDayContext: params.previousDayContext,
+    hasSchool: params.hasSchool,
+    isWeekendDay: params.isWeekendDay ?? false,
+  });
+
   return {
     title: parsed.title,
     items: weatherAdjusted as RoutineItem[],
+    adaptations,
   };
 }
 
@@ -981,13 +1021,23 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     String(prevDate.getDate()).padStart(2, "0"),
   ].join("-");
 
-  const [aiUserCustomRecipes, prevRoutineRows] = await Promise.all([
+  const [aiUserCustomRecipes, prevRoutineRows, childIntel, mostRecentSignal] = await Promise.all([
     db.select().from(customRecipesTable).where(eq(customRecipesTable.userId, userId)),
     db.select({ items: routinesTable.items })
       .from(routinesTable)
       .where(and(eq(routinesTable.childId, parsed.data.childId), eq(routinesTable.date, prevDateStr)))
       .limit(1),
+    getChildIntelligenceSnapshot(parsed.data.childId, {
+      parentGoals: (child as { parentGoals?: unknown }).parentGoals,
+      energyProfile: (child as { energyProfile?: unknown }).energyProfile,
+    }),
+    getMostRecentSignal(parsed.data.childId),
   ]);
+
+  // Build previousDayContext from the most recent signal (if any).
+  const previousDayContext = mostRecentSignal
+    ? signalToPreviousDayContext(mostRecentSignal)
+    : undefined;
 
   // Extract yesterday's meal names and activity categories for anti-repetition.
   let previousMeals: string[] = [];
@@ -1047,6 +1097,9 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       subCuisine: effSubCuisine,
       feedingType: child.feedingType ?? null,
       sleepPattern: child.sleepPattern ?? null,
+      parentGoals: childIntel.parentGoals,
+      energyProfile: childIntel.energyProfile,
+      previousDayContext,
     });
     res.json(GenerateRoutineResponse.parse(generated));
   } catch {
@@ -1073,7 +1126,16 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       date: parsed.data.date,
       customRecipes: aiUserCustomRecipes,
     });
-    res.json(GenerateRoutineResponse.parse(generated));
+    // Even on rule-based fallback, surface "why this routine" adaptations so
+    // the UI's explanation card stays populated.
+    const adaptations = buildAdaptations({
+      parentGoals: childIntel.parentGoals,
+      energyProfile: childIntel.energyProfile,
+      previousDayContext,
+      hasSchool: isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool),
+      isWeekendDay,
+    });
+    res.json(GenerateRoutineResponse.parse({ ...generated, adaptations }));
   }
 });
 
@@ -1283,6 +1345,9 @@ router.post("/routines", async (req, res): Promise<void> => {
     date: parsed.data.date,
     title: parsed.data.title,
     items: parsed.data.items,
+    // Persist adaptations passed through from the generate response so the
+    // "Why this routine?" card stays populated when the routine is re-opened.
+    adaptations: parsed.data.adaptations ?? [],
   }).returning();
 
   res.status(201).json(

@@ -254,6 +254,43 @@
     "interests": "Interests",
     "school": "School"
   },
+  "intelligence": {
+    "goals": {
+      "title": "Optimization Goals",
+      "subtitle": "Pick what you want Amy to focus on. Routines will adapt to push these forward.",
+      "saved": "Goals updated",
+      "save_failed": "Could not save goals",
+      "options": {
+        "improve_sleep": "Improve sleep",
+        "reduce_tantrums": "Reduce tantrums",
+        "improve_focus": "Improve focus",
+        "reduce_screen_time": "Reduce screen time",
+        "increase_independence": "Increase independence"
+      }
+    },
+    "signal": {
+      "title": "Today's Signal",
+      "subtitle": "A quick read on today helps tomorrow's plan adapt.",
+      "saved": "Signal logged",
+      "save_failed": "Could not log signal",
+      "fields": {
+        "mood": "Mood",
+        "focusScore": "Focus",
+        "sleepQuality": "Sleep last night"
+      },
+      "scale": {
+        "1": "Very low",
+        "2": "Low",
+        "3": "Okay",
+        "4": "Good",
+        "5": "Great"
+      }
+    },
+    "adaptations": {
+      "title": "Why this routine?",
+      "subtitle": "How Amy adapted today's plan to your child."
+    }
+  },
   "routines": {
     "title": "Routines",
     "subtitle": "Create and manage daily routines",

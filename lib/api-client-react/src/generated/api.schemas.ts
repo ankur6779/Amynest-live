@@ -9,6 +9,35 @@ export interface HealthStatus {
   status: string;
 }
 
+export type ChildParentGoalsItem =
+  (typeof ChildParentGoalsItem)[keyof typeof ChildParentGoalsItem];
+
+export const ChildParentGoalsItem = {
+  improve_sleep: "improve_sleep",
+  reduce_tantrums: "reduce_tantrums",
+  improve_focus: "improve_focus",
+  reduce_screen_time: "reduce_screen_time",
+  increase_independence: "increase_independence",
+} as const;
+
+/**
+ * Adaptive Family Intelligence — derived energy profile recomputed from
+child_daily_signals + routine completion history. Times are HH:mm strings.
+null fields = not enough data yet (sampleCount < 3).
+
+ */
+export interface EnergyProfile {
+  peakFocusStart?: string | null;
+  peakFocusEnd?: string | null;
+  lowEnergyStart?: string | null;
+  lowEnergyEnd?: string | null;
+  calmWindowStart?: string | null;
+  calmWindowEnd?: string | null;
+  /** Number of daily signals used to compute this profile. */
+  sampleCount: number;
+  lastComputedAt?: string | null;
+}
+
 export interface Child {
   id: number;
   name: string;
@@ -38,6 +67,9 @@ export interface Child {
   allergies?: string | null;
   foodPrefInherited?: boolean | null;
   foodPrefCustomized?: boolean | null;
+  /** Adaptive Family Intelligence — structured parent-selected optimization goals. */
+  parentGoals?: ChildParentGoalsItem[] | null;
+  energyProfile?: EnergyProfile | null;
   createdAt: string;
 }
 
@@ -71,6 +103,17 @@ export interface CreateChildBody {
   foodPrefCustomized?: boolean | null;
 }
 
+export type UpdateChildBodyParentGoalsItem =
+  (typeof UpdateChildBodyParentGoalsItem)[keyof typeof UpdateChildBodyParentGoalsItem];
+
+export const UpdateChildBodyParentGoalsItem = {
+  improve_sleep: "improve_sleep",
+  reduce_tantrums: "reduce_tantrums",
+  improve_focus: "improve_focus",
+  reduce_screen_time: "reduce_screen_time",
+  increase_independence: "increase_independence",
+} as const;
+
 export interface UpdateChildBody {
   name?: string;
   dob?: string | null;
@@ -99,6 +142,8 @@ export interface UpdateChildBody {
   allergies?: string | null;
   foodPrefInherited?: boolean | null;
   foodPrefCustomized?: boolean | null;
+  /** Adaptive Family Intelligence — replace structured optimization goals. */
+  parentGoals?: UpdateChildBodyParentGoalsItem[] | null;
 }
 
 export type RoutineItemStatus =
@@ -177,6 +222,12 @@ export interface Routine {
   uiPrefs: RoutineUiPrefs;
   /** True when the user has manually edited one or more items in this routine. */
   customized: boolean;
+  /** Adaptive Family Intelligence — short human-readable strings explaining why this
+routine differs from a default one (e.g. "Reduced morning load — sleep was shorter
+yesterday", "Placed learning at 09:00 (peak focus window)"). Surfaced in the
+"Why this routine?" card.
+ */
+  adaptations?: string[] | null;
   createdAt: string;
 }
 
@@ -196,6 +247,11 @@ export interface CreateRoutineBody {
   title: string;
   items: RoutineItem[];
   override?: boolean;
+  /** Adaptive Family Intelligence — pass through the adaptations array returned
+from /routines/generate so it persists on the saved routine row and can
+be displayed in the "Why this routine?" card later.
+ */
+  adaptations?: string[] | null;
 }
 
 /**
@@ -245,6 +301,8 @@ export interface GenerateRoutineBody {
 export interface GeneratedRoutine {
   title: string;
   items: RoutineItem[];
+  /** Human-readable explanations of how this routine was adapted to the child's signals, goals, and energy profile. */
+  adaptations?: string[] | null;
 }
 
 export interface CheckRoutineResponse {
@@ -684,6 +742,111 @@ export interface SmartStudyInsightsSubject {
   /** Number of attempts that contributed to accuracyPct. */
   sampleSize: number;
   weakTopics: SmartStudyInsightsWeakTopic[];
+}
+
+/**
+ * A single day's behavioral signals for a child. All scores are 1–5 (5 = best).
+ */
+export interface ChildDailySignalEntry {
+  /** YYYY-MM-DD local date. */
+  date: string;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  mood?: number | null;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  focusScore?: number | null;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  sleepQuality?: number | null;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  completionPct?: number | null;
+  /** @minimum 0 */
+  screenMinutes?: number | null;
+  /** @minimum 0 */
+  tantrumCount: number;
+  notes?: string | null;
+}
+
+export type ChildIntelligenceResponseParentGoalsItem =
+  (typeof ChildIntelligenceResponseParentGoalsItem)[keyof typeof ChildIntelligenceResponseParentGoalsItem];
+
+export const ChildIntelligenceResponseParentGoalsItem = {
+  improve_sleep: "improve_sleep",
+  reduce_tantrums: "reduce_tantrums",
+  improve_focus: "improve_focus",
+  reduce_screen_time: "reduce_screen_time",
+  increase_independence: "increase_independence",
+} as const;
+
+/**
+ * Snapshot of a child's adaptive intelligence — goals, derived energy profile, and recent daily signals.
+ */
+export interface ChildIntelligenceResponse {
+  childId: number;
+  /** Structured parent-selected optimization goals (may be empty). */
+  parentGoals: ChildIntelligenceResponseParentGoalsItem[];
+  energyProfile?: EnergyProfile | null;
+  /** Up to the last 14 days of signals, newest first. */
+  recentSignals: ChildDailySignalEntry[];
+}
+
+export type UpdateChildGoalsBodyParentGoalsItem =
+  (typeof UpdateChildGoalsBodyParentGoalsItem)[keyof typeof UpdateChildGoalsBodyParentGoalsItem];
+
+export const UpdateChildGoalsBodyParentGoalsItem = {
+  improve_sleep: "improve_sleep",
+  reduce_tantrums: "reduce_tantrums",
+  improve_focus: "improve_focus",
+  reduce_screen_time: "reduce_screen_time",
+  increase_independence: "increase_independence",
+} as const;
+
+export interface UpdateChildGoalsBody {
+  /** Replacement set of parent-selected optimization goals. */
+  parentGoals: UpdateChildGoalsBodyParentGoalsItem[];
+}
+
+/**
+ * Upsert (childId, date) — provided fields overwrite, omitted fields are preserved if a row already exists.
+ */
+export interface LogChildDailySignalBody {
+  /** YYYY-MM-DD local date. Defaults to today on the server if omitted. */
+  date?: string;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  mood?: number | null;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  focusScore?: number | null;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  sleepQuality?: number | null;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  completionPct?: number | null;
+  /** @minimum 0 */
+  screenMinutes?: number | null;
+  /** @minimum 0 */
+  tantrumCount?: number | null;
+  notes?: string | null;
 }
 
 export type SmartStudyInsightsMode =

@@ -60,3 +60,4 @@ export * from "./daily_puzzle_progress";
 export * from "./life_skills_progress";
 export * from "./child_learning_progress";
 export * from "./debug_logs";
+export * from "./child_daily_signals";

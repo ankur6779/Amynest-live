@@ -18,5 +18,11 @@ export interface Routine {
   uiPrefs: RoutineUiPrefs;
   /** True when the user has manually edited one or more items in this routine. */
   customized: boolean;
+  /** Adaptive Family Intelligence — short human-readable strings explaining why this
+routine differs from a default one (e.g. "Reduced morning load — sleep was shorter
+yesterday", "Placed learning at 09:00 (peak focus window)"). Surfaced in the
+"Why this routine?" card.
+ */
+  adaptations?: string[] | null;
   createdAt: string;
 }

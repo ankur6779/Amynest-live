@@ -14,6 +14,12 @@ export const routinesTable = pgTable("routines", {
   // True when a user has manually edited any item in this routine.
   // AI generation respects overrides by not repeating customized activities.
   customized: boolean("customized").notNull().default(false),
+  // Adaptive Family Intelligence — human-readable strings explaining why this
+  // routine differs from a default one. Surfaced in the "Why this routine?"
+  // card on web + mobile. Examples:
+  //   "Reduced morning load — sleep was shorter yesterday"
+  //   "Placed learning at 09:00 (peak focus window)"
+  adaptations: jsonb("adaptations").$type<string[]>().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

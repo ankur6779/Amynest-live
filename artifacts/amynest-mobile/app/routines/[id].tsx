@@ -25,6 +25,7 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeIn } from "react-native-reanimated";
 import SwipeableCard from "@/components/SwipeableCard";
 import RoutineItemModal from "@/components/RoutineItemModal";
+import { RoutineAdaptationsCard } from "@/components/intelligence/RoutineAdaptationsCard";
 import colors, { brand, brandAlpha, ACCENT_PINK, palette } from "@/constants/colors";
 import { BRAND } from "@/constants/brand";
 import { CATEGORY_ICON_PAIRS } from "@/constants/categoryIcons";
@@ -62,6 +63,7 @@ type Routine = {
   id: number; childId: number; childName: string;
   date: string; title: string; items: RoutineItem[];
   uiPrefs?: RoutineUiPrefs;
+  adaptations?: string[] | null;
 };
 
 // ─── Time helpers ──────────────────────────────────────────────────────────
@@ -1068,6 +1070,12 @@ export default function RoutineDetailScreen() {
                   <Text style={styles.childChipText}>{stats.total} tasks</Text>
                 </View>
               </View>
+
+              {routine.adaptations && routine.adaptations.length > 0 && (
+                <View style={{ marginBottom: 12 }}>
+                  <RoutineAdaptationsCard adaptations={routine.adaptations} />
+                </View>
+              )}
 
               <View style={styles.statsCardWrap}>
                 <BlurView intensity={Platform.OS === "android" ? 70 : 40} tint="dark" style={styles.statsCard}>

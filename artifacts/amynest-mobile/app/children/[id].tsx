@@ -17,6 +17,7 @@ import { palette } from "@/constants/colors";
 import { BRAND } from "@/constants/brand";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ChildGoalsCard } from "@/components/intelligence/ChildGoalsCard";
 
 const CHAT_KEY = (childId: number | string | null | undefined) =>
   `amynest:amy-tutor-chat:${childId ?? "default"}`;
@@ -513,6 +514,12 @@ export default function ChildDetailScreen() {
           <Ionicons name="refresh-outline" size={18} color={colors.primary} />
           <Text style={[styles.clearHistoryBtnText, { color: colors.primary }]}>{t("ai.clear_chat")}</Text>
         </TouchableOpacity>
+
+        {id && id !== "new" && Number(id) > 0 && (
+          <View style={{ marginTop: 16 }}>
+            <ChildGoalsCard childId={Number(id)} />
+          </View>
+        )}
 
         <TouchableOpacity
           style={[styles.deleteBtn, { backgroundColor: palette.red50, borderColor: palette.rose200 }]}

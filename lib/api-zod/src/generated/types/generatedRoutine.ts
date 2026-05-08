@@ -10,4 +10,6 @@ import type { RoutineItem } from "./routineItem";
 export interface GeneratedRoutine {
   title: string;
   items: RoutineItem[];
+  /** Human-readable explanations of how this routine was adapted to the child's signals, goals, and energy profile. */
+  adaptations?: string[] | null;
 }

@@ -41,6 +41,24 @@ export const childrenTable = pgTable("children", {
   allergies: text("allergies"),
   foodPrefInherited: boolean("food_pref_inherited").notNull().default(false),
   foodPrefCustomized: boolean("food_pref_customized").notNull().default(false),
+  // Adaptive Family Intelligence — Phase 1
+  // Structured parent-selected optimization goals. Codes:
+  //   improve_sleep | reduce_tantrums | improve_focus | reduce_screen_time | increase_independence
+  // Empty array / null = no explicit goals; routine uses general defaults.
+  parentGoals: jsonb("parent_goals").$type<string[]>().default([]),
+  // Derived energy profile recomputed from child_daily_signals + routine completion.
+  // Shape: { peakFocusStart, peakFocusEnd, lowEnergyStart, lowEnergyEnd, calmWindowStart, calmWindowEnd, sampleCount, lastComputedAt }
+  // Times are HH:mm strings. null fields = not enough data yet.
+  energyProfile: jsonb("energy_profile").$type<{
+    peakFocusStart: string | null;
+    peakFocusEnd: string | null;
+    lowEnergyStart: string | null;
+    lowEnergyEnd: string | null;
+    calmWindowStart: string | null;
+    calmWindowEnd: string | null;
+    sampleCount: number;
+    lastComputedAt: string | null;
+  }>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
