@@ -28,6 +28,7 @@ import { brand } from "@/constants/colors";
 import { initCrashReporter } from "@/utils/crashReporter";
 import { DebugProvider } from "@/contexts/DebugContext";
 import { DebugPanel } from "@/components/DebugPanel";
+import AmyFab from "@/components/AmyFab";
 
 SplashScreen.preventAutoHideAsync();
 WebBrowser.maybeCompleteAuthSession();
@@ -268,6 +269,7 @@ function RootLayoutNav() {
           headerStyle: { backgroundColor: c.background },
         }}
       />
+      <Stack.Screen name="amy-ai" options={{ headerShown: false }} />
       <Stack.Screen name="privacy" options={{ headerShown: false }} />
       <Stack.Screen name="kids-control-center" options={{ headerShown: false }} />
       <Stack.Screen name="nutrition" options={{ headerShown: false }} />
@@ -304,6 +306,7 @@ export default function RootLayout() {
                     <AuthGate>
                       <RootLayoutNav />
                       <DebugPanel />
+                      <AmyFab />
                     </AuthGate>
                     </DebugProvider>
                   </KeyboardProvider>
