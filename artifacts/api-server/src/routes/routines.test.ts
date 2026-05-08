@@ -428,31 +428,31 @@ describe("generateAiRoutine — meal-slot anchoring (school day)", () => {
     );
   });
 
-  it("Lunch is anchored 30 min after school end (15:30 = 930 mins)", async () => {
+  it("Lunch is anchored 75 min after school end (realistic travel + buffer)", async () => {
     const result = await schoolDayResult();
     const lunch = result.items.find((i) => /^lunch$/i.test(i.activity));
     assert.ok(lunch !== undefined, "Lunch block should be present");
     assert.equal(
       toMins(lunch.time),
-      SCHOOL_END_MINS + 30,
-      `Lunch should be at ${SCHOOL_END_MINS + 30} mins, got "${lunch.time}"`,
+      SCHOOL_END_MINS + 75,
+      `Lunch should be at ${SCHOOL_END_MINS + 75} mins, got "${lunch.time}"`,
     );
   });
 
-  it("Drunch is anchored in the 17:00–18:00 window", async () => {
+  it("Drunch is anchored in the 17:00–18:30 window", async () => {
     const result = await schoolDayResult();
     const drunch = result.items.find((i) => /^drunch$/i.test(i.activity));
     assert.ok(drunch !== undefined, "Drunch block should be present");
     const t = toMins(drunch.time);
-    assert.ok(t >= 17 * 60 && t <= 18 * 60, `Drunch should be 17:00–18:00, got "${drunch.time}"`);
+    assert.ok(t >= 17 * 60 && t <= 18 * 60 + 30, `Drunch should be 17:00–18:30, got "${drunch.time}"`);
   });
 
-  it("Dinner is anchored in the 20:00–21:00 window", async () => {
+  it("Dinner is anchored in the 19:30–21:00 window", async () => {
     const result = await schoolDayResult();
     const dinner = result.items.find((i) => /^dinner$/i.test(i.activity));
     assert.ok(dinner !== undefined, "Dinner block should be present");
     const t = toMins(dinner.time);
-    assert.ok(t >= 20 * 60 && t <= 21 * 60, `Dinner should be 20:00–21:00, got "${dinner.time}"`);
+    assert.ok(t >= 19 * 60 + 30 && t <= 21 * 60, `Dinner should be 19:30–21:00, got "${dinner.time}"`);
   });
 
   it("No duplicate meal names across the school day", async () => {
@@ -529,14 +529,14 @@ describe("generateAiRoutine — meal-slot anchoring (descriptive labels)", () =>
     });
   }
 
-  it("re-anchors 'Family Dinner' (not just 'Dinner') into 20:00–21:00", async () => {
+  it("re-anchors 'Family Dinner' (not just 'Dinner') into 19:30–21:00", async () => {
     const result = await descriptiveResult();
     const dinner = result.items.find((i) => /\bdinner\b/i.test(i.activity));
     assert.ok(dinner !== undefined, "A dinner block should be present");
     const t = toMins(dinner.time);
     assert.ok(
-      t >= 20 * 60 && t <= 21 * 60,
-      `'${dinner.activity}' should be anchored 20:00–21:00, got "${dinner.time}"`,
+      t >= 19 * 60 + 30 && t <= 21 * 60,
+      `'${dinner.activity}' should be anchored 19:30–21:00, got "${dinner.time}"`,
     );
   });
 
@@ -595,20 +595,20 @@ describe("generateAiRoutine — meal-slot anchoring (non-school day)", () => {
     assert.equal(qm, undefined, "Quick Meal Before School should not appear on a non-school day");
   });
 
-  it("Drunch is anchored in the 17:00–18:00 window", async () => {
+  it("Drunch is anchored in the 17:00–18:30 window", async () => {
     const result = await nonSchoolDayResult();
     const drunch = result.items.find((i) => /^drunch$/i.test(i.activity));
     assert.ok(drunch !== undefined, "Drunch block should be present");
     const t = toMins(drunch.time);
-    assert.ok(t >= 17 * 60 && t <= 18 * 60, `Drunch should be 17:00–18:00, got "${drunch.time}"`);
+    assert.ok(t >= 17 * 60 && t <= 18 * 60 + 30, `Drunch should be 17:00–18:30, got "${drunch.time}"`);
   });
 
-  it("Dinner is anchored in the 20:00–21:00 window", async () => {
+  it("Dinner is anchored in the 19:30–21:00 window", async () => {
     const result = await nonSchoolDayResult();
     const dinner = result.items.find((i) => /^dinner$/i.test(i.activity));
     assert.ok(dinner !== undefined, "Dinner block should be present");
     const t = toMins(dinner.time);
-    assert.ok(t >= 20 * 60 && t <= 21 * 60, `Dinner should be 20:00–21:00, got "${dinner.time}"`);
+    assert.ok(t >= 19 * 60 + 30 && t <= 21 * 60, `Dinner should be 19:30–21:00, got "${dinner.time}"`);
   });
 
   it("No duplicate meal names across the non-school day", async () => {
