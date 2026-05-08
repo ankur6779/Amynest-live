@@ -337,7 +337,13 @@ export default function SignInPage() {
     setBusy(true);
     try {
       const cred = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
-      if (!cred.user.emailVerified) {
+      // Bypass accounts skip email verification — they are allowed straight in.
+      const VERIFICATION_BYPASS_EMAILS = new Set([
+        "demo@amynest.in",
+        "googleplay.reviewer@amynest.app",
+      ]);
+      const isBypass = VERIFICATION_BYPASS_EMAILS.has(cred.user.email?.toLowerCase().trim() ?? "");
+      if (!cred.user.emailVerified && !isBypass) {
         // User has not verified their email yet — send them to the verify screen.
         // Keep them signed-in to firebaseAuth so the verify page can call resend.
         setLocation(`/verify-email?email=${encodeURIComponent(email.trim())}`);
