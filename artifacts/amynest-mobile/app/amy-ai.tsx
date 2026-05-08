@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Animated, Alert,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Animated, Image,
 } from "react-native";
 import { TtsSlider } from "@/components/TtsSlider";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -53,6 +53,20 @@ const SUGGESTED_QUESTION_KEYS = [
   "ai.suggested_q6",
 ] as const;
 
+// ─── Mode-specific placeholders + quick chips (keys in i18n/en.json) ──────
+const MODE_PLACEHOLDER_KEY: Record<Mode, string> = {
+  teach:    "ai.tutor_placeholder_teach",
+  practice: "ai.tutor_placeholder_practice",
+  quiz:     "ai.tutor_placeholder_quiz",
+  doubt:    "ai.tutor_placeholder_doubt",
+};
+const MODE_CHIPS_KEYS: Record<Mode, [string, string, string]> = {
+  teach:    ["ai.tutor_chip_teach_1",    "ai.tutor_chip_teach_2",    "ai.tutor_chip_teach_3"],
+  practice: ["ai.tutor_chip_practice_1", "ai.tutor_chip_practice_2", "ai.tutor_chip_practice_3"],
+  quiz:     ["ai.tutor_chip_quiz_1",     "ai.tutor_chip_quiz_2",     "ai.tutor_chip_quiz_3"],
+  doubt:    ["ai.tutor_chip_doubt_1",    "ai.tutor_chip_doubt_2",    "ai.tutor_chip_doubt_3"],
+};
+
 const PREFS_KEY = (childId: number | string | null | undefined) =>
   `amynest:amy-tutor-prefs:${childId ?? "default"}`;
 
@@ -79,6 +93,17 @@ export default function AmyAIScreen() {
   const [loading, setLoading] = useState(false);
   const [chatLoaded, setChatLoaded] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+  const clearNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [clearNotice, setClearNotice] = useState(false);
+
+  // Animated per-mode scale for selection pulse
+  const modeScales = useRef<Record<Mode, Animated.Value>>({
+    teach: new Animated.Value(1), practice: new Animated.Value(1),
+    quiz:  new Animated.Value(1), doubt:    new Animated.Value(1),
+  }).current;
+
+  // Breathing glow around mascot in empty state
+  const glowPulse = useRef(new Animated.Value(1)).current;
 
   const tts = useAmyVoice();
   const [activeTtsTurnId, setActiveTtsTurnId] = useState<string | null>(null);
@@ -153,6 +178,27 @@ export default function AmyAIScreen() {
     }, 500);
     return () => clearTimeout(id);
   }, [childKey, turns, chatLoaded]);
+
+  // Mode selection pulse animation
+  useEffect(() => {
+    const scale = modeScales[mode];
+    Animated.sequence([
+      Animated.spring(scale, { toValue: 1.07, useNativeDriver: true, friction: 4, tension: 220 }),
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5 }),
+    ]).start();
+  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Breathing glow for mascot in empty state
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowPulse, { toValue: 1.12, duration: 1800, useNativeDriver: true }),
+        Animated.timing(glowPulse, { toValue: 1,    duration: 1800, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => { loop.stop(); if (clearNoticeTimer.current) clearTimeout(clearNoticeTimer.current); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -244,25 +290,19 @@ export default function AmyAIScreen() {
 
   const clearChat = () => {
     if (!canClear) return;
-    const childName = primaryChild?.name ?? t("ai.tutor_badge");
-    Alert.alert(
-      t("ai.clear_confirm_title"),
-      t("ai.clear_confirm_body", { name: childName }),
-      [
-        { text: t("ai.clear_confirm_cancel"), style: "cancel" },
-        {
-          text: t("ai.clear_confirm_yes"),
-          style: "destructive",
-          onPress: () => {
-            tts.stop();
-            setActiveTtsTurnId(null);
-            setTurns([]);
-            setInput("");
-            AsyncStorage.removeItem(CHAT_KEY(childKey)).catch(() => {});
-          },
-        },
-      ],
-    );
+    tts.stop();
+    setActiveTtsTurnId(null);
+    setTurns([]);
+    setInput("");
+    setMode("teach");
+    setSubject("general");
+    setTopic("");
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    AsyncStorage.removeItem(CHAT_KEY(childKey)).catch(() => {});
+    // Brief "Conversation cleared" notice
+    if (clearNoticeTimer.current) clearTimeout(clearNoticeTimer.current);
+    setClearNotice(true);
+    clearNoticeTimer.current = setTimeout(() => setClearNotice(false), 2200);
   };
 
   const handleTtsListen = useCallback((turnId: string, text: string) => {
@@ -320,26 +360,29 @@ export default function AmyAIScreen() {
             {MODES.map((m) => {
               const active = m === mode;
               return (
-                <Pressable
-                  key={m}
-                  onPress={() => setMode(m)}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: active }}
-                  accessibilityLabel={t(`ai.mode_${m}`) + " · " + t(`ai.mode_${m}_hint`)}
-                  style={[styles.modeChip, active && styles.modeChipActive]}
-                >
-                  <MaterialCommunityIcons
-                    name={MODE_ICON[m]}
-                    size={14}
-                    color={active ? "#fff" : "rgba(255,255,255,0.75)"}
-                  />
-                  <Text style={[styles.modeChipText, active && styles.modeChipTextActive]}>
-                    {t(`ai.mode_${m}`)}
-                  </Text>
-                </Pressable>
+                <Animated.View key={m} style={{ transform: [{ scale: modeScales[m] }] }}>
+                  <Pressable
+                    onPress={() => setMode(m)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={t(`ai.mode_${m}`) + " · " + t(`ai.mode_${m}_hint`)}
+                    style={[styles.modeChip, active && styles.modeChipActive]}
+                  >
+                    <MaterialCommunityIcons
+                      name={MODE_ICON[m]}
+                      size={14}
+                      color={active ? "#fff" : "rgba(255,255,255,0.75)"}
+                    />
+                    <Text style={[styles.modeChipText, active && styles.modeChipTextActive]}>
+                      {t(`ai.mode_${m}`)}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
               );
             })}
           </ScrollView>
+          {/* Active mode hint — single line updates when mode changes */}
+          <Text style={styles.modeHintText} numberOfLines={1}>{t(`ai.mode_${mode}_hint`)}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
             {SUBJECTS.map((s) => {
               const active = s === subject;
@@ -368,6 +411,14 @@ export default function AmyAIScreen() {
           />
         </View>
 
+        {/* "Conversation cleared" notice banner */}
+        {clearNotice && (
+          <View style={styles.clearedNotice} pointerEvents="none">
+            <Ionicons name="checkmark-circle" size={14} color="rgba(167,243,208,1)" />
+            <Text style={styles.clearedNoticeText}>{t("ai.tutor_cleared")}</Text>
+          </View>
+        )}
+
         <ScrollView
           ref={scrollRef}
           contentContainerStyle={{ padding: 16, paddingBottom: 24, gap: 12 }}
@@ -375,19 +426,26 @@ export default function AmyAIScreen() {
         >
           {isEmpty && (
             <View style={styles.emptyWrap}>
-              <LinearGradient colors={[brand.primary, ACCENT_PINK]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.emptyAvatar}>
-                <MaterialCommunityIcons name="brain" size={32} color="#fff" />
-              </LinearGradient>
+              {/* Mascot with breathing glow ring */}
+              <Animated.View style={[styles.emptyGlowRing, { transform: [{ scale: glowPulse }] }]}>
+                <Image
+                  source={require("../assets/images/mascot.png")}
+                  style={styles.emptyMascotImg}
+                  resizeMode="contain"
+                />
+              </Animated.View>
               <Text style={styles.emptyHeading}>{t("ai.tutor_empty_heading")}</Text>
               <Text style={styles.emptyBody}>{t("ai.tutor_empty_body")}</Text>
+              {/* Mode-specific quick suggestion chips */}
               <View style={styles.suggestionsWrap}>
                 <Text style={styles.suggestionsLabel}>{t("ai.popular_questions")}</Text>
-                {SUGGESTED_QUESTION_KEYS.map((key) => (
+                {MODE_CHIPS_KEYS[mode].map((key) => (
                   <Pressable
                     key={key}
                     onPress={() => send(t(key))}
                     style={({ pressed }) => [styles.suggestionBtn, pressed && { opacity: 0.7 }]}
                   >
+                    <MaterialCommunityIcons name={MODE_ICON[mode]} size={13} color="rgba(167,139,250,0.85)" style={{ marginRight: 6 }} />
                     <Text style={styles.suggestionText}>{t(key)}</Text>
                   </Pressable>
                 ))}
@@ -417,7 +475,7 @@ export default function AmyAIScreen() {
           <TextInput
             value={input}
             onChangeText={setInput}
-            placeholder={t("ai.tutor_input_placeholder")}
+            placeholder={t(MODE_PLACEHOLDER_KEY[mode])}
             placeholderTextColor="rgba(255,255,255,0.4)"
             style={styles.input}
             onSubmitEditing={() => send(input)}
@@ -749,6 +807,11 @@ const styles = StyleSheet.create({
   subjectChipText: { color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "600" },
   subjectChipTextActive: { color: "#fff", fontWeight: "700" },
   topicInput: { color: "#fff", fontSize: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)" },
+  modeHintText: { color: "rgba(255,255,255,0.50)", fontSize: 11, fontStyle: "italic", paddingHorizontal: 4, paddingTop: 2 },
+  clearedNotice: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "center", marginHorizontal: 16, marginBottom: 8, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: "rgba(16,185,129,0.15)", borderWidth: 1, borderColor: "rgba(16,185,129,0.40)" },
+  clearedNoticeText: { color: "rgba(167,243,208,1)", fontSize: 12, fontWeight: "700" },
+  emptyGlowRing: { width: 92, height: 92, borderRadius: 46, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(124,58,237,0.25)", borderWidth: 2, borderColor: "rgba(167,139,250,0.45)" },
+  emptyMascotImg: { width: 72, height: 72, borderRadius: 36 },
 
   bubbleRow: { flexDirection: "row", gap: 8, alignItems: "flex-end", maxWidth: "100%" },
   bubbleRowLeft: { justifyContent: "flex-start" },
@@ -776,8 +839,8 @@ const styles = StyleSheet.create({
 
   suggestionsWrap: { marginTop: 14, gap: 8, alignSelf: "stretch" },
   suggestionsLabel: { color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase" },
-  suggestionBtn: { backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12 },
-  suggestionText: { color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "500" },
+  suggestionBtn: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12 },
+  suggestionText: { color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "500", flex: 1 },
 
   typingDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.85)" },
 

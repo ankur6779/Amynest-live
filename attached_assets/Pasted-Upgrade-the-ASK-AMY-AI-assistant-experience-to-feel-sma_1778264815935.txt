@@ -1,0 +1,132 @@
+Upgrade the ASK AMY AI assistant experience to feel smarter, clearer, and more premium.
+
+GOAL:
+Improve usability, clarity, and AI interaction quality while maintaining the neon purple theme.
+
+--------------------------------------------------
+1. CLEAR BUTTON FIX (IMPORTANT)
+--------------------------------------------------
+When user clicks "Clear":
+
+Reset ALL:
+- chat messages
+- selected mode
+- selected subject
+- generated quizzes
+- input text
+- scroll position
+
+After reset:
+- show welcome empty state again
+
+Add small toast:
+"Conversation cleared"
+
+--------------------------------------------------
+2. MODE BUTTON UX IMPROVEMENT
+--------------------------------------------------
+Modes:
+- Teach
+- Practice
+- Quiz
+- Doubt
+
+Under each mode button show helper text:
+
+Teach:
+"Learn step-by-step"
+
+Practice:
+"Solve with guidance"
+
+Quiz:
+"Test knowledge"
+
+Doubt:
+"Ask anything instantly"
+
+--------------------------------------------------
+3. DYNAMIC PLACEHOLDER
+--------------------------------------------------
+Change input placeholder dynamically:
+
+Teach:
+"What would you like to learn?"
+
+Practice:
+"Practice topic..."
+
+Quiz:
+"Quiz topic..."
+
+Doubt:
+"Ask your question..."
+
+--------------------------------------------------
+4. EMPTY STATE (PREMIUM)
+--------------------------------------------------
+Before first chat show:
+
+"👋 Hi! I'm AMY.
+I can teach, quiz, explain doubts, and help your child learn smarter."
+
+Add animated glow around mascot.
+
+--------------------------------------------------
+5. MODE SELECTION ANIMATION
+--------------------------------------------------
+Selected mode:
+- stronger glow
+- scale animation
+- neon border pulse
+
+--------------------------------------------------
+6. QUICK SUGGESTION CHIPS
+--------------------------------------------------
+Show smart suggestions below modes:
+
+Examples:
+- Teach phonics
+- English speaking
+- Math quiz
+- GK challenge
+- Science facts
+
+Tap → auto-fill input
+
+--------------------------------------------------
+7. CHAT UI UPGRADE
+--------------------------------------------------
+- Improve spacing
+- Add glassmorphism cards
+- Smooth message fade-in
+- Add typing indicator
+
+--------------------------------------------------
+8. QUIZ EXPERIENCE IMPROVEMENT
+--------------------------------------------------
+Quiz cards should:
+- animate on answer selection
+- show correct answer glow
+- show progress indicator
+
+--------------------------------------------------
+9. PERFORMANCE
+--------------------------------------------------
+- Keep UI smooth on Android
+- Lazy render long chats
+
+--------------------------------------------------
+10. FUTURE READY
+--------------------------------------------------
+Prepare structure for:
+- voice chat
+- memory
+- child personalization
+
+--------------------------------------------------
+DELIVERABLE:
+- Smarter ASK AMY experience
+- Clearer UX
+- Better animations
+- Premium AI assistant feel

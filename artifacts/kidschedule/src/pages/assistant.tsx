@@ -136,6 +136,7 @@ export default function AssistantPage() {
   const clearChat = async () => {
     setMessages([]);
     setInput("");
+    toast({ title: t("ai.conversation_cleared"), duration: 2000 });
     try {
       await authFetch("/api/ai/messages", { method: "DELETE" });
     } catch {
