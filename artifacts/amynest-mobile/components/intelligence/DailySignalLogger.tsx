@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useColors } from "@/hooks/useColors";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { palette } from "@/constants/colors";
 
 type ScaleField = "mood" | "focusScore" | "sleepQuality";
 type Child = { id: number; name: string };
@@ -32,9 +33,9 @@ const FIELD_EMOJIS: Record<ScaleField, [string, string, string, string, string]>
 
 /** Selected-state accent colours per field (mirrors web FIELD_ACCENT). */
 const FIELD_ACCENT_SELECTED: Record<ScaleField, string> = {
-  mood:         "#8b5cf6", // violet-500
-  focusScore:   "#6366f1", // indigo-500
-  sleepQuality: "#0ea5e9", // sky-500
+  mood:         palette.violet500,
+  focusScore:   palette.indigo500,
+  sleepQuality: palette.sky500,
 };
 
 function todayStr(): string {
