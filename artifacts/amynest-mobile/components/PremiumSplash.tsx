@@ -28,7 +28,6 @@ import Animated, {
   withSequence,
   withDelay,
   Easing,
-  runOnJS,
   cancelAnimation,
   type SharedValue,
 } from "react-native-reanimated";
@@ -46,8 +45,8 @@ import { useTranslation } from "react-i18next";
 const { width: W, height: H } = Dimensions.get("window");
 
 // ─── Timing ───────────────────────────────────────────────────────────────────
-const VISIBLE_MS  = 3200;   // > 2.9 s minimum requirement
-const FADE_OUT_MS = 800;
+const VISIBLE_MS  = 3800;   // > 2.9 s minimum; extra buffer for slower devices
+const FADE_OUT_MS = 900;
 
 // ─── Ring geometry ────────────────────────────────────────────────────────────
 // Thin neon-tube aesthetic — 9 px band
@@ -249,7 +248,7 @@ function FeatureIcons({ opacity }: { opacity: SharedValue<number> }) {
           {i > 0 && <View style={styles.featSep} />}
           <View style={styles.featItem}>
             <Ionicons name={f.icon} size={22} color={brand.purple400} />
-            <Text style={styles.featLabel}>{t(`premium_splash.${f.tKey}`)}</Text>
+            <Text style={styles.featLabel}>{t(`screens.premium_splash.${f.tKey}`)}</Text>
           </View>
         </React.Fragment>
       ))}
@@ -330,19 +329,20 @@ export default function PremiumSplash({ onFinish }: { onFinish: () => void }) {
     );
 
     // ── Dismiss ───────────────────────────────────────────────────────────────
-    const timer = setTimeout(() => {
+    // Two separate timers so onFinish is GUARANTEED even if Reanimated
+    // callbacks behave differently on web (Chrome / Expo web).
+    const fadeTimer = setTimeout(() => {
       cancelAnimation(ringPulse);
       cancelAnimation(ringGlow);
       cancelAnimation(amyGlow);
-      containerOpacity.value = withTiming(
-        0,
-        { duration: FADE_OUT_MS, easing: Easing.ease },
-        (done) => { if (done) runOnJS(dismiss)(); },
-      );
+      containerOpacity.value = withTiming(0, { duration: FADE_OUT_MS, easing: Easing.ease });
     }, VISIBLE_MS);
 
+    const dismissTimer = setTimeout(dismiss, VISIBLE_MS + FADE_OUT_MS);
+
     return () => {
-      clearTimeout(timer);
+      clearTimeout(fadeTimer);
+      clearTimeout(dismissTimer);
       cancelAnimation(containerOpacity);
       cancelAnimation(stageOpacity);
       cancelAnimation(stageY);
@@ -435,7 +435,7 @@ export default function PremiumSplash({ onFinish }: { onFinish: () => void }) {
 
             {/* Inner dark circle — "Meet" + "AMY" */}
             <View style={styles.innerCircle}>
-              <Text style={styles.meetText}>{t("premium_splash.meet")}</Text>
+              <Text style={styles.meetText}>{t("screens.premium_splash.meet")}</Text>
               <View style={styles.meetUnderline} />
               <AmyText glow={amyGlow} />
               <View style={styles.amyUnderline} />
@@ -453,9 +453,9 @@ export default function PremiumSplash({ onFinish }: { onFinish: () => void }) {
         {/* Tagline — "— Where Smart Parenting Start —" */}
         <Animated.View style={taglineStyle}>
           <Text style={styles.tagline}>
-            <Text style={styles.taglineDim}>{t("premium_splash.tagline_prefix")}</Text>
-            <Text style={styles.taglineHighlight}>{t("premium_splash.tagline_highlight")}</Text>
-            <Text style={styles.taglineDim}>{t("premium_splash.tagline_suffix")}</Text>
+            <Text style={styles.taglineDim}>{t("screens.premium_splash.tagline_prefix")}</Text>
+            <Text style={styles.taglineHighlight}>{t("screens.premium_splash.tagline_highlight")}</Text>
+            <Text style={styles.taglineDim}>{t("screens.premium_splash.tagline_suffix")}</Text>
           </Text>
         </Animated.View>
 
