@@ -294,7 +294,17 @@ export async function getEntitlements(userId: string): Promise<EntitlementSummar
  * These are checked BEFORE the DB table so they work in production without a
  * DB migration (just set the env var and redeploy).
  */
+// Hardcoded test/reviewer accounts that always get auto-granted Premium so
+// QA and the Google Play reviewer can test paywalled features without
+// requiring an env-var redeploy. Keep this list tiny.
+const HARDCODED_PREMIUM_EMAILS = new Set([
+  "demo@amynest.in",
+  "googleplay.reviewer@amynest.app",
+]);
+
 function isEnvGranted(userId: string, email: string | null, phoneNumber?: string | null): boolean {
+  if (email && HARDCODED_PREMIUM_EMAILS.has(email.toLowerCase().trim())) return true;
+
   const uids = (process.env.ADMIN_PREMIUM_UIDS ?? "")
     .split(",")
     .map((s) => s.trim())
