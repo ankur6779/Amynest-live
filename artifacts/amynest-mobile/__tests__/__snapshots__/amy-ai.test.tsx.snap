@@ -55,13 +55,28 @@ exports[`Amy AI tutor screen > renders a QUIZ reply with options and grades the 
       <div>
         <div>
           <button
+            aria-label="ai.mode_parenting · ai.mode_parenting_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="account-heart-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_parenting
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
             aria-label="ai.mode_teach · ai.mode_teach_hint"
-            aria-selected="true"
+            aria-selected="false"
             role="tab"
           >
             <span
               data-icon="school"
-              style="font-size: 14px; color: rgb(255, 255, 255);"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
             />
             <span>
               ai.mode_teach
@@ -86,12 +101,12 @@ exports[`Amy AI tutor screen > renders a QUIZ reply with options and grades the 
         <div>
           <button
             aria-label="ai.mode_quiz · ai.mode_quiz_hint"
-            aria-selected="false"
+            aria-selected="true"
             role="tab"
           >
             <span
               data-icon="lightbulb-on-outline"
-              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+              style="font-size: 14px; color: rgb(255, 255, 255);"
             />
             <span>
               ai.mode_quiz
@@ -115,7 +130,7 @@ exports[`Amy AI tutor screen > renders a QUIZ reply with options and grades the 
         </div>
       </div>
       <span>
-        ai.mode_teach_hint
+        ai.mode_quiz_hint
       </span>
       <div>
         <button
@@ -266,7 +281,7 @@ exports[`Amy AI tutor screen > renders a QUIZ reply with options and grades the 
     <div>
       <input
         data-testid="amy-chat-input"
-        placeholder="ai.tutor_placeholder_teach"
+        placeholder="ai.tutor_placeholder_quiz"
         placeholdertextcolor="rgba(255,255,255,0.4)"
         returnkeytype="send"
         value=""
@@ -344,6 +359,21 @@ exports[`Amy AI tutor screen > renders a structured TEACH reply with example chi
   >
     <div>
       <div>
+        <div>
+          <button
+            aria-label="ai.mode_parenting · ai.mode_parenting_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="account-heart-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_parenting
+            </span>
+          </button>
+        </div>
         <div>
           <button
             aria-label="ai.mode_teach · ai.mode_teach_hint"
@@ -599,13 +629,28 @@ exports[`Amy AI tutor screen > renders mode strip + subject chips + empty state 
       <div>
         <div>
           <button
-            aria-label="ai.mode_teach · ai.mode_teach_hint"
+            aria-label="ai.mode_parenting · ai.mode_parenting_hint"
             aria-selected="true"
             role="tab"
           >
             <span
-              data-icon="school"
+              data-icon="account-heart-outline"
               style="font-size: 14px; color: rgb(255, 255, 255);"
+            />
+            <span>
+              ai.mode_parenting
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_teach · ai.mode_teach_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="school"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
             />
             <span>
               ai.mode_teach
@@ -659,7 +704,7 @@ exports[`Amy AI tutor screen > renders mode strip + subject chips + empty state 
         </div>
       </div>
       <span>
-        ai.mode_teach_hint
+        ai.mode_parenting_hint
       </span>
       <div>
         <button
@@ -744,29 +789,29 @@ exports[`Amy AI tutor screen > renders mode strip + subject chips + empty state 
           </span>
           <button>
             <span
-              data-icon="school"
+              data-icon="account-heart-outline"
               style="font-size: 13px; color: rgba(167, 139, 250, 0.85);"
             />
             <span>
-              ai.tutor_chip_teach_1
+              ai.tutor_chip_parenting_1
             </span>
           </button>
           <button>
             <span
-              data-icon="school"
+              data-icon="account-heart-outline"
               style="font-size: 13px; color: rgba(167, 139, 250, 0.85);"
             />
             <span>
-              ai.tutor_chip_teach_2
+              ai.tutor_chip_parenting_2
             </span>
           </button>
           <button>
             <span
-              data-icon="school"
+              data-icon="account-heart-outline"
               style="font-size: 13px; color: rgba(167, 139, 250, 0.85);"
             />
             <span>
-              ai.tutor_chip_teach_3
+              ai.tutor_chip_parenting_3
             </span>
           </button>
         </div>
@@ -775,7 +820,7 @@ exports[`Amy AI tutor screen > renders mode strip + subject chips + empty state 
     <div>
       <input
         data-testid="amy-chat-input"
-        placeholder="ai.tutor_placeholder_teach"
+        placeholder="ai.tutor_placeholder_parenting"
         placeholdertextcolor="rgba(255,255,255,0.4)"
         returnkeytype="send"
         value=""

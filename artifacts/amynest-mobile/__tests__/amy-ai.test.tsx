@@ -101,7 +101,8 @@ describe("Amy AI tutor screen", () => {
 
   it("renders mode strip + subject chips + empty state", async () => {
     const { container } = render(<AmyAIScreen />);
-    // Mode strip and subject chips render synchronously
+    // Mode strip and subject chips render synchronously — parenting is now the first/default mode
+    expect(screen.getByText("ai.mode_parenting")).toBeInTheDocument();
     expect(screen.getByText("ai.mode_teach")).toBeInTheDocument();
     expect(screen.getByText("ai.mode_practice")).toBeInTheDocument();
     expect(screen.getByText("ai.mode_quiz")).toBeInTheDocument();
@@ -141,6 +142,10 @@ describe("Amy AI tutor screen", () => {
     );
 
     const { container } = render(<AmyAIScreen />);
+    // Switch to Teach mode (default is now Parenting which uses a different endpoint)
+    await act(async () => {
+      fireEvent.click(screen.getByText("ai.mode_teach"));
+    });
     await sendMessage(container, "Teach me the letter B");
 
     await waitFor(() => {
@@ -167,6 +172,10 @@ describe("Amy AI tutor screen", () => {
     );
 
     const { container } = render(<AmyAIScreen />);
+    // Switch to Quiz mode (default is now Parenting which uses a different endpoint)
+    await act(async () => {
+      fireEvent.click(screen.getByText("ai.mode_quiz"));
+    });
     await sendMessage(container, "Quiz me on addition");
 
     await waitFor(() => {
@@ -189,6 +198,10 @@ describe("Amy AI tutor screen", () => {
     mockAuthFetch.mockResolvedValueOnce(makeJsonResponse({ reply: { type: "teach" } }));
 
     const { container } = render(<AmyAIScreen />);
+    // Switch to Teach mode so the tutor endpoint (with Zod validation) is exercised
+    await act(async () => {
+      fireEvent.click(screen.getByText("ai.mode_teach"));
+    });
     await sendMessage(container, "anything");
 
     await waitFor(() => {
