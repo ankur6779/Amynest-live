@@ -17,6 +17,7 @@ import { useColors } from "@/hooks/useColors";
 import { brand, ACCENT_PINK } from "@/constants/colors";
 import { DrawerProvider, useDrawer } from "@/contexts/DrawerContext";
 import { NavDrawer } from "@/components/NavDrawer";
+import AmyFab from "@/components/AmyFab";
 
 type TabKey = "index" | "routines" | "coach" | "hub";
 
@@ -278,6 +279,7 @@ export default function TabLayout() {
       </Tabs>
       <HamburgerButton />
       <NavDrawer />
+      <AmyFab />
     </DrawerProvider>
   );
 }
