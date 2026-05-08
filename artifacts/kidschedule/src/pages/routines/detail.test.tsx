@@ -182,10 +182,10 @@ describe("RoutineDetail page — school day", () => {
     expect(parseMinutes(tiffin!.time)).toBe(SCHOOL_START_MINS + 60);
   });
 
-  it("Lunch is at schoolEnd + 30 min (3:30 PM)", () => {
+  it("Lunch is at schoolEnd + 75 min (4:15 PM — realistic travel + buffer)", () => {
     const lunch = items.find((i) => i.category === "meal" && /lunch/i.test(i.activity));
     expect(lunch).toBeDefined();
-    expect(parseMinutes(lunch!.time)).toBe(SCHOOL_END_MINS + 30);
+    expect(parseMinutes(lunch!.time)).toBe(SCHOOL_END_MINS + 75);
   });
 
   it("no duplicate meal/tiffin activity names", () => {
