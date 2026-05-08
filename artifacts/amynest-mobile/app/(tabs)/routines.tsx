@@ -16,7 +16,6 @@ import LockedBlock from "@/components/LockedBlock";
 import * as Haptics from "expo-haptics";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
-import FuturePredictor from "@/components/FuturePredictor";
 import AiMealGenerator from "@/components/AiMealGenerator";
 import { DailySignalLogger } from "@/components/intelligence/DailySignalLogger";
 import { WeeklyReportCard } from "@/components/intelligence/WeeklyReportCard";
@@ -257,11 +256,6 @@ export default function RoutinesScreen() {
             }}
           />
         )}
-
-        {/* 🔮 Future Predictor — before tasks */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
-          <FuturePredictor childId={effectiveChildId} variant="compact" />
-        </View>
 
         {/* 🍱 Meal Suggestions — surfaced here so meal planning flows naturally
             with the daily routine. Previously this lived in Parent Hub. */}
@@ -511,6 +505,20 @@ export default function RoutinesScreen() {
             })}
           </View>
         )}
+
+        {/* ✨ Bottom Generate CTA — always visible so it's easy to kick off a new routine */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 }}>
+          <TouchableOpacity onPress={goToGenerate} activeOpacity={0.85}>
+            <LinearGradient
+              colors={[brand.violet600, brand.pink500]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={styles.bottomCta}
+            >
+              <Ionicons name="sparkles" size={18} color="#fff" />
+              <Text style={styles.bottomCtaText}>{t("screens.tabs_routines.generate_routine")}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </LinearGradient>
   );
@@ -550,6 +558,8 @@ const styles = StyleSheet.create({
   retryText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   bigCta: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 22, paddingVertical: 13, borderRadius: 999 },
   bigCtaText: { color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" },
+  bottomCta: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 16, borderRadius: 999 },
+  bottomCtaText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold", letterSpacing: 0.2 },
 
   // Calendar
   calCard: { marginHorizontal: 20, padding: 16, borderRadius: 24 },

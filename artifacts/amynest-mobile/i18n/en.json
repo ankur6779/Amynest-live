@@ -1909,6 +1909,7 @@
       "add": "+ add",
       "no_routines_yet": "No routines yet",
       "generate_first_routine": "Generate First Routine",
+      "generate_routine": "Generate Routine",
       "this_week_s_routines": "THIS WEEK'S ROUTINES"
     },
     "welcome": {
