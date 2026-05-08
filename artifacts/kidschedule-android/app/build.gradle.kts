@@ -36,8 +36,8 @@ android {
         applicationId = "com.amynest.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 17
+        versionName = "1.1.6"
 
         // Surface the Firebase / FCM availability to runtime code. PushBridge
         // checks this before attempting to fetch an FCM token, and the WebView
