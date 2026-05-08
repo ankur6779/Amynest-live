@@ -126,15 +126,20 @@ function SectionHeader({
   label,
   actionLabel,
   onAction,
+  accentColor,
 }: {
   label: string;
   actionLabel?: string;
   onAction?: () => void;
+  accentColor?: string;
 }) {
   const c = useColors();
   return (
     <View style={sectionHdrStyles.row}>
-      <Text style={[sectionHdrStyles.label, { color: c.mutedForeground }]}>{label.toUpperCase()}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        {accentColor && <View style={[sectionHdrStyles.accent, { backgroundColor: accentColor }]} />}
+        <Text style={[sectionHdrStyles.label, { color: c.mutedForeground }]}>{label.toUpperCase()}</Text>
+      </View>
       {actionLabel && onAction && (
         <TouchableOpacity onPress={onAction}>
           <Text style={sectionHdrStyles.action}>{actionLabel} →</Text>
@@ -147,6 +152,7 @@ const sectionHdrStyles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginBottom: 10 },
   label: { fontSize: 10.5, fontWeight: "800", letterSpacing: 1.6 },
   action: { fontSize: 11, fontWeight: "700", color: brand.violet600 },
+  accent: { width: 3, height: 13, borderRadius: 2 },
 });
 
 // ─── Streak Card ──────────────────────────────────────────────────────────────
@@ -155,25 +161,31 @@ function StreakCard({ streak, onPress }: { streak: number; onPress: () => void }
   const { t } = useTranslation();
   const c = useColors();
   const label = streak >= 7 ? "🏆 Epic" : streak >= 3 ? "🔥 Hot" : "✨ Active";
+  const isActive = streak > 0;
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
-      style={[streakStyles.card, { borderColor: brandAlpha.violet600_18, backgroundColor: c.surface ?? "rgba(255,255,255,0.06)" }]}
+      style={[
+        streakStyles.card,
+        isActive
+          ? { borderColor: brandAlpha.amber400_18, backgroundColor: brandAlpha.amber400_12 }
+          : { borderColor: brandAlpha.violet600_18, backgroundColor: c.surface ?? "rgba(255,255,255,0.06)" },
+      ]}
     >
       <Text style={[streakStyles.fire, { opacity: streak === 0 ? 0.35 : 1 }]}>🔥</Text>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
-          <Text style={[streakStyles.num, { color: c.foreground }]}>{streak}</Text>
+          <Text style={[streakStyles.num, { color: isActive ? brand.amber400 : c.foreground }]}>{streak}</Text>
           <Text style={[streakStyles.unit, { color: c.mutedForeground }]}>{t("screens.tabs_index.day_streak")}</Text>
         </View>
         <Text style={[streakStyles.sub, { color: c.mutedForeground }]}>
           {streak === 0 ? "Start today!" : streak >= 3 ? "You're on a roll!" : "Keep going!"}
         </Text>
       </View>
-      {streak > 0 && (
-        <View style={streakStyles.badge}>
-          <Text style={streakStyles.badgeText}>{label}</Text>
+      {isActive && (
+        <View style={[streakStyles.badge, { backgroundColor: brandAlpha.amber400_14, borderColor: brandAlpha.amber400_22 }]}>
+          <Text style={[streakStyles.badgeText, { color: brand.amber400 }]}>{label}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -195,34 +207,40 @@ const streakStyles = StyleSheet.create({
   unit: { fontSize: 10, fontWeight: "800", letterSpacing: 1 },
   sub: { fontSize: 11, fontWeight: "500", marginTop: 2 },
   badge: {
-    backgroundColor: brandAlpha.violet600_12,
-    borderWidth: 1,
-    borderColor: brandAlpha.violet600_18,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
+    borderWidth: 1,
   },
-  badgeText: { fontSize: 11, fontWeight: "700", color: brand.violet600 },
+  badgeText: { fontSize: 11, fontWeight: "700" },
 });
 
 // ─── Stats Grid (2×2) ─────────────────────────────────────────────────────────
 
-function StatTile({ label, value, sub, icon }: { label: string; value: number | string; sub: string; icon: string }) {
+type TileAccent = { bg: string; border: string; iconColor: string; valueColor: string };
+
+const TILE_ACCENTS: Record<string, TileAccent> = {
+  routines:    { bg: brandAlpha.indigo500_14,         border: brandAlpha.indigo500_20,         iconColor: brand.indigo500,  valueColor: brand.indigo500 },
+  great:       { bg: "rgba(52,211,153,0.12)",          border: "rgba(52,211,153,0.22)",          iconColor: brand.emerald400, valueColor: brand.emerald400 },
+  challenging: { bg: brandAlpha.rose400_12,            border: brandAlpha.rose400_18,            iconColor: brand.rose400,    valueColor: brand.rose400 },
+  children:    { bg: "rgba(244,114,182,0.12)",         border: "rgba(244,114,182,0.22)",         iconColor: brand.pink400,    valueColor: brand.pink400 },
+};
+
+function StatTile({ label, value, sub, icon, accent }: { label: string; value: number | string; sub: string; icon: string; accent: TileAccent }) {
   const c = useColors();
   return (
-    <View style={[statStyles.tile, { borderColor: brandAlpha.violet600_15, backgroundColor: c.surface ?? "rgba(255,255,255,0.05)" }]}>
+    <View style={[statStyles.tile, { borderColor: accent.border, backgroundColor: accent.bg }]}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <Text style={[statStyles.label, { color: c.mutedForeground }]}>{label.toUpperCase()}</Text>
-        <Ionicons name={icon as any} size={14} color={brand.violet500} />
+        <Ionicons name={icon as any} size={14} color={accent.iconColor} />
       </View>
-      <Text style={[statStyles.value, { color: c.foreground }]}>{value}</Text>
+      <Text style={[statStyles.value, { color: accent.valueColor }]}>{value}</Text>
       <Text style={[statStyles.sub, { color: c.mutedForeground }]}>{sub.toUpperCase()}</Text>
     </View>
   );
 }
 
 function StatsGrid({ summary, loading }: { summary: DashboardSummary | null; loading: boolean }) {
-  const c = useColors();
   if (loading) {
     return (
       <View style={statStyles.grid}>
@@ -236,10 +254,10 @@ function StatsGrid({ summary, loading }: { summary: DashboardSummary | null; loa
   }
   return (
     <View style={statStyles.grid}>
-      <StatTile label="Routines" value={summary?.routinesGeneratedThisWeek ?? 0} sub="this week" icon="calendar-outline" />
-      <StatTile label="Great Job" value={summary?.positiveBehaviorsToday ?? 0} sub="today" icon="trending-up-outline" />
-      <StatTile label="Challenging" value={summary?.negativeBehaviorsToday ?? 0} sub="today" icon="trending-down-outline" />
-      <StatTile label="Children" value={summary?.totalChildren ?? 0} sub="total" icon="people-outline" />
+      <StatTile label="Routines"    value={summary?.routinesGeneratedThisWeek ?? 0} sub="this week" icon="calendar-outline"      accent={TILE_ACCENTS.routines} />
+      <StatTile label="Great Job"   value={summary?.positiveBehaviorsToday ?? 0}    sub="today"     icon="trending-up-outline"   accent={TILE_ACCENTS.great} />
+      <StatTile label="Challenging" value={summary?.negativeBehaviorsToday ?? 0}    sub="today"     icon="trending-down-outline" accent={TILE_ACCENTS.challenging} />
+      <StatTile label="Children"    value={summary?.totalChildren ?? 0}             sub="total"     icon="people-outline"        accent={TILE_ACCENTS.children} />
     </View>
   );
 }
@@ -298,11 +316,16 @@ function AmySuggestionCard({ routines, streak }: { routines: Routine[]; streak: 
   const display = suggestions.slice(0, 2);
 
   return (
-    <View style={[amyStyles.wrap, { borderColor: brandAlpha.violet600_18 }]}>
-      <View style={[amyStyles.header, { borderBottomColor: brandAlpha.violet600_15 }]}>
-        <Text style={amyStyles.amyEmoji}>🤖</Text>
+    <View style={[amyStyles.wrap, { borderColor: brandAlpha.indigo500_20 }]}>
+      <LinearGradient
+        colors={["rgba(99,102,241,0.22)", "rgba(139,92,246,0.18)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[amyStyles.header, { borderBottomColor: brandAlpha.indigo500_20 }]}
+      >
+        <Text style={amyStyles.amyEmoji}>✨</Text>
         <Text style={[amyStyles.headerText, { color: c.foreground }]}>{t("screens.tabs_index.amy_ai_suggests")}</Text>
-      </View>
+      </LinearGradient>
       <View style={amyStyles.body}>
         {display.length === 0 ? (
           <Text style={[amyStyles.allGood, { color: c.mutedForeground }]}>{t("screens.tabs_index.all_looking_good_today")}</Text>
@@ -373,9 +396,14 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
         <Text style={[scoreStyles.headerText, { color: c.foreground }]}>{t("screens.tabs_index.parent_score")}</Text>
       </View>
       <View style={scoreStyles.body}>
-        <View style={[scoreStyles.gradeBadge, { backgroundColor: brandAlpha.violet600_12, borderColor: brandAlpha.violet600_18 }]}>
-          <Text style={[scoreStyles.grade, { color: brand.violet600 }]}>{grade}</Text>
-        </View>
+        <LinearGradient
+          colors={[brand.amber400, brand.rose400]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={scoreStyles.gradeBadge}
+        >
+          <Text style={[scoreStyles.grade, { color: "#fff" }]}>{grade}</Text>
+        </LinearGradient>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
             <Text style={[scoreStyles.scoreNum, { color: c.foreground }]}>{score}</Text>
@@ -390,14 +418,14 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
           <Text style={[scoreStyles.barValue, { color: c.foreground }]}>{completionRate}%</Text>
         </View>
         <View style={[scoreStyles.track, { backgroundColor: brandAlpha.violet600_12 }]}>
-          <View style={[scoreStyles.fill, { width: `${completionRate}%` as any, backgroundColor: brand.violet500 }]} />
+          <View style={[scoreStyles.fill, { width: `${completionRate}%` as any, backgroundColor: brand.emerald400 }]} />
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4, marginTop: 10 }}>
           <Text style={[scoreStyles.barLabel, { color: c.mutedForeground }]}>{t("screens.tabs_index.days_active")}</Text>
           <Text style={[scoreStyles.barValue, { color: c.foreground }]}>{daysActive}/7</Text>
         </View>
-        <View style={[scoreStyles.track, { backgroundColor: brandAlpha.violet600_12 }]}>
-          <View style={[scoreStyles.fill, { width: `${(daysActive / 7) * 100}%` as any, backgroundColor: brand.violet400 }]} />
+        <View style={[scoreStyles.track, { backgroundColor: brandAlpha.indigo500_14 }]}>
+          <View style={[scoreStyles.fill, { width: `${(daysActive / 7) * 100}%` as any, backgroundColor: brand.indigo500 }]} />
         </View>
       </View>
       {score < 60 && (
@@ -597,16 +625,16 @@ function RewardsCard({ onViewAll }: { onViewAll: () => void }) {
   }, []);
 
   return (
-    <View style={[rewardsStyles.card, { borderColor: brandAlpha.violet600_15, backgroundColor: c.surface ?? "rgba(255,255,255,0.04)" }]}>
+    <View style={[rewardsStyles.card, { borderColor: brandAlpha.amber400_18, backgroundColor: brandAlpha.amber400_08 }]}>
       <View style={rewardsStyles.header}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Ionicons name="trophy-outline" size={16} color={brand.violet600} />
+          <Ionicons name="trophy-outline" size={16} color={brand.amber400} />
           <Text style={[rewardsStyles.headerText, { color: c.foreground }]}>{t("screens.tabs_index.rewards_points")}</Text>
         </View>
-        <View style={rewardsStyles.pointsBadge}>
-          <Ionicons name="star" size={12} color={brand.violet500} />
-          <Text style={rewardsStyles.pointsNum}>{points}</Text>
-          <Text style={rewardsStyles.pointsPts}>{t("screens.tabs_index.pts")}</Text>
+        <View style={[rewardsStyles.pointsBadge, { backgroundColor: brandAlpha.amber400_14, borderColor: brandAlpha.amber400_22 }]}>
+          <Ionicons name="star" size={12} color={brand.amber400} />
+          <Text style={[rewardsStyles.pointsNum, { color: brand.amber400 }]}>{points}</Text>
+          <Text style={[rewardsStyles.pointsPts, { color: brand.amber400 }]}>{t("screens.tabs_index.pts")}</Text>
         </View>
       </View>
 
@@ -938,7 +966,12 @@ export default function DashboardScreen() {
         }
       >
         {/* ── Hero Greeting ─────────────────────────────────────────── */}
-        <View style={mainStyles.heroCard}>
+        <LinearGradient
+          colors={["rgba(139,92,246,0.28)", "rgba(99,102,241,0.18)", "rgba(236,72,153,0.12)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={mainStyles.heroCard}
+        >
           <View style={mainStyles.eyebrowRow}>
             <Text style={mainStyles.eyebrow}>{t(getGreetingKey()).toUpperCase()}</Text>
             <View style={mainStyles.datePill}>
@@ -964,7 +997,7 @@ export default function DashboardScreen() {
               </Text>
             </View>
           )}
-        </View>
+        </LinearGradient>
 
         {/* ── Children Strip ────────────────────────────────────────── */}
         {!loadingChildren && children.length > 0 && (
@@ -977,7 +1010,8 @@ export default function DashboardScreen() {
 
         {/* ── Today's Timeline ──────────────────────────────────────── */}
         <View style={mainStyles.sectionHeaderRow}>
-          <Ionicons name="calendar-outline" size={16} color={c.foreground} />
+          <View style={[mainStyles.timelineAccent, { backgroundColor: brand.violet500 }]} />
+          <Ionicons name="calendar-outline" size={16} color={brand.violet400} />
           <Text style={[mainStyles.sectionTitle, { color: c.foreground }]}>
             {t("dashboard.todays_timeline")}
           </Text>
@@ -1020,14 +1054,14 @@ export default function DashboardScreen() {
 
         {/* ── At a Glance ───────────────────────────────────────────── */}
         <View style={{ marginTop: 24, marginBottom: 14 }}>
-          <SectionHeader label="At a Glance" />
+          <SectionHeader label="At a Glance" accentColor={brand.amber400} />
         </View>
         <StreakCard streak={streak} onPress={() => router.push("/progress" as never)} />
         <StatsGrid summary={summary} loading={loadingSummary || manualRefreshing} />
 
         {/* ── Coaching ──────────────────────────────────────────────── */}
         <View style={{ marginBottom: 14 }}>
-          <SectionHeader label="Coaching" />
+          <SectionHeader label="Coaching" accentColor={brand.indigo500} />
         </View>
         <AmySuggestionCard routines={routines} streak={streak} />
         <ParentScoreCard routines={routines} streak={streak} />
@@ -1038,6 +1072,7 @@ export default function DashboardScreen() {
             label="Recent Routines"
             actionLabel="View all"
             onAction={() => router.push("/(tabs)/routines" as never)}
+            accentColor={brand.emerald400}
           />
         </View>
         <RecentRoutinesList
@@ -1052,13 +1087,14 @@ export default function DashboardScreen() {
             label="Behavior Highlights"
             actionLabel="Log"
             onAction={() => router.push("/behavior" as never)}
+            accentColor={brand.rose400}
           />
         </View>
         <BehaviorHighlights stats={behaviorStats} loading={loadingBehavior || manualRefreshing} />
 
         {/* ── Rewards ───────────────────────────────────────────────── */}
         <View style={{ marginTop: 16, marginBottom: 14 }}>
-          <SectionHeader label="Rewards & Points" />
+          <SectionHeader label="Rewards & Points" accentColor={brand.pink400} />
         </View>
         <RewardsCard onViewAll={() => router.push("/rewards" as never)} />
 
@@ -1077,8 +1113,8 @@ const mainStyles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(168,85,247,0.18)",
-    backgroundColor: "rgba(168,85,247,0.07)",
+    borderColor: "rgba(168,85,247,0.28)",
+    overflow: "hidden",
   },
   eyebrowRow: {
     flexDirection: "row",
@@ -1122,6 +1158,7 @@ const mainStyles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 12,
   },
+  timelineAccent: { width: 3, height: 13, borderRadius: 2 },
   sectionTitle: { fontSize: 15, fontWeight: "800", letterSpacing: -0.2 },
   loaderRow: { paddingHorizontal: 20, paddingVertical: 24, alignItems: "center" },
   emptyWrap: {
