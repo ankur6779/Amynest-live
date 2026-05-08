@@ -34,6 +34,8 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.amynest.app.databinding.ActivityMainBinding
 
+private const val TAG = "MainActivity"
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -125,6 +127,42 @@ class MainActivity : AppCompatActivity() {
         } else {
             loadInitialUrl()
         }
+
+        // PERMANENT FIX: auto-request POST_NOTIFICATIONS on every cold start.
+        //
+        // Previously the system dialog only appeared when the web page sent
+        // {action:"requestPermission"} through the bridge. But if the web UI
+        // ever rendered the "Not supported in this browser" fallback (stale
+        // APK, race-condition before bridge wired up, etc.) the dialog was
+        // never shown — the user could open the app dozens of times and never
+        // be asked. This guarantees the prompt appears on first launch
+        // regardless of web-side state.
+        askNotificationPermission()
+        Log.d(TAG, "PushBridge version=${PushBridge.WRAPPER_VERSION}")
+    }
+
+    /**
+     * Re-sync the OS-level POST_NOTIFICATIONS grant state into the bridge
+     * every time the activity returns to the foreground.
+     *
+     * Critical scenario: user manually grants permission via
+     * Phone Settings → Apps → AmyNest → Notifications (without using the
+     * in-app "Allow" button). Without this sync the bridge still reports
+     * "default", the web page never calls /api/push/register, and the
+     * device silently receives zero notifications.
+     */
+    override fun onResume() {
+        super.onResume()
+        val bridge = pushBridge ?: return
+        val granted = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            true // Pre-Android 13: notifications are always "granted"
+        } else {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+        bridge.onPermissionResult(granted)
     }
 
     private fun loadInitialUrl() {
@@ -170,7 +208,11 @@ class MainActivity : AppCompatActivity() {
         s.setGeolocationEnabled(true)
         s.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         s.cacheMode = WebSettings.LOAD_DEFAULT
-        s.userAgentString = "${s.userAgentString} KidScheduleAndroid/${BuildConfig.VERSION_NAME}"
+        // "AmyNestAndroid" matches the UA check in isAmyNestWrapper() on the web side
+        // (native-push-bridge.ts: /AmyNestAndroid/.test(navigator.userAgent)).
+        // This is the last-resort wrapper-detection signal when both
+        // window.AmyNestPushNative and window.__AMYNEST_WRAPPER are unavailable.
+        s.userAgentString = "${s.userAgentString} AmyNestAndroid/${BuildConfig.VERSION_NAME}"
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
@@ -404,6 +446,35 @@ class MainActivity : AppCompatActivity() {
         } else {
             pendingDeepLink = link
         }
+    }
+
+    /**
+     * Request POST_NOTIFICATIONS permission on Android 13+.
+     * On older Android versions notifications are implicitly granted.
+     * Safe to call repeatedly — Android only shows the dialog once and then
+     * auto-denies subsequent requests after the user declines twice.
+     */
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            // Pre-Android 13: no runtime permission needed — bridge already
+            // reports "granted" for these versions in currentPermission().
+            return
+        }
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Already granted — nothing to do. onResume() will sync the
+            // bridge state on every foreground.
+            return
+        }
+        // Request. The result arrives in onRequestPermissionsResult →
+        // PushBridge.PERMISSION_REQUEST_CODE → pushBridge.onPermissionResult().
+        requestPermissions(
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+            PushBridge.PERMISSION_REQUEST_CODE,
+        )
     }
 
     /**
