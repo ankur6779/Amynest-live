@@ -92,6 +92,16 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     // don't get missed — getToken() always returns a fresh token via the
     // SDK cache.
     const unsub = onIdTokenChanged(firebaseAuth, (fbUser) => {
+      // Test/reviewer accounts that bypass the email-verification gate so QA
+      // and the Google Play reviewer can log in without confirming the inbox.
+      // Keep this list tiny — it's a hardcoded backdoor.
+      const VERIFICATION_BYPASS_EMAILS = new Set([
+        "demo@amynest.in",
+        "googleplay.reviewer@amynest.app",
+      ]);
+      const bypassEmail =
+        fbUser?.email != null &&
+        VERIFICATION_BYPASS_EMAILS.has(fbUser.email.toLowerCase().trim());
       // If the user signed up with email+password but hasn't verified their
       // email yet, treat them as signed-out so all protected routes redirect
       // to /sign-in. The verify-email page still has access to
@@ -99,6 +109,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       const isUnverifiedEmailUser =
         fbUser !== null &&
         !fbUser.emailVerified &&
+        !bypassEmail &&
         (fbUser as FbUser).providerData.every((p) => p.providerId === "password");
       const shim = fbUser && !isUnverifiedEmailUser ? fbToShim(fbUser as FirebaseUserLike) : null;
       setState({ user: shim, isLoaded: true });
