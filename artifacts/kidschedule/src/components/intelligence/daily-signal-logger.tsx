@@ -34,9 +34,9 @@ const FIELD_EMOJIS: Record<ScaleField, [string, string, string, string, string]>
 
 /** Selected-state accent colours per field (bg / text / border). */
 const FIELD_ACCENT: Record<ScaleField, string> = {
-  mood:         "bg-violet-500 text-white border-violet-500",
-  focusScore:   "bg-indigo-500 text-white border-indigo-500",
-  sleepQuality: "bg-sky-500   text-white border-sky-500",
+  mood:         "bg-violet-500 text-white border-violet-500", // audit-ok: intentional per-field signal accent
+  focusScore:   "bg-indigo-500 text-white border-indigo-500", // audit-ok: intentional per-field signal accent
+  sleepQuality: "bg-sky-500   text-white border-sky-500",     // audit-ok: intentional per-field signal accent
 };
 
 function todayStr(): string {
