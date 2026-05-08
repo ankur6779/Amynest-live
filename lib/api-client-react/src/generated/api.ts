@@ -44,6 +44,7 @@ import type {
   GetRecipeResponse,
   GetSmartStudyInsightsParams,
   HealthStatus,
+  IntelligenceInsightsResponse,
   LifeSkillProgressResponse,
   LifeSkillRolePlay,
   LifeSkillsTodayResponse,
@@ -63,6 +64,7 @@ import type {
   UpdateRoutineItemsBody,
   UpdateRoutineUiPrefsBody,
   UpsertParentProfileBody,
+  WeeklyReportResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -3543,3 +3545,190 @@ export const useLogChildDailySignal = <
 > => {
   return useMutation(getLogChildDailySignalMutationOptions(options));
 };
+
+/**
+ * @summary 7-day rollup of signals + completion + goal progress, with deltas vs the prior 7 days.
+ */
+export const getGetChildWeeklyReportUrl = (childId: number) => {
+  return `/api/child-intelligence/${childId}/weekly-report`;
+};
+
+export const getChildWeeklyReport = async (
+  childId: number,
+  options?: RequestInit,
+): Promise<WeeklyReportResponse> => {
+  return customFetch<WeeklyReportResponse>(
+    getGetChildWeeklyReportUrl(childId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetChildWeeklyReportQueryKey = (childId: number) => {
+  return [`/api/child-intelligence/${childId}/weekly-report`] as const;
+};
+
+export const getGetChildWeeklyReportQueryOptions = <
+  TData = Awaited<ReturnType<typeof getChildWeeklyReport>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildWeeklyReport>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetChildWeeklyReportQueryKey(childId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getChildWeeklyReport>>
+  > = ({ signal }) =>
+    getChildWeeklyReport(childId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!childId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getChildWeeklyReport>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetChildWeeklyReportQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getChildWeeklyReport>>
+>;
+export type GetChildWeeklyReportQueryError = ErrorType<unknown>;
+
+/**
+ * @summary 7-day rollup of signals + completion + goal progress, with deltas vs the prior 7 days.
+ */
+
+export function useGetChildWeeklyReport<
+  TData = Awaited<ReturnType<typeof getChildWeeklyReport>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildWeeklyReport>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetChildWeeklyReportQueryOptions(childId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Risk-window predictions and behavior↔routine correlations.
+ */
+export const getGetChildIntelligenceInsightsUrl = (childId: number) => {
+  return `/api/child-intelligence/${childId}/insights`;
+};
+
+export const getChildIntelligenceInsights = async (
+  childId: number,
+  options?: RequestInit,
+): Promise<IntelligenceInsightsResponse> => {
+  return customFetch<IntelligenceInsightsResponse>(
+    getGetChildIntelligenceInsightsUrl(childId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetChildIntelligenceInsightsQueryKey = (childId: number) => {
+  return [`/api/child-intelligence/${childId}/insights`] as const;
+};
+
+export const getGetChildIntelligenceInsightsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getChildIntelligenceInsights>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildIntelligenceInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetChildIntelligenceInsightsQueryKey(childId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getChildIntelligenceInsights>>
+  > = ({ signal }) =>
+    getChildIntelligenceInsights(childId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!childId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getChildIntelligenceInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetChildIntelligenceInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getChildIntelligenceInsights>>
+>;
+export type GetChildIntelligenceInsightsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Risk-window predictions and behavior↔routine correlations.
+ */
+
+export function useGetChildIntelligenceInsights<
+  TData = Awaited<ReturnType<typeof getChildIntelligenceInsights>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildIntelligenceInsights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetChildIntelligenceInsightsQueryOptions(
+    childId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

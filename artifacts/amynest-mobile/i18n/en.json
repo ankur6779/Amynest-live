@@ -289,6 +289,48 @@
     "adaptations": {
       "title": "Why this routine?",
       "subtitle": "How Amy adapted today's plan to your child."
+    },
+    "weekly": {
+      "title": "Weekly Intelligence Report",
+      "subtitle": "Last 7 days vs the previous 7 days.",
+      "loading": "Loading…",
+      "empty": "Log a few daily signals to unlock your weekly report.",
+      "no_data": "—",
+      "signal_days_one": "{{count}} day logged",
+      "signal_days_other": "{{count}} days logged",
+      "streak_one": "{{count}}-day streak",
+      "streak_other": "{{count}}-day streak",
+      "metrics": {
+        "mood": "Mood",
+        "focus": "Focus",
+        "sleep": "Sleep quality",
+        "completion": "Routine completion",
+        "tantrums": "Tantrums / day"
+      },
+      "direction": {
+        "up": "Improving",
+        "down": "Slipping",
+        "flat": "Steady",
+        "unknown": "Need more data"
+      }
+    },
+    "insights": {
+      "risk": {
+        "title": "Watch-out windows",
+        "subtitle": "Time-of-day windows where tougher behaviours have clustered.",
+        "events_one": "{{count}} event",
+        "events_other": "{{count}} events",
+        "suggestions": {
+          "risk:morning:add_calm_block": "Add a calm block before this hour — start the day gentler.",
+          "risk:midday:offer_snack_or_quiet": "Offer a snack or quiet wind-down 30 min before this window.",
+          "risk:afternoon:swap_demanding_for_outdoor": "Swap the demanding block here for outdoor or sensory play.",
+          "risk:evening:start_winddown_earlier": "Start the wind-down 30 min earlier to head this off."
+        }
+      },
+      "correlations": {
+        "title": "Activity ↔ behaviour links",
+        "subtitle": "Activities that ran in the 2 hours before logged behaviours."
+      }
     }
   },
   "routines": {

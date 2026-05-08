@@ -18,6 +18,7 @@ import { BRAND } from "@/constants/brand";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ChildGoalsCard } from "@/components/intelligence/ChildGoalsCard";
+import { InsightsCard } from "@/components/intelligence/InsightsCard";
 
 const CHAT_KEY = (childId: number | string | null | undefined) =>
   `amynest:amy-tutor-chat:${childId ?? "default"}`;
@@ -518,6 +519,12 @@ export default function ChildDetailScreen() {
         {id && id !== "new" && Number(id) > 0 && (
           <View style={{ marginTop: 16 }}>
             <ChildGoalsCard childId={Number(id)} />
+          </View>
+        )}
+
+        {id && id !== "new" && Number(id) > 0 && (
+          <View style={{ marginTop: 16 }}>
+            <InsightsCard childId={Number(id)} />
           </View>
         )}
 

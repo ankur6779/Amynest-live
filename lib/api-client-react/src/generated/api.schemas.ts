@@ -849,6 +849,96 @@ export interface LogChildDailySignalBody {
   notes?: string | null;
 }
 
+export interface WeeklyReportAverages {
+  mood: number | null;
+  focusScore: number | null;
+  sleepQuality: number | null;
+  completionPct: number | null;
+  screenMinutes: number | null;
+  tantrumsPerDay: number | null;
+}
+
+export interface WeeklyReportDeltas {
+  mood: number | null;
+  focusScore: number | null;
+  sleepQuality: number | null;
+  completionPct: number | null;
+  tantrumsPerDay: number | null;
+}
+
+export type WeeklyReportGoalProgressGoal =
+  (typeof WeeklyReportGoalProgressGoal)[keyof typeof WeeklyReportGoalProgressGoal];
+
+export const WeeklyReportGoalProgressGoal = {
+  improve_sleep: "improve_sleep",
+  reduce_tantrums: "reduce_tantrums",
+  improve_focus: "improve_focus",
+  reduce_screen_time: "reduce_screen_time",
+  increase_independence: "increase_independence",
+} as const;
+
+export type WeeklyReportGoalProgressDirection =
+  (typeof WeeklyReportGoalProgressDirection)[keyof typeof WeeklyReportGoalProgressDirection];
+
+export const WeeklyReportGoalProgressDirection = {
+  up: "up",
+  down: "down",
+  flat: "flat",
+  unknown: "unknown",
+} as const;
+
+export interface WeeklyReportGoalProgress {
+  goal: WeeklyReportGoalProgressGoal;
+  direction: WeeklyReportGoalProgressDirection;
+  note: string;
+}
+
+/**
+ * 7-day rollup of behavioural signals and goal progress, with deltas vs the prior 7 days.
+ */
+export interface WeeklyReportResponse {
+  childId: number;
+  rangeStart: string;
+  rangeEnd: string;
+  signalDays: number;
+  streakDays: number;
+  averages: WeeklyReportAverages;
+  deltas: WeeklyReportDeltas;
+  goalProgress: WeeklyReportGoalProgress[];
+}
+
+export interface RiskWindow {
+  /**
+   * @minimum 0
+   * @maximum 23
+   */
+  startHour: number;
+  /**
+   * @minimum 0
+   * @maximum 24
+   */
+  endHour: number;
+  negativeCount: number;
+  daysObserved: number;
+  suggestion: string;
+}
+
+export interface BehaviorCorrelation {
+  category: string;
+  positive: number;
+  negative: number;
+  net: number;
+}
+
+/**
+ * Risk windows + activity↔behavior correlations from the last 14–30 days.
+ */
+export interface IntelligenceInsightsResponse {
+  childId: number;
+  riskWindows: RiskWindow[];
+  correlations: BehaviorCorrelation[];
+}
+
 export type SmartStudyInsightsMode =
   (typeof SmartStudyInsightsMode)[keyof typeof SmartStudyInsightsMode];
 

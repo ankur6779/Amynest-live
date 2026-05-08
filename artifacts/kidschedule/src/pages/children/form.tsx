@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ChildGoalsCard } from "@/components/intelligence/child-goals-card";
+import { InsightsCard } from "@/components/intelligence/insights-card";
 interface Babysitter {
   id: number;
   name: string;
@@ -916,5 +917,6 @@ export default function ChildForm() {
       </Card>
 
       {isEditing && childId > 0 && <ChildGoalsCard childId={childId} />}
+      {isEditing && childId > 0 && <InsightsCard childId={childId} />}
     </div>;
 }
