@@ -6,6 +6,7 @@ import {
   ensureNativePushReady,
   getNativePushBridge,
   getNativePushToken,
+  requestNativePushPermission,
 } from "@/lib/native-push-bridge";
 
 const REGISTERED_KEY = "notify_device_registered_at";
@@ -88,6 +89,20 @@ export function usePushRegistration(): void {
 
       void (async () => {
         await ensureNativePushReady();
+        // PERMANENT FIX: when the wrapper bridge is live but permission is
+        // still "default" (system dialog never fired, or user dismissed
+        // it), drive the native POST_NOTIFICATIONS prompt immediately on
+        // sign-in. Combined with MainActivity.askNotificationPermission()
+        // on launch, this guarantees the user always sees the system
+        // dialog once and any "granted" state in the OS settings flows
+        // back to the bridge → token registration → server delivery.
+        if (native.getPermissionStatus() === "default") {
+          try {
+            await requestNativePushPermission(native);
+          } catch {
+            /* best-effort */
+          }
+        }
         await tryRegister();
       })();
 

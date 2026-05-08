@@ -14,7 +14,6 @@ private const val KEY_TOKEN = "fcm_token"
 private const val KEY_REGISTERED = "token_registered"
 private const val KEY_PERMISSION = "notification_permission"
 private const val BRIDGE_NAME = "AmyNestPushNative"
-private const val WRAPPER_VERSION = "1.2.0"
 
 /**
  * Allowed origins for both the message-bus and the document-start marker.
@@ -89,6 +88,17 @@ class PushBridge(
     // ── Companion: active reply proxy shared across all instances ─────────────
 
     companion object {
+        /**
+         * Wrapper version marker — bumped on every push-related native change
+         * so MainActivity can log it on launch and the user can verify (via
+         * `adb logcat -s MainActivity`) that they are running the latest APK
+         * build, not a cached older install.
+         *
+         * Bump this value when changing PushBridge protocol, MainActivity
+         * permission flow, or KidScheduleFcmService channel handling.
+         */
+        const val WRAPPER_VERSION = "1.3.0"
+
         /**
          * The last [JavaScriptReplyProxy] seen on [BRIDGE_NAME]. Updated
          * every time the web page posts a message through the bridge, which
