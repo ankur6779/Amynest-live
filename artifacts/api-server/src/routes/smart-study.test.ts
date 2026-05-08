@@ -46,6 +46,7 @@ async function startApp(injectedUserId: string | null): Promise<AuthedApp> {
       userId: injectedUserId,
       email: null,
       emailVerified: false,
+      phoneNumber: null,
       name: null,
       picture: null,
     };
