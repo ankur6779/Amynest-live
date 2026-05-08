@@ -136,13 +136,13 @@ title = "phonics apple"
 id = "3tqnDG3EWrECzvaqyJv8M"
 uri = "file://artifacts/amynest-splash/public/images/nebula-bg.png"
 type = "image"
-title = "Cosmic nebula background"
+title = "generated_image"
 
 [[generated]]
 id = "1dix-9Em0eGK7nduntEXa"
 uri = "file://artifacts/amynest-splash/public/images/mascot.png"
 type = "image"
-title = "Futuristic AI bird mascot"
+title = "generated_image"
 
 [[outputs]]
 id = "6ZC-wVpVG0DweJvlh22r3"
