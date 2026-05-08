@@ -888,6 +888,18 @@
       "inbox_body_after": ". Check your spam folder if you don't see it.",
       "back_to_sign_in_button": "Back to Sign in"
     },
+    "verify_email": {
+      "title": "Check your inbox",
+      "subtitle": "We've sent a verification link to",
+      "spam_note": "Can't find it? Check your spam or junk folder.",
+      "resend": "Resend verification email",
+      "sending": "Sending…",
+      "resend_wait": "Resend in {{seconds}}s",
+      "resent": "Verification email sent! Check your inbox.",
+      "resend_error": "Could not send email. Please try again.",
+      "must_sign_in_to_resend": "Please sign in to resend the verification email.",
+      "back_to_sign_in": "← Back to Sign in"
+    },
     "referrals": {
       "loading": "Loading your referral dashboard…",
       "invite_earn": "Invite & Earn",

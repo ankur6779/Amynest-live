@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { onIdTokenChanged, signOut as fbSignOut } from "firebase/auth";
+import { onIdTokenChanged, signOut as fbSignOut, type User as FbUser } from "firebase/auth";
 import { firebaseAuth } from "./firebase";
 import {
   AuthContext,
@@ -92,7 +92,15 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     // don't get missed — getToken() always returns a fresh token via the
     // SDK cache.
     const unsub = onIdTokenChanged(firebaseAuth, (fbUser) => {
-      const shim = fbUser ? fbToShim(fbUser as FirebaseUserLike) : null;
+      // If the user signed up with email+password but hasn't verified their
+      // email yet, treat them as signed-out so all protected routes redirect
+      // to /sign-in. The verify-email page still has access to
+      // firebaseAuth.currentUser for the resend flow.
+      const isUnverifiedEmailUser =
+        fbUser !== null &&
+        !fbUser.emailVerified &&
+        (fbUser as FbUser).providerData.every((p) => p.providerId === "password");
+      const shim = fbUser && !isUnverifiedEmailUser ? fbToShim(fbUser as FirebaseUserLike) : null;
       setState({ user: shim, isLoaded: true });
       for (const l of listenersRef.current) {
         try {
