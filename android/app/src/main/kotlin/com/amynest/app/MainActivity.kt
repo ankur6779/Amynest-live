@@ -92,9 +92,46 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // PERMANENT FIX: auto-request POST_NOTIFICATIONS on first launch.
+        //
+        // Previously this was only triggered when the web page sent
+        // { action: "requestPermission" } via the bridge. But if the web UI
+        // ever fell through to the "Not supported in this browser" fallback
+        // (stale build, transient bridge wiring delay, etc.), the dialog
+        // never appeared — the user could open the app dozens of times
+        // and never be asked. Asking up-front guarantees the prompt fires
+        // exactly once per install, regardless of any web-side state.
+        askNotificationPermission()
+
         val launchUrl = buildLaunchUrl(intent)
         webView.loadUrl(launchUrl)
-        Log.d(TAG, "Loading: $launchUrl")
+        Log.d(TAG, "Loading: $launchUrl (wrapper version=${PushBridge.WRAPPER_VERSION})")
+    }
+
+    /**
+     * Sync the OS-level POST_NOTIFICATIONS state into the bridge whenever
+     * the activity comes back to the foreground. Critical for the case
+     * where the user manually granted permission via Phone Settings → Apps
+     * → AmyNest → Notifications without the in-app dialog ever firing —
+     * without this sync the bridge would still report "default", the web
+     * page would never call /api/push/register, and the device would
+     * silently receive zero notifications.
+     */
+    override fun onResume() {
+        super.onResume()
+        if (!::pushBridge.isInitialized) return
+        val granted = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            true
+        } else {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+        // Always push the current state — setPermission() is a no-op write
+        // when the value matches but always broadcasts the event so the web
+        // page can re-attempt token registration if it was missed earlier.
+        pushBridge.setPermission(granted)
     }
 
     override fun onNewIntent(intent: Intent?) {
