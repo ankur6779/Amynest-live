@@ -233,3 +233,63 @@ id = "W-y7l-TuPuyOa9bhn6ktb"
 uri = "file://patent/amynest_patent_package.tar.gz"
 type = "unspecified"
 title = "AmyNest Provisional Patent Package (revised HTML inside archive)"
+
+[[outputs]]
+id = "RtvL33ohFCprXE_vVmBGj"
+uri = "file://screenshots/appstore-01-hero.jpg"
+type = "image"
+title = "01 · Hero — Your AI Parenting Partner"
+
+[[outputs]]
+id = "JPw62G5raw5R8eEmwdOBd"
+uri = "file://screenshots/appstore-02-ask-amy.jpg"
+type = "image"
+title = "02 · Ask AMY — AI Parenting Mode"
+
+[[outputs]]
+id = "J8p-xxlupwm85O6MSgX5W"
+uri = "file://screenshots/appstore-03-routines.jpg"
+type = "image"
+title = "03 · Smart Daily Routines"
+
+[[outputs]]
+id = "dSGv1ToNpUXyj8ZgkrQmz"
+uri = "file://screenshots/appstore-04-nutrition.jpg"
+type = "image"
+title = "04 · Healthy Meals Every Day"
+
+[[outputs]]
+id = "hW5CoWPt0c7ic2bTIdxe6"
+uri = "file://screenshots/appstore-05-behavior.jpg"
+type = "image"
+title = "05 · Track & Celebrate Growth"
+
+[[outputs]]
+id = "eQBVxFYPatERtsgWzzWoz"
+uri = "file://screenshots/appstore-06-spelling.jpg"
+type = "image"
+title = "06 · Fun Learning for Every Age"
+
+[[outputs]]
+id = "TbUPp_-pnCfYhmfxuhBd3"
+uri = "file://screenshots/appstore-07-hub.jpg"
+type = "image"
+title = "07 · Grows With Your Child"
+
+[[outputs]]
+id = "0Zn6HVYEGRCrWH8NWXz8_"
+uri = "file://screenshots/appstore-08-insights.jpg"
+type = "image"
+title = "08 · Data-Driven Parenting"
+
+[[outputs]]
+id = "W3JzOeImYwr2srVImeGwM"
+uri = "file://screenshots/appstore-09-coach.jpg"
+type = "image"
+title = "09 · Your Personal Parenting Coach"
+
+[[outputs]]
+id = "Lqpx7kwr3hB5be3WSNP58"
+uri = "file://screenshots/appstore-10-cta.jpg"
+type = "image"
+title = "10 · Start Your Parenting Journey"
