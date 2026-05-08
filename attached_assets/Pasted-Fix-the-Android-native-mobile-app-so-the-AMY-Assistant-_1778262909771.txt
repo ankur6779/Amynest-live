@@ -1,0 +1,133 @@
+Fix the Android native mobile app so the "AMY Assistant / Ask AMY" floating AI chat feature appears and works exactly like the web app.
+
+CURRENT ISSUE:
+- Web app shows floating AMY AI assistant/chat entry correctly
+- Native Android app does NOT show the assistant button/widget
+- Users cannot tap to open AI chat in native app
+
+GOAL:
+Make the native app experience identical to the web app for AMY Assistant access.
+
+--------------------------------------------------
+1. IDENTIFY ROOT CAUSE
+--------------------------------------------------
+Check why AMY Assistant is hidden in native Android app:
+
+Possible causes:
+- Platform detection hiding widget
+- z-index / overflow issue
+- WebView compatibility issue
+- CSS media query issue
+- Native wrapper blocking fixed elements
+- Safe area / bottom nav overlap
+- Conditional rendering for PWA only
+
+--------------------------------------------------
+2. ENSURE ASSISTANT LOADS ON MOBILE NATIVE
+--------------------------------------------------
+- Force render AMY Assistant widget/component inside Android app WebView
+- Ensure:
+  showOnAndroid = true
+  showOnMobile = true
+
+- Remove any:
+  if (isNativeApp) return null;
+  or platform restrictions
+
+--------------------------------------------------
+3. FLOATING BUTTON POSITION FIX
+--------------------------------------------------
+Position:
+- Bottom-right above bottom navigation bar
+
+Spacing:
+- bottom: 90px–110px
+- right: 16px–20px
+
+IMPORTANT:
+- Must not overlap navigation tabs
+
+--------------------------------------------------
+4. VISUAL DESIGN (MATCH WEB APP)
+--------------------------------------------------
+Use same premium design as web:
+
+- Neon glowing ring
+- AMY AI mascot
+- Purple/pink glow
+- Breathing animation
+- Floating pulse effect
+
+--------------------------------------------------
+5. TAP INTERACTION
+--------------------------------------------------
+On tap:
+- Open full AI chat screen/modal
+
+Features:
+- Smooth slide-up animation
+- Keyboard safe
+- Mobile optimized
+
+--------------------------------------------------
+6. WEBVIEW COMPATIBILITY FIX
+--------------------------------------------------
+Ensure:
+- position: fixed works properly
+- z-index is very high
+- overflow hidden is not clipping widget
+
+Check:
+- body overflow
+- parent container clipping
+
+--------------------------------------------------
+7. SAFE AREA SUPPORT
+--------------------------------------------------
+Respect:
+- Android gesture area
+- bottom navigation
+- notch/safe-area insets
+
+--------------------------------------------------
+8. PERSISTENT VISIBILITY
+--------------------------------------------------
+- Assistant should remain visible across:
+  • Dashboard
+  • Parent Hub
+  • Routines
+  • Stories
+  • Phonics
+
+Except:
+- Login/signup screens (optional)
+
+--------------------------------------------------
+9. PERFORMANCE
+--------------------------------------------------
+- Lazy load chat only after tap
+- Keep floating button lightweight
+
+--------------------------------------------------
+10. OPTIONAL ENHANCEMENTS
+--------------------------------------------------
+- Add unread glow pulse
+- Add small tooltip:
+  "Ask AMY"
+
+- Idle floating animation
+
+--------------------------------------------------
+11. TESTING
+--------------------------------------------------
+Verify on:
+- Android WebView app
+- Different screen sizes
+- Dark theme
+
+--------------------------------------------------
+DELIVERABLE:
+- AMY Assistant visible in native Android app
+- Floating clickable AI chat button
+- Same experience as web app
+- Premium animated UI
