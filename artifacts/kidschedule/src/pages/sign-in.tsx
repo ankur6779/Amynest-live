@@ -361,7 +361,7 @@ export default function SignInPage() {
       });
       const checkData = (await checkRes.json()) as { exists?: boolean };
       if (!checkData.exists) {
-        setResetError(t("sign_in.reset_not_found"));
+        setResetError(t("screens.sign_in.reset_not_found"));
         return;
       }
       await sendPasswordResetEmail(firebaseAuth, resetEmail.trim());
