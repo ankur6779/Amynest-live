@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1242" />
+<title>AmyNest — App Store Screenshots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#000;width:1242px;}
+
+.slide{
+  width:1242px;height:2688px;
+  position:relative;overflow:hidden;
+  display:none;flex-direction:column;align-items:center;
+  justify-content:space-between;padding:130px 80px 110px;
+}
+.slide.active{display:flex;}
+
+/* ── Backgrounds ── */
+.bg-hero{background:radial-gradient(ellipse 120% 70% at 50% 100%,#3B0D8A 0%,#1a0b3a 40%,#0D0820 80%);}
+.bg-dark{background:linear-gradient(170deg,#0B0B1A 0%,#130C28 50%,#0B0B1A 100%);}
+.bg-mint{background:linear-gradient(170deg,#0B0B1A 0%,#0C1B1A 50%,#0B0B1A 100%);}
+.bg-rose{background:linear-gradient(170deg,#0B0B1A 0%,#1c0b18 50%,#0B0B1A 100%);}
+.bg-ocean{background:linear-gradient(170deg,#0B0B1A 0%,#0b1225 50%,#0B0B1A 100%);}
+
+/* ── Brand palette ── */
+:root{
+  --p:#7B3FF2;--pl:#9B5FF5;--acc:#FF4ECD;
+  --glow:rgba(123,63,242,0.45);--glowp:rgba(255,78,205,0.35);
+}
+
+/* ── Glow orbs ── */
+.orb{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;}
+.orb-p{background:var(--glow);}
+.orb-a{background:var(--glowp);}
+
+/* ── Top badge ── */
+.top-badge{
+  display:flex;align-items:center;gap:16px;
+  background:rgba(255,255,255,0.06);
+  border:1.5px solid rgba(255,255,255,0.12);
+  border-radius:60px;padding:18px 40px;
+  color:rgba(255,255,255,0.7);font-size:32px;font-weight:600;
+  letter-spacing:0.5px;
+  backdrop-filter:blur(12px);
+}
+.top-badge .dot{width:14px;height:14px;border-radius:50%;background:var(--acc);}
+
+/* ── Marketing headline ── */
+.headline{text-align:center;max-width:1060px;}
+.headline h1{
+  font-size:108px;font-weight:900;line-height:1.08;letter-spacing:-2px;
+  color:#fff;
+}
+.headline h1 .grad{
+  background:linear-gradient(120deg,#c084fc,var(--acc));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.headline p{
+  margin-top:32px;font-size:46px;font-weight:400;line-height:1.4;
+  color:rgba(255,255,255,0.6);letter-spacing:-0.5px;
+}
+
+/* ── Phone frame ── */
+.phone-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
+.phone{
+  width:564px;height:1164px;
+  background:#0b0b1a;
+  border-radius:72px;
+  border:6px solid rgba(255,255,255,0.18);
+  box-shadow:
+    0 0 0 1.5px rgba(255,255,255,0.07),
+    inset 0 0 0 2px rgba(255,255,255,0.04),
+    0 60px 160px rgba(0,0,0,0.9),
+    0 0 80px var(--glow);
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.phone::before{/* dynamic island */
+  content:'';position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  width:130px;height:36px;background:#000;border-radius:18px;z-index:20;
+}
+.phone-glow{
+  position:absolute;inset:0;border-radius:72px;pointer-events:none;
+  box-shadow:inset 0 0 60px rgba(123,63,242,0.12);
+}
+.screen{width:100%;flex:1;padding:64px 0 0;overflow:hidden;position:relative;}
+
+/* ── Phone UI components ── */
+.status-bar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;font-size:22px;font-weight:600;color:rgba(255,255,255,0.9);}
+.sb-time{font-size:26px;font-weight:700;}
+.sb-icons{display:flex;gap:8px;align-items:center;}
+
+.section-header{padding:28px 28px 0;font-size:30px;font-weight:700;color:rgba(255,255,255,0.9);}
+
+.chip-row{display:flex;gap:12px;padding:18px 28px;overflow:hidden;}
+.chip{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 22px;border-radius:24px;
+  font-size:22px;font-weight:600;white-space:nowrap;
+  border:1.5px solid rgba(255,255,255,0.12);
+  color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.06);
+}
+.chip.active{background:var(--p);border-color:var(--p);color:#fff;}
+
+.msg-list{display:flex;flex-direction:column;gap:18px;padding:22px 28px;}
+.msg{max-width:82%;padding:18px 22px;border-radius:22px;font-size:24px;line-height:1.45;font-weight:400;}
+.msg.user{align-self:flex-end;background:var(--p);color:#fff;border-bottom-right-radius:6px;}
+.msg.amy{align-self:flex-start;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9);border-bottom-left-radius:6px;}
+
+.routine-list{display:flex;flex-direction:column;gap:14px;padding:22px 28px;}
+.routine-item{
+  display:flex;align-items:center;gap:18px;
+  background:rgba(255,255,255,0.06);border-radius:20px;
+  padding:18px 22px;border:1.5px solid rgba(255,255,255,0.08);
+}
+.ri-time{font-size:22px;font-weight:700;color:var(--pl);min-width:90px;}
+.ri-body{flex:1;}
+.ri-title{font-size:24px;font-weight:600;color:#fff;}
+.ri-sub{font-size:20px;color:rgba(255,255,255,0.5);margin-top:3px;}
+.ri-badge{padding:6px 14px;border-radius:10px;font-size:18px;font-weight:600;}
+.ri-badge.now{background:rgba(123,63,242,0.3);color:var(--pl);}
+.ri-badge.done{background:rgba(34,197,94,0.2);color:#4ade80;}
+
+.meal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:22px 28px;}
+.meal-card{
+  background:rgba(255,255,255,0.06);border-radius:20px;
+  padding:18px;border:1.5px solid rgba(255,255,255,0.08);
+}
+.meal-emoji{font-size:40px;margin-bottom:8px;}
+.meal-name{font-size:22px;font-weight:600;color:#fff;}
+.meal-cal{font-size:18px;color:rgba(255,255,255,0.45);margin-top:4px;}
+.meal-tag{margin-top:8px;display:inline-block;padding:4px 12px;border-radius:8px;font-size:16px;font-weight:600;background:rgba(123,63,242,0.25);color:var(--pl);}
+
+.behavior-list{display:flex;flex-direction:column;gap:14px;padding:22px 28px;}
+.beh-item{
+  display:flex;align-items:center;gap:16px;
+  background:rgba(255,255,255,0.06);border-radius:18px;
+  padding:16px 20px;border:1.5px solid rgba(255,255,255,0.08);
+}
+.beh-icon{font-size:32px;}
+.beh-body{flex:1;}
+.beh-title{font-size:22px;font-weight:600;color:#fff;}
+.beh-sub{font-size:18px;color:rgba(255,255,255,0.45);}
+.beh-badge{padding:6px 14px;border-radius:10px;font-size:17px;font-weight:700;}
+.pos{background:rgba(34,197,94,0.2);color:#4ade80;}
+.neg{background:rgba(239,68,68,0.15);color:#f87171;}
+.neu{background:rgba(251,191,36,0.15);color:#fbbf24;}
+
+.spelling-ui{padding:22px 28px;display:flex;flex-direction:column;gap:16px;}
+.spell-card{
+  background:rgba(255,255,255,0.06);border-radius:20px;
+  padding:24px;border:1.5px solid rgba(255,255,255,0.08);
+  text-align:center;
+}
+.spell-word{font-size:52px;font-weight:900;color:var(--pl);letter-spacing:4px;}
+.spell-hint{font-size:22px;color:rgba(255,255,255,0.5);margin-top:8px;}
+.spell-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+.spell-opt{
+  padding:16px;border-radius:14px;font-size:22px;font-weight:600;
+  background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);
+  border:1.5px solid rgba(255,255,255,0.1);text-align:center;
+}
+.spell-opt.correct{background:rgba(34,197,94,0.2);border-color:#4ade80;color:#4ade80;}
+
+.insight-list{display:flex;flex-direction:column;gap:14px;padding:22px 28px;}
+.ins-card{
+  background:rgba(255,255,255,0.06);border-radius:20px;
+  padding:20px;border:1.5px solid rgba(255,255,255,0.08);
+}
+.ins-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ins-label{font-size:22px;font-weight:600;color:rgba(255,255,255,0.8);}
+.ins-val{font-size:26px;font-weight:800;color:var(--pl);}
+.ins-bar-bg{height:10px;background:rgba(255,255,255,0.1);border-radius:5px;}
+.ins-bar{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--p),var(--acc));}
+
+.profile-list{display:flex;flex-direction:column;gap:14px;padding:22px 28px;}
+.prof-card{
+  display:flex;align-items:center;gap:18px;
+  background:rgba(255,255,255,0.06);border-radius:20px;
+  padding:20px;border:1.5px solid rgba(255,255,255,0.08);
+}
+.prof-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#fff;flex-shrink:0;}
+.av1{background:linear-gradient(135deg,var(--p),var(--acc));}
+.av2{background:linear-gradient(135deg,#0ea5e9,#38bdf8);}
+.av3{background:linear-gradient(135deg,#f59e0b,#fbbf24);}
+.prof-body{flex:1;}
+.prof-name{font-size:26px;font-weight:700;color:#fff;}
+.prof-sub{font-size:20px;color:rgba(255,255,255,0.5);margin-top:2px;}
+.prof-streak{display:flex;align-items:center;gap:6px;font-size:20px;font-weight:600;color:var(--acc);}
+
+.age-bands{display:flex;flex-direction:column;gap:12px;padding:22px 28px;}
+.age-band{
+  background:rgba(255,255,255,0.06);border-radius:18px;
+  padding:18px 22px;border:1.5px solid rgba(255,255,255,0.08);
+  display:flex;align-items:center;gap:16px;
+}
+.age-band.active-band{border-color:var(--p);background:rgba(123,63,242,0.12);}
+.age-num{font-size:22px;font-weight:800;color:var(--pl);min-width:100px;}
+.age-title{font-size:23px;font-weight:600;color:#fff;}
+.age-sub{font-size:19px;color:rgba(255,255,255,0.45);}
+.age-pill{margin-left:auto;padding:6px 14px;background:var(--p);border-radius:10px;font-size:18px;font-weight:700;color:#fff;white-space:nowrap;}
+
+.coach-msgs{display:flex;flex-direction:column;gap:16px;padding:22px 28px;}
+.coach-day{
+  background:rgba(255,255,255,0.06);border-radius:20px;
+  padding:20px;border:1.5px solid rgba(255,255,255,0.08);
+}
+.coach-num{font-size:20px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:1px;}
+.coach-title{font-size:26px;font-weight:700;color:#fff;margin-top:6px;}
+.coach-body{font-size:20px;color:rgba(255,255,255,0.55);line-height:1.5;margin-top:8px;}
+.coach-progress{margin-top:14px;}
+.cp-bar{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;}
+.cp-fill{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--p),var(--acc));}
+
+/* ── Bottom CTA ── */
+.bottom-cta{text-align:center;}
+.bottom-cta .stars{font-size:42px;margin-bottom:16px;}
+.bottom-cta .tag{
+  display:inline-flex;align-items:center;gap:12px;
+  background:linear-gradient(120deg,var(--p),var(--acc));
+  color:#fff;font-size:36px;font-weight:700;
+  padding:22px 52px;border-radius:60px;letter-spacing:-0.5px;
+}
+.bottom-cta .sub{margin-top:20px;font-size:32px;color:rgba(255,255,255,0.45);}
+
+/* ── Amy mascot SVG bird ── */
+.amy-hero{font-size:200px;line-height:1;text-align:center;filter:drop-shadow(0 0 40px rgba(255,78,205,0.5));}
+
+/* ── Floating feature pills ── */
+.feat-pills{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;max-width:1060px;}
+.feat-pill{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,0.06);
+  border:1.5px solid rgba(255,255,255,0.12);
+  border-radius:40px;padding:16px 32px;
+  font-size:30px;font-weight:600;color:rgba(255,255,255,0.8);
+  backdrop-filter:blur(8px);
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 1 · HERO ═══ -->
+<div class="slide bg-hero active" id="s1">
+  <div class="orb orb-p" style="width:900px;height:900px;top:-200px;left:-200px;opacity:0.5;"></div>
+  <div class="orb orb-a" style="width:700px;height:700px;bottom:-100px;right:-200px;opacity:0.4;"></div>
+
+  <div class="top-badge"><div class="dot"></div>Trusted by 10,000+ Parents</div>
+
+  <div class="amy-hero">🐦‍🟦</div>
+
+  <div class="headline">
+    <h1>Your AI<br/><span class="grad">Parenting</span><br/>Partner</h1>
+    <p>Routines · Nutrition · Coaching<br/>Learning · Behavior — all in one place</p>
+  </div>
+
+  <div class="feat-pills">
+    <div class="feat-pill">💜 Ask AMY</div>
+    <div class="feat-pill">📅 Daily Routines</div>
+    <div class="feat-pill">🥗 Nutrition Hub</div>
+    <div class="feat-pill">📊 Insights</div>
+    <div class="feat-pill">🧠 Spelling</div>
+    <div class="feat-pill">🏆 Coaching</div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="stars">⭐⭐⭐⭐⭐</div>
+    <div class="tag">Free to Download</div>
+    <div class="sub">Available on iOS & Android</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 2 · ASK AMY ═══ -->
+<div class="slide bg-dark" id="s2">
+  <div class="orb orb-p" style="width:700px;height:700px;top:-150px;right:-200px;opacity:0.4;"></div>
+  <div class="orb orb-a" style="width:500px;height:500px;bottom:200px;left:-150px;opacity:0.3;"></div>
+
+  <div class="top-badge"><div class="dot"></div>AI-Powered Parenting Mode</div>
+
+  <div class="headline" style="text-align:left;max-width:1060px;">
+    <h1 style="font-size:92px;">Ask <span class="grad">AMY</span><br/>Anything</h1>
+    <p style="font-size:40px;">Get warm, expert parenting<br/>advice in seconds — any time.</p>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-glow"></div>
+      <div class="screen">
+        <div class="status-bar"><span class="sb-time">9:41</span><span class="sb-icons">●●●</span></div>
+        <div class="section-header">Ask AMY</div>
+        <div class="chip-row">
+          <div class="chip active">💜 Parenting</div>
+          <div class="chip">🎓 Teach</div>
+          <div class="chip">🧠 Quiz</div>
+        </div>
+        <div style="padding:0 28px;font-size:20px;font-style:italic;color:rgba(255,255,255,0.45);">Get smart parenting guidance</div>
+        <div class="msg-list">
+          <div class="msg user">My 5-year-old has a huge tantrum every night at bedtime 😩</div>
+          <div class="msg amy">That's so exhausting! Bedtime resistance at 5 is really common — here's what works best:<br/><br/>✅ Start a 20-min wind-down at 7 pm<br/>✅ Give 2 small choices (pyjamas first or brush teeth?)<br/>✅ One calm story, then lights dim<br/><br/>The magic is making it feel <em>their</em> idea 💜</div>
+          <div class="msg user">What about screen time before bed?</div>
+          <div class="msg amy">Screens emit blue light that blocks melatonin — the sleep hormone. Try switching off 1 hour before bed and replacing with a puzzle or drawing. You'll see a difference in 3–5 days! 🌙</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="tag">💬 Warm · Practical · Expert</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 3 · ROUTINES ═══ -->
+<div class="slide bg-dark" id="s3">
+  <div class="orb orb-p" style="width:600px;height:600px;top:-100px;left:-150px;opacity:0.4;"></div>
+  <div class="orb orb-a" style="width:500px;height:500px;bottom:100px;right:-150px;opacity:0.3;"></div>
+
+  <div class="top-badge"><div class="dot"></div>AI-Generated Daily Plans</div>
+
+  <div class="headline">
+    <h1>Smart <span class="grad">Daily</span><br/>Routines</h1>
+    <p>Age-appropriate schedules<br/>built by AI in seconds</p>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-glow"></div>
+      <div class="screen">
+        <div class="status-bar"><span class="sb-time">9:41</span><span class="sb-icons">●●●</span></div>
+        <div class="section-header">Today · Aarav, 6 yrs</div>
+        <div class="routine-list">
+          <div class="routine-item">
+            <div class="ri-time">7:00 AM</div>
+            <div class="ri-body"><div class="ri-title">Morning Wake-up</div><div class="ri-sub">Stretch + fresh water 💧</div></div>
+            <div class="ri-badge done">Done ✓</div>
+          </div>
+          <div class="routine-item" style="border-color:var(--p);background:rgba(123,63,242,0.1);">
+            <div class="ri-time">7:30 AM</div>
+            <div class="ri-body"><div class="ri-title">Breakfast + Vitamins</div><div class="ri-sub">Oats with banana 🍌</div></div>
+            <div class="ri-badge now">NOW</div>
+          </div>
+          <div class="routine-item">
+            <div class="ri-time">8:00 AM</div>
+            <div class="ri-body"><div class="ri-title">School Prep</div><div class="ri-sub">Bag check + shoes 🎒</div></div>
+          </div>
+          <div class="routine-item">
+            <div class="ri-time">3:30 PM</div>
+            <div class="ri-body"><div class="ri-title">After-school Snack</div><div class="ri-sub">Fruit + rest time 🍎</div></div>
+          </div>
+          <div class="routine-item">
+            <div class="ri-time">4:00 PM</div>
+            <div class="ri-body"><div class="ri-title">Homework Hour</div><div class="ri-sub">Math + reading 📚</div></div>
+          </div>
+          <div class="routine-item">
+            <div class="ri-time">8:30 PM</div>
+            <div class="ri-body"><div class="ri-title">Bedtime Wind-down</div><div class="ri-sub">Story + lights out 🌙</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="tag">📅 Tap. Schedule. Done.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 4 · NUTRITION ═══ -->
+<div class="slide bg-mint" id="s4">
+  <div class="orb" style="width:600px;height:600px;top:-100px;right:-100px;opacity:0.35;background:rgba(16,185,129,0.4);filter:blur(90px);"></div>
+  <div class="orb orb-p" style="width:400px;height:400px;bottom:100px;left:-100px;opacity:0.3;"></div>
+
+  <div class="top-badge"><div class="dot" style="background:#4ade80;"></div>Age-Wise Nutrition Plans</div>
+
+  <div class="headline">
+    <h1>Healthy <span class="grad">Meals</span><br/>Every Day</h1>
+    <p>Indian recipes tailored to<br/>your child's age &amp; needs</p>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-glow"></div>
+      <div class="screen">
+        <div class="status-bar"><span class="sb-time">9:41</span><span class="sb-icons">●●●</span></div>
+        <div class="section-header">Today's Nutrition · Age 6</div>
+        <div style="padding:14px 28px 0;">
+          <div style="background:rgba(74,222,128,0.1);border:1.5px solid rgba(74,222,128,0.2);border-radius:16px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:22px;font-weight:600;color:#4ade80;">Daily Score</span>
+            <span style="font-size:28px;font-weight:800;color:#4ade80;">78 / 100 🌟</span>
+          </div>
+        </div>
+        <div class="meal-grid">
+          <div class="meal-card">
+            <div class="meal-emoji">🥣</div>
+            <div class="meal-name">Oats Porridge</div>
+            <div class="meal-cal">220 kcal</div>
+            <div class="meal-tag">Breakfast</div>
+          </div>
+          <div class="meal-card">
+            <div class="meal-emoji">🍱</div>
+            <div class="meal-name">Dal Chawal</div>
+            <div class="meal-cal">380 kcal</div>
+            <div class="meal-tag">Lunch</div>
+          </div>
+          <div class="meal-card">
+            <div class="meal-emoji">🍌</div>
+            <div class="meal-name">Banana + Milk</div>
+            <div class="meal-cal">160 kcal</div>
+            <div class="meal-tag">Snack</div>
+          </div>
+          <div class="meal-card">
+            <div class="meal-emoji">🫓</div>
+            <div class="meal-name">Roti + Sabzi</div>
+            <div class="meal-cal">340 kcal</div>
+            <div class="meal-tag">Dinner</div>
+          </div>
+        </div>
+        <div style="padding:0 28px;">
+          <div class="ins-card">
+            <div class="ins-top"><span class="ins-label">Protein</span><span class="ins-val">28g / 35g</span></div>
+            <div class="ins-bar-bg"><div class="ins-bar" style="width:80%;background:linear-gradient(90deg,#4ade80,#22c55e);"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="tag">🥗 Smart Indian Meal Plans</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 5 · BEHAVIOR ═══ -->
+<div class="slide bg-rose" id="s5">
+  <div class="orb" style="width:500px;height:500px;top:-80px;right:-100px;opacity:0.3;background:rgba(239,68,68,0.35);filter:blur(90px);"></div>
+  <div class="orb orb-p" style="width:500px;height:500px;bottom:200px;left:-120px;opacity:0.3;"></div>
+
+  <div class="top-badge"><div class="dot" style="background:#f87171;"></div>Behavior Tracking</div>
+
+  <div class="headline">
+    <h1><span class="grad">Track</span> &amp;<br/>Celebrate<br/>Growth</h1>
+    <p>Log behaviors, spot patterns,<br/>and get AI-driven insights</p>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-glow"></div>
+      <div class="screen">
+        <div class="status-bar"><span class="sb-time">9:41</span><span class="sb-icons">●●●</span></div>
+        <div class="section-header">Today · Aarav</div>
+        <div style="padding:14px 28px 0;display:flex;gap:14px;">
+          <div style="flex:1;background:rgba(74,222,128,0.1);border:1.5px solid rgba(74,222,128,0.2);border-radius:14px;padding:14px;text-align:center;">
+            <div style="font-size:34px;font-weight:800;color:#4ade80;">3</div>
+            <div style="font-size:19px;color:rgba(255,255,255,0.5);">Positive</div>
+          </div>
+          <div style="flex:1;background:rgba(239,68,68,0.1);border:1.5px solid rgba(239,68,68,0.15);border-radius:14px;padding:14px;text-align:center;">
+            <div style="font-size:34px;font-weight:800;color:#f87171;">1</div>
+            <div style="font-size:19px;color:rgba(255,255,255,0.5);">Needs Work</div>
+          </div>
+          <div style="flex:1;background:rgba(251,191,36,0.1);border:1.5px solid rgba(251,191,36,0.15);border-radius:14px;padding:14px;text-align:center;">
+            <div style="font-size:34px;font-weight:800;color:#fbbf24;">2</div>
+            <div style="font-size:19px;color:rgba(255,255,255,0.5);">Neutral</div>
+          </div>
+        </div>
+        <div class="behavior-list">
+          <div class="beh-item">
+            <div class="beh-icon">✅</div>
+            <div class="beh-body"><div class="beh-title">Finished homework</div><div class="beh-sub">Without reminders</div></div>
+            <div class="beh-badge pos">+</div>
+          </div>
+          <div class="beh-item">
+            <div class="beh-icon">💜</div>
+            <div class="beh-body"><div class="beh-title">Helped younger sibling</div><div class="beh-sub">Showed empathy</div></div>
+            <div class="beh-badge pos">+</div>
+          </div>
+          <div class="beh-item">
+            <div class="beh-icon">😤</div>
+            <div class="beh-body"><div class="beh-title">Screen time argument</div><div class="beh-sub">Evening frustration</div></div>
+            <div class="beh-badge neg">–</div>
+          </div>
+          <div class="beh-item">
+            <div class="beh-icon">🌙</div>
+            <div class="beh-body"><div class="beh-title">Bedtime resistance</div><div class="beh-sub">15 min delay</div></div>
+            <div class="beh-badge neu">~</div>
+          </div>
+          <div class="beh-item">
+            <div class="beh-icon">🤸</div>
+            <div class="beh-body"><div class="beh-title">Morning routine</div><div class="beh-sub">On time, no prompt</div></div>
+            <div class="beh-badge pos">+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="tag">📊 Know Your Child Better</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 6 · SPELLING ═══ -->
+<div class="slide bg-ocean" id="s6">
+  <div class="orb" style="width:600px;height:600px;top:-100px;left:-100px;opacity:0.35;background:rgba(14,165,233,0.4);filter:blur(90px);"></div>
+  <div class="orb orb-p" style="width:500px;height:500px;bottom:0;right:-100px;opacity:0.3;"></div>
+
+  <div class="top-badge"><div class="dot" style="background:#38bdf8;"></div>Spelling Mastery</div>
+
+  <div class="headline">
+    <h1>Fun <span class="grad">Learning</span><br/>for Every<br/>Age</h1>
+    <p>Adaptive spelling, quizzes<br/>and moral stories for kids</p>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-glow"></div>
+      <div class="screen">
+        <div class="status-bar"><span class="sb-time">9:41</span><span class="sb-icons">●●●</span></div>
+        <div class="section-header">Spelling Mastery · Level 3</div>
+        <div style="padding:10px 28px;">
+          <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:12px;">
+            <span style="font-size:20px;color:rgba(255,255,255,0.5);">Streak</span>
+            <span style="font-size:24px;font-weight:800;color:#fbbf24;">🔥 12 days</span>
+            <span style="margin-left:auto;font-size:20px;color:rgba(255,255,255,0.5);">Score</span>
+            <span style="font-size:24px;font-weight:800;color:#4ade80;">840 pts</span>
+          </div>
+        </div>
+        <div class="spelling-ui">
+          <div class="spell-card">
+            <div style="font-size:20px;color:rgba(255,255,255,0.5);margin-bottom:8px;">🔊 Listen and spell the word</div>
+            <div class="spell-word">E L E P H A N T</div>
+            <div class="spell-hint">An animal with a long trunk 🐘</div>
+          </div>
+          <div style="font-size:22px;font-weight:600;color:rgba(255,255,255,0.6);padding:0 4px;">Choose the correct spelling:</div>
+          <div class="spell-opts">
+            <div class="spell-opt">Elefant</div>
+            <div class="spell-opt correct">Elephant ✓</div>
+            <div class="spell-opt">Elephent</div>
+            <div class="spell-opt">Elifant</div>
+          </div>
+          <div style="background:rgba(74,222,128,0.12);border:1.5px solid rgba(74,222,128,0.25);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:14px;">
+            <span style="font-size:32px;">🎉</span>
+            <span style="font-size:22px;font-weight:700;color:#4ade80;">Brilliant! +10 points</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="tag">🧠 Learn · Practice · Win</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 7 · HUB ═══ -->
+<div class="slide bg-dark" id="s7">
+  <div class="orb orb-p" style="width:700px;height:700px;top:-200px;right:-150px;opacity:0.4;"></div>
+  <div class="orb orb-a" style="width:500px;height:500px;bottom:0;left:-100px;opacity:0.3;"></div>
+
+  <div class="top-badge"><div class="dot"></div>Parent Hub · Age-Wise Guidance</div>
+
+  <div class="headline">
+    <h1>Grows With<br/>Your <span class="grad">Child</span></h1>
+    <p>Expert content for every<br/>age — from infant to teen</p>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-glow"></div>
+      <div class="screen">
+        <div class="status-bar"><span class="sb-time">9:41</span><span class="sb-icons">●●●</span></div>
+        <div class="section-header">Parenting Hub · Aarav</div>
+        <div class="age-bands">
+          <div class="age-band">
+            <div style="font-size:28px;">👶</div>
+            <div><div class="age-title">Infant Stage</div><div class="age-sub" style="font-size:17px;">0–1 yr • Sleep &amp; feeding</div></div>
+          </div>
+          <div class="age-band">
+            <div style="font-size:28px;">🧒</div>
+            <div><div class="age-title">Toddler Stage</div><div class="age-sub" style="font-size:17px;">2–3 yrs • Language &amp; play</div></div>
+          </div>
+          <div class="age-band active-band">
+            <div style="font-size:28px;">🏫</div>
+            <div><div class="age-title">School-Age</div><div class="age-sub" style="font-size:17px;">4–7 yrs • Habits &amp; learning</div></div>
+            <div class="age-pill">Current</div>
+          </div>
+          <div class="age-band" style="opacity:0.45;">
+            <div style="font-size:28px;">🎒</div>
+            <div><div class="age-title">Pre-Teen</div><div class="age-sub" style="font-size:17px;">8–12 yrs • Independence</div></div>
+            <div style="margin-left:auto;font-size:18px;color:rgba(255,255,255,0.35);white-space:nowrap;">Coming Next ›</div>
+          </div>
+          <div class="age-band" style="opacity:0.3;">
+            <div style="font-size:28px;">🧑‍🎓</div>
+            <div><div class="age-title">Teen Stage</div><div class="age-sub" style="font-size:17px;">13–18 yrs • Life skills</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="tag">🌱 Birth to 18 — Covered</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 8 · INSIGHTS ═══ -->
+<div class="slide bg-dark" id="s8">
+  <div class="orb orb-p" style="width:600px;height:600px;bottom:100px;right:-150px;opacity:0.4;"></div>
+  <div class="orb orb-a" style="width:500px;height:500px;top:-100px;left:-100px;opacity:0.3;"></div>
+
+  <div class="top-badge"><div class="dot"></div>Progress &amp; Insights</div>
+
+  <div class="headline">
+    <h1>Data-Driven<br/><span class="grad">Parenting</span></h1>
+    <p>Weekly reports, streak tracking<br/>and rule-based insights</p>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-glow"></div>
+      <div class="screen">
+        <div class="status-bar"><span class="sb-time">9:41</span><span class="sb-icons">●●●</span></div>
+        <div class="section-header">This Week · Aarav</div>
+        <div style="padding:14px 28px 0;display:flex;gap:14px;">
+          <div style="flex:1;background:rgba(123,63,242,0.15);border:1.5px solid rgba(123,63,242,0.3);border-radius:16px;padding:16px;text-align:center;">
+            <div style="font-size:38px;font-weight:900;color:var(--pl);">🔥 12</div>
+            <div style="font-size:19px;color:rgba(255,255,255,0.5);margin-top:4px;">Day Streak</div>
+          </div>
+          <div style="flex:1;background:rgba(74,222,128,0.1);border:1.5px solid rgba(74,222,128,0.2);border-radius:16px;padding:16px;text-align:center;">
+            <div style="font-size:38px;font-weight:900;color:#4ade80;">87%</div>
+            <div style="font-size:19px;color:rgba(255,255,255,0.5);margin-top:4px;">Routine</div>
+          </div>
+          <div style="flex:1;background:rgba(251,191,36,0.1);border:1.5px solid rgba(251,191,36,0.15);border-radius:16px;padding:16px;text-align:center;">
+            <div style="font-size:38px;font-weight:900;color:#fbbf24;">840</div>
+            <div style="font-size:19px;color:rgba(255,255,255,0.5);margin-top:4px;">Points</div>
+          </div>
+        </div>
+        <div class="insight-list">
+          <div class="ins-card">
+            <div class="ins-top"><span class="ins-label">Routine Completion</span><span class="ins-val">87%</span></div>
+            <div class="ins-bar-bg"><div class="ins-bar" style="width:87%;"></div></div>
+          </div>
+          <div class="ins-card">
+            <div class="ins-top"><span class="ins-label">Positive Behaviors</span><span class="ins-val">14 / 7 days</span></div>
+            <div class="ins-bar-bg"><div class="ins-bar" style="width:75%;background:linear-gradient(90deg,#4ade80,#22c55e);"></div></div>
+          </div>
+          <div class="ins-card">
+            <div class="ins-top"><span class="ins-label">Nutrition Score</span><span class="ins-val">78 / 100</span></div>
+            <div class="ins-bar-bg"><div class="ins-bar" style="width:78%;background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div></div>
+          </div>
+          <div class="ins-card">
+            <div class="ins-top"><span class="ins-label">Spelling Mastery</span><span class="ins-val">Level 3</span></div>
+            <div class="ins-bar-bg"><div class="ins-bar" style="width:60%;background:linear-gradient(90deg,#38bdf8,#0ea5e9);"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="tag">📊 See Your Child Thrive</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 9 · COACH ═══ -->
+<div class="slide bg-dark" id="s9">
+  <div class="orb orb-a" style="width:700px;height:700px;top:-200px;right:-150px;opacity:0.35;"></div>
+  <div class="orb orb-p" style="width:500px;height:500px;bottom:0;left:-100px;opacity:0.3;"></div>
+
+  <div class="top-badge"><div class="dot"></div>Amy Coach · Personal Coaching</div>
+
+  <div class="headline">
+    <h1>Your Personal<br/><span class="grad">Parenting</span><br/>Coach</h1>
+    <p>12-step behavior change plans<br/>built by child psychology experts</p>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-glow"></div>
+      <div class="screen">
+        <div class="status-bar"><span class="sb-time">9:41</span><span class="sb-icons">●●●</span></div>
+        <div class="section-header">Amy Coach</div>
+        <div style="padding:10px 28px;">
+          <div style="background:rgba(255,78,205,0.1);border:1.5px solid rgba(255,78,205,0.2);border-radius:14px;padding:12px 16px;">
+            <div style="font-size:20px;font-weight:600;color:var(--acc);">CURRENT GOAL</div>
+            <div style="font-size:25px;font-weight:700;color:#fff;margin-top:4px;">Reduce Bedtime Resistance</div>
+            <div style="margin-top:10px;">
+              <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;">
+                <div style="height:8px;width:33%;border-radius:4px;background:linear-gradient(90deg,var(--p),var(--acc));"></div>
+              </div>
+              <div style="font-size:18px;color:rgba(255,255,255,0.45);margin-top:6px;">Step 4 of 12 · Keep going! 🔥</div>
+            </div>
+          </div>
+        </div>
+        <div class="coach-msgs">
+          <div class="coach-day">
+            <div class="coach-num">✅ Win 3 — Completed</div>
+            <div class="coach-title">The Power of Choice</div>
+            <div class="coach-body">Giving small choices returns control to your child and reduces resistance by up to 60%.</div>
+          </div>
+          <div class="coach-day" style="border-color:var(--p);background:rgba(123,63,242,0.1);">
+            <div class="coach-num" style="color:var(--pl);">🟣 Win 4 — Today</div>
+            <div class="coach-title">The Wind-Down Ritual</div>
+            <div class="coach-body">A consistent 20-minute pre-sleep routine trains your child's brain to expect sleep — and welcome it.</div>
+            <div style="margin-top:12px;display:inline-block;padding:8px 18px;background:var(--p);border-radius:10px;font-size:20px;font-weight:700;color:#fff;">Start Today's Practice →</div>
+          </div>
+          <div class="coach-day" style="opacity:0.5;">
+            <div class="coach-num">🔒 Win 5 — Upcoming</div>
+            <div class="coach-title">Emotional Labeling</div>
+            <div class="coach-body">Help your child name their feelings to reduce meltdowns.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="tag">🏆 Science-Backed Coaching</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 10 · CTA ═══ -->
+<div class="slide bg-hero" id="s10">
+  <div class="orb orb-p" style="width:1000px;height:1000px;top:-300px;left:50%;transform:translateX(-50%);opacity:0.5;"></div>
+  <div class="orb orb-a" style="width:600px;height:600px;bottom:-100px;right:-150px;opacity:0.4;"></div>
+
+  <div class="top-badge"><div class="dot"></div>Free Download · Premium Features</div>
+
+  <div class="headline">
+    <h1>Start Your<br/><span class="grad">Parenting</span><br/>Journey<br/>Today</h1>
+    <p style="font-size:50px;">Join thousands of families<br/>raising happy, healthy kids</p>
+  </div>
+
+  <div class="feat-pills">
+    <div class="feat-pill">💬 Ask AMY — Free</div>
+    <div class="feat-pill">📅 Daily Routines — Free</div>
+    <div class="feat-pill">🥗 Nutrition Hub — Free</div>
+    <div class="feat-pill">📊 Behavior Tracking</div>
+    <div class="feat-pill">🧠 Spelling Mastery</div>
+    <div class="feat-pill">🏆 Amy Coach</div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="stars" style="font-size:56px;">⭐⭐⭐⭐⭐</div>
+    <div style="margin-top:16px;font-size:32px;color:rgba(255,255,255,0.5);">"Best parenting app I've used"</div>
+    <div class="tag" style="margin-top:30px;font-size:42px;padding:28px 70px;">📲 Download AmyNest — Free</div>
+    <div class="sub">Available on iOS &amp; Android</div>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const n = parseInt(params.get('n') || '1', 10);
+  document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('s' + n);
+  if (target) target.classList.add('active');
+</script>
+</body>
+</html>
