@@ -19,6 +19,10 @@ import {
   LogChildDailySignalParams,
   LogChildDailySignalBody,
   LogChildDailySignalResponse,
+  GetChildWeeklyReportParams,
+  GetChildWeeklyReportResponse,
+  GetChildIntelligenceInsightsParams,
+  GetChildIntelligenceInsightsResponse,
 } from "@workspace/api-zod";
 import {
   loadOwnedChild,
@@ -28,6 +32,11 @@ import {
   recomputeAndPersistEnergyProfile,
   type ParentGoalCode,
 } from "../services/childIntelligenceService.js";
+import {
+  computeWeeklyReport,
+  computeRiskWindows,
+  computeBehaviorCorrelation,
+} from "../services/intelligenceAnalytics.js";
 
 const router: IRouter = Router();
 
@@ -136,6 +145,55 @@ router.post("/child-intelligence/:childId/signal", async (req, res): Promise<voi
     return;
   }
   res.json(LogChildDailySignalResponse.parse(snapshot));
+});
+
+router.get("/child-intelligence/:childId/weekly-report", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const params = GetChildWeeklyReportParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const child = await loadOwnedChild(params.data.childId, userId);
+  if (!child) {
+    res.status(404).json({ error: "Child not found" });
+    return;
+  }
+  const report = await computeWeeklyReport(params.data.childId);
+  res.json(GetChildWeeklyReportResponse.parse(report));
+});
+
+router.get("/child-intelligence/:childId/insights", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const params = GetChildIntelligenceInsightsParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const child = await loadOwnedChild(params.data.childId, userId);
+  if (!child) {
+    res.status(404).json({ error: "Child not found" });
+    return;
+  }
+  const [riskWindows, correlations] = await Promise.all([
+    computeRiskWindows(params.data.childId),
+    computeBehaviorCorrelation(params.data.childId),
+  ]);
+  res.json(
+    GetChildIntelligenceInsightsResponse.parse({
+      childId: params.data.childId,
+      riskWindows,
+      correlations,
+    }),
+  );
 });
 
 export default router;

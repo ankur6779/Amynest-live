@@ -1852,3 +1852,94 @@ export const LogChildDailySignalResponse = zod
   .describe(
     "Snapshot of a child's adaptive intelligence — goals, derived energy profile, and recent daily signals.",
   );
+
+/**
+ * @summary 7-day rollup of signals + completion + goal progress, with deltas vs the prior 7 days.
+ */
+export const GetChildWeeklyReportParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const GetChildWeeklyReportResponse = zod
+  .object({
+    childId: zod.number(),
+    rangeStart: zod.string(),
+    rangeEnd: zod.string(),
+    signalDays: zod.number(),
+    streakDays: zod.number(),
+    averages: zod.object({
+      mood: zod.number().nullable(),
+      focusScore: zod.number().nullable(),
+      sleepQuality: zod.number().nullable(),
+      completionPct: zod.number().nullable(),
+      screenMinutes: zod.number().nullable(),
+      tantrumsPerDay: zod.number().nullable(),
+    }),
+    deltas: zod.object({
+      mood: zod.number().nullable(),
+      focusScore: zod.number().nullable(),
+      sleepQuality: zod.number().nullable(),
+      completionPct: zod.number().nullable(),
+      tantrumsPerDay: zod.number().nullable(),
+    }),
+    goalProgress: zod.array(
+      zod.object({
+        goal: zod.enum([
+          "improve_sleep",
+          "reduce_tantrums",
+          "improve_focus",
+          "reduce_screen_time",
+          "increase_independence",
+        ]),
+        direction: zod.enum(["up", "down", "flat", "unknown"]),
+        note: zod.string(),
+      }),
+    ),
+  })
+  .describe(
+    "7-day rollup of behavioural signals and goal progress, with deltas vs the prior 7 days.",
+  );
+
+/**
+ * @summary Risk-window predictions and behavior↔routine correlations.
+ */
+export const GetChildIntelligenceInsightsParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const getChildIntelligenceInsightsResponseRiskWindowsItemStartHourMin = 0;
+export const getChildIntelligenceInsightsResponseRiskWindowsItemStartHourMax = 23;
+
+export const getChildIntelligenceInsightsResponseRiskWindowsItemEndHourMin = 0;
+export const getChildIntelligenceInsightsResponseRiskWindowsItemEndHourMax = 24;
+
+export const GetChildIntelligenceInsightsResponse = zod
+  .object({
+    childId: zod.number(),
+    riskWindows: zod.array(
+      zod.object({
+        startHour: zod
+          .number()
+          .min(getChildIntelligenceInsightsResponseRiskWindowsItemStartHourMin)
+          .max(getChildIntelligenceInsightsResponseRiskWindowsItemStartHourMax),
+        endHour: zod
+          .number()
+          .min(getChildIntelligenceInsightsResponseRiskWindowsItemEndHourMin)
+          .max(getChildIntelligenceInsightsResponseRiskWindowsItemEndHourMax),
+        negativeCount: zod.number(),
+        daysObserved: zod.number(),
+        suggestion: zod.string(),
+      }),
+    ),
+    correlations: zod.array(
+      zod.object({
+        category: zod.string(),
+        positive: zod.number(),
+        negative: zod.number(),
+        net: zod.number(),
+      }),
+    ),
+  })
+  .describe(
+    "Risk windows + activity↔behavior correlations from the last 14–30 days.",
+  );

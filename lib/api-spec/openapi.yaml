@@ -794,6 +794,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/ChildIntelligenceResponse"
 
+  /child-intelligence/{childId}/weekly-report:
+    get:
+      operationId: getChildWeeklyReport
+      tags: [child-intelligence]
+      summary: 7-day rollup of signals + completion + goal progress, with deltas vs the prior 7 days.
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Weekly intelligence report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyReportResponse"
+
+  /child-intelligence/{childId}/insights:
+    get:
+      operationId: getChildIntelligenceInsights
+      tags: [child-intelligence]
+      summary: Risk-window predictions and behavior↔routine correlations.
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Insights bundle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntelligenceInsightsResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -2153,6 +2191,142 @@ components:
         notes:
           type: string
           nullable: true
+
+    WeeklyReportAverages:
+      type: object
+      properties:
+        mood:
+          type: number
+          nullable: true
+        focusScore:
+          type: number
+          nullable: true
+        sleepQuality:
+          type: number
+          nullable: true
+        completionPct:
+          type: number
+          nullable: true
+        screenMinutes:
+          type: number
+          nullable: true
+        tantrumsPerDay:
+          type: number
+          nullable: true
+      required: [mood, focusScore, sleepQuality, completionPct, screenMinutes, tantrumsPerDay]
+
+    WeeklyReportDeltas:
+      type: object
+      properties:
+        mood:
+          type: number
+          nullable: true
+        focusScore:
+          type: number
+          nullable: true
+        sleepQuality:
+          type: number
+          nullable: true
+        completionPct:
+          type: number
+          nullable: true
+        tantrumsPerDay:
+          type: number
+          nullable: true
+      required: [mood, focusScore, sleepQuality, completionPct, tantrumsPerDay]
+
+    WeeklyReportGoalProgress:
+      type: object
+      properties:
+        goal:
+          type: string
+          enum: [improve_sleep, reduce_tantrums, improve_focus, reduce_screen_time, increase_independence]
+        direction:
+          type: string
+          enum: [up, down, flat, unknown]
+        note:
+          type: string
+      required: [goal, direction, note]
+
+    WeeklyReportResponse:
+      type: object
+      description: 7-day rollup of behavioural signals and goal progress, with deltas vs the prior 7 days.
+      properties:
+        childId:
+          type: integer
+        rangeStart:
+          type: string
+        rangeEnd:
+          type: string
+        signalDays:
+          type: integer
+        streakDays:
+          type: integer
+        averages:
+          $ref: "#/components/schemas/WeeklyReportAverages"
+        deltas:
+          $ref: "#/components/schemas/WeeklyReportDeltas"
+        goalProgress:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeeklyReportGoalProgress"
+      required:
+        - childId
+        - rangeStart
+        - rangeEnd
+        - signalDays
+        - streakDays
+        - averages
+        - deltas
+        - goalProgress
+
+    RiskWindow:
+      type: object
+      properties:
+        startHour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        endHour:
+          type: integer
+          minimum: 0
+          maximum: 24
+        negativeCount:
+          type: integer
+        daysObserved:
+          type: integer
+        suggestion:
+          type: string
+      required: [startHour, endHour, negativeCount, daysObserved, suggestion]
+
+    BehaviorCorrelation:
+      type: object
+      properties:
+        category:
+          type: string
+        positive:
+          type: integer
+        negative:
+          type: integer
+        net:
+          type: integer
+      required: [category, positive, negative, net]
+
+    IntelligenceInsightsResponse:
+      type: object
+      description: Risk windows + activity↔behavior correlations from the last 14–30 days.
+      properties:
+        childId:
+          type: integer
+        riskWindows:
+          type: array
+          items:
+            $ref: "#/components/schemas/RiskWindow"
+        correlations:
+          type: array
+          items:
+            $ref: "#/components/schemas/BehaviorCorrelation"
+      required: [childId, riskWindows, correlations]
 
     SmartStudyInsights:
       type: object

@@ -166,6 +166,49 @@ describe("child-intelligence routes — smoke", () => {
     });
     assert.equal(res.status, 400);
   });
+
+  it("GET weekly-report returns rollup with averages, deltas, goalProgress", async () => {
+    const res = await fetch(`${baseUrl}/child-intelligence/${childId}/weekly-report`);
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as {
+      childId: number;
+      rangeStart: string;
+      rangeEnd: string;
+      signalDays: number;
+      streakDays: number;
+      averages: Record<string, number | null>;
+      deltas: Record<string, number | null>;
+      goalProgress: Array<{ goal: string; direction: string; note: string }>;
+    };
+    assert.equal(body.childId, childId);
+    assert.ok(typeof body.signalDays === "number");
+    assert.ok("mood" in body.averages);
+    assert.ok("mood" in body.deltas);
+    assert.ok(Array.isArray(body.goalProgress));
+  });
+
+  it("GET weekly-report returns 404 for a child the caller does not own", async () => {
+    const res = await fetch(`${baseUrl}/child-intelligence/${otherChildId}/weekly-report`);
+    assert.equal(res.status, 404);
+  });
+
+  it("GET insights returns riskWindows + correlations arrays", async () => {
+    const res = await fetch(`${baseUrl}/child-intelligence/${childId}/insights`);
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as {
+      childId: number;
+      riskWindows: unknown[];
+      correlations: unknown[];
+    };
+    assert.equal(body.childId, childId);
+    assert.ok(Array.isArray(body.riskWindows));
+    assert.ok(Array.isArray(body.correlations));
+  });
+
+  it("GET insights returns 404 for a child the caller does not own", async () => {
+    const res = await fetch(`${baseUrl}/child-intelligence/${otherChildId}/insights`);
+    assert.equal(res.status, 404);
+  });
 });
 
 describe("deriveEnergyProfile — heuristic", () => {

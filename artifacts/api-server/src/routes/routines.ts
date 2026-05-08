@@ -38,6 +38,10 @@ import {
   type EnergyProfile,
 } from "../services/childIntelligenceService.js";
 import { buildAdaptations } from "../lib/routineAdaptations.js";
+import {
+  applyEnergyCurveToItems,
+  type AnalyticsRoutineItem,
+} from "../services/intelligenceAnalytics.js";
 
 const CAREGIVER_LABEL: Record<CaregiverKey, string> = {
   mom: "Mom",
@@ -757,10 +761,16 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     isWeekendDay: params.isWeekendDay ?? false,
   });
 
+  // Phase 2: re-anchor learning/rest items to the child's energy curve.
+  const curved = applyEnergyCurveToItems(
+    weatherAdjusted as unknown as AnalyticsRoutineItem[],
+    params.energyProfile ?? null,
+  );
+
   return {
     title: parsed.title,
-    items: weatherAdjusted as RoutineItem[],
-    adaptations,
+    items: curved.items as unknown as RoutineItem[],
+    adaptations: [...adaptations, ...curved.adaptations],
   };
 }
 
@@ -888,10 +898,13 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     } else if (!parsed.data.region && pp?.region) region = pp.region;
   }
 
-  const userCustomRecipes = await db
-    .select()
-    .from(customRecipesTable)
-    .where(eq(customRecipesTable.userId, userId));
+  const [userCustomRecipes, ruleChildIntel] = await Promise.all([
+    db.select().from(customRecipesTable).where(eq(customRecipesTable.userId, userId)),
+    getChildIntelligenceSnapshot(child.id, {
+      parentGoals: (child as { parentGoals?: unknown }).parentGoals,
+      energyProfile: (child as { energyProfile?: unknown }).energyProfile,
+    }),
+  ]);
 
   const generated = generateRuleBasedRoutine({
     region: region as any,
@@ -918,7 +931,20 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     customRecipes: userCustomRecipes,
   });
 
-  res.json(GenerateRoutineResponse.parse(generated));
+  const ruleCurved = applyEnergyCurveToItems(
+    generated.items as any,
+    ruleChildIntel.energyProfile,
+  );
+  res.json(
+    GenerateRoutineResponse.parse({
+      ...generated,
+      items: ruleCurved.items,
+      adaptations: [
+        ...((generated as { adaptations?: string[] }).adaptations ?? []),
+        ...ruleCurved.adaptations,
+      ],
+    }),
+  );
 });
 
 // AI-powered routine generation — uses OpenAI; rate-limited on frontend
@@ -1135,7 +1161,15 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       hasSchool: isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool),
       isWeekendDay,
     });
-    res.json(GenerateRoutineResponse.parse({ ...generated, adaptations }));
+    const curved = applyEnergyCurveToItems(
+      (generated.items ?? []) as unknown as AnalyticsRoutineItem[],
+      childIntel.energyProfile,
+    );
+    res.json(GenerateRoutineResponse.parse({
+      ...generated,
+      items: curved.items as unknown as typeof generated.items,
+      adaptations: [...adaptations, ...curved.adaptations],
+    }));
   }
 });
 
