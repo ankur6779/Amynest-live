@@ -185,9 +185,9 @@ describe("computeProductiveNudges — dedup", () => {
       sample: 10,
     };
     const risks: RiskWindow[] = [
-      { startHour: 17, endHour: 18, negativeCount: 3, suggestion: "risk:afternoon:swap_demanding_for_outdoor" },
+      { startHour: 17, endHour: 18, negativeCount: 3, daysObserved: 3, suggestion: "risk:afternoon:swap_demanding_for_outdoor" },
       // Duplicate startHour — defensive: dedup by id "risk:17" should keep one.
-      { startHour: 17, endHour: 18, negativeCount: 5, suggestion: "risk:afternoon:swap_demanding_for_outdoor" },
+      { startHour: 17, endHour: 18, negativeCount: 5, daysObserved: 5, suggestion: "risk:afternoon:swap_demanding_for_outdoor" },
     ];
     const result = computeProductiveNudges({ weekly: baseWeekly, risks, learning });
     const riskNudges = result.filter((n) => n.id === "risk:17");
