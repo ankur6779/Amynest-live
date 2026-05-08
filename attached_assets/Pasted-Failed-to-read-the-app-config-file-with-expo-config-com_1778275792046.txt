@@ -1,0 +1,23 @@
+Failed to read the app config file with `expo config` command:
+/Users/expo/workingdir/build/node_modules/.pnpm/expo@54.0.33_@babel+core@7.29.0_@expo+metro-runtime@6.1.2_expo-router@6.0.23_react-nati_ef39a591965173e95efc8473d20daf54/node_modules/expo/bin/cli config --json --full --type public exited with non-zero code: 1
+Unable to resolve a valid config plugin for ./plugins/withBlockedPermissions.
+• No "app.plugin.js" file found in ./plugins/withBlockedPermissions: config plugins are typically exported from an "app.plugin.js" file in the package root.
+• main export of ./plugins/withBlockedPermissions does not appear to be a config plugin: the following error was thrown when importing /Users/expo/workingdir/build/artifacts/amynest-mobile/plugins/withBlockedPermissions.js: Cannot find module '@expo/config-plugins'
+Require stack:
+- /Users/expo/workingdir/build/artifacts/amynest-mobile/plugins/withBlockedPermissions.js
+- /usr/local/eas-build-worker/node_modules/@expo/config-plugins/build/utils/plugin-resolver.js
+- /usr/local/eas-build-worker/node_modules/@expo/config-plugins/build/plugins/withStaticPlugin.js
+- /usr/local/eas-build-worker/node_modules/@expo/config-plugins/build/plugins/withPlugins.js
+- /usr/local/eas-build-worker/node_modules/@expo/config-plugins/build/index.js
+- /usr/local/eas-build-worker/packages/build-tools/dist/utils/resolveRuntimeVersionAsync.js
+- /usr/local/eas-build-worker/packages/build-tools/dist/utils/expoUpdates.js
+- /usr/local/eas-build-worker/packages/build-tools/dist/steps/functions/calculateEASUpdateRuntimeVersion.js
+- /usr/local/eas-build-worker/packages/build-tools/dist/steps/functionGroups/build.js
+- /usr/local/eas-build-worker/packages/build-tools/dist/steps/easFunctionGroups.js
+- /usr/local/eas-build-worker/packages/build-tools/dist/builders/custom.js
+- /usr/local/eas-build-worker/packages/build-tools/dist/builders/android.js
+- /usr/local/eas-build-worker/packages/build-tools/dist/builders/index.js
+- /usr/local/eas-build-worker/packages/build-tools/dist/index.js
+- /usr/local/eas-build-worker/packages/worker/dist/config.js
+- /usr/local/eas-build-worker/packages/worker/dist/main.js MODULE_NOT_FOUND
+Verify that ./plugins/withBlockedPermissions includes a config plugin. If it does not, then remove the entry from plugins in your app config file. Learn more: https://docs.expo.dev/guides/config-plugins/
