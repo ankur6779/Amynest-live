@@ -23,13 +23,10 @@ export function subscribeTutorialStatus(fn: (s: Status) => void): () => void {
 }
 
 export async function loadTutorialStatus(): Promise<Status> {
-  try {
-    const v = await AsyncStorage.getItem(TUTORIAL_SEEN_KEY);
-    status = v === "1" ? "done" : "needed";
-  } catch {
-    // Fail open — never block the app on storage errors.
-    status = "done";
-  }
+  // Tutorial flow permanently disabled — skip directly to app.
+  // To re-enable, restore the AsyncStorage read and remove the two lines below.
+  status = "done";
+  try { await AsyncStorage.setItem(TUTORIAL_SEEN_KEY, "1"); } catch { /* ignore */ }
   emit();
   return status;
 }
