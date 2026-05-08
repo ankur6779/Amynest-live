@@ -20,6 +20,7 @@ import FuturePredictor from "@/components/FuturePredictor";
 import AiMealGenerator from "@/components/AiMealGenerator";
 import { DailySignalLogger } from "@/components/intelligence/DailySignalLogger";
 import { WeeklyReportCard } from "@/components/intelligence/WeeklyReportCard";
+import { LearningWeightsCard } from "@/components/intelligence/LearningWeightsCard";
 import colors, { brand, palette } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 
@@ -276,6 +277,12 @@ export default function RoutinesScreen() {
         {effectiveChildId != null && (
           <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
             <WeeklyReportCard childId={effectiveChildId} />
+          </View>
+        )}
+
+        {effectiveChildId != null && (
+          <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+            <LearningWeightsCard childId={effectiveChildId} />
           </View>
         )}
 

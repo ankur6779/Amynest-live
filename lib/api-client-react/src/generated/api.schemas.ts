@@ -939,6 +939,36 @@ export interface IntelligenceInsightsResponse {
   correlations: BehaviorCorrelation[];
 }
 
+/**
+ * Per-category weight in [-1, +1] derived from behavior↔activity correlation.
+ */
+export interface LearningWeightCategory {
+  category: string;
+  weight: number;
+  positive: number;
+  negative: number;
+}
+
+/**
+ * Per-hour completion success rate over the last 14 days.
+ */
+export interface LearningWeightSlotSuccess {
+  hour: number;
+  completionRate: number;
+  sample: number;
+}
+
+/**
+ * Closed-loop learning weights — feeds back into next-day generation.
+ */
+export interface LearningWeightsResponse {
+  childId: number;
+  categoryWeights: LearningWeightCategory[];
+  slotSuccess: LearningWeightSlotSuccess[];
+  lastComputedAt: string;
+  sample: number;
+}
+
 export type SmartStudyInsightsMode =
   (typeof SmartStudyInsightsMode)[keyof typeof SmartStudyInsightsMode];
 
