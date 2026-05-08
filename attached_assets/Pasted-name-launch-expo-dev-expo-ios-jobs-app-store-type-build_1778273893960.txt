@@ -1,0 +1,69 @@
+name: launch.expo.dev/expo/ios
+jobs:
+  app-store:
+    type: build
+    image: sdk-54
+    params:
+      platform: ios
+      profile: production
+    env:
+      LAUNCH_HOST: launch.expo.dev
+      LAUNCH_ID: 2adfed6f-738b-476c-a458-26e8002e39a6
+      LAUNCH_RUN_ID: 243fea4d-8170-4cb1-8216-c895964561df
+      EAS_NO_VCS: '1'
+      COREPACK_DEFAULT_TO_LATEST: '0'
+      COREPACK_ENABLE_AUTO_PIN: '0'
+      COREPACK_ENABLE_STRICT: '0'
+      COREPACK_INTEGRITY_KEYS: '0'
+    steps:
+      - name: 🏗️  Prepare project
+        uses: eas/checkout
+      - name: 🏗️  Prepare Launch
+        run: bun add --global eas-cli @expo/launching@0.0.0-20260508-fee5b025 pod-install
+      - name: 📦  Install dependencies
+        uses: eas/install_node_modules
+        env:
+          EAS_FALLBACK_PACKAGE_MANAGER: bun
+      - name: ⚙️  Configure project
+        run: launching expo:manifest "{\"name\":\"AmyNest AI\",\"slug\":\"amynest-ai\",\"owner\":\"replit-private-daa805a0-a5b2-433a-830a-8bc9e761e470\",\"extra\":{\"eas\":{\"projectId\":\"72266bd6-b9af-48da-8dfd-99e51dd4ebf1\"}},\"ios\":{\"appleTeamId\":\"FH3WT32854\",\"bundleIdentifier\":\"com.amynest.app\",\"infoPlist\":{\"ITSAppUsesNonExemptEncryption\":false}}}"
+      - name: ⚙️  Prebuild Expo project
+        run: launching expo:prebuild --no-install --platform "ios" --apple-team-id "FH3WT32854"
+      - name: ⚙️  Configure Xcode project
+        run: launching xcode:configure
+      - name: ⚙️  Synchronize Xcode native targets
+        run: launching xcode:targets
+      - name: ⚙️  Synchronize Xcode entitlements
+        run: launching xcode:entitlements --framework "expo"
+      - name: ⚙️  Resolve build config
+        uses: eas/resolve_build_config
+      - name: ⚙️  Configure build for updates
+        uses: eas/configure_eas_update
+        with:
+          throw_if_not_configured: false
+      - name: ⚙️  Export Expo app
+        run: launching expo:export-eager --platform "ios"
+      - name: ⚙️  Configure iOS credentials
+        id: ios_credentials
+        uses: eas/configure_ios_credentials
+      - name: ⚙️  Configure iOS version
+        uses: eas/configure_ios_version
+        with:
+          target_names: ${{ steps.ios_credentials.outputs.target_names }}
+      - name: ⚙️  Configure iOS build template
+        uses: eas/generate_gymfile_from_template
+        with:
+          credentials: ${ eas.job.secrets.buildCredentials }
+      - name: 📦  Install iOS dependencies
+        run: pod-install
+      - name: ⚙️  Create iOS build
+        uses: eas/run_fastlane
+      - name: 🚀  Store iOS build
+        uses: eas/find_and_upload_build_artifacts
+      - name: 🚀  Submit to App Store
+        run: launching eas:ios-submit --app-bundle-id "${ eas.metadata.appIdentifier }" --app-id "6767664343" --app-name "${ eas.metadata.appName }" --build-id "${ eas.env.EAS_BUILD_ID }" --build-number "${ eas.metadata.appBuildVersion }" --submit-profile "${ eas.env.EAS_BUILD_PROFILE }"
+      - name: 🚀  Store App Store submission
+        uses: eas/create_submission_entity
+        with:
+          build_id: ${ eas.env.EAS_BUILD_ID }
+          apple_id_username: amyworld1402@gmail.com
+          asc_app_identifier: '6767664343'
