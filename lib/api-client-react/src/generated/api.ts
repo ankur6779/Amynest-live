@@ -54,6 +54,7 @@ import type {
   ListRoutinesParams,
   LogChildDailySignalBody,
   ParentTaskCompletion,
+  ProductiveNudgesResponse,
   Routine,
   SetLifeSkillProgressBody,
   SetParentTaskCompletionBody,
@@ -3818,6 +3819,93 @@ export function useGetChildLearningWeights<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetChildLearningWeightsQueryOptions(childId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Ranked productive nudges derived from risk windows, learning weights, and weekly goals.
+ */
+export const getGetChildNudgesUrl = (childId: number) => {
+  return `/api/child-intelligence/${childId}/nudges`;
+};
+
+export const getChildNudges = async (
+  childId: number,
+  options?: RequestInit,
+): Promise<ProductiveNudgesResponse> => {
+  return customFetch<ProductiveNudgesResponse>(getGetChildNudgesUrl(childId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetChildNudgesQueryKey = (childId: number) => {
+  return [`/api/child-intelligence/${childId}/nudges`] as const;
+};
+
+export const getGetChildNudgesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getChildNudges>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildNudges>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetChildNudgesQueryKey(childId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getChildNudges>>> = ({
+    signal,
+  }) => getChildNudges(childId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!childId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getChildNudges>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetChildNudgesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getChildNudges>>
+>;
+export type GetChildNudgesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Ranked productive nudges derived from risk windows, learning weights, and weekly goals.
+ */
+
+export function useGetChildNudges<
+  TData = Awaited<ReturnType<typeof getChildNudges>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildNudges>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetChildNudgesQueryOptions(childId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

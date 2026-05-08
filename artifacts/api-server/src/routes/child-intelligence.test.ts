@@ -231,6 +231,24 @@ describe("child-intelligence routes — smoke", () => {
     const res = await fetch(`${baseUrl}/child-intelligence/${otherChildId}/learning-weights`);
     assert.equal(res.status, 404);
   });
+
+  it("GET nudges returns childId + nudges array + computedAt", async () => {
+    const res = await fetch(`${baseUrl}/child-intelligence/${childId}/nudges`);
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as {
+      childId: number;
+      nudges: unknown[];
+      computedAt: string;
+    };
+    assert.equal(body.childId, childId);
+    assert.ok(Array.isArray(body.nudges));
+    assert.equal(typeof body.computedAt, "string");
+  });
+
+  it("GET nudges returns 404 for a child the caller does not own", async () => {
+    const res = await fetch(`${baseUrl}/child-intelligence/${otherChildId}/nudges`);
+    assert.equal(res.status, 404);
+  });
 });
 
 describe("deriveEnergyProfile — heuristic", () => {

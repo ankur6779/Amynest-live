@@ -10,6 +10,7 @@ import { SmartMealSuggestions } from "@/components/smart-meal-suggestions";
 import { DailySignalLogger } from "@/components/intelligence/daily-signal-logger";
 import { WeeklyReportCard } from "@/components/intelligence/weekly-report-card";
 import { LearningWeightsCard } from "@/components/intelligence/learning-weights-card";
+import { ProductiveNudgesCard } from "@/components/intelligence/productive-nudges-card";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useTranslation } from "react-i18next";
@@ -266,6 +267,7 @@ export default function RoutinesList() {
       <DailySignalLogger />
       <WeeklyReportCard />
       <LearningWeightsCard />
+      <ProductiveNudgesCard />
 
       <div className="flex gap-2 p-1 bg-muted rounded-2xl">
         <button onClick={() => setView("calendar")} className={`flex-1 py-2 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${view === "calendar" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
