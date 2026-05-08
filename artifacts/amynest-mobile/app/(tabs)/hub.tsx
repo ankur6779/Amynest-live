@@ -602,27 +602,29 @@ export default function HubScreen() {
                       } as never,
                     });
                   }}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTile, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[brand.violet500, brand.pink500]}
+                    colors={[`${brand.violet500}28`, `${brand.pink500}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
-                  >
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ padding: 16 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${brand.violet500}22`, alignItems: "center", justifyContent: "center" }}>
                         <Text style={{ fontSize: 22 }}>📋</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.ptm-prep.title")}</Text>
+                          <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.ptm-prep.title")}</Text>
                           {tryFreeFor("hub_ptm_prep") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.ptm-prep.sublabel")}</Text>
+                        <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.ptm-prep.sublabel")}</Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                      <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
                     </View>
-                  </LinearGradient>
+                  </View>
                 </Pressable>
               </LockedBlock>
               </View>
@@ -643,27 +645,29 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_smart_study");
                     router.push("/study" as never);
                   }}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTile, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[palette.indigo500, brand.purple500]}
+                    colors={[`${palette.indigo500}28`, `${brand.purple500}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
-                  >
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ padding: 16 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${palette.indigo500}22`, alignItems: "center", justifyContent: "center" }}>
                         <Text style={{ fontSize: 22 }}>🎓</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.smart-study.title")}</Text>
+                          <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.smart-study.title")}</Text>
                           {tryFreeFor("hub_smart_study") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.smart-study.sublabel")}</Text>
+                        <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.smart-study.sublabel")}</Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                      <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
                     </View>
-                  </LinearGradient>
+                  </View>
                 </Pressable>
               </LockedBlock>
               </View>
@@ -684,27 +688,29 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_morning_flow");
                     router.push("/morning-flow" as never);
                   }}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTile, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[palette.orange500, palette.amber400]}
+                    colors={[`${palette.orange500}28`, `${palette.amber400}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
-                  >
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ padding: 16 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${palette.orange500}22`, alignItems: "center", justifyContent: "center" }}>
                         <Text style={{ fontSize: 22 }}>🌅</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.morning-flow.title")}</Text>
+                          <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.morning-flow.title")}</Text>
                           {tryFreeFor("hub_morning_flow") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.morning-flow.sublabel")}</Text>
+                        <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.morning-flow.sublabel")}</Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                      <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
                     </View>
-                  </LinearGradient>
+                  </View>
                 </Pressable>
               </LockedBlock>
               </View>
@@ -725,27 +731,29 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_olympiad");
                     router.push("/olympiad" as never);
                   }}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTile, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[palette.amber500, palette.red500]}
+                    colors={[`${palette.amber500}28`, `${palette.red500}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
-                  >
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ padding: 16 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${palette.amber500}22`, alignItems: "center", justifyContent: "center" }}>
                         <Text style={{ fontSize: 22 }}>🏆</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.olympiad.title")}</Text>
+                          <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.olympiad.title")}</Text>
                           {tryFreeFor("hub_olympiad") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.olympiad.sublabel")}</Text>
+                        <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.olympiad.sublabel")}</Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                      <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
                     </View>
-                  </LinearGradient>
+                  </View>
                 </Pressable>
               </LockedBlock>
               </View>
@@ -836,28 +844,30 @@ export default function HubScreen() {
                       hubUsage.markFeatureUsed("hub_kids_control_center");
                       router.push("/kids-control-center" as never);
                     }}
-                    style={{ borderRadius: 18, overflow: "hidden" }}
+                    style={({ pressed }) => [styles.pushTile, pressed && { opacity: 0.85 }]}
                     testID="card-kids-control-center"
                   >
                     <LinearGradient
-                      colors={[brand.violet600, brand.pink500, palette.amber500]}
+                      colors={[`${brand.violet600}28`, `${brand.pink500}14`]}
                       start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                      style={{ padding: 16, gap: 8 }}
-                    >
+                      style={StyleSheet.absoluteFillObject}
+                      pointerEvents="none"
+                    />
+                    <View style={{ padding: 16 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.22)", alignItems: "center", justifyContent: "center" }}>
+                        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${brand.violet600}22`, alignItems: "center", justifyContent: "center" }}>
                           <Text style={{ fontSize: 22 }}>👶</Text>
                         </View>
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                            <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.kids-control-center.title")}</Text>
+                            <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.kids-control-center.title")}</Text>
                             {tryFreeFor("hub_kids_control_center") ? <TryFreeBadge /> : null}
                           </View>
-                          <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.kids-control-center.sublabel")}</Text>
+                          <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.kids-control-center.sublabel")}</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.85)" />
+                        <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
                       </View>
-                    </LinearGradient>
+                    </View>
                   </Pressable>
                 </LockedBlock>
               </View>
@@ -878,27 +888,29 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_meals_tile");
                     router.push("/meals" as never);
                   }}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTile, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[palette.emerald500, palette.lime500]}
+                    colors={[`${palette.emerald500}28`, `${palette.lime500}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
-                  >
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ padding: 16 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${palette.emerald500}22`, alignItems: "center", justifyContent: "center" }}>
                         <Text style={{ fontSize: 22 }}>🍎</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.meals.title")}</Text>
+                          <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.meals.title")}</Text>
                           {tryFreeFor("hub_meals_tile") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.meals.sublabel")}</Text>
+                        <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.meals.sublabel")}</Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                      <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
                     </View>
-                  </LinearGradient>
+                  </View>
                 </Pressable>
               </LockedBlock>
               </View>
@@ -921,27 +933,29 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_event_prep");
                     router.push("/event-prep" as never);
                   }}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTile, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[brand.pink500, palette.orange500]}
+                    colors={[`${brand.pink500}28`, `${palette.orange500}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
-                  >
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ padding: 16 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${brand.pink500}22`, alignItems: "center", justifyContent: "center" }}>
                         <Text style={{ fontSize: 22 }}>🎉</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.event-prep.title")}</Text>
+                          <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.event-prep.title")}</Text>
                           {tryFreeFor("hub_event_prep") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.event-prep.sublabel")}</Text>
+                        <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.event-prep.sublabel")}</Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                      <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
                     </View>
-                  </LinearGradient>
+                  </View>
                 </Pressable>
               </LockedBlock>
               </View>
@@ -982,25 +996,27 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_gaming_rewards");
                     router.push("/games" as never);
                   }}
-                  style={{ borderRadius: 14, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTileSubItem, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[brand.violet600, brand.purple500]}
+                    colors={[`${brand.violet600}28`, `${brand.purple500}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
-                  >
-                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}>
+                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${brand.violet600}20`, alignItems: "center", justifyContent: "center" }}>
                       <Text style={{ fontSize: 22 }}>🎮</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.gaming_reward.title")}</Text>
+                        <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.gaming_reward.title")}</Text>
                         {tryFreeFor("hub_gaming_rewards") ? <TryFreeBadge /> : null}
                       </View>
-                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.gaming_reward.desc")}</Text>
+                      <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.gaming_reward.desc")}</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
-                  </LinearGradient>
+                    <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
+                  </View>
                 </Pressable>
                 </LockedBlock>
                 </View>
@@ -1017,25 +1033,27 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_rewards_shop");
                     router.push("/rewards" as never);
                   }}
-                  style={{ borderRadius: 14, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTileSubItem, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[palette.amber500, brand.pink500]}
+                    colors={[`${palette.amber500}28`, `${brand.pink500}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
-                  >
-                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}>
+                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${palette.amber500}20`, alignItems: "center", justifyContent: "center" }}>
                       <Text style={{ fontSize: 22 }}>🎁</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.rewards_shop.title")}</Text>
+                        <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.rewards_shop.title")}</Text>
                         {tryFreeFor("hub_rewards_shop") ? <TryFreeBadge /> : null}
                       </View>
-                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.rewards_shop.desc")}</Text>
+                      <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.rewards_shop.desc")}</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
-                  </LinearGradient>
+                    <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
+                  </View>
                 </Pressable>
                 </LockedBlock>
                 </View>
@@ -1052,25 +1070,27 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_audio_lessons");
                     router.push("/audio-lessons" as never);
                   }}
-                  style={{ borderRadius: 14, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTileSubItem, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[palette.cyan700, palette.cyan600]}
+                    colors={[`${palette.cyan700}28`, `${palette.cyan600}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}
-                  >
-                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14 }}>
+                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${palette.cyan700}20`, alignItems: "center", justifyContent: "center" }}>
                       <Text style={{ fontSize: 22 }}>🎧</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.audio_lessons.title")}</Text>
+                        <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 14 }}>{t("parent_hub.tiles_activity.audio_lessons.title")}</Text>
                         {tryFreeFor("hub_audio_lessons") ? <TryFreeBadge /> : null}
                       </View>
-                      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.audio_lessons.desc")}</Text>
+                      <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles_activity.audio_lessons.desc")}</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
-                  </LinearGradient>
+                    <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
+                  </View>
                 </Pressable>
                 </LockedBlock>
                 </View>
@@ -1130,27 +1150,29 @@ export default function HubScreen() {
                     hubUsage.markFeatureUsed("hub_story_hub");
                     router.push("/stories" as never);
                   }}
-                  style={{ borderRadius: 18, overflow: "hidden" }}
+                  style={({ pressed }) => [styles.pushTile, pressed && { opacity: 0.85 }]}
                 >
                   <LinearGradient
-                    colors={[brand.pink500, brand.purple500]}
+                    colors={[`${brand.pink500}28`, `${brand.purple500}14`]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ padding: 16, gap: 8 }}
-                  >
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ padding: 16 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${brand.pink500}22`, alignItems: "center", justifyContent: "center" }}>
                         <Text style={{ fontSize: 22 }}>🎬</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.story-hub.title")}</Text>
+                          <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.story-hub.title")}</Text>
                           {tryFreeFor("hub_story_hub") ? <TryFreeBadge /> : null}
                         </View>
-                        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.story-hub.sublabel")}</Text>
+                        <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.story-hub.sublabel")}</Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.8)" />
+                      <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
                     </View>
-                  </LinearGradient>
+                  </View>
                 </Pressable>
               </LockedBlock>
               </View>
@@ -1962,6 +1984,30 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       shadowRadius: 14,
       shadowOffset: { width: 0, height: 6 },
       elevation: 2,
+    },
+    // Light pastel glass style for full-bleed nav-push tiles (PTM Prep,
+    // Smart Study, Meals, etc.). Matches the Section tile visual language:
+    // soft white glass background + subtle tinted overlay gradient.
+    pushTile: {
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: glassBorder,
+      backgroundColor: glassBg,
+      overflow: "hidden",
+      shadowColor: brand.primary,
+      shadowOpacity: isLight ? 0.08 : 0.16,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
+    },
+    // Same as pushTile but tighter radius for the sub-items nested inside
+    // the Activities Section (Gaming Reward, Rewards Shop, Audio Lessons).
+    pushTileSubItem: {
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: glassBorder,
+      backgroundColor: glassBgSoft,
+      overflow: "hidden",
     },
     sectionOpen: {
       borderColor: isLight ? brandAlpha.purple500_60 : brandAlpha.purple500_40,
