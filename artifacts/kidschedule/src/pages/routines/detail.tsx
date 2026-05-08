@@ -21,6 +21,7 @@ import { announceCurrentTask, isVoiceEnabled, getVoiceSettings } from "@/lib/voi
 import { VoiceSettingsPanel } from "@/components/voice-settings";
 import { runAdaptiveEngine, type AdaptiveMood, type AdaptiveSleepQuality } from "@workspace/family-routine";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { RoutineAdaptationsCard } from "@/components/intelligence/routine-adaptations-card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 type ItemStatus = "pending" | "completed" | "skipped" | "delayed";
 type RoutineItem = {
@@ -1366,6 +1367,9 @@ export default function RoutineDetail() {
               <span><strong>{t("pages.routines.detail.past_routine")}</strong> {t("pages.routines.detail.this_is_a_read_only_record_generate_a_new_routine_to_plan_up")}</span>
             </div>}
         </div>
+
+        {/* Why this routine? — adaptive intelligence */}
+        <RoutineAdaptationsCard adaptations={(routine as any)?.adaptations as string[] | undefined} />
 
         {/* Progress bar */}
         {totalCount > 0 && <div className="bg-muted rounded-2xl p-4">

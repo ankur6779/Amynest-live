@@ -19,6 +19,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ChildGoalsCard } from "@/components/intelligence/child-goals-card";
 interface Babysitter {
   id: number;
   name: string;
@@ -913,5 +914,7 @@ export default function ChildForm() {
           </Form>
         </CardContent>
       </Card>
+
+      {isEditing && childId > 0 && <ChildGoalsCard childId={childId} />}
     </div>;
 }

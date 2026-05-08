@@ -27,6 +27,7 @@ import type {
   CheckRoutineParams,
   CheckRoutineResponse,
   Child,
+  ChildIntelligenceResponse,
   ClearParentTaskCompletionParams,
   CreateBabysitterBody,
   CreateBehaviorLogBody,
@@ -49,6 +50,7 @@ import type {
   ListBehaviorsParams,
   ListParentTaskCompletionsParams,
   ListRoutinesParams,
+  LogChildDailySignalBody,
   ParentTaskCompletion,
   Routine,
   SetLifeSkillProgressBody,
@@ -57,6 +59,7 @@ import type {
   SmartStudyNextQuestionsRequest,
   SmartStudyNextQuestionsResponse,
   UpdateChildBody,
+  UpdateChildGoalsBody,
   UpdateRoutineItemsBody,
   UpdateRoutineUiPrefsBody,
   UpsertParentProfileBody,
@@ -3268,3 +3271,275 @@ export function useGetBehaviorStats<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get a child's adaptive intelligence snapshot (goals, energy profile, recent signals)
+ */
+export const getGetChildIntelligenceUrl = (childId: number) => {
+  return `/api/child-intelligence/${childId}`;
+};
+
+export const getChildIntelligence = async (
+  childId: number,
+  options?: RequestInit,
+): Promise<ChildIntelligenceResponse> => {
+  return customFetch<ChildIntelligenceResponse>(
+    getGetChildIntelligenceUrl(childId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetChildIntelligenceQueryKey = (childId: number) => {
+  return [`/api/child-intelligence/${childId}`] as const;
+};
+
+export const getGetChildIntelligenceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getChildIntelligence>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildIntelligence>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetChildIntelligenceQueryKey(childId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getChildIntelligence>>
+  > = ({ signal }) =>
+    getChildIntelligence(childId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!childId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getChildIntelligence>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetChildIntelligenceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getChildIntelligence>>
+>;
+export type GetChildIntelligenceQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a child's adaptive intelligence snapshot (goals, energy profile, recent signals)
+ */
+
+export function useGetChildIntelligence<
+  TData = Awaited<ReturnType<typeof getChildIntelligence>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildIntelligence>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetChildIntelligenceQueryOptions(childId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Replace the child's structured parent-selected optimization goals
+ */
+export const getUpdateChildGoalsUrl = (childId: number) => {
+  return `/api/child-intelligence/${childId}/goals`;
+};
+
+export const updateChildGoals = async (
+  childId: number,
+  updateChildGoalsBody: UpdateChildGoalsBody,
+  options?: RequestInit,
+): Promise<ChildIntelligenceResponse> => {
+  return customFetch<ChildIntelligenceResponse>(
+    getUpdateChildGoalsUrl(childId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateChildGoalsBody),
+    },
+  );
+};
+
+export const getUpdateChildGoalsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateChildGoals>>,
+    TError,
+    { childId: number; data: BodyType<UpdateChildGoalsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateChildGoals>>,
+  TError,
+  { childId: number; data: BodyType<UpdateChildGoalsBody> },
+  TContext
+> => {
+  const mutationKey = ["updateChildGoals"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateChildGoals>>,
+    { childId: number; data: BodyType<UpdateChildGoalsBody> }
+  > = (props) => {
+    const { childId, data } = props ?? {};
+
+    return updateChildGoals(childId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateChildGoalsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateChildGoals>>
+>;
+export type UpdateChildGoalsMutationBody = BodyType<UpdateChildGoalsBody>;
+export type UpdateChildGoalsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Replace the child's structured parent-selected optimization goals
+ */
+export const useUpdateChildGoals = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateChildGoals>>,
+    TError,
+    { childId: number; data: BodyType<UpdateChildGoalsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateChildGoals>>,
+  TError,
+  { childId: number; data: BodyType<UpdateChildGoalsBody> },
+  TContext
+> => {
+  return useMutation(getUpdateChildGoalsMutationOptions(options));
+};
+
+/**
+ * @summary Log or upsert a daily behavioral signal for a child
+ */
+export const getLogChildDailySignalUrl = (childId: number) => {
+  return `/api/child-intelligence/${childId}/signal`;
+};
+
+export const logChildDailySignal = async (
+  childId: number,
+  logChildDailySignalBody: LogChildDailySignalBody,
+  options?: RequestInit,
+): Promise<ChildIntelligenceResponse> => {
+  return customFetch<ChildIntelligenceResponse>(
+    getLogChildDailySignalUrl(childId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(logChildDailySignalBody),
+    },
+  );
+};
+
+export const getLogChildDailySignalMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logChildDailySignal>>,
+    TError,
+    { childId: number; data: BodyType<LogChildDailySignalBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof logChildDailySignal>>,
+  TError,
+  { childId: number; data: BodyType<LogChildDailySignalBody> },
+  TContext
+> => {
+  const mutationKey = ["logChildDailySignal"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof logChildDailySignal>>,
+    { childId: number; data: BodyType<LogChildDailySignalBody> }
+  > = (props) => {
+    const { childId, data } = props ?? {};
+
+    return logChildDailySignal(childId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LogChildDailySignalMutationResult = NonNullable<
+  Awaited<ReturnType<typeof logChildDailySignal>>
+>;
+export type LogChildDailySignalMutationBody = BodyType<LogChildDailySignalBody>;
+export type LogChildDailySignalMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Log or upsert a daily behavioral signal for a child
+ */
+export const useLogChildDailySignal = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logChildDailySignal>>,
+    TError,
+    { childId: number; data: BodyType<LogChildDailySignalBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof logChildDailySignal>>,
+  TError,
+  { childId: number; data: BodyType<LogChildDailySignalBody> },
+  TContext
+> => {
+  return useMutation(getLogChildDailySignalMutationOptions(options));
+};

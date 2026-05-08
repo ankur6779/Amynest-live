@@ -58,6 +58,37 @@ export const ListChildrenResponseItem = zod.object({
   allergies: zod.string().nullish(),
   foodPrefInherited: zod.boolean().nullish(),
   foodPrefCustomized: zod.boolean().nullish(),
+  parentGoals: zod
+    .array(
+      zod.enum([
+        "improve_sleep",
+        "reduce_tantrums",
+        "improve_focus",
+        "reduce_screen_time",
+        "increase_independence",
+      ]),
+    )
+    .nullish()
+    .describe(
+      "Adaptive Family Intelligence — structured parent-selected optimization goals.",
+    ),
+  energyProfile: zod
+    .object({
+      peakFocusStart: zod.string().nullish(),
+      peakFocusEnd: zod.string().nullish(),
+      lowEnergyStart: zod.string().nullish(),
+      lowEnergyEnd: zod.string().nullish(),
+      calmWindowStart: zod.string().nullish(),
+      calmWindowEnd: zod.string().nullish(),
+      sampleCount: zod
+        .number()
+        .describe("Number of daily signals used to compute this profile."),
+      lastComputedAt: zod.string().nullish(),
+    })
+    .describe(
+      "Adaptive Family Intelligence — derived energy profile recomputed from\nchild_daily_signals + routine completion history. Times are HH:mm strings.\nnull fields = not enough data yet (sampleCount < 3).\n",
+    )
+    .nullish(),
   createdAt: zod.string(),
 });
 export const ListChildrenResponse = zod.array(ListChildrenResponseItem);
@@ -155,6 +186,37 @@ export const GetChildResponse = zod.object({
   allergies: zod.string().nullish(),
   foodPrefInherited: zod.boolean().nullish(),
   foodPrefCustomized: zod.boolean().nullish(),
+  parentGoals: zod
+    .array(
+      zod.enum([
+        "improve_sleep",
+        "reduce_tantrums",
+        "improve_focus",
+        "reduce_screen_time",
+        "increase_independence",
+      ]),
+    )
+    .nullish()
+    .describe(
+      "Adaptive Family Intelligence — structured parent-selected optimization goals.",
+    ),
+  energyProfile: zod
+    .object({
+      peakFocusStart: zod.string().nullish(),
+      peakFocusEnd: zod.string().nullish(),
+      lowEnergyStart: zod.string().nullish(),
+      lowEnergyEnd: zod.string().nullish(),
+      calmWindowStart: zod.string().nullish(),
+      calmWindowEnd: zod.string().nullish(),
+      sampleCount: zod
+        .number()
+        .describe("Number of daily signals used to compute this profile."),
+      lastComputedAt: zod.string().nullish(),
+    })
+    .describe(
+      "Adaptive Family Intelligence — derived energy profile recomputed from\nchild_daily_signals + routine completion history. Times are HH:mm strings.\nnull fields = not enough data yet (sampleCount < 3).\n",
+    )
+    .nullish(),
   createdAt: zod.string(),
 });
 
@@ -205,6 +267,20 @@ export const UpdateChildBody = zod.object({
   allergies: zod.string().nullish(),
   foodPrefInherited: zod.boolean().nullish(),
   foodPrefCustomized: zod.boolean().nullish(),
+  parentGoals: zod
+    .array(
+      zod.enum([
+        "improve_sleep",
+        "reduce_tantrums",
+        "improve_focus",
+        "reduce_screen_time",
+        "increase_independence",
+      ]),
+    )
+    .nullish()
+    .describe(
+      "Adaptive Family Intelligence — replace structured optimization goals.",
+    ),
 });
 
 export const updateChildResponseSchoolDaysItemMax = 7;
@@ -248,6 +324,37 @@ export const UpdateChildResponse = zod.object({
   allergies: zod.string().nullish(),
   foodPrefInherited: zod.boolean().nullish(),
   foodPrefCustomized: zod.boolean().nullish(),
+  parentGoals: zod
+    .array(
+      zod.enum([
+        "improve_sleep",
+        "reduce_tantrums",
+        "improve_focus",
+        "reduce_screen_time",
+        "increase_independence",
+      ]),
+    )
+    .nullish()
+    .describe(
+      "Adaptive Family Intelligence — structured parent-selected optimization goals.",
+    ),
+  energyProfile: zod
+    .object({
+      peakFocusStart: zod.string().nullish(),
+      peakFocusEnd: zod.string().nullish(),
+      lowEnergyStart: zod.string().nullish(),
+      lowEnergyEnd: zod.string().nullish(),
+      calmWindowStart: zod.string().nullish(),
+      calmWindowEnd: zod.string().nullish(),
+      sampleCount: zod
+        .number()
+        .describe("Number of daily signals used to compute this profile."),
+      lastComputedAt: zod.string().nullish(),
+    })
+    .describe(
+      "Adaptive Family Intelligence — derived energy profile recomputed from\nchild_daily_signals + routine completion history. Times are HH:mm strings.\nnull fields = not enough data yet (sampleCount < 3).\n",
+    )
+    .nullish(),
   createdAt: zod.string(),
 });
 
@@ -328,6 +435,12 @@ export const ListRoutinesResponseItem = zod.object({
     .describe(
       "True when the user has manually edited one or more items in this routine.",
     ),
+  adaptations: zod
+    .array(zod.string())
+    .nullish()
+    .describe(
+      'Adaptive Family Intelligence — short human-readable strings explaining why this\nroutine differs from a default one (e.g. \"Reduced morning load — sleep was shorter\nyesterday\", \"Placed learning at 09:00 (peak focus window)\"). Surfaced in the\n\"Why this routine?\" card.\n',
+    ),
   createdAt: zod.string(),
 });
 export const ListRoutinesResponse = zod.array(ListRoutinesResponseItem);
@@ -376,6 +489,12 @@ export const CreateRoutineBody = zod.object({
     }),
   ),
   override: zod.boolean().optional(),
+  adaptations: zod
+    .array(zod.string())
+    .nullish()
+    .describe(
+      'Adaptive Family Intelligence — pass through the adaptations array returned\nfrom \/routines\/generate so it persists on the saved routine row and can\nbe displayed in the \"Why this routine?\" card later.\n',
+    ),
 });
 
 /**
@@ -447,6 +566,12 @@ export const GetRoutineResponse = zod.object({
     .boolean()
     .describe(
       "True when the user has manually edited one or more items in this routine.",
+    ),
+  adaptations: zod
+    .array(zod.string())
+    .nullish()
+    .describe(
+      'Adaptive Family Intelligence — short human-readable strings explaining why this\nroutine differs from a default one (e.g. \"Reduced morning load — sleep was shorter\nyesterday\", \"Placed learning at 09:00 (peak focus window)\"). Surfaced in the\n\"Why this routine?\" card.\n',
     ),
   createdAt: zod.string(),
 });
@@ -528,6 +653,12 @@ export const GenerateRoutineResponse = zod.object({
       parentHubTopic: zod.string().nullish(),
     }),
   ),
+  adaptations: zod
+    .array(zod.string())
+    .nullish()
+    .describe(
+      "Human-readable explanations of how this routine was adapted to the child's signals, goals, and energy profile.",
+    ),
 });
 
 /**
@@ -644,6 +775,12 @@ export const GetRecentRoutinesResponseItem = zod.object({
     .boolean()
     .describe(
       "True when the user has manually edited one or more items in this routine.",
+    ),
+  adaptations: zod
+    .array(zod.string())
+    .nullish()
+    .describe(
+      'Adaptive Family Intelligence — short human-readable strings explaining why this\nroutine differs from a default one (e.g. \"Reduced morning load — sleep was shorter\nyesterday\", \"Placed learning at 09:00 (peak focus window)\"). Surfaced in the\n\"Why this routine?\" card.\n',
     ),
   createdAt: zod.string(),
 });
@@ -773,6 +910,12 @@ export const UpdateRoutineItemsResponse = zod.object({
     .describe(
       "True when the user has manually edited one or more items in this routine.",
     ),
+  adaptations: zod
+    .array(zod.string())
+    .nullish()
+    .describe(
+      'Adaptive Family Intelligence — short human-readable strings explaining why this\nroutine differs from a default one (e.g. \"Reduced morning load — sleep was shorter\nyesterday\", \"Placed learning at 09:00 (peak focus window)\"). Surfaced in the\n\"Why this routine?\" card.\n',
+    ),
   createdAt: zod.string(),
 });
 
@@ -862,6 +1005,12 @@ export const UpdateRoutineUiPrefsResponse = zod.object({
     .boolean()
     .describe(
       "True when the user has manually edited one or more items in this routine.",
+    ),
+  adaptations: zod
+    .array(zod.string())
+    .nullish()
+    .describe(
+      'Adaptive Family Intelligence — short human-readable strings explaining why this\nroutine differs from a default one (e.g. \"Reduced morning load — sleep was shorter\nyesterday\", \"Placed learning at 09:00 (peak focus window)\"). Surfaced in the\n\"Why this routine?\" card.\n',
     ),
   createdAt: zod.string(),
 });
@@ -1339,3 +1488,367 @@ export const GetBehaviorStatsResponseItem = zod.object({
   neutral: zod.number(),
 });
 export const GetBehaviorStatsResponse = zod.array(GetBehaviorStatsResponseItem);
+
+/**
+ * @summary Get a child's adaptive intelligence snapshot (goals, energy profile, recent signals)
+ */
+export const GetChildIntelligenceParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const getChildIntelligenceResponseRecentSignalsItemMoodMax = 5;
+
+export const getChildIntelligenceResponseRecentSignalsItemFocusScoreMax = 5;
+
+export const getChildIntelligenceResponseRecentSignalsItemSleepQualityMax = 5;
+
+export const getChildIntelligenceResponseRecentSignalsItemCompletionPctMin = 0;
+export const getChildIntelligenceResponseRecentSignalsItemCompletionPctMax = 100;
+
+export const getChildIntelligenceResponseRecentSignalsItemScreenMinutesMin = 0;
+
+export const getChildIntelligenceResponseRecentSignalsItemTantrumCountMin = 0;
+
+export const GetChildIntelligenceResponse = zod
+  .object({
+    childId: zod.number(),
+    parentGoals: zod
+      .array(
+        zod.enum([
+          "improve_sleep",
+          "reduce_tantrums",
+          "improve_focus",
+          "reduce_screen_time",
+          "increase_independence",
+        ]),
+      )
+      .describe(
+        "Structured parent-selected optimization goals (may be empty).",
+      ),
+    energyProfile: zod
+      .object({
+        peakFocusStart: zod.string().nullish(),
+        peakFocusEnd: zod.string().nullish(),
+        lowEnergyStart: zod.string().nullish(),
+        lowEnergyEnd: zod.string().nullish(),
+        calmWindowStart: zod.string().nullish(),
+        calmWindowEnd: zod.string().nullish(),
+        sampleCount: zod
+          .number()
+          .describe("Number of daily signals used to compute this profile."),
+        lastComputedAt: zod.string().nullish(),
+      })
+      .describe(
+        "Adaptive Family Intelligence — derived energy profile recomputed from\nchild_daily_signals + routine completion history. Times are HH:mm strings.\nnull fields = not enough data yet (sampleCount < 3).\n",
+      )
+      .nullish(),
+    recentSignals: zod
+      .array(
+        zod
+          .object({
+            date: zod.string().describe("YYYY-MM-DD local date."),
+            mood: zod
+              .number()
+              .min(1)
+              .max(getChildIntelligenceResponseRecentSignalsItemMoodMax)
+              .nullish(),
+            focusScore: zod
+              .number()
+              .min(1)
+              .max(getChildIntelligenceResponseRecentSignalsItemFocusScoreMax)
+              .nullish(),
+            sleepQuality: zod
+              .number()
+              .min(1)
+              .max(getChildIntelligenceResponseRecentSignalsItemSleepQualityMax)
+              .nullish(),
+            completionPct: zod
+              .number()
+              .min(
+                getChildIntelligenceResponseRecentSignalsItemCompletionPctMin,
+              )
+              .max(
+                getChildIntelligenceResponseRecentSignalsItemCompletionPctMax,
+              )
+              .nullish(),
+            screenMinutes: zod
+              .number()
+              .min(
+                getChildIntelligenceResponseRecentSignalsItemScreenMinutesMin,
+              )
+              .nullish(),
+            tantrumCount: zod
+              .number()
+              .min(
+                getChildIntelligenceResponseRecentSignalsItemTantrumCountMin,
+              ),
+            notes: zod.string().nullish(),
+          })
+          .describe(
+            "A single day's behavioral signals for a child. All scores are 1–5 (5 = best).",
+          ),
+      )
+      .describe("Up to the last 14 days of signals, newest first."),
+  })
+  .describe(
+    "Snapshot of a child's adaptive intelligence — goals, derived energy profile, and recent daily signals.",
+  );
+
+/**
+ * @summary Replace the child's structured parent-selected optimization goals
+ */
+export const UpdateChildGoalsParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const UpdateChildGoalsBody = zod.object({
+  parentGoals: zod
+    .array(
+      zod.enum([
+        "improve_sleep",
+        "reduce_tantrums",
+        "improve_focus",
+        "reduce_screen_time",
+        "increase_independence",
+      ]),
+    )
+    .describe("Replacement set of parent-selected optimization goals."),
+});
+
+export const updateChildGoalsResponseRecentSignalsItemMoodMax = 5;
+
+export const updateChildGoalsResponseRecentSignalsItemFocusScoreMax = 5;
+
+export const updateChildGoalsResponseRecentSignalsItemSleepQualityMax = 5;
+
+export const updateChildGoalsResponseRecentSignalsItemCompletionPctMin = 0;
+export const updateChildGoalsResponseRecentSignalsItemCompletionPctMax = 100;
+
+export const updateChildGoalsResponseRecentSignalsItemScreenMinutesMin = 0;
+
+export const updateChildGoalsResponseRecentSignalsItemTantrumCountMin = 0;
+
+export const UpdateChildGoalsResponse = zod
+  .object({
+    childId: zod.number(),
+    parentGoals: zod
+      .array(
+        zod.enum([
+          "improve_sleep",
+          "reduce_tantrums",
+          "improve_focus",
+          "reduce_screen_time",
+          "increase_independence",
+        ]),
+      )
+      .describe(
+        "Structured parent-selected optimization goals (may be empty).",
+      ),
+    energyProfile: zod
+      .object({
+        peakFocusStart: zod.string().nullish(),
+        peakFocusEnd: zod.string().nullish(),
+        lowEnergyStart: zod.string().nullish(),
+        lowEnergyEnd: zod.string().nullish(),
+        calmWindowStart: zod.string().nullish(),
+        calmWindowEnd: zod.string().nullish(),
+        sampleCount: zod
+          .number()
+          .describe("Number of daily signals used to compute this profile."),
+        lastComputedAt: zod.string().nullish(),
+      })
+      .describe(
+        "Adaptive Family Intelligence — derived energy profile recomputed from\nchild_daily_signals + routine completion history. Times are HH:mm strings.\nnull fields = not enough data yet (sampleCount < 3).\n",
+      )
+      .nullish(),
+    recentSignals: zod
+      .array(
+        zod
+          .object({
+            date: zod.string().describe("YYYY-MM-DD local date."),
+            mood: zod
+              .number()
+              .min(1)
+              .max(updateChildGoalsResponseRecentSignalsItemMoodMax)
+              .nullish(),
+            focusScore: zod
+              .number()
+              .min(1)
+              .max(updateChildGoalsResponseRecentSignalsItemFocusScoreMax)
+              .nullish(),
+            sleepQuality: zod
+              .number()
+              .min(1)
+              .max(updateChildGoalsResponseRecentSignalsItemSleepQualityMax)
+              .nullish(),
+            completionPct: zod
+              .number()
+              .min(updateChildGoalsResponseRecentSignalsItemCompletionPctMin)
+              .max(updateChildGoalsResponseRecentSignalsItemCompletionPctMax)
+              .nullish(),
+            screenMinutes: zod
+              .number()
+              .min(updateChildGoalsResponseRecentSignalsItemScreenMinutesMin)
+              .nullish(),
+            tantrumCount: zod
+              .number()
+              .min(updateChildGoalsResponseRecentSignalsItemTantrumCountMin),
+            notes: zod.string().nullish(),
+          })
+          .describe(
+            "A single day's behavioral signals for a child. All scores are 1–5 (5 = best).",
+          ),
+      )
+      .describe("Up to the last 14 days of signals, newest first."),
+  })
+  .describe(
+    "Snapshot of a child's adaptive intelligence — goals, derived energy profile, and recent daily signals.",
+  );
+
+/**
+ * @summary Log or upsert a daily behavioral signal for a child
+ */
+export const LogChildDailySignalParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const logChildDailySignalBodyMoodMax = 5;
+
+export const logChildDailySignalBodyFocusScoreMax = 5;
+
+export const logChildDailySignalBodySleepQualityMax = 5;
+
+export const logChildDailySignalBodyCompletionPctMin = 0;
+export const logChildDailySignalBodyCompletionPctMax = 100;
+
+export const logChildDailySignalBodyScreenMinutesMin = 0;
+
+export const logChildDailySignalBodyTantrumCountMin = 0;
+
+export const LogChildDailySignalBody = zod
+  .object({
+    date: zod
+      .string()
+      .optional()
+      .describe(
+        "YYYY-MM-DD local date. Defaults to today on the server if omitted.",
+      ),
+    mood: zod.number().min(1).max(logChildDailySignalBodyMoodMax).nullish(),
+    focusScore: zod
+      .number()
+      .min(1)
+      .max(logChildDailySignalBodyFocusScoreMax)
+      .nullish(),
+    sleepQuality: zod
+      .number()
+      .min(1)
+      .max(logChildDailySignalBodySleepQualityMax)
+      .nullish(),
+    completionPct: zod
+      .number()
+      .min(logChildDailySignalBodyCompletionPctMin)
+      .max(logChildDailySignalBodyCompletionPctMax)
+      .nullish(),
+    screenMinutes: zod
+      .number()
+      .min(logChildDailySignalBodyScreenMinutesMin)
+      .nullish(),
+    tantrumCount: zod
+      .number()
+      .min(logChildDailySignalBodyTantrumCountMin)
+      .nullish(),
+    notes: zod.string().nullish(),
+  })
+  .describe(
+    "Upsert (childId, date) — provided fields overwrite, omitted fields are preserved if a row already exists.",
+  );
+
+export const logChildDailySignalResponseRecentSignalsItemMoodMax = 5;
+
+export const logChildDailySignalResponseRecentSignalsItemFocusScoreMax = 5;
+
+export const logChildDailySignalResponseRecentSignalsItemSleepQualityMax = 5;
+
+export const logChildDailySignalResponseRecentSignalsItemCompletionPctMin = 0;
+export const logChildDailySignalResponseRecentSignalsItemCompletionPctMax = 100;
+
+export const logChildDailySignalResponseRecentSignalsItemScreenMinutesMin = 0;
+
+export const logChildDailySignalResponseRecentSignalsItemTantrumCountMin = 0;
+
+export const LogChildDailySignalResponse = zod
+  .object({
+    childId: zod.number(),
+    parentGoals: zod
+      .array(
+        zod.enum([
+          "improve_sleep",
+          "reduce_tantrums",
+          "improve_focus",
+          "reduce_screen_time",
+          "increase_independence",
+        ]),
+      )
+      .describe(
+        "Structured parent-selected optimization goals (may be empty).",
+      ),
+    energyProfile: zod
+      .object({
+        peakFocusStart: zod.string().nullish(),
+        peakFocusEnd: zod.string().nullish(),
+        lowEnergyStart: zod.string().nullish(),
+        lowEnergyEnd: zod.string().nullish(),
+        calmWindowStart: zod.string().nullish(),
+        calmWindowEnd: zod.string().nullish(),
+        sampleCount: zod
+          .number()
+          .describe("Number of daily signals used to compute this profile."),
+        lastComputedAt: zod.string().nullish(),
+      })
+      .describe(
+        "Adaptive Family Intelligence — derived energy profile recomputed from\nchild_daily_signals + routine completion history. Times are HH:mm strings.\nnull fields = not enough data yet (sampleCount < 3).\n",
+      )
+      .nullish(),
+    recentSignals: zod
+      .array(
+        zod
+          .object({
+            date: zod.string().describe("YYYY-MM-DD local date."),
+            mood: zod
+              .number()
+              .min(1)
+              .max(logChildDailySignalResponseRecentSignalsItemMoodMax)
+              .nullish(),
+            focusScore: zod
+              .number()
+              .min(1)
+              .max(logChildDailySignalResponseRecentSignalsItemFocusScoreMax)
+              .nullish(),
+            sleepQuality: zod
+              .number()
+              .min(1)
+              .max(logChildDailySignalResponseRecentSignalsItemSleepQualityMax)
+              .nullish(),
+            completionPct: zod
+              .number()
+              .min(logChildDailySignalResponseRecentSignalsItemCompletionPctMin)
+              .max(logChildDailySignalResponseRecentSignalsItemCompletionPctMax)
+              .nullish(),
+            screenMinutes: zod
+              .number()
+              .min(logChildDailySignalResponseRecentSignalsItemScreenMinutesMin)
+              .nullish(),
+            tantrumCount: zod
+              .number()
+              .min(logChildDailySignalResponseRecentSignalsItemTantrumCountMin),
+            notes: zod.string().nullish(),
+          })
+          .describe(
+            "A single day's behavioral signals for a child. All scores are 1–5 (5 = best).",
+          ),
+      )
+      .describe("Up to the last 14 days of signals, newest first."),
+  })
+  .describe(
+    "Snapshot of a child's adaptive intelligence — goals, derived energy profile, and recent daily signals.",
+  );

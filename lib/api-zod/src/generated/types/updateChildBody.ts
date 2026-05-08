@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateChildBodyParentGoalsItem } from "./updateChildBodyParentGoalsItem";
 
 export interface UpdateChildBody {
   name?: string;
@@ -34,4 +35,6 @@ export interface UpdateChildBody {
   allergies?: string | null;
   foodPrefInherited?: boolean | null;
   foodPrefCustomized?: boolean | null;
+  /** Adaptive Family Intelligence — replace structured optimization goals. */
+  parentGoals?: UpdateChildBodyParentGoalsItem[] | null;
 }

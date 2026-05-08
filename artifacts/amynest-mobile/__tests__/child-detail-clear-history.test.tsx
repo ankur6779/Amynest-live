@@ -87,6 +87,14 @@ vi.mock("expo-haptics", () => ({
 vi.mock("@tanstack/react-query", () => ({
   useQuery: (opts: any) => mockUseQuery(opts),
   useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
+  useMutation: () => ({
+    mutate: () => {},
+    mutateAsync: async () => undefined,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    reset: () => {},
+  }),
 }));
 
 import ChildDetailScreen from "@/app/children/[id]";

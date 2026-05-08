@@ -26,6 +26,8 @@ tags:
     description: Life Skills Mode — daily age-banded skills, streaks, and role-play scenarios
   - name: smart-study
     description: Smart Study Zone insights and adaptive plans
+  - name: child-intelligence
+    description: Adaptive Family Intelligence — parent goals, daily signals, derived energy profile
 paths:
   /healthz:
     get:
@@ -723,6 +725,75 @@ paths:
                 items:
                   $ref: "#/components/schemas/BehaviorStat"
 
+  /child-intelligence/{childId}:
+    get:
+      operationId: getChildIntelligence
+      tags: [child-intelligence]
+      summary: Get a child's adaptive intelligence snapshot (goals, energy profile, recent signals)
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Child intelligence snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChildIntelligenceResponse"
+
+  /child-intelligence/{childId}/goals:
+    put:
+      operationId: updateChildGoals
+      tags: [child-intelligence]
+      summary: Replace the child's structured parent-selected optimization goals
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateChildGoalsBody"
+      responses:
+        "200":
+          description: Updated goals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChildIntelligenceResponse"
+
+  /child-intelligence/{childId}/signal:
+    post:
+      operationId: logChildDailySignal
+      tags: [child-intelligence]
+      summary: Log or upsert a daily behavioral signal for a child
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogChildDailySignalBody"
+      responses:
+        "200":
+          description: Stored signal and refreshed snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChildIntelligenceResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -808,6 +879,17 @@ components:
           nullable: true
         foodPrefCustomized:
           type: boolean
+          nullable: true
+        parentGoals:
+          type: array
+          nullable: true
+          description: Adaptive Family Intelligence — structured parent-selected optimization goals.
+          items:
+            type: string
+            enum: [improve_sleep, reduce_tantrums, improve_focus, reduce_screen_time, increase_independence]
+        energyProfile:
+          allOf:
+            - $ref: "#/components/schemas/EnergyProfile"
           nullable: true
         createdAt:
           type: string
@@ -980,6 +1062,13 @@ components:
         foodPrefCustomized:
           type: boolean
           nullable: true
+        parentGoals:
+          type: array
+          nullable: true
+          description: Adaptive Family Intelligence — replace structured optimization goals.
+          items:
+            type: string
+            enum: [improve_sleep, reduce_tantrums, improve_focus, reduce_screen_time, increase_independence]
 
     RoutineItem:
       type: object
@@ -1062,6 +1151,16 @@ components:
         customized:
           type: boolean
           description: True when the user has manually edited one or more items in this routine.
+        adaptations:
+          type: array
+          nullable: true
+          description: |
+            Adaptive Family Intelligence — short human-readable strings explaining why this
+            routine differs from a default one (e.g. "Reduced morning load — sleep was shorter
+            yesterday", "Placed learning at 09:00 (peak focus window)"). Surfaced in the
+            "Why this routine?" card.
+          items:
+            type: string
         createdAt:
           type: string
       required:
@@ -1117,6 +1216,15 @@ components:
             $ref: "#/components/schemas/RoutineItem"
         override:
           type: boolean
+        adaptations:
+          type: array
+          nullable: true
+          description: |
+            Adaptive Family Intelligence — pass through the adaptations array returned
+            from /routines/generate so it persists on the saved routine row and can
+            be displayed in the "Why this routine?" card later.
+          items:
+            type: string
       required:
         - childId
         - date
@@ -1179,6 +1287,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RoutineItem"
+        adaptations:
+          type: array
+          nullable: true
+          description: Human-readable explanations of how this routine was adapted to the child's signals, goals, and energy profile.
+          items:
+            type: string
       required:
         - title
         - items
@@ -1887,6 +2001,158 @@ components:
         - subjectEmoji
         - sampleSize
         - weakTopics
+
+    EnergyProfile:
+      type: object
+      description: |
+        Adaptive Family Intelligence — derived energy profile recomputed from
+        child_daily_signals + routine completion history. Times are HH:mm strings.
+        null fields = not enough data yet (sampleCount < 3).
+      properties:
+        peakFocusStart:
+          type: string
+          nullable: true
+        peakFocusEnd:
+          type: string
+          nullable: true
+        lowEnergyStart:
+          type: string
+          nullable: true
+        lowEnergyEnd:
+          type: string
+          nullable: true
+        calmWindowStart:
+          type: string
+          nullable: true
+        calmWindowEnd:
+          type: string
+          nullable: true
+        sampleCount:
+          type: integer
+          description: Number of daily signals used to compute this profile.
+        lastComputedAt:
+          type: string
+          nullable: true
+      required:
+        - sampleCount
+
+    ChildDailySignalEntry:
+      type: object
+      description: A single day's behavioral signals for a child. All scores are 1–5 (5 = best).
+      properties:
+        date:
+          type: string
+          description: YYYY-MM-DD local date.
+        mood:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        focusScore:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        sleepQuality:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        completionPct:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+        screenMinutes:
+          type: integer
+          nullable: true
+          minimum: 0
+        tantrumCount:
+          type: integer
+          minimum: 0
+        notes:
+          type: string
+          nullable: true
+      required:
+        - date
+        - tantrumCount
+
+    ChildIntelligenceResponse:
+      type: object
+      description: Snapshot of a child's adaptive intelligence — goals, derived energy profile, and recent daily signals.
+      properties:
+        childId:
+          type: integer
+        parentGoals:
+          type: array
+          description: Structured parent-selected optimization goals (may be empty).
+          items:
+            type: string
+            enum: [improve_sleep, reduce_tantrums, improve_focus, reduce_screen_time, increase_independence]
+        energyProfile:
+          allOf:
+            - $ref: "#/components/schemas/EnergyProfile"
+          nullable: true
+        recentSignals:
+          type: array
+          description: Up to the last 14 days of signals, newest first.
+          items:
+            $ref: "#/components/schemas/ChildDailySignalEntry"
+      required:
+        - childId
+        - parentGoals
+        - recentSignals
+
+    UpdateChildGoalsBody:
+      type: object
+      properties:
+        parentGoals:
+          type: array
+          description: Replacement set of parent-selected optimization goals.
+          items:
+            type: string
+            enum: [improve_sleep, reduce_tantrums, improve_focus, reduce_screen_time, increase_independence]
+      required:
+        - parentGoals
+
+    LogChildDailySignalBody:
+      type: object
+      description: Upsert (childId, date) — provided fields overwrite, omitted fields are preserved if a row already exists.
+      properties:
+        date:
+          type: string
+          description: YYYY-MM-DD local date. Defaults to today on the server if omitted.
+        mood:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        focusScore:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        sleepQuality:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        completionPct:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+        screenMinutes:
+          type: integer
+          nullable: true
+          minimum: 0
+        tantrumCount:
+          type: integer
+          nullable: true
+          minimum: 0
+        notes:
+          type: string
+          nullable: true
 
     SmartStudyInsights:
       type: object

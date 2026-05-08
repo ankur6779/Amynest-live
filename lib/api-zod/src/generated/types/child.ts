@@ -5,6 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ChildParentGoalsItem } from "./childParentGoalsItem";
+import type { EnergyProfile } from "./energyProfile";
 
 export interface Child {
   id: number;
@@ -35,5 +37,8 @@ export interface Child {
   allergies?: string | null;
   foodPrefInherited?: boolean | null;
   foodPrefCustomized?: boolean | null;
+  /** Adaptive Family Intelligence — structured parent-selected optimization goals. */
+  parentGoals?: ChildParentGoalsItem[] | null;
+  energyProfile?: EnergyProfile | null;
   createdAt: string;
 }

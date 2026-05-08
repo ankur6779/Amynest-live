@@ -13,4 +13,9 @@ export interface CreateRoutineBody {
   title: string;
   items: RoutineItem[];
   override?: boolean;
+  /** Adaptive Family Intelligence — pass through the adaptations array returned
+from /routines/generate so it persists on the saved routine row and can
+be displayed in the "Why this routine?" card later.
+ */
+  adaptations?: string[] | null;
 }
