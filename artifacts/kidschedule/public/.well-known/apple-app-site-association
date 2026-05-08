@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["FH3WT32854.com.amynest.app"],
+        "components": [
+          { "/": "/privacy", "comment": "Privacy page" },
+          { "/": "/terms", "comment": "Terms page" },
+          { "/": "/referral/*", "comment": "Referral deep links" },
+          { "/": "/routine/*", "comment": "Shared routine deep links" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["FH3WT32854.com.amynest.app"]
+  }
+}

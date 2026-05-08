@@ -305,3 +305,9 @@ id = "8fE_fRAfFh1Q0wq-b6pHL"
 uri = "file://kidschedule-android/store-assets/apple-export-compliance.md"
 type = "text"
 title = "Apple App Store — Export Compliance Declaration"
+
+[[outputs]]
+id = "QGeximum0tkZQlxx9h-XW"
+uri = "file://kidschedule-android/store-assets/appstore-launch-checklist.md"
+type = "text"
+title = "Apple App Store Launch Checklist — AmyNest AI"
