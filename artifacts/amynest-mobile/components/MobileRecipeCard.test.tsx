@@ -325,12 +325,12 @@ describe("MobileRecipeCard — integration with generateRuleBasedRoutine", () =>
     expect(toMins(tiffin!.time)).toBe(SCHOOL_START_MINS + 60);
   });
 
-  it("school day: Lunch renders at schoolEnd + 30 min (15:30)", () => {
+  it("school day: Lunch renders at schoolEnd + 75 min (4:15 PM — realistic travel + buffer)", () => {
     const lunch = schoolItems.find(
       (i) => i.category === "meal" && i.activity.toLowerCase().includes("lunch")
     );
     expect(lunch, "Post-school Lunch not found").toBeTruthy();
-    expect(toMins(lunch!.time)).toBe(SCHOOL_END_MINS + 30);
+    expect(toMins(lunch!.time)).toBe(SCHOOL_END_MINS + 75);
   });
 
   it("school day: no duplicate meal activity names", () => {
