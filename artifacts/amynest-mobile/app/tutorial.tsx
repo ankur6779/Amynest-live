@@ -38,6 +38,14 @@ export default function TutorialScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
 
+  // Tutorial permanently disabled — auto-skip to welcome on mount.
+  // tutorialState.ts already prevents routing here; this is a belt-and-suspenders
+  // guard in case someone navigates to /tutorial directly (deep link, etc.).
+  useEffect(() => {
+    markTutorialSeen().catch(() => {});
+    router.replace("/welcome");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const SLIDES: Slide[] = [
     {
       icon: "sparkles",
