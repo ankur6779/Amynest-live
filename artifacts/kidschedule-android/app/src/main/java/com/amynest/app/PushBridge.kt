@@ -253,6 +253,13 @@ class PushBridge private constructor(
         private const val KEY_DENIED_ONCE = "permission_denied_once"
 
         /**
+         * Bumped with every push-related native change. Logged by MainActivity
+         * on launch so the user (or developer) can confirm via
+         * `adb logcat -s MainActivity` that the new APK is actually running.
+         */
+        const val WRAPPER_VERSION = "1.3.0"
+
+        /**
          * Process-level callback FcmService invokes when a token rotation
          * arrives. The active PushBridge installs itself here; if no
          * activity is foreground, the token is still cached on disk and
@@ -292,6 +299,27 @@ class PushBridge private constructor(
                 return null
             }
             val bridge = PushBridge(activity, webView, originRule)
+
+            // ── Layer 1: synchronous wrapper marker ──────────────────────────
+            // Inject `window.__AMYNEST_WRAPPER = "<version>"` at document_start
+            // BEFORE any page script runs. This is the bulletproof signal that
+            // the page is running inside our wrapper — available even when the
+            // message-bus hasn't wired up yet. Without this, the web app can
+            // mount and render the "Not supported in this browser" fallback
+            // before window.AmyNestPushNative appears, and it never re-checks.
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                try {
+                    val script = "window.__AMYNEST_WRAPPER = '${WRAPPER_VERSION}';"
+                    WebViewCompat.addDocumentStartJavaScript(webView, script, setOf(originRule))
+                    Log.d(TAG, "Wrapper marker installed (version=$WRAPPER_VERSION, origin=$originRule)")
+                } catch (t: Throwable) {
+                    Log.e(TAG, "addDocumentStartJavaScript failed — marker NOT installed", t)
+                }
+            } else {
+                Log.w(TAG, "DOCUMENT_START_SCRIPT not supported on this WebView — marker skipped")
+            }
+
+            // ── Layer 2: message bus ─────────────────────────────────────────
             return try {
                 WebViewCompat.addWebMessageListener(
                     webView,
@@ -304,6 +332,7 @@ class PushBridge private constructor(
                     bridge.handleMessage(data, sourceOrigin, replyProxy)
                 }
                 tokenListener = bridge.onNewTokenListener
+                Log.d(TAG, "Push message bus installed (origin=$originRule)")
                 bridge
             } catch (t: Throwable) {
                 Log.e(TAG, "addWebMessageListener failed", t)
