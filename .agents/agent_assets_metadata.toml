@@ -215,3 +215,9 @@ id = "5Flst9Hx65ZRXx9EVFOhA"
 uri = "file://artifacts/kidschedule/public/android-icons/ic_launcher_xxxhdpi_192.png"
 type = "image"
 title = "ic_launcher — xxxhdpi (192×192)"
+
+[[outputs]]
+id = "W-y7l-TuPuyOa9bhn6ktb"
+uri = "file://patent/amynest_patent_package.tar.gz"
+type = "unspecified"
+title = "AmyNest — Indian Patent Package (HTML + Flowcharts)"
