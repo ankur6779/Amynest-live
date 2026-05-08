@@ -51,6 +51,37 @@ import {
 
 type WeatherOutdoor = "yes" | "no" | "limited";
 
+// ── Silent pre-generate weather/location detect ───────────────────────────
+// Returns the resolved WeatherOutdoor verdict, or null on any failure
+// (permission denied, no fix, offline, timeout). Mirrors the web helper.
+async function detectWeatherOutdoorFromDevice(timeoutMs = 5000): Promise<WeatherOutdoor | null> {
+  try {
+    const perm = await Location.requestForegroundPermissionsAsync();
+    if (perm.status !== "granted") return null;
+    const pos = await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low }),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+    ]);
+    if (!pos) return null;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=precipitation,temperature_2m,wind_speed_10m`;
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const cur = data?.current ?? {};
+    const precip = Number(cur.precipitation ?? 0);
+    const wind = Number(cur.wind_speed_10m ?? 0);
+    const temp = Number(cur.temperature_2m ?? 22);
+    if (precip > 0.5) return "no";
+    if (wind > 30 || temp < 5 || temp > 35) return "limited";
+    return "yes";
+  } catch {
+    return null;
+  }
+}
+
 type Child = {
   id: number;
   name: string;
@@ -132,7 +163,7 @@ export default function GenerateRoutineScreen() {
   const [wakeAnswer, setWakeAnswer] = useState<"yes" | "no" | null>(null);
   const [wakeInputValue, setWakeInputValue] = useState("07:00");
   const [confirmedWakeTime, setConfirmedWakeTime] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<{ type: "standard" | "ai"; forceOverride: boolean } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ type: "standard" | "ai"; forceOverride: boolean; weatherOverride?: WeatherOutdoor } | null>(null);
 
   // ── Past essential task check (after generating today) ──────────────────
   type PendingRoutineSave = {
@@ -150,35 +181,62 @@ export default function GenerateRoutineScreen() {
   // ── Weather (outdoor go-out today?) ────────────────────────────────────
   const [weatherOutdoor, setWeatherOutdoor] = useState<WeatherOutdoor | null>(null);
   const [weatherDetecting, setWeatherDetecting] = useState(false);
+  // Whether the user has explicitly engaged with the weather control this
+  // visit (manual chip tap OR successful auto-detect). When false at generate
+  // time, we silently re-detect once so meals/recipes/outdoor activities
+  // reflect actual conditions instead of the default.
+  const [weatherTouched, setWeatherTouched] = useState(false);
+  const [prefetchingLocation, setPrefetchingLocation] = useState(false);
+  // Refs for the silent pre-detect: an in-flight promise so concurrent
+  // generate taps share one geolocation lookup (no duplicate permission
+  // prompts), and a "touched" mirror so a late-resolving detection can be
+  // discarded if the user manually picked a chip during the lookup.
+  const weatherDetectInFlightRef = useRef<Promise<WeatherOutdoor | null> | null>(null);
+  const weatherTouchedRef = useRef(false);
+  const markWeatherTouched = useCallback(() => {
+    weatherTouchedRef.current = true;
+    setWeatherTouched(true);
+  }, []);
 
   const handleAutoDetectWeather = useCallback(async () => {
     if (weatherDetecting) return;
     setWeatherDetecting(true);
     try {
-      const perm = await Location.requestForegroundPermissionsAsync();
-      if (perm.status !== "granted") {
-        setWeatherDetecting(false);
-        return;
+      const verdict = await detectWeatherOutdoorFromDevice();
+      if (verdict) {
+        setWeatherOutdoor(verdict);
+        markWeatherTouched();
+        Haptics.selectionAsync();
       }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=precipitation,temperature_2m,wind_speed_10m`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const cur = data?.current ?? {};
-      const precip = Number(cur.precipitation ?? 0);
-      const wind = Number(cur.wind_speed_10m ?? 0);
-      const temp = Number(cur.temperature_2m ?? 22);
-      let verdict: WeatherOutdoor = "yes";
-      if (precip > 0.5) verdict = "no";
-      else if (wind > 30 || temp < 5 || temp > 35) verdict = "limited"; // i18n-ok: numeric weather thresholds
-      setWeatherOutdoor(verdict);
-      Haptics.selectionAsync();
-    } catch {
-      // silent fail
     } finally {
       setWeatherDetecting(false);
     }
-  }, [weatherDetecting]);
+  }, [weatherDetecting, markWeatherTouched]);
+
+  // Pre-generate detect — runs once before any routine generation when the
+  // user hasn't touched the weather control. Returns the value to use for
+  // THIS generation's payload. Idempotent: concurrent calls share one
+  // in-flight Promise (no duplicate permission prompts). Late results are
+  // discarded if the user manually picked a chip during the lookup
+  // ("transparency over surgery").
+  const ensureWeatherDetected = useCallback(async (): Promise<WeatherOutdoor | undefined> => {
+    if (weatherTouchedRef.current || weatherTouched) return weatherOutdoor ?? undefined;
+    if (!weatherDetectInFlightRef.current) {
+      setPrefetchingLocation(true);
+      weatherDetectInFlightRef.current = detectWeatherOutdoorFromDevice().finally(() => {
+        setPrefetchingLocation(false);
+        weatherDetectInFlightRef.current = null;
+      });
+    }
+    const detected = await weatherDetectInFlightRef.current;
+    if (weatherTouchedRef.current) return weatherOutdoor ?? undefined;
+    if (detected) {
+      setWeatherOutdoor(detected);
+      markWeatherTouched();
+      return detected;
+    }
+    return weatherOutdoor ?? undefined;
+  }, [weatherTouched, weatherOutdoor, markWeatherTouched]);
 
   // ── Family mode state ───────────────────────────────────────────────────
   const [familyChildSettings, setFamilyChildSettings] = useState<FamilyChildSettings>({});
@@ -371,7 +429,10 @@ export default function GenerateRoutineScreen() {
   }, [date, todayKey, selectedChildData, saveGeneratedRoutine]);
 
   // ── Common payload builder ─────────────────────────────────────────────
-  const buildGeneratePayload = useCallback((wakeTime: string | null) => ({
+  // weatherOverride: when present, takes priority over state — used by the
+  // pre-generate location re-detect path so the freshly-detected value is in
+  // the payload even before React commits the setState.
+  const buildGeneratePayload = useCallback((wakeTime: string | null, weatherOverride?: WeatherOutdoor) => ({
     childId: selectedChild,
     date,
     hasSchool: hasSchool ?? undefined,
@@ -384,7 +445,7 @@ export default function GenerateRoutineScreen() {
     schoolEnd: selectedChildData?.schoolEndTime,
     region: effectiveRegion,
     caregiver: handlerType,
-    weatherOutdoor: weatherOutdoor ?? undefined,
+    weatherOutdoor: weatherOverride ?? weatherOutdoor ?? undefined,
   }), [selectedChild, date, hasSchool, specialPlans, handlerType, fridgeItems, mood, selectedChildData, effectiveRegion, weatherOutdoor]);
 
   // ── Handle paywall response shared helper ──────────────────────────────
@@ -402,14 +463,14 @@ export default function GenerateRoutineScreen() {
   }, [router]);
 
   // ── Core generate (rule-based) ─────────────────────────────────────────
-  const proceedGenerate = useCallback(async (forceOverride: boolean, wakeTime: string | null) => {
+  const proceedGenerate = useCallback(async (forceOverride: boolean, wakeTime: string | null, weatherOverride?: WeatherOutdoor) => {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsGenerating(true);
     try {
       const res = await authFetch("/api/routines/generate", {
         method: "POST",
-        body: JSON.stringify(buildGeneratePayload(wakeTime)),
+        body: JSON.stringify(buildGeneratePayload(wakeTime, weatherOverride)),
       });
       if (await handlePaywallResponse(res)) return;
       if (!res.ok) throw new Error("Generate failed");
@@ -428,14 +489,14 @@ export default function GenerateRoutineScreen() {
   }, [overrideMode, existingRoutine, authFetch, buildGeneratePayload, handlePaywallResponse, handlerType, handlePostGenerate, t]);
 
   // ── Core generate (AI) ─────────────────────────────────────────────────
-  const proceedAiGenerate = useCallback(async (forceOverride: boolean, wakeTime: string | null) => {
+  const proceedAiGenerate = useCallback(async (forceOverride: boolean, wakeTime: string | null, weatherOverride?: WeatherOutdoor) => {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsAiGenerating(true);
     try {
       const res = await authFetch("/api/routines/generate-ai", {
         method: "POST",
-        body: JSON.stringify(buildGeneratePayload(wakeTime)),
+        body: JSON.stringify(buildGeneratePayload(wakeTime, weatherOverride)),
       });
       if (await handlePaywallResponse(res)) return;
       if (!res.ok) throw new Error("AI generate failed");
@@ -454,16 +515,16 @@ export default function GenerateRoutineScreen() {
   }, [overrideMode, existingRoutine, authFetch, buildGeneratePayload, handlePaywallResponse, handlerType, handlePostGenerate, t]);
 
   // ── Wake-check entry point ─────────────────────────────────────────────
-  const triggerWithWakeCheck = useCallback(async (type: "standard" | "ai", forceOverride: boolean) => {
+  const triggerWithWakeCheck = useCallback(async (type: "standard" | "ai", forceOverride: boolean, weatherOverride?: WeatherOutdoor) => {
     const isToday = date === todayKey;
     if (!isToday || selectedChild == null) {
-      if (type === "standard") void proceedGenerate(forceOverride, null);
-      else void proceedAiGenerate(forceOverride, null);
+      if (type === "standard") void proceedGenerate(forceOverride, null, weatherOverride);
+      else void proceedAiGenerate(forceOverride, null, weatherOverride);
       return;
     }
     if (confirmedWakeTime) {
-      if (type === "standard") void proceedGenerate(forceOverride, confirmedWakeTime);
-      else void proceedAiGenerate(forceOverride, confirmedWakeTime);
+      if (type === "standard") void proceedGenerate(forceOverride, confirmedWakeTime, weatherOverride);
+      else void proceedAiGenerate(forceOverride, confirmedWakeTime, weatherOverride);
       return;
     }
     // Check stored wake time for child+date — if present, skip dialog
@@ -471,13 +532,13 @@ export default function GenerateRoutineScreen() {
       const stored = await AsyncStorage.getItem(WAKE_KEY(selectedChild, date));
       if (stored && /^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(stored)) {
         setConfirmedWakeTime(stored);
-        if (type === "standard") void proceedGenerate(forceOverride, stored);
-        else void proceedAiGenerate(forceOverride, stored);
+        if (type === "standard") void proceedGenerate(forceOverride, stored, weatherOverride);
+        else void proceedAiGenerate(forceOverride, stored, weatherOverride);
         return;
       }
     } catch { /* ignore */ }
-    // Open wake-confirm dialog
-    setPendingAction({ type, forceOverride });
+    // Open wake-confirm dialog (carry the freshly-detected weather along).
+    setPendingAction({ type, forceOverride, weatherOverride });
     setWakeAnswer(null);
     const def = selectedChildData?.wakeUpTime ?? "7:00 AM";
     setWakeInputValue(displayToInput(def));
@@ -496,8 +557,8 @@ export default function GenerateRoutineScreen() {
       AsyncStorage.setItem(WAKE_KEY(selectedChild, date), finalWakeTime).catch(() => {});
     }
     setShowWakeConfirm(false);
-    if (pendingAction?.type === "standard") void proceedGenerate(pendingAction.forceOverride, finalWakeTime);
-    else if (pendingAction?.type === "ai") void proceedAiGenerate(pendingAction.forceOverride, finalWakeTime);
+    if (pendingAction?.type === "standard") void proceedGenerate(pendingAction.forceOverride, finalWakeTime, pendingAction.weatherOverride);
+    else if (pendingAction?.type === "ai") void proceedAiGenerate(pendingAction.forceOverride, finalWakeTime, pendingAction.weatherOverride);
     setPendingAction(null);
   }, [wakeAnswer, wakeInputValue, selectedChildData, selectedChild, date, pendingAction, proceedGenerate, proceedAiGenerate]);
 
@@ -521,17 +582,19 @@ export default function GenerateRoutineScreen() {
   }, [pendingRoutineSave, taskCheckMap, saveGeneratedRoutine]);
 
   // ── Public entry points (button handlers) ──────────────────────────────
-  const handleGenerate = useCallback((forceOverride = false) => {
+  const handleGenerate = useCallback(async (forceOverride = false) => {
     if (!isFormValid || isGenerating || isAiGenerating) return;
     if (existingRoutine?.exists && !forceOverride && !overrideMode) return;
-    void triggerWithWakeCheck("standard", forceOverride);
-  }, [isFormValid, isGenerating, isAiGenerating, existingRoutine, overrideMode, triggerWithWakeCheck]);
+    const weatherOverride = await ensureWeatherDetected();
+    void triggerWithWakeCheck("standard", forceOverride, weatherOverride);
+  }, [isFormValid, isGenerating, isAiGenerating, existingRoutine, overrideMode, triggerWithWakeCheck, ensureWeatherDetected]);
 
-  const handleAiGenerate = useCallback((forceOverride = false) => {
+  const handleAiGenerate = useCallback(async (forceOverride = false) => {
     if (!isFormValid || isGenerating || isAiGenerating) return;
     if (existingRoutine?.exists && !forceOverride && !overrideMode) return;
-    void triggerWithWakeCheck("ai", forceOverride);
-  }, [isFormValid, isGenerating, isAiGenerating, existingRoutine, overrideMode, triggerWithWakeCheck]);
+    const weatherOverride = await ensureWeatherDetected();
+    void triggerWithWakeCheck("ai", forceOverride, weatherOverride);
+  }, [isFormValid, isGenerating, isAiGenerating, existingRoutine, overrideMode, triggerWithWakeCheck, ensureWeatherDetected]);
 
   // ── Family-mode generate (sequential) ──────────────────────────────────
   const handleFamilyGenerate = async () => {
@@ -547,6 +610,10 @@ export default function GenerateRoutineScreen() {
       );
       return;
     }
+
+    // Pre-generate location detect — same gate as single-mode so all family
+    // routines share the freshly-detected outdoor signal.
+    const familyWeather = await ensureWeatherDetected();
 
     // Family-mode existing-routine override gate (parity with single-mode).
     // Check each selected child for an existing routine on the chosen date,
@@ -623,7 +690,7 @@ export default function GenerateRoutineScreen() {
             schoolEnd: child.schoolEndTime ?? undefined,
             region: effectiveRegion,
             caregiver: handlerType,
-            weatherOutdoor: weatherOutdoor ?? undefined,
+            weatherOutdoor: familyWeather ?? undefined,
           }),
         });
 
@@ -846,7 +913,7 @@ export default function GenerateRoutineScreen() {
             return (
               <TouchableOpacity
                 key={v}
-                onPress={() => { Haptics.selectionAsync(); setWeatherOutdoor(v); }}
+                onPress={() => { Haptics.selectionAsync(); setWeatherOutdoor(v); markWeatherTouched(); }}
                 activeOpacity={0.85}
                 style={[styles.toggleChip, active && styles.toggleChipActive]}
               >
@@ -942,6 +1009,18 @@ export default function GenerateRoutineScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+        )}
+
+        {/* Pre-generate location detect hint (silent re-detect in flight). */}
+        {prefetchingLocation && (
+          <View style={styles.locationHintRow}>
+            <Ionicons name="location-outline" size={14} color={brand.purple500} />
+            <Text style={styles.locationHintText}>
+              {t("routines_generate.location_redetecting", {
+                defaultValue: "Detecting your location for accurate meals & outdoor plan…",
+              })}
+            </Text>
           </View>
         )}
 
@@ -1899,6 +1978,20 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(167,139,250,0.10)", marginBottom: 16,
   },
   weatherDetectText: { fontSize: 12, fontWeight: "700", color: brand.purple500 },
+  locationHintRow: {
+    marginTop: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(167,139,250,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(167,139,250,0.30)",
+  },
+  locationHintText: { fontSize: 12, fontWeight: "600", color: brand.purple500, flexShrink: 1 },
 
   familyChildCard: {
     borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",

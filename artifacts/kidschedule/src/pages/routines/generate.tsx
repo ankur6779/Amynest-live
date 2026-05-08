@@ -58,6 +58,37 @@ function mapOpenMeteoToWeatherOutdoor(d: {
   // Otherwise (clear, mainly clear, partly cloudy, overcast, calm) → yes
   return "yes";
 }
+
+// ── Silent pre-generate weather/location detect ───────────────────────────
+// Used right before routine generation when the user hasn't touched the
+// weather control (neither auto-detected nor picked manually). Keeps a tight
+// budget and never throws — returns null on any failure (no permission, no
+// fix, offline, timeout, weather API down) so the caller can fall back to
+// the existing manual / default value.
+async function detectWeatherOutdoorFromBrowser(timeoutMs = 5000): Promise<WeatherOutdoorChoice | null> {
+  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
+  try {
+    const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: false,
+        timeout: timeoutMs,
+        maximumAge: 600000,
+      });
+    });
+    const lat = pos.coords.latitude.toFixed(4);
+    const lon = pos.coords.longitude.toFixed(4);
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,wind_speed_10m,weather_code`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const json = (await res.json()) as { current?: { temperature_2m?: number; precipitation?: number; wind_speed_10m?: number; weather_code?: number } };
+    return mapOpenMeteoToWeatherOutdoor(json.current ?? {});
+  } catch {
+    return null;
+  }
+}
 type MoodOption = {
   value: "happy" | "angry" | "lazy" | "normal";
   label: string;
@@ -236,11 +267,13 @@ function isEssentialTask(activity: string, category: string): boolean {
 function WeatherSelector({
   stepNum,
   value,
-  onChange
+  onChange,
+  onTouched
 }: {
   stepNum: number;
   value: WeatherOutdoorChoice;
   onChange: (v: WeatherOutdoorChoice) => void;
+  onTouched?: () => void;
 }) {
   const {
     t
@@ -281,6 +314,7 @@ function WeatherSelector({
         };
         const next = mapOpenMeteoToWeatherOutdoor(json.current ?? {});
         onChange(next);
+        onTouched?.();
         const t2 = json.current?.temperature_2m;
         setDetectedHint(typeof t2 === "number" ? `${Math.round(t2)}°C` : null);
       } catch {
@@ -356,7 +390,7 @@ function WeatherSelector({
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {options.map(o => {
           const active = value === o.val;
-          return <button key={o.val} type="button" onClick={() => onChange(o.val)} className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all text-center ${active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card text-foreground border-border hover:border-primary/40"}`}>
+          return <button key={o.val} type="button" onClick={() => { onChange(o.val); onTouched?.(); }} className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all text-center ${active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card text-foreground border-border hover:border-primary/40"}`}>
               <span className="text-2xl leading-none">{o.emoji}</span>
               <span className="text-sm font-bold leading-tight">{o.label}</span>
               <span className={`text-[10px] leading-tight ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{o.hint}</span>
@@ -553,6 +587,19 @@ export default function RoutineGenerate() {
   // Per-generation weather signal (sent as `weatherOutdoor`).
   // Not persisted — fresh choice each visit, defaults to "yes".
   const [weatherOutdoor, setWeatherOutdoor] = useState<WeatherOutdoorChoice>("yes");
+  // Whether the user has explicitly engaged with the weather control this
+  // visit (manual chip click OR successful auto-detect). When false, the
+  // generate flow runs one silent location/weather detect right before
+  // submitting so meals/recipes/outdoor activities reflect the actual
+  // conditions instead of the default "yes".
+  const [weatherTouched, setWeatherTouched] = useState(false);
+  const [prefetchingLocation, setPrefetchingLocation] = useState(false);
+  // Refs for the silent pre-detect: an in-flight promise so concurrent
+  // generate clicks share one geolocation lookup (no duplicate permission
+  // prompts), and a "touched" mirror so a late-resolving detection can be
+  // discarded if the user manually picked a chip while it was running.
+  const weatherDetectInFlightRef = useRef<Promise<WeatherOutdoorChoice | null> | null>(null);
+  const weatherTouchedRef = useRef(false);
 
   // Family mode
   const [familyChildSettings, setFamilyChildSettings] = useState<Record<number, {
@@ -586,6 +633,7 @@ export default function RoutineGenerate() {
   const [pendingAction, setPendingAction] = useState<{
     type: "standard" | "ai";
     forceOverride: boolean;
+    weatherForCall?: WeatherOutdoorChoice;
   } | null>(null);
 
   // Past essential task check (after routine generated for today)
@@ -866,8 +914,9 @@ export default function RoutineGenerate() {
   }, [date, selectedChildData, saveGeneratedRoutine]);
 
   // ── Core generate (rule-based) ─────────────────────────────────────────────
-  const proceedGenerate = React.useCallback((forceOverride: boolean, wakeTime: string | null) => {
+  const proceedGenerate = React.useCallback((forceOverride: boolean, wakeTime: string | null, weatherForCall?: WeatherOutdoorChoice) => {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
+    const effectiveWeather = weatherForCall ?? weatherOutdoor;
     generateMutation.mutate({
       data: {
         childId: selectedChild!,
@@ -883,7 +932,7 @@ export default function RoutineGenerate() {
         schoolEnd: selectedChildData?.schoolEndTime,
         region: parentRegion,
         caregiver: handlerType,
-        weatherOutdoor
+        weatherOutdoor: effectiveWeather
       }
     }, {
       onSuccess: generatedData => {
@@ -929,8 +978,9 @@ export default function RoutineGenerate() {
   }, [generateMutation, overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, handlePostGenerate, toast, t]);
 
   // ── Core generate (AI) ─────────────────────────────────────────────────────
-  const proceedAiGenerate = React.useCallback(async (forceOverride: boolean, wakeTime: string | null) => {
+  const proceedAiGenerate = React.useCallback(async (forceOverride: boolean, wakeTime: string | null, weatherForCall?: WeatherOutdoorChoice) => {
     const shouldOverride = forceOverride || overrideMode || !!existingRoutine?.exists;
+    const effectiveWeather = weatherForCall ?? weatherOutdoor;
     setIsAiGenerating(true);
     try {
       const payload = {
@@ -946,7 +996,7 @@ export default function RoutineGenerate() {
         schoolEnd: selectedChildData?.schoolEndTime,
         region: parentRegion,
         caregiver: handlerType,
-        weatherOutdoor
+        weatherOutdoor: effectiveWeather
       };
       const res = await authFetch("/api/routines/generate-ai", {
         method: "POST",
@@ -993,29 +1043,60 @@ export default function RoutineGenerate() {
   }, [overrideMode, existingRoutine, selectedChild, selectedChildData, date, hasSchool, specialPlans, fridgeItems, mood, handlerType, weatherOutdoor, parentRegion, authFetch, handlePostGenerate, toast, t]);
 
   // ── Wake-up confirmation gate ──────────────────────────────────────────────
-  const triggerWithWakeCheck = React.useCallback((type: "standard" | "ai", forceOverride: boolean) => {
+  const triggerWithWakeCheck = React.useCallback((type: "standard" | "ai", forceOverride: boolean, weatherForCall?: WeatherOutdoorChoice) => {
     const today = format(new Date(), "yyyy-MM-dd");
     if (date !== today) {
       // Not today — no wake check needed, use default
-      if (type === "standard") proceedGenerate(forceOverride, null);else proceedAiGenerate(forceOverride, null);
+      if (type === "standard") proceedGenerate(forceOverride, null, weatherForCall);else proceedAiGenerate(forceOverride, null, weatherForCall);
       return;
     }
     // Today — check stored or confirmed wake time
     const stored = getStoredWakeTime(selectedChild!, date);
     const wakeTime = confirmedWakeTime ?? stored;
     if (wakeTime) {
-      if (type === "standard") proceedGenerate(forceOverride, wakeTime);else proceedAiGenerate(forceOverride, wakeTime);
+      if (type === "standard") proceedGenerate(forceOverride, wakeTime, weatherForCall);else proceedAiGenerate(forceOverride, wakeTime, weatherForCall);
       return;
     }
-    // No wake time yet — show confirmation dialog
+    // No wake time yet — show confirmation dialog (carry the freshly detected
+    // weather along so the post-dialog continuation uses it).
     setPendingAction({
       type,
-      forceOverride
+      forceOverride,
+      weatherForCall
     });
     setWakeAnswer(null);
     setWakeInputValue(displayToInput(selectedChildData?.wakeUpTime ?? "7:00 AM"));
     setShowWakeConfirm(true);
   }, [date, selectedChild, confirmedWakeTime, selectedChildData, proceedGenerate, proceedAiGenerate]);
+
+  // ── Pre-generate location detect ───────────────────────────────────────────
+  // Returns the weatherOutdoor value to use for THIS generation. If the user
+  // has already touched the control, we honour their choice. Otherwise we
+  // attempt one silent geolocation+weather lookup and apply the result. On
+  // any failure (denied, offline, timeout), we fall back to current state.
+  // Idempotent: concurrent calls share one in-flight Promise (no duplicate
+  // permission prompts). Late results are discarded if the user manually
+  // picked a chip during the lookup ("transparency over surgery").
+  const ensureWeatherDetected = React.useCallback(async (): Promise<WeatherOutdoorChoice> => {
+    if (weatherTouchedRef.current || weatherTouched) return weatherOutdoor;
+    if (!weatherDetectInFlightRef.current) {
+      setPrefetchingLocation(true);
+      weatherDetectInFlightRef.current = detectWeatherOutdoorFromBrowser().finally(() => {
+        setPrefetchingLocation(false);
+        weatherDetectInFlightRef.current = null;
+      });
+    }
+    const detected = await weatherDetectInFlightRef.current;
+    // If the user picked a chip while we were detecting, honour their choice.
+    if (weatherTouchedRef.current) return weatherOutdoor;
+    if (detected) {
+      setWeatherOutdoor(detected);
+      setWeatherTouched(true);
+      weatherTouchedRef.current = true;
+      return detected;
+    }
+    return weatherOutdoor;
+  }, [weatherTouched, weatherOutdoor]);
 
   // ── Wake confirm submit ────────────────────────────────────────────────────
   const handleWakeConfirmSubmit = () => {
@@ -1024,7 +1105,7 @@ export default function RoutineGenerate() {
     storeWakeTime(selectedChild!, date, finalWakeTime);
     setConfirmedWakeTime(finalWakeTime);
     setShowWakeConfirm(false);
-    if (pendingAction?.type === "standard") proceedGenerate(pendingAction.forceOverride, finalWakeTime);else if (pendingAction?.type === "ai") proceedAiGenerate(pendingAction.forceOverride, finalWakeTime);
+    if (pendingAction?.type === "standard") proceedGenerate(pendingAction.forceOverride, finalWakeTime, pendingAction.weatherForCall);else if (pendingAction?.type === "ai") proceedAiGenerate(pendingAction.forceOverride, finalWakeTime, pendingAction.weatherForCall);
     setPendingAction(null);
   };
 
@@ -1060,17 +1141,19 @@ export default function RoutineGenerate() {
   const isFormValid = selectedChild && date && (!schoolQuestionRequired || hasSchool !== null);
 
   // Single mode generate — now goes through wake-time gate
-  const handleGenerate = (forceOverride = false) => {
+  const handleGenerate = async (forceOverride = false) => {
     if (!isFormValid) return;
     if (existingRoutine?.exists && !forceOverride && !overrideMode) return;
-    triggerWithWakeCheck("standard", forceOverride);
+    const weatherForCall = await ensureWeatherDetected();
+    triggerWithWakeCheck("standard", forceOverride, weatherForCall);
   };
 
   // AI generate — also goes through wake-time gate
-  const handleAiGenerate = (forceOverride = false) => {
+  const handleAiGenerate = async (forceOverride = false) => {
     if (!isFormValid || isAiGenerating) return;
     if (existingRoutine?.exists && !forceOverride && !overrideMode) return;
-    triggerWithWakeCheck("ai", forceOverride);
+    const weatherForCall = await ensureWeatherDetected();
+    triggerWithWakeCheck("ai", forceOverride, weatherForCall);
   };
 
   // Family mode generate — sequential
@@ -1084,6 +1167,10 @@ export default function RoutineGenerate() {
       });
       return;
     }
+
+    // Pre-generate location detect — same gate as single-mode so all family
+    // routines share the freshly detected outdoor signal.
+    const familyWeather = await ensureWeatherDetected();
 
     // Family-mode existing-routine override gate (parity with single-mode).
     // Check each selected child for an existing routine on the chosen date,
@@ -1141,7 +1228,7 @@ export default function RoutineGenerate() {
               schoolEnd: (child as ChildType).schoolEndTime,
               region: parentRegion,
               caregiver: handlerType,
-              weatherOutdoor
+              weatherOutdoor: familyWeather
             } as never
           }, {
             onSuccess: data => resolve(data as GeneratedRoutine),
@@ -1535,7 +1622,7 @@ export default function RoutineGenerate() {
                 </div>
 
                 {/* Step 4 — Outdoor weather signal */}
-                <WeatherSelector stepNum={stepN(4)} value={weatherOutdoor} onChange={setWeatherOutdoor} />
+                <WeatherSelector stepNum={stepN(4)} value={weatherOutdoor} onChange={setWeatherOutdoor} onTouched={() => { weatherTouchedRef.current = true; setWeatherTouched(true); }} />
 
                 {/* Step 5 — Special plans */}
                 <div className="space-y-4">
@@ -1601,6 +1688,7 @@ export default function RoutineGenerate() {
                 </div>
 
                 <div className="pt-2 space-y-3">
+                  {prefetchingLocation && <p className="text-center text-xs text-muted-foreground bg-muted/60 border border-border rounded-full py-2 px-4">📍 {t("pages.routines.generate.location_redetecting", { defaultValue: "Detecting your location for accurate meals & outdoor plan…" })}</p>}
                   {existingRoutine?.exists && !overrideMode ? <p className="text-center text-sm text-primary font-medium bg-muted border border-border rounded-2xl py-3 px-4">
                       {t("pages.routines.generate.choose")} <strong>{t("pages.routines.generate.view_existing_routine_2")}</strong> or <strong>{t("pages.routines.generate.override_regenerate_2")}</strong> {t("pages.routines.generate.above_to_continue")}
                     </p> : <>
@@ -1938,7 +2026,7 @@ export default function RoutineGenerate() {
                 </div>
 
                 {/* Step 3 — Outdoor weather signal */}
-                <WeatherSelector stepNum={3} value={weatherOutdoor} onChange={setWeatherOutdoor} />
+                <WeatherSelector stepNum={3} value={weatherOutdoor} onChange={setWeatherOutdoor} onTouched={() => { weatherTouchedRef.current = true; setWeatherTouched(true); }} />
 
                 {/* Step 4 — Special plans */}
                 <div className="space-y-4">
