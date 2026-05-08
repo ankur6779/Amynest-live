@@ -1,0 +1,31 @@
+kind = "video"
+previewPath = "/amynest-splash/"
+title = "AmyNest AI Splash Screen"
+version = "1.0.0"
+id = "artifacts/amynest-splash"
+router = "path"
+
+[[integratedSkills]]
+name = "video-js"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/amynest-splash/" ]
+localPort = 24273
+
+[services.development]
+run = "pnpm --filter @workspace/amynest-splash run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/amynest-splash", "run", "build" ]
+publicDir = "artifacts/amynest-splash/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24273"
+BASE_PATH = "/amynest-splash/"
