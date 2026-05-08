@@ -3562,6 +3562,7 @@
         "weather_detect_failed": "Couldn't read weather. Pick manually below.",
         "weather_detect_unavailable": "Auto-detect not supported on this browser.",
         "weather_detected_at": "Auto-detected from your location",
+        "location_redetecting": "Detecting your location for accurate meals & outdoor plan…",
         "caregiver_note_mom": "Mom is on duty — Amy AI will tune the tone for you.",
         "caregiver_note_dad": "Dad is on duty — Amy AI will tune the tone for you.",
         "caregiver_note_both": "Both parents are around — tasks will be split smartly.",

@@ -2032,6 +2032,7 @@
     "weather_limited": "⛅ Limited",
     "weather_auto_detect": "Auto-detect",
     "weather_auto_detecting": "Detecting…",
+    "location_redetecting": "Detecting your location for accurate meals & outdoor plan…",
     "caregiver_note_mom": "Amy will plan nurturing, gentle activities.",
     "caregiver_note_dad": "Amy will add active, energetic play.",
     "caregiver_note_both": "Amy will create a structured, balanced day.",
