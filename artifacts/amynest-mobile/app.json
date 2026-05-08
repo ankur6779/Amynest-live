@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "AmyNest AI",
-    "slug": "amynest-mobile",
+    "slug": "amynest-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -20,7 +20,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.amynest.ai",
+      "bundleIdentifier": "com.amynest.app",
       "googleServicesFile": "./GoogleService-Info.plist",
       "buildNumber": "1",
       "infoPlist": {
@@ -32,7 +32,7 @@
       }
     },
     "android": {
-      "package": "com.amynest.ai",
+      "package": "com.amynest.app",
       "googleServicesFile": "./google-services.json",
       "versionCode": 3,
       "adaptiveIcon": {
@@ -59,7 +59,7 @@
       [
         "expo-router",
         {
-          "origin": "https://replit.com/"
+          "origin": "https://amynest.in"
         }
       ],
       "expo-font",
@@ -116,7 +116,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "f9d316ff-ff45-41d5-aa2d-4fa49a82cff2"
+        "projectId": "72266bd6-b9af-48da-8dfd-99e51dd4ebf1"
       }
     }
   }
