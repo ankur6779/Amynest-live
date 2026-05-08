@@ -969,6 +969,53 @@ export interface LearningWeightsResponse {
   sample: number;
 }
 
+export type NudgeKind = (typeof NudgeKind)[keyof typeof NudgeKind];
+
+export const NudgeKind = {
+  risk_window: "risk_window",
+  goal_slipping: "goal_slipping",
+  demote: "demote",
+  weak_slot: "weak_slot",
+  boost: "boost",
+  streak: "streak",
+  goal_up: "goal_up",
+} as const;
+
+export type NudgeDirection =
+  | (typeof NudgeDirection)[keyof typeof NudgeDirection]
+  | null;
+
+export const NudgeDirection = {
+  up: "up",
+  down: "down",
+  flat: "flat",
+  unknown: "unknown",
+} as const;
+
+/**
+ * A single ranked productive nudge with rendering parameters.
+ */
+export interface Nudge {
+  id: string;
+  kind: NudgeKind;
+  priority: number;
+  suggestionCode: string;
+  category?: string | null;
+  hour?: number | null;
+  goal?: string | null;
+  direction?: NudgeDirection;
+  value?: number | null;
+}
+
+/**
+ * Ranked productive nudges synthesized from Phase 2/3 signals + parent goals.
+ */
+export interface ProductiveNudgesResponse {
+  childId: number;
+  nudges: Nudge[];
+  computedAt: string;
+}
+
 export type SmartStudyInsightsMode =
   (typeof SmartStudyInsightsMode)[keyof typeof SmartStudyInsightsMode];
 

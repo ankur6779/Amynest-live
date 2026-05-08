@@ -25,6 +25,8 @@ import {
   GetChildIntelligenceInsightsResponse,
   GetChildLearningWeightsParams,
   GetChildLearningWeightsResponse,
+  GetChildNudgesParams,
+  GetChildNudgesResponse,
 } from "@workspace/api-zod";
 import {
   loadOwnedChild,
@@ -40,6 +42,7 @@ import {
   computeBehaviorCorrelation,
 } from "../services/intelligenceAnalytics.js";
 import { computeLearningWeights } from "../services/learningWeights.js";
+import { computeProductiveNudgesForChild } from "../services/productiveNudges.js";
 
 const router: IRouter = Router();
 
@@ -217,6 +220,26 @@ router.get("/child-intelligence/:childId/learning-weights", async (req, res): Pr
   }
   const weights = await computeLearningWeights(params.data.childId);
   res.json(GetChildLearningWeightsResponse.parse(weights));
+});
+
+router.get("/child-intelligence/:childId/nudges", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const params = GetChildNudgesParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const child = await loadOwnedChild(params.data.childId, userId);
+  if (!child) {
+    res.status(404).json({ error: "Child not found" });
+    return;
+  }
+  const nudges = await computeProductiveNudgesForChild(params.data.childId);
+  res.json(GetChildNudgesResponse.parse(nudges));
 });
 
 export default router;

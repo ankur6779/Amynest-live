@@ -21,6 +21,7 @@ import AiMealGenerator from "@/components/AiMealGenerator";
 import { DailySignalLogger } from "@/components/intelligence/DailySignalLogger";
 import { WeeklyReportCard } from "@/components/intelligence/WeeklyReportCard";
 import { LearningWeightsCard } from "@/components/intelligence/LearningWeightsCard";
+import { ProductiveNudgesCard } from "@/components/intelligence/ProductiveNudgesCard";
 import colors, { brand, palette } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 
@@ -283,6 +284,12 @@ export default function RoutinesScreen() {
         {effectiveChildId != null && (
           <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
             <LearningWeightsCard childId={effectiveChildId} />
+          </View>
+        )}
+
+        {effectiveChildId != null && (
+          <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+            <ProductiveNudgesCard childId={effectiveChildId} />
           </View>
         )}
 

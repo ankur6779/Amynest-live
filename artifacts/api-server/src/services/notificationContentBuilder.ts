@@ -7,6 +7,10 @@ import {
   userProgressTable,
   type NotificationCategory,
 } from "@workspace/db";
+import {
+  computeProductiveNudgesForChild,
+  renderNudgeBodyForPush,
+} from "./productiveNudges.js";
 
 export interface BuiltNotification {
   title: string;
@@ -372,12 +376,36 @@ export async function buildAmyInsight(
     body = insights[ageGroup(child.age)];
   }
 
+  // Phase 4 — Productive nudges. If a high-priority nudge exists, prefer it
+  // over the generic insight body. Wrapped so any failure (DB, ranker)
+  // gracefully falls back to the existing copy.
+  let deepLink = "/hub";
+  let dedupSuffix = "";
+  let topNudgeId: string | null = null;
+  try {
+    const result = await computeProductiveNudgesForChild(child.id);
+    const top = result.nudges[0];
+    if (top && top.priority >= 70) {
+      body = renderNudgeBodyForPush(top, child.name);
+      // Use the allowlisted `/routine` shorthand so mobile's strict
+      // DEEP_LINK_MAP routes the tap. The nudge id travels in `data` so the
+      // routines screen can scroll/highlight if it chooses.
+      deepLink = "/routine";
+      dedupSuffix = `:nudge:${top.id}`;
+      topNudgeId = top.id;
+    }
+  } catch {
+    // fall through with the existing body / deepLink
+  }
+
   return {
     title: "Today's Amy insight 💡",
     body,
-    deepLink: "/hub",
-    dedupKey: `insight:${date}`,
-    data: { childId: child.id },
+    deepLink,
+    dedupKey: `insight:${date}${dedupSuffix}`,
+    data: topNudgeId
+      ? { childId: child.id, nudgeId: topNudgeId }
+      : { childId: child.id },
   };
 }
 

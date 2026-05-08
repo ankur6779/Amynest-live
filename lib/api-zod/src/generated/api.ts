@@ -1981,3 +1981,44 @@ export const GetChildLearningWeightsResponse = zod
   .describe(
     "Closed-loop learning weights — feeds back into next-day generation.",
   );
+
+/**
+ * @summary Ranked productive nudges derived from risk windows, learning weights, and weekly goals.
+ */
+export const GetChildNudgesParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const GetChildNudgesResponse = zod
+  .object({
+    childId: zod.number(),
+    nudges: zod.array(
+      zod
+        .object({
+          id: zod.string(),
+          kind: zod.enum([
+            "risk_window",
+            "goal_slipping",
+            "demote",
+            "weak_slot",
+            "boost",
+            "streak",
+            "goal_up",
+          ]),
+          priority: zod.number(),
+          suggestionCode: zod.string(),
+          category: zod.string().nullish(),
+          hour: zod.number().nullish(),
+          goal: zod.string().nullish(),
+          direction: zod.enum(["up", "down", "flat", "unknown"]).nullish(),
+          value: zod.number().nullish(),
+        })
+        .describe(
+          "A single ranked productive nudge with rendering parameters.",
+        ),
+    ),
+    computedAt: zod.string(),
+  })
+  .describe(
+    "Ranked productive nudges synthesized from Phase 2\/3 signals + parent goals.",
+  );

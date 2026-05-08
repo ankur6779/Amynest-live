@@ -342,6 +342,44 @@
       "slot_title": "Hourly completion (last 14 days)",
       "slot_axis_hour": "{{hour}}:00",
       "slot_low_label": "Low completion slot — keep this hour light"
+    },
+    "nudges": {
+      "title": "Productive nudges",
+      "subtitle": "Smart suggestions from your child's recent patterns.",
+      "kind": {
+        "risk_window": "Risk window",
+        "goal_slipping": "Goal slipping",
+        "demote": "Reduce activity",
+        "weak_slot": "Weak slot",
+        "boost": "Boost activity",
+        "streak": "Streak",
+        "goal_up": "Goal improving"
+      },
+      "suggestion": {
+        "risk:morning:add_calm_block": "Tough mornings around {{hour}}:00 — add a 5-minute calm block 30 minutes before.",
+        "risk:midday:offer_snack_or_quiet": "Midday flare-ups around {{hour}}:00 — offer a snack or quiet activity.",
+        "risk:afternoon:swap_demanding_for_outdoor": "Afternoon stress around {{hour}}:00 — swap a demanding task for outdoor play.",
+        "risk:evening:start_winddown_earlier": "Evening meltdowns around {{hour}}:00 — start wind-down 30 minutes earlier.",
+        "nudge:goal_down:improve_sleep": "Sleep is dipping this week — try a steadier bedtime tomorrow.",
+        "nudge:goal_down:reduce_tantrums": "Tantrums ticked up — name feelings out loud during the next flare-up.",
+        "nudge:goal_down:improve_focus": "Focus is slipping — shrink the next learning block to 15 minutes.",
+        "nudge:goal_down:reduce_screen_time": "Screen time crept up — swap one screen block for outdoor play.",
+        "nudge:goal_down:increase_independence": "Self-completion dipped — let your child lead one routine task tomorrow.",
+        "nudge:goal_up:improve_sleep": "Sleep is improving — keep the steadier bedtime going.",
+        "nudge:goal_up:reduce_tantrums": "Fewer tantrums this week — name what worked so it sticks.",
+        "nudge:goal_up:improve_focus": "Focus is up — protect the slot that's working.",
+        "nudge:goal_up:reduce_screen_time": "Screen time is down — celebrate the swap that helped.",
+        "nudge:goal_up:increase_independence": "Independence is up — keep handing over one task each day."
+      },
+      "fallback": {
+        "demote": "\"{{category}}\" activities have preceded tough moments — swap one out tomorrow.",
+        "boost": "\"{{category}}\" activities work well — add one more tomorrow.",
+        "weak_slot": "{{hour}}:00 has been low completion ({{value}}%) — keep this slot light.",
+        "streak": "{{value}} days of logging in a row — pick a small win to repeat tomorrow.",
+        "goal_slipping": "Your goal \"{{goal}}\" is slipping — pick one small step to shift it.",
+        "goal_up": "Your goal \"{{goal}}\" is improving — keep the change that's working.",
+        "risk_window": "Tough patch around {{hour}}:00 — add a calm reset 30 minutes before."
+      }
     }
   },
   "routines": {
