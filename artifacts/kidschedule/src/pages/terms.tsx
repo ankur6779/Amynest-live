@@ -59,8 +59,8 @@ export default function TermsOfServicePage() {
   const {
     t
   } = useTranslation();
-  return <div className="min-h-screen bg-gradient-to-br from-muted via-white to-muted">
-      <header className="border-b border-border bg-white/70 backdrop-blur">
+  return <div className="min-h-screen bg-slate-50 text-slate-800">
+      <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
           <Link href="/">
             <span className="flex items-center gap-2 cursor-pointer">
@@ -75,31 +75,31 @@ export default function TermsOfServicePage() {
             </span>
           </Link>
           <Link href="/">
-            <span className="text-sm text-foreground hover:text-foreground cursor-pointer">{t("screens.common.home_link")}</span>
+            <span className="text-sm text-slate-600 hover:text-slate-900 cursor-pointer">← {t("screens.common.home_link")}</span>
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-5 py-10">
-        <h1 className="mb-2 text-3xl font-black text-foreground">{t("screens.terms.heading")}</h1>
-        <p className="mb-8 text-sm text-muted-foreground">{t("screens.terms.last_updated")}</p>
+      <main className="mx-auto max-w-3xl px-5 py-12">
+        <h1 className="mb-2 text-3xl font-black text-slate-900">{t("screens.terms.heading")}</h1>
+        <p className="mb-8 text-sm text-slate-500 italic">{t("screens.terms.last_updated")}</p>
 
-        <p className="my-3 leading-relaxed text-foreground">
+        <p className="my-3 leading-relaxed text-slate-700">
           {t("screens.terms.intro_before")} <strong>{t("pages.terms.amynest_ai_3")}</strong> {t("screens.terms.intro_at")}{" "}
-          <a href="https://amynest.in" className="text-primary underline hover:text-primary">
+          <a href="https://amynest.in" className="text-violet-600 underline hover:text-violet-800">
             {t("pages.terms.amynest_in")}
           </a>
           {t("screens.terms.intro_after")}
         </p>
 
         {sections.map(s => <section key={s.title} className="mt-8">
-            <h2 className="mb-3 text-xl font-bold text-foreground">{s.title}</h2>
-            <p className="leading-relaxed text-foreground">{s.body}</p>
+            <h2 className="mb-3 text-xl font-bold text-slate-900">{s.title}</h2>
+            <p className="leading-relaxed text-slate-700">{s.body}</p>
           </section>)}
       </main>
 
-      <footer className="border-t border-border bg-white/60 py-6">
-        <p className="text-center text-xs text-muted-foreground">{t("screens.common.copyright")}</p>
+      <footer className="border-t border-slate-200 bg-white py-6">
+        <p className="text-center text-xs text-slate-500">{t("screens.common.copyright")}</p>
       </footer>
     </div>;
 }
