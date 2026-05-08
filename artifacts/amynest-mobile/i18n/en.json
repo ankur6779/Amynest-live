@@ -2581,9 +2581,16 @@
       }
     },
     "premium_splash": {
-      "meet": "MEET",
+      "meet": "Meet",
       "amy": "AMY",
-      "powered_by_amynest_ai": "Powered by AmyNest AI"
+      "powered_by_amynest_ai": "Powered by AmyNest AI",
+      "tagline_prefix": "— Where ",
+      "tagline_highlight": "Smart Parenting",
+      "tagline_suffix": " Start —",
+      "feat_ai": "AI Powered",
+      "feat_trusted": "Trusted",
+      "feat_caring": "Caring",
+      "feat_smarter": "Smarter Together"
     },
     "printable_worksheets": {
       "loading_worksheets": "Loading worksheets…",

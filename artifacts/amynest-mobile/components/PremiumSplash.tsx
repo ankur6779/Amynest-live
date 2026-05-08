@@ -1,24 +1,19 @@
 /**
- * PremiumSplash — Cinematic, luxury-native animated splash screen.
+ * PremiumSplash — Reference-matched cinematic splash screen.
  *
- * Design language: deep void + neon purple, Apple-level polish.
- *   · Dark void gradient background (void black → deep purple)
- *   · 26-star twinkling field (golden-angle spread, RN Animated)
- *   · Large breathing neon ring with rotating purple-pink-indigo gradient
- *   · SVG tri-colour gradient "AMY" text inside the ring
- *   · Three-layer scrolling sinusoidal bottom waves (SVG + Reanimated)
- *   · Thin glowing gradient progress bar
- *   · Slow cinematic fade-in entrance + smooth fade-out exit
+ * Visual match: thin neon ring (9 px band), large white "AMY" text with
+ * purple glow, coloured tagline, 4 feature-icon row, scrolling waves,
+ * glowing progress bar. Minimum visible duration: 3.2 s (> 2.9 s req.).
  *
- * Performance: all main animations run on the UI thread via Reanimated 4.
- * Stars use RN Animated (26 separate loops, lightweight opacity/no layout).
+ * Animations: Reanimated 4 (UI thread) for ring/stage/progress/wave;
+ *             RN Animated for 24 lightweight star-twinkle loops.
  */
 import React, { useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
   Animated as RNAnimated,
-  Easing as RNEasing,
+  Easing   as RNEasing,
   StyleSheet,
   Dimensions,
   StatusBar,
@@ -44,37 +39,39 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
 import { brand, brandAlpha } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 
 const { width: W, height: H } = Dimensions.get("window");
 
-// ─── Timing constants ─────────────────────────────────────────────────────────
-const VISIBLE_MS  = 3800;   // how long the splash is fully visible
-const FADE_OUT_MS = 900;    // duration of the final fade-out
+// ─── Timing ───────────────────────────────────────────────────────────────────
+const VISIBLE_MS  = 3200;   // > 2.9 s minimum requirement
+const FADE_OUT_MS = 800;
 
-// ─── Ring dimensions (larger than NeonRingHero's OUTER=170 for cinematic feel) ─
-const OUTER  = 240;
-const INNER  = 188;          // ~26 px ring band thickness
-const OFFSET = (OUTER - INNER) / 2;   // 26 — position of inner circle
+// ─── Ring geometry ────────────────────────────────────────────────────────────
+// Thin neon-tube aesthetic — 9 px band
+const OUTER  = 265;
+const INNER  = 247;
+const OFFSET = (OUTER - INNER) / 2;   // 9 px
 
-// ─── Progress bar ─────────────────────────────────────────────────────────────
-const BAR_MAX_W = W * 0.72;
+// Ring-group container (holds ring + all absolute glow layers)
+const RG = 360;
 
-// ─── Wave layer ──────────────────────────────────────────────────────────────
-const WAVE_H = 130;
-const WAVE_W = W * 2.5;    // extra-wide for seamless horizontal loop
+// ─── Misc ─────────────────────────────────────────────────────────────────────
+const BAR_MAX_W = W * 0.68;
+const WAVE_H    = 120;
+const WAVE_W    = W * 2.5;
 
-// ─── Star field ──────────────────────────────────────────────────────────────
+// Reusable pure-white constant (avoids repeating audit-ok on every usage)
+const WHITE = "#FFFFFF"; // audit-ok: pure white — star dots, AMY text, flare dots
+
+// ─── Star field ───────────────────────────────────────────────────────────────
 type StarDef = { x: number; y: number; r: number; dur: number; del: number };
 
-/**
- * 26 stars using golden-angle (137.508°) distribution for natural,
- * non-repeating spread across the full screen.
- */
-const STAR_DEFS: StarDef[] = Array.from({ length: 26 }, (_, i) => ({
+const STAR_DEFS: StarDef[] = Array.from({ length: 24 }, (_, i) => ({
   x:   (((i * 137.508) % 100) / 100) * W,
-  y:   (((i * 91.3 + 7) % 100) / 100) * H * 0.84,
+  y:   (((i * 91.3 + 7) % 100) / 100) * H * 0.82,
   r:   [1, 1, 1.5, 1, 1, 2, 1, 1.5][i % 8],
   dur: 2100 + ((i * 673) % 2800),
   del: (i * 437) % 3400,
@@ -82,19 +79,18 @@ const STAR_DEFS: StarDef[] = Array.from({ length: 26 }, (_, i) => ({
 
 function Star({ x, y, r, dur, del }: StarDef) {
   const opacity = useRef(new RNAnimated.Value(0)).current;
-
   useEffect(() => {
     const loop = RNAnimated.loop(
       RNAnimated.sequence([
         RNAnimated.delay(del),
         RNAnimated.timing(opacity, {
-          toValue: 0.9,
+          toValue: 0.85,
           duration: dur * 0.45,
           easing: RNEasing.inOut(RNEasing.ease),
           useNativeDriver: true,
         }),
         RNAnimated.timing(opacity, {
-          toValue: 0.12,
+          toValue: 0.1,
           duration: dur * 0.55,
           easing: RNEasing.inOut(RNEasing.ease),
           useNativeDriver: true,
@@ -114,10 +110,10 @@ function Star({ x, y, r, dur, del }: StarDef) {
         width: r * 2,
         height: r * 2,
         borderRadius: r,
-        backgroundColor: "#FFFFFF", // audit-ok: star white dot
+        backgroundColor: WHITE,
         shadowColor: brand.purple400,
-        shadowOpacity: 0.85,
-        shadowRadius: r * 3.5,
+        shadowOpacity: 0.8,
+        shadowRadius: r * 3,
         shadowOffset: { width: 0, height: 0 },
         opacity,
       }}
@@ -125,45 +121,59 @@ function Star({ x, y, r, dur, del }: StarDef) {
   );
 }
 
-// ─── SVG gradient "AMY" text ─────────────────────────────────────────────────
-function AmyGradientText({ glow }: { glow: SharedValue<number> }) {
+// ─── "AMY" SVG text — white with purple glow bloom ───────────────────────────
+function AmyText({ glow }: { glow: SharedValue<number> }) {
   const animStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
-
   return (
     <Animated.View style={animStyle}>
-      <Svg width={174} height={72} viewBox="0 0 174 72">
+      <Svg width={200} height={86} viewBox="0 0 200 86">
         <Defs>
           <SvgGradient id="amyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%"   stopColor={brand.purple500} />
-            <Stop offset="48%"  stopColor={brand.pink500}   />
+            <Stop offset="0%"   stopColor={WHITE}          />
+            <Stop offset="55%"  stopColor={brand.purple400} />
             <Stop offset="100%" stopColor={brand.indigo500} />
           </SvgGradient>
         </Defs>
 
-        {/* Soft outer glow layer — same text, wider, low opacity */}
+        {/* Outer glow bloom — large, dim purple */}
         <SvgText
-          fill={brand.purple400}
-          fontSize={50}
+          fill={brand.purple500}
+          fontSize={72}
           fontWeight="700"
-          letterSpacing={6}
+          letterSpacing={8}
           textAnchor="middle"
-          x="87"
-          y="62"
-          opacity={0.28}
+          x="100"
+          y="74"
+          opacity={0.22}
           fontFamily="Inter_700Bold"
         >
           AMY
         </SvgText>
 
-        {/* Main tri-colour gradient text */}
+        {/* Mid glow — closer to main text */}
+        <SvgText
+          fill={brand.purple400}
+          fontSize={64}
+          fontWeight="700"
+          letterSpacing={8}
+          textAnchor="middle"
+          x="100"
+          y="72"
+          opacity={0.3}
+          fontFamily="Inter_700Bold"
+        >
+          AMY
+        </SvgText>
+
+        {/* Main text — white→purple gradient */}
         <SvgText
           fill="url(#amyGrad)"
-          fontSize={50}
+          fontSize={60}
           fontWeight="700"
-          letterSpacing={6}
+          letterSpacing={8}
           textAnchor="middle"
-          x="87"
-          y="62"
+          x="100"
+          y="70"
           fontFamily="Inter_700Bold"
         >
           AMY
@@ -174,21 +184,15 @@ function AmyGradientText({ glow }: { glow: SharedValue<number> }) {
 }
 
 // ─── Bottom sine-wave layers ──────────────────────────────────────────────────
-function buildSinePath(
-  totalW: number,
-  totalH: number,
-  amp: number,
-  freq: number,
-  yBase: number,
-): string {
+function makeSinePath(tw: number, th: number, amp: number, freq: number, yb: number): string {
   const steps = 80;
   const pts: string[] = [];
   for (let i = 0; i <= steps; i++) {
-    const px = (i / steps) * totalW;
-    const py = yBase + amp * Math.sin((i / steps) * Math.PI * freq);
+    const px = (i / steps) * tw;
+    const py = yb + amp * Math.sin((i / steps) * Math.PI * freq);
     pts.push(`${i === 0 ? "M" : "L"} ${px.toFixed(1)},${py.toFixed(1)}`);
   }
-  pts.push(`L ${totalW.toFixed(1)},${totalH} L 0,${totalH} Z`);
+  pts.push(`L ${tw.toFixed(1)},${th} L 0,${th} Z`);
   return pts.join(" ");
 }
 
@@ -196,11 +200,9 @@ function BottomWave({ tx }: { tx: SharedValue<number> }) {
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: tx.value }],
   }));
-
-  // Pre-compute paths once (expensive string ops)
-  const p1 = useMemo(() => buildSinePath(WAVE_W, WAVE_H, 30, 3.5, 38), []);
-  const p2 = useMemo(() => buildSinePath(WAVE_W, WAVE_H, 20, 4.8, 60), []);
-  const p3 = useMemo(() => buildSinePath(WAVE_W, WAVE_H, 13, 6.2, 78), []);
+  const p1 = useMemo(() => makeSinePath(WAVE_W, WAVE_H, 28, 3.5, 34), []);
+  const p2 = useMemo(() => makeSinePath(WAVE_W, WAVE_H, 18, 4.8, 56), []);
+  const p3 = useMemo(() => makeSinePath(WAVE_W, WAVE_H, 11, 6.2, 72), []);
 
   return (
     <View style={styles.waveContainer} pointerEvents="none">
@@ -208,7 +210,7 @@ function BottomWave({ tx }: { tx: SharedValue<number> }) {
         <Svg width={WAVE_W} height={WAVE_H}>
           <Defs>
             <SvgGradient id="wg1" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%"   stopColor={brand.purple500} stopOpacity={0.26} />
+              <Stop offset="0%"   stopColor={brand.purple500} stopOpacity={0.28} />
               <Stop offset="100%" stopColor={brand.indigo500} stopOpacity={0.04} />
             </SvgGradient>
             <SvgGradient id="wg2" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -225,97 +227,109 @@ function BottomWave({ tx }: { tx: SharedValue<number> }) {
   );
 }
 
+// ─── Feature icons row ────────────────────────────────────────────────────────
+type FeatureDef = {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  tKey: string;
+};
+const FEATURES: FeatureDef[] = [
+  { icon: "hardware-chip-outline",     tKey: "feat_ai"      },
+  { icon: "shield-checkmark-outline",  tKey: "feat_trusted"  },
+  { icon: "heart-outline",             tKey: "feat_caring"   },
+  { icon: "trending-up-outline",       tKey: "feat_smarter"  },
+];
+
+function FeatureIcons({ opacity }: { opacity: SharedValue<number> }) {
+  const { t } = useTranslation();
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return (
+    <Animated.View style={[styles.featRow, animStyle]}>
+      {FEATURES.map((f, i) => (
+        <React.Fragment key={f.tKey}>
+          {i > 0 && <View style={styles.featSep} />}
+          <View style={styles.featItem}>
+            <Ionicons name={f.icon} size={22} color={brand.purple400} />
+            <Text style={styles.featLabel}>{t(`premium_splash.${f.tKey}`)}</Text>
+          </View>
+        </React.Fragment>
+      ))}
+    </Animated.View>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function PremiumSplash({ onFinish }: { onFinish: () => void }) {
   const { t } = useTranslation();
 
-  // All on UI thread via Reanimated 4
+  // All UI-thread shared values
   const containerOpacity = useSharedValue(0);
   const stageOpacity     = useSharedValue(0);
-  const stageY           = useSharedValue(30);
+  const stageY           = useSharedValue(26);
   const ringPulse        = useSharedValue(1);
   const ringRot          = useSharedValue(0);
-  const ringGlow         = useSharedValue(0.28);
-  const amyGlow          = useSharedValue(0.60);
+  const ringGlow         = useSharedValue(0.22);
+  const amyGlow          = useSharedValue(0.62);
   const taglineOpacity   = useSharedValue(0);
+  const featOpacity      = useSharedValue(0);
   const progressW        = useSharedValue(0);
   const waveX            = useSharedValue(0);
 
   useEffect(() => {
     const dismiss = () => onFinish();
 
-    // ── Entrance ────────────────────────────────────────────────────────────
-    containerOpacity.value = withTiming(1, {
-      duration: 550,
-      easing: Easing.out(Easing.ease),
-    });
-    stageOpacity.value = withDelay(
-      180,
-      withTiming(1, { duration: 1100, easing: Easing.out(Easing.exp) }),
-    );
-    stageY.value = withDelay(
-      180,
-      withTiming(0, { duration: 1100, easing: Easing.out(Easing.exp) }),
-    );
-    taglineOpacity.value = withDelay(
-      1050,
-      withTiming(1, { duration: 1100, easing: Easing.out(Easing.ease) }),
-    );
+    // ── Entrance ─────────────────────────────────────────────────────────────
+    containerOpacity.value = withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) });
+    stageOpacity.value     = withDelay(160, withTiming(1, { duration: 1050, easing: Easing.out(Easing.exp) }));
+    stageY.value           = withDelay(160, withTiming(0, { duration: 1050, easing: Easing.out(Easing.exp) }));
+    taglineOpacity.value   = withDelay(900,  withTiming(1, { duration: 900, easing: Easing.out(Easing.ease) }));
+    featOpacity.value      = withDelay(1300, withTiming(1, { duration: 900, easing: Easing.out(Easing.ease) }));
 
-    // ── Ring — slow rotation (13 s / revolution) ─────────────────────────────
+    // ── Ring slow rotation (14 s / rev) ──────────────────────────────────────
     ringRot.value = withRepeat(
-      withTiming(1, { duration: 13000, easing: Easing.linear }),
-      -1,
-      false,
+      withTiming(1, { duration: 14000, easing: Easing.linear }),
+      -1, false,
     );
 
-    // ── Ring — slow breathing pulse (~2.8 s cycle) ────────────────────────────
+    // ── Ring breathing pulse (~3 s cycle) ────────────────────────────────────
     ringPulse.value = withRepeat(
       withSequence(
-        withTiming(1.072, { duration: 2700, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1,     { duration: 2700, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.065, { duration: 2900, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1,     { duration: 2900, easing: Easing.inOut(Easing.ease) }),
       ),
-      -1,
-      false,
+      -1, false,
     );
 
-    // ── Atmospheric glow pulse (offset phase for organic feel) ────────────────
+    // ── Atmospheric glow pulse ────────────────────────────────────────────────
     ringGlow.value = withRepeat(
       withSequence(
-        withTiming(0.9,  { duration: 2300, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.28, { duration: 2300, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.88, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.22, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
       ),
-      -1,
-      false,
+      -1, false,
     );
 
-    // ── "AMY" text glow pulse ─────────────────────────────────────────────────
+    // ── "AMY" glow pulse ─────────────────────────────────────────────────────
     amyGlow.value = withRepeat(
       withSequence(
-        withTiming(1,    { duration: 1900, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.62, { duration: 1900, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1,    { duration: 1950, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.62, { duration: 1950, easing: Easing.inOut(Easing.ease) }),
       ),
-      -1,
-      false,
+      -1, false,
     );
 
     // ── Progress bar fills over VISIBLE_MS ───────────────────────────────────
     progressW.value = withDelay(
-      320,
-      withTiming(BAR_MAX_W, {
-        duration: VISIBLE_MS - 520,
-        easing: Easing.inOut(Easing.ease),
-      }),
+      280,
+      withTiming(BAR_MAX_W, { duration: VISIBLE_MS - 480, easing: Easing.inOut(Easing.ease) }),
     );
 
-    // ── Bottom wave scrolls left continuously ─────────────────────────────────
+    // ── Wave scrolls left ─────────────────────────────────────────────────────
     waveX.value = withRepeat(
       withTiming(-W, { duration: 6200, easing: Easing.linear }),
-      -1,
-      false,
+      -1, false,
     );
 
-    // ── Fade-out + dismiss ────────────────────────────────────────────────────
+    // ── Dismiss ───────────────────────────────────────────────────────────────
     const timer = setTimeout(() => {
       cancelAnimation(ringPulse);
       cancelAnimation(ringGlow);
@@ -337,100 +351,81 @@ export default function PremiumSplash({ onFinish }: { onFinish: () => void }) {
       cancelAnimation(ringGlow);
       cancelAnimation(amyGlow);
       cancelAnimation(taglineOpacity);
+      cancelAnimation(featOpacity);
       cancelAnimation(progressW);
       cancelAnimation(waveX);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Animated styles (all UI-thread) ──────────────────────────────────────
-  const containerStyle = useAnimatedStyle(() => ({
-    opacity: containerOpacity.value,
-  }));
-  const stageStyle = useAnimatedStyle(() => ({
+  // ── Animated styles ───────────────────────────────────────────────────────
+  const containerStyle = useAnimatedStyle(() => ({ opacity: containerOpacity.value }));
+  const stageStyle     = useAnimatedStyle(() => ({
     opacity: stageOpacity.value,
     transform: [{ translateY: stageY.value }],
   }));
-  const ringRotStyle = useAnimatedStyle(() => ({
+  const ringRotStyle   = useAnimatedStyle(() => ({
     transform: [{ rotate: `${ringRot.value * 360}deg` }],
   }));
   const ringPulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: ringPulse.value }],
   }));
-  const ringGlowStyle = useAnimatedStyle(() => ({
-    opacity: ringGlow.value,
-  }));
-  const taglineStyle = useAnimatedStyle(() => ({
-    opacity: taglineOpacity.value,
-  }));
-  const progressStyle = useAnimatedStyle(() => ({
-    width: progressW.value,
-  }));
+  const ringGlowStyle  = useAnimatedStyle(() => ({ opacity: ringGlow.value }));
+  const taglineStyle   = useAnimatedStyle(() => ({ opacity: taglineOpacity.value }));
+  const progressStyle  = useAnimatedStyle(() => ({ width: progressW.value }));
 
   return (
     <Animated.View
-      style={[
-        StyleSheet.absoluteFillObject,
-        { zIndex: 9999, elevation: 9999 },
-        containerStyle,
-      ]}
+      style={[StyleSheet.absoluteFillObject, { zIndex: 9999, elevation: 9999 }, containerStyle]}
     >
       <StatusBar
         barStyle="light-content"
-        backgroundColor="#05000f" // audit-ok: void-black splash status-bar bg
+        backgroundColor="#04000d" // audit-ok: void black splash status-bar
         translucent={Platform.OS === "android"}
       />
 
-      {/* ── Deep void gradient background ────────────────────────────────── */}
+      {/* ── Deep void gradient background ────────────────────────────── */}
       <LinearGradient
-        colors={["#05000f", "#0d0520", "#070013"]} // audit-ok: cinematic void-black + deep-purple splash gradient
-        locations={[0, 0.52, 1]}
-        start={{ x: 0.15, y: 0 }}
-        end={{ x: 0.85, y: 1 }}
+        colors={["#04000d", "#0a031a", "#060010"]} // audit-ok: void black + deep-purple splash bg
+        locations={[0, 0.5, 1]}
+        start={{ x: 0.2, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* ── Radial purple bloom — atmosphere behind the ring ─────────────── */}
+      {/* ── Radial purple blooms ──────────────────────────────────────── */}
       <View style={styles.radialBloom} />
       <View style={styles.radialBloomCore} />
 
-      {/* ── Twinkling star field ──────────────────────────────────────────── */}
-      {STAR_DEFS.map((s, i) => (
-        <Star key={i} {...s} />
-      ))}
+      {/* ── Twinkling stars ───────────────────────────────────────────── */}
+      {STAR_DEFS.map((s, i) => <Star key={i} {...s} />)}
 
-      {/* ── Scrolling bottom sine waves ───────────────────────────────────── */}
+      {/* ── Scrolling bottom waves ────────────────────────────────────── */}
       <BottomWave tx={waveX} />
 
-      {/* ── Main stage — centred column ───────────────────────────────────── */}
+      {/* ── Main stage ────────────────────────────────────────────────── */}
       <Animated.View style={[styles.stage, stageStyle]}>
 
-        {/* Ring group — 440×440 container centring all ring layers */}
+        {/* Ring group — 360×360 container */}
         <View style={styles.ringGroup}>
 
-          {/* Outer atmospheric glow disc */}
-          <Animated.View style={[styles.atmosGlow, ringGlowStyle]} />
-
-          {/* Inner tighter glow disc */}
+          {/* Atmospheric glow discs */}
+          <Animated.View style={[styles.atmosGlow,      ringGlowStyle]} />
           <Animated.View style={[styles.atmosGlowInner, ringGlowStyle]} />
 
-          {/* Static orbit guide ring */}
+          {/* Orbit guide ring */}
           <View style={styles.orbitRing} />
 
-          {/* ── Pulse + rotate group (centred by flex) ─────────────────────── */}
-          <Animated.View style={ringPulseStyle}>
+          {/* Neon edge glow rings — create the bright tube light look */}
+          <View style={styles.neonGlowOuter} />
+          <View style={styles.neonGlowInner} />
 
-            {/* Rotating gradient fill clipped to circle */}
+          {/* Pulse + rotate group — centred by flex */}
+          <Animated.View style={ringPulseStyle}>
+            {/* Rotating gradient fill — clipped to ring circle */}
             <View style={styles.ringClip}>
               <Animated.View style={[StyleSheet.absoluteFill, ringRotStyle]}>
                 <LinearGradient
-                  colors={[
-                    brand.purple500,
-                    brand.pink500,
-                    brand.indigo500,
-                    brand.purple500,
-                    brand.pink500,
-                    brand.purple500,
-                  ]}
+                  colors={[brand.purple500, brand.pink500, WHITE, brand.indigo500, brand.purple500, brand.pink500, brand.purple500]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.gradientFill}
@@ -438,29 +433,44 @@ export default function PremiumSplash({ onFinish }: { onFinish: () => void }) {
               </Animated.View>
             </View>
 
-            {/* Inner dark circle — "MEET" + gradient "AMY" */}
+            {/* Inner dark circle — "Meet" + "AMY" */}
             <View style={styles.innerCircle}>
               <Text style={styles.meetText}>{t("premium_splash.meet")}</Text>
-              <AmyGradientText glow={amyGlow} />
+              <View style={styles.meetUnderline} />
+              <AmyText glow={amyGlow} />
+              <View style={styles.amyUnderline} />
             </View>
 
-            {/* Light flare — primary (top-right of ring) */}
+            {/* Flare dots */}
             <View style={styles.flarePrimary} />
-            {/* Light flare — secondary (bottom-left, dimmer) */}
             <View style={styles.flareSecondary} />
           </Animated.View>
         </View>
 
-        {/* Glowing platform ellipse beneath ring */}
+        {/* Platform glow beneath ring */}
         <View style={styles.platform} />
 
-        {/* Tagline — fades in 1 s after stage entrance */}
+        {/* Tagline — "— Where Smart Parenting Start —" */}
         <Animated.View style={taglineStyle}>
-          <Text style={styles.tagline}>{t("landing.footer_tagline")}</Text>
+          <Text style={styles.tagline}>
+            <Text style={styles.taglineDim}>{t("premium_splash.tagline_prefix")}</Text>
+            <Text style={styles.taglineHighlight}>{t("premium_splash.tagline_highlight")}</Text>
+            <Text style={styles.taglineDim}>{t("premium_splash.tagline_suffix")}</Text>
+          </Text>
         </Animated.View>
+
+        {/* Thin divider with centre dot */}
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <View style={styles.dividerDot} />
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Feature icons */}
+        <FeatureIcons opacity={featOpacity} />
       </Animated.View>
 
-      {/* ── Thin glowing gradient progress bar ───────────────────────────── */}
+      {/* ── Thin glowing progress bar ─────────────────────────────────── */}
       <View style={styles.progressTrack}>
         <Animated.View style={[styles.progressBar, progressStyle]}>
           <LinearGradient
@@ -477,83 +487,119 @@ export default function PremiumSplash({ onFinish }: { onFinish: () => void }) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  // Background blooms
+
+  // Background
   radialBloom: {
     position: "absolute",
-    top: H * 0.22,
-    left: W / 2 - 200,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: "rgba(120,50,220,0.20)", // audit-ok: outer radial bloom purple
+    top: H * 0.18,
+    left: W / 2 - 190,
+    width: 380,
+    height: 380,
+    borderRadius: 190,
+    backgroundColor: "rgba(110,40,210,0.22)", // audit-ok: outer radial bloom
   },
   radialBloomCore: {
     position: "absolute",
-    top: H * 0.30,
-    left: W / 2 - 115,
-    width: 230,
-    height: 230,
-    borderRadius: 115,
-    backgroundColor: "rgba(168,85,247,0.16)", // audit-ok: inner radial bloom lighter purple
+    top: H * 0.27,
+    left: W / 2 - 110,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(168,85,247,0.16)", // audit-ok: inner radial bloom
   },
 
   // Wave
   waveContainer: {
     position: "absolute",
-    bottom: 64,
+    bottom: 60,
     left: 0,
     width: W,
     height: WAVE_H,
     overflow: "hidden",
   },
 
-  // Main stage
+  // Stage
   stage: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingBottom: H * 0.08, // shift content slightly upward — visually balances bottom waves
+    paddingHorizontal: 20,
+    paddingBottom: H * 0.06,
   },
 
-  // Ring group container — absolute children position relative to this 440×440 box
+  // Ring group — 360×360
   ringGroup: {
-    width: 440,
-    height: 440,
+    width: RG,
+    height: RG,
     alignItems: "center",
     justifyContent: "center",
   },
 
   atmosGlow: {
     position: "absolute",
-    width: 440,
-    height: 440,
-    borderRadius: 220,
+    width: RG,
+    height: RG,
+    borderRadius: RG / 2,
     top: 0,
     left: 0,
-    backgroundColor: "rgba(120,50,220,0.17)", // audit-ok: atmospheric outer glow behind ring
+    backgroundColor: "rgba(110,40,210,0.18)", // audit-ok: outer atmospheric glow
   },
 
   atmosGlowInner: {
     position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    top: 80,  // (440 - 280) / 2
-    left: 80,
-    backgroundColor: "rgba(168,85,247,0.13)", // audit-ok: inner atmospheric glow
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    top: (RG - 240) / 2,   // 60
+    left: (RG - 240) / 2,
+    backgroundColor: "rgba(168,85,247,0.14)", // audit-ok: inner atmospheric glow
   },
 
   orbitRing: {
     position: "absolute",
-    width: OUTER + 50,
-    height: OUTER + 50,
-    borderRadius: (OUTER + 50) / 2,
-    top:  (440 - (OUTER + 50)) / 2,  // 75
-    left: (440 - (OUTER + 50)) / 2,
+    width: OUTER + 32,
+    height: OUTER + 32,
+    borderRadius: (OUTER + 32) / 2,
+    top:  (RG - (OUTER + 32)) / 2,
+    left: (RG - (OUTER + 32)) / 2,
     borderWidth: 1,
-    borderColor: "rgba(168,85,247,0.18)", // audit-ok: orbit guide ring — brand purple, very dim
+    borderColor: "rgba(168,85,247,0.15)", // audit-ok: orbit guide dim purple
     backgroundColor: "transparent",
+  },
+
+  // Neon glow rings — simulates bright neon tube edge on iOS shadow
+  neonGlowOuter: {
+    position: "absolute",
+    width: OUTER + 10,
+    height: OUTER + 10,
+    borderRadius: (OUTER + 10) / 2,
+    top:  (RG - (OUTER + 10)) / 2,
+    left: (RG - (OUTER + 10)) / 2,
+    borderWidth: 1.5,
+    borderColor: "rgba(168,85,247,0.55)", // audit-ok: neon outer glow edge
+    backgroundColor: "transparent",
+    shadowColor: brand.purple500,
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 16,
+  },
+
+  neonGlowInner: {
+    position: "absolute",
+    width: OUTER - 4,
+    height: OUTER - 4,
+    borderRadius: (OUTER - 4) / 2,
+    top:  (RG - (OUTER - 4)) / 2,
+    left: (RG - (OUTER - 4)) / 2,
+    borderWidth: 1,
+    borderColor: "rgba(236,72,153,0.35)", // audit-ok: neon inner pink glow edge
+    backgroundColor: "transparent",
+    shadowColor: brand.pink500,
+    shadowOpacity: 0.7,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 10,
   },
 
   // Ring
@@ -579,35 +625,47 @@ const styles = StyleSheet.create({
     borderRadius: INNER / 2,
     top:  OFFSET,
     left: OFFSET,
-    backgroundColor: "#06000e", // audit-ok: deep void black inner ring fill
+    backgroundColor: "#04000d", // audit-ok: deep void black inner ring fill
     alignItems: "center",
     justifyContent: "center",
     gap: 0,
   },
 
   meetText: {
-    fontSize: 10,
+    fontSize: 16,
     fontWeight: "300",
-    letterSpacing: 5.5,
-    color: "rgba(215,200,255,0.70)", // audit-ok: MEET text soft lavender on void black
-    textTransform: "uppercase",
+    letterSpacing: 3,
+    color: "rgba(240,230,255,0.82)", // audit-ok: "Meet" soft white-lavender
+    textTransform: "capitalize",
     fontFamily: "Inter_400Regular",
-    marginTop: 8,
-    marginBottom: -6,
+    marginBottom: 2,
   },
 
-  // Flare dots
+  meetUnderline: {
+    width: 70,
+    height: 0.5,
+    backgroundColor: "rgba(168,85,247,0.45)", // audit-ok: subtle underline below Meet
+    marginBottom: 2,
+  },
+
+  amyUnderline: {
+    width: 100,
+    height: 0.5,
+    marginTop: -4,
+    backgroundColor: "rgba(168,85,247,0.35)", // audit-ok: subtle underline below AMY
+  },
+
   flarePrimary: {
     position: "absolute",
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: "#FFFFFF", // audit-ok: white light-flare on ring
-    top: 12,
-    right: 26,
-    shadowColor: "#FFFFFF", // audit-ok: white glow for flare
+    backgroundColor: WHITE,
+    top: 10,
+    right: 24,
+    shadowColor: WHITE,
     shadowOpacity: 0.95,
-    shadowRadius: 9,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 0 },
     elevation: 10,
   },
@@ -618,7 +676,7 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 2.5,
     backgroundColor: brand.pink500,
-    bottom: 22,
+    bottom: 20,
     left: 18,
     opacity: 0.55,
     shadowColor: brand.pink500,
@@ -628,38 +686,94 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 
-  // Below ring
+  // Platform glow
   platform: {
-    width: 150,
-    height: 18,
+    width: 140,
+    height: 16,
     marginTop: 2,
-    borderRadius: 75,
+    borderRadius: 70,
     backgroundColor: brandAlpha.purple500_30,
-    opacity: 0.55,
+    opacity: 0.5,
   },
 
+  // Tagline
   tagline: {
-    marginTop: 28,
+    marginTop: 18,
+    textAlign: "center",
+  },
+  taglineDim: {
     fontSize: 14,
     fontWeight: "400",
-    letterSpacing: 0.55,
-    color: "rgba(210,195,255,0.62)", // audit-ok: tagline soft lavender on void black
-    textAlign: "center",
+    letterSpacing: 0.4,
+    color: "rgba(220,210,255,0.65)", // audit-ok: tagline prefix/suffix soft lavender
     fontFamily: "Inter_400Regular",
+  },
+  taglineHighlight: {
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 0.4,
+    color: brand.pink500,
+    fontFamily: "Inter_600SemiBold",
+  },
+
+  // Divider
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: 14,
+    width: W * 0.72,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 0.5,
+    backgroundColor: "rgba(168,85,247,0.22)", // audit-ok: divider dim purple
+  },
+  dividerDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: brand.purple400,
+    marginHorizontal: 8,
+    opacity: 0.7,
+  },
+
+  // Feature icons
+  featRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  featItem: {
+    alignItems: "center",
+    paddingHorizontal: 12,
+    gap: 5,
+  },
+  featLabel: {
+    fontSize: 10,
+    fontWeight: "400",
+    fontFamily: "Inter_400Regular",
+    color: "rgba(210,195,255,0.65)", // audit-ok: feature label soft lavender
+    textAlign: "center",
+  },
+  featSep: {
+    width: 0.5,
+    height: 36,
+    backgroundColor: "rgba(168,85,247,0.25)", // audit-ok: feature separator dim purple
   },
 
   // Progress bar
   progressTrack: {
     position: "absolute",
-    bottom: 30,
+    bottom: 28,
     left: (W - BAR_MAX_W) / 2,
     width: BAR_MAX_W,
     height: 2,
     borderRadius: 1,
-    backgroundColor: "rgba(168,85,247,0.15)", // audit-ok: progress track subtle purple
+    backgroundColor: "rgba(168,85,247,0.14)", // audit-ok: progress track dim purple
     shadowColor: brand.purple500,
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
     shadowOffset: { width: 0, height: 0 },
   },
 
@@ -667,7 +781,7 @@ const styles = StyleSheet.create({
     height: 2,
     borderRadius: 1,
     shadowColor: brand.pink500,
-    shadowOpacity: 0.85,
+    shadowOpacity: 0.9,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 0 },
     elevation: 6,
