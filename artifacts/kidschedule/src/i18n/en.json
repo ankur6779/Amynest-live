@@ -161,7 +161,8 @@
     "input_placeholder": "Ask about sleep, tantrums, food, school anxiety...",
     "send_hint": "Press Enter to send · Shift+Enter for new line",
     "error_response": "Failed to get a response. Please try again.",
-    "badge_label": "Amy AI"
+    "badge_label": "Amy AI",
+    "conversation_cleared": "Conversation cleared"
   },
   "pricing": {
     "title": "Unlock Full Parenting Power",
