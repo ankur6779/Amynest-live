@@ -132,6 +132,18 @@ uri = "file://attached_assets/generated_images/phonics_apple.png"
 type = "image"
 title = "phonics apple"
 
+[[generated]]
+id = "3tqnDG3EWrECzvaqyJv8M"
+uri = "file://artifacts/amynest-splash/public/images/nebula-bg.png"
+type = "image"
+title = "Cosmic nebula background"
+
+[[generated]]
+id = "1dix-9Em0eGK7nduntEXa"
+uri = "file://artifacts/amynest-splash/public/images/mascot.png"
+type = "image"
+title = "Futuristic AI bird mascot"
+
 [[outputs]]
 id = "6ZC-wVpVG0DweJvlh22r3"
 uri = "file://screenshots/playstore/web-05-landing-mobile.jpg"
