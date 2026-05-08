@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError } from "@/lib/auth-errors";
@@ -345,14 +345,17 @@ export default function SignUpPage() {
       const cred = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
       if (name.trim()) {
         try {
-          await updateProfile(cred.user, {
-            displayName: name.trim()
-          });
+          await updateProfile(cred.user, { displayName: name.trim() });
         } catch {
           /* non-fatal */
         }
       }
-      setLocation("/");
+      try {
+        await sendEmailVerification(cred.user);
+      } catch {
+        /* non-fatal — user can resend from verify-email page */
+      }
+      setLocation(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (err: any) {
       setError(prettyAuthError(err));
     } finally {

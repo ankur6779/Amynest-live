@@ -22,6 +22,7 @@ import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
 import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
+import VerifyEmailPage from "@/pages/verify-email";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -228,6 +229,7 @@ function AppRoutes() {
           <Route path="/billing-dispute" component={BillingDisputePage} />
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
+          <Route path="/verify-email" component={VerifyEmailPage} />
           <Route path="/onboarding">
             {() => (
               <>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail, signOut as fbSignOut } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError } from "@/lib/auth-errors";
@@ -336,7 +336,13 @@ export default function SignInPage() {
     setError(null);
     setBusy(true);
     try {
-      await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      const cred = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      if (!cred.user.emailVerified) {
+        // User has not verified their email yet — send them to the verify screen.
+        // Keep them signed-in to firebaseAuth so the verify page can call resend.
+        setLocation(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+        return;
+      }
       setLocation(postSignInPath());
     } catch (err: any) {
       setError(prettyAuthError(err));
