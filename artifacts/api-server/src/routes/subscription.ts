@@ -36,12 +36,12 @@ function productIdToPlan(productId: string | undefined | null): Exclude<Plan, "f
 const router: IRouter = Router();
 
 router.get("/subscription", requireAuth, async (req, res): Promise<void> => {
-  const { userId, email } = getAuth(req);
+  const { userId, email, phoneNumber } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
-  await maybeAutoGrantPremium(userId, email);
+  await maybeAutoGrantPremium(userId, email, phoneNumber);
   const ent = await getEntitlements(userId);
   res.json({
     entitlements: ent,

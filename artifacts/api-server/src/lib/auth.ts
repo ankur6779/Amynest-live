@@ -9,6 +9,7 @@ export interface AuthPayload {
   userId: string | null;
   email: string | null;
   emailVerified: boolean;
+  phoneNumber: string | null;
   name: string | null;
   picture: string | null;
 }
@@ -17,6 +18,7 @@ const EMPTY: AuthPayload = {
   userId: null,
   email: null,
   emailVerified: false,
+  phoneNumber: null,
   name: null,
   picture: null,
 };

@@ -11,6 +11,8 @@ import { z } from "zod/v4";
 export const adminPremiumGrantsTable = pgTable("admin_premium_grants", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
+  /** Phone number (E.164 format, e.g. +919876543210) for phone-only users. */
+  phoneNumber: text("phone_number").unique(),
   plan: text("plan").notNull().default("yearly"),
   grantedAt: timestamp("granted_at", { withTimezone: true }).notNull().defaultNow(),
   note: text("note"),

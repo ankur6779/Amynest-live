@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { adminAuth } from "../lib/firebase-admin";
 import { logger } from "../lib/logger";
+import { db, parentProfilesTable, subscriptionsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 /**
  * Decode a JWT payload without verifying — for diagnostic logging only.
@@ -51,13 +53,34 @@ export async function requireAuth(
 
   try {
     const decoded = await adminAuth().verifyIdToken(token);
+    const phoneNumber = (decoded.phone_number as string | undefined) ?? null;
     req.firebaseAuth = {
       userId: decoded.uid,
       email: decoded.email ?? null,
       emailVerified: decoded.email_verified === true,
+      phoneNumber,
       name: (decoded.name as string | undefined) ?? null,
       picture: (decoded.picture as string | undefined) ?? null,
     };
+
+    // Fire-and-forget: persist phone number to parent_profiles and subscriptions
+    // so phone-auth users always have their number stored without blocking the
+    // request. We only write if phoneNumber is present and non-null.
+    if (phoneNumber) {
+      Promise.all([
+        db
+          .update(parentProfilesTable)
+          .set({ mobileNumber: phoneNumber, updatedAt: new Date() })
+          .where(eq(parentProfilesTable.userId, decoded.uid)),
+        db
+          .update(subscriptionsTable)
+          .set({ phoneNumber, updatedAt: new Date() })
+          .where(eq(subscriptionsTable.userId, decoded.uid)),
+      ]).catch((syncErr) => {
+        logger.warn({ syncErr, uid: decoded.uid }, "requireAuth: phone sync write failed (non-fatal)");
+      });
+    }
+
     next();
     return;
   } catch (err) {

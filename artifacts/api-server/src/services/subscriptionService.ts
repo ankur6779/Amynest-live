@@ -117,16 +117,26 @@ export { nextResetAtFor };
 export async function getOrCreateSubscription(
   userId: string,
   dbExec: DbExec = db,
+  phoneNumber?: string | null,
 ): Promise<Subscription> {
   const existing = await dbExec
     .select()
     .from(subscriptionsTable)
     .where(eq(subscriptionsTable.userId, userId))
     .limit(1);
-  if (existing[0]) return existing[0];
+  if (existing[0]) {
+    // Opportunistically save phone number if not yet stored.
+    if (phoneNumber && !existing[0].phoneNumber) {
+      await dbExec
+        .update(subscriptionsTable)
+        .set({ phoneNumber, updatedAt: new Date() })
+        .where(eq(subscriptionsTable.userId, userId));
+    }
+    return existing[0];
+  }
   const [created] = await dbExec
     .insert(subscriptionsTable)
-    .values({ userId, plan: "free", status: "free", provider: "none" })
+    .values({ userId, plan: "free", status: "free", provider: "none", phoneNumber: phoneNumber ?? null })
     .returning();
   return created;
 }
@@ -277,13 +287,14 @@ export async function getEntitlements(userId: string): Promise<EntitlementSummar
 }
 
 /**
- * Returns true if this userId or email is in the env-var allowlists:
- *   ADMIN_PREMIUM_UIDS  — comma-separated Firebase UIDs (works for phone-auth users)
+ * Returns true if this userId, email, or phone number is in the env-var allowlists:
+ *   ADMIN_PREMIUM_UIDS   — comma-separated Firebase UIDs (works for phone-auth users)
  *   ADMIN_PREMIUM_EMAILS — comma-separated email addresses
+ *   ADMIN_PREMIUM_PHONES — comma-separated E.164 phone numbers (e.g. +919876543210)
  * These are checked BEFORE the DB table so they work in production without a
  * DB migration (just set the env var and redeploy).
  */
-function isEnvGranted(userId: string, email: string | null): boolean {
+function isEnvGranted(userId: string, email: string | null, phoneNumber?: string | null): boolean {
   const uids = (process.env.ADMIN_PREMIUM_UIDS ?? "")
     .split(",")
     .map((s) => s.trim())
@@ -297,36 +308,57 @@ function isEnvGranted(userId: string, email: string | null): boolean {
       .filter(Boolean);
     if (emails.includes(email.toLowerCase().trim())) return true;
   }
+
+  if (phoneNumber) {
+    const phones = (process.env.ADMIN_PREMIUM_PHONES ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (phones.includes(phoneNumber.trim())) return true;
+  }
+
   return false;
 }
 
 /**
- * Checks if the given userId/email has a manual premium grant — first via
- * env-var allowlists (ADMIN_PREMIUM_UIDS / ADMIN_PREMIUM_EMAILS, works even
- * in production without a DB migration), then via the admin_premium_grants DB
- * table. If granted and the subscription is not yet active, upgrades it to
+ * Checks if the given userId/email/phoneNumber has a manual premium grant —
+ * first via env-var allowlists (ADMIN_PREMIUM_UIDS / ADMIN_PREMIUM_EMAILS /
+ * ADMIN_PREMIUM_PHONES, works even in production without a DB migration),
+ * then via the admin_premium_grants DB table (keyed by email or phone).
+ * If granted and the subscription is not yet active, upgrades it to
  * active/yearly with a far-future period end. Idempotent.
  */
 export async function maybeAutoGrantPremium(
   userId: string,
   email: string | null,
+  phoneNumber?: string | null,
 ): Promise<void> {
   let plan: Exclude<Plan, "free"> = "yearly";
 
-  if (isEnvGranted(userId, email)) {
+  if (isEnvGranted(userId, email, phoneNumber)) {
     // Fast-path: env var grant — no DB lookup needed.
   } else {
-    if (!email) return;
+    // DB lookup: match by email OR by phone number (whichever is available).
+    const conditions: ReturnType<typeof eq>[] = [];
+    if (email) {
+      conditions.push(eq(adminPremiumGrantsTable.email, email.toLowerCase().trim()));
+    }
+    if (phoneNumber) {
+      conditions.push(eq(adminPremiumGrantsTable.phoneNumber, phoneNumber.trim()));
+    }
+    if (conditions.length === 0) return;
+
+    const { or } = await import("drizzle-orm");
     const grant = await db
       .select()
       .from(adminPremiumGrantsTable)
-      .where(eq(adminPremiumGrantsTable.email, email.toLowerCase().trim()))
+      .where(or(...conditions))
       .limit(1);
     if (!grant[0]) return;
     plan = (grant[0].plan as Exclude<Plan, "free">) ?? "yearly";
   }
 
-  const sub = await getOrCreateSubscription(userId);
+  const sub = await getOrCreateSubscription(userId, db, phoneNumber);
   if (sub.status === "active") return;
   await db
     .update(subscriptionsTable)

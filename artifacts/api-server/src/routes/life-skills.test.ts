@@ -51,6 +51,7 @@ before(async () => {
       userId: TEST_USER,
       email: null,
       emailVerified: false,
+      phoneNumber: null,
       name: null,
       picture: null,
     };

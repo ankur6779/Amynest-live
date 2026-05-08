@@ -21,6 +21,10 @@ export const subscriptionsTable = pgTable(
     trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     cancelAtPeriodEnd: integer("cancel_at_period_end").notNull().default(0),
+    // Phone number associated with the subscription — populated when the user
+    // authenticates via phone OTP. Lets admin grants and lookups work for
+    // phone-only users who have no email address.
+    phoneNumber: text("phone_number"),
     // Referral system fields
     referralCode: text("referral_code").unique(),
     referralRewardsGranted: integer("referral_rewards_granted").notNull().default(0),
