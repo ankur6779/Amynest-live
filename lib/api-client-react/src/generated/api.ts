@@ -45,6 +45,7 @@ import type {
   GetSmartStudyInsightsParams,
   HealthStatus,
   IntelligenceInsightsResponse,
+  LearningWeightsResponse,
   LifeSkillProgressResponse,
   LifeSkillRolePlay,
   LifeSkillsTodayResponse,
@@ -3725,6 +3726,98 @@ export function useGetChildIntelligenceInsights<
     childId,
     options,
   );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Closed-loop learning weights derived from behaviors and per-item completion.
+ */
+export const getGetChildLearningWeightsUrl = (childId: number) => {
+  return `/api/child-intelligence/${childId}/learning-weights`;
+};
+
+export const getChildLearningWeights = async (
+  childId: number,
+  options?: RequestInit,
+): Promise<LearningWeightsResponse> => {
+  return customFetch<LearningWeightsResponse>(
+    getGetChildLearningWeightsUrl(childId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetChildLearningWeightsQueryKey = (childId: number) => {
+  return [`/api/child-intelligence/${childId}/learning-weights`] as const;
+};
+
+export const getGetChildLearningWeightsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getChildLearningWeights>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildLearningWeights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetChildLearningWeightsQueryKey(childId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getChildLearningWeights>>
+  > = ({ signal }) =>
+    getChildLearningWeights(childId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!childId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getChildLearningWeights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetChildLearningWeightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getChildLearningWeights>>
+>;
+export type GetChildLearningWeightsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Closed-loop learning weights derived from behaviors and per-item completion.
+ */
+
+export function useGetChildLearningWeights<
+  TData = Awaited<ReturnType<typeof getChildLearningWeights>>,
+  TError = ErrorType<unknown>,
+>(
+  childId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getChildLearningWeights>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetChildLearningWeightsQueryOptions(childId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

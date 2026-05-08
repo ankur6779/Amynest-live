@@ -209,6 +209,28 @@ describe("child-intelligence routes — smoke", () => {
     const res = await fetch(`${baseUrl}/child-intelligence/${otherChildId}/insights`);
     assert.equal(res.status, 404);
   });
+
+  it("GET learning-weights returns categoryWeights + slotSuccess arrays", async () => {
+    const res = await fetch(`${baseUrl}/child-intelligence/${childId}/learning-weights`);
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as {
+      childId: number;
+      categoryWeights: unknown[];
+      slotSuccess: unknown[];
+      lastComputedAt: string;
+      sample: number;
+    };
+    assert.equal(body.childId, childId);
+    assert.ok(Array.isArray(body.categoryWeights));
+    assert.ok(Array.isArray(body.slotSuccess));
+    assert.equal(typeof body.lastComputedAt, "string");
+    assert.equal(typeof body.sample, "number");
+  });
+
+  it("GET learning-weights returns 404 for a child the caller does not own", async () => {
+    const res = await fetch(`${baseUrl}/child-intelligence/${otherChildId}/learning-weights`);
+    assert.equal(res.status, 404);
+  });
 });
 
 describe("deriveEnergyProfile — heuristic", () => {

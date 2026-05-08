@@ -309,6 +309,17 @@
         "title": "Activity ↔ behaviour links",
         "subtitle": "Activities that ran in the 2 hours before logged behaviours."
       }
+    },
+    "learning": {
+      "title": "Closed-loop learning",
+      "subtitle": "What Amy has learned works (and what doesn't) for your child.",
+      "loading": "Loading…",
+      "empty": "Log a few more days of behaviours and routines to unlock learning weights.",
+      "boost_title": "Working well — boost these",
+      "demote_title": "Watch these — they precede tougher moments",
+      "slot_title": "Hourly completion (last 14 days)",
+      "slot_axis_hour": "{{hour}}:00",
+      "slot_low_label": "Low completion slot — keep this hour light"
     }
   },
   "routines": {

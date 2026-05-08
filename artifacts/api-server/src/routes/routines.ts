@@ -42,6 +42,12 @@ import {
   applyEnergyCurveToItems,
   type AnalyticsRoutineItem,
 } from "../services/intelligenceAnalytics.js";
+import {
+  computeLearningWeights,
+  deriveLearningAdaptationTags,
+  renderLearningWeightsForPrompt,
+  type LearningWeights,
+} from "../services/learningWeights.js";
 
 const CAREGIVER_LABEL: Record<CaregiverKey, string> = {
   mom: "Mom",
@@ -483,6 +489,9 @@ export async function generateAiRoutine(params: {
   // provided AND sampleCount >= 3, the AI is told to anchor learning blocks
   // inside the peak focus window and calmer activities in the low-energy window.
   energyProfile?: EnergyProfile | null;
+  // Phase 3 — closed-loop learning weights. Optional; when present the
+  // prompt receives a soft "BOOST/REDUCE" guidance block.
+  learningWeights?: LearningWeights | null;
   openaiClient?: {
     chat: {
       completions: {
@@ -663,6 +672,10 @@ ENERGY PROFILE — derived from this child's recent daily signals (HARD ANCHORS)
 ${params.energyProfile.peakFocusStart && params.energyProfile.peakFocusEnd ? `- Peak focus window: ${params.energyProfile.peakFocusStart}–${params.energyProfile.peakFocusEnd}. Place the most demanding learning / study / problem-solving block here.` : ""}
 ${params.energyProfile.lowEnergyStart && params.energyProfile.lowEnergyEnd ? `- Low-energy window: ${params.energyProfile.lowEnergyStart}–${params.energyProfile.lowEnergyEnd}. Schedule REST, quiet reading, sensory play, or a snack here — never demanding study or competitive play.` : ""}
 ${params.energyProfile.calmWindowStart && params.energyProfile.calmWindowEnd ? `- Calm window: ${params.energyProfile.calmWindowStart}–${params.energyProfile.calmWindowEnd}. Use for wind-down, story time, family bonding before bed.` : ""}
+` : ""}${renderLearningWeightsForPrompt(params.learningWeights ?? null) ? `
+
+CLOSED-LOOP LEARNING WEIGHTS — derived from this child's recent behaviors and per-item completion:
+${renderLearningWeightsForPrompt(params.learningWeights ?? null)}
 ` : ""}${params.previousMeals && params.previousMeals.length > 0 ? `
 
 ANTI-REPETITION — MEAL VARIETY (CRITICAL):
@@ -898,12 +911,13 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     } else if (!parsed.data.region && pp?.region) region = pp.region;
   }
 
-  const [userCustomRecipes, ruleChildIntel] = await Promise.all([
+  const [userCustomRecipes, ruleChildIntel, ruleLearningWeights] = await Promise.all([
     db.select().from(customRecipesTable).where(eq(customRecipesTable.userId, userId)),
     getChildIntelligenceSnapshot(child.id, {
       parentGoals: (child as { parentGoals?: unknown }).parentGoals,
       energyProfile: (child as { energyProfile?: unknown }).energyProfile,
     }),
+    computeLearningWeights(child.id).catch(() => null),
   ]);
 
   const generated = generateRuleBasedRoutine({
@@ -935,6 +949,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     generated.items as any,
     ruleChildIntel.energyProfile,
   );
+  const ruleLearningTags = deriveLearningAdaptationTags(ruleLearningWeights);
   res.json(
     GenerateRoutineResponse.parse({
       ...generated,
@@ -942,6 +957,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
       adaptations: [
         ...((generated as { adaptations?: string[] }).adaptations ?? []),
         ...ruleCurved.adaptations,
+        ...ruleLearningTags,
       ],
     }),
   );
@@ -1047,7 +1063,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     String(prevDate.getDate()).padStart(2, "0"),
   ].join("-");
 
-  const [aiUserCustomRecipes, prevRoutineRows, childIntel, mostRecentSignal] = await Promise.all([
+  const [aiUserCustomRecipes, prevRoutineRows, childIntel, mostRecentSignal, learningWeights] = await Promise.all([
     db.select().from(customRecipesTable).where(eq(customRecipesTable.userId, userId)),
     db.select({ items: routinesTable.items })
       .from(routinesTable)
@@ -1058,6 +1074,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       energyProfile: (child as { energyProfile?: unknown }).energyProfile,
     }),
     getMostRecentSignal(parsed.data.childId),
+    computeLearningWeights(parsed.data.childId).catch(() => null),
   ]);
 
   // Build previousDayContext from the most recent signal (if any).
@@ -1125,9 +1142,17 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       sleepPattern: child.sleepPattern ?? null,
       parentGoals: childIntel.parentGoals,
       energyProfile: childIntel.energyProfile,
+      learningWeights,
       previousDayContext,
     });
-    res.json(GenerateRoutineResponse.parse(generated));
+    const aiLearningTags = deriveLearningAdaptationTags(learningWeights);
+    res.json(GenerateRoutineResponse.parse({
+      ...generated,
+      adaptations: [
+        ...((generated as { adaptations?: string[] }).adaptations ?? []),
+        ...aiLearningTags,
+      ],
+    }));
   } catch {
     // Fallback to rule-based if AI fails
     const generated = generateRuleBasedRoutine({
@@ -1165,10 +1190,11 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       (generated.items ?? []) as unknown as AnalyticsRoutineItem[],
       childIntel.energyProfile,
     );
+    const fallbackLearningTags = deriveLearningAdaptationTags(learningWeights);
     res.json(GenerateRoutineResponse.parse({
       ...generated,
       items: curved.items as unknown as typeof generated.items,
-      adaptations: [...adaptations, ...curved.adaptations],
+      adaptations: [...adaptations, ...curved.adaptations, ...fallbackLearningTags],
     }));
   }
 });

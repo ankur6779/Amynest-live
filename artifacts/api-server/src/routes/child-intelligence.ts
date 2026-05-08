@@ -23,6 +23,8 @@ import {
   GetChildWeeklyReportResponse,
   GetChildIntelligenceInsightsParams,
   GetChildIntelligenceInsightsResponse,
+  GetChildLearningWeightsParams,
+  GetChildLearningWeightsResponse,
 } from "@workspace/api-zod";
 import {
   loadOwnedChild,
@@ -37,6 +39,7 @@ import {
   computeRiskWindows,
   computeBehaviorCorrelation,
 } from "../services/intelligenceAnalytics.js";
+import { computeLearningWeights } from "../services/learningWeights.js";
 
 const router: IRouter = Router();
 
@@ -194,6 +197,26 @@ router.get("/child-intelligence/:childId/insights", async (req, res): Promise<vo
       correlations,
     }),
   );
+});
+
+router.get("/child-intelligence/:childId/learning-weights", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const params = GetChildLearningWeightsParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const child = await loadOwnedChild(params.data.childId, userId);
+  if (!child) {
+    res.status(404).json({ error: "Child not found" });
+    return;
+  }
+  const weights = await computeLearningWeights(params.data.childId);
+  res.json(GetChildLearningWeightsResponse.parse(weights));
 });
 
 export default router;

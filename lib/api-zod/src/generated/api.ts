@@ -1943,3 +1943,41 @@ export const GetChildIntelligenceInsightsResponse = zod
   .describe(
     "Risk windows + activity↔behavior correlations from the last 14–30 days.",
   );
+
+/**
+ * @summary Closed-loop learning weights derived from behaviors and per-item completion.
+ */
+export const GetChildLearningWeightsParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const GetChildLearningWeightsResponse = zod
+  .object({
+    childId: zod.number(),
+    categoryWeights: zod.array(
+      zod
+        .object({
+          category: zod.string(),
+          weight: zod.number(),
+          positive: zod.number(),
+          negative: zod.number(),
+        })
+        .describe(
+          "Per-category weight in [-1, +1] derived from behavior↔activity correlation.",
+        ),
+    ),
+    slotSuccess: zod.array(
+      zod
+        .object({
+          hour: zod.number(),
+          completionRate: zod.number(),
+          sample: zod.number(),
+        })
+        .describe("Per-hour completion success rate over the last 14 days."),
+    ),
+    lastComputedAt: zod.string(),
+    sample: zod.number(),
+  })
+  .describe(
+    "Closed-loop learning weights — feeds back into next-day generation.",
+  );

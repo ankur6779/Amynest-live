@@ -832,6 +832,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/IntelligenceInsightsResponse"
 
+  /child-intelligence/{childId}/learning-weights:
+    get:
+      operationId: getChildLearningWeights
+      tags: [child-intelligence]
+      summary: Closed-loop learning weights derived from behaviors and per-item completion.
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Learning weights bundle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearningWeightsResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -2327,6 +2346,52 @@ components:
           items:
             $ref: "#/components/schemas/BehaviorCorrelation"
       required: [childId, riskWindows, correlations]
+
+    LearningWeightCategory:
+      type: object
+      description: Per-category weight in [-1, +1] derived from behavior↔activity correlation.
+      properties:
+        category:
+          type: string
+        weight:
+          type: number
+        positive:
+          type: integer
+        negative:
+          type: integer
+      required: [category, weight, positive, negative]
+
+    LearningWeightSlotSuccess:
+      type: object
+      description: Per-hour completion success rate over the last 14 days.
+      properties:
+        hour:
+          type: integer
+        completionRate:
+          type: integer
+        sample:
+          type: integer
+      required: [hour, completionRate, sample]
+
+    LearningWeightsResponse:
+      type: object
+      description: Closed-loop learning weights — feeds back into next-day generation.
+      properties:
+        childId:
+          type: integer
+        categoryWeights:
+          type: array
+          items:
+            $ref: "#/components/schemas/LearningWeightCategory"
+        slotSuccess:
+          type: array
+          items:
+            $ref: "#/components/schemas/LearningWeightSlotSuccess"
+        lastComputedAt:
+          type: string
+        sample:
+          type: integer
+      required: [childId, categoryWeights, slotSuccess, lastComputedAt, sample]
 
     SmartStudyInsights:
       type: object
