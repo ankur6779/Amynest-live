@@ -267,13 +267,14 @@ const ITEM_MEAL_TEMPLATES: Record<string, string[]> = {
 
 export function mealFromItems(key: MealKey, items: string[], seed: number): string {
   if (items.length === 0) return "Healthy meal";
-  // Fall back to the closest meal-key family if a specific key is missing.
+  // Fall back to the correct VEG/NONVEG family if a specific key is missing.
+  const isNonVeg = key.startsWith("NONVEG_");
   const fallback =
-    key.includes("BREAKFAST") ? ITEM_MEAL_TEMPLATES.VEG_BREAKFAST!
-    : key.includes("LUNCH") ? ITEM_MEAL_TEMPLATES.VEG_LUNCH!
-    : key.includes("DINNER") ? ITEM_MEAL_TEMPLATES.VEG_DINNER!
-    : key.includes("TIFFIN") ? ITEM_MEAL_TEMPLATES.VEG_TIFFIN!
-    : ITEM_MEAL_TEMPLATES.VEG_SNACKS!;
+    key.includes("BREAKFAST") ? (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_BREAKFAST! : ITEM_MEAL_TEMPLATES.VEG_BREAKFAST!)
+    : key.includes("LUNCH") ? (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_LUNCH! : ITEM_MEAL_TEMPLATES.VEG_LUNCH!)
+    : key.includes("DINNER") ? (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_DINNER! : ITEM_MEAL_TEMPLATES.VEG_DINNER!)
+    : key.includes("TIFFIN") ? (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_TIFFIN! : ITEM_MEAL_TEMPLATES.VEG_TIFFIN!)
+    : (isNonVeg ? ITEM_MEAL_TEMPLATES.NONVEG_SNACKS! : ITEM_MEAL_TEMPLATES.VEG_SNACKS!);
   const templates = ITEM_MEAL_TEMPLATES[key] ?? fallback;
   const tpl = templates[Math.abs(seed) % templates.length]!;
   const a = items[Math.abs(seed) % items.length]!;
@@ -1268,14 +1269,18 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
   // Match "Family Lunch", "Light Lunch", "Lunch Time", etc. Category guard
   // prevents matching school/tiffin items like "School lunch / tiffin".
   const lunchIdx = findIdx((it) => /\blunch\b/i.test(it.activity) && (it.category ?? "").toLowerCase() === "meal");
+  let anchoredLunchMins = -1;
   if (lunchIdx !== -1) {
     const lunch = out[lunchIdx];
     if (hasSchool && (ageGroup === "preschool" || ageGroup === "early_school" || ageGroup === "pre_teen")) {
-      // 30 min after school end (applies to all school-going age bands)
-      setItemTime(lunch, schoolEndMins + 30);
+      // Realistic post-school lunch: child returns home (~30 min travel), freshens up,
+      // then eats. Anchor 75 min after school end (≈ travel + 45 min relaxation buffer).
+      anchoredLunchMins = schoolEndMins + 75;
+      setItemTime(lunch, anchoredLunchMins);
     } else if (!hasSchool) {
       // Non-school: 13:30–14:30
       const t = clamp(timeToMins(lunch.time), 13 * 60 + 30, 14 * 60 + 30);
+      anchoredLunchMins = t;
       setItemTime(lunch, t);
     }
   } else if (hasSchool && (ageGroup === "preschool" || ageGroup === "early_school" || ageGroup === "pre_teen")) {
@@ -1285,26 +1290,32 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
       const snack = out[snackIdx];
       snack.activity = "Lunch";
       snack.duration = Math.max(snack.duration, 25);
-      setItemTime(snack, schoolEndMins + 30);
+      anchoredLunchMins = schoolEndMins + 75;
+      setItemTime(snack, anchoredLunchMins);
     }
   }
 
-  // 4. Drunch (5–6 PM) — guarantee one block in the 17:00–18:00 window every
-  // day. First, try to upgrade an existing afternoon snack; otherwise, insert
-  // a new Drunch block.
+  // 4. Drunch (evening snack) — ensure healthy gap after lunch (min 2 hrs).
+  // Target window: 17:00–18:30. If lunch was late, push drunch forward so the
+  // gap is at least 120 minutes. First, try to upgrade an existing snack block;
+  // otherwise insert a fresh Drunch block.
+  const drunchEarliestMins = anchoredLunchMins > 0
+    ? Math.max(17 * 60, anchoredLunchMins + 120)  // 2 hr min gap after lunch
+    : 17 * 60;
+  const drunchLatestMins = 18 * 60 + 30;
   const drunchIdx = findIdx((it) => /(\bdrunch\b|afternoon snack|after-school snack|mid-morning snack|post-school snack|evening snack)/i.test(it.activity) && (it.category ?? "").toLowerCase() === "meal");
   if (drunchIdx !== -1) {
     const it = out[drunchIdx];
     it.activity = "Drunch";
     const cur = timeToMins(it.time);
-    const target = clamp(cur, 17 * 60, 18 * 60);
+    const target = clamp(cur, drunchEarliestMins, drunchLatestMins);
     setItemTime(it, target);
     it.duration = Math.max(it.duration, 20);
     // Preserve AI-generated notes; do not overwrite with hardcoded text.
   } else {
     // Inserted slot — leave notes empty for the AI enrichment pass to fill.
     out.push({
-      time: minsToTime(17 * 60 + 30),
+      time: minsToTime(Math.min(drunchEarliestMins + 30, drunchLatestMins)),
       activity: "Drunch",
       duration: 25,
       category: "meal",
@@ -1313,13 +1324,13 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
     });
   }
 
-  // 5. Dinner — anchor 20:00–21:00 if currently outside that band.
+  // 5. Dinner — anchor 19:30–21:00 (7:30 PM earliest; allows cultural flexibility).
   // Match "Family Dinner", "Early Dinner", "Light Dinner", "Dinner Time", etc.
   // Category guard prevents matching unrelated activities that mention dinner.
   const dinIdx = findIdx((it) => /\bdinner\b/i.test(it.activity) && (it.category ?? "").toLowerCase() === "meal");
   if (dinIdx !== -1) {
     const din = out[dinIdx];
-    const t = clamp(timeToMins(din.time), 20 * 60, 21 * 60);
+    const t = clamp(timeToMins(din.time), 19 * 60 + 30, 21 * 60);
     setItemTime(din, t);
   }
 
@@ -1510,7 +1521,26 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
   // 1. Morning hygiene
   add(MORNING_HYGIENE[ageGroup]);
 
-  // 2. Breakfast
+  // 1b. Wake-up Nutrition — light starter immediately after hygiene.
+  // Gives a realistic 60–90 min digestion gap before main breakfast.
+  // Infants are excluded (handled above with feeding sessions).
+  const wakeNutritionVeg = [
+    "Warm milk with honey | Banana + soaked almonds | Dates + warm water",
+    "Fruit slices (banana, apple, papaya) | Smoothie (banana + milk) | Soaked nuts + raisins",
+    "Dates milkshake | Warm lemon water + 2 almonds | Coconut water",
+  ];
+  const wakeNutritionNonVeg = [
+    "Warm milk | Banana + soaked almonds | Dates + warm water",
+    "Fruit slices (banana, apple, papaya) | Smoothie (banana + milk) | Boiled egg + warm water",
+    "Dates milkshake | Warm lemon water + 2 almonds | Coconut water",
+  ];
+  const wakeNutritionOpts = (isVeg ? wakeNutritionVeg : wakeNutritionNonVeg)[Math.abs(seed) % 3];
+  add({ activity: "Wake-up Nutrition", duration: 15, category: "meal", notes: `Options: ${wakeNutritionOpts}` });
+
+  // 45-min gap between wake-up starter and breakfast (total 60–90 min from wake-up).
+  gap(45);
+
+  // 2. Breakfast (now naturally 60–90 min after wake-up)
   const bfOptions = meal(isVeg ? "VEG_BREAKFAST" : "NONVEG_BREAKFAST", 0);
   const bfDuration = ageGroup === "toddler" ? 20 : ageGroup === "preschool" ? 20 : 25;
   add({ activity: "Breakfast", duration: bfDuration, category: "meal", notes: `Options: ${bfOptions}` });
@@ -1691,10 +1721,12 @@ export function generateRuleBasedRoutine(params: RoutineParams): GeneratedRoutin
     }
   }
 
-  // 8. Dinner
+  // 8. Dinner — anchored ~90 min before sleep but no earlier than 7:00 PM.
+  // The anchor pass in applyRoutineV2 further constrains it to 19:30–21:00.
   const dinnerOpts = meal(isVeg ? "VEG_DINNER" : "NONVEG_DINNER", 0);
   const dinnerDur = ageGroup === "toddler" ? 25 : 30;
-  add({ activity: "Dinner", duration: dinnerDur, category: "meal", notes: `Options: ${dinnerOpts}` }, Math.max(cursor, dinnerMins - 30));
+  const dinnerTarget = Math.max(cursor, Math.max(19 * 60, dinnerMins - 30));
+  add({ activity: "Dinner", duration: dinnerDur, category: "meal", notes: `Options: ${dinnerOpts}` }, dinnerTarget);
   gap(5);
 
   // 9. Wind-down sequence

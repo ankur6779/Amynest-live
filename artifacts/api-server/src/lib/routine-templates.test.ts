@@ -100,25 +100,25 @@ describe("applyRoutineV2 — school day (early_school, school 9 AM–2 PM)", () 
     assert.equal(t, SCHOOL_START + 60, `Tiffin should be at ${minsToTime(SCHOOL_START + 60)}, got ${tiffin!.time}`);
   });
 
-  it("Lunch is anchored 30 min after school end", () => {
+  it("Lunch is anchored 75 min after school end (realistic travel + buffer)", () => {
     const lunch = result.find((it) => /^lunch$/i.test(it.activity));
     assert.ok(lunch, "Lunch block should be present");
     const t = timeToMins(lunch!.time);
-    assert.equal(t, SCHOOL_END + 30, `Lunch should be at ${minsToTime(SCHOOL_END + 30)}, got ${lunch!.time}`);
+    assert.equal(t, SCHOOL_END + 75, `Lunch should be at ${minsToTime(SCHOOL_END + 75)}, got ${lunch!.time}`);
   });
 
-  it("Drunch is anchored in 17:00–18:00 window", () => {
+  it("Drunch is anchored in 17:00–18:30 window", () => {
     const drunch = result.find((it) => /^drunch$/i.test(it.activity));
     assert.ok(drunch, "Drunch block should be present");
     const t = timeToMins(drunch!.time);
-    assert.ok(t >= 17 * 60 && t <= 18 * 60, `Drunch should be 17:00–18:00, got ${drunch!.time}`);
+    assert.ok(t >= 17 * 60 && t <= 18 * 60 + 30, `Drunch should be 17:00–18:30, got ${drunch!.time}`);
   });
 
-  it("Dinner is anchored in 20:00–21:00 window", () => {
+  it("Dinner is anchored in 19:30–21:00 window", () => {
     const dinner = result.find((it) => /^dinner$/i.test(it.activity));
     assert.ok(dinner, "Dinner block should be present");
     const t = timeToMins(dinner!.time);
-    assert.ok(t >= 20 * 60 && t <= 21 * 60, `Dinner should be 20:00–21:00, got ${dinner!.time}`);
+    assert.ok(t >= 19 * 60 + 30 && t <= 21 * 60, `Dinner should be 19:30–21:00, got ${dinner!.time}`);
   });
 
   it("No duplicate meal names across the day", () => {
@@ -210,10 +210,10 @@ describe("applyRoutineV2 — school day (pre_teen, school 8 AM–1 PM)", () => {
     assert.ok(tiffin, "Tiffin should be present for pre_teen on school day");
   });
 
-  it("Lunch is 30 min after school end", () => {
+  it("Lunch is 75 min after school end (realistic travel + buffer)", () => {
     const lunch = result.find((it) => /^lunch$/i.test(it.activity));
     assert.ok(lunch, "Lunch block should be present");
-    assert.equal(timeToMins(lunch!.time), SCHOOL_END + 30);
+    assert.equal(timeToMins(lunch!.time), SCHOOL_END + 75);
   });
 
   it("No duplicate meal names", () => {
@@ -257,18 +257,18 @@ describe("applyRoutineV2 — non-school day (early_school)", () => {
     assert.equal(qm, undefined, "Quick Meal Before School should NOT appear on non-school day");
   });
 
-  it("Drunch is anchored in 17:00–18:00 window", () => {
+  it("Drunch is anchored in 17:00–18:30 window", () => {
     const drunch = result.find((it) => /^drunch$/i.test(it.activity));
     assert.ok(drunch, "Drunch should be present on non-school day");
     const t = timeToMins(drunch!.time);
-    assert.ok(t >= 17 * 60 && t <= 18 * 60, `Drunch should be 17:00–18:00, got ${drunch!.time}`);
+    assert.ok(t >= 17 * 60 && t <= 18 * 60 + 30, `Drunch should be 17:00–18:30, got ${drunch!.time}`);
   });
 
-  it("Dinner is anchored in 20:00–21:00 window", () => {
+  it("Dinner is anchored in 19:30–21:00 window", () => {
     const dinner = result.find((it) => /^dinner$/i.test(it.activity));
     assert.ok(dinner, "Dinner should be present on non-school day");
     const t = timeToMins(dinner!.time);
-    assert.ok(t >= 20 * 60 && t <= 21 * 60, `Dinner should be 20:00–21:00, got ${dinner!.time}`);
+    assert.ok(t >= 19 * 60 + 30 && t <= 21 * 60, `Dinner should be 19:30–21:00, got ${dinner!.time}`);
   });
 
   it("No duplicate meal names on non-school day", () => {
@@ -328,25 +328,25 @@ describe("generateRuleBasedRoutine — school day end-to-end", () => {
     assert.ok(tiffin, "Tiffin should be in generated routine");
   });
 
-  it("Lunch is 30 min after school end (3:30 PM)", () => {
+  it("Lunch is 75 min after school end (3:00 PM school end → 4:15 PM lunch)", () => {
     const lunch = items.find((it) => /^lunch$/i.test(it.activity));
     assert.ok(lunch, "Lunch expected");
     const schoolEndMins = timeToMins("3:00 PM");
-    assert.equal(timeToMins(lunch!.time), schoolEndMins + 30);
+    assert.equal(timeToMins(lunch!.time), schoolEndMins + 75);
   });
 
-  it("Drunch present and in 17–18 window", () => {
+  it("Drunch present and in 17:00–18:30 window", () => {
     const drunch = items.find((it) => /^drunch$/i.test(it.activity));
     assert.ok(drunch, "Drunch expected");
     const t = timeToMins(drunch!.time);
-    assert.ok(t >= 17 * 60 && t <= 18 * 60, `Drunch should be 17–18, got ${drunch!.time}`);
+    assert.ok(t >= 17 * 60 && t <= 18 * 60 + 30, `Drunch should be 17:00–18:30, got ${drunch!.time}`);
   });
 
-  it("Dinner in 20–21 window", () => {
+  it("Dinner in 19:30–21:00 window", () => {
     const dinner = items.find((it) => /^dinner$/i.test(it.activity));
     assert.ok(dinner, "Dinner expected");
     const t = timeToMins(dinner!.time);
-    assert.ok(t >= 20 * 60 && t <= 21 * 60, `Dinner should be 20–21, got ${dinner!.time}`);
+    assert.ok(t >= 19 * 60 + 30 && t <= 21 * 60, `Dinner should be 19:30–21:00, got ${dinner!.time}`);
   });
 
   it("No duplicate meal names across the full day", () => {

@@ -1,0 +1,337 @@
+CRITICAL ROUTINE LOGIC FIX REQUIRED
+
+The current AI routine generation is not practical for real families.
+
+Examples of current problems:
+- Child wakes at 7:00 AM but breakfast shown at 8:00 AM with no early nutrition
+- Snack appears too close after breakfast
+- Duplicate snack/drunch blocks
+- Dinner and sleep story scheduled at same time
+- Meal timing ignores digestion gaps and realistic family behavior
+
+This must be fixed immediately.
+
+AmyNest should generate HUMAN-REALISTIC routines, not random time blocks.
+
+--------------------------------------------------
+CORE RULE:
+ROUTINES MUST FOLLOW REAL FAMILY BIOLOGICAL FLOW
+--------------------------------------------------
+
+The AI should understand:
+- hunger cycles
+- digestion gaps
+- school schedules
+- child energy patterns
+- bedtime transition timing
+
+Every generated routine must feel:
+- practical
+- natural
+- parent-friendly
+- medically/logically believable
+
+--------------------------------------------------
+1. MORNING NUTRITION FLOW (MANDATORY)
+--------------------------------------------------
+
+If child wake-up time is known:
+
+Immediately after waking:
+show ONLY:
+- milk
+- water
+- fruit
+- soaked nuts
+- smoothie
+- light starter
+
+NOT full breakfast immediately.
+
+Examples:
+- warm milk
+- banana
+- dates milkshake
+- fruit slices
+- oats drink
+
+This block should be:
+"Wake-up nutrition"
+or
+"Morning starter"
+
+--------------------------------------------------
+2. BREAKFAST RULES
+--------------------------------------------------
+
+Breakfast should happen:
+60–120 minutes after wake-up.
+
+Examples:
+
+Wake 7:00 AM
+→ breakfast between 8:00–8:45 AM
+
+If SCHOOL DAY:
+- breakfast should be lighter + faster
+- add tiffin suggestion
+- school timing priority
+
+If HOLIDAY:
+- relaxed family breakfast allowed
+
+Breakfast should NOT appear too late.
+
+--------------------------------------------------
+3. SCHOOL DAY LOGIC
+--------------------------------------------------
+
+If school exists:
+
+Before school:
+- wake
+- hygiene
+- light starter
+- breakfast
+- school prep
+- tiffin suggestion
+
+NO heavy meals before school.
+
+--------------------------------------------------
+4. POST-SCHOOL LUNCH LOGIC
+--------------------------------------------------
+
+Lunch should NOT happen immediately after school.
+
+Rule:
+Lunch = approximately 45–75 mins after reaching home
+
+Example:
+School ends 2 PM
+Reach home 2:30 PM
+→ Lunch around 3:00–3:20 PM
+
+Before lunch:
+optional:
+- hydration
+- relaxation
+- freshen-up
+
+--------------------------------------------------
+5. SNACK / DRUNCH INTELLIGENCE
+--------------------------------------------------
+
+AI currently creates duplicate snack systems.
+
+This must be fixed.
+
+RULES:
+
+Only ONE of these should appear:
+- evening snack
+OR
+- drunch
+
+NOT BOTH unnecessarily.
+
+AI should intelligently choose based on:
+- lunch timing
+- dinner timing
+- age
+- hunger gap
+
+--------------------------------------------------
+6. MEAL GAP RULES
+--------------------------------------------------
+
+Maintain healthy realistic meal gaps:
+
+Wake-up starter → breakfast:
+60–120 mins
+
+Breakfast → snack:
+minimum 2–3 hours
+
+Lunch → snack/drunch:
+minimum 2.5–4 hours
+
+Snack/drunch → dinner:
+minimum 2–3 hours
+
+Avoid:
+- overlapping meals
+- excessive food frequency
+- unrealistic digestion timing
+
+--------------------------------------------------
+7. DINNER RULES
+--------------------------------------------------
+
+Dinner should generally occur:
+between 7:30 PM – 9:00 PM
+
+Adjust based on:
+- country
+- culture
+- school next day
+- bedtime
+
+Dinner should NEVER overlap with:
+- sleep story
+- bedtime routine
+- brushing
+- calm-down blocks
+
+--------------------------------------------------
+8. BEDTIME TRANSITION LOGIC
+--------------------------------------------------
+
+After dinner:
+mandatory transition buffer:
+30–90 mins
+
+Possible blocks:
+- family time
+- brushing
+- calm play
+- gratitude
+- sleep story
+- mindfulness
+
+Only THEN:
+sleep
+
+--------------------------------------------------
+9. SLEEP STORY RULES
+--------------------------------------------------
+
+Sleep story must happen:
+BEFORE actual sleep time
+
+Examples:
+
+8:15 PM → sleep story
+8:45 PM → lights out
+
+Never:
+sleep story + sleep same timestamp.
+
+--------------------------------------------------
+10. MEAL ADAPTATION ENGINE
+--------------------------------------------------
+
+Meals should adapt using:
+- country
+- food preference
+- allergies
+- religion
+- weather
+- family style
+
+Examples:
+US:
+- sandwiches
+- oatmeal
+- wraps
+
+India:
+- poha
+- dosa
+- paratha
+
+UAE:
+- laban
+- grilled wraps
+- rice bowls
+
+UK:
+- beans toast
+- porridge
+
+--------------------------------------------------
+11. ALLERGY SAFETY
+--------------------------------------------------
+
+Strictly remove allergen meals.
+
+If peanut allergy:
+NEVER show:
+- peanut butter
+- trail mix with peanuts
+
+AI must validate every meal before rendering.
+
+--------------------------------------------------
+12. AGE-BASED MEAL REALISM
+--------------------------------------------------
+
+Toddlers:
+- smaller frequent meals
+
+Older kids:
+- larger structured meals
+
+Teens:
+- higher protein and energy support
+
+--------------------------------------------------
+13. ENERGY-BASED MEAL PLACEMENT
+--------------------------------------------------
+
+Use meals to support routine flow:
+
+Before focus blocks:
+balanced energy meals
+
+Before sleep:
+lighter calming foods
+
+After sports:
+protein + hydration
+
+--------------------------------------------------
+14. ROUTINE VALIDATION ENGINE (VERY IMPORTANT)
+--------------------------------------------------
+
+Before finalizing ANY routine:
+
+Run validation checks:
+
+❌ no duplicate meal windows
+❌ no unrealistic timing gaps
+❌ no overlapping bedtime events
+❌ no excessive eating frequency
+❌ no biologically unrealistic sequences
+
+If invalid:
+auto-correct routine before showing to user.
+
+--------------------------------------------------
+15. AI SHOULD THINK LIKE A REAL PARENT
+--------------------------------------------------
+
+The routine should feel like:
+“an experienced intelligent caregiver created this”
+
+NOT:
+“random AI blocks generated from templates”
+
+--------------------------------------------------
+16. PRIORITY
+--------------------------------------------------
+
+Fix practicality FIRST before adding more advanced AI features.
+
+A believable routine engine is more important than fancy prediction layers.
+
+--------------------------------------------------
+17. OUTPUT QUALITY GOAL
+--------------------------------------------------
+
+Every parent should feel:
+
+✅ “This actually fits real life”
+✅ “This timing makes sense”
+✅ “This feels natural for my child”
+✅ “Amy understands family flow”

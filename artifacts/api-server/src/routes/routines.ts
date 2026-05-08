@@ -894,15 +894,19 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
   const specialPlans = parsed.data.specialPlans ?? undefined;
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
 
-  // Food type — prefer child setting, fallback to parent profile
-  let foodType = (child as any).foodType ?? "veg";
+  // Food type — prefer child setting, fallback to parent profile.
+  // rawChildFoodType is null/undefined when the child has no explicit setting;
+  // the "veg" default is ONLY used as a final fallback, not to suppress parent inheritance.
+  const rawChildFoodType1 = (child as any).foodType as string | null | undefined;
+  let foodType = rawChildFoodType1 ?? "veg";
   let region: string = parsed.data.region ?? "mixed";
   if (userId) {
     const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
-    // Prefer child-level dietType (customized) → parent dietType → legacy foodType
+    // Prefer child-level dietType (customized) → parent dietType → parent foodType.
+    // Only inherit parent foodType when the child has NO explicit preference set.
     if ((child as any).dietType) foodType = (child as any).dietType;
     else if (pp?.dietType) foodType = pp.dietType;
-    else if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
+    else if (pp?.foodType && rawChildFoodType1 == null) foodType = pp.foodType;
     // Region: child foodStyle overrides parent region
     if ((child as any).foodStyle) {
       const cs = (child as any).foodStyle as string;
@@ -1019,13 +1023,14 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
   const specialPlans = parsed.data.specialPlans ?? undefined;
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
 
-  let foodType = (child as any).foodType ?? "veg";
+  // Only inherit parent foodType when the child has NO explicit preference set.
+  const rawChildFoodType2 = (child as any).foodType as string | null | undefined;
+  let foodType = rawChildFoodType2 ?? "veg";
   let region: string = parsed.data.region ?? "mixed";
   const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
-  // Prefer child-level dietType (customized) → parent dietType → legacy foodType
   if ((child as any).dietType) foodType = (child as any).dietType;
   else if (pp?.dietType) foodType = pp.dietType;
-  else if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
+  else if (pp?.foodType && rawChildFoodType2 == null) foodType = pp.foodType;
 
   // Effective food style + sub-cuisine: child overrides parent
   const effFoodStyle: string | null = (child as any).foodStyle ?? pp?.foodStyle ?? null;
@@ -1249,10 +1254,11 @@ router.get("/routines", async (req, res): Promise<void> => {
     const child = children.find((c) => c.id === childId) as (typeof childrenTable.$inferSelect & {
       dietType?: string; foodStyle?: string; subCuisine?: string; allergies?: string;
     }) | undefined;
-    let foodType = child?.foodType ?? "veg";
+    const rawChildFt = child?.foodType as string | null | undefined;
+    let foodType = rawChildFt ?? "veg";
     if ((child as any)?.dietType) foodType = (child as any).dietType;
     else if (pp?.dietType) foodType = pp.dietType;
-    else if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
+    else if (pp?.foodType && rawChildFt == null) foodType = pp.foodType;
     const foodStyle = (child as any)?.foodStyle ?? (pp as any)?.foodStyle ?? null;
     const subCuisine = (child as any)?.subCuisine ?? (pp as any)?.subCuisine ?? null;
     const allergies = (child as any)?.allergies ?? (pp as any)?.allergies ?? null;
@@ -1694,14 +1700,15 @@ router.post("/routines/:id/partial-regenerate", async (req, res): Promise<void> 
     : totalAgeMonths < 120 ? "early_school"
     : "pre_teen";
 
-  // Resolve region + foodType from child → parent profile
-  let foodType: string = (child as any).foodType ?? "veg";
+  // Resolve region + foodType from child → parent profile.
+  // Only inherit parent foodType when child has NO explicit preference set.
+  const rawChildFoodType4 = (child as any).foodType as string | null | undefined;
+  let foodType: string = rawChildFoodType4 ?? "veg";
   let region: string = "pan_indian";
   const [pp] = await db.select().from(parentProfilesTable).where(eq(parentProfilesTable.userId, userId));
-  // Prefer child-level dietType (customized) → parent dietType → legacy foodType
   if ((child as any).dietType) foodType = (child as any).dietType;
   else if (pp?.dietType) foodType = pp.dietType;
-  else if (pp?.foodType && foodType === "veg") foodType = pp.foodType;
+  else if (pp?.foodType && rawChildFoodType4 == null) foodType = pp.foodType;
   // Region: child foodStyle overrides parent region
   if ((child as any).foodStyle) {
     const cs = (child as any).foodStyle as string;
