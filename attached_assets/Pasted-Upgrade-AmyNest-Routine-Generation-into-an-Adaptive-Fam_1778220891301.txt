@@ -1,0 +1,392 @@
+Upgrade AmyNest Routine Generation into an Adaptive Family Intelligence Engine.
+
+GOAL:
+Transform routine generation from a static scheduler into a predictive, adaptive, AI-powered family operating system.
+
+The system should intelligently optimize:
+- child development
+- emotional balance
+- parent workload
+- learning progress
+- meals
+- sleep
+- activities
+- weather adaptation
+- sibling coordination
+
+The system must feel:
+- alive
+- personalized
+- evolving daily
+- non-repetitive
+- practical for real families
+
+--------------------------------------------------
+1. MULTI-LAYER AI ARCHITECTURE
+--------------------------------------------------
+
+Create 4 AI layers:
+
+LAYER 1 — Static Inputs
+- child age
+- school timing
+- country
+- food preferences
+- allergies
+- sleep schedule
+- parent availability
+
+LAYER 2 — Behavioral Signals
+Track:
+- mood
+- tantrums
+- focus span
+- screen time
+- activity completion
+- meal completion
+- sleep quality
+
+LAYER 3 — Predictive Intelligence
+Predict:
+- low-energy days
+- overtired behavior
+- high-focus windows
+- meltdown probability
+- hyperactivity periods
+
+LAYER 4 — Outcome Optimization
+Optimize routines for:
+- better sleep
+- emotional regulation
+- focus improvement
+- learning growth
+- reduced screen dependency
+- family balance
+
+--------------------------------------------------
+2. CHILD ENERGY CURVE ENGINE (CORE FEATURE)
+--------------------------------------------------
+
+Create AI logic that detects energy patterns throughout the day.
+
+Examples:
+- morning = high focus
+- post-school = tired
+- evening = calm mode
+
+Routine should adapt automatically.
+
+Examples:
+IF child focus highest at 9 AM:
+→ place learning/spelling there
+
+IF child usually cranky at 4 PM:
+→ add calm activity/snack block
+
+Store:
+child.energy_profile
+
+--------------------------------------------------
+3. PREDICTIVE TOMORROW ENGINE
+--------------------------------------------------
+
+Use previous day data:
+
+- sleep completion
+- bedtime delay
+- meals skipped
+- outdoor activity
+- emotional behavior
+
+Predict next-day needs.
+
+Examples:
+
+IF bedtime late:
+→ lighter morning routine
+
+IF child overstimulated:
+→ reduce intense learning blocks next day
+
+IF poor sleep:
+→ increase calm/rest activities
+
+--------------------------------------------------
+4. MICRO-ADAPTIVE ROUTINE ENGINE
+--------------------------------------------------
+
+Do NOT regenerate full routine unnecessarily.
+
+Only modify affected blocks.
+
+Examples:
+
+Rain started:
+→ replace outdoor activity only
+
+School holiday:
+→ replace school block only
+
+Low mood:
+→ soften evening schedule
+
+Goal:
+Routine should feel stable yet adaptive.
+
+--------------------------------------------------
+5. DAILY VARIATION SYSTEM
+--------------------------------------------------
+
+Avoid repetitive routines.
+
+Rules:
+- meals rotate daily
+- activities rotate
+- learning methods vary
+- challenges change
+
+Maintain:
+70% consistency
+30% freshness
+
+Never repeat:
+- same meal 2 days consecutively
+- same activity blocks repeatedly
+
+--------------------------------------------------
+6. WEEKEND MODE
+--------------------------------------------------
+
+Saturday/Sunday should feel different.
+
+Remove:
+- strict school flow
+- heavy academic blocks
+
+Add:
+- family activities
+- outdoor experiences
+- creativity
+- bonding
+- life skills
+
+Tone:
+Relaxed + engaging
+
+--------------------------------------------------
+7. GOAL-BASED ROUTINE OPTIMIZATION
+--------------------------------------------------
+
+Allow parents to select goals:
+
+- improve sleep
+- reduce tantrums
+- improve spelling
+- improve focus
+- reduce screen time
+- increase independence
+
+AI should optimize routine toward those goals.
+
+Example:
+IF goal = improve focus
+→ increase focused morning sessions
+→ reduce overstimulation
+
+--------------------------------------------------
+8. DEVELOPMENT GAP DETECTION
+--------------------------------------------------
+
+AI should detect weak developmental areas.
+
+Examples:
+- weak handwriting
+- poor concentration
+- delayed speech
+- low physical activity
+
+Then:
+Insert micro-interventions into routine.
+
+Example:
+“8 min tracing practice”
+“5 min pronunciation game”
+
+--------------------------------------------------
+9. SIBLING SYNCHRONIZATION ENGINE
+--------------------------------------------------
+
+If multiple children exist:
+
+AI should:
+- synchronize meals
+- align quiet times
+- suggest shared activities
+- reduce parent workload
+
+Examples:
+- shared play blocks
+- synchronized bedtime prep
+
+Goal:
+Family efficiency + reduced chaos
+
+--------------------------------------------------
+10. PARENT STRESS ADAPTATION
+--------------------------------------------------
+
+Routine should adapt based on who handles the child:
+
+- Mother
+- Father
+- Both
+- Grandparent
+- Babysitter
+
+AI should detect:
+- overloaded days
+- busy workdays
+- exhausted parent
+
+Then:
+- simplify meals
+- reduce transitions
+- lower complexity
+
+Examples:
+“Low-effort day mode”
+
+--------------------------------------------------
+11. WEATHER + GEO ADAPTATION
+--------------------------------------------------
+
+Use:
+- country
+- timezone
+- weather
+- season
+
+Examples:
+
+Hot weather:
+→ hydration reminders
+→ indoor cooling activities
+
+Rain:
+→ indoor movement games
+
+UAE Ramadan:
+→ adjusted sleep timing
+
+US Winter:
+→ indoor activity blocks
+
+--------------------------------------------------
+12. SMART LEARNING DISTRIBUTION
+--------------------------------------------------
+
+Distribute:
+- spelling
+- olympiad
+- life skills
+- reading
+- focus games
+
+Based on:
+- child age
+- energy level
+- performance history
+
+Do NOT overload learning.
+
+--------------------------------------------------
+13. ROUTINE SUCCESS SCORING
+--------------------------------------------------
+
+Track:
+- completion %
+- emotional response
+- sleep improvement
+- meal completion
+
+Generate:
+Routine effectiveness score
+
+Use score to improve future routines.
+
+--------------------------------------------------
+14. SURPRISE & ENGAGEMENT ENGINE
+--------------------------------------------------
+
+Inject occasional:
+- surprise challenges
+- fun missions
+- creativity quests
+- reward activities
+
+Goal:
+Prevent routine fatigue
+
+--------------------------------------------------
+15. USER OVERRIDE SYSTEM
+--------------------------------------------------
+
+Parents can:
+- edit blocks
+- lock activities
+- regenerate sections
+- customize timings
+
+AI must respect manual edits in future generations.
+
+--------------------------------------------------
+16. OUTPUT STRUCTURE
+--------------------------------------------------
+
+Return:
+
+{
+  "day_type": "school_day",
+  "energy_prediction": "medium",
+  "focus_window": "9AM-11AM",
+  "routine": [
+    {
+      "time": "07:00",
+      "activity": "Wake up"
+    }
+  ],
+  "adaptations": [
+    "Reduced evening load due to poor sleep yesterday"
+  ]
+}
+
+--------------------------------------------------
+17. UX COPY
+--------------------------------------------------
+
+Show intelligent explanations:
+
+“Today’s routine was adjusted because sleep was shorter yesterday.”
+
+“Learning blocks are scheduled during your child’s strongest focus time.”
+
+--------------------------------------------------
+18. PERFORMANCE & STORAGE
+--------------------------------------------------
+
+- generate routine once daily
+- cache routines
+- store behavioral trends
+- lightweight updates only
+
+--------------------------------------------------
+19. SUCCESS CRITERIA
+--------------------------------------------------
+
+The system should NOT feel like:
+❌ static timetable
+
+The system SHOULD feel like:
+✅ adaptive AI parenting assistant
+✅ intelligent family operating system
+✅ evolving daily support system
