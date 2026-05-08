@@ -116,7 +116,7 @@ describe("Amy AI tutor screen", () => {
 
   async function sendMessage(container: HTMLElement, text: string) {
     const input = container.querySelector(
-      'input[placeholder="ai.tutor_input_placeholder"]',
+      '[data-testid="amy-chat-input"]',
     ) as HTMLInputElement;
     expect(input).toBeTruthy();
     fireEvent.change(input, { target: { value: text } });

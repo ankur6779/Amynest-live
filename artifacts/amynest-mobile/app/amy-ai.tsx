@@ -481,6 +481,7 @@ export default function AmyAIScreen() {
             onSubmitEditing={() => send(input)}
             returnKeyType="send"
             multiline
+            testID="amy-chat-input"
           />
           <Pressable
             onPress={() => send(input)}

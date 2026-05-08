@@ -53,59 +53,70 @@ exports[`Amy AI tutor screen > renders a QUIZ reply with options and grades the 
   >
     <div>
       <div>
-        <button
-          aria-label="ai.mode_teach · ai.mode_teach_hint"
-          aria-selected="true"
-          role="tab"
-        >
-          <span
-            data-icon="school"
-            style="font-size: 14px; color: rgb(255, 255, 255);"
-          />
-          <span>
-            ai.mode_teach
-          </span>
-        </button>
-        <button
-          aria-label="ai.mode_practice · ai.mode_practice_hint"
-          aria-selected="false"
-          role="tab"
-        >
-          <span
-            data-icon="checkbox-multiple-marked-outline"
-            style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
-          />
-          <span>
-            ai.mode_practice
-          </span>
-        </button>
-        <button
-          aria-label="ai.mode_quiz · ai.mode_quiz_hint"
-          aria-selected="false"
-          role="tab"
-        >
-          <span
-            data-icon="lightbulb-on-outline"
-            style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
-          />
-          <span>
-            ai.mode_quiz
-          </span>
-        </button>
-        <button
-          aria-label="ai.mode_doubt · ai.mode_doubt_hint"
-          aria-selected="false"
-          role="tab"
-        >
-          <span
-            data-icon="help-circle-outline"
-            style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
-          />
-          <span>
-            ai.mode_doubt
-          </span>
-        </button>
+        <div>
+          <button
+            aria-label="ai.mode_teach · ai.mode_teach_hint"
+            aria-selected="true"
+            role="tab"
+          >
+            <span
+              data-icon="school"
+              style="font-size: 14px; color: rgb(255, 255, 255);"
+            />
+            <span>
+              ai.mode_teach
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_practice · ai.mode_practice_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="checkbox-multiple-marked-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_practice
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_quiz · ai.mode_quiz_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="lightbulb-on-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_quiz
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_doubt · ai.mode_doubt_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="help-circle-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_doubt
+            </span>
+          </button>
+        </div>
       </div>
+      <span>
+        ai.mode_teach_hint
+      </span>
       <div>
         <button
           aria-selected="true"
@@ -254,7 +265,8 @@ exports[`Amy AI tutor screen > renders a QUIZ reply with options and grades the 
     </div>
     <div>
       <input
-        placeholder="ai.tutor_input_placeholder"
+        data-testid="amy-chat-input"
+        placeholder="ai.tutor_placeholder_teach"
         placeholdertextcolor="rgba(255,255,255,0.4)"
         returnkeytype="send"
         value=""
@@ -332,59 +344,70 @@ exports[`Amy AI tutor screen > renders a structured TEACH reply with example chi
   >
     <div>
       <div>
-        <button
-          aria-label="ai.mode_teach · ai.mode_teach_hint"
-          aria-selected="true"
-          role="tab"
-        >
-          <span
-            data-icon="school"
-            style="font-size: 14px; color: rgb(255, 255, 255);"
-          />
-          <span>
-            ai.mode_teach
-          </span>
-        </button>
-        <button
-          aria-label="ai.mode_practice · ai.mode_practice_hint"
-          aria-selected="false"
-          role="tab"
-        >
-          <span
-            data-icon="checkbox-multiple-marked-outline"
-            style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
-          />
-          <span>
-            ai.mode_practice
-          </span>
-        </button>
-        <button
-          aria-label="ai.mode_quiz · ai.mode_quiz_hint"
-          aria-selected="false"
-          role="tab"
-        >
-          <span
-            data-icon="lightbulb-on-outline"
-            style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
-          />
-          <span>
-            ai.mode_quiz
-          </span>
-        </button>
-        <button
-          aria-label="ai.mode_doubt · ai.mode_doubt_hint"
-          aria-selected="false"
-          role="tab"
-        >
-          <span
-            data-icon="help-circle-outline"
-            style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
-          />
-          <span>
-            ai.mode_doubt
-          </span>
-        </button>
+        <div>
+          <button
+            aria-label="ai.mode_teach · ai.mode_teach_hint"
+            aria-selected="true"
+            role="tab"
+          >
+            <span
+              data-icon="school"
+              style="font-size: 14px; color: rgb(255, 255, 255);"
+            />
+            <span>
+              ai.mode_teach
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_practice · ai.mode_practice_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="checkbox-multiple-marked-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_practice
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_quiz · ai.mode_quiz_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="lightbulb-on-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_quiz
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_doubt · ai.mode_doubt_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="help-circle-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_doubt
+            </span>
+          </button>
+        </div>
       </div>
+      <span>
+        ai.mode_teach_hint
+      </span>
       <div>
         <button
           aria-selected="true"
@@ -507,7 +530,8 @@ exports[`Amy AI tutor screen > renders a structured TEACH reply with example chi
     </div>
     <div>
       <input
-        placeholder="ai.tutor_input_placeholder"
+        data-testid="amy-chat-input"
+        placeholder="ai.tutor_placeholder_teach"
         placeholdertextcolor="rgba(255,255,255,0.4)"
         returnkeytype="send"
         value=""
@@ -573,59 +597,70 @@ exports[`Amy AI tutor screen > renders mode strip + subject chips + empty state 
   >
     <div>
       <div>
-        <button
-          aria-label="ai.mode_teach · ai.mode_teach_hint"
-          aria-selected="true"
-          role="tab"
-        >
-          <span
-            data-icon="school"
-            style="font-size: 14px; color: rgb(255, 255, 255);"
-          />
-          <span>
-            ai.mode_teach
-          </span>
-        </button>
-        <button
-          aria-label="ai.mode_practice · ai.mode_practice_hint"
-          aria-selected="false"
-          role="tab"
-        >
-          <span
-            data-icon="checkbox-multiple-marked-outline"
-            style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
-          />
-          <span>
-            ai.mode_practice
-          </span>
-        </button>
-        <button
-          aria-label="ai.mode_quiz · ai.mode_quiz_hint"
-          aria-selected="false"
-          role="tab"
-        >
-          <span
-            data-icon="lightbulb-on-outline"
-            style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
-          />
-          <span>
-            ai.mode_quiz
-          </span>
-        </button>
-        <button
-          aria-label="ai.mode_doubt · ai.mode_doubt_hint"
-          aria-selected="false"
-          role="tab"
-        >
-          <span
-            data-icon="help-circle-outline"
-            style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
-          />
-          <span>
-            ai.mode_doubt
-          </span>
-        </button>
+        <div>
+          <button
+            aria-label="ai.mode_teach · ai.mode_teach_hint"
+            aria-selected="true"
+            role="tab"
+          >
+            <span
+              data-icon="school"
+              style="font-size: 14px; color: rgb(255, 255, 255);"
+            />
+            <span>
+              ai.mode_teach
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_practice · ai.mode_practice_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="checkbox-multiple-marked-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_practice
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_quiz · ai.mode_quiz_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="lightbulb-on-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_quiz
+            </span>
+          </button>
+        </div>
+        <div>
+          <button
+            aria-label="ai.mode_doubt · ai.mode_doubt_hint"
+            aria-selected="false"
+            role="tab"
+          >
+            <span
+              data-icon="help-circle-outline"
+              style="font-size: 14px; color: rgba(255, 255, 255, 0.75);"
+            />
+            <span>
+              ai.mode_doubt
+            </span>
+          </button>
+        </div>
       </div>
+      <span>
+        ai.mode_teach_hint
+      </span>
       <div>
         <button
           aria-selected="true"
@@ -691,12 +726,10 @@ exports[`Amy AI tutor screen > renders mode strip + subject chips + empty state 
     </div>
     <div>
       <div>
-        <div
-          data-colors="["#7B3FF2","#FF4ECD"]"
-        >
-          <span
-            data-icon="brain"
-            style="font-size: 32px; color: rgb(255, 255, 255);"
+        <div>
+          <img
+            resizemode="contain"
+            src="/home/runner/workspace/artifacts/amynest-mobile/assets/images/mascot.png"
           />
         </div>
         <span>
@@ -710,33 +743,30 @@ exports[`Amy AI tutor screen > renders mode strip + subject chips + empty state 
             ai.popular_questions
           </span>
           <button>
+            <span
+              data-icon="school"
+              style="font-size: 13px; color: rgba(167, 139, 250, 0.85);"
+            />
             <span>
-              ai.suggested_q1
+              ai.tutor_chip_teach_1
             </span>
           </button>
           <button>
+            <span
+              data-icon="school"
+              style="font-size: 13px; color: rgba(167, 139, 250, 0.85);"
+            />
             <span>
-              ai.suggested_q2
+              ai.tutor_chip_teach_2
             </span>
           </button>
           <button>
+            <span
+              data-icon="school"
+              style="font-size: 13px; color: rgba(167, 139, 250, 0.85);"
+            />
             <span>
-              ai.suggested_q3
-            </span>
-          </button>
-          <button>
-            <span>
-              ai.suggested_q4
-            </span>
-          </button>
-          <button>
-            <span>
-              ai.suggested_q5
-            </span>
-          </button>
-          <button>
-            <span>
-              ai.suggested_q6
+              ai.tutor_chip_teach_3
             </span>
           </button>
         </div>
@@ -744,7 +774,8 @@ exports[`Amy AI tutor screen > renders mode strip + subject chips + empty state 
     </div>
     <div>
       <input
-        placeholder="ai.tutor_input_placeholder"
+        data-testid="amy-chat-input"
+        placeholder="ai.tutor_placeholder_teach"
         placeholdertextcolor="rgba(255,255,255,0.4)"
         returnkeytype="send"
         value=""
