@@ -28,8 +28,6 @@ import { brand } from "@/constants/colors";
 import { initCrashReporter } from "@/utils/crashReporter";
 import { DebugProvider } from "@/contexts/DebugContext";
 import { DebugPanel } from "@/components/DebugPanel";
-import AmyFab from "@/components/AmyFab";
-
 SplashScreen.preventAutoHideAsync();
 WebBrowser.maybeCompleteAuthSession();
 
@@ -306,7 +304,6 @@ export default function RootLayout() {
                     <AuthGate>
                       <RootLayoutNav />
                       <DebugPanel />
-                      <AmyFab />
                     </AuthGate>
                     </DebugProvider>
                   </KeyboardProvider>
