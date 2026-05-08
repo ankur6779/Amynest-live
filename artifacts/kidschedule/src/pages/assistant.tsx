@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Send, Loader2, User, Sparkles, RefreshCw, Zap, RotateCcw } from "lucide-react";
+import { Send, Loader2, User, Sparkles, RefreshCw, Zap, RotateCcw, Heart, GraduationCap, CheckSquare, Lightbulb, HelpCircle } from "lucide-react";
 import { AmyIcon } from "@/components/amy-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -16,6 +16,25 @@ interface Message {
   role: "user" | "assistant";
   content: string;
 }
+
+type WebMode = "parenting" | "teach" | "practice" | "quiz" | "doubt";
+
+const WEB_MODES: { id: WebMode; labelKey: string; hintKey: string; placeholderKey: string; icon: React.ElementType }[] = [
+  { id: "parenting", labelKey: "ai.mode_parenting", hintKey: "ai.mode_parenting_hint", placeholderKey: "ai.web_placeholder_parenting", icon: Heart },
+  { id: "teach",     labelKey: "ai.mode_teach",     hintKey: "ai.mode_teach_hint",     placeholderKey: "ai.web_placeholder_teach",     icon: GraduationCap },
+  { id: "practice",  labelKey: "ai.mode_practice",  hintKey: "ai.mode_practice_hint",  placeholderKey: "ai.web_placeholder_practice",  icon: CheckSquare },
+  { id: "quiz",      labelKey: "ai.mode_quiz",       hintKey: "ai.mode_quiz_hint",      placeholderKey: "ai.web_placeholder_quiz",       icon: Lightbulb },
+  { id: "doubt",     labelKey: "ai.mode_doubt",      hintKey: "ai.mode_doubt_hint",     placeholderKey: "ai.web_placeholder_doubt",      icon: HelpCircle },
+];
+
+const PARENTING_CHIP_KEYS = [
+  "ai.web_chip_parenting_1",
+  "ai.web_chip_parenting_2",
+  "ai.web_chip_parenting_3",
+  "ai.web_chip_parenting_4",
+  "ai.web_chip_parenting_5",
+  "ai.web_chip_parenting_6",
+] as const;
 
 const SUGGESTED_QUESTION_KEYS = [
   "ai.suggested_q1",
@@ -31,6 +50,7 @@ export default function AssistantPage() {
   const { toast } = useToast();
   const authFetch = useAuthFetch();
   const { entitlements, isPremium, refresh: refreshSubscription } = useSubscription();
+  const [mode, setMode] = useState<WebMode>("parenting");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -170,6 +190,29 @@ export default function AssistantPage() {
         )}
       </div>
 
+      {/* Mode tabs */}
+      <div className="flex-shrink-0 mb-3">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {WEB_MODES.map(({ id, labelKey, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setMode(id)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all border ${
+                mode === id
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              {t(labelKey)}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground italic mt-1.5 px-0.5">
+          {t(WEB_MODES.find((m) => m.id === mode)!.hintKey)}
+        </p>
+      </div>
+
       {/* Daily limit bar */}
       <div className={`flex-shrink-0 mb-3 rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 border text-sm ${
         limitReached
@@ -226,7 +269,7 @@ export default function AssistantPage() {
             <div className="w-full max-w-lg">
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">{t("ai.popular_questions")}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {SUGGESTED_QUESTION_KEYS.map((key, i) => (
+                {(mode === "parenting" ? PARENTING_CHIP_KEYS : SUGGESTED_QUESTION_KEYS).map((key, i) => (
                   <button
                     key={i}
                     onClick={() => sendMessage(t(key))}
@@ -334,7 +377,7 @@ export default function AssistantPage() {
             <div className="flex gap-3 items-end bg-card rounded-2xl border border-border p-3 shadow-sm focus-within:border-primary transition-colors">
               <Textarea
                 ref={textareaRef}
-                placeholder={t("ai.input_placeholder")}
+                placeholder={t(WEB_MODES.find((m) => m.id === mode)!.placeholderKey)}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}

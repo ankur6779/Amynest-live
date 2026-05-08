@@ -22,7 +22,7 @@ import type { z } from "zod";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
-type Mode = "teach" | "practice" | "quiz" | "doubt";
+type Mode = "parenting" | "teach" | "practice" | "quiz" | "doubt";
 type Subject = "general" | "math" | "english" | "gk" | "logic";
 
 type TutorReply = z.infer<typeof AiTutorChatResponse>["reply"];
@@ -32,12 +32,13 @@ type Turn =
   | { id: string; role: "tutor"; reply: TutorReply; pickedIndex?: number }
   | { id: string; role: "tutor-error"; text: string };
 
-const MODES: Mode[] = ["teach", "practice", "quiz", "doubt"];
+const MODES: Mode[] = ["parenting", "teach", "practice", "quiz", "doubt"];
 const SUBJECTS: Subject[] = ["general", "math", "english", "gk", "logic"];
 const SUBJECT_EMOJI: Record<Subject, string> = {
   general: "✨", math: "🔢", english: "📖", gk: "🌍", logic: "🧩",
 };
 const MODE_ICON: Record<Mode, React.ComponentProps<typeof MaterialCommunityIcons>["name"]> = {
+  parenting: "account-heart-outline",
   teach: "school",
   practice: "checkbox-multiple-marked-outline",
   quiz: "lightbulb-on-outline",
@@ -55,16 +56,18 @@ const SUGGESTED_QUESTION_KEYS = [
 
 // ─── Mode-specific placeholders + quick chips (keys in i18n/en.json) ──────
 const MODE_PLACEHOLDER_KEY: Record<Mode, string> = {
-  teach:    "ai.tutor_placeholder_teach",
-  practice: "ai.tutor_placeholder_practice",
-  quiz:     "ai.tutor_placeholder_quiz",
-  doubt:    "ai.tutor_placeholder_doubt",
+  parenting: "ai.tutor_placeholder_parenting",
+  teach:     "ai.tutor_placeholder_teach",
+  practice:  "ai.tutor_placeholder_practice",
+  quiz:      "ai.tutor_placeholder_quiz",
+  doubt:     "ai.tutor_placeholder_doubt",
 };
 const MODE_CHIPS_KEYS: Record<Mode, [string, string, string]> = {
-  teach:    ["ai.tutor_chip_teach_1",    "ai.tutor_chip_teach_2",    "ai.tutor_chip_teach_3"],
-  practice: ["ai.tutor_chip_practice_1", "ai.tutor_chip_practice_2", "ai.tutor_chip_practice_3"],
-  quiz:     ["ai.tutor_chip_quiz_1",     "ai.tutor_chip_quiz_2",     "ai.tutor_chip_quiz_3"],
-  doubt:    ["ai.tutor_chip_doubt_1",    "ai.tutor_chip_doubt_2",    "ai.tutor_chip_doubt_3"],
+  parenting: ["ai.tutor_chip_parenting_1", "ai.tutor_chip_parenting_2", "ai.tutor_chip_parenting_3"],
+  teach:     ["ai.tutor_chip_teach_1",     "ai.tutor_chip_teach_2",     "ai.tutor_chip_teach_3"],
+  practice:  ["ai.tutor_chip_practice_1",  "ai.tutor_chip_practice_2",  "ai.tutor_chip_practice_3"],
+  quiz:      ["ai.tutor_chip_quiz_1",      "ai.tutor_chip_quiz_2",      "ai.tutor_chip_quiz_3"],
+  doubt:     ["ai.tutor_chip_doubt_1",     "ai.tutor_chip_doubt_2",     "ai.tutor_chip_doubt_3"],
 };
 
 const PREFS_KEY = (childId: number | string | null | undefined) =>
@@ -85,7 +88,7 @@ export default function AmyAIScreen() {
   const { theme } = useTheme();
   const { t, i18n } = useTranslation();
 
-  const [mode, setMode] = useState<Mode>("teach");
+  const [mode, setMode] = useState<Mode>("parenting");
   const [subject, setSubject] = useState<Subject>("general");
   const [topic, setTopic] = useState("");
   const [input, setInput] = useState("");
@@ -98,6 +101,7 @@ export default function AmyAIScreen() {
 
   // Animated per-mode scale for selection pulse
   const modeScales = useRef<Record<Mode, Animated.Value>>({
+    parenting: new Animated.Value(1),
     teach: new Animated.Value(1), practice: new Animated.Value(1),
     quiz:  new Animated.Value(1), doubt:    new Animated.Value(1),
   }).current;
@@ -220,6 +224,49 @@ export default function AmyAIScreen() {
       });
       const childAge =
         typeof primaryChild?.age === "number" && primaryChild.age > 0 ? primaryChild.age : undefined;
+
+      // ── Parenting mode: warm parenting-coach assistant ──────────────────
+      if (mode === "parenting") {
+        const parentHistory = turns.slice(-6).flatMap<{ role: "user" | "assistant"; content: string }>((tr) => {
+          if (tr.role === "user") return [{ role: "user", content: tr.text }];
+          if (tr.role === "tutor") {
+            const txt = [tr.reply.content, tr.reply.question ?? ""].filter(Boolean).join(" ").slice(0, 800);
+            return txt ? [{ role: "assistant", content: txt }] : [];
+          }
+          return [];
+        });
+        const pRes = await authFetch("/api/ai/assistant-ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question: trimmed,
+            language: i18n.language || "en",
+            history: parentHistory,
+            childName: primaryChild?.name ?? undefined,
+            childAge,
+          }),
+        });
+        if (pRes.status === 402) {
+          await useSubscriptionStore.getState().refresh();
+          router.push({ pathname: "/paywall", params: { reason: "ai_quota" } });
+          return;
+        }
+        if (!pRes.ok) throw new Error(`HTTP ${pRes.status}`);
+        const pJson = await pRes.json().catch(() => null);
+        const parentReply: TutorReply = {
+          type: "doubt",
+          content: String(pJson?.answer ?? ""),
+          examples: [],
+          question: null,
+          options: [],
+          answer: null,
+        };
+        setTurns((all) => [...all, { id: `t-${Date.now()}`, role: "tutor", reply: parentReply }]);
+        void useSubscriptionStore.getState().refresh();
+        return;
+      }
+      // ────────────────────────────────────────────────────────────────────
+
       const res = await authFetch("/api/ai-tutor/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -294,7 +341,7 @@ export default function AmyAIScreen() {
     setActiveTtsTurnId(null);
     setTurns([]);
     setInput("");
-    setMode("teach");
+    setMode("parenting");
     setSubject("general");
     setTopic("");
     scrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -797,7 +844,7 @@ const styles = StyleSheet.create({
   clearBtnText: { color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "600" },
 
   controls: { paddingHorizontal: 12, paddingTop: 8, gap: 8 },
-  chipRow: { gap: 8, paddingRight: 8 },
+  chipRow: { gap: 8, paddingRight: 20 },
   modeChip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)" },
   modeChipActive: { backgroundColor: brand.primary, borderColor: brand.primary },
   modeChipText: { color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "700" },

@@ -1,0 +1,164 @@
+Add a new default AI mode called "Parenting" inside ASK AMY.
+
+GOAL:
+Make ASK AMY immediately useful for parents by default, not just for child learning.
+
+---
+
+1. NEW DEFAULT MODE (IMPORTANT)
+
+---
+
+Add new mode button:
+
+👨‍👩‍👧 Parenting
+
+This should be:
+
+* selected by default when ASK AMY opens
+* highlighted initially
+
+Order:
+[ Parenting ] [ Teach ] [ Practice ] [ Quiz ] [ Doubt ]
+
+---
+
+2. PARENTING MODE PURPOSE
+
+---
+
+This mode is for:
+
+* parenting guidance
+* child behavior advice
+* routines
+* emotional support
+* screen time guidance
+* sleep tips
+* food habits
+* learning habits
+* parenting coaching
+
+---
+
+3. HELPER TEXT
+
+---
+
+Under Parenting mode show:
+
+"Get smart parenting guidance"
+
+---
+
+4. DYNAMIC PLACEHOLDER
+
+---
+
+When Parenting mode selected:
+
+Placeholder:
+"Ask about parenting, routines, habits..."
+
+Examples:
+
+* "My child is not sleeping on time"
+* "How to reduce screen time?"
+* "How to improve focus?"
+
+---
+
+5. DEFAULT EMPTY STATE
+
+---
+
+When ASK AMY opens first time:
+
+Show:
+"👋 Hi! I'm AMY.
+I can help with parenting guidance, routines, learning, quizzes, and child development."
+
+---
+
+6. QUICK SUGGESTION CHIPS
+
+---
+
+Show parenting-focused suggestions by default:
+
+* Bedtime routine
+* Screen time tips
+* Tantrum handling
+* Healthy food habits
+* Study routine
+* Confidence building
+
+---
+
+7. PARENTING RESPONSE STYLE
+
+---
+
+Responses should feel:
+
+* supportive
+* practical
+* calm
+* expert-like
+
+Avoid robotic tone.
+
+---
+
+8. VISUAL STYLE
+
+---
+
+Parenting mode selected state:
+
+* stronger purple/pink glow
+* soft breathing animation
+
+---
+
+9. CHAT CONTEXT
+
+---
+
+When Parenting mode active:
+
+* AI should prioritize parent-focused responses
+* Use child age if available
+
+---
+
+10. MOBILE UX
+
+---
+
+Ensure Parenting mode appears properly on small screens:
+
+* horizontal scroll chips
+* responsive spacing
+
+---
+
+11. FUTURE READY
+
+---
+
+Prepare Parenting mode for future:
+
+* voice parenting coach
+* daily parenting tips
+* routine generation
+* AI memory
+
+---
+
+DELIVERABLE:
+
+* Parenting mode added
+* Default selected on ASK AMY open
+* Better parent-first AI experience
+* Premium polished UI

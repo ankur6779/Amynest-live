@@ -200,7 +200,13 @@
     "tutor_chip_quiz_3": "Science quiz",
     "tutor_chip_doubt_1": "Why do birds fly?",
     "tutor_chip_doubt_2": "How does rain happen?",
-    "tutor_chip_doubt_3": "What is gravity?"
+    "tutor_chip_doubt_3": "What is gravity?",
+    "mode_parenting": "Parenting",
+    "mode_parenting_hint": "Get smart parenting guidance",
+    "tutor_placeholder_parenting": "Ask about parenting, routines, habits…",
+    "tutor_chip_parenting_1": "Bedtime routine tips",
+    "tutor_chip_parenting_2": "Screen time guidance",
+    "tutor_chip_parenting_3": "Tantrum handling"
   },
   "pricing": {
     "title": "Unlock Full Parenting Power",
