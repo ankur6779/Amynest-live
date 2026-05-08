@@ -299,3 +299,9 @@ id = "Lqpx7kwr3hB5be3WSNP58"
 uri = "file://screenshots/appstore-10-cta.jpg"
 type = "image"
 title = "10 · Start Your Parenting Journey"
+
+[[outputs]]
+id = "8fE_fRAfFh1Q0wq-b6pHL"
+uri = "file://kidschedule-android/store-assets/apple-export-compliance.md"
+type = "text"
+title = "Apple App Store — Export Compliance Declaration"
