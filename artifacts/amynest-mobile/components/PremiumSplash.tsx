@@ -1,12 +1,11 @@
 /**
- * PremiumSplash — clean professional splash screen.
+ * PremiumSplash — cinematic animated splash screen matching the AmyNest AI design.
  *
- * Design: AmyNest logo + wordmark + tagline on deep-dark bg.
- * Intentionally uses NO i18n — this component mounts before i18next
- * initialises (it renders outside the provider tree in RootLayout),
- * so useTranslation() would return raw key strings. All copy is hardcoded.
+ * Design: Cute bird mascot in neon gradient ring, rainbow "AmyNest AI" wordmark,
+ *         tagline, neon dots progress, cosmic background.
  *
- * Animations: plain RN Animated (no Reanimated dependency needed here).
+ * NO i18n — mounts before i18next initialises. All text intentionally hardcoded.
+ * Animations: React Native Animated + Reanimated 3 + react-native-svg.
  */
 import React, { useEffect, useRef } from "react";
 import {
@@ -21,23 +20,52 @@ import {
   Easing,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { brand } from "@/constants/colors";
+import Svg, {
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+  Circle,
+} from "react-native-svg";
+import Reanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing as REasing,
+} from "react-native-reanimated";
 
 const { width: W, height: H } = Dimensions.get("window");
 
-const VISIBLE_MS  = 2600;
-const FADE_OUT_MS = 700;
-const BAR_MAX_W   = W * 0.52;
+const RING_SIZE   = Math.min(W * 0.72, 280);
+const RING_STROKE = RING_SIZE * 0.055;
+const RING_R      = (RING_SIZE - RING_STROKE) / 2;
+const MASCOT_SIZE = RING_SIZE * 0.72;
 
-// ─── Star field (seeded, deterministic) ───────────────────────────────────────
-const STARS = Array.from({ length: 22 }, (_, i) => ({
+const VISIBLE_MS  = 3800;
+const FADE_OUT_MS = 700;
+
+// Per-letter colors for "AmyNest"
+const LETTER_COLORS = [
+  "#FF6B6B", // audit-ok: rainbow wordmark — A coral red
+  "#FF9F43", // audit-ok: rainbow wordmark — m orange
+  "#F9CA24", // audit-ok: rainbow wordmark — y yellow
+  "#6AB04C", // audit-ok: rainbow wordmark — N green
+  "#48DBFB", // audit-ok: rainbow wordmark — e cyan
+  "#A29BFE", // audit-ok: rainbow wordmark — s lavender
+  "#FD79A8", // audit-ok: rainbow wordmark — t pink
+];
+
+// Deterministic star field
+const STARS = Array.from({ length: 24 }, (_, i) => ({
   x:   ((i * 137.508) % 100) / 100 * W,
-  y:   ((i * 91.3 + 7) % 100) / 100 * H * 0.88,
+  y:   ((i * 91.3 + 7) % 100) / 100 * H * 0.9,
   r:   ([1, 1, 1.5, 1, 2] as const)[i % 5],
   dur: 2000 + (i * 680) % 2500,
   del: (i * 420) % 3000,
 }));
 
+// ─── Star ─────────────────────────────────────────────────────────────────────
 function Star({ x, y, r, dur, del }: typeof STARS[0]) {
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -45,13 +73,13 @@ function Star({ x, y, r, dur, del }: typeof STARS[0]) {
       Animated.sequence([
         Animated.delay(del),
         Animated.timing(opacity, {
-          toValue: 0.75,
+          toValue: 0.8,
           duration: dur * 0.45,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
-          toValue: 0.08,
+          toValue: 0.05,
           duration: dur * 0.55,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
@@ -61,19 +89,18 @@ function Star({ x, y, r, dur, del }: typeof STARS[0]) {
     loop.start();
     return () => loop.stop();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
     <Animated.View
       style={{
         position: "absolute",
         left: x - r,
-        top: y - r,
+        top:  y - r,
         width: r * 2,
         height: r * 2,
         borderRadius: r,
-        backgroundColor: "#FFFFFF", // audit-ok: pure white star dots
+        backgroundColor: "#FFFFFF", // audit-ok: white star particle
         opacity,
-        shadowColor: brand.purple400,
+        shadowColor: "#A78BFA", // audit-ok: violet star glow
         shadowOpacity: 0.9,
         shadowRadius: r * 4,
         shadowOffset: { width: 0, height: 0 },
@@ -82,75 +109,259 @@ function Star({ x, y, r, dur, del }: typeof STARS[0]) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Neon Gradient Ring (SVG) ──────────────────────────────────────────────────
+function NeonRing({ spinAnim }: { spinAnim: Animated.Value }) {
+  const rotate = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+  return (
+    <View style={[styles.ringContainer, { width: RING_SIZE + 24, height: RING_SIZE + 24 }]}>
+      {/* Outer glow bloom */}
+      <View style={[styles.ringGlow, {
+        width: RING_SIZE + 32,
+        height: RING_SIZE + 32,
+        borderRadius: (RING_SIZE + 32) / 2,
+        top: -16,
+        left: -16,
+      }]} />
+
+      {/* Rotating gradient ring via SVG */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          width: RING_SIZE,
+          height: RING_SIZE,
+          top: 12,
+          left: 12,
+          transform: [{ rotate }],
+        }}
+      >
+        <Svg width={RING_SIZE} height={RING_SIZE}>
+          <Defs>
+            <SvgLinearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0%"   stopColor="#9333EA" /> {/* audit-ok: neon ring gradient purple */}
+              <Stop offset="30%"  stopColor="#EC4899" /> {/* audit-ok: neon ring gradient pink */}
+              <Stop offset="65%"  stopColor="#06B6D4" /> {/* audit-ok: neon ring gradient cyan */}
+              <Stop offset="100%" stopColor="#9333EA" /> {/* audit-ok: neon ring gradient purple end */}
+            </SvgLinearGradient>
+          </Defs>
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RING_R}
+            stroke="url(#ringGrad)"
+            strokeWidth={RING_STROKE}
+            fill="transparent"
+          />
+        </Svg>
+      </Animated.View>
+    </View>
+  );
+}
+
+// ─── Rainbow Wordmark ──────────────────────────────────────────────────────────
+function RainbowWordmark({ opacity }: { opacity: Animated.Value }) {
+  return (
+    <Animated.View style={[styles.wordmarkRow, { opacity }]}>
+      {"AmyNest".split("").map((char, i) => (
+        <Text
+          key={i}
+          style={[
+            styles.wordmarkLetter,
+            { color: LETTER_COLORS[i] },
+            // audit-ok: per-letter rainbow colors for AmyNest wordmark
+          ]}
+        >
+          {char}
+        </Text>
+      ))}
+      {/* Sparkle */}
+      <Text style={styles.sparkle}>✦</Text>
+      {/* AI Badge */}
+      <View style={styles.aiBadge}>
+        <Text style={styles.aiBadgeText}>AI</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+// ─── Neon Loading Dots ─────────────────────────────────────────────────────────
+const DOT_COLORS = [
+  "#9333EA", // audit-ok: purple neon dot
+  "#EC4899", // audit-ok: pink neon dot
+  "#A855F7", // audit-ok: violet neon dot
+  "#06B6D4", // audit-ok: cyan neon dot
+];
+
+function LoadingDots({ opacity }: { opacity: Animated.Value }) {
+  const anims = [
+    useRef(new Animated.Value(0.4)).current,
+    useRef(new Animated.Value(0.4)).current,
+    useRef(new Animated.Value(0.4)).current,
+    useRef(new Animated.Value(0.4)).current,
+  ];
+
+  useEffect(() => {
+    anims.forEach((anim, i) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 180),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 500,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0.35,
+            duration: 600,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <Animated.View style={[styles.dotsSection, { opacity }]}>
+      <View style={styles.dotsRow}>
+        {DOT_COLORS.map((color, i) => (
+          <Animated.View
+            key={i}
+            style={[
+              styles.dot,
+              {
+                backgroundColor: color,
+                opacity: anims[i],
+                shadowColor: color,
+              },
+            ]}
+          />
+        ))}
+      </View>
+      {/* i18n-ignore-start */}
+      <Text style={styles.loadingText}>Personalizing your parenting experience...</Text>
+      {/* i18n-ignore-end */}
+    </Animated.View>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 export default function PremiumSplash({ onFinish }: { onFinish: () => void }) {
+  // Animated values (RN Animated)
   const containerOpacity = useRef(new Animated.Value(0)).current;
-  const logoOpacity      = useRef(new Animated.Value(0)).current;
-  const logoScale        = useRef(new Animated.Value(0.78)).current;
-  const logoFloat        = useRef(new Animated.Value(0)).current;
+  const ringOpacity      = useRef(new Animated.Value(0)).current;
+  const ringScale        = useRef(new Animated.Value(0.7)).current;
+  const mascotOpacity    = useRef(new Animated.Value(0)).current;
+  const mascotScale      = useRef(new Animated.Value(0.72)).current;
   const wordmarkOpacity  = useRef(new Animated.Value(0)).current;
   const taglineOpacity   = useRef(new Animated.Value(0)).current;
   const dotsOpacity      = useRef(new Animated.Value(0)).current;
-  const progressW        = useRef(new Animated.Value(0)).current;
+  const ringSpinAnim     = useRef(new Animated.Value(0)).current;
+
+  // Reanimated for mascot float
+  const mascotY = useSharedValue(0);
+  const mascotAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: mascotY.value }],
+  }));
 
   useEffect(() => {
-    // Container fade in
+    // Fade in container
     Animated.timing(containerOpacity, {
-      toValue: 1, duration: 380, useNativeDriver: true,
+      toValue: 1,
+      duration: 350,
+      useNativeDriver: true,
     }).start();
 
-    // Logo spring entrance
+    // Ring entrance
     Animated.parallel([
-      Animated.spring(logoScale, {
-        toValue: 1, useNativeDriver: true,
-        damping: 16, stiffness: 155, mass: 1,
+      Animated.timing(ringOpacity, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
       }),
-      Animated.timing(logoOpacity, {
-        toValue: 1, duration: 680,
-        easing: Easing.out(Easing.ease), useNativeDriver: true,
+      Animated.spring(ringScale, {
+        toValue: 1,
+        damping: 14,
+        stiffness: 120,
+        useNativeDriver: true,
       }),
     ]).start();
 
-    // Logo gentle float loop
+    // Ring continuous spin
     Animated.loop(
-      Animated.sequence([
-        Animated.timing(logoFloat, {
-          toValue: -9, duration: 2600,
-          easing: Easing.inOut(Easing.ease), useNativeDriver: true,
-        }),
-        Animated.timing(logoFloat, {
-          toValue: 0, duration: 2600,
-          easing: Easing.inOut(Easing.ease), useNativeDriver: true,
-        }),
-      ]),
+      Animated.timing(ringSpinAnim, {
+        toValue: 1,
+        duration: 14000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
     ).start();
 
-    // Text entrance (staggered)
+    // Mascot entrance (delayed slightly after ring)
+    Animated.parallel([
+      Animated.timing(mascotOpacity, {
+        toValue: 1,
+        duration: 800,
+        delay: 200,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.spring(mascotScale, {
+        toValue: 1,
+        damping: 13,
+        stiffness: 110,
+        mass: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Mascot float loop (Reanimated)
+    mascotY.value = withRepeat(
+      withSequence(
+        withTiming(-10, { duration: 2200, easing: REasing.inOut(REasing.ease) }),
+        withTiming(0,   { duration: 2200, easing: REasing.inOut(REasing.ease) }),
+      ),
+      -1,
+      false,
+    );
+
+    // Wordmark
     Animated.timing(wordmarkOpacity, {
-      toValue: 1, duration: 680, delay: 420,
-      easing: Easing.out(Easing.ease), useNativeDriver: true,
+      toValue: 1,
+      duration: 700,
+      delay: 600,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
     }).start();
 
+    // Tagline
     Animated.timing(taglineOpacity, {
-      toValue: 1, duration: 680, delay: 700,
-      easing: Easing.out(Easing.ease), useNativeDriver: true,
+      toValue: 1,
+      duration: 700,
+      delay: 900,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
     }).start();
 
+    // Loading dots
     Animated.timing(dotsOpacity, {
-      toValue: 1, duration: 680, delay: 900,
-      easing: Easing.out(Easing.ease), useNativeDriver: true,
+      toValue: 1,
+      duration: 700,
+      delay: 1300,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
     }).start();
 
-    // Progress bar
-    Animated.timing(progressW, {
-      toValue: BAR_MAX_W, duration: VISIBLE_MS - 350, delay: 220,
-      easing: Easing.inOut(Easing.ease), useNativeDriver: false,
-    }).start();
-
-    // Dismiss
+    // Dismiss sequence
     const fadeTimer = setTimeout(() => {
       Animated.timing(containerOpacity, {
-        toValue: 0, duration: FADE_OUT_MS, useNativeDriver: true,
+        toValue: 0,
+        duration: FADE_OUT_MS,
+        useNativeDriver: true,
       }).start();
     }, VISIBLE_MS);
 
@@ -168,85 +379,79 @@ export default function PremiumSplash({ onFinish }: { onFinish: () => void }) {
     >
       <StatusBar
         barStyle="light-content"
-        backgroundColor="#060018" // audit-ok: void-dark splash status bar
+        backgroundColor="#06061C" // audit-ok: deep-dark cosmic splash status bar
         translucent={Platform.OS === "android"}
       />
 
-      {/* Background gradient */}
+      {/* Background */}
       <LinearGradient
-        colors={["#060018", "#0d0330", "#080022"]} // audit-ok: deep-void purple splash bg
-        locations={[0, 0.52, 1]}
-        start={{ x: 0.2, y: 0 }}
-        end={{ x: 0.8, y: 1 }}
+        colors={["#06061C", "#0A0428", "#07062A", "#060016"]} // audit-ok: deep navy-purple cosmic bg
+        locations={[0, 0.35, 0.65, 1]}
+        start={{ x: 0.3, y: 0 }}
+        end={{ x: 0.7, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Atmospheric purple blooms */}
-      <View style={styles.bloom1} />
-      <View style={styles.bloom2} />
-      <View style={styles.bloom3} />
+      {/* Ambient purple radial center bloom */}
+      <View style={styles.centerBloom} />
+      <View style={styles.centerBloom2} />
+
+      {/* Bottom neon wave glow */}
+      <View style={styles.bottomWave1} />
+      <View style={styles.bottomWave2} />
 
       {/* Stars */}
       {STARS.map((s, i) => <Star key={i} {...s} />)}
 
-      {/* ── Main stage ──────────────────────────────────── */}
-      {/* i18n-ignore-start — PremiumSplash mounts before i18next initialises; all text is intentionally hardcoded */}
+      {/* ── Stage ──────────────────────────────────────────── */}
       <View style={styles.stage}>
 
-        {/* Logo */}
+        {/* Ring + Mascot stacked */}
         <Animated.View
           style={[
-            styles.logoWrap,
+            styles.ringMascotWrap,
             {
-              opacity: logoOpacity,
-              transform: [{ scale: logoScale }, { translateY: logoFloat }],
+              opacity: ringOpacity,
+              transform: [{ scale: ringScale }],
             },
           ]}
         >
-          <View style={styles.logoGlow} />
-          <Image
-            source={require("../assets/images/amynest-logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          {/* SVG Neon Ring — absolutely behind mascot */}
+          <View style={styles.ringAbsolute}>
+            <NeonRing spinAnim={ringSpinAnim} />
+          </View>
+
+          {/* Mascot — flex centered, floats on top */}
+          <Animated.View
+            style={{
+              opacity: mascotOpacity,
+              transform: [{ scale: mascotScale }],
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Reanimated.View style={mascotAnimStyle}>
+              <Image
+                source={require("../assets/images/mascot.png")}
+                style={{ width: MASCOT_SIZE, height: MASCOT_SIZE }}
+                resizeMode="contain"
+              />
+            </Reanimated.View>
+          </Animated.View>
         </Animated.View>
 
-        {/* Wordmark: Amy·Nest·AI */}
-        <Animated.View style={[styles.wordmarkRow, { opacity: wordmarkOpacity }]}>
-          <Text style={styles.wordAmy}>Amy</Text>
-          <Text style={styles.wordNest}>Nest</Text>
-          <View style={styles.aiBadge}>
-            <Text style={styles.wordAi}>AI</Text>
-          </View>
-        </Animated.View>
+        {/* Rainbow "AmyNest ✦ AI" wordmark */}
+        <RainbowWordmark opacity={wordmarkOpacity} />
 
         {/* Tagline */}
-        <Animated.View style={[styles.taglineWrap, { opacity: taglineOpacity }]}>
-          <View style={styles.taglineLine} />
-          <Text style={styles.tagline}>Where Smart Parenting Starts</Text>
-          <View style={styles.taglineLine} />
-        </Animated.View>
+        {/* i18n-ignore-start */}
+        <Animated.Text style={[styles.tagline, { opacity: taglineOpacity }]}>
+          WHERE SMART PARENTING STARTS
+        </Animated.Text>
+        {/* i18n-ignore-end */}
 
-        {/* Feature dots */}
-        <Animated.View style={[styles.featureRow, { opacity: dotsOpacity }]}>
-          {["✨ AI-Powered", "💛 Caring", "📈 Science-Backed"].map((label) => (
-            <View key={label} style={styles.featureDot}>
-              <Text style={styles.featureLabel}>{label}</Text>
-            </View>
-          ))}
-        </Animated.View>
-      </View>
-
-      {/* Progress bar */}
-      <View style={styles.progressTrack}>
-        <Animated.View style={[styles.progressBar, { width: progressW }]}>
-          <LinearGradient
-            colors={[brand.violet500, brand.pink500]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={StyleSheet.absoluteFill}
-          />
-        </Animated.View>
+        {/* Loading dots + text */}
+        <LoadingDots opacity={dotsOpacity} />
       </View>
     </Animated.View>
   );
@@ -259,159 +464,151 @@ const styles = StyleSheet.create({
     elevation: 9999,
   },
 
-  // Atmospheric blooms
-  bloom1: {
+  centerBloom: {
     position: "absolute",
-    width: 360,
-    height: 360,
-    borderRadius: 180,
-    top: H * 0.17,
-    left: W / 2 - 180,
-    backgroundColor: "rgba(109,28,209,0.18)", // audit-ok: outer radial bloom
+    width: W * 0.9,
+    height: W * 0.9,
+    borderRadius: W * 0.45,
+    top: H * 0.08,
+    left: W * 0.05,
+    backgroundColor: "rgba(100,30,200,0.18)", // audit-ok: outer center radial bloom
   },
-  bloom2: {
+  centerBloom2: {
     position: "absolute",
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    top: H * 0.26,
-    left: W / 2 - 105,
-    backgroundColor: "rgba(168,85,247,0.13)", // audit-ok: inner radial bloom
-  },
-  bloom3: {
-    position: "absolute",
-    width: 280,
-    height: 140,
-    borderRadius: 70,
-    bottom: H * 0.12,
-    left: W / 2 - 140,
-    backgroundColor: "rgba(124,58,237,0.10)", // audit-ok: lower accent bloom
+    width: W * 0.55,
+    height: W * 0.55,
+    borderRadius: W * 0.275,
+    top: H * 0.16,
+    left: W * 0.225,
+    backgroundColor: "rgba(147,51,234,0.12)", // audit-ok: inner center bloom
   },
 
-  // Stage
+  bottomWave1: {
+    position: "absolute",
+    width: W * 1.6,
+    height: 130,
+    borderRadius: 65,
+    bottom: H * 0.08,
+    left: -W * 0.3,
+    backgroundColor: "rgba(147,51,234,0.14)", // audit-ok: bottom neon wave 1
+  },
+  bottomWave2: {
+    position: "absolute",
+    width: W * 1.4,
+    height: 80,
+    borderRadius: 40,
+    bottom: H * 0.05,
+    left: -W * 0.2,
+    backgroundColor: "rgba(6,182,212,0.08)", // audit-ok: bottom neon wave 2 cyan
+  },
+
   stage: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: H * 0.07,
-    gap: 0,
+    paddingBottom: H * 0.04,
+    gap: 18,
   },
 
-  // Logo
-  logoWrap: {
+  // Ring & mascot
+  ringMascotWrap: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    width: RING_SIZE + 24,
+    height: RING_SIZE + 24,
+    marginBottom: 8,
   },
-  logoGlow: {
+  ringAbsolute: {
     position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: "rgba(139,92,246,0.22)", // audit-ok: logo glow halo
+    alignItems: "center",
+    justifyContent: "center",
   },
-  logo: {
-    width: 140,
-    height: 140,
+  ringContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringGlow: {
+    position: "absolute",
+    backgroundColor: "rgba(147,51,234,0.22)", // audit-ok: ring outer glow bloom
+    shadowColor: "#9333EA", // audit-ok: ring glow shadow
+    shadowOpacity: 0.8,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 0 },
   },
 
   // Wordmark
   wordmarkRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 1,
-    marginBottom: 12,
+    alignItems: "flex-end",
+    gap: 0,
   },
-  wordAmy: {
+  wordmarkLetter: {
     fontSize: 38,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "800",
-    color: "#FFFFFF", // audit-ok: brand wordmark white
-    letterSpacing: -0.8,
+    fontFamily: "Inter_900Black",
+    fontWeight: "900",
+    letterSpacing: -0.5,
+    // color set inline per letter
   },
-  wordNest: {
-    fontSize: 38,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "800",
-    color: brand.purple400,
-    letterSpacing: -0.8,
+  sparkle: {
+    fontSize: 16,
+    color: "#48DBFB", // audit-ok: cyan sparkle star
+    marginBottom: 10,
+    marginLeft: 2,
   },
   aiBadge: {
-    marginLeft: 6,
-    marginBottom: 12,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    marginLeft: 7,
+    marginBottom: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: "rgba(168,85,247,0.22)", // audit-ok: AI badge glass bg
-    borderWidth: 1,
-    borderColor: "rgba(168,85,247,0.38)", // audit-ok: AI badge glass border
+    backgroundColor: "#3A0CA3", // audit-ok: AI badge deep blue bg
+    shadowColor: "#4361EE", // audit-ok: AI badge glow
+    shadowOpacity: 0.7,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
   },
-  wordAi: {
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "800",
-    color: brand.pink400,
-    letterSpacing: 1.5,
+  aiBadgeText: {
+    fontSize: 14,
+    fontFamily: "Inter_900Black",
+    fontWeight: "900",
+    color: "#FFFFFF", // audit-ok: AI badge white text
+    letterSpacing: 1,
   },
 
   // Tagline
-  taglineWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 28,
-    paddingHorizontal: 28,
-  },
-  taglineLine: {
-    width: 28,
-    height: 1,
-    backgroundColor: "rgba(168,85,247,0.40)", // audit-ok: tagline divider line
-    borderRadius: 1,
-  },
   tagline: {
-    fontSize: 12.5,
+    fontSize: 11,
     fontFamily: "Inter_400Regular",
-    color: "rgba(200,170,255,0.72)", // audit-ok: tagline muted purple text
-    letterSpacing: 0.6,
+    color: "rgba(255,255,255,0.65)", // audit-ok: tagline muted white text
+    letterSpacing: 2.5,
     textAlign: "center",
   },
 
-  // Feature dots row
-  featureRow: {
+  // Loading dots
+  dotsSection: {
+    alignItems: "center",
+    gap: 10,
+    marginTop: 4,
+  },
+  dotsRow: {
     flexDirection: "row",
-    gap: 8,
-    flexWrap: "wrap",
-    justifyContent: "center",
-    paddingHorizontal: 24,
+    gap: 10,
   },
-  featureDot: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: "rgba(139,92,246,0.14)", // audit-ok: feature pill bg
-    borderWidth: 1,
-    borderColor: "rgba(139,92,246,0.28)", // audit-ok: feature pill border
+  dot: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
   },
-  featureLabel: {
-    fontSize: 11.5,
-    fontFamily: "Inter_600SemiBold",
-    color: "rgba(220,200,255,0.82)", // audit-ok: feature pill text
-  },
-
-  // Progress bar
-  progressTrack: {
-    position: "absolute",
-    bottom: 38,
-    left: W / 2 - BAR_MAX_W / 2,
-    width: BAR_MAX_W,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: "rgba(139,92,246,0.18)", // audit-ok: progress track bg
-    overflow: "hidden",
-  },
-  progressBar: {
-    height: "100%",
-    borderRadius: 2,
-    overflow: "hidden",
+  loadingText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.45)", // audit-ok: loading text muted white
+    letterSpacing: 0.2,
+    textAlign: "center",
+    paddingHorizontal: 32,
   },
 });
