@@ -12,7 +12,10 @@
       },
       "env": {
         "APP_ENV": "development",
-        "EXPO_PUBLIC_DOMAIN": "amynest.in"
+        "EXPO_PUBLIC_DOMAIN": "amynest.in",
+        "EXPO_PUBLIC_REVENUECAT_TEST_API_KEY": "test_lWaeoAyQjijDVsnDFoojkrumfAx",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_nCvTTUxdJpKxeAqEUtntHTTuHvV",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_wswrltSsrqhqrsQrVvOPavTIzMA"
       }
     },
     "preview": {
@@ -23,7 +26,10 @@
       "env": {
         "APP_ENV": "staging",
         "EXPO_PUBLIC_DOMAIN": "amynest.in",
-        "EXPO_PUBLIC_REPL_ID": "production"
+        "EXPO_PUBLIC_REPL_ID": "production",
+        "EXPO_PUBLIC_REVENUECAT_TEST_API_KEY": "test_lWaeoAyQjijDVsnDFoojkrumfAx",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_nCvTTUxdJpKxeAqEUtntHTTuHvV",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_wswrltSsrqhqrsQrVvOPavTIzMA"
       }
     },
     "production": {
@@ -36,7 +42,10 @@
       "env": {
         "APP_ENV": "production",
         "EXPO_PUBLIC_DOMAIN": "amynest.in",
-        "EXPO_PUBLIC_REPL_ID": "production"
+        "EXPO_PUBLIC_REPL_ID": "production",
+        "EXPO_PUBLIC_REVENUECAT_TEST_API_KEY": "test_lWaeoAyQjijDVsnDFoojkrumfAx",
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_nCvTTUxdJpKxeAqEUtntHTTuHvV",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_wswrltSsrqhqrsQrVvOPavTIzMA"
       }
     }
   },
