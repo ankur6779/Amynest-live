@@ -59,6 +59,7 @@ export default function TermsOfServicePage() {
   const {
     t
   } = useTranslation();
+  // audit-block-ignore-start — public light-mode page; slate tokens are intentional
   return <div className="min-h-screen bg-slate-50 text-slate-800">
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
