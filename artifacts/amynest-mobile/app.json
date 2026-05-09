@@ -22,8 +22,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.amynest.app",
       "appleTeamId": "FH3WT32854",
-      "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "2",
+      "buildNumber": "6",
       "associatedDomains": [
         "applinks:amynest.in"
       ],
@@ -37,7 +36,6 @@
     },
     "android": {
       "package": "com.amynest.app",
-      "googleServicesFile": "./google-services.json",
       "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
