@@ -22,7 +22,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.amynest.app",
       "appleTeamId": "FH3WT32854",
-      "buildNumber": "6",
+      "icon": "./assets/images/icon-ios.png",
+      "buildNumber": "7",
       "associatedDomains": [
         "applinks:amynest.in"
       ],
