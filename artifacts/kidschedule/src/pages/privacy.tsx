@@ -57,6 +57,7 @@ const PRIVACY_CONTENT = {
 export default function PrivacyPolicyPage() {
   const { t } = useTranslation();
 
+  // audit-block-ignore-start — public light-mode page; slate tokens are intentional
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       {/* Header */}
@@ -66,7 +67,7 @@ export default function PrivacyPolicyPage() {
             <span className="flex items-center gap-2 cursor-pointer">
               <img
                 src="/amynest-logo.png"
-                alt="AmyNest AI"
+                alt={t("pages.privacy.amynest_ai")}
                 className="h-8 w-8 rounded-full"
               />
               <span
@@ -141,4 +142,5 @@ export default function PrivacyPolicyPage() {
       </footer>
     </div>
   );
+  // audit-block-ignore-end
 }
