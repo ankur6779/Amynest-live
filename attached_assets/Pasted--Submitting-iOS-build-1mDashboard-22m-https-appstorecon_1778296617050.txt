@@ -1,0 +1,48 @@
+⌛️ Submitting iOS build...
+- [1mDashboard[22m:    https://appstoreconnect.apple.com/apps/6767664343/distribution
+- [1mApp[22m:          AmyNest AI (com.amynest.app)
+- [1mBuild number[22m: 5
+- [1mBinary path[22m:  ./ios/build/AmyNestAI.ipa
+[32m-------------------[0m
+[32m--- Step: pilot ---[0m
+[32m-------------------[0m
+Creating authorization token for App Store Connect API
+[32mReady to upload new build to TestFlight (App: 6767664343)...[0m
+Going to upload updated app to App Store Connect
+[32mThis might take a few minutes. Please don't interrupt the script.[0m
+[33m[altool] Running altool at path '/Applications/Xcode.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Frameworks/AppStoreService.framework/Support/altool'...
+[0m
+[33m[altool] 
+[0m
+[33m[altool] 2026-05-08 20:12:32.862 [1m[31mERROR: [altool.600001E44140] [ContentDelivery.Uploader.600001E44140] 
+[0m
+[33m[altool] =======================================
+[0m
+[33m[altool] UPLOAD FAILED with 1 error
+[0m
+[33m[altool] =======================================[0m
+[0m
+[33m[altool] 2026-05-08 20:12:32.864 [1m[31mERROR: [altool.600001E44140] Error uploading '/var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/aeb18806-a81d-4adf-82b6-28abbb23a77e.ipa'.[0m
+[0m
+[33m[altool] 2026-05-08 20:12:32.865 [1m[31mERROR: [altool.600001E44140] Validation failed The following URL schemes found in your app are not in the correct format: [REPLACE_WITH_REVERSED_CLIENT_ID]. URL schemes need to begin with an alphabetic character, and be comprised of alphanumeric characters, the period, the hyphen or the plus sign only. Please see RFC1738 for more detail. (ID: 68c36e67-ab73-4524-a6a2-9dc53938e58e) (409)
+[0m
+[33m[altool]  {
+[0m
+[33m[altool]     NSLocalizedDescription = "Validation failed";
+[0m
+[33m[altool]     NSLocalizedFailureReason = "The following URL schemes found in your app are not in the correct format: [REPLACE_WITH_REVERSED_CLIENT_ID]. URL schemes need to begin with an alphabetic character, and be comprised of alphanumeric characters, the period, the hyphen or the plus sign only. Please see RFC1738 for more detail. (ID: 68c36e67-ab73-4524-a6a2-9dc53938e58e)";
+[0m
+[33m[altool]     NSUnderlyingError = "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=The following URL schemes found in your app are not in the correct format: [REPLACE_WITH_REVERSED_CLIENT_ID]. URL schemes need to begin with an alphabetic character, and be comprised of alphanumeric characters, the period, the hyphen or the plus sign only. Please see RFC1738 for more detail., id=68c36e67-ab73-4524-a6a2-9dc53938e58e, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=The following URL schemes found in your app are not in the correct format: [REPLACE_WITH_REVERSED_CLIENT_ID]. URL schemes need to begin with an alphabetic character, and be comprised of alphanumeric characters, the period, the hyphen or the plus sign only. Please see RFC1738 for more detail., NSLocalizedDescription=Validation failed}";
+[0m
+[33m[altool]     "iris-code" = "STATE_ERROR.VALIDATION_ERROR";
+[0m
+[33m[altool] }[0m
+[0m
+Application Loader output above ^
+[31mThe call to the altool completed with a non-zero exit status: 1. This indicates a failure.[0m
+[31mCould not download/upload from App Store Connect![0m
+[31m
+[!] Error uploading ipa file: 
+ [Application Loader Error Output]: The call to the altool completed with a non-zero exit status: 1. This indicates a failure.[0m
+[31mError: fastlane run pilot ipa:../../app-2a42d8ed-acb0-4aab-ab7a-c617f8c615d1.ipa apple_id:6767664343 skip_waiting_for_build_processing:true api_key_path:asc_api_key-bc4af6af-f1d3-48e8-9821-c282bfc5b250.json exited with non-zero code: 1[39m
+/bin/bash -eo pipefail /var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/eas-build/4a62ad7a-392f-4b5e-b34c-9759e4e6fe68/steps/step-017/scripts/f0f2fd99-8c74-4df9-9a9b-745bb1ed1917.sh exited with non-zero code: 1
