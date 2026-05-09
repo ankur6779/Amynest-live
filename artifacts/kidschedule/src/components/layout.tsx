@@ -196,7 +196,7 @@ export function Layout({
                 <span className="sr-only">{t("components.layout.toggle_menu")}</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[80vw] sm:w-[350px] flex flex-col p-0">
+            <SheetContent side="right" className="w-[80vw] sm:w-[350px] flex flex-col p-0 bg-card text-card-foreground">
               {/* User profile — fixed at top */}
               <div className="flex items-center gap-3 px-4 pt-5 pb-4 border-b shrink-0">
                 <Avatar className="h-9 w-9">
@@ -217,10 +217,10 @@ export function Layout({
               </div>
 
               {/* Nav items — scrollable */}
-              <nav className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-1">
+              <nav className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-1 text-card-foreground">
                 {NAV_ITEMS.map(item => {
                 const isActive = location === item.href || location.startsWith(item.href);
-                return <Link key={item.href} href={item.href} onClick={closeSidebar} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${isActive ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                return <Link key={item.href} href={item.href} onClick={closeSidebar} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${isActive ? "bg-primary text-primary-foreground font-medium" : "text-foreground/70 hover:bg-muted hover:text-foreground"}`}>
                       <item.icon className="h-5 w-5 shrink-0" />
                       <span className="flex-1 truncate">{t(item.labelKey)}</span>
                       {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-primary to-primary px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
@@ -235,7 +235,7 @@ export function Layout({
 
               {/* Sign Out — always visible at bottom */}
               <div className="shrink-0 border-t px-4 py-3">
-                <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-foreground/70 hover:bg-muted hover:text-foreground transition-colors">
                   <LogOut className="h-5 w-5" />
                   {t("nav.sign_out")}
                 </button>
