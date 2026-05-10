@@ -34,8 +34,6 @@ import {
   simplifyForHandler,
   appendHandlerToPlans,
   WAKE_KEY,
-  REGION_OPTIONS,
-  type RegionValue,
   extractTiffinSummary,
   buildCombinedTimeline,
   applyTiffinSelection,
@@ -175,9 +173,6 @@ export default function GenerateRoutineScreen() {
   const [pastEssentialTasks, setPastEssentialTasks] = useState<{ idx: number; item: any }[]>([]);
   const [taskCheckMap, setTaskCheckMap] = useState<Record<number, boolean>>({});
 
-  // ── Region picker (overrides parent profile when set) ───────────────────
-  const [region, setRegion] = useState<RegionValue | null>(null);
-
   // ── Weather (outdoor go-out today?) ────────────────────────────────────
   const [weatherOutdoor, setWeatherOutdoor] = useState<WeatherOutdoor | null>(null);
   const [weatherDetecting, setWeatherDetecting] = useState(false);
@@ -249,13 +244,13 @@ export default function GenerateRoutineScreen() {
     queryFn: () => authFetch("/api/children").then((r) => r.json()),
   });
 
-  // Parent profile region — used as fallback when the local region picker
-  // hasn't been touched. Mirrors web behaviour.
+  // Parent profile region — silently passed in the generation payload
+  // (mirrors web behaviour; no UI override picker on mobile).
   const { data: parentProfile } = useQuery<{ region?: string } | null>({
     queryKey: ["parent-profile"],
     queryFn: () => authFetch("/api/parent-profile").then((r) => (r.ok ? r.json() : null)),
   });
-  const effectiveRegion = (region ?? (parentProfile?.region as RegionValue | undefined)) || undefined;
+  const effectiveRegion = (parentProfile?.region as string | undefined) || undefined;
 
   // Auto-pick the first child if none selected
   useEffect(() => {
@@ -872,30 +867,6 @@ export default function GenerateRoutineScreen() {
           })}
         </View>
         <Text style={styles.dateHint}>{formatDate(date)}</Text>
-
-        {/* Region picker */}
-        <Text style={styles.sectionLabel}>{t("routines_generate.region_label", { defaultValue: "Cuisine region (optional)" })}</Text>
-        <Text style={[styles.optional, { marginTop: -4, marginBottom: 8 }]}>
-          {t("routines_generate.region_hint", { defaultValue: `${BRAND.aiName} uses this to suggest meals. Falls back to your profile region.` })}
-        </Text>
-        <View style={styles.chipsRow}>
-          {REGION_OPTIONS.map((opt) => {
-            const active = (region ?? parentProfile?.region) === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                onPress={() => { Haptics.selectionAsync(); setRegion(opt.value); }}
-                activeOpacity={0.85}
-                style={[styles.regionChip, active && styles.regionChipActive]}
-              >
-                <Text style={{ fontSize: 14 }}>{opt.emoji}</Text>
-                <Text style={[styles.regionChipText, active && { color: "#fff" }]}>
-                  {t(`routines_generate.region_${opt.value}`, { defaultValue: opt.label })}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
 
         {/* Weather: outdoor go-out today? */}
         <Text style={styles.sectionLabel}>
@@ -1962,14 +1933,6 @@ const styles = StyleSheet.create({
   dateChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
   dateChipText: { fontSize: 14, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
   dateHint: { fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: -8, marginBottom: 16, marginLeft: 2 },
-
-  regionChip: {
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.1)", backgroundColor: "rgba(255,255,255,0.04)",
-    flexDirection: "row", alignItems: "center", gap: 6,
-  },
-  regionChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
-  regionChipText: { fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
 
   weatherDetectBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
