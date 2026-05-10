@@ -561,6 +561,59 @@ describe("POST /api/speech/expert-waitlist (idempotent)", () => {
   });
 });
 
+describe("GET /api/speech/practice/prompts", () => {
+  it("401 when unauthenticated", async () => {
+    state.authUserId = null;
+    const r = await get("/api/speech/practice/prompts?childId=10");
+    assert.equal(r.status, 401);
+  });
+
+  it("404 when child belongs to another user", async () => {
+    const r = await get("/api/speech/practice/prompts?childId=99");
+    assert.equal(r.status, 404);
+  });
+
+  it("200 returns age-band prompts; kind filter narrows results", async () => {
+    const all = await get("/api/speech/practice/prompts?childId=10");
+    assert.equal(all.status, 200);
+    assert.ok(Array.isArray(all.body));
+    assert.ok(all.body.length > 0);
+    for (const p of all.body) {
+      assert.ok(["letter", "phonic", "word", "sentence"].includes(p.kind));
+      assert.ok(Array.isArray(p.ageBands));
+    }
+    const wordsOnly = await get(
+      "/api/speech/practice/prompts?childId=10&kind=word",
+    );
+    assert.equal(wordsOnly.status, 200);
+    for (const p of wordsOnly.body) assert.equal(p.kind, "word");
+  });
+});
+
+describe("Cross-user authorization on mutating endpoints", () => {
+  it("POST /speech/practice/log → 404 for another user's child", async () => {
+    const r = await post("/api/speech/practice/log", {
+      childId: 99,
+      promptId: "p_word_x",
+    });
+    assert.equal(r.status, 404);
+    assert.equal(r.body.error, "child_not_found");
+    assert.equal(state.logs.length, 0);
+  });
+
+  it("POST /speech/milestones/:id/status → 404 for another user's child", async () => {
+    const milestones = (await import("@workspace/speech-coach"))
+      .SPEECH_MILESTONES;
+    const m = milestones[0]!;
+    const r = await post(`/api/speech/milestones/${m.id}/status`, {
+      childId: 99,
+      status: "on_track",
+    });
+    assert.equal(r.status, 404);
+    assert.equal(state.progress.length, 0);
+  });
+});
+
 describe("GET /api/speech/progress", () => {
   it("computes a weekly score from in-window logs", async () => {
     const milestones = (await import("@workspace/speech-coach"))
