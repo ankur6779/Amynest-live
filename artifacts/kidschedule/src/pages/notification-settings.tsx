@@ -86,15 +86,14 @@ const CATEGORIES: CategoryDef[] = [{
  * the page is loaded inside the AmyNest Android WebView wrapper.
  *
  *   "detecting"          — wrapper detected (UA / __AMYNEST_WRAPPER marker)
- *                          but `window.AmyNestPushNative` not wired yet.
- *                          Showing a brief "Setting up notifications…" card
- *                          while [awaitNativePushBridge] polls.
- *   "ready"              — `window.AmyNestPushNative` is live; render the
+ *                          but neither window.AndroidPush nor
+ *                          window.AmyNestPushNative is wired yet.
+ *                          Shows a brief "Setting up notifications…" card
+ *                          while [awaitNativePushBridge] polls for either.
+ *   "ready"              — bridge is live (new or legacy APK); render the
  *                          full native push card backed by the bridge.
- *   "wrapper-no-bridge"  — wrapper detected but the bridge never appeared
- *                          (very old WebView lacking WEB_MESSAGE_LISTENER,
- *                          or addWebMessageListener throw). Show a recovery
- *                          card with a Reload-app button.
+ *   "wrapper-no-bridge"  — wrapper detected but no bridge appeared within
+ *                          the timeout. Show a recovery card.
  *   "browser"            — not inside the wrapper; card renders null
  *                          (web push is disabled — native FCM only).
  */
