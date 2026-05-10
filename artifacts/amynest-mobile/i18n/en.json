@@ -2894,6 +2894,15 @@
     "footer_label": "Indian Patent Pending",
     "about_tech": "AmyNest AI operates on a proprietary patent-pending computational orchestration architecture integrating adaptive environmental processing, caregiver-aware personalization, and AI-assisted developmental scheduling.",
     "settings_note": "Patent Pending Technology — Indian Provisional Patent Filed.",
-    "powered_by": "Powered by Patent-Pending Adaptive AI"
+    "powered_by": "Powered by Patent-Pending Adaptive AI",
+    "microcopy_routine": "Powered by AmyNest's Patent-Pending Adaptive AI Engine",
+    "microcopy_planning": "Using proprietary patent-pending orchestration technology",
+    "trust_line": "Powered by Patent-Pending Context-Aware AI Technology",
+    "loading_1": "Running adaptive AI orchestration…",
+    "loading_2": "Applying patent-pending contextual intelligence…",
+    "loading_3": "Synchronising personalised developmental insights…",
+    "ai_badge": "Patent-Pending AI",
+    "hub_trust": "Patent-Pending Intelligence",
+    "onboarding_card": "Built using AmyNest's proprietary patent-pending adaptive orchestration technology designed for personalised child development."
   }
 }

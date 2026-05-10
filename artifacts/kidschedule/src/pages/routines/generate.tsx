@@ -1409,6 +1409,9 @@ export default function RoutineGenerate() {
                 <div className="w-full max-w-xs bg-muted rounded-full h-2 mt-4 overflow-hidden">
                   <div className={`h-full rounded-full w-1/2 animate-[pulse_2s_ease-in-out_infinite] ${isAiGenerating ? "bg-primary" : "bg-primary"}`} />
                 </div>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-primary/35">
+                  {t("patent_pending.loading_2")}
+                </p>
               </CardContent>
             </Card> : <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-card mt-4">
               <CardContent className="p-6 sm:p-8 space-y-8">
@@ -1709,6 +1712,9 @@ export default function RoutineGenerate() {
 
                       <p className="text-center text-xs text-muted-foreground">
                         {t("pages.routines.generate.standard_routine_is_instant_free_amy_ai_routine_is_smarter_b")}
+                      </p>
+                      <p className="text-center text-[9px] font-bold uppercase tracking-widest text-primary/40">
+                        {t("patent_pending.microcopy_planning")}
                       </p>
 
                       {!isFormValid && <p className="text-center text-xs text-destructive">

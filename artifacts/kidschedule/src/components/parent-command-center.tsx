@@ -722,6 +722,7 @@ function CommandCenterDashboard(props: DashboardProps) {
 // plan completion (so they can see whether the child actually used it).
 function LearningInsightsSection({ childId }: { childId: number }) {
   const { data, isLoading } = useGetSmartStudyInsights({ childId });
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -731,6 +732,9 @@ function LearningInsightsSection({ childId }: { childId: number }) {
           <div className="h-16 rounded-2xl bg-white/5 animate-pulse" />
           <div className="h-16 rounded-2xl bg-white/5 animate-pulse" />
         </div>
+        <p className="mt-2 text-[9px] font-bold uppercase tracking-widest text-primary/30">
+          {t("patent_pending.loading_1")}
+        </p>
       </section>
     );
   }

@@ -497,6 +497,10 @@ export default function LandingPage() {
           </Link>
         </div>
 
+        <p className="amy-fade-up-4 mt-5 text-[10px] font-bold uppercase tracking-widest text-white/25">
+          {t("patent_pending.trust_line")}
+        </p>
+
       </section>
 
       {/* SCIENCE CITATIONS SCROLLING MARQUEE */}

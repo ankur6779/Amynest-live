@@ -980,6 +980,9 @@ function PageHeader() {
         <p className="text-sm text-muted-foreground mt-0.5">
           {t("hub.subtitle")}
         </p>
+        <p className="text-[9px] font-bold uppercase tracking-widest mt-1 text-primary/35">
+          {t("patent_pending.hub_trust")}
+        </p>
       </div>
       <Link href="/assistant">
         <button className="shrink-0 flex items-center gap-2 bg-gradient-to-br from-muted dark:from-card via-muted dark:via-card to-muted dark:to-card rounded-2xl px-3 py-2 border border-border hover:border-primary/40 transition-all">
