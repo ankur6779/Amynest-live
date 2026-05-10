@@ -19,9 +19,44 @@ type Colors = ReturnType<typeof useColors>;
 
 type Babysitter = { id: number; name: string };
 
-const FOOD_TYPES: { label: string; value: string }[] = [
-  { label: "Vegetarian", value: "veg" },
-  { label: "Non-Vegetarian", value: "non_veg" },
+const DIET_OPTIONS: { label: string; value: string; emoji: string }[] = [
+  { label: "Vegetarian", value: "vegetarian", emoji: "🥦" },
+  { label: "Vegan", value: "vegan", emoji: "🌱" },
+  { label: "Eggetarian", value: "eggetarian", emoji: "🥚" },
+  { label: "Non-Veg", value: "non_veg", emoji: "🍗" },
+  { label: "Pescatarian", value: "pescatarian", emoji: "🐟" },
+  { label: "No Preference", value: "no_preference", emoji: "✨" },
+];
+
+const FOOD_STYLE_OPTIONS: { label: string; value: string; emoji: string }[] = [
+  { label: "Indian", value: "indian", emoji: "🍛" },
+  { label: "Western", value: "western", emoji: "🍕" },
+  { label: "Asian", value: "asian", emoji: "🍜" },
+  { label: "Middle Eastern", value: "middle_eastern", emoji: "🧆" },
+  { label: "Mixed", value: "mixed", emoji: "🌍" },
+];
+
+const INDIAN_SUB_OPTIONS: { label: string; value: string; emoji: string }[] = [
+  { label: "North Indian", value: "north_indian", emoji: "🫓" },
+  { label: "South Indian", value: "south_indian", emoji: "🍚" },
+  { label: "Bengali", value: "bengali", emoji: "🐟" },
+  { label: "Gujarati", value: "gujarati", emoji: "🧆" },
+  { label: "Punjabi", value: "punjabi", emoji: "🫕" },
+];
+
+const ALLERGY_CHIPS: { label: string; value: string }[] = [
+  { label: "Dairy", value: "dairy" },
+  { label: "Gluten", value: "gluten" },
+  { label: "Nuts", value: "nuts" },
+  { label: "Eggs", value: "eggs" },
+  { label: "Soy", value: "soy" },
+];
+
+const TRAVEL_MODES: { label: string; value: string }[] = [
+  { label: "🚌 Van / Bus", value: "van" },
+  { label: "🚗 Car", value: "car" },
+  { label: "🚶 Walk", value: "walk" },
+  { label: "Other", value: "other" },
 ];
 
 const WEEKDAYS: { iso: number; short: string }[] = [
@@ -37,6 +72,11 @@ function dobToAge(dob: string): { years: number; months: number } {
   let months = now.getMonth() - born.getMonth();
   if (months < 0) { years--; months += 12; }
   return { years: Math.max(0, years), months: Math.max(0, months) };
+}
+
+function deriveFoodType(dt: string): string {
+  if (["vegetarian", "vegan", "eggetarian"].includes(dt)) return "veg";
+  return "non_veg";
 }
 
 export default function NewChildScreen() {
@@ -59,9 +99,20 @@ export default function NewChildScreen() {
   const [schoolDays, setSchoolDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [wakeUp, setWakeUp] = useState("07:00");
   const [sleep, setSleep] = useState("21:00");
-  const [foodType, setFoodType] = useState("veg");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [babysitterId, setBabysitterId] = useState<number | null>(null);
+  const [goals, setGoals] = useState("General daily routine");
+
+  // Food preferences — enriched
+  const [dietType, setDietType] = useState("no_preference");
+  const [foodStyle, setFoodStyle] = useState("indian");
+  const [subCuisine, setSubCuisine] = useState("");
+  const [allergyChips, setAllergyChips] = useState<string[]>([]);
+  const [allergyText, setAllergyText] = useState("");
+
+  // Travel
+  const [travelMode, setTravelMode] = useState("car");
+  const [travelModeOther, setTravelModeOther] = useState("");
 
   const { data: babysitters = [] } = useQuery<Babysitter[]>({
     queryKey: ["babysitters"],
@@ -100,12 +151,20 @@ export default function NewChildScreen() {
     }
   };
 
+  const toggleAllergyChip = (val: string) => {
+    Haptics.selectionAsync();
+    setAllergyChips(prev =>
+      prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]
+    );
+  };
+
   const handleSave = async () => {
     if (!name.trim()) { Alert.alert(t("alerts.children.name_required_title"), t("alerts.children.name_required_msg")); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSaving(true);
     try {
       const { years, months } = dobToAge(dob || new Date().toISOString().slice(0, 10));
+      const combinedAllergies = [...allergyChips, allergyText.trim()].filter(Boolean).join(", ") || null;
       await authFetch("/api/children", {
         method: "POST",
         body: JSON.stringify({
@@ -118,7 +177,17 @@ export default function NewChildScreen() {
             ? (schoolDays.length > 0 ? [...schoolDays].sort() : [1, 2, 3, 4, 5])
             : null,
           wakeUpTime: wakeUp, sleepTime: sleep,
-          travelMode: "car", foodType, goals: "balanced-routine",
+          // Travel
+          travelMode: isSchool ? travelMode : "car",
+          travelModeOther: isSchool && travelMode === "other" ? travelModeOther.trim() || null : null,
+          // Food — enriched
+          dietType,
+          foodStyle,
+          subCuisine: subCuisine || null,
+          allergies: combinedAllergies,
+          foodType: deriveFoodType(dietType),
+          // Goals
+          goals: goals.trim() || "General daily routine",
           photoUrl, babysitterId,
         }),
       });
@@ -173,9 +242,11 @@ export default function NewChildScreen() {
         </View>
 
         <View style={styles.formSection}>
+          {/* ── Basic Info ── */}
           <Field label="Child's Name *" value={name} onChange={setName} colors={colors} placeholder={t("screens.children_new.enter_name")} />
           <Field label="Date of Birth (YYYY-MM-DD)" value={dob} onChange={setDob} colors={colors} placeholder="e.g. 2020-05-15" keyboardType="numeric" />
 
+          {/* ── School ── */}
           <View style={styles.switchRow}>
             <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{t("screens.children_new.school_going")}</Text>
             <TouchableOpacity
@@ -212,23 +283,134 @@ export default function NewChildScreen() {
                   );
                 })}
               </View>
+
+              {/* Travel Mode */}
+              <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>
+                Travel Mode
+              </Text>
+              <View style={styles.chipRow}>
+                {TRAVEL_MODES.map(m => {
+                  const active = travelMode === m.value;
+                  return (
+                    <TouchableOpacity
+                      key={m.value}
+                      style={[styles.chip, { backgroundColor: active ? colors.primary : colors.card, borderColor: active ? colors.primary : colors.border }]}
+                      onPress={() => { setTravelMode(m.value); Haptics.selectionAsync(); }}
+                    >
+                      <Text style={[styles.chipText, { color: active ? "#fff" : colors.foreground }]}>{m.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {travelMode === "other" && (
+                <Field
+                  label="Specify travel mode"
+                  value={travelModeOther}
+                  onChange={setTravelModeOther}
+                  colors={colors}
+                  placeholder="e.g. bicycle, rickshaw"
+                />
+              )}
             </>
           )}
 
+          {/* ── Wake / Sleep ── */}
           <Field label="Wake Up Time (HH:MM)" value={wakeUp} onChange={setWakeUp} colors={colors} placeholder="07:00" />
-          <Field label="Sleep Time (HH:MM)" value={sleep} onChange={setSleep} colors={colors} placeholder="21:00" />
+          <Field label="Sleep / Bedtime (HH:MM)" value={sleep} onChange={setSleep} colors={colors} placeholder="21:00" />
 
-          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>{t("screens.children_new.food_preference")}</Text>
+          {/* ── Food Preferences ── */}
+          <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Food Preference</Text>
+
+          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>Diet Type</Text>
           <View style={styles.chipRow}>
-            {FOOD_TYPES.map(f => (
-              <TouchableOpacity key={f.value}
-                style={[styles.chip, { backgroundColor: foodType === f.value ? colors.primary : colors.card, borderColor: foodType === f.value ? colors.primary : colors.border }]}
-                onPress={() => { setFoodType(f.value); Haptics.selectionAsync(); }}>
-                <Text style={[styles.chipText, { color: foodType === f.value ? "#fff" : colors.foreground }]}>{f.label}</Text>
-              </TouchableOpacity>
-            ))}
+            {DIET_OPTIONS.map(opt => {
+              const active = dietType === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.chip, { backgroundColor: active ? colors.primary : colors.card, borderColor: active ? colors.primary : colors.border }]}
+                  onPress={() => { setDietType(opt.value); Haptics.selectionAsync(); }}
+                >
+                  <Text style={[styles.chipText, { color: active ? "#fff" : colors.foreground }]}>{opt.emoji} {opt.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
+          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>Food Style</Text>
+          <View style={styles.chipRow}>
+            {FOOD_STYLE_OPTIONS.map(opt => {
+              const active = foodStyle === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.chip, { backgroundColor: active ? colors.primary : colors.card, borderColor: active ? colors.primary : colors.border }]}
+                  onPress={() => {
+                    setFoodStyle(opt.value);
+                    if (opt.value !== "indian") setSubCuisine("");
+                    Haptics.selectionAsync();
+                  }}
+                >
+                  <Text style={[styles.chipText, { color: active ? "#fff" : colors.foreground }]}>{opt.emoji} {opt.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {foodStyle === "indian" && (
+            <>
+              <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>
+                Indian Sub-cuisine (optional)
+              </Text>
+              <View style={[styles.chipRow, { paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: colors.primary + "33" }]}>
+                {INDIAN_SUB_OPTIONS.map(opt => {
+                  const active = subCuisine === opt.value;
+                  return (
+                    <TouchableOpacity
+                      key={opt.value}
+                      style={[styles.chip, { backgroundColor: active ? colors.primary + "25" : colors.card, borderColor: active ? colors.primary : colors.border }]}
+                      onPress={() => { setSubCuisine(prev => prev === opt.value ? "" : opt.value); Haptics.selectionAsync(); }}
+                    >
+                      <Text style={[styles.chipText, { color: active ? colors.primary : colors.foreground }]}>{opt.emoji} {opt.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          )}
+
+          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>
+            Allergies / Foods to Avoid
+          </Text>
+          <View style={styles.chipRow}>
+            {ALLERGY_CHIPS.map(chip => {
+              const active = allergyChips.includes(chip.value);
+              return (
+                <TouchableOpacity
+                  key={chip.value}
+                  style={[styles.chip, { backgroundColor: active ? colors.primary + "25" : colors.card, borderColor: active ? colors.primary : colors.border }]}
+                  onPress={() => toggleAllergyChip(chip.value)}
+                >
+                  <Text style={[styles.chipText, { color: active ? colors.primary : colors.foreground }]}>{chip.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <TextInput
+            style={[styles.textInput, styles.textArea, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, marginTop: 8 }]}
+            value={allergyText}
+            onChangeText={setAllergyText}
+            placeholder="Other restrictions (e.g. peanuts, shellfish)"
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            numberOfLines={2}
+            textAlignVertical="top"
+          />
+
+          {/* ── Goals ── */}
+          <Field label="Goals / Focus Area" value={goals} onChange={setGoals} colors={colors} placeholder="e.g. balanced routine, focus on reading" />
+
+          {/* ── Babysitter ── */}
           <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>
             Assigned Babysitter
           </Text>
@@ -299,6 +481,7 @@ function Field({ label, value, onChange, colors, placeholder, keyboardType }: Fi
 const styles = StyleSheet.create({
   container: { flex: 1 },
   title: { fontSize: 26, fontFamily: "Inter_700Bold", marginBottom: 16 },
+  sectionLabel: { fontSize: 14, fontFamily: "Inter_700Bold", marginTop: 8, marginBottom: 4 },
   photoBlock: { alignItems: "center", gap: 8, marginBottom: 20 },
   photoCircle: {
     width: 96, height: 96, borderRadius: 48,
@@ -321,12 +504,13 @@ const styles = StyleSheet.create({
   fieldGroup: { gap: 6 },
   fieldLabel: { fontSize: 12, fontFamily: "Inter_600SemiBold", textTransform: "uppercase", letterSpacing: 0.5 },
   textInput: { height: 48, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 14, fontSize: 15, fontFamily: "Inter_400Regular" },
+  textArea: { height: 72, paddingTop: 12, paddingBottom: 12 },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
   toggle: { width: 46, height: 26, borderRadius: 13, justifyContent: "center" },
   toggleKnob: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#fff" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, borderWidth: 1.5 },
-  chipText: { fontSize: 14, fontFamily: "Inter_500Medium" },
+  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5 },
+  chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   helperText: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 4 },
   saveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, borderRadius: 16 },
   saveBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
