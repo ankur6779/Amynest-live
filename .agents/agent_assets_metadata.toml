@@ -329,3 +329,9 @@ id = "QGeximum0tkZQlxx9h-XW"
 uri = "file://kidschedule-android/store-assets/appstore-launch-checklist.md"
 type = "text"
 title = "Apple App Store Launch Checklist — AmyNest AI"
+
+[[outputs]]
+id = "NBVK97aOvVF6FcKBl4Hq1"
+uri = "file://screenshots/amynest-review-380x844.jpg"
+type = "image"
+title = "AmyNest App Store Review Screenshot (380×844)"
