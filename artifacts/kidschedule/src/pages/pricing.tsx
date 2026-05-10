@@ -4,7 +4,7 @@ import { Sparkles, Check, Rocket, AlertTriangle, X, Smartphone } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { isIndiaRegion } from "@/lib/geo";
-import appStoreArt from "@assets/amynest-appstore-1024.png";
+const appStoreArt = "/amynest-appstore-1024.png";
 export default function PricingPage() {
   const {
     t
