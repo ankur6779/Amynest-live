@@ -1315,6 +1315,51 @@ export default function HubScreen() {
             ),
           });
           allTiles.push({
+            id: "speech_coach",
+            ageBands: HUB_CONTENT_AGE_BANDS["speech_coach"],
+            ageMonthsMin: HUB_TILE_AGE_MONTHS["speech_coach"]?.min,
+            ageMonthsMax: HUB_TILE_AGE_MONTHS["speech_coach"]?.max,
+            node: (
+              <View style={tileW("speech_coach")}>
+              <LockedBlock
+                reason="hub_speech_coach"
+                locked={hubUsage.isFeatureLocked("hub_speech_coach")}
+                radius={18}
+              >
+                <Pressable
+                  onPress={() => {
+                    hubUsage.markFeatureUsed("hub_speech_coach");
+                    router.push("/speech-coach" as never);
+                  }}
+                  style={({ pressed }) => [styles.pushTile, pressed && { opacity: 0.85 }]}
+                >
+                  <LinearGradient
+                    colors={[`${brand.violet500}28`, `${brand.pink500}14`]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <View style={{ padding: 16 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${brand.violet500}22`, alignItems: "center", justifyContent: "center" }}>
+                        <Text style={{ fontSize: 22 }}>🗣️</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <Text style={{ color: c.foreground, fontWeight: "800", fontSize: 15 }}>{t("parent_hub.tiles.speech_coach.title")}</Text>
+                          {tryFreeFor("hub_speech_coach") ? <TryFreeBadge /> : null}
+                        </View>
+                        <Text style={{ color: c.textMuted, fontSize: 11.5, marginTop: 2 }}>{t("parent_hub.tiles.speech_coach.sublabel")}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={c.mutedForeground} />
+                    </View>
+                  </View>
+                </Pressable>
+              </LockedBlock>
+              </View>
+            ),
+          });
+          allTiles.push({
             id: "abacus",
             ageBands: HUB_CONTENT_AGE_BANDS["abacus"],
             node: (

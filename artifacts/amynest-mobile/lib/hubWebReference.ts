@@ -84,6 +84,10 @@ export const WEB_SECTION_2_TILES: readonly { id: string; title: string }[] = [
  * to either port the tile to web or remove it from mobile.
  */
 export const MOBILE_ONLY_EXTRAS: ReadonlySet<string> = new Set([
+  // Amy Speech Coach — mobile-only learning module (Task #326). Sub-route
+  // /speech-coach with 9 sections (milestones, pronunciation, read-aloud,
+  // games, guidance, affirmations, reports, expert waitlist).
+  "speech_coach",
   // Mobile-only routine flow (separate from web's "Activities" tile).
   "morning-flow",
   // phonics-learning is the full Phonics Learning interactive lesson surface
