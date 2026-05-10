@@ -44,9 +44,6 @@ const AssistantPage = lazy(() => import("@/pages/assistant"));
 const AmyAiTutorPage = lazy(() => import("@/pages/amy-ai-tutor"));
 const ProgressPage = lazy(() => import("@/pages/progress"));
 const ParentingHub = lazy(() => import("@/pages/parenting-hub"));
-const HouseholdPage = lazy(() => import("@/pages/household"));
-const ForecastPage = lazy(() => import("@/pages/forecast"));
-const ExplainPage = lazy(() => import("@/pages/explain"));
 const LifeSkillsPage = lazy(() => import("@/pages/life-skills"));
 const KidsControlCenterPage = lazy(() => import("@/pages/kids-control-center"));
 const StudyPage = lazy(() => import("@/pages/study"));
@@ -291,15 +288,6 @@ function AppRoutes() {
           </Route>
           <Route path="/parenting-hub">
             {() => <ProtectedRoute component={ParentingHub} />}
-          </Route>
-          <Route path="/household">
-            {() => <ProtectedRoute component={HouseholdPage} />}
-          </Route>
-          <Route path="/forecast">
-            {() => <ProtectedRoute component={ForecastPage} />}
-          </Route>
-          <Route path="/explain">
-            {() => <ProtectedRoute component={ExplainPage} />}
           </Route>
           <Route path="/life-skills">
             {() => <ProtectedRoute component={LifeSkillsPage} />}

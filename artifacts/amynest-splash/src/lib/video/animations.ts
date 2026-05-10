@@ -1,6 +1,6 @@
 // Animation presets for consistent motion language
 
-import type { Transition, Variants } from 'framer-motion';
+import type { Transition, Variants, TargetAndTransition } from 'framer-motion';
 
 // Spring presets
 export const springs = {
@@ -187,14 +187,14 @@ export const charVariants: Variants = {
     rotateX: 0,
     transformPerspective: 800,
     transition: { type: 'spring', stiffness: 400, damping: 25 },
-  },
+  } as TargetAndTransition,
 };
 
 export const charContainerVariants: Variants = {
   hidden: {},
   visible: {
     transition: { staggerChildren: 0.03, delayChildren: 0.1 },
-  },
+  } as TargetAndTransition,
 };
 
 // Stagger configs
@@ -213,7 +213,7 @@ export const containerVariants: Variants = {
   visible: {
     opacity: 1,
     transition: staggerConfigs.medium,
-  },
+  } as TargetAndTransition,
 };
 
 export const itemVariants: Variants = {
@@ -222,7 +222,7 @@ export const itemVariants: Variants = {
     opacity: 1,
     y: 0,
     transition: { duration: 0.5, ease: 'circOut' },
-  },
+  } as TargetAndTransition,
 };
 
 // Utilities

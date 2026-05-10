@@ -57,6 +57,10 @@ const LETTER_COLORS = [
   "#FD79A8", // audit-ok: rainbow wordmark — t pink
 ];
 
+// SVG ring gradient colours — matches the web AmyNest splash neon ring design.
+const RING_GRAD_PURPLE = "#9333EA"; // audit-ok: neon ring gradient purple
+const RING_GRAD_CYAN   = "#06B6D4"; // audit-ok: neon ring gradient cyan
+
 // Deterministic star field
 const STARS = Array.from({ length: 24 }, (_, i) => ({
   x:   ((i * 137.508) % 100) / 100 * W,
@@ -141,10 +145,10 @@ function NeonRing({ spinAnim }: { spinAnim: Animated.Value }) {
         <Svg width={RING_SIZE} height={RING_SIZE}>
           <Defs>
             <SvgLinearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%"   stopColor="#9333EA" /> {/* audit-ok: neon ring gradient purple */}
+              <Stop offset="0%"   stopColor={RING_GRAD_PURPLE} />
               <Stop offset="30%"  stopColor={brand.pink500} />
-              <Stop offset="65%"  stopColor="#06B6D4" /> {/* audit-ok: neon ring gradient cyan */}
-              <Stop offset="100%" stopColor="#9333EA" /> {/* audit-ok: neon ring gradient purple end */}
+              <Stop offset="65%"  stopColor={RING_GRAD_CYAN} />
+              <Stop offset="100%" stopColor={RING_GRAD_PURPLE} />
             </SvgLinearGradient>
           </Defs>
           <Circle
