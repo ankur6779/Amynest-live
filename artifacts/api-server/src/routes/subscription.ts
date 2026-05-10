@@ -10,6 +10,7 @@ import {
   PLAN_PRICES,
   type Plan,
 } from "../services/subscriptionService";
+import { getLivePlanPrices } from "../services/rcPricingService";
 import { requireAuth } from "../middlewares/requireAuth";
 import {
   createSubscription as rzpCreateSubscription,
@@ -42,16 +43,20 @@ router.get("/subscription", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   await maybeAutoGrantPremium(userId, email, phoneNumber);
-  const ent = await getEntitlements(userId);
+  const [ent, prices] = await Promise.all([
+    getEntitlements(userId),
+    getLivePlanPrices(),
+  ]);
   res.json({
     entitlements: ent,
     plans: [
       {
         id: "monthly" as Plan,
         title: "Monthly",
-        price: PLAN_PRICES.monthly.amount,
-        currency: "INR",
-        period: PLAN_PRICES.monthly.period,
+        price: prices.monthly.amount,
+        currency: prices.monthly.currency,
+        period: prices.monthly.period,
+        formattedPrice: prices.monthly.formattedPrice,
         badge: null,
         features: [
           "Unlimited Amy AI",
@@ -63,12 +68,13 @@ router.get("/subscription", requireAuth, async (req, res): Promise<void> => {
       {
         id: "six_month" as Plan,
         title: "6 Months",
-        price: PLAN_PRICES.six_month.amount,
-        currency: "INR",
-        period: PLAN_PRICES.six_month.period,
+        price: prices.six_month.amount,
+        currency: prices.six_month.currency,
+        period: prices.six_month.period,
+        formattedPrice: prices.six_month.formattedPrice,
         badge: "Most Popular",
         savingsPercent: Math.round(
-          (1 - PLAN_PRICES.six_month.amount / (PLAN_PRICES.monthly.amount * 6)) * 100,
+          (1 - prices.six_month.amount / (prices.monthly.amount * 6)) * 100,
         ),
         features: [
           "Everything in Monthly",
@@ -79,12 +85,13 @@ router.get("/subscription", requireAuth, async (req, res): Promise<void> => {
       {
         id: "yearly" as Plan,
         title: "Yearly",
-        price: PLAN_PRICES.yearly.amount,
-        currency: "INR",
-        period: PLAN_PRICES.yearly.period,
+        price: prices.yearly.amount,
+        currency: prices.yearly.currency,
+        period: prices.yearly.period,
+        formattedPrice: prices.yearly.formattedPrice,
         badge: "Best Value",
         savingsPercent: Math.round(
-          (1 - PLAN_PRICES.yearly.amount / (PLAN_PRICES.monthly.amount * 12)) * 100,
+          (1 - prices.yearly.amount / (prices.monthly.amount * 12)) * 100,
         ),
         features: [
           "Everything in 6 Months",
