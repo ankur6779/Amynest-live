@@ -1,0 +1,166 @@
+Update AmyNest UI/UX to subtly and professionally integrate “Patent Pending” trust positioning across key user touchpoints without making the interface look overly legal, spammy, or marketing-heavy.
+
+IMPORTANT LEGAL RULE:
+Use ONLY:
+
+* “Patent Pending”
+* “Patent-Pending Technology”
+* “Patent-Pending AI”
+* “Proprietary Patent-Pending Infrastructure”
+
+DO NOT use:
+
+* “Patented”
+* “Patent Granted”
+* “Protected Patent”
+* “Officially Patented”
+
+Design language should feel:
+
+* premium
+* modern
+* subtle
+* Apple/Notion/Stripe-level clean
+* trust-oriented
+* technical and sophisticated
+
+1. ADD SUBTLE PATENT BADGES
+
+Create small premium badge components such as:
+
+* “Patent Pending”
+* “Patent-Pending AI”
+* “Proprietary AI”
+* “Patent-Pending Technology”
+
+Use:
+
+* soft rounded capsules
+* subtle gradients
+* elegant typography
+* low visual noise
+
+Avoid:
+
+* giant banners
+* flashing labels
+* excessive repetition
+
+2. CTA MICROCOPY INTEGRATION
+
+Do NOT change main CTA labels aggressively.
+
+Instead add subtle supporting microcopy below or beside buttons.
+
+Examples:
+
+Button:
+“Generate Routine”
+Microcopy:
+“Powered by AmyNest’s Patent-Pending Adaptive AI Engine”
+
+Button:
+“Start Smart Planning”
+Microcopy:
+“Using proprietary patent-pending orchestration technology”
+
+Button:
+“Build My Child’s Plan”
+Microcopy:
+“Patent-Pending contextual AI technology”
+
+3. ADD TO AI GENERATION SCREENS
+
+Add subtle premium technical indicators:
+
+* “Patent-Pending Adaptive Scheduling”
+* “Proprietary Context-Aware AI”
+* “Concurrent-Safe AI Infrastructure”
+
+Place near:
+
+* loading states
+* AI generation cards
+* insights modules
+* adaptive recommendations
+
+4. SPLASH SCREEN
+
+Add small elegant bottom text:
+“Powered by Patent-Pending AI Infrastructure”
+
+Keep minimal and premium.
+
+5. ONBOARDING
+
+Add one innovation-focused onboarding card:
+“Built using AmyNest’s proprietary patent-pending adaptive orchestration technology designed for personalized child development.”
+
+6. WEBSITE / HERO SECTION
+
+Add subtle trust line:
+“Powered by Patent-Pending Context-Aware AI Technology”
+
+7. SETTINGS / ABOUT PAGE
+
+Add:
+“Patent Pending Technology — Indian Provisional Patent Filed”
+
+8. PREMIUM FEATURE CARDS
+
+Add subtle technical trust indicators:
+
+* “Patent-Pending Intelligence”
+* “Adaptive AI Engine”
+* “Proprietary AI Infrastructure”
+
+9. LOADING STATES
+
+Add elegant rotating captions such as:
+
+* “Running adaptive AI orchestration…”
+* “Applying patent-pending contextual intelligence…”
+* “Synchronizing personalized developmental insights…”
+
+10. MAINTAIN CLEAN UI
+
+Do NOT clutter interface.
+
+Patent wording should appear:
+
+* strategic
+* trust-building
+* premium
+* technically sophisticated
+
+NOT:
+
+* repetitive
+* loud
+* overly promotional
+
+11. GLOBAL CONSISTENCY
+
+Ensure all:
+
+* app screens
+* onboarding
+* website
+* metadata
+* settings
+* investor-facing UI
+
+use consistent legally-safe “Patent Pending” terminology only.
+
+12. FINAL DESIGN GOAL
+
+The overall experience should feel like:
+
+* a premium AI operating system for parenting
+* technically advanced
+* proprietary
+* differentiated
+* credible
+* globally scalable
+
+while maintaining a calm, elegant, modern interface.

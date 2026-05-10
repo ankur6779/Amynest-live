@@ -518,6 +518,9 @@ export default function RoutinesScreen() {
               <Text style={styles.bottomCtaText}>{t("screens.tabs_routines.generate_routine")}</Text>
             </LinearGradient>
           </TouchableOpacity>
+          <Text style={{ textAlign: "center", fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 1.8, textTransform: "uppercase", color: "rgba(168,85,247,0.40)", marginTop: 8 }}>
+            {t("patent_pending.microcopy_routine")}
+          </Text>
         </View>
       </ScrollView>
     </LinearGradient>

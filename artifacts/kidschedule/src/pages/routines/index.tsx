@@ -352,5 +352,8 @@ export default function RoutinesList() {
         <Sparkles className="mr-2 h-5 w-5" />
         {t("pages.routines.index.generate_child_routine")}
       </Button>
+      <p className="text-center text-[10px] font-medium text-muted-foreground/60 tracking-wide">
+        {t("patent_pending.microcopy_routine")}
+      </p>
     </div>;
 }

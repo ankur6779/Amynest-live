@@ -1017,6 +1017,9 @@ export default function Dashboard() {
         <Sparkles className="h-5 w-5" />
         {t("pages.dashboard.generate_today_s_routine")}
       </button>
+      <p className="text-center text-[10px] font-medium text-muted-foreground/60 mt-1.5 tracking-wide">
+        {t("patent_pending.microcopy_routine")}
+      </p>
       </div>
     </div>
   );
