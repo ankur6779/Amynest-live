@@ -10,11 +10,17 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 /**
- * Waitlist for the upcoming "Connect with Certified Speech Experts" program.
- * One row per user (the unique index on userId makes the join-waitlist call
- * idempotent — the API just upserts notes / childId on subsequent calls
- * without creating duplicate rows). `childId` is nullable because the parent
- * may want to be notified before they've added a child profile.
+ * "Connect with Certified Speech Experts" waitlist signup.
+ *
+ * Idempotent on (userId, childId) — the route uses `onConflictDoNothing`
+ * so a parent tapping the button twice doesn't create duplicate rows.
+ * `childId` is nullable for the case where a parent expresses interest
+ * before they've selected a specific child; because Postgres treats NULL
+ * values as distinct in a unique index, the route also does an explicit
+ * lookup for the (userId, NULL) case to keep that path idempotent too.
+ *
+ * No emails / SMS are sent today — this is a passive list the team can
+ * export when the expert program launches.
  */
 export const speechExpertWaitlistTable = pgTable(
   "speech_expert_waitlist",
@@ -28,7 +34,10 @@ export const speechExpertWaitlistTable = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    userUniq: uniqueIndex("speech_expert_waitlist_user_uniq").on(table.userId),
+    userChildUq: uniqueIndex("speech_expert_waitlist_user_child_uq").on(
+      table.userId,
+      table.childId,
+    ),
   }),
 );
 

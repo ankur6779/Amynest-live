@@ -6,11 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { SpeechAgeBand } from "./speechAgeBand";
-import type { SpeechMilestoneEntry } from "./speechMilestoneEntry";
+import type { SpeechPracticePromptEntry } from "./speechPracticePromptEntry";
 
-export interface SpeechMilestonesResponse {
+export interface SpeechPracticePromptsResponse {
   childId: number;
   ageMonths?: number | null;
   ageBand?: SpeechAgeBand | null;
-  milestones: SpeechMilestoneEntry[];
+  prompts: SpeechPracticePromptEntry[];
 }

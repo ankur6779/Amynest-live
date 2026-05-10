@@ -9,7 +9,7 @@
 export interface SpeechExpertWaitlistEntry {
   id: number;
   childId?: number | null;
+  joinedAt: string;
   notes?: string | null;
-  joinedAt: Date;
-  alreadyJoined: boolean;
+  alreadyOnWaitlist: boolean;
 }

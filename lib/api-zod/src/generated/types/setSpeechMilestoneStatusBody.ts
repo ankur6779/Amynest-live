@@ -7,7 +7,7 @@
  */
 import type { SpeechMilestoneStatus } from "./speechMilestoneStatus";
 
-export interface UpdateSpeechMilestoneStatusBody {
+export interface SetSpeechMilestoneStatusBody {
   childId: number;
   status: SpeechMilestoneStatus;
 }

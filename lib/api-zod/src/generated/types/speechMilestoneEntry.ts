@@ -5,13 +5,16 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { SpeechMilestoneAgeBand } from "./speechMilestoneAgeBand";
+import type { SpeechAgeBand } from "./speechAgeBand";
 import type { SpeechMilestoneCategory } from "./speechMilestoneCategory";
+import type { SpeechMilestoneStatus } from "./speechMilestoneStatus";
 
-export interface SpeechMilestone {
+export interface SpeechMilestoneEntry {
   id: string;
-  ageBand: SpeechMilestoneAgeBand;
+  ageBand: SpeechAgeBand;
   category: SpeechMilestoneCategory;
   i18nKeyLabel: string;
   i18nKeyHint: string;
+  status: SpeechMilestoneStatus;
+  updatedAt?: string | null;
 }

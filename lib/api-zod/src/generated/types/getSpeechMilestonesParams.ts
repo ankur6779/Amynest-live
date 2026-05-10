@@ -6,6 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListSpeechMilestonesParams = {
+export type GetSpeechMilestonesParams = {
   childId: number;
 };

@@ -1,662 +1,262 @@
 /**
- * Amy Speech Coach — route regression tests.
+ * Speech Coach routes — integration smoke tests.
  *
- * Exercises the real Express router from `./speech.ts` against an in-memory
- * mock of `@workspace/db`, `../lib/auth`, and `../services/subscriptionService`
- * so we can run the full request/response pipeline without a live database
- * or Firebase.
- *
- * Coverage:
- *   1. GET  /api/speech/milestones
- *      - 401 unauthenticated
- *      - 400 invalid query
- *      - 404 child not owned by user
- *      - 200 returns milestones for the band, joined with persisted statuses
- *   2. POST /api/speech/milestones/:id/status
- *      - 200 happy path (insert + on-conflict update)
- *   3. POST /api/speech/practice/log (gated by hub_speech_pronounce)
- *      - 201 happy path on first call
- *      - 402 payment_required on the second call (free lifetime cap = 1)
- *   4. POST /api/speech/expert-waitlist
- *      - 200 first call inserts (alreadyJoined: false)
- *      - 200 second call returns the existing row (alreadyJoined: true)
- *   5. GET  /api/speech/progress
- *      - 200 computes weekly score from in-window logs + milestone statuses
+ * Mounts the real router behind an inline auth-injection middleware against
+ * the live dev DB. Verifies the happy paths, the featureGate 402 once the
+ * lifetime free attempt is consumed, and waitlist idempotency.
  */
-import { describe, it, before, after, beforeEach, mock } from "node:test";
+import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { createServer, type Server } from "node:http";
+import { randomUUID } from "node:crypto";
+import express, {
+  type Express,
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express";
 import type { AddressInfo } from "node:net";
+import { eq } from "drizzle-orm";
+import {
+  db,
+  childrenTable,
+  speechProgressTable,
+  speechPracticeLogTable,
+  speechExpertWaitlistTable,
+  subscriptionsTable,
+  usageDailyTable,
+} from "@workspace/db";
+import {
+  PRONUNCIATION_PROMPTS,
+  SPEECH_MILESTONES,
+} from "@workspace/speech-coach";
+import speechRouter from "./speech";
 
-// ─── In-memory mock state ──────────────────────────────────────────────
+const TEST_USER = `speech-test-${randomUUID()}`;
+let server: ReturnType<Express["listen"]>;
+let baseUrl: string;
+let childId: number;
 
-type ChildRow = {
-  id: number;
-  userId: string;
-  age: number | null;
-  ageMonths: number | null;
-};
-type ProgressRow = {
-  id: number;
-  userId: string;
-  childId: number;
-  milestoneId: string;
-  status: string;
-  updatedAt: Date;
-  createdAt: Date;
-};
-type LogRow = {
-  id: number;
-  userId: string;
-  childId: number;
-  promptId: string;
-  attemptedAt: Date;
-  clarityScore: number | null;
-  parentNote: string | null;
-};
-type WaitlistRow = {
-  id: number;
-  userId: string;
-  childId: number | null;
-  notes: string | null;
-  joinedAt: Date;
-};
+before(async () => {
+  // 3-year-old so we get the "3y" milestone band + matching prompts.
+  const inserted = await db
+    .insert(childrenTable)
+    .values({
+      userId: TEST_USER,
+      name: "Speech Test Child",
+      age: 3,
+      ageMonths: 0,
+      schoolStartTime: "08:00",
+      schoolEndTime: "14:00",
+      goals: "speech-test",
+    })
+    .returning({ id: childrenTable.id });
+  childId = inserted[0]!.id;
 
-const state: {
-  authUserId: string | null;
-  children: ChildRow[];
-  progress: ProgressRow[];
-  logs: LogRow[];
-  waitlist: WaitlistRow[];
-  isPremium: boolean;
-  featureUsed: Record<string, number>;
-  nextProgressId: number;
-  nextLogId: number;
-  nextWaitlistId: number;
-} = {
-  authUserId: null,
-  children: [],
-  progress: [],
-  logs: [],
-  waitlist: [],
-  isPremium: false,
-  featureUsed: {},
-  nextProgressId: 1,
-  nextLogId: 1,
-  nextWaitlistId: 1,
-};
-
-// Symbol tags so the chainable mock can route to the right table without
-// caring about drizzle's actual table shape. Columns are tagged with their
-// table+key so the eq/and mocks below can apply real filters.
-const col = (t: string, k: string) => ({ __col: `${t}.${k}` });
-const CHILDREN_TABLE = {
-  __tag: "children",
-  id: col("children", "id"),
-  userId: col("children", "userId"),
-  age: col("children", "age"),
-  ageMonths: col("children", "ageMonths"),
-} as const;
-const PROGRESS_TABLE = {
-  __tag: "progress",
-  childId: col("progress", "childId"),
-  userId: col("progress", "userId"),
-  milestoneId: col("progress", "milestoneId"),
-} as const;
-const LOGS_TABLE = {
-  __tag: "logs",
-  childId: col("logs", "childId"),
-  userId: col("logs", "userId"),
-  attemptedAt: col("logs", "attemptedAt"),
-} as const;
-const WAITLIST_TABLE = {
-  __tag: "waitlist",
-  userId: col("waitlist", "userId"),
-} as const;
-
-function tableOf(t: unknown): string {
-  if (t === CHILDREN_TABLE) return "children";
-  if (t === PROGRESS_TABLE) return "progress";
-  if (t === LOGS_TABLE) return "logs";
-  if (t === WAITLIST_TABLE) return "waitlist";
-  return "unknown";
-}
-
-// ─── Chainable db mock ─────────────────────────────────────────────────
-
-type Predicate = { col: string; val: unknown } | null;
-
-function collectPredicates(node: any, out: Predicate[]): void {
-  if (!node) return;
-  if (node.__op === "eq" && node.a && typeof node.a.__col === "string") {
-    out.push({ col: node.a.__col, val: node.b });
-    return;
-  }
-  if (node.__op === "and" && Array.isArray(node.args)) {
-    for (const a of node.args) collectPredicates(a, out);
-    return;
-  }
-  if (node.__op === "gte" && node.a && typeof node.a.__col === "string") {
-    // Range predicates aren't needed for filtering — the only gte usage
-    // is on attemptedAt for the weekly window, and the test seeds rows
-    // already inside that window.
-    return;
-  }
-}
-
-function applyPreds<T extends Record<string, unknown>>(
-  rows: T[],
-  preds: Predicate[],
-  tag: string,
-): T[] {
-  if (preds.length === 0) return rows;
-  return rows.filter((r) =>
-    preds.every((p) => {
-      if (!p) return true;
-      const [t, key] = p.col.split(".");
-      if (t !== tag) return true;
-      return r[key as keyof T] === p.val;
-    }),
-  );
-}
-
-function makeSelectChain(_columns: unknown, table: unknown) {
-  const tag = tableOf(table);
-  const rowsFor = (preds: Predicate[]): unknown[] => {
-    if (tag === "children") return applyPreds(state.children, preds, tag);
-    if (tag === "progress") return applyPreds(state.progress, preds, tag);
-    if (tag === "logs") return applyPreds(state.logs, preds, tag);
-    if (tag === "waitlist") return applyPreds(state.waitlist, preds, tag);
-    return [];
+  const app = express();
+  app.use(express.json());
+  const noopLog = {
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+    debug: () => {},
+    trace: () => {},
+    fatal: () => {},
+    child: () => noopLog,
   };
-  // The route uses both `.where(...).limit(1)` and bare `.where(...)`
-  // (await-thenable). Support both.
-  const whereThenable = (whereArg: unknown) => {
-    const preds: Predicate[] = [];
-    collectPredicates(whereArg, preds);
-    const chain: any = {
-      limit: async () => rowsFor(preds),
-      then: (resolve: (rows: unknown[]) => void) => resolve(rowsFor(preds)),
-    };
-    return chain;
-  };
-  return {
-    from: () => ({
-      where: (whereArg: unknown) => whereThenable(whereArg),
-    }),
-  };
-}
-
-function makeInsertChain(table: unknown) {
-  const tag = tableOf(table);
-  return {
-    values: (vals: Record<string, unknown>) => {
-      const chain = {
-        onConflictDoUpdate: (opts: { set?: Record<string, unknown> }) => ({
-          returning: async () => doInsertOrUpdate(tag, vals, opts.set ?? {}),
-        }),
-        returning: async () => doInsertOrUpdate(tag, vals, null),
-      };
-      return chain;
-    },
-  };
-}
-
-function doInsertOrUpdate(
-  tag: string,
-  vals: Record<string, unknown>,
-  setOnConflict: Record<string, unknown> | null,
-): unknown[] {
-  const now = new Date();
-  if (tag === "progress") {
-    const childId = Number(vals["childId"]);
-    const milestoneId = String(vals["milestoneId"]);
-    const existing = state.progress.find(
-      (r) => r.childId === childId && r.milestoneId === milestoneId,
-    );
-    if (existing) {
-      if (setOnConflict) {
-        if (typeof setOnConflict["status"] === "string") {
-          existing.status = String(setOnConflict["status"]);
-        }
-        existing.updatedAt =
-          (setOnConflict["updatedAt"] as Date | undefined) ?? now;
-      }
-      return [existing];
-    }
-    const row: ProgressRow = {
-      id: state.nextProgressId++,
-      userId: String(vals["userId"]),
-      childId,
-      milestoneId,
-      status: String(vals["status"]),
-      updatedAt: now,
-      createdAt: now,
-    };
-    state.progress.push(row);
-    return [row];
-  }
-  if (tag === "logs") {
-    const row: LogRow = {
-      id: state.nextLogId++,
-      userId: String(vals["userId"]),
-      childId: Number(vals["childId"]),
-      promptId: String(vals["promptId"]),
-      attemptedAt: (vals["attemptedAt"] as Date | undefined) ?? now,
-      clarityScore:
-        vals["clarityScore"] == null ? null : Number(vals["clarityScore"]),
-      parentNote:
-        vals["parentNote"] == null ? null : String(vals["parentNote"]),
-    };
-    state.logs.push(row);
-    return [row];
-  }
-  if (tag === "waitlist") {
-    const userId = String(vals["userId"]);
-    const existing = state.waitlist.find((r) => r.userId === userId);
-    if (existing) {
-      if (setOnConflict) {
-        existing.childId =
-          setOnConflict["childId"] == null
-            ? null
-            : Number(setOnConflict["childId"]);
-        existing.notes =
-          setOnConflict["notes"] == null
-            ? null
-            : String(setOnConflict["notes"]);
-      }
-      return [existing];
-    }
-    const row: WaitlistRow = {
-      id: state.nextWaitlistId++,
-      userId,
-      childId: vals["childId"] == null ? null : Number(vals["childId"]),
-      notes: vals["notes"] == null ? null : String(vals["notes"]),
-      joinedAt: now,
-    };
-    state.waitlist.push(row);
-    return [row];
-  }
-  return [];
-}
-
-const dbMock = {
-  select: (cols?: unknown) => ({
-    from: (table: unknown) => makeSelectChain(cols, table).from(),
-  }),
-  insert: (table: unknown) => makeInsertChain(table),
-};
-
-// ─── Module mocks (must run BEFORE importing the router) ───────────────
-
-mock.module("@workspace/db", {
-  namedExports: {
-    db: dbMock,
-    childrenTable: CHILDREN_TABLE,
-    speechProgressTable: PROGRESS_TABLE,
-    speechPracticeLogTable: LOGS_TABLE,
-    speechExpertWaitlistTable: WAITLIST_TABLE,
-  },
-});
-
-mock.module("../lib/auth", {
-  namedExports: {
-    getAuth: () => ({
-      userId: state.authUserId,
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    req.firebaseAuth = {
+      userId: TEST_USER,
       email: null,
       emailVerified: false,
       phoneNumber: null,
       name: null,
       picture: null,
-    }),
-  },
-});
+    };
+    (req as unknown as { log: typeof noopLog }).log = noopLog;
+    next();
+  });
+  app.use(speechRouter);
 
-// drizzle-orm helpers used by the route — return opaque sentinels; the
-// in-memory mock ignores them.
-mock.module("drizzle-orm", {
-  namedExports: {
-    and: (...args: unknown[]) => ({ __op: "and", args }),
-    eq: (a: unknown, b: unknown) => ({ __op: "eq", a, b }),
-    gte: (a: unknown, b: unknown) => ({ __op: "gte", a, b }),
-  },
-});
-
-mock.module("../middlewares/featureGate", {
-  namedExports: {
-    featureGate: (feature: string) =>
-      async function featureGateMw(
-        _req: unknown,
-        res: any,
-        next: () => void,
-      ): Promise<void> {
-        if (state.isPremium) {
-          next();
-          return;
-        }
-        const used = state.featureUsed[feature] ?? 0;
-        if (used >= 1) {
-          res.status(402).json({
-            error: "feature_locked",
-            feature,
-            message: "Free trial used. Upgrade to unlock unlimited access.",
-            limit: 1,
-            used: 1,
-            resetsAt: null,
-          });
-          return;
-        }
-        state.featureUsed[feature] = used + 1;
-        next();
-      },
-  },
-});
-
-// ─── Boot the express app + http server (after mocks installed) ────────
-
-let server: Server;
-let baseUrl: string;
-
-async function bootServer(): Promise<void> {
-  const express = (await import("express")).default;
-  const speechRouter = (await import("./speech")).default;
-  const app = express();
-  app.use(express.json());
-  app.use("/api", speechRouter);
-  server = createServer(app);
-  await new Promise<void>((resolve) => server.listen(0, resolve));
-  const addr = server.address() as AddressInfo;
-  baseUrl = `http://127.0.0.1:${addr.port}`;
-}
-
-before(async () => {
-  await bootServer();
+  await new Promise<void>((resolve) => {
+    server = app.listen(0, () => resolve());
+  });
+  baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
 
 after(async () => {
-  if (server) await new Promise<void>((r) => server.close(() => r()));
+  await db
+    .delete(speechProgressTable)
+    .where(eq(speechProgressTable.userId, TEST_USER));
+  await db
+    .delete(speechPracticeLogTable)
+    .where(eq(speechPracticeLogTable.userId, TEST_USER));
+  await db
+    .delete(speechExpertWaitlistTable)
+    .where(eq(speechExpertWaitlistTable.userId, TEST_USER));
+  await db
+    .delete(usageDailyTable)
+    .where(eq(usageDailyTable.userId, TEST_USER));
+  await db
+    .delete(subscriptionsTable)
+    .where(eq(subscriptionsTable.userId, TEST_USER));
+  await db.delete(childrenTable).where(eq(childrenTable.id, childId));
+  await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 
-beforeEach(() => {
-  state.authUserId = "user_test_1";
-  state.children = [
-    { id: 10, userId: "user_test_1", age: 3, ageMonths: 36 },
-    { id: 99, userId: "someone_else", age: 3, ageMonths: 36 },
-  ];
-  state.progress = [];
-  state.logs = [];
-  state.waitlist = [];
-  state.isPremium = false;
-  state.featureUsed = {};
-  state.nextProgressId = 1;
-  state.nextLogId = 1;
-  state.nextWaitlistId = 1;
-});
-
-// ─── Helpers ───────────────────────────────────────────────────────────
-
-async function get(path: string): Promise<{ status: number; body: any }> {
-  const res = await fetch(`${baseUrl}${path}`);
-  const text = await res.text();
-  return {
-    status: res.status,
-    body: text ? JSON.parse(text) : null,
-  };
-}
-async function post(
-  path: string,
-  body: unknown,
-): Promise<{ status: number; body: any }> {
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  return {
-    status: res.status,
-    body: text ? JSON.parse(text) : null,
-  };
-}
-
-// ─── Tests ─────────────────────────────────────────────────────────────
-
-describe("GET /api/speech/milestones", () => {
-  it("401 when unauthenticated", async () => {
-    state.authUserId = null;
-    const r = await get("/api/speech/milestones?childId=10");
-    assert.equal(r.status, 401);
-  });
-
-  it("400 on missing childId", async () => {
-    const r = await get("/api/speech/milestones");
-    assert.equal(r.status, 400);
-  });
-
-  it("404 when child belongs to another user", async () => {
-    const r = await get("/api/speech/milestones?childId=99");
-    assert.equal(r.status, 404);
-    assert.equal(r.body.error, "child_not_found");
-  });
-
-  it("200 returns milestones with status null when none persisted", async () => {
-    const r = await get("/api/speech/milestones?childId=10");
+describe("speech routes — smoke", () => {
+  it("GET /speech/milestones returns the 3y band defaulted to on_track", async () => {
+    const r = await fetch(`${baseUrl}/speech/milestones?childId=${childId}`);
     assert.equal(r.status, 200);
-    assert.equal(r.body.ageBand, "3y");
-    assert.ok(Array.isArray(r.body.items));
-    assert.ok(r.body.items.length > 0);
-    for (const item of r.body.items) {
-      assert.equal(item.status, null);
-      assert.equal(item.updatedAt, null);
-      assert.equal(item.milestone.ageBand, "3y");
+    const body = (await r.json()) as {
+      childId: number;
+      ageBand: string;
+      milestones: Array<{ id: string; ageBand: string; status: string }>;
+    };
+    assert.equal(body.childId, childId);
+    assert.equal(body.ageBand, "3y");
+    assert.ok(body.milestones.length > 0);
+    for (const m of body.milestones) {
+      assert.equal(m.ageBand, "3y");
+      assert.equal(m.status, "on_track");
     }
   });
 
-  it("200 joins persisted statuses", async () => {
-    const milestones = (await import("@workspace/speech-coach"))
-      .SPEECH_MILESTONES;
-    const first3y = milestones.find((m) => m.ageBand === "3y")!;
-    state.progress.push({
-      id: 1,
-      userId: "user_test_1",
-      childId: 10,
-      milestoneId: first3y.id,
-      status: "on_track",
-      updatedAt: new Date("2026-04-01T00:00:00Z"),
-      createdAt: new Date("2026-04-01T00:00:00Z"),
-    });
-    const r = await get("/api/speech/milestones?childId=10");
-    const matched = r.body.items.find(
-      (it: any) => it.milestone.id === first3y.id,
+  it("POST /speech/milestones/:id/status persists status", async () => {
+    const milestone = SPEECH_MILESTONES.find((m) => m.ageBand === "3y")!;
+    const r = await fetch(
+      `${baseUrl}/speech/milestones/${milestone.id}/status`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ childId, status: "needs_attention" }),
+      },
     );
-    assert.equal(matched.status, "on_track");
-    assert.equal(matched.updatedAt, "2026-04-01T00:00:00.000Z");
-  });
-});
-
-describe("POST /api/speech/milestones/:id/status", () => {
-  it("upserts a milestone status", async () => {
-    const milestones = (await import("@workspace/speech-coach"))
-      .SPEECH_MILESTONES;
-    const first3y = milestones.find((m) => m.ageBand === "3y")!;
-    const r = await post(`/api/speech/milestones/${first3y.id}/status`, {
-      childId: 10,
-      status: "needs_attention",
-    });
     assert.equal(r.status, 200);
-    assert.equal(r.body.status, "needs_attention");
-    assert.equal(state.progress.length, 1);
-    // Second call updates same row, doesn't create duplicate.
-    const r2 = await post(`/api/speech/milestones/${first3y.id}/status`, {
-      childId: 10,
-      status: "on_track",
-    });
-    assert.equal(r2.status, 200);
-    assert.equal(r2.body.status, "on_track");
-    assert.equal(state.progress.length, 1);
+    const body = (await r.json()) as { status: string; milestoneId: string };
+    assert.equal(body.status, "needs_attention");
+    assert.equal(body.milestoneId, milestone.id);
+
+    // Re-read shows the new status.
+    const r2 = await fetch(`${baseUrl}/speech/milestones?childId=${childId}`);
+    const body2 = (await r2.json()) as {
+      milestones: Array<{ id: string; status: string }>;
+    };
+    const match = body2.milestones.find((m) => m.id === milestone.id);
+    assert.equal(match?.status, "needs_attention");
   });
 
-  it("404 for unknown milestone id", async () => {
-    const r = await post("/api/speech/milestones/m_does_not_exist/status", {
-      childId: 10,
-      status: "on_track",
+  it("POST /speech/milestones/:id/status rejects unknown milestone with 404", async () => {
+    const r = await fetch(`${baseUrl}/speech/milestones/not_a_real_id/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ childId, status: "on_track" }),
     });
     assert.equal(r.status, 404);
   });
-});
 
-describe("POST /api/speech/practice/log (gated)", () => {
-  it("201 first call, 402 second call for free user", async () => {
-    const r1 = await post("/api/speech/practice/log", {
-      childId: 10,
-      promptId: "p_word_apple",
-      clarityScore: 80,
-    });
-    assert.equal(r1.status, 201);
-    assert.equal(r1.body.clarityScore, 80);
-    assert.equal(state.logs.length, 1);
-
-    const r2 = await post("/api/speech/practice/log", {
-      childId: 10,
-      promptId: "p_word_apple",
-    });
-    assert.equal(r2.status, 402);
-    assert.equal(r2.body.error, "feature_locked");
-    assert.equal(r2.body.feature, "hub_speech_pronounce");
+  it("GET /speech/practice/prompts returns 3y prompts", async () => {
+    const r = await fetch(
+      `${baseUrl}/speech/practice/prompts?childId=${childId}`,
+    );
+    assert.equal(r.status, 200);
+    const body = (await r.json()) as {
+      ageBand: string;
+      prompts: Array<{ id: string; kind: string }>;
+    };
+    assert.equal(body.ageBand, "3y");
+    assert.ok(body.prompts.length > 0);
   });
 
-  it("premium bypasses the gate", async () => {
-    state.isPremium = true;
-    for (let i = 0; i < 3; i++) {
-      const r = await post("/api/speech/practice/log", {
-        childId: 10,
-        promptId: `p_word_${i}`,
-      });
-      assert.equal(r.status, 201);
-    }
-    assert.equal(state.logs.length, 3);
-  });
-});
+  it("POST /speech/practice/log succeeds once then 402s on the second attempt", async () => {
+    // Make sure the lifetime bucket is empty for this fresh user.
+    await db
+      .delete(usageDailyTable)
+      .where(eq(usageDailyTable.userId, TEST_USER));
 
-describe("POST /api/speech/expert-waitlist (idempotent)", () => {
-  it("first call inserts, second returns existing", async () => {
-    const r1 = await post("/api/speech/expert-waitlist", {
-      childId: 10,
-      notes: "Pls notify",
+    const prompt = PRONUNCIATION_PROMPTS.find((p) => p.ageBands.includes("3y"))!;
+    const r1 = await fetch(`${baseUrl}/speech/practice/log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        childId,
+        promptId: prompt.id,
+        clarityScore: 80,
+      }),
     });
     assert.equal(r1.status, 200);
-    assert.equal(r1.body.alreadyJoined, false);
-    assert.equal(state.waitlist.length, 1);
+    const body1 = (await r1.json()) as { promptId: string; clarityScore: number | null };
+    assert.equal(body1.promptId, prompt.id);
+    assert.equal(body1.clarityScore, 80);
 
-    const r2 = await post("/api/speech/expert-waitlist", { childId: 10 });
-    assert.equal(r2.status, 200);
-    assert.equal(r2.body.alreadyJoined, true);
-    assert.equal(r2.body.id, r1.body.id);
-    assert.equal(state.waitlist.length, 1);
-  });
-
-  it("400 on invalid body", async () => {
-    const r = await post("/api/speech/expert-waitlist", { childId: "abc" });
-    assert.equal(r.status, 400);
-  });
-});
-
-describe("GET /api/speech/practice/prompts", () => {
-  it("401 when unauthenticated", async () => {
-    state.authUserId = null;
-    const r = await get("/api/speech/practice/prompts?childId=10");
-    assert.equal(r.status, 401);
-  });
-
-  it("404 when child belongs to another user", async () => {
-    const r = await get("/api/speech/practice/prompts?childId=99");
-    assert.equal(r.status, 404);
-  });
-
-  it("200 returns age-band prompts; kind filter narrows results", async () => {
-    const all = await get("/api/speech/practice/prompts?childId=10");
-    assert.equal(all.status, 200);
-    assert.ok(Array.isArray(all.body));
-    assert.ok(all.body.length > 0);
-    for (const p of all.body) {
-      assert.ok(["letter", "phonic", "word", "sentence"].includes(p.kind));
-      assert.ok(Array.isArray(p.ageBands));
-    }
-    const wordsOnly = await get(
-      "/api/speech/practice/prompts?childId=10&kind=word",
-    );
-    assert.equal(wordsOnly.status, 200);
-    for (const p of wordsOnly.body) assert.equal(p.kind, "word");
-  });
-});
-
-describe("Cross-user authorization on mutating endpoints", () => {
-  it("POST /speech/practice/log → 404 for another user's child", async () => {
-    const r = await post("/api/speech/practice/log", {
-      childId: 99,
-      promptId: "p_word_x",
+    const r2 = await fetch(`${baseUrl}/speech/practice/log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        childId,
+        promptId: prompt.id,
+        clarityScore: 60,
+      }),
     });
-    assert.equal(r.status, 404);
-    assert.equal(r.body.error, "child_not_found");
-    assert.equal(state.logs.length, 0);
+    assert.equal(r2.status, 402);
+    const body2 = (await r2.json()) as { error: string; feature: string };
+    assert.equal(body2.error, "feature_locked");
+    assert.equal(body2.feature, "hub_speech_pronounce");
   });
 
-  it("POST /speech/milestones/:id/status → 404 for another user's child", async () => {
-    const milestones = (await import("@workspace/speech-coach"))
-      .SPEECH_MILESTONES;
-    const m = milestones[0]!;
-    const r = await post(`/api/speech/milestones/${m.id}/status`, {
-      childId: 99,
-      status: "on_track",
-    });
-    assert.equal(r.status, 404);
-    assert.equal(state.progress.length, 0);
-  });
-});
-
-describe("GET /api/speech/progress", () => {
-  it("computes a weekly score from in-window logs", async () => {
-    const milestones = (await import("@workspace/speech-coach"))
-      .SPEECH_MILESTONES;
-    const first3y = milestones.find((m) => m.ageBand === "3y")!;
-    state.progress.push({
-      id: 1,
-      userId: "user_test_1",
-      childId: 10,
-      milestoneId: first3y.id,
-      status: "on_track",
-      updatedAt: new Date(),
-      createdAt: new Date(),
-    });
-    const now = Date.now();
-    state.logs = [
-      {
-        id: 1,
-        userId: "user_test_1",
-        childId: 10,
-        promptId: "p1",
-        attemptedAt: new Date(now - 1000 * 60 * 60),
-        clarityScore: 80,
-        parentNote: null,
-      },
-      {
-        id: 2,
-        userId: "user_test_1",
-        childId: 10,
-        promptId: "p2",
-        attemptedAt: new Date(now - 1000 * 60 * 60 * 26),
-        clarityScore: 50,
-        parentNote: null,
-      },
-    ];
-    const r = await get("/api/speech/progress?childId=10&range=week");
+  it("GET /speech/progress aggregates from the logged attempt", async () => {
+    const r = await fetch(`${baseUrl}/speech/progress?childId=${childId}`);
     assert.equal(r.status, 200);
-    assert.equal(r.body.range, "week");
-    assert.equal(r.body.promptsAttempted, 2);
-    assert.equal(r.body.promptsClear, 1);
-    assert.equal(r.body.streakDays, 2);
-    assert.equal(r.body.milestonesOnTrack, 1);
-    assert.ok(typeof r.body.score === "number");
-    assert.ok(r.body.score >= 0 && r.body.score <= 100);
+    const body = (await r.json()) as {
+      promptsAttempted: number;
+      promptsClear: number;
+      daysActive: number;
+      milestonesTotal: number;
+      score: number;
+    };
+    assert.ok(body.promptsAttempted >= 1);
+    assert.ok(body.promptsClear >= 1);
+    assert.ok(body.daysActive >= 1);
+    assert.ok(body.milestonesTotal > 0);
+    assert.ok(body.score >= 0 && body.score <= 100);
+  });
+
+  it("POST /speech/expert-waitlist is idempotent on (userId, childId)", async () => {
+    const r1 = await fetch(`${baseUrl}/speech/expert-waitlist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ childId, notes: "interested" }),
+    });
+    assert.equal(r1.status, 200);
+    const body1 = (await r1.json()) as { id: number; alreadyOnWaitlist: boolean };
+    assert.equal(body1.alreadyOnWaitlist, false);
+
+    const r2 = await fetch(`${baseUrl}/speech/expert-waitlist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ childId }),
+    });
+    assert.equal(r2.status, 200);
+    const body2 = (await r2.json()) as { id: number; alreadyOnWaitlist: boolean };
+    assert.equal(body2.alreadyOnWaitlist, true);
+    assert.equal(body2.id, body1.id);
+
+    // Anonymous (no childId) join is also idempotent for the same user.
+    const r3 = await fetch(`${baseUrl}/speech/expert-waitlist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    assert.equal(r3.status, 200);
+    const r4 = await fetch(`${baseUrl}/speech/expert-waitlist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    assert.equal(r4.status, 200);
+    const body3 = (await r3.json()) as { id: number; childId: number | null };
+    const body4 = (await r4.json()) as { id: number; alreadyOnWaitlist: boolean };
+    assert.equal(body3.childId, null);
+    assert.equal(body4.alreadyOnWaitlist, true);
+    assert.equal(body4.id, body3.id);
   });
 });

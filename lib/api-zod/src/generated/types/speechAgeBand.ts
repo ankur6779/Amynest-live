@@ -6,10 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type SpeechMilestoneAgeBand =
-  (typeof SpeechMilestoneAgeBand)[keyof typeof SpeechMilestoneAgeBand];
+export type SpeechAgeBand = (typeof SpeechAgeBand)[keyof typeof SpeechAgeBand];
 
-export const SpeechMilestoneAgeBand = {
+export const SpeechAgeBand = {
   "1y": "1y",
   "2y": "2y",
   "3y": "3y",

@@ -6,11 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SpeechPracticeLogEntry {
+export interface SpeechPracticeAttempt {
   id: number;
   childId: number;
   promptId: string;
-  attemptedAt: Date;
+  attemptedAt: string;
   clarityScore?: number | null;
   parentNote?: string | null;
 }

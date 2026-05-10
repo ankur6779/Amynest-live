@@ -7,9 +7,9 @@
  */
 import type { SpeechMilestoneStatus } from "./speechMilestoneStatus";
 
-export interface SpeechMilestoneProgress {
+export interface SpeechMilestoneStatusEntry {
   childId: number;
   milestoneId: string;
   status: SpeechMilestoneStatus;
-  updatedAt: Date;
+  updatedAt: string;
 }
