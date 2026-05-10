@@ -1435,7 +1435,10 @@
       "alert_title": "Smart Study Zone",
       "xp_popup": "+{{amount}} XP ⭐",
       "spelling_banner_title": "Spelling Mastery",
-      "spelling_banner_sub": "Learn, practice & compete"
+      "spelling_banner_sub": "Learn, practice & compete",
+      "label_daily_goal": "Daily goal",
+      "play_mode_title": "Play & Learn 👶",
+      "play_mode_subtitle": "Tap a category to begin"
     },
     "referrals": {
       "screen_title": "Invite & Earn",
