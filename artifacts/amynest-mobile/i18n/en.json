@@ -1438,7 +1438,20 @@
       "spelling_banner_sub": "Learn, practice & compete",
       "label_daily_goal": "Daily goal",
       "play_mode_title": "Play & Learn 👶",
-      "play_mode_subtitle": "Tap a category to begin"
+      "play_mode_subtitle": "Tap a category to begin",
+      "subject_grid_title_basic": "📘 Basic Learning",
+      "subject_grid_title_advanced": "📊 Advanced Study",
+      "subject_grid_sub": "Pick a subject to practice",
+      "adaptive_cta_title": "Smart Adaptive Practice",
+      "adaptive_cta_sub": "Questions get easier or harder as you go",
+      "adaptive_pick_title": "Pick a subject",
+      "adaptive_pick_sub": "Maths practice that adapts to your child",
+      "adaptive_subtitle": "Adaptive practice — questions get easier or harder as you go",
+      "adaptive_level_label": "Level {{level}} · {{accuracy}}% correct",
+      "adaptive_source_ai": "AI",
+      "adaptive_source_dataset": "Practice set",
+      "adaptive_error": "Couldn't load questions just now.",
+      "adaptive_retry": "Try again"
     },
     "referrals": {
       "screen_title": "Invite & Earn",

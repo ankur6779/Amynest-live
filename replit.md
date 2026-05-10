@@ -86,3 +86,16 @@ The system is a monorepo utilizing pnpm, Node.js 24, and TypeScript 5.9. The fro
 - **Tailwind CSS:** CSS framework.
 - **Shadcn/ui:** UI component library.
 - **Zustand:** State management.
+
+## Cross-Platform Sync Rule
+
+**Any feature added or changed in the Study Zone (web `artifacts/kidschedule` OR mobile `artifacts/amynest-mobile`) must be mirrored in the other platform.** This applies to:
+- `lib/study-zone` shared library changes (types, content, levels, engagement)
+- New study views or screens
+- Smart Adaptive Practice (AdaptiveRunner / SmartSubjectPicker)
+- Play Mode categories and items
+- Spelling Mastery flows
+- i18n keys under `screens.study.*`
+- Any API contract changes under `/api/smart-study/*`
+
+When updating one platform, always check the other and apply equivalent changes before marking work complete.
