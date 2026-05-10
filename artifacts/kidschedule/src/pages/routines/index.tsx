@@ -3,7 +3,8 @@ import { useListRoutines, getListRoutinesQueryKey } from "@workspace/api-client-
 import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, ChevronRight, Wand2, Sparkles, List, ChevronLeft } from "lucide-react";
+import { Calendar, Plus, ChevronRight, Wand2, Sparkles, List, ChevronLeft, Zap } from "lucide-react";
+import { getLastGenSettings } from "./generate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LockedBlock } from "@/components/locked-block";
 import { SmartMealSuggestions } from "@/components/smart-meal-suggestions";
@@ -240,12 +241,34 @@ export default function RoutinesList() {
   const allRoutines = (routines ?? []) as Routine[];
   const routinesMax = entitlements?.limits.routinesMax ?? 1;
   const generateLocked = !isPremium && allRoutines.length >= routinesMax;
+
+  // Quick Generate: premium users with saved last-used settings get a one-tap
+  // shortcut that opens the generate wizard pre-filled and ready to confirm.
+  function buildTodayStr() {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+  }
   function handleGenerateClick() {
     if (generateLocked) {
       openPaywall("routines_limit");
     } else {
       setLocation("/routines/generate");
     }
+  }
+  function handleQuickGenerate() {
+    const s = getLastGenSettings();
+    if (!s) {
+      setLocation("/routines/generate");
+      return;
+    }
+    const p = new URLSearchParams({
+      childId:  String(s.childId),
+      mood:     s.mood,
+      weather:  s.weatherOutdoor,
+      caregiver: s.caregiver,
+      date:     buildTodayStr(),
+    });
+    setLocation(`/routines/generate?${p.toString()}`);
   }
   function handleGatedNavigate(path: string) {
     if (generateLocked) {
@@ -254,6 +277,7 @@ export default function RoutinesList() {
       setLocation(path);
     }
   }
+  const hasLastSettings = isPremium && !!getLastGenSettings();
   return <div className="flex flex-col gap-6 animate-in fade-in duration-500">
       <header>
         <h1 className="font-quicksand text-3xl font-bold text-foreground">{t("pages.routines.index.routines")}</h1>
@@ -348,10 +372,24 @@ export default function RoutinesList() {
         </>}
 
       {/* Generate Child Routine CTA */}
-      <Button onClick={handleGenerateClick} size="lg" className="w-full rounded-full h-14 text-base font-bold shadow-md" data-testid="routines-generate-btn">
-        <Sparkles className="mr-2 h-5 w-5" />
-        {t("pages.routines.index.generate_child_routine")}
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button onClick={handleGenerateClick} size="lg" className="w-full rounded-full h-14 text-base font-bold shadow-md" data-testid="routines-generate-btn">
+          <Sparkles className="mr-2 h-5 w-5" />
+          {t("pages.routines.index.generate_child_routine")}
+        </Button>
+        {hasLastSettings && (
+          <Button
+            onClick={handleQuickGenerate}
+            size="lg"
+            variant="outline"
+            className="w-full rounded-full h-12 text-sm font-semibold border-primary/40 text-primary hover:bg-primary/5"
+            data-testid="routines-quick-generate-btn"
+          >
+            <Zap className="mr-2 h-4 w-4" />
+            {t("pages.routines.index.quick_generate_last_settings", { defaultValue: "⚡ Quick Generate (Last Settings)" })}
+          </Button>
+        )}
+      </div>
       <p className="text-center text-[10px] font-medium text-muted-foreground/60 tracking-wide">
         {t("patent_pending.microcopy_routine")}
       </p>
