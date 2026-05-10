@@ -38,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   // Primary navigation — ordered per product spec
   { id: "dashboard",     label: "Dashboard",      icon: "home-outline",                route: "/(tabs)/" },
   { id: "routines",      label: "Routines",       icon: "calendar-outline",            route: "/(tabs)/routines" },
+  { id: "household",     label: "Household",      icon: "people-outline",              route: "/household" },
   { id: "hub",           label: "Parenting Hub",  icon: "book-outline",                route: "/(tabs)/hub" },
   // Secondary navigation
   { id: "coach",         label: `${BRAND.aiName} Coach`,      icon: "sparkles-outline",            route: "/(tabs)/coach" },

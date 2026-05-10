@@ -224,6 +224,53 @@ paths:
               schema:
                 $ref: "#/components/schemas/GeneratedRoutine"
 
+  /household/orchestrate:
+    post:
+      operationId: orchestrateHousehold
+      tags: [routines]
+      summary: Multi-Child Conflict Resolution — orchestrate routines for all children
+      description: |
+        Accepts per-child draft routines + caregiver availability and returns a
+        coordinated household schedule. Detects caregiver overlaps, resource
+        contentions, meal misalignments, sleep window violations, and school
+        collisions, then applies (or previews) resolutions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HouseholdOrchestrateBody"
+      responses:
+        "200":
+          description: Household routine state with conflicts + resolutions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseholdRoutineState"
+
+  /household/conflicts:
+    get:
+      operationId: getHouseholdConflicts
+      tags: [routines]
+      summary: Detect household conflicts for an existing date
+      description: |
+        Pulls already-saved routines for every child belonging to the user on
+        the given date and runs the conflict-detection pass without applying
+        any changes. Useful for the household dashboard.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Household routine state for the requested date
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseholdRoutineState"
+
   /behaviors:
     get:
       operationId: listBehaviors
@@ -872,6 +919,190 @@ paths:
 
 components:
   schemas:
+    # ─── Household Orchestration (Multi-Child Conflict Resolution) ─────
+    HouseholdRoutineItem:
+      type: object
+      properties:
+        time:        { type: string }
+        activity:    { type: string }
+        duration:    { type: integer }
+        category:    { type: string }
+        notes:       { type: string, nullable: true }
+        status:      { type: string, nullable: true }
+        rewardPoints: { type: integer, nullable: true }
+        caregiver: { type: string, nullable: true, enum: [mom, dad, both, grandparent, babysitter] }
+        shiftedFromTime: { type: string, nullable: true }
+        isAnchor:    { type: boolean, nullable: true }
+      required: [time, activity, duration, category]
+
+    HouseholdChildProfile:
+      type: object
+      properties:
+        id:            { type: integer }
+        name:          { type: string }
+        age:           { type: integer }
+        ageMonths:     { type: integer, nullable: true }
+        wakeUpTime:    { type: string, nullable: true }
+        sleepTime:     { type: string, nullable: true }
+        schoolStartTime: { type: string, nullable: true }
+        schoolEndTime: { type: string, nullable: true }
+        hasSchoolToday: { type: boolean, nullable: true }
+        defaultCaregiver: { type: string, nullable: true, enum: [mom, dad, both, grandparent, babysitter] }
+        isSick:        { type: boolean, nullable: true }
+        isInfant:      { type: boolean, nullable: true }
+      required: [id, name, age]
+
+    HouseholdChildRoutine:
+      type: object
+      properties:
+        child: { $ref: "#/components/schemas/HouseholdChildProfile" }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdRoutineItem" }
+      required: [child, items]
+
+    HouseholdCaregiverAvailability:
+      type: object
+      properties:
+        caregiver: { type: string, enum: [mom, dad, both, grandparent, babysitter] }
+        capacity:  { type: integer }
+        windows:
+          type: array
+          items:
+            type: object
+            properties:
+              start: { type: string }
+              end:   { type: string }
+            required: [start, end]
+      required: [caregiver, capacity, windows]
+
+    HouseholdConflict:
+      type: object
+      properties:
+        id:          { type: string }
+        kind:        { type: string, enum: [caregiver_overlap, caregiver_overload, resource_contention, meal_misalignment, sleep_window_violation, school_collision, shared_activity_opportunity] }
+        explanation: { type: string }
+        childIds:
+          type: array
+          items: { type: integer }
+        caregiver:   { type: string, nullable: true }
+        resource:    { type: string, nullable: true }
+        startTime:   { type: string }
+        endTime:     { type: string }
+        severity:    { type: integer }
+      required: [id, kind, explanation, childIds, startTime, endTime, severity]
+
+    HouseholdResolutionChange:
+      type: object
+      properties:
+        childId:       { type: integer }
+        fromTime:      { type: string }
+        toTime:        { type: string }
+        activity:      { type: string }
+        action:        { type: string, enum: [shift, drop, merge, reassign] }
+        newCaregiver:  { type: string, nullable: true }
+      required: [childId, fromTime, toTime, activity, action]
+
+    HouseholdResolution:
+      type: object
+      properties:
+        conflictId:        { type: string }
+        strategy:          { type: string, enum: [shift_later, shift_earlier, synchronize_meals, merge_into_shared_activity, swap_caregiver, split_resource_window, drop_optional, no_action] }
+        rationale:         { type: string }
+        severityReduction: { type: integer }
+        changes:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdResolutionChange" }
+      required: [conflictId, strategy, rationale, severityReduction, changes]
+
+    HouseholdTimelineEntry:
+      type: object
+      properties:
+        childId:   { type: integer }
+        childName: { type: string }
+        item:      { $ref: "#/components/schemas/HouseholdRoutineItem" }
+      required: [childId, childName, item]
+
+    HouseholdTimelineSlot:
+      type: object
+      properties:
+        startTime: { type: string }
+        endTime:   { type: string }
+        hasConflict: { type: boolean }
+        caregivers:
+          type: array
+          items: { type: string }
+        resources:
+          type: array
+          items: { type: string }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdTimelineEntry" }
+      required: [startTime, endTime, hasConflict, caregivers, resources, entries]
+
+    HouseholdSummary:
+      type: object
+      properties:
+        totalConflicts:        { type: integer }
+        resolvedConflicts:     { type: integer }
+        sharedActivityWindows: { type: integer }
+        caregiverPeakLoad:     { type: integer }
+        sleepIntegrityScore:   { type: integer }
+        overallScore:          { type: integer }
+      required: [totalConflicts, resolvedConflicts, sharedActivityWindows, caregiverPeakLoad, sleepIntegrityScore, overallScore]
+
+    HouseholdReasoningStep:
+      type: object
+      properties:
+        step:        { type: string }
+        detail:      { type: string }
+        inputCount:  { type: integer, nullable: true }
+        outputCount: { type: integer, nullable: true }
+      required: [step, detail]
+
+    HouseholdRoutineState:
+      type: object
+      properties:
+        date:             { type: string }
+        originalRoutines:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdChildRoutine" }
+        finalRoutines:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdChildRoutine" }
+        conflicts:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdConflict" }
+        postResolutionConflicts:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdConflict" }
+        resolutions:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdResolution" }
+        timeline:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdTimelineSlot" }
+        summary:        { $ref: "#/components/schemas/HouseholdSummary" }
+        reasoningTrace:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdReasoningStep" }
+      required: [date, originalRoutines, finalRoutines, conflicts, postResolutionConflicts, resolutions, timeline, summary, reasoningTrace]
+
+    HouseholdOrchestrateBody:
+      type: object
+      properties:
+        date:    { type: string }
+        dryRun:  { type: boolean, nullable: true }
+        mealSyncWindowMinutes: { type: integer, nullable: true }
+        bucketMinutes:         { type: integer, nullable: true }
+        routines:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdChildRoutine" }
+        caregivers:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdCaregiverAvailability" }
+      required: [date, routines, caregivers]
+
     HealthStatus:
       type: object
       properties:

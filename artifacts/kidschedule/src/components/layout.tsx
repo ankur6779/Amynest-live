@@ -88,6 +88,10 @@ const NAV_ITEMS: NavItem[] = [{
   labelKey: "nav.routines",
   icon: Calendar
 }, {
+  href: "/household",
+  labelKey: "nav.household",
+  icon: Users
+}, {
   href: "/progress",
   labelKey: "nav.progress",
   icon: TrendingUp
