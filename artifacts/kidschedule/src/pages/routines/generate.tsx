@@ -180,6 +180,26 @@ type FamilyResult = {
   routine: GeneratedRoutine;
 };
 
+// ─── Last-used generation settings (localStorage) ─────────────────────────────
+// Saved after every successful routine creation so premium users can
+// "Quick Generate" from the routines page without re-entering settings.
+const LAST_GEN_KEY = "amynest_last_gen_settings";
+type LastGenSettings = {
+  childId: number;
+  mood: "happy" | "angry" | "lazy" | "normal";
+  weatherOutdoor: WeatherOutdoorChoice;
+  caregiver: HandlerKey;
+};
+export function saveLastGenSettings(s: LastGenSettings): void {
+  try { localStorage.setItem(LAST_GEN_KEY, JSON.stringify(s)); } catch {}
+}
+export function getLastGenSettings(): LastGenSettings | null {
+  try {
+    const raw = localStorage.getItem(LAST_GEN_KEY);
+    return raw ? (JSON.parse(raw) as LastGenSettings) : null;
+  } catch { return null; }
+}
+
 // ─── Wake-time helpers (localStorage, no backend) ─────────────────────────────
 const WAKE_KEY = (childId: number, date: string) => `amynest_wake_${childId}_${date}`;
 function getStoredWakeTime(childId: number, date: string): string | null {
@@ -564,29 +584,52 @@ export default function RoutineGenerate() {
 
   // Single mode
   const [selectedChild, setSelectedChild] = useState<number | null>(null);
-  // Read ?date= from URL so links from the calendar (Tomorrow / specific day)
-  // open the generator pre-filled to the requested date instead of always today.
+  // Read URL params so calendar links AND Quick Generate pre-fill the form.
+  // Supported: ?date=YYYY-MM-DD  ?childId=N  ?mood=X  ?weather=X  ?caregiver=X
   const search = useSearch();
-  const initialDate = (() => {
+  const urlParams = (() => {
     try {
       const sp = new URLSearchParams(search);
-      const q = sp.get("date");
-      if (q && /^\d{4}-\d{2}-\d{2}$/.test(q)) return q;
-    } catch {}
+      return {
+        date:      sp.get("date"),
+        childId:   sp.get("childId"),
+        mood:      sp.get("mood"),
+        weather:   sp.get("weather"),
+        caregiver: sp.get("caregiver"),
+      };
+    } catch { return {}; }
+  })();
+  const initialDate = (() => {
+    if (urlParams.date && /^\d{4}-\d{2}-\d{2}$/.test(urlParams.date)) return urlParams.date;
     return format(new Date(), "yyyy-MM-dd");
   })();
   const [date, setDate] = useState(initialDate);
   const [hasSchool, setHasSchool] = useState<boolean | null>(null);
   const [specialPlans, setSpecialPlans] = useState("");
   const [fridgeItems, setFridgeItems] = useState("");
-  const [mood, setMood] = useState<"happy" | "angry" | "lazy" | "normal">("normal");
+  const initialMood = (() => {
+    const m = urlParams.mood;
+    if (m === "happy" || m === "angry" || m === "lazy" || m === "normal") return m;
+    return "normal" as const;
+  })();
+  const [mood, setMood] = useState<"happy" | "angry" | "lazy" | "normal">(initialMood);
 
   // Caregiver — who is handling the child today (sent as `caregiver` field).
-  const [handlerType, setHandlerType] = useState<HandlerKey>("mom");
+  const VALID_HANDLERS: HandlerKey[] = ["mom", "dad", "both", "grandparent", "babysitter"];
+  const initialCaregiver = (() => {
+    const c = urlParams.caregiver;
+    if (c && VALID_HANDLERS.includes(c as HandlerKey)) return c as HandlerKey;
+    return "mom" as HandlerKey;
+  })();
+  const [handlerType, setHandlerType] = useState<HandlerKey>(initialCaregiver);
 
   // Per-generation weather signal (sent as `weatherOutdoor`).
-  // Not persisted — fresh choice each visit, defaults to "yes".
-  const [weatherOutdoor, setWeatherOutdoor] = useState<WeatherOutdoorChoice>("yes");
+  const initialWeather = (() => {
+    const w = urlParams.weather;
+    if (w === "yes" || w === "no" || w === "limited") return w as WeatherOutdoorChoice;
+    return "yes" as WeatherOutdoorChoice;
+  })();
+  const [weatherOutdoor, setWeatherOutdoor] = useState<WeatherOutdoorChoice>(initialWeather);
   // Whether the user has explicitly engaged with the weather control this
   // visit (manual chip click OR successful auto-detect). When false, the
   // generate flow runs one silent location/weather detect right before
@@ -690,6 +733,24 @@ export default function RoutineGenerate() {
       setSelectedChild(children[0].id);
     }
   }, [children, selectedChild]);
+
+  // Pre-fill child from ?childId= URL param (Quick Generate flow).
+  // Runs once after children load; skips if already selected (auto-select above).
+  const urlChildId = urlParams.childId ? parseInt(urlParams.childId, 10) : null;
+  useEffect(() => {
+    if (!urlChildId || !children || selectedChild !== null) return;
+    const exists = children.find(c => c.id === urlChildId);
+    if (exists) setSelectedChild(urlChildId);
+  }, [urlChildId, children, selectedChild]);
+
+  // Track the latest generation settings in a ref so saveGeneratedRoutine
+  // can persist them without needing them as useCallback deps.
+  const lastSettingsRef = useRef<LastGenSettings | null>(null);
+  useEffect(() => {
+    if (selectedChild !== null) {
+      lastSettingsRef.current = { childId: selectedChild, mood, weatherOutdoor, caregiver: handlerType };
+    }
+  }, [selectedChild, mood, weatherOutdoor, handlerType]);
 
   // Auto-detect weekends for single mode
   useEffect(() => {
@@ -824,6 +885,8 @@ export default function RoutineGenerate() {
         queryClient.invalidateQueries({
           queryKey: getListRoutinesQueryKey()
         });
+        // Persist last-used settings so premium users can Quick Generate next time.
+        if (lastSettingsRef.current) saveLastGenSettings(lastSettingsRef.current);
         setLocation(`/routines/${savedRoutine.id}`);
       },
       onError: (err: unknown) => {
