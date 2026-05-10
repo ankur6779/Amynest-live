@@ -1,0 +1,142 @@
+Create a new premium feature section inside the Parent Hub called “Amy Speech Coach” for the AmyNest app.
+
+Goal:
+Help parents support early speech development, pronunciation improvement, communication confidence, and speech delay awareness in children aged 1–8 years.
+
+Design Style:
+- Modern, warm, premium parenting app UI
+- Soft gradients
+- Child-friendly but medically trustworthy
+- Smooth animations
+- Mobile-first responsive layout
+- Use cards, progress rings, friendly illustrations, and calming colors
+- Keep consistent with existing AmyNest design system
+
+Main Section Title:
+“Amy Speech Coach”
+Subtitle:
+“Build confident communication through fun daily speech activities.”
+
+Core Features to Include:
+
+1. Speech Development Dashboard
+- Child speech age tracker
+- Weekly progress score
+- Pronunciation improvement %
+- Daily speaking streak
+- Communication confidence indicator
+- Milestone completion tracker
+
+2. Speech Milestone Checker
+Age-wise milestones:
+- 1 Year
+- 2 Years
+- 3 Years
+- 4+ Years
+
+Examples:
+- First words
+- Two-word sentences
+- Clear pronunciation
+- Social communication
+
+Add:
+- “On Track”
+- “Needs Attention”
+- “Consult Expert” indicators
+
+3. AI Pronunciation Practice
+Interactive speech practice cards:
+- Letters
+- Phonics sounds
+- Simple words
+- Everyday sentences
+
+Features:
+- Tap to hear pronunciation using ElevenLabs voice
+- Child repeats
+- AI analyzes clarity
+- Give encouraging feedback
+
+Sample feedback:
+- “Great pronunciation!”
+- “Try saying the R sound more slowly.”
+- “Excellent improvement today!”
+
+4. Read Aloud & Repeat
+- Story narration with ElevenLabs
+- Child repeat mode
+- Playback comparison
+- Parent listening mode
+- Speech confidence score
+
+5. Daily Speech Games
+Gamified speech exercises:
+- Animal sounds
+- Rhyming games
+- Tongue exercises
+- Breathing exercises
+- Slow vs fast speaking
+- Emotion expression game
+
+Add rewards:
+- Stars
+- Badges
+- Achievement unlocks
+
+6. Parent Guidance Area
+Educational cards:
+- Signs of speech delay
+- Screen time impact
+- How to talk with toddlers
+- Bilingual speech development
+- When to consult a speech therapist
+
+Include:
+- “Amy Coach Tips”
+
+7. Emotion & Confidence Builder
+Mini affirmations:
+- “Your voice matters.”
+- “Speaking takes practice.”
+- “Every child learns differently.”
+
+Add animated encouragement after activities.
+
+8. Speech Progress Reports
+Weekly parent reports:
+- Improved sounds
+- Difficult sounds
+- Vocabulary growth
+- Speaking confidence trend
+
+Include charts and downloadable PDF report UI.
+
+9. Expert Support (Future Ready Placeholder)
+Section:
+“Connect with Certified Speech Experts”
+- Keep as upcoming premium feature
+- Add waitlist/join interest button
+
+Technical Requirements:
+- Create reusable React components
+- Optimized for Android + iOS PWA
+- Smooth transitions
+- Lightweight animations
+- Add placeholders for speech recognition APIs
+- Add placeholder hooks for ElevenLabs integration
+- Parent Hub navigation integration required
+
+CTA Buttons:
+- “Start Speech Practice”
+- “Check Milestones”
+- “Daily 5-Minute Session”
+- “View Progress”
+- “Ask Amy Coach”
+
+Microcopy Tone:
+Supportive, intelligent, encouraging, non-judgmental.
+
+Important:
+Do NOT make the UI look clinical or hospital-like.
+It should feel premium, emotionally safe, and empowering for parents.
