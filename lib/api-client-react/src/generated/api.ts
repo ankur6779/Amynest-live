@@ -38,6 +38,7 @@ import type {
   GenerateRoutineBody,
   GeneratedRoutine,
   GetHouseholdConflictsParams,
+  GetHouseholdForecastParams,
   GetLifeSkillRolePlaysParams,
   GetLifeSkillsTodayParams,
   GetParentProfileResponse,
@@ -45,6 +46,7 @@ import type {
   GetRecipeResponse,
   GetSmartStudyInsightsParams,
   HealthStatus,
+  HouseholdForecastResponse,
   HouseholdOrchestrateBody,
   HouseholdRoutineState,
   IntelligenceInsightsResponse,
@@ -1199,6 +1201,115 @@ export function useGetHouseholdConflicts<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetHouseholdConflictsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns an anticipatory caregiver-load forecast for the requested
+target date and horizon. Built from historical routine data via
+EWMA smoothing, optionally blended with the user's draft routine
+for that day. Surfaces hotspots, severity-classified bottlenecks,
+and rebalance proposals.
+
+ * @summary Predictive Caregiver Load Forecast
+ */
+export const getGetHouseholdForecastUrl = (
+  params: GetHouseholdForecastParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/household/forecast?${stringifiedParams}`
+    : `/api/household/forecast`;
+};
+
+export const getHouseholdForecast = async (
+  params: GetHouseholdForecastParams,
+  options?: RequestInit,
+): Promise<HouseholdForecastResponse> => {
+  return customFetch<HouseholdForecastResponse>(
+    getGetHouseholdForecastUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetHouseholdForecastQueryKey = (
+  params?: GetHouseholdForecastParams,
+) => {
+  return [`/api/household/forecast`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetHouseholdForecastQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHouseholdForecast>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetHouseholdForecastParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHouseholdForecast>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetHouseholdForecastQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getHouseholdForecast>>
+  > = ({ signal }) =>
+    getHouseholdForecast(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHouseholdForecast>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHouseholdForecastQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHouseholdForecast>>
+>;
+export type GetHouseholdForecastQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Predictive Caregiver Load Forecast
+ */
+
+export function useGetHouseholdForecast<
+  TData = Awaited<ReturnType<typeof getHouseholdForecast>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetHouseholdForecastParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHouseholdForecast>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHouseholdForecastQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -226,6 +226,9 @@ importers:
       '@workspace/life-skills':
         specifier: workspace:*
         version: link:../../lib/life-skills
+      '@workspace/load-forecast':
+        specifier: workspace:*
+        version: link:../../lib/load-forecast
       '@workspace/morning-flow':
         specifier: workspace:*
         version: link:../../lib/morning-flow
@@ -578,6 +581,9 @@ importers:
       '@workspace/life-skills':
         specifier: workspace:*
         version: link:../../lib/life-skills
+      '@workspace/load-forecast':
+        specifier: workspace:*
+        version: link:../../lib/load-forecast
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../../lib/study-zone
@@ -684,6 +690,9 @@ importers:
       '@workspace/life-skills':
         specifier: workspace:*
         version: link:../../lib/life-skills
+      '@workspace/load-forecast':
+        specifier: workspace:*
+        version: link:../../lib/load-forecast
       '@workspace/morning-flow':
         specifier: workspace:*
         version: link:../../lib/morning-flow
@@ -1406,6 +1415,15 @@ importers:
         version: 25.3.5
 
   lib/life-skills: {}
+
+  lib/load-forecast:
+    dependencies:
+      '@workspace/conflict-resolution':
+        specifier: workspace:*
+        version: link:../conflict-resolution
+      '@workspace/family-routine':
+        specifier: workspace:*
+        version: link:../family-routine
 
   lib/morning-flow: {}
 

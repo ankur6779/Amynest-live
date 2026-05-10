@@ -92,6 +92,10 @@ const NAV_ITEMS: NavItem[] = [{
   labelKey: "nav.household",
   icon: Users
 }, {
+  href: "/forecast",
+  labelKey: "nav.forecast",
+  icon: TrendingUp
+}, {
   href: "/progress",
   labelKey: "nav.progress",
   icon: TrendingUp
