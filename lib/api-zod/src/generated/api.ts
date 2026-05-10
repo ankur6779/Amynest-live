@@ -1403,6 +1403,64 @@ export const GetExplainHistoryResponse = zod.array(
 );
 
 /**
+ * Module 4 — runs deterministic safety validation against the candidate
+routine activities. Returns a 0-100 safety score, an `isValid` flag
+(false when any critical violations are present), the list of
+violations grouped by category, and a list of suggested adjustments.
+
+ * @summary AI Safety Layer — validate a routine against age-banded safety rules
+ */
+export const ValidateRoutineSafetyBody = zod.object({
+  ageBand: zod.enum(["infant", "toddler", "preschool", "school", "tween"]),
+  ageMonths: zod.number(),
+  activities: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      startMinutes: zod.number(),
+      durationMinutes: zod.number(),
+      category: zod.string(),
+      intensity: zod.enum(["low", "moderate", "high"]).nullish(),
+      supervisionRequired: zod.boolean().nullish(),
+    }),
+  ),
+  totalScreenMinutes: zod.number().nullish(),
+  totalSleepMinutes: zod.number().nullish(),
+  totalOutdoorMinutes: zod.number().nullish(),
+  caregiverPresent: zod.boolean().nullish(),
+});
+
+export const ValidateRoutineSafetyResponse = zod.object({
+  isValid: zod.boolean(),
+  safetyScore: zod.number(),
+  violations: zod.array(
+    zod.object({
+      ruleId: zod.string(),
+      category: zod.enum([
+        "sleep_safety",
+        "screen_time",
+        "activity_intensity",
+        "nutrition_balance",
+        "supervision",
+        "outdoor_exposure",
+      ]),
+      severity: zod.enum(["info", "warning", "critical"]),
+      message: zod.string(),
+      affectedActivityIds: zod.array(zod.string()),
+    }),
+  ),
+  adjustments: zod.array(
+    zod.object({
+      activityId: zod.string().nullish(),
+      type: zod.enum(["shorten", "shift", "remove", "add", "replace"]),
+      reason: zod.string(),
+      suggestion: zod.string(),
+    }),
+  ),
+  appliedRuleIds: zod.array(zod.string()),
+});
+
+/**
  * @summary List behavior logs
  */
 export const ListBehaviorsQueryParams = zod.object({

@@ -1,0 +1,132 @@
+{
+  "rules": [
+    {
+      "id": "sleep_min_infant",
+      "category": "sleep_safety",
+      "appliesTo": ["infant"],
+      "description": "Infants need at least 14 hours of sleep per day (incl. naps).",
+      "severity": "critical",
+      "minSleepMinutes": 840
+    },
+    {
+      "id": "sleep_min_toddler",
+      "category": "sleep_safety",
+      "appliesTo": ["toddler"],
+      "description": "Toddlers need at least 11 hours of sleep per day.",
+      "severity": "warning",
+      "minSleepMinutes": 660
+    },
+    {
+      "id": "sleep_min_preschool",
+      "category": "sleep_safety",
+      "appliesTo": ["preschool"],
+      "description": "Preschoolers need at least 10 hours of sleep per day.",
+      "severity": "warning",
+      "minSleepMinutes": 600
+    },
+    {
+      "id": "sleep_min_school",
+      "category": "sleep_safety",
+      "appliesTo": ["school"],
+      "description": "School-age children need at least 9 hours of sleep per day.",
+      "severity": "warning",
+      "minSleepMinutes": 540
+    },
+    {
+      "id": "sleep_min_tween",
+      "category": "sleep_safety",
+      "appliesTo": ["tween"],
+      "description": "Tweens need at least 8 hours of sleep per day.",
+      "severity": "warning",
+      "minSleepMinutes": 480
+    },
+    {
+      "id": "screen_max_infant",
+      "category": "screen_time",
+      "appliesTo": ["infant"],
+      "description": "No screen time recommended for infants under 18 months.",
+      "severity": "critical",
+      "maxScreenMinutes": 0
+    },
+    {
+      "id": "screen_max_toddler",
+      "category": "screen_time",
+      "appliesTo": ["toddler"],
+      "description": "Toddlers should have no more than 60 minutes of screen time per day.",
+      "severity": "warning",
+      "maxScreenMinutes": 60
+    },
+    {
+      "id": "screen_max_preschool",
+      "category": "screen_time",
+      "appliesTo": ["preschool"],
+      "description": "Preschoolers should have no more than 60 minutes of screen time per day.",
+      "severity": "warning",
+      "maxScreenMinutes": 60
+    },
+    {
+      "id": "screen_max_school",
+      "category": "screen_time",
+      "appliesTo": ["school"],
+      "description": "School-age children should have no more than 120 minutes of recreational screen time per day.",
+      "severity": "info",
+      "maxScreenMinutes": 120
+    },
+    {
+      "id": "screen_max_tween",
+      "category": "screen_time",
+      "appliesTo": ["tween"],
+      "description": "Tweens should have no more than 120 minutes of recreational screen time per day.",
+      "severity": "info",
+      "maxScreenMinutes": 120
+    },
+    {
+      "id": "activity_high_intensity_infant",
+      "category": "activity_intensity",
+      "appliesTo": ["infant"],
+      "description": "High-intensity activities are not appropriate for infants.",
+      "severity": "critical",
+      "blockedIntensity": "high"
+    },
+    {
+      "id": "activity_high_intensity_toddler",
+      "category": "activity_intensity",
+      "appliesTo": ["toddler"],
+      "description": "Toddlers should not have continuous high-intensity activities longer than 20 minutes.",
+      "severity": "warning",
+      "maxHighIntensityBlockMinutes": 20
+    },
+    {
+      "id": "supervision_infant",
+      "category": "supervision",
+      "appliesTo": ["infant", "toddler"],
+      "description": "Infants and toddlers must have a caregiver present at all times.",
+      "severity": "critical",
+      "requiresCaregiver": true
+    },
+    {
+      "id": "outdoor_min_preschool_school",
+      "category": "outdoor_exposure",
+      "appliesTo": ["preschool", "school", "tween"],
+      "description": "Children should get at least 30 minutes of outdoor time per day.",
+      "severity": "info",
+      "minOutdoorMinutes": 30
+    },
+    {
+      "id": "nutrition_meal_count",
+      "category": "nutrition_balance",
+      "appliesTo": ["toddler", "preschool", "school", "tween"],
+      "description": "Children should have at least 3 meals plus 1-2 snacks per day.",
+      "severity": "warning",
+      "minMealCount": 3
+    },
+    {
+      "id": "activity_overload",
+      "category": "activity_intensity",
+      "appliesTo": ["preschool", "school", "tween"],
+      "description": "Total scheduled active time should not exceed 6 hours per day.",
+      "severity": "warning",
+      "maxActiveMinutes": 360
+    }
+  ]
+}

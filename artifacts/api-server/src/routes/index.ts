@@ -45,6 +45,7 @@ import lifeSkillsRouter from "./life-skills";
 import childIntelligenceRouter from "./child-intelligence";
 import householdRouter from "./household";
 import explainRouter from "./explain";
+import safetyRouter from "./safety";
 import debugRouter from "./debug";
 import authRouter from "./auth";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -121,6 +122,7 @@ router.use(lifeSkillsRouter);
 router.use(childIntelligenceRouter);
 router.use(householdRouter);
 router.use(explainRouter);
+router.use(safetyRouter);
 router.use(debugRouter);
 
 export default router;

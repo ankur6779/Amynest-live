@@ -23,6 +23,12 @@ import { LearningWeightsCard } from "@/components/intelligence/LearningWeightsCa
 import { ProductiveNudgesCard } from "@/components/intelligence/ProductiveNudgesCard";
 import colors, { brand, palette } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
+import ForecastScreen from "@/app/forecast";
+import HouseholdScreen from "@/app/household";
+import ExplainScreen from "@/app/explain";
+import { SafetyPanel } from "@/components/safety/SafetyPanel";
+
+type RoutinesTab = "schedule" | "forecast" | "household" | "explain" | "safety";
 
 
 type RoutineItem = {
@@ -84,6 +90,7 @@ export default function RoutinesScreen() {
   const authFetch = useAuthFetch();
   const isPremium = useSubscriptionStore(selectIsPremium);
   const [view, setView] = useState<"calendar" | "list">("calendar");
+  const [activeTab, setActiveTab] = useState<RoutinesTab>("schedule");
   const [selectedChild, setSelectedChild] = useState<number | null>(null);
   const [weekStart, setWeekStart] = useState(() => getMondayOfWeek(new Date()));
 
@@ -171,10 +178,72 @@ export default function RoutinesScreen() {
     return <ProfileLockScreen sectionName="Routines" />;
   }
 
+  const tabDefs: { id: RoutinesTab; icon: keyof typeof Ionicons.glyphMap; labelKey: string }[] = [
+    { id: "schedule",  icon: "calendar",          labelKey: "routines.tabs.schedule" },
+    { id: "forecast",  icon: "trending-up",       labelKey: "routines.tabs.forecast" },
+    { id: "household", icon: "people",            labelKey: "routines.tabs.household" },
+    { id: "explain",   icon: "help-circle",       labelKey: "routines.tabs.explain" },
+    { id: "safety",    icon: "shield-checkmark",  labelKey: "routines.tabs.safety" },
+  ];
+
+  const TabPills = (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: topPad + 8, paddingBottom: 8, gap: 6 }}
+      style={{ backgroundColor: colors.background }}
+    >
+      {tabDefs.map((td) => {
+        const active = activeTab === td.id;
+        return (
+          <TouchableOpacity
+            key={td.id}
+            onPress={() => setActiveTab(td.id)}
+            activeOpacity={0.85}
+            style={[
+              styles.tabPill,
+              {
+                backgroundColor: active ? brand.purple500 : colors.card,
+                borderColor: active ? brand.purple500 : colors.border,
+              },
+            ]}
+            testID={`routines-tab-${td.id}`}
+          >
+            <Ionicons name={td.icon} size={14} color={active ? "#FFFFFF" /* audit-ok: pill text */ : colors.foreground} />
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "700",
+                color: active ? "#FFFFFF" /* audit-ok: pill text */ : colors.foreground,
+              }}
+            >
+              {t(td.labelKey)}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+
+  if (activeTab !== "schedule") {
+    const Sub =
+      activeTab === "forecast"  ? <ForecastScreen />
+      : activeTab === "household" ? <HouseholdScreen />
+      : activeTab === "explain"   ? <ExplainScreen />
+      : <SafetyPanel />;
+    return (
+      <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
+        {TabPills}
+        <View style={{ flex: 1 }}>{Sub}</View>
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
+      {TabPills}
       <ScrollView
-        contentContainerStyle={{ paddingTop: topPad + 16, paddingBottom: botPad + 100 }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: botPad + 100 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
@@ -601,4 +670,13 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   progressBar: { flex: 1, height: 4, borderRadius: 2, overflow: "hidden" },
   pctText: { fontSize: 12, fontFamily: "Inter_700Bold", width: 32 },
+  tabPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
 });
