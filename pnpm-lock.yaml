@@ -590,6 +590,9 @@ importers:
       '@workspace/load-forecast':
         specifier: workspace:*
         version: link:../../lib/load-forecast
+      '@workspace/safety':
+        specifier: workspace:*
+        version: link:../../lib/safety
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../../lib/study-zone
@@ -1443,6 +1446,8 @@ importers:
   lib/parenting-articles: {}
 
   lib/ptm-prep: {}
+
+  lib/safety: {}
 
   lib/study-zone: {}
 

@@ -66,6 +66,8 @@ import type {
   ParentTaskCompletion,
   ProductiveNudgesResponse,
   Routine,
+  SafetyValidationBody,
+  SafetyValidationResponse,
   SetLifeSkillProgressBody,
   SetParentTaskCompletionBody,
   SmartStudyInsights,
@@ -1604,6 +1606,97 @@ export function useGetExplainHistory<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Module 4 — runs deterministic safety validation against the candidate
+routine activities. Returns a 0-100 safety score, an `isValid` flag
+(false when any critical violations are present), the list of
+violations grouped by category, and a list of suggested adjustments.
+
+ * @summary AI Safety Layer — validate a routine against age-banded safety rules
+ */
+export const getValidateRoutineSafetyUrl = () => {
+  return `/api/safety/validate`;
+};
+
+export const validateRoutineSafety = async (
+  safetyValidationBody: SafetyValidationBody,
+  options?: RequestInit,
+): Promise<SafetyValidationResponse> => {
+  return customFetch<SafetyValidationResponse>(getValidateRoutineSafetyUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(safetyValidationBody),
+  });
+};
+
+export const getValidateRoutineSafetyMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof validateRoutineSafety>>,
+    TError,
+    { data: BodyType<SafetyValidationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof validateRoutineSafety>>,
+  TError,
+  { data: BodyType<SafetyValidationBody> },
+  TContext
+> => {
+  const mutationKey = ["validateRoutineSafety"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof validateRoutineSafety>>,
+    { data: BodyType<SafetyValidationBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return validateRoutineSafety(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ValidateRoutineSafetyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof validateRoutineSafety>>
+>;
+export type ValidateRoutineSafetyMutationBody = BodyType<SafetyValidationBody>;
+export type ValidateRoutineSafetyMutationError = ErrorType<unknown>;
+
+/**
+ * @summary AI Safety Layer — validate a routine against age-banded safety rules
+ */
+export const useValidateRoutineSafety = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof validateRoutineSafety>>,
+    TError,
+    { data: BodyType<SafetyValidationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof validateRoutineSafety>>,
+  TError,
+  { data: BodyType<SafetyValidationBody> },
+  TContext
+> => {
+  return useMutation(getValidateRoutineSafetyMutationOptions(options));
+};
 
 /**
  * @summary List behavior logs

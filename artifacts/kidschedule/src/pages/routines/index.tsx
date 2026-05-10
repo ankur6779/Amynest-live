@@ -3,7 +3,8 @@ import { useListRoutines, getListRoutinesQueryKey } from "@workspace/api-client-
 import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, ChevronRight, Wand2, Sparkles, List, ChevronLeft, Zap } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Calendar, Plus, ChevronRight, Wand2, Sparkles, List, ChevronLeft, Zap, TrendingUp, Users, HelpCircle, ShieldCheck } from "lucide-react";
 import { getLastGenSettings } from "./generate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LockedBlock } from "@/components/locked-block";
@@ -15,6 +16,10 @@ import { ProductiveNudgesCard } from "@/components/intelligence/productive-nudge
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
 import { useTranslation } from "react-i18next";
+import ForecastPage from "@/pages/forecast";
+import HouseholdPage from "@/pages/household";
+import ExplainPage from "@/pages/explain";
+import { SafetyPanel } from "@/components/safety/safety-panel";
 type RoutineItem = {
   time: string;
   activity: string;
@@ -284,6 +289,32 @@ export default function RoutinesList() {
         <p className="text-muted-foreground mt-1">{t("pages.routines.index.daily_schedules_generated_by_ai")}</p>
       </header>
 
+      <Tabs defaultValue="schedule" className="w-full">
+        <TabsList className="w-full flex flex-wrap gap-1 h-auto p-1 rounded-2xl bg-muted">
+          <TabsTrigger value="schedule" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+            <Calendar className="h-4 w-4" /> {t("routines.tabs.schedule", { defaultValue: "Schedule" })}
+          </TabsTrigger>
+          <TabsTrigger value="forecast" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+            <TrendingUp className="h-4 w-4" /> {t("routines.tabs.forecast", { defaultValue: "Forecast" })}
+          </TabsTrigger>
+          <TabsTrigger value="household" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+            <Users className="h-4 w-4" /> {t("routines.tabs.household", { defaultValue: "Household" })}
+          </TabsTrigger>
+          <TabsTrigger value="explain" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+            <HelpCircle className="h-4 w-4" /> {t("routines.tabs.explain", { defaultValue: "Why?" })}
+          </TabsTrigger>
+          <TabsTrigger value="safety" className="flex-1 min-w-[100px] flex items-center gap-1.5 rounded-xl">
+            <ShieldCheck className="h-4 w-4" /> {t("routines.tabs.safety", { defaultValue: "Safety" })}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="forecast" className="mt-4"><ForecastPage /></TabsContent>
+        <TabsContent value="household" className="mt-4"><HouseholdPage /></TabsContent>
+        <TabsContent value="explain" className="mt-4"><ExplainPage /></TabsContent>
+        <TabsContent value="safety" className="mt-4"><SafetyPanel /></TabsContent>
+
+        <TabsContent value="schedule" className="mt-4 flex flex-col gap-6">
+
       {/* 🍱 Amy AI Meal Suggestions */}
       <SmartMealSuggestions />
 
@@ -393,5 +424,7 @@ export default function RoutinesList() {
       <p className="text-center text-[10px] font-medium text-muted-foreground/60 tracking-wide">
         {t("patent_pending.microcopy_routine")}
       </p>
+        </TabsContent>
+      </Tabs>
     </div>;
 }

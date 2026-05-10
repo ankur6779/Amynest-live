@@ -1501,6 +1501,102 @@ export interface ExplainMealBody {
   withNarrative?: boolean | null;
 }
 
+export type SafetyActivityInputIntensity =
+  | (typeof SafetyActivityInputIntensity)[keyof typeof SafetyActivityInputIntensity]
+  | null;
+
+export const SafetyActivityInputIntensity = {
+  low: "low",
+  moderate: "moderate",
+  high: "high",
+} as const;
+
+export interface SafetyActivityInput {
+  id: string;
+  title: string;
+  startMinutes: number;
+  durationMinutes: number;
+  category: string;
+  intensity?: SafetyActivityInputIntensity;
+  supervisionRequired?: boolean | null;
+}
+
+export type SafetyValidationBodyAgeBand =
+  (typeof SafetyValidationBodyAgeBand)[keyof typeof SafetyValidationBodyAgeBand];
+
+export const SafetyValidationBodyAgeBand = {
+  infant: "infant",
+  toddler: "toddler",
+  preschool: "preschool",
+  school: "school",
+  tween: "tween",
+} as const;
+
+export interface SafetyValidationBody {
+  ageBand: SafetyValidationBodyAgeBand;
+  ageMonths: number;
+  activities: SafetyActivityInput[];
+  totalScreenMinutes?: number | null;
+  totalSleepMinutes?: number | null;
+  totalOutdoorMinutes?: number | null;
+  caregiverPresent?: boolean | null;
+}
+
+export type SafetyViolationCategory =
+  (typeof SafetyViolationCategory)[keyof typeof SafetyViolationCategory];
+
+export const SafetyViolationCategory = {
+  sleep_safety: "sleep_safety",
+  screen_time: "screen_time",
+  activity_intensity: "activity_intensity",
+  nutrition_balance: "nutrition_balance",
+  supervision: "supervision",
+  outdoor_exposure: "outdoor_exposure",
+} as const;
+
+export type SafetyViolationSeverity =
+  (typeof SafetyViolationSeverity)[keyof typeof SafetyViolationSeverity];
+
+export const SafetyViolationSeverity = {
+  info: "info",
+  warning: "warning",
+  critical: "critical",
+} as const;
+
+export interface SafetyViolation {
+  ruleId: string;
+  category: SafetyViolationCategory;
+  severity: SafetyViolationSeverity;
+  message: string;
+  affectedActivityIds: string[];
+}
+
+export type SafetyAdjustmentType =
+  (typeof SafetyAdjustmentType)[keyof typeof SafetyAdjustmentType];
+
+export const SafetyAdjustmentType = {
+  shorten: "shorten",
+  shift: "shift",
+  remove: "remove",
+  add: "add",
+  replace: "replace",
+} as const;
+
+export interface SafetyAdjustment {
+  activityId?: string | null;
+  type: SafetyAdjustmentType;
+  reason: string;
+  suggestion: string;
+}
+
+export interface SafetyValidationResponse {
+  isValid: boolean;
+  safetyScore: number;
+  violations: SafetyViolation[];
+  adjustments: SafetyAdjustment[];
+  appliedRuleIds: string[];
+}
+
 export type ListRoutinesParams = {
   childId?: number;
 };

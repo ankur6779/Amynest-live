@@ -3032,5 +3032,28 @@
     "ai_badge": "Patent-Pending AI",
     "hub_trust": "Patent-Pending Intelligence",
     "onboarding_card": "Built using AmyNest's proprietary patent-pending adaptive orchestration technology designed for personalised child development."
+  },
+  "routines": {
+    "tabs": {
+      "schedule": "Schedule",
+      "forecast": "Forecast",
+      "household": "Household",
+      "explain": "Why?",
+      "safety": "Safety"
+    }
+  },
+  "safety": {
+    "title": "AI Safety Layer",
+    "intro": "Validates the most recent routine against age-appropriate sleep, screen-time, supervision, and intensity rules.",
+    "run_check": "Run Safety Check",
+    "checking": "Checking…",
+    "no_routine": "Generate a routine first to run a safety check.",
+    "result": "Safety Result",
+    "passed": "Passed",
+    "needs_attention": "Needs Attention",
+    "all_clear": "No safety concerns detected — well-balanced routine!",
+    "violations": "Concerns",
+    "adjustments": "Suggested Adjustments",
+    "error_generic": "Could not run safety check."
   }
 }

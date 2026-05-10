@@ -21,6 +21,7 @@
     "@workspace/conflict-resolution": "workspace:*",
     "@workspace/load-forecast": "workspace:*",
     "@workspace/explainability": "workspace:*",
+    "@workspace/safety": "workspace:*",
     "@workspace/infant-hub": "workspace:*",
     "@workspace/life-skills": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",

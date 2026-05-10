@@ -374,6 +374,30 @@ paths:
                 items:
                   $ref: "#/components/schemas/ExplanationAuditEntry"
 
+  /safety/validate:
+    post:
+      operationId: validateRoutineSafety
+      tags: [routines]
+      summary: AI Safety Layer — validate a routine against age-banded safety rules
+      description: |
+        Module 4 — runs deterministic safety validation against the candidate
+        routine activities. Returns a 0-100 safety score, an `isValid` flag
+        (false when any critical violations are present), the list of
+        violations grouped by category, and a list of suggested adjustments.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SafetyValidationBody"
+      responses:
+        "200":
+          description: Safety validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafetyValidationResponse"
+
   /behaviors:
     get:
       operationId: listBehaviors
@@ -3132,3 +3156,106 @@ components:
           type: boolean
           nullable: true
       required: [context]
+
+    SafetyActivityInput:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        startMinutes:
+          type: number
+        durationMinutes:
+          type: number
+        category:
+          type: string
+        intensity:
+          type: string
+          nullable: true
+          enum: [low, moderate, high]
+        supervisionRequired:
+          type: boolean
+          nullable: true
+      required: [id, title, startMinutes, durationMinutes, category]
+
+    SafetyValidationBody:
+      type: object
+      properties:
+        ageBand:
+          type: string
+          enum: [infant, toddler, preschool, school, tween]
+        ageMonths:
+          type: number
+        activities:
+          type: array
+          items:
+            $ref: "#/components/schemas/SafetyActivityInput"
+        totalScreenMinutes:
+          type: number
+          nullable: true
+        totalSleepMinutes:
+          type: number
+          nullable: true
+        totalOutdoorMinutes:
+          type: number
+          nullable: true
+        caregiverPresent:
+          type: boolean
+          nullable: true
+      required: [ageBand, ageMonths, activities]
+
+    SafetyViolation:
+      type: object
+      properties:
+        ruleId:
+          type: string
+        category:
+          type: string
+          enum: [sleep_safety, screen_time, activity_intensity, nutrition_balance, supervision, outdoor_exposure]
+        severity:
+          type: string
+          enum: [info, warning, critical]
+        message:
+          type: string
+        affectedActivityIds:
+          type: array
+          items:
+            type: string
+      required: [ruleId, category, severity, message, affectedActivityIds]
+
+    SafetyAdjustment:
+      type: object
+      properties:
+        activityId:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [shorten, shift, remove, add, replace]
+        reason:
+          type: string
+        suggestion:
+          type: string
+      required: [type, reason, suggestion]
+
+    SafetyValidationResponse:
+      type: object
+      properties:
+        isValid:
+          type: boolean
+        safetyScore:
+          type: integer
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/SafetyViolation"
+        adjustments:
+          type: array
+          items:
+            $ref: "#/components/schemas/SafetyAdjustment"
+        appliedRuleIds:
+          type: array
+          items:
+            type: string
+      required: [isValid, safetyScore, violations, adjustments, appliedRuleIds]

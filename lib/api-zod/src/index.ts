@@ -45,4 +45,9 @@ export type {
   ExplainRoutineBody,
   ExplainMealBody,
   GetExplainHistoryParams,
+  SafetyActivityInput,
+  SafetyValidationBody,
+  SafetyViolation,
+  SafetyAdjustment,
+  SafetyValidationResponse,
 } from "./generated/types";
