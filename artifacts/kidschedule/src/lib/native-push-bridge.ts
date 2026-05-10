@@ -50,6 +50,18 @@ declare global {
      * `AmyNestPushNative` message bus has been wired up yet.
      */
     __AMYNEST_WRAPPER?: string;
+    /**
+     * Buffered FCM token written by window.onAndroidToken() before React mounts.
+     * Cleared by use-push-registration.ts on first read to prevent double-registration.
+     */
+    __pendingAndroidToken?: string | null;
+    /**
+     * Direct-callback entry point called by the Android WebView wrapper when it
+     * obtains the FCM registration token. Defined in index.html's early inline
+     * script. Simpler alternative to the AmyNestPushNative message-bus — works
+     * on older WebView builds that lack addWebMessageListener support.
+     */
+    onAndroidToken?: (token: string) => void;
   }
 }
 

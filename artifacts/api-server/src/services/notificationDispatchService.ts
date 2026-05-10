@@ -323,6 +323,10 @@ async function sendFcmAndroidPush(
     data: {
       category: input.category,
       deepLink: input.deepLink ?? "",
+      // "url" is the key the Android WebView wrapper reads to navigate on tap.
+      // Kept in sync with deepLink so both the native handler and any JS
+      // running inside the WebView can read whichever key they expect.
+      url: input.deepLink ?? "",
       ...(input.data
         ? Object.fromEntries(
             Object.entries(input.data).map(([k, v]) => [k, String(v)]),
