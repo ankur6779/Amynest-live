@@ -3,11 +3,10 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { useWebPush } from "@/hooks/use-web-push";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, Monitor, CheckCircle2, XCircle, Loader2, HelpCircle, Send, Smartphone, RefreshCw } from "lucide-react";
+import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, CheckCircle2, XCircle, Loader2, Send, Smartphone, RefreshCw, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   awaitNativePushBridge,
@@ -96,8 +95,8 @@ const CATEGORIES: CategoryDef[] = [{
  *                          (very old WebView lacking WEB_MESSAGE_LISTENER,
  *                          or addWebMessageListener throw). Show a recovery
  *                          card with a Reload-app button.
- *   "browser"            — not inside the wrapper; fall through to the
- *                          standard browser push UI.
+ *   "browser"            — not inside the wrapper; card renders null
+ *                          (web push is disabled — native FCM only).
  */
 type WrapperState = "detecting" | "ready" | "wrapper-no-bridge" | "browser";
 
@@ -112,7 +111,6 @@ function WebPushCard() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const authFetch = useAuthFetch();
-  const { status, enable, disable } = useWebPush();
 
   // Wrapper-aware state machine (see [WrapperState] doc above).
   const [wrapperState, setWrapperState] = useState<WrapperState>(initialWrapperState);
@@ -288,57 +286,8 @@ function WebPushCard() {
     );
   }
 
-  // ── Standard browser path ───────────────────────────────────────────────
-  const isIos = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const label = status === "granted" ? "Enabled" : status === "denied" ? "Blocked in browser" : status === "unsupported" ? (isIos ? "Not supported on iOS Safari" : "Not supported in this browser") : status === "requesting" ? "Requesting permission…" : status === "error" ? "Setup failed — try again" : "Not enabled";
-  const Icon = status === "granted" ? CheckCircle2 : status === "denied" || status === "error" ? XCircle : status === "requesting" ? Loader2 : Monitor;
-  const iconColor = status === "granted" ? "text-primary" : status === "denied" || status === "error" ? "text-primary" : "text-muted-foreground";
-  return <Card className="bg-white/[0.04] border-primary backdrop-blur-md">
-      <CardContent className="flex items-start gap-4 p-4">
-        <div className="w-10 h-10 rounded-lg bg-primary border border-border flex items-center justify-center shrink-0">
-          <Icon className={`w-5 h-5 ${iconColor} ${status === "requesting" ? "animate-spin" : ""}`} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-white">{t("pages.notification_settings.browser_notifications")}</div>
-          <div className="text-sm text-muted-foreground mt-1">
-            {t("pages.notification_settings.receive_amynest_alerts_directly_in_this_browser_even_when_th")}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">{label}</div>
-          {status === "unsupported" && (
-            <div className="mt-2 text-xs text-muted-foreground space-y-1 leading-relaxed">
-              {/* // i18n-ignore-start */}
-              {isIos ? (
-                <p>
-                  iOS notifications require iOS 16.4+ with the app{" "}
-                  <span className="text-white font-medium">added to your Home Screen</span>{" "}
-                  first. Open this page in Safari → tap{" "}
-                  <span className="text-white font-medium">Share → Add to Home Screen</span>,
-                  then re-open from the Home Screen icon.
-                </p>
-              ) : (
-                <p>
-                  For notifications, please open this page in{" "}
-                  <span className="text-white font-medium">Google Chrome</span> or another
-                  Chromium-based browser (Edge, Brave). Samsung Internet may not support web push.
-                </p>
-              )}
-              {/* // i18n-ignore-end */}
-            </div>
-          )}
-          {status !== "unsupported" && <div className="flex gap-2 mt-2">
-              {status !== "granted" && <Button type="button" size="sm" variant="ghost" className="h-7 text-muted-foreground hover:text-white hover:bg-primary" onClick={enable} disabled={status === "requesting" || status === "denied"}>
-                  {status === "requesting" ? "Enabling…" : "Enable"}
-                </Button>}
-              {status === "granted" && <Button type="button" size="sm" variant="ghost" className="h-7 text-muted-foreground hover:text-white hover:bg-primary" onClick={disable}>
-                  {t("pages.notification_settings.disable")}
-                </Button>}
-              {status === "denied" && <span className="text-xs text-muted-foreground mt-1 self-center">
-                  {t("pages.notification_settings.unblock_in_browser_settings_site_permissions_notifications")}
-                </span>}
-            </div>}
-        </div>
-      </CardContent>
-    </Card>;
+  // Not inside the native wrapper — web push is disabled, render nothing.
+  return null;
 }
 export default function NotificationSettingsPage() {
   const {
@@ -350,7 +299,6 @@ export default function NotificationSettingsPage() {
     toast
   } = useToast();
   const [, navigate] = useLocation();
-  const { refreshRegistration } = useWebPush();
   const {
     data,
     isLoading
@@ -422,15 +370,7 @@ export default function NotificationSettingsPage() {
         return (await r.json()) as { status?: string; reason?: string };
       };
 
-      const first = await attempt();
-      // Auto-heal: browser already has permission but token wasn't saved to DB
-      // (e.g. server was down during initial Enable). Re-register silently and
-      // retry once — no manual Disable/Enable needed.
-      if (first.status === "no_tokens" && typeof Notification !== "undefined" && Notification.permission === "granted") {
-        const ok = await refreshRegistration();
-        if (ok) return attempt();
-      }
-      return first;
+      return await attempt();
     },
     onSuccess: (result) => {
       const status = result.status ?? "unknown";
@@ -444,7 +384,7 @@ export default function NotificationSettingsPage() {
         toast({
           title: "No device registered",
           description:
-            "Browser notifications are not set up for this device. Tap 'Disable' then 'Enable' above to re-register.",
+            "Open AmyNest on your Android device first to register for push notifications.",
           variant: "destructive",
         });
       } else {
@@ -535,12 +475,16 @@ export default function NotificationSettingsPage() {
           {t("pages.notification_settings.choose_which_notifications_you_want_from_amynest_maximum")} {local.dailyCap} {t("pages.notification_settings.per_day_never_during_quiet_hours")}
         </p>
 
-        <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
-          {t("pages.notification_settings.this_browser")}
-        </h2>
-        <div className="mb-6">
-          <WebPushCard />
-        </div>
+        {isAmyNestWrapper() && (
+          <>
+            <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
+              {t("pages.notification_settings.this_browser")}
+            </h2>
+            <div className="mb-6">
+              <WebPushCard />
+            </div>
+          </>
+        )}
 
         <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
           Test Delivery

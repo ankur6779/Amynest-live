@@ -34,10 +34,10 @@ function markShown() {
 function shouldShow(): boolean {
   if (typeof window === "undefined") return false;
   if (isSnoozed()) return false;
-  if (!("Notification" in window) && !getNativePushBridge()) return false;
+  // Only show inside the native Android wrapper — web push is disabled.
   const native = getNativePushBridge();
-  if (native) return native.getPermissionStatus() === "default";
-  return Notification.permission === "default";
+  if (!native) return false;
+  return native.getPermissionStatus() === "default";
 }
 
 export function NotificationPromptModal() {
@@ -72,30 +72,7 @@ export function NotificationPromptModal() {
         setOpen(false);
         return;
       }
-
-      const perm = await Notification.requestPermission();
-      if (perm === "granted") {
-        try {
-          const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined;
-          if (vapidKey) {
-            const { getWebPushToken } = await import("@/lib/firebase");
-            const token = await getWebPushToken(vapidKey);
-            if (token) {
-              await authFetch(getApiUrl("/api/push/register"), {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  token,
-                  platform: "web",
-                  deviceName: navigator.userAgent.slice(0, 100),
-                }),
-              });
-            }
-          }
-        } catch {
-          // FCM registration failure — OS permission is still granted, that's the main goal
-        }
-      }
+      // Not in native wrapper — web push is disabled, just close.
     } catch {
       // ignore
     }

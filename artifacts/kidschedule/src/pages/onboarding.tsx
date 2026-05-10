@@ -5,7 +5,11 @@ import { AmyMascotLogo } from "@/components/amy-mascot-logo";
 import { useUser } from "@/lib/firebase-auth-hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
-import { useWebPush } from "@/hooks/use-web-push";
+import {
+  getNativePushBridge,
+  requestNativePushPermission,
+  registerNativePushToken,
+} from "@/lib/native-push-bridge";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type AgeGroup = "infant" | "toddler" | "kid";
@@ -479,7 +483,20 @@ export default function OnboardingPage() {
   const { user } = useUser();
   const authFetch = useAuthFetch();
   const queryClient = useQueryClient();
-  const { enable: enableNotif } = useWebPush();
+  const enableNotif = async () => {
+    try {
+      const native = getNativePushBridge();
+      if (native) {
+        const perm = await requestNativePushPermission(native);
+        if (perm === "granted") {
+          await registerNativePushToken(authFetch, "/api/push/register");
+        }
+      }
+      // Non-wrapper browsers: web push is disabled — proceed silently.
+    } catch {
+      // best-effort, never block onboarding
+    }
+  };
 
   const [step, setStep] = useState<Step>("intro");
   const [notifLoading, setNotifLoading] = useState(false);

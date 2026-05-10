@@ -68,15 +68,8 @@ export function NotificationNudgeBanner() {
       if (isRecentlyRegistered()) return "hidden";
       return "reconnect";
     }
-    if (!("Notification" in window)) return "hidden";
-    const perm = Notification.permission;
-    if (perm === "denied") return "denied";
-    if (perm === "default") return "ask";
-    // permission === "granted"
-    // Hide ONLY if THIS device has successfully registered in last 7 days.
-    // Otherwise show reconnect — the DB token may be stale (FCM tokens expire).
-    if (isRecentlyRegistered()) return "hidden";
-    return "reconnect";
+    // Not in the native wrapper — web push is disabled, hide the banner.
+    return "hidden";
   }, [isSignedIn, userId]);
   const [state, setState] = useState<BannerState>(() => computeState());
   const [dismissed, setDismissed] = useState(() => isDismissed());
@@ -137,55 +130,8 @@ export function NotificationNudgeBanner() {
         return;
       }
 
-      // ── Standard browser / PWA path ─────────────────────────────────────
-      // Request OS-level permission (triggers native dialog on Android/iOS)
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") {
-        setState("denied");
-        setWorking(false);
-        return;
-      }
-
-      // Try to get a fresh FCM token and register it server-side.
-      // Best-effort: in pure WebView this may fail, but the OS permission is
-      // already granted which is the primary goal.
-      let registeredOk = false;
-      try {
-        const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined;
-        if (vapidKey) {
-          const {
-            getWebPushToken
-          } = await import("@/lib/firebase");
-          const token = await getWebPushToken(vapidKey);
-          if (token) {
-            const res = await authFetch(getApiUrl("/api/push/register"), {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                token,
-                platform: "web",
-                deviceName: navigator.userAgent.slice(0, 100)
-              })
-            });
-            if (res.ok) registeredOk = true;
-          }
-        }
-      } catch {
-        // FCM token may not be obtainable in WebView — that's OK
-      }
-      if (registeredOk) {
-        markRegistered();
-        clearDismiss();
-        setState("hidden");
-      } else {
-        // Permission granted but token registration failed. Mark as registered
-        // anyway so we don't keep nagging — at least OS notifications work.
-        markRegistered();
-        clearDismiss();
-        setState("hidden");
-      }
+      // Not in the native wrapper — web push is disabled, do nothing.
+      setState("hidden");
     } catch {
       setState("denied");
     }
