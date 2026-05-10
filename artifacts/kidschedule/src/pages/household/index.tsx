@@ -54,10 +54,11 @@ function conflictIcon(kind: HouseholdConflict["kind"]) {
   }
 }
 
+// audit-ok: conflict severity badges encode semantic state (red=critical, amber=warning, slate=info); intentional non-brand colors.
 function severityColor(sev: number): string {
-  if (sev >= 8) return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200";
-  if (sev >= 5) return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200";
-  return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200";
+  if (sev >= 8) return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"; // audit-ok: severity=critical
+  if (sev >= 5) return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"; // audit-ok: severity=warning
+  return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"; // audit-ok: severity=info
 }
 
 // ── Conflict Card ────────────────────────────────────────────────────────
@@ -78,7 +79,7 @@ function ConflictCard({
 }) {
   const opportunity = conflict.kind === "shared_activity_opportunity";
   return (
-    <Card className="border-l-4" style={{ borderLeftColor: opportunity ? "#22c55e" : "#f59e0b" }}>
+    <Card className="border-l-4" style={{ borderLeftColor: opportunity ? "#22c55e" : "#f59e0b" }}>{/* audit-ok: opportunity=green vs conflict=amber accent strip; semantic state, not brand */}
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -98,13 +99,13 @@ function ConflictCard({
       <CardContent className="space-y-3">
         <p className="text-sm">{conflict.explanation}</p>
         {resolution && resolution.strategy !== "no_action" && (
-          <div className="rounded-md bg-violet-50 dark:bg-violet-950/30 p-3 text-sm">
-            <p className="font-medium text-violet-900 dark:text-violet-200">
+          <div className="rounded-md bg-violet-50 dark:bg-violet-950/30 p-3 text-sm"> {/* audit-ok: violet block highlights AI-suggested resolution (matches Smart AI brand accent) */}
+            <p className="font-medium text-violet-900 dark:text-violet-200"> {/* audit-ok: violet AI-suggested text */}
               {t(`household.strategy.${resolution.strategy}`, { defaultValue: resolution.strategy })}
             </p>
-            <p className="text-violet-800 dark:text-violet-300 text-xs mt-1">{resolution.rationale}</p>
+            <p className="text-violet-800 dark:text-violet-300 text-xs mt-1">{resolution.rationale}</p> {/* audit-ok: violet AI-suggested text */}
             {resolution.changes.length > 0 && (
-              <ul className="mt-2 space-y-1 text-xs text-violet-900 dark:text-violet-200">
+              <ul className="mt-2 space-y-1 text-xs text-violet-900 dark:text-violet-200"> {/* audit-ok: violet AI-suggested text */}
                 {resolution.changes.map((c, i) => (
                   <li key={i}>
                     • {c.activity} — <span className="line-through opacity-60">{c.fromTime}</span> → <strong>{c.toTime}</strong>
@@ -145,12 +146,12 @@ function TimelinePanel({ slots, t }: { slots: HouseholdTimelineSlot[]; t: (k: st
       {slots.map((slot, i) => (
         <div
           key={i}
-          className={`rounded-lg p-3 border ${slot.hasConflict ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"}`}
+          className={`rounded-lg p-3 border ${slot.hasConflict ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"}`} // audit-ok: amber=conflict slot, slate=normal slot (semantic state)
         >
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold">{slot.startTime} – {slot.endTime}</p>
             {slot.hasConflict && (
-              <Badge variant="outline" className="text-amber-700 border-amber-400">
+              <Badge variant="outline" className="text-amber-700 border-amber-400"> {/* audit-ok: amber conflict warning badge (semantic state) */}
                 <AlertTriangle className="h-3 w-3 mr-1" /> {t("household.conflict")}
               </Badge>
             )}
