@@ -40,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "routines",      label: "Routines",       icon: "calendar-outline",            route: "/(tabs)/routines" },
   { id: "household",     label: "Household",      icon: "people-outline",              route: "/household" },
   { id: "forecast",      label: "Load Forecast",  icon: "trending-up-outline",         route: "/forecast" },
+  { id: "explain",       label: "Why This?",      icon: "help-circle-outline",         route: "/explain" },
   { id: "hub",           label: "Parenting Hub",  icon: "book-outline",                route: "/(tabs)/hub" },
   // Secondary navigation
   { id: "coach",         label: `${BRAND.aiName} Coach`,      icon: "sparkles-outline",            route: "/(tabs)/coach" },

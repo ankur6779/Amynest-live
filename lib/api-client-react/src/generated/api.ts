@@ -34,9 +34,14 @@ import type {
   CreateChildBody,
   CreateRoutineBody,
   DashboardSummary,
+  ExplainMealBody,
+  ExplainRoutineBody,
+  ExplanationAuditEntry,
+  ExplanationResponse,
   GenerateInsightsResponse,
   GenerateRoutineBody,
   GeneratedRoutine,
+  GetExplainHistoryParams,
   GetHouseholdConflictsParams,
   GetHouseholdForecastParams,
   GetLifeSkillRolePlaysParams,
@@ -1310,6 +1315,288 @@ export function useGetHouseholdForecast<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetHouseholdForecastQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Accepts a recommendation context and optional raw adaptation strings
+from the generation engine, then returns a fully-attributed
+ExplanationResponse: human-readable summary, decision-factor chips,
+a confidence score, an ordered reasoning trace, and (when available)
+an AI-generated narrative paragraph.
+
+ * @summary Explainability — Why this routine?
+ */
+export const getExplainRoutineUrl = () => {
+  return `/api/explain/routine`;
+};
+
+export const explainRoutine = async (
+  explainRoutineBody: ExplainRoutineBody,
+  options?: RequestInit,
+): Promise<ExplanationResponse> => {
+  return customFetch<ExplanationResponse>(getExplainRoutineUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(explainRoutineBody),
+  });
+};
+
+export const getExplainRoutineMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof explainRoutine>>,
+    TError,
+    { data: BodyType<ExplainRoutineBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof explainRoutine>>,
+  TError,
+  { data: BodyType<ExplainRoutineBody> },
+  TContext
+> => {
+  const mutationKey = ["explainRoutine"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof explainRoutine>>,
+    { data: BodyType<ExplainRoutineBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return explainRoutine(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ExplainRoutineMutationResult = NonNullable<
+  Awaited<ReturnType<typeof explainRoutine>>
+>;
+export type ExplainRoutineMutationBody = BodyType<ExplainRoutineBody>;
+export type ExplainRoutineMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Explainability — Why this routine?
+ */
+export const useExplainRoutine = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof explainRoutine>>,
+    TError,
+    { data: BodyType<ExplainRoutineBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof explainRoutine>>,
+  TError,
+  { data: BodyType<ExplainRoutineBody> },
+  TContext
+> => {
+  return useMutation(getExplainRoutineMutationOptions(options));
+};
+
+/**
+ * Accepts a meal recommendation context (diet type, allergies, region,
+fridge items, child age) and returns an attributed ExplanationResponse
+explaining why the meal was suggested.
+
+ * @summary Explainability — Why this meal?
+ */
+export const getExplainMealUrl = () => {
+  return `/api/explain/meal`;
+};
+
+export const explainMeal = async (
+  explainMealBody: ExplainMealBody,
+  options?: RequestInit,
+): Promise<ExplanationResponse> => {
+  return customFetch<ExplanationResponse>(getExplainMealUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(explainMealBody),
+  });
+};
+
+export const getExplainMealMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof explainMeal>>,
+    TError,
+    { data: BodyType<ExplainMealBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof explainMeal>>,
+  TError,
+  { data: BodyType<ExplainMealBody> },
+  TContext
+> => {
+  const mutationKey = ["explainMeal"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof explainMeal>>,
+    { data: BodyType<ExplainMealBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return explainMeal(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ExplainMealMutationResult = NonNullable<
+  Awaited<ReturnType<typeof explainMeal>>
+>;
+export type ExplainMealMutationBody = BodyType<ExplainMealBody>;
+export type ExplainMealMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Explainability — Why this meal?
+ */
+export const useExplainMeal = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof explainMeal>>,
+    TError,
+    { data: BodyType<ExplainMealBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof explainMeal>>,
+  TError,
+  { data: BodyType<ExplainMealBody> },
+  TContext
+> => {
+  return useMutation(getExplainMealMutationOptions(options));
+};
+
+/**
+ * Returns the last N explanation requests made by the authenticated
+user — powers the AI Explanation Timeline in the UI.
+
+ * @summary Explainability audit log
+ */
+export const getGetExplainHistoryUrl = (params?: GetExplainHistoryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/explain/history?${stringifiedParams}`
+    : `/api/explain/history`;
+};
+
+export const getExplainHistory = async (
+  params?: GetExplainHistoryParams,
+  options?: RequestInit,
+): Promise<ExplanationAuditEntry[]> => {
+  return customFetch<ExplanationAuditEntry[]>(getGetExplainHistoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetExplainHistoryQueryKey = (
+  params?: GetExplainHistoryParams,
+) => {
+  return [`/api/explain/history`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetExplainHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExplainHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetExplainHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getExplainHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetExplainHistoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getExplainHistory>>
+  > = ({ signal }) => getExplainHistory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getExplainHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetExplainHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExplainHistory>>
+>;
+export type GetExplainHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Explainability audit log
+ */
+
+export function useGetExplainHistory<
+  TData = Awaited<ReturnType<typeof getExplainHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetExplainHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getExplainHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetExplainHistoryQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

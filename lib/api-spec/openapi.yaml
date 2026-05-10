@@ -303,6 +303,77 @@ paths:
               schema:
                 $ref: "#/components/schemas/HouseholdForecastResponse"
 
+  /explain/routine:
+    post:
+      operationId: explainRoutine
+      tags: [routines]
+      summary: Explainability — Why this routine?
+      description: |
+        Accepts a recommendation context and optional raw adaptation strings
+        from the generation engine, then returns a fully-attributed
+        ExplanationResponse: human-readable summary, decision-factor chips,
+        a confidence score, an ordered reasoning trace, and (when available)
+        an AI-generated narrative paragraph.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExplainRoutineBody"
+      responses:
+        "200":
+          description: Full explanation for the routine recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExplanationResponse"
+
+  /explain/meal:
+    post:
+      operationId: explainMeal
+      tags: [meals]
+      summary: Explainability — Why this meal?
+      description: |
+        Accepts a meal recommendation context (diet type, allergies, region,
+        fridge items, child age) and returns an attributed ExplanationResponse
+        explaining why the meal was suggested.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExplainMealBody"
+      responses:
+        "200":
+          description: Full explanation for the meal recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExplanationResponse"
+
+  /explain/history:
+    get:
+      operationId: getExplainHistory
+      tags: [routines]
+      summary: Explainability audit log
+      description: |
+        Returns the last N explanation requests made by the authenticated
+        user — powers the AI Explanation Timeline in the UI.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        "200":
+          description: List of recent explanation audit entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExplanationAuditEntry"
+
   /behaviors:
     get:
       operationId: listBehaviors
@@ -2841,3 +2912,223 @@ components:
         - mode
         - hasData
         - subjects
+
+    ExplanationDecisionFactor:
+      type: object
+      properties:
+        kind:
+          type: string
+        label:
+          type: string
+        influence:
+          type: string
+          enum: [positive, negative, neutral]
+        weight:
+          type: number
+        detail:
+          type: string
+        icon:
+          type: string
+          nullable: true
+      required: [kind, label, influence, weight, detail]
+
+    ExplanationConfidenceScore:
+      type: object
+      properties:
+        value:
+          type: integer
+        tier:
+          type: string
+          enum: [high, medium, low]
+        rationale:
+          type: string
+      required: [value, tier, rationale]
+
+    ExplanationReasoningStep:
+      type: object
+      properties:
+        order:
+          type: integer
+        title:
+          type: string
+        detail:
+          type: string
+        factors:
+          type: array
+          items:
+            type: string
+      required: [order, title, detail, factors]
+
+    ExplanationReasoningTrace:
+      type: object
+      properties:
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExplanationReasoningStep"
+        totalFactors:
+          type: integer
+        primaryFactor:
+          type: string
+      required: [steps, totalFactors, primaryFactor]
+
+    ExplanationRecommendationMetadata:
+      type: object
+      properties:
+        recommendationType:
+          type: string
+          enum: [routine, meal, activity, coaching]
+        sourceEngine:
+          type: string
+          enum: [rule_based, ai_generated, hybrid]
+        generatedAt:
+          type: string
+        version:
+          type: string
+      required: [recommendationType, sourceEngine, generatedAt, version]
+
+    ExplanationResponse:
+      type: object
+      properties:
+        summary:
+          type: string
+        factors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExplanationDecisionFactor"
+        confidence:
+          $ref: "#/components/schemas/ExplanationConfidenceScore"
+        trace:
+          $ref: "#/components/schemas/ExplanationReasoningTrace"
+        metadata:
+          $ref: "#/components/schemas/ExplanationRecommendationMetadata"
+        aiNarrative:
+          type: string
+          nullable: true
+      required: [summary, factors, confidence, trace, metadata]
+
+    ExplanationAuditEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        recommendationType:
+          type: string
+        summary:
+          type: string
+        confidenceValue:
+          type: integer
+        confidenceTier:
+          type: string
+          enum: [high, medium, low]
+        primaryFactor:
+          type: string
+        generatedAt:
+          type: string
+        childId:
+          type: integer
+          nullable: true
+      required: [id, recommendationType, summary, confidenceValue, confidenceTier, primaryFactor, generatedAt]
+
+    ExplainContextInput:
+      type: object
+      properties:
+        childId:
+          type: integer
+          nullable: true
+        childAgeMonths:
+          type: number
+          nullable: true
+        ageGroup:
+          type: string
+          nullable: true
+        mood:
+          type: string
+          nullable: true
+        sleepQuality:
+          type: string
+          nullable: true
+          enum: [good, average, poor]
+        sleepDurationHours:
+          type: number
+          nullable: true
+        energyLevel:
+          type: string
+          nullable: true
+          enum: [high, medium, low]
+        weatherOutdoor:
+          type: string
+          nullable: true
+          enum: [yes, no, limited]
+        caregiver:
+          type: string
+          nullable: true
+        adaptations:
+          type: array
+          nullable: true
+          items: { type: string }
+        activityCategory:
+          type: string
+          nullable: true
+        previousDayCompletionRate:
+          type: number
+          minimum: 0
+          maximum: 1
+          nullable: true
+        learningSuccessRate:
+          type: number
+          minimum: 0
+          maximum: 1
+          nullable: true
+        mealType:
+          type: string
+          nullable: true
+        dietType:
+          type: string
+          nullable: true
+        allergyFlags:
+          type: array
+          nullable: true
+          items: { type: string }
+        fridgeItems:
+          type: array
+          nullable: true
+          items: { type: string }
+        culturalRegion:
+          type: string
+          nullable: true
+        householdConflicts:
+          type: array
+          nullable: true
+          items: { type: string }
+        specialPlans:
+          type: string
+          nullable: true
+
+    ExplainRoutineBody:
+      type: object
+      properties:
+        context:
+          $ref: "#/components/schemas/ExplainContextInput"
+        sourceEngine:
+          type: string
+          nullable: true
+          enum: [rule_based, ai_generated, hybrid]
+        withNarrative:
+          type: boolean
+          nullable: true
+      required: [context]
+
+    ExplainMealBody:
+      type: object
+      properties:
+        context:
+          $ref: "#/components/schemas/ExplainContextInput"
+        sourceEngine:
+          type: string
+          nullable: true
+          enum: [rule_based, ai_generated, hybrid]
+        withNarrative:
+          type: boolean
+          nullable: true
+      required: [context]

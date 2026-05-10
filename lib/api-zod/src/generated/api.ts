@@ -1199,6 +1199,210 @@ export const GetHouseholdForecastResponse = zod.object({
 });
 
 /**
+ * Accepts a recommendation context and optional raw adaptation strings
+from the generation engine, then returns a fully-attributed
+ExplanationResponse: human-readable summary, decision-factor chips,
+a confidence score, an ordered reasoning trace, and (when available)
+an AI-generated narrative paragraph.
+
+ * @summary Explainability — Why this routine?
+ */
+export const explainRoutineBodyContextPreviousDayCompletionRateMin = 0;
+export const explainRoutineBodyContextPreviousDayCompletionRateMax = 1;
+
+export const explainRoutineBodyContextLearningSuccessRateMin = 0;
+export const explainRoutineBodyContextLearningSuccessRateMax = 1;
+
+export const ExplainRoutineBody = zod.object({
+  context: zod.object({
+    childId: zod.number().nullish(),
+    childAgeMonths: zod.number().nullish(),
+    ageGroup: zod.string().nullish(),
+    mood: zod.string().nullish(),
+    sleepQuality: zod.enum(["good", "average", "poor"]).nullish(),
+    sleepDurationHours: zod.number().nullish(),
+    energyLevel: zod.enum(["high", "medium", "low"]).nullish(),
+    weatherOutdoor: zod.enum(["yes", "no", "limited"]).nullish(),
+    caregiver: zod.string().nullish(),
+    adaptations: zod.array(zod.string()).nullish(),
+    activityCategory: zod.string().nullish(),
+    previousDayCompletionRate: zod
+      .number()
+      .min(explainRoutineBodyContextPreviousDayCompletionRateMin)
+      .max(explainRoutineBodyContextPreviousDayCompletionRateMax)
+      .nullish(),
+    learningSuccessRate: zod
+      .number()
+      .min(explainRoutineBodyContextLearningSuccessRateMin)
+      .max(explainRoutineBodyContextLearningSuccessRateMax)
+      .nullish(),
+    mealType: zod.string().nullish(),
+    dietType: zod.string().nullish(),
+    allergyFlags: zod.array(zod.string()).nullish(),
+    fridgeItems: zod.array(zod.string()).nullish(),
+    culturalRegion: zod.string().nullish(),
+    householdConflicts: zod.array(zod.string()).nullish(),
+    specialPlans: zod.string().nullish(),
+  }),
+  sourceEngine: zod.enum(["rule_based", "ai_generated", "hybrid"]).nullish(),
+  withNarrative: zod.boolean().nullish(),
+});
+
+export const ExplainRoutineResponse = zod.object({
+  summary: zod.string(),
+  factors: zod.array(
+    zod.object({
+      kind: zod.string(),
+      label: zod.string(),
+      influence: zod.enum(["positive", "negative", "neutral"]),
+      weight: zod.number(),
+      detail: zod.string(),
+      icon: zod.string().nullish(),
+    }),
+  ),
+  confidence: zod.object({
+    value: zod.number(),
+    tier: zod.enum(["high", "medium", "low"]),
+    rationale: zod.string(),
+  }),
+  trace: zod.object({
+    steps: zod.array(
+      zod.object({
+        order: zod.number(),
+        title: zod.string(),
+        detail: zod.string(),
+        factors: zod.array(zod.string()),
+      }),
+    ),
+    totalFactors: zod.number(),
+    primaryFactor: zod.string(),
+  }),
+  metadata: zod.object({
+    recommendationType: zod.enum(["routine", "meal", "activity", "coaching"]),
+    sourceEngine: zod.enum(["rule_based", "ai_generated", "hybrid"]),
+    generatedAt: zod.string(),
+    version: zod.string(),
+  }),
+  aiNarrative: zod.string().nullish(),
+});
+
+/**
+ * Accepts a meal recommendation context (diet type, allergies, region,
+fridge items, child age) and returns an attributed ExplanationResponse
+explaining why the meal was suggested.
+
+ * @summary Explainability — Why this meal?
+ */
+export const explainMealBodyContextPreviousDayCompletionRateMin = 0;
+export const explainMealBodyContextPreviousDayCompletionRateMax = 1;
+
+export const explainMealBodyContextLearningSuccessRateMin = 0;
+export const explainMealBodyContextLearningSuccessRateMax = 1;
+
+export const ExplainMealBody = zod.object({
+  context: zod.object({
+    childId: zod.number().nullish(),
+    childAgeMonths: zod.number().nullish(),
+    ageGroup: zod.string().nullish(),
+    mood: zod.string().nullish(),
+    sleepQuality: zod.enum(["good", "average", "poor"]).nullish(),
+    sleepDurationHours: zod.number().nullish(),
+    energyLevel: zod.enum(["high", "medium", "low"]).nullish(),
+    weatherOutdoor: zod.enum(["yes", "no", "limited"]).nullish(),
+    caregiver: zod.string().nullish(),
+    adaptations: zod.array(zod.string()).nullish(),
+    activityCategory: zod.string().nullish(),
+    previousDayCompletionRate: zod
+      .number()
+      .min(explainMealBodyContextPreviousDayCompletionRateMin)
+      .max(explainMealBodyContextPreviousDayCompletionRateMax)
+      .nullish(),
+    learningSuccessRate: zod
+      .number()
+      .min(explainMealBodyContextLearningSuccessRateMin)
+      .max(explainMealBodyContextLearningSuccessRateMax)
+      .nullish(),
+    mealType: zod.string().nullish(),
+    dietType: zod.string().nullish(),
+    allergyFlags: zod.array(zod.string()).nullish(),
+    fridgeItems: zod.array(zod.string()).nullish(),
+    culturalRegion: zod.string().nullish(),
+    householdConflicts: zod.array(zod.string()).nullish(),
+    specialPlans: zod.string().nullish(),
+  }),
+  sourceEngine: zod.enum(["rule_based", "ai_generated", "hybrid"]).nullish(),
+  withNarrative: zod.boolean().nullish(),
+});
+
+export const ExplainMealResponse = zod.object({
+  summary: zod.string(),
+  factors: zod.array(
+    zod.object({
+      kind: zod.string(),
+      label: zod.string(),
+      influence: zod.enum(["positive", "negative", "neutral"]),
+      weight: zod.number(),
+      detail: zod.string(),
+      icon: zod.string().nullish(),
+    }),
+  ),
+  confidence: zod.object({
+    value: zod.number(),
+    tier: zod.enum(["high", "medium", "low"]),
+    rationale: zod.string(),
+  }),
+  trace: zod.object({
+    steps: zod.array(
+      zod.object({
+        order: zod.number(),
+        title: zod.string(),
+        detail: zod.string(),
+        factors: zod.array(zod.string()),
+      }),
+    ),
+    totalFactors: zod.number(),
+    primaryFactor: zod.string(),
+  }),
+  metadata: zod.object({
+    recommendationType: zod.enum(["routine", "meal", "activity", "coaching"]),
+    sourceEngine: zod.enum(["rule_based", "ai_generated", "hybrid"]),
+    generatedAt: zod.string(),
+    version: zod.string(),
+  }),
+  aiNarrative: zod.string().nullish(),
+});
+
+/**
+ * Returns the last N explanation requests made by the authenticated
+user — powers the AI Explanation Timeline in the UI.
+
+ * @summary Explainability audit log
+ */
+export const getExplainHistoryQueryLimitMax = 50;
+
+export const GetExplainHistoryQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(getExplainHistoryQueryLimitMax)
+    .optional(),
+});
+
+export const GetExplainHistoryResponseItem = zod.object({
+  id: zod.string(),
+  recommendationType: zod.string(),
+  summary: zod.string(),
+  confidenceValue: zod.number(),
+  confidenceTier: zod.enum(["high", "medium", "low"]),
+  primaryFactor: zod.string(),
+  generatedAt: zod.string(),
+  childId: zod.number().nullish(),
+});
+export const GetExplainHistoryResponse = zod.array(
+  GetExplainHistoryResponseItem,
+);
+
+/**
  * @summary List behavior logs
  */
 export const ListBehaviorsQueryParams = zod.object({
