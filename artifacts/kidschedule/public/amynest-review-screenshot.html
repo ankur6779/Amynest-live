@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=390" />
+<title>AmyNest — App Store Review Info</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #0d0b1e;
+  width: 390px;
+  height: 844px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Status bar ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 26px 8px;
+  flex-shrink: 0;
+}
+.status-time { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+.status-icons { display: flex; align-items: center; gap: 6px; }
+
+/* ── Content ── */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px 18px 0;
+}
+
+/* ── Headline ── */
+.headline { text-align: center; margin-bottom: 10px; }
+.headline h1 {
+  font-size: 28px; font-weight: 800; color: #fff;
+  letter-spacing: -0.5px; line-height: 1.18; margin-bottom: 7px;
+}
+.headline p {
+  font-size: 13.5px; font-weight: 400; color: rgba(255,255,255,0.6);
+  line-height: 1.4; max-width: 280px; margin: 0 auto;
+}
+
+/* ── Mascot ── */
+.mascot-wrap {
+  position: relative; width: 148px; height: 148px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px; flex-shrink: 0;
+}
+/* Glowing neon ring */
+.mascot-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  background:
+    radial-gradient(circle, #1a1530 55%, transparent 70%),
+    conic-gradient(
+      from 0deg,
+      #ff48cc 0deg, #d060f0 60deg,
+      #7b3ff2 120deg, #4a2adf 160deg,
+      #7b3ff2 200deg, #d060f0 250deg,
+      #ff48cc 300deg, #ff48cc 360deg
+    );
+  box-shadow:
+    0 0 22px rgba(255,72,204,0.7),
+    0 0 44px rgba(123,63,242,0.5),
+    0 0 70px rgba(255,72,204,0.3);
+}
+.mascot-inner {
+  position: relative; z-index: 2;
+  width: 116px; height: 116px;
+  background: radial-gradient(circle at 40% 35%, #1e1540, #0f0c1e);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Amy Bird SVG ── */
+.amy-bird {
+  width: 90px; height: 90px;
+  filter: drop-shadow(0 4px 16px rgba(200,160,255,0.6));
+}
+
+/* ── Feature card ── */
+.feature-card {
+  width: 100%;
+  background: rgba(255,255,255,0.055);
+  border: 1.5px solid rgba(255,255,255,0.11);
+  border-radius: 16px;
+  padding: 4px 16px 4px;
+  margin-bottom: 12px;
+}
+.feature-row {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.feature-row:last-child { border-bottom: none; padding-bottom: 8px; }
+.check {
+  flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid #e040a0;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.check svg { width: 10px; height: 10px; stroke: #e040a0; stroke-width: 2.5; fill: none; }
+.feature-title { font-size: 13.5px; font-weight: 700; color: #fff; line-height: 1.2; }
+.feature-sub { font-size: 11.5px; color: rgba(255,255,255,0.48); line-height: 1.35; margin-top: 1px; }
+
+/* ── Pricing row ── */
+.pricing-row { display: flex; gap: 9px; width: 100%; margin-bottom: 14px; }
+.price-card {
+  flex: 1; background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.12); border-radius: 13px;
+  padding: 12px 6px 10px; text-align: center; position: relative;
+}
+.price-card.best { border-color: #e040a0; background: rgba(224,64,160,0.09); }
+.best-badge {
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  background: #e040a0; color: #fff; font-size: 9px; font-weight: 700;
+  padding: 3px 8px; border-radius: 20px; white-space: nowrap;
+}
+.price-period { font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.65); margin-bottom: 3px; }
+.price-amount { font-size: 18px; font-weight: 900; color: #fff; letter-spacing: -0.5px; line-height: 1.1; }
+.price-amount span { font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,0.5); }
+.price-sub { font-size: 10.5px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+
+/* ── CTA button ── */
+.cta-btn {
+  width: 100%;
+  background: linear-gradient(90deg, #8044f4 0%, #c044c0 50%, #e640a0 100%);
+  border-radius: 50px; padding: 15px;
+  text-align: center; font-size: 17px; font-weight: 800; color: #fff;
+  letter-spacing: -0.2px; margin-bottom: 13px;
+  box-shadow: 0 8px 28px rgba(123,63,242,0.45);
+}
+
+/* ── Footer ── */
+.footer { text-align: center; flex-shrink: 0; }
+.footer-trust {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; margin-bottom: 7px;
+}
+.trust-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: rgba(255,255,255,0.4); }
+.trust-item svg { width: 10px; height: 10px; fill: rgba(255,255,255,0.3); flex-shrink: 0; }
+.footer-links { font-size: 11px; color: rgba(255,255,255,0.38); letter-spacing: 0.1px; }
+.footer-links span { color: rgba(255,255,255,0.2); margin: 0 5px; }
+
+/* ── Home indicator ── */
+.home-bar {
+  width: 134px; height: 5px; background: rgba(255,255,255,0.28);
+  border-radius: 3px; margin: 8px auto 10px;
+}
+</style>
+</head>
+<body>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <span class="status-time">9:41</span>
+  <div class="status-icons">
+    <!-- Signal bars -->
+    <svg width="18" height="12" viewBox="0 0 18 12" fill="white">
+      <rect x="0" y="6" width="3.5" height="6" rx="1"/>
+      <rect x="4.8" y="4" width="3.5" height="8" rx="1"/>
+      <rect x="9.6" y="2" width="3.5" height="10" rx="1"/>
+      <rect x="14.4" y="0" width="3.5" height="12" rx="1"/>
+    </svg>
+    <!-- WiFi -->
+    <svg width="17" height="13" viewBox="0 0 17 13" fill="none">
+      <circle cx="8.5" cy="11.5" r="1.5" fill="white"/>
+      <path d="M5 8.5a5 5 0 0 1 7 0" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M2 5.5a9 9 0 0 1 13 0" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+    <!-- Battery -->
+    <svg width="26" height="13" viewBox="0 0 26 13" fill="none">
+      <rect x="0.5" y="1.5" width="22" height="10" rx="2.5" stroke="white" stroke-width="1.2"/>
+      <rect x="23" y="4" width="2.5" height="5" rx="1.2" fill="white"/>
+      <rect x="2" y="3" width="18" height="7" rx="1.5" fill="white"/>
+    </svg>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Headline -->
+  <div class="headline">
+    <h1>Unlock Smart Parenting</h1>
+    <p>Give your child the best start with AI-powered learning and guidance</p>
+  </div>
+
+  <!-- Amy AI Mascot -->
+  <div class="mascot-wrap">
+    <div class="mascot-ring"></div>
+    <div class="mascot-inner">
+      <!-- Hand-crafted Amy AI bird SVG -->
+      <svg class="amy-bird" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+        <!-- Body — round white/cream bird -->
+        <ellipse cx="45" cy="56" rx="26" ry="25" fill="#f0ecf8"/>
+        <!-- Head -->
+        <circle cx="45" cy="34" r="20" fill="#f0ecf8"/>
+        <!-- Shadow/volume on body -->
+        <ellipse cx="45" cy="66" rx="20" ry="10" fill="#ddd6ee" opacity="0.5"/>
+        <!-- Beak -->
+        <polygon points="45,40 51,44 45,46" fill="#f59e0b"/>
+        <!-- Left eye -->
+        <circle cx="38" cy="31" r="5" fill="#111"/>
+        <circle cx="40" cy="29.5" r="1.5" fill="white"/>
+        <!-- Right eye -->
+        <circle cx="52" cy="31" r="5" fill="#111"/>
+        <circle cx="54" cy="29.5" r="1.5" fill="white"/>
+        <!-- Left wing -->
+        <ellipse cx="20" cy="60" rx="9" ry="15" fill="#e2daf5" transform="rotate(-20,20,60)"/>
+        <ellipse cx="18" cy="58" rx="6" ry="11" fill="#f0ecf8" transform="rotate(-20,18,58)"/>
+        <!-- Right wing -->
+        <ellipse cx="70" cy="60" rx="9" ry="15" fill="#e2daf5" transform="rotate(20,70,60)"/>
+        <ellipse cx="72" cy="58" rx="6" ry="11" fill="#f0ecf8" transform="rotate(20,72,58)"/>
+        <!-- Blush left -->
+        <ellipse cx="31" cy="38" rx="5" ry="3" fill="#f9a8d4" opacity="0.55"/>
+        <!-- Blush right -->
+        <ellipse cx="59" cy="38" rx="5" ry="3" fill="#f9a8d4" opacity="0.55"/>
+        <!-- Cap brim -->
+        <rect x="26" y="18" width="38" height="5" rx="2.5" fill="#4c1d95"/>
+        <!-- Cap top -->
+        <ellipse cx="45" cy="13" rx="18" ry="9" fill="#5b21b6"/>
+        <ellipse cx="45" cy="11" rx="14" ry="7" fill="#6d28d9"/>
+        <!-- Cap "AMY AI" text -->
+        <rect x="28" y="19" width="34" height="11" rx="2" fill="#3b0764"/>
+        <text x="45" y="28.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" font-weight="800" fill="white" letter-spacing="0.5">AMY AI</text>
+        <!-- Feet -->
+        <line x1="39" y1="79" x2="36" y2="85" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+        <line x1="39" y1="85" x2="33" y2="85" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+        <line x1="51" y1="79" x2="54" y2="85" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+        <line x1="54" y1="85" x2="60" y2="85" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="feature-card">
+    <div class="feature-row">
+      <div class="check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <div>
+        <div class="feature-title">AI Parenting Coach</div>
+        <div class="feature-sub">Ask AMY for instant, thoughtful guidance anytime</div>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <div>
+        <div class="feature-title">Personalized Learning Path</div>
+        <div class="feature-sub">Get age-aware activities tailored to your child</div>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <div>
+        <div class="feature-title">Premium Stories and Phonics</div>
+        <div class="feature-sub">Unlock richer learning content for daily growth</div>
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="check"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+      <div>
+        <div class="feature-title">Health and Growth Insights</div>
+        <div class="feature-sub">Track routines, milestones, and development clearly</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing -->
+  <div class="pricing-row">
+    <div class="price-card">
+      <div class="price-period">Monthly</div>
+      <div class="price-amount">$9.99<span>/mo</span></div>
+      <div class="price-sub">Try AmyNest</div>
+    </div>
+    <div class="price-card">
+      <div class="price-period">Half Yearly</div>
+      <div class="price-amount">$39.99<span>/6mo</span></div>
+      <div class="price-sub">Flexible access</div>
+    </div>
+    <div class="price-card best">
+      <div class="best-badge">Best Value 🔥</div>
+      <div class="price-period">Yearly</div>
+      <div class="price-amount">$69.99<span>/yr</span></div>
+      <div class="price-sub">Save more long term</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-btn">Start Parenting Smart</div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-trust">
+      <div class="trust-item">
+        <svg viewBox="0 0 16 16"><path d="M8 1a4 4 0 0 0-4 4v1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-1V5a4 4 0 0 0-4-4zm0 1.5A2.5 2.5 0 0 1 10.5 5v1h-5V5A2.5 2.5 0 0 1 8 2.5z"/></svg>
+        Cancel anytime
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 16 16"><path d="M8 1L2 4v4c0 3.5 2.5 6.5 6 7.5C12 14.5 14 11.5 14 8V4L8 1z"/></svg>
+        Secure payments
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 16 16"><path d="M8 1.5C5 1.5 3 3.5 3 5.5c0 2.5 2.5 4.5 5 7 2.5-2.5 5-4.5 5-7 0-2-2-4-5-4z"/></svg>
+        Trusted by parents
+      </div>
+    </div>
+    <div class="footer-links">
+      Restore Purchase <span>|</span> Terms <span>|</span> Privacy Policy
+    </div>
+  </div>
+
+</div>
+
+<!-- Home indicator -->
+<div class="home-bar"></div>
+
+</body>
+</html>
