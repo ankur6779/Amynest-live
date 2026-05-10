@@ -61,3 +61,6 @@ export * from "./life_skills_progress";
 export * from "./child_learning_progress";
 export * from "./debug_logs";
 export * from "./child_daily_signals";
+export * from "./speech_progress";
+export * from "./speech_practice_log";
+export * from "./speech_expert_waitlist";
