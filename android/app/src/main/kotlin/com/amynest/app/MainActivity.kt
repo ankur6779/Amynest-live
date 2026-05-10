@@ -29,18 +29,21 @@ private const val BASE_URL = "https://amynest.in"
  *  1. Renders the PWA in a full-screen [WebView] (no address bar, no Chrome UI)
  *     so the installed experience matches a native app exactly.
  *
- *  2. Installs [PushBridge] into the WebView as `window.AmyNestPushNative` so
- *     the web app (`native-push-bridge.ts`) can request the native FCM token,
- *     ask for Android 13+ notification permission, and register the token via
- *     `/api/push/register?platform=android` using its own auth session.
+ *  2. Installs [PushBridge] into the WebView. The bridge uses two channels:
+ *       • `window.AndroidPush` (addJavascriptInterface) — synchronous token
+ *         and permission reads from the web page.
+ *       • `window.onAndroidToken(token)` (evaluateJavascript) — native → web
+ *         delivery of fresh FCM tokens.
+ *     The web app (`native-push-bridge.ts`) reads the token and registers it
+ *     via `/api/push/register?platform=android` using its own auth session.
  *
  *  3. Handles FCM deep link taps: when the user taps a system-tray notification,
  *     [KidScheduleFcmService] starts this activity with a `deepLink` extra.
  *     We append it as a hash-fragment so the SPA router can navigate to the
  *     correct page (e.g. `https://amynest.in/#/routine/3`).
  *
- *  4. Requests POST_NOTIFICATIONS permission on Android 13+ via [PushBridge]'s
- *     `requestPermission` action.
+ *  4. Requests POST_NOTIFICATIONS permission on Android 13+ on every cold start
+ *     so the system dialog appears automatically without web-side involvement.
  */
 class MainActivity : AppCompatActivity() {
 

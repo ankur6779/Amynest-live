@@ -1,6 +1,7 @@
 package com.amynest.app
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
@@ -8,110 +9,90 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.core.content.ContextCompat
-import androidx.webkit.JavaScriptReplyProxy
-import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.google.firebase.messaging.FirebaseMessaging
-import org.json.JSONException
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
 /**
  * Native FCM bridge for the KidSchedule WebView.
  *
- * SECURITY: Installed via [WebViewCompat.addWebMessageListener] with a
- * strict allowedOriginRules pinned to BuildConfig.WRAPPER_URL — third-party
- * iframes loaded inside the WebView CANNOT call this bridge. Each
- * invocation also re-validates `sourceOrigin` (defense-in-depth), matching
- * the [BillingBridge] pattern.
+ * ### JS surface exposed to the web page
  *
- * On the JS side this surfaces as `window.AmyNestPushNative` with
- * `postMessage(json)` and an `onmessage` listener. The web app uses a
- * promise / callbackId registry (see `src/lib/native-push-bridge.ts`).
+ *   window.AndroidPush.getPushToken()        → cached FCM token or null
+ *   window.AndroidPush.getPermissionStatus() → "granted" | "denied" | "default"
+ *   window.onAndroidToken(token)             → called by native when a token arrives
  *
- * Message protocol (JSON in both directions):
- *   request:  { action: "getStatus" | "requestPermission" | "refreshToken", cbId?: string }
- *   response: { ok: true,  cbId, data: { fcmEnabled, permission, token } }
- *           | { ok: false, cbId, error: string }
- *   push:     { type: "permission", permission: "granted"|"denied"|"default" }
- *           | { type: "token", token: string }
+ * The native side installs `window.AndroidPush` via [WebView.addJavascriptInterface]
+ * and delivers tokens to the page by calling `window.onAndroidToken(token)` via
+ * [WebView.evaluateJavascript]. The web page defines `window.onAndroidToken` in
+ * index.html's inline script (before React mounts) so it is always ready.
+ *
+ * ### Wrapper detection
+ *
+ * A synchronous `window.__AMYNEST_WRAPPER` marker is still injected at
+ * document_start via [WebViewCompat.addDocumentStartJavaScript] for
+ * bulletproof wrapper detection (available before addJavascriptInterface
+ * objects are first accessed from JS).
+ *
+ * ### Token rotation
+ *
+ * [KidScheduleFcmService] calls [onTokenRotated] → [tokenListener] →
+ * [broadcastToken] → evaluateJavascript → window.onAndroidToken on the
+ * open WebView. The companion-object [WeakReference] prevents memory leaks
+ * when the activity is destroyed.
  */
 class PushBridge private constructor(
     activity: Activity,
     webView: WebView,
-    private val trustedOrigin: String,
 ) {
     private val activityRef = WeakReference(activity)
     private val webViewRef = WeakReference(webView)
-    private var replyProxyRef: WeakReference<JavaScriptReplyProxy>? = null
 
     /**
-     * Token-rotation listener that the FcmService notifies when a fresh
-     * token arrives. Wired up via [PushBridge.tokenListener] companion
-     * field for the lifetime of the activity.
+     * Token-rotation listener that FcmService notifies when a fresh token
+     * arrives. Installed on the companion via [tokenListener].
      */
-    private val onNewTokenListener: (String) -> Unit = { token ->
+    val onNewTokenListener: (String) -> Unit = { token ->
         cacheToken(token)
-        pushEvent(JSONObject().put("type", "token").put("token", token))
+        broadcastToken(token)
     }
 
-    fun handleMessage(rawMessage: String, sourceOrigin: Uri, replyProxy: JavaScriptReplyProxy) {
-        if (!originMatches(sourceOrigin)) {
-            Log.w(TAG, "rejected message from untrusted origin: $sourceOrigin")
-            return
-        }
-        // Cache the most-recent reply proxy so out-of-band events
-        // (token rotation, permission result) can post to the page.
-        replyProxyRef = WeakReference(replyProxy)
+    // ── JavascriptInterface exposed as window.AndroidPush ─────────────────
 
-        val msg: JSONObject = try {
-            JSONObject(rawMessage)
-        } catch (_: JSONException) {
-            Log.w(TAG, "malformed bridge message")
-            return
-        }
-        val cbId = msg.optString("cbId", "")
-        when (msg.optString("action")) {
-            "getStatus" -> resolve(replyProxy, cbId, currentStatus())
-            "refreshToken" -> refreshToken(replyProxy, cbId)
-            "requestPermission" -> requestPermission(replyProxy, cbId)
-            else -> resolveError(replyProxy, cbId, "unknown_action")
-        }
+    @SuppressLint("JavascriptInterface")
+    inner class AndroidPushInterface {
+        @JavascriptInterface
+        fun getPushToken(): String? = cachedToken()
+
+        @JavascriptInterface
+        fun getPermissionStatus(): String = currentPermission()
     }
+
+    // ── Permission result forwarded from MainActivity ──────────────────────
 
     fun onPermissionResult(granted: Boolean) {
-        val perm = if (granted) "granted" else "denied"
         if (!granted) markPermanentlyDenied()
         else clearPermanentlyDenied()
-        pushEvent(JSONObject().put("type", "permission").put("permission", perm))
-        // If the user just granted, surface the token immediately too.
+        // When just granted, surface the token immediately.
         if (granted) {
             val cached = cachedToken()
             if (cached != null) {
-                pushEvent(JSONObject().put("type", "token").put("token", cached))
+                broadcastToken(cached)
             } else {
-                refreshToken(null, "")
+                refreshAndBroadcastToken()
             }
         }
     }
 
-    // ── Internals ─────────────────────────────────────────────────────────
-
-    private fun currentStatus(): JSONObject {
-        return JSONObject()
-            .put("fcmEnabled", BuildConfig.FCM_ENABLED)
-            .put("permission", currentPermission())
-            .put("token", cachedToken())
-    }
+    // ── Internal helpers ──────────────────────────────────────────────────
 
     private fun currentPermission(): String {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            // Pre-Android 13: no runtime permission for notifications. Treat
-            // as granted unless the user has disabled the app's notifications
-            // via system settings (which we cannot reliably read).
             return "granted"
         }
         val activity = activityRef.get() ?: return "default"
@@ -120,72 +101,43 @@ class PushBridge private constructor(
             Manifest.permission.POST_NOTIFICATIONS,
         ) == PackageManager.PERMISSION_GRANTED
         if (granted) return "granted"
-        // Distinguish "user denied at least once" (return "denied") from
-        // "first launch, never asked" (return "default") via a SharedPrefs
-        // flag we set in onPermissionResult.
         return if (prefs().getBoolean(KEY_DENIED_ONCE, false)) "denied" else "default"
     }
 
-    private fun refreshToken(replyProxy: JavaScriptReplyProxy?, cbId: String) {
-        if (!BuildConfig.FCM_ENABLED) {
-            replyProxy?.let { resolve(it, cbId, currentStatus()) }
-            return
-        }
+    private fun refreshAndBroadcastToken() {
+        if (!BuildConfig.FCM_ENABLED) return
         try {
             FirebaseMessaging.getInstance().token
                 .addOnSuccessListener { token ->
                     if (!token.isNullOrBlank()) {
                         cacheToken(token)
-                        pushEvent(JSONObject().put("type", "token").put("token", token))
+                        broadcastToken(token)
                     }
-                    replyProxy?.let { resolve(it, cbId, currentStatus()) }
                 }
                 .addOnFailureListener { err ->
                     Log.w(TAG, "FCM getToken failed", err)
-                    replyProxy?.let { resolve(it, cbId, currentStatus()) }
                 }
         } catch (t: Throwable) {
             Log.w(TAG, "FCM unavailable", t)
-            replyProxy?.let { resolve(it, cbId, currentStatus()) }
         }
     }
 
-    private fun requestPermission(replyProxy: JavaScriptReplyProxy, cbId: String) {
-        val activity = activityRef.get()
-        if (activity == null) {
-            resolveError(replyProxy, cbId, "activity_unavailable")
-            return
+    /**
+     * Deliver `token` to the web page by calling `window.onAndroidToken(token)`
+     * via evaluateJavascript. Posts to the WebView's main-thread looper so
+     * it is safe to call from the FCM service worker thread.
+     */
+    fun broadcastToken(token: String) {
+        val wv = webViewRef.get() ?: return
+        val js = "if(typeof window.onAndroidToken==='function')" +
+            "window.onAndroidToken(${JSONObject.quote(token)});"
+        wv.post {
+            try {
+                wv.evaluateJavascript(js, null)
+            } catch (t: Throwable) {
+                Log.w(TAG, "broadcastToken failed", t)
+            }
         }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            // No runtime permission needed.
-            resolve(replyProxy, cbId, currentStatus())
-            // Still emit a "permission" event so the JS adapter's pending
-            // requestPermission() promise resolves consistently.
-            pushEvent(JSONObject().put("type", "permission").put("permission", "granted"))
-            return
-        }
-        if (ContextCompat.checkSelfPermission(
-                activity,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            resolve(replyProxy, cbId, currentStatus())
-            pushEvent(JSONObject().put("type", "permission").put("permission", "granted"))
-            return
-        }
-        // Acknowledge the request so the JS side can stop spinning; the
-        // actual grant/deny event is dispatched later from
-        // MainActivity.onRequestPermissionsResult → onPermissionResult.
-        resolve(replyProxy, cbId, currentStatus())
-        activity.requestPermissions(
-            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-            PERMISSION_REQUEST_CODE,
-        )
-    }
-
-    private fun originMatches(sourceOrigin: Uri): Boolean {
-        val src = sourceOrigin.toString().trimEnd('/')
-        return src.equals(trustedOrigin.trimEnd('/'), ignoreCase = true)
     }
 
     private fun prefs(): SharedPreferences {
@@ -203,9 +155,7 @@ class PushBridge private constructor(
     private fun cacheToken(token: String) {
         try {
             prefs().edit().putString(KEY_TOKEN, token).apply()
-        } catch (_: Throwable) {
-            /* ignore */
-        }
+        } catch (_: Throwable) { /* ignore */ }
     }
 
     private fun markPermanentlyDenied() {
@@ -220,33 +170,9 @@ class PushBridge private constructor(
         } catch (_: Throwable) { /* ignore */ }
     }
 
-    private fun resolve(replyProxy: JavaScriptReplyProxy, cbId: String, data: JSONObject) {
-        sendRaw(replyProxy, JSONObject().put("ok", true).put("cbId", cbId).put("data", data))
-    }
-
-    private fun resolveError(replyProxy: JavaScriptReplyProxy, cbId: String, message: String) {
-        sendRaw(replyProxy, JSONObject().put("ok", false).put("cbId", cbId).put("error", message))
-    }
-
-    private fun pushEvent(payload: JSONObject) {
-        val proxy = replyProxyRef?.get() ?: return
-        sendRaw(proxy, payload)
-    }
-
-    private fun sendRaw(replyProxy: JavaScriptReplyProxy, payload: JSONObject) {
-        val webView = webViewRef.get() ?: return
-        webView.post {
-            try {
-                replyProxy.postMessage(payload.toString())
-            } catch (t: Throwable) {
-                Log.w(TAG, "postMessage failed", t)
-            }
-        }
-    }
-
     companion object {
         private const val TAG = "PushBridge"
-        const val JS_OBJECT_NAME = "AmyNestPushNative"
+        const val JS_OBJECT_NAME = "AndroidPush"
         const val PERMISSION_REQUEST_CODE = 9421
         private const val PREFS = "kidschedule_push"
         private const val KEY_TOKEN = "fcm_token"
@@ -254,21 +180,20 @@ class PushBridge private constructor(
 
         /**
          * Bumped with every push-related native change. Logged by MainActivity
-         * on launch so the user (or developer) can confirm via
-         * `adb logcat -s MainActivity` that the new APK is actually running.
+         * on launch so the running APK version is confirmed via adb logcat.
          */
-        const val WRAPPER_VERSION = "1.3.0"
+        const val WRAPPER_VERSION = "2.0.0"
 
         /**
-         * Process-level callback FcmService invokes when a token rotation
-         * arrives. The active PushBridge installs itself here; if no
-         * activity is foreground, the token is still cached on disk and
-         * picked up on the next [refreshToken] call.
+         * Process-level callback invoked by FcmService on token rotation.
+         * The active PushBridge installs itself here; if no activity is
+         * foreground the token is cached on disk and broadcast on the next
+         * [install] call.
          */
         @Volatile
         var tokenListener: ((String) -> Unit)? = null
 
-        /** Persist the rotated token from FcmService and notify any active bridge. */
+        /** Persist the rotated token and notify any active bridge. */
         fun onTokenRotated(context: Context, token: String) {
             try {
                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -278,75 +203,60 @@ class PushBridge private constructor(
         }
 
         /**
-         * Install the bridge with a strict allowed-origin rule. Returns the
-         * installed bridge, or null when the WebView runtime does not
-         * support [WebViewFeature.WEB_MESSAGE_LISTENER] (very old Android
-         * System WebView builds) — in that case the JS side simply does
-         * not see `window.AmyNestPushNative` and falls back to its
-         * non-wrapper code path.
+         * Install the bridge on [webView].
+         *
+         * Installs in two layers:
+         *   1. Document-start `window.__AMYNEST_WRAPPER` marker (sync, before page scripts).
+         *   2. `window.AndroidPush` JavascriptInterface for token / permission reads.
+         *
+         * After installation any cached token is broadcast to the page
+         * immediately via window.onAndroidToken so registration does not
+         * wait for the next FCM rotation event.
+         *
+         * Returns the installed [PushBridge] instance.
          */
         fun installOn(
             activity: Activity,
             webView: WebView,
             trustedOriginUrl: String,
-        ): PushBridge? {
-            if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-                Log.w(TAG, "WebMessageListener unsupported — bridge disabled")
-                return null
-            }
-            val originRule = toOriginRule(trustedOriginUrl) ?: run {
-                Log.w(TAG, "could not derive origin from $trustedOriginUrl — bridge disabled")
-                return null
-            }
-            val bridge = PushBridge(activity, webView, originRule)
+        ): PushBridge {
+            val bridge = PushBridge(activity, webView)
 
             // ── Layer 1: synchronous wrapper marker ──────────────────────────
-            // Inject `window.__AMYNEST_WRAPPER = "<version>"` at document_start
-            // BEFORE any page script runs. This is the bulletproof signal that
-            // the page is running inside our wrapper — available even when the
-            // message-bus hasn't wired up yet. Without this, the web app can
-            // mount and render the "Not supported in this browser" fallback
-            // before window.AmyNestPushNative appears, and it never re-checks.
-            if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            val originRule = toOriginRule(trustedOriginUrl)
+            if (originRule != null &&
+                WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
+            ) {
                 try {
                     val script = "window.__AMYNEST_WRAPPER = '${WRAPPER_VERSION}';"
-                    WebViewCompat.addDocumentStartJavaScript(webView, script, setOf(originRule))
-                    Log.d(TAG, "Wrapper marker installed (version=$WRAPPER_VERSION, origin=$originRule)")
+                    WebViewCompat.addDocumentStartJavaScript(
+                        webView, script, setOf(originRule),
+                    )
+                    Log.d(TAG, "Wrapper marker installed (version=$WRAPPER_VERSION)")
                 } catch (t: Throwable) {
                     Log.e(TAG, "addDocumentStartJavaScript failed — marker NOT installed", t)
                 }
             } else {
-                Log.w(TAG, "DOCUMENT_START_SCRIPT not supported on this WebView — marker skipped")
+                Log.w(TAG, "DOCUMENT_START_SCRIPT not supported or origin invalid — marker skipped")
             }
 
-            // ── Layer 2: message bus ─────────────────────────────────────────
-            return try {
-                WebViewCompat.addWebMessageListener(
-                    webView,
-                    JS_OBJECT_NAME,
-                    setOf(originRule),
-                ) { _: WebView, message: WebMessageCompat,
-                    sourceOrigin: Uri, _: Boolean,
-                    replyProxy: JavaScriptReplyProxy ->
-                    val data = message.data ?: return@addWebMessageListener
-                    bridge.handleMessage(data, sourceOrigin, replyProxy)
-                }
-                tokenListener = bridge.onNewTokenListener
-                Log.d(TAG, "Push message bus installed (origin=$originRule)")
-                bridge
-            } catch (t: Throwable) {
-                Log.e(TAG, "addWebMessageListener failed", t)
-                null
-            }
+            // ── Layer 2: JavascriptInterface as window.AndroidPush ───────────
+            webView.addJavascriptInterface(bridge.AndroidPushInterface(), JS_OBJECT_NAME)
+            tokenListener = bridge.onNewTokenListener
+            Log.d(TAG, "AndroidPush interface installed (origin=$trustedOriginUrl)")
+
+            // Push any already-cached token to the page.
+            val cached = try {
+                activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .getString(KEY_TOKEN, null)
+            } catch (_: Throwable) { null }
+            if (cached != null) bridge.broadcastToken(cached)
+
+            return bridge
         }
 
-        /** Strip path/query/fragment so the rule is `scheme://host[:port]`. */
         private fun toOriginRule(url: String): String? {
-            val uri = try {
-                Uri.parse(url)
-            } catch (_: Throwable) {
-                return null
-            }
+            val uri = try { Uri.parse(url) } catch (_: Throwable) { return null }
             val scheme = uri.scheme?.lowercase() ?: return null
             val host = uri.host ?: return null
             val portPart = if (uri.port == -1) "" else ":${uri.port}"
