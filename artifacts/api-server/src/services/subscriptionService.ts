@@ -46,6 +46,18 @@ export const FREE_FEATURE_LIMITS = {
   // audio-lesson screens call /api/features/audio_lesson/consume before
   // playback to reserve the slot — premium users bypass entirely.
   audio_lesson: 1,
+  // ── Amy Speech Coach (Parent Hub Module) ──────────────────────────────
+  // Each speech-coach sub-feature is "first time free, then paywall" — the
+  // hub UI calls /api/features/<key>/consume to reserve the slot and shows
+  // a Premium gate when the response is 402. Server-side, only the prompt-
+  // logging endpoint is gated (POST /api/speech/practice/log uses
+  // hub_speech_pronounce); the other keys exist purely for the hub UI to
+  // gate its own client-side actions. All lifetime: 1.
+  hub_speech_milestones: 1,
+  hub_speech_pronounce: 1,
+  hub_speech_read_aloud: 1,
+  hub_speech_games: 1,
+  hub_speech_reports: 1,
 } as const;
 
 export type FeatureKey = keyof typeof FREE_FEATURE_LIMITS;
@@ -60,6 +72,11 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   routine_generate: "lifetime",
   behavior_log: "lifetime",
   audio_lesson: "daily",
+  hub_speech_milestones: "lifetime",
+  hub_speech_pronounce: "lifetime",
+  hub_speech_read_aloud: "lifetime",
+  hub_speech_games: "lifetime",
+  hub_speech_reports: "lifetime",
 };
 
 export type FeatureUsage = {
