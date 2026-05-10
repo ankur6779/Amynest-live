@@ -8,6 +8,7 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
+    "lib": ["es2022", "DOM", "DOM.Iterable"],
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./src/*"]

@@ -507,7 +507,14 @@
     "duration": "Duration",
     "task_name": "Task Name",
     "add_task": "Add Task",
-    "save_routine": "Save Routine"
+    "save_routine": "Save Routine",
+    "tabs": {
+      "schedule": "Schedule",
+      "forecast": "Forecast",
+      "household": "Household",
+      "explain": "Why?",
+      "safety": "Safety"
+    }
   },
   "family_routine": {
     "handler_title": "Who's handling today?",
@@ -3997,15 +4004,6 @@
     "ai_badge": "Patent-Pending AI",
     "hub_trust": "Patent-Pending Intelligence",
     "onboarding_card": "Built using AmyNest's proprietary patent-pending adaptive orchestration technology designed for personalised child development."
-  },
-  "routines": {
-    "tabs": {
-      "schedule": "Schedule",
-      "forecast": "Forecast",
-      "household": "Household",
-      "explain": "Why?",
-      "safety": "Safety"
-    }
   },
   "safety": {
     "title": "AI Safety Layer",

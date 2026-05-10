@@ -22,7 +22,7 @@ import { useTranslation } from "react-i18next";
 
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
-import { brand, brandAlpha } from "@/constants/colors";
+import { brand, brandAlpha, palette } from "@/constants/colors";
 import { BRAND } from "@/constants/brand";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
@@ -221,7 +221,7 @@ type TileAccent = { bg: string; border: string; iconColor: string; valueColor: s
 
 const TILE_ACCENTS: Record<string, TileAccent> = {
   routines:    { bg: brandAlpha.indigo500_14,         border: brandAlpha.indigo500_20,         iconColor: brand.indigo500,  valueColor: brand.indigo500 },
-  great:       { bg: "rgba(52,211,153,0.12)",          border: "rgba(52,211,153,0.22)",          iconColor: brand.emerald400, valueColor: brand.emerald400 },
+  great:       { bg: "rgba(52,211,153,0.12)",          border: "rgba(52,211,153,0.22)",          iconColor: palette.emerald400, valueColor: palette.emerald400 },
   challenging: { bg: brandAlpha.rose400_12,            border: brandAlpha.rose400_18,            iconColor: brand.rose400,    valueColor: brand.rose400 },
   children:    { bg: "rgba(244,114,182,0.12)",         border: "rgba(244,114,182,0.22)",         iconColor: brand.pink400,    valueColor: brand.pink400 },
 };
@@ -418,7 +418,7 @@ function ParentScoreCard({ routines, streak }: { routines: Routine[]; streak: nu
           <Text style={[scoreStyles.barValue, { color: c.foreground }]}>{completionRate}%</Text>
         </View>
         <View style={[scoreStyles.track, { backgroundColor: brandAlpha.violet600_12 }]}>
-          <View style={[scoreStyles.fill, { width: `${completionRate}%` as any, backgroundColor: brand.emerald400 }]} />
+          <View style={[scoreStyles.fill, { width: `${completionRate}%` as any, backgroundColor: palette.emerald400 }]} />
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4, marginTop: 10 }}>
           <Text style={[scoreStyles.barLabel, { color: c.mutedForeground }]}>{t("screens.tabs_index.days_active")}</Text>
@@ -1072,7 +1072,7 @@ export default function DashboardScreen() {
             label="Recent Routines"
             actionLabel="View all"
             onAction={() => router.push("/(tabs)/routines" as never)}
-            accentColor={brand.emerald400}
+            accentColor={palette.emerald400}
           />
         </View>
         <RecentRoutinesList
