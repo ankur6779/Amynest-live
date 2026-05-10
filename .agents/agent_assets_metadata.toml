@@ -341,3 +341,9 @@ id = "N3ALwqVf23RkOco8ddZss"
 uri = "file://screenshots/amynest-review-390x844.jpg"
 type = "image"
 title = "AmyNest App Store Review Screenshot (390×844)"
+
+[[outputs]]
+id = "cQFhj4ixd_g7KGoxbv6AT"
+uri = "file://screenshots/amynest-review-1242x2688.jpg"
+type = "image"
+title = "AmyNest App Store Screenshot (1242×2688) with real logo"
