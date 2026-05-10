@@ -91,6 +91,26 @@
     "please_wait": "Please wait…",
     "error_generic": "Something went wrong. Please try again."
   },
+  "explain": {
+    "title": "Why This Recommendation?",
+    "subtitle": "Understand the signals behind every AmyNest recommendation",
+    "context_heading": "Set Today's Context",
+    "field_mood": "Child mood",
+    "field_sleep": "Sleep quality",
+    "field_energy": "Energy level",
+    "field_weather": "Weather",
+    "field_caregiver": "Caregiver",
+    "with_narrative": "Generate AI explanation",
+    "generate_btn": "Explain This Routine",
+    "why_title": "Why AmyNest Recommended This",
+    "factors_heading": "Decision Factors",
+    "trace_heading": "Reasoning Trace",
+    "ai_says": "Amy AI says",
+    "history_heading": "AI Explanation Timeline",
+    "no_history": "No explanations yet. Generate one above.",
+    "no_factors": "No signals detected. Add mood or sleep data to personalise.",
+    "confidence": "Confidence"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "parenting_hub": "Parenting Hub",

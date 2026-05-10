@@ -214,6 +214,9 @@ importers:
       '@workspace/event-prep':
         specifier: workspace:*
         version: link:../../lib/event-prep
+      '@workspace/explainability':
+        specifier: workspace:*
+        version: link:../../lib/explainability
       '@workspace/family-routine':
         specifier: workspace:*
         version: link:../../lib/family-routine
@@ -569,6 +572,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
+      '@workspace/explainability':
+        specifier: workspace:*
+        version: link:../../lib/explainability
       '@workspace/family-routine':
         specifier: workspace:*
         version: link:../../lib/family-routine
@@ -678,6 +684,9 @@ importers:
       '@workspace/event-prep':
         specifier: workspace:*
         version: link:../../lib/event-prep
+      '@workspace/explainability':
+        specifier: workspace:*
+        version: link:../../lib/explainability
       '@workspace/family-routine':
         specifier: workspace:*
         version: link:../../lib/family-routine
@@ -1382,6 +1391,8 @@ importers:
         version: 0.31.9
 
   lib/event-prep: {}
+
+  lib/explainability: {}
 
   lib/family-routine: {}
 

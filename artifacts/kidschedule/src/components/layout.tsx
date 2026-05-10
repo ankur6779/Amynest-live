@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Users, Calendar, Star, Menu, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy } from "lucide-react";
+import { Home, Users, Calendar, Star, Menu, LogOut, UserCircle, Baby, Bot, TrendingUp, BookOpen, Brain, Moon, Sun, Sparkles, Gamepad2, Gift, ChefHat, Salad, BarChart2, Trophy, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useClerk, useUser } from "@/lib/firebase-auth-hooks";
@@ -95,6 +95,10 @@ const NAV_ITEMS: NavItem[] = [{
   href: "/forecast",
   labelKey: "nav.forecast",
   icon: TrendingUp
+}, {
+  href: "/explain",
+  labelKey: "nav.explain",
+  icon: HelpCircle
 }, {
   href: "/progress",
   labelKey: "nav.progress",

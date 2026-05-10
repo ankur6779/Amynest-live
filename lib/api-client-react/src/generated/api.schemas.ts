@@ -1307,6 +1307,200 @@ export interface SmartStudyInsights {
   yesterday?: SmartStudyInsightsYesterday;
 }
 
+export type ExplanationDecisionFactorInfluence =
+  (typeof ExplanationDecisionFactorInfluence)[keyof typeof ExplanationDecisionFactorInfluence];
+
+export const ExplanationDecisionFactorInfluence = {
+  positive: "positive",
+  negative: "negative",
+  neutral: "neutral",
+} as const;
+
+export interface ExplanationDecisionFactor {
+  kind: string;
+  label: string;
+  influence: ExplanationDecisionFactorInfluence;
+  weight: number;
+  detail: string;
+  icon?: string | null;
+}
+
+export type ExplanationConfidenceScoreTier =
+  (typeof ExplanationConfidenceScoreTier)[keyof typeof ExplanationConfidenceScoreTier];
+
+export const ExplanationConfidenceScoreTier = {
+  high: "high",
+  medium: "medium",
+  low: "low",
+} as const;
+
+export interface ExplanationConfidenceScore {
+  value: number;
+  tier: ExplanationConfidenceScoreTier;
+  rationale: string;
+}
+
+export interface ExplanationReasoningStep {
+  order: number;
+  title: string;
+  detail: string;
+  factors: string[];
+}
+
+export interface ExplanationReasoningTrace {
+  steps: ExplanationReasoningStep[];
+  totalFactors: number;
+  primaryFactor: string;
+}
+
+export type ExplanationRecommendationMetadataRecommendationType =
+  (typeof ExplanationRecommendationMetadataRecommendationType)[keyof typeof ExplanationRecommendationMetadataRecommendationType];
+
+export const ExplanationRecommendationMetadataRecommendationType = {
+  routine: "routine",
+  meal: "meal",
+  activity: "activity",
+  coaching: "coaching",
+} as const;
+
+export type ExplanationRecommendationMetadataSourceEngine =
+  (typeof ExplanationRecommendationMetadataSourceEngine)[keyof typeof ExplanationRecommendationMetadataSourceEngine];
+
+export const ExplanationRecommendationMetadataSourceEngine = {
+  rule_based: "rule_based",
+  ai_generated: "ai_generated",
+  hybrid: "hybrid",
+} as const;
+
+export interface ExplanationRecommendationMetadata {
+  recommendationType: ExplanationRecommendationMetadataRecommendationType;
+  sourceEngine: ExplanationRecommendationMetadataSourceEngine;
+  generatedAt: string;
+  version: string;
+}
+
+export interface ExplanationResponse {
+  summary: string;
+  factors: ExplanationDecisionFactor[];
+  confidence: ExplanationConfidenceScore;
+  trace: ExplanationReasoningTrace;
+  metadata: ExplanationRecommendationMetadata;
+  aiNarrative?: string | null;
+}
+
+export type ExplanationAuditEntryConfidenceTier =
+  (typeof ExplanationAuditEntryConfidenceTier)[keyof typeof ExplanationAuditEntryConfidenceTier];
+
+export const ExplanationAuditEntryConfidenceTier = {
+  high: "high",
+  medium: "medium",
+  low: "low",
+} as const;
+
+export interface ExplanationAuditEntry {
+  id: string;
+  recommendationType: string;
+  summary: string;
+  confidenceValue: number;
+  confidenceTier: ExplanationAuditEntryConfidenceTier;
+  primaryFactor: string;
+  generatedAt: string;
+  childId?: number | null;
+}
+
+export type ExplainContextInputSleepQuality =
+  | (typeof ExplainContextInputSleepQuality)[keyof typeof ExplainContextInputSleepQuality]
+  | null;
+
+export const ExplainContextInputSleepQuality = {
+  good: "good",
+  average: "average",
+  poor: "poor",
+} as const;
+
+export type ExplainContextInputEnergyLevel =
+  | (typeof ExplainContextInputEnergyLevel)[keyof typeof ExplainContextInputEnergyLevel]
+  | null;
+
+export const ExplainContextInputEnergyLevel = {
+  high: "high",
+  medium: "medium",
+  low: "low",
+} as const;
+
+export type ExplainContextInputWeatherOutdoor =
+  | (typeof ExplainContextInputWeatherOutdoor)[keyof typeof ExplainContextInputWeatherOutdoor]
+  | null;
+
+export const ExplainContextInputWeatherOutdoor = {
+  yes: "yes",
+  no: "no",
+  limited: "limited",
+} as const;
+
+export interface ExplainContextInput {
+  childId?: number | null;
+  childAgeMonths?: number | null;
+  ageGroup?: string | null;
+  mood?: string | null;
+  sleepQuality?: ExplainContextInputSleepQuality;
+  sleepDurationHours?: number | null;
+  energyLevel?: ExplainContextInputEnergyLevel;
+  weatherOutdoor?: ExplainContextInputWeatherOutdoor;
+  caregiver?: string | null;
+  adaptations?: string[] | null;
+  activityCategory?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  previousDayCompletionRate?: number | null;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  learningSuccessRate?: number | null;
+  mealType?: string | null;
+  dietType?: string | null;
+  allergyFlags?: string[] | null;
+  fridgeItems?: string[] | null;
+  culturalRegion?: string | null;
+  householdConflicts?: string[] | null;
+  specialPlans?: string | null;
+}
+
+export type ExplainRoutineBodySourceEngine =
+  | (typeof ExplainRoutineBodySourceEngine)[keyof typeof ExplainRoutineBodySourceEngine]
+  | null;
+
+export const ExplainRoutineBodySourceEngine = {
+  rule_based: "rule_based",
+  ai_generated: "ai_generated",
+  hybrid: "hybrid",
+} as const;
+
+export interface ExplainRoutineBody {
+  context: ExplainContextInput;
+  sourceEngine?: ExplainRoutineBodySourceEngine;
+  withNarrative?: boolean | null;
+}
+
+export type ExplainMealBodySourceEngine =
+  | (typeof ExplainMealBodySourceEngine)[keyof typeof ExplainMealBodySourceEngine]
+  | null;
+
+export const ExplainMealBodySourceEngine = {
+  rule_based: "rule_based",
+  ai_generated: "ai_generated",
+  hybrid: "hybrid",
+} as const;
+
+export interface ExplainMealBody {
+  context: ExplainContextInput;
+  sourceEngine?: ExplainMealBodySourceEngine;
+  withNarrative?: boolean | null;
+}
+
 export type ListRoutinesParams = {
   childId?: number;
 };
@@ -1327,6 +1521,14 @@ export type GetHouseholdForecastParams = {
    * @maximum 30
    */
   lookbackDays?: number;
+};
+
+export type GetExplainHistoryParams = {
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
 };
 
 export type ListBehaviorsParams = {
