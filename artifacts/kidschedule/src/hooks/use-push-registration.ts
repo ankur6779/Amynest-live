@@ -103,6 +103,15 @@ export function usePushRegistration(): void {
             /* best-effort */
           }
         }
+        // Drain any token that arrived via window.onAndroidToken() before
+        // React mounted (the direct-callback entry point defined in index.html).
+        // This races with the message-bus path — registerToken is idempotent
+        // (keyed by userId::token) so double-registration is harmless.
+        const pending = window.__pendingAndroidToken;
+        if (pending) {
+          window.__pendingAndroidToken = null;
+          await registerToken(pending, "android");
+        }
         await tryRegister();
       })();
 

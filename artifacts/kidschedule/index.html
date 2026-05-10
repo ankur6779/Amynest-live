@@ -182,6 +182,28 @@
             document.body && document.body.appendChild(pre);
           });
         }
+
+        // ── Native Android WebView push bridge (direct-callback entry point) ──
+        //
+        // The KidSchedule Android WebView wrapper calls window.onAndroidToken(token)
+        // directly (via evaluateJavascript / addJavascriptInterface) once it has
+        // obtained the FCM registration token. This is a simpler alternative to the
+        // window.AmyNestPushNative message-bus and works even on older WebView builds.
+        //
+        // The token is buffered in window.__pendingAndroidToken so it is never lost
+        // when this callback fires BEFORE React has mounted (the very first paint),
+        // and the custom event feeds into the existing native-push-bridge pipeline
+        // for cases where the React hook is already mounted (e.g. token rotation).
+        window.__pendingAndroidToken = null;
+        window.onAndroidToken = function(token) {
+          if (!token || typeof token !== 'string') return;
+          window.__pendingAndroidToken = token;
+          try {
+            window.dispatchEvent(
+              new CustomEvent('amynest-push-token', { detail: { token: token } })
+            );
+          } catch(_e) {}
+        };
       })();
     </script>
 

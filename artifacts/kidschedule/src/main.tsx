@@ -27,11 +27,17 @@ mark("bundle-loaded");
 // Push notifications are delivered natively by the Android wrapper via FCM
 // (not via browser Web Push). firebase-messaging-sw.js is a no-op placeholder.
 //
-// We skip this in development so Vite's HMR dev server isn't shadowed.
+// We skip this:
+//  1. In development — so Vite's HMR dev server isn't shadowed.
+//  2. Inside the KidSchedule Android WebView wrapper — the wrapper handles
+//     push natively via FCM; registering a SW inside a WebView serves no
+//     purpose and can interfere with navigation / network interception.
+//     Detected via window.__AMYNEST_WRAPPER injected at document_start.
 if (
   typeof window !== "undefined" &&
   "serviceWorker" in navigator &&
-  import.meta.env.PROD
+  import.meta.env.PROD &&
+  !(window as { __AMYNEST_WRAPPER?: string }).__AMYNEST_WRAPPER
 ) {
   const swBase = import.meta.env.BASE_URL.replace(/\/$/, "");
   navigator.serviceWorker
