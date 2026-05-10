@@ -1,0 +1,107 @@
+Update all AmyNest branding, metadata, splash screens, onboarding, website copy, App Store text, Play Store text, investor-facing copy, footer text, settings/about sections, and promotional references to consistently reflect patent-pending status in a professional and legally safe manner.
+
+IMPORTANT:
+Do NOT use:
+
+* “Patented”
+* “Patent Granted”
+* “Protected Patent”
+* “Granted Technology”
+
+Use ONLY legally safe “Patent Pending” wording.
+
+Apply the following branding direction globally:
+
+PRIMARY BRANDING LINE:
+“Powered by AmyNest’s Patent-Pending Adaptive AI Orchestration Engine”
+
+SECONDARY VARIANTS:
+
+* “Patent-Pending Adaptive Child Development Engine”
+* “Built on Proprietary Patent-Pending AI Infrastructure”
+* “Patent-Pending Context-Aware Routine Generation Technology”
+* “Powered by a Proprietary Patent-Pending Computational Orchestration System”
+* “Patent-Pending Adaptive Scheduling Technology”
+
+Update the following areas:
+
+1. SPLASH SCREEN
+   Add subtle premium text:
+   “Patent-Pending AI Infrastructure”
+
+2. ONBOARDING
+   Add one premium innovation slide:
+   “Built using AmyNest’s proprietary patent-pending adaptive orchestration technology designed for personalized child development routines.”
+
+3. WEBSITE HERO SECTION
+   Add:
+   “Powered by Patent-Pending Context-Aware AI Technology”
+
+4. FOOTER
+   Add:
+   “Indian Patent Pending”
+
+5. ABOUT SECTION
+   Add:
+   “AmyNest AI operates on a proprietary patent-pending computational orchestration architecture integrating adaptive environmental processing, caregiver-aware personalization, and AI-assisted developmental scheduling.”
+
+6. PLAY STORE / APP STORE DESCRIPTION
+   Integrate naturally:
+   “Features patent-pending adaptive scheduling and contextual child-development intelligence technology.”
+
+7. INVESTOR / PARTNER COPY
+   Use more technical language:
+   “Patent-pending concurrent-safe AI orchestration infrastructure.”
+
+8. SETTINGS / ABOUT APP
+   Add:
+   “Patent Pending Technology — Indian Provisional Patent Filed.”
+
+9. UI STYLE
+   Keep all patent-related wording:
+
+* premium
+* subtle
+* technical
+* trustworthy
+* not overly aggressive marketing
+
+Avoid:
+
+* spammy wording
+* excessive legal claims
+* flashy patent badges everywhere
+
+10. DESIGN GUIDELINES
+    Use:
+
+* minimal premium labels
+* small badges
+* elegant typography
+* subtle placement
+
+Avoid:
+
+* giant “PATENTED” banners
+* overuse across every screen
+
+11. SEO / METADATA
+    Where appropriate, include keywords:
+
+* patent-pending AI
+* adaptive child development technology
+* contextual AI scheduling
+* proprietary AI infrastructure
+* AI parenting technology
+
+12. MAINTAIN CONSISTENCY
+    Ensure all wording across:
+
+* web
+* mobile
+* metadata
+* investor pages
+* onboarding
+* marketing assets
+
+uses consistent legally-safe “Patent Pending” terminology only.

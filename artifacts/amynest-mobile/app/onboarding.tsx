@@ -1312,6 +1312,9 @@ export default function OnboardingScreen() {
       {inputNode && (
         <View style={[styles.inputContainer, { paddingBottom: botPad + 16, borderTopColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(10,6,26,0.85)" }]}>
           {inputNode}
+          <Text style={{ textAlign: "center", fontSize: 8, fontFamily: "Inter_700Bold", letterSpacing: 2, textTransform: "uppercase", color: "rgba(168,85,247,0.38)", marginTop: 8, marginBottom: 2 }}>
+            {t("patent_pending.powered_by")}
+          </Text>
         </View>
       )}
     </KeyboardAvoidingView>

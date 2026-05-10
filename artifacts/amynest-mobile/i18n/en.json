@@ -2889,5 +2889,11 @@
       "tap_any_tile_to_hear_the_sound": "Tap any tile to hear the sound",
       "header_title": "🔤 Phonics Learning"
     }
+  },
+  "patent_pending": {
+    "footer_label": "Indian Patent Pending",
+    "about_tech": "AmyNest AI operates on a proprietary patent-pending computational orchestration architecture integrating adaptive environmental processing, caregiver-aware personalization, and AI-assisted developmental scheduling.",
+    "settings_note": "Patent Pending Technology — Indian Provisional Patent Filed.",
+    "powered_by": "Powered by Patent-Pending Adaptive AI"
   }
 }

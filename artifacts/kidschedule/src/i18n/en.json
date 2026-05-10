@@ -3891,5 +3891,11 @@
       "title": "Track Progress",
       "desc": "Watch your child grow! Log behaviours, track daily streaks, and celebrate milestones together."
     }
+  },
+  "patent_pending": {
+    "footer_label": "Indian Patent Pending",
+    "about_tech": "AmyNest AI operates on a proprietary patent-pending computational orchestration architecture integrating adaptive environmental processing, caregiver-aware personalization, and AI-assisted developmental scheduling.",
+    "settings_note": "Patent Pending Technology — Indian Provisional Patent Filed.",
+    "powered_by": "Powered by Patent-Pending Adaptive AI"
   }
 }
