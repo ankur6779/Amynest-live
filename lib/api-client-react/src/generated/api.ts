@@ -50,11 +50,13 @@ import type {
   GetRecipeBody,
   GetRecipeResponse,
   GetSmartStudyInsightsParams,
+  GetSpeechProgressParams,
   HealthStatus,
   HouseholdForecastResponse,
   HouseholdOrchestrateBody,
   HouseholdRoutineState,
   IntelligenceInsightsResponse,
+  JoinSpeechExpertWaitlistBody,
   LearningWeightsResponse,
   LifeSkillProgressResponse,
   LifeSkillRolePlay,
@@ -62,7 +64,10 @@ import type {
   ListBehaviorsParams,
   ListParentTaskCompletionsParams,
   ListRoutinesParams,
+  ListSpeechMilestonesParams,
+  ListSpeechPracticePromptsParams,
   LogChildDailySignalBody,
+  LogSpeechPracticeAttemptBody,
   ParentTaskCompletion,
   ProductiveNudgesResponse,
   Routine,
@@ -73,10 +78,17 @@ import type {
   SmartStudyInsights,
   SmartStudyNextQuestionsRequest,
   SmartStudyNextQuestionsResponse,
+  SpeechExpertWaitlistEntry,
+  SpeechMilestoneProgress,
+  SpeechMilestonesResponse,
+  SpeechPracticeLogEntry,
+  SpeechPracticePrompt,
+  SpeechProgressSummary,
   UpdateChildBody,
   UpdateChildGoalsBody,
   UpdateRoutineItemsBody,
   UpdateRoutineUiPrefsBody,
+  UpdateSpeechMilestoneStatusBody,
   UpsertParentProfileBody,
   WeeklyReportResponse,
 } from "./api.schemas";
@@ -1606,6 +1618,588 @@ export function useGetExplainHistory<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List a child's speech-coach milestones with current statuses
+ */
+export const getListSpeechMilestonesUrl = (
+  params: ListSpeechMilestonesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/speech/milestones?${stringifiedParams}`
+    : `/api/speech/milestones`;
+};
+
+export const listSpeechMilestones = async (
+  params: ListSpeechMilestonesParams,
+  options?: RequestInit,
+): Promise<SpeechMilestonesResponse> => {
+  return customFetch<SpeechMilestonesResponse>(
+    getListSpeechMilestonesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListSpeechMilestonesQueryKey = (
+  params?: ListSpeechMilestonesParams,
+) => {
+  return [`/api/speech/milestones`, ...(params ? [params] : [])] as const;
+};
+
+export const getListSpeechMilestonesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSpeechMilestones>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListSpeechMilestonesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSpeechMilestones>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSpeechMilestonesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSpeechMilestones>>
+  > = ({ signal }) =>
+    listSpeechMilestones(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSpeechMilestones>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSpeechMilestonesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSpeechMilestones>>
+>;
+export type ListSpeechMilestonesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List a child's speech-coach milestones with current statuses
+ */
+
+export function useListSpeechMilestones<
+  TData = Awaited<ReturnType<typeof listSpeechMilestones>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListSpeechMilestonesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSpeechMilestones>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSpeechMilestonesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Set the milestone status for a child (upsert, idempotent)
+ */
+export const getUpdateSpeechMilestoneStatusUrl = (id: string) => {
+  return `/api/speech/milestones/${id}/status`;
+};
+
+export const updateSpeechMilestoneStatus = async (
+  id: string,
+  updateSpeechMilestoneStatusBody: UpdateSpeechMilestoneStatusBody,
+  options?: RequestInit,
+): Promise<SpeechMilestoneProgress> => {
+  return customFetch<SpeechMilestoneProgress>(
+    getUpdateSpeechMilestoneStatusUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateSpeechMilestoneStatusBody),
+    },
+  );
+};
+
+export const getUpdateSpeechMilestoneStatusMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSpeechMilestoneStatus>>,
+    TError,
+    { id: string; data: BodyType<UpdateSpeechMilestoneStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSpeechMilestoneStatus>>,
+  TError,
+  { id: string; data: BodyType<UpdateSpeechMilestoneStatusBody> },
+  TContext
+> => {
+  const mutationKey = ["updateSpeechMilestoneStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSpeechMilestoneStatus>>,
+    { id: string; data: BodyType<UpdateSpeechMilestoneStatusBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateSpeechMilestoneStatus(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSpeechMilestoneStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSpeechMilestoneStatus>>
+>;
+export type UpdateSpeechMilestoneStatusMutationBody =
+  BodyType<UpdateSpeechMilestoneStatusBody>;
+export type UpdateSpeechMilestoneStatusMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Set the milestone status for a child (upsert, idempotent)
+ */
+export const useUpdateSpeechMilestoneStatus = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSpeechMilestoneStatus>>,
+    TError,
+    { id: string; data: BodyType<UpdateSpeechMilestoneStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSpeechMilestoneStatus>>,
+  TError,
+  { id: string; data: BodyType<UpdateSpeechMilestoneStatusBody> },
+  TContext
+> => {
+  return useMutation(getUpdateSpeechMilestoneStatusMutationOptions(options));
+};
+
+/**
+ * @summary Age-appropriate pronunciation prompts for a child
+ */
+export const getListSpeechPracticePromptsUrl = (
+  params: ListSpeechPracticePromptsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/speech/practice/prompts?${stringifiedParams}`
+    : `/api/speech/practice/prompts`;
+};
+
+export const listSpeechPracticePrompts = async (
+  params: ListSpeechPracticePromptsParams,
+  options?: RequestInit,
+): Promise<SpeechPracticePrompt[]> => {
+  return customFetch<SpeechPracticePrompt[]>(
+    getListSpeechPracticePromptsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListSpeechPracticePromptsQueryKey = (
+  params?: ListSpeechPracticePromptsParams,
+) => {
+  return [`/api/speech/practice/prompts`, ...(params ? [params] : [])] as const;
+};
+
+export const getListSpeechPracticePromptsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSpeechPracticePrompts>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListSpeechPracticePromptsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSpeechPracticePrompts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSpeechPracticePromptsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSpeechPracticePrompts>>
+  > = ({ signal }) =>
+    listSpeechPracticePrompts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSpeechPracticePrompts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSpeechPracticePromptsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSpeechPracticePrompts>>
+>;
+export type ListSpeechPracticePromptsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Age-appropriate pronunciation prompts for a child
+ */
+
+export function useListSpeechPracticePrompts<
+  TData = Awaited<ReturnType<typeof listSpeechPracticePrompts>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListSpeechPracticePromptsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSpeechPracticePrompts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSpeechPracticePromptsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Log a pronunciation-practice attempt. Gated by hub_speech_pronounce
+(lifetime: 1 free use, then 402 Payment Required).
+
+ */
+export const getLogSpeechPracticeAttemptUrl = () => {
+  return `/api/speech/practice/log`;
+};
+
+export const logSpeechPracticeAttempt = async (
+  logSpeechPracticeAttemptBody: LogSpeechPracticeAttemptBody,
+  options?: RequestInit,
+): Promise<SpeechPracticeLogEntry> => {
+  return customFetch<SpeechPracticeLogEntry>(getLogSpeechPracticeAttemptUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(logSpeechPracticeAttemptBody),
+  });
+};
+
+export const getLogSpeechPracticeAttemptMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logSpeechPracticeAttempt>>,
+    TError,
+    { data: BodyType<LogSpeechPracticeAttemptBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof logSpeechPracticeAttempt>>,
+  TError,
+  { data: BodyType<LogSpeechPracticeAttemptBody> },
+  TContext
+> => {
+  const mutationKey = ["logSpeechPracticeAttempt"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof logSpeechPracticeAttempt>>,
+    { data: BodyType<LogSpeechPracticeAttemptBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return logSpeechPracticeAttempt(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LogSpeechPracticeAttemptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof logSpeechPracticeAttempt>>
+>;
+export type LogSpeechPracticeAttemptMutationBody =
+  BodyType<LogSpeechPracticeAttemptBody>;
+export type LogSpeechPracticeAttemptMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Log a pronunciation-practice attempt. Gated by hub_speech_pronounce
+(lifetime: 1 free use, then 402 Payment Required).
+
+ */
+export const useLogSpeechPracticeAttempt = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logSpeechPracticeAttempt>>,
+    TError,
+    { data: BodyType<LogSpeechPracticeAttemptBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof logSpeechPracticeAttempt>>,
+  TError,
+  { data: BodyType<LogSpeechPracticeAttemptBody> },
+  TContext
+> => {
+  return useMutation(getLogSpeechPracticeAttemptMutationOptions(options));
+};
+
+/**
+ * @summary Weekly speech-coach progress summary for a child
+ */
+export const getGetSpeechProgressUrl = (params: GetSpeechProgressParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/speech/progress?${stringifiedParams}`
+    : `/api/speech/progress`;
+};
+
+export const getSpeechProgress = async (
+  params: GetSpeechProgressParams,
+  options?: RequestInit,
+): Promise<SpeechProgressSummary> => {
+  return customFetch<SpeechProgressSummary>(getGetSpeechProgressUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSpeechProgressQueryKey = (
+  params?: GetSpeechProgressParams,
+) => {
+  return [`/api/speech/progress`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetSpeechProgressQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSpeechProgress>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetSpeechProgressParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSpeechProgress>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSpeechProgressQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSpeechProgress>>
+  > = ({ signal }) => getSpeechProgress(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSpeechProgress>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSpeechProgressQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSpeechProgress>>
+>;
+export type GetSpeechProgressQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Weekly speech-coach progress summary for a child
+ */
+
+export function useGetSpeechProgress<
+  TData = Awaited<ReturnType<typeof getSpeechProgress>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetSpeechProgressParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSpeechProgress>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSpeechProgressQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Join the certified-experts waitlist (idempotent per user — repeat calls
+return the existing entry with `alreadyJoined: true`).
+
+ */
+export const getJoinSpeechExpertWaitlistUrl = () => {
+  return `/api/speech/expert-waitlist`;
+};
+
+export const joinSpeechExpertWaitlist = async (
+  joinSpeechExpertWaitlistBody: JoinSpeechExpertWaitlistBody,
+  options?: RequestInit,
+): Promise<SpeechExpertWaitlistEntry> => {
+  return customFetch<SpeechExpertWaitlistEntry>(
+    getJoinSpeechExpertWaitlistUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(joinSpeechExpertWaitlistBody),
+    },
+  );
+};
+
+export const getJoinSpeechExpertWaitlistMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof joinSpeechExpertWaitlist>>,
+    TError,
+    { data: BodyType<JoinSpeechExpertWaitlistBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof joinSpeechExpertWaitlist>>,
+  TError,
+  { data: BodyType<JoinSpeechExpertWaitlistBody> },
+  TContext
+> => {
+  const mutationKey = ["joinSpeechExpertWaitlist"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof joinSpeechExpertWaitlist>>,
+    { data: BodyType<JoinSpeechExpertWaitlistBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return joinSpeechExpertWaitlist(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type JoinSpeechExpertWaitlistMutationResult = NonNullable<
+  Awaited<ReturnType<typeof joinSpeechExpertWaitlist>>
+>;
+export type JoinSpeechExpertWaitlistMutationBody =
+  BodyType<JoinSpeechExpertWaitlistBody>;
+export type JoinSpeechExpertWaitlistMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Join the certified-experts waitlist (idempotent per user — repeat calls
+return the existing entry with `alreadyJoined: true`).
+
+ */
+export const useJoinSpeechExpertWaitlist = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof joinSpeechExpertWaitlist>>,
+    TError,
+    { data: BodyType<JoinSpeechExpertWaitlistBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof joinSpeechExpertWaitlist>>,
+  TError,
+  { data: BodyType<JoinSpeechExpertWaitlistBody> },
+  TContext
+> => {
+  return useMutation(getJoinSpeechExpertWaitlistMutationOptions(options));
+};
 
 /**
  * Module 4 — runs deterministic safety validation against the candidate

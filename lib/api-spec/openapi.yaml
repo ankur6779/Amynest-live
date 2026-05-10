@@ -28,6 +28,8 @@ tags:
     description: Smart Study Zone insights and adaptive plans
   - name: child-intelligence
     description: Adaptive Family Intelligence — parent goals, daily signals, derived energy profile
+  - name: speech
+    description: Amy Speech Coach — milestones, pronunciation practice, weekly progress, expert waitlist
 paths:
   /healthz:
     get:
@@ -373,6 +375,145 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ExplanationAuditEntry"
+
+  /speech/milestones:
+    get:
+      operationId: listSpeechMilestones
+      tags: [speech]
+      summary: List a child's speech-coach milestones with current statuses
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Milestones with statuses joined from speech_progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpeechMilestonesResponse"
+
+  /speech/milestones/{id}/status:
+    post:
+      operationId: updateSpeechMilestoneStatus
+      tags: [speech]
+      summary: Set the milestone status for a child (upsert, idempotent)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSpeechMilestoneStatusBody"
+      responses:
+        "200":
+          description: Updated milestone status row
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpeechMilestoneProgress"
+
+  /speech/practice/prompts:
+    get:
+      operationId: listSpeechPracticePrompts
+      tags: [speech]
+      summary: Age-appropriate pronunciation prompts for a child
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: kind
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [letter, phonic, word, sentence]
+      responses:
+        "200":
+          description: List of prompts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SpeechPracticePrompt"
+
+  /speech/practice/log:
+    post:
+      operationId: logSpeechPracticeAttempt
+      tags: [speech]
+      summary: |
+        Log a pronunciation-practice attempt. Gated by hub_speech_pronounce
+        (lifetime: 1 free use, then 402 Payment Required).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogSpeechPracticeAttemptBody"
+      responses:
+        "201":
+          description: Created log entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpeechPracticeLogEntry"
+
+  /speech/progress:
+    get:
+      operationId: getSpeechProgress
+      tags: [speech]
+      summary: Weekly speech-coach progress summary for a child
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: range
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [week]
+            default: week
+      responses:
+        "200":
+          description: Progress summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpeechProgressSummary"
+
+  /speech/expert-waitlist:
+    post:
+      operationId: joinSpeechExpertWaitlist
+      tags: [speech]
+      summary: |
+        Join the certified-experts waitlist (idempotent per user — repeat calls
+        return the existing entry with `alreadyJoined: true`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinSpeechExpertWaitlistBody"
+      responses:
+        "200":
+          description: Waitlist entry (existing or newly created)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpeechExpertWaitlistEntry"
 
   /safety/validate:
     post:
@@ -3259,3 +3400,187 @@ components:
           items:
             type: string
       required: [isValid, safetyScore, violations, adjustments, appliedRuleIds]
+
+    SpeechMilestone:
+      type: object
+      properties:
+        id:
+          type: string
+        ageBand:
+          type: string
+          enum: [1y, 2y, 3y, 4y_plus]
+        category:
+          type: string
+          enum: [first_words, two_word_phrase, pronunciation, social_communication, vocabulary, sentences]
+        i18nKeyLabel:
+          type: string
+        i18nKeyHint:
+          type: string
+      required: [id, ageBand, category, i18nKeyLabel, i18nKeyHint]
+
+    SpeechMilestoneStatus:
+      type: string
+      enum: [on_track, needs_attention, consult_expert]
+
+    SpeechMilestoneWithStatus:
+      type: object
+      properties:
+        milestone:
+          $ref: "#/components/schemas/SpeechMilestone"
+        status:
+          allOf:
+            - $ref: "#/components/schemas/SpeechMilestoneStatus"
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [milestone]
+
+    SpeechMilestonesResponse:
+      type: object
+      properties:
+        ageBand:
+          type: string
+          nullable: true
+          enum: [1y, 2y, 3y, 4y_plus]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpeechMilestoneWithStatus"
+      required: [items]
+
+    SpeechMilestoneProgress:
+      type: object
+      properties:
+        childId:
+          type: integer
+        milestoneId:
+          type: string
+        status:
+          $ref: "#/components/schemas/SpeechMilestoneStatus"
+        updatedAt:
+          type: string
+          format: date-time
+      required: [childId, milestoneId, status, updatedAt]
+
+    UpdateSpeechMilestoneStatusBody:
+      type: object
+      properties:
+        childId:
+          type: integer
+        status:
+          $ref: "#/components/schemas/SpeechMilestoneStatus"
+      required: [childId, status]
+
+    SpeechPracticePrompt:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [letter, phonic, word, sentence]
+        text:
+          type: string
+        ageBands:
+          type: array
+          items:
+            type: string
+            enum: [1y, 2y, 3y, 4y_plus]
+        i18nKeyHint:
+          type: string
+      required: [id, kind, text, ageBands, i18nKeyHint]
+
+    LogSpeechPracticeAttemptBody:
+      type: object
+      properties:
+        childId:
+          type: integer
+        promptId:
+          type: string
+        clarityScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        parentNote:
+          type: string
+          nullable: true
+      required: [childId, promptId]
+
+    SpeechPracticeLogEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        childId:
+          type: integer
+        promptId:
+          type: string
+        attemptedAt:
+          type: string
+          format: date-time
+        clarityScore:
+          type: integer
+          nullable: true
+        parentNote:
+          type: string
+          nullable: true
+      required: [id, childId, promptId, attemptedAt]
+
+    SpeechProgressSummary:
+      type: object
+      properties:
+        childId:
+          type: integer
+        range:
+          type: string
+          enum: [week]
+        score:
+          type: integer
+        pronunciationPct:
+          type: integer
+        consistencyPct:
+          type: integer
+        milestonePct:
+          type: integer
+        streakDays:
+          type: integer
+        promptsAttempted:
+          type: integer
+        promptsClear:
+          type: integer
+        milestonesOnTrack:
+          type: integer
+        milestonesTotal:
+          type: integer
+      required: [childId, range, score, pronunciationPct, consistencyPct, milestonePct, streakDays, promptsAttempted, promptsClear, milestonesOnTrack, milestonesTotal]
+
+    JoinSpeechExpertWaitlistBody:
+      type: object
+      properties:
+        childId:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    SpeechExpertWaitlistEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        childId:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        joinedAt:
+          type: string
+          format: date-time
+        alreadyJoined:
+          type: boolean
+      required: [id, joinedAt, alreadyJoined]

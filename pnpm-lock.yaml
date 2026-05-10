@@ -593,6 +593,9 @@ importers:
       '@workspace/safety':
         specifier: workspace:*
         version: link:../../lib/safety
+      '@workspace/speech-coach':
+        specifier: workspace:*
+        version: link:../../lib/speech-coach
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../../lib/study-zone
