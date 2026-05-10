@@ -48,6 +48,7 @@ import { useTranslation } from "react-i18next";
 import { useProfileComplete } from "@/hooks/useProfileComplete";
 import { useFeatureUsage } from "@/hooks/useFeatureUsage";
 import LockedBlock from "@/components/LockedBlock";
+import { DailyTips } from "@/components/DailyTips";
 import TryFreeBadge from "@/components/TryFreeBadge";
 import { ProfileLockScreen } from "@/components/ProfileLockScreen";
 import colors, { brand, brandAlpha, ACCENT_PINK, palette } from "@/constants/colors";
@@ -522,22 +523,10 @@ export default function HubScreen() {
                 tryFree={tryFreeFor("hub_tips")}
               >
                 {effective ? (
-                  <View style={styles.tipsList}>
-                    {(() => {
-                      // Defensive: in test environments without a real
-                      // i18n instance, `t(..., {returnObjects:true})` may
-                      // return the key string instead of an array, which
-                      // would crash `.map`. Coerce to [] in that case.
-                      const raw = t("parent_hub.tips_fallbacks", { returnObjects: true });
-                      const list = Array.isArray(raw) ? (raw as string[]) : [];
-                      return list.map((tip, i) => (
-                        <View key={i} style={styles.tipCard}>
-                          <Text style={styles.tipNum}>{i + 1}</Text>
-                          <Text style={styles.tipText}>{tip}</Text>
-                        </View>
-                      ));
-                    })()}
-                  </View>
+                  <DailyTips
+                    ageMonths={effective.age * 12 + (effective.ageMonths ?? 0)}
+                    childName={effective.name}
+                  />
                 ) : (
                   <Text style={styles.sectionLead}>{t("parent_hub.tiles.tips.empty")}</Text>
                 )}

@@ -308,7 +308,7 @@ export default function NewChildScreen() {
                   value={travelModeOther}
                   onChange={setTravelModeOther}
                   colors={colors}
-                  placeholder="e.g. bicycle, rickshaw"
+                  placeholder={t("screens.children_form.bicycle_rickshaw_placeholder")}
                 />
               )}
             </>
@@ -319,9 +319,9 @@ export default function NewChildScreen() {
           <Field label="Sleep / Bedtime (HH:MM)" value={sleep} onChange={setSleep} colors={colors} placeholder="21:00" />
 
           {/* ── Food Preferences ── */}
-          <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Food Preference</Text>
+          <Text style={[styles.sectionLabel, { color: colors.foreground }]}>{t("screens.children_form.food_preference")}</Text>
 
-          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>Diet Type</Text>
+          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>{t("screens.children_form.diet_type")}</Text>
           <View style={styles.chipRow}>
             {DIET_OPTIONS.map(opt => {
               const active = dietType === opt.value;
@@ -337,7 +337,7 @@ export default function NewChildScreen() {
             })}
           </View>
 
-          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>Food Style</Text>
+          <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>{t("screens.children_form.food_style")}</Text>
           <View style={styles.chipRow}>
             {FOOD_STYLE_OPTIONS.map(opt => {
               const active = foodStyle === opt.value;
@@ -400,7 +400,7 @@ export default function NewChildScreen() {
             style={[styles.textInput, styles.textArea, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, marginTop: 8 }]}
             value={allergyText}
             onChangeText={setAllergyText}
-            placeholder="Other restrictions (e.g. peanuts, shellfish)"
+            placeholder={t("screens.children_form.other_restrictions_placeholder")}
             placeholderTextColor={colors.mutedForeground}
             multiline
             numberOfLines={2}
@@ -408,7 +408,7 @@ export default function NewChildScreen() {
           />
 
           {/* ── Goals ── */}
-          <Field label="Goals / Focus Area" value={goals} onChange={setGoals} colors={colors} placeholder="e.g. balanced routine, focus on reading" />
+          <Field label={t("screens.children_form.goals_label")} value={goals} onChange={setGoals} colors={colors} placeholder={t("screens.children_form.goals_placeholder")} />
 
           {/* ── Babysitter ── */}
           <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>

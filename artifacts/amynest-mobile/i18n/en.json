@@ -1637,6 +1637,25 @@
       "food_preference": "Food Preference",
       "none": "None"
     },
+    "children_form": {
+      "food_preference": "Food Preference",
+      "diet_type": "Diet Type",
+      "food_style": "Food Style",
+      "indian_sub_cuisine": "Indian Sub-cuisine (optional)",
+      "allergies_label": "Allergies / Foods to Avoid",
+      "other_restrictions_placeholder": "Other restrictions (e.g. peanuts, shellfish)",
+      "goals_label": "Goals / Focus Area",
+      "goals_placeholder": "e.g. balanced routine, focus on reading",
+      "assigned_babysitter": "Assigned Babysitter",
+      "infant_care": "Infant Care",
+      "wake_up_time": "Wake Up Time (HH:MM)",
+      "sleep_time": "Sleep Time (HH:MM)",
+      "sleep_bedtime": "Sleep / Bedtime (HH:MM)",
+      "specify_travel_mode": "Specify travel mode",
+      "bicycle_rickshaw_placeholder": "e.g. bicycle, rickshaw",
+      "feeding_type": "Feeding Type",
+      "sleep_pattern_label": "Sleep Pattern"
+    },
     "coach_premium": {
       "close_coach": "Close coach",
       "amy_is_thinking": "Amy is thinking…",
@@ -2569,6 +2588,15 @@
     "amazing_facts": {
       "no_facts_available_right_now": "No facts available right now.",
       "show_another_fact": "Show another fact"
+    },
+    "daily_tips": {
+      "amy_ai": "Amy AI",
+      "title": "Today's Parenting Cards",
+      "personalized_for": "Personalised for {{name}}",
+      "helpful": "Helpful",
+      "next_tip": "Next Tip",
+      "personalize": "Personalise",
+      "ai_left": "Amy AI left: {{count}}"
     },
     "app_data_status_banner": {
       "retry": "Retry",

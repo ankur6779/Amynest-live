@@ -464,9 +464,9 @@ export default function ChildDetailScreen() {
             <Field label="Sleep Time (HH:MM)" value={sleep} onChange={setSleep} colors={colors} placeholder="21:00" />
 
             {/* ── Food Preferences ── */}
-            <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Food Preference</Text>
+            <Text style={[styles.sectionLabel, { color: colors.foreground }]}>{t("screens.children_form.food_preference")}</Text>
 
-            <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>Diet Type</Text>
+            <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6 }]}>{t("screens.children_form.diet_type")}</Text>
             <View style={styles.chipRow}>
               {DIET_OPTIONS.map(opt => {
                 const active = dietType === opt.value;
@@ -480,7 +480,7 @@ export default function ChildDetailScreen() {
               })}
             </View>
 
-            <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>Food Style</Text>
+            <Text style={[styles.fieldLabel, { color: colors.mutedForeground, marginBottom: 6, marginTop: 4 }]}>{t("screens.children_form.food_style")}</Text>
             <View style={styles.chipRow}>
               {FOOD_STYLE_OPTIONS.map(opt => {
                 const active = foodStyle === opt.value;
@@ -537,7 +537,7 @@ export default function ChildDetailScreen() {
               style={[styles.textInput, styles.textArea, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, marginTop: 8 }]}
               value={allergyText}
               onChangeText={setAllergyText}
-              placeholder="Other restrictions (e.g. peanuts, shellfish)"
+              placeholder={t("screens.children_form.other_restrictions_placeholder")}
               placeholderTextColor={colors.mutedForeground}
               multiline
               numberOfLines={2}
@@ -567,11 +567,11 @@ export default function ChildDetailScreen() {
 
             {/* ── Goals ── */}
             <Field
-              label="Goals / Focus Area"
+              label={t("screens.children_form.goals_label")}
               value={goals}
               onChange={setGoals}
               colors={colors}
-              placeholder="e.g. balanced routine, focus on reading"
+              placeholder={t("screens.children_form.goals_placeholder")}
             />
 
             {/* ── Babysitter ── */}
@@ -700,7 +700,7 @@ export default function ChildDetailScreen() {
               ) : null}
             </InfoCard>
             {isInfant && (
-              <InfoCard title="Infant Care" colors={colors}>
+              <InfoCard title={t("screens.children_form.infant_care")} colors={colors}>
                 <InfoRow icon="nutrition-outline" label="Feeding" value={feedingLabel(child?.feedingType)} colors={colors} />
                 <InfoRow icon="bed-outline" label="Sleep Pattern" value={sleepPatternLabel(child?.sleepPattern)} colors={colors} />
               </InfoCard>
