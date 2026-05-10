@@ -1518,7 +1518,8 @@ export const GetSpeechProgressResponse = zod.object({
 
 /**
  * @summary Join the certified-experts waitlist (idempotent per user — repeat calls
-return the existing entry with `alreadyJoined: true`).
+return the existing entry with `alreadyJoined: true`). Both `childId`
+and `notes` are optional, so the request body itself is optional.
 
  */
 export const JoinSpeechExpertWaitlistBody = zod.object({

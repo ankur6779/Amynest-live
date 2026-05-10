@@ -2109,7 +2109,8 @@ export function useGetSpeechProgress<
 
 /**
  * @summary Join the certified-experts waitlist (idempotent per user — repeat calls
-return the existing entry with `alreadyJoined: true`).
+return the existing entry with `alreadyJoined: true`). Both `childId`
+and `notes` are optional, so the request body itself is optional.
 
  */
 export const getJoinSpeechExpertWaitlistUrl = () => {
@@ -2117,7 +2118,7 @@ export const getJoinSpeechExpertWaitlistUrl = () => {
 };
 
 export const joinSpeechExpertWaitlist = async (
-  joinSpeechExpertWaitlistBody: JoinSpeechExpertWaitlistBody,
+  joinSpeechExpertWaitlistBody?: JoinSpeechExpertWaitlistBody,
   options?: RequestInit,
 ): Promise<SpeechExpertWaitlistEntry> => {
   return customFetch<SpeechExpertWaitlistEntry>(
@@ -2178,7 +2179,8 @@ export type JoinSpeechExpertWaitlistMutationError = ErrorType<unknown>;
 
 /**
  * @summary Join the certified-experts waitlist (idempotent per user — repeat calls
-return the existing entry with `alreadyJoined: true`).
+return the existing entry with `alreadyJoined: true`). Both `childId`
+and `notes` are optional, so the request body itself is optional.
 
  */
 export const useJoinSpeechExpertWaitlist = <
