@@ -677,6 +677,16 @@ export default function ProfileScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* Patent-pending — About AmyNest */}
+        <View style={{ marginTop: 28, alignItems: "center", gap: 5, paddingBottom: 8 }}>
+          <Text style={{ fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 2, textTransform: "uppercase", color: "rgba(168,85,247,0.50)" }}>
+            {t("patent_pending.footer_label")}
+          </Text>
+          <Text style={{ fontSize: 10, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.30)", textAlign: "center", paddingHorizontal: 24, lineHeight: 15 }}>
+            {t("patent_pending.settings_note")}
+          </Text>
+        </View>
+
         {/* Developer Tools — only visible in __DEV__ builds */}
         {__DEV__ && (
           <TouchableOpacity

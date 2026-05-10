@@ -239,6 +239,9 @@ export function Layout({
                   <LogOut className="h-5 w-5" />
                   {t("nav.sign_out")}
                 </button>
+                <p className="text-center text-[9px] font-bold tracking-widest uppercase mt-2.5 text-primary/30">
+                  {t("patent_pending.footer_label")}
+                </p>
               </div>
             </SheetContent>
           </Sheet>
@@ -295,6 +298,9 @@ export function Layout({
               <LogOut className="h-4 w-4" />
               {t("nav.sign_out")}
             </button>
+            <p className="text-center text-[9px] font-bold tracking-widest uppercase mt-3 text-primary/25">
+              {t("patent_pending.footer_label")}
+            </p>
           </div>
         </aside>
 

@@ -1683,6 +1683,9 @@ export default function OnboardingPage() {
           style={{ background: BAR_BG, backdropFilter: "blur(8px)", borderTop: "1px solid rgba(168,85,247,0.15)" }}
         >
           {renderInput()}
+          <p className="text-center text-[9px] font-bold tracking-widest uppercase mt-3" style={{ color: "rgba(168,85,247,0.35)" }}>
+            {t("patent_pending.powered_by")}
+          </p>
         </div>
       )}
     </div>

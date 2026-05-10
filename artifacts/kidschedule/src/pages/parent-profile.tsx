@@ -621,6 +621,18 @@ export default function ParentProfilePage() {
         </CardContent>
       </Card>
 
+      {/* About AmyNest AI — patent-pending technology */}
+      <Card className="rounded-2xl border-primary/20 bg-primary/5">
+        <CardContent className="pt-4 pb-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-2">
+            {t("patent_pending.settings_note")}
+          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {t("patent_pending.about_tech")}
+          </p>
+        </CardContent>
+      </Card>
+
       <Button variant="outline" onClick={() => navigate("/notification-settings")} className="w-full rounded-xl h-11">
         <Bell className="h-4 w-4 mr-2" />
         {t("pages.parent_profile.notification_settings")}

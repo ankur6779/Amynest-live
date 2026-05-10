@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <title>AmyNest AI — Where Smart Parenting Begins</title>
-    <meta name="description" content="AI-powered parenting coach. Personalized routines, meal plans, and behavior coaching for your child." />
+    <meta name="description" content="AI-powered parenting coach with patent-pending adaptive scheduling technology. Personalized routines, meal plans, and contextual child-development intelligence for your child." />
 
     <!-- PWA manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -28,7 +28,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="AmyNest AI — Where Smart Parenting Begins" />
-    <meta property="og:description" content="Step-by-step, science-backed parenting plans personalized for your child." />
+    <meta property="og:description" content="Powered by patent-pending adaptive AI — science-backed parenting plans personalized for your child." />
     <meta property="og:image" content="opengraph.jpg" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -516,6 +516,19 @@
         to   { opacity: 1; transform: translateY(0); }
       }
 
+      /* ── Patent-Pending label ────────────────────────────────────────── */
+      .splash-patent {
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(168,85,247,0.45);
+        margin: -20px 0 22px;
+        opacity: 0;
+        animation: tagIn 0.8s 1.6s cubic-bezier(0.22,1,0.36,1) forwards;
+      }
+
       /* ── Mobile ─────────────────────────────────────────────────────── */
       @media (max-width: 480px) {
         .splash-ring-scene { width: 220px; height: 220px; }
@@ -643,6 +656,7 @@
       .lite-splash .splash-amy,
       .lite-splash .splash-meet,
       .lite-splash .splash-tagline,
+      .lite-splash .splash-patent,
       .lite-splash .splash-cta {
         animation: none !important;
         filter: none !important;
@@ -693,6 +707,8 @@
         <p class="splash-tagline">
           Where <span class="hl">Smart Parenting</span> Starts
         </p>
+
+        <p class="splash-patent">Patent-Pending AI Infrastructure</p>
 
         <button
           class="splash-cta"
