@@ -5,16 +5,17 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { SpeechProgressSummaryRange } from "./speechProgressSummaryRange";
 
-export interface SpeechProgressSummary {
+export interface SpeechProgressResponse {
   childId: number;
-  range: SpeechProgressSummaryRange;
+  rangeStart: string;
+  rangeEnd: string;
   score: number;
   pronunciationPct: number;
   consistencyPct: number;
   milestonePct: number;
   streakDays: number;
+  daysActive: number;
   promptsAttempted: number;
   promptsClear: number;
   milestonesOnTrack: number;

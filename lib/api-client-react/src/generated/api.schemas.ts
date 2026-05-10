@@ -1597,14 +1597,22 @@ export interface SafetyValidationResponse {
   appliedRuleIds: string[];
 }
 
-export type SpeechMilestoneAgeBand =
-  (typeof SpeechMilestoneAgeBand)[keyof typeof SpeechMilestoneAgeBand];
+export type SpeechAgeBand = (typeof SpeechAgeBand)[keyof typeof SpeechAgeBand];
 
-export const SpeechMilestoneAgeBand = {
+export const SpeechAgeBand = {
   "1y": "1y",
   "2y": "2y",
   "3y": "3y",
   "4y_plus": "4y_plus",
+} as const;
+
+export type SpeechMilestoneStatus =
+  (typeof SpeechMilestoneStatus)[keyof typeof SpeechMilestoneStatus];
+
+export const SpeechMilestoneStatus = {
+  on_track: "on_track",
+  needs_attention: "needs_attention",
+  consult_expert: "consult_expert",
 } as const;
 
 export type SpeechMilestoneCategory =
@@ -1619,83 +1627,57 @@ export const SpeechMilestoneCategory = {
   sentences: "sentences",
 } as const;
 
-export interface SpeechMilestone {
+export interface SpeechMilestoneEntry {
   id: string;
-  ageBand: SpeechMilestoneAgeBand;
+  ageBand: SpeechAgeBand;
   category: SpeechMilestoneCategory;
   i18nKeyLabel: string;
   i18nKeyHint: string;
-}
-
-export type SpeechMilestoneStatus =
-  (typeof SpeechMilestoneStatus)[keyof typeof SpeechMilestoneStatus];
-
-export const SpeechMilestoneStatus = {
-  on_track: "on_track",
-  needs_attention: "needs_attention",
-  consult_expert: "consult_expert",
-} as const;
-
-export interface SpeechMilestoneWithStatus {
-  milestone: SpeechMilestone;
-  status?: SpeechMilestoneStatus | null;
+  status: SpeechMilestoneStatus;
   updatedAt?: string | null;
 }
 
-export type SpeechMilestonesResponseAgeBand =
-  | (typeof SpeechMilestonesResponseAgeBand)[keyof typeof SpeechMilestonesResponseAgeBand]
-  | null;
-
-export const SpeechMilestonesResponseAgeBand = {
-  "1y": "1y",
-  "2y": "2y",
-  "3y": "3y",
-  "4y_plus": "4y_plus",
-} as const;
-
 export interface SpeechMilestonesResponse {
-  ageBand?: SpeechMilestonesResponseAgeBand;
-  items: SpeechMilestoneWithStatus[];
+  childId: number;
+  ageMonths?: number | null;
+  ageBand?: SpeechAgeBand | null;
+  milestones: SpeechMilestoneEntry[];
 }
 
-export interface SpeechMilestoneProgress {
+export interface SetSpeechMilestoneStatusBody {
+  childId: number;
+  status: SpeechMilestoneStatus;
+}
+
+export interface SpeechMilestoneStatusEntry {
   childId: number;
   milestoneId: string;
   status: SpeechMilestoneStatus;
   updatedAt: string;
 }
 
-export interface UpdateSpeechMilestoneStatusBody {
-  childId: number;
-  status: SpeechMilestoneStatus;
-}
+export type SpeechPromptKind =
+  (typeof SpeechPromptKind)[keyof typeof SpeechPromptKind];
 
-export type SpeechPracticePromptKind =
-  (typeof SpeechPracticePromptKind)[keyof typeof SpeechPracticePromptKind];
-
-export const SpeechPracticePromptKind = {
+export const SpeechPromptKind = {
   letter: "letter",
   phonic: "phonic",
   word: "word",
   sentence: "sentence",
 } as const;
 
-export type SpeechPracticePromptAgeBandsItem =
-  (typeof SpeechPracticePromptAgeBandsItem)[keyof typeof SpeechPracticePromptAgeBandsItem];
-
-export const SpeechPracticePromptAgeBandsItem = {
-  "1y": "1y",
-  "2y": "2y",
-  "3y": "3y",
-  "4y_plus": "4y_plus",
-} as const;
-
-export interface SpeechPracticePrompt {
+export interface SpeechPracticePromptEntry {
   id: string;
-  kind: SpeechPracticePromptKind;
+  kind: SpeechPromptKind;
   text: string;
-  ageBands: SpeechPracticePromptAgeBandsItem[];
   i18nKeyHint: string;
+}
+
+export interface SpeechPracticePromptsResponse {
+  childId: number;
+  ageMonths?: number | null;
+  ageBand?: SpeechAgeBand | null;
+  prompts: SpeechPracticePromptEntry[];
 }
 
 export interface LogSpeechPracticeAttemptBody {
@@ -1709,7 +1691,7 @@ export interface LogSpeechPracticeAttemptBody {
   parentNote?: string | null;
 }
 
-export interface SpeechPracticeLogEntry {
+export interface SpeechPracticeAttempt {
   id: number;
   childId: number;
   promptId: string;
@@ -1718,21 +1700,16 @@ export interface SpeechPracticeLogEntry {
   parentNote?: string | null;
 }
 
-export type SpeechProgressSummaryRange =
-  (typeof SpeechProgressSummaryRange)[keyof typeof SpeechProgressSummaryRange];
-
-export const SpeechProgressSummaryRange = {
-  week: "week",
-} as const;
-
-export interface SpeechProgressSummary {
+export interface SpeechProgressResponse {
   childId: number;
-  range: SpeechProgressSummaryRange;
+  rangeStart: string;
+  rangeEnd: string;
   score: number;
   pronunciationPct: number;
   consistencyPct: number;
   milestonePct: number;
   streakDays: number;
+  daysActive: number;
   promptsAttempted: number;
   promptsClear: number;
   milestonesOnTrack: number;
@@ -1747,9 +1724,18 @@ export interface JoinSpeechExpertWaitlistBody {
 export interface SpeechExpertWaitlistEntry {
   id: number;
   childId?: number | null;
-  notes?: string | null;
   joinedAt: string;
-  alreadyJoined: boolean;
+  notes?: string | null;
+  alreadyOnWaitlist: boolean;
+}
+
+export interface FeatureLockedError {
+  error: string;
+  feature: string;
+  message: string;
+  limit: number;
+  used: number;
+  resetsAt?: string | null;
 }
 
 export type ListRoutinesParams = {
@@ -1781,37 +1767,6 @@ export type GetExplainHistoryParams = {
    */
   limit?: number;
 };
-
-export type ListSpeechMilestonesParams = {
-  childId: number;
-};
-
-export type ListSpeechPracticePromptsParams = {
-  childId: number;
-  kind?: ListSpeechPracticePromptsKind;
-};
-
-export type ListSpeechPracticePromptsKind =
-  (typeof ListSpeechPracticePromptsKind)[keyof typeof ListSpeechPracticePromptsKind];
-
-export const ListSpeechPracticePromptsKind = {
-  letter: "letter",
-  phonic: "phonic",
-  word: "word",
-  sentence: "sentence",
-} as const;
-
-export type GetSpeechProgressParams = {
-  childId: number;
-  range?: GetSpeechProgressRange;
-};
-
-export type GetSpeechProgressRange =
-  (typeof GetSpeechProgressRange)[keyof typeof GetSpeechProgressRange];
-
-export const GetSpeechProgressRange = {
-  week: "week",
-} as const;
 
 export type ListBehaviorsParams = {
   childId?: number;
@@ -1858,3 +1813,34 @@ export const GetLifeSkillRolePlaysAgeBand = {
 export type GetSmartStudyInsightsParams = {
   childId: number;
 };
+
+export type GetSpeechMilestonesParams = {
+  childId: number;
+};
+
+export type GetSpeechPracticePromptsParams = {
+  childId: number;
+  kind?: GetSpeechPracticePromptsKind;
+};
+
+export type GetSpeechPracticePromptsKind =
+  (typeof GetSpeechPracticePromptsKind)[keyof typeof GetSpeechPracticePromptsKind];
+
+export const GetSpeechPracticePromptsKind = {
+  letter: "letter",
+  phonic: "phonic",
+  word: "word",
+  sentence: "sentence",
+} as const;
+
+export type GetSpeechProgressParams = {
+  childId: number;
+  range?: GetSpeechProgressRange;
+};
+
+export type GetSpeechProgressRange =
+  (typeof GetSpeechProgressRange)[keyof typeof GetSpeechProgressRange];
+
+export const GetSpeechProgressRange = {
+  week: "week",
+} as const;

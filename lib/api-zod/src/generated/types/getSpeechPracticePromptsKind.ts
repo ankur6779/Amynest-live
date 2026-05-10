@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListSpeechPracticePromptsKind =
-  (typeof ListSpeechPracticePromptsKind)[keyof typeof ListSpeechPracticePromptsKind];
+export type GetSpeechPracticePromptsKind =
+  (typeof GetSpeechPracticePromptsKind)[keyof typeof GetSpeechPracticePromptsKind];
 
-export const ListSpeechPracticePromptsKind = {
+export const GetSpeechPracticePromptsKind = {
   letter: "letter",
   phonic: "phonic",
   word: "word",

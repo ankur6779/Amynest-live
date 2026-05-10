@@ -40,11 +40,8 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  // Support both "deepLink" (existing key) and "url" (Android-native key) so
-  // either side of the bridge can drive the same click-to-navigate behaviour.
-  const deepLink = (event.notification.data &&
-    (event.notification.data.deepLink || event.notification.data.url))
-    ? (event.notification.data.deepLink || event.notification.data.url)
+  const deepLink = (event.notification.data && event.notification.data.deepLink)
+    ? event.notification.data.deepLink
     : '/';
   event.waitUntil(
     self.clients

@@ -33,5 +33,4 @@ export const insertSpeechPracticeLogSchema = createInsertSchema(
 export type InsertSpeechPracticeLog = z.infer<
   typeof insertSpeechPracticeLogSchema
 >;
-export type SpeechPracticeLogRow =
-  typeof speechPracticeLogTable.$inferSelect;
+export type SpeechPracticeLogRow = typeof speechPracticeLogTable.$inferSelect;

@@ -1403,139 +1403,6 @@ export const GetExplainHistoryResponse = zod.array(
 );
 
 /**
- * @summary List a child's speech-coach milestones with current statuses
- */
-export const ListSpeechMilestonesQueryParams = zod.object({
-  childId: zod.coerce.number(),
-});
-
-export const ListSpeechMilestonesResponse = zod.object({
-  ageBand: zod.enum(["1y", "2y", "3y", "4y_plus"]).nullish(),
-  items: zod.array(
-    zod.object({
-      milestone: zod.object({
-        id: zod.string(),
-        ageBand: zod.enum(["1y", "2y", "3y", "4y_plus"]),
-        category: zod.enum([
-          "first_words",
-          "two_word_phrase",
-          "pronunciation",
-          "social_communication",
-          "vocabulary",
-          "sentences",
-        ]),
-        i18nKeyLabel: zod.string(),
-        i18nKeyHint: zod.string(),
-      }),
-      status: zod
-        .enum(["on_track", "needs_attention", "consult_expert"])
-        .nullish(),
-      updatedAt: zod.coerce.date().nullish(),
-    }),
-  ),
-});
-
-/**
- * @summary Set the milestone status for a child (upsert, idempotent)
- */
-export const UpdateSpeechMilestoneStatusParams = zod.object({
-  id: zod.coerce.string(),
-});
-
-export const UpdateSpeechMilestoneStatusBody = zod.object({
-  childId: zod.number(),
-  status: zod.enum(["on_track", "needs_attention", "consult_expert"]),
-});
-
-export const UpdateSpeechMilestoneStatusResponse = zod.object({
-  childId: zod.number(),
-  milestoneId: zod.string(),
-  status: zod.enum(["on_track", "needs_attention", "consult_expert"]),
-  updatedAt: zod.coerce.date(),
-});
-
-/**
- * @summary Age-appropriate pronunciation prompts for a child
- */
-export const ListSpeechPracticePromptsQueryParams = zod.object({
-  childId: zod.coerce.number(),
-  kind: zod.enum(["letter", "phonic", "word", "sentence"]).optional(),
-});
-
-export const ListSpeechPracticePromptsResponseItem = zod.object({
-  id: zod.string(),
-  kind: zod.enum(["letter", "phonic", "word", "sentence"]),
-  text: zod.string(),
-  ageBands: zod.array(zod.enum(["1y", "2y", "3y", "4y_plus"])),
-  i18nKeyHint: zod.string(),
-});
-export const ListSpeechPracticePromptsResponse = zod.array(
-  ListSpeechPracticePromptsResponseItem,
-);
-
-/**
- * @summary Log a pronunciation-practice attempt. Gated by hub_speech_pronounce
-(lifetime: 1 free use, then 402 Payment Required).
-
- */
-export const logSpeechPracticeAttemptBodyClarityScoreMin = 0;
-export const logSpeechPracticeAttemptBodyClarityScoreMax = 100;
-
-export const LogSpeechPracticeAttemptBody = zod.object({
-  childId: zod.number(),
-  promptId: zod.string(),
-  clarityScore: zod
-    .number()
-    .min(logSpeechPracticeAttemptBodyClarityScoreMin)
-    .max(logSpeechPracticeAttemptBodyClarityScoreMax)
-    .nullish(),
-  parentNote: zod.string().nullish(),
-});
-
-/**
- * @summary Weekly speech-coach progress summary for a child
- */
-export const getSpeechProgressQueryRangeDefault = `week`;
-
-export const GetSpeechProgressQueryParams = zod.object({
-  childId: zod.coerce.number(),
-  range: zod.enum(["week"]).default(getSpeechProgressQueryRangeDefault),
-});
-
-export const GetSpeechProgressResponse = zod.object({
-  childId: zod.number(),
-  range: zod.enum(["week"]),
-  score: zod.number(),
-  pronunciationPct: zod.number(),
-  consistencyPct: zod.number(),
-  milestonePct: zod.number(),
-  streakDays: zod.number(),
-  promptsAttempted: zod.number(),
-  promptsClear: zod.number(),
-  milestonesOnTrack: zod.number(),
-  milestonesTotal: zod.number(),
-});
-
-/**
- * @summary Join the certified-experts waitlist (idempotent per user — repeat calls
-return the existing entry with `alreadyJoined: true`). Both `childId`
-and `notes` are optional, so the request body itself is optional.
-
- */
-export const JoinSpeechExpertWaitlistBody = zod.object({
-  childId: zod.number().nullish(),
-  notes: zod.string().nullish(),
-});
-
-export const JoinSpeechExpertWaitlistResponse = zod.object({
-  id: zod.number(),
-  childId: zod.number().nullish(),
-  notes: zod.string().nullish(),
-  joinedAt: zod.coerce.date(),
-  alreadyJoined: zod.boolean(),
-});
-
-/**
  * Module 4 — runs deterministic safety validation against the candidate
 routine activities. Returns a 0-100 safety score, an `isValid` flag
 (false when any critical violations are present), the list of
@@ -2954,3 +2821,148 @@ export const GetChildNudgesResponse = zod
   .describe(
     "Ranked productive nudges synthesized from Phase 2\/3 signals + parent goals.",
   );
+
+/**
+ * Returns the static milestone catalogue from `@workspace/speech-coach`
+for the child's current age band, joined with any saved status rows.
+Milestones the parent has not yet rated are returned with a default
+status of `on_track`.
+
+ * @summary List speech milestones with current per-child status
+ */
+export const GetSpeechMilestonesQueryParams = zod.object({
+  childId: zod.coerce.number(),
+});
+
+export const GetSpeechMilestonesResponse = zod.object({
+  childId: zod.number(),
+  ageMonths: zod.number().nullish(),
+  ageBand: zod.enum(["1y", "2y", "3y", "4y_plus"]).nullish(),
+  milestones: zod.array(
+    zod.object({
+      id: zod.string(),
+      ageBand: zod.enum(["1y", "2y", "3y", "4y_plus"]),
+      category: zod.enum([
+        "first_words",
+        "two_word_phrase",
+        "pronunciation",
+        "social_communication",
+        "vocabulary",
+        "sentences",
+      ]),
+      i18nKeyLabel: zod.string(),
+      i18nKeyHint: zod.string(),
+      status: zod.enum(["on_track", "needs_attention", "consult_expert"]),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update the per-child status for a speech milestone
+ */
+export const SetSpeechMilestoneStatusParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const SetSpeechMilestoneStatusBody = zod.object({
+  childId: zod.number(),
+  status: zod.enum(["on_track", "needs_attention", "consult_expert"]),
+});
+
+export const SetSpeechMilestoneStatusResponse = zod.object({
+  childId: zod.number(),
+  milestoneId: zod.string(),
+  status: zod.enum(["on_track", "needs_attention", "consult_expert"]),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary List age-appropriate pronunciation prompts for a child
+ */
+export const GetSpeechPracticePromptsQueryParams = zod.object({
+  childId: zod.coerce.number(),
+  kind: zod.enum(["letter", "phonic", "word", "sentence"]).optional(),
+});
+
+export const GetSpeechPracticePromptsResponse = zod.object({
+  childId: zod.number(),
+  ageMonths: zod.number().nullish(),
+  ageBand: zod.enum(["1y", "2y", "3y", "4y_plus"]).nullish(),
+  prompts: zod.array(
+    zod.object({
+      id: zod.string(),
+      kind: zod.enum(["letter", "phonic", "word", "sentence"]),
+      text: zod.string(),
+      i18nKeyHint: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Log a speech-practice attempt (gated, lifetime first-free)
+ */
+export const logSpeechPracticeAttemptBodyClarityScoreMin = 0;
+export const logSpeechPracticeAttemptBodyClarityScoreMax = 100;
+
+export const LogSpeechPracticeAttemptBody = zod.object({
+  childId: zod.number(),
+  promptId: zod.string(),
+  clarityScore: zod
+    .number()
+    .min(logSpeechPracticeAttemptBodyClarityScoreMin)
+    .max(logSpeechPracticeAttemptBodyClarityScoreMax)
+    .nullish(),
+  parentNote: zod.string().nullish(),
+});
+
+export const LogSpeechPracticeAttemptResponse = zod.object({
+  id: zod.number(),
+  childId: zod.number(),
+  promptId: zod.string(),
+  attemptedAt: zod.string(),
+  clarityScore: zod.number().nullish(),
+  parentNote: zod.string().nullish(),
+});
+
+/**
+ * @summary Aggregated weekly speech progress for a child
+ */
+export const getSpeechProgressQueryRangeDefault = `week`;
+
+export const GetSpeechProgressQueryParams = zod.object({
+  childId: zod.coerce.number(),
+  range: zod.enum(["week"]).default(getSpeechProgressQueryRangeDefault),
+});
+
+export const GetSpeechProgressResponse = zod.object({
+  childId: zod.number(),
+  rangeStart: zod.string(),
+  rangeEnd: zod.string(),
+  score: zod.number(),
+  pronunciationPct: zod.number(),
+  consistencyPct: zod.number(),
+  milestonePct: zod.number(),
+  streakDays: zod.number(),
+  daysActive: zod.number(),
+  promptsAttempted: zod.number(),
+  promptsClear: zod.number(),
+  milestonesOnTrack: zod.number(),
+  milestonesTotal: zod.number(),
+});
+
+/**
+ * @summary Join the Connect with Certified Speech Experts waitlist (idempotent)
+ */
+export const JoinSpeechExpertWaitlistBody = zod.object({
+  childId: zod.number().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const JoinSpeechExpertWaitlistResponse = zod.object({
+  id: zod.number(),
+  childId: zod.number().nullish(),
+  joinedAt: zod.string(),
+  notes: zod.string().nullish(),
+  alreadyOnWaitlist: zod.boolean(),
+});
