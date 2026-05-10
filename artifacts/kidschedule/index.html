@@ -518,15 +518,32 @@
 
       /* ── Patent-Pending label ────────────────────────────────────────── */
       .splash-patent {
-        font-family: 'Inter', -apple-system, system-ui, sans-serif;
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: rgba(168,85,247,0.45);
-        margin: -20px 0 22px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        margin: -10px 0 26px;
         opacity: 0;
         animation: tagIn 0.8s 1.6s cubic-bezier(0.22,1,0.36,1) forwards;
+      }
+      .splash-patent-badge {
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        color: rgba(168,85,247,0.9);
+        background: rgba(168,85,247,0.12);
+        border: 1px solid rgba(168,85,247,0.30);
+        border-radius: 100px;
+        padding: 4px 14px;
+      }
+      .splash-patent-sub {
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.4px;
+        color: rgba(168,85,247,0.50);
       }
 
       /* ── Mobile ─────────────────────────────────────────────────────── */
@@ -708,7 +725,10 @@
           Where <span class="hl">Smart Parenting</span> Starts
         </p>
 
-        <p class="splash-patent">Patent-Pending AI Infrastructure</p>
+        <div class="splash-patent">
+          <span class="splash-patent-badge">⚡ Patent-Pending AI Infrastructure</span>
+          <span class="splash-patent-sub">Indian Provisional Patent Filed &middot; Adaptive Parenting AI</span>
+        </div>
 
         <button
           class="splash-cta"
