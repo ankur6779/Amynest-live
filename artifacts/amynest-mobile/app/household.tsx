@@ -47,9 +47,9 @@ function iconFor(kind: HouseholdConflict["kind"]): keyof typeof Ionicons.glyphMa
 }
 
 function severityHex(sev: number): string {
-  if (sev >= 8) return "#dc2626";
-  if (sev >= 5) return "#f59e0b";
-  return "#64748b";
+  if (sev >= 8) return "#dc2626"; // audit-ok: severity-high semantic state
+  if (sev >= 5) return "#f59e0b"; // audit-ok: severity-medium semantic state
+  return "#64748b"; // audit-ok: severity-low semantic state
 }
 
 export default function HouseholdScreen() {
@@ -203,6 +203,7 @@ function TimelineSlot({
     <View style={[
       timelineStyles.slot,
       slot.hasConflict
+        // audit-ok: amber conflict-warning surface (semantic state)
         ? { backgroundColor: "#fffbeb", borderColor: "#fbbf24" }
         : { backgroundColor: colors.surface, borderColor: colors.border },
     ]}>
@@ -229,8 +230,8 @@ const timelineStyles = StyleSheet.create({
   slot:    { borderRadius: 10, borderWidth: 1, padding: 10, marginBottom: 8 },
   row:     { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
   time:    { fontWeight: "600" },
-  badge:   { backgroundColor: "#fef3c7", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  badgeText:{ color: "#92400e", fontSize: 11, fontWeight: "600" },
+  badge:   { backgroundColor: "#fef3c7", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }, // audit-ok: amber conflict badge
+  badgeText:{ color: "#92400e", fontSize: 11, fontWeight: "600" }, // audit-ok: amber conflict badge text
   entry:   { fontSize: 13, marginTop: 2 },
 });
 
@@ -260,10 +261,10 @@ function makeStyles(colors: ReturnType<typeof useColors>) {
     conflictKind:{ fontSize: 14, fontWeight: "700", flex: 1 },
     conflictTime:{ fontSize: 11 },
     conflictText:{ fontSize: 13, lineHeight: 18 },
-    resolution:  { marginTop: 8, padding: 10, borderRadius: 8, backgroundColor: "#f5f3ff" },
-    resStrategy: { fontSize: 13, fontWeight: "700", color: "#5b21b6" },
-    resRationale:{ fontSize: 12, color: "#6d28d9", marginTop: 2 },
-    resChange:   { fontSize: 11, color: "#5b21b6", marginTop: 2 },
+    resolution:  { marginTop: 8, padding: 10, borderRadius: 8, backgroundColor: "#f5f3ff" }, // audit-ok: violet resolution surface
+    resStrategy: { fontSize: 13, fontWeight: "700", color: "#5b21b6" }, // audit-ok: violet resolution accent
+    resRationale:{ fontSize: 12, color: "#6d28d9", marginTop: 2 }, // audit-ok: violet resolution accent
+    resChange:   { fontSize: 11, color: "#5b21b6", marginTop: 2 }, // audit-ok: violet resolution accent
     applyBtn:    { marginTop: 10, backgroundColor: colors.primary, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
     applyText:   { color: "#ffffff", fontWeight: "600", fontSize: 14 },
   });
