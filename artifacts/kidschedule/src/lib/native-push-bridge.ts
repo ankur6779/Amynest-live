@@ -1,269 +1,172 @@
 /**
  * Bridge to the native FCM push interface exposed by the KidSchedule
- * Android WebView wrapper (see `artifacts/kidschedule-android/.../PushBridge.kt`).
+ * Android WebView wrapper.
  *
- * The Android WebView has no Web Notification / PushManager / Service Worker
- * push support, so when the web app is loaded inside the wrapper, it must
- * use the device's native FCM token + Android 13+ runtime notification
- * permission instead of standard Web Push.
+ * Transport — two layers work together:
  *
- * Transport: the native side installs `window.AmyNestPushNative` via
- * `WebViewCompat.addWebMessageListener` with a strict allowed-origin rule,
- * so third-party iframes loaded inside the WebView CANNOT call this
- * bridge. Same security model as `BillingBridge` — origin is enforced at
- * the message-bus level (NOT just navigation allowlist).
+ *   1. `window.AndroidPush`  (addJavascriptInterface)
+ *      Synchronous JS object injected by the native side. Exposes:
+ *        • `getPushToken()` → cached FCM token string or null
+ *        • `getPermissionStatus()` → "granted" | "denied" | "default"
  *
- * This adapter owns a module-level singleton state cache so the rest of
- * the web app can call `getNativePushBridge()?.getPermissionStatus()` /
- * `getToken()` synchronously. The cache is hydrated lazily on first call
- * by issuing a `getStatus` request and waiting for the response.
+ *   2. `window.onAndroidToken(token)`  (evaluateJavascript callback)
+ *      Called by the native side whenever a fresh FCM token is available.
+ *      Defined in index.html's inline script so it is ready BEFORE React
+ *      mounts; it buffers the token in `window.__pendingAndroidToken` and
+ *      fires a `"amynest-push-token"` CustomEvent so mounted hooks are
+ *      also notified.
  *
- * Exposed window events (for legacy callers that prefer DOM events):
- *   - "amynest-push-token"      → detail: { token: string }
- *   - "amynest-push-permission" → detail: { status: "granted"|"denied" }
+ * This module wires those two transport layers into the same `NativePushFacade`
+ * API surface that the rest of the app already uses, so no callers outside
+ * this file and `use-push-registration.ts` need to change.
+ *
+ * Wrapper detection uses ANY of:
+ *   1. `window.AndroidPush` present (full bridge ready)
+ *   2. `window.__AMYNEST_WRAPPER` marker (injected at document_start,
+ *      present even when addJavascriptInterface objects are delayed)
+ *   3. `navigator.userAgent` containing "AmyNestAndroid" (last-resort)
  */
 
 export type NativePushPermission = "granted" | "denied" | "default";
 
-interface NativeStatus {
-  fcmEnabled: boolean;
-  permission: NativePushPermission;
-  token: string | null;
-}
-
-interface RawMessageBus {
-  postMessage: (data: string) => void;
-  addEventListener: (type: "message", listener: (ev: MessageEvent) => void) => void;
-  removeEventListener?: (type: "message", listener: (ev: MessageEvent) => void) => void;
-  // Legacy onmessage assignment fallback (older WebView Compat builds)
-  onmessage?: ((ev: MessageEvent) => void) | null;
-}
-
 declare global {
   interface Window {
-    AmyNestPushNative?: RawMessageBus;
     /**
-     * Synchronous wrapper marker injected by the Android wrapper at
-     * document_start (see PushBridge.kt → installWrapperMarker). When this
-     * string is defined, the page is GUARANTEED to be running inside the
-     * AmyNest Android WebView wrapper — regardless of whether the async
-     * `AmyNestPushNative` message bus has been wired up yet.
+     * Synchronous JavascriptInterface object injected by the Android wrapper.
+     * Exposed as `window.AndroidPush` via WebView.addJavascriptInterface().
+     */
+    AndroidPush?: {
+      getPushToken(): string | null;
+      getPermissionStatus?(): string;
+    };
+    /**
+     * Synchronous wrapper-version marker injected at document_start by
+     * addDocumentStartJavaScript — present even before AndroidPush wires up.
      */
     __AMYNEST_WRAPPER?: string;
     /**
-     * Buffered FCM token written by window.onAndroidToken() before React mounts.
-     * Cleared by use-push-registration.ts on first read to prevent double-registration.
+     * Buffered FCM token written by window.onAndroidToken() before React
+     * mounts. Cleared by use-push-registration.ts on first read.
      */
     __pendingAndroidToken?: string | null;
     /**
-     * Direct-callback entry point called by the Android WebView wrapper when it
-     * obtains the FCM registration token. Defined in index.html's early inline
-     * script. Simpler alternative to the AmyNestPushNative message-bus — works
-     * on older WebView builds that lack addWebMessageListener support.
+     * Entry point called by the Android wrapper via evaluateJavascript when
+     * the FCM token is available. Defined in index.html's early inline script.
      */
     onAndroidToken?: (token: string) => void;
   }
 }
 
-// ── Module-level singleton state ─────────────────────────────────────────
+// ── Module-level state ────────────────────────────────────────────────────
 
-let cached: NativeStatus | null = null;
-let initPromise: Promise<NativeStatus | null> | null = null;
-let messagesWired = false;
-const pendingCallbacks = new Map<
-  string,
-  (response: { ok: boolean; data?: NativeStatus; error?: string }) => void
->();
-const pendingPermissionResolvers: Array<(p: NativePushPermission) => void> = [];
+let cachedToken: string | null = null;
+let tokenListenerWired = false;
 
-let cbCounter = 0;
-function nextCbId(): string {
-  cbCounter += 1;
-  return `pb_${Date.now()}_${cbCounter}`;
-}
+// ── Internal helpers ──────────────────────────────────────────────────────
 
-function getRawBus(): RawMessageBus | null {
+function getAndroidPush(): Window["AndroidPush"] | null {
   if (typeof window === "undefined") return null;
-  const bus = window.AmyNestPushNative;
-  if (!bus || typeof bus.postMessage !== "function") return null;
-  return bus;
+  const ap = window.AndroidPush;
+  if (!ap || typeof ap.getPushToken !== "function") return null;
+  return ap;
 }
 
-function wireBusListenerOnce(bus: RawMessageBus) {
-  if (messagesWired) return;
-  messagesWired = true;
-
-  const handle = (ev: MessageEvent) => {
-    let payload: unknown;
-    try {
-      payload = typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data;
-    } catch {
-      return;
-    }
-    if (!payload || typeof payload !== "object") return;
-    const obj = payload as Record<string, unknown>;
-
-    // Out-of-band push events (token rotation, permission result).
-    const type = obj.type;
-    if (type === "token" && typeof obj.token === "string" && obj.token) {
-      const token = obj.token;
-      if (!cached) {
-        cached = { fcmEnabled: true, permission: "granted", token };
-      } else {
-        cached = { ...cached, token };
-      }
-      try {
-        window.dispatchEvent(
-          new CustomEvent("amynest-push-token", { detail: { token } }),
-        );
-      } catch { /* ignore */ }
-      return;
-    }
-    if (type === "permission" && typeof obj.permission === "string") {
-      const perm = obj.permission as NativePushPermission;
-      if (cached) cached = { ...cached, permission: perm };
-      // Resolve any awaiting requestPermission() promises.
-      while (pendingPermissionResolvers.length > 0) {
-        const r = pendingPermissionResolvers.shift();
-        if (r) r(perm);
-      }
-      try {
-        window.dispatchEvent(
-          new CustomEvent("amynest-push-permission", { detail: { status: perm } }),
-        );
-      } catch { /* ignore */ }
-      return;
-    }
-
-    // Callback responses to outbound action messages.
-    const cbId = typeof obj.cbId === "string" ? obj.cbId : "";
-    if (cbId && pendingCallbacks.has(cbId)) {
-      const cb = pendingCallbacks.get(cbId)!;
-      pendingCallbacks.delete(cbId);
-      cb({
-        ok: obj.ok === true,
-        data: obj.data as NativeStatus | undefined,
-        error: typeof obj.error === "string" ? obj.error : undefined,
-      });
-    }
-  };
-
-  if (typeof bus.addEventListener === "function") {
-    bus.addEventListener("message", handle);
-  } else {
-    bus.onmessage = handle;
+function readPermission(): NativePushPermission {
+  const ap = getAndroidPush();
+  if (!ap) return "default";
+  try {
+    const raw = ap.getPermissionStatus?.();
+    if (raw === "granted" || raw === "denied" || raw === "default") return raw;
+  } catch {
+    /* ignore */
   }
+  // If a token exists the user must have granted permission.
+  return tryGetToken() ? "granted" : "default";
 }
 
-function sendAction(
-  bus: RawMessageBus,
-  action: string,
-  timeoutMs = 8_000,
-): Promise<NativeStatus | null> {
-  return new Promise((resolve) => {
-    const cbId = nextCbId();
-    let settled = false;
-    const timer = window.setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      pendingCallbacks.delete(cbId);
-      resolve(null);
-    }, timeoutMs);
-    pendingCallbacks.set(cbId, (resp) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timer);
-      if (resp.ok && resp.data) {
-        cached = resp.data;
-        resolve(resp.data);
-      } else {
-        resolve(null);
-      }
-    });
-    try {
-      bus.postMessage(JSON.stringify({ action, cbId }));
-    } catch {
-      settled = true;
-      window.clearTimeout(timer);
-      pendingCallbacks.delete(cbId);
-      resolve(null);
+function tryGetToken(): string | null {
+  if (cachedToken) return cachedToken;
+  const ap = getAndroidPush();
+  if (!ap) return null;
+  try {
+    const t = ap.getPushToken();
+    if (t) {
+      cachedToken = t;
+      return t;
     }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/** Wire the `amynest-push-token` CustomEvent listener once (module singleton). */
+function wireTokenListenerOnce() {
+  if (tokenListenerWired || typeof window === "undefined") return;
+  tokenListenerWired = true;
+  window.addEventListener("amynest-push-token", (e: Event) => {
+    const detail = (e as CustomEvent<{ token: string }>).detail;
+    if (detail?.token) cachedToken = detail.token;
   });
 }
 
-/**
- * Initialise the bridge — wires the message listener and fetches the
- * initial status (fcmEnabled + permission + token). Idempotent: subsequent
- * calls return the same in-flight promise / cached result.
- */
-async function ensureInitialised(bus: RawMessageBus): Promise<NativeStatus | null> {
-  wireBusListenerOnce(bus);
-  if (cached) return cached;
-  if (!initPromise) {
-    initPromise = sendAction(bus, "getStatus").then((status) => {
-      // If FCM is disabled (no google-services.json), null out cached.token
-      // but keep the cached object so subsequent calls do not re-issue.
-      if (status) cached = status;
-      return status;
-    });
-  }
-  return initPromise;
-}
+// ── Public API ────────────────────────────────────────────────────────────
 
-// ── Public API ───────────────────────────────────────────────────────────
-
-/**
- * Lightweight, synchronous detection: returns the bridge facade only when
- * the wrapper has installed `window.AmyNestPushNative`. The returned
- * facade exposes sync `getPermissionStatus()` / `getToken()` accessors
- * backed by the cache; callers who care about correctness on first paint
- * should `await ensureNativePushReady()` first.
- */
+/** Facade returned to callers; same interface as before — no breaking change. */
 export interface NativePushFacade {
   getFcmEnabled(): boolean;
   getPermissionStatus(): NativePushPermission;
   getToken(): string | null;
 }
 
+/**
+ * Lightweight, synchronous detection: returns the bridge facade only when
+ * `window.AndroidPush` is wired up. The facade's sync accessors are backed
+ * by the module-level cache populated during the last `ensureNativePushReady`
+ * call; callers who need correctness on first paint should await that first.
+ */
 export function getNativePushBridge(): NativePushFacade | null {
-  const bus = getRawBus();
-  if (!bus) return null;
-  // Kick off (but do NOT await) initialisation so the cache is populated
-  // for the next call. Render-time consumers fall through with sensible
-  // defaults until the first message arrives.
-  void ensureInitialised(bus);
+  const ap = getAndroidPush();
+  if (!ap) return null;
+  wireTokenListenerOnce();
   return {
-    getFcmEnabled: () => cached?.fcmEnabled ?? true,
-    getPermissionStatus: () => cached?.permission ?? "default",
-    getToken: () => cached?.token ?? null,
+    getFcmEnabled: () => true,
+    getPermissionStatus: () => readPermission(),
+    getToken: () => tryGetToken(),
   };
 }
 
-/** Await the first status response — useful at app boot. */
-export async function ensureNativePushReady(): Promise<NativeStatus | null> {
-  const bus = getRawBus();
-  if (!bus) return null;
-  return ensureInitialised(bus);
+/**
+ * Drain the `__pendingAndroidToken` buffer (written before React mounted)
+ * and hydrate the module cache. Returns the current status object.
+ */
+export async function ensureNativePushReady(): Promise<{
+  fcmEnabled: boolean;
+  permission: NativePushPermission;
+  token: string | null;
+} | null> {
+  const ap = getAndroidPush();
+  if (!ap) return null;
+  wireTokenListenerOnce();
+  const permission = readPermission();
+  const fromBridge = tryGetToken();
+  const pending =
+    typeof window !== "undefined" ? window.__pendingAndroidToken : null;
+  if (pending && !cachedToken) {
+    cachedToken = pending;
+    // Clear so the pending token isn't drained a second time.
+    if (typeof window !== "undefined") window.__pendingAndroidToken = null;
+  }
+  return { fcmEnabled: true, permission, token: cachedToken ?? fromBridge };
 }
 
 /**
- * Synchronous, low-cost detection of "are we inside the AmyNest Android
- * wrapper?" — checks ANY of:
- *   1. `window.AmyNestPushNative` is wired up (full bridge ready)
- *   2. `window.__AMYNEST_WRAPPER` marker injected at document_start (the
- *      bulletproof signal — present even when the message-bus is delayed
- *      or unavailable on this device)
- *   3. `navigator.userAgent` contains the `AmyNestAndroid` token (last-
- *      resort signal: works even on very old WebView builds where neither
- *      WEB_MESSAGE_LISTENER nor DOCUMENT_START_SCRIPT is supported)
- *
- * Use this to suppress the misleading "Not supported in this browser"
- * fallback when the page is INSIDE the wrapper — show a wrapper-aware
- * loading / recovery state instead.
+ * Synchronous detection of "are we inside the AmyNest Android wrapper?"
+ * Checks all three signals in priority order.
  */
 export function isAmyNestWrapper(): boolean {
   if (typeof window === "undefined") return false;
-  if (typeof window.AmyNestPushNative !== "undefined") return true;
+  if (typeof window.AndroidPush !== "undefined") return true;
   if (typeof window.__AMYNEST_WRAPPER === "string") return true;
   if (
     typeof navigator !== "undefined" &&
@@ -275,19 +178,13 @@ export function isAmyNestWrapper(): boolean {
 }
 
 /**
- * Polls for `window.AmyNestPushNative` to appear within `timeoutMs`,
- * returning the bridge facade when it does or `null` on timeout.
+ * Poll for `window.AndroidPush` to appear within `timeoutMs`, then return
+ * the bridge facade. Returns immediately with `null` outside the wrapper.
  *
- * Why polling? The native side installs the message-bus listener BEFORE
- * `WebView.loadUrl()`, so in theory `window.AmyNestPushNative` should be
- * present from the very first paint. In practice, on some Android devices
- * the JS object is wired up a few hundred ms AFTER the page begins
- * rendering — long enough for React to mount the settings page and render
- * the "Not supported" fallback. This helper bridges that window so the
- * settings page can wait gracefully when [isAmyNestWrapper] is true.
- *
- * Returns immediately (with `null`) when not inside the wrapper, so it is
- * safe to call from any environment.
+ * Why polling: addJavascriptInterface objects are available before the page
+ * loads, but on some devices there is a brief gap before the first JS
+ * execution sees them. The wrapper marker (`__AMYNEST_WRAPPER`) is the
+ * bulletproof signal that we should wait.
  */
 export function awaitNativePushBridge(
   timeoutMs = 5_000,
@@ -323,7 +220,7 @@ export function awaitNativePushBridge(
   });
 }
 
-/** Read the wrapper version marker (or null when not in the wrapper). */
+/** Read the wrapper version marker, or null when not in the wrapper. */
 export function getWrapperVersion(): string | null {
   if (typeof window === "undefined") return null;
   return typeof window.__AMYNEST_WRAPPER === "string"
@@ -332,74 +229,61 @@ export function getWrapperVersion(): string | null {
 }
 
 /**
- * Trigger the native POST_NOTIFICATIONS dialog (Android 13+) and resolve
- * with the resulting permission state. On pre-Android 13 the native side
- * responds immediately with "granted". Resolves "denied" if no response
- * within `timeoutMs` (user dismissed by hardware-back, etc.).
+ * With the AndroidPush bridge, permission is requested natively by the
+ * wrapper on app launch (and re-synced on every onResume). This function
+ * resolves immediately with the current OS permission state rather than
+ * attempting to trigger a native dialog from JS.
  */
 export function requestNativePushPermission(
   _facade: NativePushFacade,
-  timeoutMs = 60_000,
+  _timeoutMs = 60_000,
 ): Promise<NativePushPermission> {
+  return Promise.resolve(readPermission());
+}
+
+/**
+ * Get the native FCM token. Returns immediately if the cache is warm;
+ * otherwise waits up to `timeoutMs` for the `amynest-push-token` event
+ * fired by `window.onAndroidToken` (which the native side calls via
+ * evaluateJavascript once the FCM token is available).
+ */
+export async function getNativePushToken(
+  _facade: NativePushFacade,
+  timeoutMs = 15_000,
+): Promise<string | null> {
+  const immediate = tryGetToken();
+  if (immediate) return immediate;
+
   return new Promise((resolve) => {
-    const bus = getRawBus();
-    if (!bus) {
-      resolve("denied");
-      return;
-    }
-    // Short-circuit when already granted.
-    if (cached?.permission === "granted") {
-      resolve("granted");
+    if (typeof window === "undefined") {
+      resolve(null);
       return;
     }
     let settled = false;
     const timer = window.setTimeout(() => {
       if (settled) return;
       settled = true;
-      const idx = pendingPermissionResolvers.indexOf(wrapped);
-      if (idx >= 0) pendingPermissionResolvers.splice(idx, 1);
-      resolve(cached?.permission ?? "denied");
+      window.removeEventListener("amynest-push-token", onToken);
+      resolve(cachedToken ?? null);
     }, timeoutMs);
-    const wrapped = (perm: NativePushPermission) => {
+
+    const onToken = (e: Event) => {
       if (settled) return;
       settled = true;
       window.clearTimeout(timer);
-      resolve(perm);
+      window.removeEventListener("amynest-push-token", onToken);
+      const detail = (e as CustomEvent<{ token: string }>).detail;
+      if (detail?.token) cachedToken = detail.token;
+      resolve(cachedToken ?? null);
     };
-    pendingPermissionResolvers.push(wrapped);
 
-    // Fire-and-forget the request. The actual permission outcome is
-    // delivered later via the "permission" push event.
-    sendAction(bus, "requestPermission").catch(() => {/* swallowed */});
+    window.addEventListener("amynest-push-token", onToken);
   });
 }
 
 /**
- * Wait for the native FCM token. Returns immediately if cached; otherwise
- * issues a `refreshToken` action and waits up to `timeoutMs` for either
- * the response or the out-of-band "token" event.
- */
-export async function getNativePushToken(
-  _facade: NativePushFacade,
-  timeoutMs = 15_000,
-): Promise<string | null> {
-  const bus = getRawBus();
-  if (!bus) return null;
-  if (cached?.token) return cached.token;
-
-  const status = await Promise.race([
-    sendAction(bus, "refreshToken", timeoutMs),
-    new Promise<NativeStatus | null>((resolve) =>
-      window.setTimeout(() => resolve(cached), timeoutMs),
-    ),
-  ]);
-  return status?.token ?? cached?.token ?? null;
-}
-
-/**
- * High-level helper used by the nudge banner + push-registration hook:
- * obtains the native FCM token (waiting if necessary) and POSTs it to
- * `/api/push/register` with platform="android". Returns true when the
+ * High-level helper: obtain the native FCM token and POST it to
+ * `/api/push/register` with `platform="android"`. Returns true when the
  * server accepted the registration.
  */
 export async function registerNativePushToken(
@@ -408,7 +292,6 @@ export async function registerNativePushToken(
 ): Promise<boolean> {
   const facade = getNativePushBridge();
   if (!facade) return false;
-  // Hydrate cache if needed so getPermissionStatus is meaningful.
   await ensureNativePushReady();
   if (facade.getPermissionStatus() !== "granted") return false;
   const token = await getNativePushToken(facade);
