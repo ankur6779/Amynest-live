@@ -36,6 +36,9 @@ type ParentProfile = {
   foodType?: string;
   allergies?: string;
   region?: string;
+  dietType?: string;
+  foodStyle?: string;
+  subCuisine?: string;
 };
 
 type Child = { id: number };
@@ -54,20 +57,78 @@ const WORK_TYPES: { label: string; value: string }[] = [
   { label: "Work from Office", value: "work_from_office" },
   { label: "Housewife / Homemaker", value: "homemaker" },
 ];
-const FOOD_TYPES: { label: string; value: string }[] = [
-  { label: "Non-Vegetarian", value: "non_veg" },
-  { label: "Vegetarian", value: "veg" },
+
+const DIET_OPTIONS: { label: string; value: string; emoji: string }[] = [
+  { label: "Vegetarian", value: "vegetarian", emoji: "🥦" },
+  { label: "Vegan", value: "vegan", emoji: "🌱" },
+  { label: "Eggetarian", value: "eggetarian", emoji: "🥚" },
+  { label: "Non-Veg", value: "non_veg", emoji: "🍗" },
+  { label: "Pescatarian", value: "pescatarian", emoji: "🐟" },
+  { label: "No Preference", value: "no_preference", emoji: "✨" },
 ];
-const REGIONS: { label: string; value: string }[] = [
-  { label: "Pan-Indian", value: "pan_indian" },
-  { label: "North Indian", value: "north_indian" },
-  { label: "South Indian", value: "south_indian" },
-  { label: "Bengali", value: "bengali" },
-  { label: "Gujarati", value: "gujarati" },
-  { label: "Maharashtrian", value: "maharashtrian" },
-  { label: "Punjabi", value: "punjabi" },
-  { label: "Global / Continental", value: "global" },
+
+const FOOD_STYLE_OPTIONS: { label: string; value: string; emoji: string }[] = [
+  { label: "Indian", value: "indian", emoji: "🍛" },
+  { label: "Western", value: "western", emoji: "🍕" },
+  { label: "Asian", value: "asian", emoji: "🍜" },
+  { label: "Middle Eastern", value: "middle_eastern", emoji: "🧆" },
+  { label: "Mixed", value: "mixed", emoji: "🌍" },
 ];
+
+const INDIAN_SUB_OPTIONS: { label: string; value: string; emoji: string }[] = [
+  { label: "North Indian", value: "north_indian", emoji: "🫓" },
+  { label: "South Indian", value: "south_indian", emoji: "🍚" },
+  { label: "Bengali", value: "bengali", emoji: "🐟" },
+  { label: "Gujarati", value: "gujarati", emoji: "🧆" },
+  { label: "Punjabi", value: "punjabi", emoji: "🫕" },
+];
+
+const ALLERGY_CHIPS: { label: string; value: string }[] = [
+  { label: "Dairy", value: "dairy" },
+  { label: "Gluten", value: "gluten" },
+  { label: "Nuts", value: "nuts" },
+  { label: "Eggs", value: "eggs" },
+  { label: "Soy", value: "soy" },
+];
+
+function deriveFoodType(dietType: string): string {
+  if (["vegetarian", "vegan", "eggetarian"].includes(dietType)) return "veg";
+  return "non_veg";
+}
+
+function deriveRegion(foodStyle: string, subCuisine: string): string {
+  if (foodStyle === "indian") {
+    if (subCuisine && subCuisine !== "") return subCuisine;
+    return "pan_indian";
+  }
+  return "global";
+}
+
+function foodTypeFromOld(old: string): string {
+  if (old === "veg") return "vegetarian";
+  return "non_veg";
+}
+
+function foodStyleFromOldRegion(region: string): { foodStyle: string; subCuisine: string } {
+  const indianSubs = ["north_indian", "south_indian", "bengali", "gujarati", "punjabi", "maharashtrian", "pan_indian"];
+  if (region === "global") return { foodStyle: "mixed", subCuisine: "" };
+  if (indianSubs.includes(region)) {
+    return { foodStyle: "indian", subCuisine: region === "pan_indian" ? "" : region };
+  }
+  return { foodStyle: "indian", subCuisine: "" };
+}
+
+function parseAllergyChips(raw: string): { chips: string[]; text: string } {
+  const knownValues = ALLERGY_CHIPS.map(c => c.value);
+  const parts = raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  const chips: string[] = [];
+  const rest: string[] = [];
+  parts.forEach(p => {
+    if (knownValues.includes(p)) chips.push(p);
+    else rest.push(p);
+  });
+  return { chips, text: rest.join(", ") };
+}
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -93,9 +154,13 @@ export default function ProfileScreen() {
   const [workStartTime, setWorkStartTime] = useState("");
   const [workEndTime, setWorkEndTime] = useState("");
   const [freeSlots, setFreeSlots] = useState<FreeSlot[]>([]);
-  const [foodType, setFoodType] = useState("non_veg");
-  const [allergies, setAllergies] = useState("");
-  const [region, setRegion] = useState("pan_indian");
+
+  // Food preferences — enriched
+  const [dietType, setDietType] = useState("no_preference");
+  const [foodStyle, setFoodStyle] = useState("indian");
+  const [subCuisine, setSubCuisine] = useState("");
+  const [allergyChips, setAllergyChips] = useState<string[]>([]);
+  const [allergyText, setAllergyText] = useState("");
 
   const { data: profile, isLoading } = useQuery<ParentProfile | null>({
     queryKey: ["parent-profile"],
@@ -186,9 +251,31 @@ export default function ProfileScreen() {
       setWorkStartTime(profile.workStartTime ?? "");
       setWorkEndTime(profile.workEndTime ?? "");
       setFreeSlots(profile.freeSlots ?? []);
-      setFoodType(profile.foodType ?? "non_veg");
-      setAllergies(profile.allergies ?? "");
-      setRegion(profile.region ?? "pan_indian");
+
+      // Load enriched fields, falling back from old flat fields for existing mobile users
+      if (profile.dietType) {
+        setDietType(profile.dietType);
+      } else if (profile.foodType) {
+        setDietType(foodTypeFromOld(profile.foodType));
+      } else {
+        setDietType("no_preference");
+      }
+
+      if (profile.foodStyle) {
+        setFoodStyle(profile.foodStyle);
+        setSubCuisine(profile.subCuisine ?? "");
+      } else if (profile.region) {
+        const derived = foodStyleFromOldRegion(profile.region);
+        setFoodStyle(derived.foodStyle);
+        setSubCuisine(derived.subCuisine);
+      } else {
+        setFoodStyle("indian");
+        setSubCuisine("");
+      }
+
+      const { chips, text } = parseAllergyChips(profile.allergies ?? "");
+      setAllergyChips(chips);
+      setAllergyText(text);
     }
   }, [profile, user?.firstName]);
 
@@ -206,6 +293,13 @@ export default function ProfileScreen() {
       next[i] = { ...next[i], [field]: value };
       return next;
     });
+  };
+
+  const toggleAllergyChip = (val: string) => {
+    Haptics.selectionAsync();
+    setAllergyChips(prev =>
+      prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]
+    );
   };
 
   const handleProfilePicUpload = async () => {
@@ -241,14 +335,25 @@ export default function ProfileScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSaving(true);
     try {
-      const body: any = { role, workType, foodType, region };
+      const combinedAllergies = [...allergyChips, allergyText.trim()].filter(Boolean).join(", ") || null;
+      const body: Record<string, unknown> = {
+        role,
+        workType,
+        // Enriched food fields
+        dietType,
+        foodStyle,
+        subCuisine: subCuisine || null,
+        allergies: combinedAllergies,
+        // Derived legacy fields for routine engine backward compat
+        foodType: deriveFoodType(dietType),
+        region: deriveRegion(foodStyle, subCuisine),
+      };
       if (name) body.name = name;
       if (gender) body.gender = gender;
       if (mobileNumber) body.mobileNumber = mobileNumber;
       if (workStartTime) body.workStartTime = workStartTime;
       if (workEndTime) body.workEndTime = workEndTime;
       if (freeSlots.length > 0) body.freeSlots = freeSlots;
-      if (allergies) body.allergies = allergies;
 
       const res = await authFetch("/api/parent-profile", {
         method: "PUT",
@@ -503,24 +608,93 @@ export default function ProfileScreen() {
           icon="restaurant-outline"
           colors={colors}
         >
+          {/* 1. Diet Type */}
           <Field label="Diet Type" colors={colors}>
-            <ChipPicker options={FOOD_TYPES} value={foodType} onChange={setFoodType} colors={colors} />
+            <View style={styles.chipRow}>
+              {DIET_OPTIONS.map(opt => {
+                const active = dietType === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={() => { Haptics.selectionAsync(); setDietType(opt.value); }}
+                    style={[styles.chip, { backgroundColor: active ? colors.primary : colors.background, borderColor: active ? colors.primary : colors.border }]}
+                  >
+                    <Text style={[styles.chipText, { color: active ? "#fff" : colors.foreground }]}>{opt.emoji} {opt.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </Field>
-          <Field label="Regional Cuisine" colors={colors}>
-            <ChipPicker options={REGIONS} value={region} onChange={setRegion} colors={colors} />
-            <Text style={[styles.hint, { color: colors.mutedForeground }]}>
-              {BRAND.aiName} AI tailors meal suggestions to your regional cuisine.
-            </Text>
+
+          {/* 2. Food Style */}
+          <Field label="Food Style" colors={colors}>
+            <View style={styles.chipRow}>
+              {FOOD_STYLE_OPTIONS.map(opt => {
+                const active = foodStyle === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setFoodStyle(opt.value);
+                      if (opt.value !== "indian") setSubCuisine("");
+                    }}
+                    style={[styles.chip, { backgroundColor: active ? colors.primary : colors.background, borderColor: active ? colors.primary : colors.border }]}
+                  >
+                    <Text style={[styles.chipText, { color: active ? "#fff" : colors.foreground }]}>{opt.emoji} {opt.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </Field>
-          <Field label="Allergies / Foods to Avoid" colors={colors}>
+
+          {/* 3. Indian Sub-cuisine (conditional) */}
+          {foodStyle === "indian" && (
+            <Field label="Indian Sub-cuisine (optional)" colors={colors}>
+              <View style={[styles.chipRow, { paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: colors.primary + "33" }]}>
+                {INDIAN_SUB_OPTIONS.map(opt => {
+                  const active = subCuisine === opt.value;
+                  return (
+                    <TouchableOpacity
+                      key={opt.value}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setSubCuisine(prev => prev === opt.value ? "" : opt.value);
+                      }}
+                      style={[styles.chip, { backgroundColor: active ? colors.primary + "25" : colors.background, borderColor: active ? colors.primary : colors.border }]}
+                    >
+                      <Text style={[styles.chipText, { color: active ? colors.primary : colors.foreground }]}>{opt.emoji} {opt.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </Field>
+          )}
+
+          {/* 4. Allergies */}
+          <Field label="Food Restrictions / Allergies" colors={colors}>
+            <View style={styles.chipRow}>
+              {ALLERGY_CHIPS.map(chip => {
+                const active = allergyChips.includes(chip.value);
+                return (
+                  <TouchableOpacity
+                    key={chip.value}
+                    onPress={() => toggleAllergyChip(chip.value)}
+                    style={[styles.chip, { backgroundColor: active ? colors.primary + "25" : colors.background, borderColor: active ? colors.primary : colors.border }]}
+                  >
+                    <Text style={[styles.chipText, { color: active ? colors.primary : colors.foreground }]}>{chip.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
             <TextInput
               style={[
                 styles.input,
                 styles.textArea,
-                { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background },
+                { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background, marginTop: 8 },
               ]}
-              value={allergies}
-              onChangeText={setAllergies}
+              value={allergyText}
+              onChangeText={setAllergyText}
               placeholder={t("screens.tabs_profile.e_g_peanuts_shellfish_dairy_gluten")}
               placeholderTextColor={colors.mutedForeground}
               multiline
@@ -823,69 +997,56 @@ const styles = StyleSheet.create({
   profileEmail: { fontSize: 12, fontFamily: "Inter_400Regular" },
   statsMini: { flexDirection: "row", marginTop: 8, gap: 6 },
   statChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
-  statChipText: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  statChipText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
 
   section: {
     borderRadius: 20, borderWidth: 1, padding: 16, marginBottom: 14,
   },
-  sectionHeader: { flexDirection: "row", alignItems: "flex-start", marginBottom: 14 },
-  sectionTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  sectionHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 },
+  sectionTitle: { fontSize: 15, fontFamily: "Inter_700Bold" },
   sectionSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
 
-  label: { fontSize: 12, fontFamily: "Inter_700Bold", textTransform: "uppercase", letterSpacing: 0.5 },
-  hint: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
-  toggleRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
-  toggleLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  toggleHint: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 4, lineHeight: 16 },
-  smallActionBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, marginTop: 4,
-  },
-  smallActionText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-
+  label: { fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase", letterSpacing: 0.6 },
   input: {
     height: 44, borderRadius: 12, borderWidth: 1.5,
-    paddingHorizontal: 14, fontSize: 14, fontFamily: "Inter_400Regular",
+    paddingHorizontal: 14, fontSize: 15, fontFamily: "Inter_400Regular",
   },
-  textArea: { height: 80, paddingTop: 10, paddingBottom: 10 },
-
+  textArea: { height: 80, paddingTop: 12, paddingBottom: 12 },
+  hint: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
   row2: { flexDirection: "row", gap: 12 },
 
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1.5 },
-  chipText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5 },
+  chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
 
-  smallBtn: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1.5,
-  },
-  smallBtnText: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  slotRow: { flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderRadius: 12 },
+  toLabel: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  trashBtn: { padding: 4 },
+  emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", paddingVertical: 8 },
 
-  emptyText: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", paddingVertical: 12 },
+  smallBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, borderWidth: 1 },
+  smallBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 
-  slotRow: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    padding: 8, borderRadius: 12,
-  },
-  toLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
-  trashBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  saveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, borderRadius: 16, marginBottom: 14 },
+  saveText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
 
-  saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    paddingVertical: 14, borderRadius: 16, marginBottom: 12,
-  },
-  saveText: { color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" },
+  toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  toggleLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
+  toggleHint: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  smallActionBtn: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1 },
+  smallActionText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
 
   logoutBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    paddingVertical: 14, borderRadius: 16, borderWidth: 1,
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16,
+    borderWidth: 1, marginBottom: 10,
   },
-  logoutText: { color: palette.red500, fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  logoutText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: palette.red500 },
 
   devToolsBtn: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    paddingVertical: 12, paddingHorizontal: 16,
-    borderRadius: 16, borderWidth: 1, marginTop: 8,
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16,
+    borderWidth: 1, borderStyle: "dashed", marginBottom: 10,
   },
   devToolsText: { fontSize: 14, fontFamily: "Inter_500Medium" },
 });
