@@ -82,6 +82,7 @@
     "@workspace/coach-topic-questions": "workspace:*",
     "@workspace/event-prep": "workspace:*",
     "@workspace/family-routine": "workspace:*",
+    "@workspace/conflict-resolution": "workspace:*",
     "@workspace/infant-hub": "workspace:*",
     "@workspace/infant-problems": "workspace:*",
     "@workspace/life-skills": "workspace:*",

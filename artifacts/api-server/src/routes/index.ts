@@ -43,6 +43,7 @@ import parentTasksRouter from "./parent-tasks";
 import smartStudyRouter from "./smart-study";
 import lifeSkillsRouter from "./life-skills";
 import childIntelligenceRouter from "./child-intelligence";
+import householdRouter from "./household";
 import debugRouter from "./debug";
 import authRouter from "./auth";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -117,6 +118,7 @@ router.use(parentTasksRouter);
 router.use(smartStudyRouter);
 router.use(lifeSkillsRouter);
 router.use(childIntelligenceRouter);
+router.use(householdRouter);
 router.use(debugRouter);
 
 export default router;

@@ -37,6 +37,7 @@ import type {
   GenerateInsightsResponse,
   GenerateRoutineBody,
   GeneratedRoutine,
+  GetHouseholdConflictsParams,
   GetLifeSkillRolePlaysParams,
   GetLifeSkillsTodayParams,
   GetParentProfileResponse,
@@ -44,6 +45,8 @@ import type {
   GetRecipeResponse,
   GetSmartStudyInsightsParams,
   HealthStatus,
+  HouseholdOrchestrateBody,
+  HouseholdRoutineState,
   IntelligenceInsightsResponse,
   LearningWeightsResponse,
   LifeSkillProgressResponse,
@@ -1004,6 +1007,205 @@ export const useGenerateRoutine = <
 > => {
   return useMutation(getGenerateRoutineMutationOptions(options));
 };
+
+/**
+ * Accepts per-child draft routines + caregiver availability and returns a
+coordinated household schedule. Detects caregiver overlaps, resource
+contentions, meal misalignments, sleep window violations, and school
+collisions, then applies (or previews) resolutions.
+
+ * @summary Multi-Child Conflict Resolution — orchestrate routines for all children
+ */
+export const getOrchestrateHouseholdUrl = () => {
+  return `/api/household/orchestrate`;
+};
+
+export const orchestrateHousehold = async (
+  householdOrchestrateBody: HouseholdOrchestrateBody,
+  options?: RequestInit,
+): Promise<HouseholdRoutineState> => {
+  return customFetch<HouseholdRoutineState>(getOrchestrateHouseholdUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(householdOrchestrateBody),
+  });
+};
+
+export const getOrchestrateHouseholdMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof orchestrateHousehold>>,
+    TError,
+    { data: BodyType<HouseholdOrchestrateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof orchestrateHousehold>>,
+  TError,
+  { data: BodyType<HouseholdOrchestrateBody> },
+  TContext
+> => {
+  const mutationKey = ["orchestrateHousehold"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof orchestrateHousehold>>,
+    { data: BodyType<HouseholdOrchestrateBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return orchestrateHousehold(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type OrchestrateHouseholdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof orchestrateHousehold>>
+>;
+export type OrchestrateHouseholdMutationBody =
+  BodyType<HouseholdOrchestrateBody>;
+export type OrchestrateHouseholdMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Multi-Child Conflict Resolution — orchestrate routines for all children
+ */
+export const useOrchestrateHousehold = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof orchestrateHousehold>>,
+    TError,
+    { data: BodyType<HouseholdOrchestrateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof orchestrateHousehold>>,
+  TError,
+  { data: BodyType<HouseholdOrchestrateBody> },
+  TContext
+> => {
+  return useMutation(getOrchestrateHouseholdMutationOptions(options));
+};
+
+/**
+ * Pulls already-saved routines for every child belonging to the user on
+the given date and runs the conflict-detection pass without applying
+any changes. Useful for the household dashboard.
+
+ * @summary Detect household conflicts for an existing date
+ */
+export const getGetHouseholdConflictsUrl = (
+  params: GetHouseholdConflictsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/household/conflicts?${stringifiedParams}`
+    : `/api/household/conflicts`;
+};
+
+export const getHouseholdConflicts = async (
+  params: GetHouseholdConflictsParams,
+  options?: RequestInit,
+): Promise<HouseholdRoutineState> => {
+  return customFetch<HouseholdRoutineState>(
+    getGetHouseholdConflictsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetHouseholdConflictsQueryKey = (
+  params?: GetHouseholdConflictsParams,
+) => {
+  return [`/api/household/conflicts`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetHouseholdConflictsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHouseholdConflicts>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetHouseholdConflictsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHouseholdConflicts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetHouseholdConflictsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getHouseholdConflicts>>
+  > = ({ signal }) =>
+    getHouseholdConflicts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHouseholdConflicts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHouseholdConflictsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHouseholdConflicts>>
+>;
+export type GetHouseholdConflictsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Detect household conflicts for an existing date
+ */
+
+export function useGetHouseholdConflicts<
+  TData = Awaited<ReturnType<typeof getHouseholdConflicts>>,
+  TError = ErrorType<unknown>,
+>(
+  params: GetHouseholdConflictsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHouseholdConflicts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHouseholdConflictsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List behavior logs

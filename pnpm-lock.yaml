@@ -208,6 +208,9 @@ importers:
       '@workspace/coach-topic-questions':
         specifier: workspace:*
         version: link:../../lib/coach-topic-questions
+      '@workspace/conflict-resolution':
+        specifier: workspace:*
+        version: link:../../lib/conflict-resolution
       '@workspace/event-prep':
         specifier: workspace:*
         version: link:../../lib/event-prep
@@ -557,6 +560,9 @@ importers:
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
+      '@workspace/conflict-resolution':
+        specifier: workspace:*
+        version: link:../../lib/conflict-resolution
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
@@ -660,6 +666,9 @@ importers:
       '@workspace/coach-topic-questions':
         specifier: workspace:*
         version: link:../../lib/coach-topic-questions
+      '@workspace/conflict-resolution':
+        specifier: workspace:*
+        version: link:../../lib/conflict-resolution
       '@workspace/event-prep':
         specifier: workspace:*
         version: link:../../lib/event-prep
@@ -844,6 +853,9 @@ importers:
       '@workspace/api-client-react':
         specifier: workspace:*
         version: link:../../lib/api-client-react
+      '@workspace/api-zod':
+        specifier: workspace:*
+        version: link:../../lib/api-zod
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -1325,6 +1337,12 @@ importers:
   lib/behavior-tracker: {}
 
   lib/coach-topic-questions: {}
+
+  lib/conflict-resolution:
+    dependencies:
+      '@workspace/family-routine':
+        specifier: workspace:*
+        version: link:../family-routine
 
   lib/db:
     dependencies:

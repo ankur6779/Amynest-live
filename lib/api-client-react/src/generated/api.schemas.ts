@@ -5,6 +5,203 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type HouseholdRoutineItemCaregiver =
+  | (typeof HouseholdRoutineItemCaregiver)[keyof typeof HouseholdRoutineItemCaregiver]
+  | null;
+
+export const HouseholdRoutineItemCaregiver = {
+  mom: "mom",
+  dad: "dad",
+  both: "both",
+  grandparent: "grandparent",
+  babysitter: "babysitter",
+} as const;
+
+export interface HouseholdRoutineItem {
+  time: string;
+  activity: string;
+  duration: number;
+  category: string;
+  notes?: string | null;
+  status?: string | null;
+  rewardPoints?: number | null;
+  caregiver?: HouseholdRoutineItemCaregiver;
+  shiftedFromTime?: string | null;
+  isAnchor?: boolean | null;
+}
+
+export type HouseholdChildProfileDefaultCaregiver =
+  | (typeof HouseholdChildProfileDefaultCaregiver)[keyof typeof HouseholdChildProfileDefaultCaregiver]
+  | null;
+
+export const HouseholdChildProfileDefaultCaregiver = {
+  mom: "mom",
+  dad: "dad",
+  both: "both",
+  grandparent: "grandparent",
+  babysitter: "babysitter",
+} as const;
+
+export interface HouseholdChildProfile {
+  id: number;
+  name: string;
+  age: number;
+  ageMonths?: number | null;
+  wakeUpTime?: string | null;
+  sleepTime?: string | null;
+  schoolStartTime?: string | null;
+  schoolEndTime?: string | null;
+  hasSchoolToday?: boolean | null;
+  defaultCaregiver?: HouseholdChildProfileDefaultCaregiver;
+  isSick?: boolean | null;
+  isInfant?: boolean | null;
+}
+
+export interface HouseholdChildRoutine {
+  child: HouseholdChildProfile;
+  items: HouseholdRoutineItem[];
+}
+
+export type HouseholdCaregiverAvailabilityCaregiver =
+  (typeof HouseholdCaregiverAvailabilityCaregiver)[keyof typeof HouseholdCaregiverAvailabilityCaregiver];
+
+export const HouseholdCaregiverAvailabilityCaregiver = {
+  mom: "mom",
+  dad: "dad",
+  both: "both",
+  grandparent: "grandparent",
+  babysitter: "babysitter",
+} as const;
+
+export type HouseholdCaregiverAvailabilityWindowsItem = {
+  start: string;
+  end: string;
+};
+
+export interface HouseholdCaregiverAvailability {
+  caregiver: HouseholdCaregiverAvailabilityCaregiver;
+  capacity: number;
+  windows: HouseholdCaregiverAvailabilityWindowsItem[];
+}
+
+export type HouseholdConflictKind =
+  (typeof HouseholdConflictKind)[keyof typeof HouseholdConflictKind];
+
+export const HouseholdConflictKind = {
+  caregiver_overlap: "caregiver_overlap",
+  caregiver_overload: "caregiver_overload",
+  resource_contention: "resource_contention",
+  meal_misalignment: "meal_misalignment",
+  sleep_window_violation: "sleep_window_violation",
+  school_collision: "school_collision",
+  shared_activity_opportunity: "shared_activity_opportunity",
+} as const;
+
+export interface HouseholdConflict {
+  id: string;
+  kind: HouseholdConflictKind;
+  explanation: string;
+  childIds: number[];
+  caregiver?: string | null;
+  resource?: string | null;
+  startTime: string;
+  endTime: string;
+  severity: number;
+}
+
+export type HouseholdResolutionChangeAction =
+  (typeof HouseholdResolutionChangeAction)[keyof typeof HouseholdResolutionChangeAction];
+
+export const HouseholdResolutionChangeAction = {
+  shift: "shift",
+  drop: "drop",
+  merge: "merge",
+  reassign: "reassign",
+} as const;
+
+export interface HouseholdResolutionChange {
+  childId: number;
+  fromTime: string;
+  toTime: string;
+  activity: string;
+  action: HouseholdResolutionChangeAction;
+  newCaregiver?: string | null;
+}
+
+export type HouseholdResolutionStrategy =
+  (typeof HouseholdResolutionStrategy)[keyof typeof HouseholdResolutionStrategy];
+
+export const HouseholdResolutionStrategy = {
+  shift_later: "shift_later",
+  shift_earlier: "shift_earlier",
+  synchronize_meals: "synchronize_meals",
+  merge_into_shared_activity: "merge_into_shared_activity",
+  swap_caregiver: "swap_caregiver",
+  split_resource_window: "split_resource_window",
+  drop_optional: "drop_optional",
+  no_action: "no_action",
+} as const;
+
+export interface HouseholdResolution {
+  conflictId: string;
+  strategy: HouseholdResolutionStrategy;
+  rationale: string;
+  severityReduction: number;
+  changes: HouseholdResolutionChange[];
+}
+
+export interface HouseholdTimelineEntry {
+  childId: number;
+  childName: string;
+  item: HouseholdRoutineItem;
+}
+
+export interface HouseholdTimelineSlot {
+  startTime: string;
+  endTime: string;
+  hasConflict: boolean;
+  caregivers: string[];
+  resources: string[];
+  entries: HouseholdTimelineEntry[];
+}
+
+export interface HouseholdSummary {
+  totalConflicts: number;
+  resolvedConflicts: number;
+  sharedActivityWindows: number;
+  caregiverPeakLoad: number;
+  sleepIntegrityScore: number;
+  overallScore: number;
+}
+
+export interface HouseholdReasoningStep {
+  step: string;
+  detail: string;
+  inputCount?: number | null;
+  outputCount?: number | null;
+}
+
+export interface HouseholdRoutineState {
+  date: string;
+  originalRoutines: HouseholdChildRoutine[];
+  finalRoutines: HouseholdChildRoutine[];
+  conflicts: HouseholdConflict[];
+  postResolutionConflicts: HouseholdConflict[];
+  resolutions: HouseholdResolution[];
+  timeline: HouseholdTimelineSlot[];
+  summary: HouseholdSummary;
+  reasoningTrace: HouseholdReasoningStep[];
+}
+
+export interface HouseholdOrchestrateBody {
+  date: string;
+  dryRun?: boolean | null;
+  mealSyncWindowMinutes?: number | null;
+  bucketMinutes?: number | null;
+  routines: HouseholdChildRoutine[];
+  caregivers: HouseholdCaregiverAvailability[];
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -1043,6 +1240,10 @@ export interface SmartStudyInsights {
 
 export type ListRoutinesParams = {
   childId?: number;
+};
+
+export type GetHouseholdConflictsParams = {
+  date: string;
 };
 
 export type ListBehaviorsParams = {

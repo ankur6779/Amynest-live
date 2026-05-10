@@ -662,6 +662,460 @@ export const GenerateRoutineResponse = zod.object({
 });
 
 /**
+ * Accepts per-child draft routines + caregiver availability and returns a
+coordinated household schedule. Detects caregiver overlaps, resource
+contentions, meal misalignments, sleep window violations, and school
+collisions, then applies (or previews) resolutions.
+
+ * @summary Multi-Child Conflict Resolution — orchestrate routines for all children
+ */
+export const OrchestrateHouseholdBody = zod.object({
+  date: zod.string(),
+  dryRun: zod.boolean().nullish(),
+  mealSyncWindowMinutes: zod.number().nullish(),
+  bucketMinutes: zod.number().nullish(),
+  routines: zod.array(
+    zod.object({
+      child: zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        age: zod.number(),
+        ageMonths: zod.number().nullish(),
+        wakeUpTime: zod.string().nullish(),
+        sleepTime: zod.string().nullish(),
+        schoolStartTime: zod.string().nullish(),
+        schoolEndTime: zod.string().nullish(),
+        hasSchoolToday: zod.boolean().nullish(),
+        defaultCaregiver: zod
+          .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+          .nullish(),
+        isSick: zod.boolean().nullish(),
+        isInfant: zod.boolean().nullish(),
+      }),
+      items: zod.array(
+        zod.object({
+          time: zod.string(),
+          activity: zod.string(),
+          duration: zod.number(),
+          category: zod.string(),
+          notes: zod.string().nullish(),
+          status: zod.string().nullish(),
+          rewardPoints: zod.number().nullish(),
+          caregiver: zod
+            .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+            .nullish(),
+          shiftedFromTime: zod.string().nullish(),
+          isAnchor: zod.boolean().nullish(),
+        }),
+      ),
+    }),
+  ),
+  caregivers: zod.array(
+    zod.object({
+      caregiver: zod.enum(["mom", "dad", "both", "grandparent", "babysitter"]),
+      capacity: zod.number(),
+      windows: zod.array(
+        zod.object({
+          start: zod.string(),
+          end: zod.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+export const OrchestrateHouseholdResponse = zod.object({
+  date: zod.string(),
+  originalRoutines: zod.array(
+    zod.object({
+      child: zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        age: zod.number(),
+        ageMonths: zod.number().nullish(),
+        wakeUpTime: zod.string().nullish(),
+        sleepTime: zod.string().nullish(),
+        schoolStartTime: zod.string().nullish(),
+        schoolEndTime: zod.string().nullish(),
+        hasSchoolToday: zod.boolean().nullish(),
+        defaultCaregiver: zod
+          .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+          .nullish(),
+        isSick: zod.boolean().nullish(),
+        isInfant: zod.boolean().nullish(),
+      }),
+      items: zod.array(
+        zod.object({
+          time: zod.string(),
+          activity: zod.string(),
+          duration: zod.number(),
+          category: zod.string(),
+          notes: zod.string().nullish(),
+          status: zod.string().nullish(),
+          rewardPoints: zod.number().nullish(),
+          caregiver: zod
+            .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+            .nullish(),
+          shiftedFromTime: zod.string().nullish(),
+          isAnchor: zod.boolean().nullish(),
+        }),
+      ),
+    }),
+  ),
+  finalRoutines: zod.array(
+    zod.object({
+      child: zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        age: zod.number(),
+        ageMonths: zod.number().nullish(),
+        wakeUpTime: zod.string().nullish(),
+        sleepTime: zod.string().nullish(),
+        schoolStartTime: zod.string().nullish(),
+        schoolEndTime: zod.string().nullish(),
+        hasSchoolToday: zod.boolean().nullish(),
+        defaultCaregiver: zod
+          .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+          .nullish(),
+        isSick: zod.boolean().nullish(),
+        isInfant: zod.boolean().nullish(),
+      }),
+      items: zod.array(
+        zod.object({
+          time: zod.string(),
+          activity: zod.string(),
+          duration: zod.number(),
+          category: zod.string(),
+          notes: zod.string().nullish(),
+          status: zod.string().nullish(),
+          rewardPoints: zod.number().nullish(),
+          caregiver: zod
+            .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+            .nullish(),
+          shiftedFromTime: zod.string().nullish(),
+          isAnchor: zod.boolean().nullish(),
+        }),
+      ),
+    }),
+  ),
+  conflicts: zod.array(
+    zod.object({
+      id: zod.string(),
+      kind: zod.enum([
+        "caregiver_overlap",
+        "caregiver_overload",
+        "resource_contention",
+        "meal_misalignment",
+        "sleep_window_violation",
+        "school_collision",
+        "shared_activity_opportunity",
+      ]),
+      explanation: zod.string(),
+      childIds: zod.array(zod.number()),
+      caregiver: zod.string().nullish(),
+      resource: zod.string().nullish(),
+      startTime: zod.string(),
+      endTime: zod.string(),
+      severity: zod.number(),
+    }),
+  ),
+  postResolutionConflicts: zod.array(
+    zod.object({
+      id: zod.string(),
+      kind: zod.enum([
+        "caregiver_overlap",
+        "caregiver_overload",
+        "resource_contention",
+        "meal_misalignment",
+        "sleep_window_violation",
+        "school_collision",
+        "shared_activity_opportunity",
+      ]),
+      explanation: zod.string(),
+      childIds: zod.array(zod.number()),
+      caregiver: zod.string().nullish(),
+      resource: zod.string().nullish(),
+      startTime: zod.string(),
+      endTime: zod.string(),
+      severity: zod.number(),
+    }),
+  ),
+  resolutions: zod.array(
+    zod.object({
+      conflictId: zod.string(),
+      strategy: zod.enum([
+        "shift_later",
+        "shift_earlier",
+        "synchronize_meals",
+        "merge_into_shared_activity",
+        "swap_caregiver",
+        "split_resource_window",
+        "drop_optional",
+        "no_action",
+      ]),
+      rationale: zod.string(),
+      severityReduction: zod.number(),
+      changes: zod.array(
+        zod.object({
+          childId: zod.number(),
+          fromTime: zod.string(),
+          toTime: zod.string(),
+          activity: zod.string(),
+          action: zod.enum(["shift", "drop", "merge", "reassign"]),
+          newCaregiver: zod.string().nullish(),
+        }),
+      ),
+    }),
+  ),
+  timeline: zod.array(
+    zod.object({
+      startTime: zod.string(),
+      endTime: zod.string(),
+      hasConflict: zod.boolean(),
+      caregivers: zod.array(zod.string()),
+      resources: zod.array(zod.string()),
+      entries: zod.array(
+        zod.object({
+          childId: zod.number(),
+          childName: zod.string(),
+          item: zod.object({
+            time: zod.string(),
+            activity: zod.string(),
+            duration: zod.number(),
+            category: zod.string(),
+            notes: zod.string().nullish(),
+            status: zod.string().nullish(),
+            rewardPoints: zod.number().nullish(),
+            caregiver: zod
+              .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+              .nullish(),
+            shiftedFromTime: zod.string().nullish(),
+            isAnchor: zod.boolean().nullish(),
+          }),
+        }),
+      ),
+    }),
+  ),
+  summary: zod.object({
+    totalConflicts: zod.number(),
+    resolvedConflicts: zod.number(),
+    sharedActivityWindows: zod.number(),
+    caregiverPeakLoad: zod.number(),
+    sleepIntegrityScore: zod.number(),
+    overallScore: zod.number(),
+  }),
+  reasoningTrace: zod.array(
+    zod.object({
+      step: zod.string(),
+      detail: zod.string(),
+      inputCount: zod.number().nullish(),
+      outputCount: zod.number().nullish(),
+    }),
+  ),
+});
+
+/**
+ * Pulls already-saved routines for every child belonging to the user on
+the given date and runs the conflict-detection pass without applying
+any changes. Useful for the household dashboard.
+
+ * @summary Detect household conflicts for an existing date
+ */
+export const GetHouseholdConflictsQueryParams = zod.object({
+  date: zod.coerce.string(),
+});
+
+export const GetHouseholdConflictsResponse = zod.object({
+  date: zod.string(),
+  originalRoutines: zod.array(
+    zod.object({
+      child: zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        age: zod.number(),
+        ageMonths: zod.number().nullish(),
+        wakeUpTime: zod.string().nullish(),
+        sleepTime: zod.string().nullish(),
+        schoolStartTime: zod.string().nullish(),
+        schoolEndTime: zod.string().nullish(),
+        hasSchoolToday: zod.boolean().nullish(),
+        defaultCaregiver: zod
+          .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+          .nullish(),
+        isSick: zod.boolean().nullish(),
+        isInfant: zod.boolean().nullish(),
+      }),
+      items: zod.array(
+        zod.object({
+          time: zod.string(),
+          activity: zod.string(),
+          duration: zod.number(),
+          category: zod.string(),
+          notes: zod.string().nullish(),
+          status: zod.string().nullish(),
+          rewardPoints: zod.number().nullish(),
+          caregiver: zod
+            .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+            .nullish(),
+          shiftedFromTime: zod.string().nullish(),
+          isAnchor: zod.boolean().nullish(),
+        }),
+      ),
+    }),
+  ),
+  finalRoutines: zod.array(
+    zod.object({
+      child: zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        age: zod.number(),
+        ageMonths: zod.number().nullish(),
+        wakeUpTime: zod.string().nullish(),
+        sleepTime: zod.string().nullish(),
+        schoolStartTime: zod.string().nullish(),
+        schoolEndTime: zod.string().nullish(),
+        hasSchoolToday: zod.boolean().nullish(),
+        defaultCaregiver: zod
+          .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+          .nullish(),
+        isSick: zod.boolean().nullish(),
+        isInfant: zod.boolean().nullish(),
+      }),
+      items: zod.array(
+        zod.object({
+          time: zod.string(),
+          activity: zod.string(),
+          duration: zod.number(),
+          category: zod.string(),
+          notes: zod.string().nullish(),
+          status: zod.string().nullish(),
+          rewardPoints: zod.number().nullish(),
+          caregiver: zod
+            .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+            .nullish(),
+          shiftedFromTime: zod.string().nullish(),
+          isAnchor: zod.boolean().nullish(),
+        }),
+      ),
+    }),
+  ),
+  conflicts: zod.array(
+    zod.object({
+      id: zod.string(),
+      kind: zod.enum([
+        "caregiver_overlap",
+        "caregiver_overload",
+        "resource_contention",
+        "meal_misalignment",
+        "sleep_window_violation",
+        "school_collision",
+        "shared_activity_opportunity",
+      ]),
+      explanation: zod.string(),
+      childIds: zod.array(zod.number()),
+      caregiver: zod.string().nullish(),
+      resource: zod.string().nullish(),
+      startTime: zod.string(),
+      endTime: zod.string(),
+      severity: zod.number(),
+    }),
+  ),
+  postResolutionConflicts: zod.array(
+    zod.object({
+      id: zod.string(),
+      kind: zod.enum([
+        "caregiver_overlap",
+        "caregiver_overload",
+        "resource_contention",
+        "meal_misalignment",
+        "sleep_window_violation",
+        "school_collision",
+        "shared_activity_opportunity",
+      ]),
+      explanation: zod.string(),
+      childIds: zod.array(zod.number()),
+      caregiver: zod.string().nullish(),
+      resource: zod.string().nullish(),
+      startTime: zod.string(),
+      endTime: zod.string(),
+      severity: zod.number(),
+    }),
+  ),
+  resolutions: zod.array(
+    zod.object({
+      conflictId: zod.string(),
+      strategy: zod.enum([
+        "shift_later",
+        "shift_earlier",
+        "synchronize_meals",
+        "merge_into_shared_activity",
+        "swap_caregiver",
+        "split_resource_window",
+        "drop_optional",
+        "no_action",
+      ]),
+      rationale: zod.string(),
+      severityReduction: zod.number(),
+      changes: zod.array(
+        zod.object({
+          childId: zod.number(),
+          fromTime: zod.string(),
+          toTime: zod.string(),
+          activity: zod.string(),
+          action: zod.enum(["shift", "drop", "merge", "reassign"]),
+          newCaregiver: zod.string().nullish(),
+        }),
+      ),
+    }),
+  ),
+  timeline: zod.array(
+    zod.object({
+      startTime: zod.string(),
+      endTime: zod.string(),
+      hasConflict: zod.boolean(),
+      caregivers: zod.array(zod.string()),
+      resources: zod.array(zod.string()),
+      entries: zod.array(
+        zod.object({
+          childId: zod.number(),
+          childName: zod.string(),
+          item: zod.object({
+            time: zod.string(),
+            activity: zod.string(),
+            duration: zod.number(),
+            category: zod.string(),
+            notes: zod.string().nullish(),
+            status: zod.string().nullish(),
+            rewardPoints: zod.number().nullish(),
+            caregiver: zod
+              .enum(["mom", "dad", "both", "grandparent", "babysitter"])
+              .nullish(),
+            shiftedFromTime: zod.string().nullish(),
+            isAnchor: zod.boolean().nullish(),
+          }),
+        }),
+      ),
+    }),
+  ),
+  summary: zod.object({
+    totalConflicts: zod.number(),
+    resolvedConflicts: zod.number(),
+    sharedActivityWindows: zod.number(),
+    caregiverPeakLoad: zod.number(),
+    sleepIntegrityScore: zod.number(),
+    overallScore: zod.number(),
+  }),
+  reasoningTrace: zod.array(
+    zod.object({
+      step: zod.string(),
+      detail: zod.string(),
+      inputCount: zod.number().nullish(),
+      outputCount: zod.number().nullish(),
+    }),
+  ),
+});
+
+/**
  * @summary List behavior logs
  */
 export const ListBehaviorsQueryParams = zod.object({

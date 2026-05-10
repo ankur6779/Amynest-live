@@ -27,8 +27,47 @@
     "please_wait": "Please wait…",
     "error_generic": "Something went wrong. Please try again."
   },
+  "household": {
+    "title": "Household",
+    "subtitle": "Coordinated multi-child schedule",
+    "conflict": "Conflict",
+    "opportunity": "Opportunity",
+    "severity": "Severity",
+    "applied": "Applied",
+    "apply_resolution": "Apply resolution",
+    "conflicts_heading": "Detected conflicts",
+    "timeline_heading": "Merged household timeline",
+    "no_conflicts": "No conflicts detected — your household is in sync.",
+    "no_timeline": "No routines saved for today yet.",
+    "summary": {
+      "score": "Household score",
+      "conflicts": "Conflicts",
+      "sleep": "Sleep integrity",
+      "shared": "Shared windows"
+    },
+    "kind": {
+      "caregiver_overlap": "Caregiver overlap",
+      "caregiver_overload": "Caregiver overload",
+      "resource_contention": "Resource contention",
+      "meal_misalignment": "Meal misalignment",
+      "sleep_window_violation": "Sleep window violation",
+      "school_collision": "School collision",
+      "shared_activity_opportunity": "Shared activity opportunity"
+    },
+    "strategy": {
+      "shift_later": "Shift later",
+      "shift_earlier": "Shift earlier",
+      "synchronize_meals": "Synchronize meals",
+      "merge_into_shared_activity": "Merge into shared activity",
+      "swap_caregiver": "Swap caregiver",
+      "split_resource_window": "Split resource window",
+      "drop_optional": "Drop optional item",
+      "no_action": "Advisory only"
+    }
+  },
   "nav": {
     "dashboard": "Dashboard",
+    "household": "Household",
     "parenting_hub": "Parenting Hub",
     "amy_coach": "Amy Coach",
     "children": "Children",
