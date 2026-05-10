@@ -19,7 +19,7 @@ export type Status = "free" | "trialing" | "active" | "past_due" | "canceled";
 export const PLAN_PRICES: Record<Exclude<Plan, "free">, { amount: number; period: string }> = {
   monthly: { amount: 199, period: "month" },
   six_month: { amount: 999, period: "6 months" },
-  yearly: { amount: 1599, period: "year" },
+  yearly: { amount: 1499, period: "year" },
 };
 
 export const FREE_LIMITS = {
