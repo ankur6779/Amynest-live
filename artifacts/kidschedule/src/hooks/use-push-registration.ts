@@ -122,32 +122,8 @@ export function usePushRegistration(): void {
       };
     }
 
-    // ── Standard browser / PWA path ──────────────────────────────────────
-    if (
-      !("Notification" in window) ||
-      !("serviceWorker" in navigator) ||
-      !("PushManager" in window)
-    ) {
-      return undefined;
-    }
-
-    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined;
-    if (!vapidKey) return undefined;
-
-    void (async () => {
-      try {
-        // Never auto-ask — permission is requested explicitly via /notify-prompt
-        // or the onboarding notifications step.
-        if (Notification.permission !== "granted") return;
-
-        const { getWebPushToken } = await import("@/lib/firebase");
-        const token = await getWebPushToken(vapidKey);
-        if (!token) return;
-        await registerToken(token, "web");
-      } catch {
-        // Best-effort — never crash the app
-      }
-    })();
+    // Web push is disabled — notifications are delivered exclusively through
+    // the native FCM layer in the KidSchedule Android WebView wrapper.
     return undefined;
   }, [isSignedIn, userId, authFetch]);
 }

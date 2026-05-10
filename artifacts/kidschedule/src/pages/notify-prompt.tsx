@@ -2,8 +2,15 @@ import { useEffect, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { AmyMascotLogo } from "@/components/amy-mascot-logo";
-import { useWebPush } from "@/hooks/use-web-push";
 import { useAuth } from "@/lib/firebase-auth-hooks";
+import {
+  isAmyNestWrapper,
+  getNativePushBridge,
+  requestNativePushPermission,
+  registerNativePushToken,
+} from "@/lib/native-push-bridge";
+import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { getApiUrl } from "@/lib/api";
 
 const GRAD = "linear-gradient(135deg,hsl(var(--brand-indigo-500)),hsl(var(--brand-purple-500)))";
 const BG   = "linear-gradient(160deg,hsl(var(--brand-indigo-100)) 0%,hsl(var(--brand-violet-50)) 55%,hsl(var(--brand-pink-50)) 100%)";
@@ -14,20 +21,41 @@ export default function NotifyPromptPage() {
   const search          = useSearch();
   const next            = new URLSearchParams(search).get("next") ?? "/";
   const { isSignedIn, isLoaded } = useAuth();
-  const { status, enable }       = useWebPush();
+  const authFetch = useAuthFetch();
   const [loading, setLoading]    = useState(false);
 
   useEffect(() => {
     if (!isLoaded) return;
     if (!isSignedIn) { setLocation("/sign-in"); return; }
-    if (status === "granted" || status === "denied" || status === "unsupported") {
+    // Web push is disabled — only the native Android wrapper drives push.
+    // Redirect immediately on any standard browser.
+    if (!isAmyNestWrapper()) {
       setLocation(next);
+      return;
     }
-  }, [status, isLoaded, isSignedIn, next, setLocation]);
+    // Inside the wrapper: redirect if permission is already resolved.
+    const native = getNativePushBridge();
+    if (native) {
+      const perm = native.getPermissionStatus();
+      if (perm === "granted" || perm === "denied") {
+        setLocation(next);
+      }
+    }
+  }, [isLoaded, isSignedIn, next, setLocation]);
 
   const handleAllow = async () => {
     setLoading(true);
-    await enable();
+    try {
+      const native = getNativePushBridge();
+      if (native) {
+        const perm = await requestNativePushPermission(native);
+        if (perm === "granted") {
+          await registerNativePushToken(authFetch, getApiUrl("/api/push/register"));
+        }
+      }
+    } catch {
+      // best-effort
+    }
     setLocation(next);
   };
 
