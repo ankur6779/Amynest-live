@@ -156,6 +156,18 @@ uri = "file://artifacts/kidschedule/public/amynest-appstore-1024.png"
 type = "image"
 title = "AmyNest app store promo"
 
+[[generated]]
+id = "mOZcU8--m936dwDKcy1xe"
+uri = "file://artifacts/kidschedule/public/amynest-review-info.png"
+type = "image"
+title = "AmyNest review information"
+
+[[generated]]
+id = "GNk05tANfB0Djk1iDwgga"
+uri = "file://artifacts/kidschedule/public/amynest-review-info-compact.png"
+type = "image"
+title = "AmyNest review screenshot"
+
 [[outputs]]
 id = "6ZC-wVpVG0DweJvlh22r3"
 uri = "file://screenshots/playstore/web-05-landing-mobile.jpg"
