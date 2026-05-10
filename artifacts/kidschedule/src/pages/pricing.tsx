@@ -4,6 +4,7 @@ import { Sparkles, Check, Rocket, AlertTriangle, X, Smartphone } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { isIndiaRegion } from "@/lib/geo";
+import appStoreArt from "@assets/amynest-appstore-1024.png";
 export default function PricingPage() {
   const {
     t
@@ -56,6 +57,7 @@ export default function PricingPage() {
   return <div className="min-h-screen bg-gradient-to-br from-muted via-white to-muted">
       <div className="max-w-5xl mx-auto px-4 py-12">
         <div className="text-center mb-10">
+          <img src={appStoreArt} alt="AmyNest app store promo" className="mx-auto mb-6 h-auto w-full max-w-[420px] rounded-none object-contain" />
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary mb-4 shadow-lg">
             <Sparkles className="h-7 w-7 text-white" />
           </div>

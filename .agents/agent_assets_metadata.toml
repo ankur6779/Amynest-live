@@ -150,6 +150,12 @@ uri = "file://artifacts/amynest-splash/public/images/purple-particle-bg.png"
 type = "image"
 title = "deep space purple particles"
 
+[[generated]]
+id = "0-8vaA9bfZjMx1zqhE08S"
+uri = "file://artifacts/kidschedule/public/amynest-appstore-1024.png"
+type = "image"
+title = "AmyNest app store promo"
+
 [[outputs]]
 id = "6ZC-wVpVG0DweJvlh22r3"
 uri = "file://screenshots/playstore/web-05-landing-mobile.jpg"
