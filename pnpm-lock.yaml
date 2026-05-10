@@ -1449,6 +1449,12 @@ importers:
 
   lib/safety: {}
 
+  lib/speech-coach:
+    devDependencies:
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+
   lib/study-zone: {}
 
   lib/tiffin-feedback: {}
