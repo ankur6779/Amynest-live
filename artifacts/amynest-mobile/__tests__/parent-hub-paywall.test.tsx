@@ -166,6 +166,7 @@ vi.mock("@/components/DailyStory", () => ({ DailyStory: makeStub("daily-story") 
 vi.mock("@/components/ParentTasks", () => ({ ParentTasks: makeStub("parent-tasks") }));
 vi.mock("@/components/DailyPuzzle", () => ({ DailyPuzzle: makeStub("daily-puzzle") }));
 vi.mock("@/components/AbacusZone", () => ({ AbacusZone: makeStub("abacus-zone") }));
+vi.mock("@/components/DailyTips", () => ({ DailyTips: makeStub("daily-tips") }));
 vi.mock("@/components/HubTile", () => ({
   HubTile: ({ children }: { children?: React.ReactNode }) =>
     React.createElement("div", { "data-stub": "hub-tile" }, children),

@@ -138,6 +138,7 @@ vi.mock("@/components/DailyStory", () => ({ DailyStory: makeStub("daily-story") 
 vi.mock("@/components/ParentTasks", () => ({ ParentTasks: makeStub("parent-tasks") }));
 vi.mock("@/components/DailyPuzzle", () => ({ DailyPuzzle: makeStub("daily-puzzle") }));
 vi.mock("@/components/AbacusZone", () => ({ AbacusZone: makeStub("abacus-zone") }));
+vi.mock("@/components/DailyTips", () => ({ DailyTips: makeStub("daily-tips") }));
 vi.mock("@/components/RoutineCarousel", () => ({ default: makeStub("routine-carousel") }));
 vi.mock("@/components/ProfileLockScreen", () => ({ ProfileLockScreen: makeStub("profile-lock-screen") }));
 vi.mock("@/components/LockedBlock", () => ({
