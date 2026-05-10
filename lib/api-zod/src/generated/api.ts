@@ -1116,6 +1116,89 @@ export const GetHouseholdConflictsResponse = zod.object({
 });
 
 /**
+ * Returns an anticipatory caregiver-load forecast for the requested
+target date and horizon. Built from historical routine data via
+EWMA smoothing, optionally blended with the user's draft routine
+for that day. Surfaces hotspots, severity-classified bottlenecks,
+and rebalance proposals.
+
+ * @summary Predictive Caregiver Load Forecast
+ */
+export const getHouseholdForecastQueryHorizonDaysMax = 7;
+
+export const getHouseholdForecastQueryLookbackDaysMax = 30;
+
+export const GetHouseholdForecastQueryParams = zod.object({
+  date: zod.coerce.string(),
+  horizonDays: zod.coerce
+    .number()
+    .min(1)
+    .max(getHouseholdForecastQueryHorizonDaysMax)
+    .optional(),
+  lookbackDays: zod.coerce
+    .number()
+    .min(1)
+    .max(getHouseholdForecastQueryLookbackDaysMax)
+    .optional(),
+});
+
+export const GetHouseholdForecastResponse = zod.object({
+  generatedAt: zod.string(),
+  horizonDays: zod.number(),
+  householdLoadScore: zod.number(),
+  forecasts: zod.array(
+    zod.object({
+      date: zod.string(),
+      historyDays: zod.number(),
+      series: zod.object({
+        bucketMinutes: zod.number(),
+        buckets: zod.number(),
+        load: zod.record(zod.string(), zod.array(zod.number())),
+      }),
+      hotspots: zod.array(
+        zod.object({
+          id: zod.string(),
+          caregiver: zod.string(),
+          startTime: zod.string(),
+          endTime: zod.string(),
+          startTime24: zod.string(),
+          endTime24: zod.string(),
+          projectedLoad: zod.number(),
+          capacity: zod.number(),
+          overload: zod.number(),
+          confidence: zod.number(),
+        }),
+      ),
+      confidence: zod.number(),
+    }),
+  ),
+  bottlenecks: zod.array(
+    zod.object({
+      date: zod.string(),
+      caregiver: zod.string(),
+      windowLabel: zod.string(),
+      severity: zod.enum(["low", "medium", "high"]),
+      reason: zod.string(),
+    }),
+  ),
+  rebalanceProposals: zod.array(
+    zod.object({
+      id: zod.string(),
+      date: zod.string(),
+      hotspotId: zod.string(),
+      fromCaregiver: zod.string(),
+      toCaregiver: zod.string(),
+      childId: zod.number(),
+      childName: zod.string(),
+      activity: zod.string(),
+      startTime: zod.string(),
+      rationale: zod.string(),
+      projectedRelief: zod.number(),
+    }),
+  ),
+});
+
+/**
  * @summary List behavior logs
  */
 export const ListBehaviorsQueryParams = zod.object({

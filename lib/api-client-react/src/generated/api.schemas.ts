@@ -84,6 +84,75 @@ export interface HouseholdCaregiverAvailability {
   windows: HouseholdCaregiverAvailabilityWindowsItem[];
 }
 
+export interface HouseholdLoadHotspot {
+  id: string;
+  caregiver: string;
+  startTime: string;
+  endTime: string;
+  startTime24: string;
+  endTime24: string;
+  projectedLoad: number;
+  capacity: number;
+  overload: number;
+  confidence: number;
+}
+
+export type HouseholdLoadBucketSeriesLoad = { [key: string]: number[] };
+
+export interface HouseholdLoadBucketSeries {
+  bucketMinutes: number;
+  buckets: number;
+  load: HouseholdLoadBucketSeriesLoad;
+}
+
+export interface HouseholdCaregiverLoadForecast {
+  date: string;
+  historyDays: number;
+  series: HouseholdLoadBucketSeries;
+  hotspots: HouseholdLoadHotspot[];
+  confidence: number;
+}
+
+export type HouseholdBottleneckPredictionSeverity =
+  (typeof HouseholdBottleneckPredictionSeverity)[keyof typeof HouseholdBottleneckPredictionSeverity];
+
+export const HouseholdBottleneckPredictionSeverity = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+} as const;
+
+export interface HouseholdBottleneckPrediction {
+  date: string;
+  caregiver: string;
+  windowLabel: string;
+  severity: HouseholdBottleneckPredictionSeverity;
+  reason: string;
+}
+
+export interface HouseholdRebalanceProposal {
+  id: string;
+  date: string;
+  hotspotId: string;
+  fromCaregiver: string;
+  toCaregiver: string;
+  childId: number;
+  childName: string;
+  activity: string;
+  startTime: string;
+  rationale: string;
+  projectedRelief: number;
+}
+
+export interface HouseholdForecastResponse {
+  generatedAt: string;
+  horizonDays: number;
+  householdLoadScore: number;
+  forecasts: HouseholdCaregiverLoadForecast[];
+  bottlenecks: HouseholdBottleneckPrediction[];
+  rebalanceProposals: HouseholdRebalanceProposal[];
+}
+
 export type HouseholdConflictKind =
   (typeof HouseholdConflictKind)[keyof typeof HouseholdConflictKind];
 
@@ -1244,6 +1313,20 @@ export type ListRoutinesParams = {
 
 export type GetHouseholdConflictsParams = {
   date: string;
+};
+
+export type GetHouseholdForecastParams = {
+  date: string;
+  /**
+   * @minimum 1
+   * @maximum 7
+   */
+  horizonDays?: number;
+  /**
+   * @minimum 1
+   * @maximum 30
+   */
+  lookbackDays?: number;
 };
 
 export type ListBehaviorsParams = {

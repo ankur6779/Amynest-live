@@ -17,6 +17,12 @@ import {
   type ChildRoutineInput,
   type RoutineItem,
 } from "@workspace/conflict-resolution";
+import {
+  forecastHorizon,
+  predictBottlenecks,
+  recommendRebalance,
+  type HistoricalDay,
+} from "@workspace/load-forecast";
 import type { HandlerKey } from "@workspace/family-routine";
 
 const router: IRouter = Router();
@@ -194,6 +200,132 @@ router.get("/household/conflicts", async (req, res) => {
 
   return res.json(state);
 });
+
+// ── GET /api/household/forecast?date=&horizonDays=&lookbackDays= ─────────
+router.get("/household/forecast", async (req, res) => {
+  const auth = getAuth(req);
+  if (!auth.userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const date = String(req.query.date ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: "Invalid or missing 'date' (YYYY-MM-DD)" });
+  }
+  const horizonDays = clampInt(req.query.horizonDays, 1, 7, 1);
+  const lookbackDays = clampInt(req.query.lookbackDays, 1, 30, 7);
+
+  // Children for this user.
+  const kids = await db
+    .select()
+    .from(childrenTable)
+    .where(eq(childrenTable.userId, auth.userId));
+  if (kids.length === 0) {
+    return res.json(emptyForecast(date, horizonDays));
+  }
+  const childIds = kids.map((k) => k.id);
+
+  // Pull all routines from (date - lookback) up to date for these children.
+  const startDate = addDaysISO(date, -lookbackDays);
+  const allRoutines = await db
+    .select()
+    .from(routinesTable)
+    .where(inArray(routinesTable.childId, childIds));
+
+  // Bucket by date, only the lookback window + the target.
+  const byDate = new Map<string, ChildRoutineInput[]>();
+  for (const r of allRoutines) {
+    if (r.date < startDate || r.date > date) continue;
+    const child = kids.find((k) => k.id === r.childId);
+    if (!child) continue;
+    const items: RoutineItem[] = Array.isArray(r.items)
+      ? (r.items as unknown as RoutineItem[])
+      : [];
+    const arr = byDate.get(r.date) ?? [];
+    arr.push({
+      child: {
+        id: child.id,
+        name: child.name,
+        age: child.age,
+        defaultCaregiver: "mom" as HandlerKey,
+        isInfant: child.age < 1,
+      },
+      items,
+    });
+    byDate.set(r.date, arr);
+  }
+
+  // History = every day strictly before `date`. Draft = the target day, if any.
+  const history: HistoricalDay[] = [];
+  let draft: ChildRoutineInput[] | undefined;
+  for (const [d, routines] of byDate.entries()) {
+    if (d === date) draft = routines;
+    else history.push({ date: d, routines });
+  }
+
+  const caregivers: CaregiverAvailability[] = [
+    { caregiver: "mom" as HandlerKey, capacity: 1, windows: [{ start: "06:00", end: "22:00" }] },
+    { caregiver: "dad" as HandlerKey, capacity: 1, windows: [{ start: "06:00", end: "22:00" }] },
+  ];
+
+  const forecast = forecastHorizon({
+    date,
+    horizonDays,
+    lookbackDays,
+    history,
+    draftRoutines: draft,
+    caregivers,
+  });
+  const bottlenecks = predictBottlenecks(forecast);
+  const rebalanceProposals = forecast.forecasts.flatMap((f) =>
+    recommendRebalance(f, caregivers, f.date === date ? draft : undefined),
+  );
+
+  req.log.info({
+    userId: auth.userId,
+    date,
+    horizonDays,
+    historyDays: history.length,
+    bottlenecks: bottlenecks.length,
+    score: forecast.householdLoadScore,
+  }, "household forecast generated");
+
+  return res.json({
+    generatedAt: forecast.generatedAt,
+    horizonDays: forecast.horizonDays,
+    householdLoadScore: forecast.householdLoadScore,
+    forecasts: forecast.forecasts,
+    bottlenecks,
+    rebalanceProposals,
+  });
+});
+
+function clampInt(v: unknown, min: number, max: number, def: number): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return def;
+  return Math.max(min, Math.min(max, Math.trunc(n)));
+}
+
+function addDaysISO(date: string, days: number): string {
+  const d = new Date(date + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function emptyForecast(date: string, horizonDays: number) {
+  return {
+    generatedAt: new Date().toISOString(),
+    horizonDays,
+    householdLoadScore: 100,
+    forecasts: Array.from({ length: horizonDays }, (_, i) => ({
+      date: addDaysISO(date, i),
+      historyDays: 0,
+      series: { bucketMinutes: 15, buckets: 96, load: {} },
+      hotspots: [],
+      confidence: 1,
+    })),
+    bottlenecks: [],
+    rebalanceProposals: [],
+  };
+}
 
 function emptyState(date: string) {
   return {

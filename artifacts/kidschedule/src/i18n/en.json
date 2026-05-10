@@ -65,9 +65,37 @@
       "no_action": "Advisory only"
     }
   },
+  "forecast": {
+    "title": "Predictive Load Forecast",
+    "subtitle": "Anticipated caregiver demand across the next days",
+    "household_score": "Household balance score",
+    "history_days": "History days analyzed",
+    "horizon": "Forecast horizon (days)",
+    "confidence": "Confidence",
+    "no_history": "Not enough routine history yet — save a few days of routines to see a forecast.",
+    "no_hotspots": "No bottlenecks anticipated. Your household looks balanced.",
+    "hotspots_heading": "Anticipated bottlenecks",
+    "rebalance_heading": "Suggested rebalances",
+    "no_rebalance": "No rebalance suggestions for this day.",
+    "heatmap_heading": "Caregiver demand heatmap (per hour)",
+    "severity": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "load_label": "Projected load",
+    "capacity_label": "Capacity",
+    "overload_label": "Overload",
+    "rebalance_from": "From",
+    "rebalance_to": "To",
+    "for_child": "For",
+    "for_activity": "Activity",
+    "todays_hotspots": "Today's hotspots"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "household": "Household",
+    "forecast": "Load Forecast",
     "parenting_hub": "Parenting Hub",
     "amy_coach": "Amy Coach",
     "children": "Children",

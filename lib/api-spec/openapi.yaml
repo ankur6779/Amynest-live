@@ -271,6 +271,38 @@ paths:
               schema:
                 $ref: "#/components/schemas/HouseholdRoutineState"
 
+  /household/forecast:
+    get:
+      operationId: getHouseholdForecast
+      tags: [routines]
+      summary: Predictive Caregiver Load Forecast
+      description: |
+        Returns an anticipatory caregiver-load forecast for the requested
+        target date and horizon. Built from historical routine data via
+        EWMA smoothing, optionally blended with the user's draft routine
+        for that day. Surfaces hotspots, severity-classified bottlenecks,
+        and rebalance proposals.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema: { type: string }
+        - name: horizonDays
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 7 }
+        - name: lookbackDays
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 30 }
+      responses:
+        "200":
+          description: Multi-day caregiver load forecast
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseholdForecastResponse"
+
   /behaviors:
     get:
       operationId: listBehaviors
@@ -975,6 +1007,88 @@ components:
               end:   { type: string }
             required: [start, end]
       required: [caregiver, capacity, windows]
+
+    HouseholdLoadHotspot:
+      type: object
+      properties:
+        id:             { type: string }
+        caregiver:      { type: string }
+        startTime:      { type: string }
+        endTime:        { type: string }
+        startTime24:    { type: string }
+        endTime24:      { type: string }
+        projectedLoad:  { type: number }
+        capacity:       { type: integer }
+        overload:       { type: number }
+        confidence:     { type: integer }
+      required: [id, caregiver, startTime, endTime, startTime24, endTime24, projectedLoad, capacity, overload, confidence]
+
+    HouseholdLoadBucketSeries:
+      type: object
+      properties:
+        bucketMinutes: { type: integer }
+        buckets:       { type: integer }
+        load:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: number }
+      required: [bucketMinutes, buckets, load]
+
+    HouseholdCaregiverLoadForecast:
+      type: object
+      properties:
+        date:        { type: string }
+        historyDays: { type: integer }
+        series:      { $ref: "#/components/schemas/HouseholdLoadBucketSeries" }
+        hotspots:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdLoadHotspot" }
+        confidence:  { type: integer }
+      required: [date, historyDays, series, hotspots, confidence]
+
+    HouseholdBottleneckPrediction:
+      type: object
+      properties:
+        date:        { type: string }
+        caregiver:   { type: string }
+        windowLabel: { type: string }
+        severity:    { type: string, enum: [low, medium, high] }
+        reason:      { type: string }
+      required: [date, caregiver, windowLabel, severity, reason]
+
+    HouseholdRebalanceProposal:
+      type: object
+      properties:
+        id:               { type: string }
+        date:             { type: string }
+        hotspotId:        { type: string }
+        fromCaregiver:    { type: string }
+        toCaregiver:      { type: string }
+        childId:          { type: integer }
+        childName:        { type: string }
+        activity:         { type: string }
+        startTime:        { type: string }
+        rationale:        { type: string }
+        projectedRelief:  { type: number }
+      required: [id, date, hotspotId, fromCaregiver, toCaregiver, childId, childName, activity, startTime, rationale, projectedRelief]
+
+    HouseholdForecastResponse:
+      type: object
+      properties:
+        generatedAt:        { type: string }
+        horizonDays:        { type: integer }
+        householdLoadScore: { type: integer }
+        forecasts:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdCaregiverLoadForecast" }
+        bottlenecks:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdBottleneckPrediction" }
+        rebalanceProposals:
+          type: array
+          items: { $ref: "#/components/schemas/HouseholdRebalanceProposal" }
+      required: [generatedAt, horizonDays, householdLoadScore, forecasts, bottlenecks, rebalanceProposals]
 
     HouseholdConflict:
       type: object
