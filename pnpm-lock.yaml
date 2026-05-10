@@ -244,6 +244,9 @@ importers:
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
+      '@workspace/speech-coach':
+        specifier: workspace:*
+        version: link:../../lib/speech-coach
       '@workspace/study-zone':
         specifier: workspace:*
         version: link:../../lib/study-zone

@@ -94,6 +94,7 @@ export const TILE_SECTION_MAP: Readonly<Record<string, Exclude<SectionKey, "toda
   worksheets: "modules",
   facts: "modules",
   "skills-focus": "modules",
+  speech_coach: "modules",
 
   // Activities — hands-on play, life skills, food.
   activities: "activities",

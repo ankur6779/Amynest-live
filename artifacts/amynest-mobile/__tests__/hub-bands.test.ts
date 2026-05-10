@@ -93,7 +93,7 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
   // Inventory updated for #197: added `skills-focus`, `daily-story`,
   // `daily-puzzle` (web-parity tiles ported from kidschedule's dashboard).
   // Inventory updated for #214: added `abacus` (Abacus PRO Zone, ages 4–10).
-  it("contains the expected 26 tiles", () => {
+  it("contains the expected 27 tiles", () => {
     const expectedIds = [
       // Always-current
       "amy", "articles", "tips", "emotional", "activities", "art-craft",
@@ -108,10 +108,12 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
       "skills-focus", "daily-story", "daily-puzzle",
       // Infant Parenting Guide (band 0 only) — mirrors web Activities > InfantMode
       "infant-parenting",
+      // Task #326 — Amy Speech Coach (mobile-only learning module, ages 1–8y)
+      "speech_coach",
     ].sort();
     const actualIds = Object.keys(HUB_CONTENT_AGE_BANDS).sort();
     expect(actualIds).toEqual(expectedIds);
-    expect(actualIds.length).toBe(26);
+    expect(actualIds.length).toBe(27);
   });
 
   // Locks expected tile membership for two representative bands. This catches
@@ -131,6 +133,10 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
       "facts",
       // Infant Parenting Guide — mobile-only, band 0 only (mirrors web InfantMode)
       "infant-parenting",
+      // Amy Speech Coach — mobile-only learning module covering bands 0–3
+      // (12–96m). HUB_TILE_AGE_MONTHS gates infants <12m at render time;
+      // band membership alone still includes band 0 here.
+      "speech_coach",
     ].sort();
     const section1Ids = Object.entries(HUB_CONTENT_AGE_BANDS)
       .filter(([, bands]) => bands.includes(band))

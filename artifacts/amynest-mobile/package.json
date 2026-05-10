@@ -92,6 +92,7 @@
     "@workspace/olympiad": "workspace:*",
     "@workspace/parenting-articles": "workspace:*",
     "@workspace/ptm-prep": "workspace:*",
+    "@workspace/speech-coach": "workspace:*",
     "@workspace/study-zone": "workspace:*",
     "@workspace/tiffin-feedback": "workspace:*",
     "expo-audio": "~1.1.1",
