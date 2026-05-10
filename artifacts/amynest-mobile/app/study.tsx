@@ -29,6 +29,7 @@ import {
   PLAY_CATEGORIES,
   BASIC_SUBJECTS,
   ADVANCED_SUBJECTS,
+  SMART_SUBJECTS,
   resolveStudyMode,
   MODE_LABELS,
   type PlayCategory,
@@ -36,6 +37,7 @@ import {
   type SubjectPack,
   type StudyTopic,
   type StudyMode,
+  type SmartSubjectId,
 } from "@workspace/study-zone";
 
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -105,6 +107,13 @@ type StudyView =
       mode: "basic" | "advanced";
       subjectId: string;
       topicId: string;
+    }
+  | { kind: "smart-pick"; childId: number; mode: "basic" | "advanced" }
+  | {
+      kind: "smart-runner";
+      childId: number;
+      mode: "basic" | "advanced";
+      subjectId: SmartSubjectId;
     };
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
@@ -200,6 +209,14 @@ export default function StudyScreen() {
         mode: view.mode,
         subjectId: view.subjectId,
       });
+      return;
+    }
+    if (view.kind === "smart-pick") {
+      setView({ kind: "study-home", childId: view.childId, mode: view.mode });
+      return;
+    }
+    if (view.kind === "smart-runner") {
+      setView({ kind: "smart-pick", childId: view.childId, mode: view.mode });
       return;
     }
     router.back();
@@ -354,6 +371,9 @@ export default function StudyScreen() {
                 topicId: item.topicId,
               })
             }
+            onOpenSmartPick={() =>
+              setView({ kind: "smart-pick", childId: view.childId, mode: view.mode })
+            }
             onPlanRefreshed={() => refreshProgress(view.childId)}
             t={t}
           />
@@ -390,6 +410,32 @@ export default function StudyScreen() {
               const p = await loadProgress(view.childId);
               setProgress(p);
             }}
+            t={t}
+          />
+        )}
+
+        {view.kind === "smart-pick" && (
+          <SmartSubjectPicker
+            onPick={(subjectId) =>
+              setView({
+                kind: "smart-runner",
+                childId: view.childId,
+                mode: view.mode,
+                subjectId,
+              })
+            }
+            t={t}
+          />
+        )}
+
+        {view.kind === "smart-runner" && (
+          <AdaptiveRunner
+            childId={view.childId}
+            subjectId={view.subjectId}
+            authFetch={authFetch}
+            onExit={() =>
+              setView({ kind: "smart-pick", childId: view.childId, mode: view.mode })
+            }
             t={t}
           />
         )}
@@ -730,6 +776,7 @@ function StudyHome({
   authFetch,
   onOpenSubject,
   onOpenTopic,
+  onOpenSmartPick,
   onPlanRefreshed,
   t,
 }: {
@@ -740,6 +787,7 @@ function StudyHome({
   authFetch: ReturnType<typeof useAuthFetch>;
   onOpenSubject: (subjectId: string) => void;
   onOpenTopic: (item: PlanItem) => void;
+  onOpenSmartPick: () => void;
   onPlanRefreshed: () => void;
   t: (k: string, opts?: Record<string, unknown>) => string;
 }) {
@@ -841,6 +889,9 @@ function StudyHome({
       {/* Spelling Mastery banner */}
       <SpellingBanner t={t} />
 
+      {/* Smart Adaptive Practice CTA */}
+      <SmartAdaptiveCta onOpen={onOpenSmartPick} t={t} />
+
       {/* Today's plan */}
       {planLoading ? (
         <View style={[styles.completionCard, { alignItems: "center" }]}>
@@ -861,10 +912,12 @@ function StudyHome({
       {/* Subject grid */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
-          {mode === "basic" ? "📘 Basic Learning" : "📊 Advanced Study"}
+          {mode === "basic"
+            ? t("screens.study.subject_grid_title_basic")
+            : t("screens.study.subject_grid_title_advanced")}
         </Text>
         <Text style={styles.sectionSub}>
-          Pick a subject to practice
+          {t("screens.study.subject_grid_sub")}
         </Text>
       </View>
       {subjects.map((s) => {
@@ -1446,6 +1499,337 @@ function TopicDetail({
   );
 }
 
+// ─── SmartAdaptiveCta ────────────────────────────────────────────────────────
+
+function SmartAdaptiveCta({
+  onOpen,
+  t,
+}: {
+  onOpen: () => void;
+  t: (k: string, opts?: Record<string, unknown>) => string;
+}) {
+  return (
+    <Pressable
+      onPress={onOpen}
+      style={({ pressed }) => [
+        styles.adaptiveCta,
+        pressed && { opacity: 0.85 },
+      ]}
+    >
+      <LinearGradient
+        colors={[`${brand.primary}22`, `${ACCENT_PINK}11`]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <Text style={{ fontSize: 22 }}>🧠</Text>
+      <View style={{ flex: 1 }}>
+        <View style={styles.adaptiveCtaRow}>
+          <Text style={styles.adaptiveCtaTitle}>
+            {t("screens.study.adaptive_cta_title")}
+          </Text>
+          <View style={styles.aiBadge}>
+            <Text style={styles.aiBadgeText}>AI</Text>
+          </View>
+        </View>
+        <Text style={styles.adaptiveCtaSub}>
+          {t("screens.study.adaptive_cta_sub")}
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={brand.primary} />
+    </Pressable>
+  );
+}
+
+// ─── SmartSubjectPicker ──────────────────────────────────────────────────────
+
+function SmartSubjectPicker({
+  onPick,
+  t,
+}: {
+  onPick: (subjectId: SmartSubjectId) => void;
+  t: (k: string, opts?: Record<string, unknown>) => string;
+}) {
+  return (
+    <ScrollView
+      contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>
+          {t("screens.study.adaptive_pick_title")}
+        </Text>
+        <Text style={styles.sectionSub}>
+          {t("screens.study.adaptive_pick_sub")}
+        </Text>
+      </View>
+      <View style={styles.smartGrid}>
+        {SMART_SUBJECTS.map((s) => (
+          <Pressable
+            key={s.id}
+            onPress={() => onPick(s.id)}
+            style={({ pressed }) => [
+              styles.smartCard,
+              pressed && { opacity: 0.82 },
+            ]}
+          >
+            <LinearGradient
+              colors={[`${brand.primary}1A`, `${ACCENT_PINK}0D`]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <Text style={{ fontSize: 28 }}>{s.emoji}</Text>
+            <Text style={styles.smartCardTitle}>{s.title}</Text>
+            <Text style={styles.smartCardBlurb} numberOfLines={2}>
+              {s.blurb}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+// ─── AdaptiveRunner ──────────────────────────────────────────────────────────
+
+interface AdaptiveQuestion {
+  id: string;
+  q: string;
+  options: string[];
+  answer: string;
+  hint?: string | null;
+}
+
+interface AdaptiveBatch {
+  level: number;
+  source: "ai" | "dataset";
+  questions: AdaptiveQuestion[];
+}
+
+function AdaptiveRunner({
+  childId,
+  subjectId,
+  authFetch,
+  onExit,
+  t,
+}: {
+  childId: number;
+  subjectId: SmartSubjectId;
+  authFetch: ReturnType<typeof useAuthFetch>;
+  onExit: () => void;
+  t: (k: string, opts?: Record<string, unknown>) => string;
+}) {
+  const meta = SMART_SUBJECTS.find((s) => s.id === subjectId)!;
+
+  const [questions, setQuestions] = useState<AdaptiveQuestion[]>([]);
+  const [idx, setIdx] = useState(0);
+  const [pickedIdx, setPickedIdx] = useState<number | null>(null);
+  const [reveal, setReveal] = useState(false);
+  const [level, setLevel] = useState(1);
+  const [source, setSource] = useState<"ai" | "dataset">("dataset");
+  const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [totalAttempted, setTotalAttempted] = useState(0);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+
+  const mountedRef = useRef(true);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadBatch = useCallback(async () => {
+    if (!mountedRef.current) return;
+    setLoading(true);
+    setHasError(false);
+    try {
+      const res = await authFetch("/api/smart-study/next-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ childId, subject: subjectId, count: 5 }),
+      });
+      if (!mountedRef.current) return;
+      if (!res.ok) { setHasError(true); setLoading(false); return; }
+      const data = (await res.json()) as AdaptiveBatch;
+      if (!mountedRef.current) return;
+      setQuestions(data.questions ?? []);
+      setLevel(data.level);
+      setSource(data.source);
+      setIdx(0);
+      setPickedIdx(null);
+      setReveal(false);
+    } catch {
+      if (mountedRef.current) setHasError(true);
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  }, [childId, subjectId, authFetch]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    void loadBatch();
+    return () => {
+      mountedRef.current = false;
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    };
+  }, [loadBatch]);
+
+  const reportAttempt = useCallback(
+    (q: AdaptiveQuestion, correct: boolean) => {
+      void authFetch("/api/smart-study/attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childId,
+          subject: subjectId,
+          topicId: subjectId,
+          correct,
+          questionId: q.id,
+          ts: new Date().toISOString(),
+        }),
+      });
+    },
+    [childId, subjectId, authFetch],
+  );
+
+  const onPick = useCallback(
+    (oi: number) => {
+      if (reveal) return;
+      const current = questions[idx];
+      if (!current) return;
+      setPickedIdx(oi);
+      setReveal(true);
+      const correct = current.options[oi] === current.answer;
+      setTotalAttempted((n) => n + 1);
+      if (correct) setTotalCorrect((n) => n + 1);
+      reportAttempt(current, correct);
+      void Haptics.notificationAsync(
+        correct
+          ? Haptics.NotificationFeedbackType.Success
+          : Haptics.NotificationFeedbackType.Error,
+      );
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+      advanceTimer.current = setTimeout(async () => {
+        const nextIdx = idx + 1;
+        if (nextIdx >= questions.length) {
+          await loadBatch();
+          return;
+        }
+        if (!mountedRef.current) return;
+        setIdx(nextIdx);
+        setPickedIdx(null);
+        setReveal(false);
+      }, correct ? 900 : 1700);
+    },
+    [reveal, questions, idx, reportAttempt, loadBatch],
+  );
+
+  const current = questions[idx];
+  const accuracy =
+    totalAttempted === 0
+      ? 0
+      : Math.round((totalCorrect / totalAttempted) * 100);
+  const progressPct =
+    questions.length === 0
+      ? 0
+      : ((idx + (reveal ? 1 : 0)) / questions.length) * 100;
+
+  return (
+    <ScrollView
+      contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header row */}
+      <View style={styles.adaptiveHeader}>
+        <Text style={{ fontSize: 26 }}>{meta.emoji}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.adaptiveSubjectTitle}>{meta.title}</Text>
+          <Text style={styles.adaptiveSubtitle}>
+            {t("screens.study.adaptive_subtitle")}
+          </Text>
+        </View>
+      </View>
+
+      {/* Level + progress bar */}
+      <View style={styles.adaptiveLevelRow}>
+        <Text style={styles.adaptiveLevelText}>
+          ✨ {t("screens.study.adaptive_level_label", { level, accuracy })}
+        </Text>
+        <View style={styles.adaptiveSourceBadge}>
+          <Text style={styles.adaptiveSourceText}>
+            {source === "ai"
+              ? t("screens.study.adaptive_source_ai")
+              : t("screens.study.adaptive_source_dataset")}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.adaptiveProgressTrack}>
+        <View
+          style={[styles.adaptiveProgressFill, { width: `${progressPct}%` }]}
+        />
+      </View>
+
+      {loading ? (
+        <View style={[styles.completionCard, { alignItems: "center", marginTop: 16 }]}>
+          <ActivityIndicator color="#fff" />
+        </View>
+      ) : hasError || !current ? (
+        <View style={[styles.completionCard, { alignItems: "center", marginTop: 16, gap: 12 }]}>
+          <Text style={{ color: "#fff", fontSize: 14 }}>
+            {t("screens.study.adaptive_error")}
+          </Text>
+          <Pressable
+            onPress={() => void loadBatch()}
+            style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
+          >
+            <Ionicons name="refresh" size={14} color="#fff" />
+            <Text style={styles.retryBtnText}>
+              {t("screens.study.adaptive_retry")}
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={[styles.completionCard, { marginTop: 16 }]}>
+          <Text style={styles.adaptiveQuestion}>{current.q}</Text>
+          <View style={{ gap: 8, marginTop: 12 }}>
+            {current.options.map((opt, oi) => {
+              const isPicked = pickedIdx === oi;
+              const isAnswer = current.answer === opt;
+              const optStyle = !reveal
+                ? styles.optionDefault
+                : isAnswer
+                  ? styles.optionCorrect
+                  : isPicked
+                    ? styles.optionWrong
+                    : styles.optionDimmed;
+              return (
+                <Pressable
+                  key={`${current.id}-${oi}`}
+                  onPress={() => onPick(oi)}
+                  disabled={reveal}
+                  style={({ pressed }) => [
+                    optStyle,
+                    pressed && !reveal && { opacity: 0.8 },
+                  ]}
+                >
+                  {reveal && isAnswer && (
+                    <Ionicons name="checkmark-circle" size={16} color={palette.green400} />
+                  )}
+                  {reveal && isPicked && !isAnswer && (
+                    <Ionicons name="close-circle" size={16} color={palette.red400} />
+                  )}
+                  <Text style={styles.optionText}>{opt}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {reveal && pickedIdx !== null && current.options[pickedIdx] !== current.answer && current.hint && (
+            <Text style={styles.hintText}>💡 {current.hint}</Text>
+          )}
+        </View>
+      )}
+    </ScrollView>
+  );
+}
+
 // ─── SpellingBanner ───────────────────────────────────────────────────────────
 
 function SpellingBanner({
@@ -2006,6 +2390,117 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.2)",
   },
   retryBtnText: { color: "#fff", fontWeight: "700", fontSize: 12 },
+
+  // Smart Adaptive CTA
+  adaptiveCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: `${brand.primary}55`,
+    overflow: "hidden",
+  },
+  adaptiveCtaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  adaptiveCtaTitle: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  adaptiveCtaSub: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  aiBadge: {
+    backgroundColor: `${brand.primary}44`,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  aiBadgeText: { color: "#fff", fontSize: 10, fontWeight: "800" },
+
+  // Smart subject picker grid
+  smartGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  smartCard: {
+    width: "47%",
+    borderRadius: 14,
+    padding: 14,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    overflow: "hidden",
+  },
+  smartCardTitle: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  smartCardBlurb: { color: "rgba(255,255,255,0.65)", fontSize: 11 },
+
+  // Adaptive runner
+  adaptiveHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 12,
+  },
+  adaptiveSubjectTitle: { color: "#fff", fontWeight: "800", fontSize: 18 },
+  adaptiveSubtitle: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 2 },
+  adaptiveLevelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  adaptiveLevelText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+  adaptiveSourceBadge: {
+    backgroundColor: "rgba(255,210,122,0.25)",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  adaptiveSourceText: { color: palette.amber400, fontSize: 11, fontWeight: "700" },
+  adaptiveProgressTrack: {
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    marginBottom: 4,
+  },
+  adaptiveProgressFill: {
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: brand.primary,
+  },
+  adaptiveQuestion: { color: "#fff", fontWeight: "800", fontSize: 18 },
+
+  // Default option (not yet revealed)
+  optionDefault: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+
+  // Dimmed option (revealed, not picked, not answer)
+  optionDimmed: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.15)",
+    opacity: 0.5,
+  },
 
   // Spelling banner
   spellingBanner: {
