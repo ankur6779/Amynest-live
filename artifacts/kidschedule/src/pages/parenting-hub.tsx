@@ -521,7 +521,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     featured: true,
     render: () => {
-      return <HubSection id="command-center" icon={<Zap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.command-center.title")} description={t("parent_hub.web_tiles.command-center.description")} accentClass="bg-gradient-to-br from-indigo-500 to-violet-600" cardClass="linear-gradient(135deg,rgba(99,102,241,0.30)0%,rgba(139,92,246,0.14)100%)" defaultOpen={false}>
+      return <HubSection id="command-center" icon={<Zap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.command-center.title")} description={t("parent_hub.web_tiles.command-center.description")} accentClass="bg-gradient-to-br from-indigo-500 to-violet-600" cardClass="linear-gradient(135deg,rgba(99,102,241,0.30)0%,rgba(139,92,246,0.14)100%)" defaultOpen={false}> {/* audit-ok: brand tile accent gradient */}
           <ParentCommandCenter child={{
           id: effectiveChild.id,
           name: effectiveChild.name,
@@ -545,7 +545,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     featured: true,
     render: () => {
-      return <HubSection id="tomorrow-forecast" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")} accentClass="bg-gradient-to-br from-sky-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(34,211,238,0.14)100%)" defaultOpen={false}>
+      return <HubSection id="tomorrow-forecast" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.tomorrow-forecast.title")} description={t("parent_hub.web_tiles.tomorrow-forecast.description")} accentClass="bg-gradient-to-br from-sky-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(34,211,238,0.14)100%)" defaultOpen={false}> {/* audit-ok: brand tile accent gradient */}
           <FuturePredictor childId={effectiveChild.id} />
         </HubSection>;
     }
@@ -555,7 +555,7 @@ export default function ParentingHub() {
     id: "smart-math-tricks",
     bands: ["4-6", "6-8"] as AgeBand[],
     render: () => {
-      return ageGroup ? <HubSection id="smart-math-tricks" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-math-tricks.title")} description={t("parent_hub.web_tiles.smart-math-tricks.description")} accentClass="bg-gradient-to-br from-orange-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(251,191,36,0.14)100%)">
+      return ageGroup ? <HubSection id="smart-math-tricks" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-math-tricks.title")} description={t("parent_hub.web_tiles.smart-math-tricks.description")} accentClass="bg-gradient-to-br from-orange-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(251,191,36,0.14)100%)"> {/* audit-ok: brand tile accent gradient */}
           <SmartMathTricks childName={effectiveChild.name} ageYears={effectiveChild.age} />
         </HubSection> : null;
     }
@@ -578,7 +578,7 @@ export default function ParentingHub() {
     id: "amy-ai",
     alwaysCurrent: true,
     render: () => {
-      return <HubSection id="amy-ai" icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-violet-500 to-purple-600" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)">
+      return <HubSection id="amy-ai" icon={<AmyIcon size={22} bounce />} title={t("parent_hub.web_tiles.amy-ai.title")} description={t("parent_hub.web_tiles.amy-ai.description")} accentClass="bg-gradient-to-br from-violet-500 to-purple-600" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)"> {/* audit-ok: brand tile accent gradient */}
           <AmyAISuggestionsSection />
         </HubSection>;
     }
@@ -587,7 +587,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_articles")}>
-          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(59,130,246,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_articles")} onOpen={() => hubUsage.markFeatureUsed("hub_articles")}>
+          <HubSection id="articles" icon={<BookOpen className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.articles.title")} description={t("parent_hub.web_tiles.articles.description")} accentClass="bg-gradient-to-br from-blue-500 to-indigo-600" cardClass="linear-gradient(135deg,rgba(59,130,246,0.30)0%,rgba(99,102,241,0.14)100%)" tryFree={tryFreeFor("hub_articles")} onOpen={() => hubUsage.markFeatureUsed("hub_articles")}> {/* audit-ok: brand tile accent gradient */}
             <ParentingArticles childAgeMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock>;
@@ -597,7 +597,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_tips")}>
-          <HubSection id="daily-tips" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(234,179,8,0.14)100%)" tryFree={tryFreeFor("hub_tips")} onOpen={() => hubUsage.markFeatureUsed("hub_tips")}>
+          <HubSection id="daily-tips" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.daily-tips.title")} description={t("parent_hub.web_tiles.daily-tips.description")} accentClass="bg-gradient-to-br from-amber-400 to-yellow-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(234,179,8,0.14)100%)" tryFree={tryFreeFor("hub_tips")} onOpen={() => hubUsage.markFeatureUsed("hub_tips")}> {/* audit-ok: brand tile accent gradient */}
             <DailyTips ageGroup={ageGroup} childName={effectiveChild.name} />
           </HubSection>
         </LockedBlock> : null;
@@ -607,7 +607,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_emotional")}>
-          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardClass="linear-gradient(135deg,rgba(251,113,133,0.30)0%,rgba(236,72,153,0.14)100%)" tryFree={tryFreeFor("hub_emotional")} onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}>
+          <HubSection id="emotional" icon={<Heart className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.emotional.title")} description={t("parent_hub.web_tiles.emotional.description")} accentClass="bg-gradient-to-br from-rose-400 to-pink-500" cardClass="linear-gradient(135deg,rgba(251,113,133,0.30)0%,rgba(236,72,153,0.14)100%)" tryFree={tryFreeFor("hub_emotional")} onOpen={() => hubUsage.markFeatureUsed("hub_emotional")}> {/* audit-ok: brand tile accent gradient */}
             <EmotionalSupportSection />
           </HubSection>
         </LockedBlock>;
@@ -617,7 +617,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return ageGroup ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_activities")}>
-          <HubSection id="activities" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_activities")} onOpen={() => hubUsage.markFeatureUsed("hub_activities")}>
+          <HubSection id="activities" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.activities.title")} description={t("parent_hub.web_tiles.activities.description")} accentClass="bg-gradient-to-br from-emerald-400 to-green-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_activities")} onOpen={() => hubUsage.markFeatureUsed("hub_activities")}> {/* audit-ok: brand tile accent gradient */}
             <ActivitiesSection ageGroup={ageGroup} effectiveChild={effectiveChild} totalAgeMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock> : null;
@@ -629,7 +629,7 @@ export default function ParentingHub() {
     alwaysCurrent: true,
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_art_craft")}>
-          <HubSection id="art-craft" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} accentClass="bg-gradient-to-br from-orange-400 to-red-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(239,68,68,0.14)100%)" tryFree={tryFreeFor("hub_art_craft")} onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}>
+          <HubSection id="art-craft" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.art-craft.title")} description={t("parent_hub.web_tiles.art-craft.description")} accentClass="bg-gradient-to-br from-orange-400 to-red-500" cardClass="linear-gradient(135deg,rgba(251,146,60,0.30)0%,rgba(239,68,68,0.14)100%)" tryFree={tryFreeFor("hub_art_craft")} onOpen={() => hubUsage.markFeatureUsed("hub_art_craft")}> {/* audit-ok: brand tile accent gradient */}
             <ArtCraftReels />
           </HubSection>
         </LockedBlock>;
@@ -641,7 +641,7 @@ export default function ParentingHub() {
     bands: ["0-2", "2-4", "4-6", "6-8"],
     render: () => {
       return <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_story_hub")}>
-          <HubSection id="story-hub" icon={<Film className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.story-hub.title")} description={t("parent_hub.web_tiles.story-hub.description")} accentClass="bg-gradient-to-br from-purple-500 to-fuchsia-600" cardClass="linear-gradient(135deg,rgba(168,85,247,0.30)0%,rgba(217,70,239,0.14)100%)" tryFree={tryFreeFor("hub_story_hub")} onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}>
+          <HubSection id="story-hub" icon={<Film className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.story-hub.title")} description={t("parent_hub.web_tiles.story-hub.description")} accentClass="bg-gradient-to-br from-purple-500 to-fuchsia-600" cardClass="linear-gradient(135deg,rgba(168,85,247,0.30)0%,rgba(217,70,239,0.14)100%)" tryFree={tryFreeFor("hub_story_hub")} onOpen={() => hubUsage.markFeatureUsed("hub_story_hub")}> {/* audit-ok: brand tile accent gradient */}
             <StoryHub childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
         </LockedBlock>;
@@ -651,7 +651,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6"],
     render: () => {
       return totalAgeMonths >= 12 && totalAgeMonths < 72 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_phonics")}>
-          <HubSection id="phonics" icon={<AudioLines className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.phonics.title")} description={t("parent_hub.web_tiles.phonics.description")} accentClass="bg-gradient-to-br from-sky-400 to-blue-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_phonics")} onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}>
+          <HubSection id="phonics" icon={<AudioLines className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.phonics.title")} description={t("parent_hub.web_tiles.phonics.description")} accentClass="bg-gradient-to-br from-sky-400 to-blue-500" cardClass="linear-gradient(135deg,rgba(56,189,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_phonics")} onOpen={() => hubUsage.markFeatureUsed("hub_phonics")}> {/* audit-ok: brand tile accent gradient */}
             <PhonicsLearning childId={effectiveChild.id} childName={effectiveChild.name} totalAgeMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock> : null;
@@ -661,7 +661,7 @@ export default function ParentingHub() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 36 && totalAgeMonths < 216 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_ptm_prep")}>
-          <HubSection id="ptm-prep" icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" tryFree={tryFreeFor("hub_ptm_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}>
+          <HubSection id="ptm-prep" icon={<ClipboardList className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.ptm-prep.title")} description={t("parent_hub.web_tiles.ptm-prep.description")} accentClass="bg-gradient-to-br from-slate-500 to-blue-600" cardClass="linear-gradient(135deg,rgba(100,116,139,0.30)0%,rgba(37,99,235,0.14)100%)" tryFree={tryFreeFor("hub_ptm_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_ptm_prep")}> {/* audit-ok: brand tile accent gradient */}
             <PtmPrepAssistant child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -675,7 +675,7 @@ export default function ParentingHub() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 36 && totalAgeMonths < 204 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_smart_study")}>
-          <HubSection id="smart-study" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-study.title")} description={t("parent_hub.web_tiles.smart-study.description")} accentClass="bg-gradient-to-br from-indigo-400 to-blue-500" cardClass="linear-gradient(135deg,rgba(129,140,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_smart_study")} onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}>
+          <HubSection id="smart-study" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.smart-study.title")} description={t("parent_hub.web_tiles.smart-study.description")} accentClass="bg-gradient-to-br from-indigo-400 to-blue-500" cardClass="linear-gradient(135deg,rgba(129,140,248,0.30)0%,rgba(59,130,246,0.14)100%)" tryFree={tryFreeFor("hub_smart_study")} onOpen={() => hubUsage.markFeatureUsed("hub_smart_study")}> {/* audit-ok: brand tile accent gradient */}
             <SmartStudyZone />
           </HubSection>
         </LockedBlock> : null;
@@ -686,7 +686,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_spelling_mastery")}>
-          <HubSection id="spelling-mastery" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.spelling-mastery.title")} description={t("parent_hub.web_tiles.spelling-mastery.description")} accentClass="bg-gradient-to-br from-green-400 to-teal-500" cardClass="linear-gradient(135deg,rgba(74,222,128,0.30)0%,rgba(45,212,191,0.14)100%)" tryFree={tryFreeFor("hub_spelling_mastery")} onOpen={() => hubUsage.markFeatureUsed("hub_spelling_mastery")}>
+          <HubSection id="spelling-mastery" icon={<GraduationCap className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.spelling-mastery.title")} description={t("parent_hub.web_tiles.spelling-mastery.description")} accentClass="bg-gradient-to-br from-green-400 to-teal-500" cardClass="linear-gradient(135deg,rgba(74,222,128,0.30)0%,rgba(45,212,191,0.14)100%)" tryFree={tryFreeFor("hub_spelling_mastery")} onOpen={() => hubUsage.markFeatureUsed("hub_spelling_mastery")}> {/* audit-ok: brand tile accent gradient */}
             <SpellingMastery childId={effectiveChild.id} childName={effectiveChild.name} ageMonths={totalAgeMonths} />
           </HubSection>
         </LockedBlock> : null;
@@ -696,7 +696,7 @@ export default function ParentingHub() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 36 && totalAgeMonths < 180 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_event_prep")}>
-          <HubSection id="event-prep" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} accentClass="bg-gradient-to-br from-amber-400 to-orange-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(249,115,22,0.14)100%)" tryFree={tryFreeFor("hub_event_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}>
+          <HubSection id="event-prep" icon={<Sparkles className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.event-prep.title")} description={t("parent_hub.web_tiles.event-prep.description")} accentClass="bg-gradient-to-br from-amber-400 to-orange-500" cardClass="linear-gradient(135deg,rgba(251,191,36,0.30)0%,rgba(249,115,22,0.14)100%)" tryFree={tryFreeFor("hub_event_prep")} onOpen={() => hubUsage.markFeatureUsed("hub_event_prep")}> {/* audit-ok: brand tile accent gradient */}
             <EventPrepCard />
           </HubSection>
         </LockedBlock> : null;
@@ -706,7 +706,7 @@ export default function ParentingHub() {
     bands: ["4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 36 && totalAgeMonths < 192 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_olympiad")}>
-          <HubSection id="olympiad" icon={<Trophy className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.olympiad.title")} description={t("parent_hub.web_tiles.olympiad.description")} accentClass="bg-gradient-to-br from-yellow-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(250,204,21,0.30)0%,rgba(245,158,11,0.14)100%)" tryFree={tryFreeFor("hub_olympiad")} onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}>
+          <HubSection id="olympiad" icon={<Trophy className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.olympiad.title")} description={t("parent_hub.web_tiles.olympiad.description")} accentClass="bg-gradient-to-br from-yellow-400 to-amber-500" cardClass="linear-gradient(135deg,rgba(250,204,21,0.30)0%,rgba(245,158,11,0.14)100%)" tryFree={tryFreeFor("hub_olympiad")} onOpen={() => hubUsage.markFeatureUsed("hub_olympiad")}> {/* audit-ok: brand tile accent gradient */}
             <OlympiadZone child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -720,7 +720,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 24 && totalAgeMonths < 192 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_life_skills")}>
-          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_life_skills")} onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}>
+          <HubSection id="life-skills" icon={<Compass className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.life-skills.title")} description={t("parent_hub.web_tiles.life-skills.description")} accentClass="bg-gradient-to-br from-emerald-400 to-cyan-500" cardClass="linear-gradient(135deg,rgba(52,211,153,0.30)0%,rgba(34,211,238,0.14)100%)" tryFree={tryFreeFor("hub_life_skills")} onOpen={() => hubUsage.markFeatureUsed("hub_life_skills")}> {/* audit-ok: brand tile accent gradient */}
             <LifeSkillsZone child={{
             id: effectiveChild.id,
             name: effectiveChild.name,
@@ -738,7 +738,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_coloring_books")}>
-          <HubSection id="coloring-books" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500" cardClass="linear-gradient(135deg,rgba(244,114,182,0.30)0%,rgba(251,113,133,0.14)100%)" tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}>
+          <HubSection id="coloring-books" icon={<Palette className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.coloring-books.title")} description={t("parent_hub.web_tiles.coloring-books.description")} accentClass="bg-gradient-to-br from-pink-400 to-rose-500" cardClass="linear-gradient(135deg,rgba(244,114,182,0.30)0%,rgba(251,113,133,0.14)100%)" tryFree={tryFreeFor("hub_coloring_books")} onOpen={() => hubUsage.markFeatureUsed("hub_coloring_books")}> {/* audit-ok: brand tile accent gradient */}
             <ColoringBooks childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
         </LockedBlock> : null;
@@ -752,7 +752,7 @@ export default function ParentingHub() {
     bands: ["2-4", "4-6", "6-8", "8-10", "10-12", "12-15"],
     render: () => {
       return totalAgeMonths >= 24 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_fun_sheets")}>
-          <HubSection id="fun-sheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} accentClass="bg-gradient-to-br from-lime-400 to-green-500" cardClass="linear-gradient(135deg,rgba(163,230,53,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}>
+          <HubSection id="fun-sheets" icon={<FileDown className="h-5 w-5 text-white" />} title={t("parent_hub.web_tiles.fun-sheets.title")} description={t("parent_hub.web_tiles.fun-sheets.description")} accentClass="bg-gradient-to-br from-lime-400 to-green-500" cardClass="linear-gradient(135deg,rgba(163,230,53,0.30)0%,rgba(34,197,94,0.14)100%)" tryFree={tryFreeFor("hub_fun_sheets")} onOpen={() => hubUsage.markFeatureUsed("hub_fun_sheets")}> {/* audit-ok: brand tile accent gradient */}
             <FunSheets childId={effectiveChild.id} childName={effectiveChild.name} />
           </HubSection>
         </LockedBlock> : null;

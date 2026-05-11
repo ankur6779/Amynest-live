@@ -58,7 +58,7 @@ function HeatmapRow({
         {perHour.map((v, h) => (
           <div
             key={h}
-            className={`h-6 border border-white/40 dark:border-slate-950 ${heatColor(v, capacity)}`}
+            className={`h-6 border border-white/40 dark:border-border ${heatColor(v, capacity)}`}
             title={`${h}:00 — load ${v.toFixed(1)} / cap ${capacity}`}
           />
         ))}
@@ -160,7 +160,7 @@ export default function ForecastPage() {
         </h1>
       </div>
 
-      <Card className="mb-4 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800">
+      <Card className="mb-4 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800"> {/* audit-ok: brand hub banner gradient */}
         <CardContent className="pt-4 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 text-sm">
             <CalendarDays className="h-4 w-4" />
@@ -235,7 +235,7 @@ export default function ForecastPage() {
               </div>
 
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" /> {t("forecast.hotspots_heading")}
+                <AlertTriangle className="h-5 w-5 text-amber-500" /> {t("forecast.hotspots_heading")} {/* audit-ok: warning icon brand color */}
               </h2>
               {forecast.bottlenecks.length === 0 ? (
                 <Card><CardContent className="pt-4 text-sm text-muted-foreground">

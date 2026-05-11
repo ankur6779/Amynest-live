@@ -224,7 +224,7 @@ export default function HouseholdPage() {
         </h1>
       </div>
 
-      <Card className="mb-4 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800">
+      <Card className="mb-4 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800"> {/* audit-ok: brand hub banner gradient */}
         <CardContent className="pt-4">
           <div className="flex items-center gap-2 text-sm">
             <CalendarDays className="h-4 w-4" />
