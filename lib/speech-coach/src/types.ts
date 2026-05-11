@@ -82,6 +82,9 @@ export interface GuidanceCard {
 /** Kind of pronunciation prompt — letter / phonic / word / sentence. */
 export type PronouncePromptKind = "letter" | "phonic" | "word" | "sentence";
 
+/** Practice difficulty level shown in the session picker. */
+export type PronouncePromptDifficulty = "easy" | "medium" | "advanced";
+
 /** A speech-practice prompt. `text` is the literal token spoken aloud and is
  *  intentionally NOT localized (English-only first round per task scope). */
 export interface PronouncePrompt {
@@ -91,6 +94,8 @@ export interface PronouncePrompt {
   ageBands: readonly SpeechAgeBand[];
   /** i18n key for a short hint shown above the prompt (e.g. "Tap to hear"). */
   i18nKeyHint: string;
+  /** Difficulty level. Defaults to "easy" when omitted. */
+  difficulty?: PronouncePromptDifficulty;
 }
 
 /** Inputs to the weekly progress scorer. */

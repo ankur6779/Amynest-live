@@ -16,6 +16,7 @@ import type {
   AffirmationCard,
   GuidanceCard,
   PronouncePrompt,
+  PronouncePromptDifficulty,
   PronouncePromptKind,
   SpeechAgeBand,
   SpeechGame,
@@ -67,6 +68,36 @@ export function getPromptsForAgeMonths(
   if (band === null) return [];
   return PRONUNCIATION_PROMPTS.filter(
     (p) => p.ageBands.includes(band) && (kind === undefined || p.kind === kind),
+  );
+}
+
+/**
+ * Return all prompts matching the given age band, kind, and difficulty.
+ * Falls back to "easy" prompts (difficulty undefined or "easy") when the
+ * strict difficulty slice is empty, so a session is never blank.
+ *
+ * Deterministic ordering — callers should shuffle in the UI layer using
+ * their own entropy source so this helper stays cache-safe.
+ */
+export function getPromptsPool(
+  months: number,
+  kind: PronouncePromptKind,
+  difficulty: PronouncePromptDifficulty,
+): readonly PronouncePrompt[] {
+  const band = monthsToBand(months);
+  const matchBand = band !== null ? band : "1y";
+
+  const matches = PRONUNCIATION_PROMPTS.filter(
+    (p) =>
+      p.kind === kind &&
+      p.ageBands.includes(matchBand) &&
+      (p.difficulty ?? "easy") === difficulty,
+  );
+  if (matches.length > 0) return matches;
+
+  // Fallback: any prompt for this kind + band regardless of difficulty
+  return PRONUNCIATION_PROMPTS.filter(
+    (p) => p.kind === kind && p.ageBands.includes(matchBand),
   );
 }
 

@@ -1658,7 +1658,30 @@
         "recording_panel_title": "Recording placeholder",
         "recording_panel_hint": "Real speech analysis is coming soon. For now, tap to simulate recording — Amy will share encouragement after.",
         "tap_to_record": "Tap to record",
-        "recording_now": "I'm listening…"
+        "recording_now": "I'm listening…",
+        "difficulty": {
+          "label": "Difficulty",
+          "easy": "Easy",
+          "medium": "Medium",
+          "advanced": "Advanced"
+        },
+        "session": {
+          "start_cta": "Start Practice",
+          "progress": "Word {{done}} of {{total}}",
+          "complete_title": "Amazing Session!",
+          "complete_subtitle": "You practised {{count}} words today!",
+          "strong_label": "Strong sounds",
+          "needs_practice_label": "Needs practice",
+          "new_session": "New Session",
+          "next_word": "Next Word",
+          "try_again": "Try Again",
+          "hear_amy": "Hear Amy",
+          "no_prompts": "No words for this selection — try a different difficulty or category.",
+          "score_label": "Score",
+          "xp_earned": "+{{xp}} XP",
+          "session_size": "{{count}} words"
+        },
+        "hear_again": "Hear it again"
       },
       "stt": {
         "panel_title": "Say it out loud",
@@ -1674,14 +1697,22 @@
         "feedback": {
           "great": "Great pronunciation!",
           "close": "Almost — try once more!",
-          "try_again": "Good try — let's practise again!"
+          "try_again": "Good try — let's practise again!",
+          "great_alt1": "You said it perfectly!",
+          "great_alt2": "Your sound is so strong!",
+          "great_alt3": "Amy is so proud of you!",
+          "close_alt1": "So close! Try saying it a little slower.",
+          "close_alt2": "Great effort! Try the sounds one at a time.",
+          "try_again_alt1": "Let’s try again together!",
+          "try_again_alt2": "Keep going — you’re getting better!"
         },
         "error": {
           "microphone_denied": "Microphone access was denied. Please allow it in browser settings.",
           "transcription_failed": "Could not analyse the audio. Please try again.",
           "recognition_start_failed": "Could not start the microphone. Please try again.",
           "generic": "Something went wrong. Please try again."
-        }
+        },
+        "analyzing": "Amy is analysing your voice…"
       },
       "read_aloud": {
         "section_title": "Read Aloud & Repeat",

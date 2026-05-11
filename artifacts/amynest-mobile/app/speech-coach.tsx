@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Animated,
   View,
   Text,
   ScrollView,
@@ -23,12 +24,14 @@ import LockedBlock from "@/components/LockedBlock";
 import { brand, palette } from "@/constants/colors";
 import {
   PARENT_GUIDANCE_CARDS,
-  PRONUNCIATION_PROMPTS,
   SPEECH_AFFIRMATIONS,
   SPEECH_GAMES,
   SPEECH_MILESTONES,
   monthsToBand,
   compareTranscript,
+  getPromptsPool,
+  type PronouncePrompt,
+  type PronouncePromptDifficulty,
   type PronouncePromptKind,
   type SpeechAgeBand,
   type TranscriptFeedback,
@@ -82,15 +85,18 @@ export default function SpeechCoachScreen() {
   const childBand = monthsToBand(childAgeMonths) ?? "1y";
 
   const [milestoneTab, setMilestoneTab] = useState<SpeechAgeBand>(childBand);
-  const [pronounceTab, setPronounceTab] = useState<PronouncePromptKind>("letter");
-  const [selectedPromptText, setSelectedPromptText] = useState<string | null>(null);
+  const [pronounceDifficulty, setPronounceDifficulty] = useState<PronouncePromptDifficulty>("easy");
+  const [pronounceKind, setPronounceKind] = useState<PronouncePromptKind>("word");
   const [sttRecording, setSttRecording] = useState(false);
   const [sttTranscribing, setSttTranscribing] = useState(false);
-  const [sttResult, setSttResult] = useState<{
-    transcript: string;
-    feedback: TranscriptFeedback;
-    score: number;
-  } | null>(null);
+  // ── Session state ──────────────────────────────────────────────────────────
+  const [sessionPhase, setSessionPhase] = useState<"setup" | "practice" | "done">("setup");
+  const [promptPhase, setPromptPhase] = useState<"idle" | "heard" | "recording" | "analyzing" | "result">("idle");
+  const [sessionItems, setSessionItems] = useState<PronouncePrompt[]>([]);
+  const [sessionIdx, setSessionIdx] = useState(0);
+  const [sessionResults, setSessionResults] = useState<Array<{ id: string; feedback: TranscriptFeedback; score: number }>>([]);
+  const [promptResult, setPromptResult] = useState<{ feedback: TranscriptFeedback; score: number; transcript: string } | null>(null);
+  const waveAnim = useRef(new Animated.Value(0)).current;
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const joinWaitlist = useMutation({
@@ -118,13 +124,34 @@ export default function SpeechCoachScreen() {
     [usage],
   );
 
+  const MOBILE_SESSION_SIZE = 10;
+  const MOBILE_DIFFICULTY_TABS: readonly PronouncePromptDifficulty[] = ["easy", "medium", "advanced"] as const;
+  const MOBILE_ENCOURAGEMENT: Record<TranscriptFeedback, string[]> = {
+    great: ["Amazing job! 🌟", "You said it perfectly! ⭐", "Amy is so proud of you! 🎉", "Wonderful — so clear! ✨"],
+    close: ["So close! Try a little slower. 👍", "Almost there! One more try. 💪", "Great effort! Sounds one at a time."],
+    try_again: ["Let's try again together! 🤝", "Keep going — you're getting better! 💪", "Every try makes you stronger!"],
+  };
+  const mobilePickEncouragement = (feedback: TranscriptFeedback, score: number): string => {
+    const list = MOBILE_ENCOURAGEMENT[feedback];
+    return list[Math.floor((score / 101) * list.length)] ?? list[0];
+  };
+  const mobileSeededShuffle = <T,>(arr: T[], seed: number): T[] => {
+    const out = [...arr];
+    let s = seed;
+    for (let i = out.length - 1; i > 0; i--) {
+      s = ((s * 1664525) + 1013904223) & 0xffffffff;
+      const j = Math.abs(s) % (i + 1);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  };
+
+  const currentSessionItem = sessionItems[sessionIdx] ?? null;
+  const isLastSessionItem = sessionIdx === sessionItems.length - 1;
+
   const milestones = useMemo(
     () => SPEECH_MILESTONES.filter((m) => m.ageBand === milestoneTab),
     [milestoneTab],
-  );
-  const prompts = useMemo(
-    () => PRONUNCIATION_PROMPTS.filter((p) => p.kind === pronounceTab),
-    [pronounceTab],
   );
 
   const handleSpeak = useCallback(
@@ -138,16 +165,34 @@ export default function SpeechCoachScreen() {
     [voice],
   );
 
+  // ── waveform animation ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (sttRecording) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(waveAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+          Animated.timing(waveAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
+        ]),
+      );
+      loop.start();
+      return () => loop.stop();
+    } else {
+      waveAnim.setValue(0);
+    }
+  }, [sttRecording, waveAnim]);
+
   const startSttRecording = useCallback(async () => {
     try {
       const { granted } = await AudioModule.requestRecordingPermissionsAsync();
       if (!granted) return;
-      setSttResult(null);
+      setPromptResult(null);
       setSttRecording(true);
+      setPromptPhase("recording");
       await audioRecorder.prepareToRecordAsync();
       audioRecorder.record();
     } catch {
       setSttRecording(false);
+      setPromptPhase("idle");
     }
   }, [audioRecorder]);
 
@@ -155,10 +200,12 @@ export default function SpeechCoachScreen() {
     if (!sttRecording) return;
     setSttRecording(false);
     setSttTranscribing(true);
+    setPromptPhase("analyzing");
+    const currentText = currentSessionItem?.text ?? null;
     try {
       await audioRecorder.stop();
       const uri = audioRecorder.uri;
-      if (!uri) { setSttTranscribing(false); return; }
+      if (!uri) { setSttTranscribing(false); setPromptPhase("idle"); return; }
       const audioBase64 = await FileSystem.readAsStringAsync(uri, {
         encoding: "base64",
       });
@@ -167,18 +214,24 @@ export default function SpeechCoachScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ audioBase64 }),
       });
-      if (!res.ok) { setSttTranscribing(false); return; }
+      if (!res.ok) { setSttTranscribing(false); setPromptPhase("idle"); return; }
       const { transcript } = (await res.json()) as { transcript: string };
-      if (transcript && selectedPromptText) {
-        const r = compareTranscript(selectedPromptText, transcript);
-        setSttResult({ transcript, feedback: r.feedback, score: r.score });
+      const trimmed = transcript?.trim() ?? "";
+      if (currentText) {
+        const r = compareTranscript(currentText, trimmed || "");
+        setPromptResult({
+          transcript: trimmed,
+          feedback: trimmed ? r.feedback : "try_again",
+          score: trimmed ? r.score : 0,
+        });
       }
+      setPromptPhase("result");
     } catch {
-      // silently discard — error visible via missing result
+      setPromptPhase("idle");
     } finally {
       setSttTranscribing(false);
     }
-  }, [sttRecording, audioRecorder, authFetch, selectedPromptText]);
+  }, [sttRecording, audioRecorder, authFetch, currentSessionItem]);
 
   const storyTitle = t("screens.speech_coach.read_aloud.story_default_title");
   const storyBody = t("screens.speech_coach.read_aloud.story_default_body");
@@ -294,182 +347,421 @@ export default function SpeechCoachScreen() {
           title={t("screens.speech_coach.pronounce.section_title")}
           icon="mic-circle"
         >
-          <Text style={[s.intro, { color: c.mutedForeground }]}>
-            {t("screens.speech_coach.pronounce.intro")}
-          </Text>
-          <View style={s.tabsRow}>
-            {PRONOUNCE_TABS.map((kind) => {
-              const active = kind === pronounceTab;
-              return (
-                <Pressable
-                  key={kind}
-                  onPress={() => setPronounceTab(kind)}
-                  style={[
-                    s.tabPill,
-                    {
-                      backgroundColor: active ? brand.violet500 : c.muted,
-                      borderColor: active ? brand.violet500 : c.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      color: active ? "#FFFFFF" /* audit-ok: pill foreground on filled brand */ : c.foreground,
-                      fontWeight: "700",
-                      fontSize: 12,
-                    }}
-                  >
-                    {t(`screens.speech_coach.pronounce.tab.${kind}`)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <View style={{ gap: 10 }}>
-            {prompts.map((p) => {
-              const isPhonic = p.kind === "phonic" || p.kind === "letter";
-              const speaking = voice.speaking || voice.loading;
-              return (
-                <View
-                  key={p.id}
-                  style={[s.row, { backgroundColor: c.card, borderColor: c.border }]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.rowTitle, { color: c.foreground, fontSize: 16 }]}>
-                      {p.text}
-                    </Text>
-                    <Text style={[s.rowHint, { color: c.mutedForeground }]}>
-                      {t(p.i18nKeyHint)}
-                    </Text>
-                  </View>
+          {/* ── Difficulty + Kind selectors (always visible) ─────────── */}
+          <View style={{ gap: 8 }}>
+            <Text style={[s.sttPanelTitle, { color: c.mutedForeground }]}>
+              {t("screens.speech_coach.pronounce.difficulty.label")}
+            </Text>
+            <View style={s.tabsRow}>
+              {MOBILE_DIFFICULTY_TABS.map((d) => {
+                const active = d === pronounceDifficulty;
+                return (
                   <Pressable
-                    onPress={() => {
-                      setSelectedPromptText(p.text);
-                      setSttResult(null);
-                      handleSpeak(p.text, isPhonic ? "phonics" : undefined);
-                    }}
-                    style={[s.miniBtn, { backgroundColor: brand.violet500 }]}
-                  >
-                    <Ionicons
-                      name={speaking ? "stop" : "volume-high"}
-                      size={14}
-                      color="#FFFFFF"/* audit-ok: button glyph on filled brand */
-                    />
-                    <Text style={s.miniBtnText}>
-                      {speaking
-                        ? t("screens.speech_coach.pronounce.listening")
-                        : t("screens.speech_coach.pronounce.play")}
-                    </Text>
-                  </Pressable>
-                </View>
-              );
-            })}
-
-            {/* ── STT Recording Panel ──────────────────────────────────── */}
-            <View style={[s.sttPanel, { backgroundColor: c.card, borderColor: c.border }]}>
-              <Text style={[s.sttPanelTitle, { color: c.mutedForeground }]}>
-                {t("screens.speech_coach.stt.panel_title")}
-              </Text>
-              {selectedPromptText ? (
-                <Text style={[s.sttSayPrompt, { color: c.foreground }]}>
-                  {t("screens.speech_coach.stt.say_prompt")}{" "}
-                  <Text style={{ color: brand.violet500 }}>&ldquo;{selectedPromptText}&rdquo;</Text>
-                </Text>
-              ) : (
-                <Text style={[s.sttHint, { color: c.mutedForeground }]}>
-                  {t("screens.speech_coach.stt.tap_a_prompt_first")}
-                </Text>
-              )}
-
-              {sttRecording ? (
-                <Pressable
-                  onPress={() => void stopSttRecording()}
-                  style={[s.fullBtn, { backgroundColor: palette.red500 }]}
-                  accessibilityRole="button"
-                >
-                  <Ionicons name="stop-circle" size={16} color="#FFFFFF"/* audit-ok: icon on filled red */ />
-                  <Text style={s.fullBtnText}>
-                    {t("screens.speech_coach.stt.stop_recording")}
-                  </Text>
-                </Pressable>
-              ) : sttTranscribing ? (
-                <View style={[s.fullBtn, { backgroundColor: c.muted }]}>
-                  <Ionicons name="hourglass" size={16} color={c.mutedForeground} />
-                  <Text style={[s.fullBtnText, { color: c.mutedForeground }]}>
-                    {t("screens.speech_coach.stt.transcribing")}
-                  </Text>
-                </View>
-              ) : (
-                <Pressable
-                  onPress={() => void startSttRecording()}
-                  disabled={!selectedPromptText}
-                  style={[
-                    s.fullBtn,
-                    selectedPromptText
-                      ? { backgroundColor: brand.violet500 }
-                      : { backgroundColor: c.muted, opacity: 0.6 },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: !selectedPromptText }}
-                >
-                  <Ionicons
-                    name="mic"
-                    size={16}
-                    color={selectedPromptText ? "#FFFFFF" : c.mutedForeground}/* audit-ok: icon on brand */
-                  />
-                  <Text
+                    key={d}
+                    onPress={() => { if (sessionPhase !== "practice") setPronounceDifficulty(d); }}
+                    disabled={sessionPhase === "practice"}
                     style={[
-                      s.fullBtnText,
-                      !selectedPromptText && { color: c.mutedForeground },
+                      s.tabPill,
+                      {
+                        backgroundColor: active ? brand.violet500 : c.muted,
+                        borderColor: active ? brand.violet500 : c.border,
+                        opacity: sessionPhase === "practice" ? 0.5 : 1,
+                      },
                     ]}
                   >
-                    {t("screens.speech_coach.stt.tap_to_record")}
-                  </Text>
-                </Pressable>
-              )}
+                    <Text style={{ color: active ? "#FFFFFF" /* audit-ok: pill foreground on filled brand */ : c.foreground, fontWeight: "700", fontSize: 12 }}>
+                      {t(`screens.speech_coach.pronounce.difficulty.${d}`)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={s.tabsRow}>
+              {PRONOUNCE_TABS.map((k) => {
+                const active = k === pronounceKind;
+                return (
+                  <Pressable
+                    key={k}
+                    onPress={() => { if (sessionPhase !== "practice") setPronounceKind(k); }}
+                    disabled={sessionPhase === "practice"}
+                    style={[
+                      s.tabPill,
+                      {
+                        backgroundColor: active ? brand.violet500 : c.muted,
+                        borderColor: active ? brand.violet500 : c.border,
+                        opacity: sessionPhase === "practice" ? 0.5 : 1,
+                      },
+                    ]}
+                  >
+                    <Text style={{ color: active ? "#FFFFFF" /* audit-ok: pill foreground on filled brand */ : c.foreground, fontWeight: "700", fontSize: 12 }}>
+                      {t(`screens.speech_coach.pronounce.tab.${k}`)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
 
-              {sttRecording && (
-                <View style={s.listeningRow}>
-                  <View style={[s.listeningDot, { backgroundColor: brand.violet500 }]} />
-                  <Text style={[s.listeningText, { color: brand.violet500 }]}>
-                    {t("screens.speech_coach.stt.listening")}
+          {/* ── SETUP phase ──────────────────────────────────────────── */}
+          {sessionPhase === "setup" && (() => {
+            const pool = getPromptsPool(childAgeMonths, pronounceKind, pronounceDifficulty);
+            const sessionSize = Math.min(MOBILE_SESSION_SIZE, pool.length);
+            return (
+              <View style={[s.setupCard, { backgroundColor: c.muted, borderColor: c.border }]}>
+                <Text style={{ fontSize: 32, textAlign: "center" }}>🎙️</Text>
+                <Text style={[s.sectionTitle, { color: c.foreground, textAlign: "center", fontSize: 15 }]}>
+                  {t(`screens.speech_coach.pronounce.difficulty.${pronounceDifficulty}`)}{" "}
+                  {t(`screens.speech_coach.pronounce.tab.${pronounceKind}`)}
+                </Text>
+                <Text style={[s.note, { color: c.mutedForeground, textAlign: "center" }]}>
+                  {t("screens.speech_coach.pronounce.session.session_size", { count: sessionSize })}
+                </Text>
+                {pool.length === 0 ? (
+                  <Text style={[s.intro, { color: c.mutedForeground, textAlign: "center" }]}>
+                    {t("screens.speech_coach.pronounce.session.no_prompts")}
                   </Text>
+                ) : (
+                  <Pressable
+                    onPress={() => {
+                      const shuffled = mobileSeededShuffle([...pool], Date.now());
+                      setSessionItems(shuffled.slice(0, Math.min(MOBILE_SESSION_SIZE, shuffled.length)));
+                      setSessionIdx(0);
+                      setSessionResults([]);
+                      setPromptResult(null);
+                      setPromptPhase("idle");
+                      setSessionPhase("practice");
+                    }}
+                    style={[s.fullBtn, { backgroundColor: brand.violet500 }]}
+                    accessibilityRole="button"
+                  >
+                    <Ionicons name="mic" size={16} color="#FFFFFF" /* audit-ok: icon on filled brand */ />
+                    <Text style={s.fullBtnText}>
+                      {t("screens.speech_coach.pronounce.session.start_cta")}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            );
+          })()}
+
+          {/* ── PRACTICE phase ───────────────────────────────────────── */}
+          {sessionPhase === "practice" && currentSessionItem && (
+            <View style={{ gap: 10 }}>
+              {/* Progress bar */}
+              <View style={{ gap: 4 }}>
+                <View style={s.progressRow}>
+                  <Text style={[s.note, { color: c.mutedForeground }]}>
+                    {t("screens.speech_coach.pronounce.session.progress", { done: sessionIdx + 1, total: sessionItems.length })}
+                  </Text>
+                  <Pressable onPress={() => { setSessionPhase("setup"); setSessionItems([]); setSttRecording(false); }} hitSlop={10}>
+                    <Text style={{ color: brand.violet500, fontSize: 13, fontWeight: "700" }}>✕</Text>
+                  </Pressable>
                 </View>
-              )}
+                <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
+                  <View
+                    style={[
+                      s.progressFill,
+                      { backgroundColor: brand.violet500, width: `${(sessionIdx / sessionItems.length) * 100}%` as unknown as number },
+                    ]}
+                  />
+                </View>
+              </View>
 
-              {sttResult && !sttRecording && !sttTranscribing && (
+              {/* Main prompt card */}
+              <View
+                style={[
+                  s.promptCard,
+                  {
+                    backgroundColor: promptPhase === "recording"
+                      ? `${brand.violet500}10`
+                      : promptPhase === "result" && promptResult?.feedback === "great"
+                        ? "rgba(16,185,129,0.08)" /* audit-ok: success session card bg */
+                        : c.card,
+                    borderColor: promptPhase === "recording"
+                      ? brand.violet500
+                      : c.border,
+                  },
+                ]}
+              >
+                <Text style={[s.kindBadge, { color: c.mutedForeground }]}>
+                  {t(`screens.speech_coach.pronounce.tab.${currentSessionItem.kind}`).toUpperCase()}
+                </Text>
+                <Text style={[s.promptText, { color: c.foreground }]}>
+                  {currentSessionItem.text}
+                </Text>
+
+                {/* Waveform */}
+                {sttRecording && (
+                  <View style={s.waveRow} accessibilityElementsHidden>
+                    {[35, 65, 90, 55, 80, 45, 85, 60, 75, 40].map((baseH, i) => (
+                      <Animated.View
+                        key={i}
+                        style={[
+                          s.waveBar,
+                          {
+                            backgroundColor: brand.violet500,
+                            transform: [{
+                              scaleY: waveAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0.3 + (baseH / 200), 1],
+                              }),
+                            }],
+                            opacity: 0.5 + (baseH / 200),
+                          },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+
+                {/* Listening label */}
+                {sttRecording && (
+                  <View style={s.listeningRow}>
+                    <View style={[s.listeningDot, { backgroundColor: brand.violet500 }]} />
+                    <Text style={[s.listeningText, { color: brand.violet500 }]}>
+                      {t("screens.speech_coach.stt.listening")}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Analyzing */}
+                {(sttTranscribing || promptPhase === "analyzing") && (
+                  <Text style={[s.analyzingText, { color: brand.violet500 }]} accessibilityLiveRegion="polite">
+                    {t("screens.speech_coach.stt.analyzing")}
+                  </Text>
+                )}
+              </View>
+
+              {/* Feedback card */}
+              {promptPhase === "result" && promptResult && (
                 <View
                   style={[
                     s.sttResultCard,
                     {
                       backgroundColor:
-                        sttResult.feedback === "great"
-                          ? "rgba(16,185,129,0.12)"
-                          : sttResult.feedback === "close"
-                            ? "rgba(245,158,11,0.12)"
-                            : "rgba(239,68,68,0.12)",
+                        promptResult.feedback === "great"
+                          ? "rgba(16,185,129,0.12)" /* audit-ok: semantic success feedback tint */
+                          : promptResult.feedback === "close"
+                            ? "rgba(245,158,11,0.12)" /* audit-ok: semantic warning feedback tint */
+                            : "rgba(239,68,68,0.12)", /* audit-ok: semantic error feedback tint */
                       borderColor:
-                        sttResult.feedback === "great"
-                          ? "rgba(16,185,129,0.35)"
-                          : sttResult.feedback === "close"
-                            ? "rgba(245,158,11,0.35)"
-                            : "rgba(239,68,68,0.35)",
+                        promptResult.feedback === "great"
+                          ? "rgba(16,185,129,0.35)" /* audit-ok: semantic success border */
+                          : promptResult.feedback === "close"
+                            ? "rgba(245,158,11,0.35)" /* audit-ok: semantic warning border */
+                            : "rgba(239,68,68,0.35)", /* audit-ok: semantic error border */
                     },
                   ]}
+                  accessibilityLiveRegion="polite"
                 >
-                  <Text style={[s.sttResultLabel, { color: c.foreground }]}>
-                    {t(`screens.speech_coach.stt.feedback.${sttResult.feedback}`)}
-                    <Text style={{ color: c.mutedForeground }}>
-                      {" "}({sttResult.score}%)
+                  <View style={s.listeningRow}>
+                    <Text style={{ fontSize: 22 }}>
+                      {promptResult.feedback === "great" ? "⭐" : promptResult.feedback === "close" ? "👍" : "💪"}
                     </Text>
+                    <Text style={[s.sttResultLabel, { color: c.foreground }]}>
+                      {t(`screens.speech_coach.stt.feedback.${promptResult.feedback}`)}
+                    </Text>
+                  </View>
+                  <Text style={[s.rowHint, { color: c.mutedForeground }]}>
+                    {mobilePickEncouragement(promptResult.feedback, promptResult.score)}
                   </Text>
-                  <Text style={[s.sttResultSaid, { color: c.mutedForeground }]}>
-                    {t("screens.speech_coach.stt.you_said")} &ldquo;{sttResult.transcript}&rdquo;
-                  </Text>
+                  {/* Score bar */}
+                  <View style={{ gap: 4 }}>
+                    <View style={s.progressRow}>
+                      <Text style={[s.sttPanelTitle, { color: c.mutedForeground }]}>
+                        {t("screens.speech_coach.pronounce.session.score_label")}
+                      </Text>
+                      <Text style={[s.sttPanelTitle, { color: c.foreground }]}>
+                        {promptResult.score}%
+                      </Text>
+                    </View>
+                    <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
+                      <View
+                        style={[
+                          s.progressFill,
+                          {
+                            width: `${promptResult.score}%` as unknown as number,
+                            backgroundColor:
+                              promptResult.feedback === "great"
+                                ? palette.emerald500 /* audit-ok: score bar on success */
+                                : promptResult.feedback === "close"
+                                  ? palette.amber500 /* audit-ok: score bar on warning */
+                                  : palette.red500, /* audit-ok: score bar on error */
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                  {promptResult.transcript ? (
+                    <Text style={[s.sttResultSaid, { color: c.mutedForeground }]}>
+                      {t("screens.speech_coach.stt.you_said")} &ldquo;{promptResult.transcript}&rdquo;
+                    </Text>
+                  ) : null}
                 </View>
               )}
+
+              {/* Action buttons */}
+              <View style={s.tabsRow}>
+                {/* Hear Amy */}
+                <Pressable
+                  onPress={() => {
+                    const isPhonic = currentSessionItem.kind === "phonic" || currentSessionItem.kind === "letter";
+                    handleSpeak(currentSessionItem.text, isPhonic ? "phonics" : undefined);
+                    if (promptPhase === "idle") setPromptPhase("heard");
+                  }}
+                  disabled={sttRecording || sttTranscribing}
+                  style={[
+                    s.halfBtn,
+                    {
+                      backgroundColor: c.muted,
+                      borderColor: c.border,
+                      opacity: (sttRecording || sttTranscribing) ? 0.5 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="volume-high" size={14} color={c.foreground} />
+                  <Text style={[s.halfBtnText, { color: c.foreground }]}>
+                    {voice.speaking || voice.loading
+                      ? t("screens.speech_coach.pronounce.listening")
+                      : promptPhase === "heard" || promptPhase === "result"
+                        ? t("screens.speech_coach.pronounce.hear_again")
+                        : t("screens.speech_coach.pronounce.session.hear_amy")}
+                  </Text>
+                </Pressable>
+
+                {/* Record / Stop */}
+                {promptPhase !== "result" && (
+                  sttRecording ? (
+                    <Pressable
+                      onPress={() => void stopSttRecording()}
+                      style={[s.halfBtn, { backgroundColor: palette.red500 }]}
+                      accessibilityRole="button"
+                    >
+                      <Ionicons name="stop-circle" size={14} color="#FFFFFF" /* audit-ok: icon on filled red */ />
+                      <Text style={[s.halfBtnText, { color: "#FFFFFF" /* audit-ok: text on filled red */ }]}>
+                        {t("screens.speech_coach.stt.stop_recording")}
+                      </Text>
+                    </Pressable>
+                  ) : sttTranscribing || promptPhase === "analyzing" ? (
+                    <View style={[s.halfBtn, { backgroundColor: c.muted }]}>
+                      <Ionicons name="hourglass" size={14} color={c.mutedForeground} />
+                      <Text style={[s.halfBtnText, { color: c.mutedForeground }]}>
+                        {t("screens.speech_coach.stt.transcribing")}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Pressable
+                      onPress={() => void startSttRecording()}
+                      style={[s.halfBtn, { backgroundColor: brand.violet500 }]}
+                      accessibilityRole="button"
+                    >
+                      <Ionicons name="mic" size={14} color="#FFFFFF" /* audit-ok: icon on filled brand */ />
+                      <Text style={[s.halfBtnText, { color: "#FFFFFF" /* audit-ok: text on filled brand */ }]}>
+                        {t("screens.speech_coach.stt.tap_to_record")}
+                      </Text>
+                    </Pressable>
+                  )
+                )}
+
+                {/* After result */}
+                {promptPhase === "result" && promptResult && (
+                  <>
+                    {promptResult.feedback !== "great" && (
+                      <Pressable
+                        onPress={() => { setPromptResult(null); setPromptPhase("idle"); }}
+                        style={[s.halfBtn, { backgroundColor: c.muted, borderColor: c.border }]}
+                        accessibilityRole="button"
+                      >
+                        <Ionicons name="refresh" size={14} color={c.foreground} />
+                        <Text style={[s.halfBtnText, { color: c.foreground }]}>
+                          {t("screens.speech_coach.pronounce.session.try_again")}
+                        </Text>
+                      </Pressable>
+                    )}
+                    <Pressable
+                      onPress={() => {
+                        const updated = [...sessionResults, { id: currentSessionItem.id, feedback: promptResult.feedback, score: promptResult.score }];
+                        setSessionResults(updated);
+                        if (isLastSessionItem) {
+                          setSessionPhase("done");
+                        } else {
+                          setSessionIdx((i) => i + 1);
+                          setPromptPhase("idle");
+                          setPromptResult(null);
+                        }
+                      }}
+                      style={[s.halfBtn, { backgroundColor: brand.violet500 }]}
+                      accessibilityRole="button"
+                    >
+                      <Ionicons name="arrow-forward" size={14} color="#FFFFFF" /* audit-ok: icon on filled brand */ />
+                      <Text style={[s.halfBtnText, { color: "#FFFFFF" /* audit-ok: text on filled brand */ }]}>
+                        {isLastSessionItem
+                          ? t("screens.speech_coach.pronounce.session.complete_title")
+                          : t("screens.speech_coach.pronounce.session.next_word")}
+                      </Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
             </View>
-          </View>
+          )}
+
+          {/* ── DONE phase ───────────────────────────────────────────── */}
+          {sessionPhase === "done" && (
+            <View style={[s.setupCard, { backgroundColor: c.muted, borderColor: c.border }]}>
+              <Text style={{ fontSize: 36, textAlign: "center" }}>🎉</Text>
+              <Text style={[s.sectionTitle, { color: c.foreground, textAlign: "center" }]}>
+                {t("screens.speech_coach.pronounce.session.complete_title")}
+              </Text>
+              <Text style={[s.note, { color: c.mutedForeground, textAlign: "center" }]}>
+                {t("screens.speech_coach.pronounce.session.complete_subtitle", { count: sessionResults.length })}
+              </Text>
+
+              {/* Summary */}
+              {(() => {
+                const strong = sessionResults
+                  .filter((r) => r.feedback === "great")
+                  .map((r) => sessionItems.find((p) => p.id === r.id)?.text ?? "")
+                  .filter(Boolean);
+                const practice = sessionResults
+                  .filter((r) => r.feedback === "try_again")
+                  .map((r) => sessionItems.find((p) => p.id === r.id)?.text ?? "")
+                  .filter(Boolean);
+                return (
+                  <View style={{ gap: 8, width: "100%" }}>
+                    {strong.length > 0 && (
+                      <View style={[s.summaryBox, { backgroundColor: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.3)" /* audit-ok: session summary success tint */ }]}>
+                        <Text style={[s.sttPanelTitle, { color: palette.emerald700 /* audit-ok: label on success tint */ }]}>
+                          {t("screens.speech_coach.pronounce.session.strong_label")} ✓
+                        </Text>
+                        <Text style={[s.rowTitle, { color: c.foreground }]}>{strong.join(" · ")}</Text>
+                      </View>
+                    )}
+                    {practice.length > 0 && (
+                      <View style={[s.summaryBox, { backgroundColor: "rgba(245,158,11,0.1)", borderColor: "rgba(245,158,11,0.3)" /* audit-ok: session summary warning tint */ }]}>
+                        <Text style={[s.sttPanelTitle, { color: palette.amber700 /* audit-ok: label on warning tint */ }]}>
+                          {t("screens.speech_coach.pronounce.session.needs_practice_label")}
+                        </Text>
+                        <Text style={[s.rowTitle, { color: c.foreground }]}>{practice.join(" · ")}</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })()}
+
+              <Pressable
+                onPress={() => { setSessionPhase("setup"); setSessionItems([]); setSessionResults([]); setPromptResult(null); setPromptPhase("idle"); }}
+                style={[s.fullBtn, { backgroundColor: brand.violet500 }]}
+                accessibilityRole="button"
+              >
+                <Ionicons name="refresh" size={16} color="#FFFFFF" /* audit-ok: icon on filled brand */ />
+                <Text style={s.fullBtnText}>
+                  {t("screens.speech_coach.pronounce.session.new_session")}
+                </Text>
+              </Pressable>
+            </View>
+          )}
         </SectionShell>
 
         {/* ── 4. Read Aloud & Repeat ────────────────────────────────── */}
@@ -1021,7 +1313,7 @@ const s = StyleSheet.create({
     borderRadius: 12,
     padding: 10,
     borderWidth: StyleSheet.hairlineWidth,
-    gap: 4,
+    gap: 6,
   },
   sttResultLabel: {
     fontSize: 13,
@@ -1030,5 +1322,87 @@ const s = StyleSheet.create({
   sttResultSaid: {
     fontSize: 11,
     lineHeight: 16,
+  },
+  // ── Session styles ─────────────────────────────────────────────────────────
+  setupCard: {
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    gap: 12,
+  },
+  promptCard: {
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1.5,
+    alignItems: "center",
+    gap: 10,
+  },
+  kindBadge: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.2,
+  },
+  promptText: {
+    fontSize: 42,
+    fontWeight: "900",
+    textAlign: "center",
+    letterSpacing: -1,
+  },
+  waveRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 3,
+    height: 28,
+    marginTop: 4,
+  },
+  waveBar: {
+    width: 5,
+    height: 24,
+    borderRadius: 3,
+  },
+  halfBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 11,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    minWidth: 0,
+  },
+  halfBtnText: {
+    fontWeight: "700",
+    fontSize: 12,
+    flexShrink: 1,
+  },
+  progressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  progressTrack: {
+    height: 5,
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: 5,
+    borderRadius: 999,
+  },
+  analyzingText: {
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  summaryBox: {
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    width: "100%",
   },
 });
