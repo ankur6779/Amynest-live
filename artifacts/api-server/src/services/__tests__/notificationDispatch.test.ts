@@ -166,9 +166,11 @@ test("routine_item bypasses daily cap — time-sensitive task reminders always d
   await cleanup(uid);
   await getOrCreatePreferences(uid);
   // Fill up the cap completely with non-timebound notifications.
+  // Disable quiet hours (start === end → inQuietHours returns false) so this
+  // test is not sensitive to the time of day it runs.
   await db
     .update(notificationPreferencesTable)
-    .set({ notificationIntensity: "minimal" })
+    .set({ notificationIntensity: "minimal", quietHoursStart: "00:00", quietHoursEnd: "00:00" })
     .where(eq(notificationPreferencesTable.userId, uid));
   for (let i = 0; i < 3; i++) {
     await db.insert(notificationLogTable).values({
