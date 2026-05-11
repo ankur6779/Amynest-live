@@ -11,7 +11,7 @@ import {
   SPEECH_AFFIRMATIONS,
   SPEECH_GAMES,
   SPEECH_MILESTONES,
-} from "./content.js";
+} from "./content";
 import type {
   AffirmationCard,
   GuidanceCard,
@@ -22,7 +22,7 @@ import type {
   SpeechMilestone,
   WeeklyProgressInput,
   WeeklyProgressScore,
-} from "./types.js";
+} from "./types";
 
 /**
  * Map a child's age in months to a Speech Coach band.

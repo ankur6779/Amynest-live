@@ -12,7 +12,7 @@ import type {
   PronouncePrompt,
   SpeechGame,
   SpeechMilestone,
-} from "./types.js";
+} from "./types";
 
 const M = (id: string): { i18nKeyLabel: string; i18nKeyHint: string } => ({
   i18nKeyLabel: `screens.speech_coach.milestones.${id}.label`,

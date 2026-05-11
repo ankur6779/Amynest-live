@@ -1,14 +1,14 @@
 // Public surface of @workspace/speech-coach.
 // Pure data + helpers. No React, no Express, no DB imports.
 
-export * from "./types.js";
+export * from "./types";
 export {
   SPEECH_MILESTONES,
   SPEECH_GAMES,
   SPEECH_AFFIRMATIONS,
   PARENT_GUIDANCE_CARDS,
   PRONUNCIATION_PROMPTS,
-} from "./content.js";
+} from "./content";
 export {
   monthsToBand,
   getMilestonesForAgeMonths,
@@ -17,8 +17,8 @@ export {
   getAllAffirmations,
   getAllGuidanceCards,
   computeWeeklyProgressScore,
-} from "./helpers.js";
+} from "./helpers";
 export {
   SPEECH_COACH_I18N_MANIFEST,
   type I18nKeyManifest,
-} from "./i18n-manifest.js";
+} from "./i18n-manifest";

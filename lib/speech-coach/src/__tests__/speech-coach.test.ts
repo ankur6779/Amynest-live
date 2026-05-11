@@ -15,8 +15,8 @@ import {
   getMilestonesForAgeMonths,
   getPromptsForAgeMonths,
   monthsToBand,
-} from "../index.js";
-import type { SpeechAgeBand } from "../index.js";
+} from "../index";
+import type { SpeechAgeBand } from "../index";
 
 const ALL_BANDS: readonly SpeechAgeBand[] = ["1y", "2y", "3y", "4y_plus"];
 
