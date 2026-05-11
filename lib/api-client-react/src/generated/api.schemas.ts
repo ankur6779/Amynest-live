@@ -546,6 +546,20 @@ export const GenerateRoutineBodyWeatherOutdoor = {
   limited: "limited",
 } as const;
 
+/**
+ * Controls whether and how school meal/tiffin suggestions are generated. "disabled" skips all school meals. Defaults to snack_and_packed_lunch on a school day.
+ */
+export type GenerateRoutineBodySchoolMealMode =
+  | (typeof GenerateRoutineBodySchoolMealMode)[keyof typeof GenerateRoutineBodySchoolMealMode]
+  | null;
+
+export const GenerateRoutineBodySchoolMealMode = {
+  disabled: "disabled",
+  snack_only: "snack_only",
+  packed_lunch_only: "packed_lunch_only",
+  snack_and_packed_lunch: "snack_and_packed_lunch",
+} as const;
+
 export interface GenerateRoutineBody {
   childId: number;
   date: string;
@@ -562,6 +576,8 @@ export interface GenerateRoutineBody {
   age?: number | null;
   schoolStart?: string | null;
   schoolEnd?: string | null;
+  /** Controls whether and how school meal/tiffin suggestions are generated. "disabled" skips all school meals. Defaults to snack_and_packed_lunch on a school day. */
+  schoolMealMode?: GenerateRoutineBodySchoolMealMode;
 }
 
 export interface GeneratedRoutine {

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GenerateRoutineBodyCaregiver } from "./generateRoutineBodyCaregiver";
+import type { GenerateRoutineBodySchoolMealMode } from "./generateRoutineBodySchoolMealMode";
 import type { GenerateRoutineBodyWeatherOutdoor } from "./generateRoutineBodyWeatherOutdoor";
 
 export interface GenerateRoutineBody {
@@ -24,4 +25,6 @@ export interface GenerateRoutineBody {
   age?: number | null;
   schoolStart?: string | null;
   schoolEnd?: string | null;
+  /** Controls whether and how school meal/tiffin suggestions are generated. "disabled" skips all school meals. Defaults to snack_and_packed_lunch on a school day. */
+  schoolMealMode?: GenerateRoutineBodySchoolMealMode;
 }

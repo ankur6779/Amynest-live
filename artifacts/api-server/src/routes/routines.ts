@@ -462,6 +462,7 @@ export async function generateAiRoutine(params: {
   mood: string;
   specialPlans?: string;
   fridgeItems?: string;
+  schoolMealMode?: string | null;
   goals?: string | null;
   travelMode?: string;
   childClass?: string;
@@ -649,6 +650,18 @@ SCHOOL RULES — non-negotiable when "School today: Yes":
 - Do NOT schedule ANY other activity (play, study, meal, creative, outdoor, family, rest) overlapping with ${params.schoolStartTime}–${params.schoolEndTime}. The child is at school; they are unavailable.
 - Plan around school: morning prep + breakfast BEFORE ${params.schoolStartTime}; lunch is at school (skip a lunch activity at home, or label it "School lunch / tiffin"); after-school routine begins AFTER ${params.schoolEndTime}.
 - The "school" activity name should be specific (e.g. "School day", "At school", "${params.childClass ? params.childClass + " classes" : "School"}").
+${params.schoolMealMode === "disabled" ? `
+SCHOOL TIFFIN MODE — DISABLED BY PARENT:
+- The parent has opted out of school meal suggestions for today.
+- Do NOT generate any school tiffin, packed lunch box, or school snack items.
+- The "tiffin" category must NOT appear anywhere in the schedule.
+- During school hours, label the slot "School time" with no meal notes.` : params.schoolMealMode === "snack_only" ? `
+SCHOOL TIFFIN MODE — SNACK ONLY:
+- Generate ONLY a morning school snack (category "tiffin") before school — small, travel-safe, age-appropriate.
+- Do NOT generate a packed tiffin lunch box; the child eats school lunch there.` : params.schoolMealMode === "packed_lunch_only" ? `
+SCHOOL TIFFIN MODE — PACKED LUNCH ONLY:
+- Generate ONLY a packed tiffin lunch box (category "tiffin") for school.
+- Do NOT generate a morning school snack; the child gets a snack at school.` : ""}
 ` : `
 NO-SCHOOL RULES — today is a school-free day:
 - Do NOT include any "school" category activity.
@@ -945,6 +958,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     (parsed.data.weatherOutdoor ?? "yes") as WeatherOutdoor;
   const specialPlans = parsed.data.specialPlans ?? undefined;
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
+  const schoolMealMode = (parsed.data.schoolMealMode ?? undefined) as string | undefined;
 
   // Food type — prefer child setting, fallback to parent profile.
   // rawChildFoodType is null/undefined when the child has no explicit setting;
@@ -1016,8 +1030,12 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     customRecipes: userCustomRecipes,
   });
 
+  const ruleIsSchoolDay = isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool);
+  const filteredRuleItems = schoolMealMode === "disabled" && ruleIsSchoolDay
+    ? (generated.items as any[]).filter((it: any) => (it.category ?? "").toLowerCase() !== "tiffin")
+    : generated.items;
   const ruleCurved = applyEnergyCurveToItems(
-    generated.items as any,
+    filteredRuleItems as any,
     ruleChildIntel.energyProfile,
   );
   const ruleLearningTags = deriveLearningAdaptationTags(ruleLearningWeights);
@@ -1099,6 +1117,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     (parsed.data.weatherOutdoor ?? "yes") as WeatherOutdoor;
   const specialPlans = parsed.data.specialPlans ?? undefined;
   const fridgeItems = parsed.data.fridgeItems ?? undefined;
+  const schoolMealMode = (parsed.data.schoolMealMode ?? undefined) as string | undefined;
 
   // Only inherit parent foodType when the child has NO explicit preference set.
   const rawChildFoodType2 = (child as any).foodType as string | null | undefined;
@@ -1239,6 +1258,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       energyProfile: childIntel.energyProfile,
       learningWeights,
       previousDayContext,
+      schoolMealMode,
     });
     const aiLearningTags = deriveLearningAdaptationTags(learningWeights);
     const aiEnriched = applyEnvironmentalEnrichments(
@@ -1288,8 +1308,12 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       hasSchool: isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool),
       isWeekendDay,
     });
+    const fallbackSchoolDay = isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool);
+    const filteredFallbackItems = schoolMealMode === "disabled" && fallbackSchoolDay
+      ? (generated.items ?? []).filter((it: any) => (it.category ?? "").toLowerCase() !== "tiffin")
+      : (generated.items ?? []);
     const curved = applyEnergyCurveToItems(
-      (generated.items ?? []) as unknown as AnalyticsRoutineItem[],
+      filteredFallbackItems as unknown as AnalyticsRoutineItem[],
       childIntel.energyProfile,
     );
     const fallbackLearningTags = deriveLearningAdaptationTags(learningWeights);

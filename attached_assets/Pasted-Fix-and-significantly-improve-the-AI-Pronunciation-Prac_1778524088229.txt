@@ -1,0 +1,238 @@
+Fix and significantly improve the “AI Pronunciation Practice” section inside Amy Speech Coach.
+
+Current Problems:
+1. Only a few static words are appearing.
+2. Practice content is too limited.
+3. Words are not changing dynamically.
+4. After child recording, nothing meaningful happens.
+5. No AI listening experience.
+6. No encouragement or pronunciation correction feedback.
+7. Practice session feels incomplete and non-interactive.
+
+Goal:
+Make the feature feel like a real intelligent AI speech coach that actively listens, responds, encourages, and guides the child.
+
+Required Improvements:
+
+====================================================
+1. DYNAMIC PRACTICE CONTENT SYSTEM
+====================================================
+
+Replace the small static word list with a dynamic practice engine.
+
+Requirements:
+- Generate large rotating sets of:
+  - Letters
+  - Phonics sounds
+  - Beginner words
+  - Advanced words
+  - Daily conversation sentences
+  - Emotion expressions
+  - Tongue exercises
+  - Rhyming words
+
+Content should refresh automatically:
+- On every session
+- On “Next Practice”
+- Based on child age
+- Based on difficulty level
+- Based on previous weak sounds
+
+Examples:
+Age 2–3:
+- mama
+- ball
+- cat
+- up
+
+Age 4–5:
+- butterfly
+- elephant
+- yellow
+- rabbit
+
+Age 6–8:
+- “I want to play outside.”
+- “The rainbow is beautiful.”
+
+Add:
+- Infinite practice generation
+- Personalized recommendations
+- Randomized sessions
+- “Practice More” button
+
+====================================================
+2. SHOW MORE CONTENT PER SESSION
+====================================================
+
+Currently only 3 words show.
+
+Improve to:
+- 8–15 practice items per session
+- Scrollable cards/grid
+- Auto progression
+- Session progress tracker
+
+Add:
+- “Easy”
+- “Medium”
+- “Advanced”
+
+Display:
+- estimated session time
+- completed count
+- streak progress
+
+====================================================
+3. REAL AI LISTENING EXPERIENCE
+====================================================
+
+After child taps record:
+The UI must clearly show that Amy is actively listening and analyzing.
+
+Add:
+- Listening animation
+- Sound wave animation
+- “Amy is listening...”
+- “Analyzing pronunciation...”
+- AI thinking state
+- Voice waveform visualizer
+
+Flow:
+1. Child taps mic
+2. Recording starts
+3. Live waveform appears
+4. Stop recording
+5. “Amy is analyzing your voice...”
+6. AI feedback appears
+
+This should feel alive and interactive.
+
+====================================================
+4. REAL FEEDBACK SYSTEM
+====================================================
+
+After analysis, Amy must respond intelligently.
+
+Examples:
+Positive:
+- “Amazing job!”
+- “You said butterfly very clearly!”
+- “Your B sound is strong!”
+
+Corrective:
+- “Try saying the R sound more slowly.”
+- “Let’s practice TH again together.”
+- “Great try! Put your tongue gently between your teeth for TH.”
+
+Add:
+- Highlight difficult sounds
+- Detect unclear pronunciation
+- Give retry option
+- Compare improvement over time
+
+====================================================
+5. ENCOURAGEMENT & CHILD ENGAGEMENT
+====================================================
+
+Every interaction should motivate the child.
+
+Add:
+- Stars
+- XP points
+- Celebration animations
+- Happy Amy reactions
+- Confetti for streaks
+- Voice encouragement
+
+Examples:
+- “Fantastic speaking!”
+- “Amy is proud of you!”
+- “You improved today!”
+
+Add emotional warmth.
+
+====================================================
+6. ELEVENLABS + SPEECH AI INTEGRATION READY
+====================================================
+
+Prepare architecture for:
+- ElevenLabs pronunciation playback
+- Speech-to-text analysis
+- Sound comparison
+- Pronunciation scoring
+
+Add placeholder services/hooks:
+- analyzePronunciation()
+- compareSpeech()
+- generateSpeechFeedback()
+
+====================================================
+7. PARENT INSIGHTS
+====================================================
+
+After session completion:
+Generate a parent-friendly summary.
+
+Examples:
+- Strong sounds: B, M
+- Needs practice: R, TH
+- Confidence improved this week
+- Speaking streak: 5 days
+
+Add charts/progress bars.
+
+====================================================
+8. UI/UX IMPROVEMENTS
+====================================================
+
+Make the experience feel premium and modern.
+
+Requirements:
+- Larger interactive cards
+- Animated transitions
+- Glow effects while listening
+- Smooth mic interaction
+- Friendly AI avatar reactions
+- Child-safe colors
+- Better spacing
+- Fully responsive mobile UI
+
+====================================================
+9. IMPORTANT BEHAVIOR LOGIC
+====================================================
+
+The system must:
+- Never feel empty
+- Never stop after one word
+- Always suggest next practice
+- Always respond after recording
+- Keep engagement high
+
+If speech recognition fails:
+Show:
+- “Let’s try again together!”
+instead of silent failure.
+
+====================================================
+10. TECHNICAL REQUIREMENTS
+====================================================
+
+Use:
+- Reusable React components
+- State management for session flow
+- Audio recording states
+- Loading/analysis states
+- Speech feedback engine placeholders
+- Smooth animations
+- Optimized PWA performance
+
+Must support:
+- Android
+- iOS
+- Web PWA
+
+Final Goal:
+The feature should feel like:
+“An intelligent AI speech therapist + fun child coach”
+instead of a static pronunciation page.

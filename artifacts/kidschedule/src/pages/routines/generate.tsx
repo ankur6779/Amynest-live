@@ -605,6 +605,7 @@ export default function RoutineGenerate() {
   })();
   const [date, setDate] = useState(initialDate);
   const [hasSchool, setHasSchool] = useState<boolean | null>(null);
+  const [schoolMealMode, setSchoolMealMode] = useState<"disabled" | "snack_only" | "packed_lunch_only" | "snack_and_packed_lunch">("snack_and_packed_lunch");
   const [specialPlans, setSpecialPlans] = useState("");
   const [fridgeItems, setFridgeItems] = useState("");
   const initialMood = (() => {
@@ -648,6 +649,7 @@ export default function RoutineGenerate() {
   const [familyChildSettings, setFamilyChildSettings] = useState<Record<number, {
     hasSchool: boolean | null;
     selected: boolean;
+    schoolMealMode?: "disabled" | "snack_only" | "packed_lunch_only" | "snack_and_packed_lunch";
   }>>({});
   const [familyDate, setFamilyDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [familySpecialPlans, setFamilySpecialPlans] = useState("");
@@ -985,6 +987,7 @@ export default function RoutineGenerate() {
         childId: selectedChild!,
         date,
         hasSchool: hasSchool ?? undefined,
+        schoolMealMode: hasSchool ? schoolMealMode : undefined,
         specialPlans: appendHandlerToPlans(specialPlans, handlerType),
         fridgeItems: fridgeItems.trim() || undefined,
         mood: mood !== "normal" ? mood : undefined,
@@ -1050,6 +1053,7 @@ export default function RoutineGenerate() {
         childId: selectedChild!,
         date,
         hasSchool: hasSchool ?? undefined,
+        schoolMealMode: hasSchool ? schoolMealMode : undefined,
         specialPlans: appendHandlerToPlans(specialPlans, handlerType),
         fridgeItems: fridgeItems.trim() || undefined,
         mood: mood !== "normal" ? mood : undefined,
@@ -1283,6 +1287,7 @@ export default function RoutineGenerate() {
               childId: child.id,
               date: familyDate,
               hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
+              schoolMealMode: familyChildSettings[child.id]?.hasSchool ? (familyChildSettings[child.id]?.schoolMealMode ?? "snack_and_packed_lunch") : undefined,
               specialPlans: appendHandlerToPlans(familySpecialPlans, handlerType),
               fridgeItems: familyFridgeItems.trim() || undefined,
               age: child.age,
@@ -1678,8 +1683,21 @@ export default function RoutineGenerate() {
                   {/* PRESCHOOL with school, or SCHOOL-AGE+ — show full toggle */}
                   {schoolQuestionRequired && <>
                       <ToggleGroup value={hasSchool} onChange={setHasSchool} options={[["Yes, school day", true, "🏫"], ["No, day off", false, "🏖️"]]} />
-                      {hasSchool === true && <div className="bg-muted border border-border rounded-2xl p-3 text-sm text-primary">
-                          {t("pages.routines.generate.amy_ai_will_suggest_a_tiffin_lunchbox_for_your_child_and_pla")}
+                      {hasSchool === true && <div className="space-y-2">
+                          <p className="text-xs font-bold text-muted-foreground">{t("pages.routines.generate.school_meal_mode_label")}</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {([
+                              { value: "snack_and_packed_lunch" as const, lk: "pages.routines.generate.school_meal_snack_and_lunch", hk: "pages.routines.generate.school_meal_snack_and_lunch_hint" },
+                              { value: "snack_only" as const, lk: "pages.routines.generate.school_meal_snack_only", hk: "pages.routines.generate.school_meal_snack_only_hint" },
+                              { value: "packed_lunch_only" as const, lk: "pages.routines.generate.school_meal_lunch_only", hk: "pages.routines.generate.school_meal_lunch_only_hint" },
+                              { value: "disabled" as const, lk: "pages.routines.generate.school_meal_disabled", hk: "pages.routines.generate.school_meal_disabled_hint" },
+                            ]).map(opt => (
+                              <button key={opt.value} onClick={() => setSchoolMealMode(opt.value)} className={`flex flex-col gap-0.5 p-3 rounded-xl border-2 text-left transition-all ${schoolMealMode === opt.value ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/40"}`}>
+                                <span className={`text-xs font-bold ${schoolMealMode === opt.value ? "text-primary" : "text-foreground"}`}>{t(opt.lk)}</span>
+                                <span className="text-[10px] text-muted-foreground leading-tight">{t(opt.hk)}</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>}
                       {hasSchool === false && <div className="bg-muted border border-border rounded-2xl p-3 text-sm text-primary">
                           {t("pages.routines.generate.amy_ai_will_skip_school_blocks_and_add_outdoor_play_hobby_ac")}
@@ -2071,6 +2089,18 @@ export default function RoutineGenerate() {
                                         {label}
                                       </button>)}
                                   </div>
+                                  {settings.hasSchool === true && <div className="grid grid-cols-2 gap-1.5 mt-2">
+                                    {([
+                                      { value: "snack_and_packed_lunch" as const, lk: "pages.routines.generate.school_meal_snack_and_lunch" },
+                                      { value: "snack_only" as const, lk: "pages.routines.generate.school_meal_snack_only" },
+                                      { value: "packed_lunch_only" as const, lk: "pages.routines.generate.school_meal_lunch_only" },
+                                      { value: "disabled" as const, lk: "pages.routines.generate.school_meal_disabled" },
+                                    ]).map(opt => (
+                                      <button key={opt.value} onClick={() => setFamilyChildSettings(prev => ({ ...prev, [child.id]: { ...settings, schoolMealMode: opt.value } }))} className={`py-1.5 px-2 rounded-lg border text-xs font-bold transition-all ${(settings.schoolMealMode ?? "snack_and_packed_lunch") === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-foreground"}`}>
+                                        {t(opt.lk)}
+                                      </button>
+                                    ))}
+                                  </div>}
                                 </div>;
                   })()}
                           </div>;
