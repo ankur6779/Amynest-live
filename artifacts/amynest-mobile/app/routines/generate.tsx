@@ -1048,6 +1048,34 @@ export default function GenerateRoutineScreen() {
           </View>
         )}
 
+        {/* What Amy AI considers */}
+        <View style={styles.considersCard}>
+          <Text style={styles.considersTitle}>{t("routines_generate.what_amy_considers_title", { defaultValue: "✨ What Amy AI considers:" })}</Text>
+          {[
+            t("routines_generate.considers_school_status", { defaultValue: "🏫 School status — includes or skips school blocks" }),
+            t("routines_generate.considers_tiffin", { defaultValue: "🍱 Tiffin suggestion — 3 options for school-going kids" }),
+            t("routines_generate.considers_work_type", { defaultValue: "👩‍💼 Parent work type — homemaker, WFH, or office schedule" }),
+            t("routines_generate.considers_working_day", { defaultValue: "💼 Working day check — busy vs. free affects task assignment" }),
+            t("routines_generate.considers_work_hours", { defaultValue: "🕘 Work hours — tasks planned around exact busy windows" }),
+            t("routines_generate.considers_coparent", { defaultValue: "👨‍👩‍👧 Co-parent coordination — smart role assignment when both parents added" }),
+            t("routines_generate.considers_special_plans", { defaultValue: "🌟 Special plans — adjusts the whole day around them" }),
+            t("routines_generate.considers_bonding", { defaultValue: "❤️ Family bonding — always adds 2–3 quality moments" }),
+            t("routines_generate.considers_wake_sleep", { defaultValue: "⏰ Wake-up & bedtime for accurate time slots" }),
+            t("routines_generate.considers_food_pref", { defaultValue: "🥦 Child's food preference — veg or non-veg" }),
+            t("routines_generate.considers_fridge", { defaultValue: "🍽️ Fridge ingredients for meal suggestions" }),
+            t("routines_generate.considers_mood", { defaultValue: "😊 Child's mood — adjusts tone & activity intensity" }),
+            t("routines_generate.considers_aqi", { defaultValue: "🌬️ AQI & air quality — outdoor suitability adjusted in real time (EIOE)" }),
+            t("routines_generate.considers_uv", { defaultValue: "☀️ UV index & weather — safe outdoor blocks, sun protection reminders" }),
+            t("routines_generate.considers_temp_season", { defaultValue: "🌡️ Temperature & season — heat, cold, and monsoon adaptations" }),
+            t("routines_generate.considers_age_band", { defaultValue: "👶 Child's age band — developmental stage shapes every activity" }),
+            t("routines_generate.considers_diet_cuisine", { defaultValue: "🥗 Diet type & cuisine — regional, allergen-aware meal planning" }),
+            t("routines_generate.considers_goals", { defaultValue: "🎯 Parenting goals — improve sleep, reduce tantrums, build focus" }),
+          ].map((item, i) => (
+            <Text key={i} style={styles.considersItem}>{item}</Text>
+          ))}
+          <Text style={styles.considersMicrocopy}>{t("patent_pending.microcopy_planning")}</Text>
+        </View>
+
         {/* Generate button */}
         {mode === "single" ? (
           <>
@@ -2098,6 +2126,32 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(167,139,250,0.10)", marginBottom: 16,
   },
   weatherDetectText: { fontSize: 12, fontWeight: "700", color: brand.purple500 },
+  considersCard: {
+    marginTop: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(167,139,250,0.22)",
+    backgroundColor: "rgba(167,139,250,0.07)",
+    padding: 16,
+    gap: 6,
+  },
+  considersTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.92)",
+    marginBottom: 4,
+  },
+  considersItem: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.65)",
+    lineHeight: 18,
+  },
+  considersMicrocopy: {
+    fontSize: 10,
+    color: "rgba(167,139,250,0.70)",
+    textAlign: "center",
+    marginTop: 6,
+  },
   locationHintRow: {
     marginTop: 16,
     flexDirection: "row",

@@ -1750,7 +1750,14 @@ export default function RoutineGenerate() {
                     <li>{t("pages.routines.generate.child_s_food_preference_veg_or_non_veg")}</li>
                     <li>{t("pages.routines.generate.fridge_ingredients_for_meal_suggestions")}</li>
                     <li>{t("pages.routines.generate.child_s_mood_adjusts_tone_activity_intensity")}</li>
+                    <li>{t("pages.routines.generate.aqi_air_quality_outdoor_suitability_real_time")}</li>
+                    <li>{t("pages.routines.generate.uv_index_weather_safe_outdoor_blocks")}</li>
+                    <li>{t("pages.routines.generate.temperature_season_heat_cold_monsoon")}</li>
+                    <li>{t("pages.routines.generate.child_age_band_shapes_every_activity")}</li>
+                    <li>{t("pages.routines.generate.diet_type_cuisine_regional_allergen_aware")}</li>
+                    <li>{t("pages.routines.generate.parenting_goals_sleep_tantrums_focus")}</li>
                   </ul>
+                  <p className="text-[10px] text-muted-foreground mt-2 text-center">{t("patent_pending.microcopy_planning")}</p>
                 </div>
 
                 <div className="pt-2 space-y-3">
