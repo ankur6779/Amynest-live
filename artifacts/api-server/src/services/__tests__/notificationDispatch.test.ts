@@ -127,20 +127,22 @@ test("daily cap blocks per-item dispatch once reached", async () => {
   const uid = `cap-${Date.now()}`;
   await cleanup(uid);
   await getOrCreatePreferences(uid);
-  // Set cap to 1 and pre-insert one "sent" log entry for the current local
-  // day so countSentToday returns >= cap on the next dispatch attempt.
+  // Set intensity to "minimal" (cap=3) and pre-insert 3 "sent" log entries
+  // for today so countSentToday returns >= cap on the next dispatch attempt.
   await db
     .update(notificationPreferencesTable)
-    .set({ dailyCap: 1 })
+    .set({ notificationIntensity: "minimal", dailyCap: 3 })
     .where(eq(notificationPreferencesTable.userId, uid));
-  await db.insert(notificationLogTable).values({
-    userId: uid,
-    category: "routine_item",
-    title: "earlier",
-    body: "earlier",
-    status: "sent",
-    platform: "web",
-  });
+  for (let i = 0; i < 3; i++) {
+    await db.insert(notificationLogTable).values({
+      userId: uid,
+      category: "routine_item",
+      title: `earlier-${i}`,
+      body: "earlier",
+      status: "sent",
+      platform: "web",
+    });
+  }
   await db.insert(pushTokensTable).values({
     userId: uid,
     token: `cap_${Math.random()}`,
