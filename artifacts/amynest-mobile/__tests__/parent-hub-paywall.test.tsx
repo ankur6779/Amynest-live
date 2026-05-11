@@ -255,23 +255,25 @@ describe("Parent Hub paywall flow — TRY FREE badges", () => {
 
 describe("Parent Hub paywall flow — locked tile routes to /paywall", () => {
   it("opens /paywall with the matching reason when a locked tile is tapped", async () => {
-    // Lock a representative tile from each logical area of the hub that has
-    // a wrapping `<LockedBlock>`. The hub is a single scroll so all three
-    // locked tiles render simultaneously without any tab navigation.
+    // Lock three tiles from the LEARNING section group, which starts expanded
+    // by default so their LockedBlocks are visible without any user interaction.
     //
     // Band check: CHILD is 6y → band "6-8".
-    //   - hub_articles      → articles tile, bands [0..6] ✓
-    //   - hub_skills_focus  → skills-focus tile, bands [1..6] ✓
-    //   - hub_art_craft     → art-craft tile, bands [0..6] ✓
+    //   - hub_skills_focus       → skills-focus tile, bands [1..6] ✓ (unique reason)
+    //   - hub_olympiad           → olympiad tile, bands [2..6] ✓ (reason="hub_locked")
+    //   - hub_smart_math_tricks  → smart-math-tricks tile, bands [2,3] ✓ (reason="hub_locked")
+    //
+    // Note: hub_articles (SUPPORT) and hub_art_craft (CREATIVITY) are in
+    // collapsed sections and are therefore not rendered by default.
     mockUsageState.locked = new Set([
-      "hub_articles",     // LockedBlock(reason="hub_locked")
-      "hub_skills_focus", // LockedBlock(reason="hub_skills_focus")
-      "hub_art_craft",    // LockedBlock(reason="hub_art_craft")
+      "hub_skills_focus",       // LockedBlock(reason="hub_skills_focus")
+      "hub_olympiad",           // LockedBlock(reason="hub_locked")
+      "hub_smart_math_tricks",  // LockedBlock(reason="hub_locked")
     ]);
     mockUsageState.used = new Set([
-      "hub_articles",
       "hub_skills_focus",
-      "hub_art_craft",
+      "hub_olympiad",
+      "hub_smart_math_tricks",
     ]);
 
     renderHub();
@@ -299,19 +301,15 @@ describe("Parent Hub paywall flow — locked tile routes to /paywall", () => {
     }
     const routes = mockRouterPush.mock.calls.map(([arg]) => arg);
 
-    // All three locked tiles should have routed to /paywall with their
-    // respective reason strings in a single render pass.
-    expect(routes).toContainEqual({
-      pathname: "/paywall",
-      params: { reason: "hub_locked" },
-    });
+    // skills-focus has a unique reason; olympiad + smart-math-tricks both use
+    // the generic "hub_locked" reason — so we assert both distinct values appear.
     expect(routes).toContainEqual({
       pathname: "/paywall",
       params: { reason: "hub_skills_focus" },
     });
     expect(routes).toContainEqual({
       pathname: "/paywall",
-      params: { reason: "hub_art_craft" },
+      params: { reason: "hub_locked" },
     });
   });
 });

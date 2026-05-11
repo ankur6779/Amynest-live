@@ -234,14 +234,25 @@ describe("Single-scroll hub smoke test (6-year-old, band 6-8)", () => {
     await waitFor(() => {
       expect(screen.getByTestId("hub-tile-amy")).toBeInTheDocument();
     });
-    // Every accordion toggle button should start in the collapsed state.
-    const toggleButtons = screen
+    // 5-section layout: "today" and "learning" group-section headers start
+    // expanded by design; all other group-level and tile-level accordion
+    // buttons start collapsed.
+    const allAriaExpandedBtns = screen
       .getAllByRole("button")
       .filter((btn) => btn.getAttribute("aria-expanded") !== null);
-    expect(toggleButtons.length).toBeGreaterThan(0);
-    toggleButtons.forEach((btn) => {
-      expect(btn).toHaveAttribute("aria-expanded", "false");
-    });
+    expect(allAriaExpandedBtns.length).toBeGreaterThan(0);
+    // TODAY and LEARNING group headers start expanded.
+    const expandedBtns = allAriaExpandedBtns.filter(
+      (btn) => btn.getAttribute("aria-expanded") === "true",
+    );
+    expect(expandedBtns).toHaveLength(2);
+    // All remaining accordions (collapsed group headers + tile-level sections)
+    // start in the closed state.
+    allAriaExpandedBtns
+      .filter((btn) => btn.getAttribute("aria-expanded") === "false")
+      .forEach((btn) => {
+        expect(btn).toHaveAttribute("aria-expanded", "false");
+      });
   });
 
   it("renders the command-center featured tile", async () => {
