@@ -1,0 +1,370 @@
+Create complete production-ready environmental intelligence datasets for AmyNest AI in JSON format.
+
+IMPORTANT:
+Datasets must be:
+
+- scalable
+- configurable
+- modular
+- localization-ready
+- API-friendly
+- future ML-compatible
+- human-readable
+- optimized for mobile + web usage
+
+Use realistic developmental logic and environmental adaptation patterns.
+
+====================================================
+
+1. ageEnvironmentalTolerance.json
+   ====================================================
+
+Structure:
+{
+"infant_0_1": {},
+"toddler_1_3": {},
+"preschool_3_5": {},
+"early_school_5_10": {},
+"preteen_10_15": {}
+}
+
+For each age group include:
+
+- maxOutdoorHeatIndex
+- minOutdoorTemperature
+- maxUVSafeDuration
+- AQISensitivity
+- humidityTolerance
+- dehydrationRiskLevel
+- recommendedHydrationInterval
+- maxContinuousOutdoorPlay
+- stormSensitivity
+- coldExposureTolerance
+- sensoryStressSensitivity
+- fatigueRecoveryMultiplier
+
+====================================================
+2. hydrationProfiles.json
+
+Create hydration profiles by:
+
+- age
+- weather
+- humidity
+- activity intensity
+
+Include:
+
+- baselineHydrationMl
+- hotWeatherMultiplier
+- humidityAdjustment
+- activityHydrationBoost
+- electrolyteRecommendationThreshold
+- dehydrationWarningThreshold
+- hydrationReminderFrequency
+
+Add:
+
+- summer profiles
+- winter profiles
+- monsoon profiles
+
+====================================================
+3. AQIRiskThresholds.json
+
+Create AQI safety logic.
+
+AQI categories:
+
+- excellent
+- good
+- moderate
+- unhealthy_sensitive
+- unhealthy
+- very_unhealthy
+- hazardous
+
+For each:
+Include:
+
+- outdoorAllowed
+- maxOutdoorDuration
+- activityIntensityLimit
+- maskRecommendation
+- infantRestrictions
+- allergyRiskLevel
+- respiratoryRiskLevel
+- recommendedFallbackActivities
+
+====================================================
+4. weatherEnergyProfiles.json
+
+Create environmental energy modulation dataset.
+
+Weather conditions:
+
+- sunny
+- cloudy
+- rainy
+- stormy
+- humid
+- cold
+- heatwave
+- windy
+- foggy
+
+For each include:
+
+- cognitiveEnergyModifier
+- physicalEnergyModifier
+- moodImpact
+- focusDurationAdjustment
+- sensoryStressRisk
+- emotionalRegulationNeed
+- recommendedActivityTypes
+- recommendedLearningIntensity
+- recommendedBreakFrequency
+
+====================================================
+5. seasonalNutritionProfiles.json
+
+Create seasonal nutrition adaptation datasets.
+
+Seasons:
+
+- summer
+- winter
+- monsoon
+- spring
+- autumn
+
+Include:
+
+- hydrationFoods
+- warmingFoods
+- immunityFoods
+- coolingFoods
+- digestionFriendlyFoods
+- seasonalSnackSuggestions
+- electrolyteFoods
+- recommendedMealDensity
+- seasonalAvoidFoods
+
+Also create regional variations:
+
+- North Indian
+- South Indian
+- Western
+- UK
+- US
+
+====================================================
+6. circadianProfiles.json
+
+Create circadian adaptation logic.
+
+Include:
+
+- sunriseImpact
+- sunsetImpact
+- daylightDurationEffects
+- melatoninSupportWindow
+- optimalFocusWindows
+- eveningWindDownAdjustment
+- seasonalWakeShift
+- darkWeatherCalmingAdjustment
+- sleepPreparationSuggestions
+
+Age-specific adaptations required.
+
+====================================================
+7. environmentalStressProfiles.json
+
+Create environmental stress modeling.
+
+Factors:
+
+- heat stress
+- humidity stress
+- storm stress
+- sensory overload
+- atmospheric fatigue
+- overstimulation
+- low-light mood suppression
+
+Include:
+
+- stressScore
+- emotionalRisk
+- meltdownRisk
+- calmingActivitySuggestions
+- stimulationReductionLevel
+- caregiverSupportRecommendation
+- recoveryActivitySuggestions
+
+====================================================
+8. UVExposureRules.json
+
+Create UV safety rules.
+
+UV categories:
+
+- low
+- moderate
+- high
+- very_high
+- extreme
+
+For each age group include:
+
+- maxSafeExposureMinutes
+- sunscreenRecommendation
+- hydrationBoost
+- outdoorRestrictionLevel
+- clothingRecommendation
+- shadeRequirement
+- recommendedActivityWindow
+
+====================================================
+9. predictiveWeatherProfiles.json
+
+Create forecast-based orchestration logic.
+
+Conditions:
+
+- incoming rain
+- incoming storm
+- temperature spike
+- AQI spike
+- high wind forecast
+- rapid weather change
+
+Include:
+
+- preemptiveScheduleAdjustment
+- activityReschedulingPriority
+- fallbackRoutineActivation
+- hydrationAdjustment
+- emotionalPreparationRecommendations
+- caregiverPreparationSuggestions
+
+====================================================
+10. emotionalWeatherProfiles.json
+
+Create weather-emotion adaptation dataset.
+
+Conditions:
+
+- rainy
+- dark_cloudy
+- sunny
+- humid
+- stormy
+- cold
+- windy
+
+Include:
+
+- likelyMoodPatterns
+- stimulationNeeds
+- bondingActivitySuggestions
+- calmingActivities
+- confidenceBuildingActivities
+- creativitySuggestions
+- emotionalSupportLevel
+
+====================================================
+11. environmentalActivityLibrary.json
+
+Create categorized activities.
+
+Categories:
+
+- indoor_low_energy
+- indoor_creative
+- indoor_learning
+- indoor_calming
+- outdoor_active
+- outdoor_exploration
+- sensory_regulation
+- weather_safe_backup
+- storm_safe_activities
+- low_AQI_activities
+
+Each activity should include:
+
+- age suitability
+- intensity score
+- cognitive load
+- emotional effect
+- hydration need
+- indoor/outdoor suitability
+- weather compatibility
+- sensory profile
+
+====================================================
+12. environmentalRiskScoring.json
+
+Create weighted risk scoring logic.
+
+Inputs:
+
+- AQI
+- UV
+- humidity
+- heat index
+- precipitation
+- wind
+- storm probability
+- age group
+- sleep quality
+- emotional sensitivity
+
+Output:
+
+- environmentalRiskScore
+- outdoorSuitability
+- fatigueRisk
+- hydrationNeedLevel
+- sensoryStressRisk
+- recommendedAdjustmentLevel
+
+====================================================
+13. GLOBAL REQUIREMENTS
+
+All datasets must:
+
+- support future ML training
+- support personalization
+- support localization
+- support explainability engine
+- support safety engine
+- support adaptive orchestration
+- support multi-child systems
+
+====================================================
+14. IMPLEMENTATION REQUIREMENTS
+
+Generate:
+
+- realistic values
+- sample entries
+- production-ready schemas
+- comments/documentation
+- validation-friendly structure
+
+====================================================
+15. FINAL GOAL
+
+The dataset system should power:
+
+- predictive environmental adaptation
+- circadian-aware scheduling
+- AQI-sensitive routines
+- weather-adaptive meal generation
+- emotional weather balancing
+- environmental safety validation
+- hydration intelligence
+- adaptive developmental orchestration
+
+across both mobile and web AmyNest platforms.
