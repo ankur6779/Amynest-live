@@ -217,7 +217,7 @@ export default function SignInScreen() {
       <View style={styles.orb1} />
       <View style={styles.orb2} />
 
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
