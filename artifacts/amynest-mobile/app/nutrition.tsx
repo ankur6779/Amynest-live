@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import {
   View, Text, ScrollView, StyleSheet, Pressable, TouchableOpacity,
-  Alert, Platform, UIManager, LayoutAnimation,
+  Alert, Platform, UIManager, LayoutAnimation, ActivityIndicator,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,9 +11,10 @@ import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { palette, brand } from "@/constants/colors";
 import {
-  AGE_GROUPS, NUTRIENTS, MEAL_PLANS, FAMILY_PORTIONS,
+  AGE_GROUPS, NUTRIENTS, FAMILY_PORTIONS,
   MEDICAL_DISCLAIMER, REFERENCES, AgeGroupId, Nutrient,
 } from "@/lib/nutrition-data";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTranslation } from "react-i18next";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -85,7 +86,6 @@ function NutrientCard({
         <Ionicons name="chevron-forward" size={16} color={nc.text} />
       </View>
       <Text style={[styles.nutrientName, { color: nc.text }]}>{nutrient.name}</Text>
-      <Text style={[styles.nutrientNameHi, { color: nc.text + "99" }]}>{nutrient.nameHi}</Text>
       <Text style={[styles.tagline, { color: palette.slate500 }]}>{nutrient.tagline}</Text>
       <View style={[styles.needBadge, { backgroundColor: "#ffffff88" }]}>
         <Text style={[{ color: nc.text, fontSize: 11, fontWeight: "700" }]}>
@@ -119,14 +119,14 @@ function NutrientDetail({
           </Pressable>
           <Text style={{ fontSize: 40, textAlign: "center", marginBottom: 8 }}>{nutrient.emoji}</Text>
           <Text style={[styles.detailTitle, { color: nc.text }]}>{nutrient.name}</Text>
-          <Text style={{ color: nc.text + "99", fontSize: 14, textAlign: "center" }}>{nutrient.nameHi}</Text>
+
         </View>
 
         <View style={{ padding: 16, gap: 16 }}>
           {/* Daily need */}
           <View style={[styles.needCard, { backgroundColor: nc.bg, borderColor: nc.border }]}>
             <Text style={{ fontSize: 11, color: palette.slate500, fontWeight: "600", marginBottom: 4 }}>
-              {t("screens.nutrition.daily_need_for", { label: ag.label.toUpperCase(), labelHi: ag.labelHi.toUpperCase() })}
+              {t("screens.nutrition.daily_need_for", { label: ag.label.toUpperCase() })}
             </Text>
             <Text style={[{ fontSize: 28, fontWeight: "900", color: nc.text }]}>
               {need.amount} <Text style={{ fontSize: 16 }}>{need.unit}</Text>
@@ -170,7 +170,7 @@ function NutrientDetail({
                         </View>
                       )}
                     </View>
-                    <Text style={{ fontSize: 11, color: palette.slate500 }}>{src.nameHi} · {src.serving}</Text>
+                    <Text style={{ fontSize: 11, color: palette.slate500 }}>{src.serving}</Text>
                     <Text style={{ fontSize: 11, color: palette.slate600, fontWeight: "600" }}>→ {src.amount}</Text>
                   </View>
                 </View>
@@ -198,101 +198,255 @@ function NutrientDetail({
   );
 }
 
-// ─── Meal Plan Tab ─────────────────────────────────────────────────────────────
-function MealPlanTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
-  const { t } = useTranslation();
-  const plan = MEAL_PLANS.find(p => p.applies.includes(ageGroupId));
-  const [dayIdx, setDayIdx] = useState(0);
-  const [isVeg, setIsVeg] = useState(true);
+// ─── AI Meal Plan Tab ──────────────────────────────────────────────────────────
+type WeatherOpt = "hot" | "moderate" | "cold";
+type MealEntry = { name: string; protein_g: number; carbs_g: number; fiber_g: number; calories: number };
+type DayPlan = {
+  day: string;
+  meals: {
+    breakfast: MealEntry; mid_morning: MealEntry;
+    lunch: MealEntry; snack: MealEntry; dinner: MealEntry;
+  };
+};
 
-  if (!plan) {
-    return (
-      <View style={{ padding: 24, alignItems: "center" }}>
-        <Text style={{ fontSize: 48, marginBottom: 12 }}>🍼</Text>
-        <Text style={{ fontSize: 16, fontWeight: "700", color: palette.slate800, textAlign: "center", marginBottom: 8 }}>
-          {t("screens.nutrition.ebf_title")}
-        </Text>
-        <Text style={{ fontSize: 13, color: palette.slate600, textAlign: "center", lineHeight: 20 }}>
-          {t("screens.nutrition.ebf_desc")}
-        </Text>
-        <View style={{ marginTop: 12, backgroundColor: palette.violet50, borderRadius: 12, padding: 12 }}>
-          <Text style={{ fontSize: 12, color: brand.violet600, textAlign: "center" }}>
-            {t("screens.nutrition.ebf_hi")}
+const AI_MEAL_SLOTS: { key: string; label: string; color: string; border: string; text: string }[] = [
+  { key: "breakfast",   label: "🌅 Breakfast",   color: palette.orange50,  border: palette.orange200, text: palette.amber800 },
+  { key: "mid_morning", label: "🍎 Mid Morning",  color: palette.emerald50, border: palette.green200,  text: palette.emerald800 },
+  { key: "lunch",       label: "🌞 Lunch",        color: palette.blue50,    border: palette.blue200,   text: palette.blue800 },
+  { key: "snack",       label: "🍪 Snack",        color: palette.violet50,  border: palette.violet200, text: brand.violet800 },
+  { key: "dinner",      label: "🌙 Dinner",       color: palette.slate50,   border: palette.slate200,  text: palette.slate700 },
+];
+
+const WEATHER_OPTS: { val: WeatherOpt; label: string; icon: string }[] = [
+  { val: "hot",      label: "Hot",      icon: "sunny-outline" },
+  { val: "moderate", label: "Moderate", icon: "partly-sunny-outline" },
+  { val: "cold",     label: "Cold",     icon: "snow-outline" },
+];
+
+function AIMealPlanTab() {
+  const { t } = useTranslation();
+  const authFetch = useAuthFetch();
+  const [weather, setWeather] = useState<WeatherOpt>("moderate");
+  const [dayIdx, setDayIdx] = useState(0);
+  const [plan, setPlan] = useState<DayPlan[] | null>(null);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generate = useCallback(async (forceRefresh = false) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await authFetch("/api/meals/week-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weather, forceRefresh }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error((j as any).error ?? `Server error ${res.status}`);
+      }
+      const data = await res.json() as { plan: DayPlan[]; generatedAt: string };
+      setPlan(data.plan);
+      setGeneratedAt(data.generatedAt);
+      setDayIdx(0);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }, [authFetch, weather]);
+
+  const day = plan?.[dayIdx];
+
+  return (
+    <View style={{ gap: 14 }}>
+      {/* Header */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Text style={{ fontSize: 22 }}>🤖</Text>
+        <View>
+          <Text style={{ fontSize: 15, fontWeight: "800", color: palette.slate800 }}>
+            {t("screens.nutrition.ai_plan_title")}
+          </Text>
+          <Text style={{ fontSize: 11, color: palette.slate500 }}>
+            {t("screens.nutrition.ai_plan_subtitle")}
           </Text>
         </View>
       </View>
-    );
-  }
 
-  const day = plan.days[dayIdx];
-  const meal = isVeg ? day.veg : day.nonVeg;
-  const MEAL_SLOTS = [
-    { key: "breakfast", time: "🌅 Breakfast", color: palette.orange50, border: palette.orange200, text: palette.amber800 },
-    meal.midMorning ? { key: "midMorning", time: "🍎 Mid-Morning", color: palette.emerald50, border: palette.green200, text: palette.emerald800 } : null,
-    { key: "lunch", time: "🌞 Lunch", color: palette.orange50, border: palette.orange300, text: palette.orange800 },
-    { key: "snack", time: "🍪 Snack", color: palette.violet50, border: palette.violet200, text: brand.violet800 },
-    { key: "dinner", time: "🌙 Dinner", color: palette.blue50, border: palette.blue200, text: palette.blue800 },
-  ].filter(Boolean) as { key: string; time: string; color: string; border: string; text: string }[];
-
-  return (
-    <View style={{ gap: 12 }}>
-      {/* Header */}
-      <View>
-        <Text style={{ fontSize: 16, fontWeight: "800", color: palette.slate800 }}>{plan.ageCategory}</Text>
-        <Text style={{ fontSize: 12, color: palette.slate500 }}>{plan.ageCategoryHi}</Text>
+      {/* Weather picker */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <Text style={{ fontSize: 12, color: palette.slate500, fontWeight: "600" }}>
+          {t("screens.nutrition.ai_plan_weather")}
+        </Text>
+        <View style={{ flexDirection: "row", backgroundColor: palette.slate100, borderRadius: 24, padding: 3, gap: 2 }}>
+          {WEATHER_OPTS.map(opt => (
+            <Pressable
+              key={opt.val}
+              onPress={() => setWeather(opt.val)}
+              style={[
+                { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 4 },
+                weather === opt.val && { backgroundColor: brand.violet600 },
+              ]}
+            >
+              <Ionicons name={opt.icon as any} size={12} color={weather === opt.val ? "#fff" : palette.slate500} />
+              <Text style={{ fontSize: 11, fontWeight: "700", color: weather === opt.val ? "#fff" : palette.slate500 }}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
-      {/* Portion note */}
-      <View style={{ backgroundColor: palette.blue50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.blue200 }}>
-        <Text style={{ fontSize: 12, color: palette.blue800 }}>📏 {plan.portionNote}</Text>
-        <Text style={{ fontSize: 11, color: palette.blue500, marginTop: 4 }}>{plan.portionNoteHi}</Text>
-      </View>
-
-      {/* Veg / Non-veg toggle */}
-      <View style={{ flexDirection: "row", backgroundColor: palette.slate100, borderRadius: 30, padding: 3 }}>
-        <Pressable
-          onPress={() => setIsVeg(true)}
-          style={[styles.toggleBtn, isVeg && { backgroundColor: palette.green500 }]}
-        >
-          <Text style={{ fontSize: 12, fontWeight: "700", color: isVeg ? "#fff" : palette.slate500 }}>{t("screens.nutrition.veg")}</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setIsVeg(false)}
-          style={[styles.toggleBtn, !isVeg && { backgroundColor: palette.orange500 }]}
-        >
-          <Text style={{ fontSize: 12, fontWeight: "700", color: !isVeg ? "#fff" : palette.slate500 }}>{t("screens.nutrition.nonveg")}</Text>
-        </Pressable>
-      </View>
-
-      {/* Day selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-        {plan.days.map((d, i) => (
+      {/* Empty state */}
+      {!plan && !loading && !error && (
+        <View style={{ borderRadius: 16, borderWidth: 1, borderColor: brand.violet400, borderStyle: "dashed", backgroundColor: palette.violet50, padding: 24, alignItems: "center", gap: 12 }}>
+          <Text style={{ fontSize: 40 }}>🤖</Text>
+          <Text style={{ fontSize: 15, fontWeight: "700", color: palette.slate800, textAlign: "center" }}>
+            {t("screens.nutrition.ai_plan_cta")}
+          </Text>
+          <Text style={{ fontSize: 12, color: palette.slate500, textAlign: "center", lineHeight: 18 }}>
+            {t("screens.nutrition.ai_plan_desc")}
+          </Text>
           <Pressable
-            key={i}
-            onPress={() => setDayIdx(i)}
-            style={[
-              styles.dayBtn,
-              dayIdx === i && { backgroundColor: brand.violet600, borderColor: brand.violet600 },
-            ]}
+            onPress={() => generate(false)}
+            style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: brand.violet600, borderRadius: 24, paddingHorizontal: 20, paddingVertical: 10 }}
           >
-            <Text style={[{ fontSize: 12, fontWeight: "700" }, dayIdx === i ? { color: "#fff" } : { color: palette.slate500 }]}>
-              {d.day.slice(0, 3)}
+            <Ionicons name="flash" size={16} color="#fff" />
+            <Text style={{ fontSize: 14, fontWeight: "700", color: "#fff" }}>
+              {t("screens.nutrition.ai_plan_btn")}
             </Text>
           </Pressable>
-        ))}
-      </ScrollView>
+        </View>
+      )}
 
-      {/* Meal cards */}
-      <View style={{ gap: 10 }}>
-        {MEAL_SLOTS.map(slot => (
-          <View key={slot.key} style={[styles.mealCard, { backgroundColor: slot.color, borderColor: slot.border }]}>
-            <Text style={{ fontSize: 12, fontWeight: "700", color: slot.text, marginBottom: 4 }}>{slot.time}</Text>
-            <Text style={{ fontSize: 13, color: palette.gray700, lineHeight: 18 }}>
-              {(meal as Record<string, string | undefined>)[slot.key] ?? "—"}
+      {/* Loading */}
+      {loading && (
+        <View style={{ gap: 10, opacity: 0.75 }}>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {[1,2,3,4,5,6,7].map(i => (
+              <View key={i} style={{ height: 28, width: 36, borderRadius: 14, backgroundColor: palette.slate200 }} />
+            ))}
+          </View>
+          {[1,2,3,4,5].map(i => (
+            <View key={i} style={{ height: 68, borderRadius: 12, backgroundColor: palette.slate100, borderWidth: 1, borderColor: palette.slate200 }} />
+          ))}
+          <View style={{ alignItems: "center", gap: 6, paddingVertical: 8 }}>
+            <ActivityIndicator size="small" color={brand.violet600} />
+            <Text style={{ fontSize: 12, color: palette.slate500 }}>
+              {t("screens.nutrition.ai_plan_generating")}
             </Text>
           </View>
-        ))}
-      </View>
+        </View>
+      )}
+
+      {/* Error */}
+      {error && !loading && (
+        <View style={{ borderRadius: 12, borderWidth: 1, borderColor: palette.rose300, backgroundColor: palette.rose50, padding: 14, gap: 8 }}>
+          <Text style={{ fontSize: 13, fontWeight: "700", color: palette.rose700 }}>
+            {t("screens.nutrition.ai_plan_error")}
+          </Text>
+          <Text style={{ fontSize: 12, color: palette.rose700 }}>{error}</Text>
+          <Pressable
+            onPress={() => generate(true)}
+            style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", borderRadius: 20, borderWidth: 1, borderColor: palette.rose300, paddingHorizontal: 12, paddingVertical: 6 }}
+          >
+            <Ionicons name="refresh" size={14} color={palette.rose700} />
+            <Text style={{ fontSize: 12, fontWeight: "600", color: palette.rose700 }}>
+              {t("screens.nutrition.ai_plan_retry")}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Plan */}
+      {plan && !loading && (
+        <View style={{ gap: 12 }}>
+          {generatedAt && (
+            <Text style={{ fontSize: 11, color: palette.slate400 }}>
+              {t("screens.nutrition.ai_plan_generated", { date: new Date(generatedAt).toLocaleDateString() })}
+            </Text>
+          )}
+
+          {/* Day selector */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+            {plan.map((d, i) => (
+              <Pressable
+                key={i}
+                onPress={() => setDayIdx(i)}
+                style={[
+                  styles.dayBtn,
+                  dayIdx === i && { backgroundColor: brand.violet600, borderColor: brand.violet600 },
+                ]}
+              >
+                <Text style={[{ fontSize: 11, fontWeight: "700" }, dayIdx === i ? { color: "#fff" } : { color: palette.slate500 }]}>
+                  {d.day.slice(0, 3)}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          {/* Meal cards */}
+          {day && (
+            <View style={{ gap: 10 }}>
+              {AI_MEAL_SLOTS.map(slot => {
+                const entry = (day.meals as any)[slot.key] as MealEntry | undefined;
+                if (!entry) return null;
+                return (
+                  <View key={slot.key} style={[styles.mealCard, { backgroundColor: slot.color, borderColor: slot.border }]}>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: slot.text, marginBottom: 4 }}>{slot.label}</Text>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: palette.gray800, marginBottom: 6 }}>{entry.name}</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                      <View style={{ backgroundColor: "#ffffff99", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ fontSize: 10, color: palette.amber700, fontWeight: "700" }}>🔥 {entry.calories} kcal</Text>
+                      </View>
+                      <View style={{ backgroundColor: "#ffffff99", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ fontSize: 10, color: palette.blue700, fontWeight: "700" }}>⚡ {entry.protein_g}g protein</Text>
+                      </View>
+                      <View style={{ backgroundColor: "#ffffff99", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ fontSize: 10, color: brand.violet700, fontWeight: "700" }}>🌾 {entry.carbs_g}g carbs</Text>
+                      </View>
+                      <View style={{ backgroundColor: "#ffffff99", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ fontSize: 10, color: palette.green700, fontWeight: "700" }}>🥦 {entry.fiber_g}g fiber</Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Daily totals bar */}
+          {day && (
+            <View style={{ borderRadius: 12, borderWidth: 1, borderColor: palette.slate200, backgroundColor: palette.slate50, padding: 12, flexDirection: "row", justifyContent: "space-around" }}>
+              {(["calories","protein_g","carbs_g","fiber_g"] as const).map(key => {
+                const total = AI_MEAL_SLOTS.reduce((acc, slot) => {
+                  const e = (day.meals as any)[slot.key] as MealEntry | undefined;
+                  return acc + (e?.[key] ?? 0);
+                }, 0);
+                const labels: Record<string, string> = { calories: "kcal", protein_g: "Protein", carbs_g: "Carbs", fiber_g: "Fiber" };
+                return (
+                  <View key={key} style={{ alignItems: "center" }}>
+                    <Text style={{ fontSize: 17, fontWeight: "900", color: palette.slate800 }}>{total}</Text>
+                    <Text style={{ fontSize: 10, color: palette.slate500, marginTop: 2 }}>{labels[key]}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Regenerate */}
+          <Pressable
+            onPress={() => generate(true)}
+            style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-end", borderRadius: 20, borderWidth: 1, borderColor: palette.slate200, paddingHorizontal: 14, paddingVertical: 8 }}
+          >
+            <Ionicons name="refresh" size={14} color={palette.slate500} />
+            <Text style={{ fontSize: 12, fontWeight: "600", color: palette.slate500 }}>
+              {t("screens.nutrition.ai_plan_regen")}
+            </Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -305,7 +459,7 @@ function FamilyModeTab() {
       {/* Info */}
       <View style={{ backgroundColor: palette.violet50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: palette.violet200 }}>
         <Text style={{ fontSize: 13, fontWeight: "700", color: brand.violet600, marginBottom: 4 }}>
-          {t("screens.nutrition.family_title_hi")}
+          {t("screens.nutrition.section_family")}
         </Text>
         <Text style={{ fontSize: 12, color: brand.violet800 }}>
           {t("screens.nutrition.family_desc")}
@@ -354,14 +508,14 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
     setChecked(prev => ({ ...prev, [id]: !prev[id] }));
   };
   const items = [
-    { id: "breakfast", label: t("screens.nutrition.item_breakfast"), labelHi: "आज पौष्टिक नाश्ता किया" },
-    { id: "protein", label: t("screens.nutrition.item_protein"), labelHi: "प्रोटीन लिया" },
-    { id: "dairy", label: t("screens.nutrition.item_dairy"), labelHi: "डेयरी या कैल्शियम स्रोत" },
-    { id: "greens", label: t("screens.nutrition.item_greens"), labelHi: "हरी पत्तेदार सब्जी खाई" },
-    { id: "fruit", label: t("screens.nutrition.item_fruit"), labelHi: "आज कम से कम 1 फल खाया" },
-    { id: "water", label: t("screens.nutrition.item_water"), labelHi: "पर्याप्त पानी पिया" },
-    { id: "noJunk", label: t("screens.nutrition.item_noJunk"), labelHi: "जंक फूड से बचे" },
-    { id: "wholegrains", label: t("screens.nutrition.item_wholegrains"), labelHi: "साबुत अनाज चुना" },
+    { id: "breakfast",   label: t("screens.nutrition.item_breakfast") },
+    { id: "protein",     label: t("screens.nutrition.item_protein") },
+    { id: "dairy",       label: t("screens.nutrition.item_dairy") },
+    { id: "greens",      label: t("screens.nutrition.item_greens") },
+    { id: "fruit",       label: t("screens.nutrition.item_fruit") },
+    { id: "water",       label: t("screens.nutrition.item_water") },
+    { id: "noJunk",      label: t("screens.nutrition.item_noJunk") },
+    { id: "wholegrains", label: t("screens.nutrition.item_wholegrains") },
   ];
   const checkedCount = Object.values(checked).filter(Boolean).length;
   const score = Math.round((checkedCount / items.length) * 100);
@@ -411,7 +565,6 @@ function ScoreTab({ ageGroupId }: { ageGroupId: AgeGroupId }) {
                 <Text style={{ fontSize: 13, fontWeight: "500", color: done ? palette.slate400 : palette.slate800, textDecorationLine: done ? "line-through" : "none" }}>
                   {item.label}
                 </Text>
-                <Text style={{ fontSize: 11, color: palette.slate400 }}>{item.labelHi}</Text>
               </View>
             </Pressable>
           );
@@ -541,9 +694,7 @@ export default function NutritionScreen() {
             <Text style={{ fontSize: 36 }}>{activeAg.emoji}</Text>
             <View style={{ flex: 1 }}>
               <Text style={[styles.ageCardTitle, { color: ac.text }]}>{activeAg.label}</Text>
-              <Text style={{ fontSize: 12, color: ac.text + "99", marginBottom: 4 }}>{activeAg.labelHi} · {activeAg.labelHinglish}</Text>
-              <Text style={{ fontSize: 12, color: palette.gray700, lineHeight: 18 }}>{activeAg.description}</Text>
-              <Text style={{ fontSize: 11, color: palette.slate500, marginTop: 4 }}>{activeAg.descriptionHi}</Text>
+              <Text style={{ fontSize: 12, color: palette.gray700, lineHeight: 18, marginTop: 4 }}>{activeAg.description}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                 {activeAg.keyFocus.map((f, i) => (
                   <View key={i} style={[styles.focusBadge, { borderColor: ac.border }]}>
@@ -607,7 +758,7 @@ export default function NutritionScreen() {
               <Text style={{ fontSize: 12, color: palette.slate500, marginBottom: 12 }}>
                 {t("screens.nutrition.section_meal_desc")}
               </Text>
-              <MealPlanTab ageGroupId={activeAgeId} />
+              <AIMealPlanTab />
             </View>
           )}
 
@@ -643,11 +794,8 @@ export default function NutritionScreen() {
           </Pressable>
           {showDisclaimer && (
             <View style={styles.disclaimerBody}>
-              <Text style={{ fontSize: 11, color: palette.amber800, lineHeight: 17, marginBottom: 8 }}>
+              <Text style={{ fontSize: 11, color: palette.amber800, lineHeight: 17 }}>
                 {MEDICAL_DISCLAIMER.en}
-              </Text>
-              <Text style={{ fontSize: 11, color: palette.amber700, lineHeight: 17 }}>
-                {MEDICAL_DISCLAIMER.hi}
               </Text>
               <Pressable onPress={() => setShowRefs(!showRefs)} style={{ marginTop: 10 }}>
                 <Text style={{ fontSize: 10, color: palette.amber700, textDecorationLine: "underline" }}>
