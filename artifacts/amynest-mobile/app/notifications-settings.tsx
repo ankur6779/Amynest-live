@@ -25,6 +25,8 @@ import { brand, brandExtended } from "@/constants/colors";
 const HISTORY_OK_COLOR = brand.primary;
 const HISTORY_WARN_COLOR = brandExtended.errorSoft;
 
+type NotificationIntensity = "minimal" | "balanced" | "active" | "growth";
+
 type Prefs = {
   routineEnabled: boolean;
   routineItemEnabled: boolean;
@@ -33,10 +35,17 @@ type Prefs = {
   weeklyEnabled: boolean;
   engagementEnabled: boolean;
   goodNightEnabled: boolean;
+  parentingTipsEnabled: boolean;
+  storyTimeEnabled: boolean;
+  phonicsEnabled: boolean;
+  learningActivityEnabled: boolean;
+  milestoneEnabled: boolean;
   timezone: string;
   quietHoursStart: string;
   quietHoursEnd: string;
   dailyCap: number;
+  notificationIntensity: NotificationIntensity;
+  engagementScore: number;
 };
 
 type Category = {
@@ -45,13 +54,10 @@ type Category = {
   description: string;
   icon: keyof typeof Ionicons.glyphMap;
   testCategory:
-    | "routine"
-    | "routine_item"
-    | "nutrition"
-    | "insights"
-    | "weekly"
-    | "engagement"
-    | "good_night";
+    | "routine" | "routine_item" | "nutrition" | "insights" | "weekly"
+    | "engagement" | "good_night" | "parenting_tips" | "story_time"
+    | "phonics" | "learning_activity" | "milestone";
+  badge: "core" | "smart";
 };
 
 type HistoryRow = {
@@ -61,6 +67,13 @@ type HistoryRow = {
   status: string;
   errorMessage: string | null;
   sentAt: string;
+};
+
+const INTENSITY_CAPS: Record<NotificationIntensity, number> = {
+  minimal: 3,
+  balanced: 6,
+  active: 9,
+  growth: 12,
 };
 
 export default function NotificationSettingsScreen() {
@@ -74,13 +87,20 @@ export default function NotificationSettingsScreen() {
   const styles = React.useMemo(() => makeStyles(c), [c]);
 
   const CATEGORIES: Category[] = [
-    { key: "routineEnabled", title: t("screens.notif_settings.cat_routine_title"), description: t("screens.notif_settings.cat_routine_desc"), icon: "calendar-outline", testCategory: "routine" },
-    { key: "routineItemEnabled", title: t("screens.notif_settings.cat_routine_item_title"), description: t("screens.notif_settings.cat_routine_item_desc"), icon: "time-outline", testCategory: "routine_item" },
-    { key: "nutritionEnabled", title: t("screens.notif_settings.cat_nutrition_title"), description: t("screens.notif_settings.cat_nutrition_desc"), icon: "nutrition-outline", testCategory: "nutrition" },
-    { key: "insightsEnabled", title: t("screens.notif_settings.cat_insights_title"), description: t("screens.notif_settings.cat_insights_desc"), icon: "bulb-outline", testCategory: "insights" },
-    { key: "weeklyEnabled", title: t("screens.notif_settings.cat_weekly_title"), description: t("screens.notif_settings.cat_weekly_desc"), icon: "stats-chart-outline", testCategory: "weekly" },
-    { key: "engagementEnabled", title: t("screens.notif_settings.cat_engagement_title"), description: t("screens.notif_settings.cat_engagement_desc"), icon: "heart-outline", testCategory: "engagement" },
-    { key: "goodNightEnabled", title: t("screens.notif_settings.cat_goodnight_title"), description: t("screens.notif_settings.cat_goodnight_desc"), icon: "moon-outline", testCategory: "good_night" },
+    // ── Core ──────────────────────────────────────────────────────────────
+    { key: "routineEnabled",          title: t("screens.notif_settings.cat_routine_title"),           description: t("screens.notif_settings.cat_routine_desc"),           icon: "calendar-outline",    testCategory: "routine",           badge: "core" },
+    { key: "routineItemEnabled",      title: t("screens.notif_settings.cat_routine_item_title"),      description: t("screens.notif_settings.cat_routine_item_desc"),      icon: "time-outline",        testCategory: "routine_item",      badge: "core" },
+    { key: "nutritionEnabled",        title: t("screens.notif_settings.cat_nutrition_title"),         description: t("screens.notif_settings.cat_nutrition_desc"),         icon: "nutrition-outline",   testCategory: "nutrition",         badge: "core" },
+    { key: "insightsEnabled",         title: t("screens.notif_settings.cat_insights_title"),          description: t("screens.notif_settings.cat_insights_desc"),          icon: "bulb-outline",        testCategory: "insights",          badge: "core" },
+    { key: "engagementEnabled",       title: t("screens.notif_settings.cat_engagement_title"),        description: t("screens.notif_settings.cat_engagement_desc"),        icon: "heart-outline",       testCategory: "engagement",        badge: "core" },
+    { key: "goodNightEnabled",        title: t("screens.notif_settings.cat_goodnight_title"),         description: t("screens.notif_settings.cat_goodnight_desc"),         icon: "moon-outline",        testCategory: "good_night",        badge: "core" },
+    { key: "weeklyEnabled",           title: t("screens.notif_settings.cat_weekly_title"),            description: t("screens.notif_settings.cat_weekly_desc"),            icon: "stats-chart-outline", testCategory: "weekly",            badge: "core" },
+    // ── Smart Engine ──────────────────────────────────────────────────────
+    { key: "parentingTipsEnabled",    title: t("screens.notif_settings.cat_parenting_tips_title"),   description: t("screens.notif_settings.cat_parenting_tips_desc"),   icon: "leaf-outline",        testCategory: "parenting_tips",    badge: "smart" },
+    { key: "storyTimeEnabled",        title: t("screens.notif_settings.cat_story_time_title"),       description: t("screens.notif_settings.cat_story_time_desc"),       icon: "book-outline",        testCategory: "story_time",        badge: "smart" },
+    { key: "phonicsEnabled",          title: t("screens.notif_settings.cat_phonics_title"),          description: t("screens.notif_settings.cat_phonics_desc"),          icon: "mic-outline",         testCategory: "phonics",           badge: "smart" },
+    { key: "learningActivityEnabled", title: t("screens.notif_settings.cat_learning_activity_title"),description: t("screens.notif_settings.cat_learning_activity_desc"),icon: "school-outline",      testCategory: "learning_activity", badge: "smart" },
+    { key: "milestoneEnabled",        title: t("screens.notif_settings.cat_milestone_title"),        description: t("screens.notif_settings.cat_milestone_desc"),        icon: "ribbon-outline",      testCategory: "milestone",         badge: "smart" },
   ];
 
   const { data, isLoading } = useQuery<Prefs>({
@@ -169,11 +189,21 @@ export default function NotificationSettingsScreen() {
     );
   }
 
-  const toggle = (key: keyof Prefs, value: boolean) => {
+  const toggle = (key: keyof Prefs, value: boolean | string) => {
     const next = { ...local, [key]: value } as Prefs;
     setLocal(next);
     patch.mutate({ [key]: value } as Partial<Prefs>);
   };
+
+  const INTENSITY_OPTIONS: { mode: NotificationIntensity; emoji?: string }[] = [
+    { mode: "minimal" },
+    { mode: "balanced" },
+    { mode: "active" },
+    { mode: "growth", emoji: "🚀" },
+  ];
+
+  const coreCategories = CATEGORIES.filter((c) => c.badge === "core");
+  const smartCategories = CATEGORIES.filter((c) => c.badge === "smart");
 
   return (
     <View style={styles.container}>
@@ -182,112 +212,192 @@ export default function NotificationSettingsScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}
       >
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={26} color={c.text} />
-        </Pressable>
-        <Text style={styles.title}>{t("screens.notif_settings.title")}</Text>
-      </View>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.back} hitSlop={8}>
+            <Ionicons name="chevron-back" size={26} color={c.text} />
+          </Pressable>
+          <Text style={styles.title}>{t("screens.notif_settings.title")}</Text>
+        </View>
 
-      <Text style={styles.subtitle}>
-        {t("screens.notif_settings.subtitle", { cap: local.dailyCap })}
-      </Text>
-
-      {CATEGORIES.map((cat) => {
-        const enabled = Boolean(local[cat.key]);
-        return (
-          <View key={cat.key} style={styles.row}>
-            <View style={styles.iconWrap}>
-              <Ionicons name={cat.icon} size={22} color={brand.primary} />
-            </View>
-            <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>{cat.title}</Text>
-              <Text style={styles.rowDesc}>{cat.description}</Text>
-              {enabled ? (
-                <Pressable
-                  onPress={() => test.mutate(cat.testCategory)}
-                  disabled={test.isPending}
-                  style={styles.testBtn}
-                >
-                  <Text style={styles.testBtnText}>
-                    {test.isPending ? t("screens.notif_settings.sending") : t("screens.notif_settings.send_test")}
-                  </Text>
-                </Pressable>
-              ) : null}
-            </View>
-            <Switch
-              value={enabled}
-              onValueChange={(v) => toggle(cat.key, v)}
-              trackColor={{ true: brand.primary, false: "#444" /* audit-ok: switch off-state track */ }}
-              thumbColor="#fff"
-            />
-          </View>
-        );
-      })}
-
-      <View style={styles.quiet}>
-        <Text style={styles.quietTitle}>{t("screens.notif_settings.quiet_hours")}</Text>
-        <Text style={styles.quietValue}>
-          {local.quietHoursStart} → {local.quietHoursEnd} ({local.timezone})
+        <Text style={styles.subtitle}>
+          {t("screens.notif_settings.smart_subtitle")}
         </Text>
-        <Text style={styles.quietHelp}>
-          {t("screens.notif_settings.quiet_help")}
+
+        {/* ── Intensity Mode Picker ──────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>
+          {t("screens.notif_settings.intensity_heading")}
         </Text>
-      </View>
+        <View style={styles.intensityGrid}>
+          {INTENSITY_OPTIONS.map(({ mode, emoji }) => {
+            const active = local.notificationIntensity === mode;
+            return (
+              <Pressable
+                key={mode}
+                onPress={() => toggle("notificationIntensity", mode)}
+                style={[styles.intensityCard, active && styles.intensityCardActive]}
+              >
+                <Text style={[styles.intensityLabel, active && styles.intensityLabelActive]}>
+                  {t(`screens.notif_settings.intensity_${mode}`)}
+                  {emoji ? ` ${emoji}` : ""}
+                </Text>
+                <Text style={styles.intensityDesc}>
+                  {t(`screens.notif_settings.intensity_${mode}_desc`)}
+                </Text>
+                <Text style={[styles.intensityCap, active && styles.intensityCapActive]}>
+                  {t("screens.notif_settings.intensity_cap", { cap: INTENSITY_CAPS[mode] })}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
-      <Pressable onPress={openSystemSettings} style={styles.systemBtn}>
-        <Ionicons name="settings-outline" size={18} color={brand.primary} />
-        <Text style={styles.systemBtnText}>{t("screens.notif_settings.open_system_settings")}</Text>
-      </Pressable>
+        {/* ── Core notification types ────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>
+          {t("screens.notif_settings.section_core")}
+        </Text>
+        {coreCategories.map((cat) => {
+          const enabled = Boolean(local[cat.key]);
+          return (
+            <View key={cat.key} style={styles.row}>
+              <View style={styles.iconWrap}>
+                <Ionicons name={cat.icon} size={22} color={brand.primary} />
+              </View>
+              <View style={styles.rowText}>
+                <Text style={styles.rowTitle}>{cat.title}</Text>
+                <Text style={styles.rowDesc}>{cat.description}</Text>
+                {enabled ? (
+                  <Pressable
+                    onPress={() => test.mutate(cat.testCategory)}
+                    disabled={test.isPending}
+                    style={styles.testBtn}
+                  >
+                    <Text style={styles.testBtnText}>
+                      {test.isPending ? t("screens.notif_settings.sending") : t("screens.notif_settings.send_test")}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              <Switch
+                value={enabled}
+                onValueChange={(v) => toggle(cat.key, v)}
+                trackColor={{ true: brand.primary, false: "#444" /* audit-ok: switch off-state track */ }}
+                thumbColor="#fff"
+              />
+            </View>
+          );
+        })}
 
-      <Pressable
-        onPress={() => router.push("/notifications-diagnostics")}
-        style={styles.diagBtn}
-      >
-        <Ionicons name="help-circle-outline" size={20} color={brand.primary} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.diagBtnTitle}>{t("screens.notif_settings.diagnostics_title")}</Text>
-          <Text style={styles.diagBtnDesc}>
-            {t("screens.notif_settings.diagnostics_desc")}
+        {/* ── Smart engine categories ────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>
+          {t("screens.notif_settings.section_smart")}
+        </Text>
+        <Text style={styles.smartDesc}>
+          {t("screens.notif_settings.smart_categories_desc")}
+        </Text>
+        {smartCategories.map((cat) => {
+          const enabled = Boolean(local[cat.key]);
+          return (
+            <View key={cat.key} style={[styles.row, styles.rowSmart]}>
+              <View style={[styles.iconWrap, styles.iconWrapSmart]}>
+                <Ionicons name={cat.icon} size={22} color={brand.primary} />
+              </View>
+              <View style={styles.rowText}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={styles.rowTitle}>{cat.title}</Text>
+                  <View style={styles.smartBadge}>
+                    <Text style={styles.smartBadgeText}>
+                      {t("screens.notif_settings.smart_badge")}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.rowDesc}>{cat.description}</Text>
+                {enabled ? (
+                  <Pressable
+                    onPress={() => test.mutate(cat.testCategory)}
+                    disabled={test.isPending}
+                    style={styles.testBtn}
+                  >
+                    <Text style={styles.testBtnText}>
+                      {test.isPending ? t("screens.notif_settings.sending") : t("screens.notif_settings.send_test")}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              <Switch
+                value={enabled}
+                onValueChange={(v) => toggle(cat.key, v)}
+                trackColor={{ true: brand.primary, false: "#444" /* audit-ok: switch off-state track */ }}
+                thumbColor="#fff"
+              />
+            </View>
+          );
+        })}
+
+        {/* ── Quiet hours ───────────────────────────────────────────────── */}
+        <View style={styles.quiet}>
+          <Text style={styles.quietTitle}>{t("screens.notif_settings.quiet_hours")}</Text>
+          <Text style={styles.quietValue}>
+            {local.quietHoursStart} → {local.quietHoursEnd} ({local.timezone})
+          </Text>
+          <Text style={styles.quietHelp}>
+            {t("screens.notif_settings.quiet_help")}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={brand.primary} />
-      </Pressable>
 
-      <Text style={styles.sectionLabel}>{t("screens.notif_settings.recent_deliveries")}</Text>
-      <View style={styles.historyCard}>
-        {history.isLoading ? (
-          <Text style={styles.historyEmpty}>{t("screens.notif_settings.history_loading")}</Text>
-        ) : !history.data || history.data.items.length === 0 ? (
-          <Text style={styles.historyEmpty}>
-            {t("screens.notif_settings.history_empty")}
-          </Text>
-        ) : (
-          history.data.items.slice(0, 10).map((row) => {
-            const ok = row.status === "sent";
-            return (
-              <View key={row.id} style={styles.historyRow}>
-                <Ionicons
-                  name={ok ? "checkmark-circle" : "alert-circle"}
-                  size={18}
-                  color={ok ? HISTORY_OK_COLOR : HISTORY_WARN_COLOR}
-                  style={{ marginTop: 2 }}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.historyTitle} numberOfLines={1}>{row.title}</Text>
-                  <Text style={styles.historyMeta} numberOfLines={1}>
-                    {row.category} · {row.status}
-                    {row.errorMessage ? ` · ${row.errorMessage}` : ""}
+        <Pressable onPress={openSystemSettings} style={styles.systemBtn}>
+          <Ionicons name="settings-outline" size={18} color={brand.primary} />
+          <Text style={styles.systemBtnText}>{t("screens.notif_settings.open_system_settings")}</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => router.push("/notifications-diagnostics")}
+          style={styles.diagBtn}
+        >
+          <Ionicons name="help-circle-outline" size={20} color={brand.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.diagBtnTitle}>{t("screens.notif_settings.diagnostics_title")}</Text>
+            <Text style={styles.diagBtnDesc}>
+              {t("screens.notif_settings.diagnostics_desc")}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={brand.primary} />
+        </Pressable>
+
+        {/* ── Recent deliveries ─────────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>{t("screens.notif_settings.recent_deliveries")}</Text>
+        <View style={styles.historyCard}>
+          {history.isLoading ? (
+            <Text style={styles.historyEmpty}>{t("screens.notif_settings.history_loading")}</Text>
+          ) : !history.data || history.data.items.length === 0 ? (
+            <Text style={styles.historyEmpty}>
+              {t("screens.notif_settings.history_empty")}
+            </Text>
+          ) : (
+            history.data.items.slice(0, 10).map((row) => {
+              const ok = row.status === "sent";
+              return (
+                <View key={row.id} style={styles.historyRow}>
+                  <Ionicons
+                    name={ok ? "checkmark-circle" : "alert-circle"}
+                    size={18}
+                    color={ok ? HISTORY_OK_COLOR : HISTORY_WARN_COLOR}
+                    style={{ marginTop: 2 }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.historyTitle} numberOfLines={1}>{row.title}</Text>
+                    <Text style={styles.historyMeta} numberOfLines={1}>
+                      {row.category} · {row.status}
+                      {row.errorMessage ? ` · ${row.errorMessage}` : ""}
+                    </Text>
+                  </View>
+                  <Text style={styles.historyTime}>
+                    {new Date(row.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </Text>
                 </View>
-                <Text style={styles.historyTime}>
-                  {new Date(row.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </Text>
-              </View>
-            );
-          })
-        )}
-      </View>
+              );
+            })
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -301,15 +411,66 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     header: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
     back: { padding: 6, marginRight: 4 },
     title: { color: c.text, fontSize: 22, fontWeight: "700" },
-    subtitle: { color: c.textMuted, fontSize: 14, marginBottom: 18, lineHeight: 20 },
+    subtitle: { color: c.textMuted, fontSize: 14, marginBottom: 16, lineHeight: 20 },
+    sectionLabel: {
+      color: c.textMuted,
+      fontSize: 12,
+      letterSpacing: 1.5,
+      textTransform: "uppercase",
+      marginTop: 20,
+      marginBottom: 10,
+    },
+    // Intensity grid
+    intensityGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 4,
+    },
+    intensityCard: {
+      width: "47%",
+      borderRadius: 14,
+      padding: 12,
+      backgroundColor: c.cardBackground,
+      borderWidth: 1.5,
+      borderColor: "transparent",
+    },
+    intensityCardActive: {
+      borderColor: brand.primary,
+      backgroundColor: brand.primary + "22",
+    },
+    intensityLabel: {
+      color: c.textMuted,
+      fontSize: 14,
+      fontWeight: "700",
+      marginBottom: 2,
+    },
+    intensityLabelActive: { color: c.text },
+    intensityDesc: {
+      color: c.textMuted,
+      fontSize: 11,
+      lineHeight: 15,
+      marginBottom: 6,
+    },
+    intensityCap: {
+      color: c.textMuted,
+      fontSize: 11,
+      fontWeight: "600",
+    },
+    intensityCapActive: { color: brand.primary },
+    // Category rows
     row: {
       flexDirection: "row",
       alignItems: "flex-start",
       backgroundColor: c.cardBackground,
       borderRadius: 14,
       padding: 14,
-      marginBottom: 12,
+      marginBottom: 10,
       gap: 12,
+    },
+    rowSmart: {
+      borderWidth: 1,
+      borderColor: brand.primary + "33",
     },
     iconWrap: {
       width: 40,
@@ -318,6 +479,9 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: c.background,
       alignItems: "center",
       justifyContent: "center",
+    },
+    iconWrapSmart: {
+      backgroundColor: brand.primary + "22",
     },
     rowText: { flex: 1 },
     rowTitle: { color: c.text, fontSize: 16, fontWeight: "600", marginBottom: 4 },
@@ -331,6 +495,29 @@ function makeStyles(c: ReturnType<typeof useColors>) {
       backgroundColor: brand.primary + "22",
     },
     testBtnText: { color: brand.primary, fontSize: 12, fontWeight: "600" },
+    // Smart badge
+    smartBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+      backgroundColor: brand.primary + "22",
+      borderWidth: 1,
+      borderColor: brand.primary + "44",
+    },
+    smartBadgeText: {
+      color: brand.primary,
+      fontSize: 9,
+      fontWeight: "700",
+      letterSpacing: 0.5,
+    },
+    smartDesc: {
+      color: c.textMuted,
+      fontSize: 12,
+      marginTop: -6,
+      marginBottom: 10,
+      lineHeight: 17,
+    },
+    // Quiet hours
     quiet: {
       marginTop: 18,
       backgroundColor: c.cardBackground,
@@ -340,6 +527,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     quietTitle: { color: c.text, fontSize: 15, fontWeight: "600", marginBottom: 6 },
     quietValue: { color: brand.primary, fontSize: 16, fontWeight: "700", marginBottom: 6 },
     quietHelp: { color: c.textMuted, fontSize: 12 },
+    // Buttons
     systemBtn: {
       flexDirection: "row",
       alignItems: "center",
@@ -366,14 +554,7 @@ function makeStyles(c: ReturnType<typeof useColors>) {
     },
     diagBtnTitle: { color: c.text, fontSize: 14, fontWeight: "700" },
     diagBtnDesc: { color: c.textMuted, fontSize: 12, marginTop: 2 },
-    sectionLabel: {
-      color: c.textMuted,
-      fontSize: 12,
-      letterSpacing: 1.5,
-      textTransform: "uppercase",
-      marginTop: 24,
-      marginBottom: 10,
-    },
+    // History
     historyCard: {
       backgroundColor: c.cardBackground,
       borderRadius: 14,

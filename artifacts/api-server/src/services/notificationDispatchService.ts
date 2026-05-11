@@ -4,6 +4,7 @@ import {
   notificationLogTable,
   notificationPreferencesTable,
   pushTokensTable,
+  intensityToCap,
   type NotificationCategory,
 } from "@workspace/db";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
@@ -29,13 +30,9 @@ export interface DispatchInput {
    * dedup window the call becomes a no-op (logged as "duplicate").
    */
   dedupKey?: string;
-  /**
-   * Skip the daily cap check. Reserved for critical messages — none today.
-   */
+  /** Skip the daily cap check. Reserved for test sends. */
   bypassDailyCap?: boolean;
-  /**
-   * Skip the quiet-hours gate. For explicit user-initiated test sends only.
-   */
+  /** Skip the quiet-hours gate. For explicit user-initiated test sends only. */
   bypassQuietHours?: boolean;
   /**
    * Skip the per-category enablement check. For explicit user-initiated
@@ -54,7 +51,6 @@ export interface DispatchResult {
 
 /**
  * Read prefs row for a user; lazily insert defaults if missing.
- * Defaults match the column defaults in the schema.
  */
 export async function getOrCreatePreferences(userId: string) {
   const [existing] = await db
@@ -71,7 +67,6 @@ export async function getOrCreatePreferences(userId: string) {
     .returning();
   if (created) return created;
 
-  // Lost the insert race — re-read.
   const [retry] = await db
     .select()
     .from(notificationPreferencesTable)
@@ -81,35 +76,37 @@ export async function getOrCreatePreferences(userId: string) {
   return retry;
 }
 
+/**
+ * Returns the effective daily cap for a user based on their intensity setting.
+ * Growth mode = 12/day, active = 9, balanced = 6, minimal = 3.
+ */
+export function effectiveDailyCap(
+  prefs: Awaited<ReturnType<typeof getOrCreatePreferences>>,
+): number {
+  return intensityToCap(prefs.notificationIntensity ?? "balanced");
+}
+
 function categoryEnabled(
   prefs: Awaited<ReturnType<typeof getOrCreatePreferences>>,
   category: NotificationCategory,
 ): boolean {
   switch (category) {
-    case "routine":
-      return prefs.routineEnabled;
-    case "routine_item":
-      return prefs.routineItemEnabled;
-    case "nutrition":
-      return prefs.nutritionEnabled;
-    case "insights":
-      return prefs.insightsEnabled;
-    case "weekly":
-      return prefs.weeklyEnabled;
-    case "engagement":
-      return prefs.engagementEnabled;
-    case "good_night":
-      return prefs.goodNightEnabled;
-    default:
-      return true;
+    case "routine":            return prefs.routineEnabled;
+    case "routine_item":       return prefs.routineItemEnabled;
+    case "nutrition":          return prefs.nutritionEnabled;
+    case "insights":           return prefs.insightsEnabled;
+    case "weekly":             return prefs.weeklyEnabled;
+    case "engagement":         return prefs.engagementEnabled;
+    case "good_night":         return prefs.goodNightEnabled;
+    case "parenting_tips":     return prefs.parentingTipsEnabled;
+    case "story_time":         return prefs.storyTimeEnabled;
+    case "phonics":            return prefs.phonicsEnabled;
+    case "learning_activity":  return prefs.learningActivityEnabled;
+    case "milestone":          return prefs.milestoneEnabled;
+    default:                   return true;
   }
 }
 
-/**
- * Permanently delete a token row when the upstream provider tells us it's
- * no longer valid (uninstall, permission revoked, FCM rotation). Best-effort:
- * never throws.
- */
 export async function pruneInvalidToken(
   token: string,
   reason: string,
@@ -130,10 +127,6 @@ export async function pruneInvalidToken(
   }
 }
 
-/**
- * Sweep: remove tokens whose lastSeenAt is older than `maxDays`.
- * Returns the number of rows removed.
- */
 export async function pruneStaleTokens(maxDays = 60): Promise<number> {
   const cutoff = new Date(Date.now() - maxDays * 24 * 60 * 60 * 1000);
   const removed = await db
@@ -146,15 +139,6 @@ export async function pruneStaleTokens(maxDays = 60): Promise<number> {
   return removed.length;
 }
 
-/**
- * FCM error codes that mean "this token is gone — stop sending to it".
- *
- * Intentionally narrow: we only auto-delete on codes that the FCM admin
- * SDK emits per-token when the registration is no longer valid. Generic
- * codes like `messaging/invalid-argument` can fire for malformed payloads
- * (not the token's fault) and would silently disconnect healthy devices,
- * so they are NOT in this list.
- */
 const FCM_INVALID_CODES = new Set([
   "messaging/registration-token-not-registered",
   "messaging/invalid-registration-token",
@@ -171,10 +155,6 @@ export function isFcmInvalidTokenError(err: unknown): boolean {
   return FCM_INVALID_CODES.has(code) || FCM_INVALID_CODES.has(infoCode);
 }
 
-/**
- * Returns true if the current local time (in the user's timezone) falls
- * inside their quiet hours window. Handles overnight ranges (e.g. 22:00–07:00).
- */
 function inQuietHours(
   prefs: Awaited<ReturnType<typeof getOrCreatePreferences>>,
   now: Date = new Date(),
@@ -192,23 +172,17 @@ function inQuietHours(
   if (start < end) {
     return localHHMM >= start && localHHMM < end;
   }
-  // Overnight window: in quiet hours if >= start OR < end.
   return localHHMM >= start || localHHMM < end;
 }
 
 async function countSentToday(userId: string, timezone: string): Promise<number> {
-  // Compute "today" boundary in the user's timezone, then convert back to UTC.
-  // Easier: count notifications in the last 24h windowed to local-day start.
-  // We approximate by resetting at local midnight using formatted date.
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
-  const localDate = fmt.format(new Date()); // "YYYY-MM-DD"
-  // Local midnight → ISO. Use the date string + "T00:00" + offset trick:
-  // safest is to query rows whose sentAt converted to that timezone matches.
+  const localDate = fmt.format(new Date());
   const result = await db.execute<{ count: number }>(sql`
     SELECT COUNT(*)::int AS count FROM notification_log
     WHERE user_id = ${userId}
@@ -254,9 +228,26 @@ async function logEvent(
 }
 
 /**
- * Send via Firebase Admin to a single FCM web push token.
- * Errors are logged but do not abort Expo sends.
+ * Bump or decay the engagementScore when a notification is opened/ignored.
+ * Best-effort — never throws.
  */
+export async function updateEngagementScore(
+  userId: string,
+  opened: boolean,
+): Promise<void> {
+  try {
+    const delta = opened ? 5 : -2;
+    await db.execute(sql`
+      UPDATE notification_preferences
+      SET engagement_score = GREATEST(0, LEAST(100, engagement_score + ${delta})),
+          updated_at = NOW()
+      WHERE user_id = ${userId}
+    `);
+  } catch (err) {
+    logger.warn({ err, userId }, "Failed to update engagement score");
+  }
+}
+
 async function sendFcmWebPush(
   token: string,
   input: DispatchInput,
@@ -272,7 +263,6 @@ async function sendFcmWebPush(
         requireInteraction: false,
       },
       fcmOptions: {
-        // FCM requires an absolute URL — relative paths are silently ignored.
         link: input.deepLink
           ? `https://amynest.in${input.deepLink.startsWith("/") ? input.deepLink : `/${input.deepLink}`}`
           : "https://amynest.in/",
@@ -292,11 +282,6 @@ async function sendFcmWebPush(
   });
 }
 
-/**
- * Send via Firebase Admin to a native Android FCM token (KidSchedule TWA/WebView wrapper).
- * Uses `android` notification config — native tokens silently drop `webpush` messages.
- * channelId "default" matches the channel registered in KidScheduleFcmService.kt.
- */
 async function sendFcmAndroidPush(
   token: string,
   input: DispatchInput,
@@ -312,20 +297,12 @@ async function sendFcmAndroidPush(
         icon: "ic_notification",
         color: "#6C63FF",
         channelId: "default",
-        // Opens MainActivity (the TWA/WebView launcher) when the user taps the
-        // system-tray notification. FCM resolves this to the activity registered
-        // with android.intent.action.MAIN in AndroidManifest.xml, passing the
-        // data payload (including deepLink) as Intent extras so MainActivity
-        // can navigate the WebView to the correct route.
         clickAction: "android.intent.action.MAIN",
       },
     },
     data: {
       category: input.category,
       deepLink: input.deepLink ?? "",
-      // "url" is the key the Android WebView wrapper reads to navigate on tap.
-      // Kept in sync with deepLink so both the native handler and any JS
-      // running inside the WebView can read whichever key they expect.
       url: input.deepLink ?? "",
       ...(input.data
         ? Object.fromEntries(
@@ -338,8 +315,8 @@ async function sendFcmAndroidPush(
 
 /**
  * Main entry point. Validates against prefs/cap/quiet hours/dedup, then
- * sends the notification to every registered Expo push token (mobile) and
- * every FCM web push token (browser) for the user.
+ * sends the notification to every registered push token for the user.
+ * Daily cap is now driven by the user's intensity mode setting.
  */
 export async function dispatchNotification(input: DispatchInput): Promise<DispatchResult> {
   const prefs = await getOrCreatePreferences(input.userId);
@@ -349,21 +326,12 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     return { status: "throttled", reason: "category_disabled" };
   }
 
-  // Fetch tokens first — no point running throttle checks if there's nobody to
-  // send to. Returning no_tokens before quiet-hours / daily-cap also avoids
-  // counting user-less dispatch attempts against the cap.
   const tokens = await db
     .select({ token: pushTokensTable.token, platform: pushTokensTable.platform })
     .from(pushTokensTable)
     .where(eq(pushTokensTable.userId, input.userId));
 
   const expoTokens = tokens.filter((t) => Expo.isExpoPushToken(t.token));
-  // FCM tokens come from two sources, both routed through Firebase Admin:
-  //   - platform "web"     → browser web push via service worker (FCM JS SDK)
-  //                          must use `webpush` config
-  //   - platform "android" → native FCM token from KidSchedule TWA wrapper
-  //                          (registered via PushBridge.kt → /api/push/register)
-  //                          must use `android` config — webpush is silently dropped
   const webFcmTokens = tokens.filter(
     (t) => !Expo.isExpoPushToken(t.token) && t.platform === "web",
   );
@@ -383,8 +351,9 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
 
   if (!input.bypassDailyCap) {
     const sentToday = await countSentToday(input.userId, prefs.timezone);
-    if (sentToday >= prefs.dailyCap) {
-      await logEvent(input, "throttled", `daily_cap:${prefs.dailyCap}`);
+    const cap = effectiveDailyCap(prefs);
+    if (sentToday >= cap) {
+      await logEvent(input, "throttled", `daily_cap:${cap}:intensity=${prefs.notificationIntensity}`);
       return { status: "throttled", reason: "daily_cap" };
     }
   }
@@ -402,7 +371,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   let androidOk = 0;
   let androidFail = 0;
 
-  // ── Expo (mobile) ──────────────────────────────────────────────────────────
+  // ── Expo (mobile) ─────────────────────────────────────────────────────────
   if (expoTokens.length > 0) {
     const messages: ExpoPushMessage[] = expoTokens.map((t) => ({
       to: t.token,
@@ -432,15 +401,10 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
       return { status: "failed", reason: "expo_error" };
     }
 
-    // Walk tickets in order — Expo returns one ticket per token in input order,
-    // so an "error" ticket with DeviceNotRegistered points at expoTokens[i].
     for (let i = 0; i < tickets.length; i++) {
       const ticket = tickets[i];
       if (ticket && ticket.status === "error") {
         const errCode = ticket.details?.error;
-        // Only prune on per-device "not registered" — InvalidCredentials is
-        // a server/config issue (bad Expo access token, wrong project) and
-        // would wrongly disconnect every token if we deleted on it.
         if (errCode === "DeviceNotRegistered") {
           const tok = expoTokens[i]?.token;
           if (tok) await pruneInvalidToken(tok, `expo:${errCode}`);
@@ -457,7 +421,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     }
   }
 
-  // ── FCM web push (browser / PWA) ───────────────────────────────────────────
+  // ── FCM web push (browser / PWA) ──────────────────────────────────────────
   if (webFcmTokens.length > 0) {
     const results = await Promise.allSettled(
       webFcmTokens.map(async (t) => {
@@ -482,7 +446,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     }
   }
 
-  // ── FCM Android push (KidSchedule native TWA wrapper) ──────────────────────
+  // ── FCM Android push (KidSchedule native TWA wrapper) ────────────────────
   if (androidFcmTokens.length > 0) {
     const results = await Promise.allSettled(
       androidFcmTokens.map(async (t) => {
@@ -507,17 +471,12 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     }
   }
 
-  // Build a platform label reflecting every active send path.
   const platformParts: string[] = [];
   if (expoTokens.length > 0) platformParts.push("expo");
   if (webFcmTokens.length > 0) platformParts.push("web");
   if (androidFcmTokens.length > 0) platformParts.push("android");
   const platform = platformParts.join("+") || "unknown";
 
-  // If every token attempt failed, surface that as "failed" instead of
-  // pretending the notification went out — diagnostics and the recent-
-  // deliveries UI rely on this status to show the correct icon and to
-  // help users understand why their device went quiet.
   const totalOk = expoOk + webOk + androidOk;
   const totalFail = expoFail + webFail + androidFail;
   if (totalOk === 0 && totalFail > 0) {
@@ -545,6 +504,8 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     {
       userId: input.userId,
       category: input.category,
+      intensity: prefs.notificationIntensity,
+      engagementScore: prefs.engagementScore,
       expoOk,
       expoFail,
       webOk,

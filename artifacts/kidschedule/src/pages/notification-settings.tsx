@@ -17,6 +17,8 @@ import {
   requestNativePushPermission,
 } from "@/lib/native-push-bridge";
 import { getApiUrl } from "@/lib/api";
+type NotificationIntensity = "minimal" | "balanced" | "active" | "growth";
+
 type Prefs = {
   routineEnabled: boolean;
   routineItemEnabled: boolean;
@@ -25,62 +27,44 @@ type Prefs = {
   weeklyEnabled: boolean;
   engagementEnabled: boolean;
   goodNightEnabled: boolean;
+  parentingTipsEnabled: boolean;
+  storyTimeEnabled: boolean;
+  phonicsEnabled: boolean;
+  learningActivityEnabled: boolean;
+  milestoneEnabled: boolean;
   timezone: string;
   quietHoursStart: string;
   quietHoursEnd: string;
   dailyCap: number;
+  notificationIntensity: NotificationIntensity;
+  engagementScore: number;
 };
-type TestCategory = "routine" | "routine_item" | "nutrition" | "insights" | "weekly" | "engagement" | "good_night";
+type TestCategory =
+  | "routine" | "routine_item" | "nutrition" | "insights" | "weekly"
+  | "engagement" | "good_night" | "parenting_tips" | "story_time"
+  | "phonics" | "learning_activity" | "milestone";
 type CategoryDef = {
   key: keyof Prefs;
   title: string;
   description: string;
   Icon: typeof Bell;
   testCategory: TestCategory;
+  badge?: "core" | "smart";
 };
-const CATEGORIES: CategoryDef[] = [{
-  key: "routineEnabled",
-  title: "Routine reminders",
-  description: "Morning, evening and bedtime nudges to stay on track.",
-  Icon: Calendar,
-  testCategory: "routine"
-}, {
-  key: "routineItemEnabled",
-  title: "Per-task reminders",
-  description: "A heads-up about 5 minutes before each routine item.",
-  Icon: Calendar,
-  testCategory: "routine_item"
-}, {
-  key: "nutritionEnabled",
-  title: "Nutrition suggestions",
-  description: "Snack ideas, dinner inspiration and meal tips.",
-  Icon: Apple,
-  testCategory: "nutrition"
-}, {
-  key: "insightsEnabled",
-  title: "Amy AI insights",
-  description: "Daily parenting tips tailored to your child's age.",
-  Icon: Sparkles,
-  testCategory: "insights"
-}, {
-  key: "weeklyEnabled",
-  title: "Weekly report",
-  description: "Sunday recap of your child's week.",
-  Icon: BarChart3,
-  testCategory: "weekly"
-}, {
-  key: "engagementEnabled",
-  title: "Friendly nudges",
-  description: "Re-engagement messages and streak rewards.",
-  Icon: Heart,
-  testCategory: "engagement"
-}, {
-  key: "goodNightEnabled",
-  title: "Good night message",
-  description: "Wind-down reminder at bedtime.",
-  Icon: Moon,
-  testCategory: "good_night"
-}];
+const CATEGORIES: CategoryDef[] = [
+  { key: "routineEnabled",         title: "Routine reminders",       description: "Morning, evening and bedtime nudges to stay on track.",      Icon: Calendar,   testCategory: "routine",           badge: "core" },
+  { key: "routineItemEnabled",     title: "Per-task reminders",      description: "A heads-up about 5 minutes before each routine item.",       Icon: Calendar,   testCategory: "routine_item",      badge: "core" },
+  { key: "nutritionEnabled",       title: "Nutrition suggestions",   description: "Snack ideas, dinner inspiration and meal tips.",             Icon: Apple,      testCategory: "nutrition",         badge: "core" },
+  { key: "insightsEnabled",        title: "Ask AMY / Insights",      description: "Daily parenting tips from Amy AI tailored to your child.",   Icon: Sparkles,   testCategory: "insights",          badge: "core" },
+  { key: "engagementEnabled",      title: "Motivation & nudges",     description: "Re-engagement, streak rewards and encouragement.",           Icon: Heart,      testCategory: "engagement",        badge: "core" },
+  { key: "goodNightEnabled",       title: "Sleep & health tips",     description: "Wind-down reminder with age-appropriate sleep tips.",        Icon: Moon,       testCategory: "good_night",        badge: "core" },
+  { key: "weeklyEnabled",          title: "Weekly report",           description: "Sunday recap of your child's week.",                        Icon: BarChart3,  testCategory: "weekly",            badge: "core" },
+  { key: "parentingTipsEnabled",   title: "Parenting tips",          description: "Daily micro-tip at 9 AM — evidence-based & age-specific.",   Icon: Sparkles,   testCategory: "parenting_tips",    badge: "smart" },
+  { key: "storyTimeEnabled",       title: "Story time",              description: "Bedtime story reminder at 8 PM for a calm wind-down.",       Icon: Moon,       testCategory: "story_time",        badge: "smart" },
+  { key: "phonicsEnabled",         title: "Phonics practice",        description: "After-school phonics nudge at 4 PM (preschool & school).",   Icon: Sparkles,   testCategory: "phonics",           badge: "smart" },
+  { key: "learningActivityEnabled",title: "Learning activities",     description: "Mid-morning activity idea — weekday learning or weekend fun.",Icon: BarChart3,  testCategory: "learning_activity", badge: "smart" },
+  { key: "milestoneEnabled",       title: "Milestone alerts",        description: "Monthly check-in on your child's developmental milestones.", Icon: Heart,      testCategory: "milestone",         badge: "smart" },
+];
 /**
  * Inside-the-wrapper state machine — drives WebPushCard rendering when
  * the page is loaded inside the AmyNest Android WebView wrapper.
@@ -447,7 +431,7 @@ export default function NotificationSettingsPage() {
         <div className="h-8 w-8 rounded-full border-2 border-border border-t-transparent animate-spin" />
       </div>;
   }
-  const toggle = (key: keyof Prefs, value: boolean) => {
+  const toggle = (key: keyof Prefs, value: boolean | string) => {
     const next = {
       ...local,
       [key]: value
@@ -470,9 +454,49 @@ export default function NotificationSettingsPage() {
           </div>
           <h1 className="text-2xl font-bold text-white">{t("pages.notification_settings.notifications")}</h1>
         </div>
-        <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
-          {t("pages.notification_settings.choose_which_notifications_you_want_from_amynest_maximum")} {local.dailyCap} {t("pages.notification_settings.per_day_never_during_quiet_hours")}
+        <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
+          {t("pages.notification_settings.smart_subtitle")}
         </p>
+
+        {/* ── Intensity Mode Picker ─────────────────────────────── */}
+        <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
+          {t("pages.notification_settings.intensity_heading")}
+        </h2>
+        <div className="grid grid-cols-2 gap-2 mb-6 sm:grid-cols-4">
+          {(["minimal", "balanced", "active", "growth"] as const).map((mode) => {
+            const caps: Record<typeof mode, number> = { minimal: 3, balanced: 6, active: 9, growth: 12 };
+            const labels: Record<typeof mode, string> = {
+              minimal: t("pages.notification_settings.intensity_minimal"),
+              balanced: t("pages.notification_settings.intensity_balanced"),
+              active: t("pages.notification_settings.intensity_active"),
+              growth: t("pages.notification_settings.intensity_growth"),
+            };
+            const descs: Record<typeof mode, string> = {
+              minimal: t("pages.notification_settings.intensity_minimal_desc"),
+              balanced: t("pages.notification_settings.intensity_balanced_desc"),
+              active: t("pages.notification_settings.intensity_active_desc"),
+              growth: t("pages.notification_settings.intensity_growth_desc"),
+            };
+            const active = local.notificationIntensity === mode;
+            return (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => toggle("notificationIntensity" as keyof Prefs, mode as unknown as boolean)}
+                className={`rounded-xl border p-3 text-left transition-all ${active ? "border-primary bg-primary/20" : "border-border bg-white/[0.04] hover:bg-white/[0.08]"}`}
+              >
+                <div className={`text-sm font-bold mb-0.5 ${active ? "text-white" : "text-muted-foreground"}`}>
+                  {labels[mode]}
+                  {mode === "growth" && <span className="ml-1 text-xs">🚀</span>}
+                </div>
+                <div className="text-xs text-muted-foreground">{descs[mode]}</div>
+                <div className={`text-xs font-semibold mt-1.5 ${active ? "text-primary" : "text-muted-foreground"}`}>
+                  {t("pages.notification_settings.intensity_cap", { cap: caps[mode] })}
+                </div>
+              </button>
+            );
+          })}
+        </div>
 
         {isAmyNestWrapper() && (
           <>
@@ -525,11 +549,12 @@ export default function NotificationSettingsPage() {
           </Card>
         </div>
 
+        {/* Core categories */}
         <h2 className="text-xs uppercase tracking-widest text-primary mb-3">
           {t("pages.notification_settings.notification_types")}
         </h2>
-        <div className="space-y-3">
-          {CATEGORIES.map((cat) => {
+        <div className="space-y-3 mb-6">
+          {CATEGORIES.filter((c) => c.badge === "core").map((cat) => {
             const enabled = Boolean(local[cat.key]);
             const Icon = cat.Icon;
             const title =
@@ -541,22 +566,61 @@ export default function NotificationSettingsPage() {
                 ? t("toasts.notification_settings_page.cat_routine_item_desc")
                 : cat.description;
             return (
-              <Card
-                key={cat.key}
-                className="bg-white/[0.04] border-primary backdrop-blur-md"
-              >
+              <Card key={cat.key} className="bg-white/[0.04] border-primary backdrop-blur-md">
                 <CardContent className="flex items-start gap-4 p-4">
                   <div className="w-10 h-10 rounded-lg bg-primary border border-border flex items-center justify-center shrink-0">
                     <Icon className="w-5 h-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-white">{title}</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {description}
+                    <div className="text-sm text-muted-foreground mt-1">{description}</div>
+                    {enabled && (
+                      <Button type="button" size="sm" variant="ghost"
+                        className="mt-2 h-7 text-muted-foreground hover:text-white hover:bg-primary"
+                        onClick={() => test.mutate(cat.testCategory)} disabled={test.isPending}>
+                        {test.isPending ? t("pages.notification_settings.sending") : t("pages.notification_settings.send_test")}
+                      </Button>
+                    )}
+                  </div>
+                  <Switch checked={enabled} onCheckedChange={v => toggle(cat.key, v)} />
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Smart engine categories */}
+        <h2 className="text-xs uppercase tracking-widest text-primary mb-1">
+          {t("pages.notification_settings.smart_categories_heading")}
+        </h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          {t("pages.notification_settings.smart_categories_desc")}
+        </p>
+        <div className="space-y-3">
+          {CATEGORIES.filter((c) => c.badge === "smart").map((cat) => {
+            const enabled = Boolean(local[cat.key]);
+            const Icon = cat.Icon;
+            return (
+              <Card key={cat.key} className="bg-white/[0.04] border-primary/50 backdrop-blur-md">
+                <CardContent className="flex items-start gap-4 p-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/30 border border-border flex items-center justify-center shrink-0">
+                    <Icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white">{cat.title}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold border border-primary/30">
+                        {t("pages.notification_settings.smart_badge")}
+                      </span>
                     </div>
-                    {enabled && <Button type="button" size="sm" variant="ghost" className="mt-2 h-7 text-muted-foreground hover:text-white hover:bg-primary" onClick={() => test.mutate(cat.testCategory)} disabled={test.isPending}>
-                        {test.isPending ? "Sending…" : "Send test"}
-                      </Button>}
+                    <div className="text-sm text-muted-foreground mt-1">{cat.description}</div>
+                    {enabled && (
+                      <Button type="button" size="sm" variant="ghost"
+                        className="mt-2 h-7 text-muted-foreground hover:text-white hover:bg-primary"
+                        onClick={() => test.mutate(cat.testCategory)} disabled={test.isPending}>
+                        {test.isPending ? t("pages.notification_settings.sending") : t("pages.notification_settings.send_test")}
+                      </Button>
+                    )}
                   </div>
                   <Switch checked={enabled} onCheckedChange={v => toggle(cat.key, v)} />
                 </CardContent>
