@@ -11,6 +11,14 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 import { API_BASE_URL } from "@/constants/api";
 import { ActivityIndicator, LogBox, StyleSheet, View } from "react-native";
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
+import { Ionicons } from "@expo/vector-icons";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PremiumSplash from "@/components/PremiumSplash";
@@ -51,6 +59,10 @@ LogBox.ignoreLogs([
   "No route named",
   // Expo AV / Audio session warnings on simulators that have no audio HW.
   "AVAudioSession",
+  // expo-notifications remote push not supported in Expo Go (SDK 53+).
+  // Remote push works in development builds; this warning is expected in Expo Go.
+  "expo-notifications: Android Push notifications",
+  "expo-notifications: remote notifications",
 ]);
 
 initCrashReporter();
@@ -286,10 +298,26 @@ function RootLayoutNav() {
 export default function RootLayout() {
   const [splashVisible, setSplashVisible] = useState(true);
 
-  // Hide the native splash on first mount so our premium animated splash takes over.
+  // Load Inter + Ionicons fonts before rendering; keeps native splash visible
+  // until fonts are ready so users never see bare Unicode glyphs.
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    // Ionicons glyph font — must be loaded explicitly in Expo Go (SDK 53+).
+    // Without this, icon code points render as CJK characters on Android.
+    ...Ionicons.font,
+  });
+
+  // Hide the native splash only after fonts are ready.
   useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {});
-  }, []);
+    if (fontsLoaded) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
 
   return (
     <FirebaseAuthProvider>
