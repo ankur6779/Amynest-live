@@ -49,6 +49,7 @@ import safetyRouter from "./safety";
 import speechRouter from "./speech";
 import debugRouter from "./debug";
 import authRouter from "./auth";
+import environmentRouter from "./environment";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -126,5 +127,6 @@ router.use(explainRouter);
 router.use(safetyRouter);
 router.use(speechRouter);
 router.use(debugRouter);
+router.use(environmentRouter);
 
 export default router;
