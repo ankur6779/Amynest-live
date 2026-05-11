@@ -1,0 +1,232 @@
+Redesign the AmyNest native mobile app splash/onboarding entry screen to visually match the premium animated web splash screen reference attached by the user.
+
+GOAL:
+The native splash experience must feel:
+
+- cinematic
+- premium
+- futuristic
+- emotionally warm
+- Apple-level polished
+- AI-first
+- patent-backed
+- smooth and modern
+
+The current native splash screen feels basic/static.
+Rebuild it completely.
+
+====================================================
+DESIGN DIRECTION
+
+Use the attached website splash screen as the primary visual reference.
+
+Visual identity:
+
+- deep dark purple background
+- premium neon pink/purple gradient glow
+- soft ambient lighting
+- glossy circular AI core
+- futuristic parenting aesthetic
+- subtle motion
+- elegant typography
+- minimal but high-end
+
+The experience should feel like:
+“the world’s most advanced AI parenting platform.”
+
+====================================================
+SCREEN STRUCTURE
+
+CENTERPIECE:
+Large glowing circular AI ring in center.
+
+Inside text:
+MEET
+AMY
+
+Typography:
+
+- premium sans-serif
+- semi-bold
+- soft glow
+- animated opacity fade
+
+====================================================
+BACKGROUND
+
+Create:
+
+- layered dark gradient
+- animated radial glows
+- slow ambient pulse
+- soft floating particles
+- subtle glassmorphism
+- premium depth
+
+Colors:
+
+- deep violet
+- neon purple
+- magenta pink
+- subtle blue highlights
+
+====================================================
+ANIMATIONS
+
+Implement smooth native animations.
+
+Required:
+
+1. Circular glow pulse
+2. Soft breathing animation
+3. Fade-in text
+4. Floating ambient particles
+5. Button shimmer
+6. Gradient movement
+7. Glow intensity transitions
+
+Animation style:
+
+- slow
+- elegant
+- calming
+- premium
+- not flashy
+
+Use:
+
+- React Native Reanimated
+- Expo Linear Gradient
+- Moti or Reanimated animations
+- native GPU-friendly performance
+
+====================================================
+PATENT PENDING BRANDING
+
+Add elegant premium badge:
+
+“Powered by Patent-Pending Adaptive AI Technology”
+
+Style:
+
+- glassmorphism capsule
+- subtle border glow
+- animated opacity pulse
+- premium typography
+
+IMPORTANT:
+Do NOT make it look spammy or cheap.
+It should feel:
+
+- enterprise-grade
+- futuristic
+- credible
+- Apple/Anthropic/OpenAI style
+
+====================================================
+PRIMARY CTA
+
+Create premium CTA button:
+
+“Start Parenting Smart →”
+
+Button style:
+
+- large rounded capsule
+- pink/purple animated gradient
+- soft glow shadow
+- shimmer animation
+- tactile press effect
+
+====================================================
+NATIVE MOBILE OPTIMIZATION
+
+Must work perfectly on:
+
+- Android
+- iPhone
+- tablets
+
+Requirements:
+
+- safe-area support
+- notch-safe
+- responsive scaling
+- no lag
+- no flickering
+- optimized startup performance
+
+====================================================
+TECH STACK
+
+Use:
+
+- React Native
+- Expo
+- Expo Linear Gradient
+- Reanimated
+- Moti
+- BlurView if needed
+
+====================================================
+SPLASH EXPERIENCE FLOW
+
+Flow:
+
+1. App opens
+2. Dark ambient background fades in
+3. Circular AI ring slowly appears
+4. “MEET AMY” fades in
+5. Patent-pending badge animates
+6. CTA button slides upward
+7. Soft glow pulse continues
+
+====================================================
+OPTIONAL ADVANCED EFFECTS
+
+If performance allows:
+
+- parallax glow movement
+- slow orbit particles
+- shader-like gradient movement
+- dynamic ambient lighting
+
+====================================================
+IMPORTANT UX REQUIREMENTS
+
+The splash screen must:
+
+- instantly communicate premium AI product
+- improve trust
+- feel globally competitive
+- emotionally connect with parents
+- strengthen patent-pending branding
+- feel like a billion-dollar startup app
+
+====================================================
+FINAL OUTPUT REQUIREMENTS
+
+Generate:
+
+- full React Native component
+- animation logic
+- responsive styles
+- reusable theme constants
+- optimized gradients
+- production-ready code
+- clean architecture
+
+Create:
+
+- SplashScreen.tsx
+- animation hooks
+- theme/colors file
+- reusable glow components
+
+====================================================
+FINAL EXPERIENCE GOAL
+
+The user should feel:
+
+“This is not a normal parenting app.
+This feels like the future of AI-powered parenting.”
