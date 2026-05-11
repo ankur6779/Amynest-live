@@ -127,4 +127,106 @@ describe("applyEnvironmentalEnrichments", () => {
     applyEnvironmentalEnrichments(sampleItems, ctx({ uvBucket: "extreme" }));
     assert.deepEqual(sampleItems, original);
   });
+
+  // ── Phase-2 enrichments (circadian / energy / stress / predictive / mood)
+
+  const studyItems: EnrichableItem[] = [
+    { time: "07:00", activity: "Wake Up", duration: 15, category: "wake" },
+    { time: "08:30", activity: "Morning Study Block", duration: 45, category: "learning" },
+    { time: "12:00", activity: "Lunch", duration: 30, category: "meal" },
+    { time: "16:00", activity: "Indoor Free Play", duration: 30, category: "play" },
+    { time: "19:30", activity: "Story Time", duration: 15, category: "bonding" },
+    { time: "20:00", activity: "Wind-Down & Cuddle", duration: 15, category: "wind-down" },
+    { time: "20:30", activity: "Sleep Time", duration: 0, category: "sleep" },
+  ];
+
+  it("annotates study blocks that fall inside a circadian focus window", () => {
+    const r = applyEnvironmentalEnrichments(studyItems, ctx({ ageGroup: "early_school_5_10" }));
+    const study = r.items.find((i) => i.activity === "Morning Study Block");
+    assert.match(study?.notes ?? "", /focus window/i);
+    assert.ok(r.extraAdaptations.some((s) => s.toLowerCase().includes("circadian")));
+  });
+
+  it("annotates wind-down blocks inside the melatonin support window", () => {
+    const r = applyEnvironmentalEnrichments(studyItems, ctx({ ageGroup: "early_school_5_10" }));
+    const wd = r.items.find((i) => i.activity === "Wind-Down & Cuddle");
+    assert.match(wd?.notes ?? "", /melatonin/i);
+  });
+
+  it("adds a darker-day note to wind-down when circadian profile is dim", () => {
+    const r = applyEnvironmentalEnrichments(studyItems, ctx({
+      ageGroup: "early_school_5_10",
+      circadianLightProfile: "early_dark",
+    }));
+    const wd = r.items.find((i) => i.activity === "Wind-Down & Cuddle");
+    assert.match(wd?.notes ?? "", /dimmer than usual/i);
+  });
+
+  it("adds weather-energy break guidance to study blocks in heatwave", () => {
+    const r = applyEnvironmentalEnrichments(studyItems, ctx({
+      ageGroup: "early_school_5_10",
+      weatherCondition: "heatwave",
+    }));
+    const study = r.items.find((i) => i.activity === "Morning Study Block");
+    assert.match(study?.notes ?? "", /drains focus|break every/i);
+    assert.ok(r.extraAdaptations.some((s) => s.toLowerCase().includes("intensity")));
+  });
+
+  it("does not add weather-energy guidance when condition is neutral", () => {
+    const r = applyEnvironmentalEnrichments(studyItems, ctx({
+      ageGroup: "early_school_5_10",
+      weatherCondition: "sunny",
+      uvBucket: "low",
+      aqiBucket: "good",
+      sensoryStressLevel: "low",
+      hydrationNeedLevel: "low",
+      circadianLightProfile: "normal",
+    }));
+    const study = r.items.find((i) => i.activity === "Morning Study Block");
+    assert.doesNotMatch(study?.notes ?? "", /drains focus/i);
+  });
+
+  it("adds a stress-factor calming hint on stormy days", () => {
+    const r = applyEnvironmentalEnrichments(studyItems, ctx({ weatherCondition: "stormy" }));
+    const wdOrStory = r.items.find((i) => i.activity === "Story Time" || i.activity === "Wind-Down & Cuddle");
+    assert.match(wdOrStory?.notes ?? "", /storm stress/i);
+    assert.ok(r.extraAdaptations.some((s) => s.toLowerCase().includes("calming guidance")));
+  });
+
+  it("appends a predictive heads-up adaptation when a shift is incoming", () => {
+    const r = applyEnvironmentalEnrichments(
+      studyItems,
+      ctx({
+        predictedWeatherShift: {
+          label: "incoming storm in 2h",
+          kind: "incoming_storm",
+          etaHours: 2,
+          confidence: 0.8,
+        },
+      }),
+    );
+    assert.ok(r.extraAdaptations.some((s) => s.toLowerCase().startsWith("heads-up")));
+  });
+
+  it("does NOT append a predictive heads-up when shift is stable", () => {
+    const r = applyEnvironmentalEnrichments(
+      studyItems,
+      ctx({
+        predictedWeatherShift: { label: "stable", kind: "stable", etaHours: 0, confidence: 1 },
+      }),
+    );
+    assert.ok(!r.extraAdaptations.some((s) => s.toLowerCase().startsWith("heads-up")));
+  });
+
+  it("adds emotional bonding hint matched to the day's mood", () => {
+    const r = applyEnvironmentalEnrichments(studyItems, ctx({ weatherCondition: "rainy" }));
+    const story = r.items.find((i) => i.activity === "Story Time");
+    assert.match(story?.notes ?? "", /mood today/i);
+    assert.ok(r.extraAdaptations.some((s) => s.toLowerCase().includes("bonding")));
+  });
+
+  it("emotional pass remains a no-op for weather conditions outside the dataset", () => {
+    const r = applyEnvironmentalEnrichments(studyItems, ctx({ weatherCondition: "foggy" }));
+    assert.ok(!r.extraAdaptations.some((s) => s.toLowerCase().includes("bonding")));
+  });
 });
