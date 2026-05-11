@@ -270,6 +270,12 @@ export default function WelcomeScreen() {
 
             <Text style={styles.smallNote}>{t("landing.hero_free")}</Text>
 
+            {/* Patent Pending trust line */}
+            <View style={styles.patentTrustRow}>
+              <Ionicons name="shield-checkmark" size={11} color="rgba(167,139,250,0.70)" />
+              <Text style={styles.patentTrustText}>{t("patent_pending.trust_line")}</Text>
+            </View>
+
             {/* Sign-in line */}
             <Link href="/sign-in" asChild>
               <TouchableOpacity activeOpacity={0.7} style={{ marginTop: 14 }} testID="link-sign-in-hero">
@@ -664,6 +670,11 @@ export default function WelcomeScreen() {
               </Text>
             </View>
             <Text style={styles.footerTag}>{t("screens.welcome.where_smart_parenting_starts")}</Text>
+            {/* Patent Pending badge */}
+            <View style={styles.patentBadge}>
+              <Ionicons name="ribbon" size={10} color="rgba(167,139,250,0.65)" />
+              <Text style={styles.patentBadgeText}>{t("patent_pending.footer_label")}</Text>
+            </View>
           </View>
         </ScrollView>
       </LinearGradient>
@@ -1495,5 +1506,45 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "rgba(255,255,255,0.40)",
     fontFamily: "Inter_500Medium",
+  },
+
+  /* Patent Pending — hero trust line */
+  patentTrustRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(167,139,250,0.20)",
+    backgroundColor: "rgba(167,139,250,0.07)",
+  },
+  patentTrustText: {
+    fontSize: 10,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(167,139,250,0.70)",
+    letterSpacing: 0.3,
+  },
+
+  /* Patent Pending — footer badge */
+  patentBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(167,139,250,0.18)",
+    backgroundColor: "rgba(167,139,250,0.06)",
+  },
+  patentBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter_600SemiBold",
+    color: "rgba(167,139,250,0.60)",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
 });
