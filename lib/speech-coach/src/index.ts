@@ -14,6 +14,7 @@ export {
   getMilestonesForAgeMonths,
   getGamesForAgeMonths,
   getPromptsForAgeMonths,
+  getPromptsPool,
   getAllAffirmations,
   getAllGuidanceCards,
   computeWeeklyProgressScore,
