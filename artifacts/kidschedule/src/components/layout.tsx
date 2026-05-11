@@ -15,6 +15,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
 import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
 import { NotificationPromptModal } from "@/components/notification-prompt-modal";
+import { SpotlightTour } from "@/components/spotlight-tour";
 function SmartParentBadge({
   className = ""
 }: {
@@ -263,7 +264,7 @@ export function Layout({
           <nav className="flex flex-1 flex-col gap-1 p-4">
             {NAV_ITEMS.map(item => {
             const isActive = location === item.href || location.startsWith(item.href);
-            return <Link key={item.href} href={item.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+            return <Link key={item.href} href={item.href} data-tour={item.href === "/dashboard" ? "dashboard" : item.href === "/routines" ? "routines" : item.href === "/amy-coach" ? "amy-coach" : item.href === "/parenting-hub" ? "parenting-hub" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <item.icon className="h-5 w-5 shrink-0" />
                   <span className="flex-1 truncate">{t(item.labelKey)}</span>
                   {item.badge && <span className="shrink-0 inline-flex items-center rounded-full bg-gradient-to-r from-primary to-primary px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
@@ -332,7 +333,7 @@ export function Layout({
           {BOTTOM_NAV_ITEMS.map(item => {
           const isActive = location === item.href || location.startsWith(item.href + "/");
           if (item.center) {
-            return <Link key={item.href} href={item.href} className="relative flex flex-col items-center justify-end -translate-y-5">
+            return <Link key={item.href} href={item.href} data-tour="amy-coach" className="relative flex flex-col items-center justify-end -translate-y-5">
                   <div className={`flex h-[60px] w-[60px] items-center justify-center rounded-full text-white transition-transform active:scale-90 ${isActive ? "bg-gradient-to-br from-primary to-primary shadow-[0_10px_25px_rgba(99,102,241,0.55)] ring-2 ring-white/20" : "bg-gradient-to-br from-primary to-primary shadow-[0_8px_20px_rgba(99,102,241,0.45)]"}`}>
                     <item.icon className="h-7 w-7" />
                   </div>
@@ -341,7 +342,7 @@ export function Layout({
                   </span>
                 </Link>;
           }
-          return <Link key={item.href} href={item.href} className={`relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+          return <Link key={item.href} href={item.href} data-tour={item.href === "/dashboard" ? "dashboard" : item.href === "/routines" ? "routines" : item.href === "/parenting-hub" ? "parenting-hub" : undefined} className={`relative flex flex-1 flex-col items-center justify-center gap-1 px-1 py-2 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                 <item.icon className={`h-5 w-5 ${isActive ? "fill-primary" : ""}`} />
                 <span className="text-[11px] font-medium leading-none">{t(item.labelKey)}</span>
                 {isActive && <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-muted" />}
@@ -352,5 +353,8 @@ export function Layout({
 
       {/* Floating Amy AI assistant button */}
       <AmyFab />
+
+      {/* Premium spotlight onboarding tour — auto-shows once after first login */}
+      <SpotlightTour />
     </div>;
 }

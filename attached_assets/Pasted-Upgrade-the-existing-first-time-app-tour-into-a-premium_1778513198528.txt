@@ -1,0 +1,247 @@
+Upgrade the existing first-time app tour into a premium interactive spotlight onboarding experience.
+
+GOAL:
+Guide new users through the app step-by-step with cinematic focus highlights on the main navigation and key features.
+
+The experience should feel:
+
+* premium
+* smooth
+* modern
+* Apple-quality
+* emotionally impressive
+
+IMPORTANT:
+Keep the existing 5-page onboarding flow, but AFTER onboarding, launch this interactive app walkthrough automatically for first-time users.
+
+---
+
+1. INTERACTIVE SPOTLIGHT TOUR
+
+---
+
+Create a guided spotlight walkthrough.
+
+Behavior:
+
+* entire screen dims with dark overlay
+* only selected area remains fully visible
+* highlighted element gets glow/ring effect
+* smooth animated transitions between steps
+
+Style inspiration:
+
+* Duolingo
+* Notion
+* Headspace
+* Apple onboarding
+
+---
+
+2. WALKTHROUGH ORDER
+
+---
+
+STEP 1:
+Highlight:
+🏠 Dashboard
+
+Message:
+“Your smart parenting home — routines, progress, and daily insights in one place.”
+
+---
+
+STEP 2:
+Highlight:
+📅 Patent-Pending Routine System
+
+Highlight:
+Routine tab + Today card
+
+Message:
+“Generate AI-powered child routines personalized to your child’s age, habits, sleep, and learning goals.”
+
+Add small badge:
+✨ Patent Pending
+
+---
+
+STEP 3:
+Highlight:
+🧠 Amy Coach
+
+Highlight center navigation button.
+
+Message:
+“Meet your AI parenting coach for routines, learning help, emotional support, and child guidance.”
+
+Add:
+subtle glow pulse animation.
+
+---
+
+STEP 4:
+Highlight:
+📚 Parent Hub
+
+Message:
+“Explore premium stories, phonics, worksheets, learning tools, speech coaching, and parenting support.”
+
+---
+
+STEP 5:
+Highlight:
+✨ AMY AI Floating Assistant
+
+Highlight:
+floating Amy AI bubble.
+
+Message:
+“Ask AMY anything — parenting help, routines, child learning, emotions, speech, habits, and more.”
+
+Add:
+
+* floating neon glow
+* slight breathing animation
+* eye blink animation if available
+
+---
+
+3. VISUAL EFFECTS
+
+---
+
+Add:
+
+* blurred/dimmed background overlay
+* spotlight cutout around focused element
+* neon glow ring around target
+* smooth fade animations
+* premium transitions
+
+Do NOT use cheap tooltip styling.
+
+---
+
+4. TOOLTIP DESIGN
+
+---
+
+Tooltip style:
+
+* dark glassmorphism card
+* soft neon border
+* rounded corners
+* subtle shadow
+
+Include:
+
+* title
+* short explanation
+* step counter
+
+Example:
+“2 of 5”
+
+---
+
+5. NAVIGATION CONTROLS
+
+---
+
+Buttons:
+
+* Next
+* Skip
+* Done
+
+Allow user to:
+
+* skip anytime
+* close anytime
+
+---
+
+6. AUTO SCROLL SUPPORT
+
+---
+
+If highlighted item is offscreen:
+
+* auto scroll smoothly
+* then show spotlight
+
+---
+
+7. ANIMATION DETAILS
+
+---
+
+Add:
+
+* smooth zoom focus
+* soft glow pulse
+* fade between steps
+* floating effect on highlighted elements
+
+Timing:
+
+* smooth and slow
+* premium feel
+
+---
+
+8. FIRST-TIME USER ONLY
+
+---
+
+Show automatically:
+
+* after signup/login
+* only first launch
+
+Store:
+tourCompleted = true
+
+Allow replay later from:
+Settings → “App Tour”
+
+---
+
+9. MOBILE UX
+
+---
+
+Ensure:
+
+* safe area support
+* tooltip never overlaps nav bar
+* works on all screen sizes
+
+---
+
+10. FINAL EXPERIENCE GOAL
+
+---
+
+The walkthrough should make users feel:
+“Wow, this app is premium and thoughtfully designed.”
+
+It should:
+
+* explain app value clearly
+* reduce confusion
+* increase feature discovery
+* improve retention
+
+---
+
+## DELIVERABLE
+
+* premium spotlight walkthrough
+* dimmed cinematic onboarding
+* guided navigation discovery
+* highlight bottom navigation sequentially
+* smooth animations
+* skippable anytime
+* polished first-time user experience

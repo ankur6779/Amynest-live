@@ -18,6 +18,7 @@ import { brand, ACCENT_PINK } from "@/constants/colors";
 import { DrawerProvider, useDrawer } from "@/contexts/DrawerContext";
 import { NavDrawer } from "@/components/NavDrawer";
 import AmyFab from "@/components/AmyFab";
+import { SpotlightTour } from "@/components/SpotlightTour";
 
 type TabKey = "index" | "routines" | "coach" | "hub";
 
@@ -280,6 +281,8 @@ export default function TabLayout() {
       <HamburgerButton />
       <NavDrawer />
       <AmyFab />
+      {/* Premium spotlight onboarding tour — auto-shows once after first launch */}
+      <SpotlightTour />
     </DrawerProvider>
   );
 }
