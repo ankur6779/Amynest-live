@@ -123,7 +123,7 @@ test("quiet hours block per-item dispatch with throttled status", async () => {
   await cleanup(uid);
 });
 
-test("daily cap blocks per-item dispatch once reached", async () => {
+test("daily cap blocks non-timebound dispatch once reached", async () => {
   const uid = `cap-${Date.now()}`;
   await cleanup(uid);
   await getOrCreatePreferences(uid);
@@ -136,7 +136,7 @@ test("daily cap blocks per-item dispatch once reached", async () => {
   for (let i = 0; i < 3; i++) {
     await db.insert(notificationLogTable).values({
       userId: uid,
-      category: "routine_item",
+      category: "routine",
       title: `earlier-${i}`,
       body: "earlier",
       status: "sent",
@@ -148,15 +148,57 @@ test("daily cap blocks per-item dispatch once reached", async () => {
     token: `cap_${Math.random()}`,
     platform: "web",
   });
+  // Non-timebound category (routine) should be throttled when cap is hit.
+  const result = await dispatchNotification({
+    userId: uid,
+    category: "routine",
+    title: "Morning reminder",
+    body: "Time to start your routine",
+    dedupKey: `routine:r:${Date.now()}`,
+  });
+  assert.equal(result.status, "throttled");
+  assert.equal(result.reason, "daily_cap");
+  await cleanup(uid);
+});
+
+test("routine_item bypasses daily cap — time-sensitive task reminders always deliver", async () => {
+  const uid = `cap-item-${Date.now()}`;
+  await cleanup(uid);
+  await getOrCreatePreferences(uid);
+  // Fill up the cap completely with non-timebound notifications.
+  await db
+    .update(notificationPreferencesTable)
+    .set({ notificationIntensity: "minimal" })
+    .where(eq(notificationPreferencesTable.userId, uid));
+  for (let i = 0; i < 3; i++) {
+    await db.insert(notificationLogTable).values({
+      userId: uid,
+      category: "routine",
+      title: `filler-${i}`,
+      body: "filler",
+      status: "sent",
+      platform: "web",
+    });
+  }
+  await db.insert(pushTokensTable).values({
+    userId: uid,
+    token: `ExponentPushToken[cap_item_${Math.random()}]`,
+    platform: "expo",
+  });
+  // routine_item should still go through (sent or failed on Expo, NOT throttled).
   const result = await dispatchNotification({
     userId: uid,
     category: "routine_item",
     title: "Brush teeth",
-    body: "Time to brush",
+    body: "5 minutes to go!",
     dedupKey: `routine_item:r:0:${Date.now()}`,
   });
-  assert.equal(result.status, "throttled");
-  assert.equal(result.reason, "daily_cap");
+  // Status is "sent" (Expo ticket ok) or "failed" (Expo ticket error) —
+  // it must NOT be "throttled" with reason "daily_cap".
+  assert.notEqual(result.status, "throttled");
+  if (result.status === "throttled") {
+    assert.notEqual(result.reason, "daily_cap");
+  }
   await cleanup(uid);
 });
 

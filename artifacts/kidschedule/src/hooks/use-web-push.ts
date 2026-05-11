@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "./use-auth-fetch";
 import { useToast } from "./use-toast";
+import { setupForegroundNotifications } from "@/lib/firebase";
 
 export type WebPushStatus =
   | "idle"
@@ -36,6 +37,12 @@ export function useWebPush() {
   useEffect(() => {
     const current = getPermissionStatus();
     setStatus(current);
+
+    // Start foreground listener immediately if permission was already granted
+    // in a previous session (e.g. app reloaded after the user enabled push).
+    if (current === "granted") {
+      void setupForegroundNotifications();
+    }
 
     if (!isSupportedBrowser()) return;
 
@@ -127,6 +134,9 @@ export function useWebPush() {
         }),
       });
       if (!r.ok) throw new Error("Failed to register token with server");
+
+      // Start foreground listener so notifications show even when app is open.
+      await setupForegroundNotifications();
 
       setStatus("granted");
       toast({ title: t("toasts.use_web_push.enabled") });
