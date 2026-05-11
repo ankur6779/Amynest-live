@@ -1,0 +1,216 @@
+Update the AmyNest notification system to support intelligent high-frequency engagement notifications instead of the current hard limit of only 4 notifications per day.
+
+GOAL:
+Increase daily engagement, retention, and habit formation without making notifications feel spammy.
+
+---
+
+1. REMOVE HARD LIMIT OF 4/DAY
+
+---
+
+Current system:
+
+- max 4 notifications/day
+
+Replace with:
+
+- smart adaptive notification engine
+
+New target:
+
+- allow 10–12 notifications/day maximum
+- dynamically adjust based on user engagement
+
+---
+
+2. SMART NOTIFICATION CATEGORIES
+
+---
+
+Create notification categories:
+
+1. Parenting Tips
+2. Child Routine Reminders
+3. Story Time
+4. Phonics Practice
+5. Learning Activities
+6. Motivation / Encouragement
+7. Ask AMY Suggestions
+8. Progress Celebrations
+9. Sleep / Health Tips
+10. Screen Time Guidance
+11. Weekend Activities
+12. Milestone Alerts
+
+---
+
+3. INTELLIGENT FREQUENCY SYSTEM
+
+---
+
+Do NOT send all notifications randomly.
+
+Build smart spacing:
+
+Morning:
+
+- parenting insight
+- routine reminder
+
+Afternoon:
+
+- learning activity
+- phonics/story reminder
+
+Evening:
+
+- bedtime/story/routine
+
+Weekend:
+
+- family activities
+- bonding suggestions
+
+---
+
+4. USER ACTIVITY ADAPTATION
+
+---
+
+If user:
+
+- opens app frequently → allow more notifications
+- ignores notifications → reduce frequency automatically
+
+Create:
+
+- engagement score system
+
+---
+
+5. QUIET HOURS
+
+---
+
+Keep quiet hours protection:
+
+- no notifications during sleep hours
+- configurable by parent
+
+---
+
+6. CATEGORY PREFERENCES
+
+---
+
+Allow parent to:
+
+- enable/disable categories
+- choose notification intensity:
+  - Minimal
+  - Balanced
+  - Active
+  - Growth Mode
+
+---
+
+7. GROWTH MODE (NEW)
+
+---
+
+Add optional mode:
+"Growth Mode 🚀"
+
+This mode:
+
+- allows higher engagement notifications
+- up to 10–12/day
+- ideal for active parents
+
+---
+
+8. CONTEXT-AWARE NOTIFICATIONS
+
+---
+
+Use:
+
+- child age
+- app usage
+- unfinished activities
+- routines
+- phonics progress
+- story history
+
+to generate relevant notifications.
+
+Examples:
+
+- “Arjun has not completed today’s phonics activity.”
+- “Bedtime story waiting tonight 🌙”
+- “Try a 5-minute learning activity today.”
+
+---
+
+9. AVOID SPAM FEEL
+
+---
+
+Add:
+
+- random timing variation
+- varied copywriting
+- rotating templates
+- cooldown logic
+
+Prevent repetitive notifications.
+
+---
+
+10. AI-POWERED NOTIFICATION ENGINE
+
+---
+
+Prepare backend for future:
+
+- AI-generated parenting nudges
+- personalized learning reminders
+- predictive engagement timing
+
+---
+
+11. UI UPDATE
+
+---
+
+Update Notifications screen text:
+
+OLD:
+"Maximum 4 per day"
+
+NEW:
+"Smart personalized notifications based on your child’s routine and activity."
+
+---
+
+12. ANALYTICS
+
+---
+
+Track:
+
+- open rate
+- click rate
+- dismissed notifications
+- category performance
+- best delivery time
+
+---
+
+DELIVERABLE:
+
+- scalable smart notification engine
+- 10–12 adaptive notifications/day
+- better retention and re-engagement
+- non-spam premium experience
