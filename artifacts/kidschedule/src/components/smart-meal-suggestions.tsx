@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useAmyVoice } from "@/hooks/use-amy-voice";
 import { AmyIcon } from "@/components/amy-icon";
-import { Utensils, X, Volume2, VolumeX, ChefHat, Flame, Clock, Loader2, Sparkles } from "lucide-react";
+import { Utensils, X, Volume2, VolumeX, ChefHat, Flame, Clock, Loader2, Sparkles, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 interface AiMeal {
   id: string;
@@ -60,6 +60,7 @@ export function SmartMealSuggestions() {
     t
   } = useTranslation();
   const authFetch = useAuthFetch();
+  const [collapsed, setCollapsed] = useState(true);
   const [audience, setAudience] = useState<Audience>("kids_tiffin");
   const [region, setRegion] = useState<string>("pan_indian");
   const [country, setCountry] = useState<string | undefined>(undefined);
@@ -145,8 +146,13 @@ export function SmartMealSuggestions() {
     inputRef.current?.focus();
   };
   return <div className="rounded-2xl border border-border dark:border-border bg-gradient-to-br from-muted via-white to-muted dark:from-card dark:via-muted dark:to-card overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-3.5 border-b border-border dark:border-border flex items-center justify-between gap-3">
+      {/* Header — click to expand / collapse */}
+      <button
+        type="button"
+        onClick={() => setCollapsed(c => !c)}
+        className="w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left cursor-pointer"
+        aria-expanded={!collapsed}
+      >
         <div className="flex items-center gap-2 min-w-0">
           <div className="h-9 w-9 rounded-xl bg-muted dark:bg-card flex items-center justify-center text-lg shrink-0">
             🍱
@@ -160,84 +166,95 @@ export function SmartMealSuggestions() {
             </p>
           </div>
         </div>
-        {/* Audience toggle */}
-        <div className="flex bg-white/70 dark:bg-card border border-border rounded-full p-0.5 shrink-0">
-          <button onClick={() => {
-          setAudience("kids_tiffin");
-          setMeals([]);
-          setHasGenerated(false);
-        }} className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${audience === "kids_tiffin" ? "bg-primary text-white shadow" : "text-muted-foreground hover:text-foreground"}`} data-testid="meals-tab-kids">
-            {t("components.smart_meal_suggestions.kids")}
-          </button>
-          <button onClick={() => {
-          setAudience("parent_healthy");
-          setMeals([]);
-          setHasGenerated(false);
-        }} className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${audience === "parent_healthy" ? "bg-primary text-white shadow" : "text-muted-foreground hover:text-foreground"}`} data-testid="meals-tab-parent">
-            {t("components.smart_meal_suggestions.parent")}
-          </button>
-        </div>
-      </div>
-
-      {/* Query input area */}
-      <div className="px-4 pt-4 pb-3">
-        <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
-          {t("components.smart_meal_suggestions.what_would_you_like_to_cook_today")}
-        </label>
-        <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} maxLength={300} className="w-full h-11 px-3.5 rounded-xl border border-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-border transition-all" data-testid="meals-query-input" />
-
-        {/* Quick suggestion chips */}
-        <div className="flex flex-wrap gap-1.5 mt-2.5">
-          {placeholders.slice(1).map(q => <button key={q} type="button" onClick={() => handleSuggestionClick(q)} className="text-[11px] px-2.5 py-1 rounded-full border border-dashed border-border dark:border-border hover:border-border hover:bg-muted dark:hover:bg-card text-muted-foreground hover:text-foreground transition-all">
-              {q}
-            </button>)}
-        </div>
-
-        {/* Generate button */}
-        <button type="button" onClick={() => void handleGenerate()} disabled={loading} className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.98]" data-testid="meals-generate-btn">
-          {loading ? <>
-              <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-              {t("components.smart_meal_suggestions.amy_is_cooking_up_recipes")}
-            </> : <>
-              <Sparkles className="h-4 w-4" />
-              {t("components.smart_meal_suggestions.generate_with_amy_ai")}
-            </>}
-        </button>
-      </div>
-
-      {/* Amy message */}
-      {amyMessage && !loading && <div className="px-4 pb-2">
-          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/80 dark:bg-card border border-border dark:border-border">
-            <AmyIcon size={18} bounce />
-            <p className="text-[12.5px] leading-snug text-foreground/90">{amyMessage}</p>
-          </div>
-        </div>}
-
-      {/* Results */}
-      <div ref={resultsRef} className="pb-4">
-        {loading ? <div className="flex gap-3 px-4 overflow-hidden">
-            {[0, 1, 2, 3, 4].map(i => <div key={i} className="shrink-0 w-[160px] h-[200px] rounded-2xl bg-muted animate-pulse" />)}
-          </div> : fetchError ? <div className="mx-4 p-4 rounded-xl bg-muted dark:bg-card border border-border dark:border-border text-center">
-            <p className="text-sm text-primary dark:text-primary font-medium">{fetchError}</p>
-            <button type="button" onClick={() => void handleGenerate()} className="mt-2 text-xs text-primary dark:text-primary underline font-bold">
-              {t("components.smart_meal_suggestions.try_again")}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Audience toggle — stop propagation so it doesn't toggle collapse */}
+          <div
+            className="flex bg-white/70 dark:bg-card border border-border rounded-full p-0.5"
+            onClick={e => e.stopPropagation()}
+          >
+            <button type="button" onClick={() => {
+              setAudience("kids_tiffin");
+              setMeals([]);
+              setHasGenerated(false);
+            }} className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${audience === "kids_tiffin" ? "bg-primary text-white shadow" : "text-muted-foreground hover:text-foreground"}`} data-testid="meals-tab-kids">
+              {t("components.smart_meal_suggestions.kids")}
             </button>
-          </div> : meals.length > 0 ? <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-2 scroll-smooth" style={{
-        scrollbarWidth: "thin"
-      }}>
-            {meals.map((m, i) => <MealCard key={m.id} meal={m} showCalories={audience === "parent_healthy"} onOpen={() => setOpenMeal(m)} style={{
-          animationDelay: `${i * 60}ms`
-        }} />)}
-          </div> : !hasGenerated ? <div className="px-4 py-5 text-center">
-            <div className="text-3xl mb-2">🍱</div>
-            <p className="text-sm text-muted-foreground">
-              {t("components.smart_meal_suggestions.type_what_you_want_to_cook_above_and_hit")}{" "}
-              <span className="font-bold text-primary">{t("components.smart_meal_suggestions.generate")}</span> {t("components.smart_meal_suggestions.amy_will_create_personalised_recipes_just_for_you")}
-            </p>
-          </div> : <div className="px-4 py-4 text-center text-sm text-muted-foreground">
-            {t("components.smart_meal_suggestions.no_meals_found_try_a_different_description")}
+            <button type="button" onClick={() => {
+              setAudience("parent_healthy");
+              setMeals([]);
+              setHasGenerated(false);
+            }} className={`text-[11px] font-bold px-2.5 py-1 rounded-full transition-all ${audience === "parent_healthy" ? "bg-primary text-white shadow" : "text-muted-foreground hover:text-foreground"}`} data-testid="meals-tab-parent">
+              {t("components.smart_meal_suggestions.parent")}
+            </button>
+          </div>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${collapsed ? "" : "rotate-180"}`} />
+        </div>
+      </button>
+
+      {/* Expandable body */}
+      {!collapsed && <>
+        <div className="border-t border-border dark:border-border" />
+
+        {/* Query input area */}
+        <div className="px-4 pt-4 pb-3">
+          <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
+            {t("components.smart_meal_suggestions.what_would_you_like_to_cook_today")}
+          </label>
+          <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} maxLength={300} className="w-full h-11 px-3.5 rounded-xl border border-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-border transition-all" data-testid="meals-query-input" />
+
+          {/* Quick suggestion chips */}
+          <div className="flex flex-wrap gap-1.5 mt-2.5">
+            {placeholders.slice(1).map(q => <button key={q} type="button" onClick={() => handleSuggestionClick(q)} className="text-[11px] px-2.5 py-1 rounded-full border border-dashed border-border dark:border-border hover:border-border hover:bg-muted dark:hover:bg-card text-muted-foreground hover:text-foreground transition-all">
+                {q}
+              </button>)}
+          </div>
+
+          {/* Generate button */}
+          <button type="button" onClick={() => void handleGenerate()} disabled={loading} className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.98]" data-testid="meals-generate-btn">
+            {loading ? <>
+                <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                {t("components.smart_meal_suggestions.amy_is_cooking_up_recipes")}
+              </> : <>
+                <Sparkles className="h-4 w-4" />
+                {t("components.smart_meal_suggestions.generate_with_amy_ai")}
+              </>}
+          </button>
+        </div>
+
+        {/* Amy message */}
+        {amyMessage && !loading && <div className="px-4 pb-2">
+            <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/80 dark:bg-card border border-border dark:border-border">
+              <AmyIcon size={18} bounce />
+              <p className="text-[12.5px] leading-snug text-foreground/90">{amyMessage}</p>
+            </div>
           </div>}
-      </div>
+
+        {/* Results */}
+        <div ref={resultsRef} className="pb-4">
+          {loading ? <div className="flex gap-3 px-4 overflow-hidden">
+              {[0, 1, 2, 3, 4].map(i => <div key={i} className="shrink-0 w-[160px] h-[200px] rounded-2xl bg-muted animate-pulse" />)}
+            </div> : fetchError ? <div className="mx-4 p-4 rounded-xl bg-muted dark:bg-card border border-border dark:border-border text-center">
+              <p className="text-sm text-primary dark:text-primary font-medium">{fetchError}</p>
+              <button type="button" onClick={() => void handleGenerate()} className="mt-2 text-xs text-primary dark:text-primary underline font-bold">
+                {t("components.smart_meal_suggestions.try_again")}
+              </button>
+            </div> : meals.length > 0 ? <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-2 scroll-smooth" style={{
+          scrollbarWidth: "thin"
+        }}>
+              {meals.map((m, i) => <MealCard key={m.id} meal={m} showCalories={audience === "parent_healthy"} onOpen={() => setOpenMeal(m)} style={{
+            animationDelay: `${i * 60}ms`
+          }} />)}
+            </div> : !hasGenerated ? <div className="px-4 py-5 text-center">
+              <div className="text-3xl mb-2">🍱</div>
+              <p className="text-sm text-muted-foreground">
+                {t("components.smart_meal_suggestions.type_what_you_want_to_cook_above_and_hit")}{" "}
+                <span className="font-bold text-primary">{t("components.smart_meal_suggestions.generate")}</span> {t("components.smart_meal_suggestions.amy_will_create_personalised_recipes_just_for_you")}
+              </p>
+            </div> : <div className="px-4 py-4 text-center text-sm text-muted-foreground">
+              {t("components.smart_meal_suggestions.no_meals_found_try_a_different_description")}
+            </div>}
+        </div>
+      </>}
 
       {openMeal && createPortal(<RecipeModal meal={openMeal} showCalories={audience === "parent_healthy"} onClose={() => setOpenMeal(null)} />, document.body)}
     </div>;
