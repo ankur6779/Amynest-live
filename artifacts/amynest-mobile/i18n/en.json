@@ -2296,6 +2296,21 @@
         "tap_to_record": "Tap to record",
         "recording_now": "I'm listening…"
       },
+      "stt": {
+        "panel_title": "Say it out loud",
+        "say_prompt": "Now say:",
+        "tap_a_prompt_first": "Tap a prompt above to hear Amy, then record your child repeating it.",
+        "tap_to_record": "Tap to record",
+        "stop_recording": "Stop recording",
+        "listening": "Listening…",
+        "transcribing": "Analysing…",
+        "you_said": "You said:",
+        "feedback": {
+          "great": "Great pronunciation!",
+          "close": "Almost — try once more!",
+          "try_again": "Good try — let's practise again!"
+        }
+      },
       "read_aloud": {
         "section_title": "Read Aloud & Repeat",
         "intro": "Amy reads a short story, then your child repeats one line at a time.",

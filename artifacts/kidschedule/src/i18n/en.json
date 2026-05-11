@@ -1658,6 +1658,29 @@
         "tap_to_record": "Tap to record",
         "recording_now": "I'm listening…"
       },
+      "stt": {
+        "panel_title": "Say it out loud",
+        "say_prompt": "Now say:",
+        "tap_a_prompt_first": "Tap a prompt above to hear Amy, then record your child repeating it.",
+        "tap_to_record": "Tap to record",
+        "stop_recording": "Stop recording",
+        "listening": "Listening…",
+        "transcribing": "Analysing…",
+        "you_said": "You said:",
+        "whisper_badge": "Whisper AI",
+        "unsupported": "Speech recognition is not supported in your browser.",
+        "feedback": {
+          "great": "Great pronunciation!",
+          "close": "Almost — try once more!",
+          "try_again": "Good try — let's practise again!"
+        },
+        "error": {
+          "microphone_denied": "Microphone access was denied. Please allow it in browser settings.",
+          "transcription_failed": "Could not analyse the audio. Please try again.",
+          "recognition_start_failed": "Could not start the microphone. Please try again.",
+          "generic": "Something went wrong. Please try again."
+        }
+      },
       "read_aloud": {
         "section_title": "Read Aloud & Repeat",
         "intro": "Amy reads a short story, then your child repeats one line at a time.",

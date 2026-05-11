@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   ChevronLeft,
   Mic,
+  MicOff,
   BookOpen,
   Gamepad2,
   Sparkles,
@@ -13,10 +14,12 @@ import {
   Stethoscope,
   Volume2,
   CheckCircle2,
+  XCircle,
   AlertTriangle,
   HelpCircle,
   Star,
   Lock,
+  Loader2,
 } from "lucide-react";
 import {
   useListChildren,
@@ -38,8 +41,11 @@ import {
   SPEECH_AFFIRMATIONS,
   PARENT_GUIDANCE_CARDS,
   monthsToBand,
+  compareTranscript,
   type SpeechAgeBand,
+  type TranscriptFeedback,
 } from "@workspace/speech-coach";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -424,9 +430,11 @@ function PronunciationSection({ child }: { child: AnyChild }) {
   const log = useLogSpeechPracticeAttempt();
   const voice = useAmyVoice();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [practicePrompt, setPracticePrompt] = useState<{ id: string; text: string } | null>(null);
 
   const onTap = async (id: string, text: string, k: SpeechPromptKind) => {
     setActiveId(id);
+    setPracticePrompt({ id, text });
     try {
       await voice.speak(text, { mode: k === "phonic" ? "phonics" : "default" });
     } catch {
@@ -500,89 +508,183 @@ function PronunciationSection({ child }: { child: AnyChild }) {
         })}
       </div>
 
-      <RecordingPlaceholder onAction={onAction} />
-
-      <p className="text-[11px] text-muted-foreground mt-3">
-        {t("screens.speech_coach.pronounce.placeholder_note")}
-      </p>
+      <LiveSpeechPanel
+        expectedText={practicePrompt?.text ?? null}
+        onAction={onAction}
+      />
       </>)}
     </GatedSection>
   );
 }
 
-// Recording placeholder: simulates the "I'm listening…" record-state UI.
-// Real STT lands later; for now we cycle through encouragement strings so
-// parents and kids see the loop they'll get when speech analysis ships.
-function RecordingPlaceholder({ onAction }: { onAction: () => void }) {
+// ── LiveSpeechPanel ──────────────────────────────────────────────────────────
+// Real STT panel. Uses the native Web Speech API (Chrome/Edge/Safari) with a
+// MediaRecorder → Whisper fallback for other browsers.
+function LiveSpeechPanel({
+  expectedText,
+  onAction,
+}: {
+  expectedText: string | null;
+  onAction: () => void;
+}) {
   const { t } = useTranslation();
-  const [recording, setRecording] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const FEEDBACKS = [
-    "screens.speech_coach.pronounce.feedback_great",
-    "screens.speech_coach.pronounce.feedback_try_slow",
-    "screens.speech_coach.pronounce.feedback_improvement",
-  ];
-  const idxRef = useRef(0);
+  const stt = useSpeechRecognition("en-US");
+  const [result, setResult] = useState<{
+    feedback: TranscriptFeedback;
+    score: number;
+    transcript: string;
+  } | null>(null);
 
+  // When STT finishes and we have a final transcript, compare with expected
   useEffect(() => {
-    if (!recording) return;
-    const timer = setTimeout(() => {
-      setRecording(false);
-      const key = FEEDBACKS[idxRef.current % FEEDBACKS.length];
-      idxRef.current += 1;
-      setFeedback(key);
-    }, 1800);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recording]);
+    if (stt.listening || stt.transcribing) return;
+    const final = stt.transcript.trim();
+    if (!final || !expectedText) return;
+    const r = compareTranscript(expectedText, final);
+    setResult({ feedback: r.feedback, score: r.score, transcript: final });
+  }, [stt.listening, stt.transcribing, stt.transcript, expectedText]);
+
+  const handleRecord = () => {
+    onAction();
+    setResult(null);
+    stt.reset();
+    stt.start();
+  };
+
+  const handleStop = () => stt.stop();
+
+  const isActive = stt.listening || stt.transcribing;
+
+  if (stt.mode === "unsupported") {
+    return (
+      <p className="mt-4 text-xs text-muted-foreground">
+        {t("screens.speech_coach.stt.unsupported")}
+      </p>
+    );
+  }
 
   return (
     <div
-      className="mt-4 rounded-2xl border border-border bg-muted p-3"
+      className="mt-4 rounded-2xl border border-border bg-muted p-3 space-y-3"
       data-testid="pronounce-recording-panel"
     >
-      <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-        {t("screens.speech_coach.pronounce.recording_panel_title")}
-      </p>
-      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-        {t("screens.speech_coach.pronounce.recording_panel_hint")}
-      </p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant={recording ? "secondary" : "default"}
-          onClick={() => {
-            onAction();
-            setFeedback(null);
-            setRecording(true);
-          }}
-          disabled={recording}
-          data-testid="pronounce-record-btn"
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+            {t("screens.speech_coach.stt.panel_title")}
+          </p>
+          {expectedText && (
+            <p className="text-sm font-bold text-foreground mt-0.5">
+              {t("screens.speech_coach.stt.say_prompt")}{" "}
+              <span className="text-primary">&ldquo;{expectedText}&rdquo;</span>
+            </p>
+          )}
+          {!expectedText && (
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+              {t("screens.speech_coach.stt.tap_a_prompt_first")}
+            </p>
+          )}
+        </div>
+        {stt.mode === "whisper" && (
+          <Badge variant="secondary" className="text-[10px] shrink-0">
+            {t("screens.speech_coach.stt.whisper_badge")}
+          </Badge>
+        )}
+      </div>
+
+      {/* Live interim transcript */}
+      {stt.listening && stt.interimTranscript && (
+        <p
+          className="text-xs italic text-muted-foreground"
+          aria-live="polite"
+          data-testid="pronounce-interim-transcript"
         >
-          <Mic className="h-4 w-4" />
-          {recording
-            ? t("screens.speech_coach.pronounce.recording_now")
-            : t("screens.speech_coach.pronounce.tap_to_record")}
-        </Button>
-        {recording && (
+          {stt.interimTranscript}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {!isActive ? (
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleRecord}
+            disabled={!expectedText}
+            data-testid="pronounce-record-btn"
+          >
+            <Mic className="h-4 w-4" />
+            {t("screens.speech_coach.stt.tap_to_record")}
+          </Button>
+        ) : stt.transcribing ? (
+          <Button type="button" size="sm" variant="secondary" disabled>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t("screens.speech_coach.stt.transcribing")}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            onClick={handleStop}
+            data-testid="pronounce-stop-btn"
+          >
+            <MicOff className="h-4 w-4" />
+            {t("screens.speech_coach.stt.stop_recording")}
+          </Button>
+        )}
+        {stt.listening && (
           <span
             className="inline-flex items-center gap-1 text-xs font-bold text-primary"
             data-testid="pronounce-listening-indicator"
             aria-live="polite"
           >
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            {t("screens.speech_coach.pronounce.listening")}
+            {t("screens.speech_coach.stt.listening")}
           </span>
         )}
       </div>
-      {feedback && !recording && (
-        <p
-          className="mt-3 rounded-xl bg-primary/10 text-foreground px-3 py-2 text-xs"
-          data-testid="pronounce-feedback"
+
+      {/* Result card */}
+      {result && !isActive && (
+        <div
+          className={[
+            "rounded-xl px-3 py-2 flex items-start gap-2",
+            result.feedback === "great"
+              ? "bg-emerald-500/10 border border-emerald-500/30" // audit-ok: semantic success feedback tint
+              : result.feedback === "close"
+                ? "bg-amber-500/10 border border-amber-500/30" // audit-ok: semantic warning feedback tint
+                : "bg-red-500/10 border border-red-500/30", // audit-ok: semantic error feedback tint
+          ].join(" ")}
+          data-testid="pronounce-stt-result"
           aria-live="polite"
         >
-          {t(feedback)}
+          {result.feedback === "great" ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" /> // audit-ok: success icon on tinted bg
+          ) : result.feedback === "close" ? (
+            <Star className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" /> // audit-ok: warning icon on tinted bg
+          ) : (
+            <XCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" /> // audit-ok: error icon on tinted bg
+          )}
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-foreground">
+              {t(`screens.speech_coach.stt.feedback.${result.feedback}`)}
+              <span className="ml-1 font-normal text-muted-foreground">
+                ({result.score}%)
+              </span>
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 break-words">
+              {t("screens.speech_coach.stt.you_said")}{" "}
+              <span className="italic">&ldquo;{result.transcript}&rdquo;</span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {stt.error && (
+        <p className="text-[11px] text-destructive" aria-live="polite">
+          {t(`screens.speech_coach.stt.error.${stt.error}`, {
+            defaultValue: t("screens.speech_coach.stt.error.generic"),
+          })}
         </p>
       )}
     </div>
