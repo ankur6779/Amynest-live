@@ -2141,6 +2141,263 @@
       "winner_ai": "AI Wins 🤖",
       "winner_tie": "It's a Tie! 🤝",
       "ai_score": "AI Score: {{score}}"
+    },
+    "speech_coach": {
+      "title": "Amy Speech Coach",
+      "subtitle": "Build confident communication through fun daily speech activities.",
+      "hub_tile": {
+        "title": "Amy Speech Coach",
+        "description": "Daily 5-minute speech sessions, milestones, and confidence-building games."
+      },
+      "cta": {
+        "start_practice": "Start Speech Practice",
+        "check_milestones": "Check Milestones",
+        "daily_session": "Daily 5-Minute Session",
+        "view_progress": "View Progress",
+        "ask_amy_coach": "Ask Amy Coach"
+      },
+      "dashboard": {
+        "title": "Speech Development Dashboard",
+        "speech_age": "Speech age",
+        "weekly_score": "This week",
+        "pronunciation_improvement": "Pronunciation",
+        "daily_streak": "Daily streak",
+        "streak_days_one": "{{count}} day",
+        "streak_days_other": "{{count}} days",
+        "confidence": "Confidence",
+        "confidence_low": "Building",
+        "confidence_mid": "Growing",
+        "confidence_high": "Soaring",
+        "milestones_completed": "{{done}} of {{total}} milestones on track"
+      },
+      "milestones": {
+        "section_title": "Milestone Checker",
+        "tab": {
+          "1y": "1 Year",
+          "2y": "2 Years",
+          "3y": "3 Years",
+          "4y_plus": "4+ Years"
+        },
+        "status": {
+          "on_track": "On Track",
+          "needs_attention": "Needs Attention",
+          "consult_expert": "Consult Expert"
+        },
+        "m_1y_first_words": {
+          "label": "Says first real words",
+          "hint": "Like \"mama\", \"dada\", or a familiar pet's name."
+        },
+        "m_1y_responds_name": {
+          "label": "Turns when their name is called",
+          "hint": "Looks up or stops what they're doing within a few seconds."
+        },
+        "m_1y_gesture_wave": {
+          "label": "Uses simple gestures",
+          "hint": "Waves bye-bye, points at things they want, claps along."
+        },
+        "m_1y_simple_words": {
+          "label": "Uses 5–10 simple words",
+          "hint": "Even if pronunciation is approximate — meaning is what counts."
+        },
+        "m_2y_two_word": {
+          "label": "Combines two words",
+          "hint": "Phrases like \"more milk\", \"my book\", \"go park\"."
+        },
+        "m_2y_follows_2step": {
+          "label": "Follows two-step instructions",
+          "hint": "\"Pick up your toy and put it in the box.\""
+        },
+        "m_2y_50_words": {
+          "label": "Uses 50+ words",
+          "hint": "Vocabulary that's slowly growing day by day."
+        },
+        "m_2y_names_familiar": {
+          "label": "Names familiar people and objects",
+          "hint": "Family members, favourite toys, body parts."
+        },
+        "m_3y_3plus_word_sentence": {
+          "label": "Speaks in 3+ word sentences",
+          "hint": "Even if grammar is still developing."
+        },
+        "m_3y_asks_wh_questions": {
+          "label": "Asks \"what / where / why\" questions",
+          "hint": "Curiosity is a great sign of language growth."
+        },
+        "m_3y_intelligible_family": {
+          "label": "Mostly understandable to family",
+          "hint": "Close family can understand most of what they say."
+        },
+        "m_3y_uses_pronouns": {
+          "label": "Uses pronouns (I, you, me)",
+          "hint": "Mixing them up sometimes is completely normal."
+        },
+        "m_4plus_full_sentences": {
+          "label": "Speaks in full sentences",
+          "hint": "Sentences with subject, verb, and detail."
+        },
+        "m_4plus_tells_story": {
+          "label": "Tells short stories",
+          "hint": "About their day, a book, or something they imagined."
+        },
+        "m_4plus_intelligible_strangers": {
+          "label": "Understandable to strangers",
+          "hint": "People outside the family can follow what they're saying."
+        },
+        "m_4plus_conversation_turns": {
+          "label": "Takes turns in a conversation",
+          "hint": "Listens, replies, and stays on the topic."
+        }
+      },
+      "pronounce": {
+        "section_title": "AI Pronunciation Practice",
+        "intro": "Tap to hear Amy say it, then let your child try.",
+        "tab": {
+          "letter": "Letters",
+          "phonic": "Phonics",
+          "word": "Words",
+          "sentence": "Sentences"
+        },
+        "play": "Hear it",
+        "replay": "Hear again",
+        "listening": "Listening…",
+        "start_recording": "Tap when ready",
+        "stop_recording": "Stop",
+        "feedback_great": "Great pronunciation!",
+        "feedback_try_slow": "Lovely effort — try saying it a little more slowly.",
+        "feedback_improvement": "Excellent improvement today!",
+        "placeholder_note": "Speech analysis coming soon — for now, you decide together how it sounded.",
+        "recording_panel_title": "Recording placeholder",
+        "recording_panel_hint": "Real speech analysis is coming soon. For now, tap to simulate recording — Amy will share encouragement after.",
+        "tap_to_record": "Tap to record",
+        "recording_now": "I'm listening…"
+      },
+      "read_aloud": {
+        "section_title": "Read Aloud & Repeat",
+        "intro": "Amy reads a short story, then your child repeats one line at a time.",
+        "play_story": "Play story",
+        "repeat_mode": "Repeat mode",
+        "compare_playback": "Compare playback",
+        "parent_listening": "Parent listening mode",
+        "confidence_score": "Confidence score",
+        "story_default_title": "Riya & the Rainy Day",
+        "story_default_body": "Riya looked outside. It was raining. She smiled, picked up her umbrella, and ran into the garden. The flowers were dancing in the rain."
+      },
+      "games": {
+        "section_title": "Daily Speech Games",
+        "rewards_label": "Rewards",
+        "stars_one": "{{count}} star",
+        "stars_other": "{{count}} stars",
+        "unlock_badge": "Unlock badge",
+        "animal_sounds": {
+          "title": "Animal Sounds",
+          "description": "Take turns making animal noises — cow, cat, lion, bird."
+        },
+        "rhyming": {
+          "title": "Rhyming Game",
+          "description": "Say a word, then find words that rhyme with it."
+        },
+        "tongue_exercises": {
+          "title": "Tongue Exercises",
+          "description": "Wiggle the tongue side to side, touch the nose, click the roof of the mouth."
+        },
+        "breathing": {
+          "title": "Breathing Exercises",
+          "description": "Slow in through the nose, slow out through the mouth — like blowing out candles."
+        },
+        "slow_vs_fast": {
+          "title": "Slow vs Fast",
+          "description": "Say the same sentence really slowly, then a little faster, then super fast."
+        },
+        "emotion_express": {
+          "title": "Emotion Expression",
+          "description": "Say one sentence three ways — happy, sad, surprised."
+        }
+      },
+      "guidance": {
+        "section_title": "Parent Guidance",
+        "amy_tip_label": "Amy Coach Tip",
+        "g_speech_delay_signs": {
+          "title": "Signs of speech delay",
+          "body": "By age 2, most children combine two words. By age 3, family understands most of their speech. If your child is well behind these markers, gentle, early support helps.",
+          "tip": "Trust your instincts — checking in early never hurts and often reassures."
+        },
+        "g_screen_time_impact": {
+          "title": "Screen time and language",
+          "body": "Passive screen time can slow vocabulary growth in toddlers. Co-watching, narrating, and pausing to ask questions changes that.",
+          "tip": "Watch with your child whenever you can — your voice is the secret ingredient."
+        },
+        "g_talking_with_toddlers": {
+          "title": "How to talk with toddlers",
+          "body": "Slow down, use short sentences, look them in the eye, and leave space for them to reply — even if it's a sound, not a word.",
+          "tip": "Pauses invite words. Count slowly to five before filling the silence."
+        },
+        "g_bilingual_development": {
+          "title": "Bilingual speech development",
+          "body": "Two languages do not cause delay. Children may mix them at first; clarity grows over time. Stay consistent — one parent, one language often works well.",
+          "tip": "Keep using both languages. Confidence in their first language helps the second."
+        },
+        "g_when_to_consult_expert": {
+          "title": "When to consult an expert",
+          "body": "If you've been concerned for more than a few months, or your child has lost words they used to say, it's worth a chat with a paediatric speech-language professional.",
+          "tip": "Early support is gentle support — the earlier the conversation, the easier the path."
+        }
+      },
+      "affirmations": {
+        "section_title": "Emotion & Confidence Builder",
+        "intro": "A little encouragement after every session — for both of you.",
+        "a_voice_matters": "Your voice matters.",
+        "a_practice_takes_time": "Speaking takes practice.",
+        "a_every_child_different": "Every child learns differently.",
+        "a_doing_amazing": "You're doing amazing.",
+        "a_sounds_become_words": "Sounds become words.",
+        "a_words_become_stories": "Words become stories.",
+        "a_patience_grows_confidence": "Patience grows confidence.",
+        "a_listening_matters": "You're listening, and that matters.",
+        "a_every_word_a_win": "Every word is a victory.",
+        "a_trust_their_pace": "Trust your child's pace.",
+        "a_pauses_are_speech": "Pauses are part of speech.",
+        "a_wonderful_coach": "You're a wonderful coach."
+      },
+      "reports": {
+        "section_title": "Speech Progress Reports",
+        "intro": "Your weekly summary across pronunciation, vocabulary, and confidence.",
+        "improved_sounds": "Sounds improving",
+        "difficult_sounds": "Sounds to keep practicing",
+        "vocabulary_growth": "Vocabulary growth",
+        "confidence_trend": "Confidence trend",
+        "download_pdf": "Download PDF report",
+        "pdf_coming_soon": "PDF reports coming soon — your weekly summary is being saved.",
+        "day_short": {
+          "mon": "M",
+          "tue": "T",
+          "wed": "W",
+          "thu": "T",
+          "fri": "F",
+          "sat": "S",
+          "sun": "S"
+        }
+      },
+      "expert": {
+        "section_title": "Connect with Certified Speech Experts",
+        "intro": "We're partnering with certified paediatric speech-language professionals. Join the waitlist and we'll let you know the moment it launches.",
+        "join_waitlist": "Join the waitlist",
+        "joined": "You're on the waitlist",
+        "coming_soon_badge": "Coming soon"
+      },
+      "prompts": {
+        "hint": {
+          "letter": "Tap to hear the letter",
+          "phonic": "Tap to hear the sound",
+          "word": "Tap to hear the word",
+          "sentence": "Tap to hear the sentence"
+        }
+      },
+      "a11y": {
+        "affirmation_prev": "Previous affirmation",
+        "affirmation_next": "Next affirmation",
+        "affirmation_slides": "Affirmation slides",
+        "trend_chart": "Weekly confidence trend chart"
+      }
     }
   },
   "routines_generate": {
