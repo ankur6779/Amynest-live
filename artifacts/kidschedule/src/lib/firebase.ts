@@ -39,6 +39,54 @@ export const firebaseAuth: Auth = getAuth(firebaseApp);
 void setPersistence(firebaseAuth, browserLocalPersistence).catch(() => {});
 
 /**
+ * Sets up an FCM foreground message listener.
+ *
+ * When the PWA is in the foreground, FCM does NOT invoke onBackgroundMessage
+ * in the service worker — the page itself must call onMessage() and manually
+ * show the notification via the ServiceWorkerRegistration API.
+ *
+ * Call once after permission is granted (or on mount when already granted).
+ * Safe to call multiple times — subsequent calls are no-ops because FCM
+ * de-duplicates listeners on the same messaging instance.
+ */
+export async function setupForegroundNotifications(): Promise<void> {
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+  if (!("serviceWorker" in navigator)) return;
+
+  try {
+    const { getMessaging, onMessage } = await import("firebase/messaging");
+    const messaging = getMessaging(firebaseApp);
+
+    onMessage(messaging, (payload) => {
+      const title = payload.notification?.title ?? "AmyNest";
+      const body = payload.notification?.body ?? "";
+      const data = (payload.data ?? {}) as Record<string, string>;
+      const category = data.category ?? "amynest";
+      const deepLink = data.deepLink ?? "/";
+
+      navigator.serviceWorker.ready
+        .then((reg) => {
+          // `renotify` is valid in all modern browsers but missing from older
+          // TS DOM typings — cast to any so tsc doesn't reject it.
+          const opts = {
+            body,
+            icon: "/kidschedule/pwa-icon-192.png",
+            badge: "/kidschedule/pwa-icon-192.png",
+            tag: category,
+            renotify: true,
+            data: { ...data, deepLink },
+          } as NotificationOptions;
+          return reg.showNotification(title, opts);
+        })
+        .catch(() => {});
+    });
+  } catch {
+    // Messaging not supported in this environment — fail silently.
+  }
+}
+
+/**
  * Requests an FCM web push token.
  * Registers the Firebase Messaging service worker, then calls getToken().
  * Throws if permission is not granted or if the VAPID key is missing.

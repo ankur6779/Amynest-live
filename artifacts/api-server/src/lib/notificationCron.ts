@@ -50,8 +50,15 @@ interface RoutineItemShape {
 }
 
 function routinePushOptedIn(uiPrefs: unknown): boolean {
-  if (!uiPrefs || typeof uiPrefs !== "object") return false;
-  return (uiPrefs as { pushReminders?: unknown }).pushReminders === true;
+  // Default is opted-IN. We only skip if the user has explicitly set
+  // pushReminders: false on a specific routine. This matches expected UX:
+  // routines created before the flag existed should still get reminders.
+  // The user-level `routineItemEnabled` pref (checked above) is the primary
+  // opt-out mechanism; this flag just allows per-routine suppression.
+  if (!uiPrefs || typeof uiPrefs !== "object") return true;
+  const prefs = uiPrefs as { pushReminders?: unknown };
+  if (!("pushReminders" in prefs)) return true;
+  return prefs.pushReminders !== false;
 }
 
 let started = false;

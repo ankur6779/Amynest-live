@@ -349,7 +349,11 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     return { status: "duplicate", reason: "dedup_window" };
   }
 
-  if (!input.bypassDailyCap) {
+  // routine_item (5-min task heads-up) are time-sensitive, user-initiated
+  // reminders that expire immediately. They bypass the daily cap so that
+  // static cron notifications filling the cap don't silence scheduled tasks.
+  const isTimebound = input.category === "routine_item";
+  if (!input.bypassDailyCap && !isTimebound) {
     const sentToday = await countSentToday(input.userId, prefs.timezone);
     const cap = effectiveDailyCap(prefs);
     if (sentToday >= cap) {
