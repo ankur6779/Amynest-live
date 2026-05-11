@@ -1,0 +1,460 @@
+Implement a next-generation “Environmental Intelligence & Adaptive Weather Orchestration System” across both AmyNest mobile app and web platform in routines generation.
+ 
+IMPORTANT: This is NOT a simple weather widget.
+ 
+The goal is to evolve AmyNest into a fully adaptive environmental child-development orchestration platform where weather, atmosphere, air quality, light exposure, seasonal context, and predictive environmental conditions dynamically influence routines, meals, sleep timing, hydration, cognitive intensity, emotional regulation, and activity planning.
+ 
+Maintain:
+ 
+ 
+- premium architecture
+ 
+- scalable APIs
+ 
+- mobile + web parity
+ 
+- production-ready TypeScript
+ 
+- modular orchestration engine
+ 
+- future patent-expansion readiness
+ 
+
+ 
+# ==================================================== CORE SYSTEM NAME
+ 
+Environmental Intelligence Orchestration Engine (EIOE)
+ 
+# ==================================================== PHASE 1 — ADVANCED WEATHER INTELLIGENCE
+ 
+Replace current simple:
+ 
+ 
+- outdoor yes/no
+ 
+- limited mode
+ 
+
+ 
+with a multi-layer environmental orchestration architecture.
+ 
+Integrate:
+ 
+ 
+- temperature
+ 
+- humidity
+ 
+- precipitation
+ 
+- cloud cover
+ 
+- wind
+ 
+- UV index
+ 
+- AQI / PM2.5
+ 
+- pollen placeholders
+ 
+- heat index
+ 
+- sunrise/sunset
+ 
+- daylight duration
+ 
+
+ 
+Create: EnvironmentalContext object containing:
+ 
+ 
+- environmentalRiskScore
+ 
+- outdoorSuitability
+ 
+- hydrationNeedLevel
+ 
+- cognitiveComfortLevel
+ 
+- sensoryStressLevel
+ 
+- environmentalFatigueRisk
+ 
+- circadianLightProfile
+ 
+- predictedWeatherShift
+ 
+
+ 
+# ==================================================== PHASE 2 — PREDICTIVE WEATHER ORCHESTRATION
+ 
+Add predictive environmental adaptation.
+ 
+FEATURES:
+ 
+ 
+1. Forecast-aware scheduling
+ 
+2. Outdoor activity pre-adjustment
+ 
+3. Rain prediction optimization
+ 
+4. Heatwave mitigation planning
+ 
+5. Storm-safe fallback routines
+ 
+6. Dynamic time-slot shifting
+ 
+7. Environmental volatility detection
+ 
+
+ 
+EXAMPLES:
+ 
+ 
+- Rain expected in 2 hours → outdoor activity moved earlier
+ 
+- Heat spike predicted → cognitive tasks shifted to morning
+ 
+- High humidity → reduced physical intensity
+ 
+- AQI spike → indoor sensory alternatives
+ 
+- UV risk → outdoor duration shortened
+ 
+
+ 
+# ==================================================== PHASE 3 — AQI & ENVIRONMENTAL SAFETY ENGINE
+ 
+Implement advanced environmental safety logic.
+ 
+INTEGRATE:
+ 
+ 
+- AQI
+ 
+- PM2.5
+ 
+- UV
+ 
+- humidity stress
+ 
+- heat index
+ 
+- wind chill placeholders
+ 
+
+ 
+FEATURES:
+ 
+ 
+1. Child-age-weighted environmental risk scoring
+ 
+2. Infant sensitivity amplification
+ 
+3. Allergy-safe recommendations
+ 
+4. Outdoor exposure limitations
+ 
+5. Hydration escalation logic
+ 
+6. Environmental warning cards
+ 
+7. Safe exposure windows
+ 
+
+ 
+EXAMPLES:
+ 
+ 
+- AQI high → indoor developmental play
+ 
+- UV extreme → sensory indoor routine
+ 
+- Humidity high → hydration reminders
+ 
+- Heat index dangerous → cognitive load reduction
+ 
+
+ 
+# ==================================================== PHASE 4 — CIRCADIAN LIGHT INTELLIGENCE
+ 
+Implement daylight-aware scheduling.
+ 
+USE:
+ 
+ 
+- sunrise
+ 
+- sunset
+ 
+- daylight duration
+ 
+- cloud darkness intensity
+ 
+
+ 
+FEATURES:
+ 
+ 
+1. Circadian bedtime modulation
+ 
+2. Wind-down optimization
+ 
+3. Seasonal wake adjustment
+ 
+4. Evening stimulation reduction
+ 
+5. Daylight-aware outdoor planning
+ 
+6. Melatonin-supportive routines
+ 
+
+ 
+EXAMPLES:
+ 
+ 
+- Early sunset → earlier calming activities
+ 
+- Long daylight → extended outdoor blocks
+ 
+- Dark rainy afternoon → earlier indoor calming transition
+ 
+
+ 
+# ==================================================== PHASE 5 — WEATHER-ADAPTIVE ENERGY CURVE SYSTEM
+ 
+Create dynamic cognitive and physical energy modeling influenced by environmental conditions.
+ 
+FEATURES:
+ 
+ 
+1. Cognitive comfort scoring
+ 
+2. Weather-linked energy modulation
+ 
+3. Emotional stress adaptation
+ 
+4. Physical intensity balancing
+ 
+5. Sensory overload reduction
+ 
+6. Focus window optimization
+ 
+7. Rest interval adaptation
+ 
+
+ 
+EXAMPLES:
+ 
+ 
+- Humid weather → shorter concentration sessions
+ 
+- Cool weather → higher physical activity tolerance
+ 
+- Stormy weather → emotional regulation activities
+ 
+- Extreme heat → low-demand cognitive tasks
+ 
+
+ 
+# ==================================================== PHASE 6 — ENVIRONMENTAL MEAL & HYDRATION ENGINE
+ 
+Add weather-aware meal intelligence.
+ 
+FEATURES:
+ 
+ 
+1. Hydration-aware meal suggestions
+ 
+2. Seasonal nutrition adaptation
+ 
+3. Immunity-supportive recommendations
+ 
+4. Cooling/warming food balancing
+ 
+5. Environmental digestion optimization
+ 
+6. Electrolyte reminder system
+ 
+
+ 
+EXAMPLES:
+ 
+ 
+- Summer → water-rich meals
+ 
+- Winter → warm energy-dense meals
+ 
+- Rainy weather → immunity-supportive foods
+ 
+- Humid weather → lighter digestion meals
+ 
+
+ 
+# ==================================================== PHASE 7 — EMOTIONAL WEATHER MODELING
+ 
+Create mood-sensitive environmental adaptation.
+ 
+FEATURES:
+ 
+ 
+1. Rainy-day emotional balancing
+ 
+2. Cloudy-weather stimulation support
+ 
+3. Storm calming protocols
+ 
+4. Sensory regulation activities
+ 
+5. Parent bonding recommendations
+ 
+6. Comfort-mode generation
+ 
+
+ 
+EXAMPLES:
+ 
+ 
+- Thunderstorms → calming bonding routines
+ 
+- Cloud-heavy days → mood-elevating creativity blocks
+ 
+- Heat stress → low-friction emotional routines
+ 
+
+ 
+# ==================================================== PHASE 8 — WEATHER EXPLAINABILITY SYSTEM
+ 
+Every weather-driven adjustment must be explainable.
+ 
+Add: “Why this adjustment?” cards.
+ 
+EXAMPLES: “Outdoor duration reduced because AQI levels exceeded recommended thresholds for this age group.” “Bedtime shifted earlier due to reduced daylight duration.” “Hydration reminders increased because heat index elevated dehydration risk.”
+ 
+# ==================================================== TECHNICAL ARCHITECTURE
+ 
+Create modular architecture:
+ 
+/environment /environment/predictive /environment/aqi /environment/circadian /environment/energy /environment/hydration /environment/explainability /environment/risk /environment/datasets
+ 
+# ==================================================== DATASETS
+ 
+Create configurable JSON datasets:
+ 
+ 
+- ageEnvironmentalTolerance.json
+ 
+- hydrationProfiles.json
+ 
+- AQIRiskThresholds.json
+ 
+- weatherEnergyProfiles.json
+ 
+- seasonalNutritionProfiles.json
+ 
+- circadianProfiles.json
+ 
+- environmentalStressProfiles.json
+ 
+- UVExposureRules.json
+ 
+
+ 
+# ==================================================== API LAYER
+ 
+Implement:
+ 
+ 
+- weather API abstraction
+ 
+- AQI provider abstraction
+ 
+- future pollen provider placeholders
+ 
+- caching layer
+ 
+- offline fallback logic
+ 
+- forecast normalization layer
+ 
+
+ 
+# ==================================================== UI / UX REQUIREMENTS
+ 
+Create elegant premium environmental UI.
+ 
+ADD:
+ 
+ 
+1. Environmental intelligence cards
+ 
+2. AQI safety indicators
+ 
+3. Weather adaptation summaries
+ 
+4. Hydration reminders
+ 
+5. Circadian insights
+ 
+6. “Environment adjusted” tags
+ 
+7. Predictive weather timeline
+ 
+8. Risk-level indicators
+ 
+9. Adaptive scheduling notices
+ 
+
+ 
+STYLE:
+ 
+ 
+- premium
+ 
+- calm
+ 
+- Apple/Stripe/Notion inspired
+ 
+- minimal but intelligent
+ 
+- subtle gradients
+ 
+- low visual noise
+ 
+
+ 
+# ==================================================== PATENT-READY TERMINOLOGY
+ 
+Internally use technical terminology such as:
+ 
+ 
+- environmental orchestration engine
+ 
+- atmospheric adaptation pipeline
+ 
+- circadian-aware scheduling
+ 
+- predictive environmental modulation
+ 
+- age-weighted environmental risk scoring
+ 
+- adaptive environmental intelligence
+ 
+- contextual environmental inference
+ 
+- deterministic environmental validation
+ 
+- environmental fatigue modeling
+ 
+- predictive atmospheric scheduling
+ 
+
+ 
+# ==================================================== FINAL GOAL
+ 
+AmyNest should evolve from: “weather-aware routine planner”
+ 
+into:
+ 
+“A fully adaptive environmental child-development orchestration operating system capable of predictive atmospheric adaptation, circadian-aware developmental scheduling, environmental safety validation, emotional weather balancing, and context-aware developmental optimization.”

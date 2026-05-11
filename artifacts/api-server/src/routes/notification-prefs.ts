@@ -9,10 +9,12 @@ import {
   pushTokensTable,
   routinesTable,
   NOTIFICATION_CATEGORIES,
+  intensityToCap,
   type NotificationCategory,
 } from "@workspace/db";
 import {
   dispatchNotification,
+  effectiveDailyCap,
   getNotificationHistory,
   getOrCreatePreferences,
 } from "../services/notificationDispatchService";
@@ -22,7 +24,7 @@ const router: IRouter = Router();
 
 /**
  * GET /api/notifications/categories
- * Returns the user's per-category toggles, timezone, quiet hours, daily cap.
+ * Returns the user's per-category toggles, intensity, timezone, quiet hours.
  * Lazily creates defaults on first request.
  */
 router.get("/notifications/categories", async (req, res): Promise<void> => {
@@ -33,6 +35,7 @@ router.get("/notifications/categories", async (req, res): Promise<void> => {
   }
   const prefs = await getOrCreatePreferences(userId);
   res.json({
+    // Core categories
     routineEnabled: prefs.routineEnabled,
     routineItemEnabled: prefs.routineItemEnabled,
     nutritionEnabled: prefs.nutritionEnabled,
@@ -40,17 +43,24 @@ router.get("/notifications/categories", async (req, res): Promise<void> => {
     weeklyEnabled: prefs.weeklyEnabled,
     engagementEnabled: prefs.engagementEnabled,
     goodNightEnabled: prefs.goodNightEnabled,
+    // Smart engine categories
+    parentingTipsEnabled: prefs.parentingTipsEnabled,
+    storyTimeEnabled: prefs.storyTimeEnabled,
+    phonicsEnabled: prefs.phonicsEnabled,
+    learningActivityEnabled: prefs.learningActivityEnabled,
+    milestoneEnabled: prefs.milestoneEnabled,
+    // Schedule / limits
     timezone: prefs.timezone,
     quietHoursStart: prefs.quietHoursStart,
     quietHoursEnd: prefs.quietHoursEnd,
-    dailyCap: prefs.dailyCap,
+    dailyCap: effectiveDailyCap(prefs),
+    notificationIntensity: prefs.notificationIntensity,
+    engagementScore: prefs.engagementScore,
   });
 });
 
-// HH:MM 24h, validates each component. "00:00"–"23:59".
 const HHMM_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-// Validate IANA timezone via Intl. Throws for unknown IDs in modern Node.
 function isValidTimezone(tz: string): boolean {
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: tz });
@@ -60,7 +70,10 @@ function isValidTimezone(tz: string): boolean {
   }
 }
 
+const INTENSITY_VALUES = ["minimal", "balanced", "active", "growth"] as const;
+
 const PatchSchema = z.object({
+  // Core categories
   routineEnabled: z.boolean().optional(),
   routineItemEnabled: z.boolean().optional(),
   nutritionEnabled: z.boolean().optional(),
@@ -68,6 +81,13 @@ const PatchSchema = z.object({
   weeklyEnabled: z.boolean().optional(),
   engagementEnabled: z.boolean().optional(),
   goodNightEnabled: z.boolean().optional(),
+  // Smart engine categories
+  parentingTipsEnabled: z.boolean().optional(),
+  storyTimeEnabled: z.boolean().optional(),
+  phonicsEnabled: z.boolean().optional(),
+  learningActivityEnabled: z.boolean().optional(),
+  milestoneEnabled: z.boolean().optional(),
+  // Schedule / limits
   timezone: z
     .string()
     .min(1)
@@ -77,6 +97,7 @@ const PatchSchema = z.object({
   quietHoursStart: z.string().regex(HHMM_REGEX).optional(),
   quietHoursEnd: z.string().regex(HHMM_REGEX).optional(),
   dailyCap: z.number().int().min(1).max(20).optional(),
+  notificationIntensity: z.enum(INTENSITY_VALUES).optional(),
 });
 
 router.patch("/notifications/categories", async (req, res): Promise<void> => {
@@ -91,12 +112,42 @@ router.patch("/notifications/categories", async (req, res): Promise<void> => {
     return;
   }
   await getOrCreatePreferences(userId);
+
+  // When intensity changes, sync dailyCap to the matching cap value so
+  // legacy code that reads dailyCap directly stays consistent.
+  const setPayload: Partial<typeof notificationPreferencesTable.$inferInsert> = {
+    ...parsed.data,
+    updatedAt: new Date(),
+  };
+  if (parsed.data.notificationIntensity) {
+    setPayload.dailyCap = intensityToCap(parsed.data.notificationIntensity);
+  }
+
   await db
     .update(notificationPreferencesTable)
-    .set({ ...parsed.data, updatedAt: new Date() })
+    .set(setPayload)
     .where(eq(notificationPreferencesTable.userId, userId));
   const updated = await getOrCreatePreferences(userId);
-  res.json(updated);
+  res.json({
+    routineEnabled: updated.routineEnabled,
+    routineItemEnabled: updated.routineItemEnabled,
+    nutritionEnabled: updated.nutritionEnabled,
+    insightsEnabled: updated.insightsEnabled,
+    weeklyEnabled: updated.weeklyEnabled,
+    engagementEnabled: updated.engagementEnabled,
+    goodNightEnabled: updated.goodNightEnabled,
+    parentingTipsEnabled: updated.parentingTipsEnabled,
+    storyTimeEnabled: updated.storyTimeEnabled,
+    phonicsEnabled: updated.phonicsEnabled,
+    learningActivityEnabled: updated.learningActivityEnabled,
+    milestoneEnabled: updated.milestoneEnabled,
+    timezone: updated.timezone,
+    quietHoursStart: updated.quietHoursStart,
+    quietHoursEnd: updated.quietHoursEnd,
+    dailyCap: effectiveDailyCap(updated),
+    notificationIntensity: updated.notificationIntensity,
+    engagementScore: updated.engagementScore,
+  });
 });
 
 router.get("/notifications/history", async (req, res): Promise<void> => {
@@ -112,13 +163,6 @@ router.get("/notifications/history", async (req, res): Promise<void> => {
 
 /**
  * GET /api/notifications/diagnostics
- * Read-only health check for the calling user. Surfaces:
- *   - registered push tokens (platform / lastSeen)
- *   - last 10 delivery attempts with status + error
- *   - whether the user is currently in quiet hours
- *   - daily cap status
- * Used by the in-app "Why didn't I get my notifications?" screen and by
- * support tooling.
  */
 router.get("/notifications/diagnostics", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
@@ -141,8 +185,6 @@ router.get("/notifications/diagnostics", async (req, res): Promise<void> => {
     .orderBy(desc(pushTokensTable.lastSeenAt));
   const recent = await getNotificationHistory(userId, 10);
 
-  // In quiet hours? Mirror the dispatch service logic so the diagnostic
-  // matches what real sends would see.
   const localHHMM = new Intl.DateTimeFormat("en-GB", {
     timeZone: prefs.timezone,
     hour: "2-digit",
@@ -158,19 +200,18 @@ router.get("/notifications/diagnostics", async (req, res): Promise<void> => {
       : localHHMM >= start || localHHMM < end;
   }
 
-  // ── Next scheduled notification ──────────────────────────────────────────
-  // For per-task reminders we look at today's routine for this user and
-  // surface the next non-completed item whose reminder time (item time minus
-  // 5 minutes) is still in the future. For the fixed daily category crons
-  // we compute the next firing of any *enabled* category, in user-local
-  // time. Whichever lands first is the "next" scheduled push.
   const fixedCategorySchedule: Array<{ category: NotificationCategory; hhmm: string; enabled: boolean }> = [
-    { category: "routine",    hhmm: "07:30", enabled: prefs.routineEnabled    },
-    { category: "insights",   hhmm: "12:30", enabled: prefs.insightsEnabled   },
-    { category: "nutrition",  hhmm: "15:30", enabled: prefs.nutritionEnabled  },
-    { category: "nutrition",  hhmm: "18:30", enabled: prefs.nutritionEnabled  },
-    { category: "engagement", hhmm: "19:00", enabled: prefs.engagementEnabled },
-    { category: "good_night", hhmm: "21:00", enabled: prefs.goodNightEnabled  },
+    { category: "routine",           hhmm: "07:30", enabled: prefs.routineEnabled        },
+    { category: "parenting_tips",    hhmm: "09:00", enabled: prefs.parentingTipsEnabled  },
+    { category: "learning_activity", hhmm: "10:30", enabled: prefs.learningActivityEnabled },
+    { category: "milestone",         hhmm: "11:00", enabled: prefs.milestoneEnabled      },
+    { category: "insights",          hhmm: "12:30", enabled: prefs.insightsEnabled       },
+    { category: "nutrition",         hhmm: "15:30", enabled: prefs.nutritionEnabled      },
+    { category: "phonics",           hhmm: "16:00", enabled: prefs.phonicsEnabled        },
+    { category: "nutrition",         hhmm: "18:30", enabled: prefs.nutritionEnabled      },
+    { category: "engagement",        hhmm: "19:00", enabled: prefs.engagementEnabled     },
+    { category: "story_time",        hhmm: "20:00", enabled: prefs.storyTimeEnabled      },
+    { category: "good_night",        hhmm: "21:00", enabled: prefs.goodNightEnabled      },
   ];
 
   const REMINDER_LEAD_MINUTES = 5;
@@ -186,7 +227,6 @@ router.get("/notifications/diagnostics", async (req, res): Promise<void> => {
   type Candidate = { category: NotificationCategory; localTime: string; minutesFromNow: number; activity?: string };
   const candidates: Candidate[] = [];
 
-  // Fixed daily category crons (only enabled ones, only future-today).
   for (const slot of fixedCategorySchedule) {
     if (!slot.enabled) continue;
     const [sh, sm] = slot.hhmm.split(":").map((s) => parseInt(s, 10));
@@ -200,7 +240,6 @@ router.get("/notifications/diagnostics", async (req, res): Promise<void> => {
     }
   }
 
-  // Per-task routine reminders (only when enabled and we have a routine for today).
   if (prefs.routineItemEnabled) {
     try {
       const rows = await db
@@ -209,17 +248,12 @@ router.get("/notifications/diagnostics", async (req, res): Promise<void> => {
         .innerJoin(childrenTable, eq(childrenTable.id, routinesTable.childId))
         .where(and(eq(childrenTable.userId, userId), eq(routinesTable.date, localDate)));
       for (const { routine } of rows) {
-        // Per-routine opt-in mirrors the cron filter: if the user hasn't
-        // flipped on the per-task reminder toggle for this routine, the cron
-        // won't push for it, so the diagnostics screen shouldn't claim a
-        // "next scheduled" item for it either.
         const uiPrefs = routine.uiPrefs as { pushReminders?: unknown } | null;
         if (!uiPrefs || uiPrefs.pushReminders !== true) continue;
         const items = (routine.items ?? []) as Array<{ time?: string; activity?: string; status?: string }>;
         for (const item of items) {
           if (!item.time || !item.activity) continue;
           if (item.status === "completed" || item.status === "skipped") continue;
-          // Inline 12-hour parser to avoid coupling routes to the cron module.
           const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(item.time.trim());
           if (!m) continue;
           let h = parseInt(m[1]!, 10);
@@ -252,7 +286,9 @@ router.get("/notifications/diagnostics", async (req, res): Promise<void> => {
     timezone: prefs.timezone,
     localTime: localHHMM,
     inQuietHours,
-    dailyCap: prefs.dailyCap,
+    dailyCap: effectiveDailyCap(prefs),
+    notificationIntensity: prefs.notificationIntensity,
+    engagementScore: prefs.engagementScore,
     nextScheduled,
     tokens: tokens.map((t) => ({
       id: t.id,
@@ -272,12 +308,6 @@ const TestSchema = z.object({
 
 /**
  * POST /api/notifications/test
- * Body: { category: NotificationCategory }
- * Sends a self-service delivery test to every registered device for the
- * current user. Bypasses quiet hours, daily cap, and category-enabled gate so
- * that parents can always confirm their device is set up correctly regardless
- * of time or preferences. Uses a hardcoded title/body so it never fails due to
- * missing personalized content.
  */
 router.post("/notifications/test", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
@@ -291,8 +321,6 @@ router.post("/notifications/test", async (req, res): Promise<void> => {
     return;
   }
   const category: NotificationCategory = parsed.data.category;
-  // Include Date.now() so the same user can fire it multiple times in a row
-  // without hitting the dedup window.
   const dedupKey = `test:${userId}:${category}:${Date.now()}`;
   const result = await dispatchNotification({
     userId,
@@ -308,6 +336,28 @@ router.post("/notifications/test", async (req, res): Promise<void> => {
   });
   logger.info({ userId, category, result }, "Test notification dispatched");
   res.json(result);
+});
+
+/**
+ * POST /api/notifications/opened
+ * Called by client when a push notification is tapped/opened, to update
+ * the engagement score for smarter adaptive frequency.
+ */
+router.post("/notifications/opened", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  // Best-effort score update — no strict schema needed
+  const { opened = true } = (req.body ?? {}) as { opened?: boolean };
+  try {
+    const { updateEngagementScore } = await import("../services/notificationDispatchService.js");
+    await updateEngagementScore(userId, opened);
+  } catch (err) {
+    logger.warn({ err, userId }, "Failed to update engagement score via route");
+  }
+  res.json({ ok: true });
 });
 
 export default router;

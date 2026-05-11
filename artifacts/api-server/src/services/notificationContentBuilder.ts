@@ -60,7 +60,15 @@ function todayLocalDateString(timezone: string): string {
   }).format(new Date());
 }
 
-/* -----------------------------  Routine  ----------------------------- */
+function isWeekend(timezone: string): boolean {
+  const day = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    weekday: "short",
+  }).format(new Date());
+  return day === "Sat" || day === "Sun";
+}
+
+/* ─────────────────────────────  Routine  ─────────────────────────────── */
 
 export async function buildMorningRoutine(
   userId: string,
@@ -128,16 +136,22 @@ export async function buildGoodNight(
   const child = await getPrimaryChild(userId);
   if (!child) return null;
   const date = todayLocalDateString(timezone);
+  const tips: Record<ReturnType<typeof ageGroup>, string> = {
+    toddler: `Dim the lights and keep noise low — ${child.name} sleeps best in calm surroundings.`,
+    preschool: `A 10-minute story before bed helps ${child.name} transition to sleep.`,
+    child: `Screens off 30 minutes before bed helps ${child.name} sleep deeper.`,
+    tween: `A short breathing exercise can help ${child.name} unwind tonight.`,
+  };
   return {
     title: `Good night, ${child.name} 🌙`,
-    body: "Wind down with a calm bedtime routine. Tap to log today's wins.",
+    body: tips[ageGroup(child.age)],
     deepLink: "/hub",
     dedupKey: `goodnight:${date}`,
     data: { childId: child.id },
   };
 }
 
-/* -----------------------------  Weekly  ----------------------------- */
+/* ─────────────────────────────  Weekly  ──────────────────────────────── */
 
 export async function buildWeeklyReport(
   userId: string,
@@ -155,14 +169,8 @@ export async function buildWeeklyReport(
   };
 }
 
-/* ----------------------  Smart engagement logic  ---------------------- */
+/* ────────────────────────  Smart engagement logic  ───────────────────── */
 
-/**
- * Build the most relevant engagement notification (or null if none applies):
- * - inactive 3+ days → re-engagement
- * - 7-day streak → reward
- * - low recent activity → gentle nudge
- */
 export async function buildEngagement(
   userId: string,
   timezone: string,
@@ -174,8 +182,6 @@ export async function buildEngagement(
   const now = Date.now();
   const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
 
-  // Most recent behavior log = proxy for "last activity".
-  // Behaviors are scoped by child, so filter using the primary child's id.
   const [lastBehavior] = await db
     .select({ createdAt: behaviorsTable.createdAt })
     .from(behaviorsTable)
@@ -185,6 +191,14 @@ export async function buildEngagement(
 
   const lastActiveAt = lastBehavior?.createdAt ?? null;
   const inactive = !lastActiveAt || lastActiveAt < threeDaysAgo;
+
+  const motivations = [
+    `You're doing an amazing job, ${child.name} is lucky to have you 💜`,
+    `Small consistent actions make the biggest difference for ${child.name}.`,
+    `Every routine you build now shapes ${child.name}'s future habits.`,
+    `Keep going — parenting gets easier with every step forward 🌟`,
+  ];
+  const motivationPick = motivations[Math.floor(Date.now() / 86400000) % motivations.length];
 
   if (inactive) {
     return {
@@ -196,7 +210,6 @@ export async function buildEngagement(
     };
   }
 
-  // Streak check via user_progress (last 7 days had at least one entry).
   const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
   const recent = await db
     .select({ createdAt: userProgressTable.createdAt })
@@ -221,7 +234,6 @@ export async function buildEngagement(
     };
   }
 
-  // Light low-engagement nudge if fewer than 3 days active in past week.
   if (distinctDays.size > 0 && distinctDays.size < 3) {
     return {
       title: "Small wins add up ✨",
@@ -232,14 +244,16 @@ export async function buildEngagement(
     };
   }
 
-  return null;
+  // Rotation motivation message for active users
+  return {
+    title: "You've got this 💪",
+    body: motivationPick ?? `Keep going — parenting gets easier with every step forward 🌟`,
+    deepLink: "/hub",
+    dedupKey: `motivation:${date}`,
+    data: { childId: child.id, reason: "motivation" },
+  };
 }
 
-/**
- * Nutrition suggestion driven by the child's recent meal/routine activity.
- * If we have recent routines that include meals, suggest variety; otherwise
- * fall back to a generic age-appropriate tip.
- */
 export async function buildNutritionInsight(
   userId: string,
   timezone: string,
@@ -249,7 +263,6 @@ export async function buildNutritionInsight(
   const date = todayLocalDateString(timezone);
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  // Routines are scoped by child, so filter using the primary child's id.
   const recentRoutines = await db
     .select({ id: routinesTable.id })
     .from(routinesTable)
@@ -282,11 +295,6 @@ export async function buildNutritionInsight(
   };
 }
 
-/**
- * Amy AI insight — uses the child's recent activity (last 7 days of completed
- * routines, behaviour logs, parent-hub progress) to produce a personalised
- * tip. Falls back to the age-group template if no signal is available.
- */
 export async function buildAmyInsight(
   userId: string,
   timezone: string,
@@ -297,8 +305,6 @@ export async function buildAmyInsight(
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  // Pull the last week of routines for this child + recent behaviour notes +
-  // parent-hub progress feedback rows.
   const [routines, recentBehaviors, recentProgress] = await Promise.all([
     db
       .select({ items: routinesTable.items, date: routinesTable.date })
@@ -334,7 +340,6 @@ export async function buildAmyInsight(
       .limit(20),
   ]);
 
-  // Tally completion across this week's routines.
   let completed = 0;
   let total = 0;
   for (const r of routines) {
@@ -351,8 +356,6 @@ export async function buildAmyInsight(
   ).length;
   const hubWins = recentProgress.filter((p) => p.feedback === "yes").length;
 
-  // Pick the most relevant signal in priority order. Each branch keeps the
-  // body short (≤ 110 chars) so it renders fully on iOS / Android lock screens.
   let body: string | null = null;
   if (total >= 3 && completionRate >= 0.7) {
     body = `${child.name} finished ${completed} of ${total} routine tasks this week — keep celebrating those wins.`;
@@ -376,9 +379,6 @@ export async function buildAmyInsight(
     body = insights[ageGroup(child.age)];
   }
 
-  // Phase 4 — Productive nudges. If a high-priority nudge exists, prefer it
-  // over the generic insight body. Wrapped so any failure (DB, ranker)
-  // gracefully falls back to the existing copy.
   let deepLink = "/hub";
   let dedupSuffix = "";
   let topNudgeId: string | null = null;
@@ -387,15 +387,12 @@ export async function buildAmyInsight(
     const top = result.nudges[0];
     if (top && top.priority >= 70) {
       body = renderNudgeBodyForPush(top, child.name);
-      // Use the allowlisted `/routine` shorthand so mobile's strict
-      // DEEP_LINK_MAP routes the tap. The nudge id travels in `data` so the
-      // routines screen can scroll/highlight if it chooses.
       deepLink = "/routine";
       dedupSuffix = `:nudge:${top.id}`;
       topNudgeId = top.id;
     }
   } catch {
-    // fall through with the existing body / deepLink
+    // fall through
   }
 
   return {
@@ -409,12 +406,8 @@ export async function buildAmyInsight(
   };
 }
 
-/* ----------------------  Per-task routine reminder  -------------------- */
+/* ─────────────────────────  Per-task routine reminder  ───────────────── */
 
-/**
- * Build the reminder for a single routine item (e.g. "Breakfast at 8:00 AM").
- * Used by the per-minute scheduler in notificationCron.
- */
 export function buildRoutineItem(opts: {
   childName: string;
   childId: number;
@@ -437,12 +430,6 @@ export function buildRoutineItem(opts: {
   };
 }
 
-/**
- * Test-mode builder for `routine_item`. Picks the next non-completed item
- * from the user's most recent routine and renders the same notification the
- * per-minute scheduler would. Returns null if there's nothing to remind
- * about (e.g. no routine for today, all items done).
- */
 async function buildRoutineItemTest(
   userId: string,
   timezone: string,
@@ -472,16 +459,262 @@ async function buildRoutineItemTest(
   });
 }
 
+/* ────────────────────────  NEW: Smart Engine Categories  ─────────────── */
+
+/**
+ * Daily parenting micro-tip — age-appropriate, rotates across a pool of
+ * evidence-based suggestions. Fires at 09:00 local (post morning-routine slot).
+ */
+export async function buildParentingTip(
+  userId: string,
+  timezone: string,
+): Promise<BuiltNotification | null> {
+  const child = await getPrimaryChild(userId);
+  if (!child) return null;
+  const date = todayLocalDateString(timezone);
+
+  const tipsByGroup: Record<ReturnType<typeof ageGroup>, string[]> = {
+    toddler: [
+      `Let ${child.name} make one tiny choice today — red cup or blue cup — it builds autonomy.`,
+      `Narrate what you're doing aloud. ${child.name}'s vocabulary grows through listening.`,
+      `10 minutes of unstructured play is more valuable than any structured lesson at this age.`,
+      `When ${child.name} is upset, crouch to eye level before speaking — it de-escalates instantly.`,
+    ],
+    preschool: [
+      `Ask "${child.name}, what made you happy today?" — it builds emotional awareness.`,
+      `Let ${child.name} help with a small chore. Contribution builds self-worth.`,
+      `Praise the effort, not the result: "You tried so hard!" shapes a growth mindset.`,
+      `Reading 15 minutes together daily builds ${child.name}'s reading readiness by 40%.`,
+    ],
+    child: [
+      `Give ${child.name} a weekly "responsibility" — it builds accountability.`,
+      `Limit advice; ask questions instead. ${child.name} learns more by figuring it out.`,
+      `Celebrate one small win today — it rewires ${child.name}'s brain for positivity.`,
+      `Family dinners 3x/week are linked to better grades and emotional health.`,
+    ],
+    tween: [
+      `Notice one thing ${child.name} does well today and mention it specifically.`,
+      `Let ${child.name} disagree with you respectfully — it's healthy boundary-testing.`,
+      `Ask about their friends by name — it shows you're interested in their world.`,
+      `Screen time is fine if balanced. Co-watch something they love this weekend.`,
+    ],
+  };
+
+  const tips = tipsByGroup[ageGroup(child.age)];
+  const dayIndex = Math.floor(Date.now() / 86400000) % tips.length;
+  const body = tips[dayIndex] ?? tips[0]!;
+
+  return {
+    title: "Parenting tip of the day 🌱",
+    body,
+    deepLink: "/hub",
+    dedupKey: `parenting_tip:${date}`,
+    data: { childId: child.id },
+  };
+}
+
+/**
+ * Bedtime story reminder — fires at 20:00 local to prompt the parent to
+ * start a wind-down reading session before the good_night message.
+ */
+export async function buildStoryTime(
+  userId: string,
+  timezone: string,
+): Promise<BuiltNotification | null> {
+  const child = await getPrimaryChild(userId);
+  if (!child) return null;
+  const date = todayLocalDateString(timezone);
+
+  const prompts: Record<ReturnType<typeof ageGroup>, string> = {
+    toddler: `It's almost story time for ${child.name} 📖 A short picture book helps them wind down.`,
+    preschool: `Ready for tonight's story with ${child.name}? Pick one together for extra magic ✨`,
+    child: `Bedtime story time 🌙 ${child.name} will sleep better after 10 minutes of reading together.`,
+    tween: `Tonight's a good night to share a chapter with ${child.name} — reading together builds bonds.`,
+  };
+
+  return {
+    title: "Story time tonight 📚",
+    body: prompts[ageGroup(child.age)],
+    deepLink: "/hub",
+    dedupKey: `story_time:${date}`,
+    data: { childId: child.id },
+  };
+}
+
+/**
+ * Phonics practice nudge — fires at 16:00 local (after-school slot).
+ * Skips weekends when children have more free-form time.
+ */
+export async function buildPhonicsReminder(
+  userId: string,
+  timezone: string,
+): Promise<BuiltNotification | null> {
+  const child = await getPrimaryChild(userId);
+  if (!child) return null;
+  const date = todayLocalDateString(timezone);
+
+  // Phonics is most relevant for preschool & early child; skip for tweens
+  const ag = ageGroup(child.age);
+  if (ag === "tween") return null;
+
+  const messages: Record<ReturnType<typeof ageGroup>, string> = {
+    toddler: `5 minutes of letter sounds with ${child.name} goes a long way today 🔤`,
+    preschool: `${child.name} has a phonics activity waiting — just 5 minutes builds big skills 🔡`,
+    child: `Quick phonics check-in for ${child.name}? Tap to see today's practice word 📝`,
+    tween: ``,
+  };
+
+  return {
+    title: "Phonics practice time 🔤",
+    body: messages[ag] || `Time for a quick phonics session with ${child.name}!`,
+    deepLink: "/study-zone",
+    dedupKey: `phonics:${date}`,
+    data: { childId: child.id },
+  };
+}
+
+/**
+ * Learning activity suggestion — fires at 10:30 local (mid-morning).
+ * On weekends pushes family-friendly activities.
+ */
+export async function buildLearningActivity(
+  userId: string,
+  timezone: string,
+): Promise<BuiltNotification | null> {
+  const child = await getPrimaryChild(userId);
+  if (!child) return null;
+  const date = todayLocalDateString(timezone);
+  const weekend = isWeekend(timezone);
+
+  const weekdayActivities: Record<ReturnType<typeof ageGroup>, string[]> = {
+    toddler: [
+      `Try colour sorting with household objects — ${child.name} will love it 🎨`,
+      `Stack and knock: building towers teaches ${child.name} cause-and-effect 🏗️`,
+      `Sing the alphabet slowly together — 3 rounds beats any flashcard.`,
+    ],
+    preschool: [
+      `5-minute counting game: count steps from room to room with ${child.name} 🔢`,
+      `Tracing letters in a tray of rice — sensory + literacy for ${child.name} ✏️`,
+      `Ask ${child.name} to sort toys by colour, size, or shape — math brain activated!`,
+    ],
+    child: [
+      `Try a 5-minute math challenge with ${child.name} — who can solve it fastest? 🧮`,
+      `Read one paragraph aloud together and ask ${child.name} to summarise it 📖`,
+      `Play 20 Questions — secretly great for ${child.name}'s critical thinking 🤔`,
+    ],
+    tween: [
+      `Brain challenge: ask ${child.name} to explain a school topic to you — teaching = learning 🎓`,
+      `10-minute journaling: ${child.name} writes 3 things they want to learn this week ✍️`,
+      `Watch a 5-minute documentary clip together and discuss — curiosity booster 🌍`,
+    ],
+  };
+
+  const weekendActivities: Record<ReturnType<typeof ageGroup>, string[]> = {
+    toddler: [
+      `Outdoor morning: let ${child.name} explore nature for 20 minutes 🌿`,
+      `Water play in a bowl — toddlers learn through touch and pour 💧`,
+    ],
+    preschool: [
+      `Family art time: ${child.name} draws, you guess — great for creativity 🎨`,
+      `Bake something simple together — math, science, and joy all in one 🍪`,
+    ],
+    child: [
+      `Weekend science: mix baking soda + vinegar with ${child.name} — instant wow 🧪`,
+      `Board game morning — builds strategy and family bonds 🎲`,
+    ],
+    tween: [
+      `Family walk or bike ride — screen-free bonding for the whole family 🚴`,
+      `Cook a new recipe together — life skill + quality time ☺️`,
+    ],
+  };
+
+  const activities = weekend
+    ? weekendActivities[ageGroup(child.age)]
+    : weekdayActivities[ageGroup(child.age)];
+
+  const idx = Math.floor(Date.now() / 86400000) % activities.length;
+  const body = activities[idx] ?? `Try a short activity with ${child.name} today!`;
+
+  return {
+    title: weekend ? "Weekend activity idea 🌟" : "Learning activity idea 🧠",
+    body,
+    deepLink: "/hub",
+    dedupKey: `learning_activity:${date}`,
+    data: { childId: child.id },
+  };
+}
+
+/**
+ * Developmental milestone alert — fires at 11:00 local. Checks child's
+ * current age band and surfaces one relevant milestone to watch for.
+ * Returns null if we've already sent a milestone for this month.
+ */
+export async function buildMilestoneAlert(
+  userId: string,
+  timezone: string,
+): Promise<BuiltNotification | null> {
+  const child = await getPrimaryChild(userId);
+  if (!child) return null;
+  const date = todayLocalDateString(timezone);
+  const monthKey = date.slice(0, 7); // "YYYY-MM"
+
+  const milestonesByGroup: Record<ReturnType<typeof ageGroup>, string[]> = {
+    toddler: [
+      `${child.name} should be starting to string 2-word phrases — celebrate each new combo 🌟`,
+      `At this age, ${child.name} is learning to self-feed — embrace the mess, it builds confidence.`,
+      `${child.name} might be entering the "no" phase — this is healthy autonomy development.`,
+      `Watch for ${child.name} starting to play alongside other kids (parallel play) — a big step!`,
+    ],
+    preschool: [
+      `${child.name} should be able to draw a simple person — ask them to draw you! 🎨`,
+      `Counting to 10 is a key milestone for ${child.name}'s age — make it a daily game.`,
+      `${child.name} may be developing "best friend" preferences — this is socially healthy.`,
+      `Writing their own name is a big milestone — celebrate every letter ${child.name} gets right.`,
+    ],
+    child: [
+      `${child.name} is at the age of logical reasoning — involve them in simple problem-solving.`,
+      `Reading chapter books independently is a key milestone — celebrate ${child.name}'s progress!`,
+      `${child.name} may start showing empathy for others — reinforce and model it daily.`,
+      `Building a 10-minute focus span is key at this age — short tasks help ${child.name} build it.`,
+    ],
+    tween: [
+      `${child.name} is entering the identity formation stage — their opinions matter, hear them out.`,
+      `Abstract reasoning kicks in at this age — great time for strategy games with ${child.name}.`,
+      `${child.name} may be experiencing peer pressure — keep communication open and non-judgmental.`,
+      `Independence is a key milestone now — let ${child.name} manage one area of their life fully.`,
+    ],
+  };
+
+  const milestones = milestonesByGroup[ageGroup(child.age)];
+  const ageMonthsKey = Math.floor(child.ageMonths / 3); // changes every 3 months
+  const body = milestones[ageMonthsKey % milestones.length] ?? milestones[0]!;
+
+  return {
+    title: `Milestone check for ${child.name} 📈`,
+    body,
+    deepLink: "/hub",
+    dedupKey: `milestone:${monthKey}`, // once per month per user
+    data: { childId: child.id },
+  };
+}
+
+/* ─────────────────────────────  Content map  ─────────────────────────── */
+
 /** Map a category to its content builder. */
 export const contentBuilders: Record<
   NotificationCategory,
   (userId: string, timezone: string) => Promise<BuiltNotification | null>
 > = {
-  routine: buildMorningRoutine,
-  routine_item: buildRoutineItemTest,
-  nutrition: buildNutritionInsight,
-  insights: buildAmyInsight,
-  weekly: buildWeeklyReport,
-  engagement: buildEngagement,
-  good_night: buildGoodNight,
+  routine:           buildMorningRoutine,
+  routine_item:      buildRoutineItemTest,
+  nutrition:         buildNutritionInsight,
+  insights:          buildAmyInsight,
+  weekly:            buildWeeklyReport,
+  engagement:        buildEngagement,
+  good_night:        buildGoodNight,
+  parenting_tips:    buildParentingTip,
+  story_time:        buildStoryTime,
+  phonics:           buildPhonicsReminder,
+  learning_activity: buildLearningActivity,
+  milestone:         buildMilestoneAlert,
 };

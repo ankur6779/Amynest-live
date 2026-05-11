@@ -23,6 +23,11 @@ import {
   buildNutritionInsight,
   buildAmyInsight,
   buildRoutineItem,
+  buildParentingTip,
+  buildStoryTime,
+  buildPhonicsReminder,
+  buildLearningActivity,
+  buildMilestoneAlert,
   type BuiltNotification,
 } from "../services/notificationContentBuilder";
 
@@ -44,13 +49,6 @@ interface RoutineItemShape {
   status?: string;
 }
 
-/**
- * Per-routine UI prefs persisted on `routines.ui_prefs`. The mobile per-routine
- * "Reminders" toggle writes `pushReminders` here so the cron knows which
- * routines to push for. We treat anything not strictly `true` as opt-out so
- * legacy routines (which only carry `ageBandFilter`) stay silent until the user
- * explicitly turns reminders on.
- */
 function routinePushOptedIn(uiPrefs: unknown): boolean {
   if (!uiPrefs || typeof uiPrefs !== "object") return false;
   return (uiPrefs as { pushReminders?: unknown }).pushReminders === true;
@@ -60,10 +58,6 @@ let started = false;
 
 const TZ = process.env["NOTIFICATION_TZ"] ?? "Asia/Kolkata";
 
-/**
- * Returns every userId that has at least one push token registered.
- * Cron jobs only target users who can actually receive notifications.
- */
 async function getTargetUsers(): Promise<string[]> {
   const rows = await db
     .selectDistinct({ userId: pushTokensTable.userId })
@@ -123,16 +117,6 @@ function schedule(name: string, expr: string, runner: () => Promise<unknown>): v
   }
 }
 
-/**
- * Per-task routine reminder.
- *
- * Runs every minute. For each user with a registered push token, computes
- * the current local HH:MM in their timezone, loads their child's routine for
- * that local date, and fires a notification for any item whose scheduled
- * time minus 5 minutes equals the current minute. Dedup is enforced by the
- * dispatch service via a deterministic dedupKey, so a brief duplicate run
- * (e.g. process restart) won't double-send.
- */
 const REMINDER_LEAD_MINUTES = 5;
 
 async function dispatchPerItemReminders(): Promise<{
@@ -153,7 +137,6 @@ async function dispatchPerItemReminders(): Promise<{
       const prefs = await getOrCreatePreferences(userId);
       if (!prefs.routineItemEnabled) continue;
 
-      // Local "now" in the user's timezone.
       const tz = prefs.timezone;
       const dateFmt = new Intl.DateTimeFormat("en-CA", {
         timeZone: tz,
@@ -167,14 +150,12 @@ async function dispatchPerItemReminders(): Promise<{
         minute: "2-digit",
         hour12: false,
       });
-      const localDate = dateFmt.format(new Date()); // "YYYY-MM-DD"
-      const localHHMM = timeFmt.format(new Date()); // "HH:MM"
+      const localDate = dateFmt.format(new Date());
+      const localHHMM = timeFmt.format(new Date());
       const [hh, mm] = localHHMM.split(":").map((s) => parseInt(s, 10));
       if (Number.isNaN(hh) || Number.isNaN(mm)) continue;
       const nowMins = hh * 60 + mm;
 
-      // Pull every routine for every child this user owns, scoped to "today".
-      // Most parents have 1–2 children; this is a small query.
       const rows = await db
         .select({ routine: routinesTable, child: childrenTable })
         .from(routinesTable)
@@ -187,11 +168,6 @@ async function dispatchPerItemReminders(): Promise<{
         );
 
       for (const { routine, child } of rows) {
-        // Per-task push reminders are opt-in per routine: the mobile app sets
-        // `uiPrefs.pushReminders = true` when the user flips the toggle on
-        // the routine detail screen. Without this gate we would push for
-        // every today's routine of every user with the (default-on) global
-        // routine_item category enabled.
         if (!routinePushOptedIn(routine.uiPrefs)) continue;
         const items = (routine.items ?? []) as RoutineItemShape[];
         for (let i = 0; i < items.length; i++) {
@@ -241,10 +217,17 @@ export function startNotificationCron(): void {
     return;
   }
 
+  // ── Core category schedule ─────────────────────────────────────────────
   // Morning routine reminder — 07:30 local.
   schedule("morning_routine", "30 7 * * *", async () => {
     const r = await dispatchToAll("routine", buildMorningRoutine);
     logger.info({ ...r, job: "morning_routine" }, "Cron summary");
+  });
+
+  // Amy AI insight — 12:30 local (lunchtime browse).
+  schedule("amy_insight", "30 12 * * *", async () => {
+    const r = await dispatchToAll("insights", buildAmyInsight);
+    logger.info({ ...r, job: "amy_insight" }, "Cron summary");
   });
 
   // Afternoon snack suggestion — 15:30 local.
@@ -265,12 +248,6 @@ export function startNotificationCron(): void {
     logger.info({ ...r, job: "engagement_sweep" }, "Cron summary");
   });
 
-  // Amy AI insight — 12:30 local (lunchtime browse).
-  schedule("amy_insight", "30 12 * * *", async () => {
-    const r = await dispatchToAll("insights", buildAmyInsight);
-    logger.info({ ...r, job: "amy_insight" }, "Cron summary");
-  });
-
   // Good night — 21:00 local.
   schedule("good_night", "0 21 * * *", async () => {
     const r = await dispatchToAll("good_night", buildGoodNight);
@@ -283,8 +260,38 @@ export function startNotificationCron(): void {
     logger.info({ ...r, job: "weekly_report" }, "Cron summary");
   });
 
-  // Per-task routine reminders — every minute. Fires ~5 min before each
-  // scheduled item. Cheap because most users won't have a match each tick.
+  // ── Smart engine: new categories ──────────────────────────────────────
+  // Parenting tip — 09:00 local (after morning routine, before commute).
+  schedule("parenting_tip", "0 9 * * *", async () => {
+    const r = await dispatchToAll("parenting_tips", buildParentingTip);
+    logger.info({ ...r, job: "parenting_tip" }, "Cron summary");
+  });
+
+  // Learning activity — 10:30 local (mid-morning energy peak).
+  schedule("learning_activity", "30 10 * * *", async () => {
+    const r = await dispatchToAll("learning_activity", buildLearningActivity);
+    logger.info({ ...r, job: "learning_activity" }, "Cron summary");
+  });
+
+  // Milestone alert — 11:00 local (daily check, deduped monthly per user).
+  schedule("milestone_alert", "0 11 * * *", async () => {
+    const r = await dispatchToAll("milestone", buildMilestoneAlert);
+    logger.info({ ...r, job: "milestone_alert" }, "Cron summary");
+  });
+
+  // Phonics practice — 16:00 local (after-school slot, skips tweens).
+  schedule("phonics_reminder", "0 16 * * *", async () => {
+    const r = await dispatchToAll("phonics", buildPhonicsReminder);
+    logger.info({ ...r, job: "phonics_reminder" }, "Cron summary");
+  });
+
+  // Story time — 20:00 local (pre-bedtime wind-down).
+  schedule("story_time", "0 20 * * *", async () => {
+    const r = await dispatchToAll("story_time", buildStoryTime);
+    logger.info({ ...r, job: "story_time" }, "Cron summary");
+  });
+
+  // ── Per-task routine reminders — every minute ──────────────────────────
   schedule("routine_item_sweep", "* * * * *", async () => {
     const r = await dispatchPerItemReminders();
     if (r.scheduled > 0) {
@@ -292,15 +299,13 @@ export function startNotificationCron(): void {
     }
   });
 
-  // Token health sweep — daily at 03:00 local. Removes tokens not seen in
-  // 60 days so the dispatch loop doesn't keep paying for failed sends.
+  // Token health sweep — daily at 03:00 local.
   schedule("token_sweep", "0 3 * * *", async () => {
     const removed = await pruneStaleTokens(60);
     logger.info({ removed, job: "token_sweep" }, "Token sweep summary");
   });
 
-  // Suppress unused var warning — buildNutritionInsight is referenced in
-  // dispatch loops via the contentBuilders map and through other categories.
+  // Suppress unused import warnings
   void buildNutritionInsight;
 
   started = true;
