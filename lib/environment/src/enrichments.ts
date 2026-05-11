@@ -21,6 +21,7 @@ import type {
   EnvironmentalContext,
   Season,
   WeatherCondition,
+  PredictedWeatherShift,
 } from "./types.js";
 
 // Item shape — intentionally a structural subset of the route's RoutineItem
@@ -83,10 +84,80 @@ interface ActivityLibraryShape {
   }>>;
 }
 
+interface CircadianShape {
+  perAge: Record<EnvAgeGroup, {
+    melatoninSupportWindow: { startBeforeBedtimeMin: number; endAtBedtime: boolean };
+    optimalFocusWindows: Array<{ label: string; offsetFromWakeMin: number; durationMin: number }>;
+    eveningWindDownAdjustment: { earlyBedtimeMinIfShortDaylight: number };
+    seasonalWakeShift: { winterEarlierMin: number; summerLaterMin: number };
+    darkWeatherCalmingAdjustment: string;
+    sleepPreparationSuggestions: string[];
+  }>;
+  globals: {
+    shortDaylightThresholdMin: number;
+    longDaylightThresholdMin: number;
+    overcastDimCloudCoverPct: number;
+  };
+}
+
+interface WeatherEnergyShape {
+  conditions: Record<string, {
+    cognitiveEnergyModifier: number;
+    physicalEnergyModifier: number;
+    moodImpact: string;
+    focusDurationAdjustment: number;
+    sensoryStressRisk: string;
+    emotionalRegulationNeed: string;
+    recommendedActivityTypes: string[];
+    recommendedLearningIntensity: "low" | "moderate" | "high";
+    recommendedBreakFrequency: number;
+  }>;
+}
+
+interface StressProfilesShape {
+  factors: Record<string, {
+    stressScore: number;
+    emotionalRisk: string;
+    meltdownRisk: string;
+    calmingActivitySuggestions: string[];
+    stimulationReductionLevel: string;
+    caregiverSupportRecommendation: string;
+    recoveryActivitySuggestions: string[];
+  }>;
+}
+
+interface PredictiveProfilesShape {
+  conditions: Record<string, {
+    preemptiveScheduleAdjustment: string;
+    activityReschedulingPriority: number;
+    fallbackRoutineActivation: string;
+    hydrationAdjustment: number;
+    emotionalPreparationRecommendations: string[];
+    caregiverPreparationSuggestions: string[];
+  }>;
+}
+
+interface EmotionalProfilesShape {
+  conditions: Record<string, {
+    likelyMoodPatterns: string[];
+    stimulationNeeds: string;
+    bondingActivitySuggestions: string[];
+    calmingActivities: string[];
+    confidenceBuildingActivities: string[];
+    creativitySuggestions: string[];
+    emotionalSupportLevel: "low" | "moderate" | "high";
+  }>;
+}
+
 const hydration = datasets.hydrationProfiles as unknown as HydrationProfilesShape;
 const nutrition = datasets.seasonalNutritionProfiles as unknown as SeasonalNutritionShape;
 const uvRules = datasets.UVExposureRules as unknown as UVRulesShape;
 const activityLibrary = datasets.environmentalActivityLibrary as unknown as ActivityLibraryShape;
+const circadian = datasets.circadianProfiles as unknown as CircadianShape;
+const weatherEnergy = datasets.weatherEnergyProfiles as unknown as WeatherEnergyShape;
+const stressProfiles = datasets.environmentalStressProfiles as unknown as StressProfilesShape;
+const predictive = datasets.predictiveWeatherProfiles as unknown as PredictiveProfilesShape;
+const emotional = datasets.emotionalWeatherProfiles as unknown as EmotionalProfilesShape;
 
 // ─── Time helpers ────────────────────────────────────────────────────────
 function timeToMins(t: string): number {
@@ -113,6 +184,33 @@ const MEAL_RE = /\b(breakfast|lunch|dinner|snack|tiffin|meal)\b/i;
 function isMeal(item: EnrichableItem): boolean {
   if (MEAL_CATEGORIES.has(item.category.toLowerCase())) return true;
   return MEAL_RE.test(item.activity);
+}
+
+const STUDY_CATEGORIES = new Set(["learning", "study", "homework", "academic", "school"]);
+const STUDY_RE = /\b(study|homework|learn|reading|practice|spelling|math|science|olympiad|focus)\b/i;
+function isStudy(item: EnrichableItem): boolean {
+  if (STUDY_CATEGORIES.has(item.category.toLowerCase())) return true;
+  return STUDY_RE.test(item.activity);
+}
+
+const WINDDOWN_CATEGORIES = new Set(["wind-down", "winddown", "wind_down", "sleep", "bedtime"]);
+const WINDDOWN_RE = /\b(wind.?down|bedtime|sleep|lullaby|cuddle)\b/i;
+function isWindDown(item: EnrichableItem): boolean {
+  if (WINDDOWN_CATEGORIES.has(item.category.toLowerCase())) return true;
+  return WINDDOWN_RE.test(item.activity);
+}
+
+const BONDING_CATEGORIES = new Set(["bonding", "family", "wind-down"]);
+const BONDING_RE = /\b(story|cuddle|bonding|together|family|read)\b/i;
+function isBonding(item: EnrichableItem): boolean {
+  if (BONDING_CATEGORIES.has(item.category.toLowerCase())) return true;
+  return BONDING_RE.test(item.activity);
+}
+
+const ACTIVE_CATEGORIES = new Set(["play", "outdoor", "outdoor_play", "exercise", "sport"]);
+function isActivePlay(item: EnrichableItem): boolean {
+  if (ACTIVE_CATEGORIES.has(item.category.toLowerCase())) return true;
+  return false;
 }
 
 // Items that were already swapped indoors by `applyWeatherAdjustment` —
@@ -319,6 +417,183 @@ function annotateIndoorSwaps(
   return { items: next, touched };
 }
 
+// ─── 5. Circadian — focus windows + melatonin support ───────────────────
+function annotateCircadian(
+  items: EnrichableItem[],
+  ctx: EnvironmentalContext,
+): { items: EnrichableItem[]; touched: number } {
+  const profile = circadian.perAge[ctx.ageGroup];
+  if (!profile) return { items, touched: 0 };
+
+  const active = items.filter((i) => i.category.toLowerCase() !== "sleep");
+  const wakeMin = active.length > 0 ? timeToMins(active[0]!.time) : null;
+  const sleepItem = items.find((i) => i.category.toLowerCase() === "sleep");
+  const bedtimeMin = sleepItem ? timeToMins(sleepItem.time) : null;
+
+  let touched = 0;
+  const focusWindows = wakeMin === null
+    ? []
+    : profile.optimalFocusWindows.map((w) => ({
+        label: w.label,
+        startMin: wakeMin + w.offsetFromWakeMin,
+        endMin: wakeMin + w.offsetFromWakeMin + w.durationMin,
+      }));
+
+  const melatoninStartMin = bedtimeMin !== null
+    ? bedtimeMin - profile.melatoninSupportWindow.startBeforeBedtimeMin
+    : null;
+
+  const next = items.map((it) => {
+    const itMin = timeToMins(it.time);
+
+    // Study blocks inside an optimal focus window — affirm the timing.
+    if (isStudy(it)) {
+      const inWindow = focusWindows.find((w) => itMin >= w.startMin && itMin <= w.endMin);
+      if (inWindow) {
+        touched++;
+        const tip = `In ${ctx.ageGroup.split("_")[0]}'s peak focus window (${inWindow.label.replace(/_/g, " ")}) — protect this slot from interruptions.`;
+        return { ...it, notes: it.notes ? `${it.notes} · ${tip}` : tip };
+      }
+    }
+
+    // Wind-down items inside the melatonin support window — add a sleep prep tip.
+    if (isWindDown(it) && melatoninStartMin !== null && itMin >= melatoninStartMin && itMin <= (bedtimeMin ?? itMin)) {
+      touched++;
+      const prep = profile.sleepPreparationSuggestions[0] ?? "dim lights, soft voice";
+      const dark = ctx.circadianLightProfile === "early_dark" || ctx.circadianLightProfile === "overcast_dim"
+        ? ` Today is dimmer than usual — try ${profile.darkWeatherCalmingAdjustment.replace(/_/g, " ")}.`
+        : "";
+      const tip = `Melatonin window — ${prep}.${dark}`;
+      return { ...it, notes: it.notes ? `${it.notes} · ${tip}` : tip };
+    }
+
+    return it;
+  });
+
+  return { items: next, touched };
+}
+
+// ─── 6. Weather-energy — break frequency + intensity guidance ────────────
+function annotateWeatherEnergy(
+  items: EnrichableItem[],
+  ctx: EnvironmentalContext,
+): { items: EnrichableItem[]; touched: number } {
+  const profile = weatherEnergy.conditions[ctx.weatherCondition];
+  if (!profile) return { items, touched: 0 };
+
+  const draining = profile.cognitiveEnergyModifier < 0.9 || profile.physicalEnergyModifier < 0.85;
+  const energising = profile.cognitiveEnergyModifier > 1.05;
+  if (!draining && !energising) return { items, touched: 0 };
+
+  let touched = 0;
+  const next = items.map((it) => {
+    if (isStudy(it)) {
+      touched++;
+      const focusDelta = profile.focusDurationAdjustment;
+      const intensity = profile.recommendedLearningIntensity;
+      const breakEvery = profile.recommendedBreakFrequency;
+      const tip = draining
+        ? `Today's ${ctx.weatherCondition} drains focus — keep this ${intensity} intensity, take a short break every ${breakEvery} min${focusDelta < 0 ? `, trim by ${Math.abs(focusDelta)} min if attention slips` : ""}.`
+        : `Today's ${ctx.weatherCondition} boosts focus — safe to push intensity to ${intensity}; break every ${breakEvery} min.`;
+      return { ...it, notes: it.notes ? `${it.notes} · ${tip}` : tip };
+    }
+    if (isActivePlay(it) && draining) {
+      touched++;
+      const physMod = Math.round(profile.physicalEnergyModifier * 100);
+      const tip = `Physical energy is ~${physMod}% of normal in ${ctx.weatherCondition} — keep play gentler and add a water break midway.`;
+      return { ...it, notes: it.notes ? `${it.notes} · ${tip}` : tip };
+    }
+    return it;
+  });
+  return { items: next, touched };
+}
+
+// ─── 7. Stress profiles — calming swap on wind-down/bonding ──────────────
+function pickStressFactor(ctx: EnvironmentalContext): string | null {
+  if (ctx.weatherCondition === "stormy") return "storm_stress";
+  if (ctx.weatherCondition === "heatwave") return "heat_stress";
+  if (ctx.weatherCondition === "humid") return "humidity_stress";
+  if (ctx.sensoryStressLevel === "high" || ctx.sensoryStressLevel === "extreme") return "sensory_overload";
+  if (ctx.environmentalFatigueRisk === "high" || ctx.environmentalFatigueRisk === "extreme") return "atmospheric_fatigue";
+  if (ctx.circadianLightProfile === "early_dark" || ctx.circadianLightProfile === "overcast_dim") {
+    return "low_light_mood_suppression";
+  }
+  return null;
+}
+
+function annotateStress(
+  items: EnrichableItem[],
+  ctx: EnvironmentalContext,
+): { items: EnrichableItem[]; touched: number } {
+  const factorKey = pickStressFactor(ctx);
+  if (!factorKey) return { items, touched: 0 };
+  const factor = stressProfiles.factors[factorKey];
+  if (!factor) return { items, touched: 0 };
+
+  const calming = factor.calmingActivitySuggestions[0];
+  if (!calming) return { items, touched: 0 };
+
+  let touched = 0;
+  let applied = false;
+  const tip = `Stress signal (${factorKey.replace(/_/g, " ")}) — try: ${calming}. ${factor.caregiverSupportRecommendation}.`;
+  const next = items.map((it) => {
+    if (!applied && (isWindDown(it) || isBonding(it))) {
+      applied = true;
+      touched++;
+      return { ...it, notes: it.notes ? `${it.notes} · ${tip}` : tip };
+    }
+    return it;
+  });
+  return { items: next, touched };
+}
+
+// ─── 8. Predictive weather — caregiver heads-up adaptation ───────────────
+function buildPredictiveAdaptation(shift: PredictedWeatherShift | undefined): string | null {
+  if (!shift || shift.kind === "stable") return null;
+  const profile = predictive.conditions[shift.kind];
+  if (!profile) return null;
+  const prep = profile.caregiverPreparationSuggestions[0];
+  const adjust = profile.preemptiveScheduleAdjustment.replace(/_/g, " ");
+  const eta = shift.etaHours > 0 ? ` in ~${shift.etaHours}h` : " soon";
+  const prepStr = prep ? ` — ${prep}` : "";
+  return `Heads-up: ${shift.label}${eta}. Plan: ${adjust}${prepStr}.`;
+}
+
+// ─── 9. Emotional weather — mood-aware annotations ───────────────────────
+function annotateEmotional(
+  items: EnrichableItem[],
+  ctx: EnvironmentalContext,
+): { items: EnrichableItem[]; touched: number } {
+  let key: string = ctx.weatherCondition;
+  if (ctx.weatherCondition === "cloudy" && ctx.circadianLightProfile === "overcast_dim") {
+    key = "dark_cloudy";
+  }
+  const profile = emotional.conditions[key];
+  if (!profile) return { items, touched: 0 };
+  const bondingPick = profile.bondingActivitySuggestions[0];
+  const calmingPick = profile.calmingActivities[0];
+  if (!bondingPick && !calmingPick) return { items, touched: 0 };
+
+  let touched = 0;
+  let bondingApplied = false;
+  const next = items.map((it) => {
+    if (!bondingApplied && isBonding(it) && bondingPick) {
+      bondingApplied = true;
+      touched++;
+      const moods = profile.likelyMoodPatterns.slice(0, 2).join(" / ");
+      const tip = `Mood today (${moods}) — try: ${bondingPick}.`;
+      return { ...it, notes: it.notes ? `${it.notes} · ${tip}` : tip };
+    }
+    if (isWindDown(it) && calmingPick && profile.emotionalSupportLevel === "high") {
+      touched++;
+      const tip = `Emotional support today is high — calming idea: ${calmingPick}.`;
+      return { ...it, notes: it.notes ? `${it.notes} · ${tip}` : tip };
+    }
+    return it;
+  });
+  return { items: next, touched };
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────
 export interface EnrichmentResult {
   items: EnrichableItem[];
@@ -351,6 +626,30 @@ export function applyEnvironmentalEnrichments<T extends EnrichableItem>(
   const swap = annotateIndoorSwaps(items, ctx);
   items = swap.items;
   if (swap.touched > 0) extras.push(`Indoor swaps tailored to today's ${ctx.weatherCondition} conditions.`);
+
+  // 5. Circadian focus + melatonin window
+  const cc = annotateCircadian(items, ctx);
+  items = cc.items;
+  if (cc.touched > 0) extras.push(`Schedule aligned with the child's circadian focus and sleep windows.`);
+
+  // 6. Weather-energy guidance on study + active blocks
+  const we = annotateWeatherEnergy(items, ctx);
+  items = we.items;
+  if (we.touched > 0) extras.push(`Activity intensity tuned to today's ${ctx.weatherCondition} energy profile.`);
+
+  // 7. Stress-factor calming hint on the first wind-down/bonding block
+  const st = annotateStress(items, ctx);
+  items = st.items;
+  if (st.touched > 0) extras.push(`Calming guidance added for today's stress signals.`);
+
+  // 9. Emotional weather — mood-aware bonding + calming hints
+  const em = annotateEmotional(items, ctx);
+  items = em.items;
+  if (em.touched > 0) extras.push(`Bonding suggestions matched to today's likely mood.`);
+
+  // 8. Predictive weather — single caregiver heads-up adaptation
+  const heads = buildPredictiveAdaptation(ctx.predictedWeatherShift);
+  if (heads) extras.push(heads);
 
   // 1. Hydration reminders (inserted last so they don't get UV-annotated etc.)
   const reminders = buildHydrationReminders(items, ctx);
