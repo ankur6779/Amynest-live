@@ -13,6 +13,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useAudioRecorder, AudioModule, RecordingPresets } from "expo-audio";
+import * as FileSystem from "expo-file-system";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useFeatureUsage } from "@/hooks/useFeatureUsage";
@@ -26,8 +28,10 @@ import {
   SPEECH_GAMES,
   SPEECH_MILESTONES,
   monthsToBand,
+  compareTranscript,
   type PronouncePromptKind,
   type SpeechAgeBand,
+  type TranscriptFeedback,
 } from "@workspace/speech-coach";
 
 type Child = { id: number; name: string; age: number; ageMonths?: number };
@@ -79,6 +83,15 @@ export default function SpeechCoachScreen() {
 
   const [milestoneTab, setMilestoneTab] = useState<SpeechAgeBand>(childBand);
   const [pronounceTab, setPronounceTab] = useState<PronouncePromptKind>("letter");
+  const [selectedPromptText, setSelectedPromptText] = useState<string | null>(null);
+  const [sttRecording, setSttRecording] = useState(false);
+  const [sttTranscribing, setSttTranscribing] = useState(false);
+  const [sttResult, setSttResult] = useState<{
+    transcript: string;
+    feedback: TranscriptFeedback;
+    score: number;
+  } | null>(null);
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const joinWaitlist = useMutation({
     mutationFn: async () => {
@@ -124,6 +137,48 @@ export default function SpeechCoachScreen() {
     },
     [voice],
   );
+
+  const startSttRecording = useCallback(async () => {
+    try {
+      const { granted } = await AudioModule.requestRecordingPermissionsAsync();
+      if (!granted) return;
+      setSttResult(null);
+      setSttRecording(true);
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
+    } catch {
+      setSttRecording(false);
+    }
+  }, [audioRecorder]);
+
+  const stopSttRecording = useCallback(async () => {
+    if (!sttRecording) return;
+    setSttRecording(false);
+    setSttTranscribing(true);
+    try {
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri;
+      if (!uri) { setSttTranscribing(false); return; }
+      const audioBase64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: "base64",
+      });
+      const res = await authFetch("/api/speech/transcribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audioBase64 }),
+      });
+      if (!res.ok) { setSttTranscribing(false); return; }
+      const { transcript } = (await res.json()) as { transcript: string };
+      if (transcript && selectedPromptText) {
+        const r = compareTranscript(selectedPromptText, transcript);
+        setSttResult({ transcript, feedback: r.feedback, score: r.score });
+      }
+    } catch {
+      // silently discard — error visible via missing result
+    } finally {
+      setSttTranscribing(false);
+    }
+  }, [sttRecording, audioRecorder, authFetch, selectedPromptText]);
 
   const storyTitle = t("screens.speech_coach.read_aloud.story_default_title");
   const storyBody = t("screens.speech_coach.read_aloud.story_default_body");
@@ -288,7 +343,11 @@ export default function SpeechCoachScreen() {
                     </Text>
                   </View>
                   <Pressable
-                    onPress={() => handleSpeak(p.text, isPhonic ? "phonics" : undefined)}
+                    onPress={() => {
+                      setSelectedPromptText(p.text);
+                      setSttResult(null);
+                      handleSpeak(p.text, isPhonic ? "phonics" : undefined);
+                    }}
                     style={[s.miniBtn, { backgroundColor: brand.violet500 }]}
                   >
                     <Ionicons
@@ -305,19 +364,111 @@ export default function SpeechCoachScreen() {
                 </View>
               );
             })}
-            <Pressable
-              disabled
-              style={[s.fullBtn, { backgroundColor: c.muted, opacity: 0.6 }]}
-              accessibilityState={{ disabled: true }}
-            >
-              <Ionicons name="mic-outline" size={16} color={c.mutedForeground} />
-              <Text style={[s.fullBtnText, { color: c.mutedForeground }]}>
-                {t("screens.speech_coach.pronounce.start_recording")}
+
+            {/* ── STT Recording Panel ──────────────────────────────────── */}
+            <View style={[s.sttPanel, { backgroundColor: c.card, borderColor: c.border }]}>
+              <Text style={[s.sttPanelTitle, { color: c.mutedForeground }]}>
+                {t("screens.speech_coach.stt.panel_title")}
               </Text>
-            </Pressable>
-            <Text style={[s.note, { color: c.mutedForeground }]}>
-              {t("screens.speech_coach.pronounce.placeholder_note")}
-            </Text>
+              {selectedPromptText ? (
+                <Text style={[s.sttSayPrompt, { color: c.foreground }]}>
+                  {t("screens.speech_coach.stt.say_prompt")}{" "}
+                  <Text style={{ color: brand.violet500 }}>&ldquo;{selectedPromptText}&rdquo;</Text>
+                </Text>
+              ) : (
+                <Text style={[s.sttHint, { color: c.mutedForeground }]}>
+                  {t("screens.speech_coach.stt.tap_a_prompt_first")}
+                </Text>
+              )}
+
+              {sttRecording ? (
+                <Pressable
+                  onPress={() => void stopSttRecording()}
+                  style={[s.fullBtn, { backgroundColor: palette.red500 }]}
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="stop-circle" size={16} color="#FFFFFF"/* audit-ok: icon on filled red */ />
+                  <Text style={s.fullBtnText}>
+                    {t("screens.speech_coach.stt.stop_recording")}
+                  </Text>
+                </Pressable>
+              ) : sttTranscribing ? (
+                <View style={[s.fullBtn, { backgroundColor: c.muted }]}>
+                  <Ionicons name="hourglass" size={16} color={c.mutedForeground} />
+                  <Text style={[s.fullBtnText, { color: c.mutedForeground }]}>
+                    {t("screens.speech_coach.stt.transcribing")}
+                  </Text>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={() => void startSttRecording()}
+                  disabled={!selectedPromptText}
+                  style={[
+                    s.fullBtn,
+                    selectedPromptText
+                      ? { backgroundColor: brand.violet500 }
+                      : { backgroundColor: c.muted, opacity: 0.6 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: !selectedPromptText }}
+                >
+                  <Ionicons
+                    name="mic"
+                    size={16}
+                    color={selectedPromptText ? "#FFFFFF" : c.mutedForeground}/* audit-ok: icon on brand */
+                  />
+                  <Text
+                    style={[
+                      s.fullBtnText,
+                      !selectedPromptText && { color: c.mutedForeground },
+                    ]}
+                  >
+                    {t("screens.speech_coach.stt.tap_to_record")}
+                  </Text>
+                </Pressable>
+              )}
+
+              {sttRecording && (
+                <View style={s.listeningRow}>
+                  <View style={[s.listeningDot, { backgroundColor: brand.violet500 }]} />
+                  <Text style={[s.listeningText, { color: brand.violet500 }]}>
+                    {t("screens.speech_coach.stt.listening")}
+                  </Text>
+                </View>
+              )}
+
+              {sttResult && !sttRecording && !sttTranscribing && (
+                <View
+                  style={[
+                    s.sttResultCard,
+                    {
+                      backgroundColor:
+                        sttResult.feedback === "great"
+                          ? "rgba(16,185,129,0.12)"
+                          : sttResult.feedback === "close"
+                            ? "rgba(245,158,11,0.12)"
+                            : "rgba(239,68,68,0.12)",
+                      borderColor:
+                        sttResult.feedback === "great"
+                          ? "rgba(16,185,129,0.35)"
+                          : sttResult.feedback === "close"
+                            ? "rgba(245,158,11,0.35)"
+                            : "rgba(239,68,68,0.35)",
+                    },
+                  ]}
+                >
+                  <Text style={[s.sttResultLabel, { color: c.foreground }]}>
+                    {t(`screens.speech_coach.stt.feedback.${sttResult.feedback}`)}
+                    <Text style={{ color: c.mutedForeground }}>
+                      {" "}({sttResult.score}%)
+                    </Text>
+                  </Text>
+                  <Text style={[s.sttResultSaid, { color: c.mutedForeground }]}>
+                    {t("screens.speech_coach.stt.you_said")} &ldquo;{sttResult.transcript}&rdquo;
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
         </SectionShell>
 
@@ -831,5 +982,53 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
+  },
+  sttPanel: {
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+  },
+  sttPanelTitle: {
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  sttSayPrompt: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  sttHint: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  listeningRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  listeningDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  listeningText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  sttResultCard: {
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+  },
+  sttResultLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  sttResultSaid: {
+    fontSize: 11,
+    lineHeight: 16,
   },
 });

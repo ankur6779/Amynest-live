@@ -15,6 +15,10 @@ import {
   getPromptsForAgeMonths,
   monthsToBand,
 } from "@workspace/speech-coach";
+import {
+  speechToText,
+  ensureCompatibleFormat,
+} from "@workspace/integrations-openai-ai-server";
 import { z } from "zod";
 import { getAuth } from "../lib/auth";
 import { featureGate } from "../middlewares/featureGate";
@@ -491,6 +495,65 @@ router.post("/speech/expert-waitlist", async (req, res): Promise<void> => {
     notes: row.notes ?? null,
     alreadyOnWaitlist,
   });
+});
+
+// ─── POST /speech/transcribe ─────────────────────────────────────────────────
+//
+// Accepts a base64-encoded audio blob from the client (web MediaRecorder
+// fallback or mobile expo-audio), transcribes it with Whisper, and returns
+// the plain-text transcript. The caller is responsible for comparing the
+// result against the expected prompt text.
+//
+// Auth: required (bearer token).  Rate-limit: 20 calls per user per day via
+// the usage_daily table (shared bucket "speech_transcribe").
+// No additional feature-gate consume — the hub section already gated.
+
+const transcribeBodySchema = z.object({
+  audioBase64: z.string().min(1),
+});
+
+router.post("/speech/transcribe", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const parsed = transcribeBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+    return;
+  }
+
+  const rawBuffer = Buffer.from(parsed.data.audioBase64, "base64");
+  if (rawBuffer.length < 100) {
+    res.status(422).json({ error: "audio_too_short" });
+    return;
+  }
+
+  let compatBuffer: Buffer;
+  let compatFormat: "wav" | "mp3";
+  try {
+    const result = await ensureCompatibleFormat(rawBuffer);
+    compatBuffer = result.buffer;
+    compatFormat = result.format;
+  } catch (err) {
+    req.log.warn({ err, userId }, "speech.transcribe format conversion failed");
+    res.status(422).json({ error: "audio_format_unsupported" });
+    return;
+  }
+
+  let transcript: string;
+  try {
+    transcript = await speechToText(compatBuffer, compatFormat);
+  } catch (err) {
+    req.log.error({ err, userId }, "speech.transcribe whisper call failed");
+    res.status(502).json({ error: "transcription_failed" });
+    return;
+  }
+
+  req.log.info({ userId, chars: transcript.length }, "speech.transcribe ok");
+  res.json({ transcript });
 });
 
 export default router;

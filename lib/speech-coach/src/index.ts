@@ -22,3 +22,8 @@ export {
   SPEECH_COACH_I18N_MANIFEST,
   type I18nKeyManifest,
 } from "./i18n-manifest";
+export {
+  compareTranscript,
+  type TranscriptFeedback,
+  type TranscriptResult,
+} from "./transcript";
