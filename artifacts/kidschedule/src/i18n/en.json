@@ -4323,5 +4323,22 @@
     "violations": "Concerns",
     "adjustments": "Suggested Adjustments",
     "error_generic": "Could not run safety check."
+  },
+  "tour": {
+    "step1_title": "Your Smart Home 🏠",
+    "step1_body": "Your smart parenting hub — daily routines, progress insights, and everything you need in one place.",
+    "step2_title": "AI Routine System 📅",
+    "step2_body": "Generate AI-powered daily routines personalised to your child's age, habits, sleep time, and learning goals.",
+    "step2_badge": "✨ Patent Pending",
+    "step3_title": "Meet Amy Coach 🧠",
+    "step3_body": "Your AI parenting coach — ask anything about routines, learning, emotions, speech, or child behaviour.",
+    "step4_title": "Parent Hub 📚",
+    "step4_body": "Explore stories, phonics, worksheets, speech coaching, learning tools, and parenting support.",
+    "step5_title": "Ask AMY Anything ✨",
+    "step5_body": "Your floating AI assistant — tap to ask about parenting, child learning, habits, emotions, and more.",
+    "aria_label": "App tour",
+    "skip": "Skip tour",
+    "next": "Next",
+    "done": "Let's go! 🚀"
   }
 }
