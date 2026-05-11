@@ -44,6 +44,26 @@ import type { AgeBand } from "@/lib/age-bands";
 import { getAgeBand, getNextAgeBand, bandLabel } from "@/lib/age-bands";
 import { ComingNextWrapper } from "@/components/coming-next-wrapper";
 
+// ── 5-section grouping for the "For You" content ────────────────────────────
+// Maps each premium section key to the tile IDs that live inside it.
+// Featured tiles (command-center, infant-hub, tomorrow-forecast) always land
+// in "today" regardless of this map.
+const WEB_HUB_SECTION_TILE_IDS: Record<string, string[]> = {
+  today:      ["amy-ai", "daily-tips"],
+  learning:   ["smart-math-tricks", "abacus", "phonics", "spelling-mastery", "smart-study", "olympiad", "event-prep"],
+  creativity: ["activities", "art-craft", "coloring-books", "fun-sheets"],
+  stories:    ["story-hub", "speech-coach"],
+  support:    ["articles", "emotional", "life-skills", "ptm-prep"],
+};
+
+const WEB_HUB_GROUPS = [
+  { key: "today",      emoji: "✨", i18n: "parent_hub.section_groups.today"      },
+  { key: "learning",   emoji: "📚", i18n: "parent_hub.section_groups.learning"   },
+  { key: "creativity", emoji: "🎨", i18n: "parent_hub.section_groups.creativity" },
+  { key: "stories",    emoji: "📖", i18n: "parent_hub.section_groups.stories"    },
+  { key: "support",    emoji: "❤️", i18n: "parent_hub.section_groups.support"    },
+] as const;
+
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
 interface SectionProps {
   id: string;
@@ -466,6 +486,19 @@ export default function ParentingHub() {
   // premium users always get full access.
   const hubUsage = useFeatureUsage();
   const tryFreeFor = (id: string) => !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
+
+  // Section-group expand/collapse — "today" + "learning" open by default.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    () => new Set(["today", "learning"]),
+  );
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
   const handleChildSelect = (id: number) => {
     setSelectedChildId(id);
     if (typeof window !== "undefined") {
@@ -803,21 +836,73 @@ export default function ParentingHub() {
           {/* ── SECTION 1: For {Child Name} ─────────────────────────────── */}
           <ForYouHeader childName={effectiveChild.name} band={currentBand} ageGroup={ageGroup} />
 
-          {/* Featured (full-width) */}
-          {forYouFeatured.length > 0 && <div className="space-y-3">
-              {forYouFeatured.map(s => {
-          const node = s.render();
-          return node ? <div key={s.id}>{node}</div> : null;
-        })}
-            </div>}
+          {/* Quick actions bar */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {WEB_HUB_GROUPS.map(g => {
+              const active = expandedGroups.has(g.key);
+              return (
+                <button
+                  key={g.key}
+                  onClick={() => { if (!active) toggleGroup(g.key); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
+                    active
+                      ? "bg-primary/10 text-primary border-primary/30"
+                      : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                  }`}
+                >
+                  <span>{g.emoji}</span>
+                  <span>{t(g.i18n)}</span>
+                </button>
+              );
+            })}
+          </div>
 
-          {/* 2-column grid */}
-          {forYouGrid.length > 0 && <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-              {forYouGrid.map(s => {
-          const node = s.render();
-          return node ? <div key={s.id}>{node}</div> : null;
-        })}
-            </div>}
+          {/* 5 collapsible section groups */}
+          <div className="space-y-4">
+            {WEB_HUB_GROUPS.map(group => {
+              const tileIds = new Set(WEB_HUB_SECTION_TILE_IDS[group.key] ?? []);
+              const groupFeatured = group.key === "today" ? forYouFeatured : [];
+              const groupGrid = forYouGrid.filter(s => tileIds.has(s.id));
+              if (groupFeatured.length === 0 && groupGrid.length === 0) return null;
+              const isOpen = expandedGroups.has(group.key);
+              return (
+                <div key={group.key} id={`hub-group-${group.key}`}>
+                  <button
+                    onClick={() => toggleGroup(group.key)}
+                    className="w-full flex items-center gap-2.5 text-left px-1 py-1 mb-3"
+                  >
+                    <span className={`flex items-center justify-center w-8 h-8 rounded-xl text-lg ${isOpen ? "bg-primary/12" : "bg-muted"}`}>
+                      {group.emoji}
+                    </span>
+                    <span className={`flex-1 text-sm font-bold tracking-wide uppercase ${isOpen ? "text-primary" : "text-foreground"}`}>
+                      {t(group.i18n)}
+                    </span>
+                    <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="space-y-3 pl-1">
+                      {groupFeatured.length > 0 && (
+                        <div className="space-y-3">
+                          {groupFeatured.map(s => {
+                            const node = s.render();
+                            return node ? <div key={s.id}>{node}</div> : null;
+                          })}
+                        </div>
+                      )}
+                      {groupGrid.length > 0 && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+                          {groupGrid.map(s => {
+                            const node = s.render();
+                            return node ? <div key={s.id}>{node}</div> : null;
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
 
           {/* ── SECTION 2: Explore Next Stage — ONLY for 0-24 month children ── */}
           {showSection2 && nextBand && <>

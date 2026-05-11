@@ -57,6 +57,23 @@ import { useColors } from "@/hooks/useColors";
 
 const LOGO = require("../../assets/images/amynest-logo.png");
 
+// ── 5-section content grouping ────────────────────────────────────────────────
+// Tile IDs bucketed by content category. The render IIFE computes section1
+// (all band-matched tiles) then groups them here for collapsible display.
+const SECTION_TODAY_IDS      = new Set(["amy", "tips"]);
+const SECTION_LEARNING_IDS   = new Set(["smart-study","phonics-learning","phonics","olympiad","abacus","smart-math-tricks","skills-focus"]);
+const SECTION_CREATIVITY_IDS = new Set(["activities","art-craft","coloring-books","fun-sheets","daily-puzzle","morning-flow"]);
+const SECTION_STORIES_IDS    = new Set(["story-hub","speech_coach","daily-story"]);
+const SECTION_SUPPORT_IDS    = new Set(["articles","emotional","ptm-prep","life-skills","event-prep","kids-control-center","meals","facts","worksheets","infant-parenting"]);
+
+const HUB_SECTION_GROUPS = [
+  { key: "today",      emoji: "✨", i18nKey: "parent_hub.section_groups.today",      tileIds: SECTION_TODAY_IDS,      defaultOpen: true  },
+  { key: "learning",   emoji: "📚", i18nKey: "parent_hub.section_groups.learning",   tileIds: SECTION_LEARNING_IDS,   defaultOpen: true  },
+  { key: "creativity", emoji: "🎨", i18nKey: "parent_hub.section_groups.creativity", tileIds: SECTION_CREATIVITY_IDS, defaultOpen: false },
+  { key: "stories",    emoji: "📖", i18nKey: "parent_hub.section_groups.stories",    tileIds: SECTION_STORIES_IDS,    defaultOpen: false },
+  { key: "support",    emoji: "❤️", i18nKey: "parent_hub.section_groups.support",    tileIds: SECTION_SUPPORT_IDS,    defaultOpen: false },
+] as const;
+
 // Avatar gradient palette for child selector cards — matches web ChildSelectorPanel
 // AVATAR_COLORS, adapted to the brand gradient token system (expo-linear-gradient).
 const AVATAR_GRADIENTS: readonly [string, string][] = [
@@ -164,6 +181,25 @@ export default function HubScreen() {
   // shown in full opacity (un-dimmed) and we scroll to it. Tapping the current
   // band chip clears it and returns to the default 2-section view.
   const [previewBand, setPreviewBand] = useState<number | null>(null);
+
+  // Section-group expand/collapse state — "today" and "learning" open by default.
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    () => new Set(["today", "learning"]),
+  );
+  const toggleSection = useCallback((key: string) => {
+    LayoutAnimation.configureNext({
+      duration: 260,
+      create: { type: "easeInEaseOut", property: "opacity" },
+      update: { type: "easeInEaseOut" },
+      delete: { type: "easeInEaseOut", property: "opacity" },
+    });
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }, []);
+
   const groupRefs = useRef<Record<number, View | null>>({});
   const mainScrollRef = useRef<ScrollView>(null);
 
@@ -1594,61 +1630,164 @@ export default function HubScreen() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
               >
-                {/* Language switcher — moved into scroll content so it doesn't
-                    eat sticky header space. Caregivers can still toggle at any
-                    time without leaving the hub. */}
-
-                {/* Featured tiles */}
-                <View style={[styles.sectionsGrid, { marginTop: 4 }]}>
-                  <LockedBlock
-                    reason="hub_command_center"
-                    locked={hubUsage.isFeatureLocked("hub_command_center")}
-                  >
-                    <View style={{ position: "relative" }}>
-                      <HubTile
-                        featured
-                        testID="hub-tile-command-center"
-                        onPress={() => hubUsage.markFeatureUsed("hub_command_center")}
+                {/* Quick actions bar — tap a chip to expand that section */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingTop: 6, paddingBottom: 8 }}
+                >
+                  {HUB_SECTION_GROUPS.map(g => {
+                    const isActive = expandedSections.has(g.key);
+                    return (
+                      <Pressable
+                        key={g.key}
+                        onPress={() => { if (!isActive) toggleSection(g.key); }}
+                        style={({ pressed }) => ({
+                          flexDirection: "row", alignItems: "center", gap: 5,
+                          paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+                          backgroundColor: isActive ? `${brand.primary}1a` : "rgba(255,255,255,0.07)",
+                          borderWidth: 1,
+                          borderColor: isActive ? brand.primary : "rgba(255,255,255,0.12)",
+                          opacity: pressed ? 0.8 : 1,
+                        })}
                       >
-                        <ParentCommandCenter child={{ id: effective.id, name: effective.name, age: effective.age }} />
-                      </HubTile>
-                      {tryFreeFor("hub_command_center") ? (
-                        <View style={styles.tileBadgeOverlay} pointerEvents="none">
-                          <TryFreeBadge />
-                        </View>
-                      ) : null}
-                    </View>
-                  </LockedBlock>
-                  <LockedBlock
-                    reason="hub_tomorrow_forecast"
-                    locked={hubUsage.isFeatureLocked("hub_tomorrow_forecast")}
-                  >
-                    <View style={{ position: "relative" }}>
-                      <HubTile
-                        featured
-                        testID="hub-tile-tomorrow-forecast"
-                        onPress={() => hubUsage.markFeatureUsed("hub_tomorrow_forecast")}
-                      >
-                        <FuturePredictor childId={effective.id} />
-                      </HubTile>
-                      {tryFreeFor("hub_tomorrow_forecast") ? (
-                        <View style={styles.tileBadgeOverlay} pointerEvents="none">
-                          <TryFreeBadge />
-                        </View>
-                      ) : null}
-                    </View>
-                  </LockedBlock>
-                </View>
+                        <Text style={{ fontSize: 14 }}>{g.emoji}</Text>
+                        <Text style={{ fontSize: 11.5, fontWeight: "700", color: isActive ? brand.primary : c.foreground }}>
+                          {t(g.i18nKey)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
 
-                {/* Band tiles in web-matching order */}
-                {section1.length > 0 && (
-                  <View style={[styles.sectionsGrid, { marginTop: 8 }]}>
-                    {section1.map((t) => (
-                      <HubTile key={t.id} testID={`hub-tile-${t.id}`}>
-                        {t.node}
-                      </HubTile>
-                    ))}
+                {/* TODAY FOR YOU — featured tiles + amy + tips */}
+                <HubSectionGroupBlock
+                  emoji="✨"
+                  title={t("parent_hub.section_groups.today")}
+                  expanded={expandedSections.has("today")}
+                  onToggle={() => toggleSection("today")}
+                >
+                  <View style={[styles.sectionsGrid, { marginTop: 4 }]}>
+                    <LockedBlock
+                      reason="hub_command_center"
+                      locked={hubUsage.isFeatureLocked("hub_command_center")}
+                    >
+                      <View style={{ position: "relative" }}>
+                        <HubTile
+                          featured
+                          testID="hub-tile-command-center"
+                          onPress={() => hubUsage.markFeatureUsed("hub_command_center")}
+                        >
+                          <ParentCommandCenter child={{ id: effective.id, name: effective.name, age: effective.age }} />
+                        </HubTile>
+                        {tryFreeFor("hub_command_center") ? (
+                          <View style={styles.tileBadgeOverlay} pointerEvents="none">
+                            <TryFreeBadge />
+                          </View>
+                        ) : null}
+                      </View>
+                    </LockedBlock>
+                    <LockedBlock
+                      reason="hub_tomorrow_forecast"
+                      locked={hubUsage.isFeatureLocked("hub_tomorrow_forecast")}
+                    >
+                      <View style={{ position: "relative" }}>
+                        <HubTile
+                          featured
+                          testID="hub-tile-tomorrow-forecast"
+                          onPress={() => hubUsage.markFeatureUsed("hub_tomorrow_forecast")}
+                        >
+                          <FuturePredictor childId={effective.id} />
+                        </HubTile>
+                        {tryFreeFor("hub_tomorrow_forecast") ? (
+                          <View style={styles.tileBadgeOverlay} pointerEvents="none">
+                            <TryFreeBadge />
+                          </View>
+                        ) : null}
+                      </View>
+                    </LockedBlock>
                   </View>
+                  {section1.some(tile => SECTION_TODAY_IDS.has(tile.id)) && (
+                    <View style={[styles.sectionsGrid, { marginTop: 8 }]}>
+                      {section1.filter(tile => SECTION_TODAY_IDS.has(tile.id)).map(tile => (
+                        <HubTile key={tile.id} testID={`hub-tile-${tile.id}`}>
+                          {tile.node}
+                        </HubTile>
+                      ))}
+                    </View>
+                  )}
+                </HubSectionGroupBlock>
+
+                {/* LEARNING ZONE */}
+                {section1.some(tile => SECTION_LEARNING_IDS.has(tile.id)) && (
+                  <HubSectionGroupBlock
+                    emoji="📚"
+                    title={t("parent_hub.section_groups.learning")}
+                    expanded={expandedSections.has("learning")}
+                    onToggle={() => toggleSection("learning")}
+                  >
+                    <View style={[styles.sectionsGrid, { marginTop: 4 }]}>
+                      {section1.filter(tile => SECTION_LEARNING_IDS.has(tile.id)).map(tile => (
+                        <HubTile key={tile.id} testID={`hub-tile-${tile.id}`}>
+                          {tile.node}
+                        </HubTile>
+                      ))}
+                    </View>
+                  </HubSectionGroupBlock>
+                )}
+
+                {/* CREATIVITY & ACTIVITIES */}
+                {section1.some(tile => SECTION_CREATIVITY_IDS.has(tile.id)) && (
+                  <HubSectionGroupBlock
+                    emoji="🎨"
+                    title={t("parent_hub.section_groups.creativity")}
+                    expanded={expandedSections.has("creativity")}
+                    onToggle={() => toggleSection("creativity")}
+                  >
+                    <View style={[styles.sectionsGrid, { marginTop: 4 }]}>
+                      {section1.filter(tile => SECTION_CREATIVITY_IDS.has(tile.id)).map(tile => (
+                        <HubTile key={tile.id} testID={`hub-tile-${tile.id}`}>
+                          {tile.node}
+                        </HubTile>
+                      ))}
+                    </View>
+                  </HubSectionGroupBlock>
+                )}
+
+                {/* STORIES & COMMUNICATION */}
+                {section1.some(tile => SECTION_STORIES_IDS.has(tile.id)) && (
+                  <HubSectionGroupBlock
+                    emoji="📖"
+                    title={t("parent_hub.section_groups.stories")}
+                    expanded={expandedSections.has("stories")}
+                    onToggle={() => toggleSection("stories")}
+                  >
+                    <View style={[styles.sectionsGrid, { marginTop: 4 }]}>
+                      {section1.filter(tile => SECTION_STORIES_IDS.has(tile.id)).map(tile => (
+                        <HubTile key={tile.id} testID={`hub-tile-${tile.id}`}>
+                          {tile.node}
+                        </HubTile>
+                      ))}
+                    </View>
+                  </HubSectionGroupBlock>
+                )}
+
+                {/* PARENT SUPPORT */}
+                {section1.some(tile => SECTION_SUPPORT_IDS.has(tile.id)) && (
+                  <HubSectionGroupBlock
+                    emoji="❤️"
+                    title={t("parent_hub.section_groups.support")}
+                    expanded={expandedSections.has("support")}
+                    onToggle={() => toggleSection("support")}
+                  >
+                    <View style={[styles.sectionsGrid, { marginTop: 4 }]}>
+                      {section1.filter(tile => SECTION_SUPPORT_IDS.has(tile.id)).map(tile => (
+                        <HubTile key={tile.id} testID={`hub-tile-${tile.id}`}>
+                          {tile.node}
+                        </HubTile>
+                      ))}
+                    </View>
+                  </HubSectionGroupBlock>
                 )}
 
                 {/* Explore Next Stage */}
@@ -1898,6 +2037,90 @@ function Section({
         </View>
       </Pressable>
       {open && <View style={styles.sectionBody}>{children}</View>}
+    </View>
+  );
+}
+
+// ─── HubSectionGroupBlock ────────────────────────────────────────────────────
+// Collapsible section container for the 5-group Parent Hub layout.
+// Uses LayoutAnimation (triggered by the parent toggleSection callback) for
+// smooth open/close. Keeps tile gradients/LockedBlock structure unchanged.
+function HubSectionGroupBlock({
+  emoji,
+  title,
+  expanded,
+  onToggle,
+  children,
+}: {
+  emoji: string;
+  title: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  const c = useColors();
+  const { mode } = useTheme();
+  const isLight = mode === "light";
+  const glassBg = isLight ? "rgba(255,255,255,0.60)" : "rgba(255,255,255,0.04)";
+  const glassBorder = isLight ? "rgba(15,23,42,0.07)" : "rgba(255,255,255,0.09)";
+  return (
+    <View
+      style={{
+        marginTop: 12,
+        borderRadius: 18,
+        overflow: "hidden",
+        backgroundColor: glassBg,
+        borderWidth: 1,
+        borderColor: glassBorder,
+      }}
+    >
+      <Pressable
+        onPress={onToggle}
+        style={({ pressed }) => ({
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          opacity: pressed ? 0.8 : 1,
+        })}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+      >
+        <View
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            backgroundColor: isLight ? "rgba(99,102,241,0.10)" : "rgba(99,102,241,0.18)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ fontSize: 18 }}>{emoji}</Text>
+        </View>
+        <Text
+          style={{
+            flex: 1,
+            color: c.foreground,
+            fontWeight: "800",
+            fontSize: 13.5,
+            letterSpacing: 0.3,
+          }}
+        >
+          {title}
+        </Text>
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={16}
+          color={expanded ? brand.primary : c.mutedForeground}
+        />
+      </Pressable>
+      {expanded && (
+        <View style={{ paddingHorizontal: 10, paddingBottom: 12, paddingTop: 2 }}>
+          {children}
+        </View>
+      )}
     </View>
   );
 }

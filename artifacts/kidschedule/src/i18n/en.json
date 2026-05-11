@@ -2439,6 +2439,13 @@
       "start": "Start",
       "no_routine": "No routine for today yet",
       "no_routine_help": "Generate one to unlock the timeline + smart suggestions."
+    },
+    "section_groups": {
+      "today": "Today For You",
+      "learning": "Learning Zone",
+      "creativity": "Creativity & Activities",
+      "stories": "Stories & Communication",
+      "support": "Parent Support"
     }
   },
   "components": {
