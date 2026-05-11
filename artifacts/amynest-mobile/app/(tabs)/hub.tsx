@@ -1317,8 +1317,6 @@ export default function HubScreen() {
           allTiles.push({
             id: "speech_coach",
             ageBands: HUB_CONTENT_AGE_BANDS["speech_coach"],
-            ageMonthsMin: HUB_TILE_AGE_MONTHS["speech_coach"]?.min,
-            ageMonthsMax: HUB_TILE_AGE_MONTHS["speech_coach"]?.max,
             node: (
               <View style={tileW("speech_coach")}>
               <LockedBlock

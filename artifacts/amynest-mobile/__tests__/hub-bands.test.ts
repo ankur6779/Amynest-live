@@ -108,7 +108,7 @@ describe("HUB_CONTENT_AGE_BANDS", () => {
       "skills-focus", "daily-story", "daily-puzzle",
       // Infant Parenting Guide (band 0 only) — mirrors web Activities > InfantMode
       "infant-parenting",
-      // Task #326 — Amy Speech Coach (mobile-only learning module, ages 1–8y)
+      // Task #326 — Amy Speech Coach (mobile-only learning module, all infants + ages up to 8y)
       "speech_coach",
     ].sort();
     const actualIds = Object.keys(HUB_CONTENT_AGE_BANDS).sort();
