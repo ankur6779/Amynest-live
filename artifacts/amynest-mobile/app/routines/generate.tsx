@@ -120,7 +120,8 @@ function formatDate(iso: string): string {
 // Per-child colors used by the combined timeline preview (mirrors web).
 const CHILD_COLORS = [palette.blue500, brand.purple500, palette.emerald500, palette.rose500, palette.amber500];
 
-type FamilyChildSettings = Record<number, { selected: boolean; hasSchool: boolean | null }>;
+type SchoolMealMode = "disabled" | "snack_only" | "packed_lunch_only" | "snack_and_packed_lunch";
+type FamilyChildSettings = Record<number, { selected: boolean; hasSchool: boolean | null; schoolMealMode?: SchoolMealMode }>;
 
 export default function GenerateRoutineScreen() {
   const { t } = useTranslation();
@@ -145,6 +146,7 @@ export default function GenerateRoutineScreen() {
   const [date, setDate] = useState<string>(initialDate);
   const [mood, setMood] = useState<Mood>("normal");
   const [hasSchool, setHasSchool] = useState<boolean | null>(null);
+  const [schoolMealMode, setSchoolMealMode] = useState<SchoolMealMode>("snack_and_packed_lunch");
   const [specialPlans, setSpecialPlans] = useState<string>("");
   const [fridgeItems, setFridgeItems] = useState<string>("");
   const [handlerType, setHandlerType] = useState<HandlerKey>("mom");
@@ -468,6 +470,7 @@ export default function GenerateRoutineScreen() {
     childId: selectedChild,
     date,
     hasSchool: hasSchool ?? undefined,
+    schoolMealMode: hasSchool ? schoolMealMode : undefined,
     specialPlans: appendHandlerToPlans(specialPlans, handlerType),
     fridgeItems: fridgeItems.trim() || undefined,
     mood: mood !== "normal" ? mood : undefined,
@@ -478,7 +481,7 @@ export default function GenerateRoutineScreen() {
     region: effectiveRegion,
     caregiver: handlerType,
     weatherOutdoor: weatherOverride ?? weatherOutdoor ?? undefined,
-  }), [selectedChild, date, hasSchool, specialPlans, handlerType, fridgeItems, mood, selectedChildData, effectiveRegion, weatherOutdoor]);
+  }), [selectedChild, date, hasSchool, schoolMealMode, specialPlans, handlerType, fridgeItems, mood, selectedChildData, effectiveRegion, weatherOutdoor]);
 
   // ── Handle paywall response shared helper ──────────────────────────────
   const handlePaywallResponse = useCallback(async (res: Response): Promise<boolean> => {
@@ -714,6 +717,7 @@ export default function GenerateRoutineScreen() {
             childId: child.id,
             date,
             hasSchool: familyChildSettings[child.id]?.hasSchool ?? undefined,
+            schoolMealMode: familyChildSettings[child.id]?.hasSchool ? (familyChildSettings[child.id]?.schoolMealMode ?? "snack_and_packed_lunch") : undefined,
             specialPlans: appendHandlerToPlans(specialPlans, handlerType),
             fridgeItems: fridgeItems.trim() || undefined,
             age: child.age,
@@ -977,6 +981,8 @@ export default function GenerateRoutineScreen() {
             MOODS={MOODS}
             hasSchool={hasSchool}
             setHasSchool={setHasSchool}
+            schoolMealMode={schoolMealMode}
+            setSchoolMealMode={setSchoolMealMode}
             specialPlans={specialPlans}
             setSpecialPlans={setSpecialPlans}
             fridgeItems={fridgeItems}
@@ -1464,6 +1470,8 @@ function SingleModeBody(props: {
   MOODS: MoodEntry[];
   hasSchool: boolean | null;
   setHasSchool: (b: boolean) => void;
+  schoolMealMode: SchoolMealMode;
+  setSchoolMealMode: (m: SchoolMealMode) => void;
   specialPlans: string;
   setSpecialPlans: (s: string) => void;
   fridgeItems: string;
@@ -1472,6 +1480,7 @@ function SingleModeBody(props: {
   const {
     t, colors, children, selectedChild, setSelectedChild, selectedChildData,
     handlerType, setHandlerType, mood, setMood, MOODS, hasSchool, setHasSchool,
+    schoolMealMode, setSchoolMealMode,
     specialPlans, setSpecialPlans, fridgeItems, setFridgeItems,
   } = props;
   return (
@@ -1576,6 +1585,32 @@ function SingleModeBody(props: {
         })}
       </View>
 
+      {hasSchool === true && (
+        <View style={styles.schoolMealModeCard}>
+          <Text style={styles.schoolMealModeTitle}>{t("routines_generate.school_meal_mode_label", { defaultValue: "Need school snack or packed lunch suggestions?" })}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+            {([
+              { value: "snack_and_packed_lunch" as const, lk: "routines_generate.school_meal_snack_and_lunch", dv: "🍱 Snack + Lunch Box" },
+              { value: "snack_only" as const, lk: "routines_generate.school_meal_snack_only", dv: "🥨 Snack Only" },
+              { value: "packed_lunch_only" as const, lk: "routines_generate.school_meal_lunch_only", dv: "🥡 Lunch Box Only" },
+              { value: "disabled" as const, lk: "routines_generate.school_meal_disabled", dv: "⏭️ Skip Meals" },
+            ] as const).map((opt) => {
+              const active = schoolMealMode === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  onPress={() => { Haptics.selectionAsync(); setSchoolMealMode(opt.value); }}
+                  activeOpacity={0.85}
+                  style={[styles.schoolMealModeChip, active && styles.schoolMealModeChipActive]}
+                >
+                  <Text style={[styles.schoolMealModeChipText, active && { color: "#fff" }]}>{t(opt.lk, { defaultValue: opt.dv })}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
       <Text style={styles.sectionLabel}>{t("screens.routines_generate.anything_special_today")}<Text style={styles.optional}>{t("screens.routines_generate.optional")}</Text></Text>
       <TextInput
         value={specialPlans}
@@ -1626,7 +1661,7 @@ function FamilyModeBody(props: {
       <Text style={styles.sectionLabel}>{t("routines_generate.family_select_kids", { defaultValue: "Pick the kids to plan for" })}</Text>
       <View style={{ gap: 10, marginBottom: 16 }}>
         {children.map((c) => {
-          const s = familyChildSettings[c.id] ?? { selected: true, hasSchool: null };
+          const s = familyChildSettings[c.id] ?? { selected: true, hasSchool: null, schoolMealMode: "snack_and_packed_lunch" as SchoolMealMode };
           return (
             <View key={c.id} style={styles.familyChildCard}>
               <TouchableOpacity
@@ -1649,30 +1684,63 @@ function FamilyModeBody(props: {
                 </View>
               </TouchableOpacity>
               {s.selected && (
-                <View style={styles.familySchoolRow}>
-                  {[
-                    { label: "🎒 School", value: true },
-                    { label: "🏠 Home", value: false },
-                  ].map((opt) => {
-                    const active = s.hasSchool === opt.value;
-                    return (
-                      <TouchableOpacity
-                        key={String(opt.value)}
-                        onPress={() => {
-                          Haptics.selectionAsync();
-                          setFamilyChildSettings((prev) => ({
-                            ...prev,
-                            [c.id]: { ...prev[c.id], hasSchool: opt.value },
-                          }));
-                        }}
-                        activeOpacity={0.85}
-                        style={[styles.familySchoolChip, active && styles.familySchoolChipActive]}
-                      >
-                        <Text style={[styles.familySchoolChipText, active && { color: "#fff" }]}>{opt.label}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                <>
+                  <View style={styles.familySchoolRow}>
+                    {[
+                      { label: "🎒 School", value: true },
+                      { label: "🏠 Home", value: false },
+                    ].map((opt) => {
+                      const active = s.hasSchool === opt.value;
+                      return (
+                        <TouchableOpacity
+                          key={String(opt.value)}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setFamilyChildSettings((prev) => ({
+                              ...prev,
+                              [c.id]: { ...prev[c.id], hasSchool: opt.value },
+                            }));
+                          }}
+                          activeOpacity={0.85}
+                          style={[styles.familySchoolChip, active && styles.familySchoolChipActive]}
+                        >
+                          <Text style={[styles.familySchoolChipText, active && { color: "#fff" }]}>{opt.label}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  {s.hasSchool === true && (
+                    <View style={[styles.schoolMealModeCard, { marginTop: 6 }]}>
+                      <Text style={styles.schoolMealModeTitle}>{t("routines_generate.school_meal_mode_label", { defaultValue: "Need school snack or packed lunch suggestions?" })}</Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                        {([
+                          { value: "snack_and_packed_lunch" as const, lk: "routines_generate.school_meal_snack_and_lunch", dv: "🍱 Snack + Lunch Box" },
+                          { value: "snack_only" as const, lk: "routines_generate.school_meal_snack_only", dv: "🥨 Snack Only" },
+                          { value: "packed_lunch_only" as const, lk: "routines_generate.school_meal_lunch_only", dv: "🥡 Lunch Box Only" },
+                          { value: "disabled" as const, lk: "routines_generate.school_meal_disabled", dv: "⏭️ Skip Meals" },
+                        ] as const).map((opt) => {
+                          const modeActive = (s.schoolMealMode ?? "snack_and_packed_lunch") === opt.value;
+                          return (
+                            <TouchableOpacity
+                              key={opt.value}
+                              onPress={() => {
+                                Haptics.selectionAsync();
+                                setFamilyChildSettings((prev) => ({
+                                  ...prev,
+                                  [c.id]: { ...prev[c.id], schoolMealMode: opt.value },
+                                }));
+                              }}
+                              activeOpacity={0.85}
+                              style={[styles.schoolMealModeChip, modeActive && styles.schoolMealModeChipActive, { flexGrow: 1, flexBasis: "44%" }]}
+                            >
+                              <Text style={[styles.schoolMealModeChipText, modeActive && { color: "#fff" }]}>{t(opt.lk, { defaultValue: opt.dv })}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+                </>
               )}
             </View>
           );
@@ -2198,6 +2266,20 @@ const styles = StyleSheet.create({
   },
   familySchoolChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
   familySchoolChipText: { fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.85)" },
+
+  schoolMealModeCard: {
+    borderWidth: 1, borderColor: "rgba(167,139,250,0.22)",
+    backgroundColor: "rgba(167,139,250,0.10)", borderRadius: 16, padding: 14, marginBottom: 16,
+  },
+  schoolMealModeTitle: {
+    fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.65)",
+  },
+  schoolMealModeChip: {
+    paddingVertical: 10, paddingHorizontal: 8, borderRadius: 12, borderWidth: 2,
+    borderColor: "rgba(167,139,250,0.22)", backgroundColor: "rgba(167,139,250,0.08)", alignItems: "center",
+  },
+  schoolMealModeChipActive: { backgroundColor: brand.purple500, borderColor: brand.purple500 },
+  schoolMealModeChipText: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.75)", textAlign: "center" },
 
   moodGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
   moodCard: { width: "47%", borderWidth: 2, borderRadius: 16, padding: 14, alignItems: "flex-start", gap: 4 },

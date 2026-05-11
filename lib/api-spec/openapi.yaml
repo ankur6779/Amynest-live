@@ -1936,6 +1936,11 @@ components:
         schoolEnd:
           type: string
           nullable: true
+        schoolMealMode:
+          type: string
+          enum: [disabled, snack_only, packed_lunch_only, snack_and_packed_lunch]
+          nullable: true
+          description: Controls whether and how school meal/tiffin suggestions are generated. "disabled" skips all school meals. Defaults to snack_and_packed_lunch on a school day.
       required:
         - childId
         - date

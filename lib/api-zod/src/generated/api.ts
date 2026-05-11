@@ -613,6 +613,17 @@ export const GenerateRoutineBody = zod.object({
   age: zod.number().nullish(),
   schoolStart: zod.string().nullish(),
   schoolEnd: zod.string().nullish(),
+  schoolMealMode: zod
+    .enum([
+      "disabled",
+      "snack_only",
+      "packed_lunch_only",
+      "snack_and_packed_lunch",
+    ])
+    .nullish()
+    .describe(
+      'Controls whether and how school meal\/tiffin suggestions are generated. \"disabled\" skips all school meals. Defaults to snack_and_packed_lunch on a school day.',
+    ),
 });
 
 export const GenerateRoutineResponse = zod.object({

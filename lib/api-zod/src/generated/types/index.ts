@@ -59,6 +59,7 @@ export * from "./generatedRoutine";
 export * from "./generateInsightsResponse";
 export * from "./generateRoutineBody";
 export * from "./generateRoutineBodyCaregiver";
+export * from "./generateRoutineBodySchoolMealMode";
 export * from "./generateRoutineBodyWeatherOutdoor";
 export * from "./getExplainHistoryParams";
 export * from "./getHouseholdConflictsParams";

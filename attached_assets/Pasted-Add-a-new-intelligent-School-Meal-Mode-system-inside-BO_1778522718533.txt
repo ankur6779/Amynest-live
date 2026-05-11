@@ -1,0 +1,349 @@
+Add a new intelligent “School Meal Mode” system inside BOTH:
+
+* Single Child Routine Generator
+* Family Routine Generator
+
+in mobile app and web app
+====================================================
+PRIMARY GOAL
+============
+
+Meal suggestions should NOT always generate automatically.
+
+Instead:
+before routine generation, ask parent:
+
+“Do you need school snacks / packed lunch suggestions?”
+
+Options:
+
+* Yes
+* No
+
+If:
+NO →
+Skip school meal generation entirely.
+
+If:
+YES →
+Generate intelligent school meal recommendations.
+
+====================================================
+NEW INPUT FIELD
+===============
+
+Add new routine generation input:
+
+schoolMealMode
+
+Values:
+
+* disabled
+* snack_only
+* packed_lunch_only
+* snack_and_packed_lunch
+
+UI LABEL:
+“Need school snacks or packed lunch suggestions?”
+
+====================================================
+APPLIES TO
+==========
+
+This logic must work across:
+
+1. Single child routine generation
+2. Family routine generation
+3. Saved routine regeneration
+4. AI regenerated routines
+5. Adaptive re-generation
+
+====================================================
+CONDITIONAL GENERATION LOGIC
+============================
+
+IF schoolMealMode == disabled:
+
+* completely skip school meal generation
+* do not mention lunch/snacks
+* do not consume AI tokens for meal generation
+* remove meal sections from schedule
+
+IF enabled:
+Generate:
+
+* age-appropriate meals
+* allergy-safe meals
+* travel-safe meals
+* school-safe packed meals
+* AQI/weather-aware meals
+* region-aware meals
+* temperature-aware meals
+
+====================================================
+INTELLIGENT CONTEXT SYSTEM
+==========================
+
+Meal generation must consider:
+
+1. AGE
+2. ALLERGIES
+3. FOOD PREFERENCE
+4. SCHOOL HOURS
+5. WEATHER
+6. AQI
+7. EIQE / Environmental Intelligence Score
+8. LOCATION
+9. TEMPERATURE
+10. HYDRATION NEEDS
+11. TRAVEL TIME
+12. CHILD ENERGY NEEDS
+
+====================================================
+EXAMPLES
+========
+
+HOT WEATHER:
+
+* cooling fruits
+* hydration snacks
+* electrolyte foods
+* lighter meals
+
+HIGH AQI:
+
+* immunity-supportive meals
+* antioxidant foods
+* indoor-safe nutrition support
+
+LONG SCHOOL HOURS:
+
+* higher satiety lunch
+* protein-balanced snack
+
+SHORT SCHOOL DAY:
+
+* lighter packed snack
+
+====================================================
+INFANT SAFETY RULE
+==================
+
+For:
+0–6 month infants:
+NEVER generate:
+
+* school snacks
+* lunch boxes
+* solids
+
+For:
+6–12 months:
+Only generate if:
+
+* explicitly relevant
+* daycare mode enabled
+
+====================================================
+FAMILY ROUTINE LOGIC
+====================
+
+Each child must independently evaluate:
+
+* schoolMealMode
+* age appropriateness
+* allergies
+* school schedule
+* weather adaptation
+
+Example:
+Child A:
+
+* snack_and_packed_lunch
+
+Child B:
+
+* disabled
+
+System should generate separately.
+
+====================================================
+ADD NEW INPUTS
+==============
+
+Add optional fields:
+
+* schoolStartTime
+* schoolEndTime
+* travelDuration
+* refrigerationAvailable
+* microwaveAvailable
+* lunchboxType
+* hydrationBottleSize
+
+====================================================
+PACKED LUNCH INTELLIGENCE
+=========================
+
+Generate meals considering:
+
+* lunch freshness duration
+* spill safety
+* temperature stability
+* easy-to-eat format
+* choking safety
+* school restrictions
+* cultural food preference
+
+====================================================
+SMART SNACK ENGINE
+==================
+
+Snacks should adapt to:
+
+* energy curve
+* concentration needs
+* physical activity
+* weather stress
+* hydration levels
+
+====================================================
+WEATHER + AQI INTEGRATION
+=========================
+
+Meal generation must integrate:
+
+* AQI
+* humidity
+* heat index
+* UV
+* rainfall
+* environmental fatigue
+
+Examples:
+Heatwave:
+→ hydration-heavy lunch
+
+Cold weather:
+→ warming energy meal
+
+High AQI:
+→ antioxidant snack
+
+====================================================
+EIQE INTEGRATION
+================
+
+Use Environmental Intelligence Quality Engine (EIQE) scoring.
+
+Examples:
+High environmental fatigue:
+→ easier digestion meals
+
+High humidity:
+→ lighter foods
+
+Cold climate:
+→ warming foods
+
+====================================================
+MEAL TYPES
+==========
+
+Generate:
+
+* morning snack
+* school snack
+* packed lunch
+* hydration reminder
+* after-school recovery snack
+
+ONLY if enabled.
+
+====================================================
+UI REQUIREMENTS
+===============
+
+Add:
+“School Meal Mode”
+
+with:
+
+* toggle
+* dropdown selection
+* smart recommendations
+
+Family mode:
+allow per-child customization.
+
+====================================================
+AI PROMPTING RULES
+==================
+
+AI must receive:
+
+* schoolMealMode
+* age
+* allergies
+* school timing
+* AQI
+* EIQE
+* temperature
+* food preference
+* lunch safety constraints
+
+====================================================
+POST VALIDATION
+===============
+
+Validate:
+
+* age safety
+* allergy safety
+* texture safety
+* school compatibility
+* freshness feasibility
+* travel durability
+
+====================================================
+NEW DATASETS
+============
+
+Create:
+
+* schoolMealProfiles.json
+* weatherAdaptiveLunchRules.json
+* AQIFoodSupportProfiles.json
+* schoolSnackEnergyProfiles.json
+* travelSafeMealRules.json
+* hydrationSchoolProfiles.json
+
+====================================================
+EXPLAINABILITY
+==============
+
+Add:
+“Why this school meal?”
+
+Examples:
+
+* “Cooling snack added due to high temperature.”
+* “Antioxidant fruit included because AQI levels are elevated.”
+* “Soft finger food selected for toddler safety.”
+* “High-protein lunch generated for long school duration.”
+
+====================================================
+FINAL REQUIREMENT
+=================
+
+The new School Meal Mode system must:
+
+* reduce unnecessary meal generation
+* improve personalization
+* improve AI efficiency
+* improve safety
+* improve environmental adaptation
+* improve school practicality
+* support global parenting use cases
+
+across both AmyNest web and native mobile applications.

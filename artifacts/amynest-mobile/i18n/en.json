@@ -3605,7 +3605,16 @@
     "considers_temp_season": "🌡️ Temperature & season — heat, cold, and monsoon adaptations",
     "considers_age_band": "👶 Child's age band — developmental stage shapes every activity",
     "considers_diet_cuisine": "🥗 Diet type & cuisine — regional, allergen-aware meal planning",
-    "considers_goals": "🎯 Parenting goals — improve sleep, reduce tantrums, build focus"
+    "considers_goals": "🎯 Parenting goals — improve sleep, reduce tantrums, build focus",
+    "school_meal_mode_label": "Need school snack or packed lunch suggestions?",
+    "school_meal_snack_and_lunch": "🍱 Snack + Lunch Box",
+    "school_meal_snack_and_lunch_hint": "Morning snack & packed tiffin",
+    "school_meal_snack_only": "🥨 Snack Only",
+    "school_meal_snack_only_hint": "Just a morning school snack",
+    "school_meal_lunch_only": "🥡 Lunch Box Only",
+    "school_meal_lunch_only_hint": "Packed tiffin, no snack",
+    "school_meal_disabled": "⏭️ Skip Meals",
+    "school_meal_disabled_hint": "No school meal suggestions"
   },
   "patent_pending": {
     "footer_label": "Patent Pending Technology",
