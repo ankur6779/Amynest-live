@@ -1467,8 +1467,13 @@ export default function OnboardingPage() {
       }
 
       case "parent-region": {
+        // South Asian users (IN, PK, BD, LK, NP) skip the top-level "Indian" tile
+        // and land directly on the regional sub-cuisine list.  Everyone else sees
+        // GLOBAL_CUISINES first; tapping "Indian Cuisine" drills into the sub-list.
+        const isSouthAsianUser = ["IN", "PK", "BD", "LK", "NP"].includes(countryCode);
+        const showingIndianSubs = isSouthAsianUser || regionDrillDown;
+        const cuisines = showingIndianSubs ? INDIAN_SUBCUISINES : GLOBAL_CUISINES;
         const recommended = getRecommendedCuisines(countryCode);
-        const cuisines = getOrderedCuisines(countryCode);
         const maxReached = selectedRegions.length >= 3;
         const toggleRegion = (value: string) => {
           setSelectedRegions((prev) => {
@@ -1479,15 +1484,48 @@ export default function OnboardingPage() {
         };
         return (
           <div className="flex flex-col gap-3">
+            {/* Back link — only for non-South-Asian users who drilled in */}
+            {regionDrillDown && !isSouthAsianUser && (
+              <button
+                onClick={() => {
+                  setRegionDrillDown(false);
+                  setSelectedRegions([]);
+                }}
+                className="flex items-center gap-1 text-xs self-start mb-0.5 active:opacity-70"
+                style={{ color: "rgba(255,255,255,0.60)" }}
+              >
+                ← {t("screens.onboarding.region_back_to_cuisines")}
+              </button>
+            )}
+            {/* Sub-list heading */}
+            {showingIndianSubs && (
+              <p className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                {t("screens.onboarding.region_indian_drilldown")}
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2.5">
               {cuisines.map((c) => {
                 const isSelected = selectedRegions.includes(c.value);
                 const isRec = recommended.includes(c.value);
+                const isIndianEntry = c.value === "indian";
                 return (
                   <button
                     key={c.value}
-                    onClick={() => toggleRegion(c.value)}
-                    disabled={maxReached && !isSelected}
+                    onClick={() => {
+                      if (isIndianEntry) {
+                        // Drill into the Indian regional sub-cuisine list
+                        setRegionDrillDown(true);
+                        // Pre-seed the first recommended Indian sub-cuisine so
+                        // the user arrives with a sensible default highlighted.
+                        const indRecs = recommended.filter((v) =>
+                          INDIAN_SUBCUISINES.some((s) => s.value === v),
+                        );
+                        setSelectedRegions(indRecs.slice(0, 1));
+                        return;
+                      }
+                      toggleRegion(c.value);
+                    }}
+                    disabled={!isIndianEntry && maxReached && !isSelected}
                     className="relative flex flex-col items-start p-3.5 rounded-2xl text-left border active:scale-95"
                     style={{
                       background: isSelected ? GRAD : "rgba(255,255,255,0.06)",
@@ -1496,7 +1534,7 @@ export default function OnboardingPage() {
                         : isRec
                         ? "1.5px solid rgba(168,85,247,0.50)"
                         : "1.5px solid rgba(255,255,255,0.12)",
-                      opacity: maxReached && !isSelected ? 0.45 : 1,
+                      opacity: !isIndianEntry && maxReached && !isSelected ? 0.45 : 1,
                       boxShadow: isSelected ? "0 0 18px rgba(168,85,247,0.35)" : undefined,
                       transition: "background 0.18s, box-shadow 0.18s, opacity 0.18s, transform 0.1s",
                     }}
@@ -1513,8 +1551,15 @@ export default function OnboardingPage() {
                         ★ {t("screens.onboarding.region_recommended")}
                       </span>
                     )}
+                    {/* "Indian Cuisine" tile gets a drill-down indicator */}
+                    {isIndianEntry && (
+                      <span
+                        className="absolute top-2 right-2 text-base leading-none"
+                        style={{ color: "rgba(255,255,255,0.55)" }}
+                      >›</span>
+                    )}
                     <span className="text-xl mb-1 leading-none">{c.emoji}</span>
-                    <span className="text-sm font-semibold text-white leading-tight pr-2">
+                    <span className="text-sm font-semibold text-white leading-tight pr-4">
                       {t(`screens.onboarding.${c.labelKey}`)}
                     </span>
                     <span
