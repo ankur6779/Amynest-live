@@ -2465,7 +2465,17 @@
     "caregiver_note_dad": "Amy will add active, energetic play.",
     "caregiver_note_both": "Amy will create a structured, balanced day.",
     "caregiver_note_grandparent": "Amy will lean on storytelling and slow-paced moments.",
-    "caregiver_note_babysitter": "Amy will keep activities simple and safe."
+    "caregiver_note_babysitter": "Amy will keep activities simple and safe.",
+    "location_denied_can_ask": "Location permission denied. Tap Auto-detect again to retry.",
+    "location_denied_permanent": "Location access blocked. Tap Auto-detect to open Settings.",
+    "location_modal_title": "Allow Location Access",
+    "location_modal_body": "For better customization, Amy AI uses your location to check the weather — so it can plan the right outdoor or indoor activities for your child's day.",
+    "location_perk_1": "🌤️ Real-time outdoor suitability check",
+    "location_perk_2": "🍱 Weather-appropriate meal & activity picks",
+    "location_perk_3": "🔒 Your location is never stored or shared",
+    "location_modal_allow": "Allow & Auto-detect",
+    "location_modal_open_settings": "Open Settings",
+    "location_modal_not_now": "Not now — pick manually"
   },
   "parent_avail": {
     "title": "Who's around today?",
@@ -3326,22 +3336,70 @@
           "needs_attention": "Needs Attention",
           "consult_expert": "Consult Expert"
         },
-        "m_1y_first_words": { "label": "Says first real words", "hint": "Like \"mama\", \"dada\", or a familiar pet's name." },
-        "m_1y_responds_name": { "label": "Turns when their name is called", "hint": "Looks up or stops what they're doing within a few seconds." },
-        "m_1y_gesture_wave": { "label": "Uses simple gestures", "hint": "Waves bye-bye, points at things they want, claps along." },
-        "m_1y_simple_words": { "label": "Uses 5–10 simple words", "hint": "Even if pronunciation is approximate — meaning is what counts." },
-        "m_2y_two_word": { "label": "Combines two words", "hint": "Phrases like \"more milk\", \"my book\", \"go park\"." },
-        "m_2y_follows_2step": { "label": "Follows two-step instructions", "hint": "\"Pick up your toy and put it in the box.\"" },
-        "m_2y_50_words": { "label": "Uses 50+ words", "hint": "Vocabulary that's slowly growing day by day." },
-        "m_2y_names_familiar": { "label": "Names familiar people and objects", "hint": "Family members, favourite toys, body parts." },
-        "m_3y_3plus_word_sentence": { "label": "Speaks in 3+ word sentences", "hint": "Even if grammar is still developing." },
-        "m_3y_asks_wh_questions": { "label": "Asks \"what / where / why\" questions", "hint": "Curiosity is a great sign of language growth." },
-        "m_3y_intelligible_family": { "label": "Mostly understandable to family", "hint": "Close family can understand most of what they say." },
-        "m_3y_uses_pronouns": { "label": "Uses pronouns (I, you, me)", "hint": "Mixing them up sometimes is completely normal." },
-        "m_4plus_full_sentences": { "label": "Speaks in full sentences", "hint": "Sentences with subject, verb, and detail." },
-        "m_4plus_tells_story": { "label": "Tells short stories", "hint": "About their day, a book, or something they imagined." },
-        "m_4plus_intelligible_strangers": { "label": "Understandable to strangers", "hint": "People outside the family can follow what they're saying." },
-        "m_4plus_conversation_turns": { "label": "Takes turns in a conversation", "hint": "Listens, replies, and stays on the topic." }
+        "m_1y_first_words": {
+          "label": "Says first real words",
+          "hint": "Like \"mama\", \"dada\", or a familiar pet's name."
+        },
+        "m_1y_responds_name": {
+          "label": "Turns when their name is called",
+          "hint": "Looks up or stops what they're doing within a few seconds."
+        },
+        "m_1y_gesture_wave": {
+          "label": "Uses simple gestures",
+          "hint": "Waves bye-bye, points at things they want, claps along."
+        },
+        "m_1y_simple_words": {
+          "label": "Uses 5–10 simple words",
+          "hint": "Even if pronunciation is approximate — meaning is what counts."
+        },
+        "m_2y_two_word": {
+          "label": "Combines two words",
+          "hint": "Phrases like \"more milk\", \"my book\", \"go park\"."
+        },
+        "m_2y_follows_2step": {
+          "label": "Follows two-step instructions",
+          "hint": "\"Pick up your toy and put it in the box.\""
+        },
+        "m_2y_50_words": {
+          "label": "Uses 50+ words",
+          "hint": "Vocabulary that's slowly growing day by day."
+        },
+        "m_2y_names_familiar": {
+          "label": "Names familiar people and objects",
+          "hint": "Family members, favourite toys, body parts."
+        },
+        "m_3y_3plus_word_sentence": {
+          "label": "Speaks in 3+ word sentences",
+          "hint": "Even if grammar is still developing."
+        },
+        "m_3y_asks_wh_questions": {
+          "label": "Asks \"what / where / why\" questions",
+          "hint": "Curiosity is a great sign of language growth."
+        },
+        "m_3y_intelligible_family": {
+          "label": "Mostly understandable to family",
+          "hint": "Close family can understand most of what they say."
+        },
+        "m_3y_uses_pronouns": {
+          "label": "Uses pronouns (I, you, me)",
+          "hint": "Mixing them up sometimes is completely normal."
+        },
+        "m_4plus_full_sentences": {
+          "label": "Speaks in full sentences",
+          "hint": "Sentences with subject, verb, and detail."
+        },
+        "m_4plus_tells_story": {
+          "label": "Tells short stories",
+          "hint": "About their day, a book, or something they imagined."
+        },
+        "m_4plus_intelligible_strangers": {
+          "label": "Understandable to strangers",
+          "hint": "People outside the family can follow what they're saying."
+        },
+        "m_4plus_conversation_turns": {
+          "label": "Takes turns in a conversation",
+          "hint": "Listens, replies, and stays on the topic."
+        }
       },
       "pronounce": {
         "section_title": "AI Pronunciation Practice",
@@ -3379,12 +3437,30 @@
         "stars_one": "{{count}} star",
         "stars_other": "{{count}} stars",
         "unlock_badge": "Unlock badge",
-        "animal_sounds": { "title": "Animal Sounds", "description": "Take turns making animal noises — cow, cat, lion, bird." },
-        "rhyming": { "title": "Rhyming Game", "description": "Say a word, then find words that rhyme with it." },
-        "tongue_exercises": { "title": "Tongue Exercises", "description": "Wiggle the tongue side to side, touch the nose, click the roof of the mouth." },
-        "breathing": { "title": "Breathing Exercises", "description": "Slow in through the nose, slow out through the mouth — like blowing out candles." },
-        "slow_vs_fast": { "title": "Slow vs Fast", "description": "Say the same sentence really slowly, then a little faster, then super fast." },
-        "emotion_express": { "title": "Emotion Expression", "description": "Say one sentence three ways — happy, sad, surprised." }
+        "animal_sounds": {
+          "title": "Animal Sounds",
+          "description": "Take turns making animal noises — cow, cat, lion, bird."
+        },
+        "rhyming": {
+          "title": "Rhyming Game",
+          "description": "Say a word, then find words that rhyme with it."
+        },
+        "tongue_exercises": {
+          "title": "Tongue Exercises",
+          "description": "Wiggle the tongue side to side, touch the nose, click the roof of the mouth."
+        },
+        "breathing": {
+          "title": "Breathing Exercises",
+          "description": "Slow in through the nose, slow out through the mouth — like blowing out candles."
+        },
+        "slow_vs_fast": {
+          "title": "Slow vs Fast",
+          "description": "Say the same sentence really slowly, then a little faster, then super fast."
+        },
+        "emotion_express": {
+          "title": "Emotion Expression",
+          "description": "Say one sentence three ways — happy, sad, surprised."
+        }
       },
       "guidance": {
         "section_title": "Parent Guidance",

@@ -13,6 +13,7 @@ import {
   Platform,
   Modal,
   Pressable,
+  Linking,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
@@ -193,20 +194,56 @@ export default function GenerateRoutineScreen() {
     setWeatherTouched(true);
   }, []);
 
-  const handleAutoDetectWeather = useCallback(async () => {
-    if (weatherDetecting) return;
+  // ── Location permission state ─────────────────────────────────────────────
+  // Tracks denial so we can show the inline hint and the explanation modal.
+  const [locationPermDenied, setLocationPermDenied] = useState(false);
+  const [locationCanAskAgain, setLocationCanAskAgain] = useState(true);
+  const [showLocationPermModal, setShowLocationPermModal] = useState(false);
+
+  const runWeatherDetect = useCallback(async () => {
     setWeatherDetecting(true);
+    setLocationPermDenied(false);
     try {
       const verdict = await detectWeatherOutdoorFromDevice();
       if (verdict) {
         setWeatherOutdoor(verdict);
         markWeatherTouched();
         Haptics.selectionAsync();
+      } else {
+        // Detection failed — check whether it was a permission denial.
+        const permStatus = await Location.getForegroundPermissionsAsync();
+        if (permStatus.status !== "granted") {
+          setLocationPermDenied(true);
+          setLocationCanAskAgain(permStatus.canAskAgain);
+        }
       }
     } finally {
       setWeatherDetecting(false);
     }
-  }, [weatherDetecting, markWeatherTouched]);
+  }, [markWeatherTouched]);
+
+  const handleAutoDetectWeather = useCallback(async () => {
+    if (weatherDetecting) return;
+
+    // If already permanently denied, go straight to Settings.
+    if (locationPermDenied && !locationCanAskAgain) {
+      try {
+        await Linking.openSettings();
+      } catch { /* ignore */ }
+      return;
+    }
+
+    // Check current permission before attempting so we know whether the OS
+    // dialog will appear or we need to show our own explanation first.
+    const current = await Location.getForegroundPermissionsAsync();
+    if (current.status !== "granted") {
+      // Show our explanation modal so the user understands why we need location.
+      setShowLocationPermModal(true);
+      return;
+    }
+
+    await runWeatherDetect();
+  }, [weatherDetecting, locationPermDenied, locationCanAskAgain, runWeatherDetect]);
 
   // Pre-generate detect — runs once before any routine generation when the
   // user hasn't touched the weather control. Returns the value to use for
@@ -909,6 +946,22 @@ export default function GenerateRoutineScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* Inline hint: shown after a denied auto-detect attempt */}
+        {locationPermDenied && !weatherDetecting && (
+          <View style={styles.locationDeniedRow}>
+            <Ionicons name="warning-outline" size={13} color={palette.amber500} />
+            <Text style={styles.locationDeniedText}>
+              {locationCanAskAgain
+                ? t("routines_generate.location_denied_can_ask", {
+                    defaultValue: "Location permission denied. Tap Auto-detect again to retry.",
+                  })
+                : t("routines_generate.location_denied_permanent", {
+                    defaultValue: "Location access blocked. Tap Auto-detect to open Settings.",
+                  })}
+            </Text>
+          </View>
+        )}
+
         {mode === "single" ? (
           <SingleModeBody
             t={t}
@@ -1254,6 +1307,110 @@ export default function GenerateRoutineScreen() {
               }} activeOpacity={0.7}>
                 <Text style={styles.modalCancel}>
                   {t("routines_generate.skip_checkin", { defaultValue: "Skip check-in & save as is" })}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ── Location Permission Explanation Modal ─────────────────────── */}
+      <Modal
+        visible={showLocationPermModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLocationPermModal(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setShowLocationPermModal(false)}
+        >
+          <Pressable style={[styles.modalCard, { padding: 24 }]} onPress={(e) => e.stopPropagation()}>
+            {/* Icon */}
+            <View style={{ alignItems: "center", marginBottom: 16 }}>
+              <View style={styles.locationModalIcon}>
+                <Ionicons name="location" size={28} color={brand.purple500} />
+              </View>
+            </View>
+
+            {/* Title */}
+            <Text style={{ color: "#fff", fontSize: 17, fontWeight: "800", textAlign: "center", marginBottom: 10 }}>
+              {t("routines_generate.location_modal_title", { defaultValue: "Allow Location Access" })}
+            </Text>
+
+            {/* Body */}
+            <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, lineHeight: 20, textAlign: "center", marginBottom: 20 }}>
+              {t("routines_generate.location_modal_body", {
+                defaultValue:
+                  `For better customization, ${BRAND.aiName} uses your location to check the weather — so it can plan the right outdoor or indoor activities for your child's day.`,
+              })}
+            </Text>
+
+            {/* Perk bullets */}
+            {(["routines_generate.location_perk_1", "routines_generate.location_perk_2", "routines_generate.location_perk_3"] as const).map((key, i) => {
+              const defaults = [
+                "🌤️ Real-time outdoor suitability check",
+                "🍱 Weather-appropriate meal & activity picks",
+                "🔒 Your location is never stored or shared",
+              ];
+              return (
+                <View key={key} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
+                  <Text style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 18, flex: 1 }}>
+                    {t(key, { defaultValue: defaults[i] })}
+                  </Text>
+                </View>
+              );
+            })}
+
+            {/* Buttons */}
+            <View style={{ gap: 10, marginTop: 20 }}>
+              {locationCanAskAgain ? (
+                <TouchableOpacity
+                  onPress={async () => {
+                    setShowLocationPermModal(false);
+                    await runWeatherDetect();
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={[brand.purple500, brand.pink500]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryBtn}
+                  >
+                    <Ionicons name="location" size={16} color="#fff" />
+                    <Text style={styles.primaryBtnText}>
+                      {t("routines_generate.location_modal_allow", { defaultValue: "Allow & Auto-detect" })}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={async () => {
+                    setShowLocationPermModal(false);
+                    try { await Linking.openSettings(); } catch { /* ignore */ }
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={[brand.purple500, brand.pink500]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryBtn}
+                  >
+                    <Ionicons name="settings-outline" size={16} color="#fff" />
+                    <Text style={styles.primaryBtnText}>
+                      {t("routines_generate.location_modal_open_settings", { defaultValue: "Open Settings" })}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                onPress={() => setShowLocationPermModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalCancel}>
+                  {t("routines_generate.location_modal_not_now", { defaultValue: "Not now — pick manually" })}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1955,6 +2112,18 @@ const styles = StyleSheet.create({
     borderColor: "rgba(167,139,250,0.30)",
   },
   locationHintText: { fontSize: 12, fontWeight: "600", color: brand.purple500, flexShrink: 1 },
+
+  locationDeniedRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 6,
+    paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, marginBottom: 8,
+    backgroundColor: "rgba(251,191,36,0.08)", borderWidth: 1, borderColor: "rgba(251,191,36,0.28)",
+  },
+  locationDeniedText: { fontSize: 12, color: "rgba(255,255,255,0.72)", flexShrink: 1, lineHeight: 17 },
+  locationModalIcon: {
+    width: 60, height: 60, borderRadius: 30,
+    backgroundColor: "rgba(167,139,250,0.14)", borderWidth: 1.5, borderColor: "rgba(167,139,250,0.40)",
+    alignItems: "center", justifyContent: "center",
+  },
 
   familyChildCard: {
     borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
