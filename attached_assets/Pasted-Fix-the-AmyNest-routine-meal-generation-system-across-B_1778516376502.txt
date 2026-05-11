@@ -1,0 +1,383 @@
+Fix the AmyNest routine meal generation system across BOTH:
+
+* single child routine generation
+* family routine generation
+
+CRITICAL ISSUE:
+Currently infants (especially 0–6 months) are receiving inappropriate hard/solid meal suggestions.
+This is a major developmental and safety issue.
+
+The meal generation engine must become:
+
+* medically safer
+* age-aware
+* allergy-aware
+* preference-aware
+* culturally adaptive
+* family-context aware
+* development-stage aware
+
+====================================================
+PRIMARY GOAL
+============
+
+Meal suggestions must ALWAYS be:
+
+* age appropriate
+* developmentally safe
+* allergy-safe
+* food preference aware
+* medically sensible
+* culturally relevant
+* consistent across all routine generators
+
+====================================================
+CRITICAL INFANT SAFETY RULES
+============================
+
+Implement strict infant feeding protection layer.
+
+AGE BAND RULES:
+
+0–6 MONTHS:
+ONLY allow:
+
+* breast milk
+* formula milk
+* doctor-approved feeding notes
+
+STRICTLY BLOCK:
+
+* solids
+* puree suggestions
+* fruits
+* cereals
+* snacks
+* finger foods
+* hard meals
+* juices
+* honey
+* cow milk meals
+
+The system must NEVER generate solid food for 0–6 month infants.
+
+Instead show:
+
+* feeding intervals
+* breastfeeding reminders
+* formula guidance
+* hydration guidance for parents
+* burping reminders if needed
+
+====================================================
+6–12 MONTHS RULES
+=================
+
+Allow:
+
+* soft purees
+* mashed foods
+* soft cereals
+* boiled vegetable mash
+* fruit puree
+* soft khichdi
+* baby-safe semi-solids
+
+STRICTLY BLOCK:
+
+* choking hazards
+* hard foods
+* spicy foods
+* processed foods
+* high salt foods
+* whole nuts
+
+====================================================
+1–3 YEARS RULES
+===============
+
+Allow:
+
+* toddler-safe finger foods
+* soft balanced meals
+* simple snacks
+* hydration reminders
+
+Add:
+
+* picky eater handling
+* variety rotation
+* nutrition balance
+
+====================================================
+3–5 YEARS RULES
+===============
+
+Focus on:
+
+* balanced nutrition
+* school-energy meals
+* immunity support
+* fun presentation foods
+* developmental nutrition
+
+====================================================
+5–10 YEARS RULES
+================
+
+Focus on:
+
+* learning energy meals
+* protein balance
+* hydration
+* sports/activity support
+* healthy snacks
+
+====================================================
+10–15 YEARS RULES
+=================
+
+Focus on:
+
+* growth nutrition
+* cognitive support
+* puberty-stage nutrition
+* activity-aware meal planning
+
+====================================================
+IMPLEMENT A MEAL SAFETY ENGINE
+==============================
+
+Create:
+MealSafetyValidationEngine
+
+Responsibilities:
+
+1. Validate age compatibility
+2. Block unsafe foods
+3. Block allergy conflicts
+4. Validate texture safety
+5. Validate choking risk
+6. Validate dietary preference compatibility
+7. Validate regional authenticity
+8. Validate developmental suitability
+
+====================================================
+ALLERGY & FOOD PREFERENCE ENGINE
+================================
+
+The meal generator MUST always consider:
+
+* allergies
+* vegetarian
+* vegan
+* Jain
+* eggetarian
+* non-veg
+* lactose intolerance
+* nut allergy
+* gluten restrictions
+
+STRICT RULE:
+Never suggest meals containing user allergies.
+
+Add:
+cross-check validation layer BEFORE final meal output.
+
+====================================================
+FAMILY ROUTINE FIX
+==================
+
+Current issue:
+Family routine generation may generate same meal logic for all children.
+
+Fix this.
+
+Each child must get:
+
+* independent age-safe meal generation
+* independent allergy validation
+* independent developmental meal logic
+
+Example:
+
+* infant gets milk feeding schedule
+* toddler gets soft meals
+* older child gets school nutrition meals
+
+within SAME family routine.
+
+====================================================
+IMPLEMENT AGE-BASED MEAL DATASETS
+=================================
+
+Create:
+
+* infantFeedingRules.json
+* toddlerMealRules.json
+* childNutritionProfiles.json
+* allergyRestrictionRules.json
+* chokingHazardFoods.json
+* ageTextureCompatibility.json
+* developmentalNutritionProfiles.json
+
+====================================================
+INFANT FEEDING DATASET
+======================
+
+For 0–6 months:
+Allowed:
+
+* breast milk
+* formula milk
+
+Blocked:
+
+* all solids
+
+For 6–12 months:
+Include:
+
+* puree textures
+* mash textures
+* semi-solid introduction stages
+
+====================================================
+TEXTURE SAFETY SYSTEM
+=====================
+
+Create texture classifications:
+
+* liquid
+* puree
+* mashed
+* semi-solid
+* soft solid
+* hard solid
+
+Map every meal to:
+
+* safe age range
+* choking risk
+* chewing requirement
+
+====================================================
+AI PROMPTING FIX
+================
+
+Update all AI prompts.
+
+The AI must receive:
+
+* exact age band
+* developmental stage
+* allergies
+* food preferences
+* texture safety rules
+* prohibited foods
+* choking restrictions
+
+Add strict instructions:
+“Never generate food outside developmental safety rules.”
+
+====================================================
+POST-GENERATION VALIDATION
+==========================
+
+After AI generates meals:
+Run deterministic validation.
+
+If unsafe:
+
+* automatically replace meal
+* regenerate safer alternative
+* log safety correction
+
+====================================================
+MEAL GENERATION PRIORITIES
+==========================
+
+Priority order:
+
+1. Safety
+2. Allergy compliance
+3. Developmental appropriateness
+4. Nutrition quality
+5. Food preference
+6. Regional authenticity
+7. Variety
+
+====================================================
+REGIONAL & CULTURAL SUPPORT
+===========================
+
+Support:
+
+* Indian meals
+* US meals
+* UK meals
+* vegetarian homes
+* Jain households
+* mixed family preferences
+
+====================================================
+UI IMPROVEMENTS
+===============
+
+Show:
+
+* “Age Appropriate”
+* “Allergy Safe”
+* “Texture Safe”
+* “Infant Safe”
+* “Nutrition Balanced”
+
+badges in meal cards.
+
+====================================================
+EXPLAINABILITY
+==============
+
+Add:
+“Why this meal?”
+
+Examples:
+
+* “Soft puree selected for 7-month developmental stage.”
+* “Nut-free meal generated due to allergy settings.”
+* “High-protein lunch added for school activity support.”
+
+====================================================
+TECHNICAL IMPLEMENTATION
+========================
+
+Create:
+
+* MealSafetyValidationEngine.ts
+* validateMealSafety()
+* validateTextureCompatibility()
+* validateAllergyCompatibility()
+* generateAgeSafeMeals()
+
+====================================================
+FINAL REQUIREMENT
+=================
+
+The system must NEVER again:
+
+* give solids to 0–6 month infants
+* ignore allergies
+* ignore food preferences
+* generate unsafe textures
+* apply same meal logic to all family members
+
+The new engine should feel:
+
+* medically safer
+* highly intelligent
+* developmentally aware
+* premium
+* globally trustworthy
+* pediatric-guideline aligned
+* future patent-grade
+  across both web and native mobile AmyNest platforms.

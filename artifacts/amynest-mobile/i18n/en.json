@@ -2993,7 +2993,10 @@
       "no_recipes_generated_try_a_different_des": "No recipes generated. Try a different description.",
       "veg": "🌿 Veg",
       "ingredients": "🛒  Ingredients",
-      "steps": "👨‍🍳  Steps"
+      "steps": "👨‍🍳  Steps",
+      "why_this_meal": "Why this meal?",
+      "safety_check": "Safety Check",
+      "allergy_note": "Allergy Note"
     },
     "amazing_facts": {
       "no_facts_available_right_now": "No facts available right now.",

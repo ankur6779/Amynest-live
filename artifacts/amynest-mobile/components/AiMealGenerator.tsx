@@ -46,6 +46,9 @@ interface AiMeal {
   isVeg: boolean;
   matchedIngredients: string[];
   missingIngredients: string[];
+  safetyBadges?: string[];
+  whyThisMeal?: string;
+  safetyWarning?: string;
 }
 
 interface AiGenerateResult {
@@ -394,6 +397,29 @@ function RecipeSheet({ meal, onClose }: { meal: AiMeal; onClose: () => void }) {
               </TouchableOpacity>
             </View>
 
+            {/* Safety Badges + Why This Meal */}
+            {((meal.safetyBadges && meal.safetyBadges.length > 0) || meal.whyThisMeal) && (
+              <View style={styles.safetyBox}>
+                {meal.safetyBadges && meal.safetyBadges.length > 0 && (
+                  <View style={styles.badgeRow}>
+                    {meal.safetyBadges.map((badge) => (
+                      <View key={badge} style={styles.safeBadge}>
+                        <Text style={styles.safeBadgeText}>✓ {badge}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                {meal.whyThisMeal ? (
+                  <Text style={styles.whyText}>💡 {meal.whyThisMeal}</Text>
+                ) : null}
+              </View>
+            )}
+            {meal.safetyWarning ? (
+              <View style={styles.warnBox}>
+                <Text style={styles.warnText}>⚠️ {meal.safetyWarning}</Text>
+              </View>
+            ) : null}
+
             {/* Ingredients */}
             <Text style={styles.sectionLabel}>{t("components.ai_meal_generator.ingredients")}</Text>
             <View style={styles.ingRow}>
@@ -670,6 +696,37 @@ const styles = StyleSheet.create({
   voicePillActive: { backgroundColor: VIOLET },
   voicePillText: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.55)" },
   voicePillTextActive: { color: "#fff" },
+
+  safetyBox: {
+    backgroundColor: "rgba(34,197,94,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.25)",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 12,
+    gap: 6,
+  },
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
+  safeBadge: {
+    backgroundColor: "rgba(34,197,94,0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.4)",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  safeBadgeText: { fontSize: 9.5, fontWeight: "800", color: palette.green400, letterSpacing: 0.3 },
+  whyText: { fontSize: 11, color: "rgba(134,239,172,0.9)", lineHeight: 15 },
+
+  warnBox: {
+    backgroundColor: "rgba(251,191,36,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(251,191,36,0.25)",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 12,
+  },
+  warnText: { fontSize: 11, color: "rgba(253,224,71,0.9)", lineHeight: 15 },
 
   sectionLabel: {
     fontSize: 12,

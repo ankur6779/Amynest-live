@@ -3171,7 +3171,10 @@
       "male": "♂ Male",
       "ingredients": "Ingredients",
       "steps": "Steps",
-      "close_2": "Close"
+      "close_2": "Close",
+      "why_this_meal": "Why this meal?",
+      "safety_check": "Safety Check",
+      "allergy_note": "Allergy Note"
     },
     "spelling_mastery": {
       "difficulty": "Difficulty",
