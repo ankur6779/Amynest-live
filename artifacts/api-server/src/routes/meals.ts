@@ -657,14 +657,32 @@ const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sun
 
 function buildWeekPlanPrompt(opts: {
   childAge: number;
+  ageMonths?: number;
+  childName?: string;
   country: string;
   dietType: string;
   foodStyle: string;
   subCuisine: string | null;
   allergies: string;
   weather: string;
+  // Environmental / routine context
+  isSchoolGoing?: boolean;
+  schoolStartTime?: string;
+  schoolEndTime?: string;
+  wakeUpTime?: string;
+  sleepTime?: string;
+  travelMode?: string;
+  goals?: string;
+  parentGoals?: string[];
+  parentWorkType?: string;
+  parentWorkStart?: string;
+  parentWorkEnd?: string;
 }): string {
-  const { childAge, country, dietType, foodStyle, subCuisine, allergies, weather } = opts;
+  const {
+    childAge, ageMonths, childName, country, dietType, foodStyle, subCuisine, allergies, weather,
+    isSchoolGoing, schoolStartTime, schoolEndTime, wakeUpTime, sleepTime, travelMode,
+    goals, parentGoals, parentWorkType, parentWorkStart, parentWorkEnd,
+  } = opts;
 
   const ft = dietType.toLowerCase().replace(/-/g, "_");
   const dietRule =
@@ -687,31 +705,102 @@ function buildWeekPlanPrompt(opts: {
   })();
 
   const weatherRule =
-    weather === "hot" ? "Weather is HOT — prefer light, hydrating, cooling meals (salads, lassi, fruits, light dals, yogurt-based dishes)" :
-    weather === "cold" ? "Weather is COLD — prefer warm, cooked, hearty meals (soups, stews, hot cereals, cooked grains)" :
-    "Weather is moderate — standard balanced meals";
+    weather === "hot" ? "Weather is HOT — prefer light, hydrating, cooling meals (salads, lassi, fruits, light dals, yogurt-based dishes). Avoid heavy or oily food." :
+    weather === "cold" ? "Weather is COLD — prefer warm, cooked, hearty meals (soups, stews, hot cereals, cooked grains, warm milk). Avoid raw cold foods." :
+    "Weather is moderate — standard balanced meals.";
 
   const cuisineLabel = (() => {
     if (foodStyle === "indian" && subCuisine) return buildCuisineLabel(subCuisine);
     return buildCuisineLabel(foodStyle || "pan_indian");
   })();
 
+  // School context
+  const schoolBlock = (() => {
+    if (isSchoolGoing === false) return "- Child does NOT attend school — no lunchbox needed. Lunch can be home-cooked.";
+    if (!isSchoolGoing && schoolStartTime === "09:00" && schoolEndTime === "15:00") return "";
+    const lines: string[] = [];
+    if (isSchoolGoing) {
+      lines.push("- Child attends school.");
+      if (schoolStartTime) lines.push(`  - School starts: ${schoolStartTime} → breakfast must be LIGHT, quick, and easy to digest before leaving`);
+      if (schoolEndTime) lines.push(`  - School ends: ${schoolEndTime} → after-school snack should be ENERGISING and filling`);
+      lines.push("  - LUNCH must be a lunchbox meal: portable, no-spill, finger-foods or compact meals, easy to eat without heating");
+      if (travelMode && travelMode !== "car") {
+        lines.push(`  - Travel mode to school: ${travelMode} — factor in commute time when sizing breakfast`);
+      }
+    }
+    return lines.join("\n");
+  })();
+
+  // Sleep / wake context
+  const routineBlock = (() => {
+    const lines: string[] = [];
+    if (wakeUpTime) lines.push(`- Wake-up time: ${wakeUpTime} → breakfast timing starts around ${wakeUpTime}`);
+    if (sleepTime) lines.push(`- Bedtime: ${sleepTime} → dinner must be served and digested well before bedtime (at least 2 hours)`);
+    return lines.join("\n");
+  })();
+
+  // Parent work context — affects meal prep complexity
+  const parentBlock = (() => {
+    const lines: string[] = [];
+    if (parentWorkType === "work_from_office" || parentWorkType === "office") {
+      lines.push("- Parent works from office — morning prep time is limited. Prefer quick breakfast (≤10 min) and pre-prep-friendly lunches.");
+      if (parentWorkStart) lines.push(`  - Leaves for office around ${parentWorkStart}`);
+    } else if (parentWorkType === "work_from_home" || parentWorkType === "wfh") {
+      lines.push("- Parent works from home — moderate prep time available. Can include slightly more elaborate lunches.");
+    } else if (parentWorkType === "business" || parentWorkType === "entrepreneur") {
+      lines.push("- Parent runs a business — schedule may be irregular. Prefer batch-cookable and quick meals.");
+    }
+    if (parentWorkStart && parentWorkEnd) {
+      lines.push(`  - Work hours: ${parentWorkStart}–${parentWorkEnd}`);
+    }
+    return lines.join("\n");
+  })();
+
+  // Goals context
+  const goalsBlock = (() => {
+    const all: string[] = [];
+    if (goals) all.push(goals);
+    if (parentGoals && parentGoals.length) {
+      const goalMap: Record<string, string> = {
+        improve_sleep: "improve sleep quality — include sleep-promoting foods (warm milk, bananas, complex carbs at dinner)",
+        reduce_tantrums: "reduce tantrums — stabilise blood sugar with balanced snacks, avoid sugar spikes",
+        improve_focus: "improve focus/concentration — include brain foods (omega-3, iron, zinc, choline)",
+        reduce_screen_time: "reduce screen time — make mealtimes engaging with colorful varied plates",
+        increase_independence: "build independence — include foods the child can self-feed easily",
+      };
+      parentGoals.forEach(g => { if (goalMap[g]) all.push(goalMap[g]); });
+    }
+    if (!all.length) return "";
+    return `PARENTING GOALS — tailor meals to support these:\n${all.map(g => `- ${g}`).join("\n")}`;
+  })();
+
+  const ageDisplay = ageMonths != null
+    ? `${childAge} years${ageMonths % 12 > 0 ? ` ${ageMonths % 12} months` : ""} (${ageMonths} months total)`
+    : `${childAge} years`;
+
+  const childLabel = childName ? `${childName}, aged ${ageDisplay}` : `aged ${ageDisplay}`;
+
   return `You are a pediatric nutrition AI. Generate a personalized 7-day meal plan.
 
 CHILD PROFILE:
-- Age: ${childAge} years old
+- Child: ${childLabel}
 - Country: ${country || "India"}
 - Cuisine style: ${cuisineLabel}
 - Diet: ${dietRule}
-- ${allergyBlock ? allergyBlock + "\n- " : ""}${weatherRule}
-
-RULES:
-1. All meals must be kid-friendly, simple to prepare (≤20 min), culturally relevant to the cuisine style above
+${allergyBlock ? `- ${allergyBlock}\n` : ""}
+ENVIRONMENTAL CONTEXT:
+- ${weatherRule}
+${schoolBlock ? schoolBlock + "\n" : ""}${routineBlock ? routineBlock + "\n" : ""}${parentBlock ? parentBlock + "\n" : ""}
+${goalsBlock ? goalsBlock + "\n\n" : ""}RULES:
+1. All meals must be kid-friendly, culturally relevant to the cuisine style above
 2. STRICT diet compliance — never violate diet type or allergies, not even in garnishes
-3. Do NOT repeat the same main dish within 3 consecutive days
-4. Provide REALISTIC nutrition values based on standard serving sizes for a child aged ${childAge}
-5. Each day must have exactly 5 meals: breakfast, mid_morning, lunch, snack, dinner
-6. Output ONLY valid JSON, no extra text, no markdown fences
+3. Respect school timing: if school-going, breakfast = light & quick, lunch = lunchbox-friendly
+4. Respect sleep/wake timing: dinner must complete at least 2 hours before bedtime
+5. Respect parent availability: if office worker, morning meals ≤10 min prep
+6. Do NOT repeat the same main dish within 3 consecutive days
+7. Provide REALISTIC nutrition values based on standard serving sizes for the child's age
+8. Each day must have exactly 5 meals: breakfast, mid_morning, lunch, snack, dinner
+9. Output ONLY valid JSON, no extra text, no markdown fences
 
 OUTPUT FORMAT (exactly this shape):
 {
@@ -753,14 +842,31 @@ router.post("/meals/week-plan", requireAuth, async (req, res): Promise<void> => 
   const child = children[0];
 
   const childAge = child?.age ?? 6;
+  const ageMonths = child != null
+    ? (Math.floor(Number(child.age)) * 12) + Math.max(0, Math.min(11, Math.floor(Number((child as any).ageMonths ?? 0))))
+    : undefined;
+  const childName = child?.name ? String(child.name).trim().slice(0, 40) : undefined;
   const dietType: string = child?.dietType ?? pp?.dietType ?? pp?.foodType ?? "veg";
   const foodStyle: string = child?.foodStyle ?? pp?.foodStyle ?? "indian";
   const subCuisine: string | null = child?.subCuisine ?? pp?.subCuisine ?? null;
   const allergies: string = child?.allergies ?? pp?.allergies ?? "";
   const country = String(req.body?.country ?? "India").slice(0, 50);
 
+  // Environmental / routine context
+  const isSchoolGoing = child?.isSchoolGoing ?? undefined;
+  const schoolStartTime = child?.schoolStartTime ?? undefined;
+  const schoolEndTime = child?.schoolEndTime ?? undefined;
+  const wakeUpTime = child?.wakeUpTime ?? undefined;
+  const sleepTime = child?.sleepTime ?? undefined;
+  const travelMode = child?.travelMode ?? undefined;
+  const goals = child?.goals ? String(child.goals).slice(0, 200) : undefined;
+  const parentGoals = Array.isArray((child as any)?.parentGoals) ? (child as any).parentGoals as string[] : [];
+  const parentWorkType = pp?.workType ?? undefined;
+  const parentWorkStart = pp?.workStartTime ?? undefined;
+  const parentWorkEnd = pp?.workEndTime ?? undefined;
+
   const cacheKey = userId;
-  const paramsFingerprint = `${childAge}|${dietType}|${foodStyle}|${subCuisine}|${allergies}|${weather}|${country}`;
+  const paramsFingerprint = `${childAge}|${dietType}|${foodStyle}|${subCuisine}|${allergies}|${weather}|${country}|${isSchoolGoing}|${schoolStartTime}|${schoolEndTime}|${wakeUpTime}|${sleepTime}|${parentWorkType}|${goals}`;
   const cached = WEEK_PLAN_CACHE.get(cacheKey);
   if (!forceRefresh && cached && Date.now() - cached.ts < WEEK_PLAN_TTL_MS && cached.params === paramsFingerprint) {
     res.set("Cache-Control", "private, max-age=3600");
@@ -769,11 +875,15 @@ router.post("/meals/week-plan", requireAuth, async (req, res): Promise<void> => 
     return;
   }
 
-  req.log.info({ childAge, dietType, foodStyle, subCuisine, allergies, weather, country }, "[meals/week-plan] generating");
+  req.log.info({ childAge, childName, dietType, foodStyle, subCuisine, allergies, weather, country, isSchoolGoing, schoolStartTime, schoolEndTime, wakeUpTime, sleepTime, parentWorkType }, "[meals/week-plan] generating");
 
   try {
     const { openai } = await import("@workspace/integrations-openai-ai-server");
-    const prompt = buildWeekPlanPrompt({ childAge, country, dietType, foodStyle, subCuisine, allergies, weather });
+    const prompt = buildWeekPlanPrompt({
+      childAge, ageMonths, childName, country, dietType, foodStyle, subCuisine, allergies, weather,
+      isSchoolGoing, schoolStartTime, schoolEndTime, wakeUpTime, sleepTime, travelMode,
+      goals, parentGoals, parentWorkType, parentWorkStart, parentWorkEnd,
+    });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
