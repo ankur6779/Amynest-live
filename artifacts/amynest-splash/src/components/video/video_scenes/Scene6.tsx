@@ -56,6 +56,20 @@ export function Scene6() {
       >
         <p className="text-sm font-bold tracking-wider uppercase">Free Download · iOS & Android</p>
       </motion.div>
+
+      <motion.div
+        className="mt-4 flex items-center gap-1.5 px-4 py-2 rounded-full border border-white/15 bg-white/5 backdrop-blur-sm"
+        initial={{ opacity: 0, y: 10 }}
+        animate={phase >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+        transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+          <path d="M5 0.5L6.12 3.38L9.24 3.62L7 5.54L7.76 8.56L5 6.9L2.24 8.56L3 5.54L0.76 3.62L3.88 3.38L5 0.5Z" fill="rgba(167,139,250,0.75)" />
+        </svg>
+        <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: 'rgba(167,139,250,0.70)' }}>
+          Patent Pending Technology
+        </span>
+      </motion.div>
     </motion.div>
   );
 }

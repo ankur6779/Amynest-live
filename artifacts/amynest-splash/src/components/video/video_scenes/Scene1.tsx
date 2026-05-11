@@ -49,6 +49,20 @@ export function Scene1() {
         >
           Your AI Parenting Partner
         </motion.p>
+
+        <motion.div
+          className="mt-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm"
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={phase >= 3 ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.85 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+            <path d="M5 0.5L6.12 3.38L9.24 3.62L7 5.54L7.76 8.56L5 6.9L2.24 8.56L3 5.54L0.76 3.62L3.88 3.38L5 0.5Z" fill="rgba(167,139,250,0.8)" />
+          </svg>
+          <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: 'rgba(167,139,250,0.75)' }}>
+            Patent Pending Technology
+          </span>
+        </motion.div>
       </div>
     </motion.div>
   );
