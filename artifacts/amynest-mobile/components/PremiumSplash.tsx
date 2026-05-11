@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { brand } from "@/constants/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, {
   Circle,
@@ -40,7 +41,7 @@ import Reanimated, {
 const { width: W, height: H } = Dimensions.get("window");
 
 // ── Ring gradient colours (audit-ok comments required by color-audit script) ──
-const RING_PINK   = "#FF4ECD"; // audit-ok: neon-pink ring gradient start/end
+const RING_PINK   = brand.accent;  // token: brand.accent
 const RING_VIOLET = "#C084FC"; // audit-ok: violet-400 ring gradient mid
 const RING_PURPLE = "#7B3FF2"; // audit-ok: brand-purple ring gradient mid2
 
@@ -182,7 +183,7 @@ function ShimmerCTA({ onPress }: { onPress: () => void }) {
     >
       <View style={styles.ctaClip}>
         <LinearGradient
-          colors={["#EC4899", "#9333EA", "#7B3FF2"]} // audit-ok: pink→purple CTA gradient
+          colors={[brand.pink500, "#9333EA", "#7B3FF2"]} // audit-ok: purple-mid hex only; pink uses brand token
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.ctaGradient}
@@ -496,7 +497,7 @@ const styles = StyleSheet.create({
     top: -14,
     left: -14,
     backgroundColor: "rgba(236,72,153,0.10)", // audit-ok: pink ring outer glow
-    shadowColor: "#EC4899", // audit-ok: pink ring glow shadow
+    shadowColor: brand.pink500, // token: brand.pink500
     shadowOpacity: 0.45,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 0 },
@@ -544,7 +545,7 @@ const styles = StyleSheet.create({
     lineHeight: 27,
   },
   taglinePink: {
-    color: "#FF4ECD", // audit-ok: neon-pink tagline highlight
+    color: brand.accent, // token: brand.accent
     fontFamily: "Inter_600SemiBold",
   },
 
@@ -583,7 +584,7 @@ const styles = StyleSheet.create({
   },
   ctaOuter: {
     width: "100%",
-    shadowColor: "#EC4899", // audit-ok: pink CTA glow shadow
+    shadowColor: brand.pink500, // token: brand.pink500
     shadowOpacity: 0.55,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 6 },
