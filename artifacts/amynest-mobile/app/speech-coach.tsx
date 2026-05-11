@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useColors } from "@/hooks/useColors";
 import { useFeatureUsage } from "@/hooks/useFeatureUsage";
@@ -79,7 +79,18 @@ export default function SpeechCoachScreen() {
 
   const [milestoneTab, setMilestoneTab] = useState<SpeechAgeBand>(childBand);
   const [pronounceTab, setPronounceTab] = useState<PronouncePromptKind>("letter");
-  const [waitlistJoined, setWaitlistJoined] = useState(false);
+
+  const joinWaitlist = useMutation({
+    mutationFn: async () => {
+      const r = await authFetch("/api/speech/expert-waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ childId: child?.id ?? null }),
+      });
+      if (!r.ok && r.status !== 409) throw new Error("waitlist_error");
+    },
+  });
+  const waitlistJoined = joinWaitlist.isSuccess;
 
   // Per-mount dedupe so a section's first interaction (any touch within it)
   // marks the matching premium feature exactly once. Mounting the screen
@@ -505,8 +516,8 @@ export default function SpeechCoachScreen() {
             {t("screens.speech_coach.expert.intro")}
           </Text>
           <Pressable
-            onPress={() => setWaitlistJoined(true)}
-            disabled={waitlistJoined}
+            onPress={() => { if (!waitlistJoined) joinWaitlist.mutate(); }}
+            disabled={waitlistJoined || joinWaitlist.isPending}
             style={[
               s.fullBtn,
               { backgroundColor: waitlistJoined ? c.muted : brand.violet500 },
@@ -523,7 +534,9 @@ export default function SpeechCoachScreen() {
                 { color: waitlistJoined ? c.mutedForeground : "#FFFFFF" /* audit-ok: button text on filled brand */ },
               ]}
             >
-              {waitlistJoined
+              {joinWaitlist.isPending
+                ? t("screens.speech_coach.expert.joining")
+                : waitlistJoined
                 ? t("screens.speech_coach.expert.joined")
                 : t("screens.speech_coach.expert.join_waitlist")}
             </Text>
