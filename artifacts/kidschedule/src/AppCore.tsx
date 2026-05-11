@@ -45,6 +45,7 @@ const AmyAiTutorPage = lazy(() => import("@/pages/amy-ai-tutor"));
 const ProgressPage = lazy(() => import("@/pages/progress"));
 const ParentingHub = lazy(() => import("@/pages/parenting-hub"));
 const LifeSkillsPage = lazy(() => import("@/pages/life-skills"));
+const SpeechCoachPage = lazy(() => import("@/pages/speech-coach"));
 const KidsControlCenterPage = lazy(() => import("@/pages/kids-control-center"));
 const StudyPage = lazy(() => import("@/pages/study"));
 const EventPrepPage = lazy(() => import("@/pages/event-prep"));
@@ -291,6 +292,9 @@ function AppRoutes() {
           </Route>
           <Route path="/life-skills">
             {() => <ProtectedRoute component={LifeSkillsPage} />}
+          </Route>
+          <Route path="/parenting-hub/speech-coach">
+            {() => <ProtectedRoute component={SpeechCoachPage} />}
           </Route>
           <Route path="/kids-control-center">
             {() => <ProtectedRoute component={KidsControlCenterPage} />}

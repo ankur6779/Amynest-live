@@ -757,6 +757,28 @@ export default function ParentingHub() {
           </HubSection>
         </LockedBlock> : null;
     }
+  }, {
+    // Amy Speech Coach — opens dedicated /parenting-hub/speech-coach page.
+    // Eligible for children aged 12–96 months (1y → 4y_plus speech bands).
+    id: "speech-coach",
+    bands: ["0-2", "2-4", "4-6", "6-8"],
+    render: () => {
+      return totalAgeMonths >= 12 && totalAgeMonths < 97 ? <LockedBlock reason="hub_locked" locked={hubUsage.isFeatureLocked("hub_speech")}>
+          <HubSection id="speech-coach" icon={<MessageCircleHeart className="h-5 w-5 text-white" />} title={t("screens.speech_coach.hub_tile.title")} description={t("screens.speech_coach.hub_tile.description")} accentClass="bg-gradient-to-br from-violet-500 to-fuchsia-500" cardClass="linear-gradient(135deg,rgba(139,92,246,0.30)0%,rgba(217,70,239,0.14)100%)" tryFree={tryFreeFor("hub_speech")} onOpen={() => hubUsage.markFeatureUsed("hub_speech")}>  {/* audit-ok: intentional vibrant violet→fuchsia accent gradient for Speech Coach tile */}
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {t("screens.speech_coach.subtitle")}
+              </p>
+              <Link href="/parenting-hub/speech-coach">
+                <Button className="w-full rounded-xl gap-2 text-sm font-semibold" data-testid="open-speech-coach">
+                  {t("screens.speech_coach.cta.start_practice")}
+                  <ArrowRight className="h-4 w-4 ml-auto" />
+                </Button>
+              </Link>
+            </div>
+          </HubSection>
+        </LockedBlock> : null;
+    }
   }] : [];
 
   // Bucket sections by age band.

@@ -429,31 +429,33 @@ router.post("/speech/expert-waitlist", async (req, res): Promise<void> => {
     childId = child.id;
   }
 
-  // Idempotent on (userId, childId). NOTE: in Postgres `NULL` values are not
-  // considered equal in a UNIQUE index, so users without a childId can create
-  // multiple "anonymous" waitlist rows. We guard that case by selecting first.
-  if (childId == null) {
-    const existing = await db
-      .select()
-      .from(speechExpertWaitlistTable)
-      .where(
-        and(
-          eq(speechExpertWaitlistTable.userId, userId),
-          sql`${speechExpertWaitlistTable.childId} IS NULL`,
-        ),
-      )
-      .orderBy(desc(speechExpertWaitlistTable.joinedAt))
-      .limit(1);
-    if (existing[0]) {
-      res.json({
-        id: existing[0].id,
-        childId: existing[0].childId,
-        joinedAt: existing[0].joinedAt.toISOString(),
-        notes: existing[0].notes ?? null,
-        alreadyOnWaitlist: true,
-      });
-      return;
-    }
+  // Idempotency: always SELECT first before inserting. Postgres NULL values
+  // are not considered equal in a UNIQUE index, so we cannot rely on
+  // ON CONFLICT DO NOTHING for null childId rows. We use a uniform
+  // select-first strategy for both cases so no DB unique constraint is needed.
+  const existingCheck = await db
+    .select()
+    .from(speechExpertWaitlistTable)
+    .where(
+      and(
+        eq(speechExpertWaitlistTable.userId, userId),
+        childId == null
+          ? sql`${speechExpertWaitlistTable.childId} IS NULL`
+          : eq(speechExpertWaitlistTable.childId, childId),
+      ),
+    )
+    .orderBy(desc(speechExpertWaitlistTable.joinedAt))
+    .limit(1);
+
+  if (existingCheck[0]) {
+    res.json({
+      id: existingCheck[0].id,
+      childId: existingCheck[0].childId,
+      joinedAt: existingCheck[0].joinedAt.toISOString(),
+      notes: existingCheck[0].notes ?? null,
+      alreadyOnWaitlist: true,
+    });
+    return;
   }
 
   const inserted = await db
@@ -463,36 +465,14 @@ router.post("/speech/expert-waitlist", async (req, res): Promise<void> => {
       childId,
       notes: parsed.data.notes ?? null,
     })
-    .onConflictDoNothing({
-      target: [
-        speechExpertWaitlistTable.userId,
-        speechExpertWaitlistTable.childId,
-      ],
-    })
     .returning();
 
-  let row = inserted[0];
-  let alreadyOnWaitlist = false;
-  if (!row) {
-    alreadyOnWaitlist = true;
-    const existing = await db
-      .select()
-      .from(speechExpertWaitlistTable)
-      .where(
-        and(
-          eq(speechExpertWaitlistTable.userId, userId),
-          childId == null
-            ? sql`${speechExpertWaitlistTable.childId} IS NULL`
-            : eq(speechExpertWaitlistTable.childId, childId),
-        ),
-      )
-      .limit(1);
-    row = existing[0];
-  }
+  const row = inserted[0];
   if (!row) {
     res.status(500).json({ error: "could_not_join_waitlist" });
     return;
   }
+  const alreadyOnWaitlist = false;
 
   req.log.info(
     {
