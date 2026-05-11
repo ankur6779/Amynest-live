@@ -65,6 +65,7 @@ const NotificationSettingsPage = lazy(() => import("@/pages/notification-setting
 const NotificationDiagnosticsPage = lazy(() => import("@/pages/notification-diagnostics"));
 const NotifyPromptPage = lazy(() => import("@/pages/notify-prompt"));
 const DebugParityPage = lazy(() => import("@/pages/debug-parity"));
+const EnvironmentPage = lazy(() => import("@/pages/environment"));
 
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { DebugProvider } from "@/contexts/debug-context";
@@ -339,6 +340,9 @@ function AppRoutes() {
             {() => <ProtectedRoute component={RewardsPage} />}
           </Route>
           <Route path="/debug-parity" component={DebugParityPage} />
+          <Route path="/environment">
+            {() => <ProtectedRoute component={EnvironmentPage} />}
+          </Route>
           <Route component={NotFound} />
             </Switch>
             </Suspense>

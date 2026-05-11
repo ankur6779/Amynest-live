@@ -139,7 +139,8 @@
     "referrals": "Referrals",
     "dark_mode": "Dark mode",
     "light_mode": "Light mode",
-    "sign_out": "Sign out"
+    "sign_out": "Sign out",
+    "environment": "Environment"
   },
   "auth": {
     "welcome_back": "Welcome back",
@@ -4343,5 +4344,24 @@
     "skip": "Skip tour",
     "next": "Next",
     "done": "Let's go! 🚀"
+  },
+  "environment": {
+    "title": "Today's Environment",
+    "subtitle": "Real-time air quality, UV, and weather — tailored for your child",
+    "refresh": "Refresh",
+    "error": "Could not load environmental data. Please try again.",
+    "retry": "Try again",
+    "scored_for": "Scored for {{name}}",
+    "degraded": "Estimated data",
+    "outdoor_basis": "Based on AQI, UV, and current conditions",
+    "forecast_shift": "Weather shift incoming",
+    "amy_says": "Amy's Adjustments",
+    "season": "Season",
+    "updated": "Updated",
+    "risk_score_label": "Environmental Risk Score",
+    "risk_low": "Conditions are excellent for your child today.",
+    "risk_mild": "Mild adjustments to the routine may be helpful.",
+    "risk_medium": "Some outdoor activities may need indoor alternatives.",
+    "risk_high": "Routine has been adapted to protect your child."
   }
 }
