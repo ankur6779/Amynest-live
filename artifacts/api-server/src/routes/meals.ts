@@ -6,6 +6,12 @@ import { suggestMeals, type MealRegion } from "../lib/meal-suggestions";
 import { logger } from "../lib/logger.js";
 import { db } from "@workspace/db";
 import { childrenTable, parentProfilesTable } from "@workspace/db/schema";
+import {
+  getAgeBand,
+  buildAgeSafetyPromptBlock,
+  validateAndEnrichMeal,
+  buildInfantFeedingCards,
+} from "../lib/meal-safety.js";
 
 const router: IRouter = Router();
 
@@ -317,6 +323,7 @@ type AiGenerateParams = {
   region: string;
   audience: string;
   childAge?: number;
+  totalAgeMonths?: number; // More precise than childAge (years) — used for infant safety
   // Full diet profile — replaces the old isVeg boolean.
   dietType?: string;       // "veg", "non_veg", "vegan", "eggetarian", "pescatarian", "jain", "no_preference"
   allergies?: string;      // comma-separated: "dairy,gluten,eggs,nuts,peanuts,soy,shellfish,sesame"
@@ -326,13 +333,21 @@ type AiGenerateParams = {
 };
 
 function buildAiGeneratePrompt(params: AiGenerateParams): string {
-  const { query, region, audience, childAge, dietType, allergies, foodStyle, subCuisine, country } = params;
+  const { query, region, audience, childAge, totalAgeMonths, dietType, allergies, foodStyle, subCuisine, country } = params;
+
+  // Determine effective age in months — totalAgeMonths is the precise value, childAge (years) is fallback
+  const effectiveAgeMonths = totalAgeMonths ?? (childAge != null ? childAge * 12 : undefined);
 
   const audience_line = audience === "parent_healthy"
     ? "The meal is for an adult parent (healthy, nutritious, appropriate calories)."
-    : childAge != null
-    ? `The meal is for a child aged ${childAge} years (kid-friendly, age-appropriate).`
+    : effectiveAgeMonths != null
+    ? `The meal is for a child aged ${Math.floor(effectiveAgeMonths / 12)} years ${effectiveAgeMonths % 12 > 0 ? `and ${effectiveAgeMonths % 12} months` : ""} (${effectiveAgeMonths} months total).`
     : "The meal is for a school-age child (kid-friendly tiffin or meal).";
+
+  // Age-band safety block — injected BEFORE diet/allergy rules for priority
+  const ageSafetyBlock = (audience !== "parent_healthy" && effectiveAgeMonths != null)
+    ? buildAgeSafetyPromptBlock(effectiveAgeMonths)
+    : "";
 
   // Full diet constraint — use dietType if provided, fall back to isVeg-style
   const ft = (dietType ?? "veg").toLowerCase().replace(/-/g, "_");
@@ -377,17 +392,19 @@ function buildAiGeneratePrompt(params: AiGenerateParams): string {
     ? `\nUser country: ${country}. Prefer ingredients common in that country.`
     : "";
 
-  return `You are Amy, an AI cooking assistant for the parenting app AmyNest. Generate 5 personalised meal recipes.
+  return `You are Amy, a pediatric nutrition AI for the parenting app AmyNest. Generate 5 personalised meal recipes.
 
 Parent's request: "${query}"
 Primary cuisine: ${primaryLabel}${secondaryCuisineContext}${countryContext}
 ${audience_line}
+${ageSafetyBlock}
 ${dietLine}${allergyDetail}
 
 CRITICAL RULES:
 - Output ONLY a valid JSON object with a "meals" array — no markdown, no extra text.
 - Generate exactly 5 meals.
-- EVERY meal MUST strictly comply with the diet and allergy rules above — no exceptions, not even in garnishes or minor ingredients.
+- AGE SAFETY IS THE TOP PRIORITY — follow all age-band rules above before any other consideration.
+- EVERY meal MUST strictly comply with the diet and allergy rules — no exceptions, not even in garnishes or minor ingredients.
 - Use the cuisine style above — do NOT default to generic Indian food if another cuisine is specified.
 - Each meal must match the parent's request as closely as possible.
 - Use real, practical recipes with ingredients commonly available locally.
@@ -479,19 +496,38 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
   // Country: frontend hint (ISO code)
   const country = typeof req.body?.country === "string" ? req.body.country.toUpperCase().slice(0, 3) : undefined;
 
-  // Child age: DB first, then frontend hint
+  // Child age: DB first (years), then frontend hint
   let childAge: number | undefined = child?.age != null ? Math.max(0, Math.min(MAX_AGE, Math.floor(Number(child.age)))) : undefined;
   if (childAge == null && req.body?.childAge != null) {
     const n = Number(req.body.childAge);
     if (Number.isFinite(n)) childAge = Math.max(0, Math.min(MAX_AGE, Math.floor(n)));
   }
 
-  req.log.info({ dietType, allergies, foodStyle, subCuisine, region, childAge }, "[meals/ai-generate] resolved diet context");
+  // Precise age in months — critical for infant safety (child.age=0 could be 0–11 months)
+  const childAgeMonths: number | undefined = child?.age != null
+    ? (Math.floor(Number(child.age)) * 12) + Math.max(0, Math.min(11, Math.floor(Number((child as any).ageMonths ?? 0))))
+    : (childAge != null ? childAge * 12 : undefined);
+
+  req.log.info({ dietType, allergies, foodStyle, subCuisine, region, childAge, childAgeMonths }, "[meals/ai-generate] resolved diet context");
+
+  // ── Infant shortcut: 0-6 months → skip AI, return deterministic feeding cards ──
+  if (audience !== "parent_healthy" && childAgeMonths != null && childAgeMonths < 6) {
+    req.log.info({ childAgeMonths }, "[meals/ai-generate] infant < 6 months — returning feeding cards");
+    const feedingType = (child as any)?.feedingType as string | undefined;
+    const infantCards = buildInfantFeedingCards(childAgeMonths, feedingType);
+    res.set("Cache-Control", "no-store");
+    res.json({
+      meals: infantCards,
+      amyMessage: `Your ${childAgeMonths}-month-old needs only breast milk or formula right now. Solid foods start at 6 months. 🤱`,
+      infantMode: true,
+    });
+    return;
+  }
 
   try {
     const { openai } = await import("@workspace/integrations-openai-ai-server");
 
-    const prompt = buildAiGeneratePrompt({ query, region, audience, childAge, dietType, allergies, foodStyle, subCuisine, country });
+    const prompt = buildAiGeneratePrompt({ query, region, audience, childAge, totalAgeMonths: childAgeMonths, dietType, allergies, foodStyle, subCuisine, country });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -568,6 +604,16 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
       const id = slugify(title) + "-" + idx;
       const audioText = `${title}. Ingredients: ${ingredients.join(", ")}. Steps: ${steps.join(". ")}`;
 
+      // ── Post-generation safety validation & enrichment ──────────────────
+      const enrichment = childAgeMonths != null
+        ? validateAndEnrichMeal(
+            { title, ingredients, tags, isVeg: isVegMeal },
+            childAgeMonths,
+            allergies,
+            dietType,
+          )
+        : { safetyBadges: [] as string[], whyThisMeal: "", safetyWarning: undefined };
+
       return {
         id,
         title,
@@ -584,11 +630,15 @@ router.post("/meals/ai-generate", requireAuth, async (req, res): Promise<void> =
         isVeg: isVegMeal,
         matchedIngredients: [] as string[],
         missingIngredients: [] as string[],
+        safetyBadges: enrichment.safetyBadges,
+        whyThisMeal: enrichment.whyThisMeal,
+        ...(enrichment.safetyWarning ? { safetyWarning: enrichment.safetyWarning } : {}),
       };
     }).filter(Boolean);
 
+    const ageBand = childAgeMonths != null ? getAgeBand(childAgeMonths) : undefined;
     res.set("Cache-Control", "no-store");
-    res.json({ meals, amyMessage });
+    res.json({ meals, amyMessage, ...(ageBand ? { ageBand } : {}) });
   } catch (err) {
     logger.error(`[meals/ai-generate] OpenAI error ${String(err)}`);
     res.status(503).json({ error: "AI service unavailable. Please retry." });

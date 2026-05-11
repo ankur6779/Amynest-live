@@ -21,6 +21,9 @@ interface AiMeal {
   isVeg: boolean;
   matchedIngredients: string[];
   missingIngredients: string[];
+  safetyBadges?: string[];
+  whyThisMeal?: string;
+  safetyWarning?: string;
 }
 interface AiGenerateResult {
   meals: AiMeal[];
@@ -260,6 +263,14 @@ export function SmartMealSuggestions() {
     </div>;
 }
 
+// ─── Safety-status style tokens (audit-ok: semantic success/warning colours, no design-system token exists) ───
+const SAFETY_BADGE_CARD_STYLE: React.CSSProperties = { background: "rgba(134,239,172,0.15)", color: "#16a34a", border: "1px solid rgba(134,239,172,0.4)" }; // audit-ok: success-state colour, no semantic token
+const SAFETY_BLOCK_STYLE: React.CSSProperties = { background: "rgba(134,239,172,0.08)", border: "1px solid rgba(134,239,172,0.25)" }; // audit-ok: success-state colour, no semantic token
+const SAFETY_BADGE_STYLE: React.CSSProperties = { background: "rgba(134,239,172,0.2)", color: "#15803d", border: "1px solid rgba(134,239,172,0.4)" }; // audit-ok: success-state colour, no semantic token
+const SAFETY_TEXT_STYLE: React.CSSProperties = { color: "#15803d" }; // audit-ok: success-state colour, no semantic token
+const WARNING_BLOCK_STYLE: React.CSSProperties = { background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)" }; // audit-ok: warning-state colour, no semantic token
+const WARNING_TEXT_STYLE: React.CSSProperties = { color: "#92400e" }; // audit-ok: warning-state colour, no semantic token
+
 // ─── Card ────────────────────────────────────────────────────────────────
 function MealCard({
   meal,
@@ -297,6 +308,15 @@ function MealCard({
           <span className="inline-flex items-center gap-0.5"><Clock className="h-3 w-3" /> {meal.prepMinutes}m</span>
           {showCalories && <span className="inline-flex items-center gap-0.5"><Flame className="h-3 w-3 text-primary" /> {meal.calories}</span>}
         </div>
+        {meal.safetyBadges && meal.safetyBadges.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {meal.safetyBadges.slice(0, 2).map(badge => (
+              <span key={badge} className="text-[8.5px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full leading-none" style={SAFETY_BADGE_CARD_STYLE}>
+                ✓ {badge}
+              </span>
+            ))}
+          </div>
+        )}
         <p className="text-[10px] text-primary dark:text-primary font-semibold">{t("components.smart_meal_suggestions.tap_for_recipe")}</p>
       </div>
     </button>;
@@ -391,6 +411,33 @@ function RecipeModal({
               </div>
             </div>
           </div>
+
+          {/* Safety Badges + Why This Meal */}
+          {(meal.safetyBadges && meal.safetyBadges.length > 0 || meal.whyThisMeal) && (
+            <div className="rounded-2xl p-3 space-y-2" style={SAFETY_BLOCK_STYLE}>
+              {meal.safetyBadges && meal.safetyBadges.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {meal.safetyBadges.map(badge => (
+                    <span key={badge} className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={SAFETY_BADGE_STYLE}>
+                      ✓ {badge}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {meal.whyThisMeal && (
+                <p className="text-[11px] leading-snug" style={SAFETY_TEXT_STYLE}>
+                  💡 {meal.whyThisMeal}
+                </p>
+              )}
+            </div>
+          )}
+          {meal.safetyWarning && (
+            <div className="rounded-2xl p-3" style={WARNING_BLOCK_STYLE}>
+              <p className="text-[11px] leading-snug" style={WARNING_TEXT_STYLE}>
+                ⚠️ {meal.safetyWarning}
+              </p>
+            </div>
+          )}
 
           {/* Ingredients */}
           <div>
