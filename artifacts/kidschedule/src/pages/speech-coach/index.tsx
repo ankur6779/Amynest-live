@@ -437,7 +437,7 @@ function PronunciationSection({ child }: { child: AnyChild }) {
 
   return (
     <GatedSection
-      featureId="hub_speech_practice"
+      featureId="hub_speech_pronounce"
       anchorId="speech-section-practice"
       title={t("screens.speech_coach.pronounce.section_title")}
       description={t("screens.speech_coach.pronounce.intro")}

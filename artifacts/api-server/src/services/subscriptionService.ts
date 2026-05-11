@@ -53,11 +53,15 @@ export const FREE_FEATURE_LIMITS = {
   // logging endpoint is gated (POST /api/speech/practice/log uses
   // hub_speech_pronounce); the other keys exist purely for the hub UI to
   // gate its own client-side actions. All lifetime: 1.
-  hub_speech_milestones: 1,
-  hub_speech_pronounce: 1,
-  hub_speech_read_aloud: 1,
-  hub_speech_games: 1,
-  hub_speech_reports: 1,
+  hub_speech_coach: 1,       // hub tile entry (mobile ParentHub tile)
+  hub_speech_dashboard: 1,   // section 1 — Dashboard
+  hub_speech_milestones: 1,  // section 2 — Milestone Checker
+  hub_speech_pronounce: 1,   // section 3 — AI Pronunciation Practice
+  hub_speech_read_aloud: 1,  // section 4 — Read Aloud & Repeat
+  hub_speech_games: 1,       // section 5 — Daily Speech Games
+  hub_speech_guidance: 1,    // section 6 — Parent Guidance
+  hub_speech_affirmations: 1,// section 7 — Emotion & Confidence Builder
+  hub_speech_reports: 1,     // section 8 — Speech Progress Reports
 } as const;
 
 export type FeatureKey = keyof typeof FREE_FEATURE_LIMITS;
@@ -72,10 +76,14 @@ export const FEATURE_SCOPE: Record<FeatureKey, "daily" | "lifetime"> = {
   routine_generate: "lifetime",
   behavior_log: "lifetime",
   audio_lesson: "daily",
+  hub_speech_coach: "lifetime",
+  hub_speech_dashboard: "lifetime",
   hub_speech_milestones: "lifetime",
   hub_speech_pronounce: "lifetime",
   hub_speech_read_aloud: "lifetime",
   hub_speech_games: "lifetime",
+  hub_speech_guidance: "lifetime",
+  hub_speech_affirmations: "lifetime",
   hub_speech_reports: "lifetime",
 };
 
