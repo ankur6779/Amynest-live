@@ -35,7 +35,9 @@ import {
   mapToWeatherOutdoor,
   buildAiPromptBlock,
   buildEnvironmentalSummary,
+  applyEnvironmentalEnrichments,
   type EnvironmentalContext,
+  type EnrichableItem,
 } from "@workspace/environment";
 import {
   loadOwnedChild,
@@ -1019,15 +1021,24 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     ruleChildIntel.energyProfile,
   );
   const ruleLearningTags = deriveLearningAdaptationTags(ruleLearningWeights);
+  // Environmental enrichments — hydration, seasonal nutrition, UV safety,
+  // and indoor swap suggestions. Applied AFTER weather + energy curve so
+  // the existing pipeline keeps full authority over scheduling.
+  const ruleEnriched = applyEnvironmentalEnrichments(
+    ruleCurved.items as unknown as EnrichableItem[],
+    ruleEnvContext,
+    { region: region as string | null | undefined },
+  );
   res.json(
     GenerateRoutineResponse.parse({
       ...generated,
-      items: ruleCurved.items,
+      items: ruleEnriched.items as typeof ruleCurved.items,
       adaptations: [
         ...((generated as { adaptations?: string[] }).adaptations ?? []),
         ...ruleCurved.adaptations,
         ...ruleLearningTags,
         ...(ruleEnvContext?.explanations ?? []),
+        ...ruleEnriched.extraAdaptations,
       ],
     }),
   );
@@ -1230,11 +1241,18 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       previousDayContext,
     });
     const aiLearningTags = deriveLearningAdaptationTags(learningWeights);
+    const aiEnriched = applyEnvironmentalEnrichments(
+      ((generated.items ?? []) as unknown) as EnrichableItem[],
+      aiEnvContext,
+      { region: region as string | null | undefined },
+    );
     res.json(GenerateRoutineResponse.parse({
       ...generated,
+      items: aiEnriched.items as unknown as typeof generated.items,
       adaptations: [
         ...((generated as { adaptations?: string[] }).adaptations ?? []),
         ...aiLearningTags,
+        ...aiEnriched.extraAdaptations,
       ],
     }));
   } catch {
@@ -1275,14 +1293,20 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       childIntel.energyProfile,
     );
     const fallbackLearningTags = deriveLearningAdaptationTags(learningWeights);
+    const fallbackEnriched = applyEnvironmentalEnrichments(
+      curved.items as unknown as EnrichableItem[],
+      aiEnvContext,
+      { region: region as string | null | undefined },
+    );
     res.json(GenerateRoutineResponse.parse({
       ...generated,
-      items: curved.items as unknown as typeof generated.items,
+      items: fallbackEnriched.items as unknown as typeof generated.items,
       adaptations: [
         ...adaptations,
         ...curved.adaptations,
         ...fallbackLearningTags,
         ...(aiEnvContext?.explanations ?? []),
+        ...fallbackEnriched.extraAdaptations,
       ],
     }));
   }
