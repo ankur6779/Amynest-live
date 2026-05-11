@@ -22,3 +22,7 @@ export { mapToWeatherOutdoor, buildAiPromptBlock, buildEnvironmentalSummary } fr
 export { resolveDefaultLocation } from "./locationDefaults.js";
 export { getEnvironmentalContext } from "./orchestrator.js";
 export { mapAgeGroupToEnvAgeGroup } from "./ageMapper.js";
+export {
+  applyEnvironmentalEnrichments,
+  type EnrichableItem,
+} from "./enrichments.js";
