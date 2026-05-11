@@ -3586,6 +3586,27 @@
       }
     }
   },
+  "routines_generate": {
+    "what_amy_considers_title": "✨ What Amy AI considers:",
+    "considers_school_status": "🏫 School status — includes or skips school blocks",
+    "considers_tiffin": "🍱 Tiffin suggestion — 3 options for school-going kids",
+    "considers_work_type": "👩‍💼 Parent work type — homemaker, WFH, or office schedule",
+    "considers_working_day": "💼 Working day check — busy vs. free affects task assignment",
+    "considers_work_hours": "🕘 Work hours — tasks planned around exact busy windows",
+    "considers_coparent": "👨‍👩‍👧 Co-parent coordination — smart role assignment when both parents added",
+    "considers_special_plans": "🌟 Special plans — adjusts the whole day around them",
+    "considers_bonding": "❤️ Family bonding — always adds 2–3 quality moments",
+    "considers_wake_sleep": "⏰ Wake-up & bedtime for accurate time slots",
+    "considers_food_pref": "🥦 Child's food preference — veg or non-veg",
+    "considers_fridge": "🍽️ Fridge ingredients for meal suggestions",
+    "considers_mood": "😊 Child's mood — adjusts tone & activity intensity",
+    "considers_aqi": "🌬️ AQI & air quality — outdoor suitability adjusted in real time (EIOE)",
+    "considers_uv": "☀️ UV index & weather — safe outdoor blocks, sun protection reminders",
+    "considers_temp_season": "🌡️ Temperature & season — heat, cold, and monsoon adaptations",
+    "considers_age_band": "👶 Child's age band — developmental stage shapes every activity",
+    "considers_diet_cuisine": "🥗 Diet type & cuisine — regional, allergen-aware meal planning",
+    "considers_goals": "🎯 Parenting goals — improve sleep, reduce tantrums, build focus"
+  },
   "patent_pending": {
     "footer_label": "Patent Pending Technology",
     "about_tech": "AmyNest AI operates on a proprietary patent-pending computational orchestration architecture integrating adaptive environmental processing, caregiver-aware personalization, and AI-assisted developmental scheduling.",
