@@ -1,0 +1,62 @@
+{
+  "$schema": "predictiveWeatherProfiles@1",
+  "_doc": "Forecast-driven preemptive scheduling rules. activityReschedulingPriority: 1 (highest) .. 5 (lowest).",
+  "conditions": {
+    "incoming_rain": {
+      "preemptiveScheduleAdjustment": "shift_outdoor_block_earlier_or_indoor_swap",
+      "activityReschedulingPriority": 2,
+      "fallbackRoutineActivation": "indoor_creative_or_learning",
+      "hydrationAdjustment": 1.0,
+      "emotionalPreparationRecommendations": ["talk through change of plan", "let child pick indoor backup"],
+      "caregiverPreparationSuggestions": ["raincoat ready if commute needed", "prep indoor activity bin"]
+    },
+    "incoming_storm": {
+      "preemptiveScheduleAdjustment": "complete_outdoor_within_60_min_then_indoor_calming",
+      "activityReschedulingPriority": 1,
+      "fallbackRoutineActivation": "storm_safe_activities",
+      "hydrationAdjustment": 1.05,
+      "emotionalPreparationRecommendations": ["normalise thunder", "prepare a cozy nook", "soft lighting"],
+      "caregiverPreparationSuggestions": ["charge devices", "torches accessible", "weighted blanket nearby"]
+    },
+    "temperature_spike": {
+      "preemptiveScheduleAdjustment": "shift_cognitive_blocks_to_morning",
+      "activityReschedulingPriority": 2,
+      "fallbackRoutineActivation": "indoor_low_energy",
+      "hydrationAdjustment": 1.2,
+      "emotionalPreparationRecommendations": ["prep cool snack", "set expectations for slower pace"],
+      "caregiverPreparationSuggestions": ["pre-cool the room", "ORS / electrolyte drink ready"]
+    },
+    "aqi_spike": {
+      "preemptiveScheduleAdjustment": "indoor_only_until_aqi_drops",
+      "activityReschedulingPriority": 1,
+      "fallbackRoutineActivation": "low_AQI_activities",
+      "hydrationAdjustment": 1.1,
+      "emotionalPreparationRecommendations": ["explain why we are staying indoors", "offer choice between two indoor games"],
+      "caregiverPreparationSuggestions": ["air purifier on", "windows shut", "masks if must step out"]
+    },
+    "high_wind_forecast": {
+      "preemptiveScheduleAdjustment": "avoid_open_play_areas",
+      "activityReschedulingPriority": 3,
+      "fallbackRoutineActivation": "indoor_creative",
+      "hydrationAdjustment": 1.0,
+      "emotionalPreparationRecommendations": ["acknowledge sound", "pick a calm indoor activity"],
+      "caregiverPreparationSuggestions": ["secure loose items", "warm layer if cold wind"]
+    },
+    "rapid_weather_change": {
+      "preemptiveScheduleAdjustment": "build_two_micro_routines_back_to_back",
+      "activityReschedulingPriority": 2,
+      "fallbackRoutineActivation": "weather_safe_backup",
+      "hydrationAdjustment": 1.05,
+      "emotionalPreparationRecommendations": ["talk through both possible plans", "let child help decide"],
+      "caregiverPreparationSuggestions": ["pack flexible clothing", "ready a 15-min indoor swap"]
+    },
+    "stable": {
+      "preemptiveScheduleAdjustment": "no_change",
+      "activityReschedulingPriority": 5,
+      "fallbackRoutineActivation": "none",
+      "hydrationAdjustment": 1.0,
+      "emotionalPreparationRecommendations": [],
+      "caregiverPreparationSuggestions": []
+    }
+  }
+}

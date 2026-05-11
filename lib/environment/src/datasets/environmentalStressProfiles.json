@@ -1,0 +1,69 @@
+{
+  "$schema": "environmentalStressProfiles@1",
+  "_doc": "Stress modeling per atmospheric factor. stressScore is additive (0..40); meltdownRisk is a coarse label.",
+  "factors": {
+    "heat_stress": {
+      "stressScore": 25,
+      "emotionalRisk": "high",
+      "meltdownRisk": "high",
+      "calmingActivitySuggestions": ["cool bath", "shaded reading", "ice-pop break"],
+      "stimulationReductionLevel": "high",
+      "caregiverSupportRecommendation": "stay close, hydrate every 30 min",
+      "recoveryActivitySuggestions": ["nap", "quiet sensory play"]
+    },
+    "humidity_stress": {
+      "stressScore": 18,
+      "emotionalRisk": "moderate",
+      "meltdownRisk": "moderate",
+      "calmingActivitySuggestions": ["fan-cooled play", "wet-towel cool-down"],
+      "stimulationReductionLevel": "moderate",
+      "caregiverSupportRecommendation": "shorter activity blocks, frequent water sips",
+      "recoveryActivitySuggestions": ["quiet story", "low-energy puzzle"]
+    },
+    "storm_stress": {
+      "stressScore": 28,
+      "emotionalRisk": "high",
+      "meltdownRisk": "high",
+      "calmingActivitySuggestions": ["cuddle blanket fort", "soft music", "deep-pressure hug"],
+      "stimulationReductionLevel": "very_high",
+      "caregiverSupportRecommendation": "name the feelings, stay nearby, normalise the storm",
+      "recoveryActivitySuggestions": ["slow breathing", "warm drink", "gentle storytime"]
+    },
+    "sensory_overload": {
+      "stressScore": 22,
+      "emotionalRisk": "high",
+      "meltdownRisk": "high",
+      "calmingActivitySuggestions": ["dim-room break", "noise-cancelling time", "weighted blanket"],
+      "stimulationReductionLevel": "very_high",
+      "caregiverSupportRecommendation": "remove triggers, low-volume voice, predictable next step",
+      "recoveryActivitySuggestions": ["sensory bin", "rocking chair", "quiet music"]
+    },
+    "atmospheric_fatigue": {
+      "stressScore": 15,
+      "emotionalRisk": "moderate",
+      "meltdownRisk": "moderate",
+      "calmingActivitySuggestions": ["nap window", "low-effort craft"],
+      "stimulationReductionLevel": "moderate",
+      "caregiverSupportRecommendation": "trim cognitive blocks; protect rest windows",
+      "recoveryActivitySuggestions": ["story", "warm drink", "early bedtime"]
+    },
+    "overstimulation": {
+      "stressScore": 20,
+      "emotionalRisk": "high",
+      "meltdownRisk": "high",
+      "calmingActivitySuggestions": ["quiet corner", "deep breathing", "single-toy play"],
+      "stimulationReductionLevel": "high",
+      "caregiverSupportRecommendation": "reduce inputs, one task at a time",
+      "recoveryActivitySuggestions": ["reading", "drawing", "warm bath"]
+    },
+    "low_light_mood_suppression": {
+      "stressScore": 12,
+      "emotionalRisk": "moderate",
+      "meltdownRisk": "low",
+      "calmingActivitySuggestions": ["bright-lamp creative play", "music + dance"],
+      "stimulationReductionLevel": "low",
+      "caregiverSupportRecommendation": "boost warm light, add upbeat activity",
+      "recoveryActivitySuggestions": ["family game", "baking together"]
+    }
+  }
+}

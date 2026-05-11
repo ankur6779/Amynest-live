@@ -1,0 +1,72 @@
+{
+  "$schema": "circadianProfiles@1",
+  "_doc": "Daylight-aware scheduling defaults. All windows in minutes relative to wake/bedtime unless absolute time is specified.",
+  "perAge": {
+    "infant_0_1": {
+      "sunriseImpact": "minor",
+      "sunsetImpact": "high",
+      "daylightDurationEffects": "naps follow daylight closely",
+      "melatoninSupportWindow": { "startBeforeBedtimeMin": 90, "endAtBedtime": true },
+      "optimalFocusWindows": [{ "label": "after_morning_nap", "offsetFromWakeMin": 90, "durationMin": 30 }],
+      "eveningWindDownAdjustment": { "earlyBedtimeMinIfShortDaylight": 30 },
+      "seasonalWakeShift": { "winterEarlierMin": 15, "summerLaterMin": 0 },
+      "darkWeatherCalmingAdjustment": "extra_cuddle_time",
+      "sleepPreparationSuggestions": ["dim lights 90 min before bed", "lullaby + skin contact", "low-stimulation play"]
+    },
+    "toddler_1_3": {
+      "sunriseImpact": "minor",
+      "sunsetImpact": "high",
+      "daylightDurationEffects": "afternoon nap timing follows daylight",
+      "melatoninSupportWindow": { "startBeforeBedtimeMin": 75, "endAtBedtime": true },
+      "optimalFocusWindows": [{ "label": "morning_play", "offsetFromWakeMin": 60, "durationMin": 45 }],
+      "eveningWindDownAdjustment": { "earlyBedtimeMinIfShortDaylight": 20 },
+      "seasonalWakeShift": { "winterEarlierMin": 15, "summerLaterMin": 10 },
+      "darkWeatherCalmingAdjustment": "warm_bath_then_storytime",
+      "sleepPreparationSuggestions": ["dim lights 75 min before bed", "story + cuddle", "no screens"]
+    },
+    "preschool_3_5": {
+      "sunriseImpact": "moderate",
+      "sunsetImpact": "moderate",
+      "daylightDurationEffects": "outdoor play window scales with daylight",
+      "melatoninSupportWindow": { "startBeforeBedtimeMin": 60, "endAtBedtime": true },
+      "optimalFocusWindows": [{ "label": "mid_morning", "offsetFromWakeMin": 90, "durationMin": 60 }],
+      "eveningWindDownAdjustment": { "earlyBedtimeMinIfShortDaylight": 15 },
+      "seasonalWakeShift": { "winterEarlierMin": 10, "summerLaterMin": 15 },
+      "darkWeatherCalmingAdjustment": "calm_creative_block",
+      "sleepPreparationSuggestions": ["dim lights 60 min before bed", "story + breathing", "no screens after dinner"]
+    },
+    "early_school_5_10": {
+      "sunriseImpact": "moderate",
+      "sunsetImpact": "moderate",
+      "daylightDurationEffects": "study and outdoor blocks shift with daylight",
+      "melatoninSupportWindow": { "startBeforeBedtimeMin": 60, "endAtBedtime": true },
+      "optimalFocusWindows": [
+        { "label": "morning_study", "offsetFromWakeMin": 60, "durationMin": 75 },
+        { "label": "post_school_focus", "offsetFromWakeMin": 540, "durationMin": 45 }
+      ],
+      "eveningWindDownAdjustment": { "earlyBedtimeMinIfShortDaylight": 15 },
+      "seasonalWakeShift": { "winterEarlierMin": 10, "summerLaterMin": 15 },
+      "darkWeatherCalmingAdjustment": "indoor_focus_block",
+      "sleepPreparationSuggestions": ["dim lights 60 min before bed", "reading", "no screens after 8pm"]
+    },
+    "preteen_10_15": {
+      "sunriseImpact": "moderate",
+      "sunsetImpact": "low",
+      "daylightDurationEffects": "study planning aware of daylight loss",
+      "melatoninSupportWindow": { "startBeforeBedtimeMin": 45, "endAtBedtime": true },
+      "optimalFocusWindows": [
+        { "label": "morning_focus", "offsetFromWakeMin": 60, "durationMin": 90 },
+        { "label": "evening_study", "offsetFromWakeMin": 600, "durationMin": 60 }
+      ],
+      "eveningWindDownAdjustment": { "earlyBedtimeMinIfShortDaylight": 10 },
+      "seasonalWakeShift": { "winterEarlierMin": 5, "summerLaterMin": 20 },
+      "darkWeatherCalmingAdjustment": "journaling_or_reading",
+      "sleepPreparationSuggestions": ["dim lights 45 min before bed", "reading or journaling", "phones out of bedroom"]
+    }
+  },
+  "globals": {
+    "shortDaylightThresholdMin": 600,
+    "longDaylightThresholdMin": 780,
+    "overcastDimCloudCoverPct": 80
+  }
+}

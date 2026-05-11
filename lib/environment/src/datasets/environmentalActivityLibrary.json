@@ -1,0 +1,43 @@
+{
+  "$schema": "environmentalActivityLibrary@1",
+  "_doc": "Reusable activity bank tagged for environmental compatibility. ageSuitability uses EnvAgeGroup keys; intensityScore 1..5; cognitiveLoad 1..5; sensoryProfile drives overload protection.",
+  "categories": {
+    "indoor_low_energy": [
+      { "name": "Picture-book story circle", "ageSuitability": ["infant_0_1","toddler_1_3","preschool_3_5"], "intensityScore": 1, "cognitiveLoad": 1, "emotionalEffect": "calming",  "hydrationNeed": "low",  "indoor": true,  "outdoor": false, "weatherCompatibility": ["rainy","stormy","heatwave","humid","cold","aqi_high"], "sensoryProfile": "low" },
+      { "name": "Soft-music coloring",       "ageSuitability": ["preschool_3_5","early_school_5_10"], "intensityScore": 1, "cognitiveLoad": 2, "emotionalEffect": "calming",  "hydrationNeed": "low",  "indoor": true,  "outdoor": false, "weatherCompatibility": ["rainy","stormy","humid"], "sensoryProfile": "low" }
+    ],
+    "indoor_creative": [
+      { "name": "DIY paper craft",     "ageSuitability": ["preschool_3_5","early_school_5_10","preteen_10_15"], "intensityScore": 2, "cognitiveLoad": 3, "emotionalEffect": "uplifting", "hydrationNeed": "low",  "indoor": true,  "outdoor": false, "weatherCompatibility": ["rainy","cloudy","cold","humid"], "sensoryProfile": "moderate" },
+      { "name": "Build a blanket fort","ageSuitability": ["toddler_1_3","preschool_3_5","early_school_5_10"], "intensityScore": 2, "cognitiveLoad": 2, "emotionalEffect": "bonding",   "hydrationNeed": "low",  "indoor": true,  "outdoor": false, "weatherCompatibility": ["rainy","stormy","cold"], "sensoryProfile": "moderate" }
+    ],
+    "indoor_learning": [
+      { "name": "Phonics flashcards",      "ageSuitability": ["preschool_3_5","early_school_5_10"], "intensityScore": 2, "cognitiveLoad": 4, "emotionalEffect": "neutral", "hydrationNeed": "low", "indoor": true, "outdoor": false, "weatherCompatibility": ["any"], "sensoryProfile": "low" },
+      { "name": "Math puzzle worksheet",   "ageSuitability": ["early_school_5_10","preteen_10_15"],   "intensityScore": 2, "cognitiveLoad": 4, "emotionalEffect": "neutral", "hydrationNeed": "low", "indoor": true, "outdoor": false, "weatherCompatibility": ["any"], "sensoryProfile": "low" }
+    ],
+    "indoor_calming": [
+      { "name": "Breathing buddy (stuffed-animal belly breathing)", "ageSuitability": ["toddler_1_3","preschool_3_5","early_school_5_10"], "intensityScore": 1, "cognitiveLoad": 1, "emotionalEffect": "calming", "hydrationNeed": "low", "indoor": true, "outdoor": false, "weatherCompatibility": ["stormy","heatwave","aqi_high"], "sensoryProfile": "very_low" },
+      { "name": "Lullaby + dim-light wind-down",                    "ageSuitability": ["infant_0_1","toddler_1_3"], "intensityScore": 1, "cognitiveLoad": 1, "emotionalEffect": "calming", "hydrationNeed": "low", "indoor": true, "outdoor": false, "weatherCompatibility": ["any"], "sensoryProfile": "very_low" }
+    ],
+    "outdoor_active": [
+      { "name": "Park play",        "ageSuitability": ["preschool_3_5","early_school_5_10","preteen_10_15"], "intensityScore": 4, "cognitiveLoad": 2, "emotionalEffect": "uplifting", "hydrationNeed": "high", "indoor": false, "outdoor": true,  "weatherCompatibility": ["sunny","cloudy","cold"], "sensoryProfile": "high" },
+      { "name": "Cycling around block", "ageSuitability": ["early_school_5_10","preteen_10_15"], "intensityScore": 5, "cognitiveLoad": 2, "emotionalEffect": "uplifting", "hydrationNeed": "high", "indoor": false, "outdoor": true, "weatherCompatibility": ["sunny","cloudy"], "sensoryProfile": "high" }
+    ],
+    "outdoor_exploration": [
+      { "name": "Nature scavenger hunt", "ageSuitability": ["preschool_3_5","early_school_5_10"], "intensityScore": 3, "cognitiveLoad": 3, "emotionalEffect": "uplifting", "hydrationNeed": "moderate", "indoor": false, "outdoor": true, "weatherCompatibility": ["sunny","cloudy"], "sensoryProfile": "moderate" }
+    ],
+    "sensory_regulation": [
+      { "name": "Rice / bean sensory bin",  "ageSuitability": ["toddler_1_3","preschool_3_5"], "intensityScore": 1, "cognitiveLoad": 1, "emotionalEffect": "calming", "hydrationNeed": "low", "indoor": true, "outdoor": false, "weatherCompatibility": ["stormy","heatwave","aqi_high"], "sensoryProfile": "moderate" },
+      { "name": "Weighted-blanket cuddle", "ageSuitability": ["preschool_3_5","early_school_5_10"], "intensityScore": 1, "cognitiveLoad": 1, "emotionalEffect": "calming", "hydrationNeed": "low", "indoor": true, "outdoor": false, "weatherCompatibility": ["stormy","heatwave"], "sensoryProfile": "very_low" }
+    ],
+    "weather_safe_backup": [
+      { "name": "Indoor obstacle course",   "ageSuitability": ["toddler_1_3","preschool_3_5","early_school_5_10"], "intensityScore": 4, "cognitiveLoad": 2, "emotionalEffect": "uplifting", "hydrationNeed": "moderate", "indoor": true, "outdoor": false, "weatherCompatibility": ["rainy","stormy","heatwave","humid"], "sensoryProfile": "moderate" }
+    ],
+    "storm_safe_activities": [
+      { "name": "Cozy storytime in fort",   "ageSuitability": ["toddler_1_3","preschool_3_5","early_school_5_10"], "intensityScore": 1, "cognitiveLoad": 2, "emotionalEffect": "calming", "hydrationNeed": "low", "indoor": true, "outdoor": false, "weatherCompatibility": ["stormy"], "sensoryProfile": "low" }
+    ],
+    "low_AQI_activities": [
+      { "name": "Air-purifier room yoga",   "ageSuitability": ["preschool_3_5","early_school_5_10","preteen_10_15"], "intensityScore": 2, "cognitiveLoad": 1, "emotionalEffect": "calming", "hydrationNeed": "moderate", "indoor": true, "outdoor": false, "weatherCompatibility": ["aqi_high"], "sensoryProfile": "low" },
+      { "name": "Indoor learning game",     "ageSuitability": ["preschool_3_5","early_school_5_10"], "intensityScore": 1, "cognitiveLoad": 3, "emotionalEffect": "neutral", "hydrationNeed": "low", "indoor": true, "outdoor": false, "weatherCompatibility": ["aqi_high"], "sensoryProfile": "low" }
+    ]
+  }
+}
