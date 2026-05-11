@@ -1,0 +1,69 @@
+{
+  "$schema": "emotionalWeatherProfiles@1",
+  "_doc": "Weather → emotional adaptation. Drives Phase 7 mood-aware suggestions.",
+  "conditions": {
+    "rainy": {
+      "likelyMoodPatterns": ["subdued", "introspective", "clingy"],
+      "stimulationNeeds": "moderate_indoor_warmth",
+      "bondingActivitySuggestions": ["read together", "bake a snack", "puzzle session"],
+      "calmingActivities": ["story circle", "warm bath", "soft music"],
+      "confidenceBuildingActivities": ["finish a small project", "show-and-tell"],
+      "creativitySuggestions": ["paint a rain scene", "build a blanket fort"],
+      "emotionalSupportLevel": "moderate"
+    },
+    "dark_cloudy": {
+      "likelyMoodPatterns": ["low energy", "less talkative"],
+      "stimulationNeeds": "uplifting",
+      "bondingActivitySuggestions": ["dance party", "family game"],
+      "calmingActivities": ["coloring", "soft music"],
+      "confidenceBuildingActivities": ["help with cooking", "perform a song"],
+      "creativitySuggestions": ["make a story together", "DIY craft"],
+      "emotionalSupportLevel": "moderate"
+    },
+    "sunny": {
+      "likelyMoodPatterns": ["energetic", "playful"],
+      "stimulationNeeds": "outdoor_release",
+      "bondingActivitySuggestions": ["park visit", "shared outdoor game"],
+      "calmingActivities": ["picnic snack", "shaded reading"],
+      "confidenceBuildingActivities": ["learn a sport skill", "ride a bike"],
+      "creativitySuggestions": ["nature collection walk", "outdoor sketching"],
+      "emotionalSupportLevel": "low"
+    },
+    "humid": {
+      "likelyMoodPatterns": ["irritable", "low energy"],
+      "stimulationNeeds": "low_friction",
+      "bondingActivitySuggestions": ["watch a favourite show together", "lazy chat time"],
+      "calmingActivities": ["fan-cooled story", "cool snack share"],
+      "confidenceBuildingActivities": ["light helping task"],
+      "creativitySuggestions": ["water-themed sensory bin"],
+      "emotionalSupportLevel": "moderate"
+    },
+    "stormy": {
+      "likelyMoodPatterns": ["anxious", "scared", "clingy"],
+      "stimulationNeeds": "calming_bonding",
+      "bondingActivitySuggestions": ["cuddle storytime", "make a cozy nook together"],
+      "calmingActivities": ["weighted blanket", "deep breathing", "favourite lullaby"],
+      "confidenceBuildingActivities": ["name the storm", "draw the storm"],
+      "creativitySuggestions": ["storm-themed drawing", "thunder-sound game"],
+      "emotionalSupportLevel": "high"
+    },
+    "cold": {
+      "likelyMoodPatterns": ["snuggly", "slower start"],
+      "stimulationNeeds": "warmth",
+      "bondingActivitySuggestions": ["warm drink together", "morning cuddle"],
+      "calmingActivities": ["warm bath", "soft music"],
+      "confidenceBuildingActivities": ["dress self warmly", "help cook warm meal"],
+      "creativitySuggestions": ["winter craft", "indoor fort"],
+      "emotionalSupportLevel": "moderate"
+    },
+    "windy": {
+      "likelyMoodPatterns": ["distracted", "restless"],
+      "stimulationNeeds": "movement_indoor",
+      "bondingActivitySuggestions": ["indoor obstacle course", "dance break"],
+      "calmingActivities": ["breathing game", "quiet listening"],
+      "confidenceBuildingActivities": ["indoor sport drill"],
+      "creativitySuggestions": ["windsock craft", "wind-themed song"],
+      "emotionalSupportLevel": "moderate"
+    }
+  }
+}

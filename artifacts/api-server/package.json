@@ -17,6 +17,7 @@
     "@workspace/abacus": "workspace:*",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
+    "@workspace/environment": "workspace:*",
     "@workspace/family-routine": "workspace:*",
     "@workspace/conflict-resolution": "workspace:*",
     "@workspace/load-forecast": "workspace:*",

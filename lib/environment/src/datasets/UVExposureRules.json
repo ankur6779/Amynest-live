@@ -1,0 +1,56 @@
+{
+  "$schema": "UVExposureRules@1",
+  "_doc": "WHO UV Index buckets with per-age safety overlays. Durations are minutes of direct sun.",
+  "buckets": {
+    "low": {
+      "uvRange": [0, 2],
+      "perAge": {
+        "infant_0_1":       { "maxSafeExposureMinutes": 30, "sunscreenRecommendation": "shaded_only", "hydrationBoost": 1.0, "outdoorRestrictionLevel": "none", "clothingRecommendation": "light_layers", "shadeRequirement": "preferred", "recommendedActivityWindow": "any_daylight" },
+        "toddler_1_3":      { "maxSafeExposureMinutes": 45, "sunscreenRecommendation": "spf_30_face", "hydrationBoost": 1.0, "outdoorRestrictionLevel": "none", "clothingRecommendation": "hat", "shadeRequirement": "optional",  "recommendedActivityWindow": "any_daylight" },
+        "preschool_3_5":    { "maxSafeExposureMinutes": 60, "sunscreenRecommendation": "spf_30",      "hydrationBoost": 1.0, "outdoorRestrictionLevel": "none", "clothingRecommendation": "hat", "shadeRequirement": "optional",  "recommendedActivityWindow": "any_daylight" },
+        "early_school_5_10":{ "maxSafeExposureMinutes": 90, "sunscreenRecommendation": "spf_30",      "hydrationBoost": 1.0, "outdoorRestrictionLevel": "none", "clothingRecommendation": "normal", "shadeRequirement": "optional", "recommendedActivityWindow": "any_daylight" },
+        "preteen_10_15":    { "maxSafeExposureMinutes": 120,"sunscreenRecommendation": "spf_30",      "hydrationBoost": 1.0, "outdoorRestrictionLevel": "none", "clothingRecommendation": "normal", "shadeRequirement": "optional", "recommendedActivityWindow": "any_daylight" }
+      }
+    },
+    "moderate": {
+      "uvRange": [3, 5],
+      "perAge": {
+        "infant_0_1":       { "maxSafeExposureMinutes": 15, "sunscreenRecommendation": "shaded_only", "hydrationBoost": 1.1, "outdoorRestrictionLevel": "shade_only", "clothingRecommendation": "long_sleeve_hat", "shadeRequirement": "required", "recommendedActivityWindow": "before_10am_after_4pm" },
+        "toddler_1_3":      { "maxSafeExposureMinutes": 25, "sunscreenRecommendation": "spf_50",      "hydrationBoost": 1.1, "outdoorRestrictionLevel": "shade_preferred", "clothingRecommendation": "hat_long_sleeve", "shadeRequirement": "required", "recommendedActivityWindow": "before_10am_after_4pm" },
+        "preschool_3_5":    { "maxSafeExposureMinutes": 40, "sunscreenRecommendation": "spf_50",      "hydrationBoost": 1.1, "outdoorRestrictionLevel": "shade_preferred", "clothingRecommendation": "hat", "shadeRequirement": "preferred", "recommendedActivityWindow": "before_11am_after_3pm" },
+        "early_school_5_10":{ "maxSafeExposureMinutes": 60, "sunscreenRecommendation": "spf_50",      "hydrationBoost": 1.1, "outdoorRestrictionLevel": "none",  "clothingRecommendation": "hat", "shadeRequirement": "preferred", "recommendedActivityWindow": "before_11am_after_3pm" },
+        "preteen_10_15":    { "maxSafeExposureMinutes": 80, "sunscreenRecommendation": "spf_50",      "hydrationBoost": 1.05,"outdoorRestrictionLevel": "none",  "clothingRecommendation": "hat", "shadeRequirement": "optional", "recommendedActivityWindow": "before_11am_after_3pm" }
+      }
+    },
+    "high": {
+      "uvRange": [6, 7],
+      "perAge": {
+        "infant_0_1":       { "maxSafeExposureMinutes": 0,  "sunscreenRecommendation": "indoor_only", "hydrationBoost": 1.2, "outdoorRestrictionLevel": "indoor",       "clothingRecommendation": "n_a",            "shadeRequirement": "indoor",   "recommendedActivityWindow": "indoor_only" },
+        "toddler_1_3":      { "maxSafeExposureMinutes": 15, "sunscreenRecommendation": "spf_50_plus", "hydrationBoost": 1.2, "outdoorRestrictionLevel": "shade_only",  "clothingRecommendation": "hat_long_sleeve", "shadeRequirement": "required", "recommendedActivityWindow": "before_10am_after_5pm" },
+        "preschool_3_5":    { "maxSafeExposureMinutes": 25, "sunscreenRecommendation": "spf_50_plus", "hydrationBoost": 1.2, "outdoorRestrictionLevel": "shade_only",  "clothingRecommendation": "hat_long_sleeve", "shadeRequirement": "required", "recommendedActivityWindow": "before_10am_after_5pm" },
+        "early_school_5_10":{ "maxSafeExposureMinutes": 35, "sunscreenRecommendation": "spf_50_plus", "hydrationBoost": 1.15,"outdoorRestrictionLevel": "limit",       "clothingRecommendation": "hat", "shadeRequirement": "preferred", "recommendedActivityWindow": "before_10am_after_5pm" },
+        "preteen_10_15":    { "maxSafeExposureMinutes": 50, "sunscreenRecommendation": "spf_50",      "hydrationBoost": 1.15,"outdoorRestrictionLevel": "limit",       "clothingRecommendation": "hat", "shadeRequirement": "preferred", "recommendedActivityWindow": "before_10am_after_5pm" }
+      }
+    },
+    "very_high": {
+      "uvRange": [8, 10],
+      "perAge": {
+        "infant_0_1":       { "maxSafeExposureMinutes": 0,  "sunscreenRecommendation": "indoor_only", "hydrationBoost": 1.3, "outdoorRestrictionLevel": "indoor", "clothingRecommendation": "n_a",            "shadeRequirement": "indoor",   "recommendedActivityWindow": "indoor_only" },
+        "toddler_1_3":      { "maxSafeExposureMinutes": 0,  "sunscreenRecommendation": "indoor_only", "hydrationBoost": 1.3, "outdoorRestrictionLevel": "indoor", "clothingRecommendation": "n_a",            "shadeRequirement": "indoor",   "recommendedActivityWindow": "indoor_only" },
+        "preschool_3_5":    { "maxSafeExposureMinutes": 10, "sunscreenRecommendation": "spf_50_plus", "hydrationBoost": 1.3, "outdoorRestrictionLevel": "shade_only", "clothingRecommendation": "hat_long_sleeve", "shadeRequirement": "required", "recommendedActivityWindow": "before_9am_after_6pm" },
+        "early_school_5_10":{ "maxSafeExposureMinutes": 20, "sunscreenRecommendation": "spf_50_plus", "hydrationBoost": 1.25,"outdoorRestrictionLevel": "shade_only", "clothingRecommendation": "hat_long_sleeve", "shadeRequirement": "required", "recommendedActivityWindow": "before_9am_after_6pm" },
+        "preteen_10_15":    { "maxSafeExposureMinutes": 30, "sunscreenRecommendation": "spf_50_plus", "hydrationBoost": 1.25,"outdoorRestrictionLevel": "shade_only", "clothingRecommendation": "hat", "shadeRequirement": "preferred", "recommendedActivityWindow": "before_9am_after_6pm" }
+      }
+    },
+    "extreme": {
+      "uvRange": [11, 15],
+      "perAge": {
+        "infant_0_1":       { "maxSafeExposureMinutes": 0, "sunscreenRecommendation": "indoor_only", "hydrationBoost": 1.4, "outdoorRestrictionLevel": "indoor", "clothingRecommendation": "n_a", "shadeRequirement": "indoor", "recommendedActivityWindow": "indoor_only" },
+        "toddler_1_3":      { "maxSafeExposureMinutes": 0, "sunscreenRecommendation": "indoor_only", "hydrationBoost": 1.4, "outdoorRestrictionLevel": "indoor", "clothingRecommendation": "n_a", "shadeRequirement": "indoor", "recommendedActivityWindow": "indoor_only" },
+        "preschool_3_5":    { "maxSafeExposureMinutes": 0, "sunscreenRecommendation": "indoor_only", "hydrationBoost": 1.4, "outdoorRestrictionLevel": "indoor", "clothingRecommendation": "n_a", "shadeRequirement": "indoor", "recommendedActivityWindow": "indoor_only" },
+        "early_school_5_10":{ "maxSafeExposureMinutes": 10,"sunscreenRecommendation": "spf_50_plus", "hydrationBoost": 1.35,"outdoorRestrictionLevel": "shade_only", "clothingRecommendation": "full_cover", "shadeRequirement": "required", "recommendedActivityWindow": "before_8am_after_6pm" },
+        "preteen_10_15":    { "maxSafeExposureMinutes": 15,"sunscreenRecommendation": "spf_50_plus", "hydrationBoost": 1.35,"outdoorRestrictionLevel": "shade_only", "clothingRecommendation": "full_cover", "shadeRequirement": "required", "recommendedActivityWindow": "before_8am_after_6pm" }
+      }
+    }
+  }
+}

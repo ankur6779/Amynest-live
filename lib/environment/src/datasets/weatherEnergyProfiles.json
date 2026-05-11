@@ -1,0 +1,105 @@
+{
+  "$schema": "weatherEnergyProfiles@1",
+  "_doc": "Per-condition modifiers applied to the routine's cognitive/physical energy curves. Modifiers are multiplicative; 1.0 = no change. focusDurationAdjustment in minutes (delta).",
+  "conditions": {
+    "sunny": {
+      "cognitiveEnergyModifier": 1.05,
+      "physicalEnergyModifier": 1.10,
+      "moodImpact": "uplifting",
+      "focusDurationAdjustment": 0,
+      "sensoryStressRisk": "low",
+      "emotionalRegulationNeed": "low",
+      "recommendedActivityTypes": ["outdoor_active", "outdoor_exploration", "creative"],
+      "recommendedLearningIntensity": "high",
+      "recommendedBreakFrequency": 45
+    },
+    "cloudy": {
+      "cognitiveEnergyModifier": 0.95,
+      "physicalEnergyModifier": 1.00,
+      "moodImpact": "neutral_to_low",
+      "focusDurationAdjustment": -5,
+      "sensoryStressRisk": "low",
+      "emotionalRegulationNeed": "moderate",
+      "recommendedActivityTypes": ["indoor_creative", "outdoor_exploration", "indoor_learning"],
+      "recommendedLearningIntensity": "moderate",
+      "recommendedBreakFrequency": 40
+    },
+    "rainy": {
+      "cognitiveEnergyModifier": 0.90,
+      "physicalEnergyModifier": 0.80,
+      "moodImpact": "subdued",
+      "focusDurationAdjustment": -10,
+      "sensoryStressRisk": "moderate",
+      "emotionalRegulationNeed": "moderate",
+      "recommendedActivityTypes": ["indoor_creative", "indoor_calming", "indoor_learning"],
+      "recommendedLearningIntensity": "moderate",
+      "recommendedBreakFrequency": 35
+    },
+    "stormy": {
+      "cognitiveEnergyModifier": 0.75,
+      "physicalEnergyModifier": 0.60,
+      "moodImpact": "anxious",
+      "focusDurationAdjustment": -15,
+      "sensoryStressRisk": "high",
+      "emotionalRegulationNeed": "high",
+      "recommendedActivityTypes": ["indoor_calming", "sensory_regulation", "storm_safe_activities"],
+      "recommendedLearningIntensity": "low",
+      "recommendedBreakFrequency": 25
+    },
+    "humid": {
+      "cognitiveEnergyModifier": 0.85,
+      "physicalEnergyModifier": 0.75,
+      "moodImpact": "low",
+      "focusDurationAdjustment": -10,
+      "sensoryStressRisk": "moderate",
+      "emotionalRegulationNeed": "moderate",
+      "recommendedActivityTypes": ["indoor_low_energy", "indoor_creative", "indoor_calming"],
+      "recommendedLearningIntensity": "moderate",
+      "recommendedBreakFrequency": 30
+    },
+    "cold": {
+      "cognitiveEnergyModifier": 1.05,
+      "physicalEnergyModifier": 0.95,
+      "moodImpact": "neutral",
+      "focusDurationAdjustment": 5,
+      "sensoryStressRisk": "low",
+      "emotionalRegulationNeed": "low",
+      "recommendedActivityTypes": ["indoor_learning", "indoor_creative", "outdoor_active"],
+      "recommendedLearningIntensity": "high",
+      "recommendedBreakFrequency": 50
+    },
+    "heatwave": {
+      "cognitiveEnergyModifier": 0.70,
+      "physicalEnergyModifier": 0.50,
+      "moodImpact": "irritable",
+      "focusDurationAdjustment": -15,
+      "sensoryStressRisk": "high",
+      "emotionalRegulationNeed": "high",
+      "recommendedActivityTypes": ["indoor_low_energy", "indoor_calming", "sensory_regulation"],
+      "recommendedLearningIntensity": "low",
+      "recommendedBreakFrequency": 25
+    },
+    "windy": {
+      "cognitiveEnergyModifier": 0.95,
+      "physicalEnergyModifier": 0.90,
+      "moodImpact": "neutral",
+      "focusDurationAdjustment": -5,
+      "sensoryStressRisk": "moderate",
+      "emotionalRegulationNeed": "moderate",
+      "recommendedActivityTypes": ["indoor_active", "indoor_creative"],
+      "recommendedLearningIntensity": "moderate",
+      "recommendedBreakFrequency": 40
+    },
+    "foggy": {
+      "cognitiveEnergyModifier": 0.90,
+      "physicalEnergyModifier": 0.85,
+      "moodImpact": "subdued",
+      "focusDurationAdjustment": -5,
+      "sensoryStressRisk": "moderate",
+      "emotionalRegulationNeed": "moderate",
+      "recommendedActivityTypes": ["indoor_calming", "indoor_creative", "indoor_learning"],
+      "recommendedLearningIntensity": "moderate",
+      "recommendedBreakFrequency": 35
+    }
+  }
+}

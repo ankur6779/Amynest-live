@@ -1,0 +1,83 @@
+{
+  "$schema": "AQIRiskThresholds@1",
+  "_doc": "US-EPA AQI buckets with child-safety overlays. maxOutdoorDuration in minutes; -1 = no outdoor.",
+  "buckets": {
+    "excellent": {
+      "aqiRange": [0, 25],
+      "outdoorAllowed": true,
+      "maxOutdoorDuration": 240,
+      "activityIntensityLimit": "vigorous",
+      "maskRecommendation": "none",
+      "infantRestrictions": "none",
+      "allergyRiskLevel": "low",
+      "respiratoryRiskLevel": "low",
+      "recommendedFallbackActivities": []
+    },
+    "good": {
+      "aqiRange": [26, 50],
+      "outdoorAllowed": true,
+      "maxOutdoorDuration": 180,
+      "activityIntensityLimit": "vigorous",
+      "maskRecommendation": "none",
+      "infantRestrictions": "none",
+      "allergyRiskLevel": "low",
+      "respiratoryRiskLevel": "low",
+      "recommendedFallbackActivities": []
+    },
+    "moderate": {
+      "aqiRange": [51, 100],
+      "outdoorAllowed": true,
+      "maxOutdoorDuration": 120,
+      "activityIntensityLimit": "moderate",
+      "maskRecommendation": "optional_for_sensitive",
+      "infantRestrictions": "limit_to_60_min",
+      "allergyRiskLevel": "moderate",
+      "respiratoryRiskLevel": "moderate",
+      "recommendedFallbackActivities": ["indoor_creative", "indoor_learning"]
+    },
+    "unhealthy_sensitive": {
+      "aqiRange": [101, 150],
+      "outdoorAllowed": true,
+      "maxOutdoorDuration": 45,
+      "activityIntensityLimit": "light",
+      "maskRecommendation": "recommended",
+      "infantRestrictions": "indoor_only",
+      "allergyRiskLevel": "high",
+      "respiratoryRiskLevel": "high",
+      "recommendedFallbackActivities": ["indoor_calming", "indoor_learning", "sensory_regulation"]
+    },
+    "unhealthy": {
+      "aqiRange": [151, 200],
+      "outdoorAllowed": false,
+      "maxOutdoorDuration": 15,
+      "activityIntensityLimit": "rest",
+      "maskRecommendation": "required_outdoors",
+      "infantRestrictions": "indoor_only",
+      "allergyRiskLevel": "high",
+      "respiratoryRiskLevel": "high",
+      "recommendedFallbackActivities": ["indoor_creative", "indoor_calming", "low_AQI_activities"]
+    },
+    "very_unhealthy": {
+      "aqiRange": [201, 300],
+      "outdoorAllowed": false,
+      "maxOutdoorDuration": 0,
+      "activityIntensityLimit": "rest",
+      "maskRecommendation": "required_outdoors_with_filter",
+      "infantRestrictions": "indoor_only_with_purifier",
+      "allergyRiskLevel": "extreme",
+      "respiratoryRiskLevel": "extreme",
+      "recommendedFallbackActivities": ["indoor_calming", "low_AQI_activities", "sensory_regulation"]
+    },
+    "hazardous": {
+      "aqiRange": [301, 500],
+      "outdoorAllowed": false,
+      "maxOutdoorDuration": -1,
+      "activityIntensityLimit": "rest",
+      "maskRecommendation": "stay_indoors",
+      "infantRestrictions": "indoor_only_with_purifier",
+      "allergyRiskLevel": "extreme",
+      "respiratoryRiskLevel": "extreme",
+      "recommendedFallbackActivities": ["indoor_calming", "low_AQI_activities"]
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "seasonalNutritionProfiles@1",
+  "_doc": "Season × region nutrition adaptation. Used to bias meal generation; strings are dish hints, not strict prescriptions.",
+  "seasons": {
+    "summer": {
+      "hydrationFoods": ["watermelon", "cucumber", "buttermilk", "coconut water", "yogurt"],
+      "warmingFoods": [],
+      "immunityFoods": ["citrus fruits", "guava", "amla"],
+      "coolingFoods": ["mint chutney", "curd rice", "sattu drink", "kokum sherbet"],
+      "digestionFriendlyFoods": ["rice porridge", "moong dal khichdi", "steamed veggies"],
+      "seasonalSnackSuggestions": ["chilled fruit bowl", "cucumber-mint sandwich", "lassi"],
+      "electrolyteFoods": ["nimbu paani", "ORS", "coconut water"],
+      "recommendedMealDensity": "light",
+      "seasonalAvoidFoods": ["heavy fried foods", "excess red meat", "very spicy curries"]
+    },
+    "winter": {
+      "hydrationFoods": ["soups", "warm milk", "herbal tea"],
+      "warmingFoods": ["bajra roti", "sarson saag", "gond ladoo", "ghee dal", "panjiri"],
+      "immunityFoods": ["turmeric milk", "ginger tea", "amla", "dates"],
+      "coolingFoods": [],
+      "digestionFriendlyFoods": ["dal khichdi", "vegetable soup", "ragi porridge"],
+      "seasonalSnackSuggestions": ["roasted peanuts", "warm sweet potato", "jaggery chikki"],
+      "electrolyteFoods": ["rasam", "vegetable broth"],
+      "recommendedMealDensity": "energy_dense",
+      "seasonalAvoidFoods": ["very cold drinks", "ice cream at night"]
+    },
+    "monsoon": {
+      "hydrationFoods": ["warm soups", "herbal tea"],
+      "warmingFoods": ["dal khichdi", "vegetable upma", "moong dal cheela"],
+      "immunityFoods": ["ginger", "turmeric", "tulsi tea", "garlic dal"],
+      "coolingFoods": [],
+      "digestionFriendlyFoods": ["rice gruel", "steamed idli", "khichdi"],
+      "seasonalSnackSuggestions": ["roasted chana", "vegetable poha", "warm soup"],
+      "electrolyteFoods": ["rasam", "ORS"],
+      "recommendedMealDensity": "moderate",
+      "seasonalAvoidFoods": ["raw leafy salads", "street food", "cut fruits left out"]
+    },
+    "spring": {
+      "hydrationFoods": ["fresh fruit juices", "coconut water"],
+      "warmingFoods": ["light dal", "vegetable pulao"],
+      "immunityFoods": ["seasonal greens", "berries", "citrus"],
+      "coolingFoods": ["raita", "salad bowls"],
+      "digestionFriendlyFoods": ["fresh vegetable soup", "moong dal"],
+      "seasonalSnackSuggestions": ["fruit chaat", "vegetable sandwich"],
+      "electrolyteFoods": ["nimbu paani", "coconut water"],
+      "recommendedMealDensity": "moderate",
+      "seasonalAvoidFoods": ["very heavy fried foods"]
+    },
+    "autumn": {
+      "hydrationFoods": ["warm milk", "soups"],
+      "warmingFoods": ["khichdi", "dal", "roti with ghee"],
+      "immunityFoods": ["pumpkin", "apple", "amla", "ginger tea"],
+      "coolingFoods": [],
+      "digestionFriendlyFoods": ["dal soup", "rice porridge"],
+      "seasonalSnackSuggestions": ["roasted chana", "fruit bowl", "sweet potato chaat"],
+      "electrolyteFoods": ["rasam", "buttermilk"],
+      "recommendedMealDensity": "moderate",
+      "seasonalAvoidFoods": ["overly cold drinks"]
+    }
+  },
+  "regionalVariations": {
+    "north_indian": {
+      "summer":  ["aam panna", "lassi", "bhindi sabzi", "lauki raita"],
+      "winter":  ["sarson saag", "makki roti", "gond ladoo", "panjiri"],
+      "monsoon": ["pakora (occasional)", "moong dal khichdi", "adrak chai"]
+    },
+    "south_indian": {
+      "summer":  ["curd rice", "buttermilk rasam", "tender coconut"],
+      "winter":  ["pongal", "kara dosa", "sambar rice"],
+      "monsoon": ["rasam", "idli with chutney", "thoran"]
+    },
+    "western": {
+      "summer":  ["watermelon salad", "cold pasta salad", "smoothie bowl"],
+      "winter":  ["minestrone soup", "chicken stew", "oatmeal porridge"],
+      "monsoon": ["tomato basil soup", "grilled cheese", "warm pasta"]
+    },
+    "uk": {
+      "summer":  ["fruit yogurt", "cold sandwich", "salad bowl"],
+      "winter":  ["shepherd's pie", "tomato soup", "porridge"],
+      "monsoon": ["lentil soup", "veggie pasta", "warm sandwich"]
+    },
+    "us": {
+      "summer":  ["fruit smoothie", "turkey wrap", "berry salad"],
+      "winter":  ["chicken noodle soup", "mac and cheese", "oatmeal"],
+      "monsoon": ["grilled cheese", "tomato soup", "pasta bake"]
+    }
+  }
+}

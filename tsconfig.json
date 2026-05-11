@@ -26,6 +26,9 @@
     },
     {
       "path": "./lib/coach-topic-questions"
+    },
+    {
+      "path": "./lib/environment"
     }
   ]
 }

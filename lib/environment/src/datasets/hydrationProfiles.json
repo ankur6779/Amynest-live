@@ -1,0 +1,29 @@
+{
+  "$schema": "hydrationProfiles@1",
+  "_doc": "Per-age × season hydration baselines. baselineHydrationMl is total daily target. Multipliers compound. Reminder frequency in minutes.",
+  "ageBaselines": {
+    "infant_0_1":       { "baselineHydrationMl": 600,  "electrolyteRecommendationThreshold": "moderate", "dehydrationWarningThreshold": "low",     "hydrationReminderFrequency": 60  },
+    "toddler_1_3":      { "baselineHydrationMl": 1100, "electrolyteRecommendationThreshold": "moderate", "dehydrationWarningThreshold": "moderate","hydrationReminderFrequency": 75  },
+    "preschool_3_5":    { "baselineHydrationMl": 1400, "electrolyteRecommendationThreshold": "high",     "dehydrationWarningThreshold": "moderate","hydrationReminderFrequency": 90  },
+    "early_school_5_10":{ "baselineHydrationMl": 1700, "electrolyteRecommendationThreshold": "high",     "dehydrationWarningThreshold": "moderate","hydrationReminderFrequency": 105 },
+    "preteen_10_15":    { "baselineHydrationMl": 2100, "electrolyteRecommendationThreshold": "high",     "dehydrationWarningThreshold": "high",    "hydrationReminderFrequency": 120 }
+  },
+  "seasonalProfiles": {
+    "summer":  { "hotWeatherMultiplier": 1.4, "humidityAdjustment": 1.15, "activityHydrationBoost": 1.25 },
+    "winter":  { "hotWeatherMultiplier": 0.85, "humidityAdjustment": 0.95, "activityHydrationBoost": 1.10 },
+    "monsoon": { "hotWeatherMultiplier": 1.10, "humidityAdjustment": 1.20, "activityHydrationBoost": 1.15 },
+    "spring":  { "hotWeatherMultiplier": 1.00, "humidityAdjustment": 1.00, "activityHydrationBoost": 1.10 },
+    "autumn":  { "hotWeatherMultiplier": 0.95, "humidityAdjustment": 1.00, "activityHydrationBoost": 1.10 }
+  },
+  "weatherAdjustments": {
+    "heatwave": { "extraMultiplier": 1.30, "reminderEveryMinutes": 45 },
+    "humid":    { "extraMultiplier": 1.20, "reminderEveryMinutes": 60 },
+    "sunny":    { "extraMultiplier": 1.10, "reminderEveryMinutes": 90 },
+    "cold":     { "extraMultiplier": 0.95, "reminderEveryMinutes": 120 },
+    "rainy":    { "extraMultiplier": 1.00, "reminderEveryMinutes": 120 },
+    "stormy":   { "extraMultiplier": 1.05, "reminderEveryMinutes": 120 },
+    "windy":    { "extraMultiplier": 1.05, "reminderEveryMinutes": 105 },
+    "cloudy":   { "extraMultiplier": 1.00, "reminderEveryMinutes": 120 },
+    "foggy":    { "extraMultiplier": 1.00, "reminderEveryMinutes": 120 }
+  }
+}

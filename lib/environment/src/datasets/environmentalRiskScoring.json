@@ -1,0 +1,59 @@
+{
+  "$schema": "environmentalRiskScoring@1",
+  "_doc": "Weighted scorer that blends raw environmental signals with age-weighting. Outputs are derived deterministically; weights are tunable for ML personalization later.",
+  "weights": {
+    "aqi": 0.30,
+    "uv": 0.18,
+    "heatIndex": 0.18,
+    "humidity": 0.10,
+    "precipitation": 0.06,
+    "wind": 0.04,
+    "stormProbability": 0.10,
+    "lowDaylight": 0.04
+  },
+  "ageMultipliers": {
+    "infant_0_1":       1.6,
+    "toddler_1_3":      1.4,
+    "preschool_3_5":    1.2,
+    "early_school_5_10":1.05,
+    "preteen_10_15":    1.0
+  },
+  "outdoorSuitabilityThresholds": {
+    "yes":     { "maxScore": 24 },
+    "limited": { "maxScore": 49 },
+    "no":      { "maxScore": 100 }
+  },
+  "fatigueRiskThresholds": {
+    "none":     { "maxScore": 14 },
+    "low":      { "maxScore": 29 },
+    "moderate": { "maxScore": 49 },
+    "high":     { "maxScore": 74 },
+    "extreme":  { "maxScore": 100 }
+  },
+  "hydrationLevelThresholds": {
+    "none":     { "maxScore": 9 },
+    "low":      { "maxScore": 24 },
+    "moderate": { "maxScore": 44 },
+    "high":     { "maxScore": 69 },
+    "extreme":  { "maxScore": 100 }
+  },
+  "sensoryStressThresholds": {
+    "none":     { "maxScore": 9 },
+    "low":      { "maxScore": 24 },
+    "moderate": { "maxScore": 49 },
+    "high":     { "maxScore": 74 },
+    "extreme":  { "maxScore": 100 }
+  },
+  "cognitiveComfortThresholds": {
+    "high":     { "maxScore": 19 },
+    "moderate": { "maxScore": 44 },
+    "low":      { "maxScore": 69 },
+    "none":     { "maxScore": 100 }
+  },
+  "recommendedAdjustmentLevels": {
+    "minor":      { "maxScore": 19 },
+    "moderate":   { "maxScore": 49 },
+    "significant":{ "maxScore": 74 },
+    "drastic":    { "maxScore": 100 }
+  }
+}
