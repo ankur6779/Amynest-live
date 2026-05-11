@@ -256,23 +256,59 @@ externalPort = 8080
 
 [[ports]]
 localPort = 8081
-externalPort = 8081
-
-[[ports]]
-localPort = 20703
 externalPort = 80
 
 [[ports]]
-localPort = 21342
+localPort = 8082
+externalPort = 3002
+
+[[ports]]
+localPort = 8083
+externalPort = 8000
+
+[[ports]]
+localPort = 8084
+externalPort = 8008
+
+[[ports]]
+localPort = 20703
+externalPort = 3000
+
+[[ports]]
+localPort = 20704
 externalPort = 3001
 
 [[ports]]
+localPort = 20705
+externalPort = 5173
+
+[[ports]]
+localPort = 21342
+externalPort = 5000
+
+[[ports]]
+localPort = 21343
+externalPort = 6800
+
+[[ports]]
 localPort = 24273
-externalPort = 4200
+externalPort = 8099
 
 [[ports]]
 localPort = 25261
-externalPort = 3000
+externalPort = 3003
+
+[[ports]]
+localPort = 25262
+externalPort = 4200
+
+[[ports]]
+localPort = 25263
+externalPort = 6000
+
+[[ports]]
+localPort = 25264
+externalPort = 8081
 
 [userenv]
 
