@@ -76,9 +76,9 @@ export const HUB_CONTENT_AGE_BANDS: Record<string, readonly number[]> = {
   // infant-specific subsection inside Activities > Baby Activities.
   "infant-parenting":    [0],
 
-  // Amy Speech Coach — mobile-only learning module covering ages 1–8y.
-  // Bands 0,1,2,3 cover 0–96m; the HUB_TILE_AGE_MONTHS gate below hides
-  // it for infants under 12 months so the experience starts at first words.
+  // Amy Speech Coach — visible for all infants and children up to 8y.
+  // Bands 0,1,2,3 cover 0–96m. No minimum-age gate — age-band-aware
+  // content (parent guidance, milestone tracking) is appropriate from birth.
   speech_coach:          [0, 1, 2, 3],
 };
 
@@ -99,9 +99,8 @@ export const HUB_TILE_AGE_MONTHS: Record<string, { min?: number; max?: number }>
   // starts at preschool difficulty). Bands gate band 0 already, but the
   // explicit ageMonthsMin gate keeps a 25-month-old in band 1 out too.
   "daily-puzzle":   { min: 36 },
-  // Amy Speech Coach starts at first-words age (12 months); infants under
-  // 12m fall through to the Infant Hub instead.
-  speech_coach:     { min: 12 },
+  // speech_coach has no month gate — it shows for all infants and children
+  // in bands 0–3. Age-band-aware content handles each stage appropriately.
 };
 
 // Minimal shape required by `partitionTilesByBand`. The function is generic
