@@ -140,7 +140,8 @@
     "dark_mode": "Dark mode",
     "light_mode": "Light mode",
     "sign_out": "Sign out",
-    "environment": "Amy AI Factors"
+    "environment": "Amy AI Factors",
+    "feedback": "Feedback"
   },
   "auth": {
     "welcome_back": "Welcome back",
