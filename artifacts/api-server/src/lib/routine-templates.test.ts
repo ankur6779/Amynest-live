@@ -914,6 +914,8 @@ describe("anchorMealSlots — infant safety (no Drunch injection)", () => {
       caregiver: "mom",
       weatherOutdoor: "yes",
       date: "2026-01-15",
+      totalAgeMonths: 6,
+      travelMode: "walk",
     });
     const drunchBlocks = routine.items.filter((it) => /\bdrunch\b/i.test(it.activity));
     assert.equal(
@@ -937,6 +939,8 @@ describe("anchorMealSlots — infant safety (no Drunch injection)", () => {
       caregiver: "mom",
       weatherOutdoor: "yes",
       date: "2026-01-15",
+      totalAgeMonths: 6,
+      travelMode: "walk",
     });
     const ADULT_FOOD_PATTERN = /paneer tikka|dhokla|upma|paratha|chapati|sandwich|noodles|pizza|burger/i;
     const violations = routine.items.filter(
