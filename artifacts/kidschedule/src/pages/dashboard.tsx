@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useGetDashboardSummary, getGetDashboardSummaryQueryKey, useGetRecentRoutines, getGetRecentRoutinesQueryKey, useGetBehaviorStats, getGetBehaviorStatsQueryKey, useListRoutines, getListRoutinesQueryKey, useListChildren, getListChildrenQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Link, useLocation } from "wouter";
-import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, TrendingDown, Minus, Clock, CheckCircle2, Sparkles, Trophy, Bot, Brain, Heart, Target, ChevronRight } from "lucide-react";
+import { Calendar, Users, Star, ArrowRight, Activity, TrendingUp, TrendingDown, Minus, Clock, CheckCircle2, Sparkles, Trophy, Bot, Brain, Heart, Target, ChevronRight, MapPin } from "lucide-react";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -262,6 +262,40 @@ function SmartHeroSection({
     return () => clearInterval(id);
   }, [insights.length]);
 
+  // ── Reverse geocoding: Nominatim (free, no key) — only when GPS is available ──
+  const { data: reverseGeoLabel } = useQuery<string | null>({
+    queryKey: ["reverse-geo", geo?.lat, geo?.lng],
+    queryFn: async () => {
+      if (!geo) return null;
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${geo.lat}&lon=${geo.lng}&format=json&accept-language=en`,
+          { headers: { "User-Agent": "AmyNest/1.0 (parenting-app)" } },
+        );
+        if (!res.ok) return null;
+        const data = await res.json() as { address?: { city?: string; town?: string; village?: string; state?: string; country_code?: string; county?: string } };
+        const city = data.address?.city ?? data.address?.town ?? data.address?.village ?? data.address?.county;
+        const state = data.address?.state;
+        const cc = data.address?.country_code?.toUpperCase();
+        if (city && state) return `${city}, ${state}`;
+        if (city && cc)    return `${city}, ${cc}`;
+        if (state && cc)   return `${state}, ${cc}`;
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!geo,
+    staleTime: 30 * 60 * 1000,
+    retry: false,
+  });
+
+  // Resolved display label — prefer GPS reverse-geocode, fall back to ctx label (skip generic "User location")
+  const ctxLocationLabel = ctx?.location?.label;
+  const locationLabel: string | null =
+    reverseGeoLabel ??
+    (ctxLocationLabel && ctxLocationLabel !== "User location" ? ctxLocationLabel : null);
+
   const grad    = getHeroGradient(weatherCondition);
   const aqiMeta = AQI_META[aqiBucket] ?? AQI_META.moderate;
   const heroTags = ctx ? getHeroTags(aqiBucket, outdoorSuitability, snap) : [];
@@ -326,6 +360,14 @@ function SmartHeroSection({
       {/* Weather metrics bar */}
       {ctx && (
         <div className="relative flex items-center gap-2 mt-3 overflow-x-auto pb-0.5">
+          {/* Location pill — GPS reverse-geocoded or region default */}
+          {locationLabel && (
+            <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
+              <MapPin className="h-3 w-3 text-white/70 shrink-0" />
+              {/* i18n-ok: dynamic location label from reverse-geocoding / env API */}
+              <span className="font-semibold text-white truncate max-w-[130px]">{locationLabel}</span>
+            </div>
+          )}
           {snap.temperatureC != null && (
             <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
               🌡️ <span className="font-bold text-white">{snap.temperatureC}°C</span>
