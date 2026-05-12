@@ -91,6 +91,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Launcher for proactive startup permissions (location + microphone).
+     * Result is intentionally ignored here — if granted, the subsequent
+     * WebChromeClient callbacks (onGeolocationPermissionsShowPrompt /
+     * onPermissionRequest) will find the permission already granted and
+     * proceed without showing a second dialog.
+     */
+    private val startupPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ -> /* no-op: reactive callbacks handle the WebView side */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -149,6 +160,14 @@ class MainActivity : AppCompatActivity() {
         // be asked. This guarantees the prompt appears on first launch
         // regardless of web-side state.
         askNotificationPermission()
+
+        // Proactively request location + microphone on first install.
+        // Without this, the WebView only triggers the OS dialog when the
+        // website calls navigator.geolocation or getUserMedia() — if the JS
+        // feature runs before the user taps anything the dialog never appears.
+        // Pre-asking here mirrors the POST_NOTIFICATIONS pattern above.
+        askLocationAndMicPermission()
+
         Log.d(TAG, "PushBridge version=${PushBridge.WRAPPER_VERSION}")
     }
 
@@ -505,6 +524,37 @@ class MainActivity : AppCompatActivity() {
             navigateToDeepLink(link)
         } else {
             pendingDeepLink = link
+        }
+    }
+
+    /**
+     * Proactively request ACCESS_FINE_LOCATION and RECORD_AUDIO on first
+     * install so the OS dialog appears before the website feature triggers.
+     *
+     * Android only shows the dialog once (and silently skips on subsequent
+     * calls if the user has already responded), so this is safe to call on
+     * every cold start — same pattern as askNotificationPermission().
+     *
+     * If the user grants here, the WebChromeClient callbacks
+     * (onGeolocationPermissionsShowPrompt / onPermissionRequest) will find the
+     * permission already GRANTED and proceed without a second dialog.
+     */
+    private fun askLocationAndMicPermission() {
+        val needed = buildList {
+            if (ContextCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) add(Manifest.permission.ACCESS_FINE_LOCATION)
+
+            if (ContextCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.RECORD_AUDIO,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) add(Manifest.permission.RECORD_AUDIO)
+        }
+        if (needed.isNotEmpty()) {
+            startupPermissionLauncher.launch(needed.toTypedArray())
         }
     }
 
