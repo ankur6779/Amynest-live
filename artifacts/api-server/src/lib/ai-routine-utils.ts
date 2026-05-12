@@ -44,11 +44,27 @@ export function reAnchorToWakeTime(
   }
   const sleepAnchor = sleepIdx !== -1 ? sorted.splice(sleepIdx, 1)[0]! : null;
 
+  // Minimum breathing room between consecutive activities.
+  // High-energy categories (play, outdoor, exercise) get a longer cool-down.
+  const HIGH_ENERGY_CATS = new Set(["play", "outdoor", "exercise", "activity"]);
+  const MIN_GAP_DEFAULT = 10; // minutes
+  const MIN_GAP_HIGH_ENERGY = 15; // minutes after play/outdoor before next block
+
   let cursor = wakeMins;
-  const anchored: AiRoutineItem[] = sorted.map((item) => {
+  const anchored: AiRoutineItem[] = sorted.map((item, i) => {
     const dur = Math.max(1, item.duration ?? 30);
     const result = { ...item, time: minsToTime(cursor) };
     cursor += dur;
+    // Add inter-activity gap (but never push past sleep - 5 min)
+    if (i < sorted.length - 1) {
+      const gap = HIGH_ENERGY_CATS.has((item.category ?? "").toLowerCase())
+        ? MIN_GAP_HIGH_ENERGY
+        : MIN_GAP_DEFAULT;
+      const next = cursor + gap;
+      if (next < effectiveSleepMins - 5) {
+        cursor = next;
+      }
+    }
     if (cursor >= effectiveSleepMins && item.category !== "sleep") {
       cursor = Math.min(cursor, effectiveSleepMins - 10);
     }

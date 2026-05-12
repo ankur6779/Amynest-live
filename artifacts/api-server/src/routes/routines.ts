@@ -628,11 +628,18 @@ Return JSON exactly like this:
 CRITICAL RULES — follow ALL exactly:
 - Time format MUST be "H:MM AM/PM" — examples: "7:00 AM", "9:30 AM", "12:00 PM", "3:45 PM". NEVER use 24-hour format like "07:00" or "19:30".
 - The FIRST activity MUST start at exactly ${params.wakeUpTime}. NEVER use 12:00 AM or any time before wake-up.
-- Build times sequentially: currentTime = ${params.wakeUpTime}. For each activity: "time" = currentTime, then currentTime += duration minutes.
-- Example if wake=7:00 AM with durations 30,25,20: first="7:00 AM", second="7:30 AM", third="7:55 AM", fourth="8:15 AM"
+- Build times sequentially WITH natural breathing room: currentTime = ${params.wakeUpTime}. For each activity: "time" = currentTime, then currentTime += duration + transition_gap. Transition gaps MUST be at least 10 min after every activity, and at least 15 min after meals or high-energy play. NEVER place two activities back-to-back with zero gap.
+- Example if wake=7:00 AM with durations 30 (meal), 30 (play): first="7:00 AM" ends 7:30, add 15 min gap → second="7:45 AM" ends 8:15, add 10 min gap → third="8:25 AM". Do NOT write "7:30 AM" for the second item.
 - The final "Sleep" activity must be placed at ${params.sleepTime}.
-- 12–16 activities covering wake-up to sleep. Include breakfast, lunch, dinner, and at least one snack.
-- Include at least 2 outdoor/play activities and 1–2 family bonding activities.
+- 10–12 activities covering wake-up to sleep — fewer, meaningful blocks parents can realistically follow. Include breakfast, lunch, dinner, and at least one snack.
+- Include at least 1 outdoor/play activity and 1 family bonding activity.
+- REALISTIC PACING — MANDATORY (violations will be rejected):
+  • Minimum 10 min gap between ANY two consecutive activities (this gap is NOT included in duration — it is separate transition/buffer time)
+  • After outdoor play, physical activity, or high-energy games: minimum 15 min calm-down gap before the next block
+  • Before nap or daytime rest: ALWAYS include 10–15 min of quiet wind-down (calm play, story, or cuddle) as a SEPARATE preceding activity — never jump directly from active play to nap
+  • Main meals (breakfast, lunch, dinner) duration: 25–40 min. Snacks/drunch: 20–30 min. Do not make meals shorter than 20 min
+  • Drunch and Dinner must be at least 90 min apart — do not schedule them within the same 2-hour window
+  • The TOTAL count of all scheduled minutes (activity durations + gaps) must NOT exceed the wake-to-sleep window in minutes
 - Activities must match the child's age group and mood.
 - MEAL NOTES FORMAT — MANDATORY for EVERY meal, snack, tiffin, and drunch block. The "notes" field MUST start with "Options: " and list EXACTLY 4 specific dish names separated by " | " (pipe with surrounding spaces). Example: "Options: Poha with peanuts | Vegetable upma | Aloo paratha with curd | Idli with sambar". Each option must be a complete, concrete dish (3–6 words) — NOT a generic category like "breakfast" or "snack". EVERY option in the list MUST respect the child's diet, allergies, and food style described below — never include any forbidden ingredient even as a minor component.
 ${buildDietConstraintBlock(params.foodType)}

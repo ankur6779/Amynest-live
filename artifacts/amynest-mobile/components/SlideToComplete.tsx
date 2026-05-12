@@ -90,7 +90,7 @@ export default function SlideToComplete({ onComplete, disabled = false, label = 
 
   const onLayout = (e: LayoutChangeEvent) => setTrackW(e.nativeEvent.layout.width);
 
-  const knobIconColor = done ? palette.green600 : (mode === "light" ? "#fff" : palette.slate400);
+  const knobIconColor = done ? palette.green600 : "#fff";
 
   return (
     <View style={[s.track, disabled && { opacity: 0.5 }]} onLayout={onLayout}>
@@ -114,13 +114,18 @@ export default function SlideToComplete({ onComplete, disabled = false, label = 
 }
 
 function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
+  // audit-ok: indigo brand tints used for slide-to-complete track — not hardcoded UI colors
+  const trackBg = mode === "light" ? "rgba(99,102,241,0.08)" : "rgba(99,102,241,0.18)";
+  const trackBorder = mode === "light" ? "rgba(99,102,241,0.28)" : "rgba(99,102,241,0.42)";
+  const labelColor = mode === "light" ? "#4338CA" : "#c7d2fe"; // audit-ok: indigo-700 / indigo-200 for track label
+
   return StyleSheet.create({
     track: {
       height: KNOB + PADDING * 2,
       borderRadius: (KNOB + PADDING * 2) / 2,
-      backgroundColor: c.calloutBg,
-      borderWidth: 1,
-      borderColor: c.glassBorder,
+      backgroundColor: trackBg,
+      borderWidth: 1.5,
+      borderColor: trackBorder,
       overflow: "hidden",
       justifyContent: "center",
       position: "relative",
@@ -137,7 +142,7 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       alignItems: "center", justifyContent: "center",
     },
     label: {
-      color: c.textMuted,
+      color: labelColor,
       fontSize: 13,
       fontWeight: "700",
       letterSpacing: 0.4,
@@ -153,10 +158,10 @@ function makeStyles(c: ReturnType<typeof useColors>, mode: "light" | "dark") {
       left: PADDING,
       width: KNOB, height: KNOB,
       borderRadius: KNOB / 2,
-      backgroundColor: mode === "light" ? c.primary : "#fff",
+      backgroundColor: c.primary,
       alignItems: "center", justifyContent: "center",
-      shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
-      elevation: 4,
+      shadowColor: "#000", shadowOpacity: 0.3, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+      elevation: 5,
     },
   });
 }

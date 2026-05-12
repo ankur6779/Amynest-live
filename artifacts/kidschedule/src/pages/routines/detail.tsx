@@ -245,21 +245,22 @@ function SlideToComplete({
       setKnobX(0);
     }
   };
-  return <div ref={trackRef} className="relative h-11 rounded-full overflow-hidden select-none border border-border" style={{
-    background: "linear-gradient(to right, #f1f5f9, #e2e8f0)",
+  return <div ref={trackRef} className="relative h-11 rounded-full overflow-hidden select-none" style={{
+    background: "rgba(99,102,241,0.10)",
+    border: "1.5px solid rgba(99,102,241,0.30)",
     touchAction: "none"
   }}>
       {/* Green fill as knob moves */}
       <div className="absolute inset-y-0 left-0 rounded-full transition-none" style={{
       width: `${4 + knobX + KNOB / 2}px`,
-      background: `rgba(34,197,94,${0.12 + progress * 0.55})`,
+      background: `rgba(34,197,94,${0.15 + progress * 0.55})`,
       transition: dragging ? "none" : "width 0.3s cubic-bezier(0.34,1.56,0.64,1)"
     }} />
       {/* Track label */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{
       opacity: Math.max(0, 1 - progress * 2.2)
     }}>
-        <span className="text-xs font-bold text-foreground tracking-wide">
+        <span className="text-xs font-bold tracking-wide" style={{ color: "rgba(99,102,241,0.85)" }}>
           {done ? "✅ Completed!" : "Slide to complete  →"}
         </span>
       </div>
@@ -270,14 +271,15 @@ function SlideToComplete({
           <span className="text-xs font-black text-primary tracking-wide">{t("pages.routines.detail.release_to_complete")}</span>
         </div>}
       {/* Knob */}
-      <div className="absolute top-1 rounded-full bg-white shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing" style={{
+      <div className="absolute top-1 rounded-full shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing" style={{
       left: `${4 + knobX}px`,
       width: KNOB,
       height: KNOB,
+      background: "linear-gradient(135deg,#7B3FF2,#6366F1)",
       transition: dragging ? "none" : "left 0.3s cubic-bezier(0.34,1.56,0.64,1)",
       touchAction: "none"
     }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-        <Check className={`h-4 w-4 transition-colors ${done ? "text-primary" : "text-muted-foreground"}`} />
+        <Check className={`h-4 w-4 transition-colors ${done ? "text-green-300" : "text-white"}`} />
       </div>
     </div>;
 }
