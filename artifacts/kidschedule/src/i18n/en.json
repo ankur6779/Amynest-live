@@ -1707,7 +1707,8 @@
           "try_again_alt2": "Keep going — you’re getting better!"
         },
         "error": {
-          "microphone_denied": "Microphone access was denied. Please allow it in browser settings.",
+          "microphone_denied": "Microphone access was denied. Tap Allow when your browser asks, or go to browser Settings → Site permissions → Microphone.",
+          "not-allowed": "Microphone access was denied. Tap Allow when your browser asks, or go to browser Settings → Site permissions → Microphone.",
           "transcription_failed": "Could not analyse the audio. Please try again.",
           "recognition_start_failed": "Could not start the microphone. Please try again.",
           "generic": "Something went wrong. Please try again."

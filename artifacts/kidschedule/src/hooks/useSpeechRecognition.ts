@@ -73,6 +73,63 @@ export interface SpeechRecognitionState {
   reset: () => void;
 }
 
+// ── Android PWA mic-permission helper ────────────────────────────────────────
+// On Android Chrome / PWA, SpeechRecognition.start() does NOT trigger the OS
+// permission dialog on its own — it just fires onerror:"not-allowed" silently.
+// We must call getUserMedia({audio:true}) first so the system dialog appears.
+// Once the user grants access the browser caches it; subsequent calls return
+// instantly without showing the dialog again.
+//
+// We also cache the result in a module-level ref so the prompt only ever shows
+// once per page load (not on every tap-to-record).
+const _micPermCache: { state: "unknown" | "granted" | "denied" } = {
+  state: "unknown",
+};
+
+async function ensureMicPermission(): Promise<"granted" | "denied"> {
+  if (_micPermCache.state !== "unknown") return _micPermCache.state;
+
+  // Try the Permissions API first (no dialog, instant check)
+  if (typeof navigator !== "undefined" && navigator.permissions) {
+    try {
+      const status = await navigator.permissions.query({
+        name: "microphone" as PermissionName,
+      });
+      if (status.state === "granted") {
+        _micPermCache.state = "granted";
+        return "granted";
+      }
+      if (status.state === "denied") {
+        _micPermCache.state = "denied";
+        return "denied";
+      }
+      // state === "prompt" — fall through to getUserMedia below
+    } catch {
+      // Permissions API not supported — fall through
+    }
+  }
+
+  // getUserMedia triggers the OS permission dialog on Android
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop()); // release immediately
+    _micPermCache.state = "granted";
+    return "granted";
+  } catch {
+    _micPermCache.state = "denied";
+    return "denied";
+  }
+}
+
+// Normalise SpeechRecognition error codes → our own error keys
+function normaliseSpeechError(code: string): string {
+  if (code === "not-allowed" || code === "permission-denied")
+    return "microphone_denied";
+  if (code === "service-not-allowed") return "microphone_denied";
+  if (code === "audio-capture") return "recognition_start_failed";
+  return code;
+}
+
 export function useSpeechRecognition(lang = "en-US"): SpeechRecognitionState {
   const [transcript, setTranscript] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
@@ -114,11 +171,19 @@ export function useSpeechRecognition(lang = "en-US"): SpeechRecognitionState {
   }, []);
 
   // ── Native Web Speech API path ──────────────────────────────────────────────
-  const startNative = useCallback(() => {
+  const startNative = useCallback(async () => {
     if (!Cls) return;
     setTranscript("");
     setInterimTranscript("");
     setError(null);
+
+    // ⚠️ Android PWA fix: request mic permission explicitly before starting
+    // recognition, so the OS dialog appears instead of silently failing.
+    const perm = await ensureMicPermission();
+    if (perm === "denied") {
+      setError("microphone_denied");
+      return;
+    }
 
     const rec = new Cls();
     recRef.current = rec;
@@ -133,8 +198,10 @@ export function useSpeechRecognition(lang = "en-US"): SpeechRecognitionState {
       setInterimTranscript("");
     };
     rec.onerror = (e: SpeechRecognitionErrorEvent) => {
-      const code = e.error;
+      const code = normaliseSpeechError(e.error);
       if (code !== "aborted") setError(code);
+      // Reset cached permission if user revoked it mid-session
+      if (code === "microphone_denied") _micPermCache.state = "unknown";
       setListening(false);
     };
     rec.onresult = (e: SpeechRecognitionEvent) => {
@@ -172,7 +239,9 @@ export function useSpeechRecognition(lang = "en-US"): SpeechRecognitionState {
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      _micPermCache.state = "granted";
     } catch {
+      _micPermCache.state = "denied";
       setError("microphone_denied");
       return;
     }
@@ -230,7 +299,7 @@ export function useSpeechRecognition(lang = "en-US"): SpeechRecognitionState {
   }, []);
 
   const start = useCallback(() => {
-    if (mode === "native") startNative();
+    if (mode === "native") void startNative();
     else if (mode === "whisper") void startWhisper();
     else setError("unsupported");
   }, [mode, startNative, startWhisper]);
