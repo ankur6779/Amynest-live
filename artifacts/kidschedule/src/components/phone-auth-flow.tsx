@@ -128,6 +128,7 @@ function CountryPicker({
   onSelect: (c: Country) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 

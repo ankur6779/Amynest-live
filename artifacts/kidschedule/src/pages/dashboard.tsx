@@ -7,7 +7,8 @@ import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/lib/firebase-auth-hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePaywall } from "@/contexts/paywall-context";
@@ -64,59 +65,305 @@ function computeStreak(routines: Routine[]): number {
 }
 
 // audit-block-ignore-start
-// ─── Hero Greeting — coral→orange gradient banner on dark dashboard ──────
-function HeroGreeting({
-  displayName,
-  hasChildren,
-  lastUpdated
-}: {
-  displayName: string;
-  hasChildren: boolean;
-  lastUpdated: number;
-}) {
-  const {
-    t
-  } = useTranslation();
-  const greeting = t(getGreetingKey());
-  const heading = displayName ? t("dashboard.greeting_with_name", {
-    name: displayName
-  }) : t("dashboard.greeting_no_name");
-  const today = new Date();
-  const dateStr = today.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
+// ─── Smart Hero Section — Live Weather Intelligence Card ─────────────────
+
+type ChildBasic = { id: number; name: string; age: number; ageMonths: number };
+
+const AQI_META: Record<string, { label: string; dotColor: string }> = {
+  excellent:           { label: "Excellent",      dotColor: "#22c55e" },
+  good:                { label: "Good",           dotColor: "#4ade80" },
+  moderate:            { label: "Moderate",       dotColor: "#facc15" },
+  unhealthy_sensitive: { label: "Sensitive",      dotColor: "#fb923c" },
+  unhealthy:           { label: "Unhealthy",      dotColor: "#ef4444" },
+  very_unhealthy:      { label: "Very Unhealthy", dotColor: "#a855f7" },
+  hazardous:           { label: "Hazardous!",     dotColor: "#f43f5e" },
+};
+
+const WEATHER_EMOJI_MAP: Record<string, string> = {
+  sunny: "☀️", cloudy: "⛅", rainy: "🌧️", stormy: "⛈️",
+  humid: "🌊", cold: "❄️", heatwave: "🌡️", windy: "🌬️", foggy: "🌫️",
+};
+
+function getHeroGradient(condition: string | undefined): { bg: string; glowA: string; glowB: string } {
+  const hour = new Date().getHours();
+  const isNight = hour >= 20 || hour < 6;
+  if (isNight) return {
+    bg: "linear-gradient(135deg,#3b1f6b 0%,#2d1558 55%,#1e0d45 100%)",
+    glowA: "rgba(107,64,160,0.55)", glowB: "rgba(60,20,100,0.40)",
+  };
+  switch (condition) {
+    case "rainy": case "stormy": return {
+      bg: "linear-gradient(135deg,#3a72c0 0%,#2d5fa8 55%,#2050a0 100%)",
+      glowA: "rgba(90,160,240,0.45)", glowB: "rgba(60,100,200,0.38)",
+    };
+    case "cold": return {
+      bg: "linear-gradient(135deg,#5b8eb5 0%,#4a7da4 55%,#3a6b90 100%)",
+      glowA: "rgba(140,190,220,0.45)", glowB: "rgba(80,140,180,0.38)",
+    };
+    case "cloudy": case "foggy": return {
+      bg: "linear-gradient(135deg,#7c6fcd 0%,#6458b0 55%,#5448a0 100%)",
+      glowA: "rgba(160,150,220,0.45)", glowB: "rgba(100,90,180,0.38)",
+    };
+    case "heatwave": return {
+      bg: "linear-gradient(135deg,#e84040 0%,#cc2020 55%,#aa1010 100%)",
+      glowA: "rgba(240,100,80,0.55)", glowB: "rgba(200,60,40,0.42)",
+    };
+    case "humid": return {
+      bg: "linear-gradient(135deg,#20b2a0 0%,#1a9a8a 55%,#158070 100%)",
+      glowA: "rgba(60,200,190,0.45)", glowB: "rgba(30,160,150,0.38)",
+    };
+    case "windy": return {
+      bg: "linear-gradient(135deg,#6b7db5 0%,#5a6ca0 55%,#4a5b8a 100%)",
+      glowA: "rgba(140,160,220,0.45)", glowB: "rgba(100,120,180,0.38)",
+    };
+    default: return {
+      bg: "linear-gradient(135deg,#ff8a65 0%,#ff6f47 55%,#ff5a3c 100%)",
+      glowA: "rgba(255,179,138,0.45)", glowB: "rgba(255,138,101,0.38)",
+    };
+  }
+}
+
+function buildInsights(
+  snap: { temperatureC?: number; humidityPct?: number; uvIndexMax?: number; aqiUs?: number },
+  aqiBucket: string,
+  outdoorSuitability: string,
+  childProfiles: ChildBasic[],
+): string[] {
+  const out: string[] = [];
+  const { temperatureC: temp, humidityPct: humidity, uvIndexMax: uv } = snap;
+
+  if (aqiBucket === "hazardous")           out.push("⚠️ Hazardous air quality — all children must stay indoors today.");
+  else if (aqiBucket === "very_unhealthy") out.push("🏠 Very poor air quality — no outdoor activity recommended.");
+  else if (aqiBucket === "unhealthy")      out.push("😷 Poor air quality — limit outdoor play time today.");
+  else if (aqiBucket === "unhealthy_sensitive") out.push("🌬️ Air quality may affect sensitive children — monitor outdoor time.");
+  else if (aqiBucket === "excellent" || aqiBucket === "good") out.push("🌿 Air quality is excellent — great for outdoor play!");
+
+  if (temp != null) {
+    if (temp >= 38)       out.push(`🌡️ Extreme heat (${temp}°C) — keep children cool and offer fluids every 30 min.`);
+    else if (temp >= 33)  out.push(`💧 Hot at ${temp}°C — keep ${childProfiles[0]?.name ?? "your child"} hydrated throughout the day.`);
+    else if (temp <= 10)  out.push("🧥 Very cold today — bundle up children well before going outside.");
+    else if (temp <= 18)  out.push("🧣 Cool weather — a light jacket is recommended for outdoor time.");
+    else if (temp >= 20 && temp <= 30 && outdoorSuitability === "yes") out.push("🌳 Perfect temperature for outdoor learning and play!");
+  }
+
+  if (humidity != null && humidity >= 85) out.push("👕 Very humid — dress children in lightweight breathable cotton.");
+  else if (humidity != null && humidity >= 70 && temp != null && temp >= 28) out.push("🌡️ Hot and humid — extra hydration + light clothing recommended.");
+
+  if (uv != null && uv >= 8)      out.push("☀️ Very high UV — apply SPF 50+ and avoid midday sun.");
+  else if (uv != null && uv >= 5) out.push("🕶️ UV is elevated — sunscreen before any outdoor activity.");
+
+  childProfiles.forEach(child => {
+    const totalMonths = child.age * 12 + child.ageMonths;
+    if (totalMonths < 12) {
+      out.push(temp != null && temp >= 30
+        ? `👶 ${child.name} (${totalMonths}mo) may overheat faster — check comfort regularly.`
+        : `👶 Infants like ${child.name} need hydration even indoors today.`);
+    } else if (child.age >= 1 && child.age <= 3 && outdoorSuitability === "yes") {
+      out.push(`🌳 Great weather for ${child.name}'s outdoor sensory play!`);
+    } else if (child.age >= 4 && child.age <= 7) {
+      out.push(outdoorSuitability === "yes"
+        ? `📚 Perfect day for ${child.name}'s outdoor learning activities.`
+        : `🎨 Indoor day — try creative play or storytime with ${child.name}.`);
+    } else if (child.age >= 8 && uv != null && uv >= 5) {
+      out.push(`🎒 Remind ${child.name} to apply sunscreen before heading out.`);
+    }
   });
-  const syncedTime = lastUpdated > 0 ? new Date(lastUpdated).toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit"
-  }) : null;
+
+  const hour = new Date().getHours();
+  if (hour >= 15 && hour <= 17 && outdoorSuitability !== "no" && (temp == null || temp < 33)) {
+    out.push("🌅 Best outdoor window: 5–6 PM when temperatures are cooler.");
+  }
+  if (hour >= 19) out.push("🌙 Evening wind-down — limit screen time 30 min before bed.");
+
+  return out.length > 0 ? out : ["✨ All conditions look good — have a wonderful day with your child!"];
+}
+
+function getHeroTags(
+  aqiBucket: string,
+  outdoorSuitability: string,
+  snap: { temperatureC?: number; uvIndexMax?: number; humidityPct?: number },
+): string[] {
+  const tags: string[] = [];
+  if (outdoorSuitability === "yes")          tags.push("Outdoor Play Friendly");
+  else if (outdoorSuitability === "limited") tags.push("Limited Outdoor Time");
+  else                                       tags.push("Indoor Activity Recommended");
+
+  if (["hazardous", "very_unhealthy", "unhealthy"].includes(aqiBucket)) tags.push("High Pollution Alert");
+  else if (["excellent", "good"].includes(aqiBucket))                   tags.push("Clean Air Day");
+
+  if (snap.temperatureC != null && snap.temperatureC >= 32) tags.push("Hydration Day");
+  if (snap.uvIndexMax   != null && snap.uvIndexMax   >= 5)  tags.push("UV Protection Day");
+  const hour = new Date().getHours();
+  if (hour >= 20 || hour < 6) tags.push("Good Sleep Weather");
+
+  return tags.slice(0, 3);
+}
+
+function SmartHeroSection({
+  displayName, hasChildren, lastUpdated, childProfiles,
+}: {
+  displayName: string; hasChildren: boolean; lastUpdated: number; childProfiles: ChildBasic[];
+}) {
+  const { t } = useTranslation();
+  const authFetch = useAuthFetch();
+  const greeting = t(getGreetingKey());
+  const heading  = displayName
+    ? t("dashboard.greeting_with_name", { name: displayName })
+    : t("dashboard.greeting_no_name");
+
+  const [geo, setGeo]           = useState<{ lat: number; lng: number } | null>(null);
+  const [geoReady, setGeoReady] = useState(false);
+
+  useEffect(() => {
+    let done = false;
+    const fallback = setTimeout(() => { if (!done) { done = true; setGeoReady(true); } }, 3000);
+    if (typeof navigator !== "undefined" && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { if (!done) { done = true; clearTimeout(fallback); setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGeoReady(true); } },
+        ()    => { if (!done) { done = true; clearTimeout(fallback); setGeoReady(true); } },
+        { timeout: 2500, maximumAge: 600_000 },
+      );
+    } else { clearTimeout(fallback); setGeoReady(true); }
+    return () => { done = true; clearTimeout(fallback); };
+  }, []);
+
+  const { data: envData, isError } = useQuery({
+    queryKey: ["hero-env-ctx", geo?.lat, geo?.lng],
+    queryFn: async () => {
+      const qs = geo ? `?lat=${geo.lat}&lng=${geo.lng}` : "";
+      const res = await authFetch(`/api/environment/context${qs}`);
+      if (!res.ok) throw new Error("env");
+      return res.json() as Promise<{ context: any; childName: string | null }>;
+    },
+    enabled: geoReady,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+
+  const ctx  = envData?.context;
+  const snap = ctx?.snapshot ?? {};
+  const aqiBucket          = ctx?.aqiBucket          ?? "moderate";
+  const weatherCondition   = ctx?.weatherCondition;
+  const outdoorSuitability = ctx?.outdoorSuitability ?? "limited";
+
+  const insights = useMemo(
+    () => ctx
+      ? buildInsights(snap, aqiBucket, outdoorSuitability, childProfiles)
+      : ["🌤️ Loading your personalised weather insights…"],
+    [ctx, childProfiles],
+  );
+
+  const [insightIdx, setInsightIdx] = useState(0);
+  useEffect(() => { setInsightIdx(0); }, [insights]);
+  useEffect(() => {
+    if (insights.length <= 1) return;
+    const id = setInterval(() => setInsightIdx(p => (p + 1) % insights.length), 4000);
+    return () => clearInterval(id);
+  }, [insights.length]);
+
+  const grad    = getHeroGradient(weatherCondition);
+  const aqiMeta = AQI_META[aqiBucket] ?? AQI_META.moderate;
+  const heroTags = ctx ? getHeroTags(aqiBucket, outdoorSuitability, snap) : [];
+  const weatherEmoji = WEATHER_EMOJI_MAP[weatherCondition ?? ""] ?? "🌤️";
+  const nowTime = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+
   return (
-    <div data-on-dark className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-[#ff8a65] via-[#ff6f47] to-[#ff5a3c] px-5 sm:px-7 py-5 sm:py-6 shadow-lg animate-in fade-in duration-400">
-      <div className="absolute -top-16 -right-12 h-48 w-48 rounded-full bg-white/15 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-[#ffb38a]/30 blur-3xl pointer-events-none" />
-      <div className="relative flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
-        <div className="min-w-0">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-[#ffd9c9]">{greeting}</p>
-          <h1 className="font-quicksand text-2xl sm:text-[28px] font-black text-white mt-1 leading-[1.15] tracking-tight">
-            👋 {heading}
-          </h1>
-          <p className="text-sm text-white/85 mt-1.5 leading-snug">
-            {hasChildren ? t("dashboard.planned_for_you") : t("dashboard.setup_first")}
-          </p>
-        </div>
-        <div className="shrink-0 flex items-center gap-2 text-xs text-white/85">
-          <span className="hidden sm:inline font-medium">{dateStr}</span>
-          {syncedTime && (
-            <span className="inline-flex items-center gap-1.5 bg-[#1a1326]/80 backdrop-blur rounded-full px-2.5 py-1 border border-white/10 text-white">
-              <span className="relative inline-flex items-center h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff7a59] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ff7a59]" />
-              </span>
-              <span className="font-semibold">{t("pages.dashboard.live")} {syncedTime}</span>
+    <div
+      data-on-dark
+      className="relative overflow-hidden rounded-3xl border border-white/10 px-5 sm:px-7 py-5 sm:py-6 shadow-xl animate-in fade-in duration-400"
+      style={{ background: grad.bg, transition: "background 0.8s ease" }}
+    >
+      {/* Glow blobs */}
+      <div className="absolute -top-16 -right-12 h-48 w-48 rounded-full pointer-events-none blur-3xl" style={{ background: grad.glowA }} />
+      <div className="absolute -bottom-20 -left-10 h-40 w-40 rounded-full pointer-events-none blur-3xl" style={{ background: grad.glowB }} />
+
+      {/* Floating particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+        <div className="absolute top-4 right-20 h-1.5 w-1.5 rounded-full bg-white/20 animate-bounce" style={{ animationDuration: "3s" }} />
+        <div className="absolute top-12 right-10 h-1 w-1 rounded-full bg-white/15 animate-bounce" style={{ animationDuration: "4.5s", animationDelay: "1s" }} />
+        <div className="absolute bottom-8 right-16 h-1.5 w-1.5 rounded-full bg-white/15 animate-bounce" style={{ animationDuration: "5s", animationDelay: "0.6s" }} />
+      </div>
+
+      {/* Row 1: greeting label + weather pill */}
+      <div className="relative flex items-center justify-between gap-2">
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-white/70">{greeting}</p>
+        {ctx && (
+          <div className="shrink-0 flex items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/20 text-[11px] font-bold text-white/90" style={{ background: "rgba(0,0,0,0.25)" }}>
+            <span>{weatherEmoji}</span>
+            {snap.temperatureC != null && <span>{snap.temperatureC}°C</span>}
+            <span className="text-white/50">·</span>
+            <span className="capitalize">{weatherCondition?.replace(/_/g, " ") ?? ""}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Heading */}
+      <h1 className="relative font-quicksand text-2xl sm:text-[27px] font-black text-white mt-1 leading-[1.15] tracking-tight">
+        👋 {heading}
+      </h1>
+
+      {/* Rotating insight */}
+      <div className="relative mt-2 min-h-[40px] flex items-start">
+        <p key={insightIdx} className="text-sm text-white/90 leading-snug animate-in fade-in duration-500">
+          {isError ? "⚠️ Unable to fetch live weather currently." : insights[insightIdx]}
+        </p>
+      </div>
+
+      {/* Smart tags */}
+      {heroTags.length > 0 && (
+        <div className="relative flex flex-wrap gap-1.5 mt-3">
+          {heroTags.map(tag => (
+            <span key={tag} className="inline-flex items-center text-[10.5px] font-bold rounded-full px-2.5 py-0.5 border border-white/20 text-white backdrop-blur-sm" style={{ background: "rgba(255,255,255,0.14)" }}>
+              {tag}
             </span>
+          ))}
+        </div>
+      )}
+
+      {/* Weather metrics bar */}
+      {ctx && (
+        <div className="relative flex items-center gap-2 mt-3 overflow-x-auto pb-0.5">
+          {snap.temperatureC != null && (
+            <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
+              🌡️ <span className="font-bold text-white">{snap.temperatureC}°C</span>
+              {snap.apparentC != null && snap.apparentC !== snap.temperatureC && (
+                <span className="text-white/55 text-[10px] ml-0.5">feels {snap.apparentC}°C</span>
+              )}
+            </div>
+          )}
+          {snap.aqiUs != null && (
+            <div className="shrink-0 flex items-center gap-1.5 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse shrink-0" style={{ background: aqiMeta.dotColor }} />
+              <span className="font-bold text-white">AQI {snap.aqiUs}</span>
+              <span className="text-white/60 text-[10px]">{aqiMeta.label}</span>
+            </div>
+          )}
+          {snap.humidityPct != null && (
+            <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
+              💧 <span className="font-bold text-white">{snap.humidityPct}%</span>
+            </div>
+          )}
+          {snap.uvIndexMax != null && (
+            <div className="shrink-0 flex items-center gap-1 text-xs rounded-lg px-2 py-1 border border-white/15" style={{ background: "rgba(0,0,0,0.20)" }}>
+              ☀️ <span className="font-bold text-white">UV {snap.uvIndexMax}</span>
+            </div>
           )}
         </div>
+      )}
+
+      {/* Live status bar */}
+      <div className="relative flex items-center gap-2 mt-3">
+        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 border border-white/10 text-white text-xs backdrop-blur" style={{ background: "rgba(26,19,38,0.80)" }}>
+          <span className="relative inline-flex items-center h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "#ff7a59" }} />
+            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#ff7a59" }} />
+          </span>
+          <span className="font-semibold">
+            {t("pages.dashboard.live")} · {nowTime}
+            {ctx && snap.aqiUs != null && ` · AQI ${aqiMeta.label}`}
+          </span>
+        </span>
+        {!hasChildren && <span className="text-[11px] text-white/65">{t("dashboard.setup_first")}</span>}
       </div>
     </div>
   );
@@ -845,7 +1092,12 @@ export default function Dashboard() {
       <div className="flex flex-col gap-5 animate-in fade-in duration-400 pb-8">
 
       {/* ── Hero Greeting ───────────────────────────────────────── */}
-      <HeroGreeting displayName={displayName} hasChildren={(childrenList?.length ?? 0) > 0} lastUpdated={lastUpdated} />
+      <SmartHeroSection
+        displayName={displayName}
+        hasChildren={(childrenList?.length ?? 0) > 0}
+        lastUpdated={lastUpdated}
+        childProfiles={(childrenList ?? []).map((c: any) => ({ id: c.id, name: c.name, age: c.age, ageMonths: c.ageMonths ?? 0 }))}
+      />
 
       {/* ── Two-column layout (desktop) / stacked (mobile) ─────── */}
       <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 items-start">
