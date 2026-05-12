@@ -578,6 +578,49 @@
 }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+/* ─── iOS / Capacitor Safe Area (notch · Dynamic Island · home bar) ─────────
+ * viewport-fit=cover is set in index.html so the WKWebView fills the whole
+ * screen including the safe area. We then push content BACK inside those
+ * insets with env() variables.
+ *
+ * CSS custom properties are exposed so JS can read them if needed:
+ *   getComputedStyle(document.documentElement).getPropertyValue('--sat')
+ * ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --sat: env(safe-area-inset-top,    0px);
+  --sar: env(safe-area-inset-right,  0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left,   0px);
+}
+
+/* When running as a standalone PWA or inside Capacitor, avoid notch overlap */
+@media all and (display-mode: standalone) {
+  body {
+    padding-top:    env(safe-area-inset-top,    0px);
+    padding-right:  env(safe-area-inset-right,  0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left:   env(safe-area-inset-left,   0px);
+  }
+}
+
+/* Bottom navigation bar — extra bottom clearance for home indicator */
+.bottom-nav-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.25rem);
+}
+
+/* Fixed headers — clear the notch / Dynamic Island */
+.header-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Utility classes for manual safe-area spacing */
+.pt-safe  { padding-top:    env(safe-area-inset-top,    0px); }
+.pr-safe  { padding-right:  env(safe-area-inset-right,  0px); }
+.pb-safe  { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pl-safe  { padding-left:   env(safe-area-inset-left,   0px); }
+.mt-safe  { margin-top:     env(safe-area-inset-top,    0px); }
+.mb-safe  { margin-bottom:  env(safe-area-inset-bottom, 0px); }
+
 /* ─── Light-mode legacy-color safety net ────────────────────────────────
  * The app was originally authored assuming the always-dark theme, so many
  * surfaces use raw `text-white`, `text-white/60`, `border-white/10`, etc.
