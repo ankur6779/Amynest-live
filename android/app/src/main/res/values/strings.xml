@@ -3,4 +3,11 @@
     <string name="app_name">AmyNest AI</string>
     <string name="notification_channel_name">AmyNest</string>
     <string name="notification_channel_description">Routine reminders, meal suggestions, and parenting insights</string>
+
+    <!-- Per-category notification channel names -->
+    <string name="channel_routine">Routine Reminders</string>
+    <string name="channel_nutrition">Nutrition &amp; Meals</string>
+    <string name="channel_parenting">Parenting Insights</string>
+    <string name="channel_learning">Learning &amp; Activities</string>
+    <string name="channel_milestone">Milestones</string>
 </resources>

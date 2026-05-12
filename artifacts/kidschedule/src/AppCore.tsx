@@ -72,6 +72,7 @@ import { OfflineScreen, useOnlineStatus } from "@/components/offline-screen";
 import { DebugProvider } from "@/contexts/debug-context";
 import { DebugPanel } from "@/components/debug-panel";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
+import { useNotificationDeepLink } from "@/hooks/use-notification-deep-link";
 import { PaywallProvider } from "@/contexts/paywall-context";
 import { PaywallModal } from "@/components/paywall-modal";
 import { SubscriptionEventBridge } from "@/components/subscription-event-bridge";
@@ -197,6 +198,11 @@ function QueryClientCacheInvalidator() {
 
 const queryClient = new QueryClient();
 
+function NotificationDeepLinkBridge() {
+  useNotificationDeepLink();
+  return null;
+}
+
 function ReactMountMarker() {
   // Confirms React's reconciliation actually completed and effects are
   // running — not just that `root.render()` returned synchronously (which
@@ -223,6 +229,7 @@ function AppRoutes() {
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />
             <FcmForegroundHandler />
+            <NotificationDeepLinkBridge />
             <Suspense fallback={null}>
             <Switch>
           <Route path="/" component={HomeRedirect} />

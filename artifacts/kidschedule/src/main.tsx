@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import "./i18n";
+import "./lib/notification-deep-link";
 
 // Boot diagnostic helpers installed by the inline <script> in index.html.
 // They write phase markers to localStorage so we can detect mid-boot crashes

@@ -1,46 +1,40 @@
 package com.amynest.app
 
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
 private const val TAG = "KidScheduleFcmService"
-private const val CHANNEL_ID = "default"
 
 /**
  * KidScheduleFcmService — handles Firebase Cloud Messaging events.
  *
- * **[onNewToken]**: Persists the fresh FCM registration token via [PushBridge]
- * and pushes the out-of-band `{ type:"token" }` event to any open WebView
- * through [PushBridge.broadcastEvent]. The backend learns about the token
- * when the web page calls `/api/push/register` after receiving the event.
+ * **[onNewToken]**: Persists the fresh FCM registration token and delivers it
+ * to any open WebView via [PushBridge.broadcastToken].
  *
  * **[onMessageReceived]**: Called when the app is in the foreground *or* when
- * FCM data-only messages arrive regardless of state. For notification messages
- * in the background, the FCM SDK displays the notification automatically using
- * the `android.notification` config sent by `sendFcmAndroidPush()` on the
- * backend. We construct our own notification here for data-only payloads and
- * for the foreground case (where the system would otherwise suppress it).
+ * FCM data-only messages arrive regardless of app state. Reads the `category`
+ * field from the FCM data payload to:
+ *   1. Select the appropriate notification channel (routine / nutrition /
+ *      parenting / learning / milestone / default).
+ *   2. Infer a smart deep-link path when the server does not supply one.
+ *   3. Set the correct priority so routine reminders ring at high importance
+ *      while engagement nudges stay quiet.
  *
- * `channelId = "default"` matches:
- *   - `AmyNestApp.createDefaultNotificationChannel()`
- *   - Backend: `sendFcmAndroidPush() → android.notification.channelId`
+ * The resulting notification tap starts [MainActivity] with:
+ *   - `deepLink`     — path to open (e.g. "/routines", "/nutrition")
+ *   - `notifCategory`— raw category string forwarded to the web page
  */
 class KidScheduleFcmService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d(TAG, "FCM registration token refreshed")
-        // Persist in SharedPreferences. PushBridge.broadcastEvent() is called
-        // inside saveToken() using the companion-object activeProxy — so if
-        // MainActivity's WebView is open the web page gets the token immediately.
         PushBridge(applicationContext).saveToken(token)
     }
 
@@ -54,35 +48,34 @@ class KidScheduleFcmService : FirebaseMessagingService() {
         val body = remoteMessage.notification?.body
             ?: remoteMessage.data["body"]
             ?: ""
-        val deepLink = remoteMessage.data["deepLink"]?.takeIf { it.isNotBlank() }
 
-        ensureNotificationChannel()
-        showNotification(title, body, deepLink)
+        val rawCategory = remoteMessage.data["category"]
+        val category = NotifCategory.from(rawCategory)
+        val categoryStr = rawCategory?.takeIf { it.isNotBlank() }
+            ?: category.name.lowercase()
+
+        val deepLink = remoteMessage.data["deepLink"]
+            ?.takeIf { it.isNotBlank() }
+            ?: category.fallbackDeepLink
+
+        Log.d(TAG, "Notification: category=$categoryStr deepLink=$deepLink channel=${category.channelId}")
+
+        showNotification(title, body, deepLink, categoryStr, category)
     }
 
     // ── Notification helpers ──────────────────────────────────────────────────
 
-    private fun ensureNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (manager.getNotificationChannel(CHANNEL_ID) != null) return
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                getString(R.string.notification_channel_name),
-                NotificationManager.IMPORTANCE_DEFAULT,
-            ).apply {
-                description = getString(R.string.notification_channel_description)
-                enableLights(true)
-                lightColor = getColor(R.color.notification_accent)
-            }
-            manager.createNotificationChannel(channel)
-        }
-    }
-
-    private fun showNotification(title: String, body: String, deepLink: String?) {
+    private fun showNotification(
+        title: String,
+        body: String,
+        deepLink: String,
+        categoryStr: String,
+        category: NotifCategory,
+    ) {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            if (deepLink != null) putExtra("deepLink", deepLink)
+            putExtra("deepLink", deepLink)
+            putExtra("notifCategory", categoryStr)
         }
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -91,7 +84,7 @@ class KidScheduleFcmService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, category.channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(getColor(R.color.notification_accent))
             .setContentTitle(title)
@@ -99,7 +92,7 @@ class KidScheduleFcmService : FirebaseMessagingService() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(category.priority)
             .build()
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

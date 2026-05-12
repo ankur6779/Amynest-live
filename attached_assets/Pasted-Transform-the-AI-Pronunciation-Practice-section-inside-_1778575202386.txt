@@ -1,0 +1,289 @@
+Transform the “AI Pronunciation Practice” section inside Amy Speech Coach into a fully interactive real-time conversational AI speech companion experience.
+
+The experience should feel like:
+- The child is talking to a real AI character
+- Amy AI is actively listening
+- Amy reacts emotionally
+- Amy speaks back naturally
+- Amy guides pronunciation like a friendly AI speech therapist
+
+The current UI feels static.
+Upgrade it into a futuristic, neon-powered, emotionally intelligent AI conversation interface.
+
+====================================================
+CORE EXPERIENCE GOAL
+====================================================
+
+The feature should feel similar to:
+- Voice conversation with ChatGPT
+- AI companion interaction
+- Real-time listening assistant
+- Interactive speech therapy coach
+
+Amy should feel ALIVE.
+
+====================================================
+1. CENTRAL LIVE AMY AI AVATAR
+====================================================
+
+Create a large animated “Amy AI” character in the center.
+
+Requirements:
+- Neon glowing circular ring around Amy
+- Pulsing ring while speaking
+- Different states:
+  - Idle
+  - Listening
+  - Thinking
+  - Speaking
+  - Celebrating
+  - Encouraging
+- Animated soundwave around the avatar
+- Glow intensity changes with voice activity
+
+States:
+Idle:
+- soft breathing glow
+
+Listening:
+- neon ring expands/reacts to mic input
+- waveform animation active
+
+Thinking:
+- rotating particles
+- subtle loading pulse
+
+Speaking:
+- mouth animation
+- wave pulses
+- AI voice indicator
+
+Celebrating:
+- stars/confetti
+- happy reaction
+
+====================================================
+2. REAL-TIME VOICE CONVERSATION FLOW
+====================================================
+
+New interaction flow:
+
+1. Amy says the word/sentence
+2. Child taps glowing mic
+3. Live recording starts
+4. Waveform reacts to child voice
+5. Amy AI enters listening mode
+6. Recording ends
+7. Amy analyzes speech
+8. Amy replies conversationally
+9. Child retries/improves
+10. Amy celebrates progress
+
+The flow must feel smooth and alive.
+
+====================================================
+3. CONVERSATIONAL AI FEEDBACK
+====================================================
+
+Amy should NEVER give robotic feedback.
+
+Instead:
+- Talk naturally
+- Encourage emotionally
+- Guide pronunciation conversationally
+
+Examples:
+
+Positive:
+- “WOW! That was amazing!”
+- “You said yellow very clearly!”
+- “Amy is proud of you!”
+
+Correction:
+- “Great try! Let’s make the ‘L’ sound together.”
+- “Try slowing down the word a little.”
+- “You’re improving already!”
+
+Encouragement:
+- “You can do this!”
+- “Let’s practice one more time together.”
+
+====================================================
+4. LIVE WAVEFORM + VOICE VISUALIZATION
+====================================================
+
+Add:
+- Real-time waveform while recording
+- Neon audio bars
+- Voice-reactive animations
+- Circular sound pulse
+- Animated mic glow
+
+Mic states:
+- inactive
+- recording
+- analyzing
+- error
+- success
+
+The interface should clearly show:
+- Amy is hearing the child
+- Audio is being processed
+
+====================================================
+5. AI CHAT-STYLE FEEDBACK CARDS
+====================================================
+
+Convert feedback into chat conversation bubbles.
+
+Layout:
+Child:
+“You said: yellow”
+
+Amy:
+“Great try! Let’s improve the L sound.”
+
+Amy Tip:
+“Place your tongue lightly behind your upper teeth.”
+
+Success:
+“Amazing! That was much clearer!”
+
+Use:
+- glowing cards
+- neon outlines
+- animated transitions
+- floating reactions
+
+====================================================
+6. ADVANCED PRACTICE EXPERIENCE
+====================================================
+
+Generate dynamic practice sessions:
+- 10–15 items per session
+- Auto next word
+- Adaptive difficulty
+- Based on weak sounds
+
+Categories:
+- Letters
+- Phonics
+- Words
+- Sentences
+- Emotions
+- Tongue exercises
+- Conversation practice
+
+Difficulty:
+- Easy
+- Medium
+- Advanced
+
+====================================================
+7. CHILD ENGAGEMENT SYSTEM
+====================================================
+
+Add:
+- Stars
+- XP
+- Streaks
+- Achievement badges
+- Daily goals
+- Speech level progression
+
+Examples:
+- “5 Day Speaking Streak!”
+- “R Sound Master!”
+- “Confidence Booster!”
+
+Add celebration animations.
+
+====================================================
+8. PREMIUM FUTURISTIC UI
+====================================================
+
+Visual Style:
+- Dark futuristic UI
+- Purple/pink/blue neon glow
+- Soft gradients
+- Glassmorphism cards
+- Floating particles
+- Ambient background glow
+
+Animations:
+- Smooth transitions
+- Framer Motion
+- Floating motion
+- Glow pulse
+- Animated borders
+
+Must feel:
+- Premium
+- Emotional
+- Interactive
+- AI-powered
+- Child friendly
+
+====================================================
+9. ELEVENLABS + AI READY ARCHITECTURE
+====================================================
+
+Prepare for:
+- ElevenLabs voice playback
+- Speech-to-text
+- Pronunciation scoring
+- AI conversational responses
+- Voice emotion detection
+
+Create reusable hooks/services:
+- useSpeechPractice()
+- analyzePronunciation()
+- generateAmyFeedback()
+- playAmyVoice()
+- detectWeakSounds()
+
+====================================================
+10. IMPORTANT UX RULES
+====================================================
+
+The feature must NEVER:
+- feel empty
+- stop responding
+- silently fail
+- look static
+
+If recognition fails:
+Amy should say:
+- “Oops! Amy didn’t hear that clearly.”
+- “Let’s try together again!”
+
+Always maintain interaction.
+
+====================================================
+11. MOBILE-FIRST PERFORMANCE
+====================================================
+
+Optimize for:
+- Android
+- iOS
+- PWA
+
+Requirements:
+- lightweight animations
+- smooth rendering
+- responsive layouts
+- reusable React components
+
+====================================================
+12. FINAL EXPERIENCE TARGET
+====================================================
+
+The final result should feel like:
+“A futuristic AI speech companion for children”
+
+NOT:
+- a static pronunciation page
+- a basic speech recorder
+
+The child should emotionally feel:
+“Amy is listening to me, talking to me, helping me, and celebrating my progress.”

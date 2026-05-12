@@ -1,36 +1,30 @@
 package com.amynest.app
 
 import android.app.Application
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.os.Build
 import android.util.Log
 import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
 
-private const val CHANNEL_ID = "default"
 private const val TAG = "AmyNestApp"
 
 /**
- * Application class — creates the default notification channel at startup so
- * FCM messages received while the app is in the foreground (and shown by
- * [KidScheduleFcmService]) can post to it immediately without waiting for the
- * first [MainActivity] launch.
+ * Application class — creates all notification channels at startup so FCM
+ * messages can post immediately regardless of when [MainActivity] first opens.
  *
- * Also initialises RevenueCat (Google Play Billing) so the [BillingBridge]
- * can serve `window.AmyNestBillingNative` calls from the WebView page.
+ * Also initialises RevenueCat (Google Play Billing) so [BillingBridge] can
+ * serve `window.AmyNestBillingNative` calls from the WebView.
  *
- * channelId "default" matches what the backend sends in
- * `sendFcmAndroidPush()` → `android.notification.channelId`.
+ * Channels are created via [NotifCategory.createAll] which covers all
+ * server-side categories (routine, nutrition, parenting, learning, milestone)
+ * plus the legacy "default" channel for backward compat.
  */
 class AmyNestApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
         initRevenueCat()
-        createDefaultNotificationChannel()
+        NotifCategory.createAll(this)
     }
 
     private fun initRevenueCat() {
@@ -42,23 +36,6 @@ class AmyNestApp : Application() {
             Log.d(TAG, "RevenueCat initialised")
         } catch (t: Throwable) {
             Log.e(TAG, "RevenueCat init failed", t)
-        }
-    }
-
-    private fun createDefaultNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (manager.getNotificationChannel(CHANNEL_ID) != null) return
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                getString(R.string.notification_channel_name),
-                NotificationManager.IMPORTANCE_DEFAULT,
-            ).apply {
-                description = getString(R.string.notification_channel_description)
-                enableLights(true)
-                lightColor = getColor(R.color.notification_accent)
-            }
-            manager.createNotificationChannel(channel)
         }
     }
 }
