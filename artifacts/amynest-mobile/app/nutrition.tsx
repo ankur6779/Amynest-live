@@ -16,6 +16,7 @@ import {
 } from "@/lib/nutrition-data";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useTranslation } from "react-i18next";
+import { useNutritionRegion, RegionalFoodSource } from "@/lib/nutrition-region";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -105,9 +106,11 @@ function NutrientDetail({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const { config, getRegional, localizeNote } = useNutritionRegion();
   const nc = NUTRIENT_COLORS[nutrient.id] ?? { bg: palette.gray50, text: palette.gray700, border: palette.gray200 };
   const need = nutrient.dailyNeeds[ageGroupId];
   const ag = AGE_GROUPS.find(a => a.id === ageGroupId)!;
+  const displaySources = (getRegional(nutrient.id) ?? nutrient.sources) as RegionalFoodSource[];
 
   return (
     <View style={styles.detailContainer}>
@@ -131,7 +134,7 @@ function NutrientDetail({
             <Text style={[{ fontSize: 28, fontWeight: "900", color: nc.text }]}>
               {need.amount} <Text style={{ fontSize: 16 }}>{need.unit}</Text>
             </Text>
-            {need.note && <Text style={{ fontSize: 11, color: palette.slate500, marginTop: 4 }}>{need.note}</Text>}
+            {need.note && <Text style={{ fontSize: 11, color: palette.slate500, marginTop: 4 }}>{localizeNote(need.note)}</Text>}
           </View>
 
           {/* Benefits */}
@@ -152,9 +155,9 @@ function NutrientDetail({
 
           {/* Food Sources */}
           <View>
-            <Text style={styles.sectionTitle}>{t("screens.nutrition.sources_title")}</Text>
+            <Text style={styles.sectionTitle}>{config.foodSourceTitle}</Text>
             <View style={{ gap: 8 }}>
-              {nutrient.sources.map((src, i) => (
+              {displaySources.map((src, i) => (
                 <View key={i} style={styles.sourceRow}>
                   <Text style={{ fontSize: 22, marginRight: 10 }}>{src.emoji}</Text>
                   <View style={{ flex: 1 }}>
@@ -172,10 +175,14 @@ function NutrientDetail({
                     </View>
                     <Text style={{ fontSize: 11, color: palette.slate500 }}>{src.serving}</Text>
                     <Text style={{ fontSize: 11, color: palette.slate600, fontWeight: "600" }}>→ {src.amount}</Text>
+                    {"trustTag" in src && src.trustTag ? (
+                      <Text style={{ fontSize: 10, color: brand.violet600, fontWeight: "600", marginTop: 2 }}>{src.trustTag}</Text>
+                    ) : null}
                   </View>
                 </View>
               ))}
             </View>
+            <Text style={{ fontSize: 10, color: palette.slate400, marginTop: 6 }}>{config.flag} {config.trustLabel}</Text>
           </View>
 
           {/* Deficiency */}
@@ -190,7 +197,7 @@ function NutrientDetail({
 
           {/* Source */}
           <Text style={{ fontSize: 10, color: palette.slate400, textAlign: "center" }}>
-            {t("screens.nutrition.source_footer")}
+            {config.sourceRef}
           </Text>
         </View>
       </ScrollView>

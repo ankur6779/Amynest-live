@@ -4197,10 +4197,10 @@
     }
   },
   "nutrition_hub": {
-    "badge": "Science-backed · WHO / ICMR",
+    "badge": "Science-backed · WHO · Global",
     "title": "Nutrition Hub",
-    "subtitle": "Poshan Ka Ghar",
-    "description": "Age-specific nutrition science for your whole family — backed by ICMR-NIN & WHO guidelines.",
+    "subtitle": "Smart Family Nutrition",
+    "description": "Age-specific nutrition science for your whole family — backed by global paediatric nutrition research & WHO guidelines.",
     "day": "day",
     "veg": "Veg",
     "non_veg": "Non-Veg",
@@ -4230,9 +4230,9 @@
     "dialog": {
       "daily_need": "Daily Need for {{age}}",
       "benefits": "Benefits",
-      "food_sources": "Indian Food Sources",
+      "food_sources": "Food Sources",
       "deficiency_signs": "Deficiency Signs",
-      "source_ref": "Source: ICMR-NIN Nutrient Requirements for Indians (2020) & WHO Guidelines"
+      "source_ref": "Source: WHO Guidelines & regional paediatric nutrition standards"
     },
     "ai_plan": {
       "title": "Your Personalized Meal Plan",
@@ -4252,7 +4252,7 @@
     },
     "nutrients": {
       "title": "Nutrient Library",
-      "subtitle": "Tap any nutrient to see benefits, Indian food sources, and daily needs for {{age}}."
+      "subtitle": "Tap any nutrient to see benefits, food sources for your region, and daily needs for {{age}}."
     },
     "breastfeeding": {
       "title": "Exclusive breastfeeding recommended (0–6 months)",
@@ -4260,7 +4260,7 @@
     },
     "family": {
       "page_title": "Family Mode",
-      "page_subtitle": "Same Indian meal — different portions for each family member by age. Cook once, serve smart!",
+      "page_subtitle": "Same meal — different portions for each family member by age. Cook once, serve smart!",
       "section_title": "Family Mode — One Meal, Different Portions",
       "section_desc": "Cook one meal for the whole family and serve age-appropriate portions. No need for separate cooking!",
       "food_item": "Food Item",
@@ -4292,17 +4292,17 @@
       "critical": "Critical 🚨",
       "checklist": {
         "breakfast": "Had a wholesome breakfast today",
-        "protein": "Ate a protein source (dal / egg / paneer / meat)",
+        "protein": "Ate a protein source (eggs / legumes / meat / dairy)",
         "dairy": "Consumed dairy or calcium source",
-        "greens": "Ate green leafy vegetables (palak / methi / etc)",
+        "greens": "Ate green leafy vegetables (spinach / kale / etc)",
         "fruit": "Had at least 1 fruit today",
         "water": "Drank adequate water / fluids",
         "no_junk": "Avoided junk food / packaged snacks",
         "wholegrains": "Whole grains instead of refined (atta roti vs maida)"
       },
       "ai_tip_title": "Amy AI Nutrition Tip",
-      "ai_tip_low": "Today's nutrition needs a boost! Try adding dal at lunch, a fruit snack, and a glass of milk to quickly improve your score.",
-      "ai_tip_mid": "You're on the right track! Make sure to include green leafy vegetables — palak, methi, or drumstick leaves are excellent.",
+      "ai_tip_low": "Today's nutrition needs a boost! Try adding a protein source at lunch, a fruit snack, and a glass of milk to quickly improve your score.",
+      "ai_tip_mid": "You're on the right track! Make sure to include green leafy vegetables — spinach, kale, or broccoli are excellent choices.",
       "ai_tip_high": "Almost there! Swap refined snacks for a handful of roasted chana or nuts to get that final boost.",
       "outstanding": "Outstanding nutrition day!",
       "keep_it_up": "Keep it up tomorrow too. Consistency is the key to health."

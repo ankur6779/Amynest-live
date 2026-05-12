@@ -765,6 +765,12 @@ export const REFERENCES = [
   "WHO (2022). Infant and young child feeding. World Health Organization.",
   "IAP (2022). Revised IAP guidelines on Vitamin D supplementation.",
   "National Family Health Survey – 5 (NFHS-5, 2020–21). Ministry of Health & Family Welfare, Government of India.",
+  "USDA Dietary Guidelines for Americans (2020–2025). U.S. Department of Agriculture & U.S. Department of Health and Human Services.",
+  "AAP (2022). Pediatric Nutrition: Policy of the American Academy of Pediatrics.",
+  "NHS (2023). Vitamins and nutrition in pregnancy / infant feeding. NHS England.",
+  "NHMRC (2013, revised 2024). Australian Dietary Guidelines. National Health and Medical Research Council.",
+  "Health Canada (2019). Canada's Food Guide. Government of Canada.",
+  "NZ Ministry of Health (2020). Eating and Activity Guidelines for New Zealand Adults.",
   "Linus Pauling Institute. Micronutrient Information Center. Oregon State University.",
 ];
 

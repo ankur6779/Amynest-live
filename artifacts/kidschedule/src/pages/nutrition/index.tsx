@@ -20,6 +20,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import {
+  useNutritionRegion, RegionConfig, RegionalFoodSource,
+} from "@/lib/nutrition-region";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = "nutrients" | "meals" | "family" | "score";
@@ -30,17 +33,21 @@ function scoreBarColor(_s: number) { return "bg-primary"; }
 
 // ─── NutrientDetailDialog ────────────────────────────────────────────────────
 function NutrientDetailDialog({
-  nutrient, ageGroupId, open, onClose,
+  nutrient, ageGroupId, open, onClose, regionConfig, regionalSources, localizeNote,
 }: {
   nutrient: Nutrient | null;
   ageGroupId: AgeGroupId;
   open: boolean;
   onClose: () => void;
+  regionConfig: RegionConfig;
+  regionalSources: RegionalFoodSource[] | null;
+  localizeNote: (note?: string) => string | undefined;
 }) {
   const { t } = useTranslation();
   if (!nutrient) return null;
   const need = nutrient.dailyNeeds[ageGroupId];
   const ageGroup = AGE_GROUPS.find(a => a.id === ageGroupId)!;
+  const displaySources = regionalSources ?? nutrient.sources;
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -61,7 +68,7 @@ function NutrientDetailDialog({
             <p className={cn("text-2xl font-bold", nutrient.textClass)}>
               {need.amount} <span className="text-base font-medium">{need.unit}</span>
             </p>
-            {need.note && <p className="text-xs text-muted-foreground mt-1">{need.note}</p>}
+            {need.note && <p className="text-xs text-muted-foreground mt-1">{localizeNote(need.note)}</p>}
           </div>
         </div>
 
@@ -83,10 +90,10 @@ function NutrientDetailDialog({
         <div>
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
             <Salad className="h-4 w-4 text-foreground" />
-            {t("nutrition_hub.dialog.food_sources")}
+            {regionConfig.foodSourceTitle}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {nutrient.sources.map((src, i) => (
+            {displaySources.map((src, i) => (
               <div key={i} className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
                 <span className="text-xl">{src.emoji}</span>
                 <div className="flex-1 min-w-0">
@@ -97,10 +104,17 @@ function NutrientDetailDialog({
                       : <Drumstick className="h-3 w-3 text-foreground shrink-0" />}
                   </div>
                   <p className="text-xs text-muted-foreground">{src.serving} → <strong>{src.amount}</strong></p>
+                  {"trustTag" in src && (src as RegionalFoodSource).trustTag && (
+                    <p className="text-xs text-primary font-medium mt-0.5">{(src as RegionalFoodSource).trustTag}</p>
+                  )}
                 </div>
               </div>
             ))}
           </div>
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+            <Globe className="h-3 w-3" />
+            {regionConfig.flag} {regionConfig.trustLabel}
+          </p>
         </div>
 
         <div>
@@ -120,7 +134,7 @@ function NutrientDetailDialog({
 
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <BookOpen className="h-3 w-3" />
-          {t("nutrition_hub.dialog.source_ref")}
+          {regionConfig.sourceRef}
         </p>
       </DialogContent>
     </Dialog>
@@ -782,6 +796,7 @@ function NutritionScoreSection({ ageGroupId }: { ageGroupId: AgeGroupId }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function NutritionHubPage() {
   const { t } = useTranslation();
+  const { config: regionConfig, getRegional, localizeNote } = useNutritionRegion();
   const authFetch = useAuthFetch();
   const [activeAgeGroupId, setActiveAgeGroupId] = useState<AgeGroupId>("toddler_1_3");
   const [activeTab, setActiveTab] = useState<Tab>("nutrients");
@@ -822,7 +837,7 @@ export default function NutritionHubPage() {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-3xl">🥗</span>
             <Badge className="bg-card text-primary-foreground border-border text-xs">
-              {t("nutrition_hub.badge")}
+              {regionConfig.guidelineBadge}
             </Badge>
           </div>
           <h1 className="text-3xl font-black tracking-tight mt-2">{t("nutrition_hub.title")}</h1>
@@ -984,6 +999,9 @@ export default function NutritionHubPage() {
         ageGroupId={activeAgeGroupId}
         open={dialogOpen}
         onClose={() => { setDialogOpen(false); setSelectedNutrient(null); }}
+        regionConfig={regionConfig}
+        regionalSources={selectedNutrient ? getRegional(selectedNutrient.id) : null}
+        localizeNote={localizeNote}
       />
     </div>
   );
