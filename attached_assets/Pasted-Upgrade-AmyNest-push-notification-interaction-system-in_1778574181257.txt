@@ -1,0 +1,211 @@
+Upgrade AmyNest push notification interaction system into a proper deep-link enabled smart notification experience.
+
+CURRENT ISSUE:
+Notifications are delivered correctly, but tapping them does nothing meaningful.
+
+GOAL:
+When user taps a notification:
+
+- app should open instantly
+- user should land on the relevant screen
+- interaction should feel intelligent and premium
+
+---
+
+1. BASIC REQUIRED BEHAVIOR
+
+---
+
+If app is:
+
+- closed
+- backgrounded
+- minimized
+
+Then tapping notification must:
+
+- open AmyNest app
+- remove notification from tray
+- navigate properly
+
+---
+
+2. SMART DEEP LINK NAVIGATION
+
+---
+
+Different notification types should open different screens.
+
+---
+
+ROUTINE NOTIFICATIONS
+
+Examples:
+“Time for bedtime routine”
+“Lunch reminder”
+“School prep reminder”
+
+Open:
+Routines screen → relevant child → relevant routine section
+
+---
+
+ASK AMY NOTIFICATIONS
+
+Examples:
+“AMY has a parenting suggestion”
+“Daily parenting insight ready”
+
+Open:
+Amy Coach / Ask AMY screen
+
+---
+
+PARENT HUB NOTIFICATIONS
+
+Examples:
+“New phonics activity available”
+“New Fun Sheet added”
+
+Open:
+Parent Hub → correct content section
+
+---
+
+SPEECH / PHONICS
+
+Open:
+Speech Coach or Phonics Learning section
+
+---
+
+MEAL / NUTRITION
+
+Open:
+Nutrition Hub or Meal Planner
+
+---
+
+SYSTEM ALERTS
+
+Examples:
+
+- AQI warning
+- hydration reminder
+- heat alert
+
+Open:
+Dashboard hero section or wellness insights screen
+
+---
+
+3. ADD SMART NOTIFICATION TYPES
+
+---
+
+Create categories:
+
+- routine
+- learning
+- parenting
+- wellness
+- reminders
+- milestones
+- Ask AMY
+- nutrition
+- speech coach
+
+---
+
+4. PREMIUM UX
+
+---
+
+When app opens from notification:
+
+- smooth transition animation
+- highlight opened section briefly
+- show tiny “Opened from notification” toast
+
+---
+
+5. OPTIONAL QUICK ACTIONS
+
+---
+
+Support notification action buttons later.
+
+Examples:
+
+- “Open Routine”
+- “Ask AMY”
+- “Mark Done”
+- “View Activity”
+
+---
+
+6. SAFE FALLBACK
+
+---
+
+If deep link fails:
+open Dashboard safely.
+
+Never leave user on blank screen.
+
+---
+
+7. TRACK ANALYTICS
+
+---
+
+Track:
+
+- notification delivered
+- opened
+- ignored
+- clicked category
+
+Useful for engagement optimization later.
+
+---
+
+8. APP STATE HANDLING
+
+---
+
+Handle all cases:
+
+- cold start
+- app in background
+- app already open
+
+Navigation must work correctly in all cases.
+
+---
+
+9. FINAL EXPERIENCE GOAL
+
+---
+
+Notifications should feel:
+
+- actionable
+- intelligent
+- contextual
+- premium
+
+NOT:
+“dead alerts that do nothing.”
+
+---
+
+DELIVERABLE
+
+- working deep link notification system
+- category-based navigation
+- proper app opening behavior
+- smooth transitions
+- analytics tracking
+- fallback handling
+- scalable notification architecture
