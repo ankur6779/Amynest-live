@@ -200,6 +200,24 @@ function getHeroTags(
   return tags.slice(0, 3);
 }
 
+// Country-code → full display name (used when GPS is not granted)
+const CC_TO_COUNTRY: Record<string, string> = {
+  IN: "India", US: "United States", GB: "United Kingdom", UK: "United Kingdom",
+  AE: "United Arab Emirates", SG: "Singapore", AU: "Australia", CA: "Canada",
+  NZ: "New Zealand", ZA: "South Africa", MY: "Malaysia", PH: "Philippines",
+  NG: "Nigeria", KE: "Kenya", PK: "Pakistan", BD: "Bangladesh",
+};
+
+/** "Delhi, IN" → "India" | "Singapore" → "Singapore" | unknown → null */
+function extractCountryFromCtxLabel(label: string): string | null {
+  const parts = label.split(",");
+  const cc = parts[parts.length - 1]?.trim().toUpperCase();
+  if (!cc) return null;
+  // Single-word label like "Singapore" — return as-is
+  if (parts.length === 1) return cc.charAt(0) + cc.slice(1).toLowerCase();
+  return CC_TO_COUNTRY[cc] ?? null;
+}
+
 function SmartHeroSection({
   displayName, hasChildren, lastUpdated, childProfiles,
 }: {
@@ -290,11 +308,15 @@ function SmartHeroSection({
     retry: false,
   });
 
-  // Resolved display label — prefer GPS reverse-geocode, fall back to ctx label (skip generic "User location")
+  // Resolved display label:
+  //   GPS granted  → reverse-geocoded "City, State" (e.g. "Mumbai, Maharashtra")
+  //   GPS denied   → just country name (e.g. "India") extracted from ctx.location.label
   const ctxLocationLabel = ctx?.location?.label;
-  const locationLabel: string | null =
-    reverseGeoLabel ??
-    (ctxLocationLabel && ctxLocationLabel !== "User location" ? ctxLocationLabel : null);
+  const fallbackCountry =
+    ctxLocationLabel && ctxLocationLabel !== "User location"
+      ? extractCountryFromCtxLabel(ctxLocationLabel)
+      : null;
+  const locationLabel: string | null = reverseGeoLabel ?? fallbackCountry;
 
   const grad    = getHeroGradient(weatherCondition);
   const aqiMeta = AQI_META[aqiBucket] ?? AQI_META.moderate;
