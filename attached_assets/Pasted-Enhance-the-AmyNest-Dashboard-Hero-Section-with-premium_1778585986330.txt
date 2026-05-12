@@ -1,0 +1,267 @@
+Enhance the AmyNest Dashboard Hero Section with premium weather-reactive ambient animations while keeping the current layout, colors, and UI structure intact.
+
+GOAL:
+Make the hero section feel:
+
+- alive
+- cinematic
+- intelligent
+- calming
+- premium
+
+The animation should feel subtle and magical — NOT distracting or cartoonish.
+
+IMPORTANT:
+Keep current hero card design exactly as it is.
+Only add lightweight ambient animations based on:
+
+- weather
+- time of day
+- AQI
+- environment conditions
+
+Animations must remain:
+
+- mobile optimized
+- battery efficient
+- smooth at 60fps if possible
+
+---
+
+1. WEATHER-REACTIVE AMBIENT ANIMATIONS
+
+---
+
+Add dynamic ambient effects inside the hero section only.
+
+---
+
+SUNNY WEATHER
+
+Show:
+
+- soft warm glow
+- floating sunlight particles
+- subtle light rays
+- gentle shimmer effect
+
+Mood:
+warm and energetic
+
+---
+
+RAINY WEATHER
+
+Show:
+
+- soft animated rain drops
+- subtle rain streaks on hero background
+- tiny mist/fog overlay
+- optional lightning flash during storms
+
+Mood:
+cozy and calming
+
+---
+
+CLOUDY WEATHER
+
+Show:
+
+- slow floating clouds
+- soft drifting haze
+- ambient motion particles
+
+Mood:
+soft and relaxed
+
+---
+
+SNOW WEATHER
+
+Show:
+
+- slow snow particles
+- subtle frosted glow
+- cold bluish ambient tint
+
+Mood:
+peaceful and wintery
+
+---
+
+WINDY WEATHER
+
+Show:
+
+- drifting particles
+- soft moving airflow lines
+- floating leaves occasionally
+
+---
+
+2. DAY / NIGHT MODE ANIMATIONS
+
+---
+
+---
+
+DAYTIME
+
+Show:
+
+- sunlight gradient
+- floating warm particles
+- subtle bright glow
+
+---
+
+NIGHT MODE
+
+Show:
+
+- glowing moon
+- tiny twinkling stars
+- slow ambient shimmer
+- neon-purple night atmosphere
+
+Moon should feel elegant and premium.
+
+---
+
+3. AQI-BASED ENVIRONMENT EFFECTS
+
+---
+
+If AQI poor:
+
+- slightly muted atmosphere
+- light haze/fog overlay
+- soft warning glow
+
+If AQI excellent:
+
+- cleaner vibrant atmosphere
+- brighter particles
+- fresh environment feel
+
+---
+
+4. CHILD WELLNESS REACTIVE EFFECTS
+
+---
+
+When important wellness alert appears:
+Examples:
+
+- “Hydration Day”
+- “High Pollution Alert”
+
+Add tiny matching animation:
+
+Hydration:
+
+- floating water droplet shimmer
+
+High pollution:
+
+- subtle warning pulse
+
+Cold weather:
+
+- tiny frosty effect
+
+---
+
+5. MICRO INTERACTIONS
+
+---
+
+Add:
+
+- slow breathing glow on hero card
+- animated AQI pulse
+- weather icon slight movement
+- smooth transitions between weather states
+
+---
+
+6. PARALLAX DEPTH EFFECT
+
+---
+
+Add subtle depth movement while scrolling or tilting device:
+
+- background particles move slower
+- foreground UI stays stable
+
+Keep extremely subtle.
+
+---
+
+7. PERFORMANCE RULES
+
+---
+
+Animations must:
+
+- use GPU-friendly transforms
+- avoid heavy CPU rendering
+- pause/reduce when app inactive
+- stay smooth on mid-range Android devices
+
+Use lightweight particles/canvas/Lottie if needed.
+
+---
+
+8. ACCESSIBILITY
+
+---
+
+Respect reduced motion settings:
+If user disables animations:
+
+- show static premium version
+
+---
+
+9. DO NOT OVERDO
+
+---
+
+Avoid:
+
+- childish effects
+- excessive particles
+- gaming-style animation
+- distracting movement
+
+This is a premium parenting app.
+
+---
+
+10. FINAL EXPERIENCE GOAL
+
+---
+
+The hero section should feel like:
+“A living AI parenting environment dashboard.”
+
+Parents should immediately feel:
+
+- calm
+- informed
+- emotionally connected
+- impressed
+
+---
+
+DELIVERABLE
+
+- weather-reactive animations
+- day/night ambient effects
+- moon/stars glow at night
+- rain/snow/cloud ambient visuals
+- AQI reactive atmosphere
+- premium subtle motion system
+- optimized mobile performance
