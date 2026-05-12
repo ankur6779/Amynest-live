@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, Play, RefreshCw, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStoriesData, type StoryDto } from "@/hooks/use-stories-data";
@@ -96,6 +97,14 @@ export function StoryHub({
     setAutoAdvanceIn(null);
     setShowLoopBanner(false);
   }, [childId]);
+
+  // ── Body scroll lock while full-screen player is open ──
+  useEffect(() => {
+    if (!isPlaying) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [isPlaying]);
 
   // ── Countdown management ──
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -203,13 +212,42 @@ export function StoryHub({
       </div>;
   }
 
-  // ── Active player ──
+  // ── Active player — portal-based full-screen overlay ──
   if (isPlaying && currentStory) {
-    return <div className="space-y-0" data-testid="story-hub">
-        {/* Invisible preload element for the next story */}
+    return <>
+        {/* Invisible preload element for the next story (stays in the regular tree) */}
         {nextStory && nextStory.id !== currentStory.id && <video key={`preload-${nextStory.id}`} src={nextStory.streamUrl} preload="auto" className="hidden" aria-hidden="true" muted />}
-        <StoryFlowPlayer story={currentStory} storyIndex={flowIndex} totalStories={stories.length} autoAdvanceIn={autoAdvanceIn} showLoopBanner={showLoopBanner} replaySignal={replaySignal} onNext={handleNext} onReplay={handleReplay} onClose={handleClose} onEnded={startCountdown} onError={handleError} onProgress={recordProgress} />
-      </div>;
+        {createPortal(
+          <div
+            data-testid="story-hub"
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 9999,
+              background: "#000",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <StoryFlowPlayer
+              story={currentStory}
+              storyIndex={flowIndex}
+              totalStories={stories.length}
+              autoAdvanceIn={autoAdvanceIn}
+              showLoopBanner={showLoopBanner}
+              replaySignal={replaySignal}
+              fullScreen
+              onNext={handleNext}
+              onReplay={handleReplay}
+              onClose={handleClose}
+              onEnded={startCountdown}
+              onError={handleError}
+              onProgress={recordProgress}
+            />
+          </div>,
+          document.body
+        )}
+      </>;
   }
 
   // ── Hero card (before / after playing) ──

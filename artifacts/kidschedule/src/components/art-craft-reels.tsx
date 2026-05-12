@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 interface Video {
   id: string;
@@ -554,6 +555,14 @@ export function ArtCraftReels() {
     if (hasMore && !loadingRef.current) loadMore(offset);
   }, [hasMore, offset, loadMore]);
 
+  // Lock body scroll while overlay is open
+  useEffect(() => {
+    if (overlayIndex === null) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [overlayIndex]);
+
   // Loading state
   if (loading) {
     return <div style={{
@@ -627,8 +636,12 @@ export function ArtCraftReels() {
         @keyframes ac-spin { to { transform: rotate(360deg); } }
       `}</style>
 
-      {/* Overlay player */}
-      {overlayIndex !== null && <ReelOverlay videos={videos} initialIndex={overlayIndex} onClose={() => setOverlayIndex(null)} onLoadMore={handleLoadMore} loadingMore={loadingMore} hasMore={hasMore} />}
+      {/* Overlay player — rendered via portal so position:fixed covers the full viewport
+          even when a parent has overflow/transform creating a stacking context */}
+      {overlayIndex !== null && createPortal(
+        <ReelOverlay videos={videos} initialIndex={overlayIndex} onClose={() => setOverlayIndex(null)} onLoadMore={handleLoadMore} loadingMore={loadingMore} hasMore={hasMore} />,
+        document.body
+      )}
 
       {/* Grid header */}
       <p style={{

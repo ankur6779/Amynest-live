@@ -13,6 +13,8 @@ interface StoryFlowPlayerProps {
   showLoopBanner: boolean;
   /** Increment to seek the current video back to 0 and replay. */
   replaySignal: number;
+  /** When true the player fills the full screen (used inside a portal overlay). */
+  fullScreen?: boolean;
   onNext: () => void;
   onReplay: () => void;
   onClose: () => void;
@@ -31,6 +33,7 @@ export function StoryFlowPlayer({
   autoAdvanceIn,
   showLoopBanner,
   replaySignal,
+  fullScreen = false,
   onNext,
   onReplay,
   onClose,
@@ -114,7 +117,14 @@ export function StoryFlowPlayer({
       v.removeEventListener("error", handleError);
     };
   }, [story.id, onProgress, onEnded, onError]);
-  return <div data-on-dark className="relative overflow-hidden rounded-2xl bg-black shadow-2xl shadow" data-testid={`story-flow-player-${story.id}`}>
+  const rootCls = fullScreen
+    ? "relative flex flex-col bg-black w-full h-full"
+    : "relative overflow-hidden rounded-2xl bg-black shadow-2xl shadow";
+  const videoCls = fullScreen
+    ? "w-full flex-1 bg-black object-contain"
+    : "aspect-video w-full bg-black";
+
+  return <div data-on-dark className={rootCls} data-testid={`story-flow-player-${story.id}`}>
       {/* Top bar: progress dots + close */}
       <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 py-3">
         <div className="flex items-center gap-2">
@@ -138,7 +148,7 @@ export function StoryFlowPlayer({
           <AlertCircle className="h-10 w-10 text-primary" />
           <p className="text-sm font-semibold text-white">{t("components.story_player.couldn_t_load_this_story")}</p>
           <p className="text-xs text-white/50">{t("components.story_player.skipping_to_next")}</p>
-        </div> : <video data-on-dark key={story.id} ref={videoRef} src={story.streamUrl} controls autoPlay playsInline className="aspect-video w-full bg-black" />}
+        </div> : <video data-on-dark key={story.id} ref={videoRef} src={story.streamUrl} controls autoPlay playsInline className={videoCls} />}
 
       {/* Auto-advance countdown overlay */}
       {autoAdvanceIn !== null && !showLoopBanner && <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/75 backdrop-blur-sm">
