@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import {
   ChevronLeft,
   Mic,
-  MicOff,
   BookOpen,
   Gamepad2,
   Sparkles,
@@ -14,12 +13,10 @@ import {
   Stethoscope,
   Volume2,
   CheckCircle2,
-  XCircle,
   AlertTriangle,
   HelpCircle,
   Star,
   Lock,
-  Loader2,
 } from "lucide-react";
 import {
   useListChildren,
@@ -44,8 +41,13 @@ import {
   type SpeechAgeBand,
   type TranscriptFeedback,
   type PronouncePrompt,
-  type PronouncePromptDifficulty,
 } from "@workspace/speech-coach";
+import {
+  type SessionPhase,
+  type PromptPhase,
+  type SessionDifficulty,
+  PronunciationCompanion,
+} from "./pronunciation-companion";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,13 +64,6 @@ type AnyChild = {
   age: number;
   ageMonths?: number | null;
 };
-
-const PROMPT_TABS: readonly SpeechPromptKind[] = [
-  "letter",
-  "phonic",
-  "word",
-  "sentence",
-] as const;
 
 const BAND_TABS: readonly { band: SpeechAgeBand; key: string }[] = [
   { band: "1y", key: "1y" },
@@ -425,39 +420,7 @@ function MilestonesSection({ child }: { child: AnyChild }) {
 
 // ─── 3. AI Pronunciation Practice ────────────────────────────────────────────
 
-type SessionPhase = "setup" | "practice" | "done";
-type PromptPhase = "idle" | "heard" | "recording" | "analyzing" | "result";
-type SessionDifficulty = PronouncePromptDifficulty;
-
-const DIFFICULTY_TABS: readonly SessionDifficulty[] = ["easy", "medium", "advanced"] as const;
 const SESSION_SIZE = 10;
-
-const ENCOURAGEMENT: Record<TranscriptFeedback, string[]> = {
-  great: [
-    "Amazing job! Amy is so proud of you!",
-    "You said it perfectly!",
-    "Your sound is so strong!",
-    "Fantastic speaking! Keep it up!",
-    "Wonderful — that was crystal clear!",
-  ],
-  close: [
-    "So close! Try saying it a little slower.",
-    "Great effort! Say each sound one at a time.",
-    "Almost there — one more try!",
-    "Lovely try! Your tongue almost got it.",
-  ],
-  try_again: [
-    "Let's try again together!",
-    "Keep going — you're getting better!",
-    "Practice makes perfect — give it another go!",
-    "Every try makes you stronger!",
-  ],
-};
-
-function pickEncouragement(feedback: TranscriptFeedback, score: number): string {
-  const list = ENCOURAGEMENT[feedback];
-  return list[Math.floor((score / 101) * list.length)] ?? list[0];
-}
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
   const out = [...arr];
@@ -585,398 +548,30 @@ function PronunciationSection({ child }: { child: AnyChild }) {
       icon={<Mic className="h-5 w-5" />}
     >
       {({ onAction }) => (
-        <div className="space-y-4">
-
-          {/* ── Setup / session header ── */}
-          <div className="space-y-3">
-            {/* Difficulty tabs */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
-                {t("screens.speech_coach.pronounce.difficulty.label")}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {DIFFICULTY_TABS.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    disabled={sessionPhase === "practice"}
-                    onClick={() => setDifficulty(d)}
-                    data-testid={`pronounce-difficulty-${d}`}
-                    className={[
-                      "px-3 py-1 rounded-full text-xs font-bold border transition-colors disabled:opacity-40",
-                      difficulty === d
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-muted-foreground border-border hover:border-primary/50",
-                    ].join(" ")}
-                  >
-                    {t(`screens.speech_coach.pronounce.difficulty.${d}`)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Category tabs */}
-            <div className="flex flex-wrap gap-1.5">
-              {PROMPT_TABS.map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  disabled={sessionPhase === "practice"}
-                  onClick={() => setKind(k)}
-                  data-testid={`pronounce-tab-${k}`}
-                  className={[
-                    "px-3 py-1 rounded-full text-xs font-bold border transition-colors disabled:opacity-40",
-                    kind === k
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card text-muted-foreground border-border hover:border-primary/50",
-                  ].join(" ")}
-                >
-                  {t(`screens.speech_coach.pronounce.tab.${k}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ── SETUP phase ── */}
-          {sessionPhase === "setup" && (
-            <div className="rounded-2xl border border-border bg-muted p-4 text-center space-y-3">
-              <div className="text-3xl" aria-hidden>🎙️</div>
-              <p className="text-sm font-semibold text-foreground">
-                {t("screens.speech_coach.pronounce.difficulty." + difficulty)}{" "}
-                {t(`screens.speech_coach.pronounce.tab.${kind}`)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t("screens.speech_coach.pronounce.session.session_size", { count: sessionSize })}
-                {" · "}~{Math.ceil(sessionSize * 0.5)} min
-              </p>
-              {pool.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {t("screens.speech_coach.pronounce.session.no_prompts")}
-                </p>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={() => { onAction(); startSession(); }}
-                  data-testid="pronounce-start-session"
-                >
-                  <Mic className="h-4 w-4" />
-                  {t("screens.speech_coach.pronounce.session.start_cta")}
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* ── PRACTICE phase ── */}
-          {sessionPhase === "practice" && currentItem && (
-            <div className="space-y-3">
-              {/* Progress bar */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground font-bold">
-                  <span>{t("screens.speech_coach.pronounce.session.progress", { done: sessionIdx + 1, total: sessionItems.length })}</span>
-                  <button
-                    type="button"
-                    onClick={handleNewSession}
-                    className="text-primary hover:underline text-[11px]"
-                    data-testid="pronounce-exit-session"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${((sessionIdx) / sessionItems.length) * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Main prompt card */}
-              <div
-                className={[
-                  "rounded-2xl border p-5 text-center space-y-2 transition-all",
-                  promptPhase === "recording"
-                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                    : promptPhase === "result" && currentResult?.feedback === "great"
-                      ? "border-emerald-500/50 bg-emerald-500/5" // audit-ok: semantic success session card
-                      : "border-border bg-card",
-                ].join(" ")}
-                data-testid="pronounce-prompt-card"
-              >
-                <span className="block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {t(`screens.speech_coach.pronounce.tab.${currentItem.kind}`)}
-                </span>
-                <span className="block text-4xl font-extrabold text-foreground tracking-tight leading-none">
-                  {currentItem.text}
-                </span>
-
-                {/* Waveform */}
-                {(promptPhase === "recording") && (
-                  <div
-                    className="flex items-end justify-center gap-0.5 h-8 pt-1"
-                    aria-hidden
-                    data-testid="pronounce-waveform"
-                  >
-                    {[35, 65, 90, 55, 80, 45, 85, 60, 75, 40, 70, 50].map((h, i) => (
-                      <div
-                        key={i}
-                        className="w-1.5 rounded-full bg-primary animate-bounce"
-                        style={{
-                          height: `${h}%`,
-                          animationDelay: `${i * 60}ms`,
-                          animationDuration: `${560 + (i % 4) * 80}ms`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Analyzing */}
-                {(stt.transcribing || promptPhase === "analyzing") && (
-                  <p className="text-xs font-bold text-primary flex items-center justify-center gap-1.5" aria-live="polite">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    {t("screens.speech_coach.stt.analyzing")}
-                  </p>
-                )}
-
-                {/* Listening indicator */}
-                {promptPhase === "recording" && stt.listening && !stt.transcribing && (
-                  <p
-                    className="text-xs font-bold text-primary flex items-center justify-center gap-1"
-                    aria-live="polite"
-                    data-testid="pronounce-listening-indicator"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                    {t("screens.speech_coach.stt.listening")}
-                  </p>
-                )}
-
-                {/* Interim transcript */}
-                {stt.listening && stt.interimTranscript && (
-                  <p className="text-xs italic text-muted-foreground" aria-live="polite">
-                    {stt.interimTranscript}
-                  </p>
-                )}
-              </div>
-
-              {/* Result feedback card */}
-              {promptPhase === "result" && currentResult && (
-                <div
-                  className={[
-                    "rounded-2xl border p-4 space-y-2",
-                    currentResult.feedback === "great"
-                      ? "bg-emerald-500/10 border-emerald-500/30" // audit-ok: semantic success feedback
-                      : currentResult.feedback === "close"
-                        ? "bg-amber-500/10 border-amber-500/30" // audit-ok: semantic warning feedback
-                        : "bg-red-500/10 border-red-500/30", // audit-ok: semantic error feedback
-                  ].join(" ")}
-                  data-testid="pronounce-stt-result"
-                  aria-live="polite"
-                >
-                  <div className="flex items-center gap-2">
-                    {currentResult.feedback === "great" ? (
-                      <>
-                        <span className="text-2xl" aria-hidden>⭐</span>
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" /> {/* audit-ok: success icon on tinted bg */}
-                      </>
-                    ) : currentResult.feedback === "close" ? (
-                      <>
-                        <span className="text-2xl" aria-hidden>👍</span>
-                        <Star className="h-5 w-5 text-amber-600 shrink-0" /> {/* audit-ok: warning icon on tinted bg */}
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-2xl" aria-hidden>💪</span>
-                        <XCircle className="h-5 w-5 text-red-600 shrink-0" /> {/* audit-ok: error icon on tinted bg */}
-                      </>
-                    )}
-                    <p className="font-bold text-sm text-foreground">
-                      {t(`screens.speech_coach.stt.feedback.${currentResult.feedback}`)}
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {pickEncouragement(currentResult.feedback, currentResult.score)}
-                  </p>
-                  {/* Score bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-                      <span>{t("screens.speech_coach.pronounce.session.score_label")}</span>
-                      <span>{currentResult.score}%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className={[
-                          "h-full rounded-full transition-all",
-                          currentResult.feedback === "great"
-                            ? "bg-emerald-500" // audit-ok: score bar semantic success
-                            : currentResult.feedback === "close"
-                              ? "bg-amber-500" // audit-ok: score bar semantic warning
-                              : "bg-red-500", // audit-ok: score bar semantic error
-                        ].join(" ")}
-                        style={{ width: `${currentResult.score}%` }}
-                      />
-                    </div>
-                  </div>
-                  {currentResult.transcript && (
-                    <p className="text-[11px] text-muted-foreground">
-                      {t("screens.speech_coach.stt.you_said")}{" "}
-                      <span className="italic">&ldquo;{currentResult.transcript}&rdquo;</span>
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* STT error */}
-              {stt.error && promptPhase !== "result" && (
-                <p className="text-[11px] text-destructive" aria-live="polite">
-                  {t(`screens.speech_coach.stt.error.${stt.error}`, {
-                    defaultValue: t("screens.speech_coach.stt.error.generic"),
-                  })}
-                </p>
-              )}
-
-              {/* Action buttons */}
-              {stt.mode !== "unsupported" && (
-                <div className="flex flex-wrap gap-2">
-                  {/* Hear Amy */}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => { onAction(); handleHear(); }}
-                    disabled={promptPhase === "recording" || stt.transcribing}
-                    data-testid="pronounce-hear-btn"
-                  >
-                    <Volume2 className="h-4 w-4" />
-                    {voice.speaking || voice.loading
-                      ? t("screens.speech_coach.pronounce.listening")
-                      : promptPhase === "heard" || promptPhase === "result"
-                        ? t("screens.speech_coach.pronounce.hear_again")
-                        : t("screens.speech_coach.pronounce.session.hear_amy")}
-                  </Button>
-
-                  {/* Record / Stop */}
-                  {promptPhase !== "result" && (
-                    promptPhase === "recording" ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => { onAction(); handleStop(); }}
-                        data-testid="pronounce-stop-btn"
-                      >
-                        <MicOff className="h-4 w-4" />
-                        {t("screens.speech_coach.stt.stop_recording")}
-                      </Button>
-                    ) : promptPhase !== "analyzing" && !stt.transcribing && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => { onAction(); handleRecord(); }}
-                        disabled={stt.transcribing}
-                        data-testid="pronounce-record-btn"
-                      >
-                        <Mic className="h-4 w-4" />
-                        {t("screens.speech_coach.stt.tap_to_record")}
-                      </Button>
-                    )
-                  )}
-
-                  {/* After result: Try Again / Next */}
-                  {promptPhase === "result" && currentResult && (
-                    <>
-                      {currentResult.feedback !== "great" && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={handleTryAgain}
-                          data-testid="pronounce-try-again-btn"
-                        >
-                          {t("screens.speech_coach.pronounce.session.try_again")}
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleNext}
-                        data-testid="pronounce-next-btn"
-                      >
-                        {isLastItem
-                          ? t("screens.speech_coach.pronounce.session.complete_title")
-                          : t("screens.speech_coach.pronounce.session.next_word")}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {stt.mode === "unsupported" && (
-                <p className="text-xs text-muted-foreground">
-                  {t("screens.speech_coach.stt.unsupported")}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* ── DONE phase ── */}
-          {sessionPhase === "done" && (
-            <div
-              className="rounded-2xl border border-border bg-muted p-5 space-y-4 text-center"
-              data-testid="pronounce-session-complete"
-            >
-              <div className="text-4xl" aria-hidden>🎉</div>
-              <p className="font-extrabold text-lg text-foreground">
-                {t("screens.speech_coach.pronounce.session.complete_title")}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {t("screens.speech_coach.pronounce.session.complete_subtitle", { count: sessionResults.length })}
-              </p>
-
-              {/* Summary stats */}
-              <div className="grid grid-cols-2 gap-2 text-left">
-                {(() => {
-                  const strong = sessionResults.filter((r) => r.feedback === "great").map((r) => {
-                    const p = sessionItems.find((s) => s.id === r.id);
-                    return p?.text ?? "";
-                  }).filter(Boolean);
-                  const practice = sessionResults.filter((r) => r.feedback === "try_again").map((r) => {
-                    const p = sessionItems.find((s) => s.id === r.id);
-                    return p?.text ?? "";
-                  }).filter(Boolean);
-                  return (
-                    <>
-                      {strong.length > 0 && (
-                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 col-span-2"> {/* audit-ok: session summary success tint */}
-                          <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1"> {/* audit-ok: label on success tint */}
-                            {t("screens.speech_coach.pronounce.session.strong_label")} ✓
-                          </p>
-                          <p className="text-sm font-bold text-foreground">{strong.join(" · ")}</p>
-                        </div>
-                      )}
-                      {practice.length > 0 && (
-                        <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 col-span-2"> {/* audit-ok: session summary needs-practice tint */}
-                          <p className="text-[10px] font-bold uppercase tracking-wide text-amber-700 mb-1"> {/* audit-ok: label on warning tint */}
-                            {t("screens.speech_coach.pronounce.session.needs_practice_label")}
-                          </p>
-                          <p className="text-sm font-bold text-foreground">{practice.join(" · ")}</p>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-
-              <Button
-                type="button"
-                onClick={() => { handleNewSession(); }}
-                data-testid="pronounce-new-session-btn"
-              >
-                <Sparkles className="h-4 w-4" />
-                {t("screens.speech_coach.pronounce.session.new_session")}
-              </Button>
-            </div>
-          )}
-        </div>
+        <PronunciationCompanion
+          kind={kind}
+          difficulty={difficulty}
+          sessionPhase={sessionPhase}
+          promptPhase={promptPhase}
+          currentItem={currentItem}
+          currentResult={currentResult}
+          sessionIdx={sessionIdx}
+          sessionItems={sessionItems}
+          sessionResults={sessionResults}
+          sessionSize={sessionSize}
+          stt={stt}
+          voice={voice}
+          onKindChange={setKind}
+          onDifficultyChange={setDifficulty}
+          onStartSession={startSession}
+          onHear={handleHear}
+          onRecord={handleRecord}
+          onStop={handleStop}
+          onNext={handleNext}
+          onTryAgain={handleTryAgain}
+          onNewSession={handleNewSession}
+          onAction={onAction}
+        />
       )}
     </GatedSection>
   );
