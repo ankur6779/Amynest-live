@@ -3046,7 +3046,9 @@
       "otp_sent_to": "OTP sent to",
       "resend_in": "Resend in",
       "resend_otp": "Resend OTP",
-      "change_number": "Change number"
+      "change_number": "Change number",
+      "country_picker_search_placeholder": "Search country or dial code…",
+      "country_picker_change_title": "Change country"
     },
     "phonics_learning": {
       "phonics_is_for_ages_1_6": "Phonics is for ages 1–6",

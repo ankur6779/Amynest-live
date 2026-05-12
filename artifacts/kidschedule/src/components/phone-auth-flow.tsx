@@ -185,7 +185,7 @@ function CountryPicker({
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search country or dial code…"
+            placeholder={t("screens.phone_auth_flow.country_picker_search_placeholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{
@@ -219,7 +219,7 @@ function CountryPicker({
               }}
             >
               <span style={{ fontSize: "22px", lineHeight: 1 }}>{c.flag}</span>
-              <span style={{ flex: 1, fontSize: "14px", color: "#E8D8FF", fontWeight: 500 }}>
+              <span style={{ flex: 1, fontSize: "14px", color: "#E8D8FF" /* audit-ok: purple tint text on dark country-picker bottom-sheet, no CSS semantic token for overlay inline styles */, fontWeight: 500 }}>
                 {c.name}
               </span>
               <span style={{ fontSize: "14px", color: "rgba(180,150,255,0.70)", fontWeight: 600 }}>
@@ -414,7 +414,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
-                title="Change country"
+                title={t("screens.phone_auth_flow.country_picker_change_title")}
                 style={{
                   height: "48px",
                   padding: "0 12px",

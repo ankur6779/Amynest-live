@@ -96,6 +96,7 @@ export default function SpeechCoachScreen() {
   const [sessionIdx, setSessionIdx] = useState(0);
   const [sessionResults, setSessionResults] = useState<Array<{ id: string; feedback: TranscriptFeedback; score: number }>>([]);
   const [promptResult, setPromptResult] = useState<{ feedback: TranscriptFeedback; score: number; transcript: string } | null>(null);
+  const [promptError, setPromptError] = useState<string | null>(null);
   const waveAnim = useRef(new Animated.Value(0)).current;
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
@@ -186,6 +187,7 @@ export default function SpeechCoachScreen() {
       const { granted } = await AudioModule.requestRecordingPermissionsAsync();
       if (!granted) return;
       setPromptResult(null);
+      setPromptError(null);
       setSttRecording(true);
       setPromptPhase("recording");
       await audioRecorder.prepareToRecordAsync();
@@ -193,19 +195,33 @@ export default function SpeechCoachScreen() {
     } catch {
       setSttRecording(false);
       setPromptPhase("idle");
+      setPromptError(t("error_generic"));
     }
-  }, [audioRecorder]);
+  }, [audioRecorder, t]);
 
   const stopSttRecording = useCallback(async () => {
     if (!sttRecording) return;
     setSttRecording(false);
     setSttTranscribing(true);
+    setPromptError(null);
     setPromptPhase("analyzing");
     const currentText = currentSessionItem?.text ?? null;
+    // Safety net: if analysis takes more than 20 s, bail out with an error.
+    const bailTimer = setTimeout(() => {
+      setSttTranscribing(false);
+      setPromptPhase("idle");
+      setPromptError(t("error_generic"));
+    }, 20_000);
     try {
       await audioRecorder.stop();
       const uri = audioRecorder.uri;
-      if (!uri) { setSttTranscribing(false); setPromptPhase("idle"); return; }
+      if (!uri) {
+        clearTimeout(bailTimer);
+        setSttTranscribing(false);
+        setPromptPhase("idle");
+        setPromptError(t("error_generic"));
+        return;
+      }
       const audioBase64 = await FileSystem.readAsStringAsync(uri, {
         encoding: "base64",
       });
@@ -214,7 +230,14 @@ export default function SpeechCoachScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ audioBase64 }),
       });
-      if (!res.ok) { setSttTranscribing(false); setPromptPhase("idle"); return; }
+      if (!res.ok) {
+        clearTimeout(bailTimer);
+        setSttTranscribing(false);
+        setPromptPhase("idle");
+        setPromptError(t("error_generic"));
+        return;
+      }
+      clearTimeout(bailTimer);
       const { transcript } = (await res.json()) as { transcript: string };
       const trimmed = transcript?.trim() ?? "";
       if (currentText) {
@@ -227,11 +250,13 @@ export default function SpeechCoachScreen() {
       }
       setPromptPhase("result");
     } catch {
+      clearTimeout(bailTimer);
       setPromptPhase("idle");
+      setPromptError(t("error_generic"));
     } finally {
       setSttTranscribing(false);
     }
-  }, [sttRecording, audioRecorder, authFetch, currentSessionItem]);
+  }, [sttRecording, audioRecorder, authFetch, currentSessionItem, t]);
 
   const storyTitle = t("screens.speech_coach.read_aloud.story_default_title");
   const storyBody = t("screens.speech_coach.read_aloud.story_default_body");
@@ -531,6 +556,24 @@ export default function SpeechCoachScreen() {
                   </Text>
                 )}
               </View>
+
+              {/* Transcription error */}
+              {promptError && !sttRecording && !sttTranscribing && promptPhase !== "analyzing" && (
+                <View
+                  style={{
+                    padding: 10,
+                    borderRadius: 10,
+                    backgroundColor: "rgba(239,68,68,0.10)", /* audit-ok: semantic error tint */
+                    borderWidth: 1,
+                    borderColor: "rgba(239,68,68,0.30)", /* audit-ok: semantic error border */
+                  }}
+                  accessibilityLiveRegion="assertive"
+                >
+                  <Text style={{ color: "#fca5a5", fontSize: 13, fontWeight: "600", textAlign: "center" /* audit-ok: error text on error tint bg */ }}>
+                    {promptError}
+                  </Text>
+                </View>
+              )}
 
               {/* Feedback card */}
               {promptPhase === "result" && promptResult && (
