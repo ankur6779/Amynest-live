@@ -228,9 +228,12 @@ function getSectionHeaders() {
 
 /** Wait until the children API has settled and section headers are visible. */
 async function waitForHubReady() {
-  await waitFor(() => {
-    expect(getSectionHeaders().length).toBeGreaterThan(0);
-  });
+  await waitFor(
+    () => {
+      expect(getSectionHeaders().length).toBeGreaterThan(0);
+    },
+    { timeout: 5000 },
+  );
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
