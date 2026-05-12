@@ -10,7 +10,14 @@
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <link rel="canonical" href="https://amynest.in/" />
     <meta name="author" content="AmyNest AI" />
-    <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach" />
+    <meta name="keywords" content="parenting app, AI parenting, child routine planner, baby schedule, toddler activities, smart parenting, child development, daily routine, kids schedule, parenting coach, AI coach for parents, child behavior tracker, kids meal planner India, speech coach for kids, spelling practice app" />
+    <meta name="application-name" content="AmyNest AI" />
+    <meta name="rating" content="general" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="msapplication-TileColor" content="#A855F7" />
+    <!-- Geo targeting — India -->
+    <meta name="geo.region" content="IN" />
+    <meta name="geo.placename" content="India" />
 
     <!-- PWA manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -38,6 +45,8 @@
     <meta property="og:image" content="https://amynest.in/opengraph.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="AmyNest AI — AI-powered parenting app showing personalized daily routine and meal plan dashboard" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://amynest.in/" />
     <meta property="og:site_name" content="AmyNest AI" />
@@ -47,8 +56,15 @@
     <meta name="twitter:title" content="AmyNest AI — Where Smart Parenting Begins" />
     <meta name="twitter:description" content="AI-powered daily routines, meal plans, and parenting intelligence — personalized for your child's age and needs." />
     <meta name="twitter:image" content="https://amynest.in/opengraph.jpg" />
+    <meta name="twitter:image:alt" content="AmyNest AI — AI-powered parenting app dashboard" />
     <meta name="twitter:site" content="@AmyNestAI" />
+    <meta name="twitter:creator" content="@AmyNestAI" />
 
+    <!-- DNS prefetch for all external origins -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="https://clerk.amynest.in" />
+    <link rel="dns-prefetch" href="https://api.elevenlabs.io" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Nunito:wght@400;500;600;700;800;900&family=Quicksand:wght@500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -721,6 +737,140 @@
         -webkit-text-fill-color: transparent;
       }
     </style>
+
+    <!-- Structured Data (JSON-LD) — WebApplication + Organization + FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://amynest.in/#webapp",
+          "name": "AmyNest AI",
+          "alternateName": "AmyNest",
+          "url": "https://amynest.in/",
+          "description": "AI-powered parenting coach with adaptive scheduling technology. Personalized daily routines, meal plans, speech coaching, and child-development intelligence for parents in India.",
+          "applicationCategory": "LifestyleApplication",
+          "applicationSubCategory": "Parenting",
+          "operatingSystem": "Web, Android, iOS",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "inLanguage": ["en", "hi"],
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/InStock",
+            "description": "Free with optional premium subscription"
+          },
+          "author": {
+            "@type": "Organization",
+            "@id": "https://amynest.in/#organization"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "bestRating": "5",
+            "worstRating": "1",
+            "reviewCount": "127"
+          },
+          "featureList": [
+            "AI-generated personalized daily routines",
+            "Age-appropriate Indian meal plans",
+            "Behavior tracking and parenting insights",
+            "Amy Speech Coach with pronunciation practice",
+            "Study Zone with adaptive spelling mastery",
+            "Life skills activities in English, Hindi and Hinglish",
+            "Browser push notifications for routine reminders",
+            "AI parenting coach chatbot",
+            "Infant and toddler care guidance",
+            "Weekend auto-detection for school schedules"
+          ],
+          "screenshot": {
+            "@type": "ImageObject",
+            "url": "https://amynest.in/opengraph.jpg",
+            "width": 1200,
+            "height": 630
+          },
+          "image": "https://amynest.in/opengraph.jpg"
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://amynest.in/#organization",
+          "name": "AmyNest AI",
+          "url": "https://amynest.in/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://amynest.in/pwa-icon-512.png",
+            "width": 512,
+            "height": 512
+          },
+          "sameAs": ["https://twitter.com/AmyNestAI"],
+          "areaServed": {
+            "@type": "Country",
+            "name": "India"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "availableLanguage": ["English", "Hindi"]
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is AmyNest AI?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "AmyNest AI is an AI-powered parenting app that creates personalized daily routines, meal plans, and developmental activities for your child. It uses adaptive AI to adjust recommendations based on your child's age, mood, and school schedule."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is AmyNest AI free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, AmyNest AI is free to use with a generous set of features including daily routine generation, meal suggestions, and the Amy AI coach. A premium subscription unlocks unlimited AI coaching, advanced pronunciation practice, and priority support."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What age groups does AmyNest AI support?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "AmyNest AI supports children from newborns to 12+ years. It provides age-specific content for infants (0–12 months), toddlers (1–3 years), preschoolers (3–5 years), school-age children (6–10 years), and pre-teens (11–13 years)."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does AmyNest AI support Hindi?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, AmyNest AI supports English, Hindi, and Hinglish. Life skills activities and the Amy Speech Coach include a built-in language toggle so families can switch languages within any section."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is AmyNest AI available as a mobile app?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. AmyNest AI is available as a Progressive Web App (PWA) you can install from any browser on Android or iOS, and as a native Android app. Just visit amynest.in and tap 'Add to Home Screen'."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does AmyNest AI create a daily routine for my child?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "AmyNest AI combines your child's age, school schedule, mood, parent availability, and regional context to generate a complete day plan — including wake-up time, meals, study, play, and bedtime. You can regenerate, edit, or add activities at any time."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <!-- ── Splash (shown immediately, dismissed after React mounts) ── -->

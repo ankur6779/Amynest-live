@@ -1,14 +1,17 @@
 {
+  "id": "/",
   "name": "AmyNest AI — Smart Parenting Coach",
   "short_name": "AmyNest AI",
   "description": "AI-powered parenting coach. Personalized routines, meal plans, and behavior coaching for your child.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#0f0c29",
   "theme_color": "#A855F7",
   "lang": "en",
+  "dir": "ltr",
   "categories": ["education", "lifestyle", "kids"],
   "gcm_sender_id": "573340015027",
   "icons": [
@@ -31,7 +34,14 @@
       "sizes": "1200x630",
       "type": "image/jpeg",
       "form_factor": "wide",
-      "label": "AmyNest AI Dashboard"
+      "label": "AmyNest AI — AI-powered smart parenting dashboard"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "AmyNest AI Mobile App"
     }
   ],
   "shortcuts": [
@@ -48,6 +58,15 @@
       "description": "Manage your child profiles",
       "url": "/children",
       "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Daily Routine",
+      "short_name": "Routine",
+      "description": "View and manage today's schedule",
+      "url": "/routines",
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
     }
-  ]
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }

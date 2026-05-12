@@ -1,4 +1,38 @@
+# AmyNest AI — robots.txt
+# https://amynest.in/
+
 User-agent: *
 Allow: /
+Allow: /sign-in
+Allow: /sign-up
+Allow: /opengraph.jpg
+Allow: /pwa-icon-192.png
+Allow: /pwa-icon-512.png
+Allow: /favicon.svg
+Allow: /manifest.json
+
+# Auth-gated pages — no crawl budget waste
+Disallow: /dashboard
+Disallow: /routines
+Disallow: /parenting-hub
+Disallow: /amy-coach
+Disallow: /progress
+Disallow: /behavior
+Disallow: /nutrition
+Disallow: /study-zone
+Disallow: /life-skills
+Disallow: /speech-coach
+Disallow: /children
+Disallow: /spelling-mastery
+Disallow: /settings
+Disallow: /profile
+
+# Internal / API paths
+Disallow: /api/
+Disallow: /debug-parity
+Disallow: /debug-logs
+
+# Crawl delay — be polite
+Crawl-delay: 5
 
 Sitemap: https://amynest.in/sitemap.xml
