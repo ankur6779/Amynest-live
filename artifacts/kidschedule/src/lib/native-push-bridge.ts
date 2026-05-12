@@ -188,6 +188,20 @@ export async function initCapacitorIOSPush(): Promise<void> {
           );
         } catch { /* ignore */ }
       });
+
+      // 4. Notification tap listener — navigate to the deep-link screen
+      await plugin.addListener("pushNotificationActionPerformed", (action) => {
+        try {
+          const a = action as {
+            notification?: { data?: { deepLink?: string; category?: string } };
+          };
+          const deepLink = a.notification?.data?.deepLink ?? "";
+          const category = a.notification?.data?.category;
+          import("@/lib/notification-deep-link").then(({ dispatchNotifDeepLink }) => {
+            dispatchNotifDeepLink(deepLink, category);
+          }).catch(() => { /* ignore */ });
+        } catch { /* ignore */ }
+      });
     } catch { /* ignore */ }
 
     // 4. Register (triggers "registration" listener above)
