@@ -1297,6 +1297,18 @@ export default function RoutineDetail() {
               </Button>
             </Link>
 
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(buildShareMessage())}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Share on WhatsApp"
+            >
+              <Button variant="outline" size="sm" className="rounded-full gap-2 border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10">
+                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.553 4.103 1.518 5.829L.057 23.63a.75.75 0 0 0 .92.92l5.703-1.461A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 0 1-5.044-1.393l-.361-.214-3.737.958.992-3.629-.235-.374A9.818 9.818 0 1 1 12 21.818z"/></svg>
+                WhatsApp
+              </Button>
+            </a>
+
             <Button variant="outline" size="sm" onClick={() => setShareOpen(true)} className="rounded-full gap-2">
               <Share2 className="h-4 w-4" />
               {t("pages.routines.detail.share")}
@@ -1938,18 +1950,24 @@ export default function RoutineDetail() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Button onClick={copyShareMessage} className="rounded-xl w-full">
+            {/* Direct WhatsApp — always visible */}
+            <a
+              href={babysitterInfo?.mobileNumber
+                ? `https://wa.me/${babysitterInfo.mobileNumber.replace(/\D/g, "")}?text=${encodeURIComponent(buildShareMessage())}`
+                : `https://wa.me/?text=${encodeURIComponent(buildShareMessage())}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full"
+            >
+              <button className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white" style={{ background: "#25D366" }}>
+                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current shrink-0" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.553 4.103 1.518 5.829L.057 23.63a.75.75 0 0 0 .92.92l5.703-1.461A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 0 1-5.044-1.393l-.361-.214-3.737.958.992-3.629-.235-.374A9.818 9.818 0 1 1 12 21.818z"/></svg>
+                {t("pages.routines.detail.open_in_whatsapp")}
+              </button>
+            </a>
+            <Button onClick={copyShareMessage} variant="outline" className="rounded-xl w-full">
               <Copy className="h-4 w-4 mr-2" />
               {t("pages.routines.detail.copy_routine_text")}
             </Button>
-            {babysitterInfo?.mobileNumber && <a href={`https://wa.me/${babysitterInfo.mobileNumber.replace(/\D/g, "")}?text=${encodeURIComponent(buildShareMessage())}`} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" className="rounded-xl w-full">
-                  {t("pages.routines.detail.open_in_whatsapp")}
-                </Button>
-              </a>}
-            <p className="text-xs text-center text-muted-foreground">
-              {t("pages.routines.detail.copy_the_text_above_and_paste_it_into_whatsapp_sms_or_any_me")}
-            </p>
           </div>
         </DialogContent>
       </Dialog>

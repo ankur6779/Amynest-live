@@ -8,7 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, Platform, Modal, Pressable, Alert,
-  TextInput, KeyboardAvoidingView, ScrollView, Share, Image,
+  TextInput, KeyboardAvoidingView, ScrollView, Share, Image, Linking,
 } from "react-native";
 import { getActivityImage } from "@/lib/activity-images";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -648,6 +648,30 @@ export default function RoutineDetailScreen() {
     } catch {}
   };
 
+  // ── Share via WhatsApp ────────────────────────────────────────────────────
+  const shareViaWhatsApp = async () => {
+    if (!routine) return;
+    const lines = [
+      `📅 ${routine.title}`,
+      `👧 Child: ${routine.childName}`,
+      `📆 ${formatDate(routine.date)}`,
+      "",
+      "📋 ROUTINE:",
+      ...items.map(i => `• ${i.time} — ${i.activity} (${i.duration} min)${i.notes ? `\n  💡 ${i.notes}` : ""}`),
+      "",
+      `— Sent via ${BRAND.appName}`,
+    ];
+    const msg = encodeURIComponent(lines.join("\n"));
+    const waUrl = `whatsapp://send?text=${msg}`;
+    const fallbackUrl = `https://wa.me/?text=${msg}`;
+    try {
+      const canOpen = await Linking.canOpenURL(waUrl);
+      await Linking.openURL(canOpen ? waUrl : fallbackUrl);
+    } catch {
+      try { await Linking.openURL(fallbackUrl); } catch {}
+    }
+  };
+
   // ── Delete routine ────────────────────────────────────────────────────────
   const confirmDelete = () => {
     setMoreMenu(false);
@@ -1019,6 +1043,10 @@ export default function RoutineDetailScreen() {
         </TouchableOpacity>
         <TouchableOpacity onPress={openVoicePanel} style={styles.headerBtn} activeOpacity={0.7} testID="voice-settings">
           <Ionicons name="settings-outline" size={18} color={voiceOn ? brand.violet400 : c.foreground} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={shareViaWhatsApp} style={[styles.headerBtn, styles.headerBtnWa]} activeOpacity={0.7}>
+          {/* audit-ok: #25D366 is WhatsApp brand green — third-party brand color, not a UI token */}
+          <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
         </TouchableOpacity>
         <TouchableOpacity onPress={shareRoutine} style={styles.headerBtn} activeOpacity={0.7}>
           <Ionicons name="share-outline" size={20} color={c.foreground} />
@@ -1733,6 +1761,8 @@ const styles = StyleSheet.create({
     width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)",
   },
+  // audit-ok: rgba(37,211,102,0.12) is WhatsApp brand green at low opacity — third-party brand tint
+  headerBtnWa: { backgroundColor: "rgba(37,211,102,0.12)", borderColor: "rgba(37,211,102,0.30)" },
   headerTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
 
   dateLabel: { color: ACCENT_PINK /* audit-ok: accent pink date label on always-dark header */, fontSize: 12, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
