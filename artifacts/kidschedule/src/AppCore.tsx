@@ -68,6 +68,7 @@ const DebugParityPage = lazy(() => import("@/pages/debug-parity"));
 const EnvironmentPage = lazy(() => import("@/pages/environment"));
 
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
+import { OfflineScreen, useOnlineStatus } from "@/components/offline-screen";
 import { DebugProvider } from "@/contexts/debug-context";
 import { DebugPanel } from "@/components/debug-panel";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
@@ -377,12 +378,26 @@ function AppCoreMountMarker() {
   return null;
 }
 
+/**
+ * OfflineGate — renders the premium AmyNest offline screen as a fixed overlay
+ * whenever the browser reports no connectivity. Auto-dismisses the moment the
+ * `online` event fires (no user action required). Also polls /api/healthz every
+ * 5 s as a fallback for environments where the browser event is delayed.
+ */
+function OfflineGate() {
+  const isOnline = useOnlineStatus();
+  if (isOnline) return null;
+  return <OfflineScreen />;
+}
+
 export default function AppCore() {
   return (
     <FirebaseAuthProvider>
       <WouterRouter base={basePath}>
         <AppCoreMountMarker />
         <AppRoutes />
+        {/* Fixed overlay — rendered outside AppRoutes so it appears above all pages */}
+        <OfflineGate />
       </WouterRouter>
     </FirebaseAuthProvider>
   );

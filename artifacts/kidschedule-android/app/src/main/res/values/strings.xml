@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">KidSchedule</string>
-    <string name="offline_title">No internet connection</string>
-    <string name="offline_message">Please check your network and try again. KidSchedule needs an internet connection to load.</string>
-    <string name="offline_retry">Retry</string>
+    <string name="offline_title">You\'re Offline Right Now</string>
+    <string name="offline_message">Please check your internet connection and try again. Your parenting tools, routines, and AI guidance will be ready once you\'re back online.</string>
+    <string name="offline_retry">Reconnect</string>
+    <string name="offline_footer">AMY AI will reconnect automatically ✨</string>
 
     <!-- Default FCM notification channel. User-visible in Settings → Apps → KidSchedule → Notifications. -->
     <string name="notification_channel_default_id">kidschedule_default</string>

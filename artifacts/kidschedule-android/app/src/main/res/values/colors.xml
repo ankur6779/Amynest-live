@@ -8,4 +8,10 @@
     <color name="brand_text">#1A1430</color>
     <color name="brand_text_muted">#6B6885</color>
     <color name="ic_launcher_background">#7C5CFF</color>
+
+    <!-- Offline screen dark theme -->
+    <color name="offline_text_primary">#F0ECFF</color>
+    <color name="offline_text_muted">#9A8FCC</color>
+    <color name="offline_text_dim">#5E5490</color>
+    <color name="offline_btn_text">#FFFFFF</color>
 </resources>

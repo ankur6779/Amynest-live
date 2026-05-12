@@ -36,6 +36,9 @@ import { brand } from "@/constants/colors";
 import { initCrashReporter } from "@/utils/crashReporter";
 import { DebugProvider } from "@/contexts/DebugContext";
 import { DebugPanel } from "@/components/DebugPanel";
+import { OfflineScreen } from "@/components/OfflineScreen";
+import { useNetworkStore, selectIsOnline } from "@/store/useNetworkStore";
+import NetInfo from "@react-native-community/netinfo";
 SplashScreen.preventAutoHideAsync();
 WebBrowser.maybeCompleteAuthSession();
 
@@ -229,6 +232,35 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * NetworkGateOverlay — full-screen overlay shown when the device is offline.
+ *
+ * Subscribes to the Zustand network store (already initialised by
+ * useOfflineSyncBootstrap inside AuthGate). When `selectIsOnline` returns
+ * false the overlay mounts; as soon as NetInfo reports connectivity restored
+ * the overlay unmounts automatically — no manual action needed.
+ *
+ * The "Reconnect" button fires a manual NetInfo.refresh() so the user gets
+ * immediate feedback rather than waiting for the next listener tick.
+ */
+function NetworkGateOverlay() {
+  const isOnline      = useNetworkStore(selectIsOnline);
+  const initialized   = useNetworkStore((s) => s.initialized);
+  const setFromNetInfo = useNetworkStore((s) => s.setFromNetInfo);
+
+  const handleRetry = () => {
+    NetInfo.refresh().then((state) => setFromNetInfo(state)).catch(() => {});
+  };
+
+  if (!initialized || isOnline) return null;
+
+  return (
+    <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+      <OfflineScreen onRetry={handleRetry} />
+    </View>
+  );
+}
+
 function RootLayoutNav() {
   const c = useColors();
   return (
@@ -335,6 +367,8 @@ export default function RootLayout() {
                     </AuthGate>
                     </DebugProvider>
                   </KeyboardProvider>
+                  {/* Offline overlay — sits above everything, auto-hides on reconnect */}
+                  <NetworkGateOverlay />
                 </GestureHandlerRootView>
               </ProgressProvider>
             </QueryClientProvider>
