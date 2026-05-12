@@ -90,6 +90,7 @@ export function useSubscription() {
     async (
       plan: Exclude<Plan, "free">,
       prefill?: { name?: string; email?: string; contact?: string },
+      method?: string,
     ): Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }> => {
       // 1) Ask the server to create a Razorpay subscription for this user/plan.
       const createRes = await authFetch(
@@ -141,6 +142,7 @@ export function useSubscription() {
           theme: { color: "hsl(var(--brand-violet-600))" },
           prefill,
           notes: { plan },
+          ...(method ? { method } : {}),
           handler: async (resp: RazorpayCheckoutResponse) => {
             try {
               const verifyRes = await authFetch(

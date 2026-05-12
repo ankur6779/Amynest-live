@@ -53,6 +53,8 @@ export type RazorpayCheckoutOptions = {
   theme?: { color?: string };
   handler: (resp: RazorpayCheckoutResponse) => void;
   modal?: { ondismiss?: () => void; escape?: boolean };
+  /** Pre-select a payment method (e.g. "upi" for Google Pay / UPI Autopay). */
+  method?: string;
 };
 
 export async function openRazorpayCheckout(opts: RazorpayCheckoutOptions): Promise<void> {
