@@ -10,11 +10,7 @@ export default defineConfig({
     globals: true,
     exclude: ["**/node_modules/**", "**/dist/**", "playwright/**"],
     pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    singleFork: true,
     fileParallelism: false,
     typecheck: {
       tsconfig: "./tsconfig.test.json",
