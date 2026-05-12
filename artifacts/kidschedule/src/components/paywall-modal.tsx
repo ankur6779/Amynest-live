@@ -9,6 +9,7 @@ import { usePaywall } from "@/contexts/paywall-context";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
 import { useNativeBilling } from "@/hooks/use-native-billing";
 import { useTranslation } from "react-i18next";
+
 const REASON_COPY: Record<string, {
   title: string;
   subtitle: string;
@@ -75,31 +76,27 @@ const REASON_COPY: Record<string, {
     icon: Sparkles
   }
 };
+
 export function PaywallModal() {
-  const {
-    t
-  } = useTranslation();
-  const {
-    state,
-    closePaywall
-  } = usePaywall();
-  const {
-    plans,
-    checkoutRazorpay
-  } = useSubscription();
-  const {
-    user
-  } = useUser();
+  const { t } = useTranslation();
+  const { state, closePaywall } = usePaywall();
+  const { plans, checkoutRazorpay } = useSubscription();
+  const { user } = useUser();
   const [, setLocation] = useLocation();
   const nativeBilling = useNativeBilling();
   const [selected, setSelected] = useState<Exclude<Plan, "free">>("six_month");
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
   useEffect(() => {
     if (state.open) setNotice(null);
   }, [state.open]);
+
   const copy = REASON_COPY[state.reason] ?? REASON_COPY.feature;
   const HeroIcon = copy.icon;
+
+  // ── Payment handlers ──────────────────────────────────────────────────────
+
   const onPayWithRazorpay = async () => {
     setSubmitting(true);
     setNotice(null);
@@ -117,10 +114,8 @@ export function PaywallModal() {
     }
   };
 
-  // Inside the Android Play Store wrapper, Play policy requires Google Play
-  // Billing for digital subscriptions — Razorpay is hidden and replaced with
-  // the native flow below.
-  const onPayWithGooglePlay = async () => {
+  // Handles both iOS Apple IAP and Android Google Play
+  const onPayWithNative = async () => {
     setSubmitting(true);
     setNotice(null);
     const res = await nativeBilling.purchase(selected);
@@ -128,17 +123,43 @@ export function PaywallModal() {
     if (res.ok) {
       closePaywall();
     } else if (!res.userCancelled) {
-      setNotice(res.reason ?? "Google Play purchase failed. Please try again.");
+      const fallback = nativeBilling.platform === "ios"
+        ? "Apple purchase failed. Please try again."
+        : "Google Play purchase failed. Please try again.";
+      setNotice(res.reason ?? fallback);
     }
   };
-  return <Dialog open={state.open} onOpenChange={o => !o && closePaywall()}>
+
+  // ── Billing decision tree ─────────────────────────────────────────────────
+  // iOS Capacitor → Apple IAP (Razorpay NOT allowed by Apple policy)
+  // Android wrapper → Google Play (Razorpay NOT allowed by Play policy)
+  // Web / PWA + India timezone → Razorpay
+  // Web / PWA + non-India → "download the app" message
+  const isNativeShell = nativeBilling.wrapperPresent;
+  const isIOS = nativeBilling.platform === "ios";
+  const isAndroid = nativeBilling.platform === "android";
+
+  const nativeButtonLabel = isIOS
+    ? (submitting || nativeBilling.purchasing ? "Opening App Store…" : "Continue with Apple")
+    : (submitting || nativeBilling.purchasing ? "Opening Google Play…" : "Continue with Google Play");
+
+  return (
+    <Dialog open={state.open} onOpenChange={o => !o && closePaywall()}>
       <DialogContent className="max-w-2xl w-[calc(100vw-1rem)] sm:w-full p-0 gap-0 overflow-hidden border-0 bg-gradient-to-br from-[#0B0B1A] via-[#1A0B2E] to-[#0B0B1A] text-white max-h-[95dvh] flex flex-col [&>button]:hidden">
         <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-[#0B0B1A]/95 to-[#0B0B1A]/70 backdrop-blur-md border-b border-white/5">
-          <button onClick={closePaywall} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-2 text-xs font-bold text-white/85 hover:bg-white/20 transition" aria-label={t("components.paywall_modal.back")}>
+          <button
+            onClick={closePaywall}
+            className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-2 text-xs font-bold text-white/85 hover:bg-white/20 transition"
+            aria-label={t("components.paywall_modal.back")}
+          >
             <ArrowLeft className="h-4 w-4" />
             {t("components.paywall_modal.back_2")}
           </button>
-          <button onClick={closePaywall} className="rounded-full bg-white/10 p-2 hover:bg-white/20 transition" aria-label={t("components.paywall_modal.close")}>
+          <button
+            onClick={closePaywall}
+            className="rounded-full bg-white/10 p-2 hover:bg-white/20 transition"
+            aria-label={t("components.paywall_modal.close")}
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -146,7 +167,9 @@ export function PaywallModal() {
         <div className="overflow-y-auto px-5 sm:px-8 pt-4 pb-8">
           {/* Hero */}
           <div className="text-center mb-6">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary mb-3 shadow-[0_8px_32px_rgba(255,78,205,0.5)]">
+            <div
+              className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary mb-3 shadow-[0_8px_32px_rgba(255,78,205,0.5)]"
+            >
               <HeroIcon className="h-7 w-7 text-white" />
             </div>
             <h2 className="text-2xl font-extrabold mb-2">{copy.title}</h2>
@@ -156,67 +179,139 @@ export function PaywallModal() {
           {/* Plan cards */}
           <div className="grid sm:grid-cols-3 gap-3 mb-5">
             {plans.map(p => {
-            const isSelected = p.id === selected;
-            return <button key={p.id} type="button" onClick={() => setSelected(p.id)} className={["relative text-left rounded-2xl p-4 border-2 transition-all", isSelected ? "border-border bg-primary shadow-[0_8px_24px_rgba(255,78,205,0.35)]" : "border-white/10 bg-white/5 hover:border-white/30"].join(" ")}>
-                  {p.badge && <span className="absolute -top-2.5 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-primary to-primary">
+              const isSelected = p.id === selected;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelected(p.id)}
+                  className={[
+                    "relative text-left rounded-2xl p-4 border-2 transition-all",
+                    isSelected
+                      ? "border-border bg-primary shadow-[0_8px_24px_rgba(255,78,205,0.35)]"
+                      : "border-white/10 bg-white/5 hover:border-white/30",
+                  ].join(" ")}
+                >
+                  {p.badge && (
+                    <span className="absolute -top-2.5 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-primary to-primary">
                       {p.badge}
-                    </span>}
+                    </span>
+                  )}
                   <div className="font-bold text-sm mb-1">{p.title}</div>
                   <div className="flex items-baseline gap-1 mb-2">
                     <span className="text-2xl font-black">₹{p.price}</span>
                     <span className="text-xs text-white/60">/ {p.period}</span>
                   </div>
-                  {typeof p.savingsPercent === "number" && p.savingsPercent > 0 && <div className="text-xs font-extrabold text-primary mb-2">
+                  {typeof p.savingsPercent === "number" && p.savingsPercent > 0 && (
+                    <div className="text-xs font-extrabold text-primary mb-2">
                       {t("components.paywall_modal.save")} {p.savingsPercent}%
-                    </div>}
+                    </div>
+                  )}
                   <ul className="space-y-1">
-                    {p.features.slice(0, 3).map((f, i) => <li key={i} className="flex items-start gap-1.5 text-xs text-white/85">
+                    {p.features.slice(0, 3).map((f, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs text-white/85">
                         <Check className={["h-3 w-3 mt-0.5 shrink-0", isSelected ? "text-primary" : "text-white/50"].join(" ")} />
                         <span>{f}</span>
-                      </li>)}
+                      </li>
+                    ))}
                   </ul>
-                </button>;
-          })}
+                </button>
+              );
+            })}
           </div>
 
-          {notice && <div className="flex items-start gap-2 rounded-lg border border-border bg-muted px-3 py-2 mb-4 text-muted-foreground text-xs font-semibold">
+          {notice && (
+            <div className="flex items-start gap-2 rounded-lg border border-border bg-muted px-3 py-2 mb-4 text-muted-foreground text-xs font-semibold">
               <Smartphone className="h-3.5 w-3.5 mt-0.5 shrink-0" />
               <span className="leading-snug">{notice}</span>
-            </div>}
+            </div>
+          )}
 
-          {nativeBilling.available ? <>
-              <Button onClick={onPayWithGooglePlay} disabled={submitting || nativeBilling.purchasing || plans.length === 0} className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]">
+          {/* ── Payment CTA ── */}
+
+          {/* Native shell (iOS or Android) — billing available */}
+          {isNativeShell && nativeBilling.available && (
+            <>
+              <Button
+                onClick={onPayWithNative}
+                disabled={submitting || nativeBilling.purchasing || plans.length === 0}
+                className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]"
+              >
                 <Zap className="h-4 w-4 mr-2" />
-                {submitting || nativeBilling.purchasing ? "Opening Google Play…" : "Continue with Google Play"}
+                {nativeButtonLabel}
               </Button>
-              <button type="button" onClick={() => void nativeBilling.restore()} className="w-full mt-2 text-white/60 text-xs font-semibold py-2 hover:text-white/85">
+              <button
+                type="button"
+                onClick={() => void nativeBilling.restore()}
+                className="w-full mt-2 text-white/60 text-xs font-semibold py-2 hover:text-white/85"
+              >
                 {t("components.paywall_modal.restore_purchases")}
               </button>
-            </> : nativeBilling.wrapperPresent ?
-        // Inside the Play wrapper but billing isn't ready — Play policy
-        // forbids falling back to Razorpay for digital subscriptions.
-        <div className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-muted-foreground text-xs font-semibold leading-relaxed">
-              {nativeBilling.unavailableReason ?? "In-app purchases aren't available right now. Please update the app from the Play Store."}
-            </div> : isIndiaRegion() ? <Button onClick={onPayWithRazorpay} disabled={submitting || plans.length === 0} className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]">
+              {isIOS && (
+                <p className="text-center text-[10px] text-white/30 mt-1">
+                  Payment processed by Apple · Subscription auto-renews until cancelled
+                </p>
+              )}
+              {isAndroid && (
+                <p className="text-center text-[10px] text-white/30 mt-1">
+                  Payment processed by Google Play · Subscription auto-renews until cancelled
+                </p>
+              )}
+            </>
+          )}
+
+          {/* Native shell — billing NOT available (never fall back to Razorpay) */}
+          {isNativeShell && !nativeBilling.available && (
+            <div className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-muted-foreground text-xs font-semibold leading-relaxed">
+              {nativeBilling.unavailableReason ??
+                (isIOS
+                  ? "Apple In-App Purchases aren't available right now. Please check your App Store account and try again."
+                  : "In-app purchases aren't available right now. Please update the app from the Play Store.")}
+            </div>
+          )}
+
+          {/* Web / PWA — India → Razorpay */}
+          {!isNativeShell && isIndiaRegion() && (
+            <Button
+              onClick={onPayWithRazorpay}
+              disabled={submitting || plans.length === 0}
+              className="w-full h-12 text-base font-extrabold bg-gradient-to-r from-primary to-primary hover:opacity-90 border-0 shadow-[0_10px_24px_rgba(255,78,205,0.5)]"
+            >
               <Zap className="h-4 w-4 mr-2" />
               {submitting ? "Opening Razorpay…" : "Pay with UPI / Card"}
-            </Button> : <div className="w-full rounded-xl border border-white/15 bg-white/8 px-4 py-4 text-center space-y-2">
+            </Button>
+          )}
+
+          {/* Web / PWA — non-India → prompt to use the app */}
+          {!isNativeShell && !isIndiaRegion() && (
+            <div className="w-full rounded-xl border border-white/15 bg-white/8 px-4 py-4 text-center space-y-2">
               <Smartphone className="h-5 w-5 mx-auto text-muted-foreground" />
-              <p className="text-sm font-bold text-white/90">{t("components.paywall_modal.subscribe_via_the_amynest_app")}</p>
+              <p className="text-sm font-bold text-white/90">
+                {t("components.paywall_modal.subscribe_via_the_amynest_app")}
+              </p>
               <p className="text-xs text-white/55 leading-relaxed">
                 {t("components.paywall_modal.web_payments_are_currently_available_in_india_only_download_")}
               </p>
-            </div>}
+            </div>
+          )}
 
-          <button type="button" onClick={() => {
-          closePaywall();
-          setLocation("/referrals");
-        }} className="w-full mt-3 inline-flex items-center justify-center gap-2 text-muted-foreground hover:text-muted-foreground font-extrabold text-sm py-2">
+          <button
+            type="button"
+            onClick={() => {
+              closePaywall();
+              setLocation("/referrals");
+            }}
+            className="w-full mt-3 inline-flex items-center justify-center gap-2 text-muted-foreground hover:text-muted-foreground font-extrabold text-sm py-2"
+          >
             <Gift className="h-4 w-4" />
             {t("components.paywall_modal.or_invite_friends_to_earn_premium_free")}
           </button>
 
-          <button type="button" onClick={closePaywall} className="w-full text-center mt-1 text-white/55 text-sm py-2 hover:text-white/80">
+          <button
+            type="button"
+            onClick={closePaywall}
+            className="w-full text-center mt-1 text-white/55 text-sm py-2 hover:text-white/80"
+          >
             {t("components.paywall_modal.maybe_later")}
           </button>
 
@@ -225,5 +320,6 @@ export function PaywallModal() {
           </p>
         </div>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 }

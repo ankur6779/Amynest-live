@@ -87,6 +87,16 @@ declare global {
             handler: (action: unknown) => void,
           ): Promise<{ remove: () => void }>;
         };
+        /** RevenueCat Purchases plugin — injected by amynest-capacitor shell. */
+        Purchases?: {
+          configure(opts: { apiKey: string; appUserID?: string }): Promise<void>;
+          logIn(opts: { appUserID: string }): Promise<{ customerInfo: unknown; created: boolean }>;
+          logOut(): Promise<{ customerInfo: unknown }>;
+          getOfferings(): Promise<{ current: unknown; all: Record<string, unknown> }>;
+          getCustomerInfo(): Promise<{ customerInfo: unknown }>;
+          purchasePackage(opts: { aPackage: unknown }): Promise<{ customerInfo: unknown; transaction: unknown }>;
+          restorePurchases(): Promise<{ customerInfo: unknown }>;
+        };
       };
     };
   }
