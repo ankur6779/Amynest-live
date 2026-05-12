@@ -228,11 +228,22 @@ afterEach(() => {
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
+/** Section group header buttons — always rendered even when collapsed. */
+function getSectionHeaders() {
+  return screen
+    .getAllByRole("button")
+    .filter((btn) => btn.getAttribute("aria-expanded") !== null);
+}
+
 describe("Parent Hub paywall flow — TRY FREE badges", () => {
   it("shows TRY FREE badges on the single-scroll hub for a fresh free user", async () => {
-    // The hub is now one scrollable surface — all tiles render simultaneously.
-    // A free user with no feature usage should see at least one badge.
+    // Tiles (and their badges) live inside collapsed sections — expand "today"
+    // (index 0) first so the command-center tile and its TryFreeBadge mount.
     renderHub();
+    await waitFor(() => {
+      expect(getSectionHeaders().length).toBeGreaterThan(0);
+    });
+    fireEvent.click(getSectionHeaders()[0]);
     await waitFor(() => {
       expect(screen.getAllByTestId("try-free-badge").length).toBeGreaterThan(0);
     });
@@ -255,16 +266,14 @@ describe("Parent Hub paywall flow — TRY FREE badges", () => {
 
 describe("Parent Hub paywall flow — locked tile routes to /paywall", () => {
   it("opens /paywall with the matching reason when a locked tile is tapped", async () => {
-    // Lock three tiles from the LEARNING section group, which starts expanded
-    // by default so their LockedBlocks are visible without any user interaction.
-    //
+    // Lock three tiles from the LEARNING section group.
     // Band check: CHILD is 6y → band "6-8".
     //   - hub_skills_focus       → skills-focus tile, bands [1..6] ✓ (unique reason)
     //   - hub_olympiad           → olympiad tile, bands [2..6] ✓ (reason="hub_locked")
     //   - hub_smart_math_tricks  → smart-math-tricks tile, bands [2,3] ✓ (reason="hub_locked")
     //
-    // Note: hub_articles (SUPPORT) and hub_art_craft (CREATIVITY) are in
-    // collapsed sections and are therefore not rendered by default.
+    // Note: all sections start collapsed — the LEARNING section (index 1) is
+    // expanded below so the locked tiles become visible before assertions run.
     mockUsageState.locked = new Set([
       "hub_skills_focus",       // LockedBlock(reason="hub_skills_focus")
       "hub_olympiad",           // LockedBlock(reason="hub_locked")
@@ -278,8 +287,14 @@ describe("Parent Hub paywall flow — locked tile routes to /paywall", () => {
 
     renderHub();
 
-    // All locked tiles render on the single-scroll surface — wait for any
-    // LockedBlock to appear (real component, not mocked).
+    // Wait for section headers to render, then expand "learning" (index 1)
+    // so the locked tiles inside it become visible.
+    await waitFor(() => {
+      expect(getSectionHeaders().length).toBeGreaterThan(0);
+    });
+    fireEvent.click(getSectionHeaders()[1]);
+
+    // Wait for any LockedBlock to appear (real component, not mocked).
     await waitFor(() => {
       expect(screen.getAllByTestId("locked-block").length).toBeGreaterThan(0);
     });

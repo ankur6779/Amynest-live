@@ -1,0 +1,227 @@
+Redesign the current “No Internet Connection” screen into a premium branded AmyNest offline experience that matches the app’s neon dark AI parenting theme.
+
+GOAL:
+The offline screen should feel:
+
+- premium
+- calming
+- emotionally reassuring
+- branded
+- alive
+- consistent with AmyNest design language
+
+IMPORTANT:
+Do NOT use generic Android-style offline UI.
+
+---
+
+1. KEEP APP THEME CONSISTENT
+
+---
+
+Replace plain white background with:
+
+- dark navy/purple gradient
+- subtle neon glow
+- premium ambient lighting
+
+Match:
+
+- Parent Hub theme
+- Amy AI neon branding
+- existing app colors
+
+---
+
+2. ADD AMY AI CHARACTER
+
+---
+
+At center/top:
+show AMY AI bird inside glowing neon ring.
+
+Behavior:
+
+- subtle floating animation
+- soft glow pulse
+- gentle eye blink
+- calm breathing animation
+
+Mood:
+supportive and reassuring
+NOT sad/cartoonish.
+
+---
+
+3. REPLACE GENERIC TEXT
+
+---
+
+OLD:
+“No internet connection”
+
+NEW HEADLINE:
+“You’re Offline Right Now”
+
+OR:
+“AmyNest Needs Internet to Continue”
+
+Use premium typography:
+
+- large bold title
+- soft contrast
+
+---
+
+4. BETTER SUBTEXT
+
+---
+
+Replace generic messaging with:
+
+“Please check your internet connection and try again. Your parenting tools, routines, and AI guidance will be ready once you're back online.”
+
+Add smaller footer:
+“AMY AI will reconnect automatically ✨”
+
+---
+
+5. PREMIUM BUTTON
+
+---
+
+Replace plain blue button.
+
+New button:
+
+- neon gradient
+- glow effect
+- rounded premium pill style
+
+Button text:
+“Reconnect”
+
+Add:
+
+- hover animation
+- press animation
+- glow pulse
+
+---
+
+6. AUTO RECONNECT SYSTEM
+
+---
+
+Implement smart reconnect logic.
+
+Behavior:
+
+- continuously monitor internet status
+- automatically retry connection silently
+- if internet restores:
+  - auto reload app content
+  - smooth transition back into app
+
+No manual restart required.
+
+---
+
+7. SOFT BACKGROUND ANIMATIONS
+
+---
+
+Add subtle ambient animations:
+
+- floating particles
+- soft glow shimmer
+- tiny neon sparkles
+
+VERY subtle only.
+Do not overanimate.
+
+---
+
+8. OFFLINE STATE UX
+
+---
+
+If cached content exists:
+show:
+
+- “View Saved Content”
+- “Access Downloaded PDFs”
+- “Open Last Routine”
+
+Otherwise:
+show standard reconnect experience.
+
+---
+
+9. MOBILE-FIRST DESIGN
+
+---
+
+Ensure:
+
+- centered vertically
+- responsive on all devices
+- safe area support
+- clean spacing
+
+---
+
+10. PERFORMANCE
+
+---
+
+Offline screen must:
+
+- load instantly
+- work without network
+- avoid heavy assets
+
+Use lightweight animations.
+
+---
+
+11. PREMIUM MICROINTERACTIONS
+
+---
+
+Add:
+
+- smooth fade-in
+- button glow on tap
+- gentle ring animation
+- reconnect success animation
+
+---
+
+12. FINAL EXPERIENCE GOAL
+
+---
+
+Even without internet,
+the app should still feel:
+
+- premium
+- polished
+- emotionally intelligent
+- trustworthy
+
+The offline screen should feel like:
+“A temporary pause”
+NOT:
+“A broken app”
+
+---
+
+DELIVERABLE
+
+- premium offline screen
+- Amy AI neon branding
+- dark theme consistency
+- animated reconnect experience
+- automatic reconnection logic
+- polished emotional UX
