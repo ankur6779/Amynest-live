@@ -1,4 +1,4 @@
-import React, {  useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   View,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
+  Image,
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -178,12 +179,21 @@ const REASON_COPY: Record<
     icon: "sparkles",
   },
   section_locked: {
-    title: "Unlock Full Parenting Power 🚀",
+    title: "Unlock Full Parenting Power",
     subtitle:
       "You've explored 1 feature. Unlock unlimited routines, full AI personalization, all activities & smart insights.",
     icon: "sparkles",
   },
 };
+
+// Canonical feature list shown on all plans when API features aren't loading
+const FALLBACK_FEATURES = [
+  "Unlimited Amy AI coaching",
+  "Personalized daily routines",
+  "Full Parenting Hub access",
+  "Behavior insights & trends",
+  "Priority support",
+];
 
 export default function PaywallScreen() {
   const { t } = useTranslation();
@@ -210,10 +220,10 @@ export default function PaywallScreen() {
   const [selected, setSelected] = useState<Exclude<Plan, "free">>("six_month");
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
   // Razorpay (Google Play UCB alternative billing) is an India-only gateway.
-  // Show it only when the device region is India (ISO "IN").
-  // All other countries — US, UK, AU, etc. — use Google Play Billing only.
-  // iOS always uses RevenueCat's native paywall (Apple IAP) — no Razorpay.
+  // Per Google Play UCB policy: Google Play Billing MUST be the primary option.
+  // Razorpay appears below as the clearly-labelled alternative. iOS never reaches this.
   const deviceRegion = getLocales()[0]?.regionCode ?? null;
   const showRazorpay = Platform.OS === "android" && deviceRegion === "IN";
 
@@ -229,23 +239,26 @@ export default function PaywallScreen() {
     if (plans.length === 0 && !loading) void load();
   }, [plans.length, loading, load]);
 
+  const selectedPlan = plans.find((p) => p.id === selected);
+  const displayFeatures =
+    selectedPlan && selectedPlan.features.length > 0
+      ? selectedPlan.features
+      : FALLBACK_FEATURES;
+
   const onUpgrade = async () => {
     if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSubmitting(true);
     setNotice(null);
 
-    // iOS: use RevenueCat's native Paywall Editor UI (published in RC dashboard).
-    // The RC paywall handles plan selection + Apple IAP sheet internally.
-    // Android: keep custom flow so we can show the Razorpay UCB alternative
-    // required by Google Play User Choice Billing policy.
+    // iOS: RevenueCat's native Paywall Editor (Apple IAP — handles plan selection internally).
+    // Android: custom flow so we can present Google Play Billing as primary + Razorpay UCB.
     if (Platform.OS === "ios") {
       const res = await presentRCPaywall();
       setSubmitting(false);
       if (res.purchased || res.restored) {
-        void refresh(); // sync entitlements from server after purchase
+        void refresh();
         router.back();
       }
-      // cancelled or error: stay on screen, no error notice needed
       return;
     }
 
@@ -254,7 +267,7 @@ export default function PaywallScreen() {
     if (res.ok) {
       router.back();
     } else if (res.userCancelled) {
-      // user dismissed the native sheet — no error message
+      // user dismissed — no error message
     } else {
       setNotice(
         res.reason ?? "Checkout is not yet available. Try again soon or contact support.",
@@ -286,12 +299,22 @@ export default function PaywallScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
+
+      {/* Deep dark gradient — matches brand dark theme */}
       <LinearGradient
-        colors={["#0B0B1A", "#1A0B2E", "#0B0B1A"]} // audit-ok: intentional dark bg / custom color
-        locations={[0, 0.5, 1]}
+        colors={["#0A0614", "#160B2E", "#0D0820", "#0A0614"]} // audit-ok: intentional dark bg / custom color
+        locations={[0, 0.35, 0.7, 1]}
         style={styles.bg}
       >
-        <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+        {/* Decorative ambient glows */}
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <View style={styles.glowTopLeft} />
+          <View style={styles.glowTopRight} />
+          <View style={styles.glowBottom} />
+        </View>
+
+        {/* Top bar */}
+        <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
           <Pressable
             onPress={() => router.back()}
             hitSlop={12}
@@ -299,7 +322,7 @@ export default function PaywallScreen() {
             accessibilityLabel={t("screens.paywall.back")}
             style={styles.backBtn}
           >
-            <Ionicons name="arrow-back" size={20} color="rgba(255,255,255,0.9)" />
+            <Ionicons name="arrow-back" size={18} color="rgba(255,255,255,0.85)" />
             <Text style={styles.backText}>{t("screens.paywall.back")}</Text>
           </Pressable>
           <Pressable
@@ -309,18 +332,42 @@ export default function PaywallScreen() {
             accessibilityLabel={t("screens.paywall.close")}
             style={styles.closeBtn}
           >
-            <Ionicons name="close" size={22} color="rgba(255,255,255,0.85)" />
+            <Ionicons name="close" size={20} color="rgba(255,255,255,0.7)" />
           </Pressable>
         </View>
 
         <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: insets.bottom + 32 },
-          ]}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero */}
+          {/* ── Brand header ─────────────────────────────────────────── */}
+          <View style={styles.brandHeader}>
+            <Image
+              source={require("@/assets/images/amynest-logo-face.png")}
+              style={styles.brandLogo}
+              resizeMode="contain"
+              accessibilityLabel="AmyNest AI logo" // i18n-ok: brand name in a11y label
+            />
+            <View style={styles.brandTextRow}>
+              <LinearGradient
+                colors={[brand.primary, ACCENT_PINK]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.brandGradientBox}
+              >
+                <Text style={styles.brandName}>{BRAND.appName}</Text>
+              </LinearGradient>
+              <Text style={styles.premiumLabel}> PREMIUM</Text>{/* i18n-ok: brand label */}
+            </View>
+
+            {/* Patent Pending badge */}
+            <View style={styles.patentBadge}>
+              <Ionicons name="shield-checkmark" size={11} color={brand.violet300} />
+              <Text style={styles.patentText}>Patent Pending Technology</Text>{/* i18n-ok: patent legal brand phrase */}
+            </View>
+          </View>
+
+          {/* ── Reason hero ──────────────────────────────────────────── */}
           <View style={styles.hero}>
             <LinearGradient
               colors={[brand.primary, ACCENT_PINK]}
@@ -328,77 +375,120 @@ export default function PaywallScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.heroIcon}
             >
-              <Ionicons name={copy.icon} size={26} color="#fff" />
+              <Ionicons name={copy.icon} size={24} color="#fff" />
             </LinearGradient>
             <Text style={styles.heroTitle}>{copy.title}</Text>
             <Text style={styles.heroSub}>{copy.subtitle}</Text>
           </View>
 
-          {/* Plan cards */}
+          {/* ── Plan selector tabs ───────────────────────────────────── */}
           {loading && plans.length === 0 ? (
-            <ActivityIndicator color="#fff" style={{ marginTop: 24 }} />
+            <ActivityIndicator color={brand.violet400} style={{ marginVertical: 32 }} />
           ) : (
-            <View style={styles.cards}>
-              {plans.map((p) => {
-                const isSelected = p.id === selected;
-                return (
-                  <Pressable
-                    key={p.id}
-                    onPress={() => {
-                      if (Platform.OS !== "web")
-                        void Haptics.selectionAsync();
-                      setSelected(p.id);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Select ${p.title} plan`}
-                  >
-                    <View
-                      style={[
-                        styles.card,
-                        isSelected && styles.cardSelected,
-                      ]}
+            <>
+              <View style={styles.planTabs}>
+                {(plans.length > 0
+                  ? plans
+                  : [
+                      { id: "monthly" as Exclude<Plan, "free">, title: "Monthly", price: 0, currency: "INR", period: "month", badge: null, features: [] },
+                      { id: "six_month" as Exclude<Plan, "free">, title: "6 Months", price: 0, currency: "INR", period: "6 months", badge: "Most Popular", features: [] },
+                      { id: "yearly" as Exclude<Plan, "free">, title: "Yearly", price: 0, currency: "INR", period: "year", badge: "Best Value", features: [] },
+                    ]
+                ).map((p) => {
+                  const isSelected = p.id === selected;
+                  return (
+                    <Pressable
+                      key={p.id}
+                      onPress={() => {
+                        if (Platform.OS !== "web") void Haptics.selectionAsync();
+                        setSelected(p.id);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Select ${p.title} plan`}
+                      style={[styles.planTab, isSelected && styles.planTabSelected]}
                     >
                       {p.badge && (
-                        <View style={styles.badgeWrap}>
+                        <View style={styles.tabBadge}>
+                          <Text style={styles.tabBadgeText}>{p.badge}</Text>
+                        </View>
+                      )}
+                      <Text style={[styles.planTabText, isSelected && styles.planTabTextSelected]}>
+                        {p.title}
+                      </Text>
+                      {p.price > 0 && (
+                        <Text style={[styles.planTabPrice, isSelected && styles.planTabPriceSelected]}>
+                          ₹{p.price}
+                        </Text>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* ── Selected plan detail card ─────────────────────────── */}
+              <View style={styles.planCard}>
+                {/* Card glow border */}
+                <LinearGradient
+                  colors={[brand.primary, ACCENT_PINK, brand.primary]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.planCardBorder}
+                >
+                  <View style={styles.planCardInner}>
+                    {/* Price row */}
+                    {selectedPlan && selectedPlan.price > 0 && (
+                      <View style={styles.priceBlock}>
+                        <View style={styles.priceRow}>
+                          <Text style={styles.priceCurrency}>₹</Text>
+                          <Text style={styles.priceAmount}>{selectedPlan.price}</Text>
+                          <Text style={styles.pricePeriod}>/ {selectedPlan.period}</Text>
+                        </View>
+                        {typeof selectedPlan.savingsPercent === "number" &&
+                          selectedPlan.savingsPercent > 0 && (
+                            <View style={styles.savingsPill}>
+                              <Text style={styles.savingsText}>
+                                Save {selectedPlan.savingsPercent}%
+                              </Text>
+                            </View>
+                          )}
+                      </View>
+                    )}
+
+                    {/* Divider */}
+                    <View style={styles.cardDivider} />
+
+                    {/* Features */}
+                    <Text style={styles.featuresLabel}>WHAT YOU GET</Text>{/* i18n-ok: paywall section header */}
+                    <View style={styles.featureList}>
+                      {displayFeatures.map((f, i) => (
+                        <View key={i} style={styles.featureRow}>
                           <LinearGradient
                             colors={[brand.primary, ACCENT_PINK]}
                             start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.badge}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.featureCheckBg}
                           >
-                            <Text style={styles.badgeText}>{p.badge}</Text>
+                            <Ionicons name="checkmark" size={11} color="#fff" />
                           </LinearGradient>
+                          <Text style={styles.featureText}>{f}</Text>
                         </View>
-                      )}
-                      <View style={styles.cardHeader}>
-                        <Text style={styles.cardTitle}>{p.title}</Text>
-                        <View style={styles.priceRow}>
-                          <Text style={styles.price}>₹{p.price}</Text>
-                          <Text style={styles.period}>/ {p.period}</Text>
-                        </View>
-                        {typeof p.savingsPercent === "number" && p.savingsPercent > 0 && (
-                          <Text style={styles.savings}>Save {p.savingsPercent}%</Text>
-                        )}
-                      </View>
-                      <View style={styles.featureList}>
-                        {p.features.map((f, i) => (
-                          <View key={i} style={styles.featureRow}>
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={14}
-                              color={isSelected ? ACCENT_PINK : "rgba(255,255,255,0.6)"}
-                            />
-                            <Text style={styles.featureText}>{f}</Text>
-                          </View>
-                        ))}
-                      </View>
+                      ))}
                     </View>
-                  </Pressable>
-                );
-              })}
-            </View>
+
+                    {/* Patent Pending powered-by line */}
+                    <View style={styles.poweredBy}>
+                      <Ionicons name="sparkles" size={11} color={brand.violet400} />
+                      <Text style={styles.poweredByText}>
+                        Powered by Patent-Pending Adaptive AI
+                      </Text>
+                    </View>
+                  </View>
+                </LinearGradient>
+              </View>
+            </>
           )}
 
+          {/* ── Error notice ─────────────────────────────────────────── */}
           {notice && (
             <View style={styles.noticeBox}>
               <Ionicons name="information-circle" size={16} color={palette.amber300} />
@@ -406,14 +496,14 @@ export default function PaywallScreen() {
             </View>
           )}
 
-          {/* Primary CTA — Google Play (RevenueCat) on Android+iOS */}
+          {/* ── Primary CTA — Google Play Billing (Android) / RevenueCat (iOS) ── */}
           <Pressable
             disabled={submitting || plans.length === 0}
             onPress={onUpgrade}
             style={({ pressed }) => [
               styles.primaryWrap,
-              pressed && { opacity: 0.85 },
-              (submitting || plans.length === 0) && { opacity: 0.6 },
+              pressed && { opacity: 0.88 },
+              (submitting || plans.length === 0) && { opacity: 0.55 },
             ]}
             accessibilityRole="button"
             accessibilityLabel={
@@ -423,15 +513,19 @@ export default function PaywallScreen() {
             <LinearGradient
               colors={[brand.primary, ACCENT_PINK]}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.primary}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryBtn}
             >
               {submitting ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Ionicons name="rocket" size={16} color="#fff" />
-                  <Text style={styles.primaryText}>
+                  {Platform.OS === "android" ? (
+                    <Ionicons name="logo-google-playstore" size={18} color="#fff" />
+                  ) : (
+                    <Ionicons name="rocket" size={18} color="#fff" />
+                  )}
+                  <Text style={styles.primaryBtnText}>
                     {Platform.OS === "android" ? "Pay with Google Play" : "Upgrade Now"}
                   </Text>
                 </>
@@ -439,12 +533,34 @@ export default function PaywallScreen() {
             </LinearGradient>
           </Pressable>
 
-          {/* Alternative billing (UCB) — Razorpay UPI / Card / Netbanking, Android only.
-               Per Google Play UCB policy this must be presented after the primary
-               Google Play option and labelled clearly as an alternative. */}
+          {/* ── Trial CTA ────────────────────────────────────────────── */}
+          {canStartTrial && (
+            <Pressable
+              onPress={onTrial}
+              disabled={submitting}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.trialBtn,
+                pressed && { opacity: 0.75 },
+                submitting && { opacity: 0.5 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Start ${trialDays}-day free trial`}
+            >
+              <Ionicons name="gift-outline" size={16} color={brand.violet300} />
+              <Text style={styles.trialText}>
+                Start {trialDays}-day Free Trial
+              </Text>
+            </Pressable>
+          )}
+
+          {/* ── UCB: Razorpay alternative billing (India Android only) ─
+               Per Google Play UCB policy, this MUST appear AFTER the primary
+               Google Play Billing option and be clearly labelled as alternative.
+          ─────────────────────────────────────────────────────────────────── */}
           {showRazorpay && (
-            <>
-              <View style={styles.orDivider}>
+            <View style={styles.ucbSection}>
+              <View style={styles.orRow}>
                 <View style={styles.orLine} />
                 <Text style={styles.orText}>{t("screens.paywall.or_choose_an_alternative")}</Text>
                 <View style={styles.orLine} />
@@ -453,53 +569,43 @@ export default function PaywallScreen() {
                 disabled={submitting || plans.length === 0}
                 onPress={onUpgradeRazorpay}
                 style={({ pressed }) => [
-                  styles.secondaryBtn,
+                  styles.razorpayBtn,
                   pressed && { opacity: 0.85 },
-                  (submitting || plans.length === 0) && { opacity: 0.6 },
+                  (submitting || plans.length === 0) && { opacity: 0.5 },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={t("screens.paywall.alternative_billing_pay_with_upi_or_card")}
               >
-                <Ionicons name="flash" size={16} color="#fff" />
-                <Text style={styles.secondaryText}>{t("screens.paywall.pay_via_upi_card_alternative")}</Text>
+                <Ionicons name="flash" size={16} color={brand.violet300} />
+                <Text style={styles.razorpayBtnText}>
+                  {t("screens.paywall.pay_via_upi_card_alternative")}
+                </Text>
               </Pressable>
-            </>
-          )}
-
-          {canStartTrial && (
-            <Pressable
-              onPress={onTrial}
-              disabled={submitting}
-              hitSlop={8}
-              style={({ pressed }) => [
-                styles.trialBtn,
-                pressed && { opacity: 0.7 },
-                submitting && { opacity: 0.5 },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Start ${trialDays}-day free trial`}
-            >
-              <Text style={styles.trialText}>
-                ✨ Start {trialDays}-day Free Trial
+              <Text style={styles.ucbNote}>
+                Alternative billing option under Google Play User Choice Billing
               </Text>
-            </Pressable>
+            </View>
           )}
 
+          {/* ── Trust row ────────────────────────────────────────────── */}
           <View style={styles.trustRow}>
             <View style={styles.trustItem}>
-              <Ionicons name="people" size={14} color="rgba(255,255,255,0.7)" />
+              <Ionicons name="people" size={13} color={brand.violet400} />
               <Text style={styles.trustText}>{t("screens.paywall.10_000_parents")}</Text>
             </View>
+            <View style={styles.trustDot} />
             <View style={styles.trustItem}>
-              <Ionicons name="lock-closed" size={14} color="rgba(255,255,255,0.7)" />
+              <Ionicons name="lock-closed" size={13} color={brand.violet400} />
               <Text style={styles.trustText}>{t("screens.paywall.cancel_anytime")}</Text>
             </View>
+            <View style={styles.trustDot} />
             <View style={styles.trustItem}>
-              <Ionicons name="shield-checkmark" size={14} color="rgba(255,255,255,0.7)" />
+              <Ionicons name="shield-checkmark" size={13} color={brand.violet400} />
               <Text style={styles.trustText}>{t("screens.paywall.secure_payment")}</Text>
             </View>
           </View>
 
+          {/* ── Maybe later ──────────────────────────────────────────── */}
           <Pressable
             onPress={() => router.back()}
             hitSlop={8}
@@ -510,8 +616,10 @@ export default function PaywallScreen() {
             <Text style={styles.maybeText}>{t("screens.paywall.maybe_later")}</Text>
           </Pressable>
 
+          {/* ── Legal footer ─────────────────────────────────────────── */}
           <Text style={styles.footer}>
-            Cancel anytime. Renews automatically until canceled.
+            Subscription renews automatically. Cancel anytime in Google Play or App Store settings.
+            {"\n"}Patent Pending — Indian Provisional Patent Filed.
           </Text>
         </ScrollView>
       </LinearGradient>
@@ -521,6 +629,37 @@ export default function PaywallScreen() {
 
 const styles = StyleSheet.create({
   bg: { flex: 1 },
+
+  // Ambient glows
+  glowTopLeft: {
+    position: "absolute",
+    top: -80,
+    left: -60,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: `${brand.primary}22`, // audit-ok: custom ambient glow / dark bg
+  },
+  glowTopRight: {
+    position: "absolute",
+    top: 60,
+    right: -80,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: `${ACCENT_PINK}18`, // audit-ok: custom ambient glow / dark bg
+  },
+  glowBottom: {
+    position: "absolute",
+    bottom: -60,
+    left: 40,
+    width: 300,
+    height: 200,
+    borderRadius: 150,
+    backgroundColor: `${brand.primary}14`, // audit-ok: custom ambient glow / dark bg
+  },
+
+  // Top bar
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -531,245 +670,440 @@ const styles = StyleSheet.create({
   backBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingVertical: 8,
+    gap: 5,
+    paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.07)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.10)",
   },
   backText: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  hero: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  heroIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-    shadowColor: ACCENT_PINK,
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-  },
-  heroTitle: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "900",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  heroSub: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
-    paddingHorizontal: 12,
-  },
-  cards: { gap: 14, marginBottom: 18 },
-  card: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderRadius: 22,
-    padding: 18,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.08)",
-  },
-  cardSelected: {
-    backgroundColor: "rgba(123,63,242,0.18)",
-    borderColor: ACCENT_PINK,
-    shadowColor: ACCENT_PINK,
-    shadowOpacity: 0.45,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
-  badgeWrap: {
-    position: "absolute",
-    top: -10,
-    right: 16,
-  },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 10.5,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  cardHeader: { marginBottom: 12 },
-  cardTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  priceRow: { flexDirection: "row", alignItems: "baseline", gap: 4 },
-  price: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "900",
-  },
-  period: {
-    color: "rgba(255,255,255,0.55)",
+    color: "rgba(255,255,255,0.85)",
     fontSize: 13,
     fontWeight: "600",
   },
-  savings: {
+  closeBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+  },
+
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
+
+  // Brand header
+  brandHeader: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  brandLogo: {
+    width: 72,
+    height: 72,
+    marginBottom: 10,
+  },
+  brandTextRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  brandGradientBox: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  brandName: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "900",
+    letterSpacing: 0.3,
+  },
+  premiumLabel: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 2,
+  },
+  patentBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: `${brand.primary}22`, // audit-ok: intentional dark bg / custom color
+    borderWidth: 1,
+    borderColor: `${brand.primary}40`, // audit-ok: intentional dark bg / custom color
+  },
+  patentText: {
+    color: brand.violet300,
+    fontSize: 10.5,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+
+  // Hero
+  hero: {
+    alignItems: "center",
+    marginBottom: 22,
+  },
+  heroIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    shadowColor: ACCENT_PINK,
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10,
+  },
+  heroTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "900",
+    textAlign: "center",
+    marginBottom: 7,
+    letterSpacing: -0.3,
+  },
+  heroSub: {
+    color: "rgba(196,181,253,0.75)",
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+    paddingHorizontal: 16,
+  },
+
+  // Plan tabs
+  planTabs: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16,
+  },
+  planTab: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.08)",
+    position: "relative",
+  },
+  planTabSelected: {
+    backgroundColor: `${brand.primary}28`, // audit-ok: intentional dark bg / custom color
+    borderColor: brand.primary,
+    shadowColor: brand.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  tabBadge: {
+    position: "absolute",
+    top: -9,
+    backgroundColor: ACCENT_PINK,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  tabBadgeText: {
+    color: "#fff",
+    fontSize: 8.5,
+    fontWeight: "900",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  planTabText: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  planTabTextSelected: {
+    color: "#fff",
+  },
+  planTabPrice: {
+    color: "rgba(255,255,255,0.35)",
+    fontSize: 10,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  planTabPriceSelected: {
+    color: brand.violet300,
+  },
+
+  // Plan detail card with glowing border
+  planCard: {
+    marginBottom: 20,
+    borderRadius: 22,
+    shadowColor: brand.primary,
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10,
+  },
+  planCardBorder: {
+    borderRadius: 22,
+    padding: 1.5,
+  },
+  planCardInner: {
+    borderRadius: 21,
+    backgroundColor: "#12082A", // audit-ok: intentional dark bg / custom color
+    padding: 20,
+  },
+  priceBlock: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 2,
+  },
+  priceCurrency: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  priceAmount: {
+    color: "#fff",
+    fontSize: 36,
+    fontWeight: "900",
+    letterSpacing: -1,
+  },
+  pricePeriod: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 13,
+    fontWeight: "500",
+    marginLeft: 2,
+  },
+  savingsPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: `${ACCENT_PINK}22`, // audit-ok: intentional dark bg / custom color
+    borderWidth: 1,
+    borderColor: `${ACCENT_PINK}44`, // audit-ok: intentional dark bg / custom color
+  },
+  savingsText: {
     color: ACCENT_PINK,
     fontSize: 12,
     fontWeight: "800",
-    marginTop: 4,
   },
-  featureList: { gap: 6 },
-  featureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  featureText: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 13,
-    fontWeight: "500",
-    flex: 1,
+  cardDivider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    marginBottom: 14,
   },
-  noticeBox: {
+  featuresLabel: {
+    color: "rgba(196,181,253,0.5)",
+    fontSize: 9.5,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginBottom: 12,
+  },
+  featureList: { gap: 10 },
+  featureRow: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 10,
+  },
+  featureCheckBg: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  featureText: {
+    color: "rgba(255,255,255,0.88)",
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
+    lineHeight: 20,
+  },
+  poweredBy: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+  },
+  poweredByText: {
+    color: brand.violet400,
+    fontSize: 10.5,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+
+  // Notices
+  noticeBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 8,
-    backgroundColor: "rgba(252,211,77,0.12)",
-    borderColor: "rgba(252,211,77,0.4)",
-    borderWidth: 1,
+    backgroundColor: "rgba(245,158,11,0.12)",
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(245,158,11,0.25)",
+    marginBottom: 14,
   },
   noticeText: {
     color: palette.amber300,
-    fontSize: 12.5,
-    fontWeight: "700",
+    fontSize: 13,
     flex: 1,
+    lineHeight: 19,
   },
+
+  // Primary CTA
   primaryWrap: {
-    borderRadius: 999,
+    borderRadius: 18,
+    marginBottom: 12,
     shadowColor: ACCENT_PINK,
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.55,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 12,
   },
-  primary: {
+  primaryBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    paddingVertical: 16,
-    borderRadius: 999,
+    paddingVertical: 17,
+    borderRadius: 18,
   },
-  primaryText: {
+  primaryBtnText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: "800",
+    letterSpacing: 0.2,
   },
-  secondaryBtn: {
+
+  // Trial CTA
+  trialBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: `${brand.primary}60`, // audit-ok: intentional dark bg / custom color
+    backgroundColor: `${brand.primary}12`, // audit-ok: intentional dark bg / custom color
+    marginBottom: 12,
+  },
+  trialText: {
+    color: brand.violet300,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  // UCB / Razorpay alternative billing section
+  ucbSection: {
+    marginBottom: 12,
+  },
+  orRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  orText: {
+    color: "rgba(255,255,255,0.35)",
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+  },
+  razorpayBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     paddingVertical: 14,
-    borderRadius: 999,
-    marginTop: 10,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
+    borderColor: "rgba(255,255,255,0.10)",
+    marginBottom: 6,
   },
-  secondaryText: {
-    color: "#fff",
+  razorpayBtnText: {
+    color: "rgba(255,255,255,0.75)",
     fontSize: 14,
-    fontWeight: "800",
-  },
-  orDivider: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 14,
-    marginBottom: 2,
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
-  orText: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 11,
     fontWeight: "600",
-    letterSpacing: 0.3,
   },
-  trialBtn: {
-    alignItems: "center",
-    paddingVertical: 12,
-    marginTop: 4,
+  ucbNote: {
+    color: "rgba(255,255,255,0.25)",
+    fontSize: 10,
+    textAlign: "center",
+    letterSpacing: 0.2,
   },
-  trialText: {
-    color: ACCENT_PINK,
-    fontSize: 13,
-    fontWeight: "800",
-  },
+
+  // Trust row
   trustRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
     justifyContent: "center",
-    gap: 14,
-    marginTop: 14,
-    paddingHorizontal: 8,
+    gap: 10,
+    marginTop: 18,
+    marginBottom: 8,
+    flexWrap: "wrap",
   },
   trustItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
   },
+  trustDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
   trustText: {
-    color: "rgba(255,255,255,0.7)",
+    color: "rgba(196,181,253,0.6)",
     fontSize: 11.5,
     fontWeight: "600",
   },
+
+  // Maybe later
   maybeBtn: {
     alignItems: "center",
     paddingVertical: 14,
-    marginTop: 2,
   },
   maybeText: {
-    color: "rgba(255,255,255,0.55)",
+    color: "rgba(255,255,255,0.3)",
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "500",
   },
+
+  // Legal footer
   footer: {
-    color: "rgba(255,255,255,0.35)",
-    fontSize: 11,
+    color: "rgba(255,255,255,0.2)",
+    fontSize: 10,
     textAlign: "center",
-    marginTop: 8,
+    lineHeight: 15,
+    paddingHorizontal: 12,
   },
 });
