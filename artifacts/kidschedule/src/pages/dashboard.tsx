@@ -7,7 +7,8 @@ import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { AmyIcon } from "@/components/amy-icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/lib/firebase-auth-hooks";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { HeroAmbientLayer } from "@/components/hero-ambient-layer";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -266,6 +267,7 @@ function SmartHeroSection({
   const heroTags = ctx ? getHeroTags(aqiBucket, outdoorSuitability, snap) : [];
   const weatherEmoji = WEATHER_EMOJI_MAP[weatherCondition ?? ""] ?? "🌤️";
   const nowTime = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const isNight = (() => { const h = new Date().getHours(); return h >= 20 || h < 6; })();
 
   return (
     <div
@@ -277,12 +279,13 @@ function SmartHeroSection({
       <div className="absolute -top-16 -right-12 h-48 w-48 rounded-full pointer-events-none blur-3xl" style={{ background: grad.glowA }} />
       <div className="absolute -bottom-20 -left-10 h-40 w-40 rounded-full pointer-events-none blur-3xl" style={{ background: grad.glowB }} />
 
-      {/* Floating particles */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-        <div className="absolute top-4 right-20 h-1.5 w-1.5 rounded-full bg-white/20 animate-bounce" style={{ animationDuration: "3s" }} />
-        <div className="absolute top-12 right-10 h-1 w-1 rounded-full bg-white/15 animate-bounce" style={{ animationDuration: "4.5s", animationDelay: "1s" }} />
-        <div className="absolute bottom-8 right-16 h-1.5 w-1.5 rounded-full bg-white/15 animate-bounce" style={{ animationDuration: "5s", animationDelay: "0.6s" }} />
-      </div>
+      {/* Weather-reactive ambient animation layer */}
+      <HeroAmbientLayer
+        weatherCondition={weatherCondition}
+        aqiBucket={aqiBucket}
+        heroTags={heroTags}
+        isNight={isNight}
+      />
 
       {/* Row 1: greeting label + weather pill */}
       <div className="relative flex items-center justify-between gap-2">
