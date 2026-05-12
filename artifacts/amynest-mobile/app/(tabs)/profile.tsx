@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, ActivityIndicator, Alert, Platform, Linking,
 } from "react-native";
+import { useSubscriptionStore } from "@/store/useSubscriptionStore";
 import { useUser, useAuth } from "@/lib/firebase-auth";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -142,6 +143,7 @@ export default function ProfileScreen() {
 
   const router = useRouter();
   const { i18n } = useTranslation();
+  const entitlements = useSubscriptionStore((s) => s.entitlements);
   const [saving, setSaving] = useState(false);
   const [uploadingPic, setUploadingPic] = useState(false);
 
@@ -427,6 +429,24 @@ export default function ProfileScreen() {
         },
       ],
     );
+  };
+
+  const handleManageSubscription = async () => {
+    Haptics.selectionAsync();
+    const url = Platform.OS === "ios"
+      ? "itms-apps://apps.apple.com/account/subscriptions"
+      : `https://play.google.com/store/account/subscriptions?package=com.amynest.app`;
+    const canOpen = await Linking.canOpenURL(url);
+    if (!canOpen) {
+      Alert.alert(
+        "Open Store Settings",
+        Platform.OS === "ios"
+          ? "Go to App Store → Account → Subscriptions to manage or cancel."
+          : "Go to Google Play → Account → Subscriptions to manage or cancel.",
+      );
+      return;
+    }
+    await Linking.openURL(url);
   };
 
   const handleContactUs = async () => {
@@ -779,6 +799,27 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={12} color={colors.primary} style={{ marginLeft: "auto" }} />
           </TouchableOpacity>
         </Section>
+
+        {/* Manage Subscription — only shown for premium users */}
+        {entitlements?.isPremium && (
+          <TouchableOpacity
+            style={[styles.logoutBtn, { backgroundColor: brandAlpha.purple500_08, borderColor: brandAlpha.purple500_33 }]}
+            onPress={handleManageSubscription}
+          >
+            <Ionicons name="card-outline" size={20} color={brand.purple500} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.logoutText, { color: brand.purple500 }]}>
+                {t("screens.tabs_profile.manage_subscription")}
+              </Text>
+              <Text style={{ fontSize: 11, color: brand.violet300, marginTop: 1 }}>
+                {Platform.OS === "ios"
+                  ? t("screens.tabs_profile.manage_subscription_ios_hint")
+                  : t("screens.tabs_profile.manage_subscription_android_hint")}
+              </Text>
+            </View>
+            <Ionicons name="open-outline" size={15} color={brand.violet300} />
+          </TouchableOpacity>
+        )}
 
         {/* My Recipes */}
         <TouchableOpacity
