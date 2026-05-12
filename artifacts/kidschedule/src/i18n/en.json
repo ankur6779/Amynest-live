@@ -297,7 +297,11 @@
     "cancelling": "Cancelling…",
     "subscribe_google_play": "Subscribe with Google Play",
     "google_play_subtitle": "Manage your subscription securely through Google Play billing.",
-    "open_google_play": "Open Google Play"
+    "open_google_play": "Open Google Play",
+    "pay_with_apple": "Pay with Apple",
+    "apple_processing": "Processing with Apple…",
+    "apple_unavailable": "Apple billing is not available right now. Make sure you are signed in to the App Store and try again.",
+    "restore_purchases": "Restore Purchases"
   },
   "profile": {
     "title": "Parent Profile",
