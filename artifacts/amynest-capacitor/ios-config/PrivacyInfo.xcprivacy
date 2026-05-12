@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
+<!--
+  ╔══════════════════════════════════════════════════════════════════════════╗
+  ║  AmyNest — Apple Privacy Manifest (PrivacyInfo.xcprivacy)               ║
+  ║                                                                          ║
+  ║  REQUIRED since May 1, 2024 for ALL App Store submissions.               ║
+  ║  Without this file, Apple will REJECT your app.                          ║
+  ║                                                                          ║
+  ║  Placement in Xcode:                                                     ║
+  ║  • Select App target → File → New File → "App Privacy"                  ║
+  ║  • Name it PrivacyInfo.xcprivacy                                         ║
+  ║  • OR: copy this file into ios/App/App/ and add to the Xcode target      ║
+  ║                                                                          ║
+  ║  After any change: Product → Clean Build Folder → Archive again          ║
+  ╚══════════════════════════════════════════════════════════════════════════╝
+-->
+<plist version="1.0">
+<dict>
+
+  <!-- ── 1. Tracking ───────────────────────────────────────────────────────
+       AmyNest does NOT track users across apps or websites owned by other
+       companies for advertising or data-broker purposes.
+  ─────────────────────────────────────────────────────────────────────── -->
+  <key>NSPrivacyTracking</key>
+  <false/>
+
+  <!-- ── 2. Tracking Domains ───────────────────────────────────────────────
+       Empty because NSPrivacyTracking is false.
+  ─────────────────────────────────────────────────────────────────────── -->
+  <key>NSPrivacyTrackingDomains</key>
+  <array/>
+
+  <!-- ── 3. Collected Data Types ───────────────────────────────────────────
+       Declare every data type the app collects, even if not shared.
+       Apple categories: https://developer.apple.com/documentation/bundleresources/privacy_manifest_files/describing_data_use_in_privacy_manifests
+  ─────────────────────────────────────────────────────────────────────── -->
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array>
+
+    <!-- Name & Email Address (Clerk / Firebase registration) -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeName</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <true/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeEmailAddress</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <true/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+
+    <!-- User ID (Firebase UID / Clerk user ID) -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeUserID</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <true/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+
+    <!-- User Content: child profiles, routines, behavior logs -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <true/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+
+    <!-- Device ID (Firebase installation ID for push token) -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeDeviceID</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+
+    <!-- Crash Data (Firebase Crashlytics, if added) -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeCrashData</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+      </array>
+    </dict>
+
+  </array>
+
+  <!-- ── 4. Required Reason APIs ───────────────────────────────────────────
+       Declare WHY the app uses sensitive system APIs.
+       Capacitor + WKWebView internally access these APIs.
+       Apple will REJECT if these are missing when the APIs are used.
+  ─────────────────────────────────────────────────────────────────────── -->
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+
+    <!-- NSUserDefaults — Capacitor uses this for plugin state & preferences.
+         Reason CA92.1: "Access information to respond to the user's request." -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>CA92.1</string>
+      </array>
+    </dict>
+
+    <!-- File timestamp — WKWebView / Capacitor caching accesses file metadata.
+         Reason DDA9.1: "Declare a specific reason that accurately reflects use." -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>DDA9.1</string>
+      </array>
+    </dict>
+
+    <!-- System boot time — used by some analytics and performance SDKs.
+         Reason 35F9.1: "Measure the time the app has been running." -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>35F9.1</string>
+      </array>
+    </dict>
+
+    <!-- Disk space — WKWebView cache management checks available disk space.
+         Reason E174.1: "Display disk space information to the user on request." -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>E174.1</string>
+      </array>
+    </dict>
+
+  </array>
+
+</dict>
+</plist>

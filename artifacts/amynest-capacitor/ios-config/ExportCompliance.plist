@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
+<!--
+  ╔══════════════════════════════════════════════════════════════════════════╗
+  ║  AmyNest — Export Compliance Declaration                                 ║
+  ║                                                                          ║
+  ║  Add these keys to ios/App/App/Info.plist                               ║
+  ║                                                                          ║
+  ║  AmyNest uses HTTPS / TLS (standard iOS encryption) only.               ║
+  ║  It does NOT implement any custom encryption algorithms.                 ║
+  ║  This qualifies for ECCN 5D002 exemption (EAR 740.17(b)(1)).            ║
+  ║                                                                          ║
+  ║  Setting ITSAppUsesNonExemptEncryption = NO removes the need for        ║
+  ║  an annual self-classification report with the US BIS.                  ║
+  ╚══════════════════════════════════════════════════════════════════════════╝
+-->
+<plist version="1.0">
+<dict>
+
+  <!-- Tells Apple the app uses only exempt encryption (HTTPS/TLS).
+       Without this, App Store Connect shows an "Export Compliance" warning
+       every single time you upload a build. -->
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+
+</dict>
+</plist>
