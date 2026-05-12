@@ -182,9 +182,9 @@ export default function HubScreen() {
   // band chip clears it and returns to the default 2-section view.
   const [previewBand, setPreviewBand] = useState<number | null>(null);
 
-  // Section-group expand/collapse state — "today" and "learning" open by default.
+  // Section-group expand/collapse state — all collapsed by default.
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    () => new Set(["today", "learning"]),
+    () => new Set(),
   );
   const toggleSection = useCallback((key: string) => {
     LayoutAnimation.configureNext({
@@ -1630,38 +1630,9 @@ export default function HubScreen() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
               >
-                {/* Quick actions bar — tap a chip to expand that section */}
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingTop: 6, paddingBottom: 8 }}
-                >
-                  {HUB_SECTION_GROUPS.map(g => {
-                    const isActive = expandedSections.has(g.key);
-                    return (
-                      <Pressable
-                        key={g.key}
-                        onPress={() => { if (!isActive) toggleSection(g.key); }}
-                        style={({ pressed }) => ({
-                          flexDirection: "row", alignItems: "center", gap: 5,
-                          paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
-                          backgroundColor: isActive ? `${brand.primary}1a` : "rgba(255,255,255,0.07)",
-                          borderWidth: 1,
-                          borderColor: isActive ? brand.primary : "rgba(255,255,255,0.12)",
-                          opacity: pressed ? 0.8 : 1,
-                        })}
-                      >
-                        <Text style={{ fontSize: 14 }}>{g.emoji}</Text>
-                        <Text style={{ fontSize: 11.5, fontWeight: "700", color: isActive ? brand.primary : c.foreground }}>
-                          {t(g.i18nKey)}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-
                 {/* TODAY FOR YOU — featured tiles + amy + tips */}
                 <HubSectionGroupBlock
+                  groupKey="today"
                   emoji="✨"
                   title={t("parent_hub.section_groups.today")}
                   expanded={expandedSections.has("today")}
@@ -1721,6 +1692,7 @@ export default function HubScreen() {
                 {/* LEARNING ZONE */}
                 {section1.some(tile => SECTION_LEARNING_IDS.has(tile.id)) && (
                   <HubSectionGroupBlock
+                    groupKey="learning"
                     emoji="📚"
                     title={t("parent_hub.section_groups.learning")}
                     expanded={expandedSections.has("learning")}
@@ -1739,6 +1711,7 @@ export default function HubScreen() {
                 {/* CREATIVITY & ACTIVITIES */}
                 {section1.some(tile => SECTION_CREATIVITY_IDS.has(tile.id)) && (
                   <HubSectionGroupBlock
+                    groupKey="creativity"
                     emoji="🎨"
                     title={t("parent_hub.section_groups.creativity")}
                     expanded={expandedSections.has("creativity")}
@@ -1757,6 +1730,7 @@ export default function HubScreen() {
                 {/* STORIES & COMMUNICATION */}
                 {section1.some(tile => SECTION_STORIES_IDS.has(tile.id)) && (
                   <HubSectionGroupBlock
+                    groupKey="stories"
                     emoji="📖"
                     title={t("parent_hub.section_groups.stories")}
                     expanded={expandedSections.has("stories")}
@@ -1775,6 +1749,7 @@ export default function HubScreen() {
                 {/* PARENT SUPPORT */}
                 {section1.some(tile => SECTION_SUPPORT_IDS.has(tile.id)) && (
                   <HubSectionGroupBlock
+                    groupKey="support"
                     emoji="❤️"
                     title={t("parent_hub.section_groups.support")}
                     expanded={expandedSections.has("support")}
@@ -2041,17 +2016,28 @@ function Section({
   );
 }
 
+// ─── Per-section accent palette ──────────────────────────────────────────────
+const SECTION_ACCENT: Record<string, { tint: string; tintDark: string; border: string; borderDark: string; icon: string; iconDark: string; glow: string }> = {
+  today:      { tint: "rgba(251,191,36,0.09)",  tintDark: "rgba(251,191,36,0.06)",  border: "rgba(251,191,36,0.35)", borderDark: "rgba(251,191,36,0.22)", icon: "rgba(251,191,36,0.28)", iconDark: "rgba(251,191,36,0.22)", glow: "rgba(251,191,36,0.50)" },
+  learning:   { tint: "rgba(99,102,241,0.09)",  tintDark: "rgba(99,102,241,0.06)",  border: "rgba(99,102,241,0.35)", borderDark: "rgba(99,102,241,0.22)", icon: "rgba(99,102,241,0.28)", iconDark: "rgba(99,102,241,0.22)", glow: "rgba(99,102,241,0.50)" },
+  creativity: { tint: "rgba(244,114,182,0.09)", tintDark: "rgba(244,114,182,0.06)", border: "rgba(244,114,182,0.35)",borderDark: "rgba(244,114,182,0.22)",icon: "rgba(244,114,182,0.28)",iconDark: "rgba(244,114,182,0.22)",glow: "rgba(244,114,182,0.50)" },
+  stories:    { tint: "rgba(56,189,248,0.09)",  tintDark: "rgba(56,189,248,0.06)",  border: "rgba(56,189,248,0.35)", borderDark: "rgba(56,189,248,0.22)", icon: "rgba(56,189,248,0.28)", iconDark: "rgba(56,189,248,0.22)", glow: "rgba(56,189,248,0.50)" },
+  support:    { tint: "rgba(251,113,133,0.09)", tintDark: "rgba(251,113,133,0.06)", border: "rgba(251,113,133,0.35)",borderDark: "rgba(251,113,133,0.22)",icon: "rgba(251,113,133,0.28)",iconDark: "rgba(251,113,133,0.22)",glow: "rgba(251,113,133,0.50)" },
+};
+
 // ─── HubSectionGroupBlock ────────────────────────────────────────────────────
 // Collapsible section container for the 5-group Parent Hub layout.
 // Uses LayoutAnimation (triggered by the parent toggleSection callback) for
-// smooth open/close. Keeps tile gradients/LockedBlock structure unchanged.
+// smooth open/close. Each group gets a unique accent color + glow.
 function HubSectionGroupBlock({
+  groupKey,
   emoji,
   title,
   expanded,
   onToggle,
   children,
 }: {
+  groupKey: string;
   emoji: string;
   title: string;
   expanded: boolean;
@@ -2061,17 +2047,27 @@ function HubSectionGroupBlock({
   const c = useColors();
   const { mode } = useTheme();
   const isLight = mode === "light";
-  const glassBg = isLight ? "rgba(255,255,255,0.60)" : "rgba(255,255,255,0.04)";
-  const glassBorder = isLight ? "rgba(15,23,42,0.07)" : "rgba(255,255,255,0.09)";
+  const accent = SECTION_ACCENT[groupKey] ?? SECTION_ACCENT.learning;
+
+  const bg     = isLight ? accent.tint     : accent.tintDark;
+  const border = isLight ? accent.border   : accent.borderDark;
+  const iconBg = isLight ? accent.icon     : accent.iconDark;
+
   return (
     <View
       style={{
         marginTop: 12,
         borderRadius: 18,
         overflow: "hidden",
-        backgroundColor: glassBg,
-        borderWidth: 1,
-        borderColor: glassBorder,
+        backgroundColor: bg,
+        borderWidth: 1.5,
+        borderColor: border,
+        // Glow shadow
+        shadowColor: accent.glow,
+        shadowOpacity: expanded ? (isLight ? 0.55 : 0.70) : (isLight ? 0.22 : 0.35),
+        shadowRadius: expanded ? 22 : 10,
+        shadowOffset: { width: 0, height: expanded ? 8 : 4 },
+        elevation: expanded ? 8 : 3,
       }}
     >
       <Pressable
@@ -2081,7 +2077,7 @@ function HubSectionGroupBlock({
           alignItems: "center",
           gap: 10,
           paddingHorizontal: 14,
-          paddingVertical: 12,
+          paddingVertical: 13,
           opacity: pressed ? 0.8 : 1,
         })}
         accessibilityRole="button"
@@ -2089,15 +2085,17 @@ function HubSectionGroupBlock({
       >
         <View
           style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            backgroundColor: isLight ? "rgba(99,102,241,0.10)" : "rgba(99,102,241,0.18)",
+            width: 38,
+            height: 38,
+            borderRadius: 12,
+            backgroundColor: iconBg,
             alignItems: "center",
             justifyContent: "center",
+            borderWidth: 1,
+            borderColor: border,
           }}
         >
-          <Text style={{ fontSize: 18 }}>{emoji}</Text>
+          <Text style={{ fontSize: 20 }}>{emoji}</Text>
         </View>
         <Text
           style={{
@@ -2110,14 +2108,27 @@ function HubSectionGroupBlock({
         >
           {title}
         </Text>
-        <Ionicons
-          name={expanded ? "chevron-up" : "chevron-down"}
-          size={16}
-          color={expanded ? brand.primary : c.mutedForeground}
-        />
+        <View style={{
+          width: 26, height: 26, borderRadius: 13,
+          alignItems: "center", justifyContent: "center",
+          borderWidth: 1,
+          borderColor: expanded ? border : "rgba(255,255,255,0.18)",
+          backgroundColor: expanded ? iconBg : "rgba(255,255,255,0.06)",
+        }}>
+          <Ionicons
+            name={expanded ? "chevron-up" : "chevron-down"}
+            size={15}
+            color={expanded ? border : c.mutedForeground}
+          />
+        </View>
       </Pressable>
       {expanded && (
-        <View style={{ paddingHorizontal: 10, paddingBottom: 12, paddingTop: 2 }}>
+        <View style={{
+          paddingHorizontal: 10, paddingBottom: 12, paddingTop: 2,
+          borderTopWidth: 1,
+          borderTopColor: border,
+          backgroundColor: isLight ? "rgba(255,255,255,0.40)" : "rgba(255,255,255,0.02)",
+        }}>
           {children}
         </View>
       )}

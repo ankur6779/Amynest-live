@@ -64,6 +64,14 @@ const WEB_HUB_GROUPS = [
   { key: "support",    emoji: "❤️", i18n: "parent_hub.section_groups.support"    },
 ] as const;
 
+const GROUP_GLASS: Record<string, { base: string; glow: string; icon: string; border: string }> = {
+  today:      { base: "bg-amber-400/[0.07] dark:bg-amber-400/[0.05]",   glow: "shadow-[0_0_0_1px_rgba(251,191,36,0.22),0_16px_40px_-8px_rgba(251,191,36,0.28)]",  icon: "bg-gradient-to-br from-amber-300/50 to-yellow-400/30",   border: "border-amber-400/30 dark:border-amber-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
+  learning:   { base: "bg-indigo-500/[0.07] dark:bg-indigo-500/[0.05]", glow: "shadow-[0_0_0_1px_rgba(99,102,241,0.22),0_16px_40px_-8px_rgba(99,102,241,0.28)]",  icon: "bg-gradient-to-br from-indigo-400/50 to-violet-500/30",  border: "border-indigo-400/30 dark:border-indigo-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
+  creativity: { base: "bg-pink-400/[0.07] dark:bg-pink-400/[0.05]",     glow: "shadow-[0_0_0_1px_rgba(244,114,182,0.22),0_16px_40px_-8px_rgba(244,114,182,0.28)]", icon: "bg-gradient-to-br from-pink-400/50 to-rose-400/30",      border: "border-pink-400/30 dark:border-pink-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
+  stories:    { base: "bg-sky-400/[0.07] dark:bg-sky-400/[0.05]",       glow: "shadow-[0_0_0_1px_rgba(56,189,248,0.22),0_16px_40px_-8px_rgba(56,189,248,0.28)]",   icon: "bg-gradient-to-br from-sky-400/50 to-blue-500/30",       border: "border-sky-400/30 dark:border-sky-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
+  support:    { base: "bg-rose-400/[0.07] dark:bg-rose-400/[0.05]",     glow: "shadow-[0_0_0_1px_rgba(251,113,133,0.22),0_16px_40px_-8px_rgba(251,113,133,0.28)]", icon: "bg-gradient-to-br from-rose-400/50 to-red-400/30",       border: "border-rose-400/30 dark:border-rose-400/20" }, // audit-ok: intentional per-section accent tint for glass UI
+};
+
 // ─── Section Wrapper ─────────────────────────────────────────────────────────
 interface SectionProps {
   id: string;
@@ -487,9 +495,9 @@ export default function ParentingHub() {
   const hubUsage = useFeatureUsage();
   const tryFreeFor = (id: string) => !hubUsage.isPremium && !hubUsage.hasUsedFeature(id);
 
-  // Section-group expand/collapse — "today" + "learning" open by default.
+  // Section-group expand/collapse — all collapsed by default.
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    () => new Set(["today", "learning"]),
+    () => new Set(),
   );
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
@@ -836,51 +844,57 @@ export default function ParentingHub() {
           {/* ── SECTION 1: For {Child Name} ─────────────────────────────── */}
           <ForYouHeader childName={effectiveChild.name} band={currentBand} ageGroup={ageGroup} />
 
-          {/* Quick actions bar */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {WEB_HUB_GROUPS.map(g => {
-              const active = expandedGroups.has(g.key);
-              return (
-                <button
-                  key={g.key}
-                  onClick={() => { if (!active) toggleGroup(g.key); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
-                    active
-                      ? "bg-primary/10 text-primary border-primary/30"
-                      : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
-                  }`}
-                >
-                  <span>{g.emoji}</span>
-                  <span>{t(g.i18n)}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* 5 collapsible section groups */}
-          <div className="space-y-4">
+          {/* 5 collapsible section groups — glass + glow tiles */}
+          <div className="space-y-3">
             {WEB_HUB_GROUPS.map(group => {
               const tileIds = new Set(WEB_HUB_SECTION_TILE_IDS[group.key] ?? []);
               const groupFeatured = group.key === "today" ? forYouFeatured : [];
               const groupGrid = forYouGrid.filter(s => tileIds.has(s.id));
               if (groupFeatured.length === 0 && groupGrid.length === 0) return null;
               const isOpen = expandedGroups.has(group.key);
+              const gs = GROUP_GLASS[group.key] ?? GROUP_GLASS.today;
               return (
-                <div key={group.key} id={`hub-group-${group.key}`}>
+                <div
+                  key={group.key}
+                  id={`hub-group-${group.key}`}
+                  className={[
+                    "relative rounded-2xl overflow-hidden transition-all duration-300",
+                    "backdrop-blur-xl border",
+                    gs.base, gs.border,
+                    isOpen
+                      ? gs.glow
+                      : "shadow-[0_4px_20px_-6px_rgba(15,23,42,0.10)] hover:shadow-[0_6px_28px_-6px_rgba(15,23,42,0.18)]",
+                  ].join(" ")}
+                >
                   <button
                     onClick={() => toggleGroup(group.key)}
-                    className="w-full flex items-center gap-2.5 text-left px-1 py-1 mb-3"
+                    className={[
+                      "w-full flex items-center gap-3 text-left px-4 py-3.5",
+                      "transition-colors duration-200",
+                      isOpen ? "bg-black/[0.05] dark:bg-black/[0.10]" : "hover:bg-white/10 dark:hover:bg-white/[0.04]",
+                    ].join(" ")}
+                    aria-expanded={isOpen}
                   >
-                    <span className={`flex items-center justify-center w-8 h-8 rounded-xl text-lg ${isOpen ? "bg-primary/12" : "bg-muted"}`}>
+                    <span className={[
+                      "flex items-center justify-center w-10 h-10 rounded-2xl shrink-0 text-xl",
+                      "shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-white/30 dark:ring-white/10",
+                      gs.icon,
+                    ].join(" ")}>
                       {group.emoji}
                     </span>
-                    <span className={`flex-1 text-sm font-bold tracking-wide uppercase ${isOpen ? "text-primary" : "text-foreground"}`}>
+                    <span className={`flex-1 font-quicksand font-bold text-[15px] leading-tight tracking-wide ${isOpen ? "text-primary" : "text-foreground"}`}>
                       {t(group.i18n)}
                     </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
+                    <span className={[
+                      "shrink-0 w-7 h-7 rounded-full flex items-center justify-center",
+                      "border bg-white/50 dark:bg-white/[0.06] transition-transform duration-300",
+                      isOpen ? "rotate-180 border-primary/40 text-primary" : "border-border/50 text-muted-foreground",
+                    ].join(" ")}>
+                      <ChevronDown className="h-4 w-4" />
+                    </span>
                   </button>
                   {isOpen && (
-                    <div className="space-y-3 pl-1">
+                    <div className="px-4 pb-5 pt-3 border-t border-white/25 dark:border-white/[0.07] bg-white/20 dark:bg-white/[0.01] animate-in fade-in slide-in-from-top-1 duration-300 space-y-3">
                       {groupFeatured.length > 0 && (
                         <div className="space-y-3">
                           {groupFeatured.map(s => {
