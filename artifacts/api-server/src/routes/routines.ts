@@ -327,6 +327,14 @@ export async function enrichMealOptionsWithAi(
   ctx: EnrichCtx,
   openai: OpenAiClient,
 ): Promise<ScheduleItem[]> {
+  // INFANT SAFETY HARD BLOCK — never send infant feeding sessions to AI for
+  // meal enrichment. Infants (0–11 months) must only receive breast milk /
+  // formula / age-appropriate purees specified by the rule-based template.
+  // AI enrichment would overwrite those safe notes with adult food options
+  // (Paneer Tikka, Dhokla, etc.) which is both developmentally inappropriate
+  // and a potential choking/allergy hazard for this age group.
+  if (ctx.ageGroup === "infant") return items;
+
   // Identify slots that need fresh AI options.
   const targets: Array<{ idx: number; activity: string; time: string; isQuickBefore: boolean; isTiffin: boolean; isDrunch: boolean }> = [];
   items.forEach((it, idx) => {

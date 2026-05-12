@@ -17,8 +17,8 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { generateAiRoutine } from "./routines.js";
-import { REGION_LABELS, type Region } from "../lib/routine-templates.js";
+import { generateAiRoutine, enrichMealOptionsWithAi } from "./routines.js";
+import { REGION_LABELS, type Region, type ScheduleItem } from "../lib/routine-templates.js";
 
 // ─── Mock-client factory ───────────────────────────────────────────────────
 function makeMockOpenai(responseJson: object) {
@@ -1113,6 +1113,95 @@ describe("generateAiRoutine — weather adjustment is applied to AI output", () 
       const yesTotal = yesOut.reduce((s, it) => s + (it.duration ?? 0), 0);
       const limTotal = limOut.reduce((s, it) => s + (it.duration ?? 0), 0);
       assert.ok(limTotal <= yesTotal);
+    }
+  });
+});
+
+// ─── enrichMealOptionsWithAi — infant hard block ───────────────────────────────
+// Regression guard: infants must NEVER be sent to the AI meal enrichment pass.
+// Previously enrichMealOptionsWithAi had no early exit for infant ageGroup, so
+// feeding session notes like "Morning feed (breast/formula)..." were overwritten
+// with adult food options (Paneer Tikka, Dhokla, Upma) by the AI.
+describe("enrichMealOptionsWithAi — infant hard block", () => {
+  // Tracks whether the mock OpenAI client was actually called.
+  function makeTrackingMockOpenai() {
+    let called = false;
+    const client = {
+      chat: {
+        completions: {
+          create: async () => {
+            called = true;
+            return { choices: [{ message: { content: '{"slots":[{"options":["A","B","C","D"]}]}' } }] };
+          },
+        },
+      },
+    };
+    return { client, wasCalled: () => called };
+  }
+
+  const infantItems: ScheduleItem[] = [
+    {
+      time: "7:00 AM",
+      activity: "Morning Wake & Feed",
+      duration: 30,
+      category: "meal",
+      notes: "Morning feed (breast/formula). Skin-to-skin cuddle after feeding.",
+      status: "pending",
+    },
+    {
+      time: "10:00 AM",
+      activity: "Mid-Morning Feed",
+      duration: 20,
+      category: "meal",
+      notes: "Breast milk or formula. Feed on demand.",
+      status: "pending",
+    },
+    {
+      time: "1:00 PM",
+      activity: "Afternoon Feed",
+      duration: 20,
+      category: "meal",
+      notes: "Feed before nap — not after.",
+      status: "pending",
+    },
+  ];
+
+  const infantCtx = {
+    foodType: "veg",
+    allergies: null,
+    foodStyle: null,
+    subCuisine: null,
+    region: null,
+    ageGroup: "infant" as const,
+  };
+
+  it("returns items unchanged without calling OpenAI", async () => {
+    const { client, wasCalled } = makeTrackingMockOpenai();
+    const result = await enrichMealOptionsWithAi(infantItems, infantCtx, client);
+    assert.ok(!wasCalled(), "OpenAI must NOT be called for infant age group");
+    assert.deepStrictEqual(result, infantItems, "Items must be returned exactly as provided");
+  });
+
+  it("preserves original infant feeding session notes (no adult food injection)", async () => {
+    const { client } = makeTrackingMockOpenai();
+    const result = await enrichMealOptionsWithAi(infantItems, infantCtx, client);
+    const ADULT_FOOD_PATTERN = /paneer tikka|dhokla|upma|paratha|chapati|sandwich|noodles/i;
+    for (const item of result) {
+      assert.ok(
+        !ADULT_FOOD_PATTERN.test(item.notes ?? ""),
+        `Adult food found in infant meal notes: "${item.activity}": "${item.notes}"`,
+      );
+    }
+  });
+
+  it("does NOT add Options: prefix to infant feeding session notes", async () => {
+    const { client } = makeTrackingMockOpenai();
+    const result = await enrichMealOptionsWithAi(infantItems, infantCtx, client);
+    for (const item of result) {
+      assert.ok(
+        !(item.notes ?? "").startsWith("Options:"),
+        `Infant feeding notes must not start with "Options:", got: "${item.notes}"`,
+      );
     }
   });
 });
