@@ -227,6 +227,18 @@ function EmotionalSupportSection() {
           </p>
         </div>
       </div>
+
+      {/* Feedback entry point */}
+      <Link href="/feedback">
+        <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/35 transition-all px-4 py-3 cursor-pointer group">
+          <span className="text-xl">💡</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">{t("parent_hub.feedback_cta.title", { defaultValue: "Share your ideas with us" })}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("parent_hub.feedback_cta.subtitle", { defaultValue: "Help shape AmyNest for every family ❤️" })}</p>
+          </div>
+          <span className="text-primary text-xs font-semibold shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
+        </div>
+      </Link>
     </div>;
 }
 
