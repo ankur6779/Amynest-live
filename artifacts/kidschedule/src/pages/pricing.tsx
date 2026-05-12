@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
+import { useNativeBilling } from "@/hooks/use-native-billing";
 import { isIndiaRegion, isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
 
 // Dates >= this year are sentinel "no real expiry" values from the DB
@@ -73,6 +74,8 @@ export default function PricingPage() {
   const isManagedByStore = provider === "revenuecat";
   const canCancelHere = isPremium && !cancelAtPeriodEnd && !isManagedByStore;
   const isAndroid = isAndroidDevice();
+  const nativeBilling = useNativeBilling();
+  const isIOS = nativeBilling.platform === "ios";
 
   const onUpgrade = async (method?: "upi") => {
     const key = method === "upi" ? "googlepay" : "razorpay";
@@ -96,7 +99,15 @@ export default function PricingPage() {
     if (!res.ok) setNotice(res.reason ?? "Could not cancel. Please try again."); // i18n-ok: fallback error
   };
 
-  const isProcessing = submitting !== null || verifying;
+  const onUpgradeApple = async () => {
+    setNotice(null);
+    const res = await nativeBilling.purchase(selected);
+    if (!res.ok && !res.userCancelled) {
+      setNotice(res.reason ?? t("pricing.checkout_unavailable"));
+    }
+  };
+
+  const isProcessing = submitting !== null || verifying || nativeBilling.purchasing;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B1A] via-[#1A0B2E] to-[#0B0B1A]"> {/* audit-ok: intentional dark brand gradient background */}
@@ -248,8 +259,52 @@ export default function PricingPage() {
       {/* ── CTAs ── */}
       <div className="mx-auto max-w-md space-y-3 px-4 pb-10">
 
+        {/* iOS Capacitor → Apple IAP via RevenueCat (highest priority; Apple policy forbids other gateways) */}
+        {isIOS && !isPremium && (
+          <div className="space-y-2">
+            {nativeBilling.unavailableReason ? (
+              <div
+                data-on-dark
+                className="w-full space-y-2 rounded-xl border border-white/15 bg-white/5 px-4 py-4 text-center"
+              >
+                <Smartphone className="mx-auto h-5 w-5 text-white/60" />
+                {/* audit-ok: white text on dark semi-transparent card */}
+                <p className="text-sm font-bold text-white/90">{t("pricing.apple_unavailable")}</p>
+                <p className="text-xs leading-relaxed text-white/55">{nativeBilling.unavailableReason}</p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onUpgradeApple}
+                disabled={isProcessing || !nativeBilling.available || plans.length === 0}
+                data-testid="button-upgrade-apple"
+                data-on-dark
+                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-black shadow-[0_4px_18px_rgba(0,0,0,0.5)] transition-opacity hover:opacity-80 disabled:opacity-50"
+              >
+                {nativeBilling.purchasing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin text-white" />
+                    {/* audit-ok: white text on black Apple button */}
+                    <span className="text-sm font-bold text-white">{t("pricing.apple_processing")}</span>
+                  </>
+                ) : (
+                  <>
+                    {/* audit-block-ignore-start — Apple Inc. logo (required by Apple HIG for Pay-with-Apple buttons) */}
+                    <svg viewBox="0 0 384 512" width="18" height="22" fill="white" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+                    </svg>
+                    {/* audit-block-ignore-end */}
+                    {/* audit-ok: white text on black Apple button */}
+                    <span className="text-sm font-bold text-white">{t("pricing.pay_with_apple")}</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+
         {/* ── India: Google Pay (primary) + Razorpay (secondary) ── */}
-        {isIndia && !isPremium && (
+        {!isIOS && isIndia && !isPremium && (
           <>
             {/* PRIMARY: Google Pay button */}
             {/* audit-ok: Google Pay button — white bg with Google brand gray text (#3C4043) and Google blue spinner (#4285F4) per Google Pay brand guidelines */}
@@ -293,8 +348,8 @@ export default function PricingPage() {
           </>
         )}
 
-        {/* Already premium (India) */}
-        {isIndia && isPremium && (
+        {/* Already premium — shown for all platforms/regions */}
+        {isPremium && (
           <div
             data-on-dark
             // audit-ok: green-500/green-400 — semantic success colour for premium confirmation
@@ -305,8 +360,8 @@ export default function PricingPage() {
           </div>
         )}
 
-        {/* Non-India + Android → Google Play billing */}
-        {!isIndia && isAndroid && !isPremium && (
+        {/* Non-India + Android (non-iOS) → Google Play billing */}
+        {!isIOS && !isIndia && isAndroid && !isPremium && (
           <a
             href={PLAY_STORE_URL}
             target="_blank"
@@ -332,8 +387,8 @@ export default function PricingPage() {
           </a>
         )}
 
-        {/* Non-India + non-Android → prompt to download the app */}
-        {!isIndia && !isAndroid && !isPremium && (
+        {/* Non-India + non-Android + non-iOS → prompt to download the app */}
+        {!isIOS && !isIndia && !isAndroid && !isPremium && (
           <div
             data-on-dark
             className="w-full space-y-2 rounded-xl border border-white/15 bg-white/5 px-4 py-4 text-center"
