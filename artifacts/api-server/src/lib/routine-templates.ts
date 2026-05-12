@@ -1299,29 +1299,33 @@ function anchorMealWindows(items: ScheduleItem[], opts: AnchorOpts): ScheduleIte
   // Target window: 17:00–18:30. If lunch was late, push drunch forward so the
   // gap is at least 120 minutes. First, try to upgrade an existing snack block;
   // otherwise insert a fresh Drunch block.
-  const drunchEarliestMins = anchoredLunchMins > 0
-    ? Math.max(17 * 60, anchoredLunchMins + 120)  // 2 hr min gap after lunch
-    : 17 * 60;
-  const drunchLatestMins = 18 * 60 + 30;
-  const drunchIdx = findIdx((it) => /(\bdrunch\b|afternoon snack|after-school snack|mid-morning snack|post-school snack|evening snack)/i.test(it.activity) && (it.category ?? "").toLowerCase() === "meal");
-  if (drunchIdx !== -1) {
-    const it = out[drunchIdx];
-    it.activity = "Drunch";
-    const cur = timeToMins(it.time);
-    const target = clamp(cur, drunchEarliestMins, drunchLatestMins);
-    setItemTime(it, target);
-    it.duration = Math.max(it.duration, 20);
-    // Preserve AI-generated notes; do not overwrite with hardcoded text.
-  } else {
-    // Inserted slot — leave notes empty for the AI enrichment pass to fill.
-    out.push({
-      time: minsToTime(Math.min(drunchEarliestMins + 30, drunchLatestMins)),
-      activity: "Drunch",
-      duration: 25,
-      category: "meal",
-      notes: EMPTY_MEAL_NOTES,
-      status: "pending",
-    });
+  // INFANT SAFETY: infants have no drunch — they have demand-feeding sessions
+  // only. Skip the drunch anchor entirely for infant age group.
+  if (ageGroup !== "infant") {
+    const drunchEarliestMins = anchoredLunchMins > 0
+      ? Math.max(17 * 60, anchoredLunchMins + 120)  // 2 hr min gap after lunch
+      : 17 * 60;
+    const drunchLatestMins = 18 * 60 + 30;
+    const drunchIdx = findIdx((it) => /(\bdrunch\b|afternoon snack|after-school snack|mid-morning snack|post-school snack|evening snack)/i.test(it.activity) && (it.category ?? "").toLowerCase() === "meal");
+    if (drunchIdx !== -1) {
+      const it = out[drunchIdx];
+      it.activity = "Drunch";
+      const cur = timeToMins(it.time);
+      const target = clamp(cur, drunchEarliestMins, drunchLatestMins);
+      setItemTime(it, target);
+      it.duration = Math.max(it.duration, 20);
+      // Preserve AI-generated notes; do not overwrite with hardcoded text.
+    } else {
+      // Inserted slot — leave notes empty for the AI enrichment pass to fill.
+      out.push({
+        time: minsToTime(Math.min(drunchEarliestMins + 30, drunchLatestMins)),
+        activity: "Drunch",
+        duration: 25,
+        category: "meal",
+        notes: EMPTY_MEAL_NOTES,
+        status: "pending",
+      });
+    }
   }
 
   // 5. Dinner — anchor 19:30–21:00 (7:30 PM earliest; allows cultural flexibility).

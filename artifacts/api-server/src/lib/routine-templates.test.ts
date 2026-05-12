@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import {
   applyRoutineV2,
+  anchorMealSlots,
   generateRuleBasedRoutine,
   timeToMins,
   minsToTime,
@@ -818,5 +819,133 @@ describe("generateRuleBasedRoutine — weatherOutdoor", () => {
       const limTotal = limOutdoor.reduce((s, it) => s + (it.duration ?? 0), 0);
       assert.ok(limTotal <= yesTotal, `limited should not increase outdoor minutes (yes=${yesTotal}, limited=${limTotal})`);
     }
+  });
+});
+
+// ─── Infant safety regression tests ───────────────────────────────────────────
+// Regression guard: infants must NEVER get a Drunch slot injected — they have
+// demand-feeding sessions only. anchorMealSlots previously inserted Drunch for
+// all age groups, causing adult food (Paneer Tikka, Dhokla, etc.) to appear in
+// infant schedules after the AI enrichment pass filled the empty notes.
+describe("anchorMealSlots — infant safety (no Drunch injection)", () => {
+  const infantFeedingItems: ScheduleItem[] = [
+    {
+      time: "7:00 AM",
+      activity: "Morning Wake & Feed",
+      duration: 30,
+      category: "meal",
+      notes: "Morning feed (breast/formula). Skin-to-skin cuddle after feeding.",
+      status: "pending",
+    },
+    {
+      time: "10:00 AM",
+      activity: "Mid-Morning Feed",
+      duration: 20,
+      category: "meal",
+      notes: "Breast milk or formula. Feed on demand.",
+      status: "pending",
+    },
+    {
+      time: "1:00 PM",
+      activity: "Afternoon Feed",
+      duration: 20,
+      category: "meal",
+      notes: "Feed before nap — not after. A full baby sleeps better.",
+      status: "pending",
+    },
+    {
+      time: "5:00 PM",
+      activity: "Evening Feed",
+      duration: 20,
+      category: "meal",
+      notes: "Evening feed — keep baby awake during feeding.",
+      status: "pending",
+    },
+    {
+      time: "9:00 PM",
+      activity: "Sleep Time",
+      duration: 0,
+      category: "sleep",
+      notes: "Infants need 14–17 hours of sleep daily.",
+      status: "pending",
+    },
+  ];
+
+  const opts = {
+    hasSchool: false,
+    schoolStartMins: 0,
+    schoolEndMins: 0,
+    ageGroup: "infant" as const,
+  };
+
+  it("does NOT inject a Drunch slot for infant age group", () => {
+    const result = anchorMealSlots(infantFeedingItems, opts);
+    const drunch = result.find((it) => /\bdrunch\b/i.test(it.activity));
+    assert.equal(drunch, undefined, `anchorMealSlots must NOT insert a Drunch block for infants, got: ${drunch?.activity}`);
+  });
+
+  it("does NOT inject a Drunch even when hasSchool is true (infants don't go to school)", () => {
+    const result = anchorMealSlots(infantFeedingItems, { ...opts, hasSchool: true, schoolStartMins: 9 * 60, schoolEndMins: 13 * 60 });
+    const drunch = result.find((it) => /\bdrunch\b/i.test(it.activity));
+    assert.equal(drunch, undefined, `anchorMealSlots must NOT insert a Drunch block for infants (school=true), got: ${drunch?.activity}`);
+  });
+
+  it("preserves the original feeding session notes without alteration", () => {
+    const result = anchorMealSlots(infantFeedingItems, opts);
+    const morningFeed = result.find((it) => /morning wake & feed/i.test(it.activity));
+    assert.ok(morningFeed, "Morning Wake & Feed item should survive anchorMealSlots");
+    assert.ok(
+      morningFeed.notes?.includes("breast/formula"),
+      `Original feeding notes must be preserved unchanged, got: "${morningFeed.notes}"`,
+    );
+  });
+
+  it("generateRuleBasedRoutine for infant produces zero Drunch blocks", () => {
+    const routine = generateRuleBasedRoutine({
+      childName: "Baby",
+      ageGroup: "infant",
+      wakeUpTime: "07:00",
+      sleepTime: "21:00",
+      hasSchool: false,
+      schoolStartTime: "09:00",
+      schoolEndTime: "14:00",
+      foodType: "veg",
+      mood: "happy",
+      caregiver: "mom",
+      weatherOutdoor: "yes",
+      date: "2026-01-15",
+    });
+    const drunchBlocks = routine.items.filter((it) => /\bdrunch\b/i.test(it.activity));
+    assert.equal(
+      drunchBlocks.length,
+      0,
+      `Infant routine must have 0 Drunch blocks, got: ${drunchBlocks.map((b) => b.activity).join(", ")}`,
+    );
+  });
+
+  it("generateRuleBasedRoutine for infant has no adult food in meal notes", () => {
+    const routine = generateRuleBasedRoutine({
+      childName: "Baby",
+      ageGroup: "infant",
+      wakeUpTime: "07:00",
+      sleepTime: "21:00",
+      hasSchool: false,
+      schoolStartTime: "09:00",
+      schoolEndTime: "14:00",
+      foodType: "veg",
+      mood: "happy",
+      caregiver: "mom",
+      weatherOutdoor: "yes",
+      date: "2026-01-15",
+    });
+    const ADULT_FOOD_PATTERN = /paneer tikka|dhokla|upma|paratha|chapati|sandwich|noodles|pizza|burger/i;
+    const violations = routine.items.filter(
+      (it) => (it.category === "meal" || it.category === "tiffin") && ADULT_FOOD_PATTERN.test(it.notes ?? ""),
+    );
+    assert.equal(
+      violations.length,
+      0,
+      `Infant routine meal notes must not contain adult food. Violations: ${violations.map((v) => `"${v.activity}": "${v.notes}"`).join("; ")}`,
+    );
   });
 });
