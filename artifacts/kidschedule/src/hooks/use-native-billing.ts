@@ -10,6 +10,13 @@ import {
   type NativeBilling,
   type NativePurchaseResult,
 } from "@/lib/native-billing";
+import {
+  isCapacitorIOS,
+  initIOSBilling,
+  getIOSPackageForPlan,
+  purchaseIOSPackage,
+  restoreIOSPurchases,
+} from "@/lib/native-billing-ios";
 import type { Plan } from "@/hooks/use-subscription";
 
 type RcConfig = {
@@ -21,16 +28,18 @@ type RcConfig = {
 };
 
 export type NativeBillingState = {
-  /** True if the page is running inside the Android wrapper at all. */
+  /** "ios" inside Capacitor iOS shell, "android" inside Android wrapper, "web" otherwise. */
+  platform: "ios" | "android" | "web";
+  /** True when running inside any native shell (iOS Capacitor OR Android wrapper). */
   wrapperPresent: boolean;
-  /** True only after the bridge confirms RevenueCat is initialised. */
+  /** True only after the bridge confirms billing is initialised. */
   available: boolean;
   /** True while a purchase is in-flight. */
   purchasing: boolean;
   /**
-   * If `wrapperPresent && !available`, this holds the reason — callers
-   * should show a blocking error instead of falling back to Razorpay
-   * (Play policy forbids external payment for digital subscriptions).
+   * When wrapperPresent && !available: explains why billing isn't ready.
+   * Callers must NOT fall back to Razorpay in a native shell — store policy
+   * requires using the native payment method (Apple IAP or Google Play).
    */
   unavailableReason: string | null;
   purchase: (
@@ -40,15 +49,29 @@ export type NativeBillingState = {
 };
 
 /**
- * Detects the Google Play Billing bridge injected by the Android wrapper and
- * exposes a small, paywall-ready API. In a regular browser it returns
- * `wrapperPresent: false` and the paywall keeps the Razorpay flow.
+ * Unified native billing hook — auto-detects the current shell:
+ *
+ *   iOS Capacitor  → Apple IAP via RevenueCat Purchases plugin
+ *   Android wrapper → Google Play via window.AmyNestBillingNative bridge
+ *   Browser/PWA     → wrapperPresent: false, callers show Razorpay / web flow
  */
 export function useNativeBilling(): NativeBillingState {
-  const wrapperPresent = useMemo(() => isWrapperPresent(), []);
-  const bridge = useMemo<NativeBilling | null>(
-    () => (wrapperPresent ? getNativeBilling() : null),
-    [wrapperPresent],
+  const iosShell = useMemo(() => isCapacitorIOS(), []);
+  const androidWrapper = useMemo(
+    () => !iosShell && isWrapperPresent(),
+    [iosShell],
+  );
+  const platform: "ios" | "android" | "web" = iosShell
+    ? "ios"
+    : androidWrapper
+      ? "android"
+      : "web";
+  const wrapperPresent = iosShell || androidWrapper;
+
+  // Android bridge (null when not in Android wrapper)
+  const androidBridge = useMemo<NativeBilling | null>(
+    () => (androidWrapper ? getNativeBilling() : null),
+    [androidWrapper],
   );
 
   const { user } = useUser();
@@ -61,9 +84,30 @@ export function useNativeBilling(): NativeBillingState {
   const [purchasing, setPurchasing] = useState(false);
   const userIdSyncedRef = useRef<string | null>(null);
 
-  // Probe billing availability once.
+  // ── iOS: init RevenueCat + probe availability ─────────────────────────────
   useEffect(() => {
-    if (!wrapperPresent) return;
+    if (!iosShell || !user?.id) return;
+    let cancelled = false;
+
+    void (async () => {
+      const ok = await initIOSBilling(user.id);
+      if (cancelled) return;
+      if (ok) {
+        setAvailable(true);
+      } else {
+        setAvailable(false);
+        setUnavailableReason(
+          "Apple In-App Purchases aren't available right now. Make sure you are signed in to the App Store, then try again.",
+        );
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [iosShell, user?.id]);
+
+  // ── Android: probe Google Play Billing availability ───────────────────────
+  useEffect(() => {
+    if (!androidWrapper) return;
     let cancelled = false;
     void probeBillingAvailability().then((ok) => {
       if (cancelled) return;
@@ -74,23 +118,20 @@ export function useNativeBilling(): NativeBillingState {
         );
       }
     });
-    return () => {
-      cancelled = true;
-    };
-  }, [wrapperPresent]);
+    return () => { cancelled = true; };
+  }, [androidWrapper]);
 
-  // Sync Clerk user id to RevenueCat so the webhook can match purchases back
-  // to the right backend account. Runs once per user once billing is ready.
+  // ── Android: sync user id to RevenueCat once billing is ready ────────────
   useEffect(() => {
-    if (!bridge || !available || !user?.id) return;
+    if (!androidBridge || !available || !user?.id) return;
     if (userIdSyncedRef.current === user.id) return;
-    void bridge.setUserId(user.id);
+    void androidBridge.setUserId(user.id);
     userIdSyncedRef.current = user.id;
-  }, [bridge, available, user?.id]);
+  }, [androidBridge, available, user?.id]);
 
-  // Pull plan → RC package mapping from the backend (single source of truth).
+  // ── Android: load plan → RC package mapping from backend ─────────────────
   useEffect(() => {
-    if (!available) return;
+    if (!androidWrapper || !available) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -99,40 +140,63 @@ export function useNativeBilling(): NativeBillingState {
         const cfg = (await res.json()) as RcConfig;
         if (!cancelled) setPackageMap(cfg.packageMap);
       } catch {
-        /* ignore — paywall surfaces an error if the user actually taps Buy */
+        /* ignore — paywall shows error when user taps Buy */
       }
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [available, authFetch]);
+    return () => { cancelled = true; };
+  }, [androidWrapper, available, authFetch]);
 
+  // ── purchase ──────────────────────────────────────────────────────────────
   const purchase = useCallback(
     async (
       plan: Exclude<Plan, "free">,
     ): Promise<{ ok: boolean; reason?: string; userCancelled?: boolean }> => {
-      if (!bridge || !available) {
-        return { ok: false, reason: unavailableReason ?? "Google Play Billing is not available." };
+      if (!available) {
+        return { ok: false, reason: unavailableReason ?? "Billing is not available." };
       }
-      const map = packageMap;
-      if (!map) return { ok: false, reason: "Loading plans — please retry in a moment." };
-      const pkgId = map[plan];
-      if (!pkgId) return { ok: false, reason: `No Google Play product mapped for ${plan}.` };
 
       setPurchasing(true);
       try {
-        const result = (await bridge.purchase(pkgId)) as NativePurchaseResult;
+        // ── iOS Apple IAP ─────────────────────────────────────────────────
+        if (iosShell) {
+          const planKey = plan === "monthly"
+            ? "monthly"
+            : plan === "yearly"
+              ? "yearly"
+              : "six_month";
+          const pkg = await getIOSPackageForPlan(planKey as "monthly" | "six_month" | "yearly");
+          if (!pkg) {
+            return { ok: false, reason: "This plan is not available on the App Store right now." };
+          }
+          const result = await purchaseIOSPackage(pkg);
+          if (result.ok) {
+            // Invalidate subscription cache (webhook may take a moment)
+            await qc.invalidateQueries({ queryKey: ["subscription"] });
+            for (const delay of [1500, 3500, 6000]) {
+              await new Promise((r) => setTimeout(r, delay));
+              await qc.invalidateQueries({ queryKey: ["subscription"] });
+            }
+          }
+          return result;
+        }
+
+        // ── Android Google Play ───────────────────────────────────────────
+        if (!androidBridge) {
+          return { ok: false, reason: "Google Play Billing is not available." };
+        }
+        const map = packageMap;
+        if (!map) return { ok: false, reason: "Loading plans — please retry in a moment." };
+        const pkgId = map[plan];
+        if (!pkgId) return { ok: false, reason: `No Google Play product mapped for ${plan}.` };
+
+        const result = (await androidBridge.purchase(pkgId)) as NativePurchaseResult;
         if (!result.ok) {
           return {
             ok: false,
             userCancelled: result.userCancelled === true,
-            reason: result.userCancelled
-              ? undefined
-              : result.error || "Google Play purchase failed.",
+            reason: result.userCancelled ? undefined : result.error || "Google Play purchase failed.",
           };
         }
-        // Optimistic + delayed refresh so the RevenueCat webhook has time to
-        // hit the backend and flip the subscription row.
         await qc.invalidateQueries({ queryKey: ["subscription"] });
         for (const delay of [1500, 3500, 6000]) {
           await new Promise((r) => setTimeout(r, delay));
@@ -142,26 +206,39 @@ export function useNativeBilling(): NativeBillingState {
       } catch (err) {
         return {
           ok: false,
-          reason: err instanceof Error ? err.message : "Google Play purchase failed.",
+          reason: err instanceof Error ? err.message : "Purchase failed. Please try again.",
         };
       } finally {
         setPurchasing(false);
       }
     },
-    [bridge, available, packageMap, qc, unavailableReason],
+    [iosShell, androidBridge, available, packageMap, qc, unavailableReason],
   );
 
+  // ── restore ───────────────────────────────────────────────────────────────
   const restore = useCallback(async (): Promise<boolean> => {
-    if (!bridge || !available) return false;
-    const res = await bridge.restore();
+    if (!available) return false;
+
+    if (iosShell) {
+      const result = await restoreIOSPurchases();
+      if (result.ok) {
+        await qc.invalidateQueries({ queryKey: ["subscription"] });
+        return result.isPremium;
+      }
+      return false;
+    }
+
+    if (!androidBridge) return false;
+    const res = await androidBridge.restore();
     if (res.ok) {
       await qc.invalidateQueries({ queryKey: ["subscription"] });
       return true;
     }
     return false;
-  }, [bridge, available, qc]);
+  }, [iosShell, androidBridge, available, qc]);
 
   return {
+    platform,
     wrapperPresent,
     available,
     purchasing,
