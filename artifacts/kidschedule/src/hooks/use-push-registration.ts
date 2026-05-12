@@ -6,7 +6,9 @@ import {
   awaitNativePushBridge,
   ensureNativePushReady,
   getNativePushToken,
+  initCapacitorIOSPush,
   isAmyNestWrapper,
+  isCapacitorIOS,
 } from "@/lib/native-push-bridge";
 
 const REGISTERED_KEY = "notify_device_registered_at";
@@ -17,20 +19,20 @@ function markRegistered() {
 }
 
 /**
- * Registers the device for push notifications and uploads the FCM token to
- * the backend. Runs once per signed-in user session.
+ * Registers the device for push notifications and uploads the token to the
+ * backend. Runs once per signed-in user session.
  *
- * Supports both APK generations transparently:
+ * Supports all AmyNest native shells:
  *
- *  NEW APK (v2+): `window.AndroidPush` (addJavascriptInterface) — synchronous
- *    token pull + `window.onAndroidToken` evaluateJavascript callback for
- *    token delivery and rotation.
+ *  iOS CAPACITOR: window.Capacitor (amynest-capacitor) — async permission
+ *    request via PushNotifications plugin → APNs/FCM token via "registration"
+ *    listener → dispatches amynest-push-token CustomEvent.
  *
- *  LEGACY APK (v1): `window.AmyNestPushNative` (addWebMessageListener) —
- *    async message-bus protocol; getStatus action retrieves the cached token.
+ *  ANDROID NEW APK (v2+): window.AndroidPush (addJavascriptInterface) —
+ *    synchronous token pull + window.onAndroidToken evaluateJavascript callback.
  *
- * Both paths use `awaitNativePushBridge()` so the hook is robust against the
- * brief race window at page load where the bridge object may not yet exist.
+ *  ANDROID LEGACY APK (v1): window.AmyNestPushNative (addWebMessageListener)
+ *    — async message-bus protocol; getStatus action retrieves the cached token.
  */
 export function usePushRegistration(): void {
   const { isSignedIn, userId } = useAuth();
@@ -44,6 +46,10 @@ export function usePushRegistration(): void {
     }
     if (typeof window === "undefined") return undefined;
 
+    // Determine platform for the API call
+    const platform = isCapacitorIOS() ? "ios-capacitor" : "android";
+    const deviceName = isCapacitorIOS() ? "AmyNest iOS" : "KidSchedule Android";
+
     const registerToken = async (token: string) => {
       const key = `${userId}::${token}`;
       if (lastKeyRef.current === key) return;
@@ -51,11 +57,7 @@ export function usePushRegistration(): void {
         const res = await authFetch(getApiUrl("/api/push/register"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            token,
-            platform: "android",
-            deviceName: "KidSchedule Android",
-          }),
+          body: JSON.stringify({ token, platform, deviceName }),
         });
         if (res.ok) {
           lastKeyRef.current = key;
@@ -69,19 +71,44 @@ export function usePushRegistration(): void {
       }
     };
 
-    // Not inside the wrapper at all — skip silently.
+    // Not inside any native wrapper — skip silently.
     if (!isAmyNestWrapper()) return undefined;
 
     let cancelled = false;
 
     void (async () => {
+      // ── iOS Capacitor path ────────────────────────────────────────────────
+      // initCapacitorIOSPush handles permission request + register() call.
+      // The token arrives via the "registration" listener which dispatches
+      // amynest-push-token. ensureNativePushReady awaits that init.
+      if (isCapacitorIOS()) {
+        await initCapacitorIOSPush();
+        if (cancelled) return;
+
+        // Token may already be in cache after init
+        const status = await ensureNativePushReady();
+        if (cancelled) return;
+
+        if (status?.token) {
+          await registerToken(status.token);
+          return;
+        }
+
+        // Token not yet ready — wait for the registration listener to fire
+        if (status?.permission === "granted") {
+          // getNativePushToken waits for the amynest-push-token event
+          const facade = { getFcmEnabled: () => true, getPermissionStatus: () => status.permission, getToken: () => null, platform: "ios" as const };
+          const token = await getNativePushToken(facade, 20_000);
+          if (!cancelled && token) await registerToken(token);
+        }
+        return;
+      }
+
+      // ── Android path (new + legacy APK) ──────────────────────────────────
       // Wait up to 8s for whichever bridge wires up first (new or legacy).
       const facade = await awaitNativePushBridge(8_000);
       if (cancelled || !facade) return;
 
-      // Hydrate the module cache:
-      //   • new APK  → drains __pendingAndroidToken, reads AndroidPush.getPushToken()
-      //   • legacy APK → sends getStatus action, awaits JSON response with token
       const status = await ensureNativePushReady();
       if (cancelled) return;
 
@@ -90,15 +117,13 @@ export function usePushRegistration(): void {
         return;
       }
 
-      // Token not yet available — wait for it (new: onAndroidToken event;
-      // legacy: refreshToken action response dispatches amynest-push-token).
       if (status?.permission === "granted") {
         const token = await getNativePushToken(facade, 15_000);
         if (!cancelled && token) await registerToken(token);
       }
     })();
 
-    // Re-register on token rotation (both APKs dispatch amynest-push-token).
+    // Re-register on token rotation (all bridges dispatch amynest-push-token)
     const onTok = (e: Event) => {
       const detail = (e as CustomEvent<{ token: string }>).detail;
       if (detail?.token) void registerToken(detail.token);
