@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { getAuth } from "../lib/auth";
 import { z } from "zod";
 import { db, userFeedbackTable } from "@workspace/db";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql, and, arrayContains } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -110,6 +110,89 @@ router.get("/user-feedback", async (req, res): Promise<void> => {
     res.json({ items: rows, limit, offset });
   } catch (err) {
     logger.error(`user-feedback GET failed: ${err instanceof Error ? err.message : String(err)}`);
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// ── Admin helpers ─────────────────────────────────────────────────────────────
+
+function isAdminUser(userId: string | null | undefined): boolean {
+  if (!userId) return false;
+  const list = (process.env["ADMIN_USER_IDS"] ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.includes(userId);
+}
+
+/**
+ * GET /api/admin/feedback
+ * Admin-only: returns ALL feedback with filters, pagination, and summary stats.
+ * Query params: limit, offset, category, rating, tag
+ */
+router.get("/admin/feedback", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!isAdminUser(userId)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+
+  const limit = Math.min(Number(req.query.limit ?? 20), 100);
+  const offset = Number(req.query.offset ?? 0);
+  const filterCategory = req.query.category ? String(req.query.category) : null;
+  const filterRating   = req.query.rating   ? Number(req.query.rating)   : null;
+  const filterTag      = req.query.tag      ? String(req.query.tag)      : null;
+
+  try {
+    // Build where conditions
+    const conditions = [];
+    if (filterCategory) conditions.push(arrayContains(userFeedbackTable.categories, [filterCategory]));
+    if (filterRating)   conditions.push(eq(userFeedbackTable.rating, filterRating));
+    if (filterTag)      conditions.push(arrayContains(userFeedbackTable.autoTags, [filterTag]));
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [items, [totals]] = await Promise.all([
+      db
+        .select({
+          id:           userFeedbackTable.id,
+          userId:       userFeedbackTable.userId,
+          categories:   userFeedbackTable.categories,
+          message:      userFeedbackTable.message,
+          rating:       userFeedbackTable.rating,
+          screenshotUrl: userFeedbackTable.screenshotUrl,
+          autoTags:     userFeedbackTable.autoTags,
+          platform:     userFeedbackTable.platform,
+          appVersion:   userFeedbackTable.appVersion,
+          deviceType:   userFeedbackTable.deviceType,
+          country:      userFeedbackTable.country,
+          createdAt:    userFeedbackTable.createdAt,
+        })
+        .from(userFeedbackTable)
+        .where(where)
+        .orderBy(desc(userFeedbackTable.createdAt))
+        .limit(limit)
+        .offset(offset),
+
+      db
+        .select({
+          total:     sql<number>`count(*)::int`,
+          avgRating: sql<number>`round(avg(${userFeedbackTable.rating})::numeric, 1)`,
+          withScreenshot: sql<number>`count(*) filter (where ${userFeedbackTable.screenshotUrl} is not null)::int`,
+        })
+        .from(userFeedbackTable)
+        .where(where),
+    ]);
+
+    res.json({
+      items,
+      total: totals?.total ?? 0,
+      avgRating: totals?.avgRating ?? null,
+      withScreenshot: totals?.withScreenshot ?? 0,
+      limit,
+      offset,
+    });
+  } catch (err) {
+    logger.error(`admin/feedback GET failed: ${err instanceof Error ? err.message : String(err)}`);
     res.status(500).json({ error: "server_error" });
   }
 });

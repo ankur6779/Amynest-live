@@ -67,6 +67,7 @@ const NotifyPromptPage = lazy(() => import("@/pages/notify-prompt"));
 const DebugParityPage = lazy(() => import("@/pages/debug-parity"));
 const EnvironmentPage = lazy(() => import("@/pages/environment"));
 const FeedbackPage = lazy(() => import("@/pages/feedback"));
+const AdminFeedbackPage = lazy(() => import("@/pages/admin-feedback"));
 
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { OfflineScreen, useOnlineStatus } from "@/components/offline-screen";
@@ -354,6 +355,9 @@ function AppRoutes() {
           </Route>
           <Route path="/feedback">
             {() => <ProtectedRoute component={FeedbackPage} requiresProfile={false} />}
+          </Route>
+          <Route path="/admin/feedback">
+            {() => <ProtectedRoute component={AdminFeedbackPage} requiresProfile={false} />}
           </Route>
           <Route component={NotFound} />
             </Switch>
