@@ -19,7 +19,7 @@
  */
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, waitFor } from "@testing-library/react";
+import { render, screen, cleanup, waitFor, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // ─── Module mocks (must precede hub.tsx import) ───────────────────────────────
@@ -216,47 +216,56 @@ afterEach(() => {
   cleanup();
 });
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Section group headers are always rendered (even when collapsed).
+ *  Returns all buttons that carry an aria-expanded attribute. */
+function getSectionHeaders() {
+  return screen
+    .getAllByRole("button")
+    .filter((btn) => btn.getAttribute("aria-expanded") !== null);
+}
+
+/** Wait until the children API has settled and section headers are visible. */
+async function waitForHubReady() {
+  await waitFor(() => {
+    expect(getSectionHeaders().length).toBeGreaterThan(0);
+  });
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("Single-scroll hub smoke test (6-year-old, band 6-8)", () => {
   it("does NOT render a Today's Plan section (removed from mobile hub)", async () => {
     renderHub();
-    // Wait for the hub to finish loading children so we are not checking
-    // before async data settles.
-    await waitFor(() => {
-      expect(screen.getByTestId("hub-tile-command-center")).toBeInTheDocument();
-    });
+    // Section group header buttons are always visible — use them as the
+    // ready-sentinel instead of tile content (tiles are inside collapsed sections).
+    await waitForHubReady();
     expect(screen.queryByText("Today's Plan")).not.toBeInTheDocument();
   });
 
   it("renders accordion sections collapsed by default (aria-expanded=false)", async () => {
     renderHub();
-    await waitFor(() => {
-      expect(screen.getByTestId("hub-tile-amy")).toBeInTheDocument();
-    });
-    // 5-section layout: "today" and "learning" group-section headers start
-    // expanded by design; all other group-level and tile-level accordion
-    // buttons start collapsed.
-    const allAriaExpandedBtns = screen
-      .getAllByRole("button")
-      .filter((btn) => btn.getAttribute("aria-expanded") !== null);
+    // Section headers render immediately; use them as the ready-sentinel.
+    await waitForHubReady();
+    // All 5 group-section headers start collapsed — no section is open by default.
+    const allAriaExpandedBtns = getSectionHeaders();
     expect(allAriaExpandedBtns.length).toBeGreaterThan(0);
-    // TODAY and LEARNING group headers start expanded.
     const expandedBtns = allAriaExpandedBtns.filter(
       (btn) => btn.getAttribute("aria-expanded") === "true",
     );
-    expect(expandedBtns).toHaveLength(2);
-    // All remaining accordions (collapsed group headers + tile-level sections)
-    // start in the closed state.
-    allAriaExpandedBtns
-      .filter((btn) => btn.getAttribute("aria-expanded") === "false")
-      .forEach((btn) => {
-        expect(btn).toHaveAttribute("aria-expanded", "false");
-      });
+    // All sections start collapsed — none should be expanded.
+    expect(expandedBtns).toHaveLength(0);
+    allAriaExpandedBtns.forEach((btn) => {
+      expect(btn).toHaveAttribute("aria-expanded", "false");
+    });
   });
 
   it("renders the command-center featured tile", async () => {
     renderHub();
+    await waitForHubReady();
+    // Tiles live inside collapsed sections — expand "today" (index 0) first.
+    fireEvent.click(getSectionHeaders()[0]);
     await waitFor(() => {
       expect(
         screen.getByTestId("hub-tile-command-center"),
@@ -266,6 +275,9 @@ describe("Single-scroll hub smoke test (6-year-old, band 6-8)", () => {
 
   it("renders the tomorrow-forecast featured tile", async () => {
     renderHub();
+    await waitForHubReady();
+    // Expand "today" section to make its tiles visible.
+    fireEvent.click(getSectionHeaders()[0]);
     await waitFor(() => {
       expect(
         screen.getByTestId("hub-tile-tomorrow-forecast"),
@@ -275,8 +287,12 @@ describe("Single-scroll hub smoke test (6-year-old, band 6-8)", () => {
 
   it("renders at least one band tile for the child's current age band (6-8)", async () => {
     renderHub();
-    // `amy` is present in every band [0-6] and is the first tile pushed onto
-    // allTiles in hub.tsx, so it is a reliable sentinel for band-tile render.
+    await waitForHubReady();
+    const headers = getSectionHeaders();
+    // Expand "today" (index 0) to see `amy`; expand "learning" (index 1) for
+    // `smart-math-tricks` which is restricted to bands [2, 3].
+    fireEvent.click(headers[0]);
+    fireEvent.click(headers[1]);
     await waitFor(() => {
       expect(screen.getByTestId("hub-tile-amy")).toBeInTheDocument();
     });
@@ -287,7 +303,9 @@ describe("Single-scroll hub smoke test (6-year-old, band 6-8)", () => {
 
   it("contains no hub-tab-* testIDs (confirms pager has been removed)", async () => {
     renderHub();
-    // Wait for the children query to settle and tiles to mount.
+    await waitForHubReady();
+    // Expand "today" so tiles are mounted, then check no hub-tab-* ids exist.
+    fireEvent.click(getSectionHeaders()[0]);
     await waitFor(() => {
       expect(screen.getByTestId("hub-tile-command-center")).toBeInTheDocument();
     });
