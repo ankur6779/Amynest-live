@@ -619,17 +619,40 @@ export default function RoutineDetailScreen() {
     } finally { setRegenLoading(false); }
   };
 
+  // ── Remaining items helper ────────────────────────────────────────────────
+  // Returns only future activities when sharing today's routine.
+  // Past or future date routines are shared in full.
+  const getRemainingItems = () => {
+    if (!routine) return items;
+    const today = new Date().toISOString().slice(0, 10);
+    const routineDay = (routine.date ?? "").slice(0, 10);
+    if (routineDay !== today) return items;
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    return items.filter(i => {
+      const match = i.time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      if (!match) return true;
+      let h = parseInt(match[1]!, 10);
+      const m = parseInt(match[2]!, 10);
+      if (match[3]!.toUpperCase() === "PM" && h !== 12) h += 12;
+      if (match[3]!.toUpperCase() === "AM" && h === 12) h = 0;
+      return h * 60 + m >= nowMins;
+    });
+  };
+
   // ── Share ─────────────────────────────────────────────────────────────────
   const shareRoutine = async () => {
     setMoreMenu(false);
     if (!routine) return;
+    const remaining = getRemainingItems();
+    const isFiltered = remaining.length < items.length;
     const lines = [
       `📅 ${routine.title}`,
       `👧 Child: ${routine.childName}`,
       `📆 ${formatDate(routine.date)}`,
       "",
-      "📋 ROUTINE:",
-      ...items.map(i => `• ${i.time} — ${i.activity} (${i.duration} min)${i.notes ? `\n  💡 ${i.notes}` : ""}`),
+      isFiltered ? "⏰ REMAINING ACTIVITIES:" : "📋 ROUTINE:",
+      ...remaining.map(i => `• ${i.time} — ${i.activity} (${i.duration} min)${i.notes ? `\n  💡 ${i.notes}` : ""}`),
       "",
       `— Sent via ${BRAND.appName}`,
     ];
@@ -651,13 +674,15 @@ export default function RoutineDetailScreen() {
   // ── Share via WhatsApp ────────────────────────────────────────────────────
   const shareViaWhatsApp = async () => {
     if (!routine) return;
+    const remaining = getRemainingItems();
+    const isFiltered = remaining.length < items.length;
     const lines = [
       `📅 ${routine.title}`,
       `👧 Child: ${routine.childName}`,
       `📆 ${formatDate(routine.date)}`,
       "",
-      "📋 ROUTINE:",
-      ...items.map(i => `• ${i.time} — ${i.activity} (${i.duration} min)${i.notes ? `\n  💡 ${i.notes}` : ""}`),
+      isFiltered ? "⏰ REMAINING ACTIVITIES:" : "📋 ROUTINE:",
+      ...remaining.map(i => `• ${i.time} — ${i.activity} (${i.duration} min)${i.notes ? `\n  💡 ${i.notes}` : ""}`),
       "",
       `— Sent via ${BRAND.appName}`,
     ];

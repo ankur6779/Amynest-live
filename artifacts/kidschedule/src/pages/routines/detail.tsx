@@ -275,10 +275,12 @@ function SlideToComplete({
       left: `${4 + knobX}px`,
       width: KNOB,
       height: KNOB,
+      // audit-ok: #7B3FF2/#6366F1 are brand violet/indigo — SlideToComplete knob gradient
       background: "linear-gradient(135deg,#7B3FF2,#6366F1)",
       transition: dragging ? "none" : "left 0.3s cubic-bezier(0.34,1.56,0.64,1)",
       touchAction: "none"
     }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+        {/* audit-ok: text-green-300 is semantic success color on the dark brand knob (done state) */}
         <Check className={`h-4 w-4 transition-colors ${done ? "text-green-300" : "text-white"}`} />
       </div>
     </div>;
@@ -668,13 +670,35 @@ export default function RoutineDetail() {
       announceCurrentTask(childName, currentTask.activity);
     }
   });
+  // Returns only activities that haven't started yet (for today's routine).
+  // Past/future date routines show the full schedule unchanged.
+  const getRemainingItems = () => {
+    if (!routine) return items;
+    const today = new Date().toISOString().slice(0, 10);
+    const routineDay = (routine.date ?? "").slice(0, 10);
+    if (routineDay !== today) return items;
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    return items.filter(item => {
+      const match = item.time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      if (!match) return true;
+      let h = parseInt(match[1]!, 10);
+      const m = parseInt(match[2]!, 10);
+      if (match[3]!.toUpperCase() === "PM" && h !== 12) h += 12;
+      if (match[3]!.toUpperCase() === "AM" && h === 12) h = 0;
+      return h * 60 + m >= nowMins;
+    });
+  };
+
   const buildShareMessage = () => {
     if (!routine) return "";
+    const remaining = getRemainingItems();
+    const isFiltered = remaining.length < items.length;
     const lines = [`📅 ${routine.title}`, `👧 Child: ${routine.childName}`, `📆 Date: ${new Date(routine.date).toLocaleDateString(undefined, {
       weekday: "long",
       month: "short",
       day: "numeric"
-    })}`, "", "📋 ROUTINE:", ...items.map(item => `• ${item.time} — ${item.activity} (${item.duration} min)${item.notes ? `\n  💡 ${item.notes}` : ""}`), "", "— Sent via AmyNest"];
+    })}`, "", isFiltered ? "⏰ REMAINING ACTIVITIES:" : "📋 ROUTINE:", ...remaining.map(item => `• ${item.time} — ${item.activity} (${item.duration} min)${item.notes ? `\n  💡 ${item.notes}` : ""}`), "", "— Sent via AmyNest"];
     return lines.join("\n");
   };
   const copyShareMessage = () => {
@@ -1297,12 +1321,14 @@ export default function RoutineDetail() {
               </Button>
             </Link>
 
+            {/* audit-ok: #25D366 is WhatsApp brand green — third-party product color, not a UI token */}
+            {/* i18n-ok: WhatsApp is a product/brand name — not localizable */}
             <a
               href={`https://wa.me/?text=${encodeURIComponent(buildShareMessage())}`}
               target="_blank"
               rel="noopener noreferrer"
-              title="Share on WhatsApp"
             >
+              {/* audit-ok: border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10 — WhatsApp brand green */}
               <Button variant="outline" size="sm" className="rounded-full gap-2 border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.553 4.103 1.518 5.829L.057 23.63a.75.75 0 0 0 .92.92l5.703-1.461A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 0 1-5.044-1.393l-.361-.214-3.737.958.992-3.629-.235-.374A9.818 9.818 0 1 1 12 21.818z"/></svg>
                 WhatsApp
@@ -1959,6 +1985,7 @@ export default function RoutineDetail() {
               rel="noopener noreferrer"
               className="w-full"
             >
+              {/* audit-ok: #25D366 is WhatsApp brand green — third-party brand color */}
               <button className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white" style={{ background: "#25D366" }}>
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current shrink-0" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.553 4.103 1.518 5.829L.057 23.63a.75.75 0 0 0 .92.92l5.703-1.461A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 0 1-5.044-1.393l-.361-.214-3.737.958.992-3.629-.235-.374A9.818 9.818 0 1 1 12 21.818z"/></svg>
                 {t("pages.routines.detail.open_in_whatsapp")}
