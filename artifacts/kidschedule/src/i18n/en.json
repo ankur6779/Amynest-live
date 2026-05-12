@@ -288,7 +288,13 @@
     "start_trial": "Start 3-day free trial",
     "cancel_anytime": "Cancel anytime. Renews automatically until canceled.",
     "on_plan": "You're on the {{plan}} plan",
-    "checkout_unavailable": "Checkout is not yet available."
+    "checkout_unavailable": "Checkout is not yet available.",
+    "pay_with_google_pay": "Pay with Google Pay",
+    "other_payment_options": "Other payment options",
+    "processing_payment": "Processing payment…",
+    "verifying_payment": "Verifying payment…",
+    "cancel_btn": "Cancel Subscription",
+    "cancelling": "Cancelling…"
   },
   "profile": {
     "title": "Parent Profile",
