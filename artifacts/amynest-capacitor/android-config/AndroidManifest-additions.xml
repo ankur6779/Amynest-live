@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║  AmyNest — Android Manifest ADDITIONS                                ║
+  ║                                                                      ║
+  ║  After running `npx cap add android`, merge these into:              ║
+  ║  android/app/src/main/AndroidManifest.xml                           ║
+  ║                                                                      ║
+  ║  Add the <uses-permission> tags inside <manifest>                    ║
+  ║  Add the attributes to the existing <application> tag               ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- ── Permissions ───────────────────────────────────────────────────── -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+  <!-- Push Notifications (FCM) -->
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+  <!-- Microphone (Speech Coach) -->
+  <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+  <!-- Camera -->
+  <uses-permission android:name="android.permission.CAMERA" />
+
+  <!-- Storage (profile photos) -->
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    android:maxSdkVersion="28" />
+  <!-- Android 13+ granular media permissions -->
+  <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+  <!-- Audio (lullaby player) -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+  <!-- ── Application attributes (add to existing <application> tag) ─────── -->
+  <!--
+    android:usesCleartextTraffic="false"
+    android:hardwareAccelerated="true"
+    android:largeHeap="true"
+    android:networkSecurityConfig="@xml/network_security_config"
+  -->
+
+  <!-- ── Intent filter for App Links (deep linking) ────────────────────── -->
+  <!--
+    Add inside your MainActivity <activity> tag:
+
+    <intent-filter android:autoVerify="true">
+      <action android:name="android.intent.action.VIEW" />
+      <category android:name="android.intent.category.DEFAULT" />
+      <category android:name="android.intent.category.BROWSABLE" />
+      <data android:scheme="https" android:host="amynest.in" />
+    </intent-filter>
+
+    <intent-filter>
+      <action android:name="android.intent.action.VIEW" />
+      <category android:name="android.intent.category.DEFAULT" />
+      <category android:name="android.intent.category.BROWSABLE" />
+      <data android:scheme="capacitor" android:host="amynest.in" />
+    </intent-filter>
+  -->
+
+  <!-- ── Firebase / FCM service ────────────────────────────────────────── -->
+  <!--
+    Add inside <application>:
+
+    <service
+      android:name="com.getcapacitor.plugin.push.MessagingService"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+      </intent-filter>
+    </service>
+
+    <meta-data
+      android:name="com.google.firebase.messaging.default_notification_icon"
+      android:resource="@mipmap/ic_launcher" />
+    <meta-data
+      android:name="com.google.firebase.messaging.default_notification_color"
+      android:resource="@color/colorPrimary" />
+  -->
+
+</manifest>
