@@ -1,0 +1,376 @@
+Upgrade the entire AmyNest Nutrition Hub into a globally adaptive AI nutrition intelligence system instead of showing India-only nutrition references, food sources, and wording by default.
+
+GOAL:
+Make Nutrition Hub feel:
+
+- globally trusted
+- country-aware
+- culturally adaptive
+- scientifically credible
+- premium
+- personalized
+
+IMPORTANT:
+Different countries follow different pediatric and nutrition standards.
+The app must dynamically adapt based on the user’s:
+
+- country
+- locale
+- food culture
+- dietary preference
+- allergies
+- age group
+
+The experience should feel international, not India-only.
+
+---
+
+1. REMOVE INDIA-ONLY DEFAULT POSITIONING
+
+---
+
+Current issues:
+
+- “Poshan Ka Ghar”
+- “Indian Food Sources”
+- ICMR-only references
+- India-centric meal examples
+
+These should NOT appear globally.
+
+---
+
+2. NEW GLOBAL POSITIONING
+
+---
+
+Replace:
+“Poshan Ka Ghar”
+
+With globally neutral premium wording:
+
+- “Global Nutrition Intelligence”
+- “Science-Based Nutrition”
+- “Smart Family Nutrition”
+
+---
+
+3. COUNTRY-AWARE GUIDELINE SYSTEM
+
+---
+
+Automatically detect:
+
+- user country
+- app locale
+- timezone
+- device language
+
+Then dynamically show appropriate health authorities.
+
+---
+
+4. REGION → GUIDELINE MAPPING
+
+---
+
+India:
+
+- ICMR
+- NIN
+- WHO
+
+USA:
+
+- AAP
+- USDA
+- CDC
+- WHO
+
+UK:
+
+- NHS
+- Public Health England
+- WHO
+
+Canada:
+
+- Canada Food Guide
+
+Australia:
+
+- Australian Dietary Guidelines
+
+New Zealand:
+
+- Ministry of Health NZ
+
+Fallback:
+WHO global recommendations
+
+---
+
+5. DYNAMIC HEADER LABELS
+
+---
+
+Examples:
+
+India:
+“Science-backed • WHO / ICMR”
+
+USA:
+“Science-backed • AAP / USDA”
+
+UK:
+“Science-backed • NHS / WHO”
+
+Canada:
+“Science-backed • Canada Food Guide”
+
+This must update automatically.
+
+---
+
+6. REMOVE STATIC “INDIAN FOOD SOURCES”
+
+---
+
+Current issue:
+Nutrient screens like:
+
+- Calcium
+- Iron
+- Vitamin A
+  etc.
+
+always show:
+“INDIAN FOOD SOURCES”
+
+Replace with dynamic region-aware labels.
+
+---
+
+7. DYNAMIC FOOD SOURCE TITLES
+
+---
+
+Examples:
+
+India:
+“Indian Food Sources”
+
+USA:
+“Common US Food Sources”
+
+UK:
+“UK Family Food Sources”
+
+Australia:
+“Australian Food Sources”
+
+Fallback:
+“Recommended Food Sources”
+
+---
+
+8. REGION-BASED FOOD DATABASE
+
+---
+
+Create localized food mappings.
+
+---
+
+INDIA EXAMPLES
+
+- Ragi
+- Paneer
+- Dal
+- Rajma
+- Idli
+- Curd
+
+---
+
+USA EXAMPLES
+
+- Greek yogurt
+- Oatmeal
+- Peanut butter
+- Cheddar cheese
+- Broccoli
+- Fortified cereals
+
+---
+
+UK EXAMPLES
+
+- Porridge
+- Beans on toast
+- Cottage cheese
+- Fish pie
+- Yogurt pots
+
+---
+
+AUSTRALIA EXAMPLES
+
+- Vegemite toast
+- Weet-Bix
+- Cheese cubes
+- Avocado toast
+
+---
+
+CANADA EXAMPLES
+
+- Maple oatmeal
+- Lentil soup
+- Salmon
+- Yogurt bowls
+
+---
+
+9. CULTURAL + DIETARY FILTERS
+
+---
+
+Food suggestions must adapt to:
+
+- vegetarian
+- vegan
+- halal
+- non-vegetarian
+- egg preference
+- allergies
+
+Examples:
+If vegetarian:
+
+- remove liver/chicken suggestions
+
+If dairy allergy:
+
+- remove milk/paneer/yogurt
+
+---
+
+10. AGE-AWARE NUTRITION
+
+---
+
+Nutrition guidance must adapt by:
+
+- infant
+- toddler
+- child
+- teen
+- postpartum mother
+
+Examples:
+0–6 months:
+
+- no hard foods
+- milk-only guidance
+
+6–12 months:
+
+- purees
+- mashed foods
+
+Toddlers:
+
+- safe finger foods
+
+---
+
+11. SMART FOOD SUBSTITUTIONS
+
+---
+
+If local foods differ:
+show culturally appropriate alternatives.
+
+Examples:
+Paneer → Cottage cheese
+Ragi → Oatmeal
+Curd → Yogurt
+
+---
+
+12. PREMIUM TRUST UI
+
+---
+
+Add subtle trust indicators:
+
+- “Reviewed using global pediatric nutrition guidance”
+- “Popular in your region”
+- “Family-friendly source”
+- “Locally common option”
+
+Keep subtle and premium.
+
+---
+
+13. KEEP CURRENT VISUAL DESIGN
+
+---
+
+Do NOT redesign the whole UI.
+
+Keep:
+
+- current dark neon premium theme
+- nutrient cards
+- age chips
+- modal structure
+- tile layouts
+
+Only improve:
+
+- global adaptability
+- trust
+- localization
+- intelligence
+
+---
+
+14. FUTURE-READY ARCHITECTURE
+
+---
+
+Prepare system for future:
+
+- seasonal food intelligence
+- grocery suggestions
+- regional supermarkets
+- AI meal planning
+- nutrition scoring
+- local food availability
+
+---
+
+15. FINAL EXPERIENCE GOAL
+
+---
+
+Nutrition Hub should feel like:
+“A globally intelligent AI nutrition assistant for modern families.”
+
+NOT:
+“An India-only nutrition database.”
+
+---
+
+DELIVERABLE
+
+- globally adaptive Nutrition Hub
+- dynamic regional guidelines
+- localized nutrient food sources
+- country-aware recommendations
+- dietary + allergy filtering
+- age-aware nutrition logic
+- smart food substitutions
+- premium international UX
