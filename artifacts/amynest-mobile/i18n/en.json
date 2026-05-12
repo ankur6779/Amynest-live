@@ -2481,6 +2481,13 @@
         "affirmation_slides": "Affirmation slides",
         "trend_chart": "Weekly confidence trend chart"
       }
+    },
+    "offline": {
+      "title": "You're Offline Right Now",
+      "body": "Please check your internet connection and try again. Your parenting tools, routines, and AI guidance will be ready once you're back online.",
+      "reconnect": "Reconnect",
+      "accessibility_reconnect": "Reconnect to the internet",
+      "footer": "AMY AI will reconnect automatically ✨"
     }
   },
   "routines_generate": {

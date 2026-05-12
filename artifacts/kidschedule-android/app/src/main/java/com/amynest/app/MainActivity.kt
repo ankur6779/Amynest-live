@@ -10,8 +10,11 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
+import android.util.Log
 import android.os.Bundle
 import android.os.Environment
 import android.view.View
@@ -50,6 +53,14 @@ class MainActivity : AppCompatActivity() {
     // Deep-link queued from a notification tap that arrived before the
     // WebView finished loading. Drained in onPageFinished.
     private var pendingDeepLink: String? = null
+
+    /**
+     * Auto-reconnect: registered when the offline screen appears, unregistered
+     * when connectivity is restored. On Android N+ the NetworkCallback fires
+     * reliably without polling. On older versions we fall back to a manual check
+     * when the user presses Reconnect.
+     */
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -408,11 +419,60 @@ class MainActivity : AppCompatActivity() {
         binding.offlineLayout.visibility = View.VISIBLE
         swipe.visibility = View.GONE
         swipe.isRefreshing = false
+        startAutoReconnect()
     }
 
     private fun showWebView() {
+        stopAutoReconnect()
         binding.offlineLayout.visibility = View.GONE
         swipe.visibility = View.VISIBLE
+    }
+
+    /**
+     * Register a NetworkCallback so the offline screen dismisses itself the
+     * moment Android reports a validated internet connection — no manual tap
+     * required. Uses the modern API (Android N+); on older devices the user
+     * must press "Reconnect" which calls isOnline() + showWebView().
+     */
+    private fun startAutoReconnect() {
+        if (networkCallback != null) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            .build()
+
+        val cb = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                runOnUiThread {
+                    if (binding.offlineLayout.visibility == View.VISIBLE) {
+                        Log.d(TAG, "Auto-reconnect: network available, reloading WebView")
+                        showWebView()
+                        webView.reload()
+                    }
+                }
+            }
+        }
+        networkCallback = cb
+        try {
+            cm.registerNetworkCallback(request, cb)
+        } catch (e: Exception) {
+            Log.w(TAG, "startAutoReconnect: failed to register callback", e)
+            networkCallback = null
+        }
+    }
+
+    private fun stopAutoReconnect() {
+        val cb = networkCallback ?: return
+        networkCallback = null
+        try {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            cm.unregisterNetworkCallback(cb)
+        } catch (e: Exception) {
+            Log.w(TAG, "stopAutoReconnect: failed to unregister callback", e)
+        }
     }
 
     private fun isOnline(): Boolean {

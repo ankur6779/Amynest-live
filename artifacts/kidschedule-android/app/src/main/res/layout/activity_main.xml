@@ -22,43 +22,121 @@
             android:layout_height="match_parent" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <LinearLayout
+    <!-- ── Offline overlay ─────────────────────────────────────────────── -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/offlineLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="32dp"
         android:visibility="gone"
-        android:background="@color/brand_background"
+        android:background="@drawable/offline_gradient_bg"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/offline_title"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="@color/brand_text" />
+        <!-- Ambient glow behind icon -->
+        <View
+            android:id="@+id/offlineGlow"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:background="@drawable/offline_icon_ring"
+            android:alpha="0.35"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintVertical_bias="0.28" />
 
+        <!-- Amy icon ring -->
+        <FrameLayout
+            android:id="@+id/offlineIconRing"
+            android:layout_width="108dp"
+            android:layout_height="108dp"
+            android:background="@drawable/offline_icon_ring"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintVertical_bias="0.28">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_splash_logo"
+                android:contentDescription="@string/app_name" />
+        </FrameLayout>
+
+        <!-- Headline -->
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/offlineHeadline"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            android:text="@string/offline_title"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="@color/offline_text_primary"
+            android:letterSpacing="0.01"
+            app:layout_constraintTop_toBottomOf="@+id/offlineIconRing"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Body message -->
+        <TextView
+            android:id="@+id/offlineMessage"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:gravity="center"
+            android:layout_marginStart="36dp"
+            android:layout_marginEnd="36dp"
             android:text="@string/offline_message"
-            android:textSize="15sp"
-            android:textColor="@color/brand_text_muted" />
+            android:textSize="14sp"
+            android:lineSpacingMultiplier="1.5"
+            android:gravity="center"
+            android:textColor="@color/offline_text_muted"
+            app:layout_constraintTop_toBottomOf="@+id/offlineHeadline"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <com.google.android.material.button.MaterialButton
+        <!-- Reconnect button -->
+        <Button
             android:id="@+id/offlineRetry"
             android:layout_width="wrap_content"
+            android:layout_height="52dp"
+            android:layout_marginTop="32dp"
+            android:paddingStart="40dp"
+            android:paddingEnd="40dp"
+            android:text="@string/offline_retry"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/offline_btn_text"
+            android:background="@drawable/offline_btn_bg"
+            android:stateListAnimator="@null"
+            android:elevation="0dp"
+            app:layout_constraintTop_toBottomOf="@+id/offlineMessage"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Footer -->
+        <TextView
+            android:id="@+id/offlineFooter"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/offline_retry" />
-    </LinearLayout>
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            android:text="@string/offline_footer"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:textColor="@color/offline_text_dim"
+            app:layout_constraintTop_toBottomOf="@+id/offlineRetry"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
