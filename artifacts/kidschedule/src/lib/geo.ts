@@ -16,6 +16,23 @@
 
 const INDIA_TIMEZONES = new Set(["Asia/Kolkata", "Asia/Calcutta"]);
 
+/** Google Play Store listing for AmyNest. */
+export const PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.amynest.app";
+
+/**
+ * Returns true when the current device is running Android.
+ * Covers both installed PWA (standalone mode) and the Android WebView wrapper.
+ * Use to gate Google Play billing on non-India Android devices.
+ */
+export function isAndroidDevice(): boolean {
+  try {
+    return /android/i.test(navigator.userAgent);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Returns true when the user's browser/device timezone is in India.
  * Use this to gate India-only payment methods like Razorpay.

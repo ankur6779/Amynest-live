@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription, type Plan } from "@/hooks/use-subscription";
-import { isIndiaRegion } from "@/lib/geo";
+import { isIndiaRegion, isAndroidDevice, PLAY_STORE_URL } from "@/lib/geo";
 
 // Dates >= this year are sentinel "no real expiry" values from the DB
 const SENTINEL_YEAR = 2099;
@@ -72,6 +72,7 @@ export default function PricingPage() {
 
   const isManagedByStore = provider === "revenuecat";
   const canCancelHere = isPremium && !cancelAtPeriodEnd && !isManagedByStore;
+  const isAndroid = isAndroidDevice();
 
   const onUpgrade = async (method?: "upi") => {
     const key = method === "upi" ? "googlepay" : "razorpay";
@@ -304,8 +305,35 @@ export default function PricingPage() {
           </div>
         )}
 
-        {/* Non-India: prompt to use mobile app */}
-        {!isIndia && !isPremium && (
+        {/* Non-India + Android → Google Play billing */}
+        {!isIndia && isAndroid && !isPremium && (
+          <a
+            href={PLAY_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="button-upgrade-google-play"
+            data-on-dark
+            className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-white shadow-[0_4px_18px_rgba(0,0,0,0.35)] transition-opacity hover:opacity-90"
+            // audit-ok: Google Play brand green gradient on white button (official Google Play brand)
+            style={{ textDecoration: "none" }}
+          >
+            {/* audit-block-ignore-start — Google Play official brand colors (4-color icon per Google brand guidelines) */}
+            <svg width="26" height="28" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M1 1.5L14.5 14L1 26.5V1.5Z" fill="#01875A" stroke="#01875A" strokeWidth="0.5"/>
+              <path d="M1 1.5L24 10L14.5 14L1 1.5Z" fill="#FFD400" stroke="#FFD400" strokeWidth="0.5"/>
+              <path d="M1 26.5L14.5 14L24 18L1 26.5Z" fill="#FF3A44" stroke="#FF3A44" strokeWidth="0.5"/>
+              <path d="M24 10L14.5 14L24 18L26 14L24 10Z" fill="#00AEFF" stroke="#00AEFF" strokeWidth="0.5"/>
+            </svg>
+            {/* audit-block-ignore-end */}
+            <div className="text-left">
+              <p className="text-xs leading-none" style={{ color: "#5F6368" }}>{t("pricing.open_google_play")}</p> {/* audit-ok: Google UI gray — Google Play button label */}
+              <p className="text-sm font-bold" style={{ color: "#202124" }}>{t("pricing.subscribe_google_play")}</p> {/* audit-ok: Google near-black — Google Play button title */}
+            </div>
+          </a>
+        )}
+
+        {/* Non-India + non-Android → prompt to download the app */}
+        {!isIndia && !isAndroid && !isPremium && (
           <div
             data-on-dark
             className="w-full space-y-2 rounded-xl border border-white/15 bg-white/5 px-4 py-4 text-center"

@@ -294,7 +294,10 @@
     "processing_payment": "Processing payment…",
     "verifying_payment": "Verifying payment…",
     "cancel_btn": "Cancel Subscription",
-    "cancelling": "Cancelling…"
+    "cancelling": "Cancelling…",
+    "subscribe_google_play": "Subscribe with Google Play",
+    "google_play_subtitle": "Manage your subscription securely through Google Play billing.",
+    "open_google_play": "Open Google Play"
   },
   "profile": {
     "title": "Parent Profile",
