@@ -6,6 +6,7 @@ import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError } from "@/lib/auth-errors";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
+import { getApiUrl } from "@/lib/api";
 
 // ── Animation keyframes (injected once into <head> via <style> in JSX) ───────
 const SIGN_IN_CSS = `
@@ -366,7 +367,7 @@ export default function SignInPage() {
     setResetError(null);
     setResetBusy(true);
     try {
-      const checkRes = await fetch("/api/auth/check-reset-email", {
+      const checkRes = await fetch(getApiUrl("/api/auth/check-reset-email"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail.trim() }),

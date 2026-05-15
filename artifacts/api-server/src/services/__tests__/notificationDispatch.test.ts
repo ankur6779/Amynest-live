@@ -123,6 +123,30 @@ test("quiet hours block per-item dispatch with throttled status", async () => {
   await cleanup(uid);
 });
 
+test("restrictToPlatforms excludes non-matching tokens (no_tokens)", async () => {
+  const uid = `restrict-${Date.now()}`;
+  await cleanup(uid);
+  await getOrCreatePreferences(uid);
+  await db.insert(pushTokensTable).values({
+    userId: uid,
+    token: `web_${Math.random().toString(36).slice(2)}`,
+    platform: "web",
+  });
+  const result = await dispatchNotification({
+    userId: uid,
+    category: "insights",
+    title: "T",
+    body: "B",
+    dedupKey: `restrict:${Date.now()}`,
+    bypassDailyCap: true,
+    bypassQuietHours: true,
+    bypassCategoryCheck: true,
+    restrictToPlatforms: ["android"],
+  });
+  assert.equal(result.status, "no_tokens");
+  await cleanup(uid);
+});
+
 test("daily cap blocks non-timebound dispatch once reached", async () => {
   const uid = `cap-${Date.now()}`;
   await cleanup(uid);

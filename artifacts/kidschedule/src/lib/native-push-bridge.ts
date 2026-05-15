@@ -1,3 +1,6 @@
+import { Capacitor } from "@capacitor/core";
+import { PushNotifications } from "@capacitor/push-notifications";
+
 /**
  * Bridge to native push interfaces for all AmyNest native shells.
  *
@@ -122,9 +125,91 @@ export function isCapacitorIOS(): boolean {
   return !!(cap && cap.isNativePlatform?.() && cap.getPlatform?.() === "ios");
 }
 
+/**
+ * Capacitor: after notification **alert** permission is `granted`, you must still call
+ * `PushNotifications.register()` so the OS runs `registerForRemoteNotifications` (iOS) /
+ * FCM registration (Android). Without this, iOS often omits the app from **Settings →
+ * Notifications**, and tokens never arrive. The startup gate previously only called
+ * `requestPermissions()` — users who allowed there before sign-in never hit
+ * `initCapacitorIOSPush()`. Safe to call repeatedly.
+ */
+export async function syncCapacitorPushRegistrationWithOs(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!Capacitor.isNativePlatform()) return;
+  const pf = Capacitor.getPlatform();
+  if (pf !== "ios" && pf !== "android") return;
+  try {
+    const { receive } = await PushNotifications.checkPermissions();
+    if (receive !== "granted") return;
+    await PushNotifications.register();
+  } catch {
+    /* ignore */
+  }
+}
+
 let iosPerm: NativePushPermission = "default";
+/** True only after permission granted, listeners wired, and register() was attempted. */
 let iosInitialized = false;
 let iosInitPromise: Promise<void> | null = null;
+/** Set when the user has seen a non-granted permission result (for diagnostics / UI). */
+let iosPermDeniedOnce = false;
+/** Remove handlers installed on the Capacitor PushNotifications plugin (reset before re-init). */
+const iosPluginListenerRemovers: Array<() => void | Promise<void>> = [];
+/** Window listener that merges native-injected FCM token events into cache. */
+let iosWindowTokenListener: ((e: Event) => void) | null = null;
+
+/** Capacitor iOS `registration` is the raw APNs device token (64 hex). Server + FCM need the FCM registration token from native. */
+function looksLikeApnsDeviceTokenHex(token: string): boolean {
+  return /^[0-9a-f]{64}$/i.test(token.trim());
+}
+
+/**
+ * Reset Capacitor iOS push module state so a later `initCapacitorIOSPush()` can run
+ * again (e.g. user enabled notifications in iOS Settings after initially denying).
+ * Also tears down plugin listeners installed on the previous successful init.
+ *
+ * Intended for the "denied → Settings → return" flow; avoid calling after a healthy
+ * granted session unless you accept re-wiring listeners.
+ */
+export function resetCapacitorIOSPushState(): void {
+  for (const r of iosPluginListenerRemovers) {
+    try {
+      void r();
+    } catch { /* ignore */ }
+  }
+  iosPluginListenerRemovers.length = 0;
+
+  if (typeof window !== "undefined" && iosWindowTokenListener) {
+    try {
+      window.removeEventListener("amynest-push-token", iosWindowTokenListener);
+    } catch { /* ignore */ }
+  }
+  iosWindowTokenListener = null;
+
+  iosInitialized = false;
+  iosInitPromise = null;
+  iosPerm = "default";
+  iosPermDeniedOnce = false;
+  if (isCapacitorIOS()) {
+    cachedToken = null;
+  }
+}
+
+/** Open the native Settings page for this app (Capacitor iOS/Android, or iOS WebView). */
+export function openNativeAppSettings(): void {
+  try {
+    const cap = window.Capacitor;
+    if (cap?.isNativePlatform?.() && cap.getPlatform?.() === "android") {
+      window.location.assign(
+        "intent:#Intent;action=android.settings.APPLICATION_DETAILS_SETTINGS;data=package:com.amynest.app;end",
+      );
+      return;
+    }
+    window.location.href = "app-settings:";
+  } catch {
+    /* ignore */
+  }
+}
 
 /**
  * One-time async init for the Capacitor iOS push bridge.
@@ -132,86 +217,113 @@ let iosInitPromise: Promise<void> | null = null;
  * - Calls register() to get the APNs/FCM token
  * - Wires the "registration" listener → dispatches amynest-push-token
  *
- * Safe to call multiple times — runs only once per page load.
+ * When permission is not granted, does **not** set `iosInitialized`, so a later
+ * call can retry after the user changes Settings.
  */
 export async function initCapacitorIOSPush(): Promise<void> {
   if (iosInitialized) return;
   if (iosInitPromise) return iosInitPromise;
 
   iosInitPromise = (async () => {
-    const plugin = getCapacitorPlugin();
-    if (!plugin) return;
-
-    activeBridgeKind = "ios";
-
-    // 1. Request permission
     try {
-      const result = await plugin.requestPermissions();
-      iosPerm = result.receive === "granted" ? "granted"
-              : result.receive === "denied"  ? "denied"
-              : "default";
+      const plugin = getCapacitorPlugin();
+      if (!plugin) return;
+
+      activeBridgeKind = "ios";
+
+      // 1. Request permission
       try {
-        window.dispatchEvent(
-          new CustomEvent("amynest-push-permission", { detail: { permission: iosPerm } }),
-        );
+        const result = await plugin.requestPermissions();
+        iosPerm = result.receive === "granted" ? "granted"
+                : result.receive === "denied"  ? "denied"
+                : "default";
+        try {
+          window.dispatchEvent(
+            new CustomEvent("amynest-push-permission", { detail: { permission: iosPerm } }),
+          );
+        } catch { /* ignore */ }
+      } catch {
+        iosPerm = "default";
+      }
+
+      if (iosPerm !== "granted") {
+        iosPermDeniedOnce = true;
+        return;
+      }
+
+      // Keep JS cache in sync when AppDelegate injects the FCM token (Swift evaluateJavascript).
+      if (typeof window !== "undefined" && iosWindowTokenListener) {
+        try {
+          window.removeEventListener("amynest-push-token", iosWindowTokenListener);
+        } catch { /* ignore */ }
+      }
+
+      const onIosFcmToken = (e: Event) => {
+        const detail = (e as CustomEvent<{ token: string }>).detail;
+        const tok = detail?.token;
+        if (!tok || looksLikeApnsDeviceTokenHex(tok)) return;
+        cachedToken = tok;
+      };
+      iosWindowTokenListener = onIosFcmToken;
+      try {
+        window.addEventListener("amynest-push-token", onIosFcmToken);
       } catch { /* ignore */ }
-    } catch {
-      iosPerm = "default";
-    }
 
-    if (iosPerm !== "granted") {
+      // 2. Listen for token before calling register()
+      try {
+        const reg = await plugin.addListener("registration", ({ value: token }) => {
+          if (!token) return;
+          if (looksLikeApnsDeviceTokenHex(token)) return;
+          cachedToken = token;
+          try {
+            window.dispatchEvent(
+              new CustomEvent("amynest-push-token", { detail: { token } }),
+            );
+          } catch { /* ignore */ }
+        });
+        iosPluginListenerRemovers.push(() => { void reg.remove(); });
+
+        const regErr = await plugin.addListener("registrationError", (err) => {
+          console.warn("[CapacitorPush] registration error:", err);
+        });
+        iosPluginListenerRemovers.push(() => { void regErr.remove(); });
+
+        const fg = await plugin.addListener("pushNotificationReceived", (notification) => {
+          try {
+            window.dispatchEvent(
+              new CustomEvent("amynest-push-foreground", { detail: notification }),
+            );
+          } catch { /* ignore */ }
+        });
+        iosPluginListenerRemovers.push(() => { void fg.remove(); });
+
+        const tap = await plugin.addListener("pushNotificationActionPerformed", (action) => {
+          try {
+            const a = action as {
+              notification?: { data?: { deepLink?: string; category?: string } };
+            };
+            const deepLink = a.notification?.data?.deepLink ?? "";
+            const category = a.notification?.data?.category;
+            import("@/lib/notification-deep-link").then(({ dispatchNotifDeepLink }) => {
+              dispatchNotifDeepLink(deepLink, category);
+            }).catch(() => { /* ignore */ });
+          } catch { /* ignore */ }
+        });
+        iosPluginListenerRemovers.push(() => { void tap.remove(); });
+      } catch { /* ignore */ }
+
+      try {
+        await plugin.register();
+      } catch (e) {
+        console.warn("[CapacitorPush] register() failed:", e);
+      }
+
       iosInitialized = true;
-      return;
+    } finally {
+      if (!iosInitialized) {
+        iosInitPromise = null;
+      }
     }
-
-    // 2. Listen for token before calling register()
-    try {
-      await plugin.addListener("registration", ({ value: token }) => {
-        if (!token) return;
-        cachedToken = token;
-        try {
-          window.dispatchEvent(
-            new CustomEvent("amynest-push-token", { detail: { token } }),
-          );
-        } catch { /* ignore */ }
-      });
-
-      await plugin.addListener("registrationError", (err) => {
-        console.warn("[CapacitorPush] registration error:", err);
-      });
-
-      // 3. Foreground notification listener (show in-app toast/banner)
-      await plugin.addListener("pushNotificationReceived", (notification) => {
-        try {
-          window.dispatchEvent(
-            new CustomEvent("amynest-push-foreground", { detail: notification }),
-          );
-        } catch { /* ignore */ }
-      });
-
-      // 4. Notification tap listener — navigate to the deep-link screen
-      await plugin.addListener("pushNotificationActionPerformed", (action) => {
-        try {
-          const a = action as {
-            notification?: { data?: { deepLink?: string; category?: string } };
-          };
-          const deepLink = a.notification?.data?.deepLink ?? "";
-          const category = a.notification?.data?.category;
-          import("@/lib/notification-deep-link").then(({ dispatchNotifDeepLink }) => {
-            dispatchNotifDeepLink(deepLink, category);
-          }).catch(() => { /* ignore */ });
-        } catch { /* ignore */ }
-      });
-    } catch { /* ignore */ }
-
-    // 4. Register (triggers "registration" listener above)
-    try {
-      await plugin.register();
-    } catch (e) {
-      console.warn("[CapacitorPush] register() failed:", e);
-    }
-
-    iosInitialized = true;
   })();
 
   return iosInitPromise;
@@ -643,6 +755,12 @@ export async function registerNativePushToken(
   if (facade.getPermissionStatus() !== "granted") return false;
   const token = await getNativePushToken(facade);
   if (!token) return false;
+  if (
+    (activeBridgeKind === "ios" || isCapacitorIOS()) &&
+    looksLikeApnsDeviceTokenHex(token)
+  ) {
+    return false;
+  }
   try {
     const res = await authFetch(apiUrl, {
       method: "POST",

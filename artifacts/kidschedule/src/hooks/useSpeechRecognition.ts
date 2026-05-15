@@ -8,6 +8,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { getApiUrl } from "@/lib/api";
+import { MicPermissionCapacitor } from "@/lib/mic-permission-capacitor";
 
 // ── Web Speech API ambient declarations ─────────────────────────────────────
 // These types are part of the WICG Speech API spec but are not yet included
@@ -81,44 +83,149 @@ export interface SpeechRecognitionState {
 // instantly without showing the dialog again.
 //
 // We also cache the result in a module-level ref so the prompt only ever shows
-// once per page load (not on every tap-to-record).
+// once per page load (not on every tap-to-record). iOS Capacitor WKWebView can
+// keep a stale "denied" across Settings → Allow → return without reloading JS;
+// we reset that case (see ensureMicPermission + visibility listener below).
 const _micPermCache: { state: "unknown" | "granted" | "denied" } = {
   state: "unknown",
 };
 
+let _micPermInFlight: Promise<"granted" | "denied"> | null = null;
+let _iosMicVisibilityWired = false;
+
+/**
+ * Returns true when running inside the AmyNest Android WebView wrapper
+ * (kidschedule-android APK). Detected via the custom UA token injected by
+ * MainActivity: s.userAgentString += " AmyNestAndroid/<version>".
+ *
+ * We deliberately do NOT import isAmyNestWrapper() from native-push-bridge
+ * here to avoid a circular-dependency risk in this low-level hook.
+ */
+function isAndroidWebViewWrapper(): boolean {
+  try {
+    return /AmyNestAndroid/.test(navigator.userAgent);
+  } catch {
+    return false;
+  }
+}
+
+/** Capacitor native iOS shell — same idea as native-push-bridge but kept local to avoid import cycles. */
+function isCapacitorIOS(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const cap = (
+      window as Window & {
+        Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string };
+      }
+    ).Capacitor;
+    return !!(cap?.isNativePlatform?.() === true && cap.getPlatform?.() === "ios");
+  } catch {
+    return false;
+  }
+}
+
+/** After returning from iOS Settings (or task switcher), re-probe mic instead of trusting stale cache. */
+function wireIosCapacitorMicCacheResetOnce(): void {
+  if (_iosMicVisibilityWired || typeof document === "undefined" || typeof window === "undefined") return;
+  if (!isCapacitorIOS()) return;
+  _iosMicVisibilityWired = true;
+
+  const onForeground = () => {
+    try {
+      if (document.visibilityState === "visible") _micPermCache.state = "unknown";
+    } catch {
+      /* ignore */
+    }
+  };
+  document.addEventListener("visibilitychange", onForeground);
+  window.addEventListener("pageshow", onForeground);
+}
+
 async function ensureMicPermission(): Promise<"granted" | "denied"> {
+  wireIosCapacitorMicCacheResetOnce();
+
+  // iOS Capacitor: user may fix mic in Settings while our JS bundle stays warm — clear stale "denied".
+  if (_micPermCache.state === "denied" && isCapacitorIOS()) {
+    _micPermCache.state = "unknown";
+  }
+
   if (_micPermCache.state !== "unknown") return _micPermCache.state;
 
-  // Try the Permissions API first (no dialog, instant check)
-  if (typeof navigator !== "undefined" && navigator.permissions) {
+  if (_micPermInFlight) return _micPermInFlight;
+
+  const run = async (): Promise<"granted" | "denied"> => {
     try {
-      const status = await navigator.permissions.query({
-        name: "microphone" as PermissionName,
-      });
-      if (status.state === "granted") {
+      // iOS Capacitor: AVAudioSession matches Settings; WKWebView Permissions API and
+      // even getUserMedia can disagree or re-prompt. If native says granted, trust it.
+      if (isCapacitorIOS()) {
+        try {
+          const { status } = await MicPermissionCapacitor.getMicrophoneStatus();
+          if (status === "granted") {
+            _micPermCache.state = "granted";
+            return "granted";
+          }
+          if (status === "denied") {
+            _micPermCache.state = "denied";
+            return "denied";
+          }
+        } catch {
+          /* older builds without MicPermission — fall through */
+        }
+      }
+
+      // ⚠️ Android WebView wrapper + iOS Capacitor WKWebView:
+      // navigator.permissions.query({ name: "microphone" }) can disagree with the
+      // real OS / embedder permission state. Skip it and use getUserMedia, which
+      // is the source of truth for capture.
+      const inWrapper = isAndroidWebViewWrapper();
+      const skipPermissionsQuery = inWrapper || isCapacitorIOS();
+
+      if (!skipPermissionsQuery && typeof navigator !== "undefined" && navigator.permissions) {
+        try {
+          const status = await navigator.permissions.query({
+            name: "microphone" as PermissionName,
+          });
+          if (status.state === "granted") {
+            _micPermCache.state = "granted";
+            return "granted";
+          }
+          if (status.state === "denied") {
+            _micPermCache.state = "denied";
+            return "denied";
+          }
+          // state === "prompt" — fall through to getUserMedia below
+        } catch {
+          // Permissions API not supported — fall through
+        }
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop()); // release immediately
         _micPermCache.state = "granted";
         return "granted";
-      }
-      if (status.state === "denied") {
+      } catch {
+        if (isCapacitorIOS()) {
+          try {
+            const { status } = await MicPermissionCapacitor.getMicrophoneStatus();
+            if (status === "granted") {
+              _micPermCache.state = "granted";
+              return "granted";
+            }
+          } catch {
+            /* ignore */
+          }
+        }
         _micPermCache.state = "denied";
         return "denied";
       }
-      // state === "prompt" — fall through to getUserMedia below
-    } catch {
-      // Permissions API not supported — fall through
+    } finally {
+      _micPermInFlight = null;
     }
-  }
+  };
 
-  // getUserMedia triggers the OS permission dialog on Android
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach((t) => t.stop()); // release immediately
-    _micPermCache.state = "granted";
-    return "granted";
-  } catch {
-    _micPermCache.state = "denied";
-    return "denied";
-  }
+  _micPermInFlight = run();
+  return _micPermInFlight;
 }
 
 // Normalise SpeechRecognition error codes → our own error keys
@@ -130,7 +237,15 @@ function normaliseSpeechError(code: string): string {
   return code;
 }
 
-export function useSpeechRecognition(lang = "en-US"): SpeechRecognitionState {
+export interface UseSpeechRecognitionOptions {
+  /** For Capacitor iOS (and other cookie-less shells): Bearer token for `/api/speech/transcribe`. */
+  getAuthToken?: () => Promise<string | null>;
+}
+
+export function useSpeechRecognition(
+  lang = "en-US",
+  options?: UseSpeechRecognitionOptions,
+): SpeechRecognitionState {
   const [transcript, setTranscript] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const [listening, setListening] = useState(false);
@@ -141,6 +256,8 @@ export function useSpeechRecognition(lang = "en-US"): SpeechRecognitionState {
   const mediaRecRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const getAuthTokenRef = useRef(options?.getAuthToken);
+  getAuthTokenRef.current = options?.getAuthToken;
 
   const Cls = getNativeSpeechRecognition();
   const mode: RecognitionMode =
@@ -274,13 +391,26 @@ export function useSpeechRecognition(lang = "en-US"): SpeechRecognitionState {
 
       setTranscribing(true);
       try {
-        const r = await fetch("/api/speech/transcribe", {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        try {
+          const tok = await getAuthTokenRef.current?.();
+          if (tok) headers.Authorization = `Bearer ${tok}`;
+        } catch {
+          /* ignore — Whisper may still work with cookies on web */
+        }
+        const r = await fetch(getApiUrl("/api/speech/transcribe"), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           credentials: "include",
           body: JSON.stringify({ audioBase64: base64 }),
         });
-        if (!r.ok) throw new Error(`${r.status}`);
+        if (!r.ok) {
+          if (r.status === 401) setError("transcription_auth_failed");
+          else setError("transcription_failed");
+          return;
+        }
         const j = (await r.json()) as { transcript: string };
         setTranscript(j.transcript ?? "");
       } catch {

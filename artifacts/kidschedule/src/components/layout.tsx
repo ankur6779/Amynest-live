@@ -13,6 +13,7 @@ import { useTheme } from "@/contexts/theme-context";
 import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/use-subscription";
 import { usePushRegistration } from "@/hooks/use-push-registration";
+import { useCapacitorPushRegistrationSync } from "@/hooks/use-capacitor-push-registration-sync";
 import { NotificationNudgeBanner } from "@/components/notification-nudge-banner";
 import { NotificationPromptModal } from "@/components/notification-prompt-modal";
 import { SpotlightTour } from "@/components/spotlight-tour";
@@ -182,6 +183,7 @@ export function Layout({
   } = useSubscription();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   usePushRegistration();
+  useCapacitorPushRegistrationSync();
   const initials = user ? (user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? user.emailAddresses?.[0]?.emailAddress?.[0] ?? "U") : "U";
   const handleSignOut = () => {
     setIsSidebarOpen(false);

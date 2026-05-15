@@ -13,8 +13,11 @@ import {
   ensureNativePushReady,
   getNativePushBridge,
   isAmyNestWrapper,
+  isCapacitorIOS,
+  openNativeAppSettings,
   registerNativePushToken,
   requestNativePushPermission,
+  resetCapacitorIOSPushState,
 } from "@/lib/native-push-bridge";
 import { getApiUrl } from "@/lib/api";
 type NotificationIntensity = "minimal" | "balanced" | "active" | "growth";
@@ -83,6 +86,16 @@ const CATEGORIES: CategoryDef[] = [
  */
 type WrapperState = "detecting" | "ready" | "wrapper-no-bridge" | "browser";
 
+type TestOnlyPlatform = "ios" | "ios-capacitor" | "android" | "web";
+
+/** Test push should hit this shell only — avoids fan-out to every device on the account. */
+function testNotificationOnlyPlatforms(): TestOnlyPlatform[] {
+  if (typeof window === "undefined") return ["web"];
+  if (isCapacitorIOS()) return ["ios-capacitor"];
+  if (isAmyNestWrapper()) return ["android"];
+  return ["web"];
+}
+
 function initialWrapperState(): WrapperState {
   if (typeof window === "undefined") return "browser";
   if (getNativePushBridge()) return "ready";
@@ -145,13 +158,29 @@ function WebPushCard() {
       const handleEnableNative = async () => {
         setEnabling(true);
         try {
+          if (isCapacitorIOS()) {
+            resetCapacitorIOSPushState();
+          }
           const perm = await requestNativePushPermission(native);
+          if (isCapacitorIOS() && perm !== "granted") {
+            const after = getNativePushBridge()?.getPermissionStatus();
+            if (after === "denied") {
+              toast({
+                title: "Notifications blocked",
+                description:
+                  "Go to iOS Settings → AmyNest → Notifications and enable them, then return to the app.",
+                variant: "destructive",
+              });
+            }
+          }
           if (perm !== "granted") {
-            toast({
-              title: t("toasts.use_web_push.blocked_title"),
-              description: t("toasts.use_web_push.blocked_body"),
-              variant: "destructive",
-            });
+            if (!isCapacitorIOS()) {
+              toast({
+                title: t("toasts.use_web_push.blocked_title"),
+                description: t("toasts.use_web_push.blocked_body"),
+                variant: "destructive",
+              });
+            }
             return;
           }
           const ok = await registerNativePushToken(authFetch, getApiUrl("/api/push/register"));
@@ -182,7 +211,13 @@ function WebPushCard() {
                 Notifications are managed directly by the AmyNest app via Firebase.
               </div>
               <div className="text-xs mt-1 font-medium" style={{ color: nativeGranted ? "hsl(var(--brand-green-500))" : nativeDenied ? "hsl(var(--brand-red-500))" : "hsl(var(--muted-foreground))" }}>
-                {nativeGranted ? "Active — notifications enabled" : nativeDenied ? "Blocked — enable in Phone Settings → Apps → AmyNest → Notifications" : "Not yet enabled — tap Allow to set up notifications on this device"}
+                {nativeGranted
+                  ? "Active — notifications enabled"
+                  : nativeDenied
+                    ? isCapacitorIOS()
+                      ? "Blocked — open iOS Settings → AmyNest → Notifications, then return and tap Retry."
+                      : "Blocked — enable in Phone Settings → Apps → AmyNest → Notifications"
+                    : "Not yet enabled — tap Allow to set up notifications on this device"}
               </div>
               {!nativeGranted && !nativeDenied && (
                 <div className="flex gap-2 mt-2">
@@ -195,6 +230,29 @@ function WebPushCard() {
                     disabled={enabling}
                   >
                     {enabling ? "Enabling…" : "Allow"}
+                  </Button>
+                </div>
+              )}
+              {nativeDenied && isCapacitorIOS() && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-muted-foreground hover:text-white hover:bg-primary"
+                    onClick={() => openNativeAppSettings()}
+                  >
+                    Open Settings
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-muted-foreground hover:text-white hover:bg-primary"
+                    onClick={handleEnableNative}
+                    disabled={enabling}
+                  >
+                    {enabling ? "Retrying…" : "Retry"}
                   </Button>
                 </div>
               )}
@@ -347,7 +405,10 @@ export default function NotificationSettingsPage() {
         const r = await authFetch("/api/notifications/test", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ category: "insights" }),
+          body: JSON.stringify({
+            category: "insights",
+            onlyPlatforms: testNotificationOnlyPlatforms(),
+          }),
         });
         if (!r.ok) throw new Error(`Server error ${r.status}`);
         return (await r.json()) as { status?: string; reason?: string };
@@ -360,8 +421,11 @@ export default function NotificationSettingsPage() {
       if (status === "sent") {
         toast({
           title: "Test notification sent!",
-          description:
-            "Check your Android system tray — it should appear within a few seconds.",
+          description: isCapacitorIOS()
+            ? "Check this iOS Simulator — it should appear within a few seconds."
+            : isAmyNestWrapper()
+              ? "Check your Android system tray — it should appear within a few seconds."
+              : "Check this browser for the notification.",
         });
       } else if (status === "no_tokens") {
         toast({
@@ -392,7 +456,7 @@ export default function NotificationSettingsPage() {
       const r = await authFetch("/api/notifications/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category }),
+        body: JSON.stringify({ category, onlyPlatforms: testNotificationOnlyPlatforms() }),
       });
       return (await r.json()) as {
         status?: string;

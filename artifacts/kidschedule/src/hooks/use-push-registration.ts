@@ -5,10 +5,12 @@ import { getApiUrl } from "@/lib/api";
 import {
   awaitNativePushBridge,
   ensureNativePushReady,
+  getNativePushBridge,
   getNativePushToken,
   initCapacitorIOSPush,
   isAmyNestWrapper,
   isCapacitorIOS,
+  resetCapacitorIOSPushState,
 } from "@/lib/native-push-bridge";
 
 const REGISTERED_KEY = "notify_device_registered_at";
@@ -51,6 +53,9 @@ export function usePushRegistration(): void {
     const deviceName = isCapacitorIOS() ? "AmyNest iOS" : "KidSchedule Android";
 
     const registerToken = async (token: string) => {
+      // Capacitor fires APNs hex first; only the FCM registration token is deliverable from the API.
+      if (isCapacitorIOS() && /^[0-9a-f]{64}$/i.test(token.trim())) return;
+
       const key = `${userId}::${token}`;
       if (lastKeyRef.current === key) return;
       try {
@@ -76,30 +81,59 @@ export function usePushRegistration(): void {
 
     let cancelled = false;
 
+    const runIosPushRegistration = async (): Promise<void> => {
+      await initCapacitorIOSPush();
+      if (cancelled) return;
+
+      const status = await ensureNativePushReady();
+      if (cancelled) return;
+
+      if (status?.token) {
+        await registerToken(status.token);
+        return;
+      }
+
+      if (status?.permission === "granted") {
+        const facade = {
+          getFcmEnabled: () => true,
+          getPermissionStatus: () => status.permission,
+          getToken: () => null,
+          platform: "ios" as const,
+        };
+        const token = await getNativePushToken(facade, 20_000);
+        if (!cancelled && token) await registerToken(token);
+      }
+    };
+
+    let iosVisCleanup: (() => void) | undefined;
+
     void (async () => {
       // ── iOS Capacitor path ────────────────────────────────────────────────
-      // initCapacitorIOSPush handles permission request + register() call.
-      // The token arrives via the "registration" listener which dispatches
-      // amynest-push-token. ensureNativePushReady awaits that init.
       if (isCapacitorIOS()) {
-        await initCapacitorIOSPush();
+        await runIosPushRegistration();
         if (cancelled) return;
 
-        // Token may already be in cache after init
-        const status = await ensureNativePushReady();
-        if (cancelled) return;
+        const permAfter = getNativePushBridge()?.getPermissionStatus();
+        if (permAfter !== "granted") {
+          const onVis = () => {
+            if (document.visibilityState !== "visible" || cancelled) return;
+            void (async () => {
+              resetCapacitorIOSPushState();
+              await runIosPushRegistration();
+            })();
+          };
+          document.addEventListener("visibilitychange", onVis);
 
-        if (status?.token) {
-          await registerToken(status.token);
-          return;
-        }
+          const onRegistered = () => {
+            document.removeEventListener("visibilitychange", onVis);
+            window.removeEventListener("amynest-push-registered", onRegistered);
+          };
+          window.addEventListener("amynest-push-registered", onRegistered);
 
-        // Token not yet ready — wait for the registration listener to fire
-        if (status?.permission === "granted") {
-          // getNativePushToken waits for the amynest-push-token event
-          const facade = { getFcmEnabled: () => true, getPermissionStatus: () => status.permission, getToken: () => null, platform: "ios" as const };
-          const token = await getNativePushToken(facade, 20_000);
-          if (!cancelled && token) await registerToken(token);
+          iosVisCleanup = () => {
+            document.removeEventListener("visibilitychange", onVis);
+            window.removeEventListener("amynest-push-registered", onRegistered);
+          };
         }
         return;
       }
@@ -132,6 +166,7 @@ export function usePushRegistration(): void {
 
     return () => {
       cancelled = true;
+      iosVisCleanup?.();
       window.removeEventListener("amynest-push-token", onTok);
     };
   }, [isSignedIn, userId, authFetch]);

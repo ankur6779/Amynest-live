@@ -1,3 +1,5 @@
+import { resolveApiRequestInput } from "@/lib/api";
+
 const MAX_ENTRIES = 60;
 const MAX_PAYLOAD_KEYS = 30;
 const MAX_STRING_LEN = 500;
@@ -81,8 +83,13 @@ export async function loggedFetch(
   fn: (input: RequestInfo | URL, init: RequestInit) => Promise<Response>,
 ): Promise<Response> {
   const t0 = Date.now();
+  const resolvedInput = resolveApiRequestInput(input);
   const url =
-    typeof input === "string" ? input : input instanceof URL ? input.href : (input as Request).url;
+    typeof resolvedInput === "string"
+      ? resolvedInput
+      : resolvedInput instanceof URL
+        ? resolvedInput.href
+        : (resolvedInput as Request).url;
   const method = (init.method ?? "GET").toUpperCase();
 
   let reqPayload: unknown = null;
@@ -91,7 +98,7 @@ export async function loggedFetch(
   } catch { /* binary/form body */ }
 
   try {
-    const res = await fn(input, init);
+    const res = await fn(resolvedInput, init);
     const responseTime = Date.now() - t0;
 
     let resPayload: unknown = null;

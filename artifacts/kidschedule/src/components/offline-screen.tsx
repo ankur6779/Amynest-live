@@ -7,6 +7,7 @@
  * accelerated animations: float, glow-pulse, ring-spin.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getApiUrl } from "@/lib/api";
 
 // ─── CSS keyframes injected once into the document head ───────────────────────
 
@@ -86,7 +87,7 @@ export function OfflineScreen({ onRetry }: Props) {
     if (retrying.current) return;
     retrying.current = true;
 
-    fetch("/api/healthz", { method: "HEAD", cache: "no-store" })
+    fetch(getApiUrl("/api/healthz"), { method: "HEAD", cache: "no-store" })
       .then(() => {
         window.location.reload();
       })

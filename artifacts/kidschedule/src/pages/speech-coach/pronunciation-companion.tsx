@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Capacitor } from "@capacitor/core";
 import {
   Volume2,
   Mic,
@@ -18,6 +19,7 @@ import {
 import { AmyIcon } from "@/components/amy-icon";
 import type { SpeechRecognitionState } from "@/hooks/useSpeechRecognition";
 import type { UseAmyVoiceState } from "@/hooks/use-amy-voice";
+import { isCapacitorIOS, openNativeAppSettings } from "@/lib/native-push-bridge";
 import type {
   TranscriptFeedback,
   PronouncePrompt,
@@ -585,6 +587,11 @@ export function PronunciationCompanion({
   onAction,
 }: PronunciationCompanionProps) {
   const { t } = useTranslation();
+  const capIos = isCapacitorIOS();
+  const nativePf =
+    typeof window !== "undefined" && Capacitor.isNativePlatform()
+      ? (Capacitor.getPlatform() as "ios" | "android")
+      : ("web" as const);
 
   const amyState = deriveAmyState(
     promptPhase,
@@ -1029,16 +1036,58 @@ export function PronunciationCompanion({
 
               {/* STT error */}
               {stt.error && promptPhase !== "result" && (
-                <p
-                  className="text-[11px]"
+                <div
+                  className="text-[11px] space-y-1.5"
                   style={{ color: "rgba(252,165,165,1)" }}
                   aria-live="polite"
                   data-on-dark
                 >
-                  {t(`screens.speech_coach.stt.error.${stt.error}`, {
-                    defaultValue: t("screens.speech_coach.stt.error.generic"),
-                  })}
-                </p>
+                  {(() => {
+                    const inAndroidWrapper = /AmyNestAndroid/.test(
+                      navigator.userAgent,
+                    );
+                    let key: string;
+                    if (stt.error === "microphone_denied") {
+                      if (nativePf === "ios") {
+                        key =
+                          "screens.speech_coach.stt.error.microphone_denied_ios_capacitor";
+                      } else if (nativePf === "android") {
+                        key =
+                          "screens.speech_coach.stt.error.microphone_denied_android";
+                      } else if (inAndroidWrapper) {
+                        key =
+                          "screens.speech_coach.stt.error.microphone_denied_android";
+                      } else {
+                        key = `screens.speech_coach.stt.error.${stt.error}`;
+                      }
+                    } else if (capIos && stt.error === "transcription_auth_failed") {
+                      key =
+                        "screens.speech_coach.stt.error.transcription_auth_failed_ios";
+                    } else {
+                      key = `screens.speech_coach.stt.error.${stt.error}`;
+                    }
+                    return t(key, {
+                      defaultValue: t("screens.speech_coach.stt.error.generic"),
+                    });
+                  })()}
+                  {stt.error === "microphone_denied" &&
+                    (nativePf === "ios" || nativePf === "android") && (
+                    <button
+                      type="button"
+                      className="block text-left underline font-semibold text-[11px]"
+                      style={{ color: "rgba(252,165,165,1)" }}
+                      onClick={() => openNativeAppSettings()}
+                    >
+                      {nativePf === "ios"
+                        ? t(
+                            "screens.speech_coach.stt.error.open_ios_settings_mic",
+                          )
+                        : t(
+                            "screens.speech_coach.stt.error.open_android_settings_mic",
+                          )}
+                    </button>
+                  )}
+                </div>
               )}
 
               {/* ── Action buttons ── */}

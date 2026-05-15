@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { getAuth } from "firebase/auth";
+import { getApiUrl } from "@/lib/api";
 
 const KEY_ENABLED = "amynest_voice_enabled";
 const KEY_GENDER  = "amynest_voice_gender"; // "female" | "male"
@@ -97,7 +98,7 @@ export async function speak(text: string): Promise<void> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const synthRes = await fetch("/api/tts/synthesize", {
+    const synthRes = await fetch(getApiUrl("/api/tts/synthesize"), {
       method: "POST",
       headers,
       body: JSON.stringify({ text: trimmed, voiceId, modelId }),

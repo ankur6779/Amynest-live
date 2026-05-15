@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthFetch } from "./use-auth-fetch";
 import { useToast } from "./use-toast";
 import { setupForegroundNotifications } from "@/lib/firebase";
+import { canUseBrowserServiceWorkers } from "@/lib/native-shell";
 
 export type WebPushStatus =
   | "idle"
@@ -15,6 +16,7 @@ export type WebPushStatus =
 function isSupportedBrowser(): boolean {
   if (typeof window === "undefined") return false;
   return (
+    canUseBrowserServiceWorkers() &&
     "Notification" in window &&
     "serviceWorker" in navigator &&
     "PushManager" in window

@@ -1,8 +1,18 @@
 import { createRoot } from "react-dom/client";
+import { setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
 import "./index.css";
 import "./i18n";
 import "./lib/notification-deep-link";
+import { canUseBrowserServiceWorkers } from "./lib/native-shell";
+import { getAppApiBaseOrigin } from "./lib/api";
+
+// Orval + authFetch use `/api/...` paths. In Capacitor those must hit
+// https://amynest.in — set the base URL before any lazy chunk (AppCore) runs.
+if (typeof window !== "undefined") {
+  const apiOrigin = getAppApiBaseOrigin();
+  if (apiOrigin) setBaseUrl(apiOrigin);
+}
 
 // Boot diagnostic helpers installed by the inline <script> in index.html.
 // They write phase markers to localStorage so we can detect mid-boot crashes
@@ -36,9 +46,9 @@ mark("bundle-loaded");
 //     Detected via window.__AMYNEST_WRAPPER injected at document_start.
 if (
   typeof window !== "undefined" &&
+  canUseBrowserServiceWorkers() &&
   "serviceWorker" in navigator &&
-  import.meta.env.PROD &&
-  !(window as { __AMYNEST_WRAPPER?: string }).__AMYNEST_WRAPPER
+  import.meta.env.PROD
 ) {
   const swBase = import.meta.env.BASE_URL.replace(/\/$/, "");
   navigator.serviceWorker

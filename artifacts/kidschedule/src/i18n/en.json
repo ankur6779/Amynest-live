@@ -1721,11 +1721,17 @@
           "try_again_alt2": "Keep going — you’re getting better!"
         },
         "error": {
-          "microphone_denied": "Microphone access was denied. Tap Allow when your browser asks, or go to browser Settings → Site permissions → Microphone.",
-          "not-allowed": "Microphone access was denied. Tap Allow when your browser asks, or go to browser Settings → Site permissions → Microphone.",
+          "microphone_denied": "Microphone access was denied. In the AmyNest app, open your device Settings → AmyNest → Microphone. In a web browser, tap Allow when prompted, or use the browser’s site settings for Microphone.",
+          "not-allowed": "Microphone access was denied. In the AmyNest app, open your device Settings → AmyNest → Microphone. In a web browser, tap Allow when prompted, or use the browser’s site settings for Microphone.",
           "transcription_failed": "Could not analyse the audio. Please try again.",
+          "transcription_auth_failed": "Authentication error. Please sign out and sign back in.",
           "recognition_start_failed": "Could not start the microphone. Please try again.",
-          "generic": "Something went wrong. Please try again."
+          "generic": "Something went wrong. Please try again.",
+          "microphone_denied_android": "Microphone access was denied. Open phone Settings → Apps → AmyNest → Permissions → Microphone and tap Allow, then return to the app.",
+          "microphone_denied_ios_capacitor": "Microphone access is blocked. Open iOS Settings → AmyNest → Microphone and enable it, then return here.",
+          "transcription_auth_failed_ios": "Authentication error. Please sign out and sign back in.",
+          "open_ios_settings_mic": "Tap here to open Settings → AmyNest → Microphone.",
+          "open_android_settings_mic": "Tap here to open Android Settings → AmyNest → Permissions → Microphone."
         },
         "analyzing": "Amy is analysing your voice…"
       },
