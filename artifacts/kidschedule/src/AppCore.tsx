@@ -73,6 +73,7 @@ import { NativeStartupPermissionsGate } from "@/components/native-startup-permis
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { OfflineScreen, useOnlineStatus } from "@/components/offline-screen";
 import { getAppApiBaseOrigin } from "@/lib/api";
+import { waitForIdToken } from "@/lib/auth-token";
 import { DebugProvider } from "@/contexts/debug-context";
 import { DebugPanel } from "@/components/debug-panel";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
@@ -125,38 +126,60 @@ function persistOnboardingCache(data: OnboardingStatus): void {
 }
 
 function useOnboardingStatus() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded, getToken } = useAuth();
   const authFetch = useAuthFetch();
   return useQuery({
     queryKey: ["onboarding-status"],
     queryFn: async () => {
-      try {
-        const res = await authFetch("/api/onboarding");
-        if (!res.ok) {
-          // API temporarily unavailable — trust local cache (e.g. Render cold start).
-          return readOnboardingCache();
-        }
-        const data = await res.json() as OnboardingStatus;
-        persistOnboardingCache(data);
-        return data;
-      } catch {
-        // Network / CORS / aborted — do not throw (avoids forcing onboarding).
-        return readOnboardingCache();
+      const token = await waitForIdToken(getToken);
+      if (!token) {
+        throw new Error("auth-token-pending");
       }
+
+      const fetchOnboarding = () => authFetch("/api/onboarding");
+
+      let res = await fetchOnboarding();
+
+      // One retry with a forced token refresh if the first call was rejected.
+      if (res.status === 401) {
+        await waitForIdToken(getToken, { skipCache: true, maxAttempts: 4 });
+        res = await fetchOnboarding();
+      }
+
+      if (!res.ok) {
+        const cached = readOnboardingCache();
+        if (res.status === 401) {
+          // Never treat auth failures as "new user needs onboarding".
+          if (isSetupComplete(cached)) return cached;
+          throw new Error("auth-unauthorized");
+        }
+        return cached;
+      }
+
+      const data = await res.json() as OnboardingStatus;
+      persistOnboardingCache(data);
+      return data;
     },
-    enabled: !!isSignedIn,
+    enabled: isLoaded && isSignedIn,
     staleTime: 30_000,
-    retry: 2,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+    retry: (failureCount, error) => {
+      const msg = error instanceof Error ? error.message : "";
+      if (msg === "auth-token-pending") return failureCount < 8;
+      if (msg === "auth-unauthorized") return false;
+      return failureCount < 2;
+    },
+    retryDelay: (attempt) => Math.min(300 * 2 ** attempt, 4000),
   });
 }
 
 function HomeRedirect() {
-  const { data, isLoading } = useOnboardingStatus();
+  const { data, isLoading, isError, error } = useOnboardingStatus();
+  const authBlocked =
+    isError && error instanceof Error && error.message === "auth-unauthorized";
   return (
     <>
       <Show when="signed-in">
-        {isLoading
+        {isLoading || authBlocked
           ? null
           : isSetupComplete(data)
             ? <Redirect to="/dashboard" />
@@ -171,11 +194,13 @@ function HomeRedirect() {
 }
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType; requiresProfile?: boolean }) {
-  const { data, isLoading } = useOnboardingStatus();
+  const { data, isLoading, isError, error } = useOnboardingStatus();
+  const authBlocked =
+    isError && error instanceof Error && error.message === "auth-unauthorized";
   return (
     <>
       <Show when="signed-in">
-        {isLoading
+        {isLoading || authBlocked
           ? null
           : !isSetupComplete(data)
             ? <Redirect to="/onboarding" />
