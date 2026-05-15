@@ -100,6 +100,30 @@ const bootMark = (phase: string) => {
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+type OnboardingStatus = {
+  onboardingComplete: boolean;
+  profileComplete: boolean;
+};
+
+/** Match mobile: child + parent rows, or explicit onboarding flag. */
+function isSetupComplete(data: OnboardingStatus | undefined): boolean {
+  if (!data) return false;
+  return data.onboardingComplete || data.profileComplete;
+}
+
+function readOnboardingCache(): OnboardingStatus {
+  const cached = localStorage.getItem("onboardingComplete") === "true";
+  return { onboardingComplete: cached, profileComplete: cached };
+}
+
+function persistOnboardingCache(data: OnboardingStatus): void {
+  if (isSetupComplete(data)) {
+    localStorage.setItem("onboardingComplete", "true");
+  } else {
+    localStorage.removeItem("onboardingComplete");
+  }
+}
+
 function useOnboardingStatus() {
   const { isSignedIn } = useAuth();
   const authFetch = useAuthFetch();
@@ -109,27 +133,21 @@ function useOnboardingStatus() {
       try {
         const res = await authFetch("/api/onboarding");
         if (!res.ok) {
-          // API temporarily unavailable — trust the localStorage cache rather than
-          // clearing it and sending the user back to onboarding unnecessarily.
-          const cached = localStorage.getItem("onboardingComplete") === "true";
-          return { onboardingComplete: cached, profileComplete: cached };
+          // API temporarily unavailable — trust local cache (e.g. Render cold start).
+          return readOnboardingCache();
         }
-        const data = await res.json() as { onboardingComplete: boolean; profileComplete: boolean };
-        if (data.onboardingComplete) {
-          localStorage.setItem("onboardingComplete", "true");
-        } else {
-          localStorage.removeItem("onboardingComplete");
-        }
+        const data = await res.json() as OnboardingStatus;
+        persistOnboardingCache(data);
         return data;
       } catch {
-        // Network / CORS / aborted — do not throw (avoids React Query error state
-        // that skips loading UI and forces onboarding when data is undefined).
-        const cached = localStorage.getItem("onboardingComplete") === "true";
-        return { onboardingComplete: cached, profileComplete: cached };
+        // Network / CORS / aborted — do not throw (avoids forcing onboarding).
+        return readOnboardingCache();
       }
     },
     enabled: !!isSignedIn,
     staleTime: 30_000,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
 }
 
@@ -140,7 +158,7 @@ function HomeRedirect() {
       <Show when="signed-in">
         {isLoading
           ? null
-          : data?.onboardingComplete
+          : isSetupComplete(data)
             ? <Redirect to="/dashboard" />
             : <Redirect to="/onboarding" />
         }
@@ -159,7 +177,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
       <Show when="signed-in">
         {isLoading
           ? null
-          : !data?.onboardingComplete
+          : !isSetupComplete(data)
             ? <Redirect to="/onboarding" />
             : <Layout><Component /></Layout>
         }

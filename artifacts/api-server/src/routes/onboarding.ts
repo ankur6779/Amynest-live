@@ -26,8 +26,10 @@ router.get("/onboarding", async (req, res): Promise<void> => {
     .where(eq(parentProfilesTable.userId, userId))
     .limit(1);
 
-  const onboardingComplete = !!profile?.onboardingComplete;
   const profileComplete = !!childRow && !!parentRow;
+  // Returning users may have child/parent rows without the onboarding flag set.
+  const onboardingComplete =
+    !!profile?.onboardingComplete || profileComplete;
 
   res.json({
     onboardingComplete,
