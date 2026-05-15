@@ -2,6 +2,10 @@
   "name": "workspace",
   "version": "0.0.0",
   "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0 <23.0.0"
+  },
   "scripts": {
       "preinstall": "echo ok",
     "prepare": "simple-git-hooks",
