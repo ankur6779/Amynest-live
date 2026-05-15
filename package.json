@@ -10,6 +10,7 @@
       "preinstall": "echo ok",
     "prepare": "sh -c 'command -v simple-git-hooks >/dev/null 2>&1 && simple-git-hooks || true'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "build:web": "BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "codegen": "pnpm --filter @workspace/api-spec run codegen && pnpm run typecheck:libs"

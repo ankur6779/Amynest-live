@@ -1,18 +1,9 @@
+import { BASE_URL } from "@/config";
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 
-/** Live API on Render (production + native shells + deployed web). */
-const PRODUCTION_API_ORIGIN = "https://amynest-live.onrender.com";
-
-/** Local api-server (`artifacts/api-server`, default PORT 8080). */
-const LOCAL_DEV_API_ORIGIN = "http://localhost:8080";
-
 /**
- * API origin for `fetch(\`${BASE_URL}/api/...\`)` and `getApiUrl("/api/...")`.
- *
- * - Local browser dev (localhost / 127.0.0.1): local api-server
- * - Capacitor / Android WebView / production web: Render
- *
- * Override anytime with `VITE_APP_API_ORIGIN` in `.env` (no trailing slash).
+ * Resolved API origin (no trailing slash).
+ * Override with `VITE_APP_API_ORIGIN` in `.env` for local or staging backends.
  */
 export function getAppApiBaseOrigin(): string {
   const fromEnv =
@@ -22,32 +13,26 @@ export function getAppApiBaseOrigin(): string {
   if (fromEnv) return fromEnv.replace(/\/$/, "");
 
   if (typeof window === "undefined") {
-    return PRODUCTION_API_ORIGIN;
+    return BASE_URL;
   }
 
   if (isNativeAmyNestShell()) {
-    return PRODUCTION_API_ORIGIN;
+    return BASE_URL;
   }
 
-  const host = window.location.hostname;
-  if (host === "localhost" || host === "127.0.0.1") {
-    return LOCAL_DEV_API_ORIGIN;
-  }
-
-  return PRODUCTION_API_ORIGIN;
+  return BASE_URL;
 }
 
-/** Resolved API base URL (no trailing slash). */
-export const BASE_URL = getAppApiBaseOrigin();
+/** Same as `getAppApiBaseOrigin()` — use with `fetch(\`${BASE_URL}/api/...\`)`. */
+export { BASE_URL };
 
 /**
  * Returns a URL for calling the backend API.
- * Example: `fetch(getApiUrl("/api/health"))` → `https://amynest-live.onrender.com/api/health`
+ * Example: `fetch(getApiUrl("/api/healthz"))` → `https://amynest-live.onrender.com/api/healthz`
  */
 export function getApiUrl(path: string): string {
   const pathPart = path.startsWith("/") ? path : `/${path}`;
-  const origin = getAppApiBaseOrigin();
-  return `${origin}${pathPart}`;
+  return `${getAppApiBaseOrigin()}${pathPart}`;
 }
 
 /**
