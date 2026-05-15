@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 
@@ -43,6 +44,7 @@ export type ReferralPayload = {
 const QKEY = ["referrals", "me"] as const;
 
 export function useReferrals() {
+  const { isSignedIn, isLoaded } = useAuth();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
 
@@ -53,6 +55,7 @@ export function useReferrals() {
       if (!res.ok) throw new Error(`referrals ${res.status}`);
       return (await res.json()) as ReferralPayload;
     },
+    enabled: isLoaded && isSignedIn,
     staleTime: 30_000,
   });
 

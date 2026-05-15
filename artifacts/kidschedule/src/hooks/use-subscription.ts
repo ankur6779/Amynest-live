@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
 import { openRazorpayCheckout, type RazorpayCheckoutResponse } from "@/lib/razorpay";
@@ -55,6 +56,7 @@ export type SubscriptionResponse = {
 const QKEY = ["subscription"] as const;
 
 export function useSubscription() {
+  const { isSignedIn, isLoaded } = useAuth();
   const authFetch = useAuthFetch();
   const qc = useQueryClient();
 
@@ -65,6 +67,7 @@ export function useSubscription() {
       if (!res.ok) throw new Error(`subscription ${res.status}`);
       return (await res.json()) as SubscriptionResponse;
     },
+    enabled: isLoaded && isSignedIn,
     staleTime: 60_000,
   });
 
