@@ -185,7 +185,7 @@ function FirebaseAuthBootstrap() {
   return null;
 }
 
-/** Orval `customFetch` uses relative `/api/...` paths — prepend prod origin in native shells. */
+/** Orval `customFetch` uses relative `/api/...` paths — prepend API origin (Render / local dev). */
 function NativeApiBaseUrlBootstrap() {
   useEffect(() => {
     const origin = getAppApiBaseOrigin();

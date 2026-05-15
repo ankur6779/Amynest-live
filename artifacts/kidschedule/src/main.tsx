@@ -7,8 +7,8 @@ import "./lib/notification-deep-link";
 import { canUseBrowserServiceWorkers } from "./lib/native-shell";
 import { getAppApiBaseOrigin } from "./lib/api";
 
-// Orval + authFetch use `/api/...` paths. In Capacitor those must hit
-// https://amynest.in — set the base URL before any lazy chunk (AppCore) runs.
+// Orval + authFetch use `/api/...` paths. Native shells and deployed web must
+// hit https://amynest-live.onrender.com — set the base URL before AppCore loads.
 if (typeof window !== "undefined") {
   const apiOrigin = getAppApiBaseOrigin();
   if (apiOrigin) setBaseUrl(apiOrigin);

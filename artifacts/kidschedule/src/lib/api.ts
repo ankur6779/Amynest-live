@@ -1,20 +1,18 @@
 import { isNativeAmyNestShell } from "@/lib/native-shell";
 
-/**
- * Production web app host — same host that serves `/api/*` in production.
- * Used when the UI runs inside a native shell (Capacitor / Android WebView)
- * where `fetch("/api/...")` would otherwise resolve against `capacitor://` or
- * `file://` and never reach the real backend.
- *
- * Override with `VITE_APP_API_ORIGIN` (or `VITE_APP_ORIGIN`) in `.env` for
- * staging builds, e.g. `https://staging.example.com` (no trailing slash).
- */
-const DEFAULT_PRODUCTION_APP_ORIGIN = "https://amynest.in";
+/** Live API on Render (production + native shells + deployed web). */
+const PRODUCTION_API_ORIGIN = "https://amynest-live.onrender.com";
+
+/** Local api-server (`artifacts/api-server`, default PORT 8080). */
+const LOCAL_DEV_API_ORIGIN = "http://localhost:8080";
 
 /**
- * Returns the API origin prefix for native shells / env overrides.
- * Empty string when the app should use same-origin relative `/api/...`
- * (normal browser on amynest.in).
+ * API origin for `fetch(\`${BASE_URL}/api/...\`)` and `getApiUrl("/api/...")`.
+ *
+ * - Local browser dev (localhost / 127.0.0.1): local api-server
+ * - Capacitor / Android WebView / production web: Render
+ *
+ * Override anytime with `VITE_APP_API_ORIGIN` in `.env` (no trailing slash).
  */
 export function getAppApiBaseOrigin(): string {
   const fromEnv =
@@ -22,27 +20,40 @@ export function getAppApiBaseOrigin(): string {
     (import.meta.env.VITE_APP_ORIGIN as string | undefined)?.trim() ||
     "";
   if (fromEnv) return fromEnv.replace(/\/$/, "");
-  if (typeof window !== "undefined" && isNativeAmyNestShell()) {
-    return DEFAULT_PRODUCTION_APP_ORIGIN;
+
+  if (typeof window === "undefined") {
+    return PRODUCTION_API_ORIGIN;
   }
-  return "";
+
+  if (isNativeAmyNestShell()) {
+    return PRODUCTION_API_ORIGIN;
+  }
+
+  const host = window.location.hostname;
+  if (host === "localhost" || host === "127.0.0.1") {
+    return LOCAL_DEV_API_ORIGIN;
+  }
+
+  return PRODUCTION_API_ORIGIN;
 }
+
+/** Resolved API base URL (no trailing slash). */
+export const BASE_URL = getAppApiBaseOrigin();
 
 /**
  * Returns a URL for calling the backend API.
- * - Browser / PWA on amynest.in: returns the path only (same-origin).
- * - Native shells: returns absolute `https://amynest.in/...` (or env override).
+ * Example: `fetch(getApiUrl("/api/health"))` → `https://amynest-live.onrender.com/api/health`
  */
 export function getApiUrl(path: string): string {
   const pathPart = path.startsWith("/") ? path : `/${path}`;
   const origin = getAppApiBaseOrigin();
-  if (!origin) return pathPart;
   return `${origin}${pathPart}`;
 }
 
 /**
- * Rewrites same-origin-style `/api/...` request targets for native shells.
- * Used by `loggedFetch` so all `authFetch("/api/...")` calls hit production.
+ * Rewrites same-origin-style `/api/...` request targets for native shells and
+ * absolute-base deployments. Used by `loggedFetch` so all `authFetch("/api/...")`
+ * calls hit the configured backend.
  */
 export function resolveApiRequestInput(input: RequestInfo | URL): RequestInfo | URL {
   if (typeof input === "string" && input.startsWith("/api")) {
