@@ -43,6 +43,14 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+app.get("/", (_req, res) => {
+  res.json({ status: "running", service: "AmyNest API" });
+});
+
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use("/api", router);
 
 // Clean JSON 404 for anything else this service receives. Without this,
