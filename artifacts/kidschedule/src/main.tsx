@@ -4,12 +4,15 @@ import App from "./App";
 import "./index.css";
 import "./i18n";
 import "./lib/notification-deep-link";
-import { canUseBrowserServiceWorkers } from "./lib/native-shell";
+import { initNativeShell } from "./lib/native-shell";
 import { getAppApiBaseOrigin } from "./lib/api";
 
-// Orval + authFetch use `/api/...` paths. Native shells and deployed web must
-// hit https://amynest-live.onrender.com — set the base URL before AppCore loads.
+// Native vs web bootstrap (service worker on web; no-op in Capacitor shells).
 if (typeof window !== "undefined") {
+  initNativeShell();
+
+  // Orval + authFetch use `/api/...` paths. Native shells and deployed web must
+  // hit https://amynest-live.onrender.com — set the base URL before AppCore loads.
   const apiOrigin = getAppApiBaseOrigin();
   if (apiOrigin) setBaseUrl(apiOrigin);
 }
@@ -29,35 +32,6 @@ const mark = (p: string) => {
 };
 
 mark("bundle-loaded");
-
-// Register the root service worker so Chrome treats the site as a real
-// installable PWA (WebAPK) on Android. Without a SW at scope "/" that
-// has a fetch handler, "Install app" creates only a launcher shortcut
-// and the app icon / name is not applied correctly.
-//
-// Push notifications are delivered natively by the Android wrapper via FCM
-// (not via browser Web Push). firebase-messaging-sw.js is a no-op placeholder.
-//
-// We skip this:
-//  1. In development — so Vite's HMR dev server isn't shadowed.
-//  2. Inside the KidSchedule Android WebView wrapper — the wrapper handles
-//     push natively via FCM; registering a SW inside a WebView serves no
-//     purpose and can interfere with navigation / network interception.
-//     Detected via window.__AMYNEST_WRAPPER injected at document_start.
-if (
-  typeof window !== "undefined" &&
-  canUseBrowserServiceWorkers() &&
-  "serviceWorker" in navigator &&
-  import.meta.env.PROD
-) {
-  const swBase = import.meta.env.BASE_URL.replace(/\/$/, "");
-  navigator.serviceWorker
-    .register(`${swBase}/sw.js`, { scope: `${swBase}/`, updateViaCache: "none" })
-    .catch(() => {
-      // Best-effort: install criteria still met by firebase-messaging-sw.js
-      // for users who already have a WebAPK; don't crash the app.
-    });
-}
 
 const root = createRoot(document.getElementById("root")!);
 
