@@ -26,6 +26,7 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  console.log(`Server listening on port ${port}`);
   startRazorpayWebhookCleanup();
   startWeeklyRecapCron();
   startNotificationCron();
