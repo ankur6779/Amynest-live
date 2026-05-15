@@ -8,12 +8,16 @@ export function useAuthFetch() {
 
   const authFetch = useCallback(
     async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
-      const token = isSignedIn
-        ? await waitForIdToken(getToken)
-        : await getToken();
-
       const headers = new Headers(init.headers);
-      if (token) {
+
+      if (isSignedIn) {
+        const token = await waitForIdToken(getToken);
+        if (!token) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
         headers.set("Authorization", `Bearer ${token}`);
       }
 

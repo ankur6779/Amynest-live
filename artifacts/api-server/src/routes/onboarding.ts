@@ -28,9 +28,9 @@ router.get("/onboarding", async (req, res): Promise<void> => {
 
   const hasChild = !!childRow;
   const hasParent = !!parentRow;
-  // Returning users: any saved child (or child + parent) means setup is done.
-  const profileComplete = hasChild || (hasChild && hasParent);
-  const onboardingComplete = !!profile?.onboardingComplete || profileComplete;
+  // Returning users: saved child profile means setup is done (parent row optional).
+  const profileComplete = hasChild;
+  const onboardingComplete = !!profile?.onboardingComplete || hasChild;
 
   res.json({
     onboardingComplete,

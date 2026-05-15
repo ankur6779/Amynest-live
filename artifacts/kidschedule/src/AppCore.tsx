@@ -125,6 +125,38 @@ function persistOnboardingCache(data: OnboardingStatus): void {
   }
 }
 
+async function resolveSetupStatus(
+  authFetch: ReturnType<typeof useAuthFetch>,
+): Promise<OnboardingStatus> {
+  let res = await authFetch("/api/onboarding");
+
+  if (res.status === 401) {
+    const cached = readOnboardingCache();
+    if (isSetupComplete(cached)) return cached;
+    throw new Error("auth-unauthorized");
+  }
+
+  if (!res.ok) {
+    return readOnboardingCache();
+  }
+
+  const data = (await res.json()) as OnboardingStatus;
+  if (isSetupComplete(data)) {
+    return data;
+  }
+
+  // Returning users: children exist but onboarding_profiles flag was never set.
+  const childrenRes = await authFetch("/api/children");
+  if (childrenRes.ok) {
+    const children = (await childrenRes.json()) as unknown;
+    if (Array.isArray(children) && children.length > 0) {
+      return { onboardingComplete: true, profileComplete: true };
+    }
+  }
+
+  return data;
+}
+
 function useOnboardingStatus() {
   const { isSignedIn, isLoaded, getToken } = useAuth();
   const authFetch = useAuthFetch();
@@ -136,27 +168,7 @@ function useOnboardingStatus() {
         throw new Error("auth-token-pending");
       }
 
-      const fetchOnboarding = () => authFetch("/api/onboarding");
-
-      let res = await fetchOnboarding();
-
-      // One retry with a forced token refresh if the first call was rejected.
-      if (res.status === 401) {
-        await waitForIdToken(getToken, { skipCache: true, maxAttempts: 4 });
-        res = await fetchOnboarding();
-      }
-
-      if (!res.ok) {
-        const cached = readOnboardingCache();
-        if (res.status === 401) {
-          // Never treat auth failures as "new user needs onboarding".
-          if (isSetupComplete(cached)) return cached;
-          throw new Error("auth-unauthorized");
-        }
-        return cached;
-      }
-
-      const data = await res.json() as OnboardingStatus;
+      const data = await resolveSetupStatus(authFetch);
       persistOnboardingCache(data);
       return data;
     },
@@ -193,6 +205,28 @@ function HomeRedirect() {
   );
 }
 
+/** If setup is already done, leave /onboarding (users often land here from an old redirect). */
+function OnboardingRouteGuard() {
+  const { data, isLoading, isError, error } = useOnboardingStatus();
+  const authBlocked =
+    isError && error instanceof Error && error.message === "auth-unauthorized";
+
+  return (
+    <>
+      <Show when="signed-in">
+        {isLoading || authBlocked
+          ? null
+          : isSetupComplete(data)
+            ? <Redirect to="/dashboard" />
+            : <OnboardingPage />}
+      </Show>
+      <Show when="signed-out">
+        <Redirect to="/sign-in" />
+      </Show>
+    </>
+  );
+}
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType; requiresProfile?: boolean }) {
   const { data, isLoading, isError, error } = useOnboardingStatus();
   const authBlocked =
@@ -219,7 +253,7 @@ function FirebaseAuthBootstrap() {
 
   useEffect(() => {
     if (isSignedIn) {
-      setAuthTokenGetter(() => getToken());
+      setAuthTokenGetter(() => waitForIdToken(getToken));
     } else {
       setAuthTokenGetter(null);
     }
@@ -308,14 +342,7 @@ function AppRoutes() {
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/verify-email" component={VerifyEmailPage} />
-          <Route path="/onboarding">
-            {() => (
-              <>
-                <Show when="signed-in"><OnboardingPage /></Show>
-                <Show when="signed-out"><Redirect to="/sign-in" /></Show>
-              </>
-            )}
-          </Route>
+          <Route path="/onboarding" component={OnboardingRouteGuard} />
           <Route path="/dashboard">
             {() => <ProtectedRoute component={Dashboard} />}
           </Route>
