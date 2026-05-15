@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import { FirebaseAuthProvider, Show } from "@/lib/firebase-auth";
 import { useAuth, useClerk } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
@@ -69,8 +69,10 @@ const EnvironmentPage = lazy(() => import("@/pages/environment"));
 const FeedbackPage = lazy(() => import("@/pages/feedback"));
 const AdminFeedbackPage = lazy(() => import("@/pages/admin-feedback"));
 
+import { NativeStartupPermissionsGate } from "@/components/native-startup-permissions-gate";
 import { ReferralAttributionBridge } from "@/components/referral-attribution-bridge";
 import { OfflineScreen, useOnlineStatus } from "@/components/offline-screen";
+import { getAppApiBaseOrigin } from "@/lib/api";
 import { DebugProvider } from "@/contexts/debug-context";
 import { DebugPanel } from "@/components/debug-panel";
 import { FcmForegroundHandler } from "@/components/fcm-foreground-handler";
@@ -104,20 +106,27 @@ function useOnboardingStatus() {
   return useQuery({
     queryKey: ["onboarding-status"],
     queryFn: async () => {
-      const res = await authFetch("/api/onboarding");
-      if (!res.ok) {
-        // API temporarily unavailable — trust the localStorage cache rather than
-        // clearing it and sending the user back to onboarding unnecessarily.
+      try {
+        const res = await authFetch("/api/onboarding");
+        if (!res.ok) {
+          // API temporarily unavailable — trust the localStorage cache rather than
+          // clearing it and sending the user back to onboarding unnecessarily.
+          const cached = localStorage.getItem("onboardingComplete") === "true";
+          return { onboardingComplete: cached, profileComplete: cached };
+        }
+        const data = await res.json() as { onboardingComplete: boolean; profileComplete: boolean };
+        if (data.onboardingComplete) {
+          localStorage.setItem("onboardingComplete", "true");
+        } else {
+          localStorage.removeItem("onboardingComplete");
+        }
+        return data;
+      } catch {
+        // Network / CORS / aborted — do not throw (avoids React Query error state
+        // that skips loading UI and forces onboarding when data is undefined).
         const cached = localStorage.getItem("onboardingComplete") === "true";
         return { onboardingComplete: cached, profileComplete: cached };
       }
-      const data = await res.json() as { onboardingComplete: boolean; profileComplete: boolean };
-      if (data.onboardingComplete) {
-        localStorage.setItem("onboardingComplete", "true");
-      } else {
-        localStorage.removeItem("onboardingComplete");
-      }
-      return data;
     },
     enabled: !!isSignedIn,
     staleTime: 30_000,
@@ -176,6 +185,19 @@ function FirebaseAuthBootstrap() {
   return null;
 }
 
+/** Orval `customFetch` uses relative `/api/...` paths — prepend prod origin in native shells. */
+function NativeApiBaseUrlBootstrap() {
+  useEffect(() => {
+    const origin = getAppApiBaseOrigin();
+    setBaseUrl(origin || null);
+    return () => {
+      setBaseUrl(null);
+    };
+  }, []);
+
+  return null;
+}
+
 function QueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const queryClient = useQueryClient();
@@ -227,6 +249,7 @@ function AppRoutes() {
           <DebugProvider>
           <PaywallProvider>
             <ReactMountMarker />
+            <NativeApiBaseUrlBootstrap />
             <FirebaseAuthBootstrap />
             <QueryClientCacheInvalidator />
             <ReferralAttributionBridge />
@@ -413,6 +436,7 @@ export default function AppCore() {
         <AppRoutes />
         {/* Fixed overlay — rendered outside AppRoutes so it appears above all pages */}
         <OfflineGate />
+        <NativeStartupPermissionsGate />
       </WouterRouter>
     </FirebaseAuthProvider>
   );

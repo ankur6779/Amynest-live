@@ -7,7 +7,7 @@ import { count } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-const PLATFORMS = ["ios", "android", "web", "unknown"] as const;
+const PLATFORMS = ["ios", "ios-capacitor", "android", "web", "unknown"] as const;
 
 const registerSchema = z.object({
   token: z.string().trim().min(1).max(512),
@@ -19,9 +19,13 @@ const unregisterSchema = z.object({
   token: z.string().trim().min(1).max(512),
 });
 
+function looksLikeApnsDeviceTokenHex(t: string): boolean {
+  return /^[0-9a-f]{64}$/i.test(t.trim());
+}
+
 /**
  * POST /api/push/register
- * Body: { token: string; platform?: "ios"|"android"|"web"|"unknown"; deviceName?: string }
+ * Body: { token: string; platform?: "ios"|"ios-capacitor"|"android"|"web"|"unknown"; deviceName?: string }
  * Atomic upsert of the Expo push token bound to the current user.
  */
 router.post("/push/register", async (req, res): Promise<void> => {
@@ -55,6 +59,17 @@ router.post("/push/register", async (req, res): Promise<void> => {
         lastSeenAt: sql`now()`,
       },
     });
+
+  // Capacitor used to POST raw APNs hex; those rows are never dispatched (FCM-only path).
+  // Drop them once we have a real FCM registration token for this user.
+  if (platform === "ios-capacitor" && !looksLikeApnsDeviceTokenHex(token)) {
+    await db.delete(pushTokensTable).where(
+      and(
+        eq(pushTokensTable.userId, userId),
+        sql`trim(${pushTokensTable.token}) ~ '^[0-9a-fA-F]{64}$'`,
+      ),
+    );
+  }
 
   res.json({ ok: true });
 });

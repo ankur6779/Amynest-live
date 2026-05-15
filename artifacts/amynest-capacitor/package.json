@@ -4,7 +4,7 @@
   "private": true,
   "description": "Capacitor wrapper for AmyNest — builds iOS (Xcode) + Android from the kidschedule PWA",
   "scripts": {
-    "build:web": "BASE_PATH=/ PORT=3000 VITE_FIREBASE_API_KEY=${FIREBASE_API_KEY} VITE_FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN} VITE_FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID} VITE_FIREBASE_APP_ID=${FIREBASE_APP_ID} VITE_FIREBASE_MESSAGING_SENDER_ID=${FIREBASE_MESSAGING_SENDER_ID} VITE_FIREBASE_VAPID_KEY=${VITE_FIREBASE_VAPID_KEY} pnpm --filter @workspace/kidschedule run build && node scripts/copy-www.mjs",
+    "build:web": "node scripts/build-web.mjs",
     "sync": "npx cap sync",
     "sync:ios": "npx cap sync ios",
     "sync:android": "npx cap sync android",
@@ -17,7 +17,9 @@
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.0",
     "@capacitor/core": "^6.2.0",
+    "@capacitor/geolocation": "^6.1.1",
     "@capacitor/ios": "^6.2.0",
     "@capacitor/push-notifications": "^6.0.0",
     "@revenuecat/purchases-capacitor": "^9.0.0"

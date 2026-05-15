@@ -19,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, XCircle, Sparkles, ArrowLeft, RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/firebase-auth-hooks";
+import { getApiUrl } from "@/lib/api";
 
 export type SmartSubjectId =
   | "addition"
@@ -86,7 +87,7 @@ export function AdaptiveQuestionRunner({
         setLoading(false);
         return;
       }
-      const res = await fetch("/api/smart-study/next-questions", {
+      const res = await fetch(getApiUrl("/api/smart-study/next-questions"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -134,7 +135,7 @@ export function AdaptiveQuestionRunner({
         // Smart Study v2: include questionId so the server can dedupe
         // (anti-repetition). topicId mirrors the subject for compatibility
         // with the legacy attempt-tracking schema.
-        await fetch("/api/smart-study/attempt", {
+        await fetch(getApiUrl("/api/smart-study/attempt"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

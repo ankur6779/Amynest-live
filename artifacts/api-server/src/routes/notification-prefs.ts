@@ -302,8 +302,12 @@ router.get("/notifications/diagnostics", async (req, res): Promise<void> => {
   });
 });
 
+const TEST_ONLY_PLATFORMS = ["ios", "ios-capacitor", "android", "web"] as const;
+
 const TestSchema = z.object({
   category: z.enum(NOTIFICATION_CATEGORIES),
+  /** Limit the test push to these stored token platforms (current device only). */
+  onlyPlatforms: z.array(z.enum(TEST_ONLY_PLATFORMS)).min(1).max(4).optional(),
 });
 
 /**
@@ -322,6 +326,7 @@ router.post("/notifications/test", async (req, res): Promise<void> => {
   }
   const category: NotificationCategory = parsed.data.category;
   const dedupKey = `test:${userId}:${category}:${Date.now()}`;
+  const onlyPlatforms = parsed.data.onlyPlatforms;
   const result = await dispatchNotification({
     userId,
     category,
@@ -333,6 +338,9 @@ router.post("/notifications/test", async (req, res): Promise<void> => {
     bypassDailyCap: true,
     bypassQuietHours: true,
     bypassCategoryCheck: true,
+    ...(onlyPlatforms && onlyPlatforms.length > 0
+      ? { restrictToPlatforms: onlyPlatforms }
+      : {}),
   });
   logger.info({ userId, category, result }, "Test notification dispatched");
   res.json(result);

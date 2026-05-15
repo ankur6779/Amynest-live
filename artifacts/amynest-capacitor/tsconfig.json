@@ -7,5 +7,5 @@
     "strict": false,
     "resolveJsonModule": true
   },
-  "include": ["capacitor.config.ts"]
+  "include": []
 }

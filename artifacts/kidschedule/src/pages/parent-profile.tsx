@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserCircle, Save, Plus, Trash2, Clock, Utensils, Camera, Loader2, Bell } from "lucide-react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { getApiUrl } from "@/lib/api";
 
 interface FreeSlot {
   start: string;
@@ -129,7 +130,7 @@ export default function ParentProfilePage() {
 
   useEffect(() => {
     getToken().then(token => {
-      fetch("/api/parent-profile", {
+      fetch(getApiUrl("/api/parent-profile"), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
         .then(r => (r.ok ? r.json() : null))
@@ -242,7 +243,7 @@ export default function ParentProfilePage() {
       if (profile.freeSlots.length > 0) body.freeSlots = profile.freeSlots;
       if (combinedAllergies) body.allergies = combinedAllergies;
 
-      const res = await fetch("/api/parent-profile", {
+      const res = await fetch(getApiUrl("/api/parent-profile"), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -156,7 +156,16 @@ export default function NotificationSettingsScreen() {
     mutationFn: async (category: Category["testCategory"]) => {
       const r = await authFetch("/api/notifications/test", {
         method: "POST",
-        body: JSON.stringify({ category }),
+        body: JSON.stringify({
+          category,
+          onlyPlatforms: [
+            Platform.OS === "ios"
+              ? "ios"
+              : Platform.OS === "android"
+                ? "android"
+                : "web",
+          ],
+        }),
       });
       const j = (await r.json()) as { status?: string; reason?: string };
       return j;

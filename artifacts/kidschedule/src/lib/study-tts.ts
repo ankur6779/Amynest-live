@@ -2,6 +2,7 @@
 // Replaces the old browser speechSynthesis with Indian ElevenLabs voices.
 
 import { getAuth } from "firebase/auth";
+import { getApiUrl } from "@/lib/api";
 
 // ─── ElevenLabs Indian Voice IDs ──────────────────────────────
 // English Indian Female — Ananya K
@@ -53,7 +54,7 @@ export async function speak(
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const synthRes = await fetch("/api/tts/synthesize", {
+    const synthRes = await fetch(getApiUrl("/api/tts/synthesize"), {
       method: "POST",
       headers,
       body: JSON.stringify({ text: trimmed, voiceId, modelId }),

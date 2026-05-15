@@ -4,7 +4,14 @@ packages:
   - lib/integrations/*
   - scripts
 
+allowBuilds:
+  '@firebase/util': true
+  esbuild: true
+  protobufjs: true
+  simple-git-hooks: true
+
 autoInstallPeers: false
+strictPeerDependencies: false
 
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.1

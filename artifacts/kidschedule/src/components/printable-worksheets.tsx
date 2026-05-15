@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import amyLogo from "@assets/ChatGPT_Image_Apr_19,_2026,_01_56_21_PM_1776587201948.png";
 import { useTranslation } from "react-i18next";
+import { getApiUrl } from "@/lib/api";
 interface Worksheet {
   id: string;
   name: string;
@@ -84,7 +85,7 @@ export function PrintableWorksheets({
   const loadWorksheets = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch("/api/worksheets").then(r => {
+    fetch(getApiUrl("/api/worksheets")).then(r => {
       if (!r.ok) return r.json().then((b: any) => {
         throw new Error(b.error || `HTTP ${r.status}`);
       });

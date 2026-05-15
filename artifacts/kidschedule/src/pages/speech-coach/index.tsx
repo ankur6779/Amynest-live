@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
+import { getAuth } from "firebase/auth";
 import {
   ChevronLeft,
   Mic,
@@ -437,7 +438,14 @@ function PronunciationSection({ child }: { child: AnyChild }) {
   const { t } = useTranslation();
   const log = useLogSpeechPracticeAttempt();
   const voice = useAmyVoice();
-  const stt = useSpeechRecognition("en-US");
+  const getAuthToken = useCallback(async () => {
+    try {
+      return (await getAuth().currentUser?.getIdToken()) ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const stt = useSpeechRecognition("en-US", { getAuthToken });
 
   const [kind, setKind] = useState<SpeechPromptKind>("word");
   const [difficulty, setDifficulty] = useState<SessionDifficulty>("easy");

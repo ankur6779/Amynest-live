@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { getApiUrl } from "@/lib/api";
 interface Video {
   id: string;
   name: string;
@@ -14,7 +15,7 @@ interface ApiResponse {
   nextOffset: number | null;
 }
 async function fetchBatch(offset: number): Promise<ApiResponse> {
-  const res = await fetch(`/api/reels/videos?offset=${offset}&batch=6`);
+  const res = await fetch(getApiUrl(`/api/reels/videos?offset=${offset}&batch=6`));
   if (!res.ok) {
     try {
       const body = await res.json();

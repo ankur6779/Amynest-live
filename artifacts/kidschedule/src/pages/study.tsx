@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { getApiUrl } from "@/lib/api";
 import {
   GraduationCap, ArrowLeft, Volume2, VolumeX, CheckCircle2, XCircle,
   Sparkles, RotateCcw, ChevronRight, Trophy,
@@ -241,7 +242,7 @@ function TodaysPlanSection({
       try {
         const token = await getToken();
         if (!token) { if (!cancelled) setLoading(false); return; }
-        const res = await fetch("/api/smart-study/daily-plan", {
+        const res = await fetch(getApiUrl("/api/smart-study/daily-plan"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -614,7 +615,7 @@ function TopicDetail({
       try {
         const token = await getToken();
         if (!token) return;
-        await fetch("/api/smart-study/attempt", {
+        await fetch(getApiUrl("/api/smart-study/attempt"), {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(perQuestion),

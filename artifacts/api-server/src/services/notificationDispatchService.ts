@@ -39,6 +39,12 @@ export interface DispatchInput {
    * test sends so the delivery test always fires even if the category is off.
    */
   bypassCategoryCheck?: boolean;
+  /**
+   * When set, only tokens whose stored `platform` matches one of these values
+   * are considered (e.g. test ping from iOS simulator → `["ios-capacitor"]`
+   * so Android stays silent). Cron / normal sends omit this.
+   */
+  restrictToPlatforms?: readonly string[];
 }
 
 export type DispatchStatus = "sent" | "throttled" | "failed" | "duplicate" | "no_tokens";
@@ -153,6 +159,11 @@ export function isFcmInvalidTokenError(err: unknown): boolean {
       ? e.errorInfo.code
       : "";
   return FCM_INVALID_CODES.has(code) || FCM_INVALID_CODES.has(infoCode);
+}
+
+/** Capacitor iOS registers a 32-byte APNs token as 64 hex chars — not an FCM registration token. */
+function looksLikeApnsDeviceTokenHex(token: string): boolean {
+  return /^[0-9a-f]{64}$/i.test(token.trim());
 }
 
 function inQuietHours(
@@ -313,6 +324,43 @@ async function sendFcmAndroidPush(
   });
 }
 
+async function sendFcmIosPush(
+  token: string,
+  input: DispatchInput,
+): Promise<void> {
+  await getMessaging(adminApp()).send({
+    token,
+    notification: {
+      title: input.title,
+      body: input.body,
+    },
+    apns: {
+      headers: {
+        "apns-priority": "10",
+        "apns-push-type": "alert",
+      },
+      payload: {
+        aps: {
+          alert: {
+            title: input.title,
+            body: input.body,
+          },
+          sound: "default",
+        },
+      },
+    },
+    data: {
+      category: input.category,
+      deepLink: input.deepLink ?? "",
+      ...(input.data
+        ? Object.fromEntries(
+            Object.entries(input.data).map(([k, v]) => [k, String(v)]),
+          )
+        : {}),
+    },
+  });
+}
+
 /**
  * Main entry point. Validates against prefs/cap/quiet hours/dedup, then
  * sends the notification to every registered push token for the user.
@@ -326,10 +374,15 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     return { status: "throttled", reason: "category_disabled" };
   }
 
-  const tokens = await db
+  let tokens = await db
     .select({ token: pushTokensTable.token, platform: pushTokensTable.platform })
     .from(pushTokensTable)
     .where(eq(pushTokensTable.userId, input.userId));
+
+  if (input.restrictToPlatforms && input.restrictToPlatforms.length > 0) {
+    const allow = new Set(input.restrictToPlatforms);
+    tokens = tokens.filter((t) => allow.has(t.platform));
+  }
 
   const expoTokens = tokens.filter((t) => Expo.isExpoPushToken(t.token));
   const webFcmTokens = tokens.filter(
@@ -338,8 +391,19 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   const androidFcmTokens = tokens.filter(
     (t) => !Expo.isExpoPushToken(t.token) && t.platform === "android",
   );
+  const iosFcmTokens = tokens.filter(
+    (t) =>
+      !Expo.isExpoPushToken(t.token) &&
+      (t.platform === "ios" || t.platform === "ios-capacitor") &&
+      !looksLikeApnsDeviceTokenHex(t.token),
+  );
 
-  if (expoTokens.length === 0 && webFcmTokens.length === 0 && androidFcmTokens.length === 0) {
+  if (
+    expoTokens.length === 0 &&
+    webFcmTokens.length === 0 &&
+    androidFcmTokens.length === 0 &&
+    iosFcmTokens.length === 0
+  ) {
     await logEvent(input, "no_tokens", "no_valid_tokens");
     return { status: "no_tokens", reason: "no_valid_tokens" };
   }
@@ -374,6 +438,8 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
   let webFail = 0;
   let androidOk = 0;
   let androidFail = 0;
+  let iosOk = 0;
+  let iosFail = 0;
 
   // ── Expo (mobile) ─────────────────────────────────────────────────────────
   if (expoTokens.length > 0) {
@@ -475,19 +541,45 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
     }
   }
 
+  // ── FCM iOS (Capacitor native — FCM registration token, not raw APNs hex) ──
+  if (iosFcmTokens.length > 0) {
+    const results = await Promise.allSettled(
+      iosFcmTokens.map(async (t) => {
+        try {
+          await sendFcmIosPush(t.token, input);
+          return true;
+        } catch (err) {
+          if (isFcmInvalidTokenError(err)) {
+            await pruneInvalidToken(t.token, "fcm:unregistered");
+          }
+          logger.error(
+            { err, userId: input.userId, token: t.token.slice(0, 20) },
+            "FCM iOS push failed",
+          );
+          return false;
+        }
+      }),
+    );
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value) iosOk++;
+      else iosFail++;
+    }
+  }
+
   const platformParts: string[] = [];
   if (expoTokens.length > 0) platformParts.push("expo");
   if (webFcmTokens.length > 0) platformParts.push("web");
   if (androidFcmTokens.length > 0) platformParts.push("android");
+  if (iosFcmTokens.length > 0) platformParts.push("ios");
   const platform = platformParts.join("+") || "unknown";
 
-  const totalOk = expoOk + webOk + androidOk;
-  const totalFail = expoFail + webFail + androidFail;
+  const totalOk = expoOk + webOk + androidOk + iosOk;
+  const totalFail = expoFail + webFail + androidFail + iosFail;
   if (totalOk === 0 && totalFail > 0) {
     await logEvent(
       input,
       "failed",
-      `all_tokens_failed:expo=${expoFail},web=${webFail},android=${androidFail}`,
+      `all_tokens_failed:expo=${expoFail},web=${webFail},android=${androidFail},ios=${iosFail}`,
       platform,
     );
     logger.warn(
@@ -497,6 +589,7 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
         expoFail,
         webFail,
         androidFail,
+        iosFail,
       },
       "Notification dispatch: all tokens failed",
     );
@@ -516,6 +609,8 @@ export async function dispatchNotification(input: DispatchInput): Promise<Dispat
       webFail,
       androidOk,
       androidFail,
+      iosOk,
+      iosFail,
     },
     "Notification dispatched",
   );

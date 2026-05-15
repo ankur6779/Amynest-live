@@ -66,11 +66,16 @@
     </dict>
   </dict>
 
-  <!-- ── Capacitor WKWebView: allow navigating back to app origin ── -->
+  <!-- ── Capacitor WKWebView: domains the embedded app may contact (must cover API + Firebase) ── -->
   <key>WKAppBoundDomains</key>
   <array>
     <string>amynest.in</string>
+    <string>www.amynest.in</string>
     <string>clerk.amynest.in</string>
+    <string>googleapis.com</string>
+    <string>gstatic.com</string>
+    <string>google.com</string>
+    <string>firebaseapp.com</string>
   </array>
 
   <!-- ── URL Schemes (Google Sign-In redirect) ── -->
