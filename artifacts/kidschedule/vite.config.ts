@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { fileURLToPath } from "node:url";
-import { copyFileSync, existsSync, writeFileSync } from "fs";
+import { writeFileSync } from "fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
@@ -18,20 +18,6 @@ if (Number.isNaN(port) || port <= 0) {
 
 /** Asset base for Vite (`/` for static hosting on Render). */
 const basePath = process.env.BASE_PATH ?? "/";
-
-function spa404CopyPlugin() {
-  return {
-    name: "spa-404-copy",
-    closeBundle() {
-      const outDir = path.resolve(import.meta.dirname, "dist/public");
-      const indexPath = path.join(outDir, "index.html");
-      const fallbackPath = path.join(outDir, "404.html");
-      if (existsSync(indexPath)) {
-        copyFileSync(indexPath, fallbackPath);
-      }
-    },
-  };
-}
 
 function firebaseSwPlugin() {
   return {
@@ -181,7 +167,6 @@ export default defineConfig({
   appType: "spa",
   plugins: [
     firebaseSwPlugin(),
-    spa404CopyPlugin(),
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
