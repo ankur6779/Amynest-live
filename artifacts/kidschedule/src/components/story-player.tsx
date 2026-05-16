@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { X, AlertCircle, RotateCcw, ChevronRight, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { StoryDto } from "@/hooks/use-stories-data";
+import { resolveApiMediaUrl } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 interface StoryFlowPlayerProps {
   story: StoryDto;
@@ -148,7 +149,7 @@ export function StoryFlowPlayer({
           <AlertCircle className="h-10 w-10 text-primary" />
           <p className="text-sm font-semibold text-white">{t("components.story_player.couldn_t_load_this_story")}</p>
           <p className="text-xs text-white/50">{t("components.story_player.skipping_to_next")}</p>
-        </div> : <video data-on-dark key={story.id} ref={videoRef} src={story.streamUrl} controls autoPlay playsInline className={videoCls} />}
+        </div> : <video data-on-dark key={story.id} ref={videoRef} src={resolveApiMediaUrl(story.streamUrl)} controls autoPlay playsInline className={videoCls} />}
 
       {/* Auto-advance countdown overlay */}
       {autoAdvanceIn !== null && !showLoopBanner && <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/75 backdrop-blur-sm">

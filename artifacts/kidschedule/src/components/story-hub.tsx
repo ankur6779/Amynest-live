@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Loader2, Play, RefreshCw, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStoriesData, type StoryDto } from "@/hooks/use-stories-data";
+import { resolveApiMediaUrl } from "@/lib/api";
 import { StoryFlowPlayer } from "@/components/story-player";
 import { SubItemGate } from "@/components/sub-item-gate";
 
@@ -216,7 +217,7 @@ export function StoryHub({
   if (isPlaying && currentStory) {
     return <>
         {/* Invisible preload element for the next story (stays in the regular tree) */}
-        {nextStory && nextStory.id !== currentStory.id && <video key={`preload-${nextStory.id}`} src={nextStory.streamUrl} preload="auto" className="hidden" aria-hidden="true" muted />}
+        {nextStory && nextStory.id !== currentStory.id && <video key={`preload-${nextStory.id}`} src={resolveApiMediaUrl(nextStory.streamUrl)} preload="auto" className="hidden" aria-hidden="true" muted />}
         {createPortal(
           <div
             data-testid="story-hub"

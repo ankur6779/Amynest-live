@@ -12,6 +12,7 @@ import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { getAuth } from "../lib/auth";
+import { driveFilesListAll, getDriveApiKey } from "../lib/googleDrive";
 import { logger } from "../lib/logger";
 import {
   db,
@@ -29,8 +30,6 @@ const FOLDER_IDS = [
   "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj",
   "1pSrec0X4nD3cTwf68qylNCFlKJbACjA4",
 ] as const;
-
-const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
 
 // Same playable types the reels integration uses — keeps behaviour consistent.
 const PLAYABLE_MIME_TYPES = new Set([
@@ -103,39 +102,20 @@ let lastSyncAt = 0;
 const SYNC_TTL_MS = 30 * 60 * 1000; // 30 min
 
 async function fetchDriveFolder(folderId: string): Promise<DriveFile[]> {
-  const apiKey = process.env["GOOGLE_API_KEY"];
-  if (!apiKey) throw new Error("GOOGLE_API_KEY environment variable is not set");
-
-  const all: DriveFile[] = [];
-  let pageToken: string | undefined;
-
-  do {
-    const params = new URLSearchParams({
-      q: `'${folderId}' in parents and mimeType contains 'video' and trashed = false`,
-      fields:
-        "nextPageToken,files(id,name,mimeType,thumbnailLink,videoMediaMetadata(durationMillis))",
-      key: apiKey,
-      pageSize: "1000",
-    });
-    if (pageToken) params.set("pageToken", pageToken);
-
-    const res = await fetch(`${DRIVE_API}?${params.toString()}`);
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Drive API ${res.status} on folder ${folderId}: ${text}`);
-    }
-    const data = (await res.json()) as {
-      files: DriveFile[];
-      nextPageToken?: string;
-    };
-    const playable = (data.files || []).filter((f) =>
-      PLAYABLE_MIME_TYPES.has(f.mimeType),
+  const apiKey = getDriveApiKey();
+  if (!apiKey) {
+    throw new Error(
+      "GOOGLE_API_KEY or GOOGLE_DRIVE_API_KEY environment variable is not set",
     );
-    all.push(...playable);
-    pageToken = data.nextPageToken;
-  } while (pageToken);
+  }
 
-  return all;
+  const raw = await driveFilesListAll(
+    apiKey,
+    `'${folderId}' in parents and mimeType contains 'video' and trashed = false`,
+    "nextPageToken,files(id,name,mimeType,thumbnailLink,videoMediaMetadata(durationMillis))",
+  );
+
+  return raw.filter((f) => PLAYABLE_MIME_TYPES.has(f.mimeType));
 }
 
 /**

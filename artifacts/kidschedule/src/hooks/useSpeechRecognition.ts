@@ -168,6 +168,15 @@ async function ensureMicPermission(): Promise<"granted" | "denied"> {
             _micPermCache.state = "denied";
             return "denied";
           }
+          if (status === "undetermined") {
+            const req = await MicPermissionCapacitor.requestMicrophonePermission();
+            if (req.status === "granted") {
+              _micPermCache.state = "granted";
+              return "granted";
+            }
+            _micPermCache.state = "denied";
+            return "denied";
+          }
         } catch {
           /* older builds without MicPermission — fall through */
         }

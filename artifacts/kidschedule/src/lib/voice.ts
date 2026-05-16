@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { getAuth } from "firebase/auth";
-import { getApiUrl } from "@/lib/api";
+import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 
 const KEY_ENABLED = "amynest_voice_enabled";
 const KEY_GENDER  = "amynest_voice_gender"; // "female" | "male"
@@ -110,7 +110,7 @@ export async function speak(text: string): Promise<void> {
     const audioHeaders: Record<string, string> = {};
     if (token) audioHeaders["Authorization"] = `Bearer ${token}`;
 
-    const audioRes = await fetch(data.audioUrl, { headers: audioHeaders });
+    const audioRes = await fetch(resolveApiMediaUrl(data.audioUrl), { headers: audioHeaders });
     if (!audioRes.ok) return;
 
     const blob = await audioRes.blob();

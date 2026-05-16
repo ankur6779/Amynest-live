@@ -122,7 +122,11 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
   } catch (err) {
     const code = err instanceof Error ? err.message : "tts_failed";
     const status =
-      code === "tts_text_too_long" || code === "tts_empty_text" ? 400 : 502;
+      code === "tts_text_too_long" || code === "tts_empty_text"
+        ? 400
+        : code === "tts_missing_api_key"
+          ? 503
+          : 502;
     logger.error(
       { evt: "tts.synthesize_failed", userId, code },
       "tts synthesize failed",

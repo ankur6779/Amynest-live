@@ -1,8 +1,15 @@
 import { createHash } from "node:crypto";
-import { Storage } from "@google-cloud/storage";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import {
+  ttsAudioBackfillPostgres,
+  ttsAudioExists,
+  ttsAudioPath,
+  ttsAudioRead,
+  ttsAudioWrite,
+  ttsStorageBackend,
+} from "./ttsAudioStore";
 
 // ─── Indian ElevenLabs Voice IDs ────────────────────────────────────────────
 // English Indian Female — Ananya K (Clear & Polished Indian Reel Voice)
@@ -24,60 +31,6 @@ export const AMY_MODEL_ID_HINDI  = "eleven_multilingual_v2";
 
 // Hard guard against huge payloads.
 export const TTS_MAX_INPUT_CHARS = 4000;
-
-// GCS object prefix for all TTS audio files.
-const GCS_PREFIX = "tts-cache";
-
-// ─── GCS client (Replit sidecar auth) ───────────────────────────────────────
-const REPLIT_SIDECAR = "http://127.0.0.1:1106";
-
-const gcsClient = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${REPLIT_SIDECAR}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${REPLIT_SIDECAR}/credential`,
-      format: { type: "json", subject_token_field_name: "access_token" },
-    },
-    universe_domain: "googleapis.com",
-  } as never,
-  projectId: "",
-});
-
-function getBucket() {
-  const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
-  if (!bucketId) throw new Error("DEFAULT_OBJECT_STORAGE_BUCKET_ID not set");
-  return gcsClient.bucket(bucketId);
-}
-
-function gcsObjectName(cacheKey: string): string {
-  return `${GCS_PREFIX}/${cacheKey}.mp3`;
-}
-
-async function gcsFileExists(cacheKey: string): Promise<boolean> {
-  try {
-    const [exists] = await getBucket().file(gcsObjectName(cacheKey)).exists();
-    return exists;
-  } catch {
-    return false;
-  }
-}
-
-async function gcsUpload(cacheKey: string, buffer: Buffer, contentType: string): Promise<void> {
-  const file = getBucket().file(gcsObjectName(cacheKey));
-  await file.save(buffer, { contentType, resumable: false });
-}
-
-async function gcsDownload(cacheKey: string): Promise<Buffer | null> {
-  try {
-    const [buffer] = await getBucket().file(gcsObjectName(cacheKey)).download();
-    return buffer;
-  } catch {
-    return null;
-  }
-}
 
 // ─── In-flight single-flight map ────────────────────────────────────────────
 const inFlight = new Map<string, Promise<SynthesizeResult>>();
@@ -110,22 +63,22 @@ export interface SynthesizeResult {
   cached: boolean;
 }
 
+export function inferSynthesizeModeFromCacheKey(
+  cacheKey: string,
+  text: string,
+  voiceId: string,
+  modelId: string,
+): SynthesizeMode {
+  const defaultKey = computeCacheKey(text, voiceId, modelId, "default");
+  return cacheKey === defaultKey ? "default" : "phonics";
+}
+
 function computeCacheKey(
   text: string,
   voiceId: string,
   modelId: string,
   mode: SynthesizeMode,
 ): string {
-  // `default` mode preserves the legacy unprefixed preimage (`${modelId}|
-  // ${voiceId}|${text}`) so every pre-existing GCS object + ttsCache row is
-  // still a hit after this change.
-  //
-  // Non-default modes must live in a *separate* namespace AND must not be
-  // forge-able from a default-mode preimage. We achieve that by prefixing
-  // with a NUL byte — TTS prompts, voiceIds and modelIds never contain
-  // \x00 — and by using NUL as the field separator so a `|` inside any
-  // field can no longer collapse two preimages onto the same hash. See
-  // architect review note in the T001 PR.
   if (mode === "default") {
     return createHash("sha256")
       .update(`${modelId}|${voiceId}|${text}`)
@@ -151,8 +104,8 @@ const VOICE_SETTINGS: Record<SynthesizeMode, {
  * Synthesize text → MP3 using ElevenLabs.
  *
  * Content-addressed cache: identical (text, voiceId, modelId) inputs only
- * ever call ElevenLabs once — the MP3 is stored in GCS and reused by ALL
- * users forever, surviving server restarts.
+ * ever call ElevenLabs once — audio is stored in GCS (Replit) or Postgres
+ * bytea (Render) and reused by all users.
  */
 export async function synthesize(
   rawText: string,
@@ -166,34 +119,41 @@ export async function synthesize(
   const modelId = options.modelId?.trim() || AMY_MODEL_ID_DEFAULT;
   const mode: SynthesizeMode = options.mode ?? "default";
   const cacheKey = computeCacheKey(text, voiceId, modelId, mode);
-  const audioPath = gcsObjectName(cacheKey);
+  const audioPath = ttsAudioPath(cacheKey);
 
-  // DB + GCS cache check.
   const existing = await db
     .select()
     .from(ttsCacheTable)
     .where(eq(ttsCacheTable.cacheKey, cacheKey))
     .limit(1);
 
-  if (existing.length > 0 && (await gcsFileExists(cacheKey))) {
-    void db
-      .update(ttsCacheTable)
-      .set({ hitCount: sql`${ttsCacheTable.hitCount} + 1`, lastAccessedAt: sql`now()` })
-      .where(eq(ttsCacheTable.cacheKey, cacheKey))
-      .catch(() => {});
+  const row = existing[0];
+  if (row && (await ttsAudioExists(cacheKey, row.audioData))) {
+    const readable = await ttsAudioRead(cacheKey, row.audioData);
+    if (readable) {
+      void ttsAudioBackfillPostgres(cacheKey, readable);
+      void db
+        .update(ttsCacheTable)
+        .set({ hitCount: sql`${ttsCacheTable.hitCount} + 1`, lastAccessedAt: sql`now()` })
+        .where(eq(ttsCacheTable.cacheKey, cacheKey))
+        .catch(() => {});
 
-    logger.info({ evt: "tts.cache_hit", cacheKey, charCount: text.length, voiceId }, "tts cache hit");
+      logger.info({ evt: "tts.cache_hit", cacheKey, charCount: text.length, voiceId }, "tts cache hit");
 
-    return {
-      cacheKey,
-      audioPath,
-      contentType: existing[0]!.contentType,
-      charCount: existing[0]!.charCount,
-      cached: true,
-    };
+      return {
+        cacheKey,
+        audioPath: row.audioPath,
+        contentType: row.contentType,
+        charCount: row.charCount,
+        cached: true,
+      };
+    }
+    logger.warn(
+      { evt: "tts.stale_cache_row", cacheKey, charCount: text.length },
+      "tts cache metadata present but audio bytes missing — regenerating",
+    );
   }
 
-  // Single-flight dedup.
   const pending = inFlight.get(cacheKey);
   if (pending) {
     const result = await pending;
@@ -255,25 +215,55 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
 
   const contentType = response.headers.get("content-type") ?? "audio/mpeg";
 
-  await gcsUpload(cacheKey, buffer, contentType);
-
   await db
     .insert(ttsCacheTable)
-    .values({ cacheKey, text, voiceId, modelId, audioPath, contentType, charCount: text.length, hitCount: 0 })
+    .values({
+      cacheKey,
+      text,
+      voiceId,
+      modelId,
+      audioPath,
+      contentType,
+      charCount: text.length,
+      hitCount: 0,
+    })
     .onConflictDoUpdate({
       target: ttsCacheTable.cacheKey,
-      set: { audioPath, contentType, charCount: text.length, lastAccessedAt: sql`now()` },
+      set: {
+        audioPath,
+        contentType,
+        charCount: text.length,
+        lastAccessedAt: sql`now()`,
+      },
     });
 
+  const { storedInPostgres } = await ttsAudioWrite(cacheKey, buffer, contentType);
+
+  if (storedInPostgres) {
+    await db
+      .update(ttsCacheTable)
+      .set({ audioData: buffer })
+      .where(eq(ttsCacheTable.cacheKey, cacheKey));
+  }
+
   logger.info(
-    { evt: "tts.cache_miss", cacheKey, charCount: text.length, bytes: buffer.byteLength, voiceId, modelId, mode },
-    "tts generated and cached to GCS",
+    {
+      evt: "tts.cache_miss",
+      cacheKey,
+      charCount: text.length,
+      bytes: buffer.byteLength,
+      voiceId,
+      modelId,
+      mode,
+      storage: storedInPostgres ? "postgres" : ttsStorageBackend(),
+    },
+    storedInPostgres ? "tts generated and cached in Postgres" : "tts generated and cached in GCS",
   );
 
   return { cacheKey, audioPath, contentType, charCount: text.length, cached: false };
 }
 
-/** Download a previously cached MP3 from GCS. */
+/** Download a previously cached MP3. */
 export async function readCachedAudio(
   cacheKey: string,
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
@@ -284,8 +274,32 @@ export async function readCachedAudio(
     .limit(1);
   if (rows.length === 0) return null;
 
-  const buffer = await gcsDownload(cacheKey);
+  const row = rows[0]!;
+  let buffer = await ttsAudioRead(cacheKey, row.audioData);
+  if (!buffer && row.text) {
+    const mode = inferSynthesizeModeFromCacheKey(cacheKey, row.text, row.voiceId, row.modelId);
+    try {
+      await synthesize(row.text, { voiceId: row.voiceId, modelId: row.modelId, mode });
+      const refreshed = await db
+        .select()
+        .from(ttsCacheTable)
+        .where(eq(ttsCacheTable.cacheKey, cacheKey))
+        .limit(1);
+      buffer = await ttsAudioRead(cacheKey, refreshed[0]?.audioData);
+    } catch (err) {
+      logger.warn(
+        {
+          evt: "tts.stream_repair_failed",
+          cacheKey,
+          message: err instanceof Error ? err.message : String(err),
+        },
+        "failed to repair missing TTS audio on stream",
+      );
+    }
+  }
   if (!buffer) return null;
+
+  void ttsAudioBackfillPostgres(cacheKey, buffer);
 
   void db
     .update(ttsCacheTable)

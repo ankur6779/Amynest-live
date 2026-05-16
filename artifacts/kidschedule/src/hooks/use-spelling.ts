@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { resolveApiMediaUrl } from "@/lib/api";
 
 // ─── Shared types (mirror server shape — no codegen yet for /spelling/*) ─────
 
@@ -140,7 +141,7 @@ export function useSpellingTTS(): UseSpellingTTSState {
 
   const playSrc = useCallback(
     async (src: string, slow: boolean, reqId: number) => {
-      const audio = new Audio(src);
+      const audio = new Audio(resolveApiMediaUrl(src));
       audio.preload = "auto";
       audio.playbackRate = slow ? 0.65 : 1;
       audio.onended = () => {

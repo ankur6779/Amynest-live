@@ -59,6 +59,20 @@ export function drivePreviewUrl(fileId: string): string {
   return `https://drive.google.com/file/d/${fileId}/preview`;
 }
 
-export function driveDownloadUrl(fileId: string): string {
-  return `https://drive.google.com/uc?export=download&id=${fileId}`;
+export function resolveHubApiUrl(pathOrUrl: string): string {
+  const u = (pathOrUrl ?? "").trim();
+  if (/^https?:\/\//i.test(u)) return u;
+  const path = u.startsWith("/") ? u : `/${u}`;
+  return `${API_BASE_URL}${path}`;
+}
+
+export function driveDownloadUrl(fileId: string, fileName?: string): string {
+  return resolveHubApiUrl(driveProxyDownloadPath(fileId, fileName));
+}
+
+function driveProxyDownloadPath(fileId: string, fileName?: string): string {
+  let path = `/api/drive/download/${fileId}`;
+  const name = fileName?.trim();
+  if (name) path += `?name=${encodeURIComponent(name)}`;
+  return path;
 }
