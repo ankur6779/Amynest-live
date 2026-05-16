@@ -11,14 +11,11 @@ services:
     runtime: node
     region: singapore
     plan: starter
+    rootDir: backend
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
-    buildCommand: >-
-      corepack enable &&
-      corepack prepare pnpm@9.15.0 --activate &&
-      pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/api-server build
-    startCommand: pnpm --filter @workspace/api-server start
+    buildCommand: npm install
+    startCommand: node server.js
     envVars:
       - key: NODE_VERSION
         value: "20"
