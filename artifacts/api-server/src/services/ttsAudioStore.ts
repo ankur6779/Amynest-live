@@ -1,19 +1,31 @@
-import { Storage } from "@google-cloud/storage";
+import { Storage, type StorageOptions } from "@google-cloud/storage";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import {
+  getGcsBucketId,
+  getGcsDiagnostics,
+  parseGcsServiceAccountJson,
+  readEnv,
+} from "../lib/env";
 import { logger } from "../lib/logger";
 
 const GCS_PREFIX = "tts-cache";
-const REPLIT_SIDECAR = "http://127.0.0.1:1106";
 
 export type TtsStoreBackend = "postgres" | "gcs";
 
+export { getGcsDiagnostics };
+
 let backend: TtsStoreBackend | null = null;
 let gcsClient: Storage | null = null;
+let gcsInitError: string | null = null;
+
+function isReplitRuntime(): boolean {
+  return !!(readEnv("REPL_ID", "REPL_IDENTITY", "REPLIT_DEPLOYMENT"));
+}
 
 function resolveBackend(): TtsStoreBackend {
   if (backend) return backend;
-  const forced = process.env.TTS_STORAGE?.trim().toLowerCase();
+  const forced = readEnv("TTS_STORAGE")?.toLowerCase();
   if (forced === "postgres" || forced === "db") {
     backend = "postgres";
     return backend;
@@ -22,40 +34,61 @@ function resolveBackend(): TtsStoreBackend {
     backend = "gcs";
     return backend;
   }
-  const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID?.trim();
-  const hasGcpCreds =
-    !!process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim() ||
-    !!process.env.GCS_SERVICE_ACCOUNT_JSON?.trim();
-  backend = bucketId && hasGcpCreds ? "gcs" : "postgres";
+  const bucketId = getGcsBucketId();
+  const parsed = parseGcsServiceAccountJson();
+  const hasFileCreds = readEnv("GOOGLE_APPLICATION_CREDENTIALS");
+  backend = bucketId && (parsed.ok || hasFileCreds) ? "gcs" : "postgres";
   return backend;
+}
+
+function buildGcsClient(): Storage {
+  const parsed = parseGcsServiceAccountJson();
+  if (parsed.ok && parsed.credentials) {
+    const opts: StorageOptions = {
+      credentials: parsed.credentials as StorageOptions["credentials"],
+      projectId: parsed.projectId,
+    };
+    return new Storage(opts);
+  }
+
+  if (parsed.ok && parsed.source === "GOOGLE_APPLICATION_CREDENTIALS") {
+    return new Storage({ projectId: parsed.projectId });
+  }
+
+  if (isReplitRuntime()) {
+    const REPLIT_SIDECAR = "http://127.0.0.1:1106";
+    return new Storage({
+      credentials: {
+        audience: "replit",
+        subject_token_type: "access_token",
+        token_url: `${REPLIT_SIDECAR}/token`,
+        type: "external_account",
+        credential_source: {
+          url: `${REPLIT_SIDECAR}/credential`,
+          format: { type: "json", subject_token_field_name: "access_token" },
+        },
+        universe_domain: "googleapis.com",
+      } as never,
+      projectId: "",
+    });
+  }
+
+  throw new Error(
+    "GCS not configured: set DEFAULT_OBJECT_STORAGE_BUCKET_ID + GCS_SERVICE_ACCOUNT_JSON on Render",
+  );
 }
 
 function getGcsClient(): Storage {
   if (gcsClient) return gcsClient;
-  const json = process.env.GCS_SERVICE_ACCOUNT_JSON?.trim();
-  if (json) {
-    gcsClient = new Storage({ credentials: JSON.parse(json) as never });
+  if (gcsInitError) throw new Error(gcsInitError);
+  try {
+    gcsClient = buildGcsClient();
     return gcsClient;
+  } catch (err) {
+    gcsInitError = err instanceof Error ? err.message : String(err);
+    logger.error({ evt: "gcs.init_failed", message: gcsInitError }, "GCS client init failed");
+    throw err;
   }
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    gcsClient = new Storage();
-    return gcsClient;
-  }
-  gcsClient = new Storage({
-    credentials: {
-      audience: "replit",
-      subject_token_type: "access_token",
-      token_url: `${REPLIT_SIDECAR}/token`,
-      type: "external_account",
-      credential_source: {
-        url: `${REPLIT_SIDECAR}/credential`,
-        format: { type: "json", subject_token_field_name: "access_token" },
-      },
-      universe_domain: "googleapis.com",
-    } as never,
-    projectId: "",
-  });
-  return gcsClient;
 }
 
 function gcsObjectName(cacheKey: string): string {
@@ -63,18 +96,14 @@ function gcsObjectName(cacheKey: string): string {
 }
 
 function getBucket() {
-  const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+  const bucketId = getGcsBucketId();
   if (!bucketId) throw new Error("DEFAULT_OBJECT_STORAGE_BUCKET_ID not set");
   return getGcsClient().bucket(bucketId);
 }
 
-/** True when we can reach the Replit-era GCS bucket (even if TTS_STORAGE=postgres). */
-function legacyGcsConfigured(): boolean {
-  const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID?.trim();
-  const hasGcpCreds =
-    !!process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim() ||
-    !!process.env.GCS_SERVICE_ACCOUNT_JSON?.trim();
-  return !!bucketId && hasGcpCreds;
+/** True when legacy Replit GCS bucket + credentials are available. */
+export function legacyGcsConfigured(): boolean {
+  return getGcsDiagnostics().legacyGcsConfigured;
 }
 
 async function tryLegacyGcsRead(cacheKey: string): Promise<Buffer | null> {
@@ -82,7 +111,15 @@ async function tryLegacyGcsRead(cacheKey: string): Promise<Buffer | null> {
   try {
     const [buffer] = await getBucket().file(gcsObjectName(cacheKey)).download();
     return buffer.byteLength > 0 ? buffer : null;
-  } catch {
+  } catch (err) {
+    logger.warn(
+      {
+        evt: "tts.gcs_read_failed",
+        cacheKey,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "GCS TTS read failed",
+    );
     return null;
   }
 }
@@ -92,7 +129,15 @@ async function tryLegacyGcsExists(cacheKey: string): Promise<boolean> {
   try {
     const [exists] = await getBucket().file(gcsObjectName(cacheKey)).exists();
     return exists;
-  } catch {
+  } catch (err) {
+    logger.warn(
+      {
+        evt: "tts.gcs_exists_failed",
+        cacheKey,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      "GCS TTS exists check failed",
+    );
     return false;
   }
 }
@@ -110,7 +155,6 @@ export async function ttsAudioExists(
   audioData: Buffer | null | undefined,
 ): Promise<boolean> {
   if (audioData && audioData.byteLength > 0) return true;
-  // Metadata-only rows from Replit may still have bytes in GCS.
   return tryLegacyGcsExists(cacheKey);
 }
 
@@ -122,7 +166,6 @@ export async function ttsAudioRead(
   if (resolveBackend() === "gcs") {
     return tryLegacyGcsRead(cacheKey);
   }
-  // Postgres is primary on Render; still read legacy GCS objects from Replit.
   const legacy = await tryLegacyGcsRead(cacheKey);
   if (legacy) return legacy;
   return null;
@@ -138,6 +181,10 @@ export async function ttsAudioWrite(
     try {
       const file = getBucket().file(gcsObjectName(cacheKey));
       await file.save(buffer, { contentType, resumable: false });
+      logger.info(
+        { evt: "tts.gcs_write_ok", cacheKey, bytes: buffer.byteLength },
+        "TTS audio saved to GCS",
+      );
       return { storedInPostgres: false };
     } catch (err) {
       logger.warn(
@@ -159,20 +206,18 @@ export async function ttsAudioWrite(
   return { storedInPostgres: true };
 }
 
-/**
- * After a successful legacy GCS read, copy bytes into Postgres so future
- * requests do not depend on GCS remaining configured.
- */
+/** Copy GCS bytes into Postgres so future reads work without GCS. */
 export async function ttsAudioBackfillPostgres(
   cacheKey: string,
   buffer: Buffer,
 ): Promise<void> {
-  if (resolveBackend() !== "postgres" || buffer.byteLength === 0) return;
+  if (buffer.byteLength === 0) return;
   try {
     await db
       .update(ttsCacheTable)
       .set({ audioData: buffer, lastAccessedAt: sql`now()` })
       .where(eq(ttsCacheTable.cacheKey, cacheKey));
+    logger.info({ evt: "tts.postgres_backfill_ok", cacheKey }, "TTS backfilled to Postgres");
   } catch (err) {
     logger.warn(
       {

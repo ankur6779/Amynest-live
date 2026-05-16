@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { db, ttsCacheTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { getElevenLabsApiKey } from "../lib/env";
 import { logger } from "../lib/logger";
 import {
   ttsAudioBackfillPostgres,
@@ -181,7 +182,7 @@ interface GenerateArgs {
 async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   const { text, voiceId, modelId, mode, cacheKey, audioPath } = args;
 
-  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const apiKey = getElevenLabsApiKey();
   if (!apiKey) throw new Error("tts_missing_api_key");
 
   const response = await fetch(
