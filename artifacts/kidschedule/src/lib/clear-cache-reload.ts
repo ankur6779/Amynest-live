@@ -1,5 +1,5 @@
 /**
- * Full cache + service worker reset, then hard navigation reload.
+ * Full cache + service worker reset, then hard navigation to a clean app URL.
  * Used by the recovery UI and post-deploy SW updates.
  */
 export async function clearCacheAndReload(): Promise<void> {
@@ -23,10 +23,10 @@ export async function clearCacheAndReload(): Promise<void> {
     /* ignore */
   }
 
-  const url = new URL(window.location.href);
-  if (url.pathname === "/index.html" || url.pathname.endsWith("/index.html")) {
-    url.pathname = url.pathname.replace(/\/index\.html$/, "") || "/";
-  }
-  url.searchParams.set("_r", String(Date.now()));
-  window.location.replace(url.toString());
+  const origin = window.location.origin;
+  const base = (import.meta.env.BASE_URL as string).replace(/\/$/, "") || "";
+  const home = `${origin}${base}/`;
+  const fresh = new URL(home);
+  fresh.searchParams.set("_r", String(Date.now()));
+  window.location.replace(fresh.toString());
 }
