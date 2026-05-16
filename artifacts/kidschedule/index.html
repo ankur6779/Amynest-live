@@ -93,6 +93,18 @@
     -->
     <script>
       (function () {
+        // Render "Redirect /* → /index.html" exposes /index.html in the URL bar.
+        // Normalize so the client router sees "/" (and keep query/hash).
+        var path = location.pathname || "/";
+        if (path === "/index.html" || path.endsWith("/index.html")) {
+          var base = path.slice(0, -"/index.html".length) || "/";
+          history.replaceState(
+            null,
+            "",
+            base + (location.search || "") + (location.hash || ""),
+          );
+        }
+
         var KEY = "__amynest_boot_v1";
         var now = Date.now();
 

@@ -111,45 +111,6 @@ self.addEventListener('notificationclick', (event) => {
       })
   );
 });
-
-// SPA fallback when this SW controls the scope (FCM registration replaces sw.js).
-var INDEX_URL = new URL('index.html', self.location.origin).href;
-
-function isNavigationRequest(request) {
-  if (request.mode === 'navigate') return true;
-  var accept = request.headers.get('accept') || '';
-  return request.method === 'GET' && accept.indexOf('text/html') !== -1;
-}
-
-function shouldSpaFallback(url) {
-  var path = url.pathname;
-  if (path.indexOf('/api') === 0) return false;
-  if (path === '/index.html') return false;
-  if (/\\.[a-z0-9]{1,8}$/i.test(path)) return false;
-  return true;
-}
-
-self.addEventListener('fetch', function (event) {
-  var request = event.request;
-  if (!isNavigationRequest(request)) return;
-
-  var url = new URL(request.url);
-  if (url.origin !== self.location.origin || !shouldSpaFallback(url)) return;
-
-  event.respondWith(
-    fetch(request).then(function (response) {
-      if (response.ok || response.type === 'opaqueredirect') return response;
-      if (response.status === 404) {
-        return fetch(INDEX_URL, { cache: 'no-store' }).then(function (indexResponse) {
-          return indexResponse.ok ? indexResponse : response;
-        });
-      }
-      return response;
-    }).catch(function () {
-      return fetch(INDEX_URL, { cache: 'no-store' });
-    })
-  );
-});
 `;
       writeFileSync(
         path.resolve(import.meta.dirname, "public", "firebase-messaging-sw.js"),

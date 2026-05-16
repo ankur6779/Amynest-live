@@ -335,6 +335,9 @@ function AppRoutes() {
             <Suspense fallback={null}>
             <Switch>
           <Route path="/" component={HomeRedirect} />
+          <Route path="/index.html">
+            <Redirect to="/" />
+          </Route>
           <Route path="/privacy" component={PrivacyPolicyPage} />
           <Route path="/terms" component={TermsOfServicePage} />
           <Route path="/delete-account" component={DeleteAccountPage} />
