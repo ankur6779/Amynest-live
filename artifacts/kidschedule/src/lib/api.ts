@@ -28,7 +28,7 @@ export { BASE_URL };
 
 /**
  * Returns a URL for calling the backend API.
- * Example: `fetch(getApiUrl("/api/healthz"))` → `https://amynest-live.onrender.com/api/healthz`
+ * Example: `fetch(getApiUrl("/api/healthz"))` → `https://amynest-backend.onrender.com/api/healthz`
  */
 export function getApiUrl(path: string): string {
   const pathPart = path.startsWith("/") ? path : `/${path}`;
