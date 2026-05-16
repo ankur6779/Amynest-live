@@ -35,9 +35,9 @@ router.get("/healthz/env", (_req, res) => {
         vars: drive.checked,
         misplacedFrontendKey: drive.misplacedFrontendKey,
         hint: drive.misplacedFrontendKey
-          ? "Move key to amynest-live as GOOGLE_API_KEY (not VITE_GOOGLE_API_KEY on static site)"
+          ? "Move key to Amynest-backend as GOOGLE_API_KEY (not VITE_GOOGLE_API_KEY on static site)"
           : !drive.resolved
-            ? "Set GOOGLE_API_KEY on amynest-live in Render → Environment"
+            ? "Set GOOGLE_API_KEY on Amynest-backend in Render → Environment"
             : undefined,
       },
       elevenlabs: {
@@ -77,7 +77,7 @@ router.get("/healthz/tts", (_req, res) => {
       clientEmail: gcs.credentials.clientEmail,
     },
     hint: !elevenlabsConfigured
-      ? "Set ELEVENLABS_API_KEY on amynest-live (not amynest-web)."
+      ? "Set ELEVENLABS_API_KEY on Amynest-backend (not Amynest-live-1 static site)."
       : !gcs.legacyGcsConfigured
         ? "GCS optional: add DEFAULT_OBJECT_STORAGE_BUCKET_ID + GCS_SERVICE_ACCOUNT_JSON (single-line JSON or GCS_SERVICE_ACCOUNT_JSON_B64). TTS falls back to Postgres."
         : undefined,
@@ -95,8 +95,8 @@ router.get("/healthz/drive", async (_req, res) => {
       driveConfigured: false,
       env: driveDiag,
       hint: driveDiag.misplacedFrontendKey
-        ? "VITE_GOOGLE_API_KEY is on the static site only. Add GOOGLE_API_KEY to the amynest-live API service."
-        : "Set GOOGLE_API_KEY on amynest-live. Enable Drive API in Cloud Console. Key restrictions: None or IP (not HTTP referrers).",
+        ? "VITE_GOOGLE_API_KEY is on the static site only. Add GOOGLE_API_KEY to the Amynest-backend API service."
+        : "Set GOOGLE_API_KEY on Amynest-backend. Enable Drive API in Cloud Console. Key restrictions: None or IP (not HTTP referrers).",
     });
     return;
   }

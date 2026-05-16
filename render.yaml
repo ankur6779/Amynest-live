@@ -1,54 +1,36 @@
-# Render Blueprint — Amynest-live (api-server + static frontend)
+# Render Blueprint — Amynest-backend (API) + Amynest-live-1 (static frontend)
 # https://render.com/docs/blueprint-spec
 #
-# IMPORTANT: Secrets must be set on the correct service:
-#   amynest-live  → API (GOOGLE_API_KEY, ELEVENLABS_API_KEY, GCS, DATABASE_URL, …)
-#   amynest-web   → static build only (VITE_* vars). GOOGLE_API_KEY here does NOT reach the API.
+# Dashboard names (match your Render services):
+#   Amynest-backend  → full API (GOOGLE_API_KEY, ELEVENLABS_API_KEY, DATABASE_URL, …)
+#   Amynest-live-1   → static build only (VITE_*). API keys here do NOT reach the backend.
 
 services:
   - type: web
-    name: amynest-live
+    name: Amynest-backend
     runtime: node
     region: singapore
     plan: starter
-    rootDir: backend
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: >-
+      corepack enable &&
+      corepack prepare pnpm@9.15.0 --activate &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @workspace/api-server build
+    startCommand: pnpm --filter @workspace/api-server start
     envVars:
       - key: NODE_VERSION
         value: "20"
-      # ── Google Drive (Story Hub, Fun Sheets, Coloring, Worksheets, Reels) ──
-      # Render Dashboard → amynest-live → Environment → add:
-      #   GOOGLE_API_KEY = AIza... (from Google Cloud → APIs & Services → Credentials)
-      # Cloud Console: enable "Google Drive API" for this project.
-      # API key restrictions: Application restrictions = None (or IP addresses).
-      #   Do NOT use "HTTP referrers" — the Node server has no browser referrer.
-      # Drive folders/files: share as "Anyone with the link" can view.
       - key: GOOGLE_API_KEY
         sync: false
-      # Aliases (optional): GOOGLE_DRIVE_API_KEY, GOOGLE_DRIVE_KEY
-      #
-      # ── ElevenLabs TTS (Amy voice) ──
-      #   ELEVENLABS_API_KEY = sk_... from elevenlabs.io → Profile → API Keys
-      #
-      # ── TTS audio storage (optional — legacy Replit GCS cache) ──
-      # Without these, TTS saves MP3 bytes in Postgres (tts_cache.audio_data).
-      # With these, new audio can go to GCS; old Replit cache can be read + backfilled.
-      #   DEFAULT_OBJECT_STORAGE_BUCKET_ID = your-bucket-name
-      #   GCS_SERVICE_ACCOUNT_JSON = entire service-account JSON on ONE line
-      #     OR GCS_SERVICE_ACCOUNT_JSON_B64 = base64-encoded JSON (easier on Render)
-      # Service account needs: Storage Object Admin on that bucket.
-      #   TTS_STORAGE = postgres | gcs  (auto: gcs if bucket+creds set, else postgres)
-      #
-      # Diagnostics after deploy:
-      #   GET https://amynest-live.onrender.com/api/healthz/env
-      #   GET https://amynest-live.onrender.com/api/healthz/drive
-      #   GET https://amynest-live.onrender.com/api/healthz/tts
+      # Diagnostics:
+      #   GET https://amynest-backend.onrender.com/api/healthz/drive
+      #   GET https://amynest-backend.onrender.com/api/healthz/tts
+      #   GET https://amynest-backend.onrender.com/api/healthz/env
 
   - type: web
-    name: amynest-web
+    name: Amynest-live-1
     runtime: static
     region: singapore
     repo: https://github.com/ankur6779/Amynest-live
@@ -67,5 +49,4 @@ services:
       - key: NODE_VERSION
         value: "20"
       - key: VITE_APP_API_ORIGIN
-        value: https://amynest-live.onrender.com
-      # Firebase / VITE_* only — do NOT put GOOGLE_API_KEY here for Drive; it won't reach the API.
+        value: https://amynest-backend.onrender.com

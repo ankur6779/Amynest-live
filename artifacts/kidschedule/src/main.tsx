@@ -12,7 +12,7 @@ if (typeof window !== "undefined") {
   initNativeShell();
 
   // Orval + authFetch use `/api/...` paths. Native shells and deployed web must
-  // hit https://amynest-live.onrender.com — set the base URL before AppCore loads.
+  // hit https://amynest-backend.onrender.com — set the base URL before AppCore loads.
   const apiOrigin = getAppApiBaseOrigin();
   if (apiOrigin) setBaseUrl(apiOrigin);
 }

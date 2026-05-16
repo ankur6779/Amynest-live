@@ -195,7 +195,7 @@ export function logStartupEnvDiagnostics(): void {
       },
       drive.misplacedFrontendKey
         ? "GOOGLE_API_KEY missing on API service — VITE_GOOGLE_API_KEY only applies to static web build"
-        : "GOOGLE_API_KEY (or GOOGLE_DRIVE_API_KEY) not set on amynest-live",
+        : "GOOGLE_API_KEY (or GOOGLE_DRIVE_API_KEY) not set on Amynest-backend",
     );
   } else {
     logger.info(
