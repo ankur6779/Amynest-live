@@ -112,6 +112,18 @@ services:
         value: production
       - key: VITE_APP_API_ORIGIN
         value: https://amynest-backend.onrender.com
+      - key: VITE_FIREBASE_API_KEY
+        value: AIzaSyBjmRgm4uGfSs_hVXN1pSgyncKn_A7T6uo
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        value: amynest-836ff.firebaseapp.com
+      - key: VITE_FIREBASE_PROJECT_ID
+        value: amynest-836ff
+      - key: VITE_FIREBASE_APP_ID
+        value: 1:573340015027:web:1d05e678f1ba90dca293c6
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        value: "573340015027"
+      - key: VITE_FIREBASE_VAPID_KEY
+        sync: false
 
   # ─── Development static web (preview) ─────────────────────────────────────
   - type: web
