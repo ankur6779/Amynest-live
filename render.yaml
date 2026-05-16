@@ -4,6 +4,13 @@
 # Dashboard names (match your Render services):
 #   Amynest-backend  → full API (GOOGLE_API_KEY, ELEVENLABS_API_KEY, DATABASE_URL, …)
 #   Amynest-live-1   → static build only (VITE_*). API keys here do NOT reach the backend.
+#
+# Existing Postgres (dashboard name: amynest-db):
+databases:
+  - name: amynest-db
+    databaseName: amynest_db
+    plan: basic_256mb
+    region: singapore
 
 services:
   - type: web
@@ -22,6 +29,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: amynest-db
+          property: connectionString
       - key: GOOGLE_API_KEY
         sync: false
       # Diagnostics:
