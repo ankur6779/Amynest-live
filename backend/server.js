@@ -1,5 +1,6 @@
 "use strict";
 
+/** @build 2026-05-16 tts-cache health */
 /**
  * Render Amynest-backend entrypoint (rootDir=backend).
  * Dashboard: build = npm install, start = node server.js
