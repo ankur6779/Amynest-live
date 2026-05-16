@@ -2,8 +2,12 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
-import { writeFileSync } from "fs";
+import { fileURLToPath } from "node:url";
+import { copyFileSync, existsSync, writeFileSync } from "fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+
+const artifactDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(artifactDir, "..", "..");
 
 const rawPort = process.env.PORT ?? "3000";
 const port = Number(rawPort);
@@ -14,6 +18,20 @@ if (Number.isNaN(port) || port <= 0) {
 
 /** Asset base for Vite (`/` for static hosting on Render). */
 const basePath = process.env.BASE_PATH ?? "/";
+
+function spa404CopyPlugin() {
+  return {
+    name: "spa-404-copy",
+    closeBundle() {
+      const outDir = path.resolve(import.meta.dirname, "dist/public");
+      const indexPath = path.join(outDir, "index.html");
+      const fallbackPath = path.join(outDir, "404.html");
+      if (existsSync(indexPath)) {
+        copyFileSync(indexPath, fallbackPath);
+      }
+    },
+  };
+}
 
 function firebaseSwPlugin() {
   return {
@@ -107,6 +125,45 @@ self.addEventListener('notificationclick', (event) => {
       })
   );
 });
+
+// SPA fallback when this SW controls the scope (FCM registration replaces sw.js).
+var INDEX_URL = new URL('index.html', self.location.origin).href;
+
+function isNavigationRequest(request) {
+  if (request.mode === 'navigate') return true;
+  var accept = request.headers.get('accept') || '';
+  return request.method === 'GET' && accept.indexOf('text/html') !== -1;
+}
+
+function shouldSpaFallback(url) {
+  var path = url.pathname;
+  if (path.indexOf('/api') === 0) return false;
+  if (path === '/index.html') return false;
+  if (/\\.[a-z0-9]{1,8}$/i.test(path)) return false;
+  return true;
+}
+
+self.addEventListener('fetch', function (event) {
+  var request = event.request;
+  if (!isNavigationRequest(request)) return;
+
+  var url = new URL(request.url);
+  if (url.origin !== self.location.origin || !shouldSpaFallback(url)) return;
+
+  event.respondWith(
+    fetch(request).then(function (response) {
+      if (response.ok || response.type === 'opaqueredirect') return response;
+      if (response.status === 404) {
+        return fetch(INDEX_URL, { cache: 'no-store' }).then(function (indexResponse) {
+          return indexResponse.ok ? indexResponse : response;
+        });
+      }
+      return response;
+    }).catch(function () {
+      return fetch(INDEX_URL, { cache: 'no-store' });
+    })
+  );
+});
 `;
       writeFileSync(
         path.resolve(import.meta.dirname, "public", "firebase-messaging-sw.js"),
@@ -118,9 +175,13 @@ self.addEventListener('notificationclick', (event) => {
 }
 
 export default defineConfig({
+  envDir: repoRoot,
   base: basePath,
+  // Hard refresh on /dashboard etc. must return index.html (Vite dev + preview).
+  appType: "spa",
   plugins: [
     firebaseSwPlugin(),
+    spa404CopyPlugin(),
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),

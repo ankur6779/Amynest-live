@@ -367,6 +367,9 @@ function AppRoutes() {
           <Route path="/behavior">
             {() => <ProtectedRoute component={BehaviorTracker} />}
           </Route>
+          <Route path="/profile">
+            <Redirect to="/parent-profile" />
+          </Route>
           <Route path="/parent-profile">
             {() => <ProtectedRoute component={ParentProfile} requiresProfile={false} />}
           </Route>

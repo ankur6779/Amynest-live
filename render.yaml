@@ -1,18 +1,30 @@
-# Render Blueprint — Amynest-backend (API) + Amynest-live-1 (static frontend)
+# Render Blueprint — production + development (preview) stacks
 # https://render.com/docs/blueprint-spec
 #
-# Dashboard names (match your Render services):
-#   Amynest-backend  → full API (GOOGLE_API_KEY, ELEVENLABS_API_KEY, DATABASE_URL, …)
-#   Amynest-live-1   → static build only (VITE_*). API keys here do NOT reach the backend.
+# Production:
+#   Amynest-backend     → https://amynest-backend.onrender.com
+#   Amynest-live-1      → static web (points at production API)
 #
-# Existing Postgres (dashboard name: amynest-db):
+# Development / preview (set secrets in Render dashboard per service):
+#   amynest-dev         → https://amynest-dev.onrender.com
+#   amynest-frontend-dev → static web (points at dev API)
+#
+# Health / env checks:
+#   GET /api/healthz/env
+
 databases:
   - name: amynest-db
     databaseName: amynest_db
     plan: basic_256mb
     region: singapore
 
+  - name: amynest-db-dev
+    databaseName: amynest_db_dev
+    plan: basic_256mb
+    region: singapore
+
 services:
+  # ─── Production API ───────────────────────────────────────────────────────
   - type: web
     name: Amynest-backend
     runtime: node
@@ -29,17 +41,53 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: AMYNEST_ENV
+        value: production
+      - key: API_PUBLIC_URL
+        value: https://amynest-backend.onrender.com
       - key: DATABASE_URL
         fromDatabase:
           name: amynest-db
           property: connectionString
       - key: GOOGLE_API_KEY
         sync: false
-      # Diagnostics:
-      #   GET https://amynest-backend.onrender.com/api/healthz/drive
-      #   GET https://amynest-backend.onrender.com/api/healthz/tts
-      #   GET https://amynest-backend.onrender.com/api/healthz/env
+      - key: ELEVENLABS_API_KEY
+        sync: false
 
+  # ─── Development / staging API ────────────────────────────────────────────
+  - type: web
+    name: amynest-dev
+    runtime: node
+    region: singapore
+    plan: starter
+    repo: https://github.com/ankur6779/Amynest-live
+    branch: main
+    buildCommand: >-
+      corepack enable &&
+      corepack prepare pnpm@9.15.0 --activate &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @workspace/api-server build
+    startCommand: AMYNEST_ENV=development pnpm --filter @workspace/api-server start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: AMYNEST_ENV
+        value: development
+      - key: API_PUBLIC_URL
+        value: https://amynest-dev.onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: amynest-db-dev
+          property: connectionString
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+
+  # ─── Production static web (SPA) ───────────────────────────────────────────
+  # Rewrite /* → /index.html (200) so hard refresh on /dashboard works.
+  # PWA also uses public/sw.js navigation fallback if a CDN edge returns 404.
+  # Optional Node fallback: runtime node + startCommand node artifacts/kidschedule/server/serve-spa.mjs
   - type: web
     name: Amynest-live-1
     runtime: static
@@ -56,8 +104,49 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+    headers:
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: VITE_AMYNEST_ENV
+        value: production
       - key: VITE_APP_API_ORIGIN
         value: https://amynest-backend.onrender.com
+
+  # ─── Development static web (preview) ─────────────────────────────────────
+  - type: web
+    name: amynest-frontend-dev
+    runtime: static
+    region: singapore
+    repo: https://github.com/ankur6779/Amynest-live
+    branch: main
+    buildCommand: >-
+      corepack enable &&
+      corepack prepare pnpm@9.15.0 --activate &&
+      pnpm install --frozen-lockfile &&
+      BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule run build:dev
+    staticPublishPath: ./artifacts/kidschedule/dist/public
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: VITE_AMYNEST_ENV
+        value: development
+      - key: VITE_APP_API_ORIGIN
+        value: https://amynest-dev.onrender.com
