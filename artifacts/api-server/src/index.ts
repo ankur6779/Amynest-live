@@ -1,4 +1,5 @@
 import app from "./app";
+import { logStartupEnvDiagnostics } from "./lib/env";
 import { logger } from "./lib/logger";
 import { startRazorpayWebhookCleanup } from "./lib/razorpayWebhookCleanup";
 import { startWeeklyRecapCron } from "./lib/weeklyRecapCron";
@@ -27,6 +28,7 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
   console.log(`Server listening on port ${port}`);
+  logStartupEnvDiagnostics();
   startRazorpayWebhookCleanup();
   startWeeklyRecapCron();
   startNotificationCron();

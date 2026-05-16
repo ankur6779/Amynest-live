@@ -1,6 +1,12 @@
 import { Router, type IRouter } from "express";
 import { HealthCheckResponse } from "@workspace/api-zod";
-import { driveFilesList, getDriveApiKey } from "../lib/googleDrive";
+import {
+  getDriveApiKey,
+  getDriveKeyDiagnostics,
+  getElevenLabsApiKey,
+  getGcsDiagnostics,
+} from "../lib/env";
+import { driveFilesList } from "../lib/googleDrive";
 import { ttsStorageBackend } from "../services/ttsAudioStore";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
@@ -12,35 +18,85 @@ router.get("/healthz", (_req, res) => {
   res.json(data);
 });
 
-/** Config-only probe for Amy / ElevenLabs TTS (no secrets exposed). */
+/** Full env diagnostics (no secret values). */
+router.get("/healthz/env", (_req, res) => {
+  const drive = getDriveKeyDiagnostics();
+  const gcs = getGcsDiagnostics();
+  const elevenlabsConfigured = !!getElevenLabsApiKey();
+
+  res.json({
+    ok: drive.resolved && elevenlabsConfigured,
+    nodeEnv: process.env.NODE_ENV ?? "unknown",
+    render: !!process.env.RENDER,
+    services: {
+      googleDrive: {
+        configured: drive.resolved,
+        activeVar: drive.activeVar,
+        vars: drive.checked,
+        misplacedFrontendKey: drive.misplacedFrontendKey,
+        hint: drive.misplacedFrontendKey
+          ? "Move key to amynest-live as GOOGLE_API_KEY (not VITE_GOOGLE_API_KEY on static site)"
+          : !drive.resolved
+            ? "Set GOOGLE_API_KEY on amynest-live in Render → Environment"
+            : undefined,
+      },
+      elevenlabs: {
+        configured: elevenlabsConfigured,
+        vars: [
+          { name: "ELEVENLABS_API_KEY", presence: elevenlabsConfigured ? "set" : "missing" },
+        ],
+      },
+      ttsStorage: {
+        backend: ttsStorageBackend(),
+        ...gcs,
+        hint: !gcs.legacyGcsConfigured
+          ? "Without GCS, TTS uses Postgres (audio_data column). Set DEFAULT_OBJECT_STORAGE_BUCKET_ID + GCS_SERVICE_ACCOUNT_JSON to use GCS."
+          : undefined,
+      },
+    },
+  });
+});
+
+/** Amy / ElevenLabs TTS + GCS storage probe. */
 router.get("/healthz/tts", (_req, res) => {
-  const elevenlabsConfigured = !!process.env.ELEVENLABS_API_KEY?.trim();
-  const legacyGcsConfigured =
-    !!process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID?.trim() &&
-    (!!process.env.GCS_SERVICE_ACCOUNT_JSON?.trim() ||
-      !!process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim());
+  const elevenlabsConfigured = !!getElevenLabsApiKey();
+  const gcs = getGcsDiagnostics();
 
   res.json({
     ok: elevenlabsConfigured,
     elevenlabsConfigured,
     ttsStorage: ttsStorageBackend(),
-    legacyGcsConfigured,
+    legacyGcsConfigured: gcs.legacyGcsConfigured,
+    gcs: {
+      bucketConfigured: gcs.bucketId === "set",
+      bucketHint: gcs.bucketName,
+      credentialsOk: gcs.credentials.ok,
+      credentialsSource: gcs.credentials.source,
+      credentialsError: gcs.credentials.error,
+      projectId: gcs.credentials.projectId,
+      clientEmail: gcs.credentials.clientEmail,
+    },
     hint: !elevenlabsConfigured
-      ? "Set ELEVENLABS_API_KEY on the amynest-live API service (not the static web service)."
-      : !legacyGcsConfigured
-        ? "Optional: add DEFAULT_OBJECT_STORAGE_BUCKET_ID + GCS_SERVICE_ACCOUNT_JSON to reuse Replit TTS cache (Google Drive API key does not cover this)."
+      ? "Set ELEVENLABS_API_KEY on amynest-live (not amynest-web)."
+      : !gcs.legacyGcsConfigured
+        ? "GCS optional: add DEFAULT_OBJECT_STORAGE_BUCKET_ID + GCS_SERVICE_ACCOUNT_JSON (single-line JSON or GCS_SERVICE_ACCOUNT_JSON_B64). TTS falls back to Postgres."
         : undefined,
   });
 });
 
-/** Probe Kids Story Hub Drive folders (no secrets). */
+/** Google Drive API + story folder probe. */
 router.get("/healthz/drive", async (_req, res) => {
+  const driveDiag = getDriveKeyDiagnostics();
   const apiKey = getDriveApiKey();
+
   if (!apiKey) {
     res.status(503).json({
       ok: false,
       driveConfigured: false,
-      hint: "Set GOOGLE_API_KEY on amynest-live. Use API key restrictions: None or IP (not HTTP referrers). Enable Google Drive API in Cloud Console.",
+      env: driveDiag,
+      hint: driveDiag.misplacedFrontendKey
+        ? "VITE_GOOGLE_API_KEY is on the static site only. Add GOOGLE_API_KEY to the amynest-live API service."
+        : "Set GOOGLE_API_KEY on amynest-live. Enable Drive API in Cloud Console. Key restrictions: None or IP (not HTTP referrers).",
     });
     return;
   }
@@ -55,11 +111,12 @@ router.get("/healthz/drive", async (_req, res) => {
     res.json({
       ok: true,
       driveConfigured: true,
+      activeVar: driveDiag.activeVar,
       storyFolderVideoCount: page.files.length,
       sampleFileId: page.files[0]?.id ?? null,
       hint:
         page.files.length === 0
-          ? "Drive API works but folder returned no videos. Check folder sharing (Anyone with the link) and that videos are in the folder."
+          ? "API key works but folder has no videos. Share folders as Anyone with the link can view."
           : undefined,
     });
   } catch (err) {
@@ -67,8 +124,11 @@ router.get("/healthz/drive", async (_req, res) => {
     res.status(502).json({
       ok: false,
       driveConfigured: true,
-      error: message.slice(0, 300),
-      hint: "If you see PERMISSION_DENIED or API key invalid: enable Drive API, remove HTTP-referrer-only restrictions, and ensure story folders are link-shared.",
+      activeVar: driveDiag.activeVar,
+      error: message.slice(0, 500),
+      env: driveDiag,
+      hint:
+        "Key is loaded but Drive API rejected the request. Enable Google Drive API, fix key restrictions, and link-share content folders.",
     });
   }
 });

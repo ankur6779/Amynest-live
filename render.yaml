@@ -1,5 +1,10 @@
 # Render Blueprint — Amynest-live (api-server + static frontend)
 # https://render.com/docs/blueprint-spec
+#
+# IMPORTANT: Secrets must be set on the correct service:
+#   amynest-live  → API (GOOGLE_API_KEY, ELEVENLABS_API_KEY, GCS, DATABASE_URL, …)
+#   amynest-web   → static build only (VITE_* vars). GOOGLE_API_KEY here does NOT reach the API.
+
 services:
   - type: web
     name: amynest-live
@@ -17,17 +22,33 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
-      # Google Drive API — Kids Story Hub, reels, worksheets, coloring, funsheets.
-      # Enable "Google Drive API" in Cloud Console. Restrictions: None or IP (not HTTP referrers).
-      # Story folders must be "Anyone with the link" can view.
+      # ── Google Drive (Story Hub, Fun Sheets, Coloring, Worksheets, Reels) ──
+      # Render Dashboard → amynest-live → Environment → add:
+      #   GOOGLE_API_KEY = AIza... (from Google Cloud → APIs & Services → Credentials)
+      # Cloud Console: enable "Google Drive API" for this project.
+      # API key restrictions: Application restrictions = None (or IP addresses).
+      #   Do NOT use "HTTP referrers" — the Node server has no browser referrer.
+      # Drive folders/files: share as "Anyone with the link" can view.
       - key: GOOGLE_API_KEY
         sync: false
-      # Alias also accepted: GOOGLE_DRIVE_API_KEY
-      # Set in Render dashboard (required for Amy / ElevenLabs TTS):
-      # ELEVENLABS_API_KEY — from elevenlabs.io → Profile → API Keys
-      # Optional: TTS_STORAGE=postgres (default on Render without GCS)
-      # Optional (reuse Replit GCS cache after migration):
-      # DEFAULT_OBJECT_STORAGE_BUCKET_ID, GCS_SERVICE_ACCOUNT_JSON
+      # Aliases (optional): GOOGLE_DRIVE_API_KEY, GOOGLE_DRIVE_KEY
+      #
+      # ── ElevenLabs TTS (Amy voice) ──
+      #   ELEVENLABS_API_KEY = sk_... from elevenlabs.io → Profile → API Keys
+      #
+      # ── TTS audio storage (optional — legacy Replit GCS cache) ──
+      # Without these, TTS saves MP3 bytes in Postgres (tts_cache.audio_data).
+      # With these, new audio can go to GCS; old Replit cache can be read + backfilled.
+      #   DEFAULT_OBJECT_STORAGE_BUCKET_ID = your-bucket-name
+      #   GCS_SERVICE_ACCOUNT_JSON = entire service-account JSON on ONE line
+      #     OR GCS_SERVICE_ACCOUNT_JSON_B64 = base64-encoded JSON (easier on Render)
+      # Service account needs: Storage Object Admin on that bucket.
+      #   TTS_STORAGE = postgres | gcs  (auto: gcs if bucket+creds set, else postgres)
+      #
+      # Diagnostics after deploy:
+      #   GET https://amynest-live.onrender.com/api/healthz/env
+      #   GET https://amynest-live.onrender.com/api/healthz/drive
+      #   GET https://amynest-live.onrender.com/api/healthz/tts
 
   - type: web
     name: amynest-web
@@ -50,6 +71,4 @@ services:
         value: "20"
       - key: VITE_APP_API_ORIGIN
         value: https://amynest-live.onrender.com
-      # Set in Render dashboard (sync with backend / Firebase console):
-      # FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID,
-      # FIREBASE_APP_ID, FIREBASE_MESSAGING_SENDER_ID, VITE_FIREBASE_VAPID_KEY
+      # Firebase / VITE_* only — do NOT put GOOGLE_API_KEY here for Drive; it won't reach the API.
