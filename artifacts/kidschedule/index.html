@@ -987,19 +987,26 @@
     </div>
 
     <div id="root"></div>
+    <!-- Vite rewrites src to /assets/index-*.js at build time — do not load dynamically. -->
+    <script type="module" crossorigin id="amynest-entry" src="/src/main.tsx"></script>
     <script>
       (function () {
-        function loadAppBundle() {
+        var entry = document.getElementById("amynest-entry");
+        if (!entry || !window.__amynestNeedsCacheRecovery || !window.__amynestForceClearCaches) {
+          return;
+        }
+        var src = entry.getAttribute("src");
+        var crossOrigin = entry.getAttribute("crossorigin");
+        entry.remove();
+        function injectEntry() {
           var s = document.createElement("script");
           s.type = "module";
-          s.src = "/src/main.tsx";
+          s.id = "amynest-entry";
+          s.src = src;
+          if (crossOrigin) s.crossOrigin = crossOrigin;
           document.body.appendChild(s);
         }
-        if (window.__amynestNeedsCacheRecovery && window.__amynestForceClearCaches) {
-          window.__amynestForceClearCaches().then(loadAppBundle).catch(loadAppBundle);
-        } else {
-          loadAppBundle();
-        }
+        window.__amynestForceClearCaches().then(injectEntry).catch(injectEntry);
       })();
     </script>
   </body>
