@@ -30,8 +30,6 @@ export function isNativeAmyNestShell(): boolean {
 
   const proto = (win.location.protocol || "").toLowerCase();
   if (proto === "capacitor:" || proto === "ionic:") return true;
-  // Some Capacitor iOS builds load the document as https://localhost; treat as
-  // native only when the Capacitor bridge is present.
   if (
     proto === "https:" &&
     win.location.hostname === "localhost" &&
@@ -61,6 +59,30 @@ export function canUseBrowserServiceWorkers(): boolean {
 
 let nativeShellInitialized = false;
 
+function listenForServiceWorkerUpdates(
+  registration: ServiceWorkerRegistration,
+): void {
+  registration.addEventListener("updatefound", () => {
+    const installing = registration.installing;
+    if (!installing) return;
+
+    installing.addEventListener("statechange", () => {
+      if (
+        installing.state === "installed" &&
+        navigator.serviceWorker.controller
+      ) {
+        navigator.serviceWorker.addEventListener(
+          "controllerchange",
+          () => {
+            window.location.reload();
+          },
+          { once: true },
+        );
+      }
+    });
+  });
+}
+
 function registerWebServiceWorker(): void {
   if (!import.meta.env.PROD) return;
   if (!canUseBrowserServiceWorkers()) return;
@@ -70,10 +92,16 @@ function registerWebServiceWorker(): void {
 
   const swBase = import.meta.env.BASE_URL.replace(/\/$/, "");
   navigator.serviceWorker
-    .register(`${swBase}/sw.js`, { scope: `${swBase}/`, updateViaCache: "none" })
+    .register(`${swBase}/sw.js`, {
+      scope: `${swBase}/`,
+      updateViaCache: "none",
+    })
+    .then((registration) => {
+      listenForServiceWorkerUpdates(registration);
+      return registration.update();
+    })
     .catch(() => {
-      // Best-effort: install criteria still met by firebase-messaging-sw.js
-      // for users who already have a WebAPK; don't crash the app.
+      /* Best-effort — app must still load without SW */
     });
 }
 

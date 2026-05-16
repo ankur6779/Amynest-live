@@ -1,4 +1,3 @@
-/* Auto-generated on build — do not edit. Cache: amynest-cache-1778951714168 */
 /**
  * AmyNest root service worker (source — built to /sw.js with a deploy-specific cache id).
  *
@@ -10,7 +9,7 @@
 
 /* global self, caches, clients, importScripts, firebase */
 
-const CACHE_NAME = "amynest-cache-1778951714168";
+const CACHE_NAME = "__AMYNEST_CACHE_NAME__";
 const INDEX_URL = new URL("index.html", self.location.origin).href;
 
 self.addEventListener("install", (event) => {
@@ -97,4 +96,4 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-
+/* __AMYNEST_FCM_BLOCK__ */

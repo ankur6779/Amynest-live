@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { fileURLToPath } from "node:url";
-import { writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
@@ -19,40 +19,36 @@ if (Number.isNaN(port) || port <= 0) {
 /** Asset base for Vite (`/` for static hosting on Render). */
 const basePath = process.env.BASE_PATH ?? "/";
 
-function firebaseSwPlugin() {
-  return {
-    name: "firebase-sw",
-    buildStart() {
-      const apiKey =
-        process.env.VITE_FIREBASE_API_KEY ??
-        process.env.FIREBASE_API_KEY ??
-        "";
-      const projectId =
-        process.env.VITE_FIREBASE_PROJECT_ID ??
-        process.env.FIREBASE_PROJECT_ID ??
-        "";
-      const rawAuthDomain =
-        process.env.VITE_FIREBASE_AUTH_DOMAIN ??
-        process.env.FIREBASE_AUTH_DOMAIN ??
-        "";
-      // Mirror the same fallback used in src/lib/firebase.ts: if the env var
-      // doesn't look like a domain (e.g. an appId was mistakenly set there),
-      // fall back to the standard Firebase auth domain for the project.
-      const authDomain =
-        rawAuthDomain && rawAuthDomain.includes(".")
-          ? rawAuthDomain
-          : `${projectId}.firebaseapp.com`;
-      const appId =
-        process.env.VITE_FIREBASE_APP_ID ?? process.env.FIREBASE_APP_ID ?? "";
-      const messagingSenderId =
-        process.env.VITE_FIREBASE_MESSAGING_SENDER_ID ??
-        process.env.FIREBASE_MESSAGING_SENDER_ID ??
-        "";
+function readFirebaseSwEnv() {
+  const apiKey =
+    process.env.VITE_FIREBASE_API_KEY ?? process.env.FIREBASE_API_KEY ?? "";
+  const projectId =
+    process.env.VITE_FIREBASE_PROJECT_ID ?? process.env.FIREBASE_PROJECT_ID ?? "";
+  const rawAuthDomain =
+    process.env.VITE_FIREBASE_AUTH_DOMAIN ??
+    process.env.FIREBASE_AUTH_DOMAIN ??
+    "";
+  const authDomain =
+    rawAuthDomain && rawAuthDomain.includes(".")
+      ? rawAuthDomain
+      : `${projectId}.firebaseapp.com`;
+  const appId =
+    process.env.VITE_FIREBASE_APP_ID ?? process.env.FIREBASE_APP_ID ?? "";
+  const messagingSenderId =
+    process.env.VITE_FIREBASE_MESSAGING_SENDER_ID ??
+    process.env.FIREBASE_MESSAGING_SENDER_ID ??
+    "";
+  return { apiKey, authDomain, projectId, appId, messagingSenderId };
+}
 
-      const swContent = `/* Auto-generated — do not edit. Regenerated on every build. */
+function buildFcmServiceWorkerBlock() {
+  const { apiKey, authDomain, projectId, appId, messagingSenderId } =
+    readFirebaseSwEnv();
+  if (!apiKey || !projectId) return "";
+
+  return `
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
-
 firebase.initializeApp({
   apiKey: ${JSON.stringify(apiKey)},
   authDomain: ${JSON.stringify(authDomain)},
@@ -60,63 +56,93 @@ firebase.initializeApp({
   appId: ${JSON.stringify(appId)},
   messagingSenderId: ${JSON.stringify(messagingSenderId)},
 });
-
-const messaging = firebase.messaging();
-
-// Activate immediately on install so users get the updated SW (and its
-// fresh Firebase config) right after a new deployment, without needing
-// to close all tabs first.
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
-messaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title ?? 'AmyNest';
-  const options = {
-    body: payload.notification?.body ?? '',
+var messaging = firebase.messaging();
+messaging.onBackgroundMessage(function (payload) {
+  var title = payload.notification && payload.notification.title ? payload.notification.title : 'AmyNest';
+  var options = {
+    body: payload.notification && payload.notification.body ? payload.notification.body : '',
     icon: '/pwa-icon-192.png',
     badge: '/pwa-icon-192.png',
-    // tag deduplicates: same category replaces the previous banner instead
-    // of stacking multiple identical notifications.
-    tag: (payload.data && payload.data.category) ? payload.data.category : 'amynest',
+    tag: payload.data && payload.data.category ? payload.data.category : 'amynest',
     renotify: true,
-    data: payload.data ?? {},
+    data: payload.data || {},
   };
   self.registration.showNotification(title, options);
 });
-
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  const deepLink = (event.notification.data && event.notification.data.deepLink)
+  var deepLink = event.notification.data && event.notification.data.deepLink
     ? event.notification.data.deepLink
     : '/';
   event.waitUntil(
-    self.clients
-      .matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        // Focus an existing app window rather than opening a duplicate tab.
-        for (var i = 0; i < clientList.length; i++) {
-          var client = clientList[i];
-          if (client.url.startsWith(self.location.origin) && 'focus' in client) {
-            client.navigate(deepLink);
-            return client.focus();
-          }
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if (client.url.indexOf(self.location.origin) === 0 && 'focus' in client) {
+          client.navigate(deepLink);
+          return client.focus();
         }
-        // No existing window — open a new one.
-        return self.clients.openWindow(deepLink);
-      })
+      }
+      return self.clients.openWindow(deepLink);
+    })
   );
 });
 `;
+}
+
+function amynestServiceWorkerPlugin() {
+  const artifactDir = path.resolve(import.meta.dirname);
+  const publicDir = path.resolve(artifactDir, "public");
+  const distPublicDir = path.resolve(artifactDir, "dist/public");
+
+  function writeServiceWorkers() {
+    const commit =
+      process.env.RENDER_GIT_COMMIT?.slice(0, 12) ??
+      process.env.GITHUB_SHA?.slice(0, 12) ??
+      String(Date.now());
+    const cacheName = `amynest-cache-${commit}`;
+
+    const fcmBlock = buildFcmServiceWorkerBlock();
+    const fcmLegacy = fcmBlock
+      ? `/* Auto-generated — do not edit. */\n${fcmBlock}`
+      : "/* FCM not configured for this build. */";
+
+    writeFileSync(
+      path.join(publicDir, "firebase-messaging-sw.js"),
+      fcmLegacy,
+      "utf8",
+    );
+
+    const template = readFileSync(
+      path.join(publicDir, "sw.source.js"),
+      "utf8",
+    );
+    const swContent = template
+      .replace("__AMYNEST_CACHE_NAME__", cacheName)
+      .replace("/* __AMYNEST_FCM_BLOCK__ */", fcmBlock);
+
+    const banner = `/* Auto-generated on build — do not edit. Cache: ${cacheName} */\n`;
+    writeFileSync(path.join(publicDir, "sw.js"), banner + swContent, "utf8");
+
+    try {
+      writeFileSync(path.join(distPublicDir, "sw.js"), banner + swContent, "utf8");
       writeFileSync(
-        path.resolve(import.meta.dirname, "public", "firebase-messaging-sw.js"),
-        swContent,
+        path.join(distPublicDir, "firebase-messaging-sw.js"),
+        fcmLegacy,
         "utf8",
       );
+    } catch {
+      /* dist may not exist during dev buildStart */
+    }
+  }
+
+  return {
+    name: "amynest-service-worker",
+    buildStart() {
+      writeServiceWorkers();
+    },
+    closeBundle() {
+      writeServiceWorkers();
     },
   };
 }
@@ -127,7 +153,7 @@ export default defineConfig({
   // Hard refresh on /dashboard etc. must return index.html (Vite dev + preview).
   appType: "spa",
   plugins: [
-    firebaseSwPlugin(),
+    amynestServiceWorkerPlugin(),
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
