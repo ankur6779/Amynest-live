@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "VITE_FIREBASE_API_KEY=$FIREBASE_API_KEY VITE_FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN VITE_FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID VITE_FIREBASE_APP_ID=$FIREBASE_APP_ID VITE_FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID VITE_FIREBASE_VAPID_KEY=$VITE_FIREBASE_VAPID_KEY vite --config vite.config.ts --host 0.0.0.0",
-    "build": "VITE_FIREBASE_API_KEY=$FIREBASE_API_KEY VITE_FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN VITE_FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID VITE_FIREBASE_APP_ID=$FIREBASE_APP_ID VITE_FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID VITE_FIREBASE_VAPID_KEY=$VITE_FIREBASE_VAPID_KEY vite build --config vite.config.ts",
+    "dev": "vite --config vite.config.ts --mode development --host 0.0.0.0",
+    "build": "vite build --config vite.config.ts --mode production",
+    "build:dev": "vite build --config vite.config.ts --mode development",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
+    "serve:spa": "node server/serve-spa.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config vitest.config.ts",
     "test:e2e": "playwright test --config playwright.config.ts"
