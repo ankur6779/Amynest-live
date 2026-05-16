@@ -17,6 +17,17 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      # Google Drive API — Kids Story Hub, reels, worksheets, coloring, funsheets.
+      # Enable "Google Drive API" in Cloud Console. Restrictions: None or IP (not HTTP referrers).
+      # Story folders must be "Anyone with the link" can view.
+      - key: GOOGLE_API_KEY
+        sync: false
+      # Alias also accepted: GOOGLE_DRIVE_API_KEY
+      # Set in Render dashboard (required for Amy / ElevenLabs TTS):
+      # ELEVENLABS_API_KEY — from elevenlabs.io → Profile → API Keys
+      # Optional: TTS_STORAGE=postgres (default on Render without GCS)
+      # Optional (reuse Replit GCS cache after migration):
+      # DEFAULT_OBJECT_STORAGE_BUCKET_ID, GCS_SERVICE_ACCOUNT_JSON
 
   - type: web
     name: amynest-web

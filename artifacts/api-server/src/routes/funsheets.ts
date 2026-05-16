@@ -7,6 +7,7 @@ import {
   funsheetDownloadsTable,
 } from "@workspace/db";
 import { getAuth } from "../lib/auth";
+import { driveFilesListAll, driveProxyDownloadPath, getDriveApiKey } from "../lib/googleDrive";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -18,8 +19,6 @@ const ROOT_FOLDER_IDS = [
   "1G0KcIN8otcleOOBqosFyg_k4o9GK4eRz",
   "1f-H6WufGb3Q7F8jJHXC13UrdooV1bBab",
 ];
-
-const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
 
 /** Drive API responses are cached in memory for 10 minutes. */
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -66,32 +65,11 @@ async function listFolderContents(
   folderId: string,
   apiKey: string,
 ): Promise<{ id: string; name: string; mimeType: string }[]> {
-  const params = new URLSearchParams({
-    q: `'${folderId}' in parents and trashed = false`,
-    fields: "nextPageToken,files(id,name,mimeType)",
-    key: apiKey,
-    pageSize: "1000",
-  });
-
-  const all: { id: string; name: string; mimeType: string }[] = [];
-  let pageToken: string | undefined;
-
-  do {
-    if (pageToken) params.set("pageToken", pageToken);
-    const res = await fetch(`${DRIVE_API}?${params.toString()}`);
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Drive API error ${res.status}: ${text}`);
-    }
-    const data = (await res.json()) as {
-      files: { id: string; name: string; mimeType: string }[];
-      nextPageToken?: string;
-    };
-    all.push(...(data.files || []));
-    pageToken = data.nextPageToken;
-  } while (pageToken);
-
-  return all;
+  return driveFilesListAll(
+    apiKey,
+    `'${folderId}' in parents and trashed = false`,
+    "nextPageToken,files(id,name,mimeType)",
+  );
 }
 
 async function collectPdfsRecursive(
@@ -192,9 +170,11 @@ router.get("/funsheets/list", async (req, res): Promise<void> => {
   }
   const { childId, page } = parsed.data;
 
-  const apiKey = process.env["GOOGLE_API_KEY"];
+  const apiKey = getDriveApiKey();
   if (!apiKey) {
-    logger.error("GOOGLE_API_KEY not configured — funsheets section unavailable");
+    logger.error(
+      "GOOGLE_API_KEY / GOOGLE_DRIVE_API_KEY not configured — funsheets section unavailable",
+    );
     res.status(500).json({ error: "google_api_key_missing" });
     return;
   }
@@ -278,7 +258,7 @@ router.post("/funsheets/download", async (req, res): Promise<void> => {
   }
   const { childId, fileId } = parsed.data;
 
-  const apiKey = process.env["GOOGLE_API_KEY"];
+  const apiKey = getDriveApiKey();
   if (!apiKey) {
     res.status(500).json({ error: "google_api_key_missing" });
     return;
@@ -329,7 +309,7 @@ router.post("/funsheets/download", async (req, res): Promise<void> => {
 
     res.json({
       ok: true,
-      downloadUrl: `https://drive.google.com/uc?export=download&id=${fileId}`,
+      downloadUrl: driveProxyDownloadPath(fileId, file.name),
       dailyQuota: {
         limit: DAILY_LIMIT,
         used: used + 1,

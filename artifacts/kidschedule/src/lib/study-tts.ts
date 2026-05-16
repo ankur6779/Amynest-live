@@ -2,7 +2,7 @@
 // Replaces the old browser speechSynthesis with Indian ElevenLabs voices.
 
 import { getAuth } from "firebase/auth";
-import { getApiUrl } from "@/lib/api";
+import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 
 // ─── ElevenLabs Indian Voice IDs ──────────────────────────────
 // English Indian Female — Ananya K
@@ -66,7 +66,7 @@ export async function speak(
     const audioHeaders: Record<string, string> = {};
     if (token) audioHeaders["Authorization"] = `Bearer ${token}`;
 
-    const audioRes = await fetch(data.audioUrl, { headers: audioHeaders });
+    const audioRes = await fetch(resolveApiMediaUrl(data.audioUrl), { headers: audioHeaders });
     if (!audioRes.ok) return;
 
     const blob = await audioRes.blob();

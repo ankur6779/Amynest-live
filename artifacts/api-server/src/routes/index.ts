@@ -12,6 +12,7 @@ import aiTutorRouter from "./ai-tutor";
 import appDataRouter from "./app-data";
 import subscriptionRouter from "./subscription";
 import reelsRouter from "./reels";
+import driveRouter from "./drive";
 import worksheetsRouter from "./worksheets";
 import onboardingRouter from "./onboarding";
 import futurePredictorRouter from "./future-predictor";
@@ -57,6 +58,7 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use("/reels", reelsRouter);
+router.use(driveRouter);
 router.use(worksheetsRouter);
 // Subscription router contains the public RevenueCat webhook endpoint
 // (authenticated by REVENUECAT_WEBHOOK_SECRET), so it must be mounted

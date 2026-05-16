@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell, Calendar, Sparkles, Heart, Moon, Apple, BarChart3, ChevronLeft, CheckCircle2, XCircle, Loader2, Send, Smartphone, RefreshCw, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Capacitor } from "@capacitor/core";
 import {
   awaitNativePushBridge,
   ensureNativePushReady,
@@ -91,9 +92,65 @@ type TestOnlyPlatform = "ios" | "ios-capacitor" | "android" | "web";
 /** Test push should hit this shell only — avoids fan-out to every device on the account. */
 function testNotificationOnlyPlatforms(): TestOnlyPlatform[] {
   if (typeof window === "undefined") return ["web"];
+  // Prefer @capacitor/core — reliable on cold start (window.Capacitor-only checks can race).
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const p = Capacitor.getPlatform();
+      if (p === "ios") return ["ios-capacitor"];
+      if (p === "android") return ["android"];
+    }
+  } catch {
+    /* ignore */
+  }
   if (isCapacitorIOS()) return ["ios-capacitor"];
   if (isAmyNestWrapper()) return ["android"];
   return ["web"];
+}
+
+function pushTestSuccessHint(): string {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const p = Capacitor.getPlatform();
+      if (p === "ios") {
+        return "Open Notification Center or check your Lock Screen — it should arrive within a few seconds.";
+      }
+      if (p === "android") {
+        return "Check your Android notification shade — it should arrive within a few seconds.";
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  if (isCapacitorIOS()) {
+    return "Open Notification Center or check your Lock Screen — it should arrive within a few seconds.";
+  }
+  if (isAmyNestWrapper()) {
+    return "Check your Android notification shade — it should arrive within a few seconds.";
+  }
+  return "Check this browser for the notification.";
+}
+
+function noRegisteredPushDeviceHint(): string {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const p = Capacitor.getPlatform();
+      if (p === "ios") {
+        return "Allow notifications in the App Notifications section above, or open Settings → AmyNest → Notifications. Wait a few seconds after enabling, then try again.";
+      }
+      if (p === "android") {
+        return "Allow notifications for AmyNest in Android Settings, reopen the app, wait a few seconds, then try again.";
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  if (isCapacitorIOS()) {
+    return "Allow notifications in the App Notifications section above, or open Settings → AmyNest → Notifications. Wait a few seconds after enabling, then try again.";
+  }
+  if (isAmyNestWrapper()) {
+    return "Open AmyNest on your Android device, allow notifications, then try again.";
+  }
+  return "Enable notifications above, or open AmyNest on your phone.";
 }
 
 function initialWrapperState(): WrapperState {
@@ -421,17 +478,12 @@ export default function NotificationSettingsPage() {
       if (status === "sent") {
         toast({
           title: "Test notification sent!",
-          description: isCapacitorIOS()
-            ? "Check this iOS Simulator — it should appear within a few seconds."
-            : isAmyNestWrapper()
-              ? "Check your Android system tray — it should appear within a few seconds."
-              : "Check this browser for the notification.",
+          description: pushTestSuccessHint(),
         });
       } else if (status === "no_tokens") {
         toast({
           title: "No device registered",
-          description:
-            "Open AmyNest on your Android device first to register for push notifications.",
+          description: noRegisteredPushDeviceHint(),
           variant: "destructive",
         });
       } else {
@@ -473,7 +525,7 @@ export default function NotificationSettingsPage() {
       } else if (status === "no_tokens") {
         toast({
           title: "No device registered",
-          description: "Enable browser notifications above, or open AmyNest on your phone first."
+          description: noRegisteredPushDeviceHint(),
         });
       } else {
         toast({
@@ -586,8 +638,17 @@ export default function NotificationSettingsPage() {
                 {/* i18n-ok: push test feature label — debug/settings tool, intentionally untranslated */}
                 <div className="font-semibold text-white">Test Push Notification</div>
                 <div className="text-sm text-muted-foreground mt-1">
-                  Send a test notification to all your registered devices right now. Bypasses quiet hours, daily limits, and category settings so you can always verify delivery.
-                  Check your Android system tray to confirm it arrived.
+                  Send a test notification on{" "}
+                  <span className="text-white font-medium">
+                    {Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios"
+                      ? "this iPhone"
+                      : Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android"
+                        ? "this Android device"
+                        : isAmyNestWrapper()
+                          ? "this device"
+                          : "this browser"}
+                  </span>
+                  . Bypasses quiet hours, daily limits, and category settings.
                 </div>
                 <Button
                   type="button"

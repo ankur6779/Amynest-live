@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { getApiUrl } from "@/lib/api";
+import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 interface Video {
   id: string;
   name: string;
@@ -128,7 +128,7 @@ function ReelCard({
           </p>
         </div>}
 
-      <video ref={videoRef} src={video.streamUrl} muted={muted} loop playsInline preload="metadata" onCanPlay={() => setLoaded(true)} onError={() => {
+      <video ref={videoRef} src={resolveApiMediaUrl(video.streamUrl)} muted={muted} loop playsInline preload="metadata" onCanPlay={() => setLoaded(true)} onError={() => {
       setHasError(true);
       setLoaded(true);
     }} style={{

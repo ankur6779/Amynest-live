@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import amyLogo from "@assets/ChatGPT_Image_Apr_19,_2026,_01_56_21_PM_1776587201948.png";
 import { useTranslation } from "react-i18next";
-import { getApiUrl } from "@/lib/api";
+import { getApiUrl, resolveApiMediaUrl } from "@/lib/api";
 interface Worksheet {
   id: string;
   name: string;
@@ -100,7 +100,7 @@ export function PrintableWorksheets({
   const handleDownload = useCallback((ws: Worksheet) => {
     if (dailyRec.count >= DAILY_LIMIT) return;
     const link = document.createElement("a");
-    link.href = ws.downloadUrl;
+    link.href = resolveApiMediaUrl(ws.downloadUrl);
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.download = ws.name;

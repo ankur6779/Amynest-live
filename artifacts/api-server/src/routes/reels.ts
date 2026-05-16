@@ -1,10 +1,14 @@
 import { Router } from "express";
+import {
+  driveFilesListAll,
+  fetchDriveStream,
+  getDriveApiKey,
+} from "../lib/googleDrive";
 import { logger } from "../lib/logger";
 
 const router = Router();
 
 const FOLDER_ID = "1rZqwBYoSIxnDIXBO4XvIqN5b4UBnbQD3";
-const DRIVE_API = "https://www.googleapis.com/drive/v3/files";
 const BATCH_SIZE = 5;
 
 interface DriveFile {
@@ -36,37 +40,24 @@ function shuffle<T>(arr: T[]): void {
 }
 
 async function fetchAllVideos(): Promise<DriveFile[]> {
-  const apiKey = process.env["GOOGLE_API_KEY"];
-  if (!apiKey) throw new Error("GOOGLE_API_KEY environment variable is not set");
+  const apiKey = getDriveApiKey();
+  if (!apiKey) {
+    throw new Error(
+      "GOOGLE_API_KEY or GOOGLE_DRIVE_API_KEY environment variable is not set",
+    );
+  }
 
   const now = Date.now();
   if (cachedVideoIds.length > 0 && now - cacheTimestamp < CACHE_TTL_MS) {
     return cachedVideoIds;
   }
 
-  const allFiles: DriveFile[] = [];
-  let pageToken: string | undefined;
-
-  do {
-    const params = new URLSearchParams({
-      q: `'${FOLDER_ID}' in parents and mimeType contains 'video' and trashed = false`,
-      fields: "nextPageToken,files(id,name,mimeType)",
-      key: apiKey,
-      pageSize: "1000",
-    });
-    if (pageToken) params.set("pageToken", pageToken);
-
-    const res = await fetch(`${DRIVE_API}?${params.toString()}`);
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Google Drive API error ${res.status}: ${text}`);
-    }
-
-    const data = (await res.json()) as { files: DriveFile[]; nextPageToken?: string };
-    const playable = (data.files || []).filter((f) => PLAYABLE_MIME_TYPES.has(f.mimeType));
-    allFiles.push(...playable);
-    pageToken = data.nextPageToken;
-  } while (pageToken);
+  const raw = await driveFilesListAll(
+    apiKey,
+    `'${FOLDER_ID}' in parents and mimeType contains 'video' and trashed = false`,
+    "nextPageToken,files(id,name,mimeType)",
+  );
+  const allFiles = raw.filter((f) => PLAYABLE_MIME_TYPES.has(f.mimeType));
 
   shuffle(allFiles);
   cachedVideoIds = allFiles;
@@ -95,52 +86,14 @@ router.get("/videos", async (req, res) => {
       nextOffset: offset + slice.length < videos.length ? offset + slice.length : null,
     });
   } catch (err) {
-    logger.error({ err }, "Failed to list videos");
-    res.status(500).json({ error: "Internal error. Please try again." });
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err, message }, "Failed to list videos");
+    const status = message.includes("not set") ? 503 : 502;
+    res.status(status).json({
+      error: status === 503 ? "drive_not_configured" : "drive_list_failed",
+    });
   }
 });
-
-/**
- * Fetch from Google Drive using the web download URL.
- * This works for files shared as "Anyone with link can view"
- * without requiring individual file-level public access.
- */
-async function fetchDriveStream(fileId: string, rangeHeader?: string): Promise<Response> {
-  const headers: Record<string, string> = {
-    "User-Agent": "Mozilla/5.0 (compatible; VideoProxy/1.0)",
-  };
-  if (rangeHeader) headers["Range"] = rangeHeader;
-
-  // Use drive.usercontent.google.com — the CDN endpoint used by Google Drive web UI
-  // Works for "Anyone with link" shared files without OAuth
-  const url = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&authuser=0&confirm=t`;
-  const res = await fetch(url, { headers });
-
-  // If we get HTML back (virus scan warning for large files), parse the confirm token
-  const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("text/html")) {
-    const html = await res.text();
-
-    // Try extracting uuid token (newer Google Drive confirmation flow)
-    const uuidMatch = html.match(/name="uuid"\s+value="([^"]+)"/);
-    if (uuidMatch) {
-      const confirmUrl = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&authuser=0&confirm=t&uuid=${uuidMatch[1]}`;
-      return fetch(confirmUrl, { headers });
-    }
-
-    // Fallback: extract any confirm token from the page
-    const confirmMatch = html.match(/confirm=([^&"]+)/);
-    if (confirmMatch) {
-      const confirmUrl = `https://drive.google.com/uc?id=${fileId}&export=download&confirm=${confirmMatch[1]}`;
-      return fetch(confirmUrl, { headers });
-    }
-
-    // Can't resolve confirmation — return a synthetic 403
-    return new Response("Confirmation required", { status: 403 });
-  }
-
-  return res;
-}
 
 router.get("/stream/:fileId", async (req, res) => {
   const { fileId } = req.params;

@@ -5,6 +5,7 @@ export type MicNativeStatus = "granted" | "denied" | "undetermined" | "unknown";
 
 interface MicPermissionPlugin {
   getMicrophoneStatus(): Promise<{ status: MicNativeStatus }>;
+  requestMicrophonePermission(): Promise<{ status: MicNativeStatus }>;
   openAppSettings(): Promise<void>;
 }
 
@@ -13,6 +14,12 @@ export const MicPermissionCapacitor = registerPlugin<MicPermissionPlugin>(
   {
     web: {
       getMicrophoneStatus: async () => ({ status: "unknown" as const }),
+      requestMicrophonePermission: async () => ({ status: "unknown" as const }),
+      openAppSettings: async () => undefined,
+    },
+    android: {
+      getMicrophoneStatus: async () => ({ status: "unknown" as const }),
+      requestMicrophonePermission: async () => ({ status: "unknown" as const }),
       openAppSettings: async () => undefined,
     },
   },

@@ -6,7 +6,7 @@ import { PushNotifications } from "@capacitor/push-notifications";
 import { Bell, MapPin, Mic, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getIosNativeMicrophoneGateState } from "@/lib/mic-permission-capacitor";
+import { getIosNativeMicrophoneGateState, MicPermissionCapacitor } from "@/lib/mic-permission-capacitor";
 import { syncCapacitorPushRegistrationWithOs } from "@/lib/native-push-bridge";
 
 const SESSION_SKIP_KEY = "amynest_native_perm_gate_skip_v1";
@@ -44,6 +44,16 @@ async function micQueryState(): Promise<TriState> {
 
 async function requestMic(): Promise<TriState> {
   try {
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+      try {
+        const { status } = await MicPermissionCapacitor.requestMicrophonePermission();
+        if (status === "granted") return "granted";
+        if (status === "denied") return "denied";
+        return "denied";
+      } catch {
+        return "denied";
+      }
+    }
     if (!navigator.mediaDevices?.getUserMedia) return "denied";
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     stream.getTracks().forEach((t) => t.stop());
@@ -53,8 +63,19 @@ async function requestMic(): Promise<TriState> {
   }
 }
 
-/** If WKWebView getUserMedia fails but iOS Settings already allow the app, trust native. */
+/** After native/Web mic request, sync pill state from AVAudioSession on iOS. */
 async function requestMicWithIosFallback(): Promise<TriState> {
+  if (Capacitor.getPlatform() === "ios") {
+    try {
+      const { status } = await MicPermissionCapacitor.requestMicrophonePermission();
+      if (status === "granted") return "granted";
+      if (status === "denied") return "denied";
+    } catch {
+      /* plugin missing — fall through */
+    }
+    const native = await getIosNativeMicrophoneGateState();
+    if (native === "granted") return "granted";
+  }
   const next = await requestMic();
   if (next === "granted") return "granted";
   if (Capacitor.getPlatform() === "ios") {
@@ -207,7 +228,12 @@ export function NativeStartupPermissionsGate() {
     setBusy(true);
     try {
       const next = await requestMicWithIosFallback();
-      setMic(next === "granted" ? "granted" : "denied");
+      if (Capacitor.getPlatform() === "ios") {
+        const nativeMic = await getIosNativeMicrophoneGateState();
+        setMic(nativeMic !== "unknown" ? nativeMic : next);
+      } else {
+        setMic(next === "granted" ? "granted" : "denied");
+      }
     } finally {
       setBusy(false);
     }

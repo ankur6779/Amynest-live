@@ -5,6 +5,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { resolveHubApiUrl } from "@/services/hubApi";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { palette } from "@/constants/colors";
@@ -131,10 +132,11 @@ export function ColoringBooks({
         setRowError({ id: file.id, message: "Server didn't return a download link." });
         return;
       }
+      const url = resolveHubApiUrl(data.downloadUrl);
       try {
-        await Linking.openURL(data.downloadUrl);
+        await Linking.openURL(url);
       } catch {
-        await WebBrowser.openBrowserAsync(data.downloadUrl);
+        await WebBrowser.openBrowserAsync(url);
       }
       if (data.dailyQuota) setQuota(data.dailyQuota);
       await fetchPage(page);

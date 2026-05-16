@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Palette, Eye, Download, Loader2, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, RefreshCw } from "lucide-react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { resolveApiMediaUrl } from "@/lib/api";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -186,10 +187,7 @@ export function ColoringBooks({
         return;
       }
 
-      // Open Drive's download URL in a new tab so the browser handles the
-      // file save. Drive's `uc?export=download` URL streams the PDF directly
-      // for files under ~100MB.
-      window.open(data.downloadUrl, "_blank", "noopener");
+      window.open(resolveApiMediaUrl(data.downloadUrl), "_blank", "noopener");
       if (data.dailyQuota) setQuota(data.dailyQuota);
       // The downloaded file should disappear from the list. Refetching the
       // current page is the simplest way to keep server state authoritative.

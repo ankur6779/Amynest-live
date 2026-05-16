@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileDown, Eye, Download, Loader2, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, RefreshCw } from "lucide-react";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { resolveApiMediaUrl } from "@/lib/api";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 import { useTranslation } from "react-i18next";
@@ -146,8 +147,7 @@ export function FunSheets({
             message: `Daily limit reached (${quota?.limit ?? 2}/day)`
           });
         } else if (body.error === "already_downloaded") {
-          // Still let them re-download via direct URL
-          window.open(`https://drive.google.com/uc?export=download&id=${file.id}`, "_blank");
+          window.open(resolveApiMediaUrl(`/api/drive/download/${file.id}?name=${encodeURIComponent(file.name)}`), "_blank");
         } else {
           setRowError({
             id: file.id,
@@ -157,7 +157,7 @@ export function FunSheets({
         return;
       }
       if (body.downloadUrl) {
-        window.open(body.downloadUrl, "_blank");
+        window.open(resolveApiMediaUrl(body.downloadUrl), "_blank");
       }
       if (body.dailyQuota) setQuota(body.dailyQuota);
       // Mark as downloaded in local state

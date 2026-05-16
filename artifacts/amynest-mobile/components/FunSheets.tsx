@@ -5,6 +5,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { driveDownloadUrl, resolveHubApiUrl } from "@/services/hubApi";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/contexts/ThemeContext";
 import { palette } from "@/constants/colors";
@@ -115,7 +116,7 @@ export function FunSheets({
           if (body.dailyQuota) setQuota(body.dailyQuota);
           setRowError({ id: file.id, message: `Daily limit reached (${quota?.limit ?? 2}/day)` });
         } else if (body.error === "already_downloaded") {
-          const url = `https://drive.google.com/uc?export=download&id=${file.id}`;
+          const url = driveDownloadUrl(file.id, file.name);
           try { await Linking.openURL(url); } catch { await WebBrowser.openBrowserAsync(url); }
         } else {
           setRowError({ id: file.id, message: "Download failed. Please try again." });
@@ -124,8 +125,9 @@ export function FunSheets({
       }
 
       if (body.downloadUrl) {
-        try { await Linking.openURL(body.downloadUrl); }
-        catch { await WebBrowser.openBrowserAsync(body.downloadUrl); }
+        const url = resolveHubApiUrl(body.downloadUrl);
+        try { await Linking.openURL(url); }
+        catch { await WebBrowser.openBrowserAsync(url); }
       }
       if (body.dailyQuota) setQuota(body.dailyQuota);
       setFiles(prev => prev.map(f => (f.id === file.id ? { ...f, downloaded: true } : f)));

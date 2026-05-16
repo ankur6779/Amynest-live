@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
 import { getApiUrl } from "@/lib/api";
@@ -76,8 +77,15 @@ export function usePushRegistration(): void {
       }
     };
 
-    // Not inside any native wrapper — skip silently.
-    if (!isAmyNestWrapper()) return undefined;
+    const isNativeCapShell = (() => {
+      try {
+        return Capacitor.isNativePlatform();
+      } catch {
+        return false;
+      }
+    })();
+
+    if (!isNativeCapShell && !isAmyNestWrapper()) return undefined;
 
     let cancelled = false;
 

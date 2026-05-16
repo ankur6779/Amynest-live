@@ -4,13 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "migrate-database": "tsx ./src/migrate-database.ts",
     "hello": "tsx ./src/hello.ts",
     "audit:parent-hub-i18n": "tsx ./src/audit-parent-hub-i18n.ts",
     "watch:openapi": "tsx ./src/watch-openapi.ts",
     "typecheck": "pnpm run audit:parent-hub-i18n && tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "pg": "^8.20.0"
+  },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/pg": "^8.18.0",
     "tsx": "catalog:"
   }
 }

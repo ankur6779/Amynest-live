@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuthFetch } from "@/hooks/use-auth-fetch";
+import { resolveApiMediaUrl } from "@/lib/api";
 
 const FADE_IN_MS = 2000;
 const FADE_TICK_MS = 60;
@@ -196,7 +197,7 @@ export function useInfantPoemPlayer(): PoemPlayer {
 
         // Build the audio element. The /api/tts/audio/:key.mp3 route is
         // public (content-addressed) so <audio> can load it without a token.
-        const audio = new Audio(audioUrl);
+        const audio = new Audio(resolveApiMediaUrl(audioUrl));
         audio.loop = loopRef.current;
         audio.volume = 0; // begin silent for fade-in
         audio.preload = "auto";
