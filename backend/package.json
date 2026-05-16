@@ -2,17 +2,14 @@
   "name": "amynest-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Amynest API — Render Web Service",
+  "description": "Render entrypoint — runs full @workspace/api-server from repo root",
   "main": "server.js",
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "npm install",
-    "start": "node server.js",
-    "dev": "node server.js"
+    "postinstall": "node ./scripts/render-build.mjs",
+    "start": "node server.js"
   },
-  "dependencies": {
-    "express": "^4.21.2"
-  }
+  "dependencies": {}
 }
