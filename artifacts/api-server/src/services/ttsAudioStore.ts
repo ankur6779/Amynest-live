@@ -198,10 +198,24 @@ export async function ttsAudioWrite(
     }
   }
 
-  await db
+  const updated = await db
     .update(ttsCacheTable)
     .set({ audioData: buffer, lastAccessedAt: sql`now()` })
-    .where(eq(ttsCacheTable.cacheKey, cacheKey));
+    .where(eq(ttsCacheTable.cacheKey, cacheKey))
+    .returning({ cacheKey: ttsCacheTable.cacheKey });
+
+  if (updated.length === 0) {
+    logger.error(
+      { evt: "tts.postgres_write_no_row", cacheKey, bytes: buffer.byteLength },
+      "TTS: failed to save to database — cache row missing",
+    );
+    throw new Error("tts_postgres_row_missing");
+  }
+
+  logger.info(
+    { evt: "tts.saved_to_database", cacheKey, bytes: buffer.byteLength },
+    "TTS: saved to database",
+  );
 
   return { storedInPostgres: true };
 }

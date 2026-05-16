@@ -139,7 +139,10 @@ export async function synthesize(
         .where(eq(ttsCacheTable.cacheKey, cacheKey))
         .catch(() => {});
 
-      logger.info({ evt: "tts.cache_hit", cacheKey, charCount: text.length, voiceId }, "tts cache hit");
+      logger.info(
+        { evt: "tts.cache_hit", cacheKey, charCount: text.length, voiceId, storage: ttsStorageBackend() },
+        "TTS: cache hit",
+      );
 
       return {
         cacheKey,
@@ -157,6 +160,7 @@ export async function synthesize(
 
   const pending = inFlight.get(cacheKey);
   if (pending) {
+    logger.info({ evt: "tts.in_flight_wait", cacheKey, charCount: text.length }, "TTS: waiting on in-flight generation");
     const result = await pending;
     return { ...result, cached: true };
   }
@@ -184,6 +188,11 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
 
   const apiKey = getElevenLabsApiKey();
   if (!apiKey) throw new Error("tts_missing_api_key");
+
+  logger.info(
+    { evt: "tts.generating", cacheKey, charCount: text.length, voiceId, modelId, mode },
+    "TTS: generating new audio",
+  );
 
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
@@ -215,36 +224,57 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
   if (buffer.byteLength === 0) throw new Error("tts_empty_audio");
 
   const contentType = response.headers.get("content-type") ?? "audio/mpeg";
+  const backend = ttsStorageBackend();
+  const storeBytesInPostgres = backend === "postgres";
 
-  await db
-    .insert(ttsCacheTable)
-    .values({
-      cacheKey,
-      text,
-      voiceId,
-      modelId,
-      audioPath,
-      contentType,
-      charCount: text.length,
-      hitCount: 0,
-    })
-    .onConflictDoUpdate({
-      target: ttsCacheTable.cacheKey,
-      set: {
+  try {
+    await db
+      .insert(ttsCacheTable)
+      .values({
+        cacheKey,
+        text,
+        voiceId,
+        modelId,
         audioPath,
         contentType,
         charCount: text.length,
-        lastAccessedAt: sql`now()`,
+        hitCount: 0,
+        audioData: storeBytesInPostgres ? buffer : null,
+      })
+      .onConflictDoUpdate({
+        target: ttsCacheTable.cacheKey,
+        set: {
+          text,
+          voiceId,
+          modelId,
+          audioPath,
+          contentType,
+          charCount: text.length,
+          ...(storeBytesInPostgres ? { audioData: buffer } : {}),
+          lastAccessedAt: sql`now()`,
+        },
+      });
+  } catch (err) {
+    logger.error(
+      {
+        evt: "tts.db_write_failed",
+        cacheKey,
+        message: err instanceof Error ? err.message : String(err),
       },
-    });
+      "TTS: failed to save cache metadata to database",
+    );
+    throw err;
+  }
 
-  const { storedInPostgres } = await ttsAudioWrite(cacheKey, buffer, contentType);
-
-  if (storedInPostgres) {
-    await db
-      .update(ttsCacheTable)
-      .set({ audioData: buffer })
-      .where(eq(ttsCacheTable.cacheKey, cacheKey));
+  let storedInPostgres = storeBytesInPostgres;
+  if (!storeBytesInPostgres) {
+    const writeResult = await ttsAudioWrite(cacheKey, buffer, contentType);
+    storedInPostgres = writeResult.storedInPostgres;
+  } else {
+    logger.info(
+      { evt: "tts.saved_to_database", cacheKey, bytes: buffer.byteLength },
+      "TTS: saved to database",
+    );
   }
 
   logger.info(
@@ -256,9 +286,9 @@ async function generateAndStore(args: GenerateArgs): Promise<SynthesizeResult> {
       voiceId,
       modelId,
       mode,
-      storage: storedInPostgres ? "postgres" : ttsStorageBackend(),
+      storage: storedInPostgres ? "postgres" : "gcs",
     },
-    storedInPostgres ? "tts generated and cached in Postgres" : "tts generated and cached in GCS",
+    storedInPostgres ? "TTS: generated and cached in Postgres" : "TTS: generated and cached in GCS",
   );
 
   return { cacheKey, audioPath, contentType, charCount: text.length, cached: false };

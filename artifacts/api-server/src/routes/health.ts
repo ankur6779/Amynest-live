@@ -7,6 +7,7 @@ import {
   getGcsDiagnostics,
 } from "../lib/env";
 import { driveFilesList } from "../lib/googleDrive";
+import { getTtsCacheStats } from "../services/ttsCacheStats";
 import { ttsStorageBackend } from "../services/ttsAudioStore";
 
 const STORY_PROBE_FOLDER_ID = "1q4bvGXt7h2yug-gGgybNpnf9_Dx2QKaj";
@@ -55,6 +56,29 @@ router.get("/healthz/env", (_req, res) => {
       },
     },
   });
+});
+
+/** Postgres TTS cache stats (global, not per-user). */
+router.get("/healthz/tts-cache", async (_req, res) => {
+  try {
+    const stats = await getTtsCacheStats();
+    res.json({
+      ok: true,
+      totalAudios: stats.totalAudios,
+      lastSaved: stats.lastSaved,
+      storageBackend: stats.storageBackend,
+      withPostgresBytes: stats.withPostgresBytes,
+      totalEntries: stats.totalEntries,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(503).json({
+      ok: false,
+      totalAudios: 0,
+      lastSaved: null,
+      error: message.slice(0, 300),
+    });
+  }
 });
 
 /** Amy / ElevenLabs TTS + GCS storage probe. */

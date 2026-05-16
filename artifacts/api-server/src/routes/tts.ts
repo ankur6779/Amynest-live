@@ -108,7 +108,7 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
         voiceId: parsed.data.voiceId ?? AMY_VOICE_ID_DEFAULT,
         mode: parsed.data.mode ?? "default",
       },
-      result.cached ? "tts cached response" : "tts new generation",
+      result.cached ? "TTS: cache hit (synthesize endpoint)" : "TTS: generating new audio (synthesize endpoint)",
     );
 
     res.json({
