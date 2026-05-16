@@ -83,7 +83,11 @@ function listenForServiceWorkerUpdates(
   });
 }
 
+/** When false, skips SW registration (recovery / debugging only). */
+const WEB_SERVICE_WORKER_ENABLED = true;
+
 function registerWebServiceWorker(): void {
+  if (!WEB_SERVICE_WORKER_ENABLED) return;
   if (!import.meta.env.PROD) return;
   if (!canUseBrowserServiceWorkers()) return;
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {

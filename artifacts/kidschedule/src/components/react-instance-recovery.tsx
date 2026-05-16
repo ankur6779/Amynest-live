@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { clearCacheAndReload } from "@/lib/clear-cache-reload";
+import { handleRecoveryReload } from "@/lib/clear-cache-reload";
+import { markCacheRecoveryPending } from "@/lib/boot-recovery";
 
 const RECOVERY_TS_KEY = "amynest:react-instance-recovery:ts";
 const RECOVERY_COUNT_KEY = "amynest:react-instance-recovery:count";
@@ -77,7 +78,8 @@ function tryAutoRecover(): boolean {
   }
 
   reloadInFlight = true;
-  void clearCacheAndReload();
+  markCacheRecoveryPending();
+  void handleRecoveryReload();
   return true;
 }
 
@@ -124,8 +126,10 @@ export class ReactInstanceRecovery extends Component<
       if (willReload) {
         return { reloading: true, message };
       }
+      markCacheRecoveryPending();
       return { fatal: true, message };
     }
+    markCacheRecoveryPending();
     return { fatal: true, message };
   }
 
@@ -157,7 +161,8 @@ export class ReactInstanceRecovery extends Component<
               } catch {
                 /* ignore */
               }
-              await clearCacheAndReload();
+              markCacheRecoveryPending();
+              await handleRecoveryReload();
             })();
           }}
         />

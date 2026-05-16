@@ -160,6 +160,50 @@
           document.documentElement.classList.add("lite-splash");
         }
 
+        // 2c. Stale service worker / index.html cache can brick the home page.
+        //     Purge caches + unregister SW before the main bundle loads.
+        var prevErr = prev && (prev.lastError || prev.lastReject);
+        var prevErrMsg = prevErr ? String(prevErr.msg || "") : "";
+        var staleAssetCrash =
+          prevErrMsg.indexOf("ChunkLoadError") !== -1 ||
+          prevErrMsg.indexOf("Failed to fetch dynamically imported module") !== -1 ||
+          prevErrMsg.indexOf("Importing a module script failed") !== -1 ||
+          prevErrMsg.indexOf("Failed to load module script") !== -1;
+        var needsCacheRecovery = prevCrashed || staleAssetCrash;
+        try {
+          if (sessionStorage.getItem("amynest:cache-recovery-pending") === "1") {
+            needsCacheRecovery = true;
+          }
+        } catch (_e) { /* ignore */ }
+        window.__amynestNeedsCacheRecovery = needsCacheRecovery;
+
+        window.__amynestForceClearCaches = function () {
+          var tasks = [];
+          if (window.caches && caches.keys) {
+            tasks.push(
+              caches.keys().then(function (keys) {
+                return Promise.all(
+                  keys.map(function (key) {
+                    return caches.delete(key);
+                  }),
+                );
+              }),
+            );
+          }
+          if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+            tasks.push(
+              navigator.serviceWorker.getRegistrations().then(function (regs) {
+                return Promise.all(
+                  regs.map(function (reg) {
+                    return reg.unregister();
+                  }),
+                );
+              }),
+            );
+          }
+          return Promise.all(tasks).catch(function () {});
+        };
+
         // 3. Start a new boot record.
         var rec = {
           ts: now,
@@ -943,6 +987,20 @@
     </div>
 
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      (function () {
+        function loadAppBundle() {
+          var s = document.createElement("script");
+          s.type = "module";
+          s.src = "/src/main.tsx";
+          document.body.appendChild(s);
+        }
+        if (window.__amynestNeedsCacheRecovery && window.__amynestForceClearCaches) {
+          window.__amynestForceClearCaches().then(loadAppBundle).catch(loadAppBundle);
+        } else {
+          loadAppBundle();
+        }
+      })();
+    </script>
   </body>
 </html>
