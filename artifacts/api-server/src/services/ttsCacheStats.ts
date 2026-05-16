@@ -28,10 +28,17 @@ export async function getTtsCacheStats(): Promise<TtsCacheStats> {
   const withBytes = row?.withPostgresBytes ?? 0;
   const totalEntries = row?.totalEntries ?? 0;
   const backend = ttsStorageBackend();
+  const lastSavedRaw = row?.lastSaved;
+  const lastSaved =
+    lastSavedRaw == null
+      ? null
+      : lastSavedRaw instanceof Date
+        ? lastSavedRaw.toISOString()
+        : new Date(String(lastSavedRaw)).toISOString();
 
   return {
     totalAudios: backend === "postgres" ? withBytes : totalEntries,
-    lastSaved: row?.lastSaved ? row.lastSaved.toISOString() : null,
+    lastSaved,
     totalEntries,
     withPostgresBytes: withBytes,
     storageBackend: backend,
