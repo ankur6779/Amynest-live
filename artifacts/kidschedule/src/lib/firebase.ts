@@ -11,17 +11,21 @@ import {
   canUseBrowserServiceWorkers,
   isNativeAmyNestShell,
 } from "@/lib/native-shell";
+import { firebaseWebDefaults } from "@/lib/firebase-web-defaults";
 
-const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string;
+const projectId =
+  (import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined)?.trim() ||
+  firebaseWebDefaults.projectId;
 
 // authDomain is set via VITE_FIREBASE_AUTH_DOMAIN.
-const rawAuthDomain = import.meta.env
-  .VITE_FIREBASE_AUTH_DOMAIN as string | undefined;
+const rawAuthDomain = (
+  import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined
+)?.trim();
 
 export const authDomain =
   rawAuthDomain && rawAuthDomain.includes(".")
     ? rawAuthDomain
-    : `${projectId}.firebaseapp.com`;
+    : firebaseWebDefaults.authDomain;
 
 export const currentHost =
   typeof window !== "undefined"
@@ -31,20 +35,19 @@ export const currentHost =
 export const firebaseProjectId = projectId;
 
 const config = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
+  apiKey:
+    (import.meta.env.VITE_FIREBASE_API_KEY as string | undefined)?.trim() ||
+    firebaseWebDefaults.apiKey,
   authDomain,
   projectId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID as string,
-  messagingSenderId: import.meta.env
-    .VITE_FIREBASE_MESSAGING_SENDER_ID as string,
+  appId:
+    (import.meta.env.VITE_FIREBASE_APP_ID as string | undefined)?.trim() ||
+    firebaseWebDefaults.appId,
+  messagingSenderId:
+    (
+      import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string | undefined
+    )?.trim() || firebaseWebDefaults.messagingSenderId,
 };
-
-if (!config.apiKey || !config.projectId) {
-  throw new Error(
-    "Missing Firebase config. Set VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, " +
-      "VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID, VITE_FIREBASE_MESSAGING_SENDER_ID."
-  );
-}
 
 export const firebaseApp: FirebaseApp =
   getApps()[0] ?? initializeApp(config);
