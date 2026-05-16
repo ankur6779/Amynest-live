@@ -1,21 +1,19 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { clearCacheAndReload } from "@/lib/clear-cache-reload";
 
 const RECOVERY_TS_KEY = "amynest:react-instance-recovery:ts";
 const RECOVERY_COUNT_KEY = "amynest:react-instance-recovery:count";
 
 const RECOVERY_WINDOW_MS = 30_000;
-// Cap at 1 so that Safari never sees the "A problem repeatedly occurred"
-// overlay (Safari shows this after ≥3 consecutive page failures). With 1
-// recovery attempt: first crash → reload once → if it crashes again the
-// error screen is shown manually instead of another location.replace().
 const MAX_RECOVERIES_IN_WINDOW = 1;
 
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) return `${err.message}\n${err.stack ?? ""}`;
+  return String(err ?? "");
+}
+
 function isReactInstanceCrash(err: unknown): boolean {
-  if (!err) return false;
-  const message =
-    err instanceof Error
-      ? `${err.message}\n${err.stack ?? ""}`
-      : String(err);
+  const message = errorMessage(err);
   if (!message) return false;
   return (
     message.includes("Cannot read properties of null (reading 'useState')") ||
@@ -28,31 +26,27 @@ function isReactInstanceCrash(err: unknown): boolean {
   );
 }
 
-async function clearAllCaches(): Promise<void> {
-  if (typeof window === "undefined") return;
+function isStaleDeployAssetError(err: unknown): boolean {
+  const message = errorMessage(err);
+  if (!message) return false;
+  return (
+    message.includes("ChunkLoadError") ||
+    message.includes("Failed to fetch dynamically imported module") ||
+    message.includes("Importing a module script failed") ||
+    message.includes("error loading dynamically imported module") ||
+    message.includes("Failed to load module script") ||
+    message.includes("MIME type") ||
+    (message.includes("Loading chunk") && message.includes("failed"))
+  );
+}
 
-  try {
-    if ("serviceWorker" in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map((r) => r.unregister().catch(() => false)));
-    }
-  } catch {
-    /* ignore */
-  }
-
-  try {
-    if ("caches" in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k).catch(() => false)));
-    }
-  } catch {
-    /* ignore */
-  }
+function isRecoverableError(err: unknown): boolean {
+  return isReactInstanceCrash(err) || isStaleDeployAssetError(err);
 }
 
 let reloadInFlight = false;
 
-function tryHardReload(): boolean {
+function tryAutoRecover(): boolean {
   if (typeof window === "undefined") return false;
   if (reloadInFlight) return true;
 
@@ -65,13 +59,11 @@ function tryHardReload(): boolean {
     const countRaw = window.sessionStorage.getItem(RECOVERY_COUNT_KEY);
     count = countRaw ? Number(countRaw) : 0;
   } catch {
-    /* sessionStorage may be blocked; fall through */
+    /* sessionStorage may be blocked */
   }
 
   if (lastTs && now - lastTs < RECOVERY_WINDOW_MS) {
-    if (count >= MAX_RECOVERIES_IN_WINDOW) {
-      return false;
-    }
+    if (count >= MAX_RECOVERIES_IN_WINDOW) return false;
     count += 1;
   } else {
     count = 1;
@@ -85,14 +77,7 @@ function tryHardReload(): boolean {
   }
 
   reloadInFlight = true;
-
-  void (async () => {
-    await clearAllCaches();
-    const url = new URL(window.location.href);
-    url.searchParams.set("_r", String(now));
-    window.location.replace(url.toString());
-  })();
-
+  void clearCacheAndReload();
   return true;
 }
 
@@ -104,13 +89,13 @@ function installGlobalRecoveryListeners(): void {
   globalListenersInstalled = true;
 
   window.addEventListener("error", (evt) => {
-    if (isReactInstanceCrash(evt.error ?? evt.message)) {
-      tryHardReload();
+    if (isRecoverableError(evt.error ?? evt.message)) {
+      tryAutoRecover();
     }
   });
   window.addEventListener("unhandledrejection", (evt) => {
-    if (isReactInstanceCrash(evt.reason)) {
-      tryHardReload();
+    if (isRecoverableError(evt.reason)) {
+      tryAutoRecover();
     }
   });
 }
@@ -134,8 +119,8 @@ export class ReactInstanceRecovery extends Component<
   static getDerivedStateFromError(err: unknown): Partial<State> {
     const message =
       err instanceof Error ? err.message : String(err ?? "Unknown error");
-    if (isReactInstanceCrash(err)) {
-      const willReload = tryHardReload();
+    if (isRecoverableError(err)) {
+      const willReload = tryAutoRecover();
       if (willReload) {
         return { reloading: true, message };
       }
@@ -145,11 +130,6 @@ export class ReactInstanceRecovery extends Component<
   }
 
   componentDidCatch(err: unknown, info: ErrorInfo): void {
-    // Log the FULL component stack so we can see the ACTUAL component that
-    // threw, not just the immediate child of this error boundary. Without
-    // this, every crash is reported as "occurred in <FirebaseAuthProvider>"
-    // because that's what wraps everything below us in the tree — useless
-    // for debugging where the bad hook call really is.
     const message = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
     // eslint-disable-next-line no-console
@@ -163,71 +143,79 @@ export class ReactInstanceRecovery extends Component<
     );
   }
 
-  private renderFallback(reloading: boolean) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px",
-          background: "#0b0820",
-          color: "#fff",
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        }}
-      >
-        <div style={{ maxWidth: 420, textAlign: "center" }}>
-          <h1 style={{ fontSize: 22, marginBottom: 12 }}>
-            {reloading ? "Refreshing AmyNest…" : "Something went wrong"}
-          </h1>
-          <p style={{ opacity: 0.8, marginBottom: 20, lineHeight: 1.5 }}>
-            {reloading
-              ? "Clearing the cache and reloading the page."
-              : "Tap the button below to clear the cache and reload."}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window === "undefined") return;
-              this.setState({ reloading: true });
-              void (async () => {
-                try {
-                  window.sessionStorage.removeItem(RECOVERY_TS_KEY);
-                  window.sessionStorage.removeItem(RECOVERY_COUNT_KEY);
-                } catch {
-                  /* ignore */
-                }
-                await clearAllCaches();
-                const url = new URL(window.location.href);
-                url.searchParams.set("_r", String(Date.now()));
-                window.location.replace(url.toString());
-              })();
-            }}
-            style={{
-              padding: "12px 24px",
-              borderRadius: 9999,
-              background: "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
-              color: "#fff",
-              fontWeight: 600,
-              border: 0,
-              cursor: "pointer",
-              fontSize: 16,
-            }}
-            disabled={reloading}
-          >
-            {reloading ? "Reloading…" : "Reload AmyNest"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   render(): ReactNode {
     if (this.state.reloading || this.state.fatal) {
-      return this.renderFallback(this.state.reloading);
+      return (
+        <RecoveryFallback
+          reloading={this.state.reloading}
+          onReload={() => {
+            this.setState({ reloading: true });
+            void (async () => {
+              try {
+                window.sessionStorage.removeItem(RECOVERY_TS_KEY);
+                window.sessionStorage.removeItem(RECOVERY_COUNT_KEY);
+              } catch {
+                /* ignore */
+              }
+              await clearCacheAndReload();
+            })();
+          }}
+        />
+      );
     }
     return this.props.children;
   }
+}
+
+function RecoveryFallback({
+  reloading,
+  onReload,
+}: {
+  reloading: boolean;
+  onReload: () => void;
+}) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+        background: "#0b0820",
+        color: "#fff",
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+      <div style={{ maxWidth: 420, textAlign: "center" }}>
+        <h1 style={{ fontSize: 22, marginBottom: 12 }}>
+          {reloading ? "Refreshing AmyNest…" : "Something went wrong"}
+        </h1>
+        <p style={{ opacity: 0.8, marginBottom: 20, lineHeight: 1.5 }}>
+          {reloading
+            ? "Clearing the cache and reloading the page."
+            : "Tap the button below to clear the cache and reload."}
+        </p>
+        <button
+          type="button"
+          onClick={onReload}
+          style={{
+            padding: "12px 24px",
+            borderRadius: 9999,
+            background:
+              "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
+            color: "#fff",
+            fontWeight: 600,
+            border: 0,
+            cursor: "pointer",
+            fontSize: 16,
+          }}
+          disabled={reloading}
+        >
+          {reloading ? "Reloading…" : "Reload AmyNest"}
+        </button>
+      </div>
+    </div>
+  );
 }

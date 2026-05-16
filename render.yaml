@@ -107,10 +107,13 @@ services:
     headers:
       - path: /index.html
         name: Cache-Control
-        value: no-cache
+        value: no-cache, no-store, must-revalidate
       - path: /sw.js
         name: Cache-Control
-        value: no-cache
+        value: no-cache, no-store, must-revalidate
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
     envVars:
       - key: NODE_VERSION
         value: "20"
@@ -139,10 +142,13 @@ services:
     headers:
       - path: /index.html
         name: Cache-Control
-        value: no-cache
+        value: no-cache, no-store, must-revalidate
       - path: /sw.js
         name: Cache-Control
-        value: no-cache
+        value: no-cache, no-store, must-revalidate
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
     envVars:
       - key: NODE_VERSION
         value: "20"

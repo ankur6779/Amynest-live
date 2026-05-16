@@ -163,16 +163,17 @@ export async function getWebPushToken(
     import.meta.env.BASE_URL as string
   ).replace(/\/$/, "");
 
-  const swUrl = `${basePath}/firebase-messaging-sw.js`;
-
-  const swReg =
-    await navigator.serviceWorker.register(swUrl, {
-      scope: `${basePath}/`,
+  // Use the root AmyNest SW only. Registering firebase-messaging-sw.js at the
+  // same scope used to replace sw.js and drop deploy/navigation handlers.
+  const scope = `${basePath}/`;
+  let swReg = await navigator.serviceWorker.getRegistration(scope);
+  if (!swReg) {
+    swReg = await navigator.serviceWorker.register(`${basePath}/sw.js`, {
+      scope,
       updateViaCache: "none",
     });
-
-  swReg.update().catch(() => {});
-
+  }
+  await swReg.update().catch(() => {});
   await navigator.serviceWorker.ready;
 
   const messaging = getMessaging(firebaseApp);
