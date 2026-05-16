@@ -84,14 +84,15 @@ services:
       - key: ELEVENLABS_API_KEY
         sync: false
 
-  # ─── Production static web (SPA) ───────────────────────────────────────────
-  # Rewrite /* → /index.html (200) so hard refresh on /dashboard works.
-  # PWA also uses public/sw.js navigation fallback if a CDN edge returns 404.
-  # Optional Node fallback: runtime node + startCommand node artifacts/kidschedule/server/serve-spa.mjs
+  # ─── Production web (SPA) ───────────────────────────────────────────────────
+  # Node serve-spa: HTML routes → index.html (200), missing *.js → real 404 (not HTML).
+  # Avoids static-site "/* → index.html" breaking stale chunk URLs after deploy.
+  # In Render dashboard: remove any static Redirect/Rewrite rules on this service.
   - type: web
     name: Amynest-live-1
-    runtime: static
+    runtime: node
     region: singapore
+    plan: starter
     repo: https://github.com/ankur6779/Amynest-live
     branch: main
     buildCommand: >-
@@ -99,24 +100,14 @@ services:
       corepack prepare pnpm@9.15.0 --activate &&
       pnpm install --frozen-lockfile &&
       BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build
-    staticPublishPath: ./artifacts/kidschedule/dist/public
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    headers:
-      - path: /index.html
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate
-      - path: /sw.js
-        name: Cache-Control
-        value: no-cache, no-store, must-revalidate
-      - path: /assets/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
+    startCommand: node artifacts/kidschedule/server/serve-spa.mjs
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: STATIC_ROOT
+        value: artifacts/kidschedule/dist/public
+      - key: BASE_PATH
+        value: /
       - key: VITE_AMYNEST_ENV
         value: production
       - key: VITE_APP_API_ORIGIN

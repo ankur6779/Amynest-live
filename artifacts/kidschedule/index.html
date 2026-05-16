@@ -104,6 +104,19 @@
             base + (location.search || "") + (location.hash || ""),
           );
         }
+        // After a failed recovery loop, ?_r=… params stack up — reset to clean "/".
+        if (/[?&]_r=/.test(location.search || "")) {
+          try {
+            var clean = new URL(location.href);
+            clean.searchParams.delete("_r");
+            if (clean.pathname === "/index.html") {
+              clean.pathname = "/";
+            }
+            if (clean.href !== location.href) {
+              history.replaceState(null, "", clean.pathname + clean.search + clean.hash);
+            }
+          } catch (_e) { /* ignore */ }
+        }
 
         var KEY = "__amynest_boot_v1";
         var now = Date.now();
