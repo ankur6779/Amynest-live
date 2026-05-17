@@ -1,9 +1,12 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
-import { sendEmailVerification, signOut as fbSignOut } from "firebase/auth";
+import { signOut as fbSignOut } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
-import { getEmailVerificationActionCodeSettings } from "@/lib/email-verification";
+import {
+  sendUserEmailVerification,
+  shouldSkipVerificationEmailSend,
+} from "@/lib/email-verification";
 import { prettyAuthError } from "@/lib/auth-errors";
 
 const CSS = `
@@ -74,12 +77,15 @@ export default function VerifyEmailPage() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const search = useSearch();
-  const email = decodeURIComponent(new URLSearchParams(search).get("email") ?? "");
+  const params = new URLSearchParams(search);
+  const email = decodeURIComponent(params.get("email") ?? "");
+  const sendFailedFromPrev = params.get("sendFailed") === "1";
 
   const [cooldown, setCooldown] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const autoSendStarted = useRef(false);
 
   const goHomeIfVerified = useCallback(async () => {
     const user = firebaseAuth.currentUser;
@@ -108,6 +114,37 @@ export default function VerifyEmailPage() {
     return () => clearInterval(id);
   }, [goHomeIfVerified]);
 
+  // Auto-send when landing from sign-in/sign-up (Firebase session required).
+  useEffect(() => {
+    if (autoSendStarted.current) return;
+    autoSendStarted.current = true;
+
+    const user = firebaseAuth.currentUser;
+    if (!user || user.emailVerified) return;
+    if (shouldSkipVerificationEmailSend(user.uid)) {
+      if (sendFailedFromPrev) {
+        setError(t("screens.verify_email.resend_error"));
+      }
+      return;
+    }
+
+    setBusy(true);
+    void (async () => {
+      try {
+        await sendUserEmailVerification(user);
+        setMessage(t("screens.verify_email.resent"));
+        setCooldown(RESEND_COOLDOWN);
+        setError(null);
+      } catch (err: unknown) {
+        console.error("[verify-email] auto-send failed:", err);
+        const msg = prettyAuthError(err);
+        setError(msg || t("screens.verify_email.resend_error"));
+      } finally {
+        setBusy(false);
+      }
+    })();
+  }, [sendFailedFromPrev, t]);
+
   async function onResend() {
     setError(null);
     setMessage(null);
@@ -118,7 +155,7 @@ export default function VerifyEmailPage() {
     }
     setBusy(true);
     try {
-      await sendEmailVerification(fbUser, getEmailVerificationActionCodeSettings());
+      await sendUserEmailVerification(fbUser);
       setMessage(t("screens.verify_email.resent"));
       setCooldown(RESEND_COOLDOWN);
     } catch (err: unknown) {

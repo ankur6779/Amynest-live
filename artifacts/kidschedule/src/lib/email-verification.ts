@@ -1,4 +1,4 @@
-import type { ActionCodeSettings } from "firebase/auth";
+import { sendEmailVerification, type ActionCodeSettings, type User } from "firebase/auth";
 
 /** Canonical prod callback — must be in Firebase → Authentication → Authorized domains. */
 const PRODUCTION_CALLBACK = "https://amynest.in/auth/callback";
@@ -35,4 +35,32 @@ export function getEmailVerificationActionCodeSettings(): ActionCodeSettings {
     url: getEmailVerificationCallbackUrl(),
     handleCodeInApp: true,
   };
+}
+
+const SENT_AT_STORAGE_PREFIX = "amynest_verify_email_sent:";
+
+/** Avoid duplicate Firebase sends within a short window (sign-up + verify page). */
+export function shouldSkipVerificationEmailSend(uid: string, withinMs = 120_000): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = sessionStorage.getItem(`${SENT_AT_STORAGE_PREFIX}${uid}`);
+    if (!raw) return false;
+    return Date.now() - Number(raw) < withinMs;
+  } catch {
+    return false;
+  }
+}
+
+export function markVerificationEmailSent(uid: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(`${SENT_AT_STORAGE_PREFIX}${uid}`, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function sendUserEmailVerification(user: User): Promise<void> {
+  await sendEmailVerification(user, getEmailVerificationActionCodeSettings());
+  markVerificationEmailSent(user.uid);
 }

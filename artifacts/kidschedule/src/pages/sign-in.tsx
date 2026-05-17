@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signOut as fbSignOut } from "firebase/auth";
+import {
+  sendUserEmailVerification,
+  shouldSkipVerificationEmailSend,
+} from "@/lib/email-verification";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError } from "@/lib/auth-errors";
@@ -345,9 +349,19 @@ export default function SignInPage() {
       ]);
       const isBypass = VERIFICATION_BYPASS_EMAILS.has(cred.user.email?.toLowerCase().trim() ?? "");
       if (!cred.user.emailVerified && !isBypass) {
-        // User has not verified their email yet — send them to the verify screen.
-        // Keep them signed-in to firebaseAuth so the verify page can call resend.
-        setLocation(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+        // Send verification email on sign-in (verify page only resends if user taps).
+        let verifySendFailed = false;
+        if (!shouldSkipVerificationEmailSend(cred.user.uid)) {
+          try {
+            await sendUserEmailVerification(cred.user);
+          } catch (verifyErr: unknown) {
+            console.error("[sign-in] sendEmailVerification failed:", verifyErr);
+            verifySendFailed = true;
+          }
+        }
+        const q = new URLSearchParams({ email: email.trim() });
+        if (verifySendFailed) q.set("sendFailed", "1");
+        setLocation(`/verify-email?${q.toString()}`);
         return;
       }
       setLocation(postSignInPath());
