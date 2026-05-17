@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
-import { getEmailVerificationActionCodeSettings } from "@/lib/email-verification";
+import { sendUserEmailVerification } from "@/lib/email-verification";
 import { useAuth } from "@/lib/firebase-auth-hooks";
 import { prettyAuthError } from "@/lib/auth-errors";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
@@ -351,12 +351,16 @@ export default function SignUpPage() {
           /* non-fatal */
         }
       }
+      let verifySendFailed = false;
       try {
-        await sendEmailVerification(cred.user, getEmailVerificationActionCodeSettings());
-      } catch {
-        /* non-fatal — user can resend from verify-email page */
+        await sendUserEmailVerification(cred.user);
+      } catch (verifyErr: unknown) {
+        console.error("[sign-up] sendEmailVerification failed:", verifyErr);
+        verifySendFailed = true;
       }
-      setLocation(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+      const q = new URLSearchParams({ email: email.trim() });
+      if (verifySendFailed) q.set("sendFailed", "1");
+      setLocation(`/verify-email?${q.toString()}`);
     } catch (err: any) {
       setError(prettyAuthError(err));
     } finally {
