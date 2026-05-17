@@ -1213,6 +1213,24 @@
       "inbox_body_after": ". Check your spam folder if you don't see it.",
       "back_to_sign_in_button": "Back to Sign in"
     },
+    "reset_password": {
+      "title": "Set a new password",
+      "subtitle": "Choose a strong password with at least 6 characters.",
+      "new_password": "New password",
+      "confirm_password": "Confirm password",
+      "submit": "Update password",
+      "updating": "Updating…",
+      "verifying": "Checking your link…",
+      "verifying_hint": "Please wait while we verify your reset link.",
+      "invalid_title": "Reset link invalid",
+      "invalid_link": "This password reset link is missing required information.",
+      "password_too_short": "Password must be at least 6 characters.",
+      "password_mismatch": "Passwords do not match.",
+      "success_title": "Password updated",
+      "success_body": "You can now sign in with your new password. Redirecting…",
+      "sign_in_now": "Sign in now",
+      "back_to_sign_in": "← Back to Sign in"
+    },
     "verify_email": {
       "title": "Check your inbox",
       "subtitle": "We've sent a verification link to",

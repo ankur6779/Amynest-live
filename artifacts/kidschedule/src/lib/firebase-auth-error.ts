@@ -107,6 +107,10 @@ export function prettyAuthError(err: unknown): string {
       return "";
     case "auth/network-request-failed":
       return "Network error. Check your connection and retry.";
+    case "auth/expired-action-code":
+      return "This link has expired. Request a new password reset from Sign in.";
+    case "auth/invalid-action-code":
+      return "This link is invalid or has already been used. Request a new password reset.";
     case "app/verification-inflight":
       return "Verification email is already being sent. Wait a moment and try again.";
     case "app/no-auth-session":

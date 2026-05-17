@@ -20,6 +20,12 @@ export default function AuthCallbackPage() {
     const mode = params.get("mode");
     const oobCode = params.get("oobCode");
 
+    if (mode === "resetPassword" && oobCode) {
+      const qs = new URLSearchParams({ mode, oobCode });
+      setLocation(`/reset-password?${qs.toString()}`);
+      return;
+    }
+
     if (mode !== "verifyEmail" || !oobCode) {
       setError("Invalid verification link.");
       return;
