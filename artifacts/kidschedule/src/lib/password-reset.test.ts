@@ -1,6 +1,6 @@
 import { describe, expect, it, afterEach } from "vitest";
+import { CANONICAL_FIREBASE_ACTION_URL } from "./firebase-action-url";
 import {
-  CANONICAL_PASSWORD_RESET_URL,
   getPasswordResetContinueUrl,
   parsePasswordResetActionParams,
 } from "./password-reset";
@@ -25,7 +25,7 @@ describe("password-reset", () => {
         hash: "",
       },
     });
-    expect(getPasswordResetContinueUrl()).toBe(CANONICAL_PASSWORD_RESET_URL);
+    expect(getPasswordResetContinueUrl()).toBe(CANONICAL_FIREBASE_ACTION_URL);
   });
 
   it("parses mode and oobCode from query string", () => {

@@ -3,8 +3,13 @@ import { firebaseAuth } from "./firebase";
 import { logFirebaseAuthError } from "./firebase-auth-error";
 import { parseFirebaseActionParams } from "./firebase-action-params";
 
-/** Must be authorized in Firebase → Authentication → Settings → Authorized domains. */
-export const CANONICAL_PASSWORD_RESET_URL = "https://amynest.in/reset-password";
+import {
+  CANONICAL_FIREBASE_ACTION_URL,
+  getFirebaseActionUrlForLocalDev,
+} from "./firebase-action-url";
+
+/** @deprecated Use CANONICAL_FIREBASE_ACTION_URL — Firebase has one shared template URL. */
+export const CANONICAL_PASSWORD_RESET_URL = CANONICAL_FIREBASE_ACTION_URL;
 
 export function getPasswordResetContinueUrl(): string {
   const fromEnv = (
@@ -12,14 +17,7 @@ export function getPasswordResetContinueUrl(): string {
   )?.trim();
   if (fromEnv) return fromEnv;
 
-  if (typeof window !== "undefined" && window.location?.hostname) {
-    const { hostname, origin } = window.location;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return `${origin}/reset-password`;
-    }
-  }
-
-  return CANONICAL_PASSWORD_RESET_URL;
+  return getFirebaseActionUrlForLocalDev();
 }
 
 export function getPasswordResetActionCodeSettings(): ActionCodeSettings {

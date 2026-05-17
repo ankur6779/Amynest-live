@@ -1,8 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import {
-  CANONICAL_EMAIL_VERIFICATION_URL,
-  getEmailVerificationCallbackUrl,
-} from "./email-verification";
+import { CANONICAL_FIREBASE_ACTION_URL } from "./firebase-action-url";
+import { getEmailVerificationCallbackUrl } from "./email-verification";
 
 describe("getEmailVerificationCallbackUrl", () => {
   const originalLocation = window.location;
@@ -27,18 +25,18 @@ describe("getEmailVerificationCallbackUrl", () => {
     });
   });
 
-  it("uses canonical amynest.in URL on Render (avoids unauthorized-continue-uri)", () => {
+  it("uses shared Firebase action URL on Render", () => {
     mockHostname("amynest-live-1.onrender.com", "https://amynest-live-1.onrender.com");
-    expect(getEmailVerificationCallbackUrl()).toBe(CANONICAL_EMAIL_VERIFICATION_URL);
+    expect(getEmailVerificationCallbackUrl()).toBe(CANONICAL_FIREBASE_ACTION_URL);
   });
 
-  it("uses canonical amynest.in URL on www", () => {
+  it("uses shared Firebase action URL on www", () => {
     mockHostname("www.amynest.in", "https://www.amynest.in");
-    expect(getEmailVerificationCallbackUrl()).toBe(CANONICAL_EMAIL_VERIFICATION_URL);
+    expect(getEmailVerificationCallbackUrl()).toBe(CANONICAL_FIREBASE_ACTION_URL);
   });
 
-  it("uses localhost /verify-email for dev", () => {
+  it("uses localhost /auth/action for dev", () => {
     mockHostname("localhost", "http://localhost:5173");
-    expect(getEmailVerificationCallbackUrl()).toBe("http://localhost:5173/verify-email");
+    expect(getEmailVerificationCallbackUrl()).toBe("http://localhost:5173/auth/action");
   });
 });
