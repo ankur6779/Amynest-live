@@ -9,13 +9,15 @@ import {
   formatPhoneE164,
   isValidNationalPhone,
   PHONE_COUNTRIES,
-  awaitMobileRecaptchaVerification,
+  buildPhoneOtpBrowserUrl,
   clearPhoneRecaptchaVerifier,
   getPhoneRecaptchaVerifier,
   isMobilePhoneOtpEnvironment,
   logPhoneOtpDomainContext,
+  prepareMobilePhoneOtpVerifier,
   setPhoneRecaptchaMobileSheetActive,
   shouldPreRenderPhoneRecaptcha,
+  shouldUseBrowserForPhoneOtp,
   warnIfPhoneAuthDomainMissingFromFirebase,
   type PhoneCountry,
 } from "@workspace/phone-auth";
@@ -287,6 +289,7 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendInFlightRef = useRef(false);
   const mobileOtp = useMemo(() => isMobilePhoneOtpEnvironment(), []);
+  const androidPwa = useMemo(() => shouldUseBrowserForPhoneOtp(), []);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
@@ -355,11 +358,15 @@ export default function PhoneAuthFlow({ onError }: Props) {
 
       let verifier;
       if (mobileOtp) {
-        logPhoneOtpDomainContext("mobile reCAPTCHA verify()");
-        verifier = await awaitMobileRecaptchaVerification(firebaseAuth);
+        logPhoneOtpDomainContext("mobile reCAPTCHA token (callback)");
+        const appVerifier = await prepareMobilePhoneOtpVerifier(firebaseAuth);
         setStep("sending");
         logPhoneOtpDomainContext("before signInWithPhoneNumber");
-        const result = await signInWithPhoneNumber(firebaseAuth, phoneFull, verifier);
+        const result = await signInWithPhoneNumber(
+          firebaseAuth,
+          phoneFull,
+          appVerifier,
+        );
         confirmRef.current = result;
       } else {
         setStep("sending");
@@ -522,6 +529,51 @@ export default function PhoneAuthFlow({ onError }: Props) {
             {country.flag} {country.name} · {t("components.phone_auth_flow.tap_flag_to_change")}
           </p>
 
+          {androidPwa && isValidPhone ? (
+            <div
+              style={{
+                padding: "12px",
+                borderRadius: "14px",
+                background: "rgba(123,63,242,0.12)",
+                border: "1px solid rgba(123,63,242,0.35)",
+              }}
+            >
+              <p style={{ margin: "0 0 10px", fontSize: "13px", lineHeight: 1.5, color: "rgba(220,200,255,0.9)" }}>
+                {t("components.phone_auth_flow.android_pwa_hint")}
+              </p>
+              <a
+                href={buildPhoneOtpBrowserUrl(phoneFull)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  ...primaryBtn(false),
+                  flex: "unset",
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textDecoration: "none",
+                  boxSizing: "border-box",
+                }}
+              >
+                {t("components.phone_auth_flow.open_in_chrome")}
+              </a>
+              <button
+                type="button"
+                onClick={() => void sendOtp()}
+                disabled={!canSend}
+                style={{
+                  ...ghostBtn,
+                  width: "100%",
+                  marginTop: "8px",
+                  flex: "unset",
+                }}
+              >
+                {t("components.phone_auth_flow.try_in_app_anyway")}
+              </button>
+            </div>
+          ) : null}
+
           <div style={{ display: "flex", gap: "8px" }}>
             <button
               type="button"
@@ -530,14 +582,16 @@ export default function PhoneAuthFlow({ onError }: Props) {
             >
               {t("components.phone_auth_flow.cancel")}
             </button>
-            <button
-              type="button"
-              onClick={() => sendOtp()}
-              disabled={!canSend}
-              style={primaryBtn(!canSend)}
-            >
-              {step === "sending" ? "Sending…" : "Send OTP"}
-            </button>
+            {!androidPwa ? (
+              <button
+                type="button"
+                onClick={() => sendOtp()}
+                disabled={!canSend}
+                style={primaryBtn(!canSend)}
+              >
+                {step === "sending" ? "Sending…" : "Send OTP"}
+              </button>
+            ) : null}
           </div>
         </div>
       </>

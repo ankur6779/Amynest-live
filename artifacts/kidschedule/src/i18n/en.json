@@ -3150,7 +3150,10 @@
       "recaptcha_sheet_title": "Verify you're human",
       "recaptcha_sheet_hint": "Complete the check below, then we'll send your OTP.",
       "recaptcha_tap_checkbox": "Tap the checkbox at the bottom of the screen, then wait for OTP.",
-      "recaptcha_sheet_busy": "Sending OTP…"
+      "recaptcha_sheet_busy": "Sending OTP…",
+      "android_pwa_hint": "On the installed Android app, phone login works best in Chrome (the checkbox can crash inside the app).",
+      "open_in_chrome": "Open in Chrome — Send OTP",
+      "try_in_app_anyway": "Try in app anyway"
     },
     "phonics_learning": {
       "phonics_is_for_ages_1_6": "Phonics is for ages 1–6",
