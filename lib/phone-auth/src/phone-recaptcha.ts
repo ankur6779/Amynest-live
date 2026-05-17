@@ -1,4 +1,8 @@
-import { RecaptchaVerifier, type ApplicationVerifier, type Auth } from "firebase/auth";
+import {
+  RecaptchaVerifier,
+  type ApplicationVerifier,
+  type Auth,
+} from "firebase/auth";
 import {
   FIREBASE_PHONE_AUTH_DOMAINS,
   logPhoneOtpDomainContext,
@@ -11,18 +15,31 @@ import {
 
 export { FIREBASE_PHONE_AUTH_DOMAINS } from "./site-domain";
 export {
+  isAndroidPwa,
   isMobilePhoneOtpEnvironment,
   shouldPreRenderPhoneRecaptcha,
+  shouldUseBrowserForPhoneOtp,
+  buildPhoneOtpBrowserUrl,
 } from "./mobile-phone-environment";
 
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
 
 const RENDER_TIMEOUT_MS = 30_000;
-const VERIFY_TIMEOUT_MS = 120_000;
+const TOKEN_TIMEOUT_MS = 120_000;
+const POST_TOKEN_DELAY_MS = 350;
+
+type GrecaptchaWindow = Window & {
+  grecaptcha?: {
+    getResponse: (widgetId?: number) => string;
+    reset: (widgetId?: number) => void;
+  };
+};
 
 let verifierInstance: RecaptchaVerifier | null = null;
-let renderPromise: Promise<ApplicationVerifier> | null = null;
+let renderPromise: Promise<RecaptchaVerifier> | null = null;
 let mobileSheetActive = false;
+let pendingTokenResolve: ((token: string) => void) | null = null;
+let pendingTokenReject: ((err: Error) => void) | null = null;
 
 function isMobileMode(): boolean {
   return isMobilePhoneOtpEnvironment() || mobileSheetActive;
@@ -47,7 +64,6 @@ function applyDesktopHiddenLayout(el: HTMLElement): void {
   });
 }
 
-/** Fixed on viewport — never reparent (moving the iframe crashes iOS WebViews on tap). */
 function applyMobileOverlayLayout(el: HTMLElement): void {
   el.setAttribute("aria-hidden", "false");
   Object.assign(el.style, {
@@ -71,7 +87,6 @@ function applyMobileOverlayLayout(el: HTMLElement): void {
   });
 }
 
-/** Call when the mobile verification sheet opens/closes. */
 export function setPhoneRecaptchaMobileSheetActive(active: boolean): void {
   mobileSheetActive = active;
   const el = document.getElementById(RECAPTCHA_CONTAINER_ID);
@@ -84,7 +99,6 @@ export function setPhoneRecaptchaMobileSheetActive(active: boolean): void {
   }
 }
 
-/** Ensure exactly one reCAPTCHA mount point on document.body (never inside React portals). */
 export function ensureRecaptchaContainer(): HTMLElement {
   let el = document.getElementById(RECAPTCHA_CONTAINER_ID);
   if (!el) {
@@ -94,7 +108,6 @@ export function ensureRecaptchaContainer(): HTMLElement {
   } else if (el.parentElement !== document.body) {
     document.body.appendChild(el);
   }
-
   applyRecaptchaContainerLayout(el);
   return el;
 }
@@ -108,9 +121,6 @@ export function applyRecaptchaContainerLayout(el: HTMLElement): void {
   }
 }
 
-/**
- * @deprecated Do not move the reCAPTCHA node — causes iframe crash on tap. Layout-only.
- */
 export function mountPhoneRecaptchaContainer(_parent: HTMLElement | null): void {
   const el = ensureRecaptchaContainer();
   if (el.parentElement !== document.body) {
@@ -132,7 +142,32 @@ export function logRecaptchaDebug(context: string): void {
   });
 }
 
+function resetPendingTokenWaiters(): void {
+  pendingTokenResolve = null;
+  pendingTokenReject = null;
+}
+
+function readGrecaptchaToken(): string {
+  const grecaptcha = (window as GrecaptchaWindow).grecaptcha;
+  if (!grecaptcha) return "";
+  try {
+    return grecaptcha.getResponse() || grecaptcha.getResponse(0) || "";
+  } catch {
+    return "";
+  }
+}
+
+function teardownRecaptchaDom(): void {
+  const el = document.getElementById(RECAPTCHA_CONTAINER_ID);
+  if (el) {
+    el.innerHTML = "";
+    applyDesktopHiddenLayout(el);
+    el.setAttribute("aria-hidden", "true");
+  }
+}
+
 export function clearPhoneRecaptchaVerifier(): void {
+  resetPendingTokenWaiters();
   if (verifierInstance) {
     try {
       verifierInstance.clear();
@@ -142,17 +177,23 @@ export function clearPhoneRecaptchaVerifier(): void {
     verifierInstance = null;
   }
   renderPromise = null;
-  const el = document.getElementById(RECAPTCHA_CONTAINER_ID);
-  if (el) {
-    el.innerHTML = "";
-    if (!isMobileMode()) {
-      applyDesktopHiddenLayout(el);
-    }
-  }
+  teardownRecaptchaDom();
 }
 
-function recaptchaSize(): "invisible" | "normal" {
-  return isMobileMode() ? "normal" : "invisible";
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function createStaticRecaptchaVerifier(token: string): ApplicationVerifier {
+  return {
+    type: "recaptcha",
+    verify: () => {
+      if (!token) {
+        return Promise.reject(new Error("reCAPTCHA token missing — try again."));
+      }
+      return Promise.resolve(token);
+    },
+  };
 }
 
 function renderWithTimeout(verifier: RecaptchaVerifier): Promise<void> {
@@ -167,21 +208,45 @@ function renderWithTimeout(verifier: RecaptchaVerifier): Promise<void> {
   ]);
 }
 
-function verifyWithTimeout(verifier: RecaptchaVerifier): Promise<unknown> {
-  return Promise.race([
-    verifier.verify(),
-    new Promise<never>((_, reject) => {
-      setTimeout(
-        () =>
-          reject(
-            new Error(
-              "Verification timed out. Tap the checkbox again or reload the page.",
-            ),
+function waitForUserRecaptchaToken(): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    pendingTokenResolve = resolve;
+    pendingTokenReject = reject;
+    setTimeout(() => {
+      if (pendingTokenReject === reject) {
+        pendingTokenReject(
+          new Error(
+            "Verification timed out. Tap the checkbox again or open in Chrome.",
           ),
-        VERIFY_TIMEOUT_MS,
+        );
+        resetPendingTokenWaiters();
+      }
+    }, TOKEN_TIMEOUT_MS);
+  });
+}
+
+function onRecaptchaCheckboxSolved(): void {
+  // Run off the reCAPTCHA iframe callback stack — sync verify() here crashes Android PWA.
+  setTimeout(() => {
+    try {
+      const token = readGrecaptchaToken();
+      if (!token) {
+        pendingTokenReject?.(
+          new Error("Could not read reCAPTCHA response. Please try again."),
+        );
+        resetPendingTokenWaiters();
+        return;
+      }
+      logRecaptchaDebug("token from grecaptcha.getResponse");
+      pendingTokenResolve?.(token);
+      resetPendingTokenWaiters();
+    } catch (err) {
+      pendingTokenReject?.(
+        err instanceof Error ? err : new Error(String(err)),
       );
-    }),
-  ]);
+      resetPendingTokenWaiters();
+    }
+  }, 0);
 }
 
 async function createAndRenderVerifier(auth: Auth): Promise<RecaptchaVerifier> {
@@ -194,16 +259,16 @@ async function createAndRenderVerifier(auth: Auth): Promise<RecaptchaVerifier> {
   }
 
   const verifier = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
-    size: recaptchaSize(),
+    size: mobile ? "normal" : "invisible",
     callback: () => {
-      console.info("[phone-recaptcha] reCAPTCHA solved", {
-        hostname: window.location.hostname,
-        mobile,
-      });
+      console.info("[phone-recaptcha] checkbox solved callback");
+      onRecaptchaCheckboxSolved();
     },
     "expired-callback": () => {
-      console.warn("[phone-recaptcha] reCAPTCHA expired — will reset verifier");
+      console.warn("[phone-recaptcha] reCAPTCHA expired");
       clearPhoneRecaptchaVerifier();
+      pendingTokenReject?.(new Error("reCAPTCHA expired. Please try again."));
+      resetPendingTokenWaiters();
     },
   });
 
@@ -213,10 +278,6 @@ async function createAndRenderVerifier(auth: Auth): Promise<RecaptchaVerifier> {
   return verifier;
 }
 
-/**
- * Mobile: render widget, wait for user tap (verify), then caller runs signInWithPhoneNumber.
- * Desktop: invisible verifier (verify happens inside signInWithPhoneNumber).
- */
 export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<ApplicationVerifier> {
   if (typeof document === "undefined") {
     throw new Error("reCAPTCHA is only available in the browser.");
@@ -238,23 +299,18 @@ export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<Application
   } catch (err) {
     clearPhoneRecaptchaVerifier();
     const host = window.location.hostname;
-    console.error("[phone-recaptcha] render failed", {
-      err,
-      hostname: host,
-      mobile: isMobileMode(),
-      hint: shouldRedirectWwwToApex(host)
-        ? "www should redirect to amynest.in — hard-refresh or clear cache"
-        : `Ensure ${host} is in Firebase → Authentication → Authorized domains (${FIREBASE_PHONE_AUTH_DOMAINS.join(", ")})`,
-    });
+    console.error("[phone-recaptcha] render failed", { err, hostname: host });
     throw err;
   }
 }
 
 /**
- * On mobile WebViews: complete the checkbox challenge BEFORE signInWithPhoneNumber.
- * Calling both at once duplicates iframe work and crashes iOS on tap.
+ * Mobile: wait for checkbox via grecaptcha callback (no verifier.verify() on tap).
+ * Returns a one-shot ApplicationVerifier for signInWithPhoneNumber.
  */
-export async function awaitMobileRecaptchaVerification(auth: Auth): Promise<ApplicationVerifier> {
+export async function prepareMobilePhoneOtpVerifier(
+  auth: Auth,
+): Promise<ApplicationVerifier> {
   if (!isMobileMode()) {
     return getPhoneRecaptchaVerifier(auth);
   }
@@ -262,21 +318,36 @@ export async function awaitMobileRecaptchaVerification(auth: Auth): Promise<Appl
   clearPhoneRecaptchaVerifier();
   renderPromise = null;
 
-  const verifier = await createAndRenderVerifier(auth);
-  renderPromise = Promise.resolve(verifier);
+  const renderTask = createAndRenderVerifier(auth);
+  renderPromise = renderTask;
+  await renderTask;
 
-  logRecaptchaDebug("awaiting user verify()");
-  try {
-    await verifyWithTimeout(verifier);
-    logRecaptchaDebug("verify() complete");
-    return verifier;
-  } catch (err) {
-    clearPhoneRecaptchaVerifier();
-    throw err;
+  logRecaptchaDebug("waiting for checkbox token");
+  const token = await waitForUserRecaptchaToken();
+
+  if (verifierInstance) {
+    try {
+      verifierInstance.clear();
+    } catch {
+      /* ignore */
+    }
+    verifierInstance = null;
   }
+  renderPromise = null;
+  teardownRecaptchaDom();
+  await delay(POST_TOKEN_DELAY_MS);
+
+  logRecaptchaDebug("returning static verifier for signIn");
+  return createStaticRecaptchaVerifier(token);
 }
 
-/** Call on sign-in page mount — logs domain context for Phone OTP / reCAPTCHA. */
+/** @deprecated Use prepareMobilePhoneOtpVerifier — verify() on tap crashes Android PWA. */
+export async function awaitMobileRecaptchaVerification(
+  auth: Auth,
+): Promise<ApplicationVerifier> {
+  return prepareMobilePhoneOtpVerifier(auth);
+}
+
 export function warnIfPhoneAuthDomainMissingFromFirebase(): void {
   logPhoneOtpDomainContext("sign-in mount");
 }

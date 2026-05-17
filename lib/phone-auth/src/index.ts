@@ -23,9 +23,14 @@ export {
   warnIfPhoneAuthDomainMissingFromFirebase,
   setPhoneRecaptchaMobileSheetActive,
   mountPhoneRecaptchaContainer,
+  prepareMobilePhoneOtpVerifier,
   awaitMobileRecaptchaVerification,
+  createStaticRecaptchaVerifier,
+  isAndroidPwa,
   isMobilePhoneOtpEnvironment,
   shouldPreRenderPhoneRecaptcha,
+  shouldUseBrowserForPhoneOtp,
+  buildPhoneOtpBrowserUrl,
 } from "./phone-recaptcha";
 export {
   CANONICAL_PRODUCTION_HOST,

@@ -1,3 +1,5 @@
+import { getCanonicalWebOrigin } from "./site-domain";
+
 type AmyNestWindow = Window & {
   Capacitor?: { isNativePlatform?: () => boolean };
   __AMYNEST_WRAPPER?: string;
@@ -6,8 +8,8 @@ type AmyNestWindow = Window & {
 };
 
 /**
- * Mobile WebViews and iOS Safari often crash (process kill) when Firebase loads
- * invisible reCAPTCHA in a 1×1 / off-screen iframe. Use visible compact mode.
+ * Mobile WebViews and iOS Safari often crash when Firebase loads
+ * invisible reCAPTCHA in a 1×1 / off-screen iframe.
  */
 export function isMobilePhoneOtpEnvironment(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
@@ -36,6 +38,38 @@ export function isMobilePhoneOtpEnvironment(): boolean {
   }
 
   return false;
+}
+
+/** Installed PWA / Add-to-Home-Screen on Android — reCAPTCHA iframe often kills the process. */
+export function isAndroidPwa(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return false;
+  }
+  if (!/Android/i.test(navigator.userAgent || "")) return false;
+
+  try {
+    if (window.matchMedia("(display-mode: standalone)").matches) return true;
+    if (window.matchMedia("(display-mode: minimal-ui)").matches) return true;
+  } catch {
+    /* ignore */
+  }
+
+  if (document.referrer.startsWith("android-app://")) return true;
+
+  return false;
+}
+
+/** Prefer opening system Chrome for phone OTP (avoids standalone WebView crashes). */
+export function shouldUseBrowserForPhoneOtp(): boolean {
+  return isAndroidPwa();
+}
+
+export function buildPhoneOtpBrowserUrl(phoneE164: string, returnPath = "/sign-in"): string {
+  const origin = getCanonicalWebOrigin();
+  const url = new URL(returnPath, origin);
+  url.searchParams.set("phoneOtp", "1");
+  url.searchParams.set("phone", phoneE164);
+  return url.toString();
 }
 
 /** Desktop-only pre-render — mobile pre-render has caused WebContent crashes. */
