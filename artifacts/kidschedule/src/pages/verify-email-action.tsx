@@ -33,7 +33,8 @@ const CARD: React.CSSProperties = {
   textAlign: "center",
 };
 
-const REDIRECT_DELAY_MS = 3000;
+/** Optional gentle redirect — user can tap sign in sooner */
+const REDIRECT_DELAY_MS = 12_000;
 
 export default function VerifyEmailActionPage() {
   const { t } = useTranslation();
@@ -106,20 +107,24 @@ export default function VerifyEmailActionPage() {
             <h1 style={{ margin: "0 0 12px", fontSize: "22px", fontWeight: 800, color: "#fff" }}>
               {t("screens.verify_email_action.success_title")}
             </h1>
-            <p style={{ margin: "0 0 24px", fontSize: "14px", color: "rgba(134,239,172,0.9)", lineHeight: 1.5 }}>
+            <p style={{ margin: "0 0 12px", fontSize: "15px", color: "rgba(134,239,172,0.95)", lineHeight: 1.55, fontWeight: 600 }}>
               {t("screens.verify_email_action.success_body")}
+            </p>
+            <p style={{ margin: "0 0 24px", fontSize: "14px", color: "rgba(200,180,255,0.70)", lineHeight: 1.5 }}>
+              {t("screens.verify_email_action.success_app_hint")}
             </p>
             <Link
               href="/sign-in"
               style={{
                 display: "inline-block",
-                padding: "12px 28px",
+                padding: "14px 32px",
                 borderRadius: 999,
                 background: "linear-gradient(90deg, hsl(var(--brand-purple-500)) 0%, hsl(var(--brand-pink-500)) 100%)",
                 color: "#fff",
-                fontSize: "15px",
+                fontSize: "16px",
                 fontWeight: 700,
                 textDecoration: "none",
+                boxShadow: "0 0 24px rgba(236,72,153,0.45)",
               }}
             >
               {t("screens.verify_email_action.sign_in_button")}
