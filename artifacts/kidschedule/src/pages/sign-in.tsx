@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { signInWithEmailAndPassword, sendPasswordResetEmail, signOut as fbSignOut } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut as fbSignOut } from "firebase/auth";
+import { sendUserPasswordResetEmail } from "@/lib/password-reset";
 import { sendUserEmailVerification } from "@/lib/email-verification";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
@@ -388,7 +389,7 @@ export default function SignInPage() {
         setResetError(t("screens.sign_in.reset_not_found"));
         return;
       }
-      await sendPasswordResetEmail(firebaseAuth, resetEmail.trim());
+      await sendUserPasswordResetEmail(resetEmail.trim());
       setMode("reset-sent");
     } catch (err: any) {
       setResetError(prettyAuthError(err));

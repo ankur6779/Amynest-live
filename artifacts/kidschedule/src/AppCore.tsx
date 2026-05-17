@@ -24,6 +24,7 @@ import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
 import VerifyEmailPage from "@/pages/verify-email";
 import AuthCallbackPage from "@/pages/auth-callback";
+import ResetPasswordPage from "@/pages/reset-password";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -346,6 +347,7 @@ function AppRoutes() {
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/verify-email" component={VerifyEmailPage} />
+          <Route path="/reset-password" component={ResetPasswordPage} />
           <Route path="/verify" component={AuthCallbackPage} />
           <Route path="/auth/callback" component={AuthCallbackPage} />
           {/* Firebase email template may use /auth/action */}
