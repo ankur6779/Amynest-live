@@ -95,15 +95,25 @@
     <script>
       (function () {
         // Render "Redirect /* → /index.html" exposes /index.html in the URL bar.
-        // Normalize so the client router sees "/" (and keep query/hash).
+        // Firebase email links must keep /auth/action (not collapse to /?mode=…).
         var path = location.pathname || "/";
+        var search = location.search || "";
+        var hash = location.hash || "";
         if (path === "/index.html" || path.endsWith("/index.html")) {
-          var base = path.slice(0, -"/index.html".length) || "/";
-          history.replaceState(
-            null,
-            "",
-            base + (location.search || "") + (location.hash || ""),
-          );
+          var params = new URLSearchParams(search);
+          var mode = params.get("mode");
+          var oobCode = params.get("oobCode") || params.get("oob_code");
+          if (mode && oobCode) {
+            history.replaceState(null, "", "/auth/action" + search + hash);
+          } else {
+            var base = path.slice(0, -"/index.html".length) || "/";
+            history.replaceState(null, "", base + search + hash);
+          }
+        } else if (path === "/" && search) {
+          var p2 = new URLSearchParams(search);
+          if (p2.get("mode") && (p2.get("oobCode") || p2.get("oob_code"))) {
+            history.replaceState(null, "", "/auth/action" + search + hash);
+          }
         }
         // After a failed recovery loop, ?_r=… params stack up — reset to clean "/".
         if (/[?&]_r=/.test(location.search || "")) {
