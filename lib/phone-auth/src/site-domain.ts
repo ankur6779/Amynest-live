@@ -1,7 +1,7 @@
 /** Production apex host — SEO / email links; www is also a live host. */
 export const CANONICAL_PRODUCTION_HOST = "amynest.in";
 
-/** Domains that must appear in Firebase → Authentication → Authorized domains. */
+/** Must exist in Firebase Console → Authentication → Settings → Authorized domains. */
 export const FIREBASE_PHONE_AUTH_DOMAINS = [
   CANONICAL_PRODUCTION_HOST,
   `www.${CANONICAL_PRODUCTION_HOST}`,
@@ -19,8 +19,11 @@ export function isAmyNestProductionHost(hostname: string): boolean {
   return hostname === CANONICAL_PRODUCTION_HOST || hostname === WWW_HOST;
 }
 
-/** Kept for diagnostics — www is no longer redirected (Cloudflare serves www). */
-export function shouldRedirectWwwToApex(hostname = getHostname()): boolean {
+export function shouldRedirectWwwToApex(_hostname = getHostname()): boolean {
+  return false;
+}
+
+export function redirectWwwToCanonicalApex(): boolean {
   return false;
 }
 
@@ -29,15 +32,6 @@ function getHostname(): string {
   return window.location.hostname;
 }
 
-/**
- * Do not redirect www → apex in the browser; that prevented React from booting
- * when Cloudflare 301s apex → www. Both hosts are Firebase-authorized.
- */
-export function redirectWwwToCanonicalApex(): boolean {
-  return false;
-}
-
-/** Current production origin (www or apex) for reCAPTCHA / action URLs. */
 export function getCanonicalWebOrigin(): string {
   if (typeof window === "undefined") return CANONICAL_PRODUCTION_ORIGIN;
   const { hostname, origin } = window.location;
@@ -52,9 +46,25 @@ export function logPhoneOtpDomainContext(phase: string): void {
   console.info(`[phone-otp] ${phase}`, {
     hostname: host,
     origin: window.location.origin,
-    canonicalOrigin: getCanonicalWebOrigin(),
-    href: window.location.href,
-    wwwRedirectNeeded: shouldRedirectWwwToApex(host),
     firebaseAuthorizedDomains: FIREBASE_PHONE_AUTH_DOMAINS,
   });
+  if (
+    host &&
+    !FIREBASE_PHONE_AUTH_DOMAINS.includes(host as (typeof FIREBASE_PHONE_AUTH_DOMAINS)[number])
+  ) {
+    console.warn(
+      `[phone-otp] Add "${host}" in Firebase → Authentication → Settings → Authorized domains`,
+    );
+  }
+}
+
+export function warnIfPhoneAuthDomainMissingFromFirebase(): void {
+  logPhoneOtpDomainContext("auth mount");
+}
+
+export function firebasePhoneAuthDomainHint(hostname = getHostname()): string {
+  return (
+    `Add "${hostname}" under Firebase Console → Authentication → Settings → Authorized domains. ` +
+    `Required: amynest.in, www.amynest.in`
+  );
 }
