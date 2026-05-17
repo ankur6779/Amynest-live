@@ -1442,6 +1442,9 @@ importers:
 
   lib/phone-auth:
     dependencies:
+      firebase:
+        specifier: ^12.12.1
+        version: 12.13.0(@react-native-async-storage/async-storage@2.2.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0)))
       libphonenumber-js:
         specifier: ^1.12.9
         version: 1.13.2
