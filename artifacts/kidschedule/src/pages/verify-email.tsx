@@ -5,7 +5,13 @@ import { signOut as fbSignOut } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { sendUserEmailVerification } from "@/lib/email-verification";
 import { getVerificationRateStatus, UX_COOLDOWN_MS } from "@/lib/email-verification-rate";
-import { prettyAuthError } from "@/lib/auth-errors";
+import {
+  consumeVerificationSendError,
+  formatAuthErrorForUi,
+  logFirebaseAuthError,
+  prettyAuthError,
+} from "@/lib/firebase-auth-error";
+import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
 
 const CSS = `
   @keyframes veRingRotate {
@@ -84,6 +90,7 @@ export default function VerifyEmailPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   const goHomeIfVerified = useCallback(async () => {
     const user = firebaseAuth.currentUser;
@@ -112,8 +119,30 @@ export default function VerifyEmailPage() {
     return () => clearInterval(id);
   }, [goHomeIfVerified]);
 
+  // Wait for Firebase session after sign-up/sign-in redirect.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const user = await waitForFirebaseUser();
+      if (cancelled) return;
+      setAuthReady(true);
+      if (!user) {
+        console.warn("[verify-email] No Firebase session after redirect");
+        if (sendFailedFromPrev || !sentOnArrival) {
+          setError(
+            "You are not signed in. Go back to Sign in and try again. (app/no-auth-session)",
+          );
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sendFailedFromPrev, sentOnArrival]);
+
   // After sign-in/sign-up we already sent once — show success + UX cooldown only (no API call).
   useEffect(() => {
+    if (!authReady) return;
     const user = firebaseAuth.currentUser;
     if (!user || user.emailVerified) return;
 
@@ -125,16 +154,27 @@ export default function VerifyEmailPage() {
     }
 
     if (sendFailedFromPrev) {
-      setError(t("screens.verify_email.resend_error"));
+      const stashed = consumeVerificationSendError();
+      if (stashed) {
+        setError(formatAuthErrorForUi(stashed));
+        console.error("[verify-email] Previous send failed:", stashed);
+      } else {
+        setError(t("screens.verify_email.resend_error"));
+      }
     }
-  }, [sentOnArrival, sendFailedFromPrev, t]);
+  }, [authReady, sentOnArrival, sendFailedFromPrev, t]);
 
   async function onResend() {
     setError(null);
     setMessage(null);
-    const fbUser = firebaseAuth.currentUser;
+    let fbUser = firebaseAuth.currentUser;
     if (!fbUser) {
-      setError(t("screens.verify_email.must_sign_in_to_resend"));
+      fbUser = await waitForFirebaseUser(3000);
+    }
+    if (!fbUser) {
+      setError(
+        "You are not signed in. Go back to Sign in and try again. (app/no-auth-session)",
+      );
       return;
     }
     const rate = getVerificationRateStatus(fbUser.uid);
@@ -152,7 +192,7 @@ export default function VerifyEmailPage() {
       const after = getVerificationRateStatus(fbUser.uid);
       setCooldown(Math.max(after.uxCooldownSeconds, RESEND_COOLDOWN_SEC));
     } catch (err: unknown) {
-      console.error("[verify-email] resend failed:", err);
+      logFirebaseAuthError("verify-email:resend", err);
       const code = (err as { code?: string })?.code;
       if (code === "auth/too-many-requests") {
         setCooldown(60);
@@ -162,7 +202,7 @@ export default function VerifyEmailPage() {
           setCooldown(after.uxCooldownSeconds);
         }
       }
-      const msg = prettyAuthError(err);
+      const msg = formatAuthErrorForUi(err);
       setError(msg || t("screens.verify_email.resend_error"));
     } finally {
       setBusy(false);

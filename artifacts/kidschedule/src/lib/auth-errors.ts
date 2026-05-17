@@ -1,42 +1,9 @@
-import { VerificationRateLimitError } from "./email-verification-rate";
-
-export function prettyAuthError(err: unknown): string {
-  if (err instanceof VerificationRateLimitError) {
-    const seconds = Math.max(1, Math.ceil((err.blockedUntil - Date.now()) / 1000));
-    return `Too many attempts. Try again in ${seconds} seconds.`;
-  }
-
-  const code = (err as { code?: string })?.code;
-  switch (code) {
-    case "auth/invalid-email":
-      return "That email looks invalid.";
-    case "auth/user-disabled":
-      return "This account has been disabled.";
-    case "auth/user-not-found":
-    case "auth/wrong-password":
-    case "auth/invalid-credential":
-      return "Wrong email or password.";
-    case "auth/email-already-in-use":
-      return "An account already exists with this email.";
-    case "auth/weak-password":
-      return "Password should be at least 6 characters.";
-    case "auth/too-many-requests":
-      return "Too many attempts. Try again in a minute.";
-    case "auth/operation-not-allowed":
-      return "Email/Password sign-in is not enabled. Go to Firebase Console → Authentication → Sign-in method → enable Email/Password.";
-    case "auth/unauthorized-domain":
-      return `This domain is not authorized in Firebase. Add "${typeof window !== "undefined" ? window.location.hostname : "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains.`;
-    case "auth/unauthorized-continue-uri":
-      return "Verification link domain is not allowed. Ensure amynest.in is listed under Firebase Console → Authentication → Settings → Authorized domains.";
-    case "auth/popup-blocked":
-      return "Popup was blocked. Please allow popups for this site and try again.";
-    case "auth/popup-closed-by-user":
-      return "";
-    case "auth/network-request-failed":
-      return "Network error. Check your connection and retry.";
-    default: {
-      const message = (err as { message?: string })?.message;
-      return message || "Something went wrong. Please try again.";
-    }
-  }
-}
+/** @deprecated Import from `./firebase-auth-error` instead. */
+export {
+  prettyAuthError,
+  formatAuthErrorForUi,
+  parseFirebaseAuthError,
+  logFirebaseAuthError,
+  stashVerificationSendError,
+  consumeVerificationSendError,
+} from "./firebase-auth-error";

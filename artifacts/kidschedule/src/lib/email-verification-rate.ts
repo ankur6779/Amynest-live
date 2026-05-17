@@ -117,11 +117,21 @@ export function setVerificationSendInflight(uid: string, inflight: boolean): voi
 }
 
 export class VerificationRateLimitError extends Error {
+  readonly code = "app/verification-rate-limited";
   readonly blockedUntil: number;
 
   constructor(blockedUntil: number) {
     super("verification_rate_limited");
     this.name = "VerificationRateLimitError";
     this.blockedUntil = blockedUntil;
+  }
+}
+
+export class VerificationInflightError extends Error {
+  readonly code = "app/verification-inflight";
+
+  constructor() {
+    super("Verification email is already being sent");
+    this.name = "VerificationInflightError";
   }
 }

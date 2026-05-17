@@ -5,7 +5,7 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { sendUserEmailVerification } from "@/lib/email-verification";
 import { useAuth } from "@/lib/firebase-auth-hooks";
-import { prettyAuthError } from "@/lib/auth-errors";
+import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 
 // ── Animation keyframes (same classes as sign-in — CSS idempotent in SPA) ────
@@ -355,7 +355,8 @@ export default function SignUpPage() {
       try {
         await sendUserEmailVerification(cred.user);
       } catch (verifyErr: unknown) {
-        console.error("[sign-up] sendEmailVerification failed:", verifyErr);
+        logFirebaseAuthError("sign-up:sendEmailVerification", verifyErr);
+        stashVerificationSendError(verifyErr);
         verifySendFailed = true;
       }
       const q = new URLSearchParams({ email: email.trim() });

@@ -5,7 +5,7 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail, signOut as fbSignOu
 import { sendUserEmailVerification } from "@/lib/email-verification";
 import { firebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/firebase-auth-hooks";
-import { prettyAuthError } from "@/lib/auth-errors";
+import { prettyAuthError, stashVerificationSendError, logFirebaseAuthError } from "@/lib/auth-errors";
 import PhoneAuthFlow from "@/components/phone-auth-flow";
 import { getApiUrl } from "@/lib/api";
 
@@ -351,7 +351,8 @@ export default function SignInPage() {
         try {
           await sendUserEmailVerification(cred.user);
         } catch (verifyErr: unknown) {
-          console.error("[sign-in] sendEmailVerification failed:", verifyErr);
+          logFirebaseAuthError("sign-in:sendEmailVerification", verifyErr);
+          stashVerificationSendError(verifyErr);
           verifySendFailed = true;
         }
         const q = new URLSearchParams({ email: email.trim() });
