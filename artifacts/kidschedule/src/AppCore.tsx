@@ -23,6 +23,7 @@ import LandingPage from "@/pages/landing";
 import SignInPage from "@/pages/sign-in";
 import SignUpPage from "@/pages/sign-up";
 import VerifyEmailPage from "@/pages/verify-email";
+import AuthCallbackPage from "@/pages/auth-callback";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -345,6 +346,7 @@ function AppRoutes() {
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
           <Route path="/verify-email" component={VerifyEmailPage} />
+          <Route path="/auth/callback" component={AuthCallbackPage} />
           <Route path="/onboarding" component={OnboardingRouteGuard} />
           <Route path="/dashboard">
             {() => <ProtectedRoute component={Dashboard} />}
