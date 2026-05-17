@@ -37,7 +37,14 @@ export {
   shouldPreRenderPhoneRecaptcha,
   shouldUseBrowserForPhoneOtp,
   buildPhoneOtpBrowserUrl,
+  hardResetRecaptcha,
+  initRecaptcha,
 } from "./phone-recaptcha";
+export {
+  sendPhoneOtpSafely,
+  PHONE_OTP_SEND_TIMEOUT_MS,
+  type SendPhoneOtpResult,
+} from "./phone-otp-send";
 export {
   CANONICAL_PRODUCTION_HOST,
   CANONICAL_PRODUCTION_ORIGIN,

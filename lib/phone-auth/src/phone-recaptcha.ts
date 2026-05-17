@@ -7,6 +7,7 @@ import {
   FIREBASE_PHONE_AUTH_DOMAINS,
   logPhoneOtpDomainContext,
 } from "./site-domain";
+import { isAndroidPwa } from "./mobile-phone-environment";
 
 export { FIREBASE_PHONE_AUTH_DOMAINS } from "./site-domain";
 export {
@@ -32,7 +33,13 @@ declare global {
   }
 }
 
-let renderPromise: Promise<RecaptchaVerifier> | null = null;
+/** Module singleton — never multiple RecaptchaVerifier instances. */
+let recaptchaInstance: RecaptchaVerifier | null = null;
+let renderPromise: Promise<RecaptchaVerifier | null> | null = null;
+
+function syncInstanceToWindow(): void {
+  window.recaptchaVerifier = recaptchaInstance;
+}
 
 function applyInvisibleRecaptchaContainerLayout(el: HTMLElement): void {
   Object.assign(el.style, {
@@ -49,14 +56,14 @@ function applyInvisibleRecaptchaContainerLayout(el: HTMLElement): void {
   });
 }
 
-/** Persistent mount on document.body — survives route changes. */
+/**
+ * Container lives in index.html after #root — do not reparent (Android WebView crash).
+ */
 export function ensureRecaptchaContainer(): HTMLElement {
   let el = document.getElementById(RECAPTCHA_CONTAINER_ID);
   if (!el) {
     el = document.createElement("div");
     el.id = RECAPTCHA_CONTAINER_ID;
-    document.body.appendChild(el);
-  } else if (el.parentElement !== document.body) {
     document.body.appendChild(el);
   }
   applyInvisibleRecaptchaContainerLayout(el);
@@ -67,12 +74,10 @@ export function applyRecaptchaContainerLayout(el: HTMLElement): void {
   applyInvisibleRecaptchaContainerLayout(el);
 }
 
-/** @deprecated */
 export function mountPhoneRecaptchaContainer(_parent: HTMLElement | null): void {
   ensureRecaptchaContainer();
 }
 
-/** @deprecated */
 export function setPhoneRecaptchaMobileSheetActive(_active: boolean): void {
   ensureRecaptchaContainer();
 }
@@ -80,21 +85,23 @@ export function setPhoneRecaptchaMobileSheetActive(_active: boolean): void {
 export function logRecaptchaDebug(context: string): void {
   console.info(`[phone-recaptcha] ${context}`, {
     hostname: typeof window !== "undefined" ? window.location.hostname : "",
+    androidPwa: isAndroidPwa(),
     containerPresent: Boolean(document.getElementById(RECAPTCHA_CONTAINER_ID)),
-    verifierReady: Boolean(window.recaptchaVerifier),
+    verifierReady: Boolean(recaptchaInstance),
     widgetId: window.recaptchaWidgetId,
   });
 }
 
-/** Clear verifier after OTP failure — do not call on every click. */
-export function clearRecaptchaOnFailure(): void {
+/** HARD reset — after OTP failure or crash loop prevention. */
+export function hardResetRecaptcha(): void {
   try {
-    if (window.recaptchaVerifier) {
-      window.recaptchaVerifier.clear();
+    if (recaptchaInstance) {
+      recaptchaInstance.clear();
     }
   } catch (err) {
-    console.warn("[phone-recaptcha] clear on failure", err);
+    console.warn("[phone-recaptcha] hard reset clear", err);
   }
+  recaptchaInstance = null;
   window.recaptchaVerifier = null;
   window.recaptchaWidgetId = undefined;
   renderPromise = null;
@@ -105,14 +112,16 @@ export function clearRecaptchaOnFailure(): void {
   }
 }
 
-/** @deprecated Use clearRecaptchaOnFailure */
-export function destroyPhoneRecaptchaVerifier(): void {
-  clearRecaptchaOnFailure();
+export function clearRecaptchaOnFailure(): void {
+  hardResetRecaptcha();
 }
 
-/** @deprecated */
+export function destroyPhoneRecaptchaVerifier(): void {
+  hardResetRecaptcha();
+}
+
 export function clearPhoneRecaptchaVerifier(): void {
-  clearRecaptchaOnFailure();
+  hardResetRecaptcha();
 }
 
 export function resetPhoneRecaptchaWidget(): boolean {
@@ -123,7 +132,6 @@ export function resetPhoneRecaptchaWidget(): boolean {
   }
   try {
     grecaptcha.reset(widgetId);
-    console.log("[phone-recaptcha] grecaptcha.reset", widgetId);
     return true;
   } catch (err) {
     console.warn("[phone-recaptcha] grecaptcha.reset failed", err);
@@ -143,21 +151,29 @@ function renderWithTimeout(verifier: RecaptchaVerifier): Promise<number> {
   ]);
 }
 
+/** Defer iframe work off the click stack — reduces Android PWA WebView kills. */
+async function deferBeforeRecaptchaWork(): Promise<void> {
+  if (isAndroidPwa()) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 200));
+  }
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
 /**
- * Create invisible RecaptchaVerifier once (sync). Does not call render().
- * Reuses window.recaptchaVerifier — never recreates on every OTP click.
+ * Safe singleton init — returns null instead of throwing (prevents UI crash).
  */
-export function getRecaptcha(auth: Auth): RecaptchaVerifier {
+export function initRecaptcha(auth: Auth): RecaptchaVerifier | null {
   try {
     ensureRecaptchaContainer();
 
-    if (window.recaptchaVerifier) {
-      console.log("[phone-recaptcha] Recaptcha reuse:", window.recaptchaVerifier);
-      console.log("[phone-recaptcha] WidgetId:", window.recaptchaWidgetId);
-      return window.recaptchaVerifier;
+    if (recaptchaInstance) {
+      syncInstanceToWindow();
+      return recaptchaInstance;
     }
 
-    const verifier = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
+    recaptchaInstance = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
       size: "invisible",
       callback: () => {
         console.log("[phone-recaptcha] reCAPTCHA solved");
@@ -168,25 +184,33 @@ export function getRecaptcha(auth: Auth): RecaptchaVerifier {
       },
     });
 
-    window.recaptchaVerifier = verifier;
-    console.log("[phone-recaptcha] Recaptcha created:", verifier);
-    return verifier;
+    syncInstanceToWindow();
+    console.log("[phone-recaptcha] Recaptcha created:", recaptchaInstance);
+    return recaptchaInstance;
   } catch (err) {
-    console.error("Recaptcha init error:", err);
-    throw err;
+    console.error("Recaptcha init crash:", err);
+    hardResetRecaptcha();
+    return null;
   }
 }
 
+export function getRecaptcha(auth: Auth): RecaptchaVerifier | null {
+  return initRecaptcha(auth);
+}
+
 /**
- * Ensure widget is rendered exactly once before signInWithPhoneNumber.
+ * Render widget once before signInWithPhoneNumber (lazy on Android PWA).
  */
-export async function ensureRecaptchaReady(auth: Auth): Promise<RecaptchaVerifier> {
+export async function ensureRecaptchaReady(auth: Auth): Promise<RecaptchaVerifier | null> {
   if (typeof document === "undefined") {
-    throw new Error("reCAPTCHA is only available in the browser.");
+    return null;
   }
 
   logPhoneOtpDomainContext("reCAPTCHA ready");
-  const verifier = getRecaptcha(auth);
+  const verifier = initRecaptcha(auth);
+  if (!verifier) {
+    return null;
+  }
 
   if (window.recaptchaWidgetId !== undefined) {
     return verifier;
@@ -198,16 +222,16 @@ export async function ensureRecaptchaReady(auth: Auth): Promise<RecaptchaVerifie
 
   renderPromise = (async () => {
     try {
+      await deferBeforeRecaptchaWork();
       const widgetId = await renderWithTimeout(verifier);
       window.recaptchaWidgetId = widgetId;
-      console.log("[phone-recaptcha] Recaptcha:", window.recaptchaVerifier);
-      console.log("[phone-recaptcha] WidgetId:", window.recaptchaWidgetId);
-      logRecaptchaDebug("render complete");
+      console.log("[phone-recaptcha] Recaptcha:", recaptchaInstance);
+      console.log("[phone-recaptcha] WidgetId:", widgetId);
       return verifier;
     } catch (err) {
       console.error("[phone-recaptcha] render failed", err);
-      clearRecaptchaOnFailure();
-      throw err;
+      hardResetRecaptcha();
+      return null;
     } finally {
       renderPromise = null;
     }
@@ -216,29 +240,32 @@ export async function ensureRecaptchaReady(auth: Auth): Promise<RecaptchaVerifie
   return renderPromise;
 }
 
-/** @deprecated Alias */
 export async function setupPhoneRecaptcha(auth: Auth): Promise<RecaptchaVerifier> {
-  return ensureRecaptchaReady(auth);
+  const v = await ensureRecaptchaReady(auth);
+  if (!v) {
+    throw new Error("Recaptcha failed");
+  }
+  return v;
 }
 
 export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<ApplicationVerifier> {
-  return ensureRecaptchaReady(auth);
+  return setupPhoneRecaptcha(auth);
 }
 
 export async function prepareMobilePhoneOtpVerifier(auth: Auth): Promise<ApplicationVerifier> {
-  return ensureRecaptchaReady(auth);
+  return setupPhoneRecaptcha(auth);
 }
 
 export async function awaitMobileRecaptchaVerification(
   auth: Auth,
 ): Promise<ApplicationVerifier> {
-  return ensureRecaptchaReady(auth);
+  return setupPhoneRecaptcha(auth);
 }
 
 export function createStaticRecaptchaVerifier(_token: string): ApplicationVerifier {
   return {
     type: "recaptcha",
-    verify: () => Promise.reject(new Error("Use getRecaptcha() / ensureRecaptchaReady() instead.")),
+    verify: () => Promise.reject(new Error("Use initRecaptcha() / sendPhoneOtpSafely() instead.")),
   };
 }
 

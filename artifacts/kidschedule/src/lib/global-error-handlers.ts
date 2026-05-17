@@ -37,6 +37,26 @@ export function installGlobalErrorHandlers(): void {
   if (typeof window === "undefined" || installed) return;
   installed = true;
 
+  window.onerror = (msg, src, line, col, err) => {
+    const detail = [
+      src,
+      line != null ? `line ${line}` : "",
+      col != null ? `col ${col}` : "",
+      err ? formatUnknown(err) : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
+    console.error(`${TAG} GLOBAL CRASH:`, err ?? msg, detail || "");
+    recordError("window.onerror", String(msg), detail);
+    return true;
+  };
+
+  window.onunhandledrejection = (event: PromiseRejectionEvent) => {
+    console.error(`${TAG} PROMISE CRASH:`, event.reason);
+    recordError("unhandledrejection", formatUnknown(event.reason));
+    event.preventDefault();
+  };
+
   window.addEventListener("error", (event) => {
     const msg = event.message || "Script error";
     const detail = [
@@ -48,12 +68,14 @@ export function installGlobalErrorHandlers(): void {
       .join(" | ");
     console.error(`${TAG} window.onerror`, msg, detail || "");
     recordError("window.onerror", msg, detail);
+    event.preventDefault();
   });
 
   window.addEventListener("unhandledrejection", (event) => {
     const msg = formatUnknown(event.reason);
     console.error(`${TAG} unhandledrejection`, msg);
     recordError("unhandledrejection", msg);
+    event.preventDefault();
   });
 
   const originalError = console.error.bind(console);
