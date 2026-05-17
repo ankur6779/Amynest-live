@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -27,6 +27,11 @@ import AuthCallbackPage from "@/pages/auth-callback";
 import ResetPasswordPage from "@/pages/reset-password";
 import { FirebaseActionGate } from "@/components/firebase-action-gate";
 import { AuthBootShell } from "@/components/auth-boot-shell";
+import { AppFallbackUi } from "@/components/app-fallback-ui";
+import { AppErrorBoundary } from "@/components/app-error-boundary";
+import { RouteLoadingShell } from "@/components/route-loading-shell";
+import { firebaseConfig } from "@/lib/firebase";
+import { logFirebaseBootStatus } from "@/lib/firebase-boot-log";
 
 // Lazy-loaded pages — each becomes its own JS chunk, fetched on demand
 // when its route is first matched. The Suspense boundary below renders
@@ -196,7 +201,7 @@ function HomeRedirect() {
     <>
       <Show when="signed-in">
         {isLoading || authBlocked
-          ? null
+          ? <RouteLoadingShell />
           : isSetupComplete(data)
             ? <Redirect to="/dashboard" />
             : <Redirect to="/onboarding" />
@@ -219,7 +224,7 @@ function OnboardingRouteGuard() {
     <>
       <Show when="signed-in">
         {isLoading || authBlocked
-          ? null
+          ? <RouteLoadingShell />
           : isSetupComplete(data)
             ? <Redirect to="/dashboard" />
             : <OnboardingPage />}
@@ -239,7 +244,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     <>
       <Show when="signed-in">
         {isLoading || authBlocked
-          ? null
+          ? <RouteLoadingShell />
           : !isSetupComplete(data)
             ? <Redirect to="/onboarding" />
             : <Layout><Component /></Layout>
@@ -308,10 +313,34 @@ function NotificationDeepLinkBridge() {
   return null;
 }
 
+const AUTH_BOOT_TIMEOUT_MS = 12_000;
+
 /** Covers the gap between splash dismiss and Firebase `isLoaded`. */
 function AuthBootGate({ children }: { children: ReactNode }) {
   const { isLoaded } = useAuth();
-  if (!isLoaded) return <AuthBootShell />;
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (isLoaded) {
+      setTimedOut(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setTimedOut(true), AUTH_BOOT_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [isLoaded]);
+
+  if (!isLoaded) {
+    if (timedOut) {
+      return (
+        <AppFallbackUi
+          title="Still loading"
+          message="Firebase auth is taking longer than expected. Check your connection and reload."
+          onReload={() => window.location.reload()}
+        />
+      );
+    }
+    return <AuthBootShell />;
+  }
   return <>{children}</>;
 }
 
@@ -505,6 +534,7 @@ function AppRoutes() {
 // the empty Suspense fallback.
 function AppCoreMountMarker() {
   useEffect(() => {
+    logFirebaseBootStatus(firebaseConfig);
     try { (window as Window & { __amynestAppCoreReady?: boolean }).__amynestAppCoreReady = true; } catch (_e) { /* best-effort */ }
     bootMark("appcore-mounted");
   }, []);
@@ -530,7 +560,9 @@ export default function AppCore() {
         <WouterRouter base={basePath}>
           <FirebaseActionGate>
             <AppCoreMountMarker />
-            <AppRoutes />
+            <AppErrorBoundary label="AppRoutes">
+              <AppRoutes />
+            </AppErrorBoundary>
           {/* Fixed overlay — rendered outside AppRoutes so it appears above all pages */}
           <OfflineGate />
           <NativeStartupPermissionsGate />

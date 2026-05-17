@@ -94,6 +94,14 @@
     -->
     <script>
       (function () {
+        try {
+          console.info("[amynest:boot] Pre-React", {
+            hostname: location.hostname,
+            href: location.href,
+            pwa: window.matchMedia && window.matchMedia("(display-mode: standalone)").matches,
+          });
+        } catch (_e) { /* ignore */ }
+
         // Firebase Phone OTP: reCAPTCHA hostname must match authorized domain (apex only).
         if (location.hostname === "www.amynest.in") {
           location.replace(

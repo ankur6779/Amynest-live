@@ -34,7 +34,7 @@ export const currentHost =
 
 export const firebaseProjectId = projectId;
 
-const config = {
+export const firebaseConfig = {
   apiKey:
     (import.meta.env.VITE_FIREBASE_API_KEY as string | undefined)?.trim() ||
     firebaseWebDefaults.apiKey,
@@ -49,8 +49,15 @@ const config = {
     )?.trim() || firebaseWebDefaults.messagingSenderId,
 };
 
-export const firebaseApp: FirebaseApp =
-  getApps()[0] ?? initializeApp(config);
+function ensureFirebaseApp(): FirebaseApp {
+  const existing = getApps()[0];
+  if (existing) return existing;
+  return initializeApp(firebaseConfig);
+}
+
+export const firebaseApp: FirebaseApp = ensureFirebaseApp();
+
+let authInstance: Auth | null = null;
 
 function createFirebaseAuth(): Auth {
   const wantsIndexedDbPersistence = isNativeAmyNestShell();
@@ -80,7 +87,23 @@ function createFirebaseAuth(): Auth {
   return auth;
 }
 
-export const firebaseAuth: Auth = createFirebaseAuth();
+export function getFirebaseAuth(): Auth {
+  if (!authInstance) {
+    authInstance = createFirebaseAuth();
+  }
+  return authInstance;
+}
+
+/** @deprecated Prefer getFirebaseAuth() — kept for existing imports. */
+export const firebaseAuth: Auth = getFirebaseAuth();
+
+export function isFirebaseAuthReady(): boolean {
+  try {
+    return Boolean(getFirebaseAuth());
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Foreground notification handler

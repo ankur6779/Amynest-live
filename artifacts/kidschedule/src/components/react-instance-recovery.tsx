@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { AppFallbackUi } from "@/components/app-fallback-ui";
 import { handleRecoveryReload } from "@/lib/clear-cache-reload";
 import { markCacheRecoveryPending } from "@/lib/boot-recovery";
 
@@ -180,47 +181,14 @@ function RecoveryFallback({
   onReload: () => void;
 }) {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "24px",
-        background: "#0b0820",
-        color: "#fff",
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-      }}
-    >
-      <div style={{ maxWidth: 420, textAlign: "center" }}>
-        <h1 style={{ fontSize: 22, marginBottom: 12 }}>
-          {reloading ? "Refreshing AmyNest…" : "Something went wrong"}
-        </h1>
-        <p style={{ opacity: 0.8, marginBottom: 20, lineHeight: 1.5 }}>
-          {reloading
-            ? "Clearing the cache and reloading the page."
-            : "Tap the button below to clear the cache and reload."}
-        </p>
-        <button
-          type="button"
-          onClick={onReload}
-          style={{
-            padding: "12px 24px",
-            borderRadius: 9999,
-            background:
-              "linear-gradient(135deg,hsl(var(--brand-purple-500)),hsl(var(--brand-pink-500)))",
-            color: "#fff",
-            fontWeight: 600,
-            border: 0,
-            cursor: "pointer",
-            fontSize: 16,
-          }}
-          disabled={reloading}
-        >
-          {reloading ? "Reloading…" : "Reload AmyNest"}
-        </button>
-      </div>
-    </div>
+    <AppFallbackUi
+      reloading={reloading}
+      onReload={onReload}
+      message={
+        reloading
+          ? "Clearing the cache and reloading the page."
+          : "Tap the button below to clear the cache and reload."
+      }
+    />
   );
 }
