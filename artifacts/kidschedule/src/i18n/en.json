@@ -1215,7 +1215,7 @@
     },
     "reset_password": {
       "title": "Set a new password",
-      "subtitle": "Choose a strong password with at least 6 characters.",
+      "subtitle": "Enter your new password below, then sign in to the AmyNest app.",
       "new_password": "New password",
       "confirm_password": "Confirm password",
       "submit": "Update password",

@@ -192,7 +192,6 @@ function HomeRedirect() {
   const authBlocked =
     isError && error instanceof Error && error.message === "auth-unauthorized";
   return (
-    <FirebaseActionGate>
     <>
       <Show when="signed-in">
         {isLoading || authBlocked
@@ -206,7 +205,6 @@ function HomeRedirect() {
         <LandingPage />
       </Show>
     </>
-    </FirebaseActionGate>
   );
 }
 
@@ -518,11 +516,13 @@ export default function AppCore() {
   return (
     <FirebaseAuthProvider>
       <WouterRouter base={basePath}>
-        <AppCoreMountMarker />
-        <AppRoutes />
-        {/* Fixed overlay — rendered outside AppRoutes so it appears above all pages */}
-        <OfflineGate />
-        <NativeStartupPermissionsGate />
+        <FirebaseActionGate>
+          <AppCoreMountMarker />
+          <AppRoutes />
+          {/* Fixed overlay — rendered outside AppRoutes so it appears above all pages */}
+          <OfflineGate />
+          <NativeStartupPermissionsGate />
+        </FirebaseActionGate>
       </WouterRouter>
     </FirebaseAuthProvider>
   );
