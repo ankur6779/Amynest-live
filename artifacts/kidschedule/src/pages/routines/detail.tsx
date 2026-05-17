@@ -1409,7 +1409,19 @@ export default function RoutineDetail() {
         </div>
 
         {/* Why this routine? — adaptive intelligence */}
-        <RoutineAdaptationsCard adaptations={(routine as any)?.adaptations as string[] | undefined} />
+        <RoutineAdaptationsCard
+          adaptations={(routine as any)?.adaptations as string[] | undefined}
+          isWeekendDay={
+            routine?.date
+              ? (() => {
+                  const d = new Date(`${routine.date}T12:00:00`);
+                  const dow = d.getDay();
+                  return dow === 0 || dow === 6;
+                })()
+              : undefined
+          }
+          mood={todayMood}
+        />
 
         {/* Progress bar */}
         {totalCount > 0 && <div className="bg-muted rounded-2xl p-4">

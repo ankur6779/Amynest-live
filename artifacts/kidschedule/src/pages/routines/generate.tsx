@@ -40,13 +40,9 @@ import {
   cacheSafetyForRoutine,
   validateRoutineSafety,
 } from "@/lib/safety-routine-validation";
-import { FixedActivitiesEditor } from "@/components/routines/fixed-activities-editor";
+import { FixedActivitiesInlineCard } from "@/components/routines/fixed-activities-inline-card";
 import { FixedActivitiesReviewPanel } from "@/components/routines/fixed-activities-review-panel";
-import { FixedActivitiesSuggestionBanner } from "@/components/routines/fixed-activities-suggestion-banner";
-import { FixedActivitiesWeeklyView } from "@/components/routines/fixed-activities-weekly-view";
-import { FixedActivitiesWeeklyInsights } from "@/components/routines/fixed-activities-weekly-insights";
 import {
-  FIXED_ACTIVITY_TEMPLATES,
   normalizeFixedActivities,
   type FixedActivityDraft,
 } from "@/lib/fixed-activities";
@@ -813,6 +809,10 @@ export default function RoutineGenerate() {
 
   const isGenerating = generateMutation.isPending || createMutation.isPending;
   const selectedChildData = children?.find(c => c.id === selectedChild) as ChildType | undefined;
+  const profileFixedActivities = React.useMemo(
+    () => normalizeFixedActivities(selectedChildData?.fixedActivities),
+    [selectedChildData?.fixedActivities, selectedChildData?.id],
+  );
 
   useEffect(() => {
     if (!selectedChildData) return;
@@ -1598,6 +1598,18 @@ export default function RoutineGenerate() {
                     </div>
                   </Link>}
 
+                {selectedChild && selectedChildData && (
+                  <FixedActivitiesInlineCard
+                    childId={selectedChild}
+                    childName={selectedChildData.name}
+                    childAge={selectedChildData.age}
+                    activities={fixedActivities}
+                    onActivitiesChange={setFixedActivities}
+                    profileActivities={profileFixedActivities}
+                    highlightDay={weekdayLabelFromRoutineDate(date)}
+                  />
+                )}
+
                 <div className="space-y-6">
                 <GenerationGuidanceBanner />
                 <AutoDetectionToggle enabled={useAutoDetection} onChange={setUseAutoDetection} />
@@ -1758,51 +1770,6 @@ export default function RoutineGenerate() {
                     setWeatherTouched(true);
                   }}
                 />
-                </InputSection>
-
-                <InputSection
-                  title={t("pages.routines.fixed.section_title", {
-                    defaultValue: "Weekly activities",
-                  })}
-                  subtitle={t("pages.routines.fixed.section_hint", {
-                    defaultValue:
-                      "Tuition, sports, and classes are locked every week — Amy schedules everything else around them",
-                  })}
-                >
-                  {serializedFixedActivities.length === 0 && (
-                    <FixedActivitiesSuggestionBanner
-                      onAddTemplate={(key) => {
-                        const tpl = FIXED_ACTIVITY_TEMPLATES.find((x) => x.key === key);
-                        if (!tpl) return;
-                        setFixedActivities((prev) => [
-                          ...prev,
-                          {
-                            activity: tpl.activity,
-                            days: [...tpl.days],
-                            start: tpl.start,
-                            end: tpl.end,
-                          },
-                        ]);
-                      }}
-                    />
-                  )}
-                  {serializedFixedActivities.length > 0 && (
-                    <>
-                      <FixedActivitiesWeeklyInsights
-                        activities={serializedFixedActivities}
-                        childName={selectedChildData?.name}
-                      />
-                      <FixedActivitiesWeeklyView
-                        activities={serializedFixedActivities}
-                        highlightDay={weekdayLabelFromRoutineDate(date)}
-                      />
-                    </>
-                  )}
-                  <FixedActivitiesEditor
-                    value={fixedActivities}
-                    onChange={setFixedActivities}
-                    compact
-                  />
                 </InputSection>
 
                 {inlineFixedBlocking && !fixedReviewState && (

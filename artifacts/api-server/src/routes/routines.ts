@@ -39,7 +39,6 @@ import {
 import { runRoutineIntelligencePipeline } from "../lib/routine-intelligence-pipeline.js";
 import type { SpecialEventDebug } from "../lib/routine-special-event.js";
 import {
-  fixedActivitiesAdaptationTags,
   finalizeFixedActivitiesSummary,
   parseFixedActivitiesForDate,
   toFixedActivitiesResult,
@@ -47,6 +46,13 @@ import {
   type FixedActivitiesDebug,
   type FixedActivityInput,
 } from "../lib/routine-fixed-activities.js";
+import {
+  mergeParentRoutineAdaptations,
+  parentFriendlyDifficultyLines,
+  parentFriendlyFixedActivityLines,
+  parentFriendlySpecialEventLines,
+} from "../lib/routine-parent-adaptations.js";
+import type { ParentExplanationContext } from "@workspace/explainability";
 import { normalizeTo24h } from "../lib/routine-scheduler.js";
 import { type CaregiverKey, type WeatherOutdoor, applyWeatherAdjustment } from "@workspace/family-routine";
 import {
@@ -911,29 +917,26 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     previousDayContext: params.previousDayContext,
   });
 
-  const signatureAdaptations = piped.behaviorSignature
-    ? [
-        `behavior:focusSpan=${piped.behaviorSignature.focusSpan}`,
-        `behavior:energy=${piped.behaviorSignature.energyPattern}`,
-        `behavior:compliance=${(piped.behaviorSignature.complianceScore * 100).toFixed(0)}%`,
-      ]
-    : [];
+  const parentCtx: ParentExplanationContext = {
+    hasSchool: params.hasSchool,
+    isWeekendDay: params.isWeekendDay ?? false,
+    mood: params.mood,
+  };
 
   return {
     title: parsed.title,
     items: piped.items,
     specialEvent: piped.specialEvent,
     fixedActivities: piped.fixedActivities,
-    adaptations: [
-      ...adaptations,
-      ...curved.adaptations,
-      ...signatureAdaptations,
-      ...(params.environmentalContext?.explanations ?? []),
-      ...piped.pipelineAdaptations,
-      ...(inputDebug.defaultsApplied.length
-        ? [`inputs:defaults:${inputDebug.defaultsApplied.join(",")}`]
-        : []),
-    ],
+    adaptations: finalizeParentAdaptations(
+      [
+        ...adaptations,
+        ...curved.adaptations,
+        ...(params.environmentalContext?.explanations ?? []),
+        ...piped.pipelineAdaptations,
+      ],
+      parentCtx,
+    ),
   };
 }
 
@@ -1011,14 +1014,23 @@ function normaliseUiPrefs(raw: unknown): RoutineUiPrefs {
   return out;
 }
 
-function specialEventAdaptationTags(se: SpecialEventDebug): string[] {
-  if (!se.eventDetected) return ["special-event:none"];
-  return [
-    `special-event:detected:${se.eventActivity}@${se.eventTime}`,
-    `special-event:status:${se.eventPlacementStatus}`,
-    `special-event:type:${se.eventType}`,
-    ...se.validationWarnings,
-  ];
+function parentExplanationCtx(
+  resolved: ResolvedRoutineInputs,
+  isWeekendDay: boolean,
+): ParentExplanationContext {
+  return {
+    hasSchool: resolved.hasSchool,
+    isWeekendDay,
+    mood: resolved.mood,
+  };
+}
+
+/** Parent-facing adaptations only — strips debug tokens and caps length. */
+function finalizeParentAdaptations(
+  rawLines: readonly string[],
+  ctx: ParentExplanationContext,
+): string[] {
+  return mergeParentRoutineAdaptations(rawLines, ctx);
 }
 
 function coerceFixedActivities(raw: unknown): FixedActivityInput[] | undefined {
@@ -1120,6 +1132,7 @@ function runIntelligencePipelineOnItems(params: {
     moodScore?: "happy" | "tired" | "cranky" | "normal";
     activityCompletion?: number;
   };
+  childName?: string;
 }): {
   items: RoutineItem[];
   pipelineAdaptations: string[];
@@ -1197,18 +1210,18 @@ function runIntelligencePipelineOnItems(params: {
 
   const specialEvent = intelligenceResult.specialEvent;
   const fixedActivities = intelligenceResult.fixedActivities;
-  const pipelineAdaptations = [
-    ...intelligenceResult.validationErrors.map((e) => `schedule:${e}`),
-    ...(intelligenceResult.reverted ? ["schedule:reverted_pre_validation"] : []),
-    ...intelligenceResult.difficultyAdjustments.map(
-      (a) => `difficulty:${a.direction}:${a.activity}`,
-    ),
-    ...(intelligenceResult.state?.decisions.map(
-      (d) => `decision:${d.priority}:${d.resolution}`,
-    ) ?? []),
-    ...specialEventAdaptationTags(specialEvent),
-    ...fixedActivitiesAdaptationTags(fixedActivities),
-  ];
+  const explCtx = parentExplanationCtx(params.resolvedInputs, params.isWeekendDay);
+  const pipelineAdaptations = finalizeParentAdaptations(
+    [
+      ...parentFriendlyDifficultyLines(intelligenceResult.difficultyAdjustments),
+      ...parentFriendlySpecialEventLines(specialEvent),
+      ...parentFriendlyFixedActivityLines(fixedActivities, params.childName),
+      ...(intelligenceResult.reverted
+        ? ["Schedule was simplified to keep today's plan safe and realistic."]
+        : []),
+    ],
+    explCtx,
+  );
 
   return {
     items: intelligenceResult.items as unknown as RoutineItem[],
@@ -1406,7 +1419,6 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     filteredRuleItems as any,
     ruleChildIntel.energyProfile,
   );
-  const ruleLearningTags = deriveLearningAdaptationTags(ruleLearningWeights);
   // Environmental enrichments — hydration, seasonal nutrition, UV safety,
   // and indoor swap suggestions. Applied AFTER weather + energy curve so
   // the existing pipeline keeps full authority over scheduling.
@@ -1425,6 +1437,7 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     totalAgeMonths,
     date: parsed.data.date,
     childId: String(child.id),
+    childName: child.name,
     region,
     country: (rulePp as Record<string, unknown> | null)?.country as string | undefined,
     foodType,
@@ -1433,24 +1446,33 @@ router.post("/routines/generate", featureGate("routine_generate"), async (req, r
     fridgeItems: ruleInputs.fridgeItems || fridgeItems,
   });
 
+  const ruleExplCtx = parentExplanationCtx(ruleInputs, ruleIsWeekendDay);
+  const ruleContextAdaptations = buildAdaptations({
+    parentGoals: ruleChildIntel.parentGoals,
+    energyProfile: ruleChildIntel.energyProfile,
+    previousDayContext: undefined,
+    hasSchool: ruleIsSchoolDay,
+    isWeekendDay: ruleIsWeekendDay,
+  });
+
   res.json(
     GenerateRoutineResponse.parse({
       ...generated,
       items: rulePiped.items as typeof ruleCurved.items,
-      adaptations: [
-        ...((generated as { adaptations?: string[] }).adaptations ?? []),
-        ...ruleCurved.adaptations,
-        ...ruleLearningTags,
-        ...(ruleEnvContext?.explanations ?? []),
-        ...ruleEnriched.extraAdaptations,
-        ...(ruleEnriched.hydrationSummary
-          ? [`hydration:${ruleEnriched.hydrationSummary}`]
-          : []),
-        ...rulePiped.pipelineAdaptations,
-        ...(ruleInputDebug.defaultsApplied.length
-          ? [`inputs:defaults:${ruleInputDebug.defaultsApplied.join(",")}`]
-          : []),
-      ],
+      adaptations: finalizeParentAdaptations(
+        [
+          ...ruleContextAdaptations,
+          ...((generated as { adaptations?: string[] }).adaptations ?? []),
+          ...ruleCurved.adaptations,
+          ...(ruleEnvContext?.explanations ?? []),
+          ...ruleEnriched.extraAdaptations,
+          ...(ruleEnriched.hydrationSummary
+            ? [`hydration:${ruleEnriched.hydrationSummary}`]
+            : []),
+          ...rulePiped.pipelineAdaptations,
+        ],
+        ruleExplCtx,
+      ),
       fixedActivitiesResult: rulePiped.fixedActivities.fixedActivitiesApplied
         ? toFixedActivitiesResult(rulePiped.fixedActivities, child.name)
         : null,
@@ -1676,23 +1698,29 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       previousDayContext,
       schoolMealMode,
     });
-    const aiLearningTags = deriveLearningAdaptationTags(learningWeights);
     const aiEnriched = applyEnvironmentalEnrichments(
       ((generated.items ?? []) as unknown) as EnrichableItem[],
       aiEnvContext,
       { region: region as string | null | undefined },
     );
+    const aiExplCtx: ParentExplanationContext = {
+      hasSchool: isSchoolDay(parsed.data.date, child.isSchoolGoing, (child as any).schoolDays, hasSchool),
+      isWeekendDay,
+      mood: mood ?? "normal",
+    };
     res.json(GenerateRoutineResponse.parse({
       ...generated,
       items: aiEnriched.items as unknown as typeof generated.items,
-      adaptations: [
-        ...((generated as { adaptations?: string[] }).adaptations ?? []),
-        ...aiLearningTags,
-        ...aiEnriched.extraAdaptations,
-        ...(aiEnriched.hydrationSummary
-          ? [`hydration:${aiEnriched.hydrationSummary}`]
-          : []),
-      ],
+      adaptations: finalizeParentAdaptations(
+        [
+          ...((generated.adaptations ?? []) as string[]),
+          ...aiEnriched.extraAdaptations,
+          ...(aiEnriched.hydrationSummary
+            ? [`hydration:${aiEnriched.hydrationSummary}`]
+            : []),
+        ],
+        aiExplCtx,
+      ),
       fixedActivitiesResult: generated.fixedActivities?.fixedActivitiesApplied
         ? toFixedActivitiesResult(generated.fixedActivities, child.name)
         : null,
@@ -1750,7 +1778,6 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       filteredFallbackItems as unknown as AnalyticsRoutineItem[],
       childIntel.energyProfile,
     );
-    const fallbackLearningTags = deriveLearningAdaptationTags(learningWeights);
     const fallbackEnriched = applyEnvironmentalEnrichments(
       curved.items as unknown as EnrichableItem[],
       aiEnvContext,
@@ -1765,6 +1792,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       totalAgeMonths,
       date: parsed.data.date,
       childId: String(child.id),
+      childName: child.name,
       region,
       country: (pp as Record<string, unknown> | undefined)?.country as string | undefined,
       foodType,
@@ -1773,23 +1801,23 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
       fridgeItems: fallbackInputs.fridgeItems || fridgeItems,
       previousDayContext,
     });
+    const fallbackExplCtx = parentExplanationCtx(fallbackInputs, isWeekendDay);
     res.json(GenerateRoutineResponse.parse({
       ...generated,
       items: fallbackPiped.items as unknown as typeof generated.items,
-      adaptations: [
-        ...adaptations,
-        ...curved.adaptations,
-        ...fallbackLearningTags,
-        ...(aiEnvContext?.explanations ?? []),
-        ...fallbackEnriched.extraAdaptations,
-        ...(fallbackEnriched.hydrationSummary
-          ? [`hydration:${fallbackEnriched.hydrationSummary}`]
-          : []),
-        ...fallbackPiped.pipelineAdaptations,
-        ...(fallbackInputDebug.defaultsApplied.length
-          ? [`inputs:defaults:${fallbackInputDebug.defaultsApplied.join(",")}`]
-          : []),
-      ],
+      adaptations: finalizeParentAdaptations(
+        [
+          ...adaptations,
+          ...curved.adaptations,
+          ...(aiEnvContext?.explanations ?? []),
+          ...fallbackEnriched.extraAdaptations,
+          ...(fallbackEnriched.hydrationSummary
+            ? [`hydration:${fallbackEnriched.hydrationSummary}`]
+            : []),
+          ...fallbackPiped.pipelineAdaptations,
+        ],
+        fallbackExplCtx,
+      ),
       fixedActivitiesResult: fallbackPiped.fixedActivities.fixedActivitiesApplied
         ? toFixedActivitiesResult(fallbackPiped.fixedActivities, child.name)
         : null,
