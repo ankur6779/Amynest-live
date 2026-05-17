@@ -113,13 +113,8 @@ const server = http.createServer((req, res) => {
 
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
 
-  if (url.hostname === WWW_PRODUCTION_HOST) {
-    url.hostname = CANONICAL_PRODUCTION_HOST;
-    url.protocol = "https:";
-    res.writeHead(301, { Location: url.toString() });
-    res.end();
-    return;
-  }
+  // Do not 301 www → apex here: Cloudflare already canonicalizes apex → www at the edge.
+  // A server-side www redirect + client www→apex redirect caused a blank boot screen.
 
   let pathname = decodeURIComponent(url.pathname);
 

@@ -2,7 +2,6 @@ import { RecaptchaVerifier, type ApplicationVerifier, type Auth } from "firebase
 import {
   FIREBASE_PHONE_AUTH_DOMAINS,
   logPhoneOtpDomainContext,
-  redirectWwwToCanonicalApex,
   shouldRedirectWwwToApex,
 } from "./site-domain";
 
@@ -72,10 +71,6 @@ export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<Application
     throw new Error("reCAPTCHA is only available in the browser.");
   }
 
-  if (redirectWwwToCanonicalApex()) {
-    throw new Error("Redirecting to amynest.in for phone verification…");
-  }
-
   logPhoneOtpDomainContext("reCAPTCHA init");
   ensureRecaptchaContainer();
 
@@ -122,9 +117,9 @@ export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<Application
   }
 }
 
-/** Call on sign-in page mount — redirects www → apex before reCAPTCHA. */
+/** Call on sign-in page mount — logs domain context for Phone OTP / reCAPTCHA. */
 export function warnIfPhoneAuthDomainMissingFromFirebase(): void {
-  redirectWwwToCanonicalApex();
+  logPhoneOtpDomainContext("sign-in mount");
 }
 
 export function firebasePhoneAuthDomainHint(hostname = window.location.hostname): string {
