@@ -6,7 +6,6 @@ import {
 import {
   signInWithPhoneNumber,
   type ConfirmationResult,
-  type ApplicationVerifier,
   type Auth,
 } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
@@ -18,6 +17,8 @@ import {
   detectDefaultCountry,
   formatPhoneE164,
   isValidNationalPhone,
+  clearPhoneRecaptchaVerifier,
+  getPhoneRecaptchaVerifier,
   type PhoneCountry,
 } from "@workspace/phone-auth";
 import CountryPickerModal from "@/components/CountryPickerModal";
@@ -41,7 +42,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const confirmRef = useRef<ConfirmationResult | null>(null);
-  const recaptchaRef = useRef<ApplicationVerifier | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const digits = phone.replace(/\D/g, "");
@@ -54,6 +54,13 @@ export default function PhoneAuthFlow({ onError }: Props) {
     };
   }, []);
 
+  useEffect(() => {
+    if (Platform.OS !== "web" || step === "idle") return;
+    void getPhoneRecaptchaVerifier(firebaseAuth).catch((err) => {
+      console.warn("[PhoneAuthFlow] reCAPTCHA pre-render failed", err);
+    });
+  }, [step]);
+
   function startResendTimer() {
     setResendTimer(30);
     timerRef.current = setInterval(() => {
@@ -65,16 +72,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
         return t - 1;
       });
     }, 1000);
-  }
-
-  async function getOrCreateWebVerifier(): Promise<ApplicationVerifier> {
-    if (recaptchaRef.current) return recaptchaRef.current;
-    const { RecaptchaVerifier } = await import("firebase/auth");
-    const v = new RecaptchaVerifier(firebaseAuth, "recaptcha-container", {
-      size: "invisible",
-    });
-    recaptchaRef.current = v;
-    return v;
   }
 
   async function sendOtp(forceResend = false) {
@@ -90,11 +87,10 @@ export default function PhoneAuthFlow({ onError }: Props) {
       let result: ConfirmationResult;
 
       if (Platform.OS === "web") {
-        if (forceResend && recaptchaRef.current) {
-          try { (recaptchaRef.current as unknown as { clear(): void }).clear(); } catch { /* ignore */ }
-          recaptchaRef.current = null;
+        if (forceResend) {
+          clearPhoneRecaptchaVerifier();
         }
-        const verifier = await getOrCreateWebVerifier();
+        const verifier = await getPhoneRecaptchaVerifier(firebaseAuth);
         result = await signInWithPhoneNumber(firebaseAuth, phoneFull, verifier);
       } else {
         result = await (signInWithPhoneNumber as unknown as (
@@ -107,8 +103,9 @@ export default function PhoneAuthFlow({ onError }: Props) {
       setStep("otp");
       startResendTimer();
     } catch (err: unknown) {
-      recaptchaRef.current = null;
+      if (Platform.OS === "web") clearPhoneRecaptchaVerifier();
       const msg = err instanceof Error ? err.message : "Failed to send OTP. Please try again.";
+      console.error("[PhoneAuthFlow] sendOtp failed", err);
       onError?.(msg);
       setStep("phone");
     }
@@ -137,7 +134,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
   if (step === "idle") {
     return (
       <>
-        {Platform.OS === "web" && <div id="recaptcha-container" />}
         <TouchableOpacity
           style={s.btn}
           onPress={() => setStep("phone")}
@@ -155,7 +151,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
     const canSend = isValidPhone && step !== "sending";
     return (
       <>
-        {Platform.OS === "web" && <div id="recaptcha-container" />}
         <CountryPickerModal
           visible={pickerOpen}
           selected={country}

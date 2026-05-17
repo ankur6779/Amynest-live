@@ -105,6 +105,11 @@ export function prettyAuthError(err: unknown): string {
       return "Popup was blocked. Please allow popups for this site and try again.";
     case "auth/popup-closed-by-user":
       return "";
+    case "auth/captcha-check-failed":
+      return `Phone verification security check failed. ${typeof window !== "undefined" ? `Add "${window.location.hostname}" to Firebase Console → Authentication → Settings → Authorized domains (also add www.amynest.in, amynest.in, and localhost).` : "Authorize your site domain in Firebase Authentication settings."}`;
+    case "auth/invalid-app-credential":
+    case "auth/missing-app-credential":
+      return "Phone sign-in is not configured for this app. Check Firebase Console → Authentication → Sign-in method → Phone, and ensure your domain is authorized.";
     case "auth/network-request-failed":
       return "Network error. Check your connection and retry.";
     case "auth/expired-action-code":
@@ -117,6 +122,13 @@ export function prettyAuthError(err: unknown): string {
       return "You are not signed in. Go back to Sign in and try again.";
     default: {
       const message = (err as { message?: string })?.message?.trim();
+      if (
+        message &&
+        (message.includes("Hostname match not found") ||
+          message.includes("captcha-check-failed"))
+      ) {
+        return `Phone verification security check failed. Add "${typeof window !== "undefined" ? window.location.hostname : "this domain"}" to Firebase Console → Authentication → Settings → Authorized domains (also add amynest.in, www.amynest.in, localhost).`;
+      }
       if (message && !message.startsWith("Firebase:")) {
         return message;
       }
