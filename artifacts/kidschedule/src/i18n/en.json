@@ -3146,7 +3146,10 @@
       "no_country_found": "No country found",
       "invalid_phone": "Please enter a valid phone number for the selected country.",
       "phone_placeholder": "Phone number",
-      "tap_flag_to_change": "Tap flag to change country"
+      "tap_flag_to_change": "Tap flag to change country",
+      "recaptcha_sheet_title": "Verify you're human",
+      "recaptcha_sheet_hint": "Complete the check below, then we'll send your OTP.",
+      "recaptcha_sheet_busy": "Sending OTP…"
     },
     "phonics_learning": {
       "phonics_is_for_ages_1_6": "Phonics is for ages 1–6",

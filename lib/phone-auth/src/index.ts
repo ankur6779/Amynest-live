@@ -21,6 +21,10 @@ export {
   logRecaptchaDebug,
   firebasePhoneAuthDomainHint,
   warnIfPhoneAuthDomainMissingFromFirebase,
+  setPhoneRecaptchaMobileSheetActive,
+  mountPhoneRecaptchaContainer,
+  isMobilePhoneOtpEnvironment,
+  shouldPreRenderPhoneRecaptcha,
 } from "./phone-recaptcha";
 export {
   CANONICAL_PRODUCTION_HOST,
