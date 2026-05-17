@@ -90,13 +90,12 @@ services:
       - key: ELEVENLABS_API_KEY
         sync: false
 
-  # ─── Production web (SPA) ───────────────────────────────────────────────────
-  # Node serve-spa: HTML routes → index.html (200), missing *.js → real 404 (not HTML).
-  # Avoids static-site "/* → index.html" breaking stale chunk URLs after deploy.
-  # In Render dashboard: remove any static Redirect/Rewrite rules on this service.
+  # ─── Production static web (amynest.in) ─────────────────────────────────────
+  # Dashboard service Amynest-live-1 is a static site (not Node serve-spa).
+  # Keep this block aligned with the dashboard to avoid Blueprint sync failures.
   - type: web
     name: Amynest-live-1
-    runtime: node
+    runtime: static
     region: singapore
     plan: starter
     repo: https://github.com/ankur6779/Amynest-live
@@ -106,12 +105,10 @@ services:
       corepack prepare pnpm@9.15.0 --activate &&
       pnpm install --frozen-lockfile &&
       BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build
-    startCommand: node artifacts/kidschedule/server/serve-spa.mjs
+    staticPublishPath: ./artifacts/kidschedule/dist/public
     envVars:
       - key: NODE_VERSION
         value: "20"
-      - key: STATIC_ROOT
-        value: artifacts/kidschedule/dist/public
       - key: BASE_PATH
         value: /
       - key: VITE_AMYNEST_ENV
