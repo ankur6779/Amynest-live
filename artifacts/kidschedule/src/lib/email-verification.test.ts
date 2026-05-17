@@ -1,5 +1,8 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { getEmailVerificationCallbackUrl } from "./email-verification";
+import {
+  CANONICAL_EMAIL_VERIFICATION_URL,
+  getEmailVerificationCallbackUrl,
+} from "./email-verification";
 
 describe("getEmailVerificationCallbackUrl", () => {
   const originalLocation = window.location;
@@ -24,20 +27,18 @@ describe("getEmailVerificationCallbackUrl", () => {
     });
   });
 
-  it("uses current origin on Render production host when allowlisted", () => {
+  it("uses canonical amynest.in URL on Render (avoids unauthorized-continue-uri)", () => {
     mockHostname("amynest-live-1.onrender.com", "https://amynest-live-1.onrender.com");
-    expect(getEmailVerificationCallbackUrl()).toBe(
-      "https://amynest-live-1.onrender.com/auth/callback",
-    );
+    expect(getEmailVerificationCallbackUrl()).toBe(CANONICAL_EMAIL_VERIFICATION_URL);
   });
 
-  it("uses current origin on amynest.in", () => {
-    mockHostname("amynest.in", "https://amynest.in");
-    expect(getEmailVerificationCallbackUrl()).toBe("https://amynest.in/auth/callback");
+  it("uses canonical amynest.in URL on www", () => {
+    mockHostname("www.amynest.in", "https://www.amynest.in");
+    expect(getEmailVerificationCallbackUrl()).toBe(CANONICAL_EMAIL_VERIFICATION_URL);
   });
 
-  it("uses current origin on localhost", () => {
+  it("uses localhost /verify for dev", () => {
     mockHostname("localhost", "http://localhost:5173");
-    expect(getEmailVerificationCallbackUrl()).toBe("http://localhost:5173/auth/callback");
+    expect(getEmailVerificationCallbackUrl()).toBe("http://localhost:5173/verify");
   });
 });
