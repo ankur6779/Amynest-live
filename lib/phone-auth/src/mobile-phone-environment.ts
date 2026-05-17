@@ -72,7 +72,7 @@ export function buildPhoneOtpBrowserUrl(phoneE164: string, returnPath = "/sign-i
   return url.toString();
 }
 
-/** Android PWA: pre-render iframe crashes WebView — render only on Send OTP. */
+/** Warm up invisible reCAPTCHA on app load (Replit-style — badge before Send OTP). */
 export function shouldPreRenderPhoneRecaptcha(): boolean {
-  return !isAndroidPwa();
+  return true;
 }

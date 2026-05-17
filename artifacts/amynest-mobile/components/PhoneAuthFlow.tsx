@@ -17,11 +17,7 @@ import {
   detectDefaultCountry,
   formatPhoneE164,
   isValidNationalPhone,
-  hardResetRecaptcha,
-  resetPhoneRecaptchaWidget,
   sendPhoneOtpSafely,
-  shouldPreRenderPhoneRecaptcha,
-  ensureRecaptchaReady,
   logPhoneOtpDomainContext,
   redirectWwwToCanonicalApex,
   warnIfPhoneAuthDomainMissingFromFirebase,
@@ -61,16 +57,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
     };
   }, []);
 
-  useEffect(() => {
-    if (Platform.OS !== "web" || step === "idle" || !shouldPreRenderPhoneRecaptcha()) {
-      return;
-    }
-    warnIfPhoneAuthDomainMissingFromFirebase();
-    void ensureRecaptchaReady(firebaseAuth).catch((err) => {
-      console.warn("[PhoneAuthFlow] reCAPTCHA pre-render failed", err);
-    });
-  }, [step]);
-
   function startResendTimer() {
     setResendTimer(30);
     timerRef.current = setInterval(() => {
@@ -103,9 +89,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
       let result: ConfirmationResult;
 
       if (Platform.OS === "web") {
-        if (forceResend && !resetPhoneRecaptchaWidget()) {
-          hardResetRecaptcha();
-        }
         const res = await sendPhoneOtpSafely(firebaseAuth, phoneFull);
         if (!res.success) {
           throw new Error(res.error);
@@ -122,9 +105,6 @@ export default function PhoneAuthFlow({ onError }: Props) {
       setStep("otp");
       startResendTimer();
     } catch (err: unknown) {
-      if (Platform.OS === "web") {
-        hardResetRecaptcha();
-      }
       const msg = err instanceof Error ? err.message : "Failed to send OTP. Please try again.";
       console.error("[PhoneAuthFlow] OTP Error:", err);
       onError?.(msg);
