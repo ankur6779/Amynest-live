@@ -7,16 +7,23 @@ import {
 import VerifyEmailActionPage from "@/pages/verify-email-action";
 import ResetPasswordPage from "@/pages/reset-password";
 
+const ACTION_PATH_PREFIX = "/auth/action";
+
 /**
  * Intercepts Firebase email links (?mode=&oobCode=) on ANY route — including `/`
  * (landing), `/dashboard`, etc. — and shows the correct handler UI.
+ *
+ * Verification runs only after the URL is normalized to /auth/action so we never
+ * mount the handler twice (which would cancel applyActionCode and burn the oobCode).
  */
 export function FirebaseActionGate({ children }: { children: ReactNode }) {
   const [pathname, setLocation] = useLocation();
   const { mode, oobCode } = parseFirebaseActionParams();
+  const hasAction = Boolean(mode && oobCode);
+  const onCanonicalPath = pathname.startsWith(ACTION_PATH_PREFIX);
 
   useEffect(() => {
-    if (!mode || !oobCode) return;
+    if (!hasAction) return;
 
     console.info("[firebase-action-gate] Detected email action link", {
       mode,
@@ -24,27 +31,47 @@ export function FirebaseActionGate({ children }: { children: ReactNode }) {
       href: window.location.href,
     });
 
-    // Normalize URL so bookmarks/refreshes keep params on /auth/action
-    if (!pathname.startsWith("/auth/action")) {
-      const qs = new URLSearchParams({ mode, oobCode });
-      const next = `/auth/action?${qs.toString()}`;
+    if (!onCanonicalPath) {
+      const qs = new URLSearchParams({ mode: mode!, oobCode: oobCode! });
+      const next = `${ACTION_PATH_PREFIX}?${qs.toString()}`;
       if (`${pathname}${window.location.search}` !== next) {
         setLocation(next);
       }
     }
-  }, [mode, oobCode, pathname, setLocation]);
+  }, [hasAction, mode, oobCode, pathname, onCanonicalPath, setLocation]);
 
-  if (mode === "verifyEmail" && oobCode) {
+  if (!hasAction) {
+    return <>{children}</>;
+  }
+
+  if (!onCanonicalPath) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(175deg, #0a061a 0%, #120a2e 55%, #050010 100%)",
+        }}
+      >
+        <p style={{ margin: 0, fontSize: 15, color: "rgba(200,180,255,0.75)" }}>
+          Loading…
+        </p>
+      </div>
+    );
+  }
+
+  if (mode === "verifyEmail") {
     return <VerifyEmailActionPage />;
   }
 
-  if (mode === "resetPassword" && oobCode) {
+  if (mode === "resetPassword") {
     return <ResetPasswordPage />;
   }
 
   return <>{children}</>;
 }
-
 /** Run before React route matching (e.g. in index bootstrap). */
 export function peekFirebaseActionMode(): string | null {
   if (typeof window === "undefined") return null;

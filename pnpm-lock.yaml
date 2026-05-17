@@ -190,6 +190,9 @@ importers:
       '@workspace/parenting-articles':
         specifier: workspace:*
         version: link:../../lib/parenting-articles
+      '@workspace/phone-auth':
+        specifier: workspace:*
+        version: link:../../lib/phone-auth
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
@@ -687,6 +690,9 @@ importers:
       '@workspace/parenting-articles':
         specifier: workspace:*
         version: link:../../lib/parenting-articles
+      '@workspace/phone-auth':
+        specifier: workspace:*
+        version: link:../../lib/phone-auth
       '@workspace/ptm-prep':
         specifier: workspace:*
         version: link:../../lib/ptm-prep
@@ -1311,8 +1317,6 @@ importers:
 
   lib/age-content: {}
 
-  lib/amynest-env: {}
-
   lib/api-client-react:
     dependencies:
       '@tanstack/react-query':
@@ -1435,6 +1439,12 @@ importers:
   lib/olympiad: {}
 
   lib/parenting-articles: {}
+
+  lib/phone-auth:
+    dependencies:
+      libphonenumber-js:
+        specifier: ^1.12.9
+        version: 1.13.2
 
   lib/ptm-prep: {}
 
@@ -7242,6 +7252,9 @@ packages:
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
+
+  libphonenumber-js@1.13.2:
+    resolution: {integrity: sha512-S3kmBrptp3yRTm83NUcHy9g1vbwiWMzI8WvY22+koBJ6zkRteLnedBL2VX0MIAGwx2yiyxX4J85pceZyQ6ffgg==}
 
   lie@3.3.0:
     resolution: {integrity: sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==}
@@ -16341,6 +16354,8 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+
+  libphonenumber-js@1.13.2: {}
 
   lie@3.3.0:
     dependencies:

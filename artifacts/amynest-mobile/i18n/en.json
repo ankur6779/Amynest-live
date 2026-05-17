@@ -3193,7 +3193,13 @@
       "enter_otp_sent_to": "Enter OTP sent to",
       "verify_sign_in": "Verify & Sign In",
       "resend_otp": "Resend OTP",
-      "change_number": "Change number"
+      "change_number": "Change number",
+      "country_picker_search_placeholder": "Search country or dial code…",
+      "country_picker_change_title": "Change country",
+      "no_country_found": "No country found",
+      "invalid_phone": "Please enter a valid phone number for the selected country.",
+      "phone_placeholder": "Phone number",
+      "tap_flag_to_change": "Tap flag to change country"
     },
     "phonics_test_card": {
       "phonics_test": "🔤 Phonics Test"
