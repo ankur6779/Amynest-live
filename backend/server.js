@@ -1,6 +1,6 @@
 "use strict";
 
-/** @build 2026-05-17 parent routine explanations + inline fixed activities */
+/** @build 2026-05-17 routine integrity, category taxonomy, energy shaping */
 /**
  * Render Amynest-backend entrypoint (rootDir=backend).
  * Dashboard: build = npm install, start = node server.js
