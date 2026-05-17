@@ -1,5 +1,9 @@
 import { signInWithPhoneNumber, type Auth, type ConfirmationResult } from "firebase/auth";
-import { shouldUseBrowserForPhoneOtp } from "./mobile-phone-environment";
+import {
+  canRunInAppPhoneRecaptcha,
+  isAndroidPwa,
+  shouldUseBrowserForPhoneOtp,
+} from "./mobile-phone-environment";
 import { logPhoneOtpDomainContext } from "./site-domain";
 import {
   resetRecaptchaOnFailure,
@@ -9,6 +13,9 @@ import {
 } from "./phone-recaptcha";
 
 export const PHONE_OTP_SEND_TIMEOUT_MS = 30_000;
+
+const ANDROID_PWA_OTP_MESSAGE =
+  "Phone login in the installed app opens Chrome for security. Tap the button below.";
 
 export type SendPhoneOtpResult =
   | { success: true; confirmation: ConfirmationResult }
@@ -21,7 +28,7 @@ declare global {
 }
 
 /**
- * Replit-style OTP: reuse verifier created on page load, reset only on failure.
+ * Replit-style OTP in browser; never loads reCAPTCHA in Android PWA (process crash).
  */
 export async function sendPhoneOtpSafely(
   auth: Auth,
@@ -30,6 +37,15 @@ export async function sendPhoneOtpSafely(
   const phone = phoneNumber?.trim();
   if (!phone) {
     return { success: false, error: "No phone number" };
+  }
+
+  if (!canRunInAppPhoneRecaptcha()) {
+    console.warn("[phone-otp] Blocked in-app OTP — Android PWA cannot run reCAPTCHA");
+    return {
+      success: false,
+      error: ANDROID_PWA_OTP_MESSAGE,
+      suggestBrowser: true,
+    };
   }
 
   try {
@@ -69,7 +85,7 @@ export async function sendPhoneOtpSafely(
     return {
       success: false,
       error: message,
-      suggestBrowser: shouldUseBrowserForPhoneOtp(),
+      suggestBrowser: isAndroidPwa() || shouldUseBrowserForPhoneOtp(),
     };
   }
 }

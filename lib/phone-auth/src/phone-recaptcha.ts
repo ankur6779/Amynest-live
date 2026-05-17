@@ -3,6 +3,7 @@ import {
   type ApplicationVerifier,
   type Auth,
 } from "firebase/auth";
+import { canRunInAppPhoneRecaptcha } from "./mobile-phone-environment";
 import {
   FIREBASE_PHONE_AUTH_DOMAINS,
   logPhoneOtpDomainContext,
@@ -195,6 +196,10 @@ export function getRecaptcha(auth: Auth): RecaptchaVerifier | null {
  * Render widget once (page load). Replit-style: badge ready before Send OTP.
  */
 export async function warmUpRecaptcha(auth: Auth): Promise<RecaptchaVerifier> {
+  if (!canRunInAppPhoneRecaptcha()) {
+    throw new Error("reCAPTCHA is disabled in Android installed app — use Chrome");
+  }
+
   logPhoneOtpDomainContext("warmUpRecaptcha");
   const verifier = setupRecaptcha(auth);
 
