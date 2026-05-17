@@ -138,6 +138,45 @@ describe("runRoutineIntelligencePipeline", () => {
     assert.ok(feeds.every((f) => f.feedingType === "breast_milk" && !f.dishes?.length));
   });
 
+  it("7-month infant uses validated adaptive path with realism layer", () => {
+    const built = buildRoutineContext({
+      country: "IN",
+      weatherOutdoor: "yes",
+      aqi: 220,
+      previousDayContext: { sleepQuality: "poor" },
+    });
+    const result = runRoutineIntelligencePipeline({
+      items: [
+        { time: "06:45", activity: "Wake", duration: 30, category: "morning_routine" },
+        { time: "19:15", activity: "Sleep", duration: 30, category: "sleep" },
+      ],
+      builtContext: built,
+      childProfile: { ageGroup: "infant", ageInMonths: 7, feedingType: "mixed" },
+      ageInMonths: 7,
+      feedingType: "mixed",
+      specialPlans: "Doctor visit at 11:30",
+      scheduleOpts: {
+        wakeUpTime: "06:45",
+        sleepTime: "19:15",
+        ageGroup: "infant",
+        hasSchool: false,
+      },
+    });
+    assert.ok(
+      result.debugLog.includes("infant_adaptive_validated_path"),
+      result.debugLog.join("; "),
+    );
+    assert.equal(result.validated, true);
+    assert.ok(result.items.length <= 16);
+    assert.equal(
+      result.items.some((i) => /\boutdoor\b/i.test(i.activity)),
+      false,
+    );
+    assert.ok(
+      result.items.some((i) => /doctor|feed|nap/i.test(i.activity)),
+    );
+  });
+
   it("never returns broken schedule when enhancements fail validation", () => {
     const built = buildRoutineContext({ country: "IN", weatherOutdoor: "yes" });
     const broken = baseItems.map((i) => ({ ...i, duration: 3 }));

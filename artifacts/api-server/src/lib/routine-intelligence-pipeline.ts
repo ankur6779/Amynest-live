@@ -51,6 +51,10 @@ import {
   shouldSkipCountryCulture,
   validateAgeFeedingIntegration,
 } from "./routine-age-feeding.js";
+import {
+  generateValidatedInfantRoutine,
+  type InfantFeedingMode,
+} from "./infant-adaptive-routine.js";
 import { getRoutineOutcomeStore } from "./routine-outcome-log.js";
 import {
   ensureFixedActivitiesPreserved,
@@ -141,6 +145,21 @@ function pipelineDebug(enabled: boolean | undefined, log: string[], msg: string,
 
 function cloneItems(items: RoutineScheduleItem[]): RoutineScheduleItem[] {
   return items.map((i) => ({ ...i }));
+}
+
+function isAdaptiveInfantDay(ageInMonths?: number): boolean {
+  return ageInMonths != null && ageInMonths >= 6 && ageInMonths < 12;
+}
+
+function mapInfantFeedingMode(
+  feedingType?: string | null,
+): InfantFeedingMode {
+  const s = (feedingType ?? "").toLowerCase();
+  if (s.includes("breast") && s.includes("formula")) return "mixed";
+  if (s.includes("breast")) return "breast";
+  if (s.includes("formula")) return "formula";
+  if (s.includes("solid")) return "solids_intro";
+  return "mixed";
 }
 
 export function buildHistoryFromOutcomeStore(
@@ -252,6 +271,71 @@ export function runRoutineIntelligencePipeline(
       validationErrors: [...hard.errors, ...ageWarnings],
       decisionTrace,
       confidence: "high",
+      specialEvent: specialParse.debug,
+      parsedSpecialEvent: specialParse.event,
+      parsedSpecialEvents: specialParse.events,
+      fixedActivities: fixedParse.debug,
+      parsedFixedActivities: fixedParse.activities,
+    };
+  }
+
+  if (isAdaptiveInfantDay(ageInMonthsEarly)) {
+    const wake = normalizeTo24h(scheduleOpts.wakeUpTime);
+    const sleep = normalizeTo24h(scheduleOpts.sleepTime);
+    const previousDay =
+      builtContext.previousDayContext ?? history.previousDayContext;
+    const constraints: string[] = [];
+    if (previousDay?.sleepQuality === "poor") {
+      constraints.push("poor sleep previous night");
+    }
+    const specialEvents = specialParse.events.map((e) => ({
+      label: e.activity,
+      time: minsToTime24(e.startMins),
+    }));
+    const validated = generateValidatedInfantRoutine({
+      ageMonths: ageInMonthsEarly,
+      wakeTime: wake,
+      sleepTime: sleep,
+      feedingType: mapInfantFeedingMode(
+        input.feedingType ?? childProfile.feedingType,
+      ),
+      aqi: builtContext.aqi ?? null,
+      weather: builtContext.environment?.condition ?? undefined,
+      location: builtContext.region ?? state.country,
+      specialEvents: specialEvents.length > 0 ? specialEvents : undefined,
+      constraints: constraints.length > 0 ? constraints : undefined,
+      nightWakings:
+        previousDay?.sleepQuality === "poor"
+          ? { count: 2, severity: "moderate" }
+          : undefined,
+    });
+    const infantItems = validated.result.items;
+    const hard = hardValidateSchedule(infantItems, wake, sleep);
+    const auditPassed = validated.finalAudit.allPassed;
+    pipelineDebug(debug, debugLog, "infant_adaptive_validated_path", {
+      realismScore: validated.realismScore.total,
+      blocks: validated.result.blocks.length,
+      auditPassed,
+      schedulerValid: hard.valid,
+    });
+    return {
+      items: infantItems,
+      validated: auditPassed,
+      reverted: false,
+      behaviorSignature,
+      state,
+      difficultyAdjustments: [],
+      culturalChanges: [],
+      debugLog: [...debugLog, "infant_adaptive_validated_path"],
+      validationErrors: auditPassed
+        ? hard.valid
+          ? []
+          : hard.errors
+        : validated.finalAudit.results
+            .filter((r) => r.status === "FAIL")
+            .flatMap((r) => r.details),
+      decisionTrace,
+      confidence: auditPassed ? "high" : "medium",
       specialEvent: specialParse.debug,
       parsedSpecialEvent: specialParse.event,
       parsedSpecialEvents: specialParse.events,
