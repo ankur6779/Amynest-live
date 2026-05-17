@@ -1,0 +1,63 @@
+{
+  "appId": "com.amynest.app",
+  "appName": "AmyNest",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://amynest.in",
+    "androidScheme": "https",
+    "iosScheme": "capacitor",
+    "cleartext": false,
+    "allowNavigation": [
+      "amynest.in",
+      "*.amynest.in",
+      "accounts.google.com",
+      "*.google.com",
+      "*.googleapis.com",
+      "*.gstatic.com",
+      "*.recaptcha.net",
+      "*.firebaseapp.com",
+      "*.firebaseio.com",
+      "*.firebase.com",
+      "securetoken.googleapis.com"
+    ]
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0a061a",
+    "allowsLinkPreview": false,
+    "scrollEnabled": true,
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "android": {
+    "backgroundColor": "#0a061a",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "useLegacyBridge": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2500,
+      "launchAutoHide": true,
+      "backgroundColor": "#0a061a",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "CapacitorHttp": {
+      "enabled": false
+    }
+  },
+  "packageClassList": [
+    "AppPlugin",
+    "GeolocationPlugin",
+    "PushNotificationsPlugin",
+    "PurchasesPlugin",
+    "MicPermissionPlugin"
+  ]
+}

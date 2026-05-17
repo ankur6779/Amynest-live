@@ -3149,6 +3149,7 @@
       "tap_flag_to_change": "Tap flag to change country",
       "recaptcha_sheet_title": "Verify you're human",
       "recaptcha_sheet_hint": "Complete the check below, then we'll send your OTP.",
+      "recaptcha_tap_checkbox": "Tap the checkbox at the bottom of the screen, then wait for OTP.",
       "recaptcha_sheet_busy": "Sending OTP…"
     },
     "phonics_learning": {
