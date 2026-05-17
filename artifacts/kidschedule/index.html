@@ -1017,7 +1017,8 @@
 
         <button
           class="splash-cta"
-          onclick="var s=document.getElementById('splash');if(s){s.classList.add('splash-hide');s.addEventListener('transitionend',function(){s.remove();},{once:true});}"
+          type="button"
+          onclick="(function(){if(!window.__amynestAppCoreReady){console.info('[splash] App still loading — wait for AmyNest to finish starting');return;}var s=document.getElementById('splash');if(s){s.classList.add('splash-hide');s.addEventListener('transitionend',function(){s.remove();},{once:true});}})();"
         >Start Parenting Smart &#8594;</button>
       </div>
     </div>

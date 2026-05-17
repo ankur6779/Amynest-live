@@ -6,7 +6,7 @@ import "./i18n";
 import "./lib/notification-deep-link";
 import { initNativeShell } from "./lib/native-shell";
 import { getAppApiBaseOrigin } from "./lib/api";
-import { redirectWwwToCanonicalApex } from "@workspace/phone-auth";
+import { redirectWwwToCanonicalApex } from "@/lib/canonical-domain";
 import {
   clearCacheRecoveryPending,
   runBootCacheRecoveryIfNeeded,
@@ -33,30 +33,43 @@ const mark = (p: string) => {
 };
 
 async function bootstrap(): Promise<void> {
-  if (typeof window !== "undefined") {
-    if (redirectWwwToCanonicalApex()) return;
+  try {
+    if (typeof window !== "undefined") {
+      if (redirectWwwToCanonicalApex()) return;
 
-    // Purge stale SW/index.html cache before any registration or React mount.
-    await runBootCacheRecoveryIfNeeded();
+      // Purge stale SW/index.html cache before any registration or React mount.
+      await runBootCacheRecoveryIfNeeded();
 
-    // Native vs web bootstrap (service worker on web; no-op in Capacitor shells).
-    initNativeShell();
+      // Native vs web bootstrap (service worker on web; no-op in Capacitor shells).
+      initNativeShell();
 
-    // Orval + authFetch use `/api/...` paths. Native shells and deployed web must
-    // hit https://amynest-backend.onrender.com — set the base URL before AppCore loads.
-    const apiOrigin = getAppApiBaseOrigin();
-    if (apiOrigin) setBaseUrl(apiOrigin);
+      // Orval + authFetch use `/api/...` paths. Native shells and deployed web must
+      // hit https://amynest-backend.onrender.com — set the base URL before AppCore loads.
+      const apiOrigin = getAppApiBaseOrigin();
+      if (apiOrigin) setBaseUrl(apiOrigin);
+    }
+
+    mark("bundle-loaded");
+
+    const rootEl = document.getElementById("root");
+    if (!rootEl) {
+      throw new Error("Missing #root mount node");
+    }
+
+    createRoot(rootEl).render(<App />);
+    mark("react-rendered");
+    clearCacheRecoveryPending();
+  } catch (err) {
+    console.error("[bootstrap] Failed to start app", err);
+    mark("bootstrap-failed");
+    const rootEl = document.getElementById("root");
+    if (rootEl) {
+      rootEl.innerHTML =
+        '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0a061a;color:#f0e8ff;font-family:system-ui,sans-serif;text-align:center"><div><p style="font-weight:600;margin:0 0 12px">AmyNest could not start</p><p style="opacity:0.8;margin:0 0 16px;font-size:14px">Please refresh the page.</p><button type="button" onclick="location.reload()" style="padding:12px 24px;border-radius:999px;border:none;background:linear-gradient(90deg,#7c3aed,#ec4899);color:#fff;font-weight:600;cursor:pointer">Refresh</button></div></div>';
+    }
+  } finally {
+    startSplashDismissal();
   }
-
-  mark("bundle-loaded");
-
-  const root = createRoot(document.getElementById("root")!);
-
-  root.render(<App />);
-  mark("react-rendered");
-  clearCacheRecoveryPending();
-
-  startSplashDismissal();
 }
 
 // Dismiss the splash screen after React has painted AND a minimum display
@@ -108,7 +121,9 @@ function startSplashDismissal(): void {
     const elapsed = performance.now() - splashStartedAt;
     const minElapsed = elapsed >= SPLASH_MIN_MS;
     const coreReady = window.__amynestAppCoreReady === true;
-    if (!minElapsed || !coreReady) return false;
+    // If AppCore is slow, still dismiss after 6s — AuthBootShell covers the gap.
+    const fallbackElapsed = elapsed >= 6000;
+    if (!minElapsed || (!coreReady && !fallbackElapsed)) return false;
     splashDismissed = true;
     if (pollHandle !== null) {
       clearInterval(pollHandle);

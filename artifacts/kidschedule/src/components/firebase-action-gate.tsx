@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { normalizeFirebaseActionUrl } from "@/lib/firebase-action-url-normalize";
 import { FIREBASE_ACTION_PATH, hasFirebaseActionParams } from "@/lib/firebase-action-params";
@@ -10,6 +10,7 @@ import { FIREBASE_ACTION_PATH, hasFirebaseActionParams } from "@/lib/firebase-ac
  */
 export function FirebaseActionGate({ children }: { children: ReactNode }) {
   const [pathname, setLocation] = useLocation();
+  const lastNormalizedRef = useRef<string | null>(null);
 
   useEffect(() => {
     const target = normalizeFirebaseActionUrl();
@@ -17,8 +18,9 @@ export function FirebaseActionGate({ children }: { children: ReactNode }) {
 
     const targetPath = target.split("?")[0] || FIREBASE_ACTION_PATH;
     const current = `${window.location.pathname}${window.location.search}`;
-    if (current === target) return;
+    if (current === target || lastNormalizedRef.current === target) return;
 
+    lastNormalizedRef.current = target;
     console.info("[firebase-action-gate] Normalizing action URL", {
       from: window.location.href,
       to: target,
