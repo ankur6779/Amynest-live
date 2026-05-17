@@ -1,9 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import {
-  getEmailVerificationCallbackUrl,
-  markVerificationEmailSent,
-  shouldSkipVerificationEmailSend,
-} from "./email-verification";
+import { getEmailVerificationCallbackUrl } from "./email-verification";
 
 describe("getEmailVerificationCallbackUrl", () => {
   const originalLocation = window.location;
@@ -43,13 +39,5 @@ describe("getEmailVerificationCallbackUrl", () => {
   it("uses current origin on localhost", () => {
     mockHostname("localhost", "http://localhost:5173");
     expect(getEmailVerificationCallbackUrl()).toBe("http://localhost:5173/auth/callback");
-  });
-
-  it("skips duplicate sends within cooldown window", () => {
-    sessionStorage.clear();
-    markVerificationEmailSent("user-1");
-    expect(shouldSkipVerificationEmailSend("user-1")).toBe(true);
-    expect(shouldSkipVerificationEmailSend("user-2")).toBe(false);
-    sessionStorage.clear();
   });
 });

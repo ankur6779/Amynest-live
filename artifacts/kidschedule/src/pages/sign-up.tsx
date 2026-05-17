@@ -360,6 +360,7 @@ export default function SignUpPage() {
       }
       const q = new URLSearchParams({ email: email.trim() });
       if (verifySendFailed) q.set("sendFailed", "1");
+      else q.set("sent", "1");
       setLocation(`/verify-email?${q.toString()}`);
     } catch (err: any) {
       setError(prettyAuthError(err));
