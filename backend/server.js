@@ -1,6 +1,6 @@
 "use strict";
 
-/** @build 2026-05-17 wire infant realism into production pipeline */
+/** @build 2026-05-17 email OTP verification + production deploy trigger */
 /**
  * Render Amynest-backend entrypoint (rootDir=backend).
  * Dashboard: build = npm install, start = node server.js

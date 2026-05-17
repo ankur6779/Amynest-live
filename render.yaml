@@ -53,6 +53,12 @@ services:
         sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: EMAIL_FROM
+        value: "AmyNest <hello@amynest.in>"
 
   # ─── Development / staging API ────────────────────────────────────────────
   - type: web
