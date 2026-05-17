@@ -32,12 +32,8 @@ declare global {
   }
 }
 
-let setupPromise: Promise<RecaptchaVerifier> | null = null;
+let renderPromise: Promise<RecaptchaVerifier> | null = null;
 
-/**
- * Bottom-corner mount — do NOT move off-screen or opacity:0; Google escalates to
- * visible "Verify you're human" when the widget is hidden.
- */
 function applyInvisibleRecaptchaContainerLayout(el: HTMLElement): void {
   Object.assign(el.style, {
     position: "fixed",
@@ -71,46 +67,54 @@ export function applyRecaptchaContainerLayout(el: HTMLElement): void {
   applyInvisibleRecaptchaContainerLayout(el);
 }
 
-/** @deprecated Container stays on body. */
+/** @deprecated */
 export function mountPhoneRecaptchaContainer(_parent: HTMLElement | null): void {
   ensureRecaptchaContainer();
 }
 
-/** @deprecated No visible sheet — invisible only. */
+/** @deprecated */
 export function setPhoneRecaptchaMobileSheetActive(_active: boolean): void {
   ensureRecaptchaContainer();
 }
 
 export function logRecaptchaDebug(context: string): void {
-  const container = document.getElementById(RECAPTCHA_CONTAINER_ID);
   console.info(`[phone-recaptcha] ${context}`, {
-    hostname: window.location.hostname,
-    containerPresent: Boolean(container),
+    hostname: typeof window !== "undefined" ? window.location.hostname : "",
+    containerPresent: Boolean(document.getElementById(RECAPTCHA_CONTAINER_ID)),
     verifierReady: Boolean(window.recaptchaVerifier),
     widgetId: window.recaptchaWidgetId,
   });
 }
 
-/** Tear down verifier before a fresh create (force resend). */
-export function destroyPhoneRecaptchaVerifier(): void {
-  if (window.recaptchaVerifier) {
-    try {
+/** Clear verifier after OTP failure — do not call on every click. */
+export function clearRecaptchaOnFailure(): void {
+  try {
+    if (window.recaptchaVerifier) {
       window.recaptchaVerifier.clear();
-    } catch {
-      /* ignore */
     }
-    window.recaptchaVerifier = null;
+  } catch (err) {
+    console.warn("[phone-recaptcha] clear on failure", err);
   }
+  window.recaptchaVerifier = null;
   window.recaptchaWidgetId = undefined;
-  setupPromise = null;
+  renderPromise = null;
+  const el = document.getElementById(RECAPTCHA_CONTAINER_ID);
+  if (el) {
+    el.innerHTML = "";
+    applyInvisibleRecaptchaContainerLayout(el);
+  }
 }
 
-/** @deprecated Use destroyPhoneRecaptchaVerifier or resetPhoneRecaptchaWidget. */
+/** @deprecated Use clearRecaptchaOnFailure */
+export function destroyPhoneRecaptchaVerifier(): void {
+  clearRecaptchaOnFailure();
+}
+
+/** @deprecated */
 export function clearPhoneRecaptchaVerifier(): void {
-  destroyPhoneRecaptchaVerifier();
+  clearRecaptchaOnFailure();
 }
 
-/** Reset invisible widget instead of showing a new visible challenge. */
 export function resetPhoneRecaptchaWidget(): boolean {
   const widgetId = window.recaptchaWidgetId;
   const grecaptcha = window.grecaptcha;
@@ -140,29 +144,18 @@ function renderWithTimeout(verifier: RecaptchaVerifier): Promise<number> {
 }
 
 /**
- * Create invisible reCAPTCHA once, persist on window, render to get widgetId.
- * Call before signInWithPhoneNumber(auth, phone, window.recaptchaVerifier).
+ * Create invisible RecaptchaVerifier once (sync). Does not call render().
+ * Reuses window.recaptchaVerifier — never recreates on every OTP click.
  */
-export async function setupPhoneRecaptcha(auth: Auth): Promise<RecaptchaVerifier> {
-  if (typeof document === "undefined") {
-    throw new Error("reCAPTCHA is only available in the browser.");
-  }
+export function getRecaptcha(auth: Auth): RecaptchaVerifier {
+  try {
+    ensureRecaptchaContainer();
 
-  logPhoneOtpDomainContext("reCAPTCHA setup");
-  ensureRecaptchaContainer();
-
-  if (window.recaptchaVerifier) {
-    console.log("Recaptcha:", window.recaptchaVerifier);
-    console.log("WidgetId:", window.recaptchaWidgetId);
-    return window.recaptchaVerifier;
-  }
-
-  if (setupPromise) {
-    return setupPromise;
-  }
-
-  setupPromise = (async () => {
-    destroyPhoneRecaptchaVerifier();
+    if (window.recaptchaVerifier) {
+      console.log("[phone-recaptcha] Recaptcha reuse:", window.recaptchaVerifier);
+      console.log("[phone-recaptcha] WidgetId:", window.recaptchaWidgetId);
+      return window.recaptchaVerifier;
+    }
 
     const verifier = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
       size: "invisible",
@@ -176,50 +169,76 @@ export async function setupPhoneRecaptcha(auth: Auth): Promise<RecaptchaVerifier
     });
 
     window.recaptchaVerifier = verifier;
-
-    const widgetId = await renderWithTimeout(verifier);
-    window.recaptchaWidgetId = widgetId;
-
-    console.log("Recaptcha:", window.recaptchaVerifier);
-    console.log("WidgetId:", window.recaptchaWidgetId);
-    logRecaptchaDebug("setup complete");
-
+    console.log("[phone-recaptcha] Recaptcha created:", verifier);
     return verifier;
-  })();
-
-  try {
-    return await setupPromise;
   } catch (err) {
-    destroyPhoneRecaptchaVerifier();
-    console.error("[phone-recaptcha] setup failed", err);
+    console.error("Recaptcha init error:", err);
     throw err;
-  } finally {
-    setupPromise = null;
   }
 }
 
-/** Alias — setup once, reuse global verifier. */
+/**
+ * Ensure widget is rendered exactly once before signInWithPhoneNumber.
+ */
+export async function ensureRecaptchaReady(auth: Auth): Promise<RecaptchaVerifier> {
+  if (typeof document === "undefined") {
+    throw new Error("reCAPTCHA is only available in the browser.");
+  }
+
+  logPhoneOtpDomainContext("reCAPTCHA ready");
+  const verifier = getRecaptcha(auth);
+
+  if (window.recaptchaWidgetId !== undefined) {
+    return verifier;
+  }
+
+  if (renderPromise) {
+    return renderPromise;
+  }
+
+  renderPromise = (async () => {
+    try {
+      const widgetId = await renderWithTimeout(verifier);
+      window.recaptchaWidgetId = widgetId;
+      console.log("[phone-recaptcha] Recaptcha:", window.recaptchaVerifier);
+      console.log("[phone-recaptcha] WidgetId:", window.recaptchaWidgetId);
+      logRecaptchaDebug("render complete");
+      return verifier;
+    } catch (err) {
+      console.error("[phone-recaptcha] render failed", err);
+      clearRecaptchaOnFailure();
+      throw err;
+    } finally {
+      renderPromise = null;
+    }
+  })();
+
+  return renderPromise;
+}
+
+/** @deprecated Alias */
+export async function setupPhoneRecaptcha(auth: Auth): Promise<RecaptchaVerifier> {
+  return ensureRecaptchaReady(auth);
+}
+
 export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<ApplicationVerifier> {
-  return setupPhoneRecaptcha(auth);
+  return ensureRecaptchaReady(auth);
 }
 
-/** @deprecated Alias. */
 export async function prepareMobilePhoneOtpVerifier(auth: Auth): Promise<ApplicationVerifier> {
-  return setupPhoneRecaptcha(auth);
+  return ensureRecaptchaReady(auth);
 }
 
-/** @deprecated Alias. */
 export async function awaitMobileRecaptchaVerification(
   auth: Auth,
 ): Promise<ApplicationVerifier> {
-  return setupPhoneRecaptcha(auth);
+  return ensureRecaptchaReady(auth);
 }
 
-/** @deprecated Use setupPhoneRecaptcha. */
 export function createStaticRecaptchaVerifier(_token: string): ApplicationVerifier {
   return {
     type: "recaptcha",
-    verify: () => Promise.reject(new Error("Use setupPhoneRecaptcha() instead.")),
+    verify: () => Promise.reject(new Error("Use getRecaptcha() / ensureRecaptchaReady() instead.")),
   };
 }
 
