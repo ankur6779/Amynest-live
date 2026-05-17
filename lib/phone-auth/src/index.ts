@@ -35,9 +35,11 @@ export {
   hardResetRecaptcha,
   initRecaptcha,
   warmUpRecaptcha,
+  prepareRecaptchaForSend,
   resetRecaptchaOnFailure,
   logRecaptchaState,
   setupRecaptcha,
+  applyRecaptchaContainerLayout,
 } from "./phone-recaptcha";
 export {
   isAndroidPwa,

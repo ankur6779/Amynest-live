@@ -6,16 +6,12 @@ import {
 } from "./mobile-phone-environment";
 import { logPhoneOtpDomainContext } from "./site-domain";
 import {
+  prepareRecaptchaForSend,
   resetRecaptchaOnFailure,
-  setupRecaptcha,
-  warmUpRecaptcha,
   logRecaptchaState,
 } from "./phone-recaptcha";
 
 export const PHONE_OTP_SEND_TIMEOUT_MS = 30_000;
-
-const ANDROID_PWA_OTP_MESSAGE =
-  "Phone login in the installed app opens Chrome for security. Tap the button below.";
 
 export type SendPhoneOtpResult =
   | { success: true; confirmation: ConfirmationResult }
@@ -28,7 +24,7 @@ declare global {
 }
 
 /**
- * Replit-style OTP in browser; never loads reCAPTCHA in Android PWA (process crash).
+ * Lazy reCAPTCHA: load only on Send OTP (never at app boot).
  */
 export async function sendPhoneOtpSafely(
   auth: Auth,
@@ -40,10 +36,9 @@ export async function sendPhoneOtpSafely(
   }
 
   if (!canRunInAppPhoneRecaptcha()) {
-    console.warn("[phone-otp] Blocked in-app OTP — Android PWA cannot run reCAPTCHA");
     return {
       success: false,
-      error: ANDROID_PWA_OTP_MESSAGE,
+      error: "Installed app cannot run security check here. Use Open in Chrome below.",
       suggestBrowser: true,
     };
   }
@@ -52,10 +47,7 @@ export async function sendPhoneOtpSafely(
     logPhoneOtpDomainContext("sendOTP");
     logRecaptchaState();
 
-    let verifier = setupRecaptcha(auth);
-    if (window.recaptchaWidgetId === undefined) {
-      verifier = await warmUpRecaptcha(auth);
-    }
+    const verifier = await prepareRecaptchaForSend(auth);
 
     const confirmation = await Promise.race([
       signInWithPhoneNumber(auth, phone, verifier),
