@@ -16,6 +16,30 @@ import { getApiUrl } from "@/lib/api";
 import { format } from "date-fns";
 import { getAgeGroup, getAgeGroupInfo, formatAge } from "@/lib/age-groups";
 import { HANDLER_TYPES, type HandlerKey, simplifyForHandler, buildSyncSuggestions, computeFamilyPoints, pickSharedActivities, appendHandlerToPlans, type FRFamilyResult } from "@workspace/family-routine";
+import {
+  AutoDetectedBadge,
+  AutoDetectionToggle,
+  CompletenessBar,
+  FridgeItemsField,
+  GenerationGuidanceBanner,
+  InputSection,
+  RoutineStylePreview,
+  SpecialPlansField,
+} from "./routine-generate-inputs.js";
+import {
+  EnvironmentSection,
+  SchoolMealSelector,
+  schoolMealPreferenceToApiMode,
+} from "./routine-environment-ui.js";
+import {
+  apiModeToSchoolMealPreference,
+  defaultSchoolMealPreference,
+  type SchoolMealPreference,
+} from "@/lib/school-meal-preference";
+import {
+  cacheSafetyForRoutine,
+  validateRoutineSafety,
+} from "@/lib/safety-routine-validation";
 
 // Mirrors the `weatherOutdoor` enum in the regenerated GenerateRoutineBody
 // schema (see lib/api-zod/src/generated/types/generateRoutineBodyWeatherOutdoor.ts).
@@ -184,6 +208,7 @@ type FamilyResult = {
 // Saved after every successful routine creation so premium users can
 // "Quick Generate" from the routines page without re-entering settings.
 const LAST_GEN_KEY = "amynest_last_gen_settings";
+const AUTO_DETECTION_KEY = "amynest_routine_auto_detection";
 type LastGenSettings = {
   childId: number;
   mood: "happy" | "angry" | "lazy" | "normal";
@@ -278,150 +303,6 @@ function shiftRoutineItems(items: RoutineItem[], defaultWake: string, actualWake
 // Detect essential tasks (brushing, meals, hygiene, sleep)
 function isEssentialTask(activity: string, category: string): boolean {
   return /brush|breakfast|lunch|dinner|snack|meal|eat|morning|wake|bath|hygiene|toilet|tiffin/i.test(activity) || ["meal", "hygiene", "tiffin", "morning"].includes((category ?? "").toLowerCase());
-}
-// ── WeatherSelector ──────────────────────────────────────────────────────
-// Yes/No/Limited control + browser-geolocation auto-detect that calls
-// Open-Meteo (free, keyless) and maps the response into the contract enum.
-// Permission denial / offline / timeout → silently leaves the manual toggle
-// usable; never throws on the page.
-function WeatherSelector({
-  stepNum,
-  value,
-  onChange,
-  onTouched
-}: {
-  stepNum: number;
-  value: WeatherOutdoorChoice;
-  onChange: (v: WeatherOutdoorChoice) => void;
-  onTouched?: () => void;
-}) {
-  const {
-    t
-  } = useTranslation();
-  const [detecting, setDetecting] = useState(false);
-  const [detectError, setDetectError] = useState<string | null>(null);
-  const [detectedHint, setDetectedHint] = useState<string | null>(null);
-  const handleAutoDetect = () => {
-    setDetectError(null);
-    setDetectedHint(null);
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setDetectError(t("pages.routines.generate.weather_detect_unavailable", {
-        defaultValue: "Auto-detect not supported on this browser."
-      }));
-      return;
-    }
-    setDetecting(true);
-    navigator.geolocation.getCurrentPosition(async pos => {
-      try {
-        const lat = pos.coords.latitude.toFixed(4);
-        const lon = pos.coords.longitude.toFixed(4);
-        // Open-Meteo: no API key, no auth, free tier.
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,wind_speed_10m,weather_code`;
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 8000);
-        const res = await fetch(url, {
-          signal: ctrl.signal
-        });
-        clearTimeout(timer);
-        if (!res.ok) throw new Error("weather_failed");
-        const json = (await res.json()) as {
-          current?: {
-            temperature_2m?: number;
-            precipitation?: number;
-            wind_speed_10m?: number;
-            weather_code?: number;
-          };
-        };
-        const next = mapOpenMeteoToWeatherOutdoor(json.current ?? {});
-        onChange(next);
-        onTouched?.();
-        const t2 = json.current?.temperature_2m;
-        setDetectedHint(typeof t2 === "number" ? `${Math.round(t2)}°C` : null);
-      } catch {
-        setDetectError(t("pages.routines.generate.weather_detect_failed", {
-          defaultValue: "Couldn't read weather. Pick manually below."
-        }));
-      } finally {
-        setDetecting(false);
-      }
-    }, () => {
-      setDetecting(false);
-      setDetectError(t("pages.routines.generate.weather_detect_denied", {
-        defaultValue: "Location permission denied. Pick manually below."
-      }));
-    }, {
-      enableHighAccuracy: false,
-      timeout: 8000,
-      maximumAge: 600000
-    });
-  };
-  const options: {
-    val: WeatherOutdoorChoice;
-    label: string;
-    emoji: string;
-    hint: string;
-  }[] = [{
-    val: "yes",
-    label: t("pages.routines.generate.weather_yes", {
-      defaultValue: "Yes"
-    }),
-    emoji: "☀️",
-    hint: t("pages.routines.generate.weather_yes_hint", {
-      defaultValue: "Outdoor play OK"
-    })
-  }, {
-    val: "limited",
-    label: t("pages.routines.generate.weather_limited", {
-      defaultValue: "Limited"
-    }),
-    emoji: "⛅",
-    hint: t("pages.routines.generate.weather_limited_hint", {
-      defaultValue: "Short outdoor + indoor backup"
-    })
-  }, {
-    val: "no",
-    label: t("pages.routines.generate.weather_no", {
-      defaultValue: "No"
-    }),
-    emoji: "🌧️",
-    hint: t("pages.routines.generate.weather_no_hint", {
-      defaultValue: "Stay indoors"
-    })
-  }];
-  return <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepNum}</div>
-          <Label className="text-base sm:text-lg font-bold flex items-center gap-2">
-            <span className="text-xl">🌤️</span>
-            {t("pages.routines.generate.weather_prompt", {
-              defaultValue: "Can the child go outdoor today?"
-            })}
-          </Label>
-        </div>
-        <button type="button" onClick={handleAutoDetect} disabled={detecting} className="text-xs font-bold px-3 py-1.5 rounded-full bg-muted border border-border text-primary hover:bg-primary/10 transition-colors disabled:opacity-50">
-          {detecting ? t("pages.routines.generate.weather_detecting", {
-            defaultValue: "Detecting…"
-          }) : `📍 ${t("pages.routines.generate.weather_auto_detect", {
-            defaultValue: "Auto-detect"
-          })}`}
-        </button>
-      </div>
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        {options.map(o => {
-          const active = value === o.val;
-          return <button key={o.val} type="button" onClick={() => { onChange(o.val); onTouched?.(); }} className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all text-center ${active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card text-foreground border-border hover:border-primary/40"}`}>
-              <span className="text-2xl leading-none">{o.emoji}</span>
-              <span className="text-sm font-bold leading-tight">{o.label}</span>
-              <span className={`text-[10px] leading-tight ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{o.hint}</span>
-            </button>;
-        })}
-      </div>
-      {detectedHint && !detectError && <p className="text-[11px] text-muted-foreground">📍 {t("pages.routines.generate.weather_detected_at", {
-        defaultValue: "Auto-detected from your location"
-      })} · {detectedHint}</p>}
-      {detectError && <p className="text-[11px] text-muted-foreground">{detectError}</p>}
-    </div>;
 }
 function ToggleGroup({
   value,
@@ -605,7 +486,10 @@ export default function RoutineGenerate() {
   })();
   const [date, setDate] = useState(initialDate);
   const [hasSchool, setHasSchool] = useState<boolean | null>(null);
-  const [schoolMealMode, setSchoolMealMode] = useState<"disabled" | "snack_only" | "packed_lunch_only" | "snack_and_packed_lunch">("snack_and_packed_lunch");
+  const [schoolMealPreference, setSchoolMealPreference] =
+    useState<SchoolMealPreference>("meals_from_home");
+  const schoolMealMode = schoolMealPreferenceToApiMode(schoolMealPreference);
+  const schoolMealDefaultAppliedRef = useRef(false);
   const [specialPlans, setSpecialPlans] = useState("");
   const [fridgeItems, setFridgeItems] = useState("");
   const initialMood = (() => {
@@ -637,6 +521,14 @@ export default function RoutineGenerate() {
   // submitting so meals/recipes/outdoor activities reflect the actual
   // conditions instead of the default "yes".
   const [weatherTouched, setWeatherTouched] = useState(false);
+  const [useAutoDetection, setUseAutoDetection] = useState(() => {
+    try {
+      return localStorage.getItem(AUTO_DETECTION_KEY) !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const [schoolAutoDetected, setSchoolAutoDetected] = useState(false);
   const [prefetchingLocation, setPrefetchingLocation] = useState(false);
   // Refs for the silent pre-detect: an in-flight promise so concurrent
   // generate clicks share one geolocation lookup (no duplicate permission
@@ -644,6 +536,14 @@ export default function RoutineGenerate() {
   // discarded if the user manually picked a chip while it was running.
   const weatherDetectInFlightRef = useRef<Promise<WeatherOutdoorChoice | null> | null>(null);
   const weatherTouchedRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUTO_DETECTION_KEY, useAutoDetection ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [useAutoDetection]);
 
   // Family mode
   const [familyChildSettings, setFamilyChildSettings] = useState<Record<number, {
@@ -717,6 +617,12 @@ export default function RoutineGenerate() {
       if (!cancelled) {
         if (p?.region) setParentRegion(p.region);
         if (p?.dietType) setParentDietType(p.dietType);
+        if (!schoolMealDefaultAppliedRef.current) {
+          setSchoolMealPreference(
+            defaultSchoolMealPreference(null, p?.region ?? p?.foodStyle),
+          );
+          schoolMealDefaultAppliedRef.current = true;
+        }
       }
     }).catch(() => {});
     return () => {
@@ -754,27 +660,29 @@ export default function RoutineGenerate() {
     }
   }, [selectedChild, mood, weatherOutdoor, handlerType]);
 
-  // Auto-detect weekends for single mode
+  // Auto-detect school day from child schoolDays when auto-detection is on
   useEffect(() => {
-    // Auto-pre-fill hasSchool based on child's schoolDays + selected date weekday.
-    // Replaces the prior weekend-only heuristic so it respects custom school weeks
-    // (e.g. some kids go Sat too, some only Mon/Wed/Fri).
+    if (!useAutoDetection) {
+      setSchoolAutoDetected(false);
+      return;
+    }
     if (!selectedChild || !children) return;
     const data = children.find(c => c.id === selectedChild);
     if (!data) return;
     if (!(data as any).isSchoolGoing) {
       setHasSchool(false);
+      setSchoolAutoDetected(true);
       return;
     }
     const isoWeekday = (() => {
-      // ISO 1=Mon..7=Sun (matches stored schoolDays)
-      const day = new Date(date + "T00:00:00").getDay(); // 0=Sun..6=Sat
+      const day = new Date(date + "T00:00:00").getDay();
       return day === 0 ? 7 : day;
     })();
     const days = (data as any).schoolDays as number[] | null | undefined;
-    const effectiveDays = Array.isArray(days) ? days : [1, 2, 3, 4, 5]; // legacy fallback
+    const effectiveDays = Array.isArray(days) ? days : [1, 2, 3, 4, 5];
     setHasSchool(effectiveDays.includes(isoWeekday));
-  }, [date, selectedChild, children]);
+    setSchoolAutoDetected(true);
+  }, [date, selectedChild, children, useAutoDetection]);
 
   // Auto-set hasSchool=false for infants, toddlers, and non-school preschoolers
   useEffect(() => {
@@ -852,7 +760,10 @@ export default function RoutineGenerate() {
           if (!(c.id in next)) {
             next[c.id] = {
               hasSchool: notSchoolApplicable ? false : null,
-              selected: true
+              selected: true,
+              schoolMealMode: schoolMealPreferenceToApiMode(
+                defaultSchoolMealPreference(null, parentRegion),
+              ),
             };
           } else if (notSchoolApplicable && next[c.id].hasSchool === null) {
             next[c.id] = {
@@ -864,7 +775,7 @@ export default function RoutineGenerate() {
         return next;
       });
     }
-  }, [children]);
+  }, [children, parentRegion]);
 
   const isGenerating = generateMutation.isPending || createMutation.isPending;
   const selectedChildData = children?.find(c => c.id === selectedChild) as ChildType | undefined;
@@ -889,6 +800,19 @@ export default function RoutineGenerate() {
         });
         // Persist last-used settings so premium users can Quick Generate next time.
         if (lastSettingsRef.current) saveLastGenSettings(lastSettingsRef.current);
+        const childForSafety = children?.find(c => c.id === selectedChild);
+        void validateRoutineSafety(
+          authFetch,
+          data.items as Array<{
+            time?: string;
+            activity?: string;
+            duration?: number;
+            category?: string;
+          }>,
+          childForSafety as { dob?: string | null } | undefined,
+        )
+          .then((result) => cacheSafetyForRoutine(savedRoutine.id, result))
+          .catch(() => {});
         setLocation(`/routines/${savedRoutine.id}`);
       },
       onError: (err: unknown) => {
@@ -911,7 +835,7 @@ export default function RoutineGenerate() {
         });
       }
     });
-  }, [createMutation, selectedChild, date, toast, queryClient, setLocation]);
+  }, [createMutation, selectedChild, date, toast, queryClient, setLocation, children, authFetch]);
 
   // ── Post-generate: adjust for today (past tasks + wake shift) ─────────────
   const handlePostGenerate = React.useCallback((generatedData: {
@@ -1145,7 +1069,9 @@ export default function RoutineGenerate() {
   // permission prompts). Late results are discarded if the user manually
   // picked a chip during the lookup ("transparency over surgery").
   const ensureWeatherDetected = React.useCallback(async (): Promise<WeatherOutdoorChoice> => {
-    if (weatherTouchedRef.current || weatherTouched) return weatherOutdoor;
+    if (!useAutoDetection || weatherTouchedRef.current || weatherTouched) {
+      return weatherOutdoor;
+    }
     if (!weatherDetectInFlightRef.current) {
       setPrefetchingLocation(true);
       weatherDetectInFlightRef.current = detectWeatherOutdoorFromBrowser().finally(() => {
@@ -1163,7 +1089,7 @@ export default function RoutineGenerate() {
       return detected;
     }
     return weatherOutdoor;
-  }, [weatherTouched, weatherOutdoor]);
+  }, [weatherTouched, weatherOutdoor, useAutoDetection]);
 
   // ── Wake confirm submit ────────────────────────────────────────────────────
   const handleWakeConfirmSubmit = () => {
@@ -1206,6 +1132,27 @@ export default function RoutineGenerate() {
     return true;
   })();
   const isFormValid = selectedChild && date && (!schoolQuestionRequired || hasSchool !== null);
+
+  const missingOptionalLabels = (() => {
+    const missing: string[] = [];
+    if (!fridgeItems.trim()) {
+      missing.push(t("pages.routines.generate.optional_fridge", { defaultValue: "fridge" }));
+    }
+    if (mood === "normal") {
+      missing.push(t("pages.routines.generate.optional_mood", { defaultValue: "mood" }));
+    }
+    if (!specialPlans.trim()) {
+      missing.push(
+        t("pages.routines.generate.optional_special_plans", { defaultValue: "special plans" }),
+      );
+    }
+    return missing;
+  })();
+
+  const isWeekendDate = (() => {
+    const d = new Date(date + "T00:00:00").getDay();
+    return d === 0 || d === 6;
+  })();
 
   // Single mode generate — now goes through wake-time gate
   const handleGenerate = async (forceOverride = false) => {
@@ -1366,8 +1313,20 @@ export default function RoutineGenerate() {
               override: true
             }
           }, {
-            onSuccess: () => {
+            onSuccess: (savedRoutine) => {
               saved++;
+              void validateRoutineSafety(
+                authFetch,
+                routine.items as Array<{
+                  time?: string;
+                  activity?: string;
+                  duration?: number;
+                  category?: string;
+                }>,
+                child as { dob?: string | null } | undefined,
+              )
+                .then((result) => cacheSafetyForRoutine(savedRoutine.id, result))
+                .catch(() => {});
               resolve();
             },
             onError: reject
@@ -1394,9 +1353,6 @@ export default function RoutineGenerate() {
   // Hide the single-mode child picker (and renumber subsequent steps)
   // when the parent only has one child registered.
   const multiChild = (children?.length ?? 0) > 1;
-  const stepOffset = multiChild ? 0 : 1;
-  const stepN = (n: number) => n - stepOffset;
-
   const isGeneratingFamily = !!familyProgress;
   const familySelectedCount = Object.values(familyChildSettings).filter(s => s.selected).length;
   const familyReadyCount = Object.entries(familyChildSettings).filter(([, s]) => s.selected && s.hasSchool !== null).length;
@@ -1564,13 +1520,24 @@ export default function RoutineGenerate() {
                     </div>
                   </Link>}
 
-                <div className="space-y-8">
-                {/* Step 2 — Date */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(2)}</div>
-                    <Label className="text-lg font-bold">{t("pages.routines.generate.which_day")}</Label>
+                <div className="space-y-6">
+                <GenerationGuidanceBanner />
+                <AutoDetectionToggle enabled={useAutoDetection} onChange={setUseAutoDetection} />
+                <InputSection
+                  title={t("pages.routines.generate.section_essential", { defaultValue: "Essential inputs" })}
+                  subtitle={t("pages.routines.generate.section_essential_hint", { defaultValue: "Required to build today's schedule" })}
+                >
+                {!multiChild && selectedChildData && (
+                  <div className="flex items-center gap-2 rounded-xl bg-card border border-border px-3 py-2 text-sm">
+                    <User className="h-4 w-4 text-primary" />
+                    <span>
+                      {t("pages.routines.generate.generating_for", { defaultValue: "Generating for" })}{" "}
+                      <strong>{selectedChildData.name}</strong>
+                    </span>
                   </div>
+                )}
+                <div className="space-y-4">
+                  <Label className="text-base font-bold">{t("pages.routines.generate.which_day")}</Label>
                   <div className="flex gap-3 max-w-sm">
                     {([{
                   label: "Today",
@@ -1638,19 +1605,18 @@ export default function RoutineGenerate() {
                     </div>}
                 </div>
 
-                {/* Step 3 — School today? (age-aware) */}
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(3)}</div>
-                    <Label className="text-lg font-bold flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Label className="text-base font-bold flex items-center gap-2">
                       <School className="h-5 w-5 text-primary" />
                       {selectedChildAgeGroup === "infant" ? "Care Mode" : selectedChildAgeGroup === "toddler" ? "Learning Mode" : "Is there school on this day?"}
                     </Label>
-                    {(() => {
-                  const d = new Date(date + "T00:00:00");
-                  const day = d.getDay();
-                  return (day === 0 || day === 6) && schoolQuestionRequired ? <span className="text-xs bg-muted text-primary font-bold px-2 py-0.5 rounded-full">{t("pages.routines.generate.weekend_auto_detected")}</span> : null;
-                })()}
+                    {isWeekendDate && schoolQuestionRequired && useAutoDetection && (
+                      <AutoDetectedBadge label={t("pages.routines.generate.weekend_auto_detected")} />
+                    )}
+                    {useAutoDetection && schoolAutoDetected && schoolQuestionRequired && !isWeekendDate && (
+                      <AutoDetectedBadge />
+                    )}
                   </div>
 
                   {/* INFANT — no school, just info */}
@@ -1682,101 +1648,78 @@ export default function RoutineGenerate() {
 
                   {/* PRESCHOOL with school, or SCHOOL-AGE+ — show full toggle */}
                   {schoolQuestionRequired && <>
-                      <ToggleGroup value={hasSchool} onChange={setHasSchool} options={[["Yes, school day", true, "🏫"], ["No, day off", false, "🏖️"]]} />
-                      {hasSchool === true && <div className="space-y-2">
-                          <p className="text-xs font-bold text-muted-foreground">{t("pages.routines.generate.school_meal_mode_label")}</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            {([
-                              { value: "snack_and_packed_lunch" as const, lk: "pages.routines.generate.school_meal_snack_and_lunch", hk: "pages.routines.generate.school_meal_snack_and_lunch_hint" },
-                              { value: "snack_only" as const, lk: "pages.routines.generate.school_meal_snack_only", hk: "pages.routines.generate.school_meal_snack_only_hint" },
-                              { value: "packed_lunch_only" as const, lk: "pages.routines.generate.school_meal_lunch_only", hk: "pages.routines.generate.school_meal_lunch_only_hint" },
-                              { value: "disabled" as const, lk: "pages.routines.generate.school_meal_disabled", hk: "pages.routines.generate.school_meal_disabled_hint" },
-                            ]).map(opt => (
-                              <button key={opt.value} onClick={() => setSchoolMealMode(opt.value)} className={`flex flex-col gap-0.5 p-3 rounded-xl border-2 text-left transition-all ${schoolMealMode === opt.value ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/40"}`}>
-                                <span className={`text-xs font-bold ${schoolMealMode === opt.value ? "text-primary" : "text-foreground"}`}>{t(opt.lk)}</span>
-                                <span className="text-[10px] text-muted-foreground leading-tight">{t(opt.hk)}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>}
+                      <ToggleGroup value={hasSchool} onChange={(v) => { setHasSchool(v); setSchoolAutoDetected(false); }} options={[["Yes, school day", true, "🏫"], ["No, day off", false, "🏖️"]]} />
+                      {hasSchool === true && (
+                        <SchoolMealSelector
+                          value={schoolMealPreference}
+                          onChange={setSchoolMealPreference}
+                        />
+                      )}
                       {hasSchool === false && <div className="bg-muted border border-border rounded-2xl p-3 text-sm text-primary">
                           {t("pages.routines.generate.amy_ai_will_skip_school_blocks_and_add_outdoor_play_hobby_ac")}
                         </div>}
                     </>}
                 </div>
+                </InputSection>
 
-                {/* Step 4 — Outdoor weather signal */}
-                <WeatherSelector stepNum={stepN(4)} value={weatherOutdoor} onChange={setWeatherOutdoor} onTouched={() => { weatherTouchedRef.current = true; setWeatherTouched(true); }} />
+                <InputSection
+                  title={t("pages.routines.generate.section_environment", { defaultValue: "Environment" })}
+                  subtitle={t("pages.routines.generate.section_environment_hint", {
+                    defaultValue:
+                      "Live location, weather, AQI, and outdoor allowance for today's routine",
+                  })}
+                >
+                <EnvironmentSection
+                  childId={selectedChild}
+                  autoDetectEnabled={useAutoDetection}
+                  weatherOutdoor={weatherOutdoor}
+                  onWeatherChange={setWeatherOutdoor}
+                  allowEnvSync={useAutoDetection && !weatherTouched}
+                  onWeatherTouched={() => {
+                    weatherTouchedRef.current = true;
+                    setWeatherTouched(true);
+                  }}
+                />
+                </InputSection>
 
-                {/* Step 5 — Special plans */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(5)}</div>
-                    <Label className="text-lg font-bold flex items-center gap-2">
-                      <Star className="h-5 w-5 text-primary" />
-                      {t("pages.routines.generate.any_special_plans_today")} <span className="text-sm font-normal text-muted-foreground">{t("pages.routines.generate.optional_2")}</span>
-                    </Label>
-                  </div>
-                  <Input placeholder={t("pages.routines.generate.e_g_birthday_party_at_4pm_doctor_s_appointment_at_11am_outin")} value={specialPlans} onChange={e => setSpecialPlans(e.target.value)} className="rounded-2xl h-12 pl-4" />
-                  <p className="text-xs text-muted-foreground">{t("pages.routines.generate.amy_ai_will_adjust_the_entire_routine_around_your_special_pl")}</p>
-                </div>
+                <InputSection
+                  title={t("pages.routines.generate.section_important", { defaultValue: "Important" })}
+                  subtitle={t("pages.routines.generate.section_important_hint", {
+                    defaultValue: "Fixed plans are scheduled first — Amy works around them",
+                  })}
+                  highlight
+                >
+                  <SpecialPlansField value={specialPlans} onChange={setSpecialPlans} />
+                </InputSection>
 
-                {/* Step 6 — Fridge Items */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(6)}</div>
-                    <Label className="text-lg font-bold">{t("pages.routines.generate.what_s_in_your_fridge")} <span className="text-sm font-normal text-muted-foreground">{t("pages.routines.generate.optional_3")}</span></Label>
-                  </div>
-                  <div className="relative">
-                    <Refrigerator className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Textarea placeholder={t("pages.routines.generate.e_g_eggs_spinach_chicken_rice_tomatoes_milk_apples")} value={fridgeItems} onChange={e => setFridgeItems(e.target.value)} className="pl-9 resize-none rounded-2xl min-h-[80px]" rows={2} />
-                  </div>
-                  <p className="text-xs text-muted-foreground">{t("pages.routines.generate.amy_ai_will_suggest_meals_and_tiffin_using_only_what_you_hav")}</p>
-                </div>
-
-                {/* Mood Selector */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/20 text-primary w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs">{stepN(7)}</div>
-                    <Label className="text-lg font-bold">{t("pages.routines.generate.how_is_your_child_feeling_today")}</Label>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {MOOD_OPTIONS.map(opt => <button key={opt.value} onClick={() => setMood(opt.value)} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${mood === opt.value ? `${opt.color} border-2 shadow-sm scale-105` : "bg-card border-border hover:border-primary/40 hover:bg-muted"}`}>
+                <InputSection
+                  title={t("pages.routines.generate.section_lifestyle", { defaultValue: "Lifestyle inputs" })}
+                  subtitle={t("pages.routines.generate.section_lifestyle_hint", {
+                    defaultValue: "Optional — improves meals and activity tone",
+                  })}
+                >
+                  <FridgeItemsField value={fridgeItems} onChange={setFridgeItems} />
+                  <div className="space-y-3 pt-2 border-t border-border/50">
+                    <Label className="text-base font-bold">{t("pages.routines.generate.how_is_your_child_feeling_today")}</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {MOOD_OPTIONS.map(opt => <button key={opt.value} type="button" onClick={() => setMood(opt.value)} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${mood === opt.value ? `${opt.color} border-2 shadow-sm scale-105` : "bg-card border-border hover:border-primary/40 hover:bg-muted"}`}>
                         <span className="text-2xl">{opt.emoji}</span>
                         <span className="font-bold text-sm">{opt.label}</span>
                         <span className="text-[10px] text-center opacity-70 leading-tight">{opt.hint}</span>
                       </button>)}
-                  </div>
-                  {mood !== "normal" && <div className="bg-muted/60 border border-border rounded-xl px-3 py-2 text-xs text-foreground/70">
+                    </div>
+                    {mood !== "normal" && <div className="bg-muted/60 border border-border rounded-xl px-3 py-2 text-xs text-foreground/70">
                       {t("pages.routines.generate.amy_ai_will_adapt_the_routine_for_a")} <strong>{mood}</strong> {t("pages.routines.generate.mood_day")} {MOOD_OPTIONS.find(o => o.value === mood)?.hint?.toLowerCase()}.
                     </div>}
-                </div>
+                  </div>
+                </InputSection>
 
-                {/* What the AI uses */}
-                <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 text-sm text-foreground/70 space-y-1">
-                  <p className="font-bold text-foreground text-sm mb-2">{t("pages.routines.generate.what_amy_ai_considers")}</p>
-                  <ul className="space-y-1 list-none">
-                    <li>{t("pages.routines.generate.school_status_includes_or_skips_school_blocks")}</li>
-                    <li>{t("pages.routines.generate.tiffin_suggestion_3_options_for_school_going_kids")}</li>
-                    <li>{t("pages.routines.generate.parent_work_type_homemaker_wfh_or_office_schedule")}</li>
-                    <li>{t("pages.routines.generate.working_day_check_busy_vs_free_affects_task_assignment")}</li>
-                    <li>{t("pages.routines.generate.work_hours_tasks_planned_around_exact_busy_windows")}</li>
-                    <li>{t("pages.routines.generate.co_parent_coordination_smart_role_assignment_when_both_paren")}</li>
-                    <li>{t("pages.routines.generate.special_plans_adjusts_the_whole_day_around_them")}</li>
-                    <li>{t("pages.routines.generate.family_bonding_always_adds_2_3_quality_moments")}</li>
-                    <li>{t("pages.routines.generate.wake_up_bedtime_for_accurate_time_slots")}</li>
-                    <li>{t("pages.routines.generate.child_s_food_preference_veg_or_non_veg")}</li>
-                    <li>{t("pages.routines.generate.fridge_ingredients_for_meal_suggestions")}</li>
-                    <li>{t("pages.routines.generate.child_s_mood_adjusts_tone_activity_intensity")}</li>
-                    <li>{t("pages.routines.generate.aqi_air_quality_outdoor_suitability_real_time")}</li>
-                    <li>{t("pages.routines.generate.uv_index_weather_safe_outdoor_blocks")}</li>
-                    <li>{t("pages.routines.generate.temperature_season_heat_cold_monsoon")}</li>
-                    <li>{t("pages.routines.generate.child_age_band_shapes_every_activity")}</li>
-                    <li>{t("pages.routines.generate.diet_type_cuisine_regional_allergen_aware")}</li>
-                    <li>{t("pages.routines.generate.parenting_goals_sleep_tantrums_focus")}</li>
-                  </ul>
-                  <p className="text-[10px] text-muted-foreground mt-2 text-center">{t("patent_pending.microcopy_planning")}</p>
-                </div>
+                <CompletenessBar ready={!!isFormValid} missingOptional={missingOptionalLabels} />
+                <RoutineStylePreview
+                  weatherOutdoor={weatherOutdoor}
+                  mood={mood}
+                  hasSpecialPlans={!!specialPlans.trim()}
+                />
 
                 <div className="pt-2 space-y-3">
                   {prefetchingLocation && <p className="text-center text-xs text-muted-foreground bg-muted/60 border border-border rounded-full py-2 px-4">📍 {t("pages.routines.generate.location_redetecting", { defaultValue: "Detecting your location for accurate meals & outdoor plan…" })}</p>}
@@ -2089,18 +2032,24 @@ export default function RoutineGenerate() {
                                         {label}
                                       </button>)}
                                   </div>
-                                  {settings.hasSchool === true && <div className="grid grid-cols-2 gap-1.5 mt-2">
-                                    {([
-                                      { value: "snack_and_packed_lunch" as const, lk: "pages.routines.generate.school_meal_snack_and_lunch" },
-                                      { value: "snack_only" as const, lk: "pages.routines.generate.school_meal_snack_only" },
-                                      { value: "packed_lunch_only" as const, lk: "pages.routines.generate.school_meal_lunch_only" },
-                                      { value: "disabled" as const, lk: "pages.routines.generate.school_meal_disabled" },
-                                    ]).map(opt => (
-                                      <button key={opt.value} onClick={() => setFamilyChildSettings(prev => ({ ...prev, [child.id]: { ...settings, schoolMealMode: opt.value } }))} className={`py-1.5 px-2 rounded-lg border text-xs font-bold transition-all ${(settings.schoolMealMode ?? "snack_and_packed_lunch") === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-foreground"}`}>
-                                        {t(opt.lk)}
-                                      </button>
-                                    ))}
-                                  </div>}
+                                  {settings.hasSchool === true && (
+                                    <div className="mt-2">
+                                      <SchoolMealSelector
+                                        value={apiModeToSchoolMealPreference(
+                                          settings.schoolMealMode ?? "snack_and_packed_lunch",
+                                        )}
+                                        onChange={(pref) =>
+                                          setFamilyChildSettings((prev) => ({
+                                            ...prev,
+                                            [child.id]: {
+                                              ...settings,
+                                              schoolMealMode: schoolMealPreferenceToApiMode(pref),
+                                            },
+                                          }))
+                                        }
+                                      />
+                                    </div>
+                                  )}
                                 </div>;
                   })()}
                           </div>;
@@ -2132,7 +2081,17 @@ export default function RoutineGenerate() {
                 </div>
 
                 {/* Step 3 — Outdoor weather signal */}
-                <WeatherSelector stepNum={3} value={weatherOutdoor} onChange={setWeatherOutdoor} onTouched={() => { weatherTouchedRef.current = true; setWeatherTouched(true); }} />
+                <EnvironmentSection
+                  childId={children?.[0]?.id ?? null}
+                  autoDetectEnabled={useAutoDetection}
+                  weatherOutdoor={weatherOutdoor}
+                  onWeatherChange={setWeatherOutdoor}
+                  allowEnvSync={useAutoDetection && !weatherTouched}
+                  onWeatherTouched={() => {
+                    weatherTouchedRef.current = true;
+                    setWeatherTouched(true);
+                  }}
+                />
 
                 {/* Step 4 — Special plans */}
                 <div className="space-y-4">

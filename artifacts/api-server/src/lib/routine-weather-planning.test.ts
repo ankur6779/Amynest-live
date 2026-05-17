@@ -71,13 +71,32 @@ describe("applyWeatherFirstPlanning", () => {
     assert.equal(out[0]?.duration, 60);
   });
 
-  it("adds hydration break on hot AU day", () => {
+  it("adds hydration hints (not standalone breaks) on hot AU day", () => {
     const state = deriveBehavioralState(
-      buildRoutineContext({ country: "AU", temperatureC: 35, weatherOutdoor: "yes" }),
+      buildRoutineContext({ country: "AU", temperatureC: 36, weatherOutdoor: "yes" }),
       { ageGroup: "early_school" },
     );
-    const out = applyWeatherFirstPlanning([], state, []);
-    assert.ok(out.some((i) => /hydration/i.test(i.activity)));
+    const out = applyWeatherFirstPlanning(
+      [
+        {
+          time: "18:30",
+          activity: "Backyard play",
+          duration: 40,
+          category: "outdoor",
+        },
+      ],
+      state,
+      [],
+    );
+    assert.ok(
+      !out.some((i) => /^(Hydration break|Water Break)$/i.test(i.activity)),
+      "should not insert standalone water blocks on hot days",
+    );
+    const outdoor = out.find((i) => i.category === "outdoor");
+    assert.ok(
+      (outdoor as { hydration?: string })?.hydration?.includes("Offer water"),
+      "outdoor block should carry integrated hydration hint",
+    );
   });
 
   it("splits outdoor into morning and evening on hot day", () => {

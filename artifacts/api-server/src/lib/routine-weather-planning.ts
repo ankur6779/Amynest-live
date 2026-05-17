@@ -19,12 +19,12 @@ import {
   formatSplitSessionName,
   localizeNzOutdoorLabel,
 } from "./routine-activity-labels.js";
+import { applyHydrationHintsForWeather } from "@workspace/environment";
 import {
   aqiOutdoorLimitNote,
   breathingSafetyNote,
   heatAfternoonBlockNote,
   heatEveningOnlyNote,
-  hydrationHealthNote,
   indoorPlayAirNote,
   MIN_OUTDOOR_SPORT_MINS,
   rainSnowIndoorNote,
@@ -129,6 +129,7 @@ export function weatherPlanningFlagsFromMode(
       mode === "evening_only" || (mode === "avoid_afternoon" && hot),
     limitOutdoorShortenOnly: mode === "limited_outdoor",
     preferSaferOutdoorActivity: mode === "limited_outdoor" && c === "NZ",
+    /** Hint-only hydration on activities — no recurring standalone water blocks. */
     requireHydrationBreak:
       mode === "avoid_afternoon" ||
       mode === "evening_only" ||
@@ -491,27 +492,18 @@ export function applyWeatherFirstPlanning(
     out.push(item);
   }
 
-  if (state.requireHydrationBreak && !out.some((i) => HYDRATION_RE.test(i.activity))) {
-    const schoolEnd = windowMidpoint(state.countryProfile.schoolEndTimeRange);
-    out.push(
-      withWeatherDecision(
-        {
-          time: minsToTime24(Math.max(17 * 60, schoolEnd + 90)),
-          activity: "Hydration break",
-          duration: 15,
-          category: "rest",
-          notes: hydrationHealthNote(),
-          status: "pending",
-        },
-        "hydration break added for hot weather",
-        undefined,
-        "indoor_rest",
-      ),
-    );
-    trace.push({
-      kind: "weather",
-      message: weatherAdjustmentReason("hydration break scheduled"),
-    });
+  let hydratedOut = out;
+  if (state.requireHydrationBreak) {
+    hydratedOut = applyHydrationHintsForWeather(out, {
+      temperatureC: state.environment?.temperature ?? null,
+      requireHydrationHints: true,
+    }) as RoutineScheduleItemWithDecision[];
+    if (hydratedOut.some((it) => Boolean((it as { hydration?: string }).hydration))) {
+      trace.push({
+        kind: "weather",
+        message: weatherAdjustmentReason("hydration hints on active blocks (no separate water breaks)"),
+      });
+    }
   }
 
   if (state.requireAirSafeIndoorBlocks) {
@@ -546,27 +538,6 @@ export function applyWeatherFirstPlanning(
             status: "pending",
           },
           "breathing-safe rest block",
-          undefined,
-          "indoor_rest",
-          "aqi",
-        ),
-      );
-    }
-    if (
-      state.requireHydrationBreak &&
-      !out.some((i) => HYDRATION_RE.test(i.activity))
-    ) {
-      out.push(
-        withWeatherDecision(
-          {
-            time: minsToTime24(17 * 60),
-            activity: "Hydration break",
-            duration: 15,
-            category: "rest",
-            notes: hydrationHealthNote(),
-            status: "pending",
-          },
-          "hydration during high AQI",
           undefined,
           "indoor_rest",
           "aqi",
@@ -621,7 +592,7 @@ export function applyWeatherFirstPlanning(
     });
   }
 
-  return dropUnderMinOutdoorSport(out, state, trace).items;
+  return dropUnderMinOutdoorSport(hydratedOut, state, trace).items;
 }
 
 /**

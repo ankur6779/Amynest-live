@@ -1,11 +1,6 @@
-// ─────────────────────────────────────────────────────────────────────────
-// Household Dashboard — Multi-Child Conflict Resolution Engine
-// Surfaces detected conflicts across all children's routines for a date,
-// shows the merged timeline, and offers one-tap "Apply Resolution" actions.
-// ─────────────────────────────────────────────────────────────────────────
+// Household tab — simplified family-day view for parents
 
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
   useGetHouseholdConflicts,
@@ -25,119 +20,42 @@ import { Badge } from "@/components/ui/badge";
 import {
   AlertTriangle,
   CalendarDays,
-  ChevronLeft,
   Sparkles,
   Users,
-  Moon,
-  Utensils,
-  School as SchoolIcon,
-  Activity,
   CheckCircle2,
+  Heart,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  buildSimplifiedTimeline,
+  householdBalanceMessage,
+} from "@/lib/schedule-insights";
+import { ViewDetailsCollapsible } from "@/components/schedule/view-details-collapsible";
 
-// ── Helpers ──────────────────────────────────────────────────────────────
 function todayIso(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function conflictIcon(kind: HouseholdConflict["kind"]) {
-  switch (kind) {
-    case "caregiver_overlap":
-    case "caregiver_overload":  return <Users className="h-4 w-4" />;
-    case "meal_misalignment":   return <Utensils className="h-4 w-4" />;
-    case "sleep_window_violation": return <Moon className="h-4 w-4" />;
-    case "school_collision":    return <SchoolIcon className="h-4 w-4" />;
-    case "shared_activity_opportunity": return <Sparkles className="h-4 w-4" />;
-    default:                    return <Activity className="h-4 w-4" />;
+function conflictAction(
+  conflict: HouseholdConflict,
+  t: (k: string, o?: { defaultValue?: string }) => string,
+): string {
+  if (conflict.kind === "shared_activity_opportunity") {
+    return t("schedule.household_action_opportunity", {
+      defaultValue: "Block a shared family activity — everyone can join in.",
+    });
   }
+  return conflict.explanation.split(".")[0] + (conflict.explanation.includes(".") ? "." : "");
 }
 
-// audit-ok: conflict severity badges encode semantic state (red=critical, amber=warning, slate=info); intentional non-brand colors.
-function severityColor(sev: number): string {
-  if (sev >= 8) return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"; // audit-ok: severity=critical
-  if (sev >= 5) return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"; // audit-ok: severity=warning
-  return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"; // audit-ok: severity=info
-}
-
-// ── Conflict Card ────────────────────────────────────────────────────────
-function ConflictCard({
-  conflict,
-  resolution,
-  onApply,
-  applying,
-  applied,
+function DetailedTimelinePanel({
+  slots,
   t,
 }: {
-  conflict: HouseholdConflict;
-  resolution?: HouseholdResolution;
-  onApply: () => void;
-  applying: boolean;
-  applied: boolean;
-  t: (k: string, opts?: Record<string, unknown>) => string;
+  slots: HouseholdTimelineSlot[];
+  t: (k: string) => string;
 }) {
-  const opportunity = conflict.kind === "shared_activity_opportunity";
-  return (
-    <Card className="border-l-4" style={{ borderLeftColor: opportunity ? "#22c55e" : "#f59e0b" }}>{/* audit-ok: opportunity=green vs conflict=amber accent strip; semantic state, not brand */}
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {conflictIcon(conflict.kind)}
-            <CardTitle className="text-base">
-              {t(`household.kind.${conflict.kind}`, { defaultValue: conflict.kind })}
-            </CardTitle>
-          </div>
-          <Badge className={severityColor(conflict.severity)}>
-            {opportunity ? t("household.opportunity") : `${t("household.severity")}: ${conflict.severity}`}
-          </Badge>
-        </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          {conflict.startTime} – {conflict.endTime}
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm">{conflict.explanation}</p>
-        {resolution && resolution.strategy !== "no_action" && (
-          <div className="rounded-md bg-violet-50 dark:bg-violet-950/30 p-3 text-sm"> {/* audit-ok: violet block highlights AI-suggested resolution (matches Smart AI brand accent) */}
-            <p className="font-medium text-violet-900 dark:text-violet-200"> {/* audit-ok: violet AI-suggested text */}
-              {t(`household.strategy.${resolution.strategy}`, { defaultValue: resolution.strategy })}
-            </p>
-            <p className="text-violet-800 dark:text-violet-300 text-xs mt-1">{resolution.rationale}</p> {/* audit-ok: violet AI-suggested text */}
-            {resolution.changes.length > 0 && (
-              <ul className="mt-2 space-y-1 text-xs text-violet-900 dark:text-violet-200"> {/* audit-ok: violet AI-suggested text */}
-                {resolution.changes.map((c, i) => (
-                  <li key={i}>
-                    • {c.activity} — <span className="line-through opacity-60">{c.fromTime}</span> → <strong>{c.toTime}</strong>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-        {resolution && resolution.strategy !== "no_action" && (
-          <Button
-            size="sm"
-            variant={applied ? "secondary" : "default"}
-            disabled={applying || applied}
-            onClick={onApply}
-            className="w-full"
-            data-testid={`button-apply-${conflict.id}`}
-          >
-            {applied
-              ? <><CheckCircle2 className="h-4 w-4 mr-1" />{t("household.applied")}</>
-              : applying
-                ? t("common.loading")
-                : t("household.apply_resolution")}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ── Timeline View (grouped by hour) ──────────────────────────────────────
-function TimelinePanel({ slots, t }: { slots: HouseholdTimelineSlot[]; t: (k: string) => string }) {
   if (slots.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("household.no_timeline")}</p>;
   }
@@ -146,21 +64,16 @@ function TimelinePanel({ slots, t }: { slots: HouseholdTimelineSlot[]; t: (k: st
       {slots.map((slot, i) => (
         <div
           key={i}
-          className={`rounded-lg p-3 border ${slot.hasConflict ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"}`} // audit-ok: amber=conflict slot, slate=normal slot (semantic state)
+          className={`rounded-lg p-3 border ${slot.hasConflict ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-800"}`}
         >
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-semibold">{slot.startTime} – {slot.endTime}</p>
-            {slot.hasConflict && (
-              <Badge variant="outline" className="text-amber-700 border-amber-400"> {/* audit-ok: amber conflict warning badge (semantic state) */}
-                <AlertTriangle className="h-3 w-3 mr-1" /> {t("household.conflict")}
-              </Badge>
-            )}
-          </div>
+          <p className="text-sm font-semibold mb-2">
+            {slot.startTime} – {slot.endTime}
+          </p>
           <div className="space-y-1">
             {slot.entries.map((e, j) => (
-              <div key={j} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{e.childName}</span>
-                <span>{e.item.activity} <span className="text-xs text-muted-foreground">({e.item.duration}m)</span></span>
+              <div key={j} className="flex justify-between text-sm gap-2">
+                <span className="text-muted-foreground shrink-0">{e.childName}</span>
+                <span className="text-right">{e.item.activity}</span>
               </div>
             ))}
           </div>
@@ -170,7 +83,6 @@ function TimelinePanel({ slots, t }: { slots: HouseholdTimelineSlot[]; t: (k: st
   );
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────
 export default function HouseholdPage() {
   const { t } = useTranslation();
   const [date] = useState<string>(todayIso());
@@ -187,10 +99,21 @@ export default function HouseholdPage() {
     return map;
   }, [state?.resolutions]);
 
+  const simplifiedBlocks = useMemo(
+    () => (state ? buildSimplifiedTimeline(state.timeline) : []),
+    [state?.timeline],
+  );
+
+  const balanceMessage = state
+    ? householdBalanceMessage(state.summary.overallScore)
+    : "";
+
+  const topConflicts = state?.conflicts.filter((c) => c.kind !== "shared_activity_opportunity").slice(0, 3) ?? [];
+  const opportunities =
+    state?.conflicts.filter((c) => c.kind === "shared_activity_opportunity").slice(0, 2) ?? [];
+
   const handleApply = async (conflictId: string) => {
     if (!state) return;
-    // Re-orchestrate non-dry-run with just this resolution applied.
-    // Server returns the resolved state; we mark as applied locally.
     try {
       await orchestrate.mutateAsync({
         data: {
@@ -207,92 +130,174 @@ export default function HouseholdPage() {
       await queryClient.invalidateQueries({ queryKey: getGetHouseholdConflictsQueryKey({ date }) });
       void refetch();
     } catch {
-      // Surface via existing toast / error state if available; no-op here.
+      /* noop */
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
-      <div className="flex items-center gap-2 mb-4">
-        <Link href="/dashboard">
-          <Button variant="ghost" size="sm" data-testid="button-back">
-            <ChevronLeft className="h-4 w-4 mr-1" /> {t("common.back")}
-          </Button>
-        </Link>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Users className="h-6 w-6" /> {t("household.title")}
-        </h1>
+    <div className="space-y-5 max-w-3xl">
+      <div>
+        <h2 className="text-lg font-bold flex items-center gap-2">
+          <Users className="h-5 w-5 text-primary" />
+          {t("household.title")}
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {t("schedule.household_subtitle", {
+            defaultValue: "How the whole family's day fits together.",
+          })}
+        </p>
       </div>
 
-      <Card className="mb-4 bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/30 dark:to-indigo-950/30 border-violet-200 dark:border-violet-800"> {/* audit-ok: brand hub banner gradient */}
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-2 text-sm">
-            <CalendarDays className="h-4 w-4" />
-            <span className="font-medium">{date}</span>
-            <span className="text-muted-foreground">·</span>
-            <span className="text-muted-foreground">{t("household.subtitle")}</span>
-          </div>
+      <Card className="border border-border/60">
+        <CardContent className="p-4 flex items-center gap-2 text-sm">
+          <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span className="font-medium">{date}</span>
         </CardContent>
       </Card>
 
       {isLoading && (
         <div className="space-y-3">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-24 w-full rounded-2xl" />
+          <Skeleton className="h-40 w-full rounded-2xl" />
         </div>
       )}
 
       {error && (
-        <Card><CardContent className="pt-4 text-sm text-destructive">{t("common.error_generic")}</CardContent></Card>
+        <Card>
+          <CardContent className="p-4 text-sm text-destructive">{t("common.error_generic")}</CardContent>
+        </Card>
       )}
 
       {state && (
         <>
-          {/* Summary scoreboard */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <Card><CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">{t("household.summary.score")}</p>
-              <p className="text-2xl font-bold">{state.summary.overallScore}</p>
-            </CardContent></Card>
-            <Card><CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">{t("household.summary.conflicts")}</p>
-              <p className="text-2xl font-bold">{state.summary.totalConflicts}</p>
-            </CardContent></Card>
-            <Card><CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">{t("household.summary.sleep")}</p>
-              <p className="text-2xl font-bold">{state.summary.sleepIntegrityScore}</p>
-            </CardContent></Card>
-            <Card><CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">{t("household.summary.shared")}</p>
-              <p className="text-2xl font-bold">{state.summary.sharedActivityWindows}</p>
-            </CardContent></Card>
-          </div>
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-5 flex items-start gap-3">
+              <Heart className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-lg font-bold text-foreground">{balanceMessage}</p>
+                {state.summary.totalConflicts > 0 ? (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("schedule.household_conflicts_count", {
+                      defaultValue: "{{count}} items to review below",
+                      count: state.summary.totalConflicts,
+                    })}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("household.no_conflicts")}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Conflict list */}
-          <h2 className="text-lg font-semibold mb-3">{t("household.conflicts_heading")}</h2>
-          {state.conflicts.length === 0 ? (
-            <Card><CardContent className="pt-4 text-sm text-muted-foreground">
-              {t("household.no_conflicts")}
-            </CardContent></Card>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 mb-6">
-              {state.conflicts.map((c) => (
-                <ConflictCard
-                  key={c.id}
-                  conflict={c}
-                  resolution={resolutionsByConflict.get(c.id)}
-                  onApply={() => handleApply(c.id)}
-                  applying={orchestrate.isPending}
-                  applied={appliedIds.has(c.id)}
-                  t={t}
-                />
-              ))}
-            </div>
+          {simplifiedBlocks.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">
+                  {t("schedule.household_day_overview", { defaultValue: "Your day at a glance" })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {simplifiedBlocks.map((block) => (
+                  <div key={block.part}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-bold text-foreground">{block.label}</p>
+                      {block.hasConflict && (
+                        <Badge variant="outline" className="text-amber-700 border-amber-400 text-[10px]">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          {t("household.conflict")}
+                        </Badge>
+                      )}
+                    </div>
+                    <ul className="flex flex-wrap gap-2">
+                      {block.activities.map((a, i) => (
+                        <li
+                          key={i}
+                          className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted border border-border text-foreground"
+                        >
+                          {a}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           )}
 
-          {/* Merged timeline */}
-          <h2 className="text-lg font-semibold mb-3">{t("household.timeline_heading")}</h2>
-          <TimelinePanel slots={state.timeline} t={t} />
+          {(topConflicts.length > 0 || opportunities.length > 0) && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">
+                  {t("schedule.what_to_do", { defaultValue: "What you can do" })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {topConflicts.map((c) => {
+                  const resolution = resolutionsByConflict.get(c.id);
+                  return (
+                    <div
+                      key={c.id}
+                      className="rounded-xl border border-border/60 bg-card p-3 space-y-2"
+                    >
+                      <p className="text-sm font-semibold text-foreground">
+                        {t(`household.kind.${c.kind}`, { defaultValue: c.kind })}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{conflictAction(c, t)}</p>
+                      {resolution && resolution.strategy !== "no_action" && (
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          disabled={orchestrate.isPending || appliedIds.has(c.id)}
+                          onClick={() => handleApply(c.id)}
+                        >
+                          {appliedIds.has(c.id) ? (
+                            <>
+                              <CheckCircle2 className="h-4 w-4 mr-1" />
+                              {t("household.applied")}
+                            </>
+                          ) : (
+                            t("household.apply_resolution")
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+                {opportunities.map((c) => (
+                  <div
+                    key={c.id}
+                    className="rounded-xl border border-emerald-200/60 bg-emerald-50/50 dark:bg-emerald-950/20 p-3"
+                  >
+                    <p className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                      <Sparkles className="h-4 w-4 text-emerald-600" />
+                      {t("household.opportunity")}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">{conflictAction(c, t)}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          <ViewDetailsCollapsible>
+            <DetailedTimelinePanel slots={state.timeline} t={t} />
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <Card>
+                <CardContent className="pt-4">
+                  <p className="text-xs text-muted-foreground">{t("household.summary.sleep")}</p>
+                  <p className="text-xl font-bold">{state.summary.sleepIntegrityScore}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4">
+                  <p className="text-xs text-muted-foreground">{t("household.summary.shared")}</p>
+                  <p className="text-xl font-bold">{state.summary.sharedActivityWindows}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </ViewDetailsCollapsible>
         </>
       )}
     </div>

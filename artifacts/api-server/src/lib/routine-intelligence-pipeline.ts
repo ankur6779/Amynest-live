@@ -47,9 +47,17 @@ import {
   validateAgeFeedingIntegration,
 } from "./routine-age-feeding.js";
 import { getRoutineOutcomeStore } from "./routine-outcome-log.js";
+import {
+  injectSpecialEventBlock,
+  parseSpecialPlans,
+  validateSpecialEventPlacement,
+  type ParsedSpecialEvent,
+  type SpecialEventDebug,
+} from "./routine-special-event.js";
 import { resolveRoutineSchedule } from "./routine-scheduler.js";
 import {
   hardValidateSchedule,
+  minsToTime24,
   normalizeTo24h,
   parseTimeToMins,
   scheduleRoutineItems,
@@ -74,6 +82,8 @@ export type IntelligencePipelineInput = {
   /** Child age in months (overrides profile when set). */
   ageInMonths?: number;
   feedingType?: "breastfeeding" | "formula" | "mixed";
+  /** Raw parent special plans text. */
+  specialPlans?: string;
 };
 
 export type IntelligencePipelineResult = {
@@ -89,6 +99,8 @@ export type IntelligencePipelineResult = {
   decisionTrace: DecisionTraceEntry[];
   /** Trust signal when weather and AQI signals conflict. */
   confidence: RoutineConfidence;
+  specialEvent: SpecialEventDebug;
+  parsedSpecialEvent: ParsedSpecialEvent | null;
 };
 
 function pipelineDebug(enabled: boolean | undefined, log: string[], msg: string, data?: unknown): void {
@@ -150,6 +162,13 @@ export function runRoutineIntelligencePipeline(
   const ageInMonthsEarly =
     input.ageInMonths ?? childProfile.ageInMonths;
 
+  const wakeMinsEarly = parseTimeToMins(normalizeTo24h(scheduleOpts.wakeUpTime));
+  const sleepMinsEarly = parseTimeToMins(normalizeTo24h(scheduleOpts.sleepTime));
+  const specialParse = parseSpecialPlans(input.specialPlans, {
+    wakeMins: wakeMinsEarly,
+    sleepMins: sleepMinsEarly,
+  });
+
   if (isExclusiveInfantPhase(ageInMonthsEarly)) {
     const wake = normalizeTo24h(scheduleOpts.wakeUpTime);
     const sleep = normalizeTo24h(scheduleOpts.sleepTime);
@@ -199,6 +218,8 @@ export function runRoutineIntelligencePipeline(
       validationErrors: [...hard.errors, ...ageWarnings],
       decisionTrace,
       confidence: "high",
+      specialEvent: specialParse.debug,
+      parsedSpecialEvent: specialParse.event,
     };
   }
 
@@ -206,6 +227,16 @@ export function runRoutineIntelligencePipeline(
     ...it,
     time: normalizeTo24h(it.time),
   }));
+
+  if (specialParse.event) {
+    items = injectSpecialEventBlock(items, specialParse.event);
+    pipelineDebug(debug, debugLog, "specialEventInjected", specialParse.event);
+    decisionTrace.push({
+      kind: "priority",
+      message: `Special event locked: ${specialParse.event.activity} @ ${minsToTime24(specialParse.event.startMins)}`,
+      detail: { type: specialParse.event.type, source: specialParse.event.timeSource },
+    });
+  }
 
   const preEnhancementSnapshot = cloneItems(items);
   const baselineDurations = snapshotDurations(items);
@@ -234,6 +265,8 @@ export function runRoutineIntelligencePipeline(
     hasSchool:
       (scheduleOpts.hasSchool ?? false) &&
       (ageInMonths == null || ageInMonths >= 36),
+    isWeekendDay: builtContext.isWeekendDay,
+    referenceDate: builtContext.referenceDate,
     schoolEndMins: scheduleOpts.schoolEndMins,
     schoolStartMins: scheduleOpts.schoolStartMins,
     sleepMins,
@@ -384,6 +417,18 @@ export function runRoutineIntelligencePipeline(
     state.country,
   );
 
+  const specialEvent = validateSpecialEventPlacement(
+    polished,
+    specialParse.event,
+    {
+      wakeMins: wakeMinsEarly,
+      sleepMins: sleepMinsEarly,
+      schoolStartMins: scheduleOpts.schoolStartMins,
+      schoolEndMins: scheduleOpts.schoolEndMins,
+      hasSchool: scheduleOpts.hasSchool,
+    },
+  );
+
   return {
     items: polished,
     validated: validated.valid,
@@ -393,8 +438,13 @@ export function runRoutineIntelligencePipeline(
     difficultyAdjustments,
     culturalChanges,
     debugLog,
-    validationErrors: validated.errors,
+    validationErrors: [
+      ...validated.errors,
+      ...specialEvent.validationWarnings,
+    ],
     decisionTrace,
     confidence,
+    specialEvent,
+    parsedSpecialEvent: specialParse.event,
   };
 }

@@ -1,12 +1,5 @@
 /**
- * DailySignalLogger — Phase 1 of the Adaptive Family Intelligence Engine.
- *
- * Compact card to log today's mood / focus / sleep_quality (1–5 scale)
- * for the selected child. Each scale is rendered as 5 emoji+label buttons;
- * tapping one POSTs the signal and gives toast feedback.
- *
- * Designed to live on the routines index page so parents can drop a quick
- * morning signal that immediately improves the next routine generation.
+ * DailySignalLogger — mood / focus / sleep (1–5) for routine intelligence.
  */
 
 import { useState } from "react";
@@ -25,18 +18,16 @@ import { useToast } from "@/hooks/use-toast";
 
 type ScaleField = "mood" | "focusScore" | "sleepQuality";
 
-/** Per-field emoji for each rating 1–5. Emojis are universal, labels come from i18n. */
 const FIELD_EMOJIS: Record<ScaleField, [string, string, string, string, string]> = {
-  mood:         ["😢", "😟", "😐", "😊", "😄"],
-  focusScore:   ["😵", "😕", "😐", "🎯", "🔥"],
+  mood: ["😢", "😟", "😐", "😊", "😄"],
+  focusScore: ["😵", "😕", "😐", "🎯", "🔥"],
   sleepQuality: ["😩", "😪", "😐", "😌", "⭐"],
 };
 
-/** Selected-state accent colours per field (bg / text / border). */
 const FIELD_ACCENT: Record<ScaleField, string> = {
-  mood:         "bg-violet-500 text-white border-violet-500", // audit-ok: intentional per-field signal accent
-  focusScore:   "bg-indigo-500 text-white border-indigo-500", // audit-ok: intentional per-field signal accent
-  sleepQuality: "bg-sky-500   text-white border-sky-500",     // audit-ok: intentional per-field signal accent
+  mood: "bg-violet-500 text-white border-violet-500",
+  focusScore: "bg-indigo-500 text-white border-indigo-500",
+  sleepQuality: "bg-sky-500 text-white border-sky-500",
 };
 
 function todayStr(): string {
@@ -44,7 +35,13 @@ function todayStr(): string {
   return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
 }
 
-export function DailySignalLogger() {
+export function DailySignalLogger({
+  embedded = false,
+  childId: forcedChildId,
+}: {
+  embedded?: boolean;
+  childId?: number | null;
+}) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -53,7 +50,7 @@ export function DailySignalLogger() {
   });
   const list = (children ?? []) as Array<{ id: number; name: string }>;
   const [childId, setChildId] = useState<number | null>(null);
-  const activeId = childId ?? list[0]?.id ?? null;
+  const activeId = forcedChildId ?? childId ?? list[0]?.id ?? null;
 
   const { data: snap } = useGetChildIntelligence(activeId ?? 0, {
     query: {
@@ -64,14 +61,14 @@ export function DailySignalLogger() {
   const logSignal = useLogChildDailySignal();
 
   const today = todayStr();
-  const todaysSignal = (snap?.recentSignals ?? []).find((s: any) => s.date === today) as
+  const todaysSignal = (snap?.recentSignals ?? []).find((s: { date: string }) => s.date === today) as
     | { mood: number | null; focusScore: number | null; sleepQuality: number | null }
     | undefined;
 
   function send(field: ScaleField, value: number) {
     if (!activeId) return;
     logSignal.mutate(
-      { childId: activeId, data: { date: today, [field]: value } as any },
+      { childId: activeId, data: { date: today, [field]: value } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetChildIntelligenceQueryKey(activeId) });
@@ -85,6 +82,52 @@ export function DailySignalLogger() {
   }
 
   if (list.length === 0) return null;
+
+  const scaleFields = (["mood", "focusScore", "sleepQuality"] as const).map((field) => {
+    const cur = todaysSignal?.[field] ?? null;
+    const emojis = FIELD_EMOJIS[field];
+    const accent = FIELD_ACCENT[field];
+
+    return (
+      <div key={field} className="flex flex-col gap-2">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          {t(`intelligence.signal.fields.${field}`)}
+        </span>
+        <div className="flex gap-1.5">
+          {([1, 2, 3, 4, 5] as const).map((n) => {
+            const on = cur === n;
+            const emoji = emojis[n - 1];
+            const label = t(`intelligence.signal.scale.${field}.${n}`);
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => send(field, n)}
+                disabled={logSignal.isPending}
+                aria-pressed={on}
+                aria-label={`${label} (${n}/5)`}
+                className={
+                  "flex-1 py-1.5 rounded-xl flex flex-col items-center gap-0.5 border transition-all disabled:opacity-50 " +
+                  (on
+                    ? accent + " shadow-md scale-105"
+                    : "bg-muted text-foreground border-border hover:border-primary/40 hover:scale-105")
+                }
+              >
+                <span className="text-xl leading-none">{emoji}</span>
+                <span className="text-[10px] font-semibold leading-tight text-center w-full px-0.5 truncate">
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  });
+
+  if (embedded) {
+    return <div className="flex flex-col gap-3 pt-1">{scaleFields}</div>;
+  }
 
   return (
     <Card className="rounded-3xl border-none shadow-sm bg-card">
@@ -100,10 +143,10 @@ export function DailySignalLogger() {
         </div>
         <p className="text-sm text-muted-foreground">{t("intelligence.signal.subtitle")}</p>
 
-        {list.length > 1 && (
+        {!forcedChildId && list.length > 1 && (
           <div className="flex flex-wrap gap-2 pt-1">
             {list.map((c) => {
-              const on = (childId ?? list[0]?.id) === c.id;
+              const on = activeId === c.id;
               return (
                 <button
                   key={c.id}
@@ -124,47 +167,7 @@ export function DailySignalLogger() {
           </div>
         )}
 
-        {(["mood", "focusScore", "sleepQuality"] as const).map((field) => {
-          const cur = todaysSignal?.[field] ?? null;
-          const emojis = FIELD_EMOJIS[field];
-          const accent = FIELD_ACCENT[field];
-
-          return (
-            <div key={field} className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {t(`intelligence.signal.fields.${field}`)}
-              </span>
-              <div className="flex gap-1.5">
-                {([1, 2, 3, 4, 5] as const).map((n) => {
-                  const on = cur === n;
-                  const emoji = emojis[n - 1];
-                  const label = t(`intelligence.signal.scale.${field}.${n}`);
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => send(field, n)}
-                      disabled={logSignal.isPending}
-                      aria-pressed={on}
-                      aria-label={`${label} (${n}/5)`}
-                      className={
-                        "flex-1 py-1.5 rounded-xl flex flex-col items-center gap-0.5 border transition-all disabled:opacity-50 " +
-                        (on
-                          ? accent + " shadow-md scale-105"
-                          : "bg-muted text-foreground border-border hover:border-primary/40 hover:scale-105")
-                      }
-                    >
-                      <span className="text-xl leading-none">{emoji}</span>
-                      <span className="text-[10px] font-semibold leading-tight text-center w-full px-0.5 truncate">
-                        {label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+        {scaleFields}
       </CardContent>
     </Card>
   );

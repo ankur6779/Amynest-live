@@ -35,4 +35,14 @@ export { mapAgeGroupToEnvAgeGroup } from "./ageMapper.js";
 export {
   applyEnvironmentalEnrichments,
   type EnrichableItem,
+  type EnvironmentalEnrichmentResult,
 } from "./enrichments.js";
+export {
+  applyHydrationGuidance,
+  applyHydrationHintsForWeather,
+  attachHydrationHint,
+  buildHydrationSummary,
+  HYDRATION_ACTIVITY_HINT,
+  MAX_STANDALONE_HYDRATION_BLOCKS,
+  isHotTemperature,
+} from "./hydrationEnrichment.js";

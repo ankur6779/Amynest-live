@@ -343,19 +343,29 @@ function buildCandidates(
         state.aqiExposureMode === "controlled" ||
         state.aqiExposureMode === "limited" ||
         state.aqiExposureMode === "reduced";
+      const aqiHigh = state.aqi != null && state.aqi >= 150;
+      const capMins = state.maxOutdoorDurationFromAqi ?? 20;
+      const outdoorExists = (items: RoutineScheduleItem[]) =>
+        items.some(
+          (i) =>
+            OUTDOOR_RE.test(i.activity) ||
+            /\blight outdoor walk\b/i.test(i.activity),
+        );
+
       if (
         state.allowOutdoor &&
         state.dayPlanningMode === "evening_only" &&
         aqiAdvisoryOutdoor
       ) {
-        const eveningDur = Math.min(state.maxOutdoorDurationFromAqi ?? 20, 20);
+        const planned = 30;
+        const eveningDur = Math.min(planned, capMins);
         add({
           id: "evening_outdoor_in",
           priority: 96,
           slot: "evening",
           item: {
             time: minsToTime24(19 * 60),
-            activity: "Evening outdoor play (limited)",
+            activity: "Outdoor play (limited)",
             duration: eveningDur,
             category: "outdoor",
             notes:
@@ -366,18 +376,40 @@ function buildCandidates(
           source: "safety",
           tag: "evening_outdoor_in",
           kind: "outdoor_evening",
-          exists: (items) =>
-            items.some(
-              (i) =>
-                OUTDOOR_RE.test(i.activity) ||
-                /\blight outdoor walk\b/i.test(i.activity),
-            ),
+          exists: outdoorExists,
+        });
+      } else if (
+        state.allowOutdoor &&
+        state.environmentDataConfidence === "low" &&
+        aqiHigh
+      ) {
+        const fallbackDur = Math.min(15, Math.max(10, capMins));
+        add({
+          id: "fallback_outdoor_in",
+          priority: 97,
+          slot: "evening",
+          item: {
+            time: minsToTime24(19 * 60),
+            activity: "Outdoor play (limited)",
+            duration: fallbackDur,
+            category: "outdoor",
+            notes:
+              "Brief outdoor despite limited air data — mask and hydration advised.",
+            status: "pending",
+          },
+          reason:
+            "Limited environmental data — conservative short outdoor window",
+          source: "safety",
+          tag: "fallback_outdoor_in",
+          kind: "outdoor_evening",
+          exists: outdoorExists,
         });
       } else if (
         state.allowOutdoor &&
         (state.aqiExposureMode === "controlled" ||
           state.aqiExposureMode === "limited")
       ) {
+        const planned = 25;
         add({
           id: "outdoor_limited_in",
           priority: 98,
@@ -385,7 +417,7 @@ function buildCandidates(
           item: {
             time: minsToTime24(schoolEndMid + 18),
             activity: lightOutdoorWalkLabel(),
-            duration: state.maxOutdoorDurationFromAqi ?? 20,
+            duration: Math.min(planned, capMins),
             category: "outdoor",
             notes:
               "Brief outdoor after school — mask advised; avoid evening traffic peak.",
@@ -399,23 +431,25 @@ function buildCandidates(
             items.some((i) => /\blight outdoor walk\b/i.test(i.activity)),
         });
       }
-      add({
-        id: "snack_in",
-        priority: 48,
-        slot: "post_school",
-        item: {
-          time: minsToTime24(schoolEndMid + 95),
-          activity: "Afternoon snack",
-          duration: 20,
-          category: "meal",
-          status: "pending",
-        },
-        reason: "India afternoon snack before dinner",
-        source: "structure",
-        tag: "snack_in",
-        kind: "snack",
-        exists: (items) => items.some((i) => SNACK_RE.test(i.activity)),
-      });
+      if (state.isSchoolDay) {
+        add({
+          id: "snack_in",
+          priority: 48,
+          slot: "post_school",
+          item: {
+            time: minsToTime24(schoolEndMid + 95),
+            activity: "Afternoon snack",
+            duration: 20,
+            category: "meal",
+            status: "pending",
+          },
+          reason: "India afternoon snack before dinner",
+          source: "structure",
+          tag: "snack_in",
+          kind: "snack",
+          exists: (items) => items.some((i) => SNACK_RE.test(i.activity)),
+        });
+      }
       add({
         id: "tuition_in",
         priority: 100,
@@ -440,10 +474,10 @@ function buildCandidates(
         slot: "pre_dinner",
         item: {
           time: minsToTime24(schoolEndMid + 30 + tuitionDur + 15),
-          activity: "Evening play with parent",
+          activity: "Indoor play with parent",
           duration: 40,
           category: "play",
-          notes: "Parent-guided play before dinner.",
+          notes: "Parent-guided indoor play before dinner.",
           status: "pending",
         },
         reason: "India parent-led play before dinner",

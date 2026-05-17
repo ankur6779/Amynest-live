@@ -29,7 +29,15 @@ import {
   type MealPrioritySlot,
 } from "./routine-priority-engine.js";
 import {
+  finalizeMealStructure,
+  isRefuelItem,
+  isWeekdayLunchItem,
+  resolveIsSchoolDay,
+  validateMealDayStructure,
+} from "./routine-meal-day-type.js";
+import {
   clampDurationForCategory,
+  isLockedScheduleItem,
   parseTimeToMins,
   minsToTime24,
   type RoutineScheduleItem,
@@ -60,6 +68,10 @@ export type IntegratedMealMeta = {
 
 export type IntegratedRoutineOpts = {
   hasSchool?: boolean;
+  /** Calendar weekend — suppresses school-day meal flow when true. */
+  isWeekendDay?: boolean;
+  /** Override “today” for weekday detection (tests). */
+  referenceDate?: Date;
   schoolEndMins?: number;
   schoolStartMins?: number;
   sleepMins?: number;
@@ -242,8 +254,9 @@ function mealSlotFromActivity(activity: string, category: string): MealSlot | nu
 
 function dishBase(dish: string): string {
   const d = dish.toLowerCase();
-  if (/\brice\b|chawal|biryani|pulao/i.test(d)) return "rice";
-  if (/\bkhichdi\b/i.test(d)) return "khichdi";
+  if (/\brice\b|chawal|biryani|pulao|khichdi|curd\s+rice|steamed\s+rice/i.test(d)) {
+    return "rice";
+  }
   if (/\broti\b|bread|toast|paratha|wrap|sandwich|pasta|noodle|mac\b/i.test(d)) {
     return "grain";
   }
@@ -263,7 +276,7 @@ type DishVarietyProfile = {
 function dishVarietyProfile(dish: string): DishVarietyProfile {
   const d = dish.toLowerCase();
   let grain = "other";
-  if (/\brice|chawal|pulao|biryani/i.test(d)) grain = "rice";
+  if (/\brice|chawal|pulao|biryani|khichdi|curd\s+rice/i.test(d)) grain = "rice";
   else if (/\broti|bread|toast|paratha|wrap|sandwich|pasta|noodle|mac|potato|idli|dosa/i.test(d)) {
     grain = "grain";
   }
@@ -415,12 +428,7 @@ function isDinnerItem(item: RoutineScheduleItem): boolean {
 }
 
 function isLunchItem(item: RoutineScheduleItem): boolean {
-  const cat = (item.category ?? "").toLowerCase();
-  if (cat !== "meal") return false;
-  return (
-    /\blunch\b/i.test(item.activity) ||
-    /\b(after-school refuel|refuel)\b/i.test(item.activity)
-  );
+  return isRefuelItem(item) || isWeekdayLunchItem(item);
 }
 
 function isSnackItem(item: RoutineScheduleItem): boolean {
@@ -449,9 +457,8 @@ function isPostDinnerStudy(item: RoutineScheduleItem): boolean {
 }
 
 function effectiveKind(item: RoutineScheduleItem): StructureBlockKind {
-  if ((item as { structureKind?: string }).structureKind === "post_dinner_study") {
-    return "post_dinner_study";
-  }
+  const sk = (item as { structureKind?: StructureBlockKind }).structureKind;
+  if (sk === "post_dinner_study" || sk === "outdoor_evening") return sk;
   return classifyStructureBlock(item);
 }
 
@@ -694,7 +701,11 @@ export function enforceIntegratedRoutineFlow(
   const schoolEnd = opts.schoolEndMins ?? 15 * 60;
   const sleepMins = opts.sleepMins ?? 21 * 60;
   const wakeMins = opts.wakeMins ?? 7 * 60;
-  const hasSchool = opts.hasSchool !== false;
+  const isSchoolDay = resolveIsSchoolDay({
+    hasSchool: opts.hasSchool,
+    isWeekendDay: opts.isWeekendDay,
+    date: opts.referenceDate,
+  });
 
   let working = [...items].filter((it) => {
     if (!/\bdrunch\b/i.test(it.activity)) return true;
@@ -702,11 +713,14 @@ export function enforceIntegratedRoutineFlow(
   });
   working = working.filter((it) => !/\bfree time\b/i.test(it.activity));
 
-  if (hasSchool) {
+  if (isSchoolDay) {
     working = removeMorningSnacks(working, schoolEnd);
     adjustments.push("removed pre-school snacks");
     working = ensureAfterSchoolRefuel(working, schoolEnd);
     adjustments.push("ensured after-school refuel (school lunch implicit)");
+  } else {
+    working = working.filter((it) => !isRefuelItem(it));
+    adjustments.push("removed after-school refuel on non-school day");
   }
 
   let dinner =
@@ -736,10 +750,13 @@ export function enforceIntegratedRoutineFlow(
 
   const pinned = new Set<RoutineScheduleItem>();
   const school = working.find(isSchoolItem);
-  if (hasSchool) tagImplicitSchoolLunch(school);
+  if (isSchoolDay) tagImplicitSchoolLunch(school);
   const sleep = working.find(isSleepItem);
   const breakfast = working.find((i) => mealSlotFromActivity(i.activity, i.category ?? "") === "breakfast");
   const lunch = working.find(isLunchItem);
+  for (const it of working) {
+    if (isLockedScheduleItem(it)) pinned.add(it);
+  }
   if (school) pinned.add(school);
   if (sleep) pinned.add(sleep);
   if (breakfast) pinned.add(breakfast);
@@ -796,7 +813,7 @@ export function enforceIntegratedRoutineFlow(
     return true;
   });
 
-  if (country === "UK" && hasSchool && !preOrdered.some((i) => effectiveKind(i) === "study")) {
+  if (country === "UK" && isSchoolDay && !preOrdered.some((i) => effectiveKind(i) === "study")) {
     preOrdered.unshift({
       time: minsToTime24(schoolEnd + 25),
       activity: "Homework & reading",
@@ -810,7 +827,7 @@ export function enforceIntegratedRoutineFlow(
 
   if (
     country === "IN" &&
-    hasSchool &&
+    isSchoolDay &&
     !preOrdered.some((i) => isSnackItem(i))
   ) {
     preOrdered.push({
@@ -827,7 +844,7 @@ export function enforceIntegratedRoutineFlow(
 
   if (country === "AE") {
     if (
-      hasSchool &&
+      isSchoolDay &&
       !preOrdered.some(
         (i) => isSnackItem(i) || parseTimeToMins(i.time) >= 17 * 60 - 5,
       )
@@ -870,7 +887,7 @@ export function enforceIntegratedRoutineFlow(
 
   if (
     country === "UK" &&
-    hasSchool &&
+    isSchoolDay &&
     !preOrdered.some((i) => /\bfootball club\b/i.test(i.activity))
   ) {
     const club = {
@@ -892,7 +909,7 @@ export function enforceIntegratedRoutineFlow(
 
   if (
     country === "US" &&
-    hasSchool &&
+    isSchoolDay &&
     !preOrdered.some((i) => /\bsoccer\b/i.test(i.activity))
   ) {
     preOrdered.push({
@@ -909,7 +926,7 @@ export function enforceIntegratedRoutineFlow(
   if (
     (country === "US" || country === "UK") &&
     !preOrdered.some(isSnackItem) &&
-    hasSchool
+    isSchoolDay
   ) {
     preOrdered.unshift({
       time: minsToTime24(schoolEnd + 15),
@@ -924,7 +941,7 @@ export function enforceIntegratedRoutineFlow(
   if (
     country === "AU" &&
     !preOrdered.some((i) => effectiveKind(i) === "extracurricular") &&
-    hasSchool
+    isSchoolDay
   ) {
     preOrdered.push({
       time: minsToTime24(schoolEnd + 120),
@@ -940,7 +957,7 @@ export function enforceIntegratedRoutineFlow(
   if (
     (country === "AU" || country === "NZ") &&
     !preOrdered.some(isSnackItem) &&
-    hasSchool
+    isSchoolDay
   ) {
     const outdoorIdx = preOrdered.findIndex(
       (i) => effectiveKind(i) === "outdoor" || (i.category ?? "").toLowerCase() === "outdoor",
@@ -960,7 +977,7 @@ export function enforceIntegratedRoutineFlow(
     adjustments.push("inserted AU/NZ snack between outdoor and sports");
   }
 
-  if (country === "AT" && hasSchool) {
+  if (country === "AT" && isSchoolDay) {
     if (!preOrdered.some((i) => effectiveKind(i) === "study")) {
       preOrdered.unshift({
         time: minsToTime24(schoolEnd + 25),
@@ -1017,7 +1034,12 @@ export function enforceIntegratedRoutineFlow(
       : defaultDinnerStart(country, sleepMins) - GAP_MINS;
   for (const it of preOrderedFinal) {
     if (isSnackItem(it) && parseTimeToMins(it.time) < schoolEnd) continue;
-    let dur = clampDurationForCategory(it.category ?? "play", it.duration ?? 30);
+    const kindForDur = effectiveKind(it);
+    let dur =
+      kindForDur === "outdoor_evening" ||
+      (country === "IN" && /\boutdoor play \(limited\)/i.test(it.activity))
+        ? Math.min(20, Math.max(10, it.duration ?? 15))
+        : clampDurationForCategory(it.category ?? "play", it.duration ?? 30);
     if (country === "IN" && effectiveKind(it) === "study" && !isPostDinnerStudy(it)) {
       dur = Math.min(dur, 50);
     }
@@ -1217,7 +1239,7 @@ export function enforceIntegratedRoutineFlow(
     seen.add(key);
     deduped.push(it);
   }
-  if (hasSchool && !deduped.some(isLunchItem)) {
+  if (isSchoolDay && !deduped.some(isRefuelItem)) {
     deduped.push({
       time: minsToTime24(schoolEnd + 15),
       activity: AFTER_SCHOOL_REFUEL_LABEL,
@@ -1242,31 +1264,32 @@ export function enforceIntegratedRoutineFlow(
     wakeMins,
     sleepMins,
     schoolEndMins: schoolEnd,
+    isSchoolDay,
     seed: schoolEnd + country.charCodeAt(0),
   });
 
-  if (hasSchool) {
+  const finalized = finalizeMealStructure(polished, {
+    isSchoolDay,
+    schoolEndMins: schoolEnd,
+    wakeMins,
+    sleepMins,
+  });
+  polished = finalized.items;
+  adjustments.push(...finalized.adjustments);
+
+  if (isSchoolDay) {
     tagImplicitSchoolLunch(polished.find(isSchoolItem));
-    if (!polished.some(isLunchItem)) {
-      polished = [
-        ...polished,
-        {
-          time: minsToTime24(schoolEnd + 15),
-          activity: AFTER_SCHOOL_REFUEL_LABEL,
-          duration: 35,
-          category: "meal",
-          status: "pending" as const,
-          notes: SCHOOL_LUNCH_IMPLICIT_NOTE,
-        },
-      ].sort((a, b) => parseTimeToMins(a.time) - parseTimeToMins(b.time));
-      polished = polishIntegratedTimeline(polished, {
-        country,
-        wakeMins,
-        sleepMins,
-        schoolEndMins: schoolEnd,
-        seed: schoolEnd + country.charCodeAt(0) + 3,
-      });
-      adjustments.push("re-applied after-school refuel post-polish");
+  }
+
+  const dinnerFinal = polished.find(isDinnerItem);
+  if (dinnerFinal) {
+    const dinnerEndMins =
+      parseTimeToMins(dinnerFinal.time) + (dinnerFinal.duration ?? 35);
+    for (const it of polished) {
+      if (isWindDownItem(it) && parseTimeToMins(it.time) < dinnerEndMins + GAP_MINS) {
+        it.time = minsToTime24(dinnerEndMins + GAP_MINS);
+        adjustments.push(`moved wind-down after dinner (${it.activity})`);
+      }
     }
   }
 
@@ -1281,6 +1304,7 @@ function polishIntegratedTimeline(
     wakeMins: number;
     sleepMins: number;
     schoolEndMins: number;
+    isSchoolDay: boolean;
     seed: number;
   },
 ): RoutineScheduleItem[] {
@@ -1301,10 +1325,17 @@ function polishIntegratedTimeline(
 
   for (let i = 0; i < sorted.length; i++) {
     const it = sorted[i]!;
+    if (isLockedScheduleItem(it)) {
+      prevEnd = parseTimeToMins(it.time) + (it.duration ?? 30);
+      continue;
+    }
     if (pinnedMeals.has(it) && (isLunchItem(it) || isDinnerItem(it))) {
       let start = roundRoutineClockMins(parseTimeToMins(it.time), step);
-      if (isLunchItem(it) && start < opts.schoolEndMins + 10) {
+      if (isRefuelItem(it) && opts.isSchoolDay && start < opts.schoolEndMins + 10) {
         start = roundRoutineClockMins(opts.schoolEndMins + 15, step);
+      }
+      if (isWeekdayLunchItem(it) && !opts.isSchoolDay) {
+        start = roundRoutineClockMins(12 * 60 + 30, step);
       }
       if (start < prevEnd + GAP_MINS) {
         start = roundRoutineClockMins(prevEnd + GAP_MINS, step);
@@ -1331,7 +1362,7 @@ function polishIntegratedTimeline(
     }
 
     let start = parseTimeToMins(it.time);
-    if (isLunchItem(it) && start < opts.schoolEndMins) {
+    if (isRefuelItem(it) && opts.isSchoolDay && start < opts.schoolEndMins) {
       start = opts.schoolEndMins + 15;
     }
 
@@ -1471,7 +1502,9 @@ export function enrichRoutineMeals(
     for (const d of meta.dishes) {
       usedBases.add(dishBase(d));
       usedNames.add(d.toLowerCase());
-      if (slot === "lunch") refuelDishes.push(d);
+      if (isRefuelItem(it) || (slot === "lunch" && /\brefuel\b/i.test(it.activity))) {
+        refuelDishes.push(d);
+      }
     }
     if (
       meta.dishes.some((d) =>
@@ -1526,17 +1559,20 @@ export function validateMealActivityIntegration(
   const profile = getCountryRoutineProfile(c);
   const schoolEnd = opts.schoolEndMins ?? 15 * 60;
 
-  if (opts.hasSchool !== false) {
-    const refuel = items.find(isLunchItem);
+  const isSchoolDay = resolveIsSchoolDay({
+    hasSchool: opts.hasSchool,
+    isWeekendDay: opts.isWeekendDay,
+    date: opts.referenceDate,
+  });
+
+  warnings.push(
+    ...validateMealDayStructure(items, isSchoolDay, { schoolEndMins: schoolEnd }),
+  );
+
+  if (isSchoolDay) {
+    const refuel = items.find(isRefuelItem);
     if (!refuel) {
       warnings.push("meal-flow: missing after-school refuel on school day");
-    } else {
-      const t = parseTimeToMins(refuel.time);
-      if (t < schoolEnd || t > schoolEnd + 75) {
-        warnings.push(
-          `meal-flow: after-school refuel at ${refuel.time} outside post-school window`,
-        );
-      }
     }
     const school = items.find(isSchoolItem);
     if (school && !school.notes?.includes("implicit")) {
@@ -1550,7 +1586,7 @@ export function validateMealActivityIntegration(
     }
   }
 
-  const refuelMeal = items.find(isLunchItem);
+  const refuelMeal = items.find(isRefuelItem);
   const dinner = items.find(isDinnerItem);
   if (refuelMeal?.dishes?.length && dinner?.dishes?.length) {
     for (const rd of refuelMeal.dishes) {
@@ -1640,17 +1676,29 @@ export function validateMealActivityIntegration(
     patterns.add(pattern);
   }
 
-  const refuel = items.find(isLunchItem);
+  const mealWithDishes = items.filter((i) => (i.dishes?.length ?? 0) > 0);
+  const riceBasesSeen = new Map<string, string>();
+  for (const m of mealWithDishes) {
+    for (const d of m.dishes!) {
+      const b = dishBase(d);
+      if (b !== "rice" && b !== "grain") continue;
+      const prior = riceBasesSeen.get(b);
+      if (prior && prior !== m.activity) {
+        warnings.push(
+          `meal-variety: duplicate ${b} base across "${prior}" and "${m.activity}"`,
+        );
+      } else if (!prior) {
+        riceBasesSeen.set(b, m.activity);
+      }
+    }
+  }
+
+  const refuel = items.find(isRefuelItem);
   const dinnerItem = items.find(isDinnerItem);
   if (refuel?.dishes?.length && dinnerItem?.dishes?.length) {
-    const refuelBases = new Set(refuel.dishes.map(dishBase));
     const refuelKeys = new Set(refuel.dishes.map((d) => varietyKey(dishVarietyProfile(d))));
     for (const d of dinnerItem.dishes) {
-      const b = dishBase(d);
       const vk = varietyKey(dishVarietyProfile(d));
-      if (refuelBases.has(b) && (b === "rice" || b === "grain")) {
-        warnings.push(`meal-variety: shared ${b} base at refuel and dinner`);
-      }
       if (refuelKeys.has(vk)) {
         warnings.push(`meal-variety: duplicate grain/protein/prep at refuel and dinner`);
       }
@@ -1664,7 +1712,7 @@ export function validateMealActivityIntegration(
     }
   }
 
-  if (c === "AE" && opts.hasSchool !== false) {
+  if (c === "AE" && isSchoolDay) {
     const hydrationSnack = items.find(
       (i) =>
         isSnackItem(i) &&
@@ -1714,6 +1762,12 @@ export function validateMealActivityIntegration(
 }
 
 export { getAgeGroup, type FeedingAgeGroup } from "./routine-age-feeding.js";
+export {
+  resolveIsSchoolDay,
+  classifyCanonicalMealKind,
+  validateMealDayStructure,
+  type CanonicalMealKind,
+} from "./routine-meal-day-type.js";
 
 /** Meal generation — branches on age before country/fridge logic. */
 export function generateMeals(

@@ -4,6 +4,7 @@
  * orchestration.
  */
 import type { WeatherOutdoor } from "@workspace/family-routine";
+import { applyHydrationHintsForWeather } from "@workspace/environment";
 import {
   deriveBehavioralState,
   mealWindowsForState,
@@ -157,7 +158,12 @@ function localizeActivityLabels(
         `study_${state.country.toLowerCase()}`,
         state.country === "IN" ? "study" : "study",
       );
-    } else if (/\b(outdoor play|park play|backyard)\b/i.test(act) && state.allowOutdoor) {
+    } else if (
+      /\b(outdoor play|park play|backyard)\b/i.test(act) &&
+      state.allowOutdoor &&
+      !/\(limited\)/i.test(act) &&
+      next.structureKind !== "outdoor_evening"
+    ) {
       const kind =
         state.country === "AT"
           ? "outdoor_structured"
@@ -334,7 +340,12 @@ function transformActivitiesForState(
         "safety",
         item.activity,
       );
-    } else if (PLAY_CATS.has(cat) && state.activityBias === "play") {
+    } else if (
+      PLAY_CATS.has(cat) &&
+      state.activityBias === "play" &&
+      !/\boutdoor play \(limited\)/i.test(item.activity) &&
+      (item as { structureKind?: string }).structureKind !== "outdoor_evening"
+    ) {
       const dur = clampDurationForCategory(
         cat,
         Math.round((item.duration ?? 30) * state.playDurationFactor),
@@ -406,7 +417,11 @@ export function applyWeatherToScheduledItems(
   );
   next = enforceOutdoorTimeGuards(next, state, trace) as RoutineScheduleItemWithDecision[];
   next = enforceSleepIsLast(next, trace) as RoutineScheduleItemWithDecision[];
-  return polishRoutineOutput(next, state, trace) as RoutineScheduleItemWithDecision[];
+  next = polishRoutineOutput(next, state, trace) as RoutineScheduleItemWithDecision[];
+  return applyHydrationHintsForWeather(next, {
+    temperatureC: state.environment?.temperature ?? null,
+    requireHydrationHints: state.requireHydrationBreak,
+  }) as RoutineScheduleItemWithDecision[];
 }
 
 export { WEATHER_ADJUSTMENT_LABEL, weatherAdjustmentReason };

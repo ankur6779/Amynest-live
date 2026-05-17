@@ -65,18 +65,15 @@ describe("applyEnvironmentalEnrichments", () => {
     assert.deepEqual(r.extraAdaptations, []);
   });
 
-  it("inserts hydration reminders during the active day", () => {
+  it("integrates hydration without recurring water blocks", () => {
     const r = applyEnvironmentalEnrichments(sampleItems, ctx());
-    const reminders = r.items.filter((i) => i.category === "hydration");
-    assert.ok(reminders.length > 0, "expected at least one hydration reminder");
-    const firstActiveMin = 6 * 60 + 30;
-    const lastActiveMin = 16 * 60 + 30;
-    for (const rem of reminders) {
-      const [h, m] = rem.time.split(":").map(Number);
-      const t = h! * 60 + m!;
-      assert.ok(t >= firstActiveMin && t <= lastActiveMin, `reminder ${rem.time} outside active window`);
-    }
-    assert.ok(r.extraAdaptations.some((s) => s.toLowerCase().includes("hydration")));
+    const spam = r.items.filter((i) => i.activity === "Water Break");
+    assert.equal(spam.length, 0, "should not insert recurring Water Break activities");
+    const outdoor = r.items.find((i) => i.activity === "Park & Outdoor Play");
+    assert.ok(outdoor?.hydration?.includes("Offer water"), "outdoor should have hydration hint");
+    const standalone = r.items.filter((i) => i.category === "hydration");
+    assert.ok(standalone.length <= 2, "at most 2 standalone hydration blocks");
+    assert.ok(r.hydrationSummary || r.extraAdaptations.some((s) => s.toLowerCase().includes("hydration")));
   });
 
   it("annotates meal items with seasonal nutrition hints", () => {

@@ -4,7 +4,7 @@
  * Priority resolution order: Safety > Health > Development > Preference
  */
 import type { WeatherOutdoor } from "@workspace/family-routine";
-import type { EnvLevel } from "@workspace/environment";
+import type { EnvDataConfidence, EnvLevel } from "@workspace/environment";
 import type {
   CountryLabelPack,
   CountryRoutineProfile,
@@ -25,6 +25,7 @@ import {
   type AqiOutdoorPolicy,
   type ExposureMode,
 } from "./routine-aqi.js";
+import { resolveIsSchoolDay } from "./routine-meal-day-type.js";
 import { normalizeCountryCode } from "./routine-country-profile.js";
 import {
   assessEnvironment,
@@ -107,6 +108,9 @@ export type InterpretedBehavioralState = {
   environment?: RoutineEnvironmentInput;
   /** Unified AQI + temperature + weather severity. */
   environmentSeverity: EnvironmentSeverity;
+  environmentDataConfidence?: EnvDataConfidence;
+  /** School-day meal flow (weekday + has school). */
+  isSchoolDay: boolean;
 };
 
 export type PreviousDayContext = {
@@ -134,6 +138,10 @@ export type RoutineRawContext = {
   environment?: RoutineEnvironmentInput;
   /** US AQI — also readable from `environment.AQI`. */
   aqi?: number | null;
+  /** Environmental data confidence from EQIE pipeline. */
+  environmentDataConfidence?: EnvDataConfidence;
+  /** Calendar date for school-day detection (defaults to today). */
+  referenceDate?: Date;
 };
 
 export type ChildProfileForRoutine = {
@@ -736,6 +744,12 @@ export function deriveBehavioralState(
     requireAirSafeIndoorBlocks: aqiPolicy.requireAirSafeBlocks,
     environment: enriched.environment,
     environmentSeverity: envAssessment.severity,
+    environmentDataConfidence: enriched.environmentDataConfidence,
+    isSchoolDay: resolveIsSchoolDay({
+      hasSchool: enriched.hasSchool,
+      isWeekendDay: enriched.isWeekendDay,
+      date: enriched.referenceDate,
+    }),
   };
 }
 

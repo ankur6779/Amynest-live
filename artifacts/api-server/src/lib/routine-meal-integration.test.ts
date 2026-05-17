@@ -64,9 +64,11 @@ describe("resolveCountryMealDishes", () => {
 describe("enforceIntegratedRoutineFlow", () => {
   const flowOpts = {
     hasSchool: true,
+    isWeekendDay: false,
     schoolEndMins: 15 * 60,
     sleepMins: 21 * 60,
     wakeMins: 7 * 60,
+    referenceDate: new Date("2026-05-13T12:00:00"),
   };
 
   it("removes high-energy blocks after dinner and adds after-school refuel", () => {
@@ -96,6 +98,35 @@ describe("enforceIntegratedRoutineFlow", () => {
         i.category === "outdoor" && parseTimeToMins(i.time) >= dinnerEnd,
     );
     assert.equal(lateOutdoor, undefined);
+  });
+
+  it("Sunday uses lunch not after-school refuel", () => {
+    const ctx = buildRoutineContext({
+      country: "IN",
+      hasSchool: true,
+      isWeekendDay: true,
+    });
+    const state = deriveBehavioralState(ctx, { ageGroup: "early_school" });
+    assert.equal(state.isSchoolDay, false);
+    const items = [
+      { time: "07:00", activity: "Wake", duration: 30, category: "morning_routine" },
+      { time: "08:00", activity: "Breakfast", duration: 30, category: "meal" },
+      { time: "21:00", activity: "Sleep", duration: 30, category: "sleep" },
+    ];
+    const { items: out } = applyMealAwareScheduling(items, state, {
+      ...flowOpts,
+      isWeekendDay: true,
+      referenceDate: new Date("2026-05-17T12:00:00"),
+    });
+    assert.ok(!out.some((i) => /\bafter-school refuel\b/i.test(i.activity)));
+    assert.ok(out.some((i) => /\blunch\b/i.test(i.activity) && !/\brefuel\b/i.test(i.activity)));
+    const warnings = validateMealActivityIntegration(out, "IN", {
+      hasSchool: true,
+      isWeekendDay: true,
+      referenceDate: new Date("2026-05-17T12:00:00"),
+    });
+    assert.ok(!warnings.some((w) => w.includes("duplicate snack")));
+    assert.ok(!warnings.some((w) => w.includes("refuel must not")));
   });
 
   it("India revision after dinner and play before", () => {
@@ -166,15 +197,26 @@ describe("enrichRoutineMeals + validateMealActivityIntegration", () => {
     let items = [
       { time: "07:00", activity: "Wake", duration: 30, category: "morning_routine" },
       { time: "08:00", activity: "Breakfast", duration: 30, category: "meal" },
-      { time: "15:30", activity: "After-school snack", duration: 20, category: "meal" },
+      { time: "09:00", activity: "At school", duration: 360, category: "school" },
       { time: "16:00", activity: "Soccer practice", duration: 45, category: "exercise" },
       { time: "18:30", activity: "Dinner", duration: 35, category: "meal" },
-      { time: "19:15", activity: "Wind-down & story", duration: 25, category: "rest" },
+      { time: "20:00", activity: "Wind-down & story", duration: 25, category: "rest" },
       { time: "21:00", activity: "Sleep", duration: 30, category: "sleep" },
     ];
     items = enrichRoutineMeals(items, { country: "US", seed: 6 });
-    const flow = applyMealAwareScheduling(items, state);
-    const warnings = validateMealActivityIntegration(flow.items, "US");
+    const flow = applyMealAwareScheduling(items, state, {
+      hasSchool: true,
+      isWeekendDay: false,
+      schoolEndMins: 15 * 60,
+      sleepMins: 21 * 60,
+      wakeMins: 7 * 60,
+      referenceDate: new Date("2026-05-13T12:00:00"),
+    });
+    const warnings = validateMealActivityIntegration(flow.items, "US", {
+      hasSchool: true,
+      isWeekendDay: false,
+      referenceDate: new Date("2026-05-13T12:00:00"),
+    });
     const hard = hardValidateSchedule(flow.items, "07:00", "21:00");
     assert.equal(hard.valid, true, hard.errors.join("; "));
     assert.ok(!warnings.some((w) => w.includes("after dinner")));

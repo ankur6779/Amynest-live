@@ -43,6 +43,25 @@ const EXPOSURE_ORDER: readonly ExposureMode[] = [
 export const AQI_OUTDOOR_RESTRICTED_REASON =
   "Air quality calls for more indoor time today.";
 
+/** Shown on blocks when environmental data confidence is low (full fallback). */
+export const FALLBACK_ENV_REASON =
+  "Limited environmental data — conservative routine applied";
+
+/** Strict outdoor cap from AQI (minutes); null = use exposure-mode default only. */
+export function maxOutdoorMinutesFromAqi(aqi: number): number | null {
+  if (aqi > 300) return 0;
+  if (aqi >= 200) return 15;
+  if (aqi >= 150) return 20;
+  return null;
+}
+
+/** User-facing severity for advisories — AQI ≥ 150 is unhealthy. */
+export function aqiSeverityLabelForMessaging(aqi: number): "good" | "moderate" | "unhealthy" | "severe" {
+  if (aqi <= 100) return aqi <= 50 ? "good" : "moderate";
+  if (aqi < 300) return "unhealthy";
+  return "severe";
+}
+
 export function aqiAdjustmentReason(detail?: string): string {
   if (!detail) return AQI_OUTDOOR_RESTRICTED_REASON;
   const friendly: Record<string, string> = {
@@ -116,6 +135,30 @@ export function applyCulturalExposureModifier(
   if (profile === "strict") return shiftExposure(baseMode, 1);
   if (profile === "tolerant") return shiftExposure(baseMode, -1);
   return baseMode;
+}
+
+/**
+ * Resolved exposure tier — AQI 150–200 is always `limited` (strict band).
+ */
+export function resolveExposureModeForAqi(
+  aqi: number,
+  country: LaunchCountry | string,
+): ExposureMode {
+  if (aqi >= 150 && aqi <= 200) return "limited";
+  const baseMode = baseExposureModeFromAqi(aqi);
+  return applyCulturalExposureModifier(baseMode, country);
+}
+
+function applyAqiDurationCap(policy: AqiOutdoorPolicy, aqi: number): AqiOutdoorPolicy {
+  const cap = maxOutdoorMinutesFromAqi(aqi);
+  if (cap == null) return policy;
+  if (policy.maxOutdoorDurationMins == null) {
+    return { ...policy, maxOutdoorDurationMins: cap };
+  }
+  return {
+    ...policy,
+    maxOutdoorDurationMins: Math.min(policy.maxOutdoorDurationMins, cap),
+  };
 }
 
 /** Stricter of two exposure modes (weather ∩ AQI). */
@@ -252,8 +295,11 @@ export function deriveAqiOutdoorPolicy(
 
   const category = getAQICategory(aqi);
   const baseMode = baseExposureModeFromAqi(aqi);
-  const exposureMode = applyCulturalExposureModifier(baseMode, country);
-  return policyFromExposureMode(baseMode, exposureMode, category, country);
+  const exposureMode = resolveExposureModeForAqi(aqi, country);
+  return applyAqiDurationCap(
+    policyFromExposureMode(baseMode, exposureMode, category, country),
+    aqi,
+  );
 }
 
 /** @deprecated Use `exposureMode` on policy — tolerant controlled/limited outdoor. */
@@ -301,10 +347,17 @@ export function buildGlobalAqiAdvisory(
     actions.push("Limit time outside to essential trips only.");
   }
 
+  const severity = aqiSeverityLabelForMessaging(aqi);
   let level: AdvisoryLevel = "info";
   let message = "Air quality is good — normal outdoor time is fine.";
 
-  if (exposureMode === "reduced") {
+  if (severity === "unhealthy") {
+    level = "warning";
+    message =
+      exposureMode === "indoor_only"
+        ? "Air quality is unhealthy — stay indoors when possible."
+        : "Air quality is unhealthy — limit outdoor time and use protection.";
+  } else if (exposureMode === "reduced") {
     level = "info";
     message = "Air quality is moderate — slightly shorter outdoor time is sensible.";
   } else if (exposureMode === "limited") {
@@ -333,11 +386,7 @@ export function buildAqiAdvisory(
   exposureMode?: ExposureMode,
 ): RoutineAqiAdvisory {
   const mode =
-    exposureMode ??
-    applyCulturalExposureModifier(
-      baseExposureModeFromAqi(aqi),
-      country ?? "IN",
-    );
+    exposureMode ?? resolveExposureModeForAqi(aqi, country ?? "IN");
   return buildGlobalAqiAdvisory(aqi, mode, country);
 }
 
@@ -408,6 +457,7 @@ export function applyExposureModeAdaptations<T extends RoutineScheduleItem>(
     policy: AqiOutdoorPolicy;
     schoolEndMins?: number;
     wakeMins?: number;
+    environmentDataConfidence?: "high" | "medium" | "low";
   },
 ): T[] {
   if (opts.policy.exposureMode === "normal" || opts.aqi == null) {
@@ -426,6 +476,7 @@ export function applyMetroAqiActivityAdaptations<T extends RoutineScheduleItem>(
     policy: AqiOutdoorPolicy;
     schoolEndMins?: number;
     wakeMins?: number;
+    environmentDataConfidence?: "high" | "medium" | "low";
   },
 ): T[] {
   const needsAdaptation =
@@ -473,6 +524,7 @@ export function applyMetroAqiActivityAdaptations<T extends RoutineScheduleItem>(
 
     if (
       opts.policy.avoidEveningPeakPollution &&
+      opts.environmentDataConfidence !== "low" &&
       isOutdoorActivityItem(next) &&
       isEveningPollutionPeak(parseTimeToMins(next.time))
     ) {
@@ -512,12 +564,17 @@ export function applyMetroAqiActivityAdaptations<T extends RoutineScheduleItem>(
     opts.policy.allowOutdoor &&
     (opts.policy.exposureMode === "controlled" || opts.policy.exposureMode === "limited")
   ) {
+    const cap = opts.policy.maxOutdoorDurationMins ?? 20;
+    const injectDur =
+      opts.environmentDataConfidence === "low"
+        ? Math.min(15, Math.max(10, cap))
+        : cap;
     const walk: T = {
       time: minsToTime24(
         opts.policy.preferMorningOutdoor ? wakeMins + 45 : schoolEnd + 20,
       ),
       activity: lightOutdoorWalkLabel(),
-      duration: opts.policy.maxOutdoorDurationMins ?? 20,
+      duration: injectDur,
       category: "outdoor",
       notes: "Brief protected outdoor — lower pollution than evening rush.",
       status: "pending",

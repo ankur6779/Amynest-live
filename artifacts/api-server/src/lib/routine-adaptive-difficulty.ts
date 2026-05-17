@@ -3,6 +3,7 @@
  */
 import {
   clampDurationForCategory,
+  isLockedScheduleItem,
   type RoutineScheduleItem,
 } from "./routine-scheduler.js";
 import type { ActivityHistoryEntry, RoutineActivityHistory } from "./routine-behavior-signature.js";
@@ -31,6 +32,7 @@ const LIGHTEN_LABELS: Record<string, { activity: string; category: string }> = {
 };
 
 function isPinnedItem(item: RoutineScheduleItem): boolean {
+  if (isLockedScheduleItem(item)) return true;
   const cat = (item.category ?? "").toLowerCase();
   return (
     cat === "sleep" ||
