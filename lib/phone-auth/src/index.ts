@@ -23,6 +23,7 @@ export {
   warnIfPhoneAuthDomainMissingFromFirebase,
   setPhoneRecaptchaMobileSheetActive,
   mountPhoneRecaptchaContainer,
+  awaitMobileRecaptchaVerification,
   isMobilePhoneOtpEnvironment,
   shouldPreRenderPhoneRecaptcha,
 } from "./phone-recaptcha";

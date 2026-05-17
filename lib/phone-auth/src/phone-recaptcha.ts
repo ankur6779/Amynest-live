@@ -18,6 +18,7 @@ export {
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
 
 const RENDER_TIMEOUT_MS = 30_000;
+const VERIFY_TIMEOUT_MS = 120_000;
 
 let verifierInstance: RecaptchaVerifier | null = null;
 let renderPromise: Promise<ApplicationVerifier> | null = null;
@@ -41,23 +42,32 @@ function applyDesktopHiddenLayout(el: HTMLElement): void {
     margin: "",
     transform: "",
     maxWidth: "",
+    bottom: "",
+    background: "",
   });
 }
 
-function applyMobileVisibleLayout(el: HTMLElement): void {
+/** Fixed on viewport — never reparent (moving the iframe crashes iOS WebViews on tap). */
+function applyMobileOverlayLayout(el: HTMLElement): void {
+  el.setAttribute("aria-hidden", "false");
   Object.assign(el.style, {
-    position: "relative",
+    position: "fixed",
+    left: "50%",
+    bottom: "max(28px, env(safe-area-inset-bottom))",
     top: "auto",
-    left: "auto",
-    width: "100%",
+    transform: "translateX(-50%)",
+    width: "min(304px, calc(100vw - 32px))",
     maxWidth: "304px",
-    height: "78px",
+    minHeight: "78px",
+    height: "auto",
     overflow: "visible",
     opacity: "1",
     pointerEvents: "auto",
-    zIndex: "1",
-    margin: "0 auto",
-    transform: "none",
+    zIndex: "100003",
+    margin: "0",
+    background: "#fff",
+    borderRadius: "4px",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
   });
 }
 
@@ -67,42 +77,44 @@ export function setPhoneRecaptchaMobileSheetActive(active: boolean): void {
   const el = document.getElementById(RECAPTCHA_CONTAINER_ID);
   if (!el) return;
   if (active || isMobilePhoneOtpEnvironment()) {
-    applyMobileVisibleLayout(el);
+    applyMobileOverlayLayout(el);
   } else {
     applyDesktopHiddenLayout(el);
+    el.setAttribute("aria-hidden", "true");
   }
 }
 
-/** Ensure exactly one reCAPTCHA mount point exists (never duplicate IDs). */
+/** Ensure exactly one reCAPTCHA mount point on document.body (never inside React portals). */
 export function ensureRecaptchaContainer(): HTMLElement {
-  const byId = document.getElementById(RECAPTCHA_CONTAINER_ID);
-  if (byId) {
-    applyRecaptchaContainerLayout(byId);
-    return byId;
+  let el = document.getElementById(RECAPTCHA_CONTAINER_ID);
+  if (!el) {
+    el = document.createElement("div");
+    el.id = RECAPTCHA_CONTAINER_ID;
+    document.body.appendChild(el);
+  } else if (el.parentElement !== document.body) {
+    document.body.appendChild(el);
   }
 
-  const el = document.createElement("div");
-  el.id = RECAPTCHA_CONTAINER_ID;
-  el.setAttribute("aria-hidden", "true");
-  document.body.appendChild(el);
   applyRecaptchaContainerLayout(el);
   return el;
 }
 
 export function applyRecaptchaContainerLayout(el: HTMLElement): void {
   if (isMobileMode()) {
-    applyMobileVisibleLayout(el);
+    applyMobileOverlayLayout(el);
   } else {
     applyDesktopHiddenLayout(el);
+    el.setAttribute("aria-hidden", "true");
   }
 }
 
-/** Move the shared reCAPTCHA node into the mobile sheet (or back to body). */
-export function mountPhoneRecaptchaContainer(parent: HTMLElement | null): void {
+/**
+ * @deprecated Do not move the reCAPTCHA node — causes iframe crash on tap. Layout-only.
+ */
+export function mountPhoneRecaptchaContainer(_parent: HTMLElement | null): void {
   const el = ensureRecaptchaContainer();
-  const target = parent ?? document.body;
-  if (el.parentElement !== target) {
-    target.appendChild(el);
+  if (el.parentElement !== document.body) {
+    document.body.appendChild(el);
   }
   applyRecaptchaContainerLayout(el);
 }
@@ -131,11 +143,16 @@ export function clearPhoneRecaptchaVerifier(): void {
   }
   renderPromise = null;
   const el = document.getElementById(RECAPTCHA_CONTAINER_ID);
-  if (el) el.innerHTML = "";
+  if (el) {
+    el.innerHTML = "";
+    if (!isMobileMode()) {
+      applyDesktopHiddenLayout(el);
+    }
+  }
 }
 
-function recaptchaSize(): "invisible" | "compact" {
-  return isMobileMode() ? "compact" : "invisible";
+function recaptchaSize(): "invisible" | "normal" {
+  return isMobileMode() ? "normal" : "invisible";
 }
 
 function renderWithTimeout(verifier: RecaptchaVerifier): Promise<void> {
@@ -150,9 +167,55 @@ function renderWithTimeout(verifier: RecaptchaVerifier): Promise<void> {
   ]);
 }
 
+function verifyWithTimeout(verifier: RecaptchaVerifier): Promise<unknown> {
+  return Promise.race([
+    verifier.verify(),
+    new Promise<never>((_, reject) => {
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              "Verification timed out. Tap the checkbox again or reload the page.",
+            ),
+          ),
+        VERIFY_TIMEOUT_MS,
+      );
+    }),
+  ]);
+}
+
+async function createAndRenderVerifier(auth: Auth): Promise<RecaptchaVerifier> {
+  const mobile = isMobileMode();
+  const container = ensureRecaptchaContainer();
+  applyRecaptchaContainerLayout(container);
+
+  if (mobile) {
+    clearPhoneRecaptchaVerifier();
+  }
+
+  const verifier = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
+    size: recaptchaSize(),
+    callback: () => {
+      console.info("[phone-recaptcha] reCAPTCHA solved", {
+        hostname: window.location.hostname,
+        mobile,
+      });
+    },
+    "expired-callback": () => {
+      console.warn("[phone-recaptcha] reCAPTCHA expired — will reset verifier");
+      clearPhoneRecaptchaVerifier();
+    },
+  });
+
+  await renderWithTimeout(verifier);
+  verifierInstance = verifier;
+  logRecaptchaDebug("render complete");
+  return verifier;
+}
+
 /**
- * Returns a single rendered reCAPTCHA verifier for phone sign-in.
- * On mobile: visible compact widget (invisible mode crashes WebViews).
+ * Mobile: render widget, wait for user tap (verify), then caller runs signInWithPhoneNumber.
+ * Desktop: invisible verifier (verify happens inside signInWithPhoneNumber).
  */
 export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<ApplicationVerifier> {
   if (typeof document === "undefined") {
@@ -160,14 +223,6 @@ export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<Application
   }
 
   logPhoneOtpDomainContext("reCAPTCHA init");
-  const container = ensureRecaptchaContainer();
-  applyRecaptchaContainerLayout(container);
-
-  const mobile = isMobileMode();
-
-  if (mobile && verifierInstance) {
-    clearPhoneRecaptchaVerifier();
-  }
 
   if (verifierInstance) {
     logRecaptchaDebug("reuse existing verifier");
@@ -176,26 +231,7 @@ export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<Application
 
   if (renderPromise) return renderPromise;
 
-  renderPromise = (async () => {
-    const verifier = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
-      size: recaptchaSize(),
-      callback: () => {
-        console.info("[phone-recaptcha] reCAPTCHA solved", {
-          hostname: window.location.hostname,
-          mobile: mobile,
-        });
-      },
-      "expired-callback": () => {
-        console.warn("[phone-recaptcha] reCAPTCHA expired — will reset verifier");
-        clearPhoneRecaptchaVerifier();
-      },
-    });
-
-    await renderWithTimeout(verifier);
-    verifierInstance = verifier;
-    logRecaptchaDebug("render complete");
-    return verifier;
-  })();
+  renderPromise = createAndRenderVerifier(auth);
 
   try {
     return await renderPromise;
@@ -205,11 +241,37 @@ export async function getPhoneRecaptchaVerifier(auth: Auth): Promise<Application
     console.error("[phone-recaptcha] render failed", {
       err,
       hostname: host,
-      mobile,
+      mobile: isMobileMode(),
       hint: shouldRedirectWwwToApex(host)
         ? "www should redirect to amynest.in — hard-refresh or clear cache"
         : `Ensure ${host} is in Firebase → Authentication → Authorized domains (${FIREBASE_PHONE_AUTH_DOMAINS.join(", ")})`,
     });
+    throw err;
+  }
+}
+
+/**
+ * On mobile WebViews: complete the checkbox challenge BEFORE signInWithPhoneNumber.
+ * Calling both at once duplicates iframe work and crashes iOS on tap.
+ */
+export async function awaitMobileRecaptchaVerification(auth: Auth): Promise<ApplicationVerifier> {
+  if (!isMobileMode()) {
+    return getPhoneRecaptchaVerifier(auth);
+  }
+
+  clearPhoneRecaptchaVerifier();
+  renderPromise = null;
+
+  const verifier = await createAndRenderVerifier(auth);
+  renderPromise = Promise.resolve(verifier);
+
+  logRecaptchaDebug("awaiting user verify()");
+  try {
+    await verifyWithTimeout(verifier);
+    logRecaptchaDebug("verify() complete");
+    return verifier;
+  } catch (err) {
+    clearPhoneRecaptchaVerifier();
     throw err;
   }
 }
