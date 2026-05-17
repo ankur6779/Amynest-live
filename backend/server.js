@@ -1,6 +1,6 @@
 "use strict";
 
-/** @build 2026-05-17 routine integrity, category taxonomy, energy shaping */
+/** @build 2026-05-17 infant realism scoring + rewrite layer */
 /**
  * Render Amynest-backend entrypoint (rootDir=backend).
  * Dashboard: build = npm install, start = node server.js
