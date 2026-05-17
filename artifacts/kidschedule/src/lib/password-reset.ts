@@ -1,6 +1,7 @@
 import { sendPasswordResetEmail, type ActionCodeSettings } from "firebase/auth";
 import { firebaseAuth } from "./firebase";
 import { logFirebaseAuthError } from "./firebase-auth-error";
+import { parseFirebaseActionParams } from "./firebase-action-params";
 
 /** Must be authorized in Firebase → Authentication → Settings → Authorized domains. */
 export const CANONICAL_PASSWORD_RESET_URL = "https://amynest.in/reset-password";
@@ -28,22 +29,11 @@ export function getPasswordResetActionCodeSettings(): ActionCodeSettings {
   };
 }
 
-/** Parse Firebase action link params from search or hash. */
-export function parsePasswordResetActionParams(location: Location = window.location): {
-  mode: string | null;
-  oobCode: string | null;
-} {
-  const search = new URLSearchParams(location.search);
-  let mode = search.get("mode");
-  let oobCode = search.get("oobCode");
-
-  if ((!mode || !oobCode) && location.hash) {
-    const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
-    mode = mode ?? hash.get("mode");
-    oobCode = oobCode ?? hash.get("oobCode");
-  }
-
-  return { mode, oobCode };
+/** @deprecated Use parseFirebaseActionParams */
+export function parsePasswordResetActionParams(
+  location: Pick<Location, "search" | "hash"> = window.location,
+) {
+  return parseFirebaseActionParams(location);
 }
 
 function isUnauthorizedContinueUri(err: unknown): boolean {

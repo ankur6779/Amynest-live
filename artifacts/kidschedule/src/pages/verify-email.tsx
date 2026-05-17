@@ -12,6 +12,8 @@ import {
   prettyAuthError,
 } from "@/lib/firebase-auth-error";
 import { waitForFirebaseUser } from "@/lib/wait-for-firebase-user";
+import { parseFirebaseActionParams } from "@/lib/firebase-action-params";
+import VerifyEmailActionPage from "@/pages/verify-email-action";
 
 const CSS = `
   @keyframes veRingRotate {
@@ -77,7 +79,17 @@ function postVerifyPath(): string {
   return "/";
 }
 
+/** Inbox / resend UI after sign-up, or email-link handler when mode+oobCode present. */
 export default function VerifyEmailPage() {
+  const { mode, oobCode } = parseFirebaseActionParams();
+  if (mode === "verifyEmail" && oobCode) {
+    return <VerifyEmailActionPage />;
+  }
+
+  return <VerifyEmailInboxPage />;
+}
+
+function VerifyEmailInboxPage() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const search = useSearch();

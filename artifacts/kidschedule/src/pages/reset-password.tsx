@@ -7,7 +7,7 @@ import {
 } from "firebase/auth";
 import { firebaseAuth } from "@/lib/firebase";
 import { formatAuthErrorForUi, logFirebaseAuthError } from "@/lib/firebase-auth-error";
-import { parsePasswordResetActionParams } from "@/lib/password-reset";
+import { parseFirebaseActionParams } from "@/lib/firebase-action-params";
 
 type PageState = "loading" | "invalid" | "form" | "success";
 
@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const { mode, oobCode: code } = parsePasswordResetActionParams();
+    const { mode, oobCode: code } = parseFirebaseActionParams();
 
     console.info("[reset-password] Link opened", { mode, hasCode: Boolean(code) });
 

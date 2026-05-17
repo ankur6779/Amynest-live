@@ -1231,6 +1231,17 @@
       "sign_in_now": "Sign in now",
       "back_to_sign_in": "← Back to Sign in"
     },
+    "verify_email_action": {
+      "verifying": "Verifying your email…",
+      "verifying_hint": "Please wait a moment.",
+      "success_title": "Email successfully verified",
+      "success_body": "Your email is confirmed. You can sign in now.",
+      "sign_in_button": "Go back and sign in",
+      "redirect_hint": "Redirecting to sign in in a few seconds…",
+      "error_title": "Verification failed",
+      "error_generic": "This link is invalid or has expired.",
+      "invalid_link": "This verification link is missing required information."
+    },
     "verify_email": {
       "title": "Check your inbox",
       "subtitle": "We've sent a verification link to",
