@@ -28,5 +28,6 @@ if (!hasPnpm()) {
 
 run("pnpm", ["install", "--frozen-lockfile"]);
 run("pnpm", ["--filter", "@workspace/api-server", "build"]);
+run("pnpm", ["--filter", "@workspace/db", "push"]);
 
-console.log("[render-build] api-server build complete");
+console.log("[render-build] api-server build + db push complete");
