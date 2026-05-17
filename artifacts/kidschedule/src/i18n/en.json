@@ -1231,6 +1231,11 @@
       "sign_in_now": "Sign in now",
       "back_to_sign_in": "← Back to Sign in"
     },
+    "auth_action": {
+      "processing": "Processing...",
+      "email_verified_title": "✅ Email Verified",
+      "password_updated": "✅ Password updated successfully. Go to login."
+    },
     "verify_email_action": {
       "verifying": "Verifying your email...",
       "success_message": "✅ Your email has been successfully verified. Please go back and sign in.",
