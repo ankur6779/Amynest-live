@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
+    "dev": "AMYNEST_ENV=development NODE_ENV=development tsx watch ./src/index.ts",
+    "dev:built": "AMYNEST_ENV=development NODE_ENV=development pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
-    "start": "node --enable-source-maps ./dist/index.mjs",
+    "start": "AMYNEST_ENV=${AMYNEST_ENV:-production} node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx/esm --test src/lib/routine-templates.test.ts src/lib/phonicsTests.test.ts src/lib/cryInsight.test.ts src/lib/sleepPredict.test.ts src/routes/routines.test.ts ../../lib/study-zone/src/engagement.test.ts ../../lib/study-zone/src/levels.test.ts ../../lib/study-zone/src/adaptive.test.ts ../../lib/life-skills/src/streak.test.ts ../../lib/family-routine/src/*.test.ts ../../lib/conflict-resolution/src/__tests__/*.test.ts ../../lib/load-forecast/src/__tests__/*.test.ts ../../lib/explainability/src/__tests__/*.test.ts src/lib/__tests__/notificationCron.test.ts src/services/__tests__/notificationContent.test.ts src/services/__tests__/notificationDispatch.test.ts && node --import tsx/esm --test src/routes/child-intelligence.test.ts && node --import tsx/esm --test src/routes/spelling.test.ts && node --import tsx/esm --test src/routes/life-skills.test.ts && node --import tsx/esm --test src/routes/smart-study.test.ts && node --import tsx/esm --experimental-test-module-mocks --test src/routes/abacus.test.ts && node --import tsx/esm --experimental-test-module-mocks --test src/routes/speech.test.ts",
+    "test": "node --import tsx/esm --test src/lib/routine-age-feeding.test.ts src/lib/routine-meal-integration.test.ts src/lib/routine-country-structure.test.ts src/lib/routine-country-profile.test.ts src/lib/routine-scheduler.test.ts src/lib/routine-templates.test.ts src/lib/phonicsTests.test.ts src/lib/cryInsight.test.ts src/lib/sleepPredict.test.ts src/routes/routines.test.ts ../../lib/study-zone/src/engagement.test.ts ../../lib/study-zone/src/levels.test.ts ../../lib/study-zone/src/adaptive.test.ts ../../lib/life-skills/src/streak.test.ts ../../lib/family-routine/src/*.test.ts ../../lib/conflict-resolution/src/__tests__/*.test.ts ../../lib/load-forecast/src/__tests__/*.test.ts ../../lib/explainability/src/__tests__/*.test.ts src/lib/__tests__/notificationCron.test.ts src/services/__tests__/notificationContent.test.ts src/services/__tests__/notificationDispatch.test.ts && node --import tsx/esm --test src/routes/child-intelligence.test.ts && node --import tsx/esm --test src/routes/spelling.test.ts && node --import tsx/esm --test src/routes/life-skills.test.ts && node --import tsx/esm --test src/routes/smart-study.test.ts && node --import tsx/esm --experimental-test-module-mocks --test src/routes/abacus.test.ts && node --import tsx/esm --experimental-test-module-mocks --test src/routes/speech.test.ts",
     "test:ai-pipeline": "node --import tsx/esm --test src/routes/routines.test.ts"
   },
   "dependencies": {
@@ -28,6 +29,7 @@
     "@workspace/life-skills": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",
     "@workspace/study-zone": "workspace:*",
+    "dotenv": "^16.6.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2",
     "drizzle-orm": "catalog:",

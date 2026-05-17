@@ -34,6 +34,8 @@ export const ttsCacheTable = pgTable(
     voiceId: varchar("voice_id", { length: 64 }).notNull(),
     modelId: varchar("model_id", { length: 64 }).notNull(),
     audioPath: text("audio_path").notNull(),
+    /** Public GCS URL when object storage is configured (https://storage.googleapis.com/…). */
+    audioUrl: text("audio_url"),
     audioData: bytea("audio_data"),
     contentType: varchar("content_type", { length: 32 }).notNull().default("audio/mpeg"),
     charCount: integer("char_count").notNull(),

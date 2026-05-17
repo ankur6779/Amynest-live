@@ -78,14 +78,9 @@ router.get("/environment/context", async (req, res): Promise<void> => {
       date: today,
       latitude: latParam ?? null,
       longitude: lngParam ?? null,
-      country: null,
+      country: (parentProfile as { country?: string | null } | undefined)?.country ?? null,
       region: parentProfile?.region ?? null,
     });
-
-    if (!ctx) {
-      res.status(503).json({ error: "Environmental data temporarily unavailable" });
-      return;
-    }
 
     res.json({ context: ctx, childName: childName ?? null, ageGroup });
   } catch (err) {

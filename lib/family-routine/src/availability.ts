@@ -135,15 +135,22 @@ export function parentStatusLabel(entry: ParentAvailEntry): string {
 
 // ─── Time helpers ─────────────────────────────────────────────────────────
 
-/** "7:00 AM" → total minutes since midnight (-1 on parse failure). */
+/** "7:00 AM" or "07:00" → total minutes since midnight (-1 on parse failure). */
 export function parseDisplayTime(t: string): number {
-  const m = t.replace(/\s+/g, " ").trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!m) return -1;
-  let h = parseInt(m[1]);
-  const min = parseInt(m[2]);
-  if (m[3].toUpperCase() === "PM" && h !== 12) h += 12;
-  if (m[3].toUpperCase() === "AM" && h === 12) h = 0;
-  return h * 60 + min;
+  const cleaned = t.replace(/\s+/g, " ").trim();
+  const m12 = cleaned.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (m12) {
+    let h = parseInt(m12[1]!);
+    const min = parseInt(m12[2]!);
+    if (m12[3]!.toUpperCase() === "PM" && h !== 12) h += 12;
+    if (m12[3]!.toUpperCase() === "AM" && h === 12) h = 0;
+    return h * 60 + min;
+  }
+  const m24 = cleaned.match(/^(\d{1,2}):(\d{2})$/);
+  if (m24) {
+    return parseInt(m24[1]!) * 60 + parseInt(m24[2]!);
+  }
+  return -1;
 }
 
 /** Total minutes → "H:MM AM/PM". */

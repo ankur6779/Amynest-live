@@ -27,10 +27,17 @@ import {
   GenerateInsightsResponse,
 } from "@workspace/api-zod";
 import { generateRuleBasedRoutine, generateRuleBasedInsights, generatePartialRoutine, timeToMins, minsToTime, applyRoutineV2, anchorMealSlots, attachMealRecipesAndMetadata, type AgeGroup, type Region, type ScheduleItem } from "../lib/routine-templates.js";
-import { enforceSchoolBlock as enforceSchoolBlockUtil, reAnchorToWakeTime as reAnchorToWakeTimeUtil, type AiRoutineItem } from "../lib/ai-routine-utils.js";
+import {
+  enforceSchoolBlock as enforceSchoolBlockUtil,
+  type AiRoutineItem,
+} from "../lib/ai-routine-utils.js";
+import { buildRoutineContext } from "../lib/routine-context-builder.js";
+import { runRoutineIntelligencePipeline } from "../lib/routine-intelligence-pipeline.js";
+import { normalizeTo24h } from "../lib/routine-scheduler.js";
 import { type CaregiverKey, type WeatherOutdoor, applyWeatherAdjustment } from "@workspace/family-routine";
 import {
   getEnvironmentalContext,
+  fallbackAtmosphericSnapshot,
   mapAgeGroupToEnvAgeGroup,
   mapToWeatherOutdoor,
   buildAiPromptBlock,
@@ -458,6 +465,8 @@ The "slots" array MUST have exactly ${targets.length} entries in the same order 
 export async function generateAiRoutine(params: {
   childName: string;
   age: number;
+  /** Precise age in months (preferred over `age` years for feeding logic). */
+  ageInMonths?: number;
   ageGroup: AgeGroup;
   wakeUpTime: string;
   sleepTime: string;
@@ -515,6 +524,7 @@ export async function generateAiRoutine(params: {
   // the AI prompt receives a real-time atmospheric/AQI/UV/circadian rules
   // block AND env explanations are appended to the returned `adaptations`.
   environmentalContext?: EnvironmentalContext | null;
+  childId?: string;
   openaiClient?: {
     chat: {
       completions: {
@@ -530,6 +540,11 @@ export async function generateAiRoutine(params: {
 }): Promise<{ title: string; items: RoutineItem[]; adaptations: string[] }> {
   const openai = params.openaiClient
     ?? (await import("@workspace/integrations-openai-ai-server")).openai;
+
+  const wakeUpTime = normalizeTo24h(params.wakeUpTime);
+  const sleepTime = normalizeTo24h(params.sleepTime);
+  const schoolStartTime = normalizeTo24h(params.schoolStartTime);
+  const schoolEndTime = normalizeTo24h(params.schoolEndTime);
 
   const dayOfWeek = new Date(params.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long" });
   const ageGroupLabel =
@@ -555,9 +570,9 @@ Return ONLY valid JSON, no markdown, no explanation.`;
 ${ageBandGuidance}
 - Date: ${params.date} (${dayOfWeek})
 - School today: ${params.hasSchool ? "Yes" : "No"}
-${params.hasSchool ? `- School hours: ${params.schoolStartTime} to ${params.schoolEndTime} — HARD CONSTRAINT, see school rules below` : ""}
-- Wake up: ${params.wakeUpTime}
-- Bedtime: ${params.sleepTime}
+${params.hasSchool ? `- School hours: ${schoolStartTime} to ${schoolEndTime} — HARD CONSTRAINT, see school rules below` : ""}
+- Wake up: ${wakeUpTime} (24-hour)
+- Bedtime: ${sleepTime} (24-hour)
 - Diet: ${(() => {
     const ft = (params.foodType ?? "veg").toLowerCase().replace("-", "_");
     if (ft === "vegan") return "Vegan (strictly no animal products — no meat, fish, dairy, eggs, honey)";
@@ -616,7 +631,7 @@ Return JSON exactly like this:
   "title": "string — include child name and day",
   "items": [
     {
-      "time": "H:MM AM/PM",
+      "time": "HH:MM",
       "activity": "Activity name",
       "duration": 30,
       "category": "one of: morning_routine, meal, school, study, play, family, creative, outdoor, self_care, rest, sleep",
@@ -626,11 +641,13 @@ Return JSON exactly like this:
 }
 
 CRITICAL RULES — follow ALL exactly:
-- Time format MUST be "H:MM AM/PM" — examples: "7:00 AM", "9:30 AM", "12:00 PM", "3:45 PM". NEVER use 24-hour format like "07:00" or "19:30".
-- The FIRST activity MUST start at exactly ${params.wakeUpTime}. NEVER use 12:00 AM or any time before wake-up.
-- Build times sequentially WITH natural breathing room: currentTime = ${params.wakeUpTime}. For each activity: "time" = currentTime, then currentTime += duration + transition_gap. Transition gaps MUST be at least 10 min after every activity, and at least 15 min after meals or high-energy play. NEVER place two activities back-to-back with zero gap.
-- Example if wake=7:00 AM with durations 30 (meal), 30 (play): first="7:00 AM" ends 7:30, add 15 min gap → second="7:45 AM" ends 8:15, add 10 min gap → third="8:25 AM". Do NOT write "7:30 AM" for the second item.
-- The final "Sleep" activity must be placed at ${params.sleepTime}.
+- Time format MUST be 24-hour "HH:MM" only — examples: "07:00", "09:30", "12:00", "15:45", "21:00". NEVER use AM/PM.
+- The FIRST activity MUST start at exactly ${wakeUpTime}. NEVER use 00:00 or any time before wake-up.
+- Build times sequentially WITH natural breathing room: currentTime = ${wakeUpTime}. For each activity: "time" = currentTime, then currentTime += duration + transition_gap. Transition gaps MUST be at least 10 min after every activity, and at least 15 min after meals or high-energy play. NEVER place two activities back-to-back with zero gap.
+- Example if wake=07:00 with durations 30 (meal), 30 (play): first="07:00" ends 07:30, add 15 min gap → second="07:45" ends 08:15, add 10 min gap → third="08:25". Do NOT write "07:30" for the second item start.
+- The final "Sleep" / bedtime activity must START at exactly ${sleepTime}.
+- DAY/NIGHT: Morning 05:00–12:00, Afternoon 12:00–17:00, Evening 17:00–21:00, Night 21:00–05:00. Study/school only morning/afternoon; play afternoon/evening; sleep only night/evening wind-down. NEVER schedule study or outdoor play during night hours.
+- Durations: study 30–90 min, play 30–60 min, meals 20–40 min, sleep-prep/rest 15–30 min.
 - 10–12 activities covering wake-up to sleep — fewer, meaningful blocks parents can realistically follow. Include breakfast, lunch, dinner, and at least one snack.
 - Include at least 1 outdoor/play activity and 1 family bonding activity.
 - REALISTIC PACING — MANDATORY (violations will be rejected):
@@ -661,9 +678,9 @@ ${params.foodStyle ? `
 FOOD STYLE CONTEXT: The family follows a ${params.foodStyle === "indian" ? (params.subCuisine ? params.subCuisine.replace(/_/g, " ") + " Indian" : "Indian") : params.foodStyle} food style. Every meal, snack, and tiffin MUST reflect this style authentically. Do NOT default to generic pan-Indian food if a specific regional sub-cuisine is specified.` : ""}
 ${params.hasSchool ? `
 SCHOOL RULES — non-negotiable when "School today: Yes":
-- Insert exactly ONE activity with category "school" that starts at ${params.schoolStartTime} and ends at ${params.schoolEndTime}. Set its duration to the full minutes between those two times.
-- Do NOT schedule ANY other activity (play, study, meal, creative, outdoor, family, rest) overlapping with ${params.schoolStartTime}–${params.schoolEndTime}. The child is at school; they are unavailable.
-- Plan around school: morning prep + breakfast BEFORE ${params.schoolStartTime}; lunch is at school (skip a lunch activity at home, or label it "School lunch / tiffin"); after-school routine begins AFTER ${params.schoolEndTime}.
+- Insert exactly ONE activity with category "school" that starts at ${schoolStartTime} and ends at ${schoolEndTime}. Set its duration to the full minutes between those two times.
+- Do NOT schedule ANY other activity (play, study, meal, creative, outdoor, family, rest) overlapping with ${schoolStartTime}–${schoolEndTime}. The child is at school; they are unavailable.
+- Plan around school: morning prep + breakfast BEFORE ${schoolStartTime}; lunch is at school (skip a lunch activity at home, or label it "School lunch / tiffin"); after-school routine begins AFTER ${schoolEndTime}.
 - The "school" activity name should be specific (e.g. "School day", "At school", "${params.childClass ? params.childClass + " classes" : "School"}").
 ${params.schoolMealMode === "disabled" ? `
 SCHOOL TIFFIN MODE — DISABLED BY PARENT:
@@ -762,18 +779,19 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     };
   });
 
-  // Always re-anchor to wake time — prevents AI from starting at midnight
-  const anchoredItems = params.ageGroup === "infant"
-    ? rawItems  // infants use flexible blocks, skip cascade
-    : reAnchorToWakeTimeUtil(rawItems as AiRoutineItem[], params.wakeUpTime, params.sleepTime, params.ageGroup);
+  // Normalize times only — full scheduling runs in intelligence pipeline (final step).
+  const anchoredItems =
+    params.ageGroup === "infant"
+      ? rawItems.map((it) => ({ ...it, time: normalizeTo24h(it.time) }))
+      : rawItems.map((it) => ({ ...it, time: normalizeTo24h(it.time) }));
 
   // Deterministic school-block enforcement — guarantees the school constraint
   // even when the AI ignored / partially ignored the prompt's SCHOOL RULES block.
   const finalItems = enforceSchoolBlockUtil(
     anchoredItems as AiRoutineItem[],
     params.hasSchool,
-    params.schoolStartTime,
-    params.schoolEndTime,
+    schoolStartTime,
+    schoolEndTime,
     params.childClass,
   );
 
@@ -786,8 +804,8 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
   // required fields + optional v2 fields), so a direct array cast is safe.
   const v2Opts = {
     hasSchool: params.hasSchool,
-    schoolStartMins: timeToMins(params.schoolStartTime),
-    schoolEndMins: timeToMins(params.schoolEndTime),
+    schoolStartMins: timeToMins(schoolStartTime),
+    schoolEndMins: timeToMins(schoolEndTime),
     ageGroup: params.ageGroup,
     fridgeItems: params.fridgeItems,
     customRecipes: params.customRecipes,
@@ -823,13 +841,97 @@ Ensure today's non-meal activities feel DIFFERENT from yesterday — rotate the 
     params.energyProfile ?? null,
   );
 
+  const envCtx = params.environmentalContext;
+  const canonicalAqi = envCtx?.AQI ?? envCtx?.snapshot.aqiUs ?? null;
+  const builtContext = buildRoutineContext({
+    weatherOutdoor: params.weatherOutdoor,
+    country: params.country,
+    region: params.region,
+    isWeekendDay: params.isWeekendDay,
+    hasSchool: params.hasSchool,
+    mood: params.mood,
+    previousDayContext: params.previousDayContext,
+    outdoorSuitability: envCtx?.outdoorSuitability,
+    environmentalRiskScore: envCtx?.environmentalRiskScore,
+    temperatureC: envCtx?.temperatureC ?? null,
+    hydrationNeedLevel: envCtx?.hydrationNeedLevel,
+    sensoryStressLevel: envCtx?.sensoryStressLevel,
+    cognitiveComfortLevel: envCtx?.cognitiveComfortLevel,
+    aqi: canonicalAqi,
+    environment: envCtx
+      ? {
+          temperature: envCtx.temperatureC,
+          condition: envCtx.weatherCondition,
+          AQI: canonicalAqi,
+        }
+      : undefined,
+  });
+
+  const totalAgeMonths = params.ageInMonths ?? params.age * 12;
+  const feedingType =
+    params.feedingType === "breastfeeding" ||
+    params.feedingType === "formula" ||
+    params.feedingType === "mixed"
+      ? params.feedingType
+      : undefined;
+
+  const intelligenceResult = runRoutineIntelligencePipeline({
+    items: curved.items as unknown as AiRoutineItem[],
+    scheduleOpts: {
+      wakeUpTime,
+      sleepTime,
+      ageGroup: params.ageGroup,
+      hasSchool: params.hasSchool && totalAgeMonths >= 36,
+      schoolStartMins: timeToMins(schoolStartTime),
+      schoolEndMins: timeToMins(schoolEndTime),
+      ageInMonths: totalAgeMonths,
+      feedingType,
+    },
+    builtContext,
+    childProfile: {
+      ageGroup: params.ageGroup,
+      ageInMonths: totalAgeMonths,
+      feedingType,
+    },
+    childId: params.childId,
+    fridgeItems: totalAgeMonths >= 48 ? params.fridgeItems ?? undefined : undefined,
+    isVeg:
+      params.foodType !== "non_veg" &&
+      params.foodType !== "nonveg" &&
+      params.foodType !== "no_preference",
+    mealSeed: params.date.split("-").reduce((a, b) => a + Number(b), 0),
+    ageInMonths: totalAgeMonths,
+    feedingType,
+    debug: process.env.ROUTINE_SCHEDULER_DEBUG === "1",
+  });
+
+  const decisionAdaptations =
+    intelligenceResult.state?.decisions.map(
+      (d) => `decision:${d.priority}:${d.resolution}`,
+    ) ?? [];
+
+  const signatureAdaptations = intelligenceResult.behaviorSignature
+    ? [
+        `behavior:focusSpan=${intelligenceResult.behaviorSignature.focusSpan}`,
+        `behavior:energy=${intelligenceResult.behaviorSignature.energyPattern}`,
+        `behavior:compliance=${(intelligenceResult.behaviorSignature.complianceScore * 100).toFixed(0)}%`,
+      ]
+    : [];
+
   return {
     title: parsed.title,
-    items: curved.items as unknown as RoutineItem[],
+    items: intelligenceResult.items as unknown as RoutineItem[],
     adaptations: [
       ...adaptations,
       ...curved.adaptations,
+      ...signatureAdaptations,
+      ...decisionAdaptations,
       ...(params.environmentalContext?.explanations ?? []),
+      ...intelligenceResult.validationErrors.map((e) => `schedule:${e}`),
+      ...(intelligenceResult.reverted ? ["schedule:reverted_pre_validation"] : []),
+      ...intelligenceResult.difficultyAdjustments.map(
+        (a) => `difficulty:${a.direction}:${a.activity}`,
+      ),
     ],
   };
 }
@@ -847,8 +949,6 @@ async function resolveEnvironmentalContextSafe(input: {
   if (process.env.ENVIRONMENT_INTELLIGENCE_DISABLED === "1") return null;
   const envAge = mapAgeGroupToEnvAgeGroup(input.ageGroup);
   const controller = new AbortController();
-  // Hard ceiling — strictly bounds routine-generation latency contribution
-  // from the env subsystem. Provider has its own 2.5s timeout below this.
   const timer = setTimeout(() => controller.abort(), 3000);
   try {
     return await getEnvironmentalContext({
@@ -861,7 +961,17 @@ async function resolveEnvironmentalContextSafe(input: {
       signal: controller.signal,
     });
   } catch {
-    return null;
+    return getEnvironmentalContext({
+      ageGroup: envAge,
+      date: input.date,
+      country: (input.parentProfile?.country ?? null) as string | null,
+      region: (input.parentProfile?.region ?? null) as string | null,
+      provider: {
+        name: "fallback-only",
+        fetchSnapshot: async () =>
+          fallbackAtmosphericSnapshot(input.parentProfile?.country ?? null),
+      },
+    });
   } finally {
     clearTimeout(timer);
   }
@@ -1241,6 +1351,7 @@ router.post("/routines/generate-ai", featureGate("routine_generate"), async (req
     const generated = await generateAiRoutine({
       childName: child.name,
       age: effectiveAge,
+      ageInMonths: totalAgeMonths,
       ageGroup,
       wakeUpTime: effWakeUp,
       sleepTime: child.sleepTime,

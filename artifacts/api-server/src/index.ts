@@ -1,3 +1,4 @@
+import { logAmynestEnvironment } from "./lib/loadEnv";
 import app from "./app";
 import { logStartupEnvDiagnostics } from "./lib/env";
 import { logger } from "./lib/logger";
@@ -26,7 +27,16 @@ app.listen(port, (err) => {
     process.exit(1);
   }
 
-  logger.info({ port }, "Server listening");
+  logAmynestEnvironment();
+  logger.info(
+    {
+      port,
+      amynestEnv: process.env["AMYNEST_ENV"],
+      nodeEnv: process.env.NODE_ENV,
+      render: !!process.env.RENDER,
+    },
+    "Server listening",
+  );
   console.log(`Server listening on port ${port}`);
   logStartupEnvDiagnostics();
   startRazorpayWebhookCleanup();

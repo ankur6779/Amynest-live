@@ -8,10 +8,11 @@ import {
   readEnv,
 } from "../lib/env";
 import { logger } from "../lib/logger";
-
-const GCS_PREFIX = "tts-cache";
+import { ttsGcsObjectName, ttsPublicGcsUrl as buildPublicGcsUrl } from "./ttsGcsPaths";
 
 export type TtsStoreBackend = "postgres" | "gcs";
+
+export { ttsGcsObjectName };
 
 export { getGcsDiagnostics };
 
@@ -31,6 +32,11 @@ function resolveBackend(): TtsStoreBackend {
     return backend;
   }
   if (forced === "gcs") {
+    if (!legacyGcsConfigured()) {
+      throw new Error(
+        "TTS_STORAGE=gcs but GCS is not configured: set DEFAULT_OBJECT_STORAGE_BUCKET_ID and GCS_SERVICE_ACCOUNT_JSON",
+      );
+    }
     backend = "gcs";
     return backend;
   }
@@ -91,8 +97,11 @@ function getGcsClient(): Storage {
   }
 }
 
-function gcsObjectName(cacheKey: string): string {
-  return `${GCS_PREFIX}/${cacheKey}.mp3`;
+/** Public HTTPS URL for a cached MP3 (bucket must allow public read). */
+export function ttsPublicGcsUrl(cacheKey: string): string | null {
+  const bucketId = getGcsBucketId();
+  if (!bucketId) return null;
+  return buildPublicGcsUrl(cacheKey, bucketId);
 }
 
 function getBucket() {
@@ -101,7 +110,7 @@ function getBucket() {
   return getGcsClient().bucket(bucketId);
 }
 
-/** True when legacy Replit GCS bucket + credentials are available. */
+/** True when GCS bucket + credentials are available. */
 export function legacyGcsConfigured(): boolean {
   return getGcsDiagnostics().legacyGcsConfigured;
 }
@@ -109,7 +118,7 @@ export function legacyGcsConfigured(): boolean {
 async function tryLegacyGcsRead(cacheKey: string): Promise<Buffer | null> {
   if (!legacyGcsConfigured()) return null;
   try {
-    const [buffer] = await getBucket().file(gcsObjectName(cacheKey)).download();
+    const [buffer] = await getBucket().file(ttsGcsObjectName(cacheKey)).download();
     return buffer.byteLength > 0 ? buffer : null;
   } catch (err) {
     logger.warn(
@@ -127,7 +136,7 @@ async function tryLegacyGcsRead(cacheKey: string): Promise<Buffer | null> {
 async function tryLegacyGcsExists(cacheKey: string): Promise<boolean> {
   if (!legacyGcsConfigured()) return false;
   try {
-    const [exists] = await getBucket().file(gcsObjectName(cacheKey)).exists();
+    const [exists] = await getBucket().file(ttsGcsObjectName(cacheKey)).exists();
     return exists;
   } catch (err) {
     logger.warn(
@@ -146,15 +155,17 @@ export function ttsStorageBackend(): TtsStoreBackend {
   return resolveBackend();
 }
 
+/** @deprecated Use ttsGcsObjectName — kept for existing DB rows. */
 export function ttsAudioPath(cacheKey: string): string {
-  return gcsObjectName(cacheKey);
+  return ttsGcsObjectName(cacheKey);
 }
 
 export async function ttsAudioExists(
   cacheKey: string,
-  audioData: Buffer | null | undefined,
+  row?: { audioUrl?: string | null; audioData?: Buffer | null },
 ): Promise<boolean> {
-  if (audioData && audioData.byteLength > 0) return true;
+  if (row?.audioUrl?.startsWith("https://storage.googleapis.com/")) return true;
+  if (row?.audioData && row.audioData.byteLength > 0) return true;
   return tryLegacyGcsExists(cacheKey);
 }
 
@@ -163,39 +174,60 @@ export async function ttsAudioRead(
   audioData: Buffer | null | undefined,
 ): Promise<Buffer | null> {
   if (audioData && audioData.byteLength > 0) return audioData;
-  if (resolveBackend() === "gcs") {
+  if (resolveBackend() === "gcs" || legacyGcsConfigured()) {
     return tryLegacyGcsRead(cacheKey);
   }
-  const legacy = await tryLegacyGcsRead(cacheKey);
-  if (legacy) return legacy;
   return null;
 }
 
+/**
+ * Upload MP3 bytes to GCS. Returns the public object URL.
+ * Bucket objects should be world-readable (uniform bucket-level access + allUsers objectViewer).
+ */
+export async function ttsGcsUpload(
+  cacheKey: string,
+  buffer: Buffer,
+  contentType = "audio/mpeg",
+): Promise<string> {
+  if (!legacyGcsConfigured()) {
+    throw new Error("gcs_not_configured");
+  }
+  const objectName = ttsGcsObjectName(cacheKey);
+  const publicUrl = ttsPublicGcsUrl(cacheKey);
+  if (!publicUrl) throw new Error("gcs_bucket_missing");
+
+  try {
+    const file = getBucket().file(objectName);
+    await file.save(buffer, {
+      contentType,
+      resumable: false,
+      metadata: { cacheControl: "public, max-age=31536000, immutable" },
+    });
+    logger.info(
+      { evt: "tts.uploaded_to_gcs", cacheKey, bytes: buffer.byteLength, objectName },
+      "TTS: uploaded to GCS",
+    );
+    return publicUrl;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error(
+      { evt: "tts.gcs_upload_failed", cacheKey, message },
+      "TTS: GCS upload failed",
+    );
+    throw new Error(`tts_gcs_upload_failed: ${message}`);
+  }
+}
+
+/** @deprecated Prefer ttsGcsUpload + DB metadata only. Postgres bytea fallback for local dev. */
 export async function ttsAudioWrite(
   cacheKey: string,
   buffer: Buffer,
   contentType: string,
-): Promise<{ storedInPostgres: boolean }> {
+): Promise<{ storedInPostgres: boolean; audioUrl: string | null }> {
   const mode = resolveBackend();
   if (mode === "gcs") {
-    try {
-      const file = getBucket().file(gcsObjectName(cacheKey));
-      await file.save(buffer, { contentType, resumable: false });
-      logger.info(
-        { evt: "tts.gcs_write_ok", cacheKey, bytes: buffer.byteLength },
-        "TTS audio saved to GCS",
-      );
-      return { storedInPostgres: false };
-    } catch (err) {
-      logger.warn(
-        {
-          evt: "tts.gcs_write_failed",
-          cacheKey,
-          message: err instanceof Error ? err.message : String(err),
-        },
-        "GCS TTS upload failed — falling back to Postgres bytea",
-      );
-    }
+    const audioUrl = await ttsGcsUpload(cacheKey, buffer, contentType);
+    return { storedInPostgres: false, audioUrl };
   }
 
   const updated = await db
@@ -217,14 +249,15 @@ export async function ttsAudioWrite(
     "TTS: saved to database",
   );
 
-  return { storedInPostgres: true };
+  return { storedInPostgres: true, audioUrl: null };
 }
 
-/** Copy GCS bytes into Postgres so future reads work without GCS. */
+/** Copy GCS bytes into Postgres so future reads work without GCS (legacy migration only). */
 export async function ttsAudioBackfillPostgres(
   cacheKey: string,
   buffer: Buffer,
 ): Promise<void> {
+  if (resolveBackend() === "gcs") return;
   if (buffer.byteLength === 0) return;
   try {
     await db
@@ -242,4 +275,14 @@ export async function ttsAudioBackfillPostgres(
       "failed to backfill TTS bytes into Postgres",
     );
   }
+}
+
+export function resolveTtsPlaybackUrl(
+  cacheKey: string,
+  row?: { audioUrl?: string | null },
+): string {
+  if (row?.audioUrl?.startsWith("https://")) return row.audioUrl;
+  const gcsUrl = ttsPublicGcsUrl(cacheKey);
+  if (gcsUrl && resolveBackend() === "gcs") return gcsUrl;
+  return `/api/tts/audio/${cacheKey}.mp3`;
 }

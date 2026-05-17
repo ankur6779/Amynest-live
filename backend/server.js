@@ -11,7 +11,12 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 
-console.log("[Amynest-backend] Starting full api-server from", root);
+const profile =
+  process.env.AMYNEST_ENV === "development" ? "DEV" : "PROD";
+console.log(
+  `[Amynest-backend] Starting full api-server (${profile}) from`,
+  root,
+);
 
 const child = spawn(
   "pnpm",

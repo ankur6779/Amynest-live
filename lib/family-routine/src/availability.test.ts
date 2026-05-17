@@ -41,6 +41,10 @@ describe("parseDisplayTime / minsToDisplay", () => {
     assert.equal(minsToDisplay(12 * 60), "12:00 PM");
     assert.equal(minsToDisplay(0), "12:00 AM");
   });
+  it("parses 24-hour times", () => {
+    assert.equal(parseDisplayTime("07:00"), 7 * 60);
+    assert.equal(parseDisplayTime("21:30"), 21 * 60 + 30);
+  });
   it("returns -1 for garbage", () => {
     assert.equal(parseDisplayTime(""), -1);
     assert.equal(parseDisplayTime("foo"), -1);

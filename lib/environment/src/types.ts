@@ -48,6 +48,17 @@ export type WeatherCondition =
 /** Season — matches seasonalNutritionProfiles.json. */
 export type Season = "summer" | "winter" | "monsoon" | "spring" | "autumn";
 
+/** Data provenance for routine safety — fresh API vs cache vs estimate. */
+export type EnvDataConfidence = "high" | "medium" | "low";
+
+/** Base outdoor exposure tier (routine layer may apply cultural modifiers). */
+export type EnvExposureMode =
+  | "normal"
+  | "reduced"
+  | "limited"
+  | "controlled"
+  | "indoor_only";
+
 /** Raw atmospheric snapshot returned by a provider. All fields optional —
  *  the orchestrator gracefully degrades when sensors are missing. */
 export interface AtmosphericSnapshot {
@@ -144,6 +155,21 @@ export interface EnvironmentalContext {
   tags: string[];
   /** True when the engine had to fall back (cache / offline / no provider). */
   degraded: boolean;
+
+  // ── Resilient pipeline (always populated) ───────────────────────────────
+  /** Canonical US AQI 0–500 — never undefined after orchestration. */
+  AQI: number;
+  /** Canonical temperature °C for routine decisions. */
+  temperatureC: number;
+  /** Fresh API vs stale cache vs country estimate. */
+  confidence: EnvDataConfidence;
+  /** Base exposure tier from AQI + weather. */
+  exposureMode: EnvExposureMode;
+  outdoorAllowed: boolean;
+  /** Minutes cap for outdoor blocks (0 when indoor_only). */
+  outdoorMaxDuration: number;
+  airQualityRisk: "low" | "moderate" | "high";
+  hydrationNeeded: boolean;
 }
 
 /** Provider abstraction — swap Open-Meteo for any other vendor by implementing this. */
@@ -153,6 +179,7 @@ export interface EnvironmentalProvider {
     latitude: number;
     longitude: number;
     timezone?: string;
+    country?: string | null;
     signal?: AbortSignal;
   }): Promise<AtmosphericSnapshot>;
 }

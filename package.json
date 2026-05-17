@@ -7,8 +7,14 @@
     "node": ">=20.0.0 <23.0.0"
   },
   "scripts": {
-      "preinstall": "echo ok",
+    "preinstall": "echo ok",
     "prepare": "sh -c 'command -v simple-git-hooks >/dev/null 2>&1 && simple-git-hooks || true'",
+    "dev": "pnpm run dev:api",
+    "dev:api": "pnpm --filter @workspace/api-server dev",
+    "dev:web": "pnpm --filter @workspace/kidschedule dev",
+    "dev:mobile": "pnpm --filter @workspace/amynest-mobile dev",
+    "build:api": "pnpm --filter @workspace/api-server build",
+    "start:api": "pnpm --filter @workspace/api-server start",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "build:web": "BASE_PATH=/ PORT=3000 pnpm --filter @workspace/kidschedule build",
     "db:migrate": "pnpm --filter @workspace/scripts run migrate-database",

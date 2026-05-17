@@ -31,6 +31,14 @@ ttsPublicRouter.get("/tts/audio/:key.mp3", async (req, res): Promise<void> => {
       res.status(404).json({ error: "not_found" });
       return;
     }
+    if (cached.audioUrl?.startsWith("https://")) {
+      res.redirect(302, cached.audioUrl);
+      return;
+    }
+    if (cached.buffer.byteLength === 0) {
+      res.status(404).json({ error: "not_found" });
+      return;
+    }
     // Lock the response to a fixed audio MIME regardless of what the cache
     // row claims. The endpoint is public, so we don't want a future ingest
     // path that wrote a weird `contentType` to ever serve, say, text/html
@@ -114,7 +122,7 @@ router.post("/tts/synthesize", async (req, res): Promise<void> => {
     res.json({
       ok: true,
       cacheKey: result.cacheKey,
-      audioUrl: `/api/tts/audio/${result.cacheKey}.mp3`,
+      audioUrl: result.audioUrl,
       cached: result.cached,
       charCount: result.charCount,
       contentType: result.contentType,

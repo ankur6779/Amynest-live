@@ -1,19 +1,27 @@
-import { timeToMins, minsToTime } from "./routine-templates.js";
-import type { AgeGroup } from "./routine-templates.js";
+import { timeToMins, type AgeGroup } from "./routine-templates.js";
+import {
+  generateRoutineFromState,
+  rawContextFromScheduleInput,
+} from "./routine-decision-engine.js";
+import {
+  deriveBehavioralState,
+  type ChildProfileForRoutine,
+  type InterpretedBehavioralState,
+  type RoutineRawContext,
+} from "./routine-context-engine.js";
+import {
+  scheduleRoutineItems,
+  normalizeTo24h,
+  minsToTime24,
+  type RoutineScheduleItem,
+  type ScheduleOpts,
+} from "./routine-scheduler.js";
 
-export type AiRoutineItem = {
-  time: string;
-  activity: string;
-  duration: number;
-  category: string;
-  notes?: string;
-  status?: "pending" | "completed" | "skipped" | "delayed";
-  rewardPoints?: number;
-  meal?: string | null;
-  recipe?: unknown;
-  nutrition?: unknown;
-  ageBand?: "2-5" | "6-10" | "10+";
-  parentHubTopic?: string;
+export type AiRoutineItem = RoutineScheduleItem;
+
+export type ReAnchorContext = RoutineRawContext & {
+  childProfile?: ChildProfileForRoutine;
+  interpretedState?: InterpretedBehavioralState;
 };
 
 export function reAnchorToWakeTime(
@@ -21,62 +29,38 @@ export function reAnchorToWakeTime(
   wakeUpTime: string,
   sleepTime: string,
   ageGroup: AgeGroup,
+  opts?: Pick<ScheduleOpts, "hasSchool" | "schoolStartMins" | "schoolEndMins"> & {
+    context?: ReAnchorContext;
+  },
 ): AiRoutineItem[] {
-  if (!items.length) return items;
-  const wakeMins = timeToMins(wakeUpTime);
-  const sleepMins = timeToMins(sleepTime);
-  const effectiveSleepMins = sleepMins < wakeMins ? sleepMins + 1440 : sleepMins;
+  const wake = normalizeTo24h(wakeUpTime);
+  const sleep = normalizeTo24h(sleepTime);
+  const scheduleOpts: ScheduleOpts = {
+    wakeUpTime: wake,
+    sleepTime: sleep,
+    ageGroup,
+    hasSchool: opts?.hasSchool,
+    schoolStartMins: opts?.schoolStartMins,
+    schoolEndMins: opts?.schoolEndMins,
+  };
 
-  const sorted = [...items].sort((a, b) => {
-    const ta = timeToMins(a.time);
-    const tb = timeToMins(b.time);
-    const ra = ta < wakeMins - 120 ? ta + 1440 : ta;
-    const rb = tb < wakeMins - 120 ? tb + 1440 : tb;
-    return ra - rb;
-  });
-
-  let sleepIdx = -1;
-  for (let i = sorted.length - 1; i >= 0; i--) {
-    if (sorted[i]!.category === "sleep" || /sleep|bedtime|good night/i.test(sorted[i]!.activity)) {
-      sleepIdx = i;
-      break;
-    }
-  }
-  const sleepAnchor = sleepIdx !== -1 ? sorted.splice(sleepIdx, 1)[0]! : null;
-
-  // Minimum breathing room between consecutive activities.
-  // High-energy categories (play, outdoor, exercise) get a longer cool-down.
-  const HIGH_ENERGY_CATS = new Set(["play", "outdoor", "exercise", "activity"]);
-  const MIN_GAP_DEFAULT = 10; // minutes
-  const MIN_GAP_HIGH_ENERGY = 15; // minutes after play/outdoor before next block
-
-  let cursor = wakeMins;
-  const anchored: AiRoutineItem[] = sorted.map((item, i) => {
-    const dur = Math.max(1, item.duration ?? 30);
-    const result = { ...item, time: minsToTime(cursor) };
-    cursor += dur;
-    // Add inter-activity gap (but never push past sleep - 5 min)
-    if (i < sorted.length - 1) {
-      const gap = HIGH_ENERGY_CATS.has((item.category ?? "").toLowerCase())
-        ? MIN_GAP_HIGH_ENERGY
-        : MIN_GAP_DEFAULT;
-      const next = cursor + gap;
-      if (next < effectiveSleepMins - 5) {
-        cursor = next;
-      }
-    }
-    if (cursor >= effectiveSleepMins && item.category !== "sleep") {
-      cursor = Math.min(cursor, effectiveSleepMins - 10);
-    }
-    return result;
-  });
-
-  if (sleepAnchor) {
-    anchored.push({ ...sleepAnchor, time: minsToTime(sleepMins) });
+  if (opts?.context) {
+    const childProfile: ChildProfileForRoutine = opts.context.childProfile ?? {
+      ageGroup,
+    };
+    const state =
+      opts.context.interpretedState ??
+      deriveBehavioralState(
+        rawContextFromScheduleInput(opts.context),
+        childProfile,
+      );
+    return generateRoutineFromState(items, state, scheduleOpts).items;
   }
 
-  return anchored;
+  return scheduleRoutineItems(items, scheduleOpts);
 }
+
+export { deriveBehavioralState, generateRoutineFromState };
 
 export function enforceSchoolBlock(
   items: AiRoutineItem[],
@@ -91,13 +75,13 @@ export function enforceSchoolBlock(
     return items.filter((it) => (it.category ?? "").toLowerCase() !== "school");
   }
 
-  const schoolStart = timeToMins(schoolStartTime);
-  const schoolEnd = timeToMins(schoolEndTime);
+  const schoolStart = timeToMins(normalizeTo24h(schoolStartTime));
+  const schoolEnd = timeToMins(normalizeTo24h(schoolEndTime));
   if (schoolEnd <= schoolStart) return items;
   const schoolDur = schoolEnd - schoolStart;
 
   const kept = items.filter((it) => {
-    const t = timeToMins(it.time);
+    const t = timeToMins(normalizeTo24h(it.time));
     const end = t + Math.max(1, it.duration ?? 30);
     const overlaps = t < schoolEnd && end > schoolStart;
     const cat = (it.category ?? "").toLowerCase();
@@ -107,7 +91,7 @@ export function enforceSchoolBlock(
   });
 
   const schoolItem: AiRoutineItem = {
-    time: minsToTime(schoolStart),
+    time: minsToTime24(schoolStart),
     activity: childClass ? `${childClass} — at school` : "At school",
     duration: schoolDur,
     category: "school",
@@ -115,5 +99,7 @@ export function enforceSchoolBlock(
     status: "pending",
   };
 
-  return [...kept, schoolItem].sort((a, b) => timeToMins(a.time) - timeToMins(b.time));
+  return [...kept, schoolItem].sort(
+    (a, b) => timeToMins(normalizeTo24h(a.time)) - timeToMins(normalizeTo24h(b.time)),
+  );
 }

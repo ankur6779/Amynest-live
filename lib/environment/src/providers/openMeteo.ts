@@ -2,11 +2,8 @@
 // Open-Meteo provider — free, no API key required.
 // Endpoints: https://api.open-meteo.com (forecast) + https://air-quality-api.open-meteo.com (AQI)
 //
-// Includes a small in-memory TTL cache (15 min by default) keyed by
-// rounded coordinates so two children at the same address share one fetch.
-// On any network failure / 4xx / timeout the caller receives a "fallback"
-// snapshot derived from the cache or, last resort, an empty stub. This
-// guarantees routine generation NEVER blocks on the weather feed.
+// Priority: fresh API → 15 min cache → country-based fallback snapshot.
+// Never throws; routine generation must not block on weather/AQI.
 // ─────────────────────────────────────────────────────────────────────────
 
 import type {
@@ -14,6 +11,12 @@ import type {
   EnvironmentalProvider,
   PredictedWeatherShift,
 } from "../types.js";
+import {
+  fallbackAtmosphericSnapshot,
+  logEnvDev,
+  normalizeSnapshot,
+  validateAQI,
+} from "../snapshotPipeline.js";
 
 interface CacheEntry {
   expiresAt: number;
@@ -23,12 +26,9 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>();
 
 const DEFAULT_TTL_MS = 15 * 60 * 1000;
-// Tight upstream budget — the orchestrator wraps this in another shorter
-// soft deadline so routine generation latency stays bounded.
 const DEFAULT_TIMEOUT_MS = 2_500;
 
 function cacheKey(lat: number, lng: number): string {
-  // Round to 0.1° (~11 km) — children at the same locality share a fetch.
   return `${lat.toFixed(1)},${lng.toFixed(1)}`;
 }
 
@@ -65,7 +65,7 @@ interface OpenMeteoForecastResponse {
     sunrise?: string[];
     sunset?: string[];
     uv_index_max?: number[];
-    daylight_duration?: number[]; // seconds
+    daylight_duration?: number[];
     precipitation_probability_max?: number[];
   };
   hourly?: {
@@ -120,7 +120,6 @@ function deriveShift(forecast: OpenMeteoForecastResponse): PredictedWeatherShift
 
 function weatherCodeIsSevere(code?: number): boolean {
   if (code == null) return false;
-  // Open-Meteo WMO codes: 95+ = thunderstorm
   return code >= 95;
 }
 
@@ -138,11 +137,14 @@ export class OpenMeteoProvider implements EnvironmentalProvider {
     latitude: number;
     longitude: number;
     timezone?: string;
+    country?: string | null;
     signal?: AbortSignal;
   }): Promise<AtmosphericSnapshot> {
     const key = cacheKey(input.latitude, input.longitude);
     const cached = cache.get(key);
-    if (cached && cached.expiresAt > Date.now()) return cached.snapshot;
+    if (cached && cached.expiresAt > Date.now()) {
+      return normalizeSnapshot({ ...cached.snapshot, source: "cache" });
+    }
 
     const { signal, cleanup } = withTimeout(this.timeoutMs, input.signal);
 
@@ -169,8 +171,14 @@ export class OpenMeteoProvider implements EnvironmentalProvider {
         ? ((await aqiRes.json()) as OpenMeteoAirQualityResponse)
         : null;
 
+      const rawPm25 = aqi?.current?.pm2_5;
+      const rawAqi = validateAQI(aqi?.current?.us_aqi, rawPm25);
+      if (rawAqi == null && aqi?.current?.us_aqi != null) {
+        logEnvDev("aqi_invalid", { raw: aqi.current.us_aqi, pm25: rawPm25 });
+      }
+
       const daylightSec = fcast.daily?.daylight_duration?.[0];
-      const snapshot: AtmosphericSnapshot = {
+      const snapshot = normalizeSnapshot({
         observedAt: fcast.current?.time ?? new Date().toISOString(),
         source: "open-meteo",
         temperatureC: fcast.current?.temperature_2m,
@@ -181,23 +189,30 @@ export class OpenMeteoProvider implements EnvironmentalProvider {
         cloudCoverPct: fcast.current?.cloud_cover,
         windKph: fcast.current?.wind_speed_10m,
         uvIndexMax: fcast.daily?.uv_index_max?.[0],
-        aqiUs: aqi?.current?.us_aqi,
-        pm25: aqi?.current?.pm2_5,
+        aqiUs: rawAqi ?? undefined,
+        pm25: rawPm25,
         sunrise: fcast.daily?.sunrise?.[0],
         sunset: fcast.daily?.sunset?.[0],
         daylightMinutes: daylightSec != null ? Math.round(daylightSec / 60) : undefined,
         predictedShift: weatherCodeIsSevere(fcast.current?.weather_code)
           ? { kind: "incoming_storm", label: "Severe weather present", etaHours: 0, confidence: 0.95 }
           : deriveShift(fcast),
-      };
+      });
 
       cache.set(key, { expiresAt: Date.now() + this.ttlMs, snapshot });
       return snapshot;
-    } catch (_err) {
-      // Fallback: stale cache if available, otherwise an empty snapshot
-      // marked "fallback" so the orchestrator marks the context as degraded.
-      if (cached) return { ...cached.snapshot, source: "cache" };
-      return { observedAt: new Date().toISOString(), source: "fallback" };
+    } catch (err) {
+      logEnvDev("api_failure", {
+        error: err instanceof Error ? err.message : String(err),
+        lat: input.latitude,
+        lng: input.longitude,
+      });
+      if (cached) {
+        logEnvDev("fallback_cache", { key });
+        return normalizeSnapshot({ ...cached.snapshot, source: "cache" });
+      }
+      logEnvDev("fallback_country", { country: input.country });
+      return fallbackAtmosphericSnapshot(input.country);
     } finally {
       cleanup();
     }

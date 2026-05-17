@@ -3,6 +3,7 @@
  * Never logs secret values — only presence, length, and parse errors.
  */
 import { logger } from "./logger";
+import { amynestEnvLabel, resolveAmynestEnv } from "./loadEnv";
 
 function readRaw(name: string): string | undefined {
   const v = process.env[name];
@@ -181,6 +182,18 @@ export function getGcsDiagnostics(): {
 
 /** Log once at startup — safe for production (no secret values). */
 export function logStartupEnvDiagnostics(): void {
+  const amynestEnv = resolveAmynestEnv();
+  logger.info(
+    {
+      evt: "env.profile",
+      amynestEnv,
+      profile: amynestEnvLabel(amynestEnv),
+      nodeEnv: process.env.NODE_ENV ?? "unset",
+      renderService: process.env.RENDER_SERVICE_NAME ?? null,
+    },
+    `AmyNest API profile: ${amynestEnvLabel(amynestEnv)}`,
+  );
+
   const drive = getDriveKeyDiagnostics();
   const gcs = getGcsDiagnostics();
   const eleven = !!getElevenLabsApiKey();
